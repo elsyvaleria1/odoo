@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="device_category_mobile_phone" model="device.kind">
+        <field name="name">Mobile Phone</field>
+        <field name="code">mobile_phone</field>
+        <field
+            name="description">Company-owned Android phones running the AgroMarin companion app</field>
+        <field name="link_mode">push</field>
+    </record>
+
+</odoo>

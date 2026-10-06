@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="web.FormCogMenu" t-inherit="web.CogMenu">
+        <xpath expr="//div[hasclass('o_cp_action_menus')]" position="attributes">
+            <attribute name="t-if">this.ui.isSmall or this.hasItems</attribute>
+        </xpath>
+    </t>
+
+</templates>

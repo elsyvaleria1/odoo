@@ -1,0 +1,209 @@
+import { getFixture } from "@odoo/hoot";
+import { waitFor } from "@odoo/hoot-dom";
+import { Component, useProps, xml } from "@odoo/owl";
+import {
+    contains,
+    getMockEnv,
+    makeMockEnv,
+    MockServer,
+    mountWithCleanup,
+    onRpc,
+    parseViewProps,
+    registerInlineViewArchs,
+} from "@web/../tests/web_test_helpers";
+import { useAppContext } from "@web/core/app_context";
+import { provideDebugContext } from "@web/core/debug/debug_context";
+import { registry } from "@web/core/registry";
+import { useService } from "@web/core/utils/hooks";
+import { MainComponentsContainer } from "@web/ui/main_components_container";
+import { getDefaultConfig } from "@web/views/view";
+import { EditionFlow } from "@web_studio/client_action/editor/edition_flow";
+import { provideStudioEditorContext } from "@web_studio/client_action/editor/studio_editor_context";
+import { ViewEditor } from "@web_studio/client_action/view_editor/view_editor";
+import { useStudioServiceAsReactive } from "@web_studio/studio_service";
+
+const serviceRegistry = registry.category("services");
+
+class ViewEditorHoc extends Component {
+    static template = xml`<ViewEditor action="{}" className="''" />`;
+    static components = { ViewEditor };
+    static props = null;
+    props = useProps(this.constructor.props);
+    setup() {
+        const editionFlow = new EditionFlow(useAppContext(), {
+            dialog: useService("dialog"),
+            studio: useStudioServiceAsReactive(),
+            view: useService("view"),
+        });
+        provideStudioEditorContext({ editionFlow });
+        if (useAppContext().debug) {
+            provideDebugContext();
+        }
+    }
+}
+
+class ViewEditorParent extends Component {
+    static components = { ViewEditorHoc, MainComponentsContainer };
+    static props = {};
+    static template = xml`
+        <MainComponentsContainer />
+        <div class="o_studio h-100">
+            <div class="o_web_studio_editor">
+                <div class="o_action_manager">
+                    <div class="o_web_studio_editor_manager d-flex flex-row w-100 h-100">
+                        <ViewEditorHoc />
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    props = useProps(this.constructor.props);
+}
+
+/**
+ * @param {Request | { model: string, view_id: number | false }} params
+ * @param {string} viewType
+ * @param {string} arch
+ */
+export async function editView(params, viewType, arch) {
+    if (params instanceof Request) {
+        ({ params } = await params.json());
+    }
+    const { model: modelName, view_id: viewId } = params;
+    const model = MockServer.env[modelName];
+    registerInlineViewArchs(modelName, {
+        [[viewType, viewId]]: arch,
+    });
+    const result = model.get_views([[viewId || false, viewType]]);
+    result.models[modelName].fields = model.fields_get(); // return all fields
+    return result;
+}
+
+export function disableHookAnimation() {
+    const fixture = getFixture();
+    fixture
+        .querySelectorAll(".o_web_studio_hook, .o_web_studio_hook_separator")
+        .forEach((sep) => {
+            sep.style.setProperty("transition", "none", "important");
+            sep.style.setProperty("min-height", "20px");
+        });
+}
+
+export function handleDefaultStudioRoutes() {
+    onRpc("ir.model", "studio_model_infos", () => ({
+        is_mail_thread: false,
+        is_mail_activity: false,
+        state: "base",
+        record_ids: [1],
+    }));
+    onRpc("/web_studio/edit_view", () => {});
+    onRpc("/web_studio/edit_view_arch", () => {});
+    onRpc("/web_studio/get_actions_for_model", () => []);
+    onRpc("/web_studio/get_default_value", () => ({ default_value: undefined }));
+    onRpc("/web_studio/get_studio_view_arch", () => ({ studio_view_arch: "" }));
+    onRpc("approval.binding", "get_button_approvals", ({ args }) =>
+        args[0].map(() => ({
+            gated: false,
+            approved: true,
+            request: false,
+            steps: [],
+        })),
+    );
+}
+
+export async function mountViewEditor(params) {
+    const actionToEdit = { res_model: params.resModel };
+    const config = { ...getDefaultConfig(), ...params.config };
+    params.viewId = params.viewId || 99999999;
+
+    prepareRegistry();
+    const env = params.env || getMockEnv() || (await makeMockEnv({ config }));
+
+    params = parseViewProps(params);
+    actionToEdit.views = [[params.viewId, params.type]];
+
+    handleDefaultStudioRoutes();
+    env.services.studio.setParams({
+        viewType: params.type,
+        editorTab: "views",
+        action: actionToEdit,
+        controllerState: {
+            resId: params.resId,
+        },
+        mode: "editor",
+    });
+    return mountWithCleanup(ViewEditorParent, {
+        env,
+    });
+}
+
+/**
+ * Keep the floating mail/discuss/bus overlays out of the editor DOM: these
+ * tests query the rendered document, and those components inject markup
+ * irrelevant to (and perturbing for) the view-editor assertions.
+ *
+ * Deliberately a DENYLIST of the few noisy components, not an allowlist of
+ * "required" services. The previous allowlist enumerated every service the
+ * components under test happened to need, which coupled this file to `web`'s
+ * internals and rotted the moment `web` added one: `FormController` began
+ * calling `useService("multi_company_recovery")`, that name was not in the
+ * list, and all 228 form-editor mounts died on "Service multi_company_recovery
+ * is not available". A `useService` call is an *undeclared* dependency, so
+ * such a list can never be derived or kept correct — only a denylist of the
+ * things these tests actively want gone is maintainable. Mirrors the same
+ * approach already used by `client_action/report_editor/`.
+ */
+function prepareRegistry() {
+    registry.category("main_components").remove("mail.ChatHub");
+    registry.category("main_components").remove("discuss.CallInvitations");
+    registry.category("main_components").remove("bus.ConnectionAlert");
+    serviceRegistry.add("messaging", makeFakeMessagingService());
+}
+
+function makeFakeMessagingService() {
+    const chatter = {
+        update: () => {},
+        refresh: () => {},
+        exists: () => {},
+        delete: () => {},
+        thread: {},
+    };
+
+    const messaging = {
+        models: {
+            Chatter: {
+                insert: () => chatter,
+            },
+        },
+    };
+
+    const service = {
+        get: () => messaging,
+        modelManager: {
+            messaging,
+            messagingCreatedPromise: new Promise((resolve) => resolve()),
+            startListening: () => {},
+            stopListening: () => {},
+            removeListener: () => {},
+        },
+    };
+
+    return {
+        start(env) {
+            return service;
+        },
+    };
+}
+
+export async function openStudio(params = {}) {
+    await contains(".o_main_navbar .o_web_studio_navbar_item button").click();
+    if (params.noEdit) {
+        await contains(".o_menu_sections a").click();
+        await waitFor(".o_web_studio_views");
+    }
+    if (params.report) {
+        await contains(".o_menu_sections a:eq(1)").click();
+        await contains(`.o_kanban_record [data-id="${params.report}"`).click();
+        await waitFor(".o_web_studio_report_editor_manager");
+    }
+}

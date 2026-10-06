@@ -1,0 +1,287 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* account_collection_sale
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: es\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: account_collection_sale
+#. odoo-python
+#: code:addons/account_collection_sale/models/sale_order.py:0
+msgid "%(order)s has nothing left to invoice; collect its invoices instead."
+msgstr "%(order)s ya no tiene nada por facturar; cobra sus facturas."
+
+#. module: account_collection_sale
+#. odoo-python
+#: code:addons/account_collection_sale/models/sale_order.py:0
+msgid "%(order)s is not a cash sale: collect its invoices instead."
+msgstr "%(order)s no es una venta de contado: cobra sus facturas."
+
+#. module: account_collection_sale
+#. odoo-python
+#: code:addons/account_collection_sale/models/sale_order.py:0
+msgid ""
+"%(salesperson)s holds %(amount)s in collections past their hand-in date: "
+"%(order)s, on credit terms, can be confirmed once they hand them in."
+msgstr ""
+"%(salesperson)s trae %(amount)s en cobros vencidos: %(order)s, a crédito, "
+"podrá confirmarse cuando los entregue."
+
+#. module: account_collection_sale
+#: model:res.groups,comment:account_collection_sale.privilege_invoice_cash_sale
+msgid ""
+"A collector who holds no accounting right collects a confirmed cash sale on "
+"the spot: the order's invoice is created, dated the day the customer paid "
+"and posted in the collector's name, so the customer leaves with an issued "
+"invoice and a receipt. Nothing else of accounting is theirs."
+msgstr ""
+"Un cobrador sin derechos contables cobra en el momento una venta de contado "
+"confirmada: la factura de la orden se crea, con la fecha en que pagó el "
+"cliente, y se publica a nombre del cobrador, de modo que el cliente se va "
+"con su factura emitida y su recibo. Nada más de contabilidad le corresponde."
+
+#. module: account_collection_sale
+#: model:ir.model,name:account_collection_sale.model_account_config
+msgid "A company's accounting configuration"
+msgstr "Configuración contable de una empresa"
+
+#. module: account_collection_sale
+#: model:ir.model.fields,field_description:account_collection_sale.field_wizard_sale_order_cash_collect__amount
+msgid "Amount"
+msgstr "Importe"
+
+#. module: account_collection_sale
+#: model_terms:ir.ui.view,arch_db:account_collection_sale.wizard_sale_order_cash_collect_view_form
+msgid "Cancel"
+msgstr "Cancelar"
+
+#. module: account_collection_sale
+#: model:ir.model.fields.selection,name:account_collection_sale.selection__wizard_sale_order_cash_collect__collection_method__cash
+msgid "Cash"
+msgstr "Efectivo"
+
+#. module: account_collection_sale
+#: model:ir.model.fields.selection,name:account_collection_sale.selection__wizard_sale_order_cash_collect__collection_method__check
+msgid "Check"
+msgstr "Cheque"
+
+#. module: account_collection_sale
+#. odoo-python
+#: code:addons/account_collection_sale/models/sale_order.py:0
+#: model_terms:ir.ui.view,arch_db:account_collection_sale.view_order_form
+#: model_terms:ir.ui.view,arch_db:account_collection_sale.wizard_sale_order_cash_collect_view_form
+msgid "Collect Cash Sale"
+msgstr "Cobrar venta de contado"
+
+#. module: account_collection_sale
+#: model:ir.model,name:account_collection_sale.model_wizard_sale_order_cash_collect
+msgid "Collect a Cash Sale"
+msgstr "Cobrar una venta de contado"
+
+#. module: account_collection_sale
+#: model:ir.model,name:account_collection_sale.model_res_config_settings
+msgid "Config Settings"
+msgstr "Ajustes de configuración"
+
+#. module: account_collection_sale
+#. odoo-python
+#: code:addons/account_collection_sale/models/sale_order.py:0
+msgid "Confirm %(order)s before collecting it."
+msgstr "Confirma %(order)s antes de cobrarla."
+
+#. module: account_collection_sale
+#: model:ir.model.fields,field_description:account_collection_sale.field_wizard_sale_order_cash_collect__create_uid
+msgid "Created by"
+msgstr "Creado por"
+
+#. module: account_collection_sale
+#: model:ir.model.fields,field_description:account_collection_sale.field_wizard_sale_order_cash_collect__create_date
+msgid "Created on"
+msgstr "Creado el"
+
+#. module: account_collection_sale
+#: model:ir.model.fields,field_description:account_collection_sale.field_wizard_sale_order_cash_collect__currency_id
+msgid "Currency"
+msgstr "Moneda"
+
+#. module: account_collection_sale
+#: model:ir.model.fields,field_description:account_collection_sale.field_account_config__display_name
+#: model:ir.model.fields,field_description:account_collection_sale.field_res_config_settings__display_name
+#: model:ir.model.fields,field_description:account_collection_sale.field_sale_order__display_name
+#: model:ir.model.fields,field_description:account_collection_sale.field_wizard_sale_order_cash_collect__display_name
+msgid "Display Name"
+msgstr "Nombre para mostrar"
+
+#. module: account_collection_sale
+#: model:ir.model.fields,field_description:account_collection_sale.field_account_config__collection_hold_credit_sales
+#: model:ir.model.fields,field_description:account_collection_sale.field_res_config_settings__collection_hold_credit_sales
+msgid "Hold Credit Sales of Overdue Collectors"
+msgstr "Retener ventas a crédito de cobradores con cobros vencidos"
+
+#. module: account_collection_sale
+#: model:ir.model.fields,field_description:account_collection_sale.field_account_config__id
+#: model:ir.model.fields,field_description:account_collection_sale.field_res_config_settings__id
+#: model:ir.model.fields,field_description:account_collection_sale.field_sale_order__id
+#: model:ir.model.fields,field_description:account_collection_sale.field_wizard_sale_order_cash_collect__id
+msgid "ID"
+msgstr "ID"
+
+#. module: account_collection_sale
+#: model:ir.model.fields,field_description:account_collection_sale.field_sale_order__is_cash_sale
+msgid "Immediate Payment Term"
+msgstr "Plazo de pago inmediato"
+
+#. module: account_collection_sale
+#: model_terms:ir.ui.view,arch_db:account_collection_sale.wizard_sale_order_cash_collect_view_form
+msgid "Invoice and Collect"
+msgstr "Facturar y cobrar"
+
+#. module: account_collection_sale
+#: model:ir.model.fields,field_description:account_collection_sale.field_wizard_sale_order_cash_collect__write_uid
+msgid "Last Updated by"
+msgstr "Última actualización por"
+
+#. module: account_collection_sale
+#: model:ir.model.fields,field_description:account_collection_sale.field_wizard_sale_order_cash_collect__write_date
+msgid "Last Updated on"
+msgstr "Última actualización el"
+
+#. module: account_collection_sale
+#: model:ir.model.fields,field_description:account_collection_sale.field_wizard_sale_order_cash_collect__order_id
+msgid "Order"
+msgstr "Orden"
+
+#. module: account_collection_sale
+#: model:ir.model.fields,field_description:account_collection_sale.field_wizard_sale_order_cash_collect__collection_method
+msgid "Paid In"
+msgstr "Forma de pago"
+
+#. module: account_collection_sale
+#: model:ir.model.fields,field_description:account_collection_sale.field_wizard_sale_order_cash_collect__date
+msgid "Paid On"
+msgstr "Fecha de pago"
+
+#. module: account_collection_sale
+#: model:res.groups,name:account_collection_sale.privilege_invoice_cash_sale
+msgid "Privilege: a collector invoices the cash sale they are collecting"
+msgstr "Privilegio: un cobrador factura la venta de contado que está cobrando"
+
+#. module: account_collection_sale
+#: model:ir.model,name:account_collection_sale.model_sale_order
+msgid "Sale Order"
+msgstr "Orden de venta"
+
+#. module: account_collection_sale
+#: model_terms:ir.ui.view,arch_db:account_collection_sale.wizard_sale_order_cash_collect_view_form
+msgid ""
+"The order is invoiced and the invoice issued now; the money stays in\n"
+"                    your custody until you hand it in."
+msgstr ""
+"La orden se factura y la factura se emite ahora; el dinero queda\n"
+"                    bajo tu custodia hasta que lo entregues."
+
+#. module: account_collection_sale
+#: model:ir.model.fields,help:account_collection_sale.field_sale_order__is_cash_sale
+msgid ""
+"True when the whole amount falls due on the invoice date itself: a single "
+"100% line, no delay, counted from the invoice date."
+msgstr ""
+"Verdadero cuando todo el importe vence en la fecha de la factura: una sola "
+"línea al 100 %, sin plazo, contada desde la fecha de la factura."
+
+#. module: account_collection_sale
+#: model:ir.model.fields,help:account_collection_sale.field_wizard_sale_order_cash_collect__amount
+msgid "What the customer paid you."
+msgstr "Lo que te pagó el cliente."
+
+#. module: account_collection_sale
+#: model:ir.model.fields,help:account_collection_sale.field_account_config__collection_hold_credit_sales
+#: model:ir.model.fields,help:account_collection_sale.field_res_config_settings__collection_hold_credit_sales
+msgid ""
+"While a salesperson holds collections past their hand-in date, their sales "
+"orders on credit terms cannot be confirmed."
+msgstr ""
+"Mientras un vendedor traiga cobros vencidos, sus órdenes de venta a crédito "
+"no se pueden confirmar."
+
+#. module: account_collection_sale
+#. odoo-python
+#: code:addons/account_collection_sale/models/stock_picking.py:0
+msgid ""
+"%(pickings)s could not be handed over: validate them from Inventory to see "
+"what they ask."
+msgstr ""
+"%(pickings)s no se pudieron entregar: valídalas desde Inventario para ver "
+"qué piden."
+
+#. module: account_collection_sale
+#. odoo-python
+#: code:addons/account_collection_sale/models/sale_order.py:0
+msgid ""
+"%(products)s are not all at hand in %(location)s: leave the delivery of "
+"%(order)s for later instead of handing it over now."
+msgstr ""
+"%(products)s no están completos en %(location)s: deja la entrega de "
+"%(order)s para después en lugar de entregarla ahora."
+
+#. module: account_collection_sale
+#: model:ir.model.fields,help:account_collection_sale.field_wizard_sale_order_cash_collect__hand_over
+msgid ""
+"Deliver the order now, from where its goods are at hand: the salesperson's "
+"vehicle, or the warehouse when the customer picks it up."
+msgstr ""
+"Entrega el pedido ahora, desde donde está su mercancía: el vehículo del "
+"vendedor, o el almacén cuando el cliente la recoge."
+
+#. module: account_collection_sale
+#: model:ir.model.fields,field_description:account_collection_sale.field_stock_picking__is_handed_over_at_sale
+msgid "Handed Over at Sale"
+msgstr "Entregado en la venta"
+
+#. module: account_collection_sale
+#: model:res.groups,name:account_collection_sale.privilege_hand_over_cash_sale
+msgid ""
+"Privilege: a collector hands over the goods of the cash sale they collect"
+msgstr ""
+"Privilegio: un cobrador entrega la mercancía de la venta de contado que "
+"cobra"
+
+#. module: account_collection_sale
+#: model:ir.model.fields,field_description:account_collection_sale.field_wizard_sale_order_cash_collect__hand_over
+msgid "The Customer Takes the Goods Now"
+msgstr "El cliente se lleva la mercancía ahora"
+
+#. module: account_collection_sale
+#: model:ir.model.fields,help:account_collection_sale.field_stock_picking__is_handed_over_at_sale
+msgid ""
+"The customer took the goods when the salesperson collected the cash sale; "
+"the transfer travelled in no delivery."
+msgstr ""
+"El cliente se llevó la mercancía cuando el vendedor cobró la venta de "
+"contado; la transferencia no viajó en ninguna entrega."
+
+#. module: account_collection_sale
+#: model:ir.model,name:account_collection_sale.model_stock_picking
+msgid "Transfer"
+msgstr "Transferencia"
+
+#. module: account_collection_sale
+#: model:res.groups,comment:account_collection_sale.privilege_hand_over_cash_sale
+msgid ""
+"When the customer takes the goods at once, the salesperson who collects it "
+"records the quantities of the cash sale's outgoing transfers, from where its"
+" goods are at hand, and validates them. Nothing else of inventory is theirs."
+msgstr ""
+"Cuando el cliente se lleva la mercancía en ese momento, el vendedor que "
+"cobra registra las cantidades de las transferencias de salida de la venta de"
+" contado, desde donde está la mercancía, y las valida. Nada más de "
+"inventario es suyo."

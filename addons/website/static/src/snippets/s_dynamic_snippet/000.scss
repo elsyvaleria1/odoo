@@ -1,0 +1,75 @@
+.s_dynamic {
+    #wrap &:not(.o_check_scroll_position) {
+        &.o_dynamic_empty,
+        &.s_dynamic_empty,
+        &.o_dynamic_snippet_empty {
+            body:not(.editor_enable) & {
+                display: none !important;
+            }
+        }
+        &.o_dynamic_snippet_loading {
+            body:not(.editor_enable) & {
+                section:not(.s_dynamic_snippet_holder) {
+                    display: none !important;
+                }
+                .s_dynamic_snippet_holder {
+                    display: block !important;
+                }
+            }
+        }
+    }
+    [data-url] {
+        cursor: pointer;
+    }
+    img {
+        object-fit: scale-down;
+    }
+
+    $-container-small-inner-width-max: map-get($container-max-widths, md) -
+        $grid-gutter-width;
+    $-entry-min-width: ($-container-small-inner-width-max * 0.5) - $grid-gutter-width;
+
+    > .container {
+        .s_dynamic_snippet_title.s_dynamic_snippet_title_aside
+            + .s_dynamic_snippet_content
+            .s_dynamic_snippet_row
+            > * {
+            @include media-breakpoint-up(lg) {
+                flex: 0 1
+                    MAX(
+                        var(--DynamicSnippet__entry-maxWidth, #{$-entry-min-width}),
+                        50%
+                    );
+            }
+        }
+    }
+
+    > .o_container_small {
+        .s_dynamic_snippet_row > * {
+            @include media-breakpoint-up(lg) {
+                flex: 0 1
+                    MAX(
+                        var(--DynamicSnippet__entry-maxWidth, #{$-entry-min-width}),
+                        50%
+                    );
+            }
+        }
+
+        .s_dynamic_snippet_title.s_dynamic_snippet_title_aside {
+            min-width: percentage(divide(5, $grid-columns));
+
+            + .s_dynamic_snippet_content .s_dynamic_snippet_row > * {
+                @include media-breakpoint-up(lg) {
+                    flex: 1 1
+                        var(--DynamicSnippet__entry-maxWidth, #{$-entry-min-width});
+                }
+            }
+        }
+    }
+
+    &.s_dynamic_snippet_cover_left {
+        .s_dynamic_snippet_content_position {
+            flex-direction: row-reverse;
+        }
+    }
+}

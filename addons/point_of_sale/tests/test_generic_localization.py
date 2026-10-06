@@ -1,0 +1,29 @@
+from odoo.fields import Command
+from odoo.tests import tagged
+
+from odoo.addons.point_of_sale.tests.test_frontend import TestPointOfSaleHttpCommon
+
+
+@tagged("post_install", "-at_install", "post_install_l10n")
+class TestGenericLocalization(TestPointOfSaleHttpCommon):
+    allow_inherited_tests_method = True
+    partner_vat = "32345678"
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.partner_a.name = "AAAA Generic Partner"
+        cls.partner_a.vat = cls.partner_vat
+        cls.whiteboard_pen.write(
+            {"standard_price": 10.0, "taxes_id": [Command.link(cls.tax_sale_a.id)]}
+        )
+
+        cls.wall_shelf.write(
+            {"standard_price": 10.0, "taxes_id": [Command.link(cls.tax_sale_a.id)]}
+        )
+
+    def test_generic_localization(self):
+        self.main_pos_config.open_ui()
+        url = "/pos/ui?config_id=%d" % self.main_pos_config.id
+        url += "&company_name=%s" % self.main_pos_config.company_id.name
+        self.start_tour(url, "generic_localization_tour", login="accountman")

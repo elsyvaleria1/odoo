@@ -1,0 +1,105 @@
+/** @odoo-module native */
+import { Component, t, useProps } from "@odoo/owl";
+import { SelectMenu } from "@web/components/select_menu";
+import { _t } from "@web/core/translation";
+
+import { ImportDataColumnError } from "../import_data_column_error/import_data_column_error.js";
+import { ImportDataOptions } from "../import_data_options/import_data_options.js";
+
+export class ImportDataContent extends Component {
+    static template = "ImportDataContent";
+    static components = {
+        ImportDataColumnError,
+        ImportDataOptions,
+        SelectMenu,
+    };
+    static props = {
+        columns: t.array(),
+        isFieldSet: t.function(),
+        onOptionChanged: t.function(),
+        onFieldChanged: t.function(),
+        options: t.object(),
+        importMessages: t.array(),
+        previewError: t.string().optional(),
+    };
+    props = useProps(this.constructor.props);
+
+    getGroups(column) {
+        const groups = [
+            { choices: this.makeChoices(column.fields.basic) },
+            {
+                choices: this.makeChoices(column.fields.suggested),
+                label: _t("Suggested Fields"),
+            },
+            {
+                choices: this.makeChoices(column.fields.additional),
+                label:
+                    column.fields.suggested.length > 0
+                        ? _t("Additional Fields")
+                        : _t("Standard Fields"),
+            },
+            {
+                choices: this.makeChoices(column.fields.relational),
+                label: _t("Relation Fields"),
+            },
+        ];
+        return groups;
+    }
+
+    makeChoices(fields) {
+        return fields.map((field) => ({
+            label: field.label,
+            value: field.fieldPath,
+            iconClass: `o_import_field_icon_${field.type}`,
+            // `value` is just the field-path string; `choice.data.value.required`
+            // in the template was always undefined, so required fields were never
+            // visually distinguished in the dropdown (t24068 F2-frontend/#2).
+            required: field.required,
+        }));
+    }
+
+    getTooltipDetails(field) {
+        return JSON.stringify({
+            resModel: field.model_name,
+            debug: true,
+            field: {
+                name: field.name,
+                label: field.string,
+                type: field.type,
+            },
+        });
+    }
+
+    getTooltip(column) {
+        const displayCount = 5;
+        if (column.previews.length > displayCount) {
+            return JSON.stringify({
+                lines: [
+                    ...column.previews.slice(0, displayCount - 1),
+                    `(+${column.previews.length - displayCount + 1})`,
+                ],
+            });
+        } else {
+            return JSON.stringify({ lines: column.previews.slice(0, displayCount) });
+        }
+    }
+
+    getErrorMessageClass(messages, type, index) {
+        return `alert alert-${type} m-0 p-2 ${index === messages.length - 1 ? "" : "mb-2"}`;
+    }
+
+    getCommentClass(column, comment, index) {
+        return `alert-${comment.type} ${index < column.comments.length - 1 ? "mb-2" : "mb-0"}`;
+    }
+
+    onFieldChanged(column, fieldPath) {
+        const fields = [
+            ...column.fields.basic,
+            ...column.fields.suggested,
+            ...column.fields.additional,
+            ...column.fields.relational,
+        ];
+        const fieldInfo = fields.find((f) => f.fieldPath === fieldPath);
+        this.props.onFieldChanged(column, fieldInfo);
+    }
+}

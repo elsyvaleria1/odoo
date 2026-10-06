@@ -1,0 +1,289 @@
+import base64
+import logging
+import re
+
+from odoo.tests import tagged
+from odoo.tests.css import (
+    DARK_SCOPE_RE,
+    DARK_SELECTOR_RE,
+    ROOT,
+    flatten_opaque,
+    is_mask,
+    measure,
+    norm,
+    parse,
+    pick_dark,
+    resolve,
+    same_paint,
+    settle,
+    split_selector,
+    unreachable,
+)
+
+from . import lint_case
+
+_logger = logging.getLogger(__name__)
+
+INERT_IN_URI_RE = re.compile(r"(?:var|color-mix)(?:\(|%28)")
+
+
+@tagged("post_install", "-at_install")
+class TestSchemeDuplication(lint_case.LintCase):
+    def _measure(self, env):
+        return measure(
+            self._css(env, "web.assets_web"), self._css(env, "web.assets_web_dark")
+        )
+
+    @staticmethod
+    def _css(env, bundle):
+        assets = env["ir.qweb"]._get_asset_bundle(bundle, css=True, js=False)
+        return base64.b64decode(assets.css().datas).decode("utf-8", "replace")
+
+    def test_no_svg_data_uri_reads_a_custom_property(self):
+        offenders = []
+        with self.superuser_env() as env:
+            for bundle in ("web.assets_web", "web.assets_web_dark"):
+                for source, selector, prop, value in parse(self._css(env, bundle)):
+                    if "svg+xml" not in value:
+                        continue
+                    inert = INERT_IN_URI_RE.search(value)
+                    if inert:
+                        offenders.append(
+                            f"{bundle} {source} {selector} {prop}: {inert.group(0)}"
+                        )
+
+        self.assertFalse(
+            offenders,
+            f"{len(offenders)} SVG data URI(s) name a custom property, which "
+            f"cannot resolve there -- the icon will not be drawn. Keep the "
+            f"variable the URI reads a colour, and restate the pair under the "
+            f"scheme scope if it has to answer both:\n  " + "\n  ".join(offenders),
+        )
+
+    def test_the_light_bundle_answers_the_dark_scheme_alone(self):
+        with self.superuser_env() as env:
+            gap, answered, light, dark = self._measure(env)
+
+        self.assertGreater(
+            min(light, dark),
+            12000,
+            f"assets_web compiled {light} declarations and assets_web_dark "
+            f"{dark}. Something did not compile -- the comparison below is "
+            f"being made against a partial bundle and passes for the wrong "
+            f"reason.",
+        )
+        self.assertGreater(
+            answered,
+            1000,
+            f"only {answered} declarations were answered under the attribute, so "
+            f"the bundles did not carry the dark scope they should",
+        )
+        core = lint_case.core_module_names()
+        offenders = sorted(
+            f"{source} {selector} {prop}"
+            for source, selector, prop in gap
+            if source.strip("/").split("/")[0] in core
+        )
+        _logger.info(
+            "assets_web %s declarations, assets_web_dark %s: %s answered under "
+            "the attribute, %s outside this repository still differ",
+            light,
+            dark,
+            answered,
+            len(gap) - len(offenders),
+        )
+        self.assertFalse(
+            offenders,
+            f'{len(offenders)} declaration(s) resolve differently under `data-color-scheme="dark"` '
+            f"in the light bundle from what the dark bundle serves. Answer the "
+            f"scheme with a token, or restate the declaration in the module's "
+            f"backend-only scheme rules (coding_guidelines §5.5):\n  "
+            + "\n  ".join(offenders),
+        )
+
+    def test_a_restatement_for_a_selector_list_answers_each_selector(self):
+        light = (
+            "/* /a/x.scss */.a{--c:#fff}.b{--c:#fff}"
+            ':root[data-color-scheme="dark"] .a,:root[data-color-scheme="dark"] .b'
+            "{--c:#000}"
+        )
+        dark = "/* /a/x.scss */.a{--c:#000}.b{--c:#000}"
+        gap, answered, _light, _dark = measure(light, dark)
+        self.assertEqual(gap, [])
+        self.assertEqual(answered, 2)
+
+    def test_a_restatement_per_selector_answers_a_selector_list(self):
+        light = (
+            "/* /a/x.scss */.a,.b{--c:#fff}"
+            ':root[data-color-scheme="dark"] .a{--c:#000}'
+            ':root[data-color-scheme="dark"] .b{--c:#000}'
+        )
+        dark = "/* /a/x.scss */.a,.b{--c:#000}"
+        gap, answered, _light, _dark = measure(light, dark)
+        self.assertEqual(gap, [])
+        self.assertEqual(answered, 2)
+
+    def test_a_list_the_dark_bundle_groups_differently_is_still_measured(self):
+        light = "/* /a/x.scss */.a,.b{color:#fff}"
+        dark = "/* /a/x.scss */.a,.b,.c{color:#000}"
+        gap, answered, _light, _dark = measure(light, dark)
+        self.assertEqual(
+            gap, [("/a/x.scss", ".a", "color"), ("/a/x.scss", ".b", "color")]
+        )
+        self.assertEqual(answered, 0)
+
+    def test_an_at_rule_prefixes_each_selector_of_its_list(self):
+        light = (
+            "@media x{.a,.b{color:#fff}}"
+            '@media x{:root[data-color-scheme="dark"] .b{color:#000}}'
+        )
+        dark = "@media x{.a,.b{color:#000}}"
+        gap, answered, _light, _dark = measure(light, dark)
+        self.assertEqual(gap, [("?", "@media x .a", "color")])
+        self.assertEqual(answered, 1)
+
+    def test_a_comma_inside_an_attribute_value_is_not_a_selector_boundary(self):
+        self.assertEqual(
+            split_selector('[data-x="a,b"] .c, .d'), ['[data-x="a,b"] .c', ".d"]
+        )
+
+    def test_the_measurement_survives_a_brace_in_a_string(self):
+        css = (
+            '/* /a/x.scss */.fa-bracket-curly::before{content:"{"}'
+            "/* /b/y.scss */.after{color:red}"
+        )
+        self.assertEqual(
+            parse(css),
+            [
+                ("/a/x.scss", ".fa-bracket-curly::before", "content", '"{"'),
+                ("/b/y.scss", ".after", "color", "red"),
+            ],
+        )
+
+    def test_only_the_dark_half_of_light_dark_is_measured(self):
+        self.assertEqual(
+            pick_dark(
+                "linear-gradient(light-dark(#fff, #000), light-dark(#eee, #111))"
+            ),
+            "linear-gradient(#000, #111)",
+        )
+        self.assertEqual(pick_dark("light-dark(a, light-dark(b, c))"), "c")
+        self.assertEqual(pick_dark("#abc"), "#abc")
+
+    def test_an_opaque_colour_inside_a_mask_is_not_a_scheme_difference(self):
+        light = "linear-gradient(130deg, #000 55%, rgba(0, 0, 0, 0.8) 75%, #000 95%)"
+        dark = light.replace("#000 ", "#E2E8F0 ")
+        self.assertNotEqual(norm(light), norm(dark))
+        self.assertEqual(norm(flatten_opaque(light)), norm(flatten_opaque(dark)))
+
+        self.assertNotEqual(
+            norm(flatten_opaque("linear-gradient(rgba(0, 0, 0, 0.8), #000)")),
+            norm(flatten_opaque("linear-gradient(rgba(0, 0, 0, 0.4), #000)")),
+        )
+        self.assertEqual(flatten_opaque("var(--o-text)"), "var(--o-text)")
+
+        self.assertTrue(is_mask("mask-image"))
+        self.assertTrue(is_mask("-webkit-mask"))
+        self.assertFalse(is_mask("mask-size"))
+        self.assertFalse(is_mask("background-image"))
+
+    def test_a_comma_inside_has_is_not_a_selector_boundary(self):
+        selector = ':root[data-color-scheme="dark"] .a:has(.b, .c) .d, .e'
+        self.assertEqual(
+            split_selector(selector),
+            [':root[data-color-scheme="dark"] .a:has(.b, .c) .d', ".e"],
+        )
+
+    def test_a_rule_scoped_to_the_attribute_answers_the_scheme(self):
+        self.assertEqual(
+            DARK_SCOPE_RE.sub("", ':root[data-color-scheme="dark"] .bg-primary-light'),
+            ".bg-primary-light",
+        )
+        self.assertEqual(
+            DARK_SCOPE_RE.sub("", ".bg-primary-light"), ".bg-primary-light"
+        )
+        self.assertEqual(
+            DARK_SCOPE_RE.sub("", ':root[data-color-scheme="dark"]'),
+            ':root[data-color-scheme="dark"]',
+        )
+
+    def test_the_attribute_alone_scopes_the_root(self):
+        gap, answered, _, _ = measure(
+            ':root{color-scheme:light}:root[data-color-scheme="dark"]{color-scheme:dark}',
+            ":root{color-scheme:dark}",
+        )
+        self.assertEqual((gap, answered), ([], 1))
+
+    def test_a_length_is_compared_in_pixels(self):
+        self.assertEqual(norm("margin: 0.25rem"), norm("margin: 4px"))
+        self.assertEqual(norm("-.5rem"), norm("-8px"))
+        self.assertNotEqual(norm("0.25rem"), norm("3px"))
+
+    def test_bootstraps_own_colour_mode_is_not_counted(self):
+        self.assertTrue(unreachable('[data-bs-theme="dark"]'))
+        self.assertTrue(unreachable("[data-bs-theme=dark] .card"))
+        self.assertFalse(unreachable(".navbar-dark,.navbar[data-bs-theme=dark]"))
+        self.assertFalse(unreachable(":root"))
+
+    def test_the_attribute_reading_is_what_is_compared(self):
+        light = settle(
+            parse(
+                "/* /a/x.scss */:root{--o-bg:#fff;--other:1px}"
+                '/* /a/x.scss */:root[data-color-scheme="dark"]{--o-bg:#000}'
+            )
+        )
+        self.assertEqual(
+            {p: v for _, s, p, v in light if s == ROOT},
+            {"--o-bg": "#fff", "--other": "1px"},
+        )
+        self.assertTrue(DARK_SELECTOR_RE.fullmatch(':root[data-color-scheme="dark"]'))
+        self.assertEqual(
+            norm(resolve("var(--o-bg)", {"--o-bg": "black"})), "rgb(0,0,0)"
+        )
+
+    def test_a_colour_is_compared_by_what_it_paints(self):
+        self.assertEqual(
+            norm("color-mix(in srgb, #3a3a3c 50%, #48484a)"), norm("rgb(65, 65, 67)")
+        )
+        self.assertEqual(
+            norm("rgb(from #f5f5f7 r g b / 0.2)"), norm("rgba(245, 245, 247, .2)")
+        )
+        self.assertEqual(
+            norm("1px solid hsla(0, 0%, 100%, .08)"),
+            norm("1px solid rgba(255,255,255,0.08)"),
+        )
+        self.assertEqual(
+            norm("hsl(240, 4.347826087%, 19.0196078431%)"), norm("rgb(46, 46, 51)")
+        )
+        self.assertEqual(
+            norm("color-mix(in srgb, #0071e3 10%, transparent)"),
+            norm("rgba(0, 113, 227, 0.1)"),
+        )
+        self.assertEqual(norm("hsl(from #0071e3 h s calc(l - 10%))"), norm("#0058b0"))
+        self.assertEqual(
+            norm("rgba(0, 0, 0, calc(0.055 * 2))"), norm("rgba(0, 0, 0, 0.11)")
+        )
+        self.assertTrue(
+            same_paint(norm("1px solid #ed0d00"), norm("1px solid #ec0d00"))
+        )
+        self.assertFalse(
+            same_paint(norm("1px solid #ee0d00"), norm("1px solid #ec0d00"))
+        )
+        self.assertFalse(
+            same_paint(norm("2px solid #ec0d00"), norm("1px solid #ec0d00"))
+        )
+        self.assertNotEqual(norm("rgba(245,245,247,.11)"), norm("rgba(245,245,247,.2)"))
+        unresolved = "color-mix(in srgb, var(--x) 50%, #000)"
+        self.assertEqual(norm(unresolved), unresolved)
+        self.assertEqual(norm("white-space"), "white-space")
+        self.assertEqual(norm("0 .5rem 1rem"), norm("0 0.5rem 1rem"))
+        self.assertEqual(norm("rgba(48, 48, 48, 0)"), norm("transparent"))
+        self.assertEqual(
+            norm("color-mix(in srgb, purple 50%, white)"), norm("rgb(192,128,192)")
+        )
+        self.assertEqual(
+            resolve(
+                "var(--x, hsl(from var(--y, #000) h s calc(l + 20)))", {"--y": "#fff"}
+            ),
+            "hsl(from #fff h s calc(l + 20))",
+        )

@@ -1,0 +1,650 @@
+import base64
+import zipfile
+from io import BytesIO
+from itertools import batched
+from urllib.parse import unquote
+
+import qrcode
+import qrcode.image.svg
+
+from odoo import Command, api, fields, models, service
+from odoo.exceptions import AccessError, UserError, ValidationError
+
+
+class PosConfig(models.Model):
+    _inherit = "pos.config"
+
+    def _self_order_kiosk_default_languages(self):
+        return self.env["res.lang"].search([("active", "=", True)])
+
+    def _self_order_default_user(self):
+        users = self.env["res.users"].search(
+            [
+                "|",
+                ("company_ids", "in", self.env.company.id),
+                ("company_id", "=", False),
+            ]
+        )
+        for user in users:
+            if user.sudo().has_group("point_of_sale.group_pos_manager"):
+                return user
+        return self.env["res.users"]
+
+    status = fields.Selection(
+        selection=[("inactive", "Inactive"), ("active", "Active")],
+        compute="_compute_status",
+        store=False,
+    )
+    self_ordering_url = fields.Char(compute="_compute_self_ordering_url")
+    self_ordering_mode = fields.Selection(
+        selection=[
+            ("nothing", "Disable"),
+            ("consultation", "QR menu"),
+            ("mobile", "QR menu + Ordering"),
+            ("kiosk", "Kiosk"),
+        ],
+        default="nothing",
+        required=True,
+        help="Choose the self ordering mode",
+    )
+    self_ordering_service_mode = fields.Selection(
+        selection=[("counter", "Pickup zone"), ("table", "Table")],
+        default="counter",
+        required=True,
+        help="Choose the kiosk mode",
+    )
+    self_ordering_default_language_id = fields.Many2one(
+        comodel_name="res.lang",
+        string="Default Language",
+        default=lambda self: self.env["res.lang"].search(
+            [("code", "=", self.env.lang)], limit=1
+        ),
+        help="Default language for the kiosk mode",
+    )
+    self_ordering_available_language_ids = fields.Many2many(
+        comodel_name="res.lang",
+        string="Available Languages",
+        default=lambda self: self._self_order_kiosk_default_languages(),
+        help="Languages available for the kiosk mode",
+    )
+    self_ordering_image_home_ids = fields.Many2many(
+        comodel_name="ir.attachment",
+        string="Add images",
+        bypass_search_access=True,
+        help="Image to display on the self order screen",
+    )
+    self_ordering_image_background_ids = fields.Many2many(
+        comodel_name="ir.attachment",
+        relation="pos_self_order_background_rels",
+        string="Set background image",
+        bypass_search_access=True,
+        help="Image to be displayed in the background",
+    )
+    self_ordering_default_user_id = fields.Many2one(
+        comodel_name="res.users",
+        string="Default User",
+        default=lambda self: self._self_order_default_user(),
+        help="Access rights of this user will be used when visiting self order website when no session is open.",
+    )
+    self_ordering_pay_after = fields.Selection(
+        selection=lambda self: self._selection_pay_after(),
+        string="Pay After:",
+        default="meal",
+        required=True,
+        help="Choose when the customer will pay",
+    )
+    self_ordering_image_brand = fields.Image(
+        string="Self Order Kiosk Image Brand",
+        max_width=1200,
+        max_height=250,
+        help="Image to display on the self order screen",
+    )
+    self_ordering_image_brand_name = fields.Char(
+        string="Self Order Kiosk Image Brand Name",
+        help="Name of the image to display on the self order screen",
+    )
+    has_paper = fields.Boolean(
+        string="Has paper",
+        default=True,
+    )
+
+    def _update_access_token(self) -> None:
+        self._pos_bus_rotate_token()
+        self.floor_ids.table_ids._update_identifier()
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        self._prepare_self_order_splash_screen(vals_list, is_new=True)
+        pos_config_ids = super().create(vals_list)
+        pos_config_ids._update_public_attachments()
+        pos_config_ids._create_missing_self_order_custom_btn()
+        return pos_config_ids
+
+    @api.model
+    def _prepare_self_order_splash_screen(self, vals_list, is_new=False) -> bool:
+        for vals in vals_list:
+            if not vals.get("self_ordering_mode"):
+                return True
+
+            if not vals.get("self_ordering_image_home_ids"):
+                vals["self_ordering_image_home_ids"] = [
+                    Command.create(
+                        {
+                            "name": image_name,
+                            "type": "url",
+                            "url": f"/pos_self_order/static/img/{image_name}",
+                            "res_model": "pos.config",
+                        }
+                    )
+                    for image_name in [
+                        "landing_01.jpg",
+                        "landing_02.jpg",
+                        "landing_03.jpg",
+                    ]
+                ]
+
+            if is_new and not vals.get("self_ordering_image_background_ids"):
+                vals["self_ordering_image_background_ids"] = [
+                    Command.create(
+                        {
+                            "name": "background.jpg",
+                            "type": "url",
+                            "url": "/pos_self_order/static/img/kiosk_background.jpg",
+                            "res_model": "pos.config",
+                        }
+                    )
+                ]
+
+        return True
+
+    def _create_missing_self_order_custom_btn(self) -> None:
+        for record in self:
+            exists = record.env["pos_self_order.custom_link"].search_count(  # noqa: E8507 - one probe per config, on its own links
+                [
+                    ("pos_config_ids", "in", record.id),
+                    ("url", "=", f"/pos-self/{record.id}/products"),
+                ]
+            )
+
+            if not exists:
+                record.env["pos_self_order.custom_link"].create(
+                    {
+                        "name": self.env._("Order Now"),
+                        "url": f"/pos-self/{record.id}/products",
+                        "pos_config_ids": [Command.link(record.id)],
+                    }
+                )
+
+    def write(self, vals):
+        self._prepare_self_order_splash_screen([vals])
+        for record in self:
+            if vals.get("self_ordering_mode") == "kiosk" or (
+                vals.get("pos_self_ordering_mode") == "mobile"
+                and vals.get("pos_self_ordering_service_mode") == "counter"
+            ):
+                vals["self_ordering_pay_after"] = "each"
+
+            if (
+                not vals.get("module_pos_restaurant")
+                and not record.module_pos_restaurant
+            ) and vals.get("self_ordering_mode") == "mobile":
+                vals["self_ordering_pay_after"] = "each"
+
+            if vals.get("self_ordering_mode") == "mobile" and (
+                vals.get("self_ordering_service_mode") == "counter"
+                or (
+                    record.self_ordering_service_mode == "counter"
+                    and vals.get("self_ordering_service_mode") != "table"
+                )
+            ):
+                vals["self_ordering_pay_after"] = "each"
+
+            if (
+                vals.get("self_ordering_mode") == "mobile"
+                and vals.get("self_ordering_pay_after") == "meal"
+            ):
+                vals["self_ordering_service_mode"] = "table"
+
+        res = super().write(vals)
+        self._update_public_attachments()
+        self._create_missing_self_order_custom_btn()
+        return res
+
+    def _update_public_attachments(self) -> None:
+        self.self_ordering_image_background_ids.write({"public": True})
+        self.self_ordering_image_home_ids.write({"public": True})
+
+    @api.depends("module_pos_restaurant")
+    def _compute_self_order(self) -> None:
+        for record in self:
+            if (
+                not record.module_pos_restaurant
+                and record.self_ordering_mode != "kiosk"
+            ):
+                record.self_ordering_mode = "nothing"
+
+    def _selection_pay_after(self) -> list:
+        selection_each_label = self.env._("Each Order")
+        version_info = service.common.exp_version()["server_version_info"]
+        if version_info[-1] == "":
+            selection_each_label = (
+                f"{selection_each_label} {self.env._('(require Odoo Enterprise)')}"
+            )
+        return [("meal", self.env._("Meal")), ("each", selection_each_label)]
+
+    @api.constrains("self_ordering_default_user_id")
+    def _check_default_user(self) -> None:
+        for record in self:
+            if record.self_ordering_mode != "nothing" and (
+                not record.self_ordering_default_user_id
+                or (
+                    record.self_ordering_default_user_id
+                    and not record.self_ordering_default_user_id.sudo().has_group(
+                        "point_of_sale.group_pos_user"
+                    )
+                    and not record.self_ordering_default_user_id.sudo().has_group(
+                        "point_of_sale.group_pos_manager"
+                    )
+                )
+            ):
+                raise UserError(
+                    self.env._("The Self-Order default user must be a POS user")
+                )
+
+    @api.constrains("payment_method_ids", "self_ordering_mode")
+    def _check_kiosk_payment_methods(self) -> None:
+        if any(
+            record.self_ordering_mode == "kiosk"
+            and any(pm.is_cash_count for pm in record.payment_method_ids)
+            for record in self
+        ):
+            raise ValidationError(
+                self.env._("You cannot add cash payment methods in kiosk mode.")
+            )
+
+    def _get_qr_code_data(self):
+        self.check_singleton()
+
+        table_qr_code = []
+        if (
+            self.self_ordering_mode == "mobile"
+            and self.module_pos_restaurant
+            and self.self_ordering_service_mode == "table"
+        ):
+            table_qr_code.extend(
+                [
+                    {
+                        "name": floor.name,
+                        "type": "table",
+                        "tables": [
+                            {
+                                "identifier": table.identifier,
+                                "id": table.id,
+                                "name": table.table_number,
+                                "url": self._get_self_order_url(table.id),
+                            }
+                            for table in floor.table_ids.filtered("active")
+                        ],
+                    }
+                    for floor in self.floor_ids
+                ]
+            )
+        else:
+            # Here we use "range" to determine the number of QR codes to generate from
+            # this list, which will then be inserted into a PDF.
+            table_qr_code.extend(
+                [
+                    {
+                        "name": self.env._("Generic"),
+                        "type": "default",
+                        "tables": [
+                            {
+                                "id": i,
+                                "url": self._get_self_order_url(),
+                            }
+                            for i in range(6)
+                        ],
+                    }
+                ]
+            )
+
+        return table_qr_code
+
+    def _get_self_order_route(self, table_id: int | None = None) -> str:
+        self.check_singleton()
+        base_route = f"/pos-self/{self.id}"
+        table_route = ""
+
+        if self.self_ordering_mode == "consultation":
+            return base_route
+
+        if self.self_ordering_mode == "mobile":
+            table = self.env["restaurant.table"].search(
+                [("active", "=", True), ("id", "=", table_id)], limit=1
+            )
+
+            if table:
+                table_route = f"&table_identifier={table.identifier}"
+
+        return f"{base_route}?access_token={self.access_token}{table_route}"
+
+    def _get_self_order_url(self, table_id: int | None = None) -> str:
+        self.check_singleton()
+        long_url = self.get_base_url() + self._get_self_order_route(table_id)
+        return (
+            self.env["link.tracker"]
+            .search_or_create(
+                [
+                    {
+                        "url": long_url,
+                        "title": f"Self Order {self.name}"
+                        if not table_id
+                        else f"Self Order {self.name} - Table id {table_id}",
+                    }
+                ]
+            )
+            .short_url
+        )
+
+    def preview_self_order_app(self):
+        self.check_singleton()
+        return {
+            "type": "ir.actions.act_url",
+            "url": self._get_self_order_route(),
+            "target": "new",
+        }
+
+    def _get_self_ordering_attachment(self, images) -> list:
+        return [
+            {"id": image.id, "data": image.sudo().datas.decode("utf-8")}
+            for image in images
+        ]
+
+    def _load_self_data_models(self):
+        return [
+            "pos.session",
+            "pos.preset",
+            "resource.calendar.attendance",
+            "pos.order",
+            "pos.order.line",
+            "pos.payment",
+            "pos.payment.method",
+            "res.partner",
+            "phone.number",
+            "res.currency",
+            "pos.printer",
+            "pos.category",
+            "product.template",
+            "product.product",
+            "product.combo",
+            "product.combo.item",
+            "res.company",
+            "account.tax",
+            "account.tax.group",
+            "res.country",
+            "product.category",
+            "product.pricelist",
+            "product.pricelist.item",
+            "account.fiscal.position",
+            "res.lang",
+            "product.attribute",
+            "product.attribute.custom.value",
+            "product.template.attribute.line",
+            "product.template.attribute.value",
+            "product.tag",
+            "decimal.precision",
+            "uom.uom",
+            "pos_self_order.custom_link",
+            "restaurant.floor",
+            "restaurant.table",
+            "account.cash.rounding",
+            "res.country",
+            "res.country.state",
+            "mail.template",
+        ]
+
+    @api.model
+    def _load_pos_self_data_domain(self, data, config):
+        return [("id", "=", config.id)]
+
+    @api.model
+    def _load_pos_self_data_read(self, records, config):
+        read_records = super()._load_pos_data_read(records, config)
+        if not read_records:
+            return read_records
+        record = read_records[0]
+        record["_self_ordering_image_home_ids"] = (
+            config.self_ordering_image_home_ids.ids
+        )
+        record["_self_ordering_image_background_ids"] = (
+            config.self_ordering_image_background_ids.ids
+        )
+        record["_pos_special_products_ids"] = config._get_special_products().ids
+        record["_self_ordering_style"] = {
+            "primaryBgColor": self.env.company.email_secondary_color,
+            "primaryTextColor": self.env.company.email_primary_color,
+        }
+        record["_self_order_pos"] = True
+        return read_records
+
+    def load_self_data(self):
+        response = {}
+        response["pos.config"] = self.env["pos.config"]._load_pos_self_data_search_read(
+            response, self
+        )
+
+        for model in self._load_self_data_models():
+            try:
+                response[model] = self.env[model]._load_pos_self_data_search_read(
+                    response, self
+                )
+            except AccessError:
+                response[model] = []
+
+        return response
+
+    def load_data_params(self):
+        response = {}
+        fields = self._load_pos_self_data_fields(self)
+        response["pos.config"] = {
+            "fields": fields,
+            "relations": self.env["pos.session"]._get_field_relations(
+                "pos.config", fields
+            ),
+        }
+
+        for model in self._load_self_data_models():
+            fields = self.env[model]._load_pos_self_data_fields(self)
+            response[model] = {
+                "fields": fields,
+                "relations": self.env["pos.session"]._get_field_relations(
+                    model, fields
+                ),
+            }
+
+        return response
+
+    def _split_qr_codes_list(self, floors: list[dict], cols: int) -> list[dict]:
+        """
+        :param floors: the list of floors
+        :param cols: the number of qr codes per row
+        """
+        self.check_singleton()
+        return [
+            {
+                "name": floor.get("name"),
+                "rows_of_tables": [
+                    list(b) for b in batched(floor["tables"], cols, strict=False)
+                ],
+            }
+            for floor in floors
+        ]
+
+    def _compute_self_ordering_url(self) -> None:
+        for record in self:
+            record.self_ordering_url = (
+                record.get_base_url() + record._get_self_order_route()
+            )
+
+    def close_ui(self):
+        if self.self_ordering_mode == "kiosk":
+            return self.action_close_kiosk_session()
+        return super().close_ui()
+
+    def action_close_kiosk_session(self):
+        if self.current_session_id and self.current_session_id.order_ids:
+            self.current_session_id.order_ids.filtered(
+                lambda o: o.state == "draft"
+            ).unlink()
+
+        self._notify("STATUS", {"status": "closed"})
+        return self.current_session_id.action_pos_session_closing_control()
+
+    def _compute_status(self) -> None:
+        for record in self:
+            record.status = "active" if record.has_active_session else "inactive"
+
+    def action_view_wizard(self):
+        self.check_singleton()
+
+        if not self.current_session_id:
+            res = self._check_before_creating_new_session()
+            if res:
+                return res
+            session = self.env["pos.session"].create(
+                {"user_id": self.env.uid, "config_id": self.id}
+            )
+            session.set_opening_control(0, "")
+            self._notify("STATUS", {"status": "open"})
+
+        return {
+            "type": "ir.actions.act_url",
+            "name": self.env._("Self Order"),
+            "target": "new",
+            "url": self.get_kiosk_url(),
+        }
+
+    def get_kiosk_url(self):
+        return self.self_ordering_url
+
+    def _supported_kiosk_payment_terminal(self):
+        return ["adyen", "razorpay", "stripe", "pine_labs"]
+
+    def has_valid_self_payment_method(self) -> bool:
+        """Checks if the POS config has a valid payment method (terminal or online)."""
+        self.check_singleton()
+        if self.self_ordering_mode == "mobile":
+            return False
+        return any(
+            pm.use_payment_terminal in self._supported_kiosk_payment_terminal()
+            for pm in self.payment_method_ids
+        )
+
+    @api.model
+    def load_onboarding_kiosk_scenario(self) -> bool:
+        if not bool(self.env.company.account_config_id.chart_template):
+            return False
+
+        journal, payment_methods_ids = self._create_journal_and_payment_methods()
+        restaurant_categories = self.get_record_by_ref(
+            [
+                "pos_restaurant.food",
+                "pos_restaurant.drinks",
+            ]
+        )
+        not_cash_payment_methods_ids = (
+            self.env["pos.payment.method"]
+            .search(
+                [
+                    ("is_cash_count", "=", False),
+                    ("id", "in", payment_methods_ids),
+                ]
+            )
+            .ids
+        )
+        self.env["pos.config"].create(
+            {
+                "name": self.env._("Kiosk"),
+                "company_id": self.env.company.id,
+                "journal_id": journal.id,
+                "payment_method_ids": not_cash_payment_methods_ids,
+                "limit_categories": True,
+                "iface_available_categ_ids": restaurant_categories,
+                "iface_splitbill": True,
+                "module_pos_restaurant": True,
+                "self_ordering_mode": "kiosk",
+                "self_ordering_pay_after": "each",
+            }
+        )
+        return True
+
+    def _generate_single_qr_code__(self, url) -> dict:
+        qr = qrcode.QRCode(
+            version=1,
+            error_correction=qrcode.constants.ERROR_CORRECT_L,
+            box_size=10,
+            border=4,
+        )
+        qr.add_data(url)
+        qr.make(fit=True)
+        return {
+            "png": qr.make_image(fill_color="black", back_color="transparent"),
+            "svg": qr.make_image(
+                fill_color="black",
+                back_color="transparent",
+                image_factory=qrcode.image.svg.SvgImage,
+            ),
+        }
+
+    def get_pos_qr_order_data(self) -> dict:
+
+        url_form = "https://www.odoo.com/app/point-of-sale-restaurant-qr-code"
+
+        table_data = []
+        if self.self_ordering_mode not in ["mobile", "consultation"]:
+            return {
+                "success": False,
+                "error": "INVALID_SELF_ORDERING_MODE",
+            }
+
+        table_ids = None
+        if self.module_pos_restaurant:
+            table_ids = self.floor_ids.table_ids
+
+        if table_ids and self.self_ordering_mode == "mobile":
+            for table in table_ids:
+                url = self._get_self_order_url(table.id)
+                table_data.append(
+                    {
+                        "url": url,
+                        "name": f"{table.floor_id.name} - {table.table_number}",
+                        "images": self._generate_single_qr_code__(unquote(url)),
+                    }
+                )
+        else:
+            url = self._get_self_order_url()
+            table_data.append(
+                {
+                    "url": url,
+                    "name": "generic",
+                    "images": self._generate_single_qr_code__(unquote(url)),
+                }
+            )
+
+        zip_buffer = BytesIO()
+        with zipfile.ZipFile(zip_buffer, "w", 0) as zip_file:
+            for index, qr_data in enumerate(table_data):
+                with zip_file.open(f"{qr_data['name']} ({index + 1}).png", "w") as buf:
+                    qr_data["images"]["png"].save(buf, format="PNG")
+                with zip_file.open(f"{qr_data['name']} ({index + 1}).svg", "w") as buf:
+                    buf.write(qr_data["images"]["svg"].to_string())
+        zip_buffer.seek(0)
+
+        return {
+            "success": True,
+            "table_data": table_data,
+            "self_ordering_mode": self.self_ordering_mode,
+            "db_name": self.env.cr.dbname,
+            "redirect_url": url_form,
+            "zip_archive": base64.b64encode(zip_buffer.read()).decode("utf-8"),
+        }

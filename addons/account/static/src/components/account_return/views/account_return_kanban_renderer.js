@@ -1,0 +1,77 @@
+/** @odoo-module native */
+import { useBus, useEventBus, useService } from "@web/core/utils/hooks";
+import { KanbanRenderer } from "@web/views/kanban";
+import { useDeleteRecords } from "@web/views/view_hook";
+import { kanbanGroupKey } from "@web/views/view_utils";
+
+import { AccountReturnBaseKanbanRenderer } from "./account_return_base_kanban_renderer.js";
+import { AccountReturnKanbanRecord } from "./account_return_kanban_record.js";
+
+export class AccountReturnKanbanRenderer extends AccountReturnBaseKanbanRenderer {
+    static template = "account.account_return_kanban_renderer";
+
+    static props = { ...KanbanRenderer.props };
+
+    static components = {
+        ...KanbanRenderer.components,
+        AccountReturnKanbanRecord,
+    };
+
+    setup() {
+        super.setup();
+        this.bus = useEventBus();
+        this.orm = useService("orm");
+        this.actionService = useService("action");
+        this.deleteRecordsWithConfirmation = useDeleteRecords(this.props.list.model);
+
+        useBus(this.bus, "return_reload_model", (ev) => {
+            const recordIds = ev.detail.resIds;
+            const recordToReload = this.records.filter((record) =>
+                recordIds.includes(record.resId),
+            );
+            for (const record of recordToReload) {
+                record.model.load();
+            }
+        });
+    }
+
+    deleteRecord(record) {
+        this.deleteRecordsWithConfirmation({}, [record]);
+    }
+
+    async openRecord(record, params) {
+        if (record.context?.in_checks_view) {
+            return;
+        }
+        const action = await this.orm.call(
+            "account.return",
+            "action_view_account_return",
+            [record.resIds],
+        );
+        if (!action) {
+            return;
+        }
+        return this.actionService.doAction(action);
+    }
+
+    get records() {
+        const { list } = this.props;
+        if (list.isGrouped) {
+            return list.groups.flatMap((group) => group.list.records);
+        } else {
+            return list.records;
+        }
+    }
+
+    get groups() {
+        const { list } = this.props;
+        if (!list.isGrouped) {
+            return false;
+        }
+
+        return list.groups.map((group, i) => ({
+            ...group,
+            key: kanbanGroupKey(group, i),
+        }));
+    }
+}

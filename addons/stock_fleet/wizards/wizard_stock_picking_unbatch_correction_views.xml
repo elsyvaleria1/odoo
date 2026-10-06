@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="wizard_stock_picking_unbatch_correction_form" model="ir.ui.view">
+        <field name="name">wizard.stock.picking.unbatch.correction.form</field>
+        <field name="model">wizard.stock.picking.unbatch.correction</field>
+        <field name="arch" type="xml">
+            <form>
+                <div class="alert alert-info" role="alert">Use it when the transfer should not have travelled on this trip. If the goods travelled and came back, register it as not delivered.</div>
+                <group>
+                    <field name="batch_id" readonly="1" />
+                    <field
+                        name="picking_ids"
+                        widget="many2many_tags"
+                        options="{'no_create': True}" />
+                    <field
+                        name="reason_id"
+                        options="{'no_create': True, 'no_open': True}" />
+                    <field name="note" placeholder="Why it comes off the trip" />
+                </group>
+                <footer>
+                    <button
+                        name="action_confirm"
+                        type="object"
+                        string="Remove from Trip"
+                        class="btn-primary"
+                        data-hotkey="q" />
+                    <button special="cancel" string="Discard" data-hotkey="x" />
+                </footer>
+            </form>
+        </field>
+    </record>
+
+</odoo>

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <menuitem
+        id="menu_asset_compliance_dashboard"
+        name="Asset Compliance"
+        parent="document.menu_root"
+        action="action_asset_compliance_dashboard"
+        sequence="6" />
+
+</odoo>

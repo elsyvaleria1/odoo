@@ -1,0 +1,136 @@
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-09-27 00:35+0000\n"
+"PO-Revision-Date: 2026-09-27 00:35+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: fr_BE\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: trade_tender_agreement
+#: model:ir.model.fields,field_description:trade_tender_agreement.field_mixin_tender_agreement__agreement_count
+msgid "Agreement Count"
+msgstr ""
+
+#. module: trade_tender_agreement
+#. odoo-python
+#: code:addons/trade_tender_agreement/models/mixin_tender_agreement.py:0
+#: model:ir.model.fields,field_description:trade_tender_agreement.field_mixin_tender_agreement__agreement_ids
+#: model:ir.model.fields.selection,name:trade_tender_agreement.selection__mixin_tender_agreement__award_as__agreements
+#: model:ir.model.fields.selection,name:trade_tender_agreement.selection__purchase_tender__award_as__agreements
+#: model:ir.model.fields.selection,name:trade_tender_agreement.selection__sale_tender__award_as__agreements
+msgid "Agreements"
+msgstr ""
+
+#. module: trade_tender_agreement
+#: model:ir.model.fields,field_description:trade_tender_agreement.field_mixin_tender_agreement__award_as
+msgid "Award As"
+msgstr ""
+
+#. module: trade_tender_agreement
+#: model:ir.model.fields,field_description:trade_tender_agreement.field_mixin_order_tender_agreement__awarded_agreement_id
+msgid "Awarded Into"
+msgstr ""
+
+#. module: trade_tender_agreement
+#: model:ir.model.fields,field_description:trade_tender_agreement.field_mixin_tender_agreement__agreement_commitment
+msgid "Commitment"
+msgstr ""
+
+#. module: trade_tender_agreement
+#: model:ir.model.fields,field_description:trade_tender_agreement.field_mixin_order_tender_agreement__display_name
+#: model:ir.model.fields,field_description:trade_tender_agreement.field_mixin_tender_agreement__display_name
+msgid "Display Name"
+msgstr ""
+
+#. module: trade_tender_agreement
+#: model:ir.model.fields,field_description:trade_tender_agreement.field_mixin_order_tender_agreement__id
+#: model:ir.model.fields,field_description:trade_tender_agreement.field_mixin_tender_agreement__id
+msgid "ID"
+msgstr "ID"
+
+#. module: trade_tender_agreement
+#: model:ir.model,name:trade_tender_agreement.model_mixin_order_tender_agreement
+msgid "Offer Awarded into an Agreement"
+msgstr ""
+
+#. module: trade_tender_agreement
+#: model:ir.model.fields.selection,name:trade_tender_agreement.selection__mixin_tender_agreement__award_as__orders
+#: model:ir.model.fields.selection,name:trade_tender_agreement.selection__purchase_tender__award_as__orders
+#: model:ir.model.fields.selection,name:trade_tender_agreement.selection__sale_tender__award_as__orders
+msgid "Orders"
+msgstr ""
+
+#. module: trade_tender_agreement
+#: model:ir.model.fields,help:trade_tender_agreement.field_mixin_tender_agreement__award_as
+msgid ""
+"Orders: the award confirms each winning offer. Agreements: the award opens a"
+" blanket agreement with each winner for the period, and orders are released "
+"from it later."
+msgstr ""
+
+#. module: trade_tender_agreement
+#: model:ir.model.fields.selection,name:trade_tender_agreement.selection__mixin_tender_agreement__agreement_commitment__price
+#: model:ir.model.fields.selection,name:trade_tender_agreement.selection__purchase_tender__agreement_commitment__price
+#: model:ir.model.fields.selection,name:trade_tender_agreement.selection__sale_tender__agreement_commitment__price
+msgid "Prices Only"
+msgstr ""
+
+#. module: trade_tender_agreement
+#: model:ir.model.fields.selection,name:trade_tender_agreement.selection__mixin_tender_agreement__agreement_commitment__quantity
+#: model:ir.model.fields.selection,name:trade_tender_agreement.selection__purchase_tender__agreement_commitment__quantity
+#: model:ir.model.fields.selection,name:trade_tender_agreement.selection__sale_tender__agreement_commitment__quantity
+msgid "Quantity"
+msgstr ""
+
+#. module: trade_tender_agreement
+#: model:ir.model.fields,field_description:trade_tender_agreement.field_mixin_tender_agreement__date_start
+msgid "Supply From"
+msgstr ""
+
+#. module: trade_tender_agreement
+#: model:ir.model.fields,field_description:trade_tender_agreement.field_mixin_tender_agreement__date_end
+msgid "Supply Until"
+msgstr ""
+
+#. module: trade_tender_agreement
+#: model:ir.model,name:trade_tender_agreement.model_mixin_tender_agreement
+msgid "Tender Awarded into Agreements"
+msgstr ""
+
+#. module: trade_tender_agreement
+#: model:ir.model.fields,help:trade_tender_agreement.field_mixin_order_tender_agreement__awarded_agreement_id
+msgid ""
+"The agreement this offer's award opened. The offer itself closes as won; "
+"orders are released from the agreement."
+msgstr ""
+
+#. module: trade_tender_agreement
+#: model:ir.model.fields,help:trade_tender_agreement.field_mixin_tender_agreement__date_start
+msgid "The first day of the agreements the award opens."
+msgstr ""
+
+#. module: trade_tender_agreement
+#: model:ir.model.fields,help:trade_tender_agreement.field_mixin_tender_agreement__date_end
+msgid "The last day of the agreements the award opens."
+msgstr ""
+
+#. module: trade_tender_agreement
+#: model:ir.model.fields.selection,name:trade_tender_agreement.selection__mixin_tender_agreement__agreement_commitment__value
+#: model:ir.model.fields.selection,name:trade_tender_agreement.selection__purchase_tender__agreement_commitment__value
+#: model:ir.model.fields.selection,name:trade_tender_agreement.selection__sale_tender__agreement_commitment__value
+msgid "Value"
+msgstr ""
+
+#. module: trade_tender_agreement
+#: model:ir.model.fields,help:trade_tender_agreement.field_mixin_tender_agreement__agreement_commitment
+msgid ""
+"What the agreements the award opens commit: the prices only, each awarded "
+"quantity, or the awarded total."
+msgstr ""

@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="demo_data_temp_01" model="device.data.log">
+        <field name="device_id" ref="demo_device_temp_sensor_01" />
+        <field name="data_type">json</field>
+        <field name="source">iot</field>
+        <field
+            name="raw_payload">{"temperature": 22.5, "unit": "celsius", "sensor_id": "TMP-001"}</field>
+        <field
+            name="timestamp"
+            eval="(datetime.now() - timedelta(hours=2)).strftime('%Y-%m-%d %H:%M:%S')" />
+    </record>
+
+    <record id="demo_data_temp_02" model="device.data.log">
+        <field name="device_id" ref="demo_device_temp_sensor_01" />
+        <field name="data_type">json</field>
+        <field name="source">iot</field>
+        <field
+            name="raw_payload">{"temperature": 23.1, "unit": "celsius", "sensor_id": "TMP-001"}</field>
+        <field
+            name="timestamp"
+            eval="(datetime.now() - timedelta(hours=1)).strftime('%Y-%m-%d %H:%M:%S')" />
+    </record>
+
+    <record id="demo_data_temp_03" model="device.data.log">
+        <field name="device_id" ref="demo_device_temp_sensor_01" />
+        <field name="data_type">json</field>
+        <field name="source">iot</field>
+        <field
+            name="raw_payload">{"temperature": 22.8, "unit": "celsius", "sensor_id": "TMP-001", "battery": 87}</field>
+        <field
+            name="timestamp"
+            eval="(datetime.now() - timedelta(minutes=30)).strftime('%Y-%m-%d %H:%M:%S')" />
+    </record>
+
+    <record id="demo_data_climate_01" model="device.data.log">
+        <field name="device_id" ref="demo_device_temp_humidity_01" />
+        <field name="data_type">json</field>
+        <field name="source">iot</field>
+        <field
+            name="raw_payload">{"temperature": 21.3, "humidity": 45.2, "pressure": 1013.25, "sensor_id": "CLM-002"}</field>
+        <field
+            name="timestamp"
+            eval="(datetime.now() - timedelta(hours=3)).strftime('%Y-%m-%d %H:%M:%S')" />
+    </record>
+
+    <record id="demo_data_climate_02" model="device.data.log">
+        <field name="device_id" ref="demo_device_temp_humidity_01" />
+        <field name="data_type">json</field>
+        <field name="source">iot</field>
+        <field
+            name="raw_payload">{"temperature": 21.8, "humidity": 47.5, "pressure": 1013.10, "sensor_id": "CLM-002"}</field>
+        <field
+            name="timestamp"
+            eval="(datetime.now() - timedelta(hours=1, minutes=30)).strftime('%Y-%m-%d %H:%M:%S')" />
+    </record>
+
+    <record id="demo_data_switch_01" model="device.data.log">
+        <field name="device_id" ref="demo_device_smart_switch_01" />
+        <field name="data_type">json</field>
+        <field name="source">webhook</field>
+        <field
+            name="raw_payload">{"state": "on", "power": 1250, "voltage": 220, "current": 5.68}</field>
+        <field
+            name="timestamp"
+            eval="(datetime.now() - timedelta(hours=4)).strftime('%Y-%m-%d %H:%M:%S')" />
+    </record>
+
+    <record id="demo_data_switch_02" model="device.data.log">
+        <field name="device_id" ref="demo_device_smart_switch_01" />
+        <field name="data_type">json</field>
+        <field name="source">webhook</field>
+        <field
+            name="raw_payload">{"state": "off", "power": 0, "voltage": 220, "current": 0}</field>
+        <field
+            name="timestamp"
+            eval="(datetime.now() - timedelta(minutes=45)).strftime('%Y-%m-%d %H:%M:%S')" />
+    </record>
+
+    <record id="demo_data_gps_01" model="device.data.log">
+        <field name="device_id" ref="demo_device_gps_tracker_01" />
+        <field name="data_type">json</field>
+        <field name="source">webhook</field>
+        <field
+            name="raw_payload">{"lat": 19.432608, "lon": -99.133209, "speed": 45.5, "heading": 180, "altitude": 2240}</field>
+        <field
+            name="timestamp"
+            eval="(datetime.now() - timedelta(hours=2)).strftime('%Y-%m-%d %H:%M:%S')" />
+    </record>
+
+    <record id="demo_data_gps_02" model="device.data.log">
+        <field name="device_id" ref="demo_device_gps_tracker_01" />
+        <field name="data_type">json</field>
+        <field name="source">webhook</field>
+        <field
+            name="raw_payload">{"lat": 19.445123, "lon": -99.145678, "speed": 52.3, "heading": 185, "altitude": 2245}</field>
+        <field
+            name="timestamp"
+            eval="(datetime.now() - timedelta(minutes=30)).strftime('%Y-%m-%d %H:%M:%S')" />
+    </record>
+
+</odoo>

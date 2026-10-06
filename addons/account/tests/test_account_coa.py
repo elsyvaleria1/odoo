@@ -1,0 +1,297 @@
+from odoo import Command
+from odoo.exceptions import UserError, ValidationError
+from odoo.tests import TransactionCase, tagged
+
+
+@tagged("post_install", "-at_install")
+class TestAccountCoa(TransactionCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.company = cls.env["res.company"].create(
+            {"name": "Chart of Accounts Test Co"}
+        )
+        cls.env.user.company_ids = [Command.link(cls.company.id)]
+        cls.Account = cls.env["account.account"].with_company(cls.company)
+
+        readonly_group = cls.env.ref(
+            "account.group_account_readonly", raise_if_not_found=False
+        )
+        if readonly_group:
+            cls.env.user.group_ids = [Command.link(readonly_group.id)]
+
+    def test_split_code_name(self):
+        cases = [
+            ("101000 Cash", ("101000", "Cash")),
+            ("Cash", (None, "Cash")),
+            ("101000", ("101000", "")),
+            ("123-A Cash Register", ("123-A", "Cash Register")),
+            ("", (None, "")),
+        ]
+        for value, expected in cases:
+            with self.subTest(value=value):
+                self.assertEqual(self.Account._split_code_name(value), expected)
+
+    def test_code_regex_rejects_invalid_chars(self):
+        for bad in ("10 00", "10#0", "abc$"):
+            with self.subTest(code=bad), self.assertRaises(ValidationError):
+                self.Account.create(
+                    {"code": bad, "name": "Bad", "account_type": "asset_current"}
+                )
+
+    def test_code_regex_accepts_valid_chars(self):
+        acc = self.Account.create(
+            {"code": "10.01-A/B", "name": "Ok", "account_type": "asset_current"}
+        )
+        self.assertEqual(acc.code, "10.01-A/B")
+
+    def test_search_new_account_code(self):
+        self.Account.create(
+            {"code": "203000", "name": "Seed", "account_type": "asset_current"}
+        )
+        self.assertEqual(self.Account._search_new_account_code("203000"), "203001")
+
+    def test_search_new_account_code_copy_fallback(self):
+        self.Account.create(
+            {"code": "hello", "name": "Seed", "account_type": "asset_current"}
+        )
+        self.assertEqual(self.Account._search_new_account_code("hello"), "hello.copy")
+
+    def test_closest_parent_inherits_type_and_tags(self):
+        self.Account.create(
+            {
+                "code": "400000",
+                "name": "Parent",
+                "account_type": "expense",
+                "tag_ids": [Command.create({"name": "ClosestParentTag"})],
+            }
+        )
+        child = self.Account.create({"code": "400001", "name": "Child"})
+        self.assertEqual(child.account_type, "expense")
+        self.assertEqual(child.tag_ids.name, "ClosestParentTag")
+
+    def test_closest_parent_default_when_no_parent(self):
+        child = self.Account.create({"code": "000001", "name": "Orphan"})
+        self.assertEqual(child.account_type, "asset_current")
+
+    def test_closest_parent_batch_consistency(self):
+        self.Account.create({"code": "500000", "name": "A", "account_type": "income"})
+        self.Account.create({"code": "600000", "name": "B", "account_type": "expense"})
+        children = self.Account.create(
+            [
+                {"code": "500500", "name": "c1"},
+                {"code": "600500", "name": "c2"},
+                {"code": "500900", "name": "c3"},
+            ]
+        )
+        self.assertEqual(
+            children.mapped("account_type"), ["income", "expense", "income"]
+        )
+
+    def test_receivable_must_be_reconcilable(self):
+        acc = self.Account.create(
+            {"code": "110000", "name": "Recv", "account_type": "asset_receivable"}
+        )
+        self.assertTrue(acc.reconcile)
+        with self.assertRaises(ValidationError):
+            acc.reconcile = False
+
+    def test_off_balance_cannot_reconcile(self):
+        with self.assertRaises(UserError):
+            self.Account.create(
+                {
+                    "code": "990000",
+                    "name": "OffBal",
+                    "account_type": "off_balance",
+                    "reconcile": True,
+                }
+            )
+
+    def test_internal_group_and_initial_balance(self):
+        income = self.Account.create(
+            {"code": "700000", "name": "Rev", "account_type": "income"}
+        )
+        self.assertEqual(income.internal_group, "income")
+        self.assertFalse(income.include_initial_balance)
+
+        asset = self.Account.create(
+            {"code": "150000", "name": "Asset", "account_type": "asset_non_current"}
+        )
+        self.assertEqual(asset.internal_group, "asset")
+        self.assertTrue(asset.include_initial_balance)
+
+    def test_display_name(self):
+        acc = self.Account.create(
+            {"code": "160000", "name": "Widget", "account_type": "asset_current"}
+        )
+        self.assertEqual(acc.display_name, "160000 Widget")
+
+    def test_default_get_preserves_leading_zeros(self):
+        for name, expected_code in [
+            ("0001", "0001"),
+            ("007", "007"),
+            ("101000", "101000"),
+        ]:
+            with self.subTest(name=name):
+                defaults = self.Account.with_context(default_name=name).default_get(
+                    ["name", "code"]
+                )
+                self.assertEqual(defaults.get("code"), expected_code)
+                self.assertFalse(defaults.get("name"))
+
+
+def _internal_user(env):
+    return env["res.users"].create(
+        {
+            "name": "Internal",
+            "login": "account_coa_internal",
+            "company_id": env.company.id,
+            "company_ids": [Command.set(env.company.ids)],
+            "group_ids": [Command.set(env.ref("base.group_user").ids)],
+        }
+    )
+
+
+@tagged("post_install", "-at_install")
+class TestAccountRoot(TransactionCase):
+    def test_from_account_code(self):
+        Root = self.env["account.root"]
+        self.assertFalse(Root._from_account_code(False).id)
+        root = Root._from_account_code("101000")
+        self.assertEqual(root.id, "10")
+        self.assertEqual(root.name, "10")
+        self.assertEqual(root.parent_id.id, "1")
+
+    def test_search_parent_of(self):
+        Root = self.env["account.root"]
+        roots = Root.search([("id", "parent_of", ["10"])])
+        self.assertEqual(sorted(roots.ids), ["1", "10"])
+
+    def test_internal_user_searches_any_domain(self):
+        self.env["account.account"].create(
+            [
+                {"code": "Z71000", "name": "Root A", "account_type": "asset_current"},
+                {"code": "Z81000", "name": "Root B", "account_type": "income"},
+            ]
+        )
+        Root = self.env["account.root"].with_user(_internal_user(self.env))
+
+        self.assertTrue({"Z", "Z7", "Z8"} <= set(Root.search([]).ids))
+        self.assertEqual(Root.search_count([]), len(Root.search([])))
+        self.assertEqual(Root.search([("name", "=like", "Z%")]).ids, ["Z", "Z7", "Z8"])
+        self.assertEqual(Root.search([("parent_id", "=", "Z")]).ids, ["Z7", "Z8"])
+        self.assertEqual([root_id for root_id, _name in Root.name_search("Z7")], ["Z7"])
+
+
+@tagged("post_install", "-at_install")
+class TestAccountCodeMapping(TransactionCase):
+    def test_internal_user_searches_any_domain(self):
+        first, second = self.env["account.account"].create(
+            [
+                {"code": "Z71001", "name": "Map A", "account_type": "asset_current"},
+                {"code": "Z81001", "name": "Map B", "account_type": "income"},
+            ]
+        )
+        company = self.env.company
+        Mapping = self.env["account.code.mapping"].with_user(_internal_user(self.env))
+
+        mappings = Mapping.search([("company_id", "=", company.id)])
+        self.assertTrue({first.id, second.id} <= set(mappings.account_id.ids))
+        self.assertEqual(Mapping.search_count([]), len(Mapping.search([])))
+        self.assertEqual(
+            Mapping.search(
+                [("company_id", "=", company.id), ("code", "=", "Z81001")]
+            ).account_id,
+            second,
+        )
+        self.assertEqual(
+            Mapping.search(
+                [
+                    ("company_id", "=", company.id),
+                    ("account_id.code", "=like", "Z7%"),
+                ]
+            ).account_id,
+            first,
+        )
+        self.assertEqual(
+            Mapping.search(
+                [
+                    ("company_id", "=", company.id),
+                    "|",
+                    ("account_id", "in", first.ids),
+                    ("code", "=", "Z81001"),
+                ]
+            ).account_id,
+            first | second,
+        )
+
+    def test_offset_roundtrip(self):
+        acc = self.env["account.account"].create(
+            {"code": "170000", "name": "Map", "account_type": "asset_current"}
+        )
+        acc.invalidate_recordset(["code_mapping_ids"])
+        mapping = acc.code_mapping_ids
+        self.assertTrue(mapping)
+        self.assertEqual(
+            mapping,
+            self.env["account.code.mapping"].search([("account_id", "in", acc.ids)]),
+        )
+        for m in mapping:
+            self.assertEqual(m.account_id, acc)
+            self.assertIn(m.company_id, self.env.user.company_ids)
+            self.assertEqual(m.code, acc.with_company(m.company_id).code)
+
+    def test_pack_mapping_id_encoding(self):
+        from odoo.addons.account.models.account_code_mapping import (
+            COMPANY_OFFSET,
+            _pack_mapping_id,
+        )
+
+        account_id, company_id = 42, 10001
+        vid = _pack_mapping_id(account_id, company_id)
+        self.assertEqual(vid // COMPANY_OFFSET, account_id)
+        self.assertEqual(vid % COMPANY_OFFSET, company_id)
+
+    def test_pack_mapping_id_guards_overflow(self):
+        from odoo.addons.account.models.account_code_mapping import (
+            COMPANY_OFFSET,
+            _pack_mapping_id,
+        )
+
+        with self.assertRaises(ValueError):
+            _pack_mapping_id(1, COMPANY_OFFSET)
+
+
+@tagged("post_install", "-at_install")
+class TestAccountNameDuplication(TransactionCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.env["res.lang"]._activate_lang("es_MX")
+        cls.account = cls.env["account.account"].create(
+            {"name": "Bank Suspense", "code": "ZZ9001"}
+        )
+        cls.account.with_context(lang="es_MX").name = "Banco Transitorio"
+        cls.env.flush_all()
+
+    def test_duplicating_suffixes_each_language_separately(self):
+        copy = self.account.with_context(lang="es_MX").copy()
+        self.env.flush_all()
+
+        name_en = copy.with_context(lang="en_US").name
+        name_es = copy.with_context(lang="es_MX").name
+        self.assertIsInstance(name_en, str)
+        self.assertIsInstance(name_es, str)
+        self.assertIn("Bank Suspense", name_en)
+        self.assertNotEqual(name_en, "Bank Suspense")
+        self.assertIn("Banco Transitorio", name_es)
+        self.assertNotEqual(name_es, "Banco Transitorio")
+
+    def test_explicit_default_name_is_left_alone(self):
+        copy = self.account.with_context(lang="es_MX").copy(
+            {"name": "Fixed Name", "code": "ZZ9002"}
+        )
+        self.env.flush_all()
+
+        self.assertEqual(copy.with_context(lang="en_US").name, "Fixed Name")
+        self.assertEqual(copy.with_context(lang="es_MX").name, "Fixed Name")

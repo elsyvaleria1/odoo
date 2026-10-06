@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <menuitem
+        id="menu_commission_plans"
+        name="Commission Plans"
+        parent="partnership.crm_menu_partners"
+        action="action_commission_plans"
+        sequence="10" />
+
+</odoo>

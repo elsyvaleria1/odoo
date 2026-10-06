@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="speech_vocabulary_form_view_list_voice" model="ir.ui.view">
+        <field name="name">speech.vocabulary.form.view.list.voice</field>
+        <field name="model">speech.vocabulary.form</field>
+        <field name="arch" type="xml">
+            <list string="Spoken Forms" editable="bottom">
+                <field name="phrases" />
+                <field name="word" />
+                <field name="pronunciation" />
+                <field name="source" />
+                <field name="confirmations" optional="show" />
+                <button
+                    name="action_approve"
+                    type="object"
+                    string="Approve"
+                    icon="fa-check"
+                    invisible="active" />
+                <field name="company_id" groups="base.group_multi_company" />
+                <field name="active" column_invisible="True" />
+            </list>
+        </field>
+    </record>
+
+    <record id="speech_vocabulary_form_view_search_voice" model="ir.ui.view">
+        <field name="name">speech.vocabulary.form.view.search.voice</field>
+        <field name="model">speech.vocabulary.form</field>
+        <field name="arch" type="xml">
+            <search string="Spoken Forms">
+                <field name="phrases" />
+                <field name="vocabulary_id" />
+                <filter
+                    name="acronyms"
+                    string="Acronyms"
+                    domain="[('pronunciation', '=', 'acronym')]" />
+                <filter
+                    name="to_approve"
+                    string="To approve"
+                    domain="[('source', '=', 'learned'), ('active', '=', False)]" />
+                <filter
+                    name="seeded"
+                    string="Seeded"
+                    domain="[('source', '=', 'seed')]" />
+                <separator />
+                <filter
+                    name="archived"
+                    string="Archived"
+                    domain="[('active', '=', False)]" />
+                <separator />
+                <filter
+                    name="group_pronunciation"
+                    string="Pronunciation"
+                    context="{'group_by': 'pronunciation'}" />
+                <filter
+                    name="group_word"
+                    string="Word"
+                    context="{'group_by': 'vocabulary_id'}" />
+            </search>
+        </field>
+    </record>
+
+    <record id="voice_spoken_form_action" model="ir.actions.act_window">
+        <field name="name">Spoken Forms</field>
+        <field name="res_model">speech.vocabulary.form</field>
+        <field name="view_mode">list</field>
+        <field name="view_id" ref="speech_vocabulary_form_view_list_voice" />
+        <field name="search_view_id" ref="speech_vocabulary_form_view_search_voice" />
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Teach voice the words people use</p>
+            <p>An English word, an acronym or a local word, and the word the screens use for it: "checa" means "revisa", "PO" means "órdenes de compra". The word joins the speech vocabulary, so transcribers expect it too.</p>
+        </field>
+    </record>
+
+</odoo>

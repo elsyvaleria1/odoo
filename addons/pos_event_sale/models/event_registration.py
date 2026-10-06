@@ -1,0 +1,17 @@
+from odoo import api, models
+
+
+class EventRegistration(models.Model):
+    _inherit = ["event.registration"]
+    _name = "event.registration"
+
+    @api.depends("pos_order_id.state")
+    def _compute_registration_status(self) -> None:
+        super()._compute_registration_status()
+        for record in self.filtered("pos_order_id.id"):
+            if record.pos_order_id.state in ["paid", "done", "invoiced"]:
+                record.sale_status = "sold"
+                record.state = "open"
+            else:
+                record.sale_status = "to_pay"
+                record.state = "draft"

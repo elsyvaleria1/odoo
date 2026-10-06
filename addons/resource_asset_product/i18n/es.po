@@ -1,0 +1,166 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* resource_asset_product
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Language: es\n"
+"Plural-Forms: \n"
+
+#. module: resource_asset_product
+#: model_terms:ir.ui.view,arch_db:resource_asset_product.resource_asset_log_view_search
+msgid "Archived"
+msgstr "Archivado"
+
+#. module: resource_asset_product
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_log__asset_id
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_part__asset_id
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_part_flag__asset_id
+#: model_terms:ir.ui.view,arch_db:resource_asset_product.resource_asset_log_view_search
+#: model_terms:ir.ui.view,arch_db:resource_asset_product.resource_asset_part_view_search
+msgid "Asset"
+msgstr "Activo"
+
+#. module: resource_asset_product
+#: model_terms:ir.ui.view,arch_db:resource_asset_product.resource_asset_part_view_form
+msgid "Cancel"
+msgstr "Cancelar"
+
+#. module: resource_asset_product
+#. odoo-python
+#: code:addons/resource_asset_product/models/resource_asset_part.py:0
+#: model_terms:ir.ui.view,arch_db:resource_asset_product.resource_asset_part_clear_view_form
+#: model_terms:ir.ui.view,arch_db:resource_asset_product.resource_asset_part_view_form
+msgid "Clear Flags"
+msgstr "Quitar marcas"
+
+#. module: resource_asset_product
+#: model_terms:ir.ui.view,arch_db:resource_asset_product.resource_asset_log_view_search
+msgid "Closed"
+msgstr "Cerrado"
+
+#. module: resource_asset_product
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_log__date
+#: model_terms:ir.ui.view,arch_db:resource_asset_product.resource_asset_log_view_search
+msgid "Date"
+msgstr "Fecha"
+
+#. module: resource_asset_product
+#: model_terms:ir.ui.view,arch_db:resource_asset_product.resource_asset_part_clear_view_form
+msgid "Discard"
+msgstr "Descartar"
+
+#. module: resource_asset_product
+#: model:ir.model.fields.selection,name:resource_asset_product.selection__resource_asset_part__review_state__flagged
+#: model_terms:ir.ui.view,arch_db:resource_asset_product.resource_asset_part_view_form
+#: model_terms:ir.ui.view,arch_db:resource_asset_product.resource_asset_part_view_search
+msgid "Flagged"
+msgstr "Marcado"
+
+#. module: resource_asset_product
+#: model_terms:ir.ui.view,arch_db:resource_asset_product.resource_asset_part_view_search
+msgid "History"
+msgstr "Historial"
+
+#. module: resource_asset_product
+#: model_terms:ir.ui.view,arch_db:resource_asset_product.resource_asset_part_view_form
+msgid "Install"
+msgstr "Instalar"
+
+#. module: resource_asset_product
+#: model_terms:ir.ui.view,arch_db:resource_asset_product.resource_asset_part_view_search
+msgid "Installed Now"
+msgstr "Instalado ahora"
+
+#. module: resource_asset_product
+#: model:ir.actions.act_window,name:resource_asset_product.action_resource_asset_log
+#: model:ir.ui.menu,name:resource_asset_product.menu_asset_ledger
+#: model_terms:ir.ui.view,arch_db:resource_asset_product.resource_asset_view_form_product
+msgid "Ledger"
+msgstr "Libro"
+
+#. module: resource_asset_product
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset__product_id
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_device__product_id
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_equipment__product_id
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_furniture__product_id
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_it__product_id
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_machinery__product_id
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_property__product_id
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_telecom__product_id
+#: model_terms:ir.ui.view,arch_db:resource_asset_product.resource_asset_view_search_product
+msgid "Model"
+msgstr "Modelo"
+
+#. module: resource_asset_product
+#: model:ir.model.fields.selection,name:resource_asset_product.selection__resource_asset_part_flag__state__open
+#: model_terms:ir.ui.view,arch_db:resource_asset_product.resource_asset_log_view_search
+msgid "Open"
+msgstr "Abrir"
+
+#. module: resource_asset_product
+#: model:ir.actions.act_window,name:resource_asset_product.action_resource_asset_part
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset__part_ids
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_device__part_ids
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_equipment__part_ids
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_furniture__part_ids
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_it__part_ids
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_machinery__part_ids
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_property__part_ids
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_telecom__part_ids
+#: model:ir.model.fields,field_description:resource_asset_product.field_wizard_resource_asset_part_clear_flag__part_ids
+#: model:ir.ui.menu,name:resource_asset_product.menu_asset_parts
+#: model_terms:ir.ui.view,arch_db:resource_asset_product.resource_asset_view_form_product
+msgid "Parts"
+msgstr "Refacciones"
+
+#. module: resource_asset_product
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_part__position_id
+#: model_terms:ir.ui.view,arch_db:resource_asset_product.resource_asset_part_view_search
+msgid "Position"
+msgstr "Posición"
+
+#. module: resource_asset_product
+#. odoo-python
+#: code:addons/resource_asset_product/models/resource_asset_part.py:0
+#: model_terms:ir.ui.view,arch_db:resource_asset_product.resource_asset_part_view_form
+msgid "Position History"
+msgstr "Historial de posiciones"
+
+#. module: resource_asset_product
+#: model:ir.model.fields.selection,name:resource_asset_product.selection__resource_asset_part_flag__reason__not_returned
+#: model_terms:ir.ui.view,arch_db:resource_asset_product.resource_asset_part_view_search
+msgid "Removed Part Not Returned"
+msgstr "Refacción retirada no devuelta"
+
+#. module: resource_asset_product
+#: model_terms:ir.ui.view,arch_db:resource_asset_product.resource_asset_part_view_form
+msgid "Reset to Planned"
+msgstr "Restablecer a planeado"
+
+#. module: resource_asset_product
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_log__state
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_part__state
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_part_flag__state
+#: model_terms:ir.ui.view,arch_db:resource_asset_product.resource_asset_log_view_search
+msgid "State"
+msgstr "Estado"
+
+#. module: resource_asset_product
+#: model_terms:ir.ui.view,arch_db:resource_asset_product.resource_asset_log_view_search
+msgid "Type"
+msgstr "Tipo"
+
+#. module: resource_asset_product
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_log__vendor_id
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_part__vendor_id
+#: model_terms:ir.ui.view,arch_db:resource_asset_product.resource_asset_part_view_search
+msgid "Vendor"
+msgstr "Proveedor"

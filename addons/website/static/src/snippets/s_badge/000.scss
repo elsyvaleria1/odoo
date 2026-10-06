@@ -1,0 +1,13 @@
+.s_badge {
+    padding: $s-badge-padding;
+    margin: $s-badge-margin;
+    border-radius: if(
+        $s-badge-border-radius != null,
+        $s-badge-border-radius,
+        $badge-border-radius
+    );
+
+    :is(#{$o-icon-selector}) {
+        margin: $s-badge-i-margin;
+    }
+}

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="wizard_stock_picking_unbatch_undelivered_form" model="ir.ui.view">
+        <field name="name">wizard.stock.picking.unbatch.undelivered.form</field>
+        <field name="model">wizard.stock.picking.unbatch.undelivered</field>
+        <field name="arch" type="xml">
+            <form>
+                <group>
+                    <field name="picking_id" readonly="1" />
+                    <field
+                        name="reason_id"
+                        options="{'no_create': True, 'no_open': True}" />
+                    <field name="note" placeholder="What happened at the stop" />
+                </group>
+                <footer>
+                    <button
+                        name="action_confirm"
+                        type="object"
+                        string="Confirm"
+                        class="btn-primary"
+                        data-hotkey="q" />
+                    <button special="cancel" string="Discard" data-hotkey="x" />
+                </footer>
+            </form>
+        </field>
+    </record>
+
+</odoo>

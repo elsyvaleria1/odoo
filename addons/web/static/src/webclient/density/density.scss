@@ -1,0 +1,106 @@
+@mixin density-compact-base() {
+    .o_list_renderer {
+        --ListRenderer-thead-padding-y: #{$table-cell-padding-y-sm * 0.5};
+
+        .o_list_table > tbody > tr > td {
+            padding-top: #{$table-cell-padding-y-sm * 0.4};
+            padding-bottom: #{$table-cell-padding-y-sm * 0.4};
+        }
+
+        .o_list_table > tbody > tr.o_group_header > th {
+            padding-top: 3px;
+            padding-bottom: 3px;
+        }
+    }
+
+    .o_kanban_view {
+        --KanbanRecord-padding-v: 4px;
+        --KanbanRecord-padding-h: 6px;
+        --KanbanRecord-margin-v: 3px;
+        --KanbanRecord-margin-h: 6px;
+        --KanbanRecord-gap-v: 3px;
+        --Card-Footer-gap: 2px;
+    }
+
+    .o_form_view {
+        --fieldWidget-margin-bottom: #{$o-form-spacing-unit * 0.5};
+
+        .o_form_sheet {
+            --formView-sheet-padding-y: #{map-get($spacers, 2)};
+            --formView-sheet-padding-y-md: #{map-get($spacers, 2)};
+            --formView-sheet-padding-y-lg: #{map-get($spacers, 3)};
+            --formView-sheet-padding-y-xxl: #{map-get($spacers, 2)};
+        }
+
+        .o_form_sheet_bg {
+            --formView-sheetBg-padding-x: #{map-get($spacers, 2)};
+        }
+
+        .o_inner_group {
+            margin-bottom: #{$o-form-spacing-unit * 2};
+        }
+
+        .o-form-buttonbox .oe_stat_button {
+            padding-top: 2px;
+            padding-bottom: 2px;
+        }
+
+        .o_notebook > .nav-tabs > .nav-item > .nav-link {
+            padding: 4px 12px;
+        }
+    }
+
+    .o_action_manager {
+        .btn:not(.btn-sm):not(.btn-lg):not(.oe_stat_button):not(.o_arrow_button) {
+            padding-top: #{$input-btn-padding-y-sm};
+            padding-bottom: #{$input-btn-padding-y-sm};
+        }
+    }
+
+    .o_action_manager .o_field_widget .o_input:not(.o_searchview_input) {
+        padding-top: 1px;
+        padding-bottom: 1px;
+    }
+
+    .o_action_manager .dropdown-menu .dropdown-item {
+        padding-top: 3px;
+        padding-bottom: 3px;
+    }
+
+    .o_control_panel {
+        padding-top: #{map-get($spacers, 1)};
+        padding-bottom: #{map-get($spacers, 1)};
+    }
+
+    .o-mail-Chatter {
+        --mail-Chatter-contentPaddingLeft: #{map-get($spacers, 2)};
+    }
+}
+
+body.o-density-compact {
+    @include density-compact-base();
+}
+
+body.o-density-condensed {
+    @include density-compact-base();
+
+    .o_list_renderer {
+        --ListRenderer-thead-padding-y: 2px;
+
+        .o_list_table > tbody > tr > td {
+            padding-top: 1px;
+            padding-bottom: 1px;
+        }
+
+        .o_list_table > tbody > tr.o_group_header > th {
+            padding-top: 2px;
+            padding-bottom: 2px;
+        }
+    }
+
+    .o_kanban_view {
+        --KanbanRecord-padding-v: 2px;
+        --KanbanRecord-padding-h: 4px;
+        --KanbanRecord-margin-v: 2px;
+    }
+}

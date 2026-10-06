@@ -1,0 +1,66 @@
+/** @odoo-module native */
+import { t } from "@odoo/owl";
+import {
+    provideProductConfiguratorContext,
+    useProductConfiguratorContext,
+} from "@sale/js/product_configurator_dialog/product_configurator_context";
+import {
+    ProductConfiguratorDialog,
+    productConfiguratorDialogProps,
+    productConfiguratorOptionsShape,
+} from "@sale/js/product_configurator_dialog/product_configurator_dialog";
+import { _t } from "@web/core/translation";
+import { patch } from "@web/core/utils/patch";
+
+Object.assign(productConfiguratorDialogProps, {
+    isFrontend: t.boolean().optional(),
+});
+
+patch(ProductConfiguratorDialog.prototype, {
+    setup() {
+        super.setup(...arguments);
+
+        if (this.props.isFrontend) {
+            this.getValuesUrl = "/website_sale/product_configurator/get_values";
+            this.createProductUrl = "/website_sale/product_configurator/create_product";
+            this.updateCombinationUrl =
+                "/website_sale/product_configurator/update_combination";
+            this.getOptionalProductsUrl =
+                "/website_sale/product_configurator/get_optional_products";
+            this.title = _t("Configure");
+        }
+
+        provideProductConfiguratorContext({
+            isFrontend: this.props.isFrontend,
+            isMainProductConfigurable:
+                this.props.options?.isMainProductConfigurable ?? true,
+        });
+        this.configuratorContext = useProductConfiguratorContext();
+    },
+
+    /**
+     * @return {Boolean}
+     */
+    canBeSold() {
+        return this.state.products.every((p) => p.can_be_sold);
+    },
+
+    /**
+     * @return {Boolean}
+     */
+    showShopButtons() {
+        return this.props.isFrontend && !this.props.edit;
+    },
+
+    get totalMessage() {
+        if (this.configuratorContext.isFrontend) {
+            return _t("Total: %s", this.getFormattedTotal());
+        }
+        return super.totalMessage;
+    },
+});
+
+Object.assign(productConfiguratorOptionsShape, {
+    isMainProductConfigurable: t.boolean().optional(),
+    isBuyNow: t.boolean().optional(),
+});

@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="wizard_stock_trip_stop_result_view_form" model="ir.ui.view">
+        <field name="name">wizard.stock.trip.stop.result.form</field>
+        <field name="model">wizard.stock.trip.stop.result</field>
+        <field name="arch" type="xml">
+            <form string="Stop Result">
+                <field name="picking_id" invisible="1" />
+                <p class="text-muted">
+                    Set what the customer took. What they do not take stays on the
+                    vehicle and needs a reason.
+                </p>
+                <field name="line_ids">
+                    <list editable="bottom" create="0" delete="0">
+                        <field name="move_line_id" column_invisible="1" />
+                        <field name="product_id" readonly="1" />
+                        <field name="trace_id" readonly="1" />
+                        <field name="qty_on_board" readonly="1" />
+                        <field name="qty_delivered" />
+                        <field name="qty_rejected" />
+                        <field name="reason_id" required="qty_rejected &gt; 0" />
+                        <field name="note" optional="hide" />
+                        <field name="uom_id" groups="uom.group_uom" />
+                    </list>
+                </field>
+                <group>
+                    <field name="reason_id" />
+                    <field name="note" />
+                </group>
+                <footer>
+                    <button
+                        name="action_confirm"
+                        type="object"
+                        string="Confirm"
+                        class="btn-primary"
+                        data-hotkey="q" />
+                    <button special="cancel" string="Cancel" data-hotkey="x" />
+                </footer>
+            </form>
+        </field>
+    </record>
+
+</odoo>

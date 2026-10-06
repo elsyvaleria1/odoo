@@ -1,0 +1,151 @@
+from odoo.tests import tagged
+
+from odoo.addons.sale_loyalty.tests.common import TestSaleCouponCommon
+
+
+@tagged("post_install", "-at_install")
+class TestSaleInvoicing(TestSaleCouponCommon):
+    def test_invoicing_order_with_promotions(self):
+        discount_coupon_program = self.env["loyalty.program"].create(
+            {
+                "name": "10% Discount",
+                "program_type": "coupons",
+                "applies_on": "current",
+                "trigger": "auto",
+                "rule_ids": [(0, 0, {})],
+                "reward_ids": [
+                    (
+                        0,
+                        0,
+                        {
+                            "reward_type": "discount",
+                            "discount": 10,
+                            "discount_mode": "percent",
+                            "discount_applicability": "order",
+                        },
+                    )
+                ],
+            }
+        )
+
+        product = self.env["product.product"].create(
+            {
+                "invoice_policy": "transferred",
+                "name": "Product invoiced on delivery",
+                "lst_price": 500,
+            }
+        )
+
+        order = self.empty_order
+        order.write(
+            {
+                "line_ids": [
+                    (
+                        0,
+                        0,
+                        {
+                            "product_id": product.id,
+                        },
+                    )
+                ]
+            }
+        )
+
+        self.assertEqual(
+            discount_coupon_program.reward_ids.discount_line_product_id.invoice_policy,
+            "ordered",
+        )
+
+        order._update_programs_and_rewards()
+        self._claim_reward(order, discount_coupon_program)
+        invoiceable_lines = order._get_invoiceable_lines()
+        self.assertEqual(len(invoiceable_lines), 0)
+
+        order.action_confirm()
+        invoiceable_lines = order._get_invoiceable_lines()
+        self.assertEqual(order.invoice_state, "no")
+        self.assertEqual(len(invoiceable_lines), 1)
+
+        inv = order._create_invoices()
+        self.assertEqual(len(inv.invoice_line_ids), 1)
+        invoiceable_lines = order._get_invoiceable_lines()
+        self.assertEqual(len(invoiceable_lines), 0)
+        inv.action_cancel()
+
+        order.line_ids[0].qty_transferred = 1
+        self.assertEqual(order.invoice_state, "to do")
+        invoiceable_lines = order._get_invoiceable_lines()
+        self.assertEqual(order.line_ids, invoiceable_lines)
+        account_move = order._create_invoices()
+        self.assertEqual(len(account_move.invoice_line_ids), 2)
+
+    def test_coupon_on_order_sequence(self):
+        discount_coupon_program = self.env["loyalty.program"].create(
+            {
+                "name": "10% Discount",
+                "program_type": "coupons",
+                "applies_on": "current",
+                "trigger": "auto",
+                "rule_ids": [(0, 0, {})],
+                "reward_ids": [
+                    (
+                        0,
+                        0,
+                        {
+                            "reward_type": "discount",
+                            "discount": 10,
+                            "discount_mode": "percent",
+                            "discount_applicability": "order",
+                        },
+                    )
+                ],
+            }
+        )
+
+        order = self.empty_order
+
+        product_6 = self.env["product.product"].create(
+            {
+                "name": "Large Cabinet",
+            }
+        )
+        self.env["sale.order.line"].create(
+            {
+                "product_id": product_6.id,
+                "name": "largeCabinet",
+                "product_qty": 1.0,
+                "order_id": order.id,
+            }
+        )
+
+        self.assertEqual(
+            discount_coupon_program.reward_ids.discount_line_product_id.invoice_policy,
+            "ordered",
+        )
+
+        self._auto_rewards(order, discount_coupon_program)
+
+        self.assertEqual(len(order.line_ids), 2, "Coupon correctly applied")
+
+        product_11 = self.env["product.product"].create(
+            {
+                "name": "Conference Chair",
+            }
+        )
+
+        self.env["sale.order.line"].create(
+            {
+                "product_id": product_11.id,
+                "name": "conferenceChair",
+                "product_qty": 1.0,
+                "order_id": order.id,
+            }
+        )
+
+        order._update_programs_and_rewards()
+        self.assertEqual(len(order.line_ids), 3, "Coupon correctly applied")
+
+        self.assertTrue(
+            order.line_ids.sorted(lambda x: x.sequence)[-1].is_reward_line,
+            "Global coupons appear on the last line",
+        )

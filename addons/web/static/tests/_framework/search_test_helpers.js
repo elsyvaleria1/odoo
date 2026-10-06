@@ -1,0 +1,293 @@
+// @ts-check
+
+import { queryAll, queryAllTexts, queryOne, queryText } from "@odoo/hoot";
+import { Component, useProps, xml } from "@odoo/owl";
+import { WithSearch } from "@web/search/with_search/with_search";
+import { getDefaultConfig } from "@web/views/view";
+
+import { findComponent, mountWithCleanup } from "./component_test_helpers.js";
+import { contains } from "./dom_test_helpers.js";
+import { getMockEnv, makeMockEnv } from "./env_test_helpers.js";
+
+/** @param {import("@odoo/hoot").Target} [root] */
+const ensureSearchView = async (root) => {
+    if (
+        getMockEnv().isSmall &&
+        queryAll(".o_control_panel_navigation", { root }).length &&
+        !queryAll(".o_searchview", { root }).length
+    ) {
+        await contains(`.o_control_panel_navigation .fa-search`, { root }).click();
+    }
+};
+
+const ensureSearchBarMenu = async () => {
+    if (!queryAll`.o_search_bar_menu`.length) {
+        await toggleSearchBarMenu();
+    }
+};
+
+/**
+ * @param {Component} Component
+ * @param {Object} props
+ * @returns {Object}
+ */
+function filterPropsForComponent(Component, props) {
+    if (Component.props) {
+        let componentKeys = null;
+        if (Component.props instanceof Array) {
+            componentKeys = Component.props.map((x) => x.replace("?", ""));
+        } else {
+            componentKeys = Object.keys(Component.props);
+        }
+        if (componentKeys.includes("*")) {
+            return props;
+        } else {
+            return Object.keys(props)
+                .filter((k) => componentKeys.includes(k))
+                .reduce((o, k) => {
+                    o[k] = props[k];
+                    return o;
+                }, {});
+        }
+    } else {
+        return props;
+    }
+}
+
+/**
+ * @param {any} componentConstructor
+ * @param {Record<string, any>} [searchProps]
+ * @param {Record<string, any>} [config]
+ * @returns {Promise<any>}
+ */
+export async function mountWithSearch(
+    componentConstructor,
+    searchProps = {},
+    config = {},
+) {
+    class ComponentWithSearch extends Component {
+        static template = xml`
+            <WithSearch t-props="this.withSearchProps" t-slot-scope="search">
+                <t t-component="this.component" t-props="this.getProps(search)"/>
+            </WithSearch>
+        `;
+        static components = { WithSearch };
+        static props = null;
+        props = useProps(this.constructor.props);
+
+        setup() {
+            this.withSearchProps = searchProps;
+            this.component = componentConstructor;
+        }
+
+        getProps(search) {
+            const props = {
+                context: search.context,
+                domain: search.domain,
+                groupBy: search.groupBy,
+                orderBy: search.orderBy,
+                comparison: search.comparison,
+                display: search.display,
+            };
+            return filterPropsForComponent(componentConstructor, props);
+        }
+    }
+
+    const fullConfig = { ...getDefaultConfig(), ...config };
+    const env = await makeMockEnv({ config: fullConfig });
+    const root = await mountWithCleanup(ComponentWithSearch, { env });
+    return findComponent(
+        root,
+        (component) => component instanceof componentConstructor,
+    );
+}
+
+/** @param {string} label */
+export async function toggleMenu(label) {
+    await contains(`button.o-dropdown:text(${label})`).click();
+}
+
+/** @param {string} label */
+export async function toggleMenuItem(label) {
+    const target = /** @type {any} */ (queryOne)`.o_menu_item:text(${label})`;
+    if (target.classList.contains("dropdown-toggle")) {
+        await contains(target).hover();
+    } else {
+        await contains(target).click();
+    }
+}
+
+/**
+ * @param {string} itemLabel
+ * @param {string} optionLabel
+ */
+export async function toggleMenuItemOption(itemLabel, optionLabel) {
+    const { parentElement: root } = /** @type {any} */ (
+        queryOne
+    )`.o_menu_item:text(${itemLabel})`;
+    const target = queryOne(`.o_item_option:text(${optionLabel})`, { root });
+    if (target.classList.contains("dropdown-toggle")) {
+        await contains(target).hover();
+    } else {
+        await contains(target).click();
+    }
+}
+
+/** @param {string} label */
+export function isItemSelected(label) {
+    return /** @type {any} */ (
+        queryOne
+    )`.o_menu_item:text(${label})`.classList.contains("selected");
+}
+
+/**
+ * @param {string} itemLabel
+ * @param {string} optionLabel
+ */
+export function isOptionSelected(itemLabel, optionLabel) {
+    const { parentElement: root } = /** @type {any} */ (
+        queryOne
+    )`.o_menu_item:text(${itemLabel})`;
+    return queryOne(`.o_item_option:text(${optionLabel})`, { root }).classList.contains(
+        "selected",
+    );
+}
+
+export function getMenuItemTexts() {
+    return queryAllTexts`.dropdown-menu .o_menu_item`;
+}
+
+export function getButtons() {
+    return queryAll`.o_control_panel_breadcrumbs button`;
+}
+
+export function getVisibleButtons() {
+    return queryAll`.o_control_panel_breadcrumbs button:visible, .o_control_panel_actions button:visible`;
+}
+
+export async function toggleFilterMenu() {
+    await ensureSearchBarMenu();
+    await contains(`.o_filter_menu button.dropdown-toggle`).click();
+}
+
+export async function openAddCustomFilterDialog() {
+    await ensureSearchBarMenu();
+    await contains(`.o_filter_menu .o_menu_item.o_add_custom_filter`).click();
+}
+
+export async function toggleGroupByMenu() {
+    await ensureSearchBarMenu();
+    await contains(`.o_group_by_menu .dropdown-toggle`).click();
+}
+
+/** @param {string} fieldName */
+export async function selectGroup(fieldName) {
+    await ensureSearchBarMenu();
+    await contains(`.o_add_custom_group_menu`).select(fieldName);
+}
+
+export async function toggleFavoriteMenu() {
+    await ensureSearchBarMenu();
+    await contains(`.o_favorite_menu .dropdown-toggle`).click();
+}
+
+/** @param {string} text */
+export async function editFavorite(text) {
+    await ensureSearchBarMenu();
+    await contains(`.o_favorite_menu .o_menu_item:text(${text}) i.fa-pencil`, {
+        visible: false,
+    }).click();
+}
+
+export async function toggleSaveFavorite() {
+    await ensureSearchBarMenu();
+    await contains(`.o_favorite_menu .o_add_favorite`).click();
+}
+
+/** @param {string} name */
+export async function editFavoriteName(name) {
+    await ensureSearchBarMenu();
+    await contains(
+        `.o_favorite_menu .o_add_favorite + .o_accordion_values input[type="text"]`,
+    ).edit(name, { confirm: false });
+}
+
+export async function saveFavorite() {
+    await ensureSearchBarMenu();
+    await contains(`.o_favorite_menu .o_save_favorite`).click();
+}
+
+export async function saveAndEditFavorite() {
+    await ensureSearchBarMenu();
+    await contains(`.o_favorite_menu .o_edit_favorite`).click();
+}
+
+/** @param {import("@odoo/hoot").Target} [root] */
+export function getFacetTexts(root) {
+    return queryAllTexts(`.o_searchview_facet`, { root });
+}
+
+/** @param {string} label */
+export async function removeFacet(label) {
+    await ensureSearchView();
+    await contains(`.o_searchview_facet:text(${label}) .o_facet_remove`).click();
+}
+
+/** @param {string} value */
+export async function editSearch(value) {
+    await ensureSearchView();
+    await contains(`.o_searchview input`).edit(value, { confirm: false });
+}
+
+export async function validateSearch() {
+    await ensureSearchView();
+    await contains(`.o_searchview input`).press("Enter");
+}
+
+/** @param {string} viewType */
+export async function switchView(viewType) {
+    if (getMockEnv().isSmall) {
+        await contains(".o_cp_switch_buttons .dropdown-toggle").click();
+        await contains(`.dropdown-item:contains(${viewType.toUpperCase()})`).click();
+    } else {
+        await contains(`button.o_switch_view.o_${viewType}`).click();
+    }
+}
+
+/** @param {HTMLElement} [root] */
+export function getPagerValue(root) {
+    return queryText(".o_pager .o_pager_value", { root })
+        .split(/\s*-\s*/)
+        .map(Number);
+}
+
+/** @param {HTMLElement} [root] */
+export function getPagerLimit(root) {
+    return parseInt(queryText(".o_pager .o_pager_limit", { root }), 10);
+}
+
+/** @param {HTMLElement} [root] */
+export async function pagerNext(root) {
+    await contains(".o_pager button.o_pager_next", { root }).click();
+}
+
+/** @param {HTMLElement} [root] */
+export async function pagerPrevious(root) {
+    await contains(".o_pager button.o_pager_previous", { root }).click();
+}
+
+/** @param {string} value */
+export async function editPager(value) {
+    await contains(`.o_pager .o_pager_limit`).edit(value);
+}
+
+/** @returns {Promise} */
+export async function toggleActionMenu() {
+    await contains(".o_cp_action_menus .dropdown-toggle").click();
+}
+
+/** @param {import("@odoo/hoot").Target} [root] */
+export async function toggleSearchBarMenu(root) {
+    await ensureSearchView(root);
+    await contains(`.o_searchview_dropdown_toggler`, { root }).click();
+}

@@ -1,0 +1,3 @@
+id,name,model_id/id,group_id/id,kind,operation,domain
+homeworking_location_wizard_own_rule,homeworking wizard: own,model_wizard_hr_employee_update_work_location,base.group_user,permission,crud,"[ ('employee_id', '=', user.employee_id.id) ]"
+homeworking_location_wizard_admin_rule,homeworking wizard: admin,model_wizard_hr_employee_update_work_location,hr.group_hr_user,permission,crud,

@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="sale_order_line_view_search" model="ir.ui.view">
+        <field name="name">sale.order.line.view.search</field>
+        <field name="model">sale.order.line</field>
+        <field name="mode">primary</field>
+        <field name="priority">1000</field>
+        <field name="arch" type="xml">
+            <search>
+                <filter
+                    name="last_365_days"
+                    string="For the Last 365 Days"
+                    help="Sales Order Lines processed during last 365 days"
+                    domain="[('order_id.date_order', '&gt;=', 'today -365d')]" />
+                <separator />
+                <filter
+                    name="service"
+                    string="Service"
+                    help="Display only service lines"
+                    domain="[('product_type', '=', 'service')]" />
+                <filter
+                    name="goods"
+                    string="Goods"
+                    help="Display only goods lines"
+                    domain="[('product_type', '=', 'consu')]" />
+                <separator />
+                <filter
+                    name="invoice_policy_on_order"
+                    string="Invoice on Ordered"
+                    help="Display only lines for product invoiced on ordered quantities"
+                    domain="[('product_invoice_policy', '=', 'ordered')]" />
+                <filter
+                    name="invoice_policy_on_delivery"
+                    string="Invoice on Delivered"
+                    help="Display only lines for product invoiced on delivered quantities"
+                    domain="[('product_invoice_policy', '=', 'transferred')]" />
+                <group>
+                    <filter
+                        name="groupby_customer"
+                        string="Customer"
+                        context="{'group_by': 'partner_id'}" />
+                    <filter
+                        name="groupby_company"
+                        string="Company"
+                        context="{'group_by': 'company_id'}" />
+                    <filter
+                        name="groupby_order"
+                        string="Order Reference"
+                        context="{'group_by': 'order_id'}" />
+                    <filter
+                        name="groupby_product_category"
+                        string="Product Category"
+                        context="{'group_by': 'product_categ_id'}" />
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="sale_order_line_view_list" model="ir.ui.view">
+        <field name="name">sale.order.line.view.list</field>
+        <field name="model">sale.order.line</field>
+        <field name="priority">1000</field>
+        <field name="arch" type="xml">
+            <list
+                string="Sales Order Lines"
+                create="false"
+                js_class="accrual_list_view">
+                <header>
+                    <button
+                        name="%(sale.action_accrued_revenue_entry_sale_order_line)d"
+                        type="action"
+                        string="Create Accrual Entries"
+                        groups="account.group_account_user"
+                        class="btn btn-primary"
+                        data-hotkey="r" />
+                </header>
+                <field name="currency_id" column_invisible="True"/> <!-- Needed for monetary widget -->
+                <field name="order_id" />
+                <field name="partner_id" />
+                <field name="name" optional="show" />
+                <field name="user_id" optional="show" />
+                <field name="product_uom_qty" />
+                <field name="qty_transferred_at_date" />
+                <field name="qty_invoiced_at_date" />
+                <field name="product_uom_id" groups="uom.group_uom" />
+                <field name="price_unit" widget="monetary" />
+                <field name="amount_to_invoice_at_date" widget="monetary" />
+            </list>
+        </field>
+    </record>
+
+    <record id="sale_order_line_accrual_to_bill_action" model="ir.actions.act_window">
+        <field name="name">Invoices To Be Issued</field>
+        <field name="res_model">sale.order.line</field>
+        <field name="view_mode">list</field>
+        <field name="view_id" ref="sale_order_line_view_list" />
+        <field
+            name="search_view_id"
+            ref="sale_account_accountant.sale_order_line_view_search" />
+        <field name="domain">[('invoice_to_be_issued', '=', True)]</field>
+        <field
+            name="context">{'search_default_last_365_days': 1, 'search_default_groupby_customer': 1}</field>
+    </record>
+
+    <record
+        id="sale_order_line_accrual_deferred_revenues_action"
+        model="ir.actions.act_window">
+        <field name="name">Invoiced Not Delivered</field>
+        <field name="res_model">sale.order.line</field>
+        <field name="view_mode">list</field>
+        <field name="view_id" ref="sale_order_line_view_list" />
+        <field
+            name="search_view_id"
+            ref="sale_account_accountant.sale_order_line_view_search" />
+        <field name="domain">[('deferred_revenue', '=', True)]</field>
+        <field
+            name="context">{'search_default_last_365_days': 1, 'search_default_groupby_customer': 1}</field>
+    </record>
+
+</odoo>

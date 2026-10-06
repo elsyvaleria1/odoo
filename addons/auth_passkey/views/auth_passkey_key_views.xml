@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="auth_passkey_key_view_kanban" model="ir.ui.view">
+        <field name="name">auth.passkey.key.kanban</field>
+        <field name="model">auth.passkey.key</field>
+        <field name="arch" type="xml">
+            <kanban create="0" can_open="0">
+                <templates>
+                    <t t-name="menu">
+                        <a role="menuitem" type="object" name="action_rename_passkey" class="dropdown-item">Rename</a>
+                        <a role="menuitem" type="object" name="action_delete_passkey" class="dropdown-item">Delete</a>
+                    </t>
+                    <t t-name="card">
+                        <div>
+                            <field name="name" class="fw-bold fs-5" />
+                            <field name="create_date" class="ms-2 text-muted" />
+                        </div>
+                        <small>Last used: <field name="write_date" /></small>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
+    <record id="auth_passkey_key_rename" model="ir.ui.view">
+        <field name="name">auth.passkey.key.rename</field>
+        <field name="model">auth.passkey.key</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                        <field name="name" />
+                    </group>
+                </sheet>
+                <footer>
+                    <button
+                        special="save"
+                        string="Save"
+                        class="btn-primary"
+                        data-hotkey="s" />
+                    <button
+                        special="cancel"
+                        string="Cancel"
+                        class="btn-secondary"
+                        data-hotkey="x" />
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_auth_passkey_key_create" model="ir.actions.act_window">
+        <field name="name">Create Passkey Wizard</field>
+        <field name="res_model">wizard.auth.passkey.key.create</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+
+    <record id="auth_passkey_key_create_view_form" model="ir.ui.view">
+        <field name="name">Create Passkey Wizard Form</field>
+        <field name="model">wizard.auth.passkey.key.create</field>
+        <field name="arch" type="xml">
+            <form js_class="auth_passkey_key_create_view_form">
+                <sheet>
+                    <group>
+                        <field name="name" />
+                    </group>
+                </sheet>
+                <footer>
+                    <button
+                        name="action_generate_key"
+                        type="object"
+                        string="Create"
+                        class="btn-primary"
+                        data-hotkey="q" />
+                    <button
+                        special="cancel"
+                        string="Cancel"
+                        class="btn-secondary"
+                        data-hotkey="x" />
+                </footer>
+            </form>
+        </field>
+    </record>
+
+</odoo>

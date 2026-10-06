@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_access_event_search" model="ir.ui.view">
+        <field name="name">access.event.search</field>
+        <field name="model">access.event</field>
+        <field name="arch" type="xml">
+            <search string="Search Events">
+                <field name="device_id" />
+                <field name="employee_id" />
+                <field name="employee_no" />
+                <field name="card_no" />
+                <field name="person_name" />
+                <separator />
+                <filter
+                    name="filter_access_granted"
+                    string="Access Granted"
+                    domain="[('event_type', '=', 'access_granted')]" />
+                <filter
+                    name="filter_access_denied"
+                    string="Access Denied"
+                    domain="[('event_type', '=', 'access_denied')]" />
+                <filter
+                    name="filter_alarm"
+                    string="Alarms"
+                    domain="[('event_type', '=', 'alarm')]" />
+                <filter
+                    name="filter_door_event"
+                    string="Door Events"
+                    domain="[('event_type', '=', 'door_event')]" />
+                <separator />
+                <filter
+                    name="filter_today"
+                    string="Today"
+                    domain="[('event_time', '&gt;=', 'today'), ('event_time', '&lt;', 'today +1d')]" />
+                <separator />
+                <group>
+                    <filter
+                        name="groupby_device"
+                        string="Device"
+                        context="{'group_by': 'device_id'}" />
+                    <filter
+                        name="groupby_type"
+                        string="Event Type"
+                        context="{'group_by': 'event_type'}" />
+                    <filter
+                        name="groupby_employee"
+                        string="Employee"
+                        context="{'group_by': 'employee_id'}" />
+                    <filter
+                        name="groupby_date"
+                        string="Date"
+                        context="{'group_by': 'event_time:day'}" />
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="view_access_event_list" model="ir.ui.view">
+        <field name="name">access.event.list</field>
+        <field name="model">access.event</field>
+        <field name="arch" type="xml">
+            <list
+                string="Events"
+                create="0"
+                edit="0"
+                decoration-danger="event_type in ('access_denied', 'alarm')"
+                decoration-muted="event_type == 'heartbeat'"
+                decoration-success="event_type == 'access_granted'">
+                <field name="event_time" />
+                <field name="device_id" />
+                <field
+                    name="event_type"
+                    widget="badge"
+                    decoration-danger="event_type in ('access_denied', 'alarm')"
+                    decoration-info="event_type == 'door_event'"
+                    decoration-muted="event_type == 'heartbeat'"
+                    decoration-success="event_type == 'access_granted'" />
+                <field name="person_name" optional="show" />
+                <field name="employee_id" optional="show" />
+                <field name="employee_no" optional="hide" />
+                <field name="card_no" optional="hide" />
+                <field name="attendance_status" optional="hide" />
+            </list>
+        </field>
+    </record>
+
+    <record id="view_access_event_form" model="ir.ui.view">
+        <field name="name">access.event.form</field>
+        <field name="model">access.event</field>
+        <field name="arch" type="xml">
+            <form string="Event" create="0" edit="0">
+                <sheet>
+                    <group>
+                        <group string="Event">
+                            <field name="device_id" />
+                            <field name="event_type" widget="badge" />
+                            <field name="event_time" />
+                            <field name="major_type" />
+                            <field name="sub_type" />
+                            <field name="attendance_status" />
+                        </group>
+                        <group string="Person">
+                            <field name="person_name" />
+                            <field name="employee_id" />
+                            <field name="employee_no" />
+                            <field name="card_no" />
+                        </group>
+                    </group>
+                    <group string="Snapshot" invisible="not image">
+                        <field name="image" widget="image" />
+                    </group>
+                    <group string="Raw Data" invisible="not event_data">
+                        <field name="event_data" />
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_access_event" model="ir.actions.act_window">
+        <field name="name">Events</field>
+        <field name="res_model">access.event</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{'search_default_filter_today': 1}</field>
+    </record>
+
+</odoo>

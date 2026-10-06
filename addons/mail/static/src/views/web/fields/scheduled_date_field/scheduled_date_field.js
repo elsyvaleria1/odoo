@@ -1,0 +1,93 @@
+// @ts-check
+/** @odoo-module native */
+import { Component, useProps } from "@odoo/owl";
+import {
+    deserializeDateTime,
+    serializeDateTime,
+    toLocaleString,
+} from "@web/core/l10n/dates";
+import { registry } from "@web/core/registry";
+import { useService } from "@web/core/utils/hooks";
+import { standardFieldProps } from "@web/fields/standard_field_props";
+
+import { ScheduledDateDialog } from "./scheduled_date_dialog.js";
+
+class ScheduledDateFieldCommon extends Component {
+    static props = standardFieldProps;
+    static template = "mail.ScheduledDateField";
+    props = useProps(this.constructor.props);
+
+    setup() {
+        super.setup();
+        this.dialog = useService("dialog");
+        /** @type {Intl.DateTimeFormatOptions} */
+        this.dateTimeFormat = {
+            day: "numeric",
+            hour: "numeric",
+            minute: "numeric",
+            month: "short",
+        };
+    }
+
+    get scheduledDateText() {
+        return toLocaleString(this.scheduledDate, this.dateTimeFormat);
+    }
+
+    /** @param {MouseEvent} ev */
+    onClick(ev) {
+        this.dialog.add(ScheduledDateDialog, {
+            /** @param {Temporal.ZonedDateTime|false} scheduledDate */
+            save: (scheduledDate) => this.setScheduledDate(scheduledDate),
+            isRemovable: this.isRemovable,
+            scheduledDate: this.scheduledDate,
+        });
+        /** @type {HTMLElement} */ (ev.currentTarget).blur();
+    }
+}
+
+class TextScheduledDateField extends ScheduledDateFieldCommon {
+    setup() {
+        super.setup();
+        this.isRemovable = true;
+    }
+
+    get scheduledDate() {
+        return (
+            (this.props.record.data[this.props.name] || undefined) &&
+            deserializeDateTime(this.props.record.data[this.props.name])
+        );
+    }
+
+    /** @param {Temporal.ZonedDateTime|false} scheduledDate */
+    setScheduledDate(scheduledDate) {
+        this.props.record.update({
+            [this.props.name]: scheduledDate ? serializeDateTime(scheduledDate) : "",
+        });
+    }
+}
+
+const textScheduledDateField = {
+    component: TextScheduledDateField,
+};
+registry.category("fields").add("text_scheduled_date", textScheduledDateField);
+
+class DatetimeScheduledDateField extends ScheduledDateFieldCommon {
+    setup() {
+        super.setup();
+        this.isRemovable = false;
+    }
+
+    get scheduledDate() {
+        return this.props.record.data[this.props.name];
+    }
+
+    /** @param {string|false} scheduledDate */
+    setScheduledDate(scheduledDate) {
+        this.props.record.update({ [this.props.name]: scheduledDate });
+    }
+}
+
+const datetimeScheduledDateField = {
+    component: DatetimeScheduledDateField,
+};
+registry.category("fields").add("datetime_scheduled_date", datetimeScheduledDateField);

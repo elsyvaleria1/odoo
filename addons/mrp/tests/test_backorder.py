@@ -1,0 +1,1626 @@
+from datetime import datetime, timedelta
+
+from odoo import Command
+from odoo.tests import Form
+from odoo.tests.common import TransactionCase, freeze_time
+
+from odoo.addons.mrp.tests.common import TestMrpCommon
+
+
+class TestMrpProductionBackorder(TestMrpCommon):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.env.ref("base.group_user").write(
+            {
+                "implied_ids": [
+                    Command.link(cls.env.ref("stock.group_production_lot").id)
+                ],
+            }
+        )
+
+    def test_no_tracking_1(self):
+        mo = self.generate_mo(qty_final=4)[0]
+
+        mo_form = Form(mo)
+        mo_form.qty_producing = 4
+        mo = mo_form.save()
+
+        self.assertTrue(mo.button_mark_done())
+        self.assertEqual(mo._get_quantity_to_backorder(), 0)
+        self.assertTrue("-001" not in mo.name)
+
+    def test_no_tracking_2(self):
+        production, _, _, product_to_use_1, _ = self.generate_mo(
+            qty_final=4, qty_base_1=3
+        )
+        self.assertEqual(production.state, "confirmed")
+        self.assertEqual(production.reserve_visible, True)
+
+        for product in production.move_raw_ids.product_id:
+            self.env["stock.quant"].with_context(inventory_mode=True).create(
+                {
+                    "product_id": product.id,
+                    "inventory_quantity": 100,
+                    "location_id": production.location_src_id.id,
+                }
+            )._apply_inventory()
+        production.action_assign()
+        self.assertEqual(production.state, "confirmed")
+        self.assertEqual(production.reserve_visible, False)
+
+        mo_form = Form(production)
+        mo_form.qty_producing = 1
+        production = mo_form.save()
+
+        action = production.button_mark_done()
+        backorder = Form(
+            self.env["wizard.mrp.production.produce.partial"].with_context(
+                **action["context"]
+            )
+        )
+        backorder.save().action_backorder()
+
+        self.assertEqual(len(production.production_group_id.production_ids), 2)
+
+        mo_backorder = production.production_group_id.production_ids.sorted(
+            "backorder_sequence"
+        )[-1]
+        self.assertEqual(mo_backorder.product_id.id, production.product_id.id)
+        self.assertEqual(mo_backorder.product_qty, 3)
+        self.assertEqual(
+            sum(
+                mo_backorder.move_raw_ids.filtered(
+                    lambda m: m.product_id.id == product_to_use_1.id
+                ).mapped("product_uom_qty")
+            ),
+            9,
+        )
+        self.assertEqual(mo_backorder.reserve_visible, False)
+
+    def test_no_tracking_pbm_1(self):
+        self.env.user.group_ids += self.env.ref("stock.group_adv_location")
+        with Form(self.warehouse_1) as warehouse:
+            warehouse.manufacture_steps = "pbm"
+
+        production, _, _, product_to_use_1, product_to_use_2 = self.generate_mo(
+            qty_base_1=4, qty_final=4, picking_type_id=self.picking_type_manu
+        )
+
+        move_raw_ids = production.move_raw_ids
+        self.assertEqual(len(move_raw_ids), 2)
+        self.assertEqual(
+            set(move_raw_ids.mapped("product_id")), {product_to_use_1, product_to_use_2}
+        )
+
+        pbm_move = move_raw_ids.move_orig_ids
+        self.assertEqual(len(pbm_move), 2)
+        self.assertEqual(
+            set(pbm_move.mapped("product_id")), {product_to_use_1, product_to_use_2}
+        )
+        self.assertFalse(pbm_move.move_orig_ids)
+
+        mo_form = Form(production)
+        mo_form.qty_producing = 1
+        production = mo_form.save()
+        self.assertEqual(
+            sum(
+                pbm_move.filtered(
+                    lambda m: m.product_id.id == product_to_use_1.id
+                ).mapped("product_qty")
+            ),
+            16,
+        )
+        self.assertEqual(
+            sum(
+                pbm_move.filtered(
+                    lambda m: m.product_id.id == product_to_use_2.id
+                ).mapped("product_qty")
+            ),
+            4,
+        )
+
+        action = production.button_mark_done()
+        backorder = Form(
+            self.env["wizard.mrp.production.produce.partial"].with_context(
+                **action["context"]
+            )
+        )
+
+        backorder.save().action_backorder()
+
+        mo_backorder = production.production_group_id.production_ids.sorted(
+            "backorder_sequence"
+        )[-1]
+        self.assertEqual(mo_backorder.count_transfer_outgoing, 1)
+
+        pbm_move |= mo_backorder.move_raw_ids.move_orig_ids
+        self.assertEqual(
+            sum(
+                pbm_move.filtered(
+                    lambda m: m.product_id.id == product_to_use_1.id
+                ).mapped("product_qty")
+            ),
+            16,
+        )
+        self.assertEqual(
+            sum(
+                pbm_move.filtered(
+                    lambda m: m.product_id.id == product_to_use_2.id
+                ).mapped("product_qty")
+            ),
+            4,
+        )
+
+        self.assertFalse(pbm_move.move_orig_ids)
+
+    def test_no_tracking_pbm_sam_1(self):
+        self.env.user.group_ids += self.env.ref("stock.group_adv_location")
+        with Form(self.warehouse_1) as warehouse:
+            warehouse.manufacture_steps = "pbm_sam"
+        production, _, product_to_build, product_to_use_1, product_to_use_2 = (
+            self.generate_mo(
+                qty_base_1=4, qty_final=4, picking_type_id=self.picking_type_manu
+            )
+        )
+
+        move_raw_ids = production.move_raw_ids
+        self.assertEqual(len(move_raw_ids), 2)
+        self.assertEqual(
+            set(move_raw_ids.mapped("product_id")), {product_to_use_1, product_to_use_2}
+        )
+
+        pbm_move = move_raw_ids.move_orig_ids
+        self.assertEqual(len(pbm_move), 2)
+        self.assertEqual(
+            set(pbm_move.mapped("product_id")), {product_to_use_1, product_to_use_2}
+        )
+        self.assertFalse(pbm_move.move_orig_ids)
+        self.assertEqual(
+            sum(
+                pbm_move.filtered(
+                    lambda m: m.product_id.id == product_to_use_1.id
+                ).mapped("product_qty")
+            ),
+            16,
+        )
+        self.assertEqual(
+            sum(
+                pbm_move.filtered(
+                    lambda m: m.product_id.id == product_to_use_2.id
+                ).mapped("product_qty")
+            ),
+            4,
+        )
+
+        mo_form = Form(production)
+        mo_form.qty_producing = 1
+        production = mo_form.save()
+
+        action = production.button_mark_done()
+        backorder = Form(
+            self.env["wizard.mrp.production.produce.partial"].with_context(
+                **action["context"]
+            )
+        )
+        backorder.save().action_backorder()
+
+        sam_move = production.move_finished_ids.move_dest_ids
+        self.assertEqual(len(sam_move), 1)
+        self.assertEqual(sam_move.product_id.id, product_to_build.id)
+        self.assertEqual(sum(sam_move.mapped("product_qty")), 1)
+
+        mo_backorder = production.production_group_id.production_ids.sorted(
+            "backorder_sequence"
+        )[-1]
+        self.assertEqual(mo_backorder.count_transfer_outgoing, 2)
+
+        pbm_move |= mo_backorder.move_raw_ids.move_orig_ids
+        self.assertEqual(
+            sum(
+                pbm_move.filtered(
+                    lambda m: m.product_id.id == product_to_use_1.id
+                ).mapped("product_qty")
+            ),
+            16,
+        )
+        self.assertEqual(
+            sum(
+                pbm_move.filtered(
+                    lambda m: m.product_id.id == product_to_use_2.id
+                ).mapped("product_qty")
+            ),
+            4,
+        )
+
+        sam_move |= mo_backorder.move_finished_ids.move_orig_ids
+        self.assertEqual(sum(sam_move.mapped("product_qty")), 1)
+
+        mo_backorder.button_mark_done()
+        self.assertEqual(len(sam_move), 1.0)
+        self.assertEqual(sam_move.product_qty, 4.0)
+
+    def test_tracking_backorder_series_lot_1(self):
+        nb_product_todo = 4
+        production, _, p_final, p1, p2 = self.generate_mo(
+            qty_final=nb_product_todo,
+            tracking_final="lot",
+            tracking_base_1="lot",
+            tracking_base_2="lot",
+        )
+        lot_final = self.env["product.trace"].create(
+            {
+                "name": "lot_final",
+                "product_id": p_final.id,
+            }
+        )
+        lot_1 = self.env["product.trace"].create(
+            {
+                "name": "lot_consumed_1",
+                "product_id": p1.id,
+            }
+        )
+        lot_2 = self.env["product.trace"].create(
+            {
+                "name": "lot_consumed_2",
+                "product_id": p2.id,
+            }
+        )
+
+        self.env["stock.quant"]._update_available_quantity(
+            p1, self.stock_location, nb_product_todo * 4, trace_id=lot_1
+        )
+        self.env["stock.quant"]._update_available_quantity(
+            p2, self.stock_location, nb_product_todo, trace_id=lot_2
+        )
+
+        active_production = production
+        for i in range(nb_product_todo):
+            active_production.action_assign()
+
+            details_operation_form = Form(
+                active_production.move_raw_ids.filtered(lambda m: m.product_id == p1),
+                view=self.env.ref("stock.view_stock_move_form_operations"),
+            )
+            with details_operation_form.move_line_ids.edit(0) as ml:
+                ml.quantity = 4
+                ml.trace_id = lot_1
+            details_operation_form.save()
+            details_operation_form = Form(
+                active_production.move_raw_ids.filtered(lambda m: m.product_id == p2),
+                view=self.env.ref("stock.view_stock_move_form_operations"),
+            )
+            with details_operation_form.move_line_ids.edit(0) as ml:
+                ml.quantity = 1
+                ml.trace_id = lot_2
+            details_operation_form.save()
+
+            production_form = Form(active_production)
+            production_form.qty_producing = 1
+            production_form.trace_producing_ids.set(lot_final)
+            active_production = production_form.save()
+
+            active_production.move_raw_ids.picked = True
+            active_production.button_mark_done()
+            if i + 1 != nb_product_todo:
+                action = active_production.button_mark_done()
+                backorder = Form(
+                    self.env["wizard.mrp.production.produce.partial"].with_context(
+                        **action["context"]
+                    )
+                )
+                backorder.save().action_backorder()
+            active_production = (
+                active_production.production_group_id.production_ids.sorted(
+                    "backorder_sequence"
+                )[-1]
+            )
+
+        self.assertEqual(
+            self.env["stock.quant"]._get_available_quantity(
+                p_final, self.stock_location, trace_id=lot_final
+            ),
+            nb_product_todo,
+            f"You should have the {nb_product_todo} final product in stock",
+        )
+        self.assertEqual(
+            len(production.production_group_id.production_ids), nb_product_todo
+        )
+
+    def test_tracking_backorder_series_lot_2(self):
+        production, _, _, p1, p2 = self.generate_mo(tracking_base_2="lot")
+        lot1, lot2 = self.env["product.trace"].create(
+            [
+                {
+                    "name": f"lot_consumed_{i}",
+                    "product_id": p2.id,
+                }
+                for i in range(2)
+            ]
+        )
+        self.env["stock.quant"]._update_available_quantity(p1, self.stock_location, 20)
+        self.env["stock.quant"]._update_available_quantity(
+            p2, self.stock_location, 3, trace_id=lot1
+        )
+        self.env["stock.quant"]._update_available_quantity(
+            p2, self.stock_location, 2, trace_id=lot2
+        )
+
+        production.action_assign()
+
+        production_form = Form(production)
+        production_form.qty_producing = 3
+
+        details_operation_form = Form(
+            production.move_raw_ids.filtered(lambda m: m.product_id == p1),
+            view=self.env.ref("stock.view_stock_move_form_operations"),
+        )
+        with details_operation_form.move_line_ids.edit(0) as ml:
+            ml.quantity = 4 * 3
+        details_operation_form.save()
+
+        p2_smls = production.move_raw_ids.filtered(
+            lambda m: m.product_id == p2
+        ).move_line_ids
+        self.assertEqual(len(p2_smls), 2, "One for each lot")
+        details_operation_form = Form(
+            production.move_raw_ids.filtered(lambda m: m.product_id == p2),
+            view=self.env.ref("stock.view_stock_move_form_operations"),
+        )
+        with details_operation_form.move_line_ids.edit(0) as ml:
+            ml.quantity = 1
+            ml.trace_id = lot1
+        with details_operation_form.move_line_ids.edit(1) as ml:
+            ml.quantity = 2
+            ml.trace_id = lot2
+        details_operation_form.save()
+
+        production = production_form.save()
+        action = production.button_mark_done()
+        backorder = Form(
+            self.env["wizard.mrp.production.produce.partial"].with_context(
+                **action["context"]
+            )
+        )
+        backorder.save().action_backorder()
+
+        p2_bo_mls = (
+            production.production_group_id.production_ids.sorted("backorder_sequence")[
+                -1
+            ]
+            .move_raw_ids.filtered(lambda m: m.product_id == p2)
+            .move_line_ids
+        )
+        self.assertEqual(len(p2_bo_mls), 1)
+        self.assertEqual(p2_bo_mls.trace_id, lot1)
+        self.assertEqual(p2_bo_mls.quantity_product_uom, 2)
+
+    def test_uom_backorder(self):
+        product_finished = self.env["product.product"].create(
+            {
+                "name": "Young Tom",
+                "type": "consu",
+                "is_storable": True,
+            }
+        )
+        product_component = self.env["product.product"].create(
+            {
+                "name": "Botox",
+                "type": "consu",
+                "is_storable": True,
+                "uom_id": self.uom_kg.id,
+            }
+        )
+
+        mo_form = Form(self.env["mrp.production"])
+        mo_form.product_id = product_finished
+        mo_form.bom_id = self.env["mrp.bom"].create(
+            {
+                "product_id": product_finished.id,
+                "product_tmpl_id": product_finished.product_tmpl_id.id,
+                "product_uom_id": self.uom_unit.id,
+                "product_qty": 1.0,
+                "type": "normal",
+                "consumption": "flexible",
+                "bom_line_ids": [
+                    Command.create(
+                        {
+                            "product_id": product_component.id,
+                            "product_qty": 1,
+                            "product_uom_id": self.uom_gm.id,
+                        }
+                    )
+                ],
+            }
+        )
+        mo_form.product_qty = 1000
+        mo = mo_form.save()
+        mo.action_confirm()
+
+        self.env["stock.quant"]._update_available_quantity(
+            product_component, self.stock_location, 1000
+        )
+        mo.action_assign()
+
+        production_form = Form(mo)
+        production_form.qty_producing = 300
+        mo = production_form.save()
+
+        action = mo.button_mark_done()
+        backorder_form = Form(
+            self.env["wizard.mrp.production.produce.partial"].with_context(
+                **action["context"]
+            )
+        )
+        backorder_form.save().action_backorder()
+        self.assertAlmostEqual(
+            self.env["stock.quant"]
+            ._gather(product_component, self.stock_location)
+            .reserved_quantity,
+            0.7,
+        )
+
+    def test_rounding_backorder(self):
+        production, _, _, p1, p2 = self.generate_mo(
+            qty_final=5, qty_base_1=1, qty_base_2=1
+        )
+
+        self.env["stock.quant"]._update_available_quantity(p1, self.stock_location, 100)
+        self.env["stock.quant"]._update_available_quantity(p2, self.stock_location, 100)
+
+        production.action_assign()
+
+        production_form = Form(production)
+        production_form.qty_producing = 3.1
+        production = production_form.save()
+
+        details_operation_form = Form(
+            production.move_raw_ids.filtered(lambda m: m.product_id == p1),
+            view=self.env.ref("stock.view_stock_move_form_operations"),
+        )
+        with details_operation_form.move_line_ids.edit(0) as ml:
+            ml.quantity = 3.09
+
+        details_operation_form.save()
+
+        action = production.button_mark_done()
+        backorder_form = Form(
+            self.env["wizard.mrp.production.produce.partial"].with_context(
+                **action["context"]
+            )
+        )
+        backorder_form.save().action_backorder()
+        backorder = production.production_group_id.production_ids.sorted(
+            "backorder_sequence"
+        )[-1]
+        self.assertAlmostEqual(
+            self.env["stock.quant"]._gather(p1, self.stock_location).reserved_quantity,
+            1.9,
+        )
+        self.assertAlmostEqual(
+            backorder.move_raw_ids.filtered(
+                lambda m: m.product_id == p1
+            ).move_line_ids.quantity,
+            1.9,
+        )
+
+        backorder.action_unreserve()
+
+    def test_tracking_backorder_series_serial_1(self):
+        nb_product_todo = 4
+        production, _, p_final, p1, p2 = self.generate_mo(
+            qty_final=nb_product_todo,
+            tracking_final="serial",
+            tracking_base_1="serial",
+            tracking_base_2="serial",
+            qty_base_1=1,
+        )
+        serials_final, serials_p1, serials_p2 = [], [], []
+        for i in range(nb_product_todo):
+            serials_final.append(
+                self.env["product.trace"].create(
+                    {
+                        "name": f"lot_final_{i}",
+                        "product_id": p_final.id,
+                    }
+                )
+            )
+            serials_p1.append(
+                self.env["product.trace"].create(
+                    {
+                        "name": f"lot_consumed_1_{i}",
+                        "product_id": p1.id,
+                    }
+                )
+            )
+            serials_p2.append(
+                self.env["product.trace"].create(
+                    {
+                        "name": f"lot_consumed_2_{i}",
+                        "product_id": p2.id,
+                    }
+                )
+            )
+            self.env["stock.quant"]._update_available_quantity(
+                p1, self.stock_location, 1, trace_id=serials_p1[-1]
+            )
+            self.env["stock.quant"]._update_available_quantity(
+                p2, self.stock_location, 1, trace_id=serials_p2[-1]
+            )
+
+        production.action_assign()
+        active_production = production
+        for i in range(nb_product_todo):
+            active_production.trace_producing_ids = serials_final[i]
+            active_production.qty_producing = 1
+            details_operation_form = Form(
+                active_production.move_raw_ids.filtered(lambda m: m.product_id == p1),
+                view=self.env.ref("stock.view_stock_move_form_operations"),
+            )
+            with details_operation_form.move_line_ids.edit(0) as ml:
+                ml.quantity = 1
+                ml.trace_id = serials_p1[i]
+            details_operation_form.save()
+            details_operation_form = Form(
+                active_production.move_raw_ids.filtered(lambda m: m.product_id == p2),
+                view=self.env.ref("stock.view_stock_move_form_operations"),
+            )
+            with details_operation_form.move_line_ids.edit(0) as ml:
+                ml.quantity = 1
+                ml.trace_id = serials_p2[i]
+            details_operation_form.save()
+            active_production.button_mark_done()
+            if i + 1 != nb_product_todo:
+                action = active_production.button_mark_done()
+                backorder = Form(
+                    self.env["wizard.mrp.production.produce.partial"].with_context(
+                        **action["context"]
+                    )
+                )
+                backorder.save().action_backorder()
+            active_production = (
+                active_production.production_group_id.production_ids.sorted(
+                    "backorder_sequence"
+                )[-1]
+            )
+
+        self.assertEqual(
+            self.env["stock.quant"]._get_available_quantity(
+                p_final, self.stock_location
+            ),
+            nb_product_todo,
+            f"You should have the {nb_product_todo} final product in stock",
+        )
+        self.assertEqual(
+            len(production.production_group_id.production_ids), nb_product_todo
+        )
+
+    def test_tracking_backorder_immediate_production_serial_1(self):
+        mo, _, p_final, p1, p2 = self.generate_mo(
+            qty_final=2, tracking_final="serial", qty_base_1=2, qty_base_2=2
+        )
+        self.env["stock.quant"]._update_available_quantity(
+            p1, self.stock_location_components, 2.0
+        )
+        self.env["stock.quant"]._update_available_quantity(
+            p2, self.stock_location_components, 2.0
+        )
+        mo.action_assign()
+        res_dict = mo.action_generate_serial()
+        self.assertEqual(
+            res_dict.get("res_model"), "wizard.mrp.production.update.serial"
+        )
+        serials_wizard = Form.from_action(self.env, res_dict)
+        serials_wizard.lot_name = "sn#1"
+        serials_wizard.lot_quantity = 1
+        res_dict = serials_wizard.save().action_generate_serial_numbers()
+        serials_wizard = Form.from_action(self.env, res_dict)
+        serials_wizard.save().action_apply()
+        res_dict = mo.button_mark_done()
+        self.assertEqual(
+            res_dict.get("res_model"), "wizard.mrp.production.produce.partial"
+        )
+        backorder_wizard = Form.from_action(self.env, res_dict)
+
+        action = backorder_wizard.save().action_backorder()
+        self.assertEqual(action.get("res_model"), "mrp.production")
+        backorder_mo = Form.from_action(self.env, action).save()
+        backorder_mo.button_mark_done()
+
+        self.assertEqual(
+            self.env["stock.quant"]._get_available_quantity(
+                p_final, self.stock_location
+            ),
+            2,
+            "Incorrect number of final product produced.",
+        )
+        self.assertEqual(
+            len(self.env["product.trace"].search([("product_id", "=", p_final.id)])),
+            2,
+            "Serial Numbers were not correctly produced.",
+        )
+
+    def test_backorder_name(self):
+        def produce_one(mo):
+            mo_form = Form(mo)
+            mo_form.qty_producing = 1
+            mo = mo_form.save()
+            action = mo.button_mark_done()
+            backorder = Form(
+                self.env["wizard.mrp.production.produce.partial"].with_context(
+                    **action["context"]
+                )
+            )
+            backorder.save().action_backorder()
+            return mo.production_group_id.production_ids.sorted("backorder_sequence")[
+                -1
+            ]
+
+        mo_sequence = self.picking_type_manu.sequence_id
+        initial_mo_name = mo_sequence.prefix + str(
+            mo_sequence.number_next_actual
+        ).zfill(mo_sequence.padding)
+        production = self.generate_mo(qty_final=5)[0]
+        self.assertEqual(production.name, initial_mo_name)
+
+        backorder = produce_one(production)
+        self.assertEqual(production.name, initial_mo_name + "-001")
+        self.assertEqual(backorder.name, initial_mo_name + "-002")
+
+        backorder.backorder_sequence = 998
+        for seq in [998, 999, 1000]:
+            new_backorder = produce_one(backorder)
+            self.assertEqual(backorder.name, initial_mo_name + "-" + str(seq))
+            self.assertEqual(new_backorder.name, initial_mo_name + "-" + str(seq + 1))
+            backorder = new_backorder
+
+    def test_backorder_name_without_production_group(self):
+        production = self.generate_mo(qty_final=5)[0]
+        mo_form = Form(production)
+        mo_form.qty_producing = 1
+        mo = mo_form.save()
+
+        action = mo.button_mark_done()
+        backorder_form = Form(
+            self.env["wizard.mrp.production.produce.partial"].with_context(
+                **action["context"]
+            )
+        )
+        backorder_form.save().action_backorder()
+
+        self.assertTrue(production.production_group_id)
+        backorder_ids = production.production_group_id.production_ids.sorted(
+            "backorder_sequence"
+        )[1]
+        self.assertEqual(
+            production.name.split("-")[0], backorder_ids.name.split("-")[0]
+        )
+        self.assertEqual(
+            int(production.name.split("-")[1]) + 1,
+            int(backorder_ids.name.split("-")[1]),
+        )
+
+    def test_backorder_name_with_multiple_backorder(self):
+        mo = self.generate_mo(qty_final=5)[0]
+        action = mo.action_split()
+        wizard = Form(self.env[action["res_model"]].with_context(action["context"]))
+        wizard.max_batch_size = 2.5
+        wizard.save().action_split()
+
+        self.assertEqual(len(mo.production_group_id.production_ids), 2)
+        mo_2 = mo.production_group_id.production_ids.sorted("backorder_sequence")[1]
+
+        self.assertEqual(mo.name.split("-")[1], "001")
+        self.assertEqual(mo_2.name.split("-")[1], "002")
+
+        mo_form = Form(mo)
+        mo_form.qty_producing = 1
+        mo = mo_form.save()
+        action = mo.button_mark_done()
+        backorder = Form(
+            self.env["wizard.mrp.production.produce.partial"].with_context(
+                **action["context"]
+            )
+        )
+        backorder.save().action_backorder()
+        backorder_mo1 = mo.production_group_id.production_ids.sorted(
+            "backorder_sequence"
+        )[-1]
+        self.assertEqual(backorder_mo1.name.split("-")[1], "003")
+
+        mo_form = Form(mo_2)
+        mo_form.qty_producing = 1
+        mo = mo_form.save()
+        action = mo.button_mark_done()
+        backorder = Form(
+            self.env["wizard.mrp.production.produce.partial"].with_context(
+                **action["context"]
+            )
+        )
+        backorder.save().action_backorder()
+        backorder_mo2 = mo_2.production_group_id.production_ids.sorted(
+            "backorder_sequence"
+        )[-1]
+        self.assertEqual(backorder_mo2.name.split("-")[1], "004")
+
+    def test_split_draft(self):
+        mo_form = Form(self.env["mrp.production"])
+        mo_form.product_id = self.bom_1.product_id
+        mo_form.bom_id = self.bom_1
+        mo_form.product_qty = 2
+        mo = mo_form.save()
+        self.assertEqual(mo.state, "draft")
+
+        action = mo.action_split()
+        wizard = Form.from_action(self.env, action)
+        wizard.max_batch_size = 1
+        wizard.save().action_split()
+        self.assertEqual(len(mo.production_group_id.production_ids), 2)
+
+        mo1 = mo.production_group_id.production_ids.sorted("backorder_sequence")[0]
+        mo2 = mo.production_group_id.production_ids.sorted("backorder_sequence")[1]
+        self.assertEqual(mo1.move_raw_ids.mapped("state"), ["draft", "draft"])
+        self.assertEqual(mo2.move_raw_ids.mapped("state"), ["draft", "draft"])
+
+    def test_split_merge(self):
+        self.env["decimal.precision"].search([("name", "=", "Product Unit")]).digits = 0
+        mo, _, _, p1, p2 = self.generate_mo(qty_final=10)
+        action = mo.action_split()
+        wizard = Form.from_action(self.env, action)
+        wizard.max_batch_size = 4
+        action = wizard.save().action_split()
+        self.assertEqual(len(mo.production_group_id.production_ids), 3)
+        mo1 = mo.production_group_id.production_ids.sorted("backorder_sequence")[0]
+        mo2 = mo.production_group_id.production_ids.sorted("backorder_sequence")[1]
+        mo3 = mo.production_group_id.production_ids.sorted("backorder_sequence")[2]
+        self.assertEqual(mo1.product_qty, 4)
+        self.assertEqual(mo2.product_qty, 4)
+        self.assertEqual(mo3.product_qty, 2)
+        self.assertEqual(
+            mo1.move_raw_ids.filtered(lambda m: m.product_id == p1).product_qty, 16
+        )
+        self.assertEqual(
+            mo2.move_raw_ids.filtered(lambda m: m.product_id == p1).product_qty, 16
+        )
+        self.assertEqual(
+            mo3.move_raw_ids.filtered(lambda m: m.product_id == p1).product_qty, 8
+        )
+        self.assertEqual(
+            mo1.move_raw_ids.filtered(lambda m: m.product_id == p2).product_qty, 4
+        )
+        self.assertEqual(
+            mo2.move_raw_ids.filtered(lambda m: m.product_id == p2).product_qty, 4
+        )
+        self.assertEqual(
+            mo3.move_raw_ids.filtered(lambda m: m.product_id == p2).product_qty, 2
+        )
+
+        location = self.env["stock.location"].search([], limit=1)
+        mo.production_group_id.production_ids.location_final_id = location
+        expected_origin = f"{mo1.name},{mo2.name},{mo3.name}"
+        action = (mo1 + mo2 + mo3).action_merge()
+        mo = self.env[action["res_model"]].browse(action["res_id"])
+        self.assertEqual(mo.location_final_id, location)
+        self.assertEqual(mo.origin, expected_origin)
+        self.assertEqual(mo.product_qty, 10)
+
+    def test_reservation_method_w_mo(self):
+        def create_mo(date_start=False):
+            mo_form = Form(self.env["mrp.production"])
+            mo_form.product_id = self.bom_1.product_id
+            mo_form.bom_id = self.bom_1
+            mo_form.product_qty = 2
+            if date_start:
+                mo_form.date_start = date_start
+            mo = mo_form.save()
+            mo.action_confirm()
+            return mo
+
+        def produce_one(mo):
+            mo_form = Form(mo)
+            mo_form.qty_producing = 1
+            mo = mo_form.save()
+            action = mo.button_mark_done()
+            backorder = Form(
+                self.env["wizard.mrp.production.produce.partial"].with_context(
+                    **action["context"]
+                )
+            )
+            backorder.save().action_backorder()
+            return mo.production_group_id.production_ids.sorted("backorder_sequence")[
+                -1
+            ]
+
+        for product in self.bom_1.bom_line_ids.product_id:
+            product.is_storable = True
+            self.env["stock.quant"].with_context(inventory_mode=True).create(
+                {
+                    "product_id": product.id,
+                    "inventory_quantity": 100,
+                    "location_id": self.stock_location.id,
+                }
+            )._apply_inventory()
+
+        default_picking_type = self.picking_type_manu
+
+        default_picking_type.reservation_method = "at_confirm"
+        production = create_mo()
+        self.assertEqual(production.state, "confirmed")
+        self.assertEqual(production.reserve_visible, False)
+        backorder = produce_one(production)
+        self.assertEqual(backorder.state, "confirmed")
+        self.assertEqual(backorder.reserve_visible, False)
+
+        default_picking_type.reservation_method = "manual"
+        production = create_mo()
+        self.assertEqual(production.state, "confirmed")
+        self.assertEqual(production.reserve_visible, True)
+        backorder = produce_one(production)
+        self.assertEqual(backorder.state, "confirmed")
+        self.assertEqual(backorder.reserve_visible, True)
+
+        default_picking_type.reservation_method = "by_date"
+        default_picking_type.reservation_days_before = 2
+        production = create_mo(datetime.now() + timedelta(days=10))
+        self.assertEqual(production.state, "confirmed")
+        self.assertEqual(production.reserve_visible, True)
+        backorder = produce_one(production)
+        self.assertEqual(backorder.state, "confirmed")
+        self.assertEqual(backorder.reserve_visible, True)
+
+        production = create_mo()
+        self.assertEqual(production.state, "confirmed")
+        self.assertEqual(production.reserve_visible, False)
+        backorder = produce_one(production)
+        self.assertEqual(backorder.state, "confirmed")
+        self.assertEqual(backorder.reserve_visible, False)
+
+    def test_split_mo(self):
+        mo = self.env["mrp.production"].create(
+            {
+                "product_qty": 10,
+                "bom_id": self.bom_1.id,
+            }
+        )
+        self.assertEqual(mo.move_raw_ids.mapped("product_uom_qty"), [5, 10])
+        self.assertEqual(mo.state, "draft")
+        action = mo.action_split()
+        wizard = Form.from_action(self.env, action)
+        wizard.max_batch_size = 1
+        action = wizard.save().action_split()
+        self.assertEqual(len(mo.production_group_id.production_ids), 10)
+        self.assertEqual(mo.product_qty, 1)
+        self.assertEqual(mo.move_raw_ids.mapped("product_uom_qty"), [0.5, 1])
+
+    def test_split_multiple_MOs(self):
+        mos = self.env["mrp.production"].create(
+            [
+                {
+                    "product_id": self.product_4.id,
+                    "product_qty": 10,
+                },
+                {
+                    "product_id": self.product_6.id,
+                    "product_qty": 20,
+                },
+            ]
+        )
+        for mo in mos:
+            self.assertEqual(mo.state, "draft")
+
+        action = mos.action_split()
+        wizard = Form.from_action(self.env, action)
+        wizard_record = wizard.save()
+
+        for line in wizard_record.production_ids:
+            split_action = line.action_prepare_split()
+            split_wizard = Form.from_action(self.env, split_action)
+            split_wizard.max_batch_size = 5
+            split_wizard.save().action_split()
+
+        self.assertEqual(len(mos[0].production_group_id.production_ids), 2)
+        self.assertEqual(len(mos[1].production_group_id.production_ids), 4)
+
+    def test_split_mo_partially_available(self):
+        mo, _, _, product_to_use_1, product_to_use_2 = self.generate_mo(
+            qty_base_1=1, qty_final=10
+        )
+
+        self.env["stock.quant"]._update_available_quantity(
+            product_to_use_1, self.stock_location, 10
+        )
+        self.env["stock.quant"]._update_available_quantity(
+            product_to_use_2, self.stock_location, 9
+        )
+
+        self.assertEqual(mo.state, "confirmed")
+        mo.action_assign()
+        action = mo.action_split()
+        wizard = Form.from_action(self.env, action)
+        wizard.max_batch_size = 1
+        action = wizard.save().action_split()
+        self.assertEqual(len(mo.production_group_id.production_ids), 10)
+        last_move = mo.production_group_id.production_ids.sorted("backorder_sequence")[
+            -1
+        ].move_raw_ids.filtered(lambda m: m.product_id == product_to_use_2)
+        self.assertFalse(last_move.quantity)
+
+    def test_auto_generate_backorder(self):
+        mo = self.env["mrp.production"].create(
+            {
+                "product_qty": 10,
+                "bom_id": self.bom_1.id,
+                "priority": "1",
+            }
+        )
+        mo.picking_type_id.create_backorder = "always"
+        mo.action_confirm()
+        with Form(mo) as mo_form:
+            mo_form.qty_producing = 3.0
+        mo = mo_form.save()
+        self.assertEqual(mo.priority, "1")
+        mo.button_mark_done()
+        self.assertRecordValues(
+            mo,
+            [
+                {
+                    "state": "done",
+                    "qty_produced": 3.0,
+                    "mrp_production_backorder_count": 2,
+                    "priority": "0",
+                }
+            ],
+        )
+        backorder = mo.production_group_id.production_ids - mo
+        self.assertEqual(backorder.product_qty, 7.0)
+
+        with Form(backorder) as backorder_form:
+            backorder_form.qty_producing = 7.0
+        backorder = backorder_form.save()
+        backorder.button_mark_done()
+        self.assertRecordValues(
+            backorder,
+            [
+                {
+                    "state": "done",
+                    "qty_produced": 7.0,
+                    "mrp_production_backorder_count": 2,
+                }
+            ],
+        )
+
+    def test_generate_backorder_multi_type(self):
+        product_qty = 10.0
+        qty_produced = 3.0
+
+        def create_mo(picking_type_id=False):
+            return self.env["mrp.production"].create(
+                {
+                    "product_qty": product_qty,
+                    "bom_id": self.bom_1.id,
+                    "priority": "1",
+                    "picking_type_id": picking_type_id or self.picking_type_manu.id,
+                }
+            )
+
+        picking_type_always = self.picking_type_manu.copy(
+            {
+                "name": "Always BO",
+                "sequence_code": "always",
+                "create_backorder": "always",
+            }
+        )
+        picking_type_ask = self.picking_type_manu.copy(
+            {"name": "Ask BO", "sequence_code": "ask", "create_backorder": "ask"}
+        )
+        picking_type_never = self.picking_type_manu.copy(
+            {"name": "Never BO", "sequence_code": "never", "create_backorder": "never"}
+        )
+
+        mo_produce_all = create_mo()
+        mo_all_produced = create_mo()
+        mo_always = create_mo(picking_type_always.id)
+        mo_ask = create_mo(picking_type_ask.id)
+        mos = mo_produce_all | mo_all_produced | mo_always | mo_ask
+        mos.action_confirm()
+
+        with Form(mo_all_produced) as mo_form:
+            mo_all_produced.qty_producing = product_qty
+        mo_form.save()
+        with Form(mo_always) as mo_form:
+            mo_form.qty_producing = qty_produced
+        mo_form.save()
+        with Form(mo_ask) as mo_form:
+            mo_form.qty_producing = qty_produced
+        mo_form.save()
+
+        self.assertTrue(all(p == "1" for p in mos.mapped("priority")))
+        action = mos.button_mark_done()
+        backorder = Form(
+            self.env["wizard.mrp.production.produce.partial"].with_context(
+                **action["context"]
+            )
+        )
+        backorder.save().action_backorder()
+        self.assertRecordValues(
+            mo_produce_all,
+            [
+                {
+                    "state": "done",
+                    "qty_produced": product_qty,
+                    "mrp_production_backorder_count": 1,
+                    "priority": "0",
+                }
+            ],
+        )
+        self.assertRecordValues(
+            mo_all_produced,
+            [
+                {
+                    "state": "done",
+                    "qty_produced": product_qty,
+                    "mrp_production_backorder_count": 1,
+                    "priority": "0",
+                }
+            ],
+        )
+        self.assertRecordValues(
+            mo_always,
+            [
+                {
+                    "state": "done",
+                    "qty_produced": qty_produced,
+                    "mrp_production_backorder_count": 2,
+                    "priority": "0",
+                }
+            ],
+        )
+        self.assertRecordValues(
+            mo_ask,
+            [
+                {
+                    "state": "done",
+                    "qty_produced": qty_produced,
+                    "mrp_production_backorder_count": 2,
+                    "priority": "0",
+                }
+            ],
+        )
+        bo = mo_always.production_group_id.production_ids - mo_always
+        bo2 = mo_ask.production_group_id.production_ids - mo_ask
+        self.assertEqual(bo.product_qty, product_qty - qty_produced)
+        self.assertEqual(bo2.product_qty, product_qty - qty_produced)
+
+        mo_produce_all = create_mo()
+        mo_all_produced = create_mo()
+        mo_always = create_mo(picking_type_always.id)
+        mo_never = create_mo(picking_type_never.id)
+        mos = mo_produce_all | mo_all_produced | mo_always | mo_never
+        mos.action_confirm()
+
+        with Form(mo_all_produced) as mo_form:
+            mo_all_produced.qty_producing = product_qty
+        mo_form.save()
+        with Form(mo_always) as mo_form:
+            mo_form.qty_producing = qty_produced
+        mo_form.save()
+        with Form(mo_never) as mo_form:
+            mo_form.qty_producing = qty_produced
+        mo_form.save()
+
+        self.assertTrue(all(p == "1" for p in mos.mapped("priority")))
+        action = mos.button_mark_done()
+        self.assertRecordValues(
+            mo_produce_all,
+            [
+                {
+                    "state": "done",
+                    "qty_produced": product_qty,
+                    "mrp_production_backorder_count": 1,
+                    "priority": "0",
+                }
+            ],
+        )
+        self.assertRecordValues(
+            mo_all_produced,
+            [
+                {
+                    "state": "done",
+                    "qty_produced": product_qty,
+                    "mrp_production_backorder_count": 1,
+                    "priority": "0",
+                }
+            ],
+        )
+        self.assertRecordValues(
+            mo_always,
+            [
+                {
+                    "state": "done",
+                    "qty_produced": qty_produced,
+                    "mrp_production_backorder_count": 2,
+                    "priority": "0",
+                }
+            ],
+        )
+        self.assertRecordValues(
+            mo_never,
+            [
+                {
+                    "state": "done",
+                    "qty_produced": qty_produced,
+                    "mrp_production_backorder_count": 1,
+                    "priority": "0",
+                }
+            ],
+        )
+        bo = mo_always.production_group_id.production_ids - mo_always
+        self.assertEqual(bo.product_qty, product_qty - qty_produced)
+
+        mo_produce_all = create_mo()
+        mo_all_produced = create_mo()
+        mo_ask = create_mo(picking_type_ask.id)
+        mo_never = create_mo(picking_type_never.id)
+        mos = mo_produce_all | mo_all_produced | mo_ask | mo_never
+        mos.action_confirm()
+
+        with Form(mo_all_produced) as mo_form:
+            mo_all_produced.qty_producing = product_qty
+        mo_form.save()
+        with Form(mo_ask) as mo_form:
+            mo_form.qty_producing = qty_produced
+        mo_ask = mo_form.save()
+        with Form(mo_never) as mo_form:
+            mo_form.qty_producing = qty_produced
+        mo_never = mo_form.save()
+
+        self.assertTrue(all(p == "1" for p in mos.mapped("priority")))
+        action = mos.button_mark_done()
+        backorder = Form(
+            self.env["wizard.mrp.production.produce.partial"].with_context(
+                **action["context"]
+            )
+        )
+        backorder.save().action_backorder()
+        self.assertRecordValues(
+            mo_produce_all,
+            [
+                {
+                    "state": "done",
+                    "qty_produced": product_qty,
+                    "mrp_production_backorder_count": 1,
+                    "priority": "0",
+                }
+            ],
+        )
+        self.assertRecordValues(
+            mo_all_produced,
+            [
+                {
+                    "state": "done",
+                    "qty_produced": product_qty,
+                    "mrp_production_backorder_count": 1,
+                    "priority": "0",
+                }
+            ],
+        )
+        self.assertRecordValues(
+            mo_ask,
+            [
+                {
+                    "state": "done",
+                    "qty_produced": qty_produced,
+                    "mrp_production_backorder_count": 2,
+                    "priority": "0",
+                }
+            ],
+        )
+        self.assertRecordValues(
+            mo_never,
+            [
+                {
+                    "state": "done",
+                    "qty_produced": qty_produced,
+                    "mrp_production_backorder_count": 1,
+                    "priority": "0",
+                }
+            ],
+        )
+        bo = mo_ask.production_group_id.production_ids - mo_ask
+        self.assertEqual(bo.product_qty, product_qty - qty_produced)
+
+        mo_produce_all = create_mo()
+        mo_all_produced = create_mo()
+        mo_always = create_mo(picking_type_always.id)
+        mo_ask = create_mo(picking_type_ask.id)
+        mos = mo_produce_all | mo_all_produced | mo_always | mo_ask
+        mos.action_confirm()
+
+        with Form(mo_all_produced) as mo_form:
+            mo_all_produced.qty_producing = product_qty
+        mo_form.save()
+        with Form(mo_always) as mo_form:
+            mo_form.qty_producing = qty_produced
+        mo_form.save()
+        with Form(mo_ask) as mo_form:
+            mo_form.qty_producing = qty_produced
+        mo_form.save()
+
+        self.assertTrue(all(p == "1" for p in mos.mapped("priority")))
+        action = mos.button_mark_done()
+        backorder = Form(
+            self.env["wizard.mrp.production.produce.partial"].with_context(
+                **action["context"]
+            )
+        )
+        backorder.save().action_close_mo()
+        self.assertRecordValues(
+            mo_produce_all,
+            [
+                {
+                    "state": "done",
+                    "qty_produced": product_qty,
+                    "mrp_production_backorder_count": 1,
+                    "priority": "0",
+                }
+            ],
+        )
+        self.assertRecordValues(
+            mo_all_produced,
+            [
+                {
+                    "state": "done",
+                    "qty_produced": product_qty,
+                    "mrp_production_backorder_count": 1,
+                    "priority": "0",
+                }
+            ],
+        )
+        self.assertRecordValues(
+            mo_always,
+            [
+                {
+                    "state": "done",
+                    "qty_produced": qty_produced,
+                    "mrp_production_backorder_count": 2,
+                    "priority": "0",
+                }
+            ],
+        )
+        self.assertRecordValues(
+            mo_ask,
+            [
+                {
+                    "state": "done",
+                    "qty_produced": qty_produced,
+                    "mrp_production_backorder_count": 1,
+                    "priority": "0",
+                }
+            ],
+        )
+        bo = mo_always.production_group_id.production_ids - mo_always
+        self.assertEqual(bo.product_qty, product_qty - qty_produced)
+
+        mo_produce_all = create_mo()
+        mo_all_produced = create_mo()
+        mo_ask = create_mo(picking_type_ask.id)
+        mo_never = create_mo(picking_type_never.id)
+        mos = mo_produce_all | mo_all_produced | mo_ask | mo_never
+        mos.action_confirm()
+
+        with Form(mo_all_produced) as mo_form:
+            mo_all_produced.qty_producing = product_qty
+        mo_form.save()
+        with Form(mo_ask) as mo_form:
+            mo_form.qty_producing = qty_produced
+        mo_form.save()
+        with Form(mo_never) as mo_form:
+            mo_form.qty_producing = qty_produced
+        mo_form.save()
+
+        self.assertTrue(all(p == "1" for p in mos.mapped("priority")))
+        action = mos.button_mark_done()
+        backorder = Form(
+            self.env["wizard.mrp.production.produce.partial"].with_context(
+                **action["context"]
+            )
+        )
+        backorder.save().action_close_mo()
+        self.assertRecordValues(
+            mo_produce_all,
+            [
+                {
+                    "state": "done",
+                    "qty_produced": product_qty,
+                    "mrp_production_backorder_count": 1,
+                    "priority": "0",
+                }
+            ],
+        )
+        self.assertRecordValues(
+            mo_all_produced,
+            [
+                {
+                    "state": "done",
+                    "qty_produced": product_qty,
+                    "mrp_production_backorder_count": 1,
+                    "priority": "0",
+                }
+            ],
+        )
+        self.assertRecordValues(
+            mo_ask,
+            [
+                {
+                    "state": "done",
+                    "qty_produced": qty_produced,
+                    "mrp_production_backorder_count": 1,
+                    "priority": "0",
+                }
+            ],
+        )
+        self.assertRecordValues(
+            mo_never,
+            [
+                {
+                    "state": "done",
+                    "qty_produced": qty_produced,
+                    "mrp_production_backorder_count": 1,
+                    "priority": "0",
+                }
+            ],
+        )
+
+    def test_cancel_backorder_3_step_no_propagation(self):
+        warehouse = self.env["stock.warehouse"].search([], limit=1)
+        warehouse.write({"manufacture_steps": "pbm_sam"})
+
+        mo = self.env["mrp.production"].create(
+            {
+                "bom_id": self.bom_4.id,
+                "product_qty": 5,
+                "location_src_id": warehouse.pbm_loc_id.id,
+            }
+        )
+        mo.action_confirm()
+        mo.picking_ids.button_validate()
+        mo_form = Form(mo)
+        mo_form.qty_producing = 1
+        mo = mo_form.save()
+        action = mo.button_mark_done()
+        Form(
+            self.env["wizard.mrp.production.produce.partial"].with_context(
+                **action["context"]
+            )
+        ).save().action_backorder()
+        self.assertEqual(len(mo.production_group_id.production_ids), 2)
+
+        mo.production_group_id.production_ids.sorted("backorder_sequence")[
+            -1
+        ].action_cancel()
+        self.assertFalse(
+            mo.picking_ids.filtered(
+                lambda p: p.state == "cancel" and p.product_id == self.product_6
+            )
+        )
+
+
+class TestMrpWorkorderBackorder(TransactionCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.uom_unit = cls.env.ref("uom.product_uom_unit")
+        cls.finished1 = cls.env["product.product"].create(
+            {
+                "name": "finished1",
+                "type": "consu",
+                "is_storable": True,
+            }
+        )
+        cls.compfinished1 = cls.env["product.product"].create(
+            {
+                "name": "compfinished1",
+                "type": "consu",
+                "is_storable": True,
+            }
+        )
+        cls.compfinished2 = cls.env["product.product"].create(
+            {
+                "name": "compfinished2",
+                "type": "consu",
+                "is_storable": True,
+            }
+        )
+        cls.workcenter1 = cls.env["mrp.workcenter"].create(
+            {
+                "name": "workcenter1",
+            }
+        )
+        cls.workcenter2 = cls.env["mrp.workcenter"].create(
+            {
+                "name": "workcenter2",
+            }
+        )
+
+        cls.bom_finished1 = cls.env["mrp.bom"].create(
+            {
+                "product_id": cls.finished1.id,
+                "product_tmpl_id": cls.finished1.product_tmpl_id.id,
+                "product_uom_id": cls.uom_unit.id,
+                "product_qty": 1,
+                "consumption": "flexible",
+                "type": "normal",
+                "bom_line_ids": [
+                    Command.create(
+                        {"product_id": cls.compfinished1.id, "product_qty": 1}
+                    ),
+                    Command.create(
+                        {"product_id": cls.compfinished2.id, "product_qty": 1}
+                    ),
+                ],
+                "operation_ids": [
+                    Command.create(
+                        {
+                            "sequence": 1,
+                            "name": "finished operation 1",
+                            "workcenter_id": cls.workcenter1.id,
+                        }
+                    ),
+                    Command.create(
+                        {
+                            "sequence": 2,
+                            "name": "finished operation 2",
+                            "workcenter_id": cls.workcenter2.id,
+                        }
+                    ),
+                ],
+            }
+        )
+        cls.bom_finished1.bom_line_ids[
+            0
+        ].operation_id = cls.bom_finished1.operation_ids[0].id
+        cls.bom_finished1.bom_line_ids[
+            1
+        ].operation_id = cls.bom_finished1.operation_ids[1].id
+
+    @freeze_time("2025-10-27 12:00:00")
+    def test_mrp_backorder_operations(self):
+        self.env.ref("base.group_user").implied_ids += self.env.ref(
+            "mrp.group_mrp_routings"
+        )
+        mo_form = Form(self.env["mrp.production"])
+        mo_form.bom_id = self.bom_finished1
+        mo_form.product_qty = 10
+        mo = mo_form.save()
+        mo.action_confirm()
+        op_1, op_2 = mo.workorder_ids
+        with Form(mo) as fmo:
+            fmo.qty_producing = 10
+        op_1.button_start()
+        op_1.button_finish()
+        with Form(mo) as fmo:
+            fmo.qty_producing = 4
+        op_2.button_start()
+        op_2.button_finish()
+        action = mo.button_mark_done()
+        backorder_1 = Form(
+            self.env["wizard.mrp.production.produce.partial"].with_context(
+                **action["context"]
+            )
+        )
+        backorder_1.save().action_backorder()
+        bo_1 = mo.production_group_id.production_ids - mo
+        self.assertRecordValues(
+            bo_1.workorder_ids,
+            [
+                {
+                    "state": "cancel",
+                    "qty_remaining": 0.0,
+                    "workcenter_id": op_1.workcenter_id.id,
+                },
+                {
+                    "state": "ready",
+                    "qty_remaining": 6.0,
+                    "workcenter_id": op_2.workcenter_id.id,
+                },
+            ],
+        )
+        with Form(bo_1) as form_bo_1:
+            form_bo_1.qty_producing = 2
+        op_4 = bo_1.workorder_ids.filtered(lambda wo: wo.state != "cancel")
+        op_4.button_start()
+        op_4.button_finish()
+        action = bo_1.button_mark_done()
+        self.assertRecordValues(op_4, [{"state": "done", "qty_remaining": 4.0}])
+        backorder_2 = Form(
+            self.env["wizard.mrp.production.produce.partial"].with_context(
+                **action["context"]
+            )
+        )
+        backorder_2.save().action_backorder()
+        bo_2 = mo.production_group_id.production_ids - mo - bo_1
+        self.assertRecordValues(
+            bo_2.workorder_ids,
+            [
+                {
+                    "state": "cancel",
+                    "qty_remaining": 0.0,
+                    "workcenter_id": op_1.workcenter_id.id,
+                },
+                {
+                    "state": "ready",
+                    "qty_remaining": 4.0,
+                    "workcenter_id": op_2.workcenter_id.id,
+                },
+            ],
+        )
+        op_6 = bo_2.workorder_ids.filtered(lambda wo: wo.state != "cancel")
+        with Form(bo_2) as form_bo_2:
+            form_bo_2.qty_producing = 4
+        op_6.button_start()
+        op_6.button_finish()
+        bo_2.button_mark_done()
+        self.assertRecordValues(
+            bo_2.workorder_ids,
+            [
+                {"state": "cancel", "qty_remaining": 0.0, "duration": 0.0},
+                {"state": "done", "qty_remaining": 0.0, "duration": 240.0},
+            ],
+        )
+
+    def test_kit_bom_order_splitting(self):
+        self.env.ref("base.group_user").implied_ids += self.env.ref(
+            "mrp.group_mrp_routings"
+        )
+        water_bottle_kit_product = self.env["product.product"].create(
+            {
+                "name": "Water Bottle Kit",
+                "is_storable": True,
+            }
+        )
+        water_bottle_kit = self.env["mrp.bom"].create(
+            {
+                "product_id": water_bottle_kit_product.id,
+                "product_tmpl_id": water_bottle_kit_product.product_tmpl_id.id,
+                "type": "phantom",
+                "operation_ids": [
+                    Command.create(
+                        {
+                            "name": "Test Operation",
+                            "workcenter_id": self.workcenter1.id,
+                        }
+                    ),
+                ],
+            }
+        )
+        water_bottle = self.env["product.product"].create(
+            {
+                "name": "Water Bottle",
+                "is_storable": True,
+            }
+        )
+        water_bottle_bom = self.env["mrp.bom"].create(
+            {
+                "product_id": water_bottle.id,
+                "product_tmpl_id": water_bottle.product_tmpl_id.id,
+                "bom_line_ids": [
+                    Command.create(
+                        {
+                            "product_id": water_bottle_kit.product_id.id,
+                            "product_qty": 1,
+                        }
+                    ),
+                ],
+            }
+        )
+
+        mo_form = Form(self.env["mrp.production"])
+        mo_form.product_id = water_bottle
+        mo_form.bom_id = water_bottle_bom
+        mo_form.product_qty = 10
+        mo = mo_form.save()
+        self.assertEqual(mo.state, "draft")
+        action = mo.action_split()
+        wizard = Form(self.env[action["res_model"]].with_context(action["context"]))
+        wizard.max_batch_size = 1
+        wizard.save().action_split()

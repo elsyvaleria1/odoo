@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="ir_access_simulate_view_form" model="ir.ui.view">
+        <field name="name">ir.access.simulate.form</field>
+        <field name="model">wizard.res.users.simulate.access</field>
+        <field name="arch" type="xml">
+            <form string="Simulate Someone's Reach">
+                <group>
+                    <field name="user_id" options="{'no_create': True}" />
+                    <field name="model_name" />
+                    <field
+                        name="domain"
+                        widget="domain"
+                        options="{'model': 'model_name'}" />
+                </group>
+                <group invisible="not reached_count and not extra_count">
+                    <field name="reached_count" />
+                    <field name="shared_count" />
+                    <field name="hidden_count" />
+                    <field name="extra_count" />
+                </group>
+                <footer>
+                    <button
+                        name="action_simulate"
+                        type="object"
+                        string="Simulate"
+                        class="btn-primary" />
+                    <button
+                        name="action_open_shared"
+                        type="object"
+                        string="Open What You Both Reach"
+                        invisible="not shared_count" />
+                    <button
+                        name="action_open_extra"
+                        type="object"
+                        string="Open What Only You Reach"
+                        invisible="not extra_count" />
+                    <button special="cancel" string="Close" />
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_ir_access_simulate" model="ir.actions.act_window">
+        <field name="name">Simulate Someone's Reach</field>
+        <field name="res_model">wizard.res.users.simulate.access</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+
+</odoo>

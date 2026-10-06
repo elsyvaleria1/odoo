@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="hr_payslip_run_view_kanban" model="ir.ui.view">
+        <field name="name">hr.payslip.run.inherit.kanban</field>
+        <field name="model">hr.payslip.run</field>
+        <field name="inherit_id" ref="hr_payroll.hr_payslip_run_view_kanban" />
+        <field name="arch" type="xml">
+            <button name="action_payment_report" position="attributes">
+                <attribute name="invisible" add="not payment_report" separator="or" />
+            </button>
+            <button name="action_payment_report" position="before">
+                <button
+                    name="action_payment_report"
+                    type="object"
+                    string="Payment Report"
+                    options="{'is_priority': True}"
+                    invisible="state != '02_close' or payment_report"
+                    class="btn btn-primary" />
+            </button>
+            <button name="action_paid" position="attributes">
+                <attribute name="invisible" add="not payment_report" separator="or" />
+            </button>
+            <button name="action_paid" position="before">
+                <button
+                    name="action_paid"
+                    type="object"
+                    string="Mark as Paid"
+                    invisible="state != '02_close' or payment_report"
+                    class="btn btn-secondary" />
+            </button>
+        </field>
+    </record>
+
+</odoo>

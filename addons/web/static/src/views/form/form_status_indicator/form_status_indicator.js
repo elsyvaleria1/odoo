@@ -1,0 +1,94 @@
+// @ts-check
+/** @odoo-module native */
+
+import { Component, proxy, t, useProps } from "@odoo/owl";
+import { _t } from "@web/core/translation";
+import { elementRef } from "@web/core/utils/element_ref";
+import { useLayoutEffect } from "@web/core/utils/layout_effect";
+import { useFieldIsDirty } from "@web/views/form/field_is_dirty_hook";
+
+export class FormStatusIndicator extends Component {
+    static template = "web.FormStatusIndicator";
+    static props = {
+        model: t.object(),
+        save: t.function(),
+        discard: t.function(),
+        coordinator: t.object().optional(),
+    };
+    props = useProps(this.constructor.props);
+
+    /** @type {ReturnType<typeof useFieldIsDirty>} */
+    hasUnsavedEdits;
+    /** @type {import("@odoo/owl").Ref} */
+    saveButton;
+
+    setup() {
+        this.hasUnsavedEdits = useFieldIsDirty(this.props.model);
+        this.coordinator = this.props.coordinator
+            ? proxy(this.props.coordinator)
+            : null;
+        this.saveButton = elementRef();
+        useLayoutEffect(
+            (disabled) => {
+                if (!this.saveButton.el) {
+                    return;
+                }
+                if (disabled) {
+                    this.saveButton.el.setAttribute("disabled", "1");
+                } else {
+                    this.saveButton.el.removeAttribute("disabled");
+                }
+            },
+            () => [this.saveButtonDisabled],
+        );
+    }
+
+    /** @returns {boolean} */
+    get displayButtons() {
+        return this.indicatorMode !== "saved";
+    }
+
+    /** @returns {boolean} */
+    get isDirty() {
+        return this.hasUnsavedEdits() || this.coordinator?.status === "error";
+    }
+
+    /** @returns {"dirty" | "invalid" | "saving" | "saved"} */
+    get indicatorMode() {
+        const { isNew, isValid } = this.props.model.root;
+        if (this.coordinator?.isSaving) {
+            return "saving";
+        }
+        if (isNew || this.isDirty) {
+            return isValid ? "dirty" : "invalid";
+        }
+        return "saved";
+    }
+
+    /** @returns {boolean} */
+    get saveButtonDisabled() {
+        const { isNew, isValid } = this.props.model.root;
+        return !isNew && this.isDirty && !isValid;
+    }
+
+    /** @returns {string} */
+    get statusLabel() {
+        switch (this.indicatorMode) {
+            case "dirty":
+                return _t("Unsaved changes");
+            case "invalid":
+                return _t("Form has validation errors");
+            default:
+                return "";
+        }
+    }
+
+    /** @returns {Promise<void>} */
+    async discard() {
+        await this.props.discard();
+    }
+    /** @returns {Promise<void>} */
+    async save() {
+        await this.props.save();
+    }
+}

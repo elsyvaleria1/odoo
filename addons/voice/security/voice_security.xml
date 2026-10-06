@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="privilege_record_sentence" model="res.groups">
+        <field name="name">Record Shared Voice Sentences</field>
+        <field
+            name="comment">A user who chose to share what they say keeps a sentence the grammar did not understand, with no author on it; reading them stays with administrators.</field>
+        <field name="is_privilege" eval="True" />
+    </record>
+
+    <record id="privilege_learn_term" model="res.groups">
+        <field name="name">Learn Voice Terms From Choices</field>
+        <field
+            name="comment">A user who chose to share what they say keeps the reading they picked from a list as a learned voice term, inactive until an administrator approves it.</field>
+        <field name="is_privilege" eval="True" />
+    </record>
+
+    <record id="privilege_read_english_pass" model="res.groups">
+        <field
+            name="name">Read Whether Voice Commands Are Heard Again in English</field>
+        <field
+            name="comment">The voice client asks whether a command nothing understood may be decoded once more in English; the answer is one system parameter, and only that one.</field>
+        <field name="is_privilege" eval="True" />
+    </record>
+
+</odoo>

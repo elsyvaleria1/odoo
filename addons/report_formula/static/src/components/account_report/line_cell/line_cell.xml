@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<templates>
+    <t t-name="report_formula.AccountReportLineCell">
+        <t t-call="{{ this.reportContext.template('AccountReportLineCell') }}"/>
+    </t>
+
+    <t t-name="report_formula.AccountReportLineCellCustomizable">
+        <td
+            data-id="line_cell"
+            class="line_cell"
+            t-att-class="this.cellClasses"
+            t-att-data-expression_label="this.props.cell.expression_label"
+        >
+            <div class="wrapper">
+                <t t-if="!this.controller.filters.show_totals or !this.props.line.unfolded">
+
+                    <t t-if="this.props.cell.edit_popup_data">
+                        <button
+                            class="btn btn_edit me-auto"
+                            t-on-click="(ev) => this.editPopover(ev)"
+                        >
+                            <i class="fa-solid fa-pencil"/>
+                        </button>
+                    </t>
+
+                    <div class="content">
+                        <t t-if="this.props.cell.auditable">
+                            <a class="cursor-pointer" t-on-click="() => this.audit()">
+                                <t t-component="this.reportContext.component('AccountReportEllipsis')" t-props="{
+                                    name: this.props.cell.name?.toString(),
+                                    no_format: this.props.cell.no_format,
+                                    type: this.props.cell.figure_type,
+                                    maxCharacters: 50,
+                                }"/>
+                            </a>
+                        </t>
+                        <t t-else="">
+                            <t t-component="this.reportContext.component('AccountReportEllipsis')" t-props="{
+                                name: this.props.cell.name?.toString(),
+                                no_format: this.props.cell.no_format,
+                                type: this.props.cell.figure_type,
+                                maxCharacters: 50,
+                            }"/>
+                        </t>
+                    </div>
+                </t>
+            </div>
+        </td>
+    </t>
+</templates>

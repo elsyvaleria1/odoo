@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_stock_picking_form_inherit_voice_stock" model="ir.ui.view">
+        <field name="name">stock.picking.view.form.inherit.voice.stock</field>
+        <field name="model">stock.picking</field>
+        <field name="inherit_id" ref="stock.view_stock_picking_form" />
+        <field name="arch" type="xml">
+            <xpath
+                expr="//header/button[@name='button_validate'][1]"
+                position="attributes">
+                <attribute name="spoken">finish the delivery; finish the transfer; finish the receipt</attribute>
+            </xpath>
+            <xpath
+                expr="//header/button[@name='button_validate'][2]"
+                position="attributes">
+                <attribute name="spoken">finish the delivery; finish the transfer; finish the receipt</attribute>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

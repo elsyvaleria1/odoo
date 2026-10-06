@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="geoengine_view_form" model="ir.ui.view">
+        <field name="name">geoengine.view.form</field>
+        <field name="model">ir.ui.view</field>
+        <field name="inherit_id" ref="base.view_view_form" />
+        <field name="arch" type="xml">
+            <notebook position="inside">
+                <page string="GeoEngine Data" col="4" invisible="type != 'geoengine'">
+                    <group string="Map Settings">
+                        <field
+                            name="map_settings_id"
+                            placeholder="Defaults (EPSG:3857, auto engine, credits and fullscreen shown)"
+                            context="{'default_view_id': id}" />
+                    </group>
+                    <separator string="Vector (Active layers)" colspan="4" />
+                    <field name="vector_layer_ids" colspan="4" nolabel="1" />
+                    <separator string="Raster (Background layers)" colspan="4" />
+                    <field name="raster_layer_ids" colspan="4" nolabel="1" />
+                </page>
+            </notebook>
+        </field>
+    </record>
+
+    <record id="geo_engine_view_action" model="ir.actions.act_window">
+        <field name="name">Views</field>
+        <field name="res_model">ir.ui.view</field>
+        <field name="view_id" ref="base.view_view_tree" />
+        <field name="search_view_id" ref="base.action_view_search" />
+        <field name="domain">[('type', '=', 'geoengine')]</field>
+        <field name="type">ir.actions.act_window</field>
+    </record>
+
+</odoo>

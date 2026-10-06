@@ -1,0 +1,27 @@
+from odoo import api, models
+from odoo.exceptions import UserError
+
+
+class UtmMedium(models.Model):
+    _inherit = "utm.medium"
+
+    @api.ondelete(at_uninstall=False)
+    def _unlink_except_linked_mailings(self) -> None:
+        """Already handled by ondelete='restrict', but let's show a nice error message"""
+        linked_mailings = (
+            self.env["mailing.mailing"].sudo().search([("medium_id", "in", self.ids)])
+        )
+
+        if linked_mailings:
+            raise UserError(
+                self.env._(
+                    "You cannot delete these UTM Mediums as they are linked to the following mailings in "
+                    "Mass Mailing:\n%(mailing_names)s",
+                    mailing_names=", ".join(
+                        [
+                            '"%s"' % subject
+                            for subject in linked_mailings.mapped("subject")
+                        ]
+                    ),
+                )
+            )

@@ -1,0 +1,26 @@
+{
+    "name": "Telegram Payment Approval Intake",
+    "version": "19.0.3.3.1",
+    "oldest_upgradable_version": "19.0.3.3.0",
+    "category": "Human Resources/Approvals",
+    "summary": "Create payment approval requests and start configured accounting workflows",
+    "description": "Adds payment and payment-in-kind chat flows with evidence upload, confirmation and request logs. After approval, starts the configured automation when its prerequisites are met, including a required statement link where applicable. Requires configured bot commands, approval categories and accounting workflows; approval alone does not guarantee workflow completion.",
+    "author": "AgroMarin",
+    "license": "LGPL-3",
+    "depends": [
+        "approval_account",
+        "approval_automation",
+        "automation_account",
+        "approval_telegram",
+        "account_telegram",
+        "account",
+    ],
+    "data": [
+        "security/res_groups.xml",
+        "security/ir.access.csv",
+        "data/telegram_command_data.xml",
+        "views/telegram_bot_views.xml",
+        "views/telegram_payment_report_log_views.xml",
+        "views/approval_account_telegram_menus.xml",
+    ],
+}

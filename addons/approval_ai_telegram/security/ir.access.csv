@@ -1,0 +1,2 @@
+id,name,model_id/id,group_id/id,kind,operation,domain
+privilege_read_confidence_threshold_parameter,ir.config_parameter: the confidence a suggested approval category needs,base.model_ir_config_parameter,privilege_read_confidence_threshold,permission,r,"[('key', '=', 'smart_approval.confidence_threshold')]"

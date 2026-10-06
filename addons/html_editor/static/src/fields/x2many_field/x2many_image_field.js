@@ -1,0 +1,79 @@
+/** @odoo-module native */
+import { useHtmlEditorContext } from "@html_editor/html_editor_context";
+import { getVideoUrl } from "@html_editor/utils/url";
+import { registry } from "@web/core/registry";
+import { useService } from "@web/core/utils/hooks";
+import { ImageField, imageField } from "@web/fields/media/image/image_field";
+
+import { CustomMediaDialog } from "./custom_media_dialog.js";
+
+export class X2ManyImageField extends ImageField {
+    static template = "html_editor.ImageField";
+    setup() {
+        super.setup();
+        this.htmlEditorContext = useHtmlEditorContext();
+        this.orm = useService("orm");
+        this.dialog = useService("dialog");
+    }
+
+    onFileEdit(ev) {
+        const isVideo = this.props.record.data.video_url;
+        let mediaEl;
+        if (isVideo) {
+            mediaEl = document.createElement("img");
+            mediaEl.dataset.src = this.props.record.data.video_url;
+        }
+        this.dialog.add(CustomMediaDialog, {
+            visibleTabs: ["IMAGES", "VIDEOS"],
+            media: mediaEl,
+            activeTab: isVideo ? "VIDEOS" : "IMAGES",
+            save: (el) => {},
+            imageSave: this.onImageSave.bind(this),
+            videoSave: this.onVideoSave.bind(this),
+        });
+    }
+
+    async onImageSave(attachment) {
+        const attachmentRecord = await this.orm.searchRead(
+            "ir.attachment",
+            [["id", "=", attachment[0].id]],
+            ["id", "datas", "name"],
+            {},
+        );
+        if (!attachmentRecord[0].datas) {
+            return this.notification.add(
+                `Cannot add URL type attachment "${attachmentRecord[0].name}". Please try to reupload this image.`,
+                {
+                    type: "warning",
+                },
+            );
+        }
+        await this.props.record.update({
+            [this.props.name]: attachmentRecord[0].datas,
+            name: attachmentRecord[0].name,
+        });
+    }
+
+    async onVideoSave(videoInfo) {
+        const url = getVideoUrl(
+            videoInfo[0].platform,
+            videoInfo[0].videoId,
+            videoInfo[0].params,
+        );
+        await this.props.record.update({
+            video_url: url.href,
+            name: videoInfo[0].platform + " - [Video]",
+        });
+    }
+
+    onFileRemove() {
+        this.htmlEditorContext.removeRecord(this.props.record);
+    }
+}
+
+export const x2ManyImageField = {
+    ...imageField,
+    component: X2ManyImageField,
+};
+
+registry.category("fields").add("x2_many_image", x2ManyImageField);

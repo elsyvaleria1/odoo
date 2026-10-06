@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="res_config_settings_view_form_whatsapp" model="ir.ui.view">
+        <field name="name">res.config.settings.form.whatsapp.quote</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="website.res_config_settings_view_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//block[@id='website_info_settings']" position="inside">
+                <setting
+                    string="WhatsApp Sales Number"
+                    help="Number used by the WhatsApp quote button on catalog products">
+                    <field name="whatsapp_sales_number" placeholder="521XXXXXXXXXX" />
+                </setting>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

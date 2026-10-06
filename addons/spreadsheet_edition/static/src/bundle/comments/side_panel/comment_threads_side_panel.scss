@@ -1,0 +1,10 @@
+.o-threads-side-panel {
+    .o-thread-item {
+        padding: 4px 8px;
+        &.selected {
+            padding: 3px 7px;
+            background-color: #e6f2f3;
+            border: 2px solid #017e84 !important;
+        }
+    }
+}

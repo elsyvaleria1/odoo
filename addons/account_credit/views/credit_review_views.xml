@@ -1,0 +1,209 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_credit_review_form" model="ir.ui.view">
+        <field name="name">credit.review.form</field>
+        <field name="model">credit.review</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button
+                        name="action_start"
+                        type="object"
+                        string="Start"
+                        groups="account_credit.group_credit_user"
+                        invisible="state != 'draft'" />
+                    <button
+                        name="action_refresh"
+                        type="object"
+                        string="Refresh Metrics"
+                        groups="account_credit.group_credit_user"
+                        invisible="state not in ('draft', 'in_progress')" />
+                    <button
+                        name="action_approve"
+                        type="object"
+                        string="Approve"
+                        groups="account_credit.group_credit_manager"
+                        invisible="state not in ('draft', 'in_progress')"
+                        class="oe_highlight" />
+                    <button
+                        name="action_approve_proposed"
+                        type="object"
+                        string="Approve as Proposed"
+                        groups="account_credit.group_credit_manager"
+                        invisible="state not in ('draft', 'in_progress') or not grade_proposed_id" />
+                    <button
+                        name="action_refuse"
+                        type="object"
+                        string="Refuse"
+                        groups="account_credit.group_credit_manager"
+                        invisible="state not in ('draft', 'in_progress')" />
+                    <button
+                        name="action_cancel"
+                        type="object"
+                        string="Cancel"
+                        groups="account_credit.group_credit_user"
+                        invisible="state not in ('draft', 'in_progress')" />
+                    <field
+                        name="state"
+                        widget="statusbar"
+                        statusbar_visible="draft,in_progress,approved" />
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name" readonly="1" /></h1>
+                    </div>
+                    <group>
+                        <group name="subject">
+                            <field name="profile_id" readonly="state != 'draft'" />
+                            <field name="partner_id" />
+                            <field
+                                name="company_id"
+                                groups="base.group_multi_company" />
+                            <field name="kind" readonly="state != 'draft'" />
+                            <field name="user_id" />
+                            <field name="trigger_event_id" />
+                        </group>
+                        <group name="measured">
+                            <field name="score" />
+                            <field name="grade_current_id" />
+                            <field name="grade_proposed_id" />
+                            <field name="limit_current" />
+                            <field name="limit_suggested" />
+                            <field name="exposure_total" />
+                            <field name="currency_id" invisible="1" />
+                        </group>
+                    </group>
+                    <group name="decision" string="Decision">
+                        <group>
+                            <field
+                                name="grade_decided_id"
+                                readonly="state not in ('draft', 'in_progress')" />
+                            <field
+                                name="limit_decided"
+                                readonly="state not in ('draft', 'in_progress')" />
+                            <field
+                                name="facility_months"
+                                readonly="state not in ('draft', 'in_progress')" />
+                        </group>
+                        <group>
+                            <field name="decided_by_id" />
+                            <field name="decided_on" />
+                        </group>
+                    </group>
+                    <notebook>
+                        <page name="score" string="Score">
+                            <field name="line_ids">
+                                <list>
+                                    <field name="dimension_id" />
+                                    <field name="source_ref" />
+                                    <field name="value" />
+                                    <field name="points" sum="Total" />
+                                    <field name="max_points" sum="Total" />
+                                    <field name="applicable" />
+                                </list>
+                            </field>
+                        </page>
+                        <page name="notes" string="Notes">
+                            <field name="notes" />
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter />
+            </form>
+        </field>
+    </record>
+
+    <record id="view_credit_review_list" model="ir.ui.view">
+        <field name="name">credit.review.list</field>
+        <field name="model">credit.review</field>
+        <field name="arch" type="xml">
+            <list>
+                <header>
+                    <button
+                        name="action_approve_proposed"
+                        type="object"
+                        string="Approve as proposed"
+                        groups="account_credit.group_credit_manager" />
+                    <button
+                        name="action_refuse"
+                        type="object"
+                        string="Refuse"
+                        groups="account_credit.group_credit_manager" />
+                </header>
+                <field name="create_date" />
+                <field name="partner_id" />
+                <field
+                    name="company_id"
+                    optional="show"
+                    groups="base.group_multi_company" />
+                <field name="kind" />
+                <field name="score" />
+                <field name="grade_current_id" />
+                <field name="grade_proposed_id" />
+                <field name="grade_decided_id" />
+                <field name="limit_decided" />
+                <field name="currency_id" column_invisible="1" />
+                <field name="user_id" />
+                <field
+                    name="state"
+                    widget="badge"
+                    decoration-info="state in ('draft', 'in_progress')"
+                    decoration-success="state == 'approved'" />
+            </list>
+        </field>
+    </record>
+
+    <record id="view_credit_review_search" model="ir.ui.view">
+        <field name="name">credit.review.search</field>
+        <field name="model">credit.review</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="partner_id" />
+                <filter
+                    name="open"
+                    string="To decide"
+                    domain="[('state', 'in', ('draft', 'in_progress'))]" />
+                <filter
+                    name="exceptions"
+                    string="Exception reclassification"
+                    domain="[('kind', '=', 'exception')]" />
+                <filter
+                    name="mine"
+                    string="My reviews"
+                    domain="[('user_id', '=', uid)]" />
+                <group>
+                    <filter
+                        name="group_kind"
+                        string="Kind"
+                        context="{'group_by': 'kind'}" />
+                    <filter
+                        name="group_state"
+                        string="State"
+                        context="{'group_by': 'state'}" />
+                    <filter
+                        name="group_proposed"
+                        string="Proposed grade"
+                        context="{'group_by': 'grade_proposed_id'}" />
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_credit_review" model="ir.actions.act_window">
+        <field name="name">Credit Reviews</field>
+        <field name="res_model">credit.review</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{'search_default_open': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No review to decide
+            </p>
+            <p>
+                A review snapshots a profile's metrics and score, proposes a grade
+                and a facility, and a credit manager decides.
+            </p>
+        </field>
+    </record>
+
+</odoo>

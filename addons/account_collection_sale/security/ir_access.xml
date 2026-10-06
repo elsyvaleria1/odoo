@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="privilege_invoice_cash_sale_post" model="ir.access">
+        <field
+            name="name">account.move: a collector's cash sale posts its customer invoice</field>
+        <field name="model_id" ref="account.model_account_move" />
+        <field name="group_id" ref="privilege_invoice_cash_sale" />
+        <field name="kind">permission</field>
+        <field
+            name="domain">[('move_type', '=', 'out_invoice'), ('invoice_line_ids.sale_line_ids', '!=', False)]</field>
+        <field name="verbs">post</field>
+    </record>
+
+</odoo>

@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="loss_reason_view_list" model="ir.ui.view">
+        <field name="name">loss.reason.list</field>
+        <field name="model">loss.reason</field>
+        <field name="arch" type="xml">
+            <list string="Loss Reasons" editable="bottom">
+                <field name="sequence" widget="handle" />
+                <field name="name" />
+                <field name="scope" optional="show" />
+                <field
+                    name="company_id"
+                    optional="show"
+                    groups="base.group_multi_company" />
+            </list>
+        </field>
+    </record>
+
+    <record id="loss_reason_view_form" model="ir.ui.view">
+        <field name="name">loss.reason.form</field>
+        <field name="model">loss.reason</field>
+        <field name="arch" type="xml">
+            <form string="Loss Reason">
+                <sheet>
+                    <div class="oe_button_box" name="button_box" />
+                    <widget
+                        name="web_ribbon"
+                        title="Archived"
+                        invisible="active"
+                        bg_color="text-bg-danger" />
+                    <div class="oe_title">
+                        <label for="name" />
+                        <h1>
+                            <field name="name" placeholder="e.g. Too expensive" />
+                        </h1>
+                        <field name="active" invisible="1" />
+                    </div>
+                    <group>
+                        <field name="scope" />
+                        <field
+                            name="company_id"
+                            options="{'no_create': True}"
+                            groups="base.group_multi_company" />
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="loss_reason_view_search" model="ir.ui.view">
+        <field name="name">loss.reason.search</field>
+        <field name="model">loss.reason</field>
+        <field name="arch" type="xml">
+            <search string="Loss Reasons">
+                <field name="name" />
+                <filter
+                    name="inactive"
+                    string="Archived"
+                    domain="[('active', '=', False)]" />
+            </search>
+        </field>
+    </record>
+
+</odoo>

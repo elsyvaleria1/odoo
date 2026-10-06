@@ -1,0 +1,5 @@
+id,name,model_id/id,group_id/id,kind,operation,reach,anchor,predicate_id/id,predicate_args,domain
+privilege_trip_route_delay_threshold,ir.config_parameter: a trip reads its delay threshold,base.model_ir_config_parameter,privilege_trip_route,permission,r,,,,,"[('key', '=', 'stock_fleet_route.delay_threshold_minutes')]"
+privilege_trip_route_gps_log,device.data.log.gps: a trip reads its vehicle's position,device_gps.model_device_data_log_gps,privilege_trip_route,permission,r,,,,,
+privilege_trip_route_sale_order,sale.order: a stop reads the seller of its order,sale.model_sale_order,privilege_trip_route,permission,r,,,,,
+privilege_trip_route_telegram_chat,telegram.chat: a trip finds the chat of its crew and sellers,telegram.model_telegram_chat,privilege_trip_route,permission,r,,,,,

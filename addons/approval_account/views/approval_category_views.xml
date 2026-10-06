@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_approval_category_form_inherit_accounting_link" model="ir.ui.view">
+        <field name="name">approval.category.form.inherit.accounting</field>
+        <field name="model">approval.category</field>
+        <field
+            name="inherit_id"
+            ref="approval_app.view_approval_category_form_fields" />
+        <field name="arch" type="xml">
+            <xpath expr="//group[@name='fields_documents']" position="inside">
+                <field
+                    name="has_journal"
+                    string="Journal"
+                    widget="radio"
+                    options="{'horizontal': true}"
+                    invisible="approval_type not in ['accounting', 'payment']" />
+                <field
+                    name="has_bsl"
+                    widget="radio"
+                    options="{'horizontal': true}"
+                    invisible="approval_type not in ['accounting', 'payment']" />
+            </xpath>
+
+            <xpath expr="//page[@name='settings']" position="before">
+                <page
+                    name="accounting_config"
+                    string="Accounting"
+                    invisible="approval_type not in ['accounting', 'payment']">
+                    <group>
+                        <group string="Flow">
+                            <field
+                                name="account_move_type"
+                                invisible="target_model != 'account.move'" />
+                            <div
+                                class="text-muted"
+                                colspan="2"
+                                invisible="target_model != False">
+                                <strong>Mixin Flow (Move → Approval)</strong><br /> Invoices/bills
+                                trigger approval automatically based on rules below. </div>
+                            <div
+                                class="text-muted"
+                                colspan="2"
+                                invisible="target_model != 'account.move'">
+                                <strong>Creation Flow (Approval → Move)</strong><br /> Approval
+                                request creates invoice/bill when approved. Ensure "Has Product" is
+                                set to Required. </div>
+                        </group>
+                        <group string="Automation">
+                            <field name="move_auto_post" />
+                        </group>
+                    </group>
+                    <group
+                        string="Trigger Conditions"
+                        invisible="target_model != False">
+                        <label for="move_amount_min" />
+                        <div>
+                            <field name="move_amount_min" placeholder="e.g., 5000" class="oe_inline" /> to <field name="move_amount_max" placeholder="0 = no limit" class="oe_inline" />
+                        </div>
+                        <field
+                            name="move_partner_ids"
+                            string="Partners"
+                            placeholder="Leave empty for all partners"
+                            widget="many2many_tags" />
+                        <field
+                            name="journal_ids"
+                            string="Journals"
+                            placeholder="Leave empty for all journals"
+                            widget="many2many_tags" />
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="action_approval_category_accounting" model="ir.actions.act_window">
+        <field name="name">Accounting Approval Types</field>
+        <field name="res_model">approval.category</field>
+        <field name="view_mode">list,form</field>
+        <field
+            name="domain">[('approval_type', 'in', ['accounting', 'payment'])]</field>
+        <field
+            name="context">{'default_approval_type': 'accounting', 'approval_category_routes_by_steps': True}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Create your first accounting approval type
+            </p>
+            <p> Define approval workflows for invoices and bills: <br /><br />
+                <strong>Flow 1: Mixin
+                Flow (Move → Approval)</strong><br /> • Set Approval Type = "Accounting"<br /> •
+                Leave Target Model empty<br /> • Configure approval triggers (amount, partner,
+                journal, etc.)<br /> • Moves trigger approval automatically based on rules <br /><br />
+                <strong>Flow
+                2: Creation Flow (Approval → Move)</strong><br /> • Set Approval Type = "Accounting"<br />
+                • Set Target Model = "Journal Entry"<br /> • Set "Has Product" = Required<br /> •
+                Approval creates invoice/bill when approved </p>
+        </field>
+    </record>
+
+</odoo>

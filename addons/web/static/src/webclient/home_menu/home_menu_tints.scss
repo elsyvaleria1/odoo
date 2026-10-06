@@ -1,0 +1,50 @@
+// A tint is a gradient over grayscale arcs, blended hard-light (iCloud's
+// technique): one pair of colours per tint and scheme, no image per colour.
+// Backend only: the web client sets data-home-tint; the login page never does.
+
+.o_web_client[data-home-tint] {
+    --o-canvas-image:
+        linear-gradient(135deg, var(--o-canvas-tint-from), var(--o-canvas-tint-to)),
+        var(--o-canvas-tint-image);
+    --o-canvas-blend: hard-light, normal;
+}
+
+@each $name, $colors in $o-home-menu-tints {
+    .o_web_client[data-home-tint="#{$name}"] {
+        --o-canvas-tint-from: #{nth($colors, 1)};
+        --o-canvas-tint-to: #{nth($colors, 2)};
+    }
+}
+
+@include media-only(screen) {
+    :root[data-color-scheme="dark"] {
+        @each $name, $colors in $o-home-menu-tints {
+            .o_web_client[data-home-tint="#{$name}"] {
+                --o-canvas-tint-from: #{nth($colors, 3)};
+                --o-canvas-tint-to: #{nth($colors, 4)};
+            }
+        }
+    }
+}
+
+.o_home_menu_tint {
+    $-swatch: 22px;
+    width: var(--o-hit-target, #{$-swatch + 6px});
+    height: var(--o-hit-target, #{$-swatch + 6px});
+    padding: calc((var(--o-hit-target, #{$-swatch + 6px}) - #{$-swatch}) / 2);
+    border: 0;
+    border-radius: 50%;
+    background-clip: content-box;
+    background-image: url("/web/static/img/home_menu_arcs_light.svg");
+    background-size: cover;
+
+    &[aria-checked="true"] {
+        box-shadow: inset 0 0 0 2px var(--o-label-1);
+    }
+}
+
+@each $name, $colors in $o-home-menu-tints {
+    .o_home_menu_tint[data-tint="#{$name}"] {
+        background-image: linear-gradient(135deg, nth($colors, 1), nth($colors, 2));
+    }
+}

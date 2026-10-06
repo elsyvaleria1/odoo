@@ -1,0 +1,10 @@
+from . import models
+
+
+def _sync_cron(env) -> None:
+    cron = env.ref("crm_iap_enrich.ir_cron_lead_enrichment")
+    if cron:
+        config = env["ir.config_parameter"].get_param(
+            "crm.iap.lead.enrich.setting", "auto"
+        )
+        cron.active = config == "auto"

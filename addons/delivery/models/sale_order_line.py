@@ -1,0 +1,60 @@
+from typing import Self
+
+from odoo import fields, models
+
+
+class SaleOrderLine(models.Model):
+    _inherit = "sale.order.line"
+
+    is_delivery = fields.Boolean(
+        string="Is a Delivery",
+        default=False,
+    )
+    recompute_delivery_price = fields.Boolean(
+        related="order_id.recompute_delivery_price"
+    )
+
+    def _can_be_invoiced_alone(self) -> bool:
+        return super()._can_be_invoiced_alone() and not self.is_delivery
+
+    def unlink(self):
+        orders = self.filtered("is_delivery").order_id
+        res = super().unlink()
+        orders.filtered("carrier_id").filtered(
+            lambda order: not order.line_ids.filtered("is_delivery")
+        ).carrier_id = False
+        return res
+
+    def _is_delivery(self) -> bool:
+        self.check_singleton()
+        return bool(self.is_delivery)
+
+    def _filtered_invalid_delivery_weight(self) -> Self:
+        """Retrieve lines containing physical products with no weight defined."""
+        return self.filtered(
+            lambda line: (
+                line.product_id
+                and line.product_uom_qty > 0
+                and line.product_id.type not in ("service", "combo")
+                and line.product_id.weight == 0
+            ),
+        )
+
+    # override to allow deletion of delivery line in a confirmed order
+    def _filtered_unlink_forbidden(self):
+        """
+        Extend the allowed deletion policy of SO lines.
+
+        Lines that are delivery lines can be deleted from a confirmed order.
+
+        :rtype: recordset sale.order.line
+        :returns: set of lines that cannot be deleted
+        """
+
+        undeletable_lines = super()._filtered_unlink_forbidden()
+        return undeletable_lines.filtered(lambda line: not line.is_delivery)
+
+    def _compute_pricelist_item_id(self) -> None:
+        delivery_lines = self.filtered("is_delivery")
+        super(SaleOrderLine, self - delivery_lines)._compute_pricelist_item_id()
+        delivery_lines.pricelist_item_id = False

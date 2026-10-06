@@ -1,0 +1,556 @@
+// @ts-check
+import { mailDataHelpers } from "@mail/../tests/mock_server/mail_mock_server";
+import { computeActivityNext } from "@mail/../tests/mock_server/mock_models/mail_activity";
+import {
+    fields,
+    getKwArgs,
+    makeKwArgs,
+    serverState,
+    webModels,
+} from "@web/../tests/web_test_helpers";
+
+/** @typedef {import("@web/../tests/web_test_helpers").ModelRecord} ModelRecord */
+export class ResPartner extends webModels.ResPartner {
+    _inherit = ["mixin.mail.thread"];
+
+    description = fields.Char({ string: "Description" });
+    phone = fields.Char({ string: "Phone" });
+    hasWriteAccess = fields.Boolean({ default: true });
+    is_in_call = fields.Boolean({ compute: "_compute_is_in_call" });
+    activity_summary = fields.Char({ compute: "_compute_activity_next" });
+    activity_type_icon = fields.Char({ compute: "_compute_activity_next" });
+    activity_type_id = fields.Many2one({
+        relation: "mail.activity.type",
+        compute: "_compute_activity_next",
+    });
+
+    _views = {
+        form: `
+            <form>
+                <sheet>
+                    <field name="name"/>
+                </sheet>
+                <chatter/>
+            </form>`,
+    };
+
+    _compute_activity_next() {
+        computeActivityNext.call(this);
+    }
+
+    _compute_is_in_call() {
+        for (const partner of this) {
+            partner.is_in_call =
+                this.env["discuss.channel.member"].search([
+                    ["rtc_session_ids", "!=", []],
+                    ["partner_id", "=", partner.id],
+                ]).length > 0;
+        }
+    }
+
+    /**
+     * @param {string} [search]
+     * @param {number} [limit]
+     */
+    get_mention_suggestions(search, limit = 8) {
+        const kwargs = getKwArgs(arguments, "search", "limit");
+        search = kwargs.search || "";
+        limit = kwargs.limit || 8;
+
+        /** @type {import("mock_models").ResUsers} */
+        const ResUsers = this.env["res.users"];
+
+        search = search.toLowerCase();
+        /**
+         * @param {ModelRecord[]} partners
+         * @param {string} search
+         * @param {number} limit
+         */
+        const mentionSuggestionsFilter = (partners, search, limit) => {
+            const matchingPartnerIds = partners
+                .filter((partner) => {
+                    if (!search) {
+                        return true;
+                    }
+                    if (
+                        partner.name &&
+                        String(partner.name).toLowerCase().includes(search)
+                    ) {
+                        return true;
+                    }
+                    if (partner.email && partner.email.toLowerCase().includes(search)) {
+                        return true;
+                    }
+                    return false;
+                })
+                .map((partner) => partner.id);
+            matchingPartnerIds.length = Math.min(matchingPartnerIds.length, limit);
+            return matchingPartnerIds;
+        };
+
+        const partnersFromUsers = ResUsers._filter([])
+            .map((user) => this.browse(user.partner_id)[0])
+            .filter((partner) => partner);
+        const mainMatchingPartnerIds = mentionSuggestionsFilter(
+            partnersFromUsers,
+            search,
+            limit,
+        );
+
+        let extraMatchingPartnerIds = [];
+        const remainingLimit = limit - mainMatchingPartnerIds.length;
+        if (mainMatchingPartnerIds.length < limit) {
+            const partners = this._filter([["id", "not in", mainMatchingPartnerIds]]);
+            extraMatchingPartnerIds = mentionSuggestionsFilter(
+                partners,
+                search,
+                remainingLimit,
+            );
+        }
+
+        const partnerIds = mainMatchingPartnerIds.concat(extraMatchingPartnerIds);
+        const store = new mailDataHelpers.Store(this.browse(partnerIds));
+        this._mention_suggestions_to_store(partnerIds, store);
+        const roleIds = this.env["res.role"].search(
+            [["name", "ilike", search || ""]],
+            makeKwArgs({ limit: limit || 8 }),
+        );
+        store.add(
+            "res.role",
+            this.env["res.role"]._read_format(roleIds, ["name"], false),
+        );
+
+        return store.get_result();
+    }
+
+    /**
+     * @param {number} [channel_id]
+     * @param {string} [search]
+     * @param {number} [limit]
+     */
+    get_mention_suggestions_from_channel(channel_id, search, limit = 8) {
+        const kwargs = getKwArgs(arguments, "channel_id", "search", "limit");
+        channel_id = kwargs.channel_id;
+        search = kwargs.search || "";
+        limit = kwargs.limit || 8;
+
+        /** @type {import("mock_models").DiscussChannelMember} */
+        const DiscussChannelMember = this.env["discuss.channel.member"];
+        /** @type {import("mock_models").ResUsers} */
+        const ResUsers = this.env["res.users"];
+        /** @type {ModelRecord} */
+        const channel = this.env["discuss.channel"].browse(channel_id)[0];
+        const searchLower = search.toLowerCase();
+
+        const [parent_channel] = this.env["discuss.channel"].browse(
+            channel.parent_channel_id,
+        );
+        const allowed_group = (parent_channel ?? channel).group_public_id;
+        const baseDomain = search
+            ? ["|", ["name", "ilike", searchLower], ["email", "ilike", searchLower]]
+            : [];
+        const partners = this._search_mention_suggestions(
+            baseDomain,
+            limit,
+            channel_id,
+            {
+                allowedGroupId: allowed_group || false,
+            },
+        );
+        const store = new mailDataHelpers.Store();
+        const memberIds = DiscussChannelMember.search([
+            ["channel_id", "in", [channel.id, channel.parent_channel_id]],
+            ["partner_id", "in", partners],
+        ]);
+        const users = ResUsers.search([["partner_id", "in", partners]]).reduce(
+            (map, userId) => {
+                const [user] = ResUsers.browse(userId);
+                map[user.partner_id] = user;
+                return map;
+            },
+            {},
+        );
+        for (const memberId of memberIds) {
+            const [member] = DiscussChannelMember.browse(memberId);
+            store.add(this.browse(member.partner_id));
+            store.add(
+                DiscussChannelMember.browse(member.id),
+                makeKwArgs({ fields: ["channel", "persona"] }),
+            );
+        }
+        for (const partnerId of partners) {
+            const data = {
+                name: users[partnerId]?.name,
+                group_ids: users[partnerId]?.group_ids.includes(allowed_group)
+                    ? allowed_group
+                    : undefined,
+            };
+            store.add(this.browse(partnerId), data);
+        }
+        this._mention_suggestions_to_store(partners, store);
+        const roleIds = this.env["res.role"].search(
+            [["name", "ilike", searchLower || ""]],
+            makeKwArgs({ limit: limit || 8 }),
+        );
+        store.add(
+            "res.role",
+            this.env["res.role"]._read_format(roleIds, ["name"], false),
+        );
+        return store.get_result();
+    }
+
+    compute_im_status(partner) {
+        if (partner.im_status) {
+            return partner.im_status;
+        }
+        if (partner.id === serverState.odoobotId) {
+            return "bot";
+        }
+        if (!partner.user_ids.length) {
+            return "im_status";
+        }
+        return "offline";
+    }
+
+    _compute_display_name() {
+        super._compute_display_name();
+        for (const record of this) {
+            if (record.parent_id && !record.name) {
+                const [parent] = this.env["res.partner"].browse(record.parent_id);
+                const type = this._fields.type.selection.find(
+                    (item) => item[0] === record.type,
+                );
+                record.display_name = `${parent.name}, ${type[1]}`;
+            }
+        }
+    }
+
+    /**
+     * @param {Array} domain
+     * @param {number} limit
+     * @param {number} [channel_id]
+     * @param {{ allowedGroupId?: number | false }} [extraTier]
+     * @returns {number[]}
+     */
+    _search_mention_suggestions(domain, limit, channel_id, extraTier) {
+        const DiscussChannelMember = this.env["discuss.channel.member"];
+        const ResUsers = this.env["res.users"];
+
+        const channel = this.env["discuss.channel"].browse(channel_id)[0];
+        let basePartnerIds = this.search(domain ?? []);
+        if (channel) {
+            const memberPartnerIds = new Set(
+                DiscussChannelMember.search([
+                    ["channel_id", "in", [channel.id, channel.parent_channel_id]],
+                ]).map(
+                    (memberId) => DiscussChannelMember.browse(memberId)[0].partner_id,
+                ),
+            );
+            basePartnerIds = basePartnerIds.filter((partnerId) =>
+                memberPartnerIds.has(partnerId),
+            );
+        }
+        const activeUserByPartnerId = new Map();
+        for (const user of ResUsers._filter([["active", "=", true]])) {
+            if (user.partner_id) {
+                activeUserByPartnerId.set(user.partner_id, user);
+            }
+        }
+        const isActiveUser = (partnerId) => activeUserByPartnerId.has(partnerId);
+        const isInternalUser = (partnerId) =>
+            isActiveUser(partnerId) && !activeUserByPartnerId.get(partnerId).share;
+        const tiers = [
+            basePartnerIds.filter(isInternalUser),
+            basePartnerIds.filter(isActiveUser),
+            basePartnerIds,
+        ];
+        if (extraTier) {
+            tiers.push(
+                this.search([]).filter(
+                    (partnerId) =>
+                        isInternalUser(partnerId) &&
+                        (!extraTier.allowedGroupId ||
+                            activeUserByPartnerId
+                                .get(partnerId)
+                                .group_ids?.includes(extraTier.allowedGroupId)),
+                ),
+            );
+        }
+        const partnerIds = [];
+        for (const tier of tiers) {
+            for (const partnerId of tier) {
+                if (partnerIds.length >= limit) {
+                    return partnerIds;
+                }
+                if (!partnerIds.includes(partnerId)) {
+                    partnerIds.push(partnerId);
+                }
+            }
+        }
+        return partnerIds;
+    }
+
+    /**
+     * @param {import("../mail_mock_server").Store} store
+     * @param {string[]} fields
+     * @param {string[]} [extra_fields]
+     */
+    _to_store(store, fields, extra_fields) {
+        const kwargs = getKwArgs(arguments, "store", "fields", "extra_fields");
+        fields = kwargs.fields;
+        extra_fields = kwargs.extra_fields ?? [];
+        fields = fields.concat(extra_fields);
+
+        /** @type {import("mock_models").ResCountry} */
+        const ResCountry = this.env["res.country"];
+        /** @type {import("mock_models").ResUsers} */
+        const ResUsers = this.env["res.users"];
+
+        this._compute_main_user_id();
+        store._add_record_fields(
+            this,
+            fields.filter(
+                (field) =>
+                    ![
+                        "avatar_128",
+                        "country_id",
+                        "display_name",
+                        "is_admin",
+                        "notification_type",
+                        "signature",
+                        "user",
+                    ].includes(field),
+            ),
+        );
+        for (const partner of this) {
+            const data = {};
+            if (fields.includes("avatar_128")) {
+                data.avatar_128_access_token = partner.id;
+                data.write_date = partner.write_date;
+            }
+            if (fields.includes("country_id")) {
+                const [country_id] = ResCountry.browse(partner.country_id);
+                data.country_id = country_id || false;
+            }
+            if (fields.includes("display_name")) {
+                data.displayName = partner.display_name || partner.name;
+            }
+            if (fields.includes("im_status")) {
+                data.im_status = this.compute_im_status(partner);
+                data.im_status_access_token = partner.id;
+            }
+            if (fields.includes("user")) {
+                data.main_user_id = partner.main_user_id;
+                if (partner.main_user_id) {
+                    store._add_record_fields(ResUsers.browse(partner.main_user_id), [
+                        "share",
+                    ]);
+                }
+                if (partner.main_user_id && fields.includes("is_admin")) {
+                    const users = ResUsers.search([["login", "=", "admin"]]);
+                    store._add_record_fields(ResUsers.browse(partner.main_user_id), {
+                        is_admin:
+                            this.env.cookie.get("authenticated_user_sid") === users[0],
+                    });
+                }
+                if (partner.main_user_id && fields.includes("notification_type")) {
+                    store._add_record_fields(
+                        ResUsers.browse(partner.main_user_id),
+                        makeKwArgs({ fields: ["notification_type"] }),
+                    );
+                }
+                if (partner.main_user_id && fields.includes("signature")) {
+                    store._add_record_fields(
+                        ResUsers.browse(partner.main_user_id),
+                        makeKwArgs({ fields: ["signature"] }),
+                    );
+                }
+            }
+            if (Object.keys(data).length) {
+                store._add_record_fields(this.browse(partner.id), data);
+            }
+        }
+    }
+
+    get _to_store_defaults() {
+        return [
+            "avatar_128",
+            "name",
+            "email",
+            "active",
+            "im_status",
+            "is_company",
+            mailDataHelpers.Store.one("main_user_id", ["share"]),
+        ];
+    }
+
+    _get_fields_store_mention() {
+        return [mailDataHelpers.Store.attr("mention_token", (p) => p.id)];
+    }
+
+    /**
+     * @param {string} [search_term]
+     * @param {number} [channel_id]
+     * @param {number} [limit]
+     */
+    search_for_channel_invite(search_term, channel_id, limit = 30) {
+        const kwargs = getKwArgs(arguments, "search_term", "channel_id", "limit");
+        const store = new mailDataHelpers.Store();
+        const channel_invites = this._search_for_channel_invite(
+            store,
+            kwargs.search_term,
+            kwargs.channel_id,
+            kwargs.limit,
+        );
+        return { store_data: store.get_result(), ...channel_invites };
+    }
+
+    /**
+     * @param {string} [search_term]
+     * @param {number} [channel_id]
+     * @param {number} [limit]
+     */
+    _search_for_channel_invite(store, search_term, channel_id, limit = 30) {
+        const kwargs = getKwArgs(
+            arguments,
+            "store",
+            "search_term",
+            "channel_id",
+            "limit",
+        );
+        search_term = kwargs.search_term || "";
+        channel_id = kwargs.channel_id;
+        limit = kwargs.limit || 30;
+
+        /** @type {import("mock_models").DiscussChannelMember} */
+        const DiscussChannelMember = this.env["discuss.channel.member"];
+        /** @type {import("mock_models").ResUsers} */
+        const ResUsers = this.env["res.users"];
+
+        search_term = search_term.toLowerCase();
+        let memberPartnerIds;
+        if (channel_id) {
+            memberPartnerIds = new Set(
+                DiscussChannelMember._filter([["channel_id", "=", channel_id]]).map(
+                    (member) => member.partner_id,
+                ),
+            );
+        }
+        const matchingPartnersIds = ResUsers._filter([])
+            .filter((user) => {
+                const [partner] = this.browse(user.partner_id);
+                if (!partner) {
+                    return false;
+                }
+                if (!channel_id && partner.id === this.env.user.partner_id) {
+                    return false;
+                }
+                if (channel_id && memberPartnerIds.has(partner.id)) {
+                    return false;
+                }
+                if (!search_term) {
+                    return true;
+                }
+                if (
+                    partner.name &&
+                    String(partner.name).toLowerCase().includes(search_term)
+                ) {
+                    return true;
+                }
+                return false;
+            })
+            .map((user) => user.partner_id)
+            .reduce((ids, partnerId) => {
+                if (!ids.includes(partnerId)) {
+                    ids.push(partnerId);
+                }
+                return ids;
+            }, []);
+        const count = matchingPartnersIds.length;
+        matchingPartnersIds.length = Math.min(count, limit);
+        this._search_for_channel_invite_to_store(
+            matchingPartnersIds,
+            store,
+            channel_id,
+        );
+        return {
+            count,
+            partner_ids: matchingPartnersIds,
+        };
+    }
+
+    _search_for_channel_invite_to_store(ids, store, channel_id) {
+        store.add(this.browse(ids));
+    }
+
+    /**
+     * @param {(number|false)[]} ids
+     * @param {any} store
+     */
+    _mention_suggestions_to_store(ids, store) {
+        store.add(this.env["discuss.channel"].browse(this._get_self_chats(ids)));
+    }
+
+    /**
+     * @param {(number|false)[]} ids
+     * @returns {number[]}
+     */
+    _get_self_chats(ids) {
+        /** @type {import("mock_models").DiscussChannelMember} */
+        const DiscussChannelMember = this.env["discuss.channel.member"];
+        const selfPartnerId = this.env.user?.partner_id;
+        if (!ids.length || !selfPartnerId) {
+            return [];
+        }
+        return this.env["discuss.channel"]
+            ._filter([["channel_type", "=", "chat"]])
+            .filter((channel) => {
+                const partnerIds = DiscussChannelMember._filter([
+                    ["channel_id", "=", channel.id],
+                ]).map((member) => member.partner_id);
+                return (
+                    partnerIds.includes(selfPartnerId) &&
+                    partnerIds.some((partnerId) => ids.includes(partnerId))
+                );
+            })
+            .map((channel) => channel.id);
+    }
+
+    /**
+     * @param {number} id
+     * @returns {number}
+     */
+    _get_needaction_count(id) {
+        /** @type {import("mock_models").MailNotification} */
+        const MailNotification = this.env["mail.notification"];
+
+        const [partner] = this.browse(id);
+        const channelMessageIds = new Set(
+            this.env["mail.message"]
+                ._filter([["model", "=", "discuss.channel"]])
+                .map((message) => message.id),
+        );
+        return MailNotification._filter([
+            ["res_partner_id", "=", partner.id],
+            ["is_read", "=", false],
+        ]).filter(
+            (notification) => !channelMessageIds.has(notification.mail_message_id),
+        ).length;
+    }
+
+    _get_current_persona() {
+        /** @type {import("mock_models").MailGuest} */
+        const MailGuest = this.env["mail.guest"];
+        /** @type {import("mock_models").ResUsers} */
+        const ResUsers = this.env["res.users"];
+
+        if (ResUsers._is_public(this.env.uid)) {
+            return [null, MailGuest._get_guest_from_context()];
+        }
+        return [this.browse(this.env.user.partner_id)[0], null];
+    }
+
+    _get_fields_store_avatar_card() {
+        return ["email", "partner_share", "name", "phone"];
+    }
+}

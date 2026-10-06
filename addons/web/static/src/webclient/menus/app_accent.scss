@@ -1,0 +1,22 @@
+// The current app's accent, set on the body by the app_accent service: the
+// server made it readable on every surface of the scheme it is served for.
+.o_web_client.o_app_accented {
+    --o-bg-active: color-mix(
+        in srgb,
+        var(--o-app-accent) #{$o-app-accent-active-mix},
+        var(--o-bg-view)
+    );
+    --o-ring-color: var(--o-app-accent);
+}
+
+:root[data-color-scheme="dark"] .o_web_client.o_app_accented {
+    --o-bg-active: color-mix(
+        in srgb,
+        var(--o-app-accent) #{$o-app-accent-active-mix-dark},
+        var(--o-bg-view)
+    );
+}
+
+.o_web_client.o_app_accented .o_list_renderer .o_list_table {
+    --#{$variable-prefix}table-active-bg: var(--o-bg-active);
+}

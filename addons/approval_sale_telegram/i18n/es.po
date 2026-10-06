@@ -1,0 +1,121 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* approval_sale_telegram
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#. module: approval_sale_telegram
+#: model:ir.model.fields,field_description:approval_sale_telegram.field_approval_category__telegram_confirm_user_ids
+msgid "Confirm by Telegram"
+msgstr "Confirman por Telegram"
+
+#. module: approval_sale_telegram
+#: model:ir.model.fields,help:approval_sale_telegram.field_approval_category__telegram_confirm_user_ids
+msgid ""
+"Users who confirm the sale order once this category approves it. Each "
+"receives a Telegram message with the order summary and a Confirm "
+"button, provided they have a chat linked to a bot with 'Notify Approval "
+"Requests' enabled. Nothing is sent when the company confirms approved orders"
+" automatically."
+msgstr ""
+"Usuarios que confirman la orden de venta una vez que esta categoría la "
+"aprueba. Cada uno recibe por Telegram el resumen de la orden y un "
+"botón Confirmar, siempre que tenga un chat ligado a un bot con 'Notificar "
+"solicitudes de aprobación' activo. No se envía nada cuando la compañía "
+"confirma automáticamente las órdenes aprobadas."
+
+#. module: approval_sale_telegram
+#: model_terms:ir.ui.view,arch_db:approval_sale_telegram.view_approval_category_form_telegram_sale_confirm
+msgid "Telegram"
+msgstr "Telegram"
+
+#. module: approval_sale_telegram
+#: code:addons/approval_sale_telegram/services/sale_confirm_notifier.py:0
+msgid "📦 Sale order approved, ready to confirm"
+msgstr "📦 Orden de venta aprobada, lista para confirmar"
+
+#. module: approval_sale_telegram
+#: code:addons/approval_sale_telegram/services/sale_confirm_notifier.py:0
+msgid "Order: %(order)s"
+msgstr "Orden: %(order)s"
+
+#. module: approval_sale_telegram
+#: code:addons/approval_sale_telegram/services/sale_confirm_notifier.py:0
+msgid "Customer: %(customer)s"
+msgstr "Cliente: %(customer)s"
+
+#. module: approval_sale_telegram
+#: code:addons/approval_sale_telegram/services/sale_confirm_notifier.py:0
+msgid "Salesperson: %(user)s"
+msgstr "Vendedor: %(user)s"
+
+#. module: approval_sale_telegram
+#: code:addons/approval_sale_telegram/services/sale_confirm_notifier.py:0
+msgid "Amount: %(amount)s"
+msgstr "Monto: %(amount)s"
+
+#. module: approval_sale_telegram
+#: code:addons/approval_sale_telegram/services/sale_confirm_notifier.py:0
+msgid "Approval: %(request)s"
+msgstr "Aprobación: %(request)s"
+
+#. module: approval_sale_telegram
+#: code:addons/approval_sale_telegram/services/sale_confirm_notifier.py:0
+msgid "Confirm the order?"
+msgstr "¿Confirmas la orden?"
+
+#. module: approval_sale_telegram
+#: code:addons/approval_sale_telegram/services/sale_confirm_notifier.py:0
+msgid "✅ Confirm order"
+msgstr "✅ Confirmar orden"
+
+#. module: approval_sale_telegram
+#: code:addons/approval_sale_telegram/services/sale_confirm_notifier.py:0
+msgid "📄 Open in Odoo"
+msgstr "📄 Abrir en Odoo"
+
+#. module: approval_sale_telegram
+#: code:addons/approval_sale_telegram/services/sale_confirm_notifier.py:0
+msgid "You are not set up to confirm this order."
+msgstr "No tienes permiso para confirmar esta orden."
+
+#. module: approval_sale_telegram
+#: code:addons/approval_sale_telegram/services/sale_confirm_notifier.py:0
+msgid "Order %(order)s is no longer a quotation."
+msgstr "La orden %(order)s ya no es una cotización."
+
+#. module: approval_sale_telegram
+#: code:addons/approval_sale_telegram/services/sale_confirm_notifier.py:0
+msgid "Order %(order)s could not be confirmed."
+msgstr "No se pudo confirmar la orden %(order)s."
+
+#. module: approval_sale_telegram
+#: code:addons/approval_sale_telegram/models/telegram_handler.py:0
+msgid ""
+"To confirm orders your Odoo account must be linked to this chat. Ask IT to "
+"link your Telegram user."
+msgstr ""
+"Para confirmar órdenes tu cuenta de Odoo debe estar ligada a este chat. Pide "
+"a Sistemas que ligue tu usuario de Telegram."
+
+#. module: approval_sale_telegram
+#: code:addons/approval_sale_telegram/models/telegram_handler.py:0
+msgid "This order no longer exists."
+msgstr "Esta orden ya no existe."
+
+#. module: approval_sale_telegram
+#: code:addons/approval_sale_telegram/models/telegram_handler.py:0
+msgid "Could not confirm %(order)s: %(error)s"
+msgstr "No se pudo confirmar %(order)s: %(error)s"
+
+#. module: approval_sale_telegram
+#: code:addons/approval_sale_telegram/models/telegram_handler.py:0
+msgid "✅ You confirmed order %(order)s."
+msgstr "✅ Confirmaste la orden %(order)s."
+

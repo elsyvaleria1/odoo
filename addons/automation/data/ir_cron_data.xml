@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+
+    <record id="ir_cron_data_automation_check" model="ir.cron">
+        <field name="name">Automation Rules: check and execute</field>
+        <field name="model_id" ref="model_automation_rule" />
+        <field name="state">code</field>
+        <field name="code">model._cron_process_time_based_actions()</field>
+        <field name="repeat_interval">4</field>
+        <field name="repeat_unit">hour</field>
+        <field name="active" eval="False" />
+    </record>
+
+    <record id="ir_cron_data_automation_resume" model="ir.cron">
+        <field name="name">Automation Rules: run due workflow steps</field>
+        <field name="model_id" ref="model_automation_runtime" />
+        <field name="state">code</field>
+        <field name="code">model._dispatch_due_steps()</field>
+        <field name="repeat_interval">1</field>
+        <field name="repeat_unit">hour</field>
+    </record>
+
+</odoo>

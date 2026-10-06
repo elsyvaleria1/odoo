@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <menuitem
+        id="planning_menu_schedule_by_project"
+        name="By Project"
+        parent="planning.planning_menu_schedule"
+        action="planning_action_schedule_by_project"
+        sequence="30" />
+
+    <!--
+        override of the schedule by resource menu entry to repoint it to the
+        project-aware action (project_forecast_action_schedule_by_employee)
+    -->
+    <menuitem
+        id="planning.planning_menu_schedule_by_resource"
+        name="By Resource"
+        parent="planning.planning_menu_schedule"
+        action="project_forecast_action_schedule_by_employee"
+        sequence="10" />
+
+</odoo>

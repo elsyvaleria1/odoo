@@ -1,0 +1,190 @@
+// @ts-check
+/** @odoo-module native */
+import { Component, onWillDestroy, onWillStart, proxy, t, useProps } from "@odoo/owl";
+import { browser } from "@web/core/browser/browser";
+import { isBrowserChrome } from "@web/core/browser/feature_detection";
+import { makeLogger } from "@web/core/debug/debug_logger";
+import { _t } from "@web/core/translation";
+import { useService } from "@web/core/utils/hooks";
+
+const log = makeLogger("mail.rtc.devices");
+/** @type {Set<string>} */
+const deviceKind = new Set(["audioinput", "videoinput", "audiooutput"]);
+
+export class DeviceSelect extends Component {
+    static props = {
+        kind: t.customValidator(t.string(), (string) => deviceKind.has(string)),
+    };
+    static template = "discuss.CallDeviceSelect";
+    props = useProps(this.constructor.props);
+
+    setup() {
+        super.setup();
+        this.store = useService("mail.store");
+        this.notification = useService("notification");
+        this.state = proxy({
+            userDevices: [],
+        });
+        this.abortController = new AbortController();
+        this.isBrowserChrome = isBrowserChrome();
+        onWillStart(async () => {
+            if (!browser.navigator.mediaDevices) {
+                this.notification.add(
+                    _t("Media devices unobtainable. SSL might not be set up properly."),
+                    { type: "warning" },
+                );
+                console.warn(
+                    "Media devices unobtainable. SSL might not be set up properly.",
+                );
+                return;
+            }
+            await this.updateDevicesList();
+            this.setupEventListeners();
+        });
+        onWillDestroy(() => {
+            this.abortController.abort();
+        });
+    }
+
+    async updateDevicesList() {
+        this.state.userDevices =
+            await browser.navigator.mediaDevices.enumerateDevices();
+        log.pipeline("updateDevicesList", () => ({
+            kind: this.props.kind,
+            devices: this.state.userDevices.length,
+        }));
+    }
+
+    async setupEventListeners() {
+        const boundHandler = this.updateDevicesList.bind(this);
+        const signal = this.abortController.signal;
+
+        browser.navigator.mediaDevices.addEventListener("devicechange", boundHandler, {
+            signal,
+        });
+        try {
+            if (this.props.kind === "videoinput") {
+                const cameraPermission = await browser.navigator.permissions.query({
+                    name: "camera",
+                });
+                cameraPermission.addEventListener("change", boundHandler, { signal });
+            } else {
+                const microphonePermission = await browser.navigator.permissions.query({
+                    name: "microphone",
+                });
+                microphonePermission.addEventListener("change", boundHandler, {
+                    signal,
+                });
+            }
+        } catch {}
+    }
+
+    /** @param {"audioinput"|"videoinput"|"audiooutput"} kind */
+    async showPermissionDialog(kind) {
+        log.logic("showPermissionDialog", () => ({
+            kind,
+            camera: this.store.rtc.cameraPermission,
+            microphone: this.store.rtc.microphonePermission,
+        }));
+        if (kind === "videoinput") {
+            if (this.store.rtc.cameraPermission === "denied") {
+                this.store.rtc.showMediaUnavailableWarning({ camera: true });
+            } else {
+                this.store.rtc.showMediaPermissionDialog("camera");
+                return;
+            }
+        } else {
+            if (this.store.rtc.microphonePermission === "denied") {
+                this.store.rtc.showMediaUnavailableWarning({ microphone: true });
+            } else {
+                this.store.rtc.showMediaPermissionDialog("microphone");
+                return;
+            }
+        }
+    }
+
+    /**
+     * @param {string} id
+     * @returns {boolean}
+     */
+    isSelected(id) {
+        switch (this.props.kind) {
+            case "audioinput":
+                return this.store.settings.audioInputDeviceId === id;
+            case "videoinput":
+                return this.store.settings.cameraInputDeviceId === id;
+            case "audiooutput":
+                return this.store.settings.audioOutputDeviceId === id;
+        }
+    }
+
+    /** @param {Event} ev */
+    onChangeSelectAudioInput(ev) {
+        switch (this.props.kind) {
+            case "audioinput":
+                this.store.rtc
+                    .askForBrowserPermission({
+                        audio: true,
+                        deviceId:
+                            /** @type {HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement} */ (
+                                ev.target
+                            ).value,
+                    })
+                    .then((granted) => {
+                        if (granted) {
+                            this.store.settings.setAudioInputDevice(
+                                /** @type {HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement} */ (
+                                    ev.target
+                                ).value,
+                            );
+                        } else {
+                            /** @type {HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement} */ (
+                                ev.target
+                            ).value = this.store.settings.audioInputDeviceId;
+                        }
+                    });
+                return;
+            case "videoinput":
+                this.store.rtc
+                    .askForBrowserPermission({
+                        video: true,
+                        deviceId:
+                            /** @type {HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement} */ (
+                                ev.target
+                            ).value,
+                    })
+                    .then((granted) => {
+                        if (granted) {
+                            this.store.settings.setCameraInputDevice(
+                                /** @type {HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement} */ (
+                                    ev.target
+                                ).value,
+                            );
+                        } else {
+                            /** @type {HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement} */ (
+                                ev.target
+                            ).value = this.store.settings.cameraInputDeviceId;
+                        }
+                    });
+                return;
+            case "audiooutput":
+                this.store.settings.setAudioOutputDevice(
+                    /** @type {HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement} */ (
+                        ev.target
+                    ).value,
+                );
+                return;
+        }
+    }
+
+    /**
+     * @param {"audioinput"|"videoinput"|"audiooutput"} kind
+     * @returns {boolean}
+     */
+    isPermissionGranted(kind) {
+        if (kind === "videoinput") {
+            return this.store.rtc.cameraPermission === "granted";
+        }
+        return this.store.rtc.microphonePermission === "granted";
+    }
+}

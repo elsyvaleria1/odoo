@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_approval_category_form_inherit_stock" model="ir.ui.view">
+        <field name="name">approval.category.form.inherit.stock</field>
+        <field name="model">approval.category</field>
+        <field
+            name="inherit_id"
+            ref="approval_app.view_approval_category_form_fields" />
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='has_location']" position="after">
+                <field
+                    name="has_asset"
+                    widget="radio"
+                    options="{'horizontal': true}"
+                    invisible="approval_type != 'asset_log'" />
+                <field
+                    name="has_odometer"
+                    widget="radio"
+                    options="{'horizontal': true}"
+                    invisible="approval_type != 'asset_log'" />
+            </xpath>
+
+            <xpath expr="//page[@name='settings']" position="before">
+                <page
+                    name="stock_rules"
+                    string="Inventory"
+                    groups="stock.group_stock_manager"
+                    invisible="approval_type not in ('stock', 'stock_inventory')">
+                    <group>
+                        <group>
+                            <field
+                                name="stock_approval_mode"
+                                string="Require approval by"
+                                invisible="approval_type != 'stock'"
+                                required="approval_type == 'stock'" />
+                            <field
+                                name="picking_type_ids"
+                                widget="many2many_tags"
+                                invisible="approval_type != 'stock' or stock_approval_mode not in ['picking_type', 'combined']" />
+                        </group>
+                        <group>
+                            <field
+                                name="location_ids"
+                                widget="many2many_tags"
+                                invisible="approval_type == 'stock' and stock_approval_mode not in ['location', 'combined']" />
+                            <field
+                                name="stock_product_categ_ids"
+                                widget="many2many_tags"
+                                invisible="approval_type == 'stock' and stock_approval_mode not in ['product', 'combined']" />
+                        </group>
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

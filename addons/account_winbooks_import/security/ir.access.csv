@@ -1,0 +1,2 @@
+id,name,model_id/id,group_id/id,kind,operation,domain
+access_account_winbooks_import_wizard,access.account.winbooks.import.wizard,model_wizard_account_move_import_winbooks,account.group_account_manager,permission,cru,

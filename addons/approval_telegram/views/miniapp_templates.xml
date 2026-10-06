@@ -1,0 +1,676 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <template id="miniapp_page" name="Approval Mini App">
+        <html>
+            <head>
+                <meta charset="utf-8" />
+                <meta
+                    name="viewport"
+                    content="width=device-width, initial-scale=1, viewport-fit=cover" />
+                <title />
+                <link
+                    rel="stylesheet"
+                    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" />
+                <script src="https://telegram.org/js/telegram-web-app.js" />
+                <style>
+                    body { font-family: sans-serif; margin: 0; padding: 12px;
+                        background: var(--tg-theme-bg-color, #fff);
+                        color: var(--tg-theme-text-color, #000); }
+                    h1 { font-size: 18px; margin: 4px 0 16px; text-align: center; }
+                    .brand { text-align: center; margin: 4px 0 10px; }
+                    .brand span { display: inline-block; background: #fff;
+                        padding: 8px 14px; border-radius: 12px; }
+                    .brand img { max-height: 40px; max-width: 80%;
+                        vertical-align: middle; }
+                    .card { border: 1px solid rgba(128,128,128,.3);
+                        border-radius: 10px; padding: 12px; margin-bottom: 10px; }
+                    .folio { font-weight: bold; }
+                    .cat { opacity: .8; font-size: 14px; }
+                    .amount { color: #2e7d32; font-weight: bold; margin-top: 4px; }
+                    .detail { margin-top: 8px; font-size: 14px;
+                        border-top: 1px dashed rgba(128,128,128,.3);
+                        padding-top: 8px; }
+                    .badge { margin-top: 10px; font-weight: bold; }
+                    .actions { margin-top: 10px; display: flex; flex-wrap: wrap;
+                        gap: 6px; }
+                    .btn { flex: 1; min-width: 90px; padding: 8px; border: none;
+                        border-radius: 8px; font-size: 14px; cursor: pointer;
+                        background: rgba(128,128,128,.18); color: inherit; }
+                    .btn.ok { background: #2e7d32; color: #fff; }
+                    .btn.danger { background: #c62828; color: #fff; }
+                    .btn[disabled] { opacity: .5; }
+                    .formhost { flex-basis: 100%; }
+                    .form { margin-top: 8px; display: flex; flex-direction: column;
+                        gap: 6px; }
+                    .lbl { font-size: 13px; opacity: .8; }
+                    .field { width: 100%; padding: 8px; border-radius: 8px;
+                        border: 1px solid rgba(128,128,128,.4);
+                        box-sizing: border-box; font: inherit; }
+                    .empty { text-align: center; opacity: .6; margin-top: 40px; }
+                    .state-tag { float: right; font-size: 12px; padding: 2px 8px;
+                        border-radius: 10px; background: rgba(128,128,128,.2); }
+                    .kv { display: flex; gap: 6px; font-size: 14px; margin-top: 3px; }
+                    .kv .k { opacity: .65; min-width: 92px; }
+                    .kv .v { flex: 1; }
+                    .section { margin-top: 10px; font-weight: bold; font-size: 12px;
+                        text-transform: uppercase; opacity: .7; }
+                    .desc { margin-top: 4px; font-size: 14px; }
+                    .line { font-size: 14px; padding: 4px 0;
+                        border-bottom: 1px dashed rgba(128,128,128,.25); }
+                    .appr { font-size: 14px; padding: 2px 0; }
+                    .att { display: flex; align-items: center; gap: 8px;
+                        padding: 5px 0; cursor: pointer; font-size: 14px; }
+                    .att-thumb { width: 46px; height: 46px; object-fit: cover;
+                        border-radius: 8px; flex: none;
+                        border: 1px solid rgba(128,128,128,.3); }
+                    .att-name { flex: 1; }
+                    .text-success { color: #28a745; }
+                    .text-danger { color: #dc3545; }
+                    .text-muted { opacity: .55; }
+                    .fa { width: 1.1em; text-align: center; }
+                    .overlay { position: fixed; top: 0; left: 0; right: 0;
+                        bottom: 0; background: rgba(0,0,0,.88);
+                        display: flex; align-items: center;
+                        justify-content: center; z-index: 1000;
+                        padding: 16px; box-sizing: border-box; }
+                    .overlay-img { max-width: 100%; max-height: 100%;
+                        border-radius: 8px; }
+                    .overlay-frame { width: 100%; height: 92%; border: none;
+                        background: #fff; border-radius: 8px; }
+                    .overlay-close { position: fixed; top: 10px; right: 16px;
+                        color: #fff; font-size: 28px;
+                        cursor: pointer; z-index: 1001; }
+                </style>
+            </head>
+            <body t-att-data-bot-id="bot_id">
+                <div class="brand">
+                    <span>
+                        <img
+                            src="/approval_telegram/static/img/marin-logo.png"
+                            alt="MARIN" />
+                    </span>
+                </div>
+                <h1><i class="fa fa-bell-o" /> <span id="heading" /></h1>
+                <div id="list" class="empty">…</div>
+                <script type="text/javascript">
+                    <![CDATA[
+                    var BOT_ID = document.body.dataset.botId;
+                    var REQUEST_ID = new URLSearchParams(window.location.search)
+                        .get("request") || "";
+                    var tg = window.Telegram.WebApp;
+                    tg.ready();
+                    tg.expand();
+                    var listEl = document.getElementById("list");
+                    var ICON = {
+                        check: '<i class="fa fa-check text-success"></i>',
+                        times: '<i class="fa fa-times text-danger"></i>'
+                    };
+                    var STATE_ICON = {
+                        new: '<i class="fa fa-pencil-square-o"></i> ',
+                        pending: '<i class="fa fa-paper-plane-o"></i> ',
+                        approved: '<i class="fa fa-check-circle text-success"></i> ',
+                        refused: '<i class="fa fa-times-circle text-danger"></i> '
+                    };
+                    var L = {states: {}, priorities: {}};
+
+                    function useLabels(labels) {
+                        if (!labels) { return; }
+                        L = labels;
+                        document.documentElement.lang = L.lang;
+                        document.title = L.title;
+                        document.getElementById("heading").textContent = L.title;
+                    }
+
+                    function reqState(state) {
+                        return L.states[state]
+                            ? STATE_ICON[state] + esc(L.states[state]) : "";
+                    }
+                    var APPR_ICON = {
+                        pending: '<i class="fa fa-clock-o text-muted"></i>',
+                        waiting: '<i class="fa fa-hourglass-half text-muted"></i>',
+                        approved: '<i class="fa fa-check-circle text-success"></i>',
+                        refused: '<i class="fa fa-times-circle text-danger"></i>',
+                        new: '<i class="fa fa-circle-o text-muted"></i>'
+                    };
+
+                    // Signed session issued by the server after it validates
+                    // initData once. Sending it instead of initData is what
+                    // keeps the bot token from being decrypted per request.
+                    var SESSION = null;
+
+                    function money(currency, amount) {
+                        return (currency || "") + Number(amount || 0).toLocaleString(
+                            L.lang, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                    }
+
+                    function kv(label, value) {
+                        var row = el("div", "kv");
+                        row.appendChild(el("span", "k", esc(label)));
+                        row.appendChild(el("span", "v", esc(value)));
+                        return row;
+                    }
+
+                    function attUrl(a) {
+                        var credential = SESSION
+                            ? "s=" + encodeURIComponent(SESSION)
+                            : "init_data=" + encodeURIComponent(tg.initData);
+                        return window.location.origin
+                            + "/telegram/approval/app/" + BOT_ID
+                            + "/attachment/" + a.id
+                            + "?" + credential;
+                    }
+
+                    function attIcon(a) {
+                        if (a.is_image) {
+                            return '<i class="fa fa-file-image-o text-success"></i> ';
+                        }
+                        if ((a.mimetype || "").indexOf("pdf") >= 0) {
+                            return '<i class="fa fa-file-pdf-o text-danger"></i> ';
+                        }
+                        return '<i class="fa fa-paperclip text-muted"></i> ';
+                    }
+
+                    function attachmentRow(a) {
+                        var row = el("div", "att");
+                        if (a.is_image) {
+                            var img = el("img", "att-thumb");
+                            img.src = attUrl(a);
+                            img.alt = a.name || L.attachment;
+                            row.appendChild(img);
+                        }
+                        row.appendChild(el("span", "att-name",
+                            attIcon(a) + esc(a.name || L.attachment)));
+                        row.onclick = function () { openPreview(a); };
+                        return row;
+                    }
+
+                    function openPreview(a) {
+                        var url = attUrl(a);
+                        var overlay = el("div", "overlay");
+                        var close = el("div", "overlay-close",
+                            '<i class="fa fa-times"></i>');
+                        function dismiss() {
+                            if (overlay.parentNode) {
+                                document.body.removeChild(overlay);
+                            }
+                        }
+                        close.onclick = dismiss;
+                        overlay.onclick = function (e) {
+                            if (e.target === overlay) { dismiss(); }
+                        };
+                        var viewer;
+                        if (a.is_image) {
+                            viewer = el("img", "overlay-img");
+                        } else {
+                            viewer = el("iframe", "overlay-frame");
+                        }
+                        viewer.src = url;
+                        overlay.appendChild(close);
+                        overlay.appendChild(viewer);
+                        document.body.appendChild(overlay);
+                    }
+
+                    function auth(params) {
+                        var payload = {};
+                        Object.keys(params).forEach(function (k) {
+                            payload[k] = params[k];
+                        });
+                        if (SESSION) {
+                            payload.s = SESSION;
+                        } else {
+                            payload.init_data = tg.initData;
+                        }
+                        return payload;
+                    }
+
+                    function post(path, params) {
+                        var payload = auth(params);
+                        var body = Object.keys(payload).map(function (k) {
+                            return k + "=" + encodeURIComponent(payload[k]);
+                        }).join("&");
+                        return fetch("/telegram/approval/app/" + BOT_ID + path, {
+                            method: "POST",
+                            headers: {"Content-Type": "application/x-www-form-urlencoded"},
+                            body: body
+                        }).then(function (resp) { return resp.json(); })
+                        .then(function (res) {
+                            // Any endpoint may hand back a fresher session.
+                            if (res && res.session) { SESSION = res.session; }
+                            return res;
+                        });
+                    }
+
+                    function el(tag, cls, html) {
+                        var e = document.createElement(tag);
+                        if (cls) { e.className = cls; }
+                        if (html !== undefined) { e.innerHTML = html; }
+                        return e;
+                    }
+
+                    // el() assigns innerHTML, so anything coming from a record
+                    // (product names, units, order refs) has to be escaped or a
+                    // "<" in a catalogue name silently eats the rest of the row.
+                    function esc(value) {
+                        return String(value === null || value === undefined ? "" : value)
+                            .replace(/&/g, "&amp;")
+                            .replace(/</g, "&lt;")
+                            .replace(/[>]/g, "&gt;")
+                            .replace(/"/g, "&quot;");
+                    }
+
+                    function disable(wrap) {
+                        wrap.querySelectorAll("button").forEach(function (b) {
+                            b.disabled = true;
+                        });
+                    }
+
+                    function notify(msg) {
+                        if (tg.showAlert) { tg.showAlert(msg); } else { alert(msg); }
+                    }
+
+                    function act(r, action, extra) {
+                        var params = {
+                            approver_id: r.approver_id,
+                            action: action
+                        };
+                        Object.keys(extra).forEach(function (k) {
+                            params[k] = extra[k];
+                        });
+                        post("/act", params).then(function (res) {
+                            if (!res.ok) { notify(L.failed + " " + (res.error || "")); }
+                            load();
+                        });
+                    }
+
+                    function refuseForm(r, wrap) {
+                        var f = el("div", "form");
+                        var sel = el("select", "field");
+                        sel.appendChild(new Option(L.no_reason, "0"));
+                        (r.reasons || []).forEach(function (rs) {
+                            sel.appendChild(new Option(rs.name, rs.id));
+                        });
+                        var ta = el("textarea", "field");
+                        ta.placeholder = L.comment;
+                        var ok = el("button", "btn danger", esc(L.confirm_refusal));
+                        ok.onclick = function () {
+                            disable(wrap);
+                            act(r, "refuse", {reason_id: sel.value, note: ta.value});
+                        };
+                        f.appendChild(el("div", "lbl", esc(L.refusal_reason)));
+                        f.appendChild(sel);
+                        f.appendChild(ta);
+                        f.appendChild(ok);
+                        return f;
+                    }
+
+                    function changeForm(r, wrap) {
+                        var f = el("div", "form");
+                        var sel = el("select", "field");
+                        sel.appendChild(new Option(L.field_date, "date"));
+                        sel.appendChild(new Option(L.field_reason, "reason"));
+                        var ta = el("textarea", "field");
+                        ta.placeholder = L.change_hint;
+                        var ok = el("button", "btn", esc(L.confirm));
+                        ok.onclick = function () {
+                            disable(wrap);
+                            act(r, "change", {field: sel.value, note: ta.value});
+                        };
+                        f.appendChild(el("div", "lbl", esc(L.field_to_fix)));
+                        f.appendChild(sel);
+                        f.appendChild(ta);
+                        f.appendChild(ok);
+                        return f;
+                    }
+
+                    function actions(r) {
+                        var wrap = el("div", "actions");
+                        var bOk = el("button", "btn ok",
+                            '<i class="fa fa-check"></i> ' + esc(L.approve));
+                        var bCh = el("button", "btn",
+                            '<i class="fa fa-pencil"></i> ' + esc(L.changes));
+                        var bNo = el("button", "btn danger",
+                            '<i class="fa fa-times"></i> ' + esc(L.refuse));
+                        var host = el("div", "formhost");
+                        bOk.onclick = function () { disable(wrap); act(r, "approve", {}); };
+                        bCh.onclick = function () {
+                            host.innerHTML = "";
+                            host.appendChild(changeForm(r, wrap));
+                        };
+                        bNo.onclick = function () {
+                            host.innerHTML = "";
+                            host.appendChild(refuseForm(r, wrap));
+                        };
+                        wrap.appendChild(bOk);
+                        wrap.appendChild(bCh);
+                        wrap.appendChild(bNo);
+                        wrap.appendChild(host);
+                        return wrap;
+                    }
+
+                    function buildCard(r) {
+                        var card = el("div", "card");
+                        var head = el("div", "folio", esc(r.name));
+                        if (L.states[r.state]) {
+                            head.appendChild(el("span", "state-tag", reqState(r.state)));
+                        }
+                        card.appendChild(head);
+                        card.appendChild(el("div", "cat", esc(r.category)));
+
+                        card.appendChild(kv(L.requester, r.owner));
+                        if (r.amount) {
+                            card.appendChild(kv(L.amount, money(r.currency, r.amount)));
+                        }
+                        if (r.quantity) {
+                            card.appendChild(kv(L.quantity, String(r.quantity)));
+                        }
+                        if (r.partner) { card.appendChild(kv(L.vendor, r.partner)); }
+                        if (r.reference) { card.appendChild(kv(L.reference, r.reference)); }
+                        if (r.location) { card.appendChild(kv(L.location, r.location)); }
+                        if (r.journal) { card.appendChild(kv(L.journal, r.journal)); }
+                        if (r.date) { card.appendChild(kv(L.date, r.date)); }
+                        if (r.date_start) {
+                            card.appendChild(kv(L.date_start, r.date_start));
+                        }
+                        if (r.date_end) { card.appendChild(kv(L.date_end, r.date_end)); }
+                        if (r.date_deadline) {
+                            card.appendChild(kv(L.date_deadline, r.date_deadline));
+                        }
+                        if (r.priority && r.priority !== "0") {
+                            card.appendChild(kv(L.priority,
+                                L.priorities[r.priority] || r.priority));
+                        }
+
+                        if (r.lines && r.lines.length) {
+                            card.appendChild(el("div", "section",
+                                esc(L.products) +
+                                (r.lines_source ? " · " + esc(r.lines_source) : "")));
+                            r.lines.forEach(function (l) {
+                                // The document's own currency when the server
+                                // sent one; the request's only as a fallback.
+                                var cur = l.currency || r.currency;
+                                var total = l.subtotal === undefined
+                                    ? (l.quantity || 0) * (l.price_unit || 0)
+                                    : l.subtotal;
+                                var qty = (l.quantity || 0) +
+                                    (l.uom ? " " + esc(l.uom) : "");
+                                card.appendChild(el("div", "line",
+                                    (l.order ? esc(l.order) + " · " : "") +
+                                    esc(l.product || l.description) + " — " +
+                                    qty + " × " +
+                                    money(cur, l.price_unit) + " = " +
+                                    money(cur, total)));
+                            });
+                            if (r.lines_more) {
+                                card.appendChild(el("div", "line",
+                                    esc(L.more_lines.replace(
+                                        /%\(count\)s/, r.lines_more))));
+                            }
+                        }
+
+                        if (r.reason) {
+                            card.appendChild(el("div", "section", esc(L.description)));
+                            card.appendChild(el("div", "desc", r.reason));
+                        }
+
+                        if (r.approvers && r.approvers.length) {
+                            card.appendChild(el("div", "section", esc(L.approvers)));
+                            r.approvers.forEach(function (a) {
+                                card.appendChild(el("div", "appr",
+                                    (APPR_ICON[a.state] || "") + " " + esc(a.name)));
+                            });
+                        }
+
+                        if (r.attachments && r.attachments.length) {
+                            card.appendChild(el("div", "section", esc(L.attachments)));
+                            r.attachments.forEach(function (a) {
+                                card.appendChild(attachmentRow(a));
+                            });
+                        }
+
+                        if (r.can_act) {
+                            card.appendChild(actions(r));
+                        } else if (r.approver_state === "approved") {
+                            card.appendChild(el("div", "badge",
+                                ICON.check + " " + esc(L.already_approved)));
+                        } else if (r.approver_state === "refused") {
+                            card.appendChild(el("div", "badge",
+                                ICON.times + " " + esc(L.already_refused)));
+                        } else {
+                            card.appendChild(el("div", "badge",
+                                reqState(r.state) || esc(r.state)));
+                        }
+                        return card;
+                    }
+
+                    function render(data) {
+                        useLabels(data.labels);
+                        if (!data.ok) {
+                            listEl.className = "empty";
+                            listEl.textContent = data.error === "unlinked"
+                                ? L.unlinked
+                                : L.session || "⚠️";
+                            return;
+                        }
+                        if (!data.requests.length) {
+                            listEl.className = "empty";
+                            listEl.textContent = L.empty;
+                            return;
+                        }
+                        listEl.className = "";
+                        listEl.innerHTML = "";
+                        data.requests.forEach(function (r) {
+                            listEl.appendChild(buildCard(r));
+                        });
+                    }
+
+                    function load() {
+                        post("/pending", {request_id: REQUEST_ID})
+                            .then(render)
+                            .catch(function () {
+                                listEl.className = "empty";
+                                listEl.textContent = L.network || "⚠️";
+                            });
+                    }
+
+                    load();
+                    ]]>
+                </script>
+            </body>
+        </html>
+    </template>
+
+    <template id="fix_page" name="Approval Fix Panel">
+        <html>
+            <head>
+                <meta charset="utf-8" />
+                <meta
+                    name="viewport"
+                    content="width=device-width, initial-scale=1, viewport-fit=cover" />
+                <title />
+                <link
+                    rel="stylesheet"
+                    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" />
+                <script src="https://telegram.org/js/telegram-web-app.js" />
+                <style>
+                    body { font-family: sans-serif; margin: 0; padding: 16px;
+                        background: var(--tg-theme-bg-color, #fff);
+                        color: var(--tg-theme-text-color, #000); }
+                    h1 { font-size: 18px; margin: 4px 0 14px; text-align: center; }
+                    .lbl { font-size: 14px; opacity: .75; margin: 8px 0 6px; }
+                    .field { width: 100%; padding: 10px; border-radius: 8px;
+                        border: 1px solid rgba(128,128,128,.4);
+                        box-sizing: border-box; font: inherit; }
+                    textarea.field, .editor { min-height: 140px; }
+                    .editor { overflow-y: auto; }
+                    .editor ul { margin: 4px 0 4px 18px; padding: 0; }
+                    .editor p { margin: 4px 0; }
+                    .btn { margin-top: 14px; width: 100%; padding: 12px; border: none;
+                        border-radius: 8px; font-size: 15px; cursor: pointer;
+                        background: #2e7d32; color: #fff; }
+                    .btn[disabled] { opacity: .5; }
+                    .empty { text-align: center; opacity: .6; margin-top: 40px; }
+                    .brand { text-align: center; margin: 4px 0 10px; }
+                    .brand span { display: inline-block; background: #fff;
+                        padding: 8px 14px; border-radius: 12px; }
+                    .brand img { max-height: 36px; max-width: 80%;
+                        vertical-align: middle; }
+                    .folio { font-weight: bold; margin-bottom: 8px; }
+                    .comment { background: rgba(33,150,243,.12);
+                        border-left: 3px solid #2196f3; border-radius: 8px;
+                        padding: 10px 12px; margin: 4px 0 14px;
+                        font-size: 14px; white-space: pre-wrap; }
+                    .comment .ct { font-weight: bold; opacity: .75; display: block;
+                        margin-bottom: 4px; }
+                    .card { border: 1px solid rgba(128,128,128,.3);
+                        border-radius: 12px; padding: 14px; }
+                </style>
+            </head>
+            <body t-att-data-bot-id="bot_id" t-att-data-request-id="request_id">
+                <div class="brand">
+                    <span>
+                        <img
+                            src="/approval_telegram/static/img/marin-logo.png"
+                            alt="MARIN" />
+                    </span>
+                </div>
+                <h1><i class="fa fa-pencil" /> <span id="heading" /></h1>
+                <div id="panel" class="empty">…</div>
+                <script type="text/javascript">
+                    <![CDATA[
+                    var BOT_ID = document.body.dataset.botId;
+                    var REQUEST_ID = document.body.dataset.requestId;
+                    var tg = window.Telegram.WebApp;
+                    tg.ready();
+                    tg.expand();
+                    var panel = document.getElementById("panel");
+                    var L = {};
+
+                    function useLabels(labels) {
+                        if (!labels) { return; }
+                        L = labels;
+                        document.documentElement.lang = L.lang;
+                        document.title = L.fix_title;
+                        document.getElementById("heading").textContent = L.fix_title;
+                    }
+
+                    function el(tag, cls, html) {
+                        var e = document.createElement(tag);
+                        if (cls) { e.className = cls; }
+                        if (html !== undefined) { e.innerHTML = html; }
+                        return e;
+                    }
+                    // Signed session issued after the server validates initData
+                    // once, so the save call costs no token decrypt.
+                    var SESSION = null;
+
+                    function auth(params) {
+                        var payload = {};
+                        Object.keys(params).forEach(function (k) {
+                            payload[k] = params[k];
+                        });
+                        if (SESSION) {
+                            payload.s = SESSION;
+                        } else {
+                            payload.init_data = tg.initData;
+                        }
+                        return payload;
+                    }
+
+                    function post(path, params) {
+                        var payload = auth(params);
+                        var body = Object.keys(payload).map(function (k) {
+                            return k + "=" + encodeURIComponent(payload[k]);
+                        }).join("&");
+                        return fetch("/telegram/approval/app/" + BOT_ID + path, {
+                            method: "POST",
+                            headers: {"Content-Type": "application/x-www-form-urlencoded"},
+                            body: body
+                        }).then(function (r) { return r.json(); })
+                        .then(function (res) {
+                            if (res && res.session) { SESSION = res.session; }
+                            return res;
+                        });
+                    }
+                    function notify(msg) {
+                        if (tg.showAlert) { tg.showAlert(msg); } else { alert(msg); }
+                    }
+
+                    function esc(value) {
+                        return String(value === null || value === undefined ? "" : value)
+                            .replace(/&/g, "&amp;")
+                            .replace(/</g, "&lt;")
+                            .replace(/[>]/g, "&gt;")
+                            .replace(/"/g, "&quot;");
+                    }
+
+                    function build(res) {
+                        useLabels(res.labels);
+                        if (!res.ok) {
+                            panel.className = "empty";
+                            panel.textContent = {
+                                not_owner: L.not_owner,
+                                unlinked: L.unlinked
+                            }[res.error] || L.session || "⚠️";
+                            return;
+                        }
+                        panel.className = "";
+                        panel.innerHTML = "";
+                        panel.appendChild(el("div", "folio"));
+                        panel.lastChild.textContent = L.request + " " + res.name;
+                        if (res.comment) {
+                            var c = el("div", "comment");
+                            c.appendChild(el("span", "ct",
+                                '<i class="fa fa-comment-o"></i> ' + esc(L.to_fix)));
+                            c.appendChild(document.createTextNode(res.comment));
+                            panel.appendChild(c);
+                        }
+                        var card = el("div", "card");
+                        var input;
+                        if (res.field === "date") {
+                            card.appendChild(el("div", "lbl", esc(L.new_date)));
+                            input = el("input", "field");
+                            input.type = "date";
+                            input.value = res.value;
+                        } else {
+                            card.appendChild(el("div", "lbl", esc(L.new_reason)));
+                            input = el("div", "field editor");
+                            input.contentEditable = "true";
+                            input.innerHTML = res.value;
+                        }
+                        card.appendChild(input);
+                        panel.appendChild(card);
+                        var btn = el("button", "btn",
+                            '<i class="fa fa-save"></i> ' + esc(L.save_resend));
+                        btn.onclick = function () {
+                            btn.disabled = true;
+                            var newValue = res.field === "date"
+                                ? input.value : input.innerHTML;
+                            post("/fix/" + REQUEST_ID + "/save",
+                                {value: newValue})
+                                .then(function (r) {
+                                    if (r.ok) {
+                                        notify(L.fix_sent);
+                                        tg.close();
+                                    } else {
+                                        btn.disabled = false;
+                                        notify(L.failed + " " + (r.error || ""));
+                                    }
+                                });
+                        };
+                        panel.appendChild(btn);
+                    }
+
+                    post("/fix/" + REQUEST_ID + "/data", {})
+                        .then(build)
+                        .catch(function () {
+                            panel.className = "empty";
+                            panel.textContent = L.network || "⚠️";
+                        });
+                    ]]>
+                </script>
+            </body>
+        </html>
+    </template>
+
+</odoo>

@@ -1,0 +1,144 @@
+import annotationlib
+import inspect
+import logging
+import typing
+from collections import defaultdict
+
+from odoo.libs.debug_log import DebugLog
+
+from ..fields.misc import Id
+from ..fields.relational import Many2one
+from ..fields.temporal import Datetime
+
+if typing.TYPE_CHECKING:
+    from .._typing import ModelClass
+    from ..fields.base import Field
+    from ..runtime import Registry
+    from .table_objects import TableObject
+
+_logger = logging.getLogger("odoo.models")
+_debug = DebugLog(__name__)
+
+_BASE_MODEL_INIT_PARAM_COUNT = 4
+
+
+class MetaModel(type):
+    _module_to_models__: defaultdict[str, list[MetaModel]] = defaultdict(list)
+
+    pool: Registry | None
+
+    _field_definitions: list[Field[typing.Any]]
+    _table_object_definitions: list[TableObject]
+    _name: str
+    _register: bool
+    _log_access: bool
+    _module: str | None
+    _abstract: bool
+    _auto: bool
+    _inherit: str | list[str] | tuple[str, ...] | None
+
+    def __new__(
+        meta: type[MetaModel],
+        name: str,
+        bases: tuple[type, ...],
+        attrs: dict[str, typing.Any],
+    ) -> MetaModel:
+        attrs.setdefault("__slots__", ())
+        attrs.setdefault("_field_definitions", [])
+        attrs.setdefault("_table_object_definitions", [])
+
+        if attrs.get("_register", True):
+            if "_module" not in attrs:
+                module = attrs["__module__"]
+                if not module.startswith("odoo.addons."):
+                    raise ImportError(
+                        f"Invalid import of {module}.{name}, it should start with 'odoo.addons'."
+                    )
+                attrs["_module"] = module.split(".")[2]
+
+            _inherit = attrs.get("_inherit")
+            if _inherit and isinstance(_inherit, str):
+                attrs.setdefault("_name", _inherit)
+                attrs["_inherit"] = [_inherit]
+
+            if not attrs.get("_name"):
+                raise TypeError(
+                    f"{attrs['__module__']}.{name} declares no _name: name the model "
+                    "it defines, or extend one with _inherit = '<model>'"
+                )
+
+        return super().__new__(meta, name, bases, attrs)
+
+    def __init__(
+        cls,
+        name: str,
+        bases: tuple[type, ...],
+        attrs: dict[str, typing.Any],
+    ) -> None:
+        super().__init__(name, bases, attrs)
+
+        if (
+            "__init__" in attrs
+            and len(
+                inspect.signature(
+                    attrs["__init__"],
+                    annotation_format=annotationlib.Format.FORWARDREF,
+                ).parameters
+            )
+            != _BASE_MODEL_INIT_PARAM_COUNT
+        ):
+            _logger.warning(
+                "The method %s.__init__ doesn't match the new signature in module %s",
+                name,
+                attrs.get("__module__"),
+            )
+            _debug.logic(
+                "metaclass.init_signature_mismatch",
+                cls=name,
+                module=attrs.get("__module__"),
+            )
+
+        if not attrs.get("_register", True):
+            return
+
+        if cls._module:
+            cls._module_to_models__[cls._module].append(cls)
+
+        if cls._inherit is None:
+            cls._inherit = ()
+        inherit = (cls._inherit,) if isinstance(cls._inherit, str) else cls._inherit
+        _debug.lifecycle(
+            "metaclass.model_class_registered",
+            model=cls._name,
+            cls=name,
+            module=cls._module,
+            inherit=len(inherit),
+            abstract=cls._abstract,
+            extension=cls._name in inherit,
+        )
+        if not cls._abstract and cls._name not in inherit:
+            model_class = typing.cast("ModelClass", cls)
+
+            def add_default(name: str, field: Field[typing.Any]) -> None:
+                if name not in attrs:
+                    setattr(cls, name, field)
+                    field.__set_name__(model_class, name)
+
+            id_field = getattr(cls, "id", None)
+            if not isinstance(id_field, Id):
+                raise TypeError(f"Field {id_field} is not an instance of fields.Id")
+
+            if attrs.get("_log_access", cls._auto):
+                add_default(
+                    "create_uid",
+                    Many2one("res.users", string="Created by", readonly=True),
+                )
+                add_default("create_date", Datetime(string="Created on", readonly=True))
+                add_default(
+                    "write_uid",
+                    Many2one("res.users", string="Last Updated by", readonly=True),
+                )
+                add_default(
+                    "write_date",
+                    Datetime(string="Last Updated on", readonly=True),
+                )

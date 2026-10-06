@@ -1,0 +1,38 @@
+from . import controllers
+from . import models
+from . import reports
+from . import wizards
+
+from odoo.libs.sql import normalize_identifier
+from odoo.db.schema import create_index
+
+
+def _update_project_sharing_rules_if_collaborators(env) -> None:
+    collaborator = env["project.collaborator"].search([], limit=1)
+    if collaborator:
+        env["project.collaborator"]._update_project_sharing_portal_rules(True)
+
+
+def _project_post_init(env) -> None:
+    _update_project_sharing_rules_if_collaborators(env)
+
+    project_task_step_field_id = (
+        env["ir.model.fields"]._get_ids_by_name("project.task").get("step_id")
+    )
+    create_index(
+        env.cr,
+        normalize_identifier(
+            "mail_tracking_value_mail_message_id_old_value_integer_task_step"
+        ),
+        env["mail.tracking.value"]._table,
+        ["mail_message_id", "old_value_integer"],
+        where=f"field_id={project_task_step_field_id}",
+    )
+
+    env["account.analytic.plan"].search([])._sync_plan_column("project.project")
+
+
+def _project_uninstall_hook(env) -> None:
+    env["wizard.project.project.share"].search(
+        [("partner_ids", "!=", False)]
+    ).partner_ids = False

@@ -1,0 +1,21 @@
+from . import (
+    res_partner,
+    product_product,
+    product_supplierinfo,
+    product_template,
+    account_move,
+    account_move_line,
+    product_trace,
+    stock_move,
+    stock_move_line,
+    stock_picking,
+    stock_reference,
+    mixin_stock_replenish,
+    stock_rule,
+    stock_route,
+    stock_warehouse,
+    stock_warehouse_orderpoint,
+    purchase_order,
+    purchase_order_line,
+)
+from . import purchase_config

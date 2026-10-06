@@ -1,0 +1,10 @@
+id,name,model_id/id,group_id/id,kind,operation,domain
+access_device_machine_bucket_user,device.machine.bucket user,model_device_machine_bucket,device.group_device_user,permission,r,
+access_device_machine_bucket_manager,device.machine.bucket manager,model_device_machine_bucket,device.group_device_manager,permission,cud,
+access_device_machine_reading_user,device.machine.reading user,model_device_machine_reading,device.group_device_user,permission,r,
+access_device_machine_reading_manager,device.machine.reading manager,model_device_machine_reading,device.group_device_manager,permission,cud,
+access_device_machine_workorder_user,device.machine.workorder user,model_device_machine_workorder,device.group_device_user,permission,r,
+access_device_machine_workorder_manager,device.machine.workorder manager,model_device_machine_workorder,device.group_device_manager,permission,cud,
+access_device_machine_bucket_mrp_user,device.machine.bucket mrp user,model_device_machine_bucket,mrp.group_mrp_user,permission,r,
+access_device_machine_workorder_mrp_user,device.machine.workorder mrp user,model_device_machine_workorder,mrp.group_mrp_user,permission,r,
+access_device_device_mrp_user,device.device mrp user,device.model_device_device,mrp.group_mrp_user,permission,r,

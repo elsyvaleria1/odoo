@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+<t t-name="website_generator.GeneratorRequest">
+    <div class="d-flex">
+        <a href="#" class="o_nav_entry" t-on-click="this.goToWaitingView">
+            <span class="fa-solid fa-earth-americas fa-lg" t-att-class="this.state.globeExtraClasses"/>
+        </a>
+    </div>
+</t>
+</templates>

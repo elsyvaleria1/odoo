@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="approval_category_step_view_form" model="ir.ui.view">
+        <field name="name">approval.category.step.form</field>
+        <field name="model">approval.category.step</field>
+        <field name="arch" type="xml">
+            <form string="Approval Step">
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name" placeholder="e.g. Finance review" /></h1>
+                    </div>
+                    <group>
+                        <group string="Who">
+                            <field name="group_id" options="{'no_create': True}" />
+                            <field name="asks_group_members" invisible="not group_id" />
+                            <field name="minimum" />
+                            <field name="walk" />
+                            <field
+                                name="walk_from"
+                                invisible="walk != 'manager_chain'" />
+                            <field name="exclusive" />
+                            <field name="in_order" />
+                            <field name="counts_added_approvers" />
+                            <field
+                                name="subject_user_path"
+                                placeholder="e.g. employee_id.leave_manager_id"
+                                invisible="not subject_model_id" />
+                            <field
+                                name="subject_user_sequence"
+                                invisible="not subject_user_path or not in_order" />
+                            <field
+                                name="subject_user_required"
+                                invisible="not subject_user_path" />
+                        </group>
+                        <group string="When">
+                            <field name="sequence" />
+                            <field
+                                name="subject_model_id"
+                                options="{'no_create': True}" />
+                            <field name="subject_model_name" invisible="1" />
+                            <field
+                                name="subject_domain"
+                                widget="domain"
+                                options="{'model': 'subject_model_name'}"
+                                invisible="not subject_model_id" />
+                            <field name="condition_field" />
+                            <field
+                                name="operator"
+                                invisible="not condition_field"
+                                required="condition_field" />
+                            <field name="threshold" invisible="not condition_field" />
+                            <field
+                                name="threshold_max"
+                                invisible="operator != 'between'" />
+                            <field
+                                name="currency_id"
+                                groups="base.group_multi_currency"
+                                invisible="condition_field != 'amount'" />
+                            <field
+                                name="when_rule_ids"
+                                widget="many2many_tags"
+                                domain="[('category_id', '=', category_id)]" />
+                            <field
+                                name="unless_rule_ids"
+                                widget="many2many_tags"
+                                domain="[('category_id', '=', category_id)]" />
+                            <field name="active" invisible="1" />
+                            <field name="category_id" invisible="1" />
+                        </group>
+                    </group>
+                    <notebook>
+                        <page name="members" string="Members">
+                            <field name="member_ids">
+                                <list editable="bottom">
+                                    <field name="sequence" widget="handle" />
+                                    <field name="user_id" />
+                                    <field name="required" />
+                                    <field name="date_end" />
+                                    <field name="delegated_by_id" optional="show" />
+                                </list>
+                            </field>
+                        </page>
+                        <page name="notify" string="Notify">
+                            <field name="notify_user_ids" widget="many2many_tags" />
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="approval_category_step_view_list" model="ir.ui.view">
+        <field name="name">approval.category.step.list</field>
+        <field name="model">approval.category.step</field>
+        <field name="arch" type="xml">
+            <list string="Approval Steps">
+                <field name="sequence" widget="handle" />
+                <field name="name" />
+                <field name="minimum" />
+                <field name="group_id" optional="show" />
+                <field name="exclusive" optional="show" />
+                <field name="notify_user_ids" widget="many2many_tags" optional="hide" />
+            </list>
+        </field>
+    </record>
+
+    <record id="approval_category_step_view_form_quick_create" model="ir.ui.view">
+        <field name="name">approval.category.step.form.quick_create</field>
+        <field name="model">approval.category.step</field>
+        <field name="arch" type="xml">
+            <form>
+                <group>
+                    <field name="name" placeholder="e.g. Finance review" />
+                    <field
+                        name="user_ids"
+                        placeholder="Select users..."
+                        widget="many2many_tags"
+                        required="not group_id" />
+                    <field
+                        name="group_id"
+                        options="{'no_create': True}"
+                        required="not user_ids" />
+                    <field name="notify_user_ids" widget="many2many_tags" />
+                    <field name="exclusive" widget="boolean_toggle" />
+                </group>
+            </form>
+        </field>
+    </record>
+
+    <record id="approval_category_step_view_kanban" model="ir.ui.view">
+        <field name="name">approval.category.step.kanban</field>
+        <field name="model">approval.category.step</field>
+        <field name="arch" type="xml">
+            <kanban
+                class="o_approval_step_kanban"
+                quick_create_view="approval.approval_category_step_view_form_quick_create">
+                <field name="exclusive" />
+                <templates>
+                    <t t-name="card">
+                        <div class="d-flex align-items-start justify-content-between">
+                            <field name="name" class="fs-5 fw-bold text-truncate" />
+                            <i
+                                t-if="record.exclusive.raw_value"
+                                class="fa-solid fa-shield ms-2"
+                                role="img"
+                                title="Whoever decides this step decides no other step on the record" />
+                        </div>
+                        <field name="group_id" class="text-muted text-truncate" />
+                        <footer class="align-items-center">
+                            <span class="text-muted small">Order <field name="sequence" /></span>
+                            <field
+                                name="user_ids"
+                                widget="many2many_avatar_user"
+                                readonly="1"
+                                class="ms-auto" />
+                        </footer>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
+    <record id="approval_category_view_form_steps" model="ir.ui.view">
+        <field name="name">approval.category.form.steps</field>
+        <field name="model">approval.category</field>
+        <field name="inherit_id" ref="view_approval_category_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//page[@name='approvers']" position="after">
+                <page name="steps" string="Steps">
+                    <group>
+                        <field name="notify_sequentially" invisible="not step_ids" />
+                    </group>
+                    <field name="step_ids" context="{'default_category_id': id}" />
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

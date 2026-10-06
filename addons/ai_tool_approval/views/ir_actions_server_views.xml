@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="ir_actions_server_view_form" model="ir.ui.view">
+        <field name="name">ir.actions.server.view.form.inherit.ai.tool.approval</field>
+        <field name="model">ir.actions.server</field>
+        <field name="inherit_id" ref="ai.ir_actions_server_view_form" />
+        <field name="arch" type="xml">
+            <field name="ai_tool_schema" position="after">
+                <field
+                    name="ai_approval_category_id"
+                    invisible="not ai_tool_is_candidate or not use_in_ai" />
+            </field>
+        </field>
+    </record>
+
+</odoo>

@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates>
+
+    <t t-name="web_hierarchy_studio.HierarchyEditorSidebar">
+        <InteractiveEditorSidebar>
+            <t t-set-slot="view">
+                <Property
+                    name="'parent_field'"
+                    type="'selection'"
+                    value="this.archInfo.parentFieldName"
+                    childProps="{ choices: this.parentFieldChoices, required: true }"
+                    onChange.bind="this.onViewAttributeChanged"
+                >
+                    Parent Field
+                </Property>
+
+                <Property
+                    name="'child_field'"
+                    type="'selection'"
+                    value="this.archInfo.childFieldName"
+                    childProps="{ choices: this.childFieldChoices, required: false }"
+                    onChange.bind="this.onViewAttributeChanged"
+                >
+                    Child Field
+                </Property>
+
+                <Property
+                    name="'draggable'"
+                    type="'boolean'"
+                    value="this.archInfo.draggable"
+                    onChange.bind="this.onDraggableChanged"
+                >
+                    Draggable
+                </Property>
+
+                <Property
+                    name="'default_order'"
+                    type="'selection'"
+                    value="this.archInfo.defaultOrder?.[0]?.name"
+                    childProps="{ choices: this.defaultOrderChoices, required: false }"
+                    onChange.bind="this.onViewAttributeChanged"
+                >
+                    Sort by
+                </Property>
+
+                <SidebarViewToolbox onMore="this.props.openViewInForm"
+                    canEditXml="!this.viewEditorModel.isEditingSubview"
+                    openDefaultValues="this.props.openDefaultValues" />
+            </t>
+        </InteractiveEditorSidebar>
+    </t>
+
+</templates>

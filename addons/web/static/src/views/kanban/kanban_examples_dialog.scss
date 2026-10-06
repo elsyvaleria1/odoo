@@ -1,0 +1,56 @@
+.o_kanban_examples_dialog {
+    .modal-body {
+        padding: 0;
+        background: o-token(--light, map-get($theme-colors, "light"));
+    }
+
+    .o_notebook {
+        --Notebook__link-border-color: #{o-token(--border-color, $border-color)};
+        --Notebook__link-border-color--hover: #{o-token(--border-color, $border-color)};
+        --Notebook__link-border-top-color--active: var(--o-brand);
+
+        .nav-link.active {
+            $o-btn-primary-theme-colors: map-get($o-btns-bs-override, "primary");
+            background-color: map-get($o-btn-primary-theme-colors, "background");
+            color: map-get($o-btn-primary-theme-colors, "color");
+            &,
+            &:hover,
+            &:focus,
+            &:active {
+                border-right-color: var(--Notebook__link-border-color--active);
+            }
+        }
+
+        .o_notebook_content {
+            flex: 1 1 100%;
+            min-height: 300px;
+
+            .o_kanban_examples_description {
+                padding: 16px 16px 0;
+                text-align: justify;
+            }
+        }
+    }
+}
+
+.o_kanban_examples .o_kanban_examples_group .o_kanban_examples_ghost {
+    &.o_collapse {
+        margin-top: -1px;
+    }
+
+    .o_ghost_avatar {
+        height: 20px;
+        width: 20px;
+    }
+}
+
+@include media-only(screen) {
+    :root[data-color-scheme="dark"]
+        .o_kanban_examples_dialog
+        .o_notebook
+        .nav-link.active {
+        $-colors: map-get($o-dark-btns-bs-override, "primary");
+        background-color: map-get($-colors, "background");
+        color: map-get($-colors, "color");
+    }
+}

@@ -1,0 +1,503 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# * stock
+#
+# Translators:
+# Michal Matus <misko.matus@gmail.com>, 2022
+# Matus Krnac <matus.krnac@gmail.com>, 2022
+# Pavol Krnáč <pavol.krnac@ekoenergo.sk>, 2022
+# Filip Matúšek <filip.matusek@26house.com>, 2022
+# Filip Hanes <filip.hanes@protonmail.com>, 2022
+# Stefan Stieranka <stieranka@itec.sk>, 2022
+# Viktor Dicer, 2022
+# karolína schusterová <karolina.schusterova@vdp.sk>, 2022
+# Damian Brencic <brencicdamian12313@gmail.com>, 2022
+# Martin Trigaux, 2022
+# Jaroslav Bosansky <jaro.bosansky@ekoenergo.sk>, 2022
+# Jan Prokop, 2022
+# SAKodoo <sak@odoo.com>, 2022
+# Rastislav Brencic <rastislav.brencic@azet.sk>, 2023
+# Tomáš Píšek <Tomas.Pisek@seznam.cz>, 2026.
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 16.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-02-06 18:35+0000\n"
+"PO-Revision-Date: 2026-01-13 15:37+0000\n"
+"Last-Translator: Tomáš Píšek <Tomas.Pisek@seznam.cz>\n"
+"Language-Team: Slovak <https://translate.odoo.com/projects/odoo-19/stock/sk/>\n"
+"Language: sk\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: nplurals=4; plural=(n % 1 == 0 && n == 1 ? 0 : n % 1 == 0 && n >= 2 && n <= 4 ? 1 : n % 1 != 0 ? 2: 3);\n"
+"X-Generator: Weblate 5.14.3\n"
+
+#. module: product_trace
+#: model:ir.model.fields,help:product_trace.field_product_product__serial_prefix_format
+#: model:ir.model.fields,help:product_trace.field_product_template__serial_prefix_format
+msgid ""
+"\n"
+"            If multiple products share the same prefix, they will share the same sequence, otherwise the sequence will be dedicated to the product.\n"
+"\n"
+"            * Legend (for prefix):\n"
+"            - Current Year with Century: %(year)s\n"
+"            - Current Year without Century: %(y)s\n"
+"            - Month: %(month)s\n"
+"            - Day: %(day)s\n"
+"            - Day of the Year: %(doy)s\n"
+"            - Week of the Year: %(woy)s\n"
+"            - Day of the Week (0:Monday): %(weekday)s\n"
+"            - Hour 00->24: %(h24)s\n"
+"            - Hour 00->12: %(h12)s\n"
+"            - Minute: %(min)s\n"
+"            - Second: %(sec)s\n"
+"        "
+msgstr ""
+
+#. module: product_trace
+#. odoo-python
+#: code:addons/product_trace/models/product_trace.py:0
+msgid " - Product: %(product)s, Lot/Serial Number: %(lot)s"
+msgstr ""
+
+#. module: product_trace
+#. odoo-python
+#: code:addons/product_trace/models/product_trace.py:0
+msgid "(copy of) %s"
+msgstr ""
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__message_needaction
+msgid "Action Needed"
+msgstr "Potrebná akcia"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__active
+msgid "Active"
+msgstr "Aktívne"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__activity_ids
+msgid "Activities"
+msgstr "Aktivity"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__activity_exception_decoration
+msgid "Activity Exception Decoration"
+msgstr "Označenie výnimky v aktivite"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__activity_state
+msgid "Activity State"
+msgstr "Stav aktivity"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__activity_type_icon
+msgid "Activity Type Icon"
+msgstr "Ikona typ aktivity"
+
+#. module: product_trace
+#: model_terms:ir.ui.view,arch_db:product_trace.view_product_trace_form
+msgid "Add an internal note"
+msgstr ""
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__message_attachment_count
+msgid "Attachment Count"
+msgstr "Počet príloh"
+
+#. module: product_trace
+#: model:ir.model.fields.selection,name:product_trace.selection__product_template__tracking__lot
+msgid "By Lots"
+msgstr "Podľa šarží"
+
+#. module: product_trace
+#: model:ir.model.fields.selection,name:product_trace.selection__product_template__tracking__none
+msgid "By Quantity"
+msgstr ""
+
+#. module: product_trace
+#: model:ir.model.fields.selection,name:product_trace.selection__product_template__tracking__serial
+msgid "By Unique Serial Number"
+msgstr "Podľa Unikátneho seriálového čísla"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__company_id
+#: model_terms:ir.ui.view,arch_db:product_trace.view_product_trace_search
+msgid "Company"
+msgstr "Spoločnosť"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__create_uid
+msgid "Created by"
+msgstr "Vytvoril"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__create_date
+msgid "Created on"
+msgstr "Vytvorené"
+
+#. module: product_trace
+#: model_terms:ir.ui.view,arch_db:product_trace.view_product_trace_search
+msgid "Creation Date"
+msgstr "Dátum vytvorenia"
+
+#. module: product_trace
+#: model_terms:ir.ui.view,arch_db:product_trace.view_product_trace_search
+msgid "Creation date"
+msgstr ""
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_product__serial_prefix_format
+#: model:ir.model.fields,field_description:product_trace.field_product_template__serial_prefix_format
+msgid "Custom Lot/Serial"
+msgstr ""
+
+#. module: product_trace
+#: model:ir.model.fields,help:product_trace.field_product_trace__product_uom_id
+msgid "Default unit of measure used for all stock operations."
+msgstr "Predvolená merná jednotka používaná pre všetky skladové operácie."
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__note
+#: model_terms:ir.ui.view,arch_db:product_trace.view_product_trace_form
+msgid "Description"
+msgstr "Popis"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__display_complete
+msgid "Display Complete"
+msgstr ""
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_product__display_name
+#: model:ir.model.fields,field_description:product_trace.field_product_template__display_name
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__display_name
+msgid "Display Name"
+msgstr "Zobrazovaný názov"
+
+#. module: product_trace
+#: model:ir.model.fields,help:product_trace.field_product_product__tracking
+#: model:ir.model.fields,help:product_trace.field_product_template__tracking
+msgid "Ensure the traceability of a storable product in your warehouse."
+msgstr "Zabezpečte sledovateľnosť skladovateľného produktu vo vašom sklade."
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__message_follower_ids
+msgid "Followers"
+msgstr "Odberatelia"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__message_partner_ids
+msgid "Followers (Partners)"
+msgstr "Odberatelia (partneri)"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__has_message
+msgid "Has Message"
+msgstr "Má správu"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_product__id
+#: model:ir.model.fields,field_description:product_trace.field_product_template__id
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__id
+msgid "ID"
+msgstr "ID"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__activity_exception_icon
+msgid "Icon"
+msgstr "Ikona"
+
+#. module: product_trace
+#: model:ir.model.fields,help:product_trace.field_product_trace__activity_exception_icon
+msgid "Icon to indicate an exception activity."
+msgstr "Ikona indikujúca výnimočnú aktivitu."
+
+#. module: product_trace
+#: model:ir.model.fields,help:product_trace.field_product_trace__message_needaction
+msgid "If checked, new messages require your attention."
+msgstr "Ak označené, potom nové správy vyžadujú vašu pozornosť."
+
+#. module: product_trace
+#: model:ir.model.fields,help:product_trace.field_product_trace__message_has_error
+msgid "If checked, some messages have a delivery error."
+msgstr "Ak označené, potom majú niektoré správy chybu dodania."
+
+#. module: product_trace
+#: model_terms:ir.ui.view,arch_db:product_trace.view_product_trace_form
+msgid "Information"
+msgstr ""
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__ref
+msgid "Internal Reference"
+msgstr "Interná referencia"
+
+#. module: product_trace
+#: model:ir.model.fields,help:product_trace.field_product_trace__ref
+msgid ""
+"Internal reference number in case it differs from the manufacturer's "
+"lot/serial number"
+msgstr ""
+"Interné referenčné číslo v prípade, že sa líši od sériového čísla výrobcu"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__message_is_follower
+msgid "Is Follower"
+msgstr "Odberateľ"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__write_uid
+msgid "Last Updated by"
+msgstr "Naposledy upravoval"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__write_date
+msgid "Last Updated on"
+msgstr "Naposledy upravované"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_product__lot_properties_definition
+msgid "Lot Properties"
+msgstr ""
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_product__lot_name_format
+#: model:ir.model.fields,field_description:product_trace.field_product_template__lot_name_format
+msgid "Lot/Serial Name Format"
+msgstr ""
+
+#. module: product_trace
+#: model:ir.model,name:product_trace.model_product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__name
+#: model_terms:ir.ui.view,arch_db:product_trace.view_product_trace_search
+msgid "Lot/Serial Number"
+msgstr "Šarža/sériové číslo"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_product__trace_ids
+msgid "Lot/Serial Numbers"
+msgstr "Šarže / sériové čísla"
+
+#. module: product_trace
+#: model_terms:ir.ui.view,arch_db:product_trace.view_product_trace_form
+#: model_terms:ir.ui.view,arch_db:product_trace.view_product_trace_list
+msgid "Lots/Serial Numbers"
+msgstr "Šarže / sériové čísla"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__message_has_error
+msgid "Message Delivery error"
+msgstr "Chyba zobrazovania správ"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__message_ids
+msgid "Messages"
+msgstr "Správy"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__my_activity_date_deadline
+msgid "My Activity Deadline"
+msgstr "Termín mojej aktivity"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__activity_date_deadline
+msgid "Next Activity Deadline"
+msgstr "Ďalší konečný termín aktivity"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__activity_summary
+msgid "Next Activity Summary"
+msgstr "Zhrnutie ďalšej aktivity"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__activity_type_id
+msgid "Next Activity Type"
+msgstr "Typ ďalšej aktivity"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_product__next_serial
+#: model:ir.model.fields,field_description:product_trace.field_product_template__next_serial
+msgid "Next Serial"
+msgstr ""
+
+#. module: product_trace
+#. odoo-python
+#: code:addons/product_trace/models/product_trace.py:0
+msgid ""
+"No sequence can name a lot for %(product)s. Set a Serial/Lot Numbers "
+"Sequence on the product, or restore the default one."
+msgstr ""
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__message_needaction_counter
+msgid "Number of Actions"
+msgstr "Počet akcií"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__message_has_error_counter
+msgid "Number of errors"
+msgstr "Počet chýb"
+
+#. module: product_trace
+#: model:ir.model.fields,help:product_trace.field_product_trace__message_needaction_counter
+msgid "Number of messages requiring action"
+msgstr ""
+
+#. module: product_trace
+#: model:ir.model.fields,help:product_trace.field_product_trace__message_has_error_counter
+msgid "Number of messages with delivery error"
+msgstr "Počet doručených správ s chybou"
+
+#. module: product_trace
+#: model_terms:ir.ui.view,arch_db:product_trace.view_product_trace_form
+msgid "Other Info"
+msgstr ""
+
+#. module: product_trace
+#: model:ir.model,name:product_trace.model_product_template
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__product_id
+#: model_terms:ir.ui.view,arch_db:product_trace.view_product_trace_search
+msgid "Product"
+msgstr "Produkt"
+
+#. module: product_trace
+#: model_terms:ir.ui.view,arch_db:product_trace.view_product_trace_search
+msgid "Product Lots Filter"
+msgstr "Filter šarží produktu"
+
+#. module: product_trace
+#: model:ir.model,name:product_trace.model_product_product
+msgid "Product Variant"
+msgstr "Varianta produktu"
+
+#. module: product_trace
+#: model_terms:ir.ui.view,arch_db:product_trace.view_product_trace_form
+msgid ""
+"Product this lot/serial number contains. You cannot change it anymore if it "
+"has already been moved."
+msgstr ""
+"Produkt túto šaržu/sériové číslo obsahuje. Nemožno to zmeniť, ak bol "
+"uskutočnený pohyb."
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__lot_properties
+#: model_terms:ir.ui.view,arch_db:product_trace.view_product_trace_search
+msgid "Properties"
+msgstr ""
+
+#. module: product_trace
+#: model_terms:ir.ui.view,arch_db:product_trace.view_product_trace_form
+msgid "Reference"
+msgstr "Referencia"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__activity_user_id
+msgid "Responsible User"
+msgstr "Zodpovedný užívateľ"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_product__lot_sequence_id
+#: model:ir.model.fields,field_description:product_trace.field_product_template__lot_sequence_id
+msgid "Serial/Lot Numbers Sequence"
+msgstr ""
+
+#. module: product_trace
+#: model:ir.model.fields,help:product_trace.field_product_product__lot_name_format
+#: model:ir.model.fields,help:product_trace.field_product_template__lot_name_format
+msgid ""
+"Shape this product's lot/serial names take, in the same placeholder form as a sequence prefix (%(year)s, %(month)s, %(day)s, ...) plus the mandatory %(ref)s: the manufacturer's lot number, or the next number of the lot sequence when there is none.\n"
+"Set it when the name has to carry information — a manufacturing date, a supplier's own lot number — rather than just be unique. Left empty, names are drawn from the sequence as usual."
+msgstr ""
+
+#. module: product_trace
+#: model:ir.model.fields,help:product_trace.field_product_trace__activity_state
+msgid ""
+"Status based on activities\n"
+"Overdue: Due date is already passed\n"
+"Today: Activity date is today\n"
+"Planned: Future activities."
+msgstr ""
+"Status založený na aktivitách\n"
+"Zmeškané: dátum už vypršal\n"
+"Dnes: dátum aktivity je dnes\n"
+"Plán: budúce aktivity"
+
+#. module: product_trace
+#: model:ir.model.fields,help:product_trace.field_product_product__lot_sequence_id
+#: model:ir.model.fields,help:product_trace.field_product_template__lot_sequence_id
+msgid ""
+"Technical Field: The Ir.Sequence record that is used to generate serial/lot "
+"numbers for this product"
+msgstr ""
+
+#. module: product_trace
+#. odoo-python
+#: code:addons/product_trace/models/product_template.py:0
+msgid ""
+"The Lot/Serial Name Format of %(product)s must contain %%(ref)s: it is what "
+"keeps the names apart, the manufacturer's lot number or, without one, the "
+"next number of the lot sequence."
+msgstr ""
+
+#. module: product_trace
+#. odoo-python
+#: code:addons/product_trace/models/product_trace.py:0
+msgid ""
+"The Lot/Serial Name Format on %(product)s cannot be used: %(error)s.\n"
+"Expected placeholders are %(placeholders)s."
+msgstr ""
+
+#. module: product_trace
+#. odoo-python
+#: code:addons/product_trace/models/product_trace.py:0
+msgid ""
+"The combination of lot/serial number and product must be unique within a company including when no company is defined.\n"
+"The following combinations contain duplicates:\n"
+"%(error_lines)s"
+msgstr ""
+
+#. module: product_trace
+#: model:ir.model.constraint,message:product_trace.constraint_product_trace_name_product_company_uniq
+msgid ""
+"The combination of lot/serial number and product must be unique within a "
+"company."
+msgstr ""
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_product__tracking
+#: model:ir.model.fields,field_description:product_trace.field_product_template__tracking
+msgid "Tracking"
+msgstr "Sledovanie"
+
+#. module: product_trace
+#: model:ir.model.fields,help:product_trace.field_product_trace__activity_exception_decoration
+msgid "Type of the exception activity on record."
+msgstr "Typ výnimočnej aktivity v zázname."
+
+#. module: product_trace
+#: model:ir.model.fields,help:product_trace.field_product_trace__name
+msgid "Unique Lot/Serial Number"
+msgstr "Jednoznačná Šarža/Sériové číslo"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__product_uom_id
+msgid "Unit"
+msgstr "Jednotka"
+
+#. module: product_trace
+#: model_terms:ir.ui.view,arch_db:product_trace.view_product_trace_form
+msgid "Visible to all"
+msgstr ""
+
+#. module: product_trace
+#: model_terms:ir.ui.view,arch_db:product_trace.view_product_trace_form
+msgid "Visible to all coompanies"
+msgstr ""
+
+#. module: product_trace
+#: model_terms:ir.ui.view,arch_db:product_trace.view_product_trace_form
+msgid "e.g. LOT/0001/20121"
+msgstr "napr. LOT/0001/20121"

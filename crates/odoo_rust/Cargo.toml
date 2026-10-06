@@ -1,0 +1,23 @@
+[package]
+name = "odoo_rust"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+description = "Rust-accelerated hot paths for the Odoo ORM"
+
+[lib]
+name = "odoo_rust"
+
+crate-type = ["cdylib", "rlib"]
+
+doctest = false
+
+[dependencies]
+
+pyo3.workspace = true
+
+[build-dependencies]
+odoo_build = { path = "../odoo_build" }
+
+[features]
+extension-module = ["pyo3/extension-module"]

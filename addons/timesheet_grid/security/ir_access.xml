@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="project.access_account_analytic_line_project_ud" model="ir.access">
+        <field name="active" eval="False" />
+    </record>
+
+    <record id="hr_timesheet.timesheet_line_rule_user" model="ir.access">
+        <field name="operation">cr</field>
+    </record>
+
+    <record
+        id="hr_timesheet.timesheet_line_rule_user_group_project_manager"
+        model="ir.access">
+        <field name="operation">cr</field>
+    </record>
+
+</odoo>

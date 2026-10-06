@@ -1,0 +1,34 @@
+/** @odoo-module native */
+import { Component, useProps } from "@odoo/owl";
+import { DropdownItem } from "@web/components/dropdown";
+import { registry } from "@web/core/registry";
+import { useService } from "@web/core/utils/hooks";
+export class BusLogsMenuItem extends Component {
+    static components = { DropdownItem };
+    static template = "bus.BusLogsMenuItem";
+    static props = {};
+    props = useProps(this.constructor.props);
+
+    setup() {
+        this.busService = useService("bus_service");
+        this.busLogsService = useService("bus.logs_service");
+    }
+
+    onClickToggle() {
+        this.busLogsService.toggleLogging();
+    }
+
+    onClickDownload() {
+        this.busService.downloadLogs();
+    }
+}
+
+registry
+    .category("debug")
+    .category("default")
+    .add("bus.download_logs", () => ({
+        Component: BusLogsMenuItem,
+        sequence: 550,
+        section: "tools",
+        type: "component",
+    }));

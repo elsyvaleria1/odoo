@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<templates xml:space="preserve">
+
+    <t t-inherit="geoengine.GeoengineRenderer" t-inherit-mode="extension">
+        <xpath
+            expr="//div[@id='popup']//button[hasclass('btn-primary')]"
+            position="after"
+        >
+            <button
+                t-if="this.supportsTrailButton()"
+                t-on-click="this.onViewTrailClicked"
+                class="btn btn-outline-primary w-25 ms-1"
+                title="View today's GPS trail for this device"
+            >
+                <i class="fa-solid fa-road" />
+            </button>
+        </xpath>
+    </t>
+
+</templates>

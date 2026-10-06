@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_res_partner_filter_purchase_approval" model="ir.ui.view">
+        <field name="name">res.partner.filter.purchase.approval</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_res_partner_filter" />
+        <field name="arch" type="xml">
+
+            <xpath expr="//filter[@name='supplier']" position="after">
+                <filter
+                    name="po_approval_required"
+                    string="Requires PO Approval"
+                    help="Vendors that require purchase order approval"
+                    domain="[('po_approval_required', '=', True), ('supplier_rank', '&gt;', 0)]"
+                    groups="purchase.group_purchase_manager" />
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_partner_list_purchase_approval" model="ir.ui.view">
+        <field name="name">res.partner.list.purchase.approval</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_tree" />
+        <field name="arch" type="xml">
+
+            <xpath expr="//field[@name='complete_name']" position="after">
+                <field
+                    name="po_approval_required"
+                    string="PO Approval"
+                    widget="boolean_toggle"
+                    optional="hide" />
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_partner_form_purchase_approval" model="ir.ui.view">
+        <field name="name">res.partner.form.purchase.approval</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_form" />
+        <field name="arch" type="xml">
+
+            <group name="purchase" position="inside">
+                <field
+                    name="po_approval_required"
+                    string="Requires Approval"
+                    widget="boolean_toggle"
+                    invisible="not supplier_rank" />
+                <div
+                    class="text-muted"
+                    colspan="2"
+                    invisible="not supplier_rank or not po_approval_required"
+                    groups="purchase.group_purchase_manager">
+                    When enabled, all purchase orders from this vendor
+                    will require approval regardless of amount.
+                </div>
+                <field
+                    name="po_approval_notes"
+                    string="Approval Notes"
+                    placeholder="Add special instructions or notes for approvers regarding purchase orders from this vendor...&#10;&#10;Example: 'New vendor - verify credentials and references before approving first order'"
+                    colspan="2"
+                    groups="purchase.group_purchase_manager"
+                    invisible="not supplier_rank or not po_approval_required" />
+                <div
+                    class="alert alert-info"
+                    colspan="2"
+                    invisible="not supplier_rank or not po_approval_required"
+                    groups="purchase.group_purchase_manager"
+                    role="alert">
+                    <strong>Approval Required:</strong> This vendor is flagged for purchase
+                    order approval. All purchase orders from this vendor will require approval
+                    through the configured approval workflow. </div>
+            </group>
+        </field>
+    </record>
+
+</odoo>

@@ -1,0 +1,1001 @@
+from datetime import timedelta
+
+from odoo import fields
+from odoo.exceptions import ValidationError
+from odoo.fields import Command
+from odoo.tests import Form, common, tagged
+
+
+class TestMrpByProduct(common.TransactionCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.MrpBom = cls.env["mrp.bom"]
+        cls.warehouse = cls.env.ref("stock.warehouse0")
+        route_manufacture = cls.warehouse.manufacture_pull_id.route_id.id
+        route_mto = cls.warehouse.mto_pull_id.route_id.id
+        cls.uom_unit_id = cls.env.ref("uom.product_uom_unit").id
+
+        def create_product(name, route_ids=None):
+            return cls.env["product.product"].create(
+                {"name": name, "is_storable": True, "route_ids": route_ids or []}
+            )
+
+        cls.product_a = create_product(
+            "Product A", route_ids=[(6, 0, [route_manufacture, route_mto])]
+        )
+        cls.product_b = create_product(
+            "Product B", route_ids=[(6, 0, [route_manufacture, route_mto])]
+        )
+        cls.product_c_id = create_product("Product C", route_ids=[]).id
+        cls.bom_byproduct = cls.MrpBom.create(
+            {
+                "product_tmpl_id": cls.product_a.product_tmpl_id.id,
+                "product_qty": 1.0,
+                "type": "normal",
+                "product_uom_id": cls.uom_unit_id,
+                "bom_line_ids": [
+                    (
+                        0,
+                        0,
+                        {
+                            "product_id": cls.product_c_id,
+                            "product_uom_id": cls.uom_unit_id,
+                            "product_qty": 2,
+                        },
+                    )
+                ],
+                "byproduct_ids": [
+                    (
+                        0,
+                        0,
+                        {
+                            "product_id": cls.product_b.id,
+                            "product_uom_id": cls.uom_unit_id,
+                            "product_qty": 1,
+                        },
+                    )
+                ],
+            }
+        )
+        cls.produced_serial = cls.env["product.product"].create(
+            {
+                "name": "Produced Serial",
+                "is_storable": True,
+                "tracking": "serial",
+            }
+        )
+        cls.sn_1 = cls.env["product.trace"].create(
+            {"name": "Serial_01", "product_id": cls.produced_serial.id}
+        )
+        cls.sn_2 = cls.env["product.trace"].create(
+            {"name": "Serial_02", "product_id": cls.produced_serial.id}
+        )
+
+    def test_00_mrp_byproduct(self):
+        self.MrpBom.create(
+            {
+                "product_tmpl_id": self.product_b.product_tmpl_id.id,
+                "product_qty": 1.0,
+                "type": "normal",
+                "product_uom_id": self.uom_unit_id,
+                "bom_line_ids": [
+                    (
+                        0,
+                        0,
+                        {
+                            "product_id": self.product_c_id,
+                            "product_uom_id": self.uom_unit_id,
+                            "product_qty": 2,
+                        },
+                    )
+                ],
+            }
+        )
+
+        mnf_product_a_form = Form(self.env["mrp.production"])
+        mnf_product_a_form.product_id = self.product_a
+        mnf_product_a_form.bom_id = self.bom_byproduct
+        mnf_product_a_form.product_qty = 2.0
+        mnf_product_a = mnf_product_a_form.save()
+        mnf_product_a.action_confirm()
+
+        self.assertEqual(
+            mnf_product_a.state,
+            "confirmed",
+            "Production order should be in state confirmed",
+        )
+
+        moves = mnf_product_a.move_raw_ids | mnf_product_a.move_finished_ids
+        self.assertTrue(moves, "No moves are created !")
+
+        mo_form = Form(mnf_product_a)
+        mo_form.qty_producing = 2.00
+        mnf_product_a = mo_form.save()
+        self.assertEqual(
+            len(mnf_product_a.move_raw_ids),
+            1,
+            "Wrong consume move on production order.",
+        )
+        consume_move_c = mnf_product_a.move_raw_ids
+        by_product_move = mnf_product_a.move_finished_ids.filtered(
+            lambda x: x.product_id.id == self.product_b.id
+        )
+        self.assertEqual(
+            consume_move_c.product_uom_qty, 4, "Wrong consumed quantity of product c."
+        )
+        self.assertEqual(
+            by_product_move.product_uom_qty,
+            2,
+            "Wrong produced quantity of sub product.",
+        )
+
+        mnf_product_a._post_inventory()
+
+        self.assertFalse(
+            any(move.state != "done" for move in moves), "Moves are not done!"
+        )
+
+    def test_01_mrp_byproduct(self):
+        self.env["stock.quant"].create(
+            {
+                "product_id": self.product_c_id,
+                "location_id": self.warehouse.lot_stock_id.id,
+                "quantity": 4,
+            }
+        )
+        bom_product_a = self.MrpBom.create(
+            {
+                "product_tmpl_id": self.product_a.product_tmpl_id.id,
+                "product_qty": 1.0,
+                "type": "normal",
+                "product_uom_id": self.uom_unit_id,
+                "bom_line_ids": [
+                    (
+                        0,
+                        0,
+                        {
+                            "product_id": self.product_c_id,
+                            "product_uom_id": self.uom_unit_id,
+                            "product_qty": 2,
+                        },
+                    )
+                ],
+            }
+        )
+        mnf_product_a_form = Form(self.env["mrp.production"])
+        mnf_product_a_form.product_id = self.product_a
+        mnf_product_a_form.bom_id = bom_product_a
+        mnf_product_a_form.product_qty = 2.0
+        mnf_product_a = mnf_product_a_form.save()
+        mnf_product_a.action_confirm()
+        self.assertEqual(mnf_product_a.state, "confirmed")
+        mnf_product_a.move_raw_ids._action_assign()
+        mnf_product_a.move_raw_ids.picked = True
+        mnf_product_a.move_raw_ids._action_done()
+        self.assertEqual(mnf_product_a.state, "progress")
+        mnf_product_a.qty_producing = 2
+        mnf_product_a.button_mark_done()
+        self.assertTrue(mnf_product_a.move_finished_ids)
+        self.assertEqual(mnf_product_a.state, "done")
+
+    def test_change_product(self):
+        bom_product_a = self.MrpBom.create(
+            {
+                "product_tmpl_id": self.product_a.product_tmpl_id.id,
+                "product_qty": 1.0,
+                "type": "normal",
+                "product_uom_id": self.uom_unit_id,
+                "bom_line_ids": [
+                    (
+                        0,
+                        0,
+                        {
+                            "product_id": self.product_b.id,
+                            "product_uom_id": self.uom_unit_id,
+                            "product_qty": 2,
+                        },
+                    )
+                ],
+            }
+        )
+
+        bom_product_a_2 = self.MrpBom.create(
+            {
+                "product_tmpl_id": self.product_b.product_tmpl_id.id,
+                "product_qty": 1.0,
+                "type": "normal",
+                "product_uom_id": self.uom_unit_id,
+                "bom_line_ids": [
+                    (
+                        0,
+                        0,
+                        {
+                            "product_id": self.product_c_id,
+                            "product_uom_id": self.uom_unit_id,
+                            "product_qty": 2,
+                        },
+                    )
+                ],
+            }
+        )
+
+        mnf_product_a_form = Form(self.env["mrp.production"])
+        mnf_product_a_form.product_id = self.product_a
+        mnf_product_a_form.bom_id = bom_product_a
+        mnf_product_a_form.product_qty = 1.0
+        mnf_product_a = mnf_product_a_form.save()
+        mnf_product_a_form = Form(mnf_product_a)
+        mnf_product_a_form.bom_id = bom_product_a_2
+        mnf_product_a = mnf_product_a_form.save()
+        self.assertEqual(mnf_product_a.move_raw_ids.product_id.id, self.product_c_id)
+        self.assertFalse(mnf_product_a.move_byproduct_ids)
+
+    def test_default_uom(self):
+        self.product_b.product_tmpl_id.uom_id = self.env.ref("uom.product_uom_dozen")
+        bom = self.MrpBom.create(
+            {
+                "product_tmpl_id": self.product_a.product_tmpl_id.id,
+                "product_qty": 1.0,
+                "type": "normal",
+                "byproduct_ids": [
+                    (0, 0, {"product_id": self.product_b.id, "product_qty": 1})
+                ],
+            }
+        )
+        self.assertEqual(
+            bom.byproduct_ids.product_uom_id, self.env.ref("uom.product_uom_dozen")
+        )
+
+    def test_finished_and_byproduct_moves(self):
+        bom_product_a = self.MrpBom.create(
+            {
+                "product_tmpl_id": self.product_a.product_tmpl_id.id,
+                "product_qty": 1.0,
+                "type": "normal",
+                "bom_line_ids": [
+                    (
+                        0,
+                        0,
+                        {
+                            "product_id": self.product_c_id,
+                            "product_uom_id": self.uom_unit_id,
+                            "product_qty": 2.0,
+                        },
+                    )
+                ],
+                "byproduct_ids": [
+                    (
+                        0,
+                        0,
+                        {
+                            "product_id": self.product_b.id,
+                            "product_uom_id": self.uom_unit_id,
+                            "product_qty": 1.0,
+                        },
+                    )
+                ],
+            }
+        )
+        for expected_finished_qty, expected_byproduct_qty, values in [
+            (
+                3.0,
+                4.0,
+                {
+                    "move_finished_ids": [
+                        (
+                            0,
+                            0,
+                            {
+                                "product_id": self.product_a.id,
+                                "product_uom_qty": 3.0,
+                                "location_id": self.product_a.property_stock_production,
+                                "location_dest_id": self.warehouse.lot_stock_id.id,
+                            },
+                        ),
+                        (
+                            0,
+                            0,
+                            {
+                                "product_id": self.product_b.id,
+                                "product_uom_qty": 4.0,
+                                "location_id": self.product_a.property_stock_production,
+                                "location_dest_id": self.warehouse.lot_stock_id.id,
+                            },
+                        ),
+                    ],
+                },
+            ),
+            (
+                2.0,
+                4.0,
+                {
+                    "move_finished_ids": [
+                        (
+                            0,
+                            0,
+                            {
+                                "product_id": self.product_a.id,
+                                "product_uom_qty": 2.0,
+                                "location_id": self.product_a.property_stock_production,
+                                "location_dest_id": self.warehouse.lot_stock_id.id,
+                            },
+                        ),
+                        (
+                            0,
+                            0,
+                            {
+                                "product_id": self.product_b.id,
+                                "product_uom_qty": 4.0,
+                                "location_id": self.product_a.property_stock_production,
+                                "location_dest_id": self.warehouse.lot_stock_id.id,
+                            },
+                        ),
+                    ],
+                    "move_byproduct_ids": [
+                        (
+                            0,
+                            0,
+                            {
+                                "product_id": self.product_b.id,
+                                "product_uom_qty": 4.0,
+                                "location_id": self.product_a.property_stock_production,
+                                "location_dest_id": self.warehouse.lot_stock_id.id,
+                            },
+                        ),
+                    ],
+                },
+            ),
+            (
+                3.0,
+                4.0,
+                {
+                    "move_finished_ids": [
+                        (
+                            0,
+                            0,
+                            {
+                                "product_id": self.product_a.id,
+                                "product_uom_qty": 3.0,
+                                "location_id": self.product_a.property_stock_production,
+                                "location_dest_id": self.warehouse.lot_stock_id.id,
+                            },
+                        ),
+                    ],
+                    "move_byproduct_ids": [
+                        (
+                            0,
+                            0,
+                            {
+                                "product_id": self.product_b.id,
+                                "product_uom_qty": 4.0,
+                                "location_id": self.product_a.property_stock_production,
+                                "location_dest_id": self.warehouse.lot_stock_id.id,
+                            },
+                        ),
+                    ],
+                },
+            ),
+        ]:
+            mo = self.env["mrp.production"].create(
+                {
+                    "product_id": self.product_a.id,
+                    "bom_id": bom_product_a.id,
+                    "product_qty": 2.0,
+                    **values,
+                }
+            )
+            self.assertEqual(
+                mo.move_finished_ids.product_id, self.product_a + self.product_b
+            )
+            self.assertEqual(mo.move_byproduct_ids.product_id, self.product_b)
+
+            finished_move = mo.move_finished_ids.filtered(
+                lambda x: x.product_id == self.product_a
+            )
+            self.assertEqual(
+                finished_move.product_uom_qty,
+                expected_finished_qty,
+                "Wrong produced quantity of finished product.",
+            )
+
+            by_product_move = mo.move_finished_ids.filtered(
+                lambda x: x.product_id == self.product_b
+            )
+            self.assertEqual(
+                by_product_move.product_uom_qty,
+                expected_byproduct_qty,
+                "Wrong produced quantity of by-product.",
+            )
+
+            self.assertEqual(
+                mo.move_byproduct_ids.product_uom_qty,
+                expected_byproduct_qty,
+                "Wrong produced quantity of by-product.",
+            )
+
+    def test_byproduct_putaway(self):
+        self.stock_location = self.env.ref("stock.stock_location_stock")
+        stor_category = self.env["stock.storage.category"].create(
+            {
+                "name": "Super Storage Category",
+                "max_weight": 1000,
+                "product_capacity_ids": [
+                    (
+                        0,
+                        0,
+                        {
+                            "product_id": self.product_b.id,
+                            "quantity": 2,
+                        },
+                    )
+                ],
+            }
+        )
+        shelf1_location = self.env["stock.location"].create(
+            {
+                "name": "shelf1",
+                "usage": "internal",
+                "location_id": self.stock_location.id,
+                "storage_category_id": stor_category.id,
+            }
+        )
+        shelf2_location = self.env["stock.location"].create(
+            {
+                "name": "shelf2",
+                "usage": "internal",
+                "location_id": self.stock_location.id,
+                "storage_category_id": stor_category.id,
+            }
+        )
+        self.env["stock.putaway.rule"].create(
+            {
+                "product_id": self.product_b.id,
+                "location_in_id": self.stock_location.id,
+                "location_out_id": self.stock_location.id,
+                "storage_category_id": stor_category.id,
+                "sublocation": "closest_location",
+            }
+        )
+        self.env["stock.putaway.rule"].create(
+            {
+                "product_id": self.product_a.id,
+                "location_in_id": self.stock_location.id,
+                "location_out_id": shelf2_location.id,
+            }
+        )
+
+        self.env["stock.quant"]._update_available_quantity(
+            self.product_b, shelf1_location, 1
+        )
+
+        mo_form = Form(self.env["mrp.production"])
+        mo_form.product_id = self.product_a
+        mo_form.bom_id = self.bom_byproduct
+        mo_form.product_qty = 2.0
+        mo = mo_form.save()
+        mo.action_confirm()
+        mo_form = Form(mo)
+        mo_form.qty_producing = 2.00
+        mo = mo_form.save()
+
+        mo._post_inventory()
+        byproduct_move_line = mo.move_byproduct_ids.move_line_ids
+        finished_move_line = mo.move_finished_ids.filtered(
+            lambda m: m.product_id == self.product_a
+        ).move_line_ids
+        self.assertEqual(byproduct_move_line.location_dest_id, shelf2_location)
+        self.assertEqual(finished_move_line.location_dest_id, shelf2_location)
+
+    def test_check_byproducts_cost_share(self):
+        mo_form = Form(self.env["mrp.production"])
+        mo_form.product_id = self.product_a
+        mo_form.product_qty = 2.0
+        mo = mo_form.save()
+
+        self.product_d = self.env["product.product"].create(
+            {"name": "Product D", "is_storable": True}
+        )
+        self.product_e = self.env["product.product"].create(
+            {"name": "Product E", "is_storable": True}
+        )
+
+        byproduct_1 = self.env["stock.move"].create(
+            {
+                "product_id": self.product_d.id,
+                "product_uom_id": self.ref("uom.product_uom_unit"),
+                "production_id": mo.id,
+                "location_id": self.ref("stock.stock_location_stock"),
+                "location_dest_id": self.ref("stock.stock_location_output"),
+            }
+        )
+        byproduct_2 = self.env["stock.move"].create(
+            {
+                "product_id": self.product_e.id,
+                "product_uom_id": self.ref("uom.product_uom_unit"),
+                "production_id": mo.id,
+                "location_id": self.ref("stock.stock_location_stock"),
+                "location_dest_id": self.ref("stock.stock_location_output"),
+            }
+        )
+
+        with self.assertRaises(ValidationError):
+            byproduct_1.cost_share = 120
+            mo.write({"move_byproduct_ids": [(4, byproduct_1.id)]})
+
+        with self.assertRaises(ValidationError):
+            byproduct_1.cost_share = -10
+            mo.write({"move_byproduct_ids": [(4, byproduct_1.id)]})
+
+        with self.assertRaises(ValidationError):
+            byproduct_1.cost_share = 60
+            byproduct_2.cost_share = 70
+            mo.write({"move_byproduct_ids": [(6, 0, [byproduct_1.id, byproduct_2.id])]})
+
+    def test_check_byproducts_cost_share_02(self):
+        self.bom_byproduct.byproduct_ids[0].cost_share = 70
+        self.bom_byproduct.byproduct_ids[0].product_qty = 2
+        mo = self.env["mrp.production"].create(
+            {
+                "product_id": self.product_a.id,
+                "product_qty": 1.0,
+                "bom_id": self.bom_byproduct.id,
+            }
+        )
+        mo.action_confirm()
+        self.assertEqual(mo.state, "confirmed")
+        mo_form = Form(mo)
+        mo_form.qty_producing = 1
+        mo = mo_form.save()
+        self.assertEqual(mo.state, "to_close")
+        mo.button_mark_done()
+        self.assertEqual(mo.state, "done")
+
+    def test_01_check_byproducts_update(self):
+        mo_form = Form(self.env["mrp.production"])
+        mo_form.product_id = self.product_a
+        mo_form.product_qty = 1.0
+        mo = mo_form.save()
+        mo.action_confirm()
+
+        mo.move_byproduct_ids.write({"product_id": self.product_c_id})
+        mo.button_mark_done()
+        self.assertEqual(
+            mo.move_byproduct_ids.product_id,
+            mo.move_byproduct_ids.move_line_ids.product_id,
+        )
+
+    def test_02_check_byproducts_update(self):
+        self.bom_byproduct.byproduct_ids[0].product_id = self.produced_serial.id
+        self.bom_byproduct.byproduct_ids[0].product_qty = 2
+        mo = self.env["mrp.production"].create(
+            {
+                "product_id": self.product_a.id,
+                "product_qty": 1.0,
+                "bom_id": self.bom_byproduct.id,
+            }
+        )
+        mo.action_confirm()
+
+        mo.move_byproduct_ids.trace_ids = [(4, self.sn_1.id)]
+        mo.move_byproduct_ids.trace_ids = [(4, self.sn_2.id)]
+
+        self.assertEqual(len(mo.move_byproduct_ids.move_line_ids), 2)
+
+        mo.move_byproduct_ids.write({"product_id": self.product_c_id})
+
+        mo.button_mark_done()
+        self.assertEqual(len(mo.move_byproduct_ids.move_line_ids), 1)
+        self.assertEqual(
+            mo.move_byproduct_ids.product_id,
+            mo.move_byproduct_ids.move_line_ids.product_id,
+        )
+
+    def test_03_check_byproducts_update(self):
+        mo_form = Form(self.env["mrp.production"])
+        mo_form.product_id = self.product_a
+        mo_form.product_qty = 2.0
+        mo = mo_form.save()
+        mo.action_confirm()
+
+        mo.move_byproduct_ids.write({"product_id": self.produced_serial.id})
+
+        mo.move_byproduct_ids.trace_ids = [(4, self.sn_1.id)]
+        mo.move_byproduct_ids.trace_ids = [(4, self.sn_2.id)]
+
+        self.assertFalse(mo.move_byproduct_ids.show_lots_text)
+        self.assertTrue(mo.move_byproduct_ids.show_lots_m2o)
+        self.assertFalse(mo.move_byproduct_ids.show_quant)
+
+        mo.button_mark_done()
+        self.assertEqual(len(mo.move_byproduct_ids.move_line_ids), 2)
+        self.assertEqual(
+            mo.move_byproduct_ids.product_id,
+            mo.move_byproduct_ids.move_line_ids.product_id,
+        )
+
+    def test_byproduct_qty_update(self):
+        self.bom_byproduct.byproduct_ids.product_qty = 0.0
+        self.warehouse.manufacture_steps = "pbm_sam"
+        mo = self.env["mrp.production"].create(
+            {
+                "product_id": self.product_a.id,
+                "product_qty": 1.0,
+                "bom_id": self.bom_byproduct.id,
+            }
+        )
+        mo.action_confirm()
+        mo.move_byproduct_ids.quantity = 1.0
+        mo.button_mark_done()
+        self.assertEqual(mo.state, "done")
+        picking = mo.picking_ids.filtered(
+            lambda p: p.location_dest_id == self.warehouse.lot_stock_id
+        )
+        self.assertEqual(picking.state, "assigned")
+        byproduct_move = picking.move_ids.filtered(
+            lambda m: m.product_id == self.bom_byproduct.byproduct_ids.product_id
+        )
+        self.assertEqual(byproduct_move.product_qty, 1.0)
+
+    def test_byproducts_bom_document(self):
+        self.env.user.group_ids += self.env.ref("mrp.group_mrp_byproducts")
+        doc_product_bom = self.env["document.document"].create(
+            {
+                "name": "doc_product_bom",
+                "attached_on_mrp": "bom",
+                "res_id": self.product_a.id,
+                "res_model": "product.product",
+            }
+        )
+
+        self.env["document.document"].create(
+            {
+                "name": "doc_product_bom_archived",
+                "active": False,
+                "attached_on_mrp": "bom",
+                "res_id": self.product_a.id,
+                "res_model": "product.product",
+            }
+        )
+
+        doc_template_bom = self.env["document.document"].create(
+            {
+                "name": "doc_template_bom",
+                "attached_on_mrp": "bom",
+                "res_id": self.product_a.product_tmpl_id.id,
+                "res_model": "product.template",
+            }
+        )
+
+        attachments = doc_template_bom.attachment_id + doc_product_bom.attachment_id
+
+        bom = self.env["mrp.bom"].create(
+            {
+                "product_tmpl_id": self.product_b.product_tmpl_id.id,
+                "product_uom_id": self.product_b.product_tmpl_id.uom_id.id,
+                "product_qty": 1.0,
+                "type": "normal",
+                "byproduct_ids": [
+                    Command.create({"product_id": self.product_a.id, "product_qty": 1}),
+                ],
+            }
+        )
+
+        self.assertEqual(bom._get_extra_attachments_by_bom()[bom], attachments)
+
+    def test_3_steps_byproduct(self):
+        self.warehouse.manufacture_steps = "pbm_sam"
+        self.env.user.group_ids += self.env.ref("mrp.group_mrp_byproducts")
+        component, final_product, byproduct = self.env["product.product"].create(
+            [
+                {
+                    "name": name,
+                    "is_storable": True,
+                }
+                for name in ["Old Blood", "Insight", "Eyes on the Inside"]
+            ]
+        )
+        self.env["stock.quant"]._update_available_quantity(
+            component, self.warehouse.lot_stock_id, 1
+        )
+        mo = self.env["mrp.production"].create(
+            {
+                "product_id": final_product.id,
+                "product_qty": 1.0,
+            }
+        )
+        mo_form = Form(mo)
+        with mo_form.move_raw_ids.new() as line:
+            line.product_id = component
+            line.product_uom_qty = 1
+        with mo_form.move_byproduct_ids.new() as line:
+            line.product_id = byproduct
+            line.product_uom_qty = 1
+        mo = mo_form.save()
+        mo.action_confirm()
+        preprod_picking = mo.picking_ids.filtered(lambda p: p.state == "assigned")
+        preprod_picking.button_validate()
+        mo.button_mark_done()
+        postprod_picking = mo.picking_ids.filtered(lambda p: p.state == "assigned")
+
+        self.assertEqual(len(postprod_picking.move_ids), 2)
+        self.assertEqual(
+            postprod_picking.move_ids.product_id, final_product + byproduct
+        )
+        self.assertEqual(postprod_picking.location_dest_id, self.warehouse.lot_stock_id)
+
+    def test_over_produce_by_products_with_cost_share(self):
+        self.env.user.group_ids = [Command.link(self.ref("mrp.group_mrp_byproducts"))]
+        self.bom_byproduct.byproduct_ids.cost_share = 3.3
+        mo = self.env["mrp.production"].create(
+            {
+                "product_id": self.product_a.id,
+                "product_qty": 1.0,
+            }
+        )
+        mo.action_confirm()
+
+        with Form(mo) as mo_form:
+            mo_form.qty_producing = 1.0
+            with mo_form.move_byproduct_ids.edit(0) as by_product_move:
+                by_product_move.quantity = 10.0
+        mo.button_mark_done()
+        self.assertRecordValues(
+            mo.move_byproduct_ids,
+            [
+                {"quantity": 10.0, "state": "done"},
+            ],
+        )
+
+    def _confirmed_order(self):
+        production = self.env["mrp.production"].create(
+            {"product_id": self.product_a.id, "bom_id": self.bom_byproduct.id}
+        )
+        production.action_confirm()
+        self.assertFalse(production.is_outdated_bom)
+        return production
+
+    def test_a_catalog_by_product_change_outdates_open_orders(self):
+        production = self._confirmed_order()
+        self.bom_byproduct._update_order_line_info(
+            self.product_b.id, 5, child_field="byproduct_ids"
+        )
+        self.assertEqual(self.bom_byproduct.byproduct_ids.product_qty, 5)
+        self.assertTrue(
+            production.is_outdated_bom,
+            "a by-product quantity changed through the catalog outdates the "
+            "order, as a component's does",
+        )
+
+    def test_a_catalog_by_product_removal_outdates_open_orders(self):
+        production = self._confirmed_order()
+        self.bom_byproduct._update_order_line_info(
+            self.product_b.id, 0, child_field="byproduct_ids"
+        )
+        self.assertFalse(self.bom_byproduct.byproduct_ids)
+        self.assertTrue(production.is_outdated_bom)
+
+    def test_a_by_product_cost_share_change_outdates_open_orders(self):
+        production = self._confirmed_order()
+        self.bom_byproduct.byproduct_ids.cost_share = 10
+        self.assertTrue(production.is_outdated_bom)
+
+
+@tagged("post_install", "-at_install")
+class TestByproductMoves(common.TransactionCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.env.user.group_ids += cls.env.ref("mrp.group_mrp_byproducts")
+        cls.unit = cls.env.ref("uom.product_uom_unit")
+        cls.component, cls.finished, cls.byproduct, cls.other_byproduct, cls.extra = (
+            cls.env["product.product"].create(
+                [
+                    {"name": name, "is_storable": True}
+                    for name in (
+                        "Moves component",
+                        "Moves finished",
+                        "Moves by-product",
+                        "Moves other by-product",
+                        "Moves hand-added by-product",
+                    )
+                ]
+            )
+        )
+        cls.bom = cls.env["mrp.bom"].create(
+            {
+                "product_tmpl_id": cls.finished.product_tmpl_id.id,
+                "product_qty": 1.0,
+                "bom_line_ids": [
+                    Command.create({"product_id": cls.component.id, "product_qty": 2})
+                ],
+                "byproduct_ids": [
+                    Command.create(
+                        {
+                            "product_id": cls.byproduct.id,
+                            "product_qty": 1,
+                            "cost_share": 70,
+                        }
+                    ),
+                    Command.create(
+                        {
+                            "product_id": cls.other_byproduct.id,
+                            "product_qty": 1,
+                            "cost_share": 30,
+                        }
+                    ),
+                ],
+            }
+        )
+
+    def make_production(self, **values):
+        return self.env["mrp.production"].create(
+            {"product_id": self.finished.id, "bom_id": self.bom.id, **values}
+        )
+
+    def byproduct_move(self, production, product):
+        return production.move_byproduct_ids.filtered(
+            lambda move: move.product_id == product
+        )
+
+    def test_cost_share_written_on_the_move_is_capped(self):
+        production = self.make_production()
+        production.action_confirm()
+        with self.assertRaises(ValidationError):
+            self.byproduct_move(production, self.byproduct).cost_share = 150
+            self.env.flush_all()
+
+    def test_negative_cost_share_written_on_the_move_is_refused(self):
+        production = self.make_production()
+        with self.assertRaises(ValidationError):
+            self.byproduct_move(production, self.byproduct).cost_share = -5
+            self.env.flush_all()
+
+    def test_cost_shares_can_be_swapped_in_one_edit(self):
+        production = self.make_production()
+        first = self.byproduct_move(production, self.byproduct)
+        second = self.byproduct_move(production, self.other_byproduct)
+        production.write(
+            {
+                "move_byproduct_ids": [
+                    Command.update(second.id, {"cost_share": 70}),
+                    Command.update(first.id, {"cost_share": 30}),
+                ]
+            }
+        )
+        self.env.flush_all()
+        self.assertEqual(production.byproduct_cost_share, 100)
+        self.assertEqual((first.cost_share, second.cost_share), (30, 70))
+
+    def finished_state(self, production):
+        return sorted(
+            (move.product_id.name, move.product_uom_qty, bool(move.byproduct_id))
+            for move in production.move_finished_ids
+        )
+
+    def test_a_draft_order_keeps_its_hand_added_byproduct(self):
+        production = self.make_production()
+        production.write(
+            {
+                "move_byproduct_ids": [
+                    Command.create({"product_id": self.extra.id, "product_uom_qty": 3})
+                ]
+            }
+        )
+        ids_before = set(production.move_finished_ids.ids)
+
+        production.write({"product_qty": 2})
+        production.write({"date_start": fields.Datetime.now() + timedelta(days=3)})
+
+        self.assertEqual(
+            self.finished_state(production),
+            [
+                ("Moves by-product", 2.0, True),
+                ("Moves finished", 2.0, False),
+                ("Moves hand-added by-product", 3.0, False),
+                ("Moves other by-product", 2.0, True),
+            ],
+        )
+        self.assertEqual(set(production.move_finished_ids.ids), ids_before)
+        self.assertEqual(production.byproduct_cost_share, 100)
+
+    def test_a_form_keeps_the_byproduct_added_before_a_quantity_change(self):
+        form = Form(self.env["mrp.production"])
+        form.product_id = self.finished
+        with form.move_byproduct_ids.new() as line:
+            line.product_id = self.extra
+            line.product_uom_qty = 7
+        form.product_qty = 4
+        self.assertEqual(len(form.move_byproduct_ids), 3)
+        production = form.save()
+        self.assertEqual(
+            self.finished_state(production),
+            [
+                ("Moves by-product", 4.0, True),
+                ("Moves finished", 4.0, False),
+                ("Moves hand-added by-product", 7.0, False),
+                ("Moves other by-product", 4.0, True),
+            ],
+        )
+
+        ids_before = set(production.move_finished_ids.ids)
+        form = Form(production)
+        form.product_qty = 5
+        production = form.save()
+        self.assertEqual(
+            self.finished_state(production),
+            [
+                ("Moves by-product", 5.0, True),
+                ("Moves finished", 5.0, False),
+                ("Moves hand-added by-product", 7.0, False),
+                ("Moves other by-product", 5.0, True),
+            ],
+        )
+        self.assertEqual(set(production.move_finished_ids.ids), ids_before)
+
+    def test_a_new_product_rebuilds_the_finished_moves(self):
+        other = self.env["product.product"].create(
+            {"name": "Moves other finished", "is_storable": True}
+        )
+        production = self.make_production()
+        production.write(
+            {
+                "move_byproduct_ids": [
+                    Command.create({"product_id": self.extra.id, "product_uom_qty": 3})
+                ]
+            }
+        )
+        production.write({"product_id": other.id})
+        self.assertEqual(
+            self.finished_state(production), [("Moves other finished", 1.0, False)]
+        )
+
+        form = Form(self.make_production())
+        form.product_id = other
+        self.assertEqual(
+            self.finished_state(form.save()), [("Moves other finished", 1.0, False)]
+        )
+
+    def test_a_bom_without_byproducts_drops_only_the_bom_byproducts(self):
+        plain_bom = self.bom.copy({"byproduct_ids": False})
+        self.assertFalse(plain_bom.byproduct_ids)
+        production = self.make_production()
+        production.write(
+            {
+                "move_byproduct_ids": [
+                    Command.create({"product_id": self.extra.id, "product_uom_qty": 3})
+                ]
+            }
+        )
+        main = production._get_main_finished_moves()
+        production.write({"bom_id": plain_bom.id})
+        self.assertEqual(
+            self.finished_state(production),
+            [
+                ("Moves finished", 1.0, False),
+                ("Moves hand-added by-product", 3.0, False),
+            ],
+        )
+        self.assertEqual(production._get_main_finished_moves(), main)
+
+    def test_main_and_byproduct_moves_are_split_on_the_product(self):
+        productions = self.make_production() | self.make_production()
+        productions[0].write(
+            {
+                "move_byproduct_ids": [
+                    Command.create({"product_id": self.extra.id, "product_uom_qty": 3})
+                ]
+            }
+        )
+        main = productions._get_main_finished_moves()
+        self.assertEqual(main.product_id, self.finished)
+        self.assertEqual(len(main), 2)
+        self.assertEqual(
+            main | productions.move_byproduct_ids, productions.move_finished_ids
+        )
+        self.assertTrue(all(move._is_main_finished_move() for move in main))
+        self.assertFalse(
+            any(
+                move._is_main_finished_move() for move in productions.move_byproduct_ids
+            )
+        )

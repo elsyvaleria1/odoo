@@ -1,0 +1,108 @@
+// @ts-check
+/** @odoo-module native */
+import { NavigableList } from "@mail/core/common/navigable_list";
+import { mapSuggestionsToOptions } from "@mail/core/common/suggestion_hook";
+import { makeSequential } from "@mail/utils/common/misc";
+import { Component, proxy, t, useProps } from "@odoo/owl";
+import { _t } from "@web/core/translation";
+import { elementRef } from "@web/core/utils/element_ref";
+import { useAutofocus, useService } from "@web/core/utils/hooks";
+import { useLayoutEffect } from "@web/core/utils/layout_effect";
+export class MentionList extends Component {
+    static template = "mail.MentionList";
+    static components = { NavigableList };
+    static props = {
+        onSelect: t.function(),
+        close: t.function().optional(() => () => {}),
+        thread: t.any().optional(),
+        type: t.string(),
+    };
+    props = useProps(this.constructor.props);
+
+    setup() {
+        super.setup();
+        this.state = proxy({
+            searchTerm: "",
+            options: [],
+            isFetching: false,
+        });
+        this.orm = useService("orm");
+        this.store = useService("mail.store");
+        this.suggestionService = useService("mail.suggestion");
+        this.sequential = makeSequential();
+        this.autofocusRef = elementRef();
+        this.ref = useAutofocus({ ref: this.autofocusRef, mobile: true });
+
+        useLayoutEffect(
+            /**
+             * @param {string} term
+             * @param {string} delimiter
+             * @param {import("models").Thread} thread
+             */
+            (term, delimiter, thread) => {
+                if (!term) {
+                    this.state.options = [];
+                    return;
+                }
+                this.sequential(async () => {
+                    this.state.isFetching = true;
+                    try {
+                        await this.suggestionService.fetchSuggestions(
+                            { delimiter, term },
+                            { thread },
+                        );
+                    } finally {
+                        this.state.isFetching = false;
+                    }
+                    const { suggestions } = this.suggestionService.searchSuggestions(
+                        { delimiter, term },
+                        { thread },
+                    );
+                    this.state.options = suggestions;
+                });
+            },
+            () => [
+                this.state.searchTerm,
+                this.props.type === "Partner" ? "@" : "#",
+                this.props.thread,
+            ],
+        );
+    }
+
+    get placeholder() {
+        switch (this.props.type) {
+            case "Thread":
+                return _t("Search for a channel...");
+            case "Partner":
+                return _t("Search for a user...");
+            default:
+                return _t("Search...");
+        }
+    }
+
+    get navigableListProps() {
+        return {
+            anchorRef: this.ref.el,
+            position: "bottom-fit",
+            isLoading: !!this.state.searchTerm && this.state.isFetching,
+            /** @param {...any} args */
+            onSelect: (...args) => {
+                this.props.onSelect(...args);
+                this.props.close();
+            },
+            ...mapSuggestionsToOptions(this.props.type, this.state.options, {
+                thread: this.props.thread,
+            }),
+        };
+    }
+
+    /** @param {KeyboardEvent} ev */
+    onKeydown(ev) {
+        switch (ev.key) {
+            case "Escape": {
+                this.props.close();
+                break;
+            }
+        }
+    }
+}

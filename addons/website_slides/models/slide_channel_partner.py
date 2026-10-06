@@ -1,0 +1,365 @@
+import math
+
+from dateutil.relativedelta import relativedelta
+
+from odoo import Command, api, fields, models
+from odoo.fields import Domain
+from odoo.tools import frozendict
+
+# how long an invitation to a course stays pending, and its link with it
+INVITATION_VALIDITY_MONTHS = 3
+
+
+class SlideChannelPartner(models.Model):
+    _name = "slide.channel.partner"
+    _description = "Channel / Partners (Members)"
+    _table = "slide_channel_partner"
+    _rec_name = "partner_id"
+    _access_anchors = frozendict(
+        {
+            "owner": "channel_id.user_id",
+        }
+    )
+
+    active = fields.Boolean(default=True)
+    channel_id = fields.Many2one(
+        comodel_name="slide.channel",
+        string="Course",
+        index=True,
+        required=True,
+        ondelete="cascade",
+    )
+    member_status = fields.Selection(
+        selection=[
+            ("invited", "Invite Sent"),
+            ("joined", "Joined"),
+            ("ongoing", "Ongoing"),
+            ("completed", "Finished"),
+        ],
+        string="Attendee Status",
+        default="joined",
+        readonly=True,
+        required=True,
+    )
+    completion = fields.Integer(
+        string="% Completed Contents",
+        default=0,
+        aggregator="avg",
+    )
+    completed_slides_count = fields.Integer(
+        string="# Completed Contents",
+        default=0,
+    )
+    partner_id = fields.Many2one(
+        comodel_name="res.partner",
+        index=True,
+        required=True,
+        ondelete="cascade",
+    )
+    partner_email = fields.Char(
+        related="partner_id.email",
+        readonly=True,
+    )
+    channel_user_id = fields.Many2one(
+        comodel_name="res.users",
+        related="channel_id.user_id",
+        string="Responsible",
+    )
+    channel_type = fields.Selection(related="channel_id.channel_type")
+    channel_visibility = fields.Selection(related="channel_id.visibility")
+    channel_enroll = fields.Selection(related="channel_id.enroll")
+    channel_website_id = fields.Many2one(
+        comodel_name="website",
+        related="channel_id.website_id",
+        string="Website",
+    )
+    next_slide_id = fields.Many2one(
+        comodel_name="slide.slide",
+        string="Next Lesson",
+        compute="_compute_next_slide_id",
+    )
+
+    invitation_link = fields.Char(compute="_compute_invitation_link")
+    last_invitation_date = fields.Datetime()
+
+    _channel_partner_uniq = models.Constraint(
+        "unique(channel_id, partner_id)",
+        "A partner membership to a channel must be unique!",
+    )
+    _check_completion = models.Constraint(
+        "check(completion >= 0 and completion <= 100)",
+        "The completion of a channel is a percentage and should be between 0% and 100.",
+    )
+
+    @api.depends("channel_id", "partner_id")
+    def _compute_invitation_link(self) -> None:
+        links = (
+            self.env["access.link"]
+            ._record_links(self.filtered("id"), Domain("audience", "=", "anyone"))
+            .sorted("id", reverse=True)
+        )
+        shown = links._tokens()
+        tokens = {}
+        for link in links:
+            if link.res_id not in tokens and link.id in shown:
+                tokens[link.res_id] = shown[link.id]
+        for record in self:
+            token = tokens.get(record.id)
+            record.invitation_link = token and (
+                f"{record.channel_id.get_base_url()}/slides/{record.channel_id.id}"
+                f"/invite?invite_partner_id={record.partner_id.id}&invite_hash={token}"
+            )
+
+    def _issue_invitation_links(self) -> None:
+        """The link each member's invitation mail carries: while an invitation
+        is pending, three months from the last one sent (as the invitation
+        itself); a member enrolled directly is notified for a notification's
+        time (decision B1)."""
+        Link = self.env["access.link"].with_privilege(
+            "base.privilege_manage_links", reason="invite to a course"
+        )
+        for member in self:
+            pending = member.member_status == "invited"
+            date_to = (
+                (member.last_invitation_date or fields.Datetime.now())
+                + relativedelta(months=INVITATION_VALIDITY_MONTHS)
+                if pending
+                else None
+            )
+            cause = "share" if pending else "notification"
+            if date_to:
+                Link._update_record_links(
+                    member,
+                    {"date_to": date_to},
+                    domain=Domain("cause", "=", cause)
+                    & Domain("partner_id", "=", member.partner_id.id),
+                )
+            Link._issue(
+                member,
+                partner=member.partner_id,
+                role="view",
+                cause=cause,
+                date_to=date_to,
+            )
+        self.invalidate_recordset(["invitation_link"])
+
+    def _compute_next_slide_id(self) -> None:
+        if not self.ids:
+            self.next_slide_id = False
+            return
+        self.env["slide.channel.partner"].flush_model()
+        self.env["slide.slide"].flush_model()
+        self.env["slide.slide.partner"].flush_model()
+        query = """
+            SELECT DISTINCT ON (SCP.id)
+                SCP.id AS id,
+                SS.id AS slide_id
+            FROM slide_channel_partner SCP
+            JOIN slide_slide SS
+                ON SS.channel_id = SCP.channel_id
+                AND SS.is_published = TRUE
+                AND SS.active = TRUE
+                AND SS.is_category = FALSE
+                AND NOT EXISTS (
+                    SELECT 1
+                      FROM slide_slide_partner
+                     WHERE slide_id = SS.id
+                       AND partner_id = SCP.partner_id
+                       AND completed = TRUE
+                )
+            WHERE SCP.id = ANY(%s)
+            ORDER BY SCP.id, SS.sequence, SS.id
+        """
+        self.env.cr.execute(query, [list(self.ids)])
+        next_slide_per_membership = {
+            line["id"]: line["slide_id"] for line in self.env.cr.dictfetchall()
+        }
+
+        for membership in self:
+            membership.next_slide_id = next_slide_per_membership.get(
+                membership.id, False
+            )
+
+    def _is_finished(self) -> bool:
+        self.check_singleton()
+        total_slides = self.channel_id.total_slides
+        return bool(total_slides) and self.completed_slides_count >= total_slides
+
+    def _recompute_completion(self) -> None:
+        read_group_res = (
+            self.env["slide.slide.partner"]
+            .sudo()
+            ._read_group(
+                [
+                    "&",
+                    "&",
+                    ("channel_id", "in", self.mapped("channel_id").ids),
+                    ("partner_id", "in", self.mapped("partner_id").ids),
+                    ("completed", "=", True),
+                    ("slide_id.is_published", "=", True),
+                    ("slide_id.active", "=", True),
+                ],
+                ["channel_id", "partner_id"],
+                aggregates=["__count"],
+            )
+        )
+        mapped_data = {
+            (channel.id, partner.id): count
+            for channel, partner, count in read_group_res
+        }
+
+        completed_records = self.env["slide.channel.partner"]
+        uncompleted_records = self.env["slide.channel.partner"]
+        for record in self:
+            if record.member_status in ("completed", "invited"):
+                continue
+            total_slides = record.channel_id.total_slides
+            was_finished = record._is_finished()
+            record.completed_slides_count = mapped_data.get(
+                (record.channel_id.id, record.partner_id.id), 0
+            )
+            record.completion = (
+                math.floor(100.0 * record.completed_slides_count / total_slides)
+                if total_slides
+                else 0
+            )
+            is_finished = record._is_finished()
+
+            if not record.channel_id.active:
+                continue
+            if not was_finished and is_finished:
+                completed_records += record
+            elif was_finished and not is_finished:
+                uncompleted_records += record
+
+            if is_finished:
+                record.member_status = "completed"
+            elif not record.completed_slides_count:
+                record.member_status = "joined"
+            else:
+                record.member_status = "ongoing"
+
+        if completed_records:
+            completed_records._post_completion_update_hook(completed=True)
+            completed_records._send_completed_mail()
+
+        if uncompleted_records:
+            uncompleted_records._post_completion_update_hook(completed=False)
+
+    def unlink(self):
+        if self:
+            self.filtered(
+                lambda membership: membership.member_status == "completed"
+            )._post_completion_update_hook(completed=False)
+            # One clause per (channel, partners) pair rather than per record,
+            # and the channel side expressed as a relation instead of an
+            # inlined list of slide ids: unlinking 1000 members of a 500-slide
+            # course used to build a domain with half a million terms in it.
+            removed_slide_partner_domain = Domain.OR(
+                Domain("channel_id", "=", channel.id)
+                & Domain("partner_id", "in", channel_partners.partner_id.ids)
+                for channel, channel_partners in self.grouped("channel_id").items()
+            )
+            self.env["slide.slide.partner"].search(
+                removed_slide_partner_domain
+            ).unlink()
+        return super().unlink()
+
+    def _post_completion_update_hook(self, completed=True):
+        for channel, memberships in self.grouped("channel_id").items():
+            karma = channel.karma_gen_channel_finish
+            if karma <= 0:
+                continue
+
+            karma_per_users = {}
+            for user in memberships.sudo().partner_id.user_ids:
+                karma_per_users[user] = {
+                    "gain": karma if completed else karma * -1,
+                    "source": channel,
+                    "reason": self.env._("Course Finished")
+                    if completed
+                    else self.env._("Course Set Uncompleted"),
+                }
+
+            self.env["res.users"]._add_karma_batch(karma_per_users)
+
+    def _send_completed_mail(self) -> None:
+        template_to_records = {}
+        for record in self:
+            template = record.channel_id.completed_template_id
+            if template:
+                template_to_records.setdefault(
+                    template, self.env["slide.channel.partner"]
+                )
+                template_to_records[template] += record
+
+        record_email_values = {}
+        for template, records in template_to_records.items():
+            record_values = template._prepare_mail_vals(
+                records.ids,
+                [
+                    "attachment_ids",
+                    "body_html",
+                    "email_cc",
+                    "email_from",
+                    "email_to",
+                    "mail_server_id",
+                    "model",
+                    "partner_to",
+                    "reply_to",
+                    "report_template_ids",
+                    "res_id",
+                    "scheduled_date",
+                    "subject",
+                ],
+            )
+            for res_id, values in record_values.items():
+                values.pop("attachments", False)
+                values["body"] = values.get("body_html")
+                record_email_values[res_id] = (template, values)
+
+        mail_mail_values = []
+        for record in self:
+            template, email_values = record_email_values.get(record.id, (None, None))
+
+            if not email_values or not email_values.get("partner_ids"):
+                continue
+
+            email_values.update(
+                author_id=record.channel_id.user_id.partner_id.id
+                or self.env.company.partner_id.id,
+                auto_delete=True,
+                recipient_ids=[
+                    Command.link(pid) for pid in email_values["partner_ids"]
+                ],
+            )
+            email_values["body_html"] = template._render_encapsulate(
+                "mail.mail_notification_light",
+                email_values["body_html"],
+                add_context={"model_description": self.env._("Completed Course")},
+                context_record=record.channel_id,
+            )
+            mail_mail_values.append(email_values)
+
+        if mail_mail_values:
+            self.env["mail.mail"].sudo().create(mail_mail_values)
+
+    @api.autovacuum
+    def _gc_slide_channel_partner(self) -> None:
+        limit_dt = fields.Datetime.subtract(
+            fields.Datetime.now(), months=INVITATION_VALIDITY_MONTHS
+        )
+        expired_invitations = (
+            self.env["slide.channel.partner"]
+            .with_context(active_test=False)
+            .search(
+                [
+                    ("member_status", "=", "invited"),
+                    ("completion", "=", 0),
+                    "|",
+                    ("last_invitation_date", "=", False),
+                    ("last_invitation_date", "<", limit_dt),
+                ]
+            )
+        )
+        expired_invitations.unlink()

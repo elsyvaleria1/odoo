@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <data>
+        <!--
+            The rung between own and all documents. Like purchase's own rung it
+            does not imply Read-only: record rules OR across a user's groups, so
+            a read-all rule reached through Read-only would widen it to every
+            order.
+        -->
+        <record id="group_purchase_user_team" model="res.groups">
+            <field name="name">User: Team Documents</field>
+            <field name="sequence">12</field>
+            <field name="privilege_id" ref="purchase.res_groups_privilege_purchase" />
+            <field
+                name="comment">The user will have access to the records of their purchase teams.</field>
+            <field
+                name="implied_ids"
+                eval="[Command.link(ref('purchase.group_purchase_user'))]" />
+        </record>
+        <record id="purchase.group_purchase_user_all" model="res.groups">
+            <field
+                name="implied_ids"
+                eval="[Command.link(ref('group_purchase_user_team'))]" />
+        </record>
+    </data>
+
+</odoo>

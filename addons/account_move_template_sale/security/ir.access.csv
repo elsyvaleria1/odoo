@@ -1,0 +1,2 @@
+id,name,model_id/id,group_id/id,kind,operation,reach,anchor,domain
+sale_invoice_match_templates,sale.invoice.match: readable invoice templates,sale.model_sale_invoice_match,sale.group_sale_salesman,permission,r,,,"[('template_id', '!=', False)]"

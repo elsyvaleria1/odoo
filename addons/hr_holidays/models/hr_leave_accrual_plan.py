@@ -1,0 +1,235 @@
+from calendar import monthrange
+
+from odoo import api, fields, models
+from odoo.exceptions import ValidationError
+
+from odoo.addons.base.models.mixin_recurrence_anchored import (
+    DAY_SELECTION,
+    MONTH_SELECTION,
+)
+
+
+class HrLeaveAccrualPlan(models.Model):
+    _name = "hr.leave.accrual.plan"
+    _description = "Accrual Plan"
+
+    active = fields.Boolean(default=True)
+    name = fields.Char(required=True)
+    time_off_type_id = fields.Many2one(
+        comodel_name="hr.leave.type",
+        index="btree_not_null",
+        check_company=True,
+        help="""Specify if this accrual plan can only be used with this Time Off Type.
+                Leave empty if this accrual plan can be used with any Time Off Type.""",
+    )
+    employees_count = fields.Integer(
+        string="Employees",
+        compute="_compute_employees_count",
+    )
+    level_ids = fields.One2many(
+        comodel_name="hr.leave.accrual.level",
+        inverse_name="accrual_plan_id",
+        string="Milestones",
+        copy=True,
+    )
+    allocation_ids = fields.One2many(
+        comodel_name="hr.leave.allocation",
+        inverse_name="accrual_plan_id",
+        export_string_translation=False,
+    )
+    company_id = fields.Many2one(
+        comodel_name="res.company",
+        compute="_compute_company_id",
+        store=True,
+        readonly=False,
+        domain=lambda self: [("id", "in", self.env.companies.ids)],
+    )
+    transition_mode = fields.Selection(
+        selection=[
+            ("immediately", "Immediately"),
+            ("end_of_accrual", "After this accrual's period"),
+        ],
+        export_string_translation=False,
+        default="immediately",
+        required=True,
+    )
+    show_transition_mode = fields.Boolean(
+        export_string_translation=False,
+        compute="_compute_show_transition_mode",
+    )
+    is_based_on_worked_time = fields.Boolean(
+        export_string_translation=False,
+        compute="_compute_is_based_on_worked_time",
+        store=True,
+        readonly=False,
+        help="Only excludes requests where the time off type is set as unpaid kind of.",
+    )
+    accrued_gain_time = fields.Selection(
+        selection=[
+            ("start", "At the start of the accrual period"),
+            ("end", "At the end of the accrual period"),
+        ],
+        export_string_translation=False,
+        default="end",
+        required=True,
+    )
+    can_be_carryover = fields.Boolean(export_string_translation=False)
+    carryover_date = fields.Selection(
+        selection=[
+            ("year_start", "At the start of the year"),
+            ("allocation", "At the allocation date"),
+            ("other", "Custom date"),
+        ],
+        string="Carry-Over Time",
+        export_string_translation=False,
+        default="year_start",
+        required=True,
+    )
+    carryover_day = fields.Selection(
+        selection=DAY_SELECTION,
+        export_string_translation=False,
+        compute="_compute_carryover_day",
+        default="1",
+        store=True,
+        readonly=False,
+    )
+    carryover_month = fields.Selection(
+        selection=MONTH_SELECTION,
+        export_string_translation=False,
+        default=lambda self: str(fields.Date.context_today(self).month),
+    )
+    added_value_type = fields.Selection(
+        selection=[("day", "Days"), ("hour", "Hours")],
+        export_string_translation=False,
+        default="day",
+        store=True,
+    )
+
+    @api.depends("level_ids")
+    def _compute_show_transition_mode(self) -> None:
+        for plan in self:
+            plan.show_transition_mode = len(plan.level_ids) > 1
+
+    level_count = fields.Integer(
+        string="Levels",
+        compute="_compute_level_count",
+    )
+
+    @api.depends("level_ids")
+    def _compute_level_count(self) -> None:
+        level_read_group = self.env["hr.leave.accrual.level"]._read_group(
+            [("accrual_plan_id", "in", self.ids)],
+            groupby=["accrual_plan_id"],
+            aggregates=["__count"],
+        )
+        mapped_count = {
+            accrual_plan.id: count for accrual_plan, count in level_read_group
+        }
+        for plan in self:
+            plan.level_count = mapped_count.get(plan.id, 0)
+
+    @api.depends("allocation_ids")
+    def _compute_employees_count(self) -> None:
+        allocations_read_group = self.env["hr.leave.allocation"]._read_group(
+            [("accrual_plan_id", "in", self.ids)],
+            ["accrual_plan_id"],
+            ["employee_id:count_distinct"],
+        )
+        allocations_dict = {
+            accrual_plan.id: count for accrual_plan, count in allocations_read_group
+        }
+        for plan in self:
+            plan.employees_count = allocations_dict.get(plan.id, 0)
+
+    @api.depends("time_off_type_id.company_id")
+    def _compute_company_id(self):
+        for accrual_plan in self:
+            if accrual_plan.time_off_type_id:
+                accrual_plan.company_id = accrual_plan.time_off_type_id.company_id
+            else:
+                accrual_plan.company_id = self.env.company
+
+    @api.depends("accrued_gain_time")
+    def _compute_is_based_on_worked_time(self) -> None:
+        for plan in self:
+            if plan.accrued_gain_time == "start":
+                plan.is_based_on_worked_time = False
+
+    @api.depends("carryover_month")
+    def _compute_carryover_day(self) -> None:
+        for plan in self:
+            plan.carryover_day = str(
+                min(
+                    monthrange(2020, int(plan.carryover_month))[1],
+                    int(plan.carryover_day),
+                )
+            )
+
+    def action_view_accrual_plan_employees(self) -> dict:
+        self.check_singleton()
+        return {
+            "name": self.env._("Accrual Plan's Employees"),
+            "type": "ir.actions.act_window",
+            "view_mode": "kanban,list,form",
+            "res_model": "hr.employee",
+            "domain": [("id", "in", self.allocation_ids.employee_id.ids)],
+        }
+
+    def action_create_accrual_plan_level(self) -> dict:
+        return {
+            "name": self.env._("New Milestone"),
+            "type": "ir.actions.act_window",
+            "res_model": "hr.leave.accrual.level",
+            "view_mode": "form",
+            "views": [[False, "form"]],
+            "view_id": self.env.ref("hr_holidays.hr_accrual_level_view_form").id,
+            "target": "new",
+            "context": dict(
+                self.env.context,
+                new=True,
+                default_can_be_carryover=self.can_be_carryover,
+                default_accrued_gain_time=self.accrued_gain_time,
+                default_can_modify_value_type=not self.time_off_type_id
+                and not self.level_ids,
+                default_added_value_type=self.added_value_type,
+            ),
+        }
+
+    def action_view_accrual_plan_level(self, level_id) -> dict:
+        return {
+            "name": self.env._("Milestone Edition"),
+            "type": "ir.actions.act_window",
+            "res_model": "hr.leave.accrual.level",
+            "view_mode": "form",
+            "views": [[False, "form"]],
+            "target": "new",
+            "res_id": level_id,
+        }
+
+    def copy_data(self, default=None):
+        vals_list = super().copy_data(default=default)
+        return [
+            dict(vals, name=self.env._("%s (copy)", plan.name))
+            for plan, vals in zip(self, vals_list, strict=False)
+        ]
+
+    @api.ondelete(at_uninstall=False)
+    def _prevent_used_plan_unlink(self) -> None:
+        domain = [
+            ("allocation_type", "=", "accrual"),
+            ("accrual_plan_id", "in", self.ids),
+            ("state", "not in", ("cancel", "refuse")),
+        ]
+        if self.env["hr.leave.allocation"].search_count(domain, limit=1):
+            raise ValidationError(
+                self.env._(
+                    "Some of the accrual plans you're trying to delete are linked to an existing allocation. Delete or cancel them first."
+                )
+            )
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        for vals in vals_list:
+            if not vals.get("name", False):
+                vals["name"] = self.env._("Unnamed Plan")
+        return super().create(vals_list)

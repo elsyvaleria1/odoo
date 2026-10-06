@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="privilege_maintain_l10n_mx_catalogue" model="res.groups">
+        <field
+            name="name">Privilege: maintain the Mexican municipality and postal code catalogues</field>
+        <field name="is_privilege" eval="True" />
+    </record>
+
+</odoo>

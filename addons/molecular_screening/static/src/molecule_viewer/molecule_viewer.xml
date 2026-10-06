@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<templates xml:space="preserve">
+
+    <t t-name="molecular_screening.MoleculeViewer3D">
+        <div t-if="this.molblock" t-ref="this.root" class="o_molecule_viewer_3d" />
+        <span t-else="" class="text-muted">No 3D structure</span>
+    </t>
+
+    <t t-name="molecular_screening.MoleculeSvg">
+        <img t-if="this.src" t-att-src="this.src" class="o_molecule_svg" alt="2D structure" />
+    </t>
+
+</templates>

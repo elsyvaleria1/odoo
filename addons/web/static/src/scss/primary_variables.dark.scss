@@ -1,0 +1,63 @@
+$o-community-color: $o-dark-community-color !default;
+$o-enterprise-color: $o-dark-enterprise-color !default;
+$o-enterprise-action-color: $o-dark-enterprise-action-color !default;
+$o-brand-odoo: $o-dark-brand-odoo !default;
+$o-brand-primary: $o-dark-brand-primary !default;
+$o-action: $o-dark-action !default;
+
+$o-brand-primary-filled: $o-dark-brand-primary-filled !default;
+$o-action-text: $o-dark-action-text !default;
+
+$o-theme-text-colors: $o-dark-theme-text-colors !default;
+
+$o-success: map-get($o-theme-text-colors, "success") !default;
+$o-info: map-get($o-theme-text-colors, "info") !default;
+$o-warning: map-get($o-theme-text-colors, "warning") !default;
+$o-danger: map-get($o-theme-text-colors, "danger") !default;
+$light: $o-dark-bs-light !default;
+$dark: $o-dark-bs-dark !default;
+
+$o-main-link-color: $o-dark-main-link-color !default;
+$o-main-color-muted: $o-dark-main-color-muted !default;
+$o-main-favorite-color: $o-dark-main-favorite-color !default;
+$o-main-code-color: $o-dark-main-code-color !default;
+
+$o-webclient-color-scheme: dark !default;
+$o-webclient-background-color: $o-dark-webclient-background-color !default;
+$o-view-background-color: $o-dark-view-background-color !default;
+$o-shadow-color: $o-dark-shadow-color !default;
+
+$o-ring-color: $o-dark-ring-color !default;
+
+$o-hairline: $o-dark-hairline !default;
+$o-border-color: $o-dark-border-color !default;
+
+$o-input-border-required: $o-dark-input-border-required !default;
+$o-input-boundary-color: $o-dark-input-boundary-color !default;
+
+$o-component-active-bg: $o-dark-component-active-bg !default;
+$o-form-lightsecondary: $o-dark-form-lightsecondary !default;
+$o-brand-lightsecondary: $o-dark-brand-lightsecondary !default;
+$o-form-separator-color: $o-dark-form-separator-color !default;
+$o-bg-chrome: $o-dark-bg-chrome !default;
+$o-bg-disabled: $o-dark-bg-disabled !default;
+$o-bg-raised: $o-dark-bg-raised !default;
+$o-glass-bg: $o-dark-glass-bg !default;
+$o-labels: $o-dark-labels !default;
+$o-fills: $o-dark-fills !default;
+$o-separator: $o-dark-separator !default;
+$o-list-group-active-bg: $o-dark-list-group-active-bg !default;
+$modal-backdrop-bg: $o-dark-modal-backdrop-bg !default;
+
+$o-text-colors-custom: $o-dark-text-colors-custom !default;
+$o-bg-colors-custom: $o-dark-bg-colors-custom !default;
+$o-btn-custom: $o-dark-btn-custom !default;
+
+$o-btns-bs-override: () !default;
+$o-btns-bs-override: map-merge($o-dark-btns-bs-override, $o-btns-bs-override);
+
+$o-btns-bs-outline-override: () !default;
+$o-btns-bs-outline-override: map-merge(
+    $o-dark-btns-bs-outline-override,
+    $o-btns-bs-outline-override
+);

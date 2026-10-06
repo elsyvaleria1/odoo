@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="action_approval_request_mark_paid" model="ir.actions.server">
+        <field name="name">Mark as Paid</field>
+        <field name="model_id" ref="approval.model_approval_request" />
+        <field name="binding_model_id" ref="approval.model_approval_request" />
+        <field name="binding_view_types">list,form</field>
+        <field
+            name="group_ids"
+            eval="[Command.link(ref('approval_account.group_treasury_payment'))]" />
+        <field name="state">code</field>
+        <field name="code">records.action_mark_paid()</field>
+    </record>
+
+    <record id="action_approval_request_mark_not_paid" model="ir.actions.server">
+        <field name="name">Mark as Not Paid</field>
+        <field name="model_id" ref="approval.model_approval_request" />
+        <field name="binding_model_id" ref="approval.model_approval_request" />
+        <field name="binding_view_types">list,form</field>
+        <field
+            name="group_ids"
+            eval="[Command.link(ref('approval_account.group_treasury_payment'))]" />
+        <field name="state">code</field>
+        <field name="code">records.action_mark_not_paid()</field>
+    </record>
+
+</odoo>

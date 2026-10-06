@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <menuitem
+        id="mrp_workorder_menu_planning"
+        name="Work Orders"
+        parent="mrp.menu_mrp_planning"
+        sequence="2"
+        groups="mrp.group_mrp_routings" />
+
+    <menuitem
+        id="menu_mrp_workorder_production"
+        name="Planning by Production"
+        parent="mrp_workorder_menu_planning"
+        action="action_mrp_workorder_dependencies_production"
+        sequence="1" />
+
+    <menuitem
+        id="menu_mrp_workorder_workcenter"
+        name="Planning by Workcenter"
+        parent="mrp_workorder_menu_planning"
+        action="action_mrp_workorder_dependencies_workcenter"
+        sequence="2" />
+
+    <menuitem
+        id="menu_mrp_dashboard"
+        name="Overview"
+        parent="mrp.menu_mrp_root"
+        action="mrp.mrp_workcenter_kanban_action"
+        sequence="5"
+        groups="mrp.group_mrp_routings" />
+
+    <menuitem
+        id="menu_mrp_workorder_root"
+        name="Shop Floor"
+        sequence="146"
+        groups="group_mrp_wo_shop_floor"
+        web_icon="mrp_workorder,static/description/mrp_display_icon.png">
+        <menuitem
+            id="menu_shop_floor"
+            action="action_mrp_display"
+            groups="mrp.group_mrp_user" />
+    </menuitem>
+
+</odoo>

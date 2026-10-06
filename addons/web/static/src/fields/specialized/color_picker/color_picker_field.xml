@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="web.ColorPickerField">
+        <ColorList canToggle="this.props.canToggle" colors="this.constructor.RECORD_COLORS" forceExpanded="this.isExpanded" onColorSelected.bind="this.switchColor" selectedColor="this.props.record.data[this.props.name] || 0"/>
+    </t>
+
+</templates>

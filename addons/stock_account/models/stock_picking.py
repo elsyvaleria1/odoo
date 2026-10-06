@@ -1,0 +1,57 @@
+from odoo import api, fields, models
+from odoo.exceptions import ValidationError
+
+
+class StockPicking(models.Model):
+    _inherit = "stock.picking"
+
+    country_code = fields.Char(
+        related="company_id.tax_config_id.account_fiscal_country_id.code"
+    )
+
+    @api.constrains("date_planned", "date_done")
+    def _check_backdate_allowed(self) -> None:
+        if self.env.registry.settings.get(
+            self.env, "stock_account.skip_lock_date_check", False
+        ):
+            return
+        for picking in self:
+            if picking._is_date_in_lock_period():
+                raise ValidationError(
+                    self.env._(
+                        "You cannot modify the scheduled date of this operation because it falls within a locked fiscal period.",
+                    ),
+                )
+
+    def _compute_is_date_editable(self) -> None:
+        super()._compute_is_date_editable()
+        for picking in self:
+            if (
+                picking.is_date_editable
+                and picking.state in ["done", "cancel"]
+                and picking.ids
+            ):
+                picking.is_date_editable = not picking._is_date_in_lock_period()
+
+    def _is_date_in_lock_period(self) -> bool:
+        self.check_singleton()
+        lock = []
+        if self.state == "done":
+            lock += self.company_id._get_lock_date_violations(
+                self.date_planned.date(),
+                fiscalyear=True,
+                sale=False,
+                purchase=False,
+                tax=False,
+                hard=True,
+            )
+        if self.date_done:
+            lock += self.company_id._get_lock_date_violations(
+                self.date_done.date(),
+                fiscalyear=True,
+                sale=False,
+                purchase=False,
+                tax=False,
+                hard=True,
+            )
+        return bool(lock)

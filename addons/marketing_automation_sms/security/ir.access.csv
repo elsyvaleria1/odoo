@@ -1,0 +1,2 @@
+id,name,model_id/id,group_id/id,kind,operation,domain
+ir_rule_sms_template_marketing_automation_user,SMS Template: marketing automation users CUD on all templates,sms.model_sms_template,marketing_automation.group_marketing_automation_user,permission,cud,

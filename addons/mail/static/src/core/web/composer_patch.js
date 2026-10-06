@@ -1,0 +1,34 @@
+// @ts-check
+/** @odoo-module native */
+import { wrapInlinesInBlocks } from "@html_editor/utils/dom";
+import { childNodes } from "@html_editor/utils/dom_traversal";
+import { Composer } from "@mail/core/common/composer";
+import { markup } from "@odoo/owl";
+import { createDocumentFragmentFromContent } from "@web/core/utils/dom/html";
+import { patch } from "@web/core/utils/patch";
+import { renderToElement } from "@web/core/utils/render";
+patch(Composer.prototype, {
+    /**
+     * @param {string|import("@odoo/owl").Markup} defaultBody
+     * @param {string|import("@odoo/owl").Markup} [signature=""]
+     * @returns {import("@odoo/owl").Markup}
+     */
+    formatDefaultBodyForFullComposer(defaultBody, signature = "") {
+        const fragment = createDocumentFragmentFromContent(defaultBody).body;
+        if (!fragment.firstChild) {
+            fragment.append(document.createElement("BR"));
+        }
+        if (signature) {
+            const signatureEl = renderToElement("html_editor.Signature", {
+                signature,
+                signatureClass: "o-signature-container",
+            });
+            fragment.append(document.createElement("BR"));
+            fragment.append(signatureEl);
+        }
+        const container = document.createElement("DIV");
+        container.append(...childNodes(fragment));
+        wrapInlinesInBlocks(container, { baseContainerNodeName: "DIV" });
+        return markup(container.innerHTML);
+    },
+});

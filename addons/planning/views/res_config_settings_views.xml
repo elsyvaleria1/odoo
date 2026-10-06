@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="res_config_settings_view_form" model="ir.ui.view">
+        <field name="name">res.config.settings.view.form.inherit.planning</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="base.res_config_settings_view_form" />
+        <field name="priority" eval="55" />
+        <field name="arch" type="xml">
+            <xpath expr="//form" position="inside">
+                <app
+                    name="planning"
+                    string="Planning"
+                    groups="planning.group_planning_manager"
+                    data-string="Planning">
+                    <block name="planning" title="Planning">
+                        <setting
+                            string="Employee Unavailabilities"
+                            help="Let employees switch shifts with colleagues or unassign themselves when unavailable">
+                            <span>Allow employees to:</span>
+                            <div class="mt4">
+                                <field
+                                    name="planning_employee_unavailabilities"
+                                    widget="radio"
+                                    options="{'horizontal': true}"
+                                    required="True"
+                                    class="o_light_label" />
+                            </div>
+                            <div
+                                invisible="planning_employee_unavailabilities == 'switch'">
+                                <br />
+                                <label
+                                    for="planning_self_unassign_days_before"
+                                    string="Deadline"
+                                    class="o_dark_label" />
+                                <field name="planning_self_unassign_days_before" class="oe_inline col-4 col-lg-2 me-1 text-center" /> days before the beginning of the shift
+                            </div>
+                        </setting>
+                        <setting
+                            name="planning_project_time_management"
+                            help="Plan resource allocation across projects and estimate deadlines more accurately">
+                            <field
+                                name="module_project_forecast"
+                                widget="upgrade_boolean" />
+                        </setting>
+                    </block>
+                    <block>
+                        <setting string="Recurring Shifts" groups="base.group_no_one">
+                            <div class="content-group">
+                                <div class="mt16">
+                                    <label
+                                        for="planning_generation_interval"
+                                        string="Generate shifts"
+                                        class="o_light_label" />
+                                    <field
+                                        name="planning_generation_interval"
+                                        class="oe_inline col-4 col-lg-2 me-1 text-center" />
+                                    <span>months ahead</span>
+                                </div>
+                            </div>
+                        </setting>
+                    </block>
+                </app>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

@@ -1,0 +1,16 @@
+/** @odoo-module native */
+import { registry } from "@web/core/registry";
+import { formView } from "@web/views/form";
+
+import { TodoFormControlPanel } from "./todo_form_control_panel.js";
+import { TodoFormController } from "./todo_form_controller.js";
+import { TodoFormRenderer } from "./todo_form_renderer.js";
+
+export const todoFormView = {
+    ...formView,
+    Controller: TodoFormController,
+    ControlPanel: TodoFormControlPanel,
+    Renderer: TodoFormRenderer,
+};
+
+registry.category("views").add("todo_form", todoFormView);

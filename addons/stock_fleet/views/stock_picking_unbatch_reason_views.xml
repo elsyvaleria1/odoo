@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="stock_picking_unbatch_reason_view_list" model="ir.ui.view">
+        <field name="name">stock.picking.unbatch.reason.list</field>
+        <field name="model">stock.picking.unbatch.reason</field>
+        <field name="arch" type="xml">
+            <list editable="bottom">
+                <field name="sequence" widget="handle" />
+                <field name="name" />
+                <field name="moment" />
+                <field name="accountable" />
+                <field
+                    name="company_id"
+                    optional="hide"
+                    groups="base.group_multi_company" />
+                <field name="active" column_invisible="True" />
+            </list>
+        </field>
+    </record>
+
+    <record id="stock_picking_unbatch_reason_view_search" model="ir.ui.view">
+        <field name="name">stock.picking.unbatch.reason.search</field>
+        <field name="model">stock.picking.unbatch.reason</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name" />
+                <filter
+                    name="archived"
+                    string="Archived"
+                    domain="[('active', '=', False)]" />
+                <group>
+                    <filter
+                        name="group_moment"
+                        string="Moment"
+                        context="{'group_by': 'moment'}" />
+                    <filter
+                        name="group_accountable"
+                        string="Accountable"
+                        context="{'group_by': 'accountable'}" />
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_stock_picking_unbatch_reason" model="ir.actions.act_window">
+        <field name="name">Trip Removal Reasons</field>
+        <field name="res_model">stock.picking.unbatch.reason</field>
+        <field name="view_mode">list</field>
+        <field name="search_view_id" ref="stock_picking_unbatch_reason_view_search" />
+    </record>
+
+</odoo>

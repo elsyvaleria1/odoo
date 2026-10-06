@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="base.user_root" model="res.users">
+        <field
+            name="group_ids"
+            eval="[Command.link(ref('account.group_account_user'))]" />
+    </record>
+
+    <record id="base.user_admin" model="res.users">
+        <field
+            name="group_ids"
+            eval="[Command.link(ref('account.group_account_user'))]" />
+    </record>
+
+    <!-- Add additional XMLIDs to export the overwritten names in this module's POT file -->
+    <function model="ir.model.data" name="_update_xmlids">
+        <value
+            model="base"
+            eval="[             {'xml_id': 'accountant.group_account_readonly', 'record': obj().env.ref('account.group_account_readonly')},             {'xml_id': 'accountant.group_account_user', 'record': obj().env.ref('account.group_account_user')},         ]" />
+    </function>
+
+    <!--
+        name, sequence and privilege stay as account declares them; only the
+        comment is this module's.
+    -->
+    <record id="account.group_account_readonly" model="res.groups">
+        <field
+            name="comment">access to all the accounting data but in readonly mode, no actions allowed.</field>
+    </record>
+
+    <record id="account.group_account_user" model="res.groups">
+        <field name="name">Bookkeeper</field>
+        <field name="sequence">40</field>
+        <field name="privilege_id" ref="account.res_groups_privilege_accounting" />
+        <field
+            name="comment">access to all Accounting features, including reporting, asset management, analytic accounting, without configuration rights.</field>
+    </record>
+
+    <record id="account.group_account_manager" model="res.groups">
+        <field
+            name="implied_ids"
+            eval="[Command.unlink(ref('account.group_account_invoice')), Command.link(ref('account.group_account_user'))]" />
+    </record>
+
+</odoo>

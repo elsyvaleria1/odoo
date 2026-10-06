@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="utm_source_marketing_card" model="utm.source">
+        <field name="name">Marketing Card</field>
+    </record>
+
+</odoo>

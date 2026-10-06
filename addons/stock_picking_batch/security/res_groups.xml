@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="privilege_detach_cancelled_picking" model="res.groups">
+        <field
+            name="name">Privilege: take a cancelled transfer out of the batch it was grouped in</field>
+        <field name="is_privilege" eval="True" />
+    </record>
+
+</odoo>

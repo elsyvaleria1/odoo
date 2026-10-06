@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="hr_work_entry.access_hr_work_entry_system" model="ir.access">
+        <field name="active" eval="False" />
+    </record>
+
+</odoo>

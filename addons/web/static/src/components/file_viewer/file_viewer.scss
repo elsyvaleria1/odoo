@@ -1,0 +1,63 @@
+.o-FileViewer {
+    z-index: -1;
+    outline: none;
+}
+
+.o-FileViewer-navigation {
+    width: 40px;
+    height: 40px;
+}
+
+.o-FileViewer-header {
+    color: o-token(--o-white, $white);
+    background-color: var(--FileViewer-toolbarBgColor, var(--o-bg-chrome));
+    height: var(--o-navbar-height, #{$o-navbar-height});
+}
+
+.o-FileViewer-main {
+    z-index: -1;
+    padding: calc(var(--o-navbar-height, #{$o-navbar-height}) * 1.125) 0;
+
+    &:has(.o-FileViewer-loading) {
+        cursor: wait;
+    }
+}
+
+.o-FileViewer-zoomer {
+    padding: calc(var(--o-navbar-height, #{$o-navbar-height}) * 1.125) 0;
+}
+
+.o-FileViewer-viewImage {
+    background: repeating-conic-gradient(#ccc 0deg 90deg, #fff 90deg 180deg) 50% / 20px
+        20px;
+}
+
+.o-FileViewer-headerButton:hover {
+    background-color: o-token-alpha(--o-white, $white, 0.1);
+    color: lighten($gray-400, 15%);
+}
+
+.o-FileViewer-toolbarButton {
+    background-color: var(--FileViewer-toolbarBgColor, var(--o-bg-chrome));
+    color: o-token(--o-white, $white);
+
+    &:hover {
+        filter: brightness(1.3);
+    }
+}
+
+.o-FileViewer-view {
+    background-color: o-token(--o-black, $black);
+    box-shadow: 0 0 40px o-token(--o-black, $black);
+    outline: none;
+
+    &.o-isText {
+        background: o-token(--o-white, $white);
+
+        &.o-FileViewer-loading {
+            background: o-token(--o-black, $black);
+            opacity: 50%;
+            pointer-events: none;
+        }
+    }
+}

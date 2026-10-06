@@ -1,0 +1,418 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* stock_fleet_trace_gps
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-09-28 19:51+0000\n"
+"PO-Revision-Date: 2026-09-28 19:51+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: es_MX\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: stock_fleet_trace_gps
+#. odoo-python
+#: code:addons/stock_fleet_trace_gps/models/stock_picking_batch.py:0
+msgid "%(minutes)s min at the customer."
+msgstr "%(minutes)s min con el cliente."
+
+#. module: stock_fleet_trace_gps
+#: model:ir.model.fields,help:stock_fleet_trace_gps.field_stock_warehouse__trip_unplanned_stop_minutes
+msgid ""
+"A stop this long away from the warehouse and every customer of the trip "
+"raises an alert."
+msgstr "Una parada así de larga lejos del almacén y de todos los clientes del viaje genera una alerta."
+
+#. module: stock_fleet_trace_gps
+#: model:ir.model.fields,field_description:stock_fleet_trace_gps.field_stock_trip_alert__alert_type
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace_gps.stock_trip_alert_view_search
+msgid "Alert"
+msgstr "Alerta"
+
+#. module: stock_fleet_trace_gps
+#: model:ir.model.fields,field_description:stock_fleet_trace_gps.field_stock_picking_batch__trip_alert_ids
+msgid "Alerts"
+msgstr "Alertas"
+
+#. module: stock_fleet_trace_gps
+#: model:ir.model.fields,field_description:stock_fleet_trace_gps.field_stock_picking__trip_gps_arrival
+msgid "Arrival (GPS)"
+msgstr "Llegada (GPS)"
+
+#. module: stock_fleet_trace_gps
+#: model:ir.model.fields,field_description:stock_fleet_trace_gps.field_stock_picking_batch__trip_gps_entry_date
+msgid "Back at Warehouse (GPS)"
+msgstr "De vuelta en el almacén (GPS)"
+
+#. module: stock_fleet_trace_gps
+#: model:ir.model.fields.selection,name:stock_fleet_trace_gps.selection__stock_trip_alert__alert_type__returned_pending
+msgid "Back with stops pending"
+msgstr "Regresó con paradas pendientes"
+
+#. module: stock_fleet_trace_gps
+#: model:ir.model.fields,field_description:stock_fleet_trace_gps.field_stock_trip_alert__company_id
+msgid "Company"
+msgstr "Empresa"
+
+#. module: stock_fleet_trace_gps
+#: model:ir.model.fields,field_description:stock_fleet_trace_gps.field_stock_trip_alert__partner_id
+msgid "Contact"
+msgstr "Contacto"
+
+#. module: stock_fleet_trace_gps
+#: model:ir.model.fields,field_description:stock_fleet_trace_gps.field_stock_trip_alert__create_uid
+msgid "Created by"
+msgstr "Creado por"
+
+#. module: stock_fleet_trace_gps
+#: model:ir.model.fields,field_description:stock_fleet_trace_gps.field_stock_trip_alert__create_date
+msgid "Created on"
+msgstr "Creado el"
+
+#. module: stock_fleet_trace_gps
+#: model:ir.model.fields,field_description:stock_fleet_trace_gps.field_stock_warehouse__trip_stop_radius
+msgid "Customer Radius (m)"
+msgstr "Radio del cliente (m)"
+
+#. module: stock_fleet_trace_gps
+#: model:ir.model.fields.selection,name:stock_fleet_trace_gps.selection__stock_trip_alert__alert_type__customer_without_location
+msgid "Customer without coordinates"
+msgstr "Cliente sin coordenadas"
+
+#. module: stock_fleet_trace_gps
+#: model:ir.model.fields,field_description:stock_fleet_trace_gps.field_stock_trip_alert__date
+msgid "Date"
+msgstr "Fecha"
+
+#. module: stock_fleet_trace_gps
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace_gps.stock_trip_alert_view_search
+msgid "Day"
+msgstr "Día"
+
+#. module: stock_fleet_trace_gps
+#: model:ir.model.fields,field_description:stock_fleet_trace_gps.field_stock_trip_alert__picking_id
+msgid "Delivery"
+msgstr "Entrega"
+
+#. module: stock_fleet_trace_gps
+#: model:ir.model.fields,field_description:stock_fleet_trace_gps.field_resource_asset_vehicle__trip_delivery_vehicle
+msgid "Delivery Vehicle"
+msgstr "Vehículo de reparto"
+
+#. module: stock_fleet_trace_gps
+#: model:ir.model.fields,field_description:stock_fleet_trace_gps.field_stock_trip_alert__display_name
+#: model:ir.model.fields,field_description:stock_fleet_trace_gps.field_stock_trip_incident__display_name
+#: model:ir.model.fields,field_description:stock_fleet_trace_gps.field_wizard_stock_trip_handover__display_name
+msgid "Display Name"
+msgstr "Nombre en pantalla"
+
+#. module: stock_fleet_trace_gps
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace_gps.stock_picking_batch_form_driver_trace_gps
+msgid "GPS"
+msgstr "GPS"
+
+#. module: stock_fleet_trace_gps
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace_gps.stock_picking_batch_form_trace_gps
+msgid "GPS Alerts"
+msgstr "Alertas GPS"
+
+#. module: stock_fleet_trace_gps
+#: model:ir.model.fields,field_description:stock_fleet_trace_gps.field_stock_trip_incident__gps_note
+msgid "GPS Around the Incident"
+msgstr "GPS alrededor de la incidencia"
+
+#. module: stock_fleet_trace_gps
+#: model:ir.model.fields,field_description:stock_fleet_trace_gps.field_resource_asset_vehicle__trip_gps_cursor
+msgid "GPS Read Up To"
+msgstr "GPS leído hasta"
+
+#. module: stock_fleet_trace_gps
+#: model:ir.model.fields,field_description:stock_fleet_trace_gps.field_stock_warehouse__trip_gps_silence_minutes
+msgid "GPS Silence Alert (min)"
+msgstr "Alerta de GPS sin reportar (min)"
+
+#. module: stock_fleet_trace_gps
+#: model:ir.model.fields.selection,name:stock_fleet_trace_gps.selection__stock_trip_alert__alert_type__reading_conflict
+msgid "GPS contradicts a captured reading"
+msgstr "El GPS contradice una lectura capturada"
+
+#. module: stock_fleet_trace_gps
+#: model:ir.model.fields.selection,name:stock_fleet_trace_gps.selection__stock_trip_alert__alert_type__gps_silent
+msgid "GPS silent"
+msgstr "GPS sin reportar"
+
+#. module: stock_fleet_trace_gps
+#: model:ir.model.fields,field_description:stock_fleet_trace_gps.field_stock_warehouse__trip_geofence_radius
+msgid "Geofence Radius (m)"
+msgstr "Radio de la geocerca (m)"
+
+#. module: stock_fleet_trace_gps
+#: model:ir.model.fields,field_description:stock_fleet_trace_gps.field_stock_picking_batch__trip_harsh_event_count
+msgid "Harsh Driving Events"
+msgstr "Eventos de manejo brusco"
+
+#. module: stock_fleet_trace_gps
+#: model:ir.model.fields.selection,name:stock_fleet_trace_gps.selection__stock_trip_alert__alert_type__harsh_driving
+msgid "Harsh driving"
+msgstr "Manejo brusco"
+
+#. module: stock_fleet_trace_gps
+#. odoo-python
+#: code:addons/stock_fleet_trace_gps/models/stock_trip_incident.py:0
+msgid "Harsh driving at %(time)s, %(speed)s km/h"
+msgstr "Manejo brusco a las %(time)s, %(speed)s km/h"
+
+#. module: stock_fleet_trace_gps
+#: model:ir.model.fields,help:stock_fleet_trace_gps.field_stock_trip_incident__gps_note
+msgid "Harsh driving the vehicle's GPS reported close to the incident."
+msgstr "Manejo brusco que el GPS del vehículo reportó cerca de la incidencia."
+
+#. module: stock_fleet_trace_gps
+#: model:ir.model.fields,field_description:stock_fleet_trace_gps.field_stock_warehouse__has_trip_geofence
+msgid "Has Trip Geofence"
+msgstr "Tiene geocerca de viajes"
+
+#. module: stock_fleet_trace_gps
+#: model:ir.model.fields,field_description:stock_fleet_trace_gps.field_stock_picking_batch__has_trip_gps
+msgid "Has Trip Gps"
+msgstr "Tiene GPS de viajes"
+
+#. module: stock_fleet_trace_gps
+#: model:ir.model.fields,help:stock_fleet_trace_gps.field_stock_warehouse__trip_stop_radius
+msgid ""
+"How close to a customer's coordinates the vehicle must stop for the visit to"
+" count."
+msgstr "Qué tan cerca de las coordenadas del cliente debe detenerse el vehículo para que cuente la visita."
+
+#. module: stock_fleet_trace_gps
+#: model:ir.model.fields,help:stock_fleet_trace_gps.field_stock_warehouse__trip_stop_min_minutes
+msgid ""
+"How long the vehicle must stay near the customer for the visit to count."
+msgstr "Cuánto tiempo debe quedarse el vehículo con el cliente para que cuente la visita."
+
+#. module: stock_fleet_trace_gps
+#: model:ir.model.fields,field_description:stock_fleet_trace_gps.field_stock_trip_alert__id
+#: model:ir.model.fields,field_description:stock_fleet_trace_gps.field_stock_trip_incident__id
+#: model:ir.model.fields,field_description:stock_fleet_trace_gps.field_wizard_stock_trip_handover__id
+msgid "ID"
+msgstr "ID"
+
+#. module: stock_fleet_trace_gps
+#: model:ir.model.fields,field_description:stock_fleet_trace_gps.field_resource_asset_vehicle__trip_gps_inside_warehouse_id
+msgid "Inside Warehouse (GPS)"
+msgstr "Dentro del almacén (GPS)"
+
+#. module: stock_fleet_trace_gps
+#: model:ir.model.fields,field_description:stock_fleet_trace_gps.field_stock_trip_alert__write_uid
+msgid "Last Updated by"
+msgstr "Última actualización por"
+
+#. module: stock_fleet_trace_gps
+#: model:ir.model.fields,field_description:stock_fleet_trace_gps.field_stock_trip_alert__write_date
+msgid "Last Updated on"
+msgstr "Última actualización el"
+
+#. module: stock_fleet_trace_gps
+#: model:ir.model.fields,field_description:stock_fleet_trace_gps.field_stock_trip_alert__latitude
+msgid "Latitude"
+msgstr "Latitud"
+
+#. module: stock_fleet_trace_gps
+#: model:ir.model.fields,help:stock_fleet_trace_gps.field_resource_asset_vehicle__trip_delivery_vehicle
+msgid ""
+"Leaving a warehouse geofence without a loaded trip raises an alert. Leave it"
+" clear for vehicles that go out for other reasons, e.g. agronomists'."
+msgstr "Salir de la geocerca de un almacén sin un viaje cargado genera una alerta. Déjelo sin marcar en vehículos que salen por otros motivos, por ejemplo los de agrónomos."
+
+#. module: stock_fleet_trace_gps
+#: model:ir.model.fields,field_description:stock_fleet_trace_gps.field_stock_picking__trip_gps_departure
+msgid "Left Customer (GPS)"
+msgstr "Salió del cliente (GPS)"
+
+#. module: stock_fleet_trace_gps
+#: model:ir.model.fields,field_description:stock_fleet_trace_gps.field_stock_picking_batch__trip_gps_exit_date
+msgid "Left Warehouse (GPS)"
+msgstr "Salió del almacén (GPS)"
+
+#. module: stock_fleet_trace_gps
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace_gps.stock_trip_alert_view_search
+msgid "Left Without a Trip"
+msgstr "Salió sin viaje"
+
+#. module: stock_fleet_trace_gps
+#: model:ir.model.fields.selection,name:stock_fleet_trace_gps.selection__stock_trip_alert__alert_type__departure_not_loaded
+msgid "Left before loading"
+msgstr "Salió antes de cargar"
+
+#. module: stock_fleet_trace_gps
+#: model:ir.model.fields.selection,name:stock_fleet_trace_gps.selection__stock_trip_alert__alert_type__departure_blocked
+msgid "Left but the trip could not depart"
+msgstr "Salió pero el viaje no pudo iniciar"
+
+#. module: stock_fleet_trace_gps
+#: model:ir.model.fields.selection,name:stock_fleet_trace_gps.selection__stock_trip_alert__alert_type__departure_without_trip
+msgid "Left without a trip"
+msgstr "Salió sin viaje"
+
+#. module: stock_fleet_trace_gps
+#: model:ir.model.fields,field_description:stock_fleet_trace_gps.field_stock_trip_alert__longitude
+msgid "Longitude"
+msgstr "Longitud"
+
+#. module: stock_fleet_trace_gps
+#: model:ir.model.fields,field_description:stock_fleet_trace_gps.field_stock_warehouse__trip_stop_min_minutes
+msgid "Minimum Stop (min)"
+msgstr "Parada mínima (min)"
+
+#. module: stock_fleet_trace_gps
+#: model:ir.model.fields,field_description:stock_fleet_trace_gps.field_stock_trip_alert__duration_minutes
+msgid "Minutes"
+msgstr "Minutos"
+
+#. module: stock_fleet_trace_gps
+#: model:ir.model.fields,field_description:stock_fleet_trace_gps.field_stock_trip_alert__note
+msgid "Note"
+msgstr "Nota"
+
+#. module: stock_fleet_trace_gps
+#: model:ir.model.fields.selection,name:stock_fleet_trace_gps.selection__stock_trip_alert__state__open
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace_gps.stock_trip_alert_view_search
+msgid "Open"
+msgstr "Abierta"
+
+#. module: stock_fleet_trace_gps
+#: model:ir.model.fields,field_description:stock_fleet_trace_gps.field_stock_picking_batch__trip_alert_open_count
+msgid "Open Alerts"
+msgstr "Alertas abiertas"
+
+#. module: stock_fleet_trace_gps
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace_gps.stock_trip_alert_view_search
+msgid "Outcome Without Visit"
+msgstr "Resultado sin visita"
+
+#. module: stock_fleet_trace_gps
+#: model:ir.model.fields.selection,name:stock_fleet_trace_gps.selection__stock_trip_alert__alert_type__outcome_without_visit
+msgid "Outcome without a GPS visit"
+msgstr "Resultado sin visita GPS"
+
+#. module: stock_fleet_trace_gps
+#: model:res.groups,name:stock_fleet_trace_gps.privilege_trip_gps_read
+msgid ""
+"Privilege: a trip reads its vehicle's track, keeps its reading cursor and "
+"raises its alerts"
+msgstr "Privilegio: un viaje lee el recorrido de su vehículo, guarda hasta dónde leyó y genera sus alertas"
+
+#. module: stock_fleet_trace_gps
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace_gps.stock_picking_batch_form_trace_gps
+msgid "Read GPS"
+msgstr "Leer GPS"
+
+#. module: stock_fleet_trace_gps
+#. odoo-python
+#: code:addons/stock_fleet_trace_gps/models/stock_picking_batch.py:0
+msgid "Refuelling detected by the GPS."
+msgstr "Carga de combustible detectada por el GPS."
+
+#. module: stock_fleet_trace_gps
+#: model:ir.model.fields.selection,name:stock_fleet_trace_gps.selection__stock_trip_alert__state__reviewed
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace_gps.stock_trip_alert_view_list
+msgid "Reviewed"
+msgstr "Revisada"
+
+#. module: stock_fleet_trace_gps
+#: model:ir.model.fields,field_description:stock_fleet_trace_gps.field_stock_trip_alert__reviewed_uid
+msgid "Reviewed By"
+msgstr "Revisada por"
+
+#. module: stock_fleet_trace_gps
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace_gps.stock_warehouse_view_form_trip_gps
+msgid "Route Rules"
+msgstr "Reglas de ruta"
+
+#. module: stock_fleet_trace_gps
+#: model:ir.model.fields,field_description:stock_fleet_trace_gps.field_stock_trip_alert__state
+msgid "State"
+msgstr "Estado"
+
+#. module: stock_fleet_trace_gps
+#: model:ir.model.constraint,message:stock_fleet_trace_gps.constraint_stock_trip_alert_alert_uniq
+msgid "This alert was already raised."
+msgstr "Esta alerta ya se generó."
+
+#. module: stock_fleet_trace_gps
+#: model:ir.model.fields,help:stock_fleet_trace_gps.field_resource_asset_vehicle__trip_gps_cursor
+msgid "Timestamp of the last GPS reading the trips have processed."
+msgstr "Fecha y hora de la última lectura GPS que procesaron los viajes."
+
+#. module: stock_fleet_trace_gps
+#: model:ir.model.fields,field_description:stock_fleet_trace_gps.field_stock_trip_alert__batch_id
+msgid "Trip"
+msgstr "Viaje"
+
+#. module: stock_fleet_trace_gps
+#: model:ir.model,name:stock_fleet_trace_gps.model_stock_trip_alert
+msgid "Trip Alert"
+msgstr "Alerta de viaje"
+
+#. module: stock_fleet_trace_gps
+#: model:ir.actions.act_window,name:stock_fleet_trace_gps.action_stock_trip_alert
+#: model:ir.ui.menu,name:stock_fleet_trace_gps.menu_stock_trip_alert
+msgid "Trip Alerts"
+msgstr "Alertas de viajes"
+
+#. module: stock_fleet_trace_gps
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace_gps.stock_warehouse_view_form_trip_gps
+msgid "Trip GPS"
+msgstr "GPS de viajes"
+
+#. module: stock_fleet_trace_gps
+#: model:ir.actions.server,name:stock_fleet_trace_gps.ir_cron_trip_gps_sync_ir_actions_server
+msgid "Trips: read the vehicles' GPS"
+msgstr "Viajes: leer el GPS de los vehículos"
+
+#. module: stock_fleet_trace_gps
+#: model:ir.model.fields,field_description:stock_fleet_trace_gps.field_stock_warehouse__trip_unplanned_stop_minutes
+msgid "Unplanned Stop Alert (min)"
+msgstr "Alerta de parada no planeada (min)"
+
+#. module: stock_fleet_trace_gps
+#: model:ir.model.fields.selection,name:stock_fleet_trace_gps.selection__stock_trip_alert__alert_type__unplanned_stop
+msgid "Unplanned stop"
+msgstr "Parada no planeada"
+
+#. module: stock_fleet_trace_gps
+#: model:ir.model.fields,field_description:stock_fleet_trace_gps.field_stock_trip_alert__vehicle_id
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace_gps.stock_trip_alert_view_search
+msgid "Vehicle"
+msgstr "Vehículo"
+
+#. module: stock_fleet_trace_gps
+#: model:ir.model.fields,field_description:stock_fleet_trace_gps.field_stock_picking__trip_gps_verified
+msgid "Visit Verified by GPS"
+msgstr "Visita verificada por GPS"
+
+#. module: stock_fleet_trace_gps
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace_gps.stock_warehouse_view_form_trip_gps
+msgid "Warehouse Geofence"
+msgstr "Geocerca del almacén"
+
+#. module: stock_fleet_trace_gps
+#: model:ir.model.fields,help:stock_fleet_trace_gps.field_resource_asset_vehicle__trip_gps_inside_warehouse_id
+msgid "Warehouse geofence the last processed reading was inside."
+msgstr "Geocerca de almacén en la que estaba la última lectura procesada."
+
+#. module: stock_fleet_trace_gps
+#: model:ir.model.fields,help:stock_fleet_trace_gps.field_stock_picking__trip_gps_arrival
+msgid "When the vehicle's track first stayed at the customer's location."
+msgstr "Cuando el recorrido del vehículo se detuvo por primera vez en la ubicación del cliente."
+
+#. module: stock_fleet_trace_gps
+#: model:ir.model.fields,help:stock_fleet_trace_gps.field_stock_warehouse__trip_geofence_radius
+msgid "Around the trips' origin: a delivery vehicle leaving it departs its trip, entering it returns."
+msgstr "Alrededor del origen de los viajes: un vehículo de reparto que sale de ella inicia su viaje y al entrar regresa."

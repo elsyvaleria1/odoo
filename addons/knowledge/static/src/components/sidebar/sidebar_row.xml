@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates id="template" xml:space="preserve">
+    <t t-name="knowledge.SidebarRow">
+        <li t-on-click.stop="this.onNameClick" t-attf-class="o_article position-relative cursor-pointer #{this.isReadonly ? 'readonly' : ''}" t-att-data-article-id="this.props.article.id">
+            <div t-attf-class="o_article_handle d-flex rounded overflow-hidden #{this.isActive ? 'o_article_active' : ''}">
+                <div t-if="this.hasChildren" class="o_article_icon position-relative" t-att-class="{'cursor-pointer': this.hasChildren }">
+                    <div class="o_article_emoji p-1" t-out="this.props.article.icon or '📄'"/>
+                    <a class="o_article_caret d-flex align-items-center justify-content-center text-muted" role="button" t-on-click.stop="this.onCaretClick">
+                        <i t-attf-class="fa-solid fa-fw #{this.props.unfolded ? 'fa-caret-down' : 'fa-caret-right'}"/>
+                    </a>
+                </div>
+                <div t-else="" class="o_article_emoji p-1" t-out="this.props.article.icon or '📄'"/>
+                <div class="d-flex flex-grow-1 min-w-0">
+                    <a t-attf-class="o_article_name p-1 flex-grow-1 text-truncate #{this.isActive ? 'fw-bold text-900' : 'text-muted'}" role="button">
+                        <t t-if="this.props.article.name" t-out="this.props.article.name"/>
+                        <t t-else="">Untitled</t>
+                    </a>
+                    <a t-if="this.canCreateArticle and this.props.article.user_can_write" role="button"
+                        class="o_article_create p-1 opacity-75 opacity-100-hover text-muted"
+                        t-on-click.stop="this.createChild">
+                        <i class="fa-solid fa-plus" title="Create an Article inside"/>
+                    </a>
+                </div>
+            </div>
+            <ul t-if="this.props.unfolded">
+                <t t-foreach="this.props.article.child_ids" t-as="childId" t-key="childId">
+                    <KnowledgeSidebarRow article="this.knowledgeContext.getArticle(childId)" unfolded="this.props.unfoldedIds.has(childId)" unfoldedIds="this.props.unfoldedIds" record="this.props.record"/>
+                </t>
+            </ul>
+            <div t-elif="this.state.loading" class="p-1 text-center">
+                <i class="fa-solid fa-circle-notch fa-spin" title="loader" role="img"/>
+            </div>
+        </li>
+    </t>
+</templates>

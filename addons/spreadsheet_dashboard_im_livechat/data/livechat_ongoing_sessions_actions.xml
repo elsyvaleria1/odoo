@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <data>
+        <record id="ongoing_sessions_all_action" model="ir.actions.act_window">
+            <field name="name">Sessions</field>
+            <field name="res_model">discuss.channel</field>
+            <field
+                name="search_view_id"
+                ref="im_livechat.discuss_channel_view_search" />
+            <field name="domain">[('channel_type', '=', 'livechat')]</field>
+            <field name="context">{'search_default_ongoing': 1}</field>
+            <field
+                name="view_ids"
+                eval="[Command.clear(), Command.create({'view_mode': 'list', 'view_id': ref('im_livechat.discuss_channel_view_tree')}), Command.create({'view_mode': 'form', 'view_id': ref('im_livechat.discuss_channel_view_form')})]" />
+        </record>
+        <record id="ongoing_sessions_escalated_action" model="ir.actions.act_window">
+            <field name="name">Sessions</field>
+            <field name="res_model">discuss.channel</field>
+            <field
+                name="search_view_id"
+                ref="im_livechat.discuss_channel_view_search" />
+            <field
+                name="context">{'search_default_ongoing': 1, 'search_default_escalated': 1}</field>
+            <field
+                name="view_ids"
+                eval="[Command.clear(), Command.create({'view_mode': 'list', 'view_id': ref('im_livechat.discuss_channel_view_tree')}), Command.create({'view_mode': 'form', 'view_id': ref('im_livechat.discuss_channel_view_form')})]" />
+        </record>
+        <record
+            id="ongoing_sessions_agents_in_call_action"
+            model="ir.actions.act_window">
+            <field name="name">Sessions</field>
+            <field name="res_model">discuss.channel</field>
+            <field
+                name="search_view_id"
+                ref="im_livechat.discuss_channel_view_search" />
+            <field
+                name="context">{'search_default_ongoing': 1, 'search_default_in_call': 1}</field>
+            <field
+                name="view_ids"
+                eval="[Command.clear(), Command.create({'view_mode': 'list', 'view_id': ref('im_livechat.discuss_channel_view_tree')}), Command.create({'view_mode': 'form', 'view_id': ref('im_livechat.discuss_channel_view_form')})]" />
+        </record>
+        <record
+            id="ongoing_sessions_handle_by_agent_action"
+            model="ir.actions.act_window">
+            <field name="name">Sessions</field>
+            <field name="res_model">discuss.channel</field>
+            <field
+                name="search_view_id"
+                ref="im_livechat.discuss_channel_view_search" />
+            <field
+                name="context">{'search_default_ongoing': 1, 'search_default_handled_by_agent': 1}</field>
+            <field
+                name="view_ids"
+                eval="[Command.clear(), Command.create({'view_mode': 'list', 'view_id': ref('im_livechat.discuss_channel_view_tree')}), Command.create({'view_mode': 'form', 'view_id': ref('im_livechat.discuss_channel_view_form')})]" />
+        </record>
+        <record
+            id="ongoing_sessions_handle_by_bot_action"
+            model="ir.actions.act_window">
+            <field name="name">Sessions</field>
+            <field name="res_model">discuss.channel</field>
+            <field
+                name="search_view_id"
+                ref="im_livechat.discuss_channel_view_search" />
+            <field
+                name="context">{'search_default_ongoing': 1, 'search_default_handled_by_bot': 1}</field>
+            <field
+                name="view_ids"
+                eval="[Command.clear(), Command.create({'view_mode': 'list', 'view_id': ref('im_livechat.discuss_channel_view_tree')}), Command.create({'view_mode': 'form', 'view_id': ref('im_livechat.discuss_channel_view_form')})]" />
+        </record>
+    </data>
+
+</odoo>

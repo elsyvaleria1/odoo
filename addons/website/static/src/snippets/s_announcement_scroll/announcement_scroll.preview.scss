@@ -1,0 +1,8 @@
+.o_snippet_preview_wrap:where(:hover, :focus-visible)
+    [data-snippet="s_announcement_scroll"] {
+    animation-play-state: running;
+
+    .s_announcement_scroll_marquee_item {
+        animation: o-marquee-scroll-left linear infinite 10s;
+    }
+}

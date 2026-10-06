@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="hr_payslip_view_form" model="ir.ui.view">
+        <field name="name">hr.payslip.inherit.form</field>
+        <field name="model">hr.payslip</field>
+        <field name="inherit_id" ref="hr_payroll.view_hr_payslip_form" />
+        <field name="arch" type="xml">
+            <div name="button_box" position="inside">
+                <field name="move_id" invisible="1" readonly="1" />
+                <button
+                    name="action_view_move"
+                    type="object"
+                    icon="fa-dollar"
+                    groups="account.group_account_readonly"
+                    invisible="not move_id"
+                    class="oe_stat_button">
+                    <div class="o_stat_info">
+                        <span class="o_stat_text" invisible="move_state != 'draft'">Journal Entry <br />(Draft)</span>
+                        <span class="o_stat_text" invisible="move_state != 'posted'">Journal Entry <br />(Posted)</span>
+                        <span class="o_stat_text" invisible="move_state != 'cancel'">Journal Entry <br />(Canceled)</span>
+                    </div>
+                </button>
+            </div>
+
+            <xpath expr="//button[@name='action_payslip_done']" position="replace">
+                <button
+                    name="action_payslip_done"
+                    type="object"
+                    string="Create Draft Entry"
+                    confirm="Are you sure you want to proceed?"
+                    context="{'payslip_generate_pdf': True}"
+                    invisible="state != 'draft' or not line_ids"
+                    class="oe_highlight" />
+            </xpath>
+            <button name="action_payslip_done" position="after">
+                <button
+                    name="action_register_payment"
+                    type="object"
+                    string="Pay"
+                    context="{'dont_redirect_to_payments': True, 'hr_payroll_payment_register': True}"
+                    groups="account.group_account_invoice"
+                    invisible="state != 'validated' or not move_id or batch_payroll_move_lines"
+                    class="oe_highlight"
+                    data-hotkey="w" />
+            </button>
+            <field name="paid" position="after">
+                <field name="date" readonly="state != 'draft'" />
+                <field name="journal_id" />
+                <field name="batch_payroll_move_lines" invisible="1" />
+            </field>
+            <button name="action_payslip_paid" position="attributes">
+                <attribute name="invisible">True</attribute>
+            </button>
+            <xpath
+                expr="//page[@name='salary_computation']//field[@name='line_ids']/list/field[@name='total']"
+                position="after">
+                <field name="salary_rule_account_debit" optional="hide" />
+                <field name="salary_rule_account_credit" optional="hide" />
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

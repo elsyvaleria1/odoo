@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!--        MENU ITEMS -->
+    <menuitem
+        id="menu_action_loans"
+        parent="account_depreciation.account_assets_liabilities_menu"
+        action="action_view_account_loans"
+        sequence="62"
+        groups="account.group_account_readonly" />
+
+    <menuitem
+        id="menu_action_loans_analysis"
+        name="Loans Analysis"
+        parent="account.account_audit_inventory_entries_menu"
+        action="action_view_account_loans_analysis"
+        sequence="30"
+        groups="account.group_account_readonly" />
+
+</odoo>

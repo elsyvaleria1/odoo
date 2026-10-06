@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="molecular_sketch_view_form" model="ir.ui.view">
+        <field name="name">wizard.molecular.sketch.form</field>
+        <field name="model">wizard.molecular.sketch</field>
+        <field name="arch" type="xml">
+            <form string="Draw a Molecule">
+                <group>
+                    <group>
+                        <field name="name" placeholder="e.g. CHEMBL461" />
+                        <field name="origin" />
+                    </group>
+                    <group>
+                        <field name="campaign_id" />
+                        <field
+                            name="role"
+                            invisible="not campaign_id"
+                            required="campaign_id" />
+                    </group>
+                </group>
+                <field name="molblock" widget="molecule_editor" />
+                <field name="molblock_3d" invisible="1" />
+                <group>
+                    <field name="summary" readonly="1" />
+                </group>
+                <p class="text-muted">
+                    The figures above are recomputed on the server from the connection
+                    table you drew. Implicit hydrogens follow a valence table, and the
+                    relaxed geometry is approximate — it is not a docking conformer.
+                </p>
+                <footer>
+                    <button
+                        name="action_save"
+                        type="object"
+                        string="Save Compound"
+                        class="btn-primary" />
+                    <button special="cancel" string="Cancel" />
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="molecular_sketch_action" model="ir.actions.act_window">
+        <field name="name">Draw a Molecule</field>
+        <field name="res_model">wizard.molecular.sketch</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+
+</odoo>

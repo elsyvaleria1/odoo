@@ -1,0 +1,92 @@
+from odoo import fields, models
+from odoo.fields import Domain
+from odoo.libs.debug_log import DebugLog
+
+_debug = DebugLog(__name__)
+
+
+class WizardStockQuantRequestCount(models.TransientModel):
+    _name = "wizard.stock.quant.request.count"
+    _description = "Stock Request an Inventory Count"
+
+    inventory_date = fields.Date(
+        string="Scheduled at",
+        default=fields.Date.context_today,
+        required=True,
+        help="Choose a date to get the inventory at that date",
+    )
+    user_id = fields.Many2one(
+        comodel_name="res.users",
+        string="Assign to",
+        domain=lambda self: [
+            ("all_group_ids", "in", self.env.ref("stock.group_stock_user").id)
+        ],
+    )
+    quant_ids = fields.Many2many(comodel_name="stock.quant")
+    show_expected_quantity = fields.Boolean(
+        compute="_compute_show_expected_quantity",
+        inverse="_inverse_show_expected_quantity",
+        help="If the user can see the expected quantity or not",
+    )
+
+    def _compute_show_expected_quantity(self) -> None:
+        show_quantity_count = (
+            self.env.registry.settings.get(
+                self.env, "stock.show_expected_quantity_count", "False"
+            )
+            == "True"
+        )
+        for record in self:
+            record.show_expected_quantity = show_quantity_count
+
+    def _inverse_show_expected_quantity(self) -> None:
+        for record in self:
+            if record.show_expected_quantity:
+                self.env["ir.config_parameter"].sudo().set_param(
+                    "stock.show_expected_quantity_count", "True"
+                )
+            else:
+                self.env["ir.config_parameter"].sudo().set_param(
+                    "stock.show_expected_quantity_count", "False"
+                )
+
+    def action_request_count(self) -> None:
+        for count_request in self:
+            quants_to_count = count_request._get_quants_to_count()
+            values = count_request._get_values_to_write()
+            _debug.pipeline(
+                "request_count",
+                quants=quants_to_count,
+                selected=len(count_request.quant_ids),
+                values=values,
+            )
+            quants_to_count.with_context(inventory_mode=True).write(values)
+
+    def _get_quants_to_count(self):
+        self.check_singleton()
+        quants_to_count = self.quant_ids
+        tracked_quants = self.quant_ids.filtered(
+            lambda q: q.product_id.tracking != "none"
+        )
+        if (
+            not self.env.user.has_group("stock.group_production_lot")
+            or not tracked_quants
+        ):
+            return quants_to_count
+        domain = Domain.OR(
+            {
+                Domain("product_id", "=", quant.product_id.id)
+                & Domain("location_id", "=", quant.location_id.id)
+                for quant in tracked_quants
+            }
+        )
+        sibling_quants = self.env["stock.quant"].search(domain)
+        return quants_to_count | sibling_quants
+
+    def _get_values_to_write(self):
+        values = {
+            "inventory_date": self.inventory_date,
+        }
+        if self.user_id:
+            values["user_id"] = self.user_id.id
+        return values

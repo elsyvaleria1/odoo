@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="access_res_partner_print_statement" model="ir.access">
+        <field
+            name="name">res.partner: an accounting reader prints any customer's account statement from Telegram, as the partner ledger shows it to them in Odoo</field>
+        <field name="model_id" ref="base.model_res_partner" />
+        <field name="group_id" ref="account.group_account_readonly" />
+        <field name="kind">permission</field>
+        <field name="verbs">print_statement</field>
+    </record>
+
+</odoo>

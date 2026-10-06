@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="documents_link_to_record_form_view" model="ir.ui.view">
+        <field name="name">document.link_to_record_wizard.form</field>
+        <field name="model">wizard.document.document.link.record</field>
+        <field name="arch" type="xml">
+            <form>
+                <group>
+                    <field name="is_readonly_model" invisible="1" />
+                    <field name="document_ids" widget="many2many_tags" />
+                    <field
+                        name="model_id"
+                        options="{'no_open': True, 'no_create': True}"
+                        readonly="is_readonly_model" />
+                    <field
+                        name="resource_ref"
+                        options="{'model_field': 'model_id', 'no_create': True}"
+                        groups="base.group_erp_manager"
+                        invisible="not model_id" />
+                    <field
+                        name="resource_ref"
+                        options="{'hide_model': True, 'no_create': True}"
+                        groups="!base.group_erp_manager"
+                        invisible="not model_id" />
+                </group>
+                <footer>
+                    <button
+                        name="link_to"
+                        type="object"
+                        string="Link"
+                        invisible="not resource_ref"
+                        class="oe_highlight"
+                        data-hotkey="q" />
+                    <button special="cancel" string="Cancel" data-hotkey="x" />
+                </footer>
+            </form>
+        </field>
+    </record>
+
+</odoo>

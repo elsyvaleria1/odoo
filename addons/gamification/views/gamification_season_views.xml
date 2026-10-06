@@ -1,0 +1,172 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="season_list_action" model="ir.actions.act_window">
+        <field name="name">Seasons</field>
+        <field name="res_model">gamification.season</field>
+        <field name="view_mode">kanban,list,form</field>
+    </record>
+
+    <record id="season_search_view" model="ir.ui.view">
+        <field name="name">gamification.season.search</field>
+        <field name="model">gamification.season</field>
+        <field name="arch" type="xml">
+            <search string="Seasons">
+                <field name="name" />
+                <field name="theme" />
+                <separator />
+                <filter
+                    name="active_seasons"
+                    string="Active"
+                    domain="[('state', '=', 'active')]" />
+                <filter
+                    name="draft_seasons"
+                    string="Draft"
+                    domain="[('state', '=', 'draft')]" />
+                <separator />
+                <group>
+                    <filter
+                        name="group_state"
+                        string="State"
+                        context="{'group_by': 'state'}" />
+                    <filter
+                        name="group_start"
+                        string="Start Date"
+                        context="{'group_by': 'start_date:month'}" />
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="season_kanban_view" model="ir.ui.view">
+        <field name="name">gamification.season.kanban</field>
+        <field name="model">gamification.season</field>
+        <field name="arch" type="xml">
+            <kanban default_group_by="state" class="o_kanban_small_column">
+                <templates>
+                    <t t-name="card">
+                        <field name="icon" widget="image" class="o_kanban_image" />
+                        <div>
+                            <strong><field name="name" /></strong>
+                            <div class="text-muted"><field name="theme" /></div>
+                            <div>
+                                <field name="start_date" /> — <field name="end_date" />
+                            </div>
+                            <div class="mt-1">
+                                <span class="badge text-bg-primary me-1">
+                                    <field name="challenge_count" /> challenges
+                                </span>
+                                <span class="badge text-bg-secondary">
+                                    <field name="participant_count" /> participants
+                                </span>
+                            </div>
+                        </div>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
+    <record id="season_list_view" model="ir.ui.view">
+        <field name="name">gamification.season.list</field>
+        <field name="model">gamification.season</field>
+        <field name="arch" type="xml">
+            <list string="Seasons">
+                <field name="name" />
+                <field name="theme" />
+                <field
+                    name="state"
+                    widget="badge"
+                    decoration-info="state == 'draft'"
+                    decoration-muted="state in ('ended', 'archived')"
+                    decoration-success="state == 'active'" />
+                <field name="start_date" />
+                <field name="end_date" />
+                <field name="challenge_count" />
+                <field name="participant_count" />
+            </list>
+        </field>
+    </record>
+
+    <record id="season_form_view" model="ir.ui.view">
+        <field name="name">gamification.season.form</field>
+        <field name="model">gamification.season</field>
+        <field name="arch" type="xml">
+            <form string="Season">
+                <header>
+                    <button
+                        name="action_activate"
+                        type="object"
+                        string="Activate"
+                        invisible="state != 'draft'"
+                        class="btn-primary" />
+                    <button
+                        name="action_end"
+                        type="object"
+                        string="End Season"
+                        invisible="state != 'active'" />
+                    <button
+                        name="action_archive"
+                        type="object"
+                        string="Archive"
+                        invisible="state != 'ended'" />
+                    <field
+                        name="state"
+                        widget="statusbar"
+                        statusbar_visible="draft,active,ended" />
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button
+                            name="action_view_challenges"
+                            type="object"
+                            icon="fa-flag"
+                            class="oe_stat_button">
+                            <field
+                                name="challenge_count"
+                                string="Challenges"
+                                widget="statinfo" />
+                        </button>
+                        <button icon="fa-users" class="oe_stat_button">
+                            <field
+                                name="participant_count"
+                                string="Participants"
+                                widget="statinfo" />
+                        </button>
+                    </div>
+                    <field name="icon" widget="image" class="oe_avatar" />
+                    <div class="oe_title">
+                        <h1><field name="name" placeholder="e.g. Q1 2026: Innovation Sprint" /></h1>
+                        <h3><field name="theme" placeholder="Theme or motto..." /></h3>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="start_date" />
+                            <field name="end_date" />
+                        </group>
+                        <group>
+                            <field name="challenge_count" />
+                            <field name="participant_count" />
+                        </group>
+                    </group>
+                    <notebook>
+                        <page name="description" string="Description">
+                            <field name="description" />
+                        </page>
+                        <page name="challenges" string="Challenges">
+                            <field name="challenge_ids" />
+                        </page>
+                        <page name="badges" string="Exclusive Badges">
+                            <field name="badge_ids" widget="many2many_tags" />
+                        </page>
+                        <page name="quests" string="Quests">
+                            <field name="quest_ids" widget="many2many_tags" />
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter />
+            </form>
+        </field>
+    </record>
+
+</odoo>

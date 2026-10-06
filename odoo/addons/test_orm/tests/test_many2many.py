@@ -1,0 +1,200 @@
+from unittest.mock import patch
+
+from odoo.fields import Command, Domain
+from odoo.tests.common import TransactionCase, new_test_user
+
+
+class Many2manyCase(TransactionCase):
+    def setUp(self):
+        super().setUp()
+        self.ship = self.env["test_orm.ship"].create({"name": "Colombus"})
+        self.env["test_orm.prisoner"].create(
+            {
+                "name": "Brian",
+                "ship_ids": self.ship.ids,
+            }
+        )
+        self.blackbeard = self.env["test_orm.pirate"].create(
+            {
+                "name": "Black Beard",
+                "ship_ids": self.ship.ids,
+            }
+        )
+        self.redbeard = self.env["test_orm.pirate"].create({"name": "Red Beard"})
+
+    def test_a_record_created_through_the_field_knows_its_owner_at_create(self):
+        Ship = type(self.env["test_orm.ship"])
+        seen = []
+        create = Ship.create
+
+        def spy(model, vals_list):
+            seen.extend(vals_list if isinstance(vals_list, list) else [vals_list])
+            return create(model, vals_list)
+
+        with patch.object(Ship, "create", spy):
+            self.redbeard.ship_ids = [Command.create({"name": "Revenge"})]
+        self.assertEqual(seen[0]["pirate_ids"], [Command.link(self.redbeard.id)])
+        self.assertEqual(self.redbeard.ship_ids.pirate_ids, self.redbeard)
+
+    def test_an_owner_being_created_links_what_it_creates(self):
+        Ship = type(self.env["test_orm.ship"])
+        seen = []
+        create = Ship.create
+
+        def spy(model, vals_list):
+            seen.extend(vals_list if isinstance(vals_list, list) else [vals_list])
+            return create(model, vals_list)
+
+        with patch.object(Ship, "create", spy):
+            anne = self.env["test_orm.pirate"].create(
+                {"name": "Anne", "ship_ids": [Command.create({"name": "Queen"})]}
+            )
+        self.assertEqual(seen[0]["pirate_ids"], [Command.link(anne.id)])
+        self.assertEqual(anne.ship_ids.pirate_ids, anne)
+
+    def test_set_removes_archived_links(self):
+        Category = self.env["res.partner.tag"]
+        a, b, c = Category.create([{"name": "A"}, {"name": "B"}, {"name": "C"}])
+        partner = self.env["res.partner"].create(
+            {"name": "P", "tag_ids": [Command.set((a + b).ids)]}
+        )
+        b.active = False
+
+        partner.write({"tag_ids": [Command.set(c.ids)]})
+
+        self.assertEqual(
+            partner.with_context(active_test=False).tag_ids,
+            c,
+            "archived link must be removed by SET, not survive the delta",
+        )
+
+    def test_write_new_scopes_commands_per_record(self):
+        Ship = self.env["test_orm.ship"]
+        p1 = self.env["test_orm.prisoner"].create({"name": "P1"})
+        p2 = self.env["test_orm.prisoner"].create({"name": "P2"})
+        s1 = Ship.new({"name": "S1"})
+        s2 = Ship.new({"name": "S2"})
+        Ship._fields["prisoner_ids"].write_new(
+            [(s1, [Command.link(p1.id)]), (s2, [Command.link(p2.id)])]
+        )
+        self.assertEqual(s1.prisoner_ids.ids, p1.ids, "s1 must link only p1")
+        self.assertEqual(s2.prisoner_ids.ids, p2.ids, "s2 must link only p2")
+
+    def test_not_in_relation(self):
+        pirates = self.env["test_orm.pirate"].search(
+            [("ship_ids", "not in", self.ship.ids)]
+        )
+        self.assertEqual(len(pirates), 1)
+        self.assertEqual(pirates, self.redbeard)
+
+    def test_not_in_relation_as_query(self):
+        ship_ids = self.env["test_orm.ship"]._search([("name", "=", "Colombus")])
+        pirates = self.env["test_orm.pirate"].search([("ship_ids", "not in", ship_ids)])
+        self.assertEqual(len(pirates), 1)
+        self.assertEqual(pirates, self.redbeard)
+
+    def test_attachment_m2m_link(self):
+        user = new_test_user(self.env, "foo", groups="base.group_system")
+
+        attachments = (
+            self.env["ir.attachment"]
+            .create(
+                {
+                    "res_model": self.ship._name,
+                    "res_id": self.ship.id,
+                    "name": "test",
+                }
+            )
+            .with_user(user)
+        )
+        record = (
+            self.env["test_orm.attachment.host"]
+            .create(
+                {
+                    "real_binary": b"aGV5",
+                }
+            )
+            .with_user(user)
+        )
+        attachments += attachments.sudo().search(
+            [
+                ("res_model", "=", record._name),
+                ("res_field", "=", "real_binary"),
+            ]
+        )
+        self.assertEqual(len(attachments), 2)
+        record.real_m2m_attachment_ids = [Command.link(a.id) for a in attachments]
+
+        self.assertFalse(record.env.su)
+
+        record.invalidate_model()
+        self.assertEqual(len(record.real_m2m_attachment_ids), len(attachments))
+
+    def test_bypass_search_access(self):
+        user = new_test_user(self.env, "foo", groups="base.group_system")
+
+        attachment = (
+            self.env["test_orm.attachment"]
+            .create(
+                {
+                    "res_model": self.ship._name,
+                    "res_id": self.ship.id,
+                }
+            )
+            .with_user(user)
+        )
+        record = (
+            self.env["test_orm.attachment.host"]
+            .create(
+                {
+                    "m2m_attachment_ids": [Command.link(attachment.id)],
+                }
+            )
+            .with_user(user)
+        )
+
+        self.assertFalse(record.env.su)
+
+        field = record._fields["m2m_attachment_ids"]
+        self.assertTrue(field.bypass_search_access)
+
+        Attachment = type(attachment)
+        with (
+            patch.object(
+                Attachment,
+                "_search",
+                autospec=True,
+                side_effect=Attachment._search,
+            ) as _search,
+            patch.object(
+                Attachment, "_check_access", autospec=True, return_value=None
+            ) as _check_access,
+        ):
+            record.invalidate_model()
+            record.m2m_attachment_ids
+            _search.assert_called_once_with(
+                attachment.browse(), Domain.TRUE, order="id", bypass_access=True
+            )
+            _check_access.assert_called_once_with(attachment, "read")
+
+        self.patch(field, "bypass_search_access", False)
+        with (
+            patch.object(
+                Attachment,
+                "_search",
+                autospec=True,
+                side_effect=Attachment._search,
+            ) as _search,
+            patch.object(
+                Attachment, "_check_access", autospec=True, return_value=None
+            ) as _check_access,
+        ):
+            record.invalidate_model()
+            record.m2m_attachment_ids
+            _search.assert_called_once_with(
+                attachment.browse(),
+                Domain.TRUE,
+                order="id",
+                bypass_access=False,
+            )
+            _check_access.assert_called_once_with(attachment.browse(), "read")

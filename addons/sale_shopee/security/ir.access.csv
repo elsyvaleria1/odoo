@@ -1,0 +1,6 @@
+id,name,model_id/id,group_id/id,kind,operation,reach,anchor,domain
+access_shopee_account,access.shopee.account,model_shopee_account,sale.group_sale_manager,permission,crud,,,
+access_shopee_shop,access.shopee.shop,model_shopee_shop,sale.group_sale_manager,permission,crud,,,
+access_shopee_item,access.shopee.item,model_shopee_item,sale.group_sale_manager,permission,crud,,,
+shopee_account_comp_rule,Shopee Account multi-company,model_shopee_account,base.group_everyone,guard,crud,company,,
+shopee_shop_comp_rule,Shopee Shop multi-company,model_shopee_shop,base.group_everyone,guard,crud,company,,

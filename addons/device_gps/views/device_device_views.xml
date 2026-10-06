@@ -1,0 +1,464 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_device_device_search" model="ir.ui.view">
+        <field name="name">device.device.search.gps</field>
+        <field name="model">device.device</field>
+        <field name="inherit_id" ref="device.view_device_device_search" />
+        <field name="arch" type="xml">
+            <!-- Gated on an explicit context flag the GPS actions set, not on
+                a search_default_* key. It used to read search_default_gps_trackers,
+                which no action anywhere set and no search view declared a filter
+                for, so every one of these columns was invisible in every view
+                that inherits this one. -->
+            <xpath expr="//field[@name='name']" position="after">
+                <field name="gps_receiver_key" />
+            </xpath>
+            <xpath expr="//filter[@name='filter_inactive']" position="after">
+                <separator />
+                <filter
+                    name="filter_is_gps_tracker"
+                    string="GPS Trackers"
+                    domain="[('is_gps_device', '=', True)]" />
+                <filter
+                    name="filter_tracking_enabled"
+                    string="Tracking Enabled"
+                    domain="[('gps_tracking_enabled', '=', True)]" />
+                <filter
+                    name="filter_moving_true"
+                    string="Moving"
+                    domain="[('gps_movement_state', '=', True)]" />
+                <filter
+                    name="filter_ignition_on"
+                    string="Ignition On"
+                    domain="[('gps_ignition_state', '=', True)]" />
+            </xpath>
+            <xpath expr="//group" position="inside">
+                <group>
+                    <filter
+                        name="group_tracking"
+                        string="Tracking Status"
+                        context="{'group_by': 'gps_tracking_enabled'}" />
+                    <filter
+                        name="group_movement"
+                        string="Movement Status"
+                        context="{'group_by': 'gps_movement_state'}" />
+                    <filter
+                        name="group_config"
+                        string="GPS Config"
+                        context="{'group_by': 'config_id'}" />
+                </group>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_device_device_list" model="ir.ui.view">
+        <field name="name">device.device.list.gps</field>
+        <field name="model">device.device</field>
+        <field name="inherit_id" ref="device.view_device_device_list" />
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='name']" position="after">
+                <field
+                    name="gps_receiver_key"
+                    optional="show"
+                    column_invisible="not context.get('gps_columns')" />
+            </xpath>
+            <xpath expr="//field[@name='connection_state']" position="after">
+                <field
+                    name="gps_tracking_enabled"
+                    widget="boolean_toggle"
+                    optional="show"
+                    column_invisible="not context.get('gps_columns')" />
+                <field
+                    name="gps_ignition_state"
+                    string="Ignition"
+                    widget="boolean_toggle"
+                    optional="show"
+                    column_invisible="not context.get('gps_columns')" />
+                <field
+                    name="gps_movement_state"
+                    string="Moving"
+                    widget="boolean_toggle"
+                    optional="show"
+                    column_invisible="not context.get('gps_columns')" />
+                <field
+                    name="log_gps_last_speed"
+                    string="Speed"
+                    optional="hide"
+                    column_invisible="not context.get('gps_columns')" />
+                <field
+                    name="gps_battery_level"
+                    widget="progressbar"
+                    optional="hide"
+                    column_invisible="not context.get('gps_columns')" />
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_device_device_kanban_gps_dashboard" model="ir.ui.view">
+        <field name="name">device.device.kanban.gps.dashboard</field>
+        <field name="model">device.device</field>
+        <field name="priority" eval="32" />
+        <field name="arch" type="xml">
+            <kanban
+                class="o_kanban_dashboard o_gps_device_kanban"
+                can_open="1"
+                highlight_color="kanban_color">
+                <field name="id" />
+                <field name="name" />
+                <field name="gps_receiver_key" />
+                <field name="kanban_color" />
+                <field name="is_gps_device" />
+                <field name="gps_tracking_enabled" />
+                <field name="connection_state" />
+                <field name="date_last_data_received" />
+                <field name="kanban_dashboard" />
+                <field name="log_gps_count" />
+                <field name="activity_ids" />
+                <field name="activity_state" />
+                <templates>
+                    <t t-name="card">
+                        <t
+                            t-value="JSON.parse(record.kanban_dashboard.raw_value)"
+                            t-set="dashboard" />
+
+                        <div class="o_kanban_card_header">
+                            <div class="o_kanban_card_header_title">
+                                <div class="o_primary">
+                                    <a type="object" name="action_view_logs_gps">
+                                        <field name="name" class="fs-5 fw-bold" />
+                                    </a>
+                                    <t
+                                        t-if="dashboard.show_company"
+                                        groups="base.group_multi_company">
+                                        <span class="text-muted small"> - <field name="company_id" /></span>
+                                    </t>
+                                </div>
+                                <div class="text-muted small">
+                                    <i class="fa-solid fa-id-card" />
+                                    <span>Receiver Key: </span>
+                                    <field name="gps_receiver_key" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="container o_kanban_card_content mt-2">
+                            <div class="row text-muted small">
+                                <div class="col-12">
+                                    <i class="fa-regular fa-clock" />
+                                    <span class="ms-1">Last update: </span>
+                                    <strong t-out="dashboard.last_update_str" />
+                                </div>
+                            </div>
+
+                            <div class="row mt-3">
+                                <div class="col-6">
+                                    <div class="d-flex align-items-center">
+                                        <t t-if="dashboard.ignition_on">
+                                            <i
+                                                class="fa-solid fa-power-off fa-2x text-success"
+                                                title="Ignition On" />
+                                        </t>
+                                        <t t-else="">
+                                            <i
+                                                class="fa-solid fa-power-off fa-2x text-muted"
+                                                title="Ignition Off" />
+                                        </t>
+                                        <div class="ms-2">
+                                            <div class="text-muted small">Ignition</div>
+                                            <strong t-if="dashboard.ignition_on" class="text-success">ON</strong>
+                                            <strong t-else="" class="text-muted">OFF</strong>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="d-flex align-items-center">
+                                        <t t-if="dashboard.is_moving">
+                                            <i
+                                                class="fa-solid fa-car fa-2x text-primary"
+                                                title="Moving" />
+                                        </t>
+                                        <t t-else="">
+                                            <i
+                                                class="fa-solid fa-car fa-2x text-muted"
+                                                title="Stopped" />
+                                        </t>
+                                        <div class="ms-2">
+                                            <div class="text-muted small">Status</div>
+                                            <strong
+                                                t-if="dashboard.is_moving"
+                                                class="text-primary">
+                                                Moving</strong>
+                                            <strong t-else="" class="text-muted">Stopped</strong>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row mt-3">
+                                <div class="col-6">
+                                    <div class="d-flex align-items-center">
+                                        <i
+                                            class="fa-solid fa-gauge-high fa-2x text-info"
+                                            title="Speed Indicator" />
+                                        <div class="ms-2">
+                                            <div class="text-muted small">Speed</div>
+                                            <strong>
+                                                <span t-out="dashboard.current_speed" />
+                                                <span class="text-muted small"> km/h</span>
+                                            </strong>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="d-flex align-items-center">
+                                        <t t-if="dashboard.battery_status == 'good'">
+                                            <i
+                                                class="fa-solid fa-battery-full fa-2x text-success"
+                                                title="Battery Full" />
+                                        </t>
+                                        <t
+                                            t-elif="dashboard.battery_status == 'medium'">
+                                            <i
+                                                class="fa-solid fa-battery-half fa-2x text-warning"
+                                                title="Battery Half" />
+                                        </t>
+                                        <t t-else="">
+                                            <i
+                                                class="fa-solid fa-battery-empty fa-2x text-danger"
+                                                title="Battery Empty" />
+                                        </t>
+                                        <div class="ms-2">
+                                            <div class="text-muted small">Battery</div>
+                                            <strong>
+                                                <span
+                                                    t-out="dashboard.battery_voltage" />
+                                                <span class="text-muted small"> V</span>
+                                            </strong>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row mt-3 pt-3 border-top">
+                                <div class="col-12">
+                                    <div class="text-muted small fw-bold mb-2">Last 24 Hours</div>
+                                </div>
+                                <div class="col-4 text-center">
+                                    <div class="text-muted small">Distance</div>
+                                    <strong>
+                                        <span t-out="dashboard.distance_24h" />
+                                        <span class="text-muted small"> km</span>
+                                    </strong>
+                                </div>
+                                <div class="col-4 text-center">
+                                    <div class="text-muted small">Avg Speed</div>
+                                    <strong>
+                                        <span t-out="dashboard.avg_speed" />
+                                        <span class="text-muted small"> km/h</span>
+                                    </strong>
+                                </div>
+                                <div class="col-4 text-center">
+                                    <div class="text-muted small">Max Speed</div>
+                                    <strong>
+                                        <span t-out="dashboard.max_speed" />
+                                        <span class="text-muted small"> km/h</span>
+                                    </strong>
+                                </div>
+                            </div>
+
+                            <div class="row mt-3 pt-3 border-top">
+                                <div class="col-6">
+                                    <div class="text-muted small">Satellites</div>
+                                    <div>
+                                        <i
+                                            class="fa-solid fa-satellite"
+                                            title="Satellites" />
+                                        <strong
+                                            class="ms-1"
+                                            t-out="dashboard.satellites" />
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="text-muted small">Total Logs</div>
+                                    <div>
+                                        <i
+                                            class="fa-solid fa-database"
+                                            title="Total Logs" />
+                                        <strong class="ms-1">
+                                            <field name="log_gps_count" />
+                                        </strong>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div
+                            class="o_kanban_card_manage_pane dropdown-menu"
+                            role="menu">
+                            <div class="container">
+                                <div class="row">
+                                    <div class="col-6">
+                                        <h5 class="o_kanban_card_manage_title">
+                                            <span>View</span>
+                                        </h5>
+                                        <div>
+                                            <a role="menuitem" type="object" name="action_view_logs_gps">GPS Logs</a>
+                                        </div>
+                                        <div>
+                                            <a role="menuitem" type="open">Device Details</a>
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <h5 class="o_kanban_card_manage_title">
+                                            <span>Actions</span>
+                                        </h5>
+                                        <div>
+                                            <a role="menuitem" type="object" name="action_get_current_position">Get Position</a>
+                                        </div>
+                                        <div
+                                            t-if="!record.gps_tracking_enabled.raw_value">
+                                            <a role="menuitem" type="object" name="action_start_tracking_gps">Start Tracking</a>
+                                        </div>
+                                        <div
+                                            t-if="record.gps_tracking_enabled.raw_value">
+                                            <a role="menuitem" type="object" name="action_stop_tracking_gps">Stop Tracking</a>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row mt-2">
+                                    <div class="col-12">
+                                        <field
+                                            name="kanban_color"
+                                            widget="kanban_color_picker" />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
+    <record id="view_device_device_form" model="ir.ui.view">
+        <field name="name">device.device.form.gps</field>
+        <field name="model">device.device</field>
+        <field name="inherit_id" ref="device.view_device_device_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//header" position="inside">
+                <button
+                    name="action_start_tracking_gps"
+                    type="object"
+                    string="Start Tracking"
+                    invisible="not is_gps_device or gps_tracking_enabled"
+                    class="btn-success" />
+                <button
+                    name="action_stop_tracking_gps"
+                    type="object"
+                    string="Stop Tracking"
+                    invisible="not is_gps_device or not gps_tracking_enabled"
+                    class="btn-warning" />
+                <button
+                    name="action_get_current_position"
+                    type="object"
+                    string="Get Position"
+                    invisible="not is_gps_device" />
+            </xpath>
+
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <button
+                    name="action_view_logs_gps"
+                    type="object"
+                    icon="fa-map-marker"
+                    invisible="not is_gps_device"
+                    class="oe_stat_button">
+                    <field
+                        name="log_gps_count"
+                        string="Tracking Points (24h)"
+                        widget="statinfo" />
+                </button>
+            </xpath>
+
+            <xpath expr="//field[@name='active']" position="after">
+                <field name="is_gps_device" invisible="1" />
+            </xpath>
+
+            <xpath expr="//field[@name='identifier']" position="after">
+                <field
+                    name="gps_receiver_key"
+                    placeholder="Key sent in tracker field 14"
+                    invisible="not is_gps_device" />
+            </xpath>
+
+            <xpath expr="//notebook" position="inside">
+                <page name="gps" string="GPS Tracking" invisible="not is_gps_device">
+                    <group>
+                        <group string="Tracking Configuration">
+                            <field name="gps_tracking_enabled" />
+                            <field name="config_id" />
+                        </group>
+                        <group string="Current Status">
+                            <field name="date_last_data_received" readonly="1" />
+                            <field name="gps_battery_level" widget="progressbar" />
+                        </group>
+                    </group>
+                    <group>
+                        <group string="Vehicle Status">
+                            <field name="gps_ignition_state" />
+                            <field name="gps_movement_state" />
+                            <field name="log_gps_last_speed" string="Current Speed" />
+                            <field
+                                name="log_gps_last_fuel_level_l"
+                                string="Fuel Level (L)" />
+                            <field
+                                name="log_gps_last_fuel_level"
+                                string="Fuel Level (%)"
+                                widget="progressbar" />
+                        </group>
+                        <group string="Last Position">
+                            <field name="log_gps_last_latitude" />
+                            <field name="log_gps_last_longitude" />
+                            <field name="log_gps_last_altitude" />
+                            <field name="log_gps_last_satellites" />
+                        </group>
+                    </group>
+                    <group>
+                        <group string="Vehicle Calibration">
+                            <field
+                                name="odometer_initial_offset"
+                                help="Offset to add to calculated odometer (for pre-existing values)" />
+                            <field
+                                name="fuel_tank_capacity"
+                                help="Tank capacity in liters (for percentage calculations)" />
+                        </group>
+                        <group name="geofencing" string="Geofencing">
+                        </group>
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="action_device_device_gps" model="ir.actions.act_window">
+        <field name="name">GPS Devices</field>
+        <field name="res_model">device.device</field>
+        <field name="view_mode">kanban,list,form</field>
+        <field name="search_view_id" ref="view_device_device_search" />
+        <field name="domain">[('is_gps_device', '=', True)]</field>
+        <field
+            name="context">{'gps_columns': 1, 'search_default_filter_moving_true': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Create your first GPS Tracker
+            </p>
+            <p>
+                GPS devices extend remote IoT devices with tracking capabilities.
+            </p>
+        </field>
+        <field
+            name="view_ids"
+            eval="[Command.clear(), Command.create({'view_mode': 'kanban', 'view_id': ref('view_device_device_kanban_gps_dashboard')}), Command.create({'view_mode': 'list', 'view_id': ref('view_device_device_list')}), Command.create({'view_mode': 'form', 'view_id': ref('device.view_device_device_form')})]" />
+    </record>
+
+</odoo>

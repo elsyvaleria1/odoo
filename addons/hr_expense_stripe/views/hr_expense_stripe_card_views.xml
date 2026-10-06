@@ -1,0 +1,445 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <data>
+        <record id="view_hr_expense_stripe_card_form" model="ir.ui.view">
+            <field name="name">hr.expense.stripe.card.view.form</field>
+            <field name="model">hr.expense.stripe.card</field>
+            <field name="arch" type="xml">
+                <form string="Expenses Stripe Card">
+                    <header>
+                        <button
+                            name="action_activate_card"
+                            type="object"
+                            string="Activate"
+                            groups="hr_expense.group_hr_expense_manager"
+                            invisible="state in ('active', 'canceled') or (state == 'draft' and card_type == 'physical')"
+                            class="btn btn-primary" />
+                        <button
+                            name="action_activate_card"
+                            type="object"
+                            string="Order"
+                            groups="hr_expense.group_hr_expense_manager"
+                            invisible="state != 'draft' or card_type == 'virtual'"
+                            class="btn btn-primary" />
+                        <button
+                            name="action_activate_card"
+                            type="object"
+                            string="Activate"
+                            groups="!hr_expense.group_hr_expense_manager"
+                            invisible="state != 'pending' or card_type == 'virtual'"
+                            class="btn btn-primary" />
+                        <button
+                            name="action_block_card"
+                            type="object"
+                            string="Block"
+                            groups="hr_expense.group_hr_expense_manager"
+                            invisible="state != 'active'"
+                            class="btn btn-primary" />
+                        <button
+                            name="action_pause_card"
+                            type="object"
+                            string="Pause"
+                            groups="hr_expense.group_hr_expense_manager"
+                            invisible="state != 'active'"
+                            class="btn btn-secondary" />
+                        <button
+                            name="action_pause_card_warning_view"
+                            type="object"
+                            string="Pause"
+                            groups="base.group_user,!hr_expense.group_hr_expense_manager"
+                            invisible="state != 'active'">
+                        </button>
+                        <!-- Statusbar -->
+                        <field
+                            name="state"
+                            widget="statusbar"
+                            statusbar_visible="inactive,active" />
+                    </header>
+                    <sheet>
+                        <div name="button_box" class="oe_button_box">
+                            <button
+                                name="action_view_employee"
+                                type="object"
+                                icon="fa-id-card-o"
+                                invisible="not has_employee"
+                                class="oe_stat_button">
+                                <div class="o_field_widget o_stat_info">
+                                    <span class="o_stat_text">Employee</span>
+                                    <span class="o_stat_value"><field name="employee_name" /></span>
+                                </div>
+                            </button>
+                            <button
+                                name="action_view_expenses"
+                                type="object"
+                                icon="fa-dollar"
+                                invisible="expenses_count == 0"
+                                class="oe_stat_button">
+                                <field
+                                    name="expenses_count"
+                                    string="Expenses"
+                                    widget="statinfo" />
+                            </button>
+                        </div>
+                        <div class="oe_title">
+                            <h1>
+                                <field
+                                    name="name"
+                                    placeholder="Draft"
+                                    readonly="state != 'draft'" />
+                            </h1>
+                        </div>
+                        <group>
+                            <group groups="!hr.group_hr_user">
+                                <field
+                                    name="employee_id"
+                                    widget="many2one_avatar_employee"
+                                    options="{'no_open': True}" />
+                            </group>
+                            <group groups="hr.group_hr_user">
+                                <field
+                                    name="stripe_id"
+                                    groups="base.group_no_one"
+                                    readonly="True" />
+                                <label for="employee_id" string="Cardholder" />
+                                <div class="o_field_widget o_stat_info">
+                                    <field
+                                        name="employee_id"
+                                        nolabel="0"
+                                        options="{'no_create': True, 'no_open': True}"
+                                        readonly="stripe_id"
+                                        class="oe_inline w-50" />
+                                    <button
+                                        name="action_view_cardholder_wizard"
+                                        type="object"
+                                        string="Update info"
+                                        invisible="not has_employee"
+                                        class="btn btn-link" />
+                                </div>
+                            </group>
+                            <group>
+                                <field
+                                    name="card_type"
+                                    widget="radio"
+                                    options="{'horizontal': true}"
+                                    readonly="state != 'draft'"
+                                    required="True" />
+                                <field
+                                    name="delivery_address_id"
+                                    options="{'no_create': True}"
+                                    invisible="card_type == 'virtual'"
+                                    readonly="is_delivered or state in ('active', 'inactive', 'cancelled') or shipping_status in ('shipped', 'delivered')" />
+                                <field
+                                    name="company_id"
+                                    groups="base.group_multi_company"
+                                    readonly="stripe_id or has_employee" />
+                                <field name="journal_id" readonly="True" />
+                            </group>
+                        </group>
+                        <notebook>
+                            <page string="Spending Policy">
+                                <div
+                                    class="alert alert-warning oe_edit_only"
+                                    role="alert"
+                                    name="warning_spending_limit_over_stripe_limit"
+                                    invisible="not has_limit_higher_than_stripe_warning">
+                                    The spending limits set on this card are higher than the limits set by Stripe of 50.000 per day and per transaction.
+                                </div>
+                                <group>
+                                    <field name="currency_id" invisible="True"/> <!-- Needed for the amount fields -->
+                                    <group colspan="2">
+                                        <field
+                                            name="spending_policy_country_tag_ids"
+                                            placeholder="Allow All"
+                                            widget="many2many_tags"
+                                            options="{'no_create': True}" />
+                                        <field
+                                            name="spending_policy_category_tag_ids"
+                                            string="Categories"
+                                            placeholder="Allow All"
+                                            widget="many2many_tags"
+                                            options="{'no_create': True, 'no_edit': True, 'color_field': 'color', 'no_edit_color': True}" />
+
+                                        <label
+                                            for="spending_policy_interval_amount"
+                                            string="Limit" />
+                                        <table>
+                                            <tr>
+                                                <td>
+                                                    <field
+                                                        name="spending_policy_interval_amount"
+                                                        widget="monetary_blank_if_zero"
+                                                        class="pe-2" />
+                                                </td>
+                                                <td>
+                                                    <span>per</span>
+                                                    <field
+                                                        name="spending_policy_interval"
+                                                        class="oe_inline px-2" />
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td>
+                                                    <span>and</span>
+                                                    <field
+                                                        name="spending_policy_transaction_amount"
+                                                        widget="monetary_blank_if_zero"
+                                                        class="oe_inline px-2" />
+                                                </td>
+                                                <td>
+                                                    <span>per transaction</span>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </group>
+                                </group>
+                            </page>
+                            <page string="Card Details" invisible="not stripe_id">
+                                <script src="https://js.stripe.com/v3/" />
+                                <group>
+                                    <field
+                                        name="card_number_public"
+                                        placeholder="**** **** **** ****" />
+                                    <field name="expiration" />
+                                    <div colspan="2">
+                                        <a
+                                            name="action_view_card_private_view"
+                                            type="object"
+                                            icon="fa-eye"
+                                            invisible="user_id != uid"
+                                            string="View Details"
+                                            role="button"
+                                            class="btn-link" />
+                                    </div>
+                                </group>
+                            </page>
+                        </notebook>
+                    </sheet>
+                    <div class="o_attachment_preview o_center_attachment" />
+                    <chatter />
+                </form>
+            </field>
+        </record>
+        <record id="view_hr_expense_stripe_card_list" model="ir.ui.view">
+            <field name="name">hr.expense.stripe.card.view.list</field>
+            <field name="model">hr.expense.stripe.card</field>
+            <field name="arch" type="xml">
+                <list string="Cards" edit="False">
+                    <field name="currency_id" column_invisible="True"/>  <!-- Needed for the amount fields -->
+                    <field name="name" />
+                    <field
+                        name="employee_id"
+                        widget="many2one_avatar_employee"
+                        context="{'default_company_id': company_id}"
+                        options="{'no_create': True}"
+                        groups="!hr.group_hr_user" />
+                    <field
+                        name="employee_id"
+                        widget="many2one_avatar_employee"
+                        context="{'default_company_id': company_id}"
+                        options="{'relation': 'hr.employee'}"
+                        groups="hr.group_hr_user" />
+                    <field name="last_4" invisible="state == 'pending'" />
+                    <field name="card_type" />
+                    <field
+                        name="spending_policy_interval_amount"
+                        widget="monetary"
+                        optional="show" />
+                    <field name="spending_policy_interval" optional="show" />
+                    <field
+                        name="spending_policy_transaction_amount"
+                        widget="monetary"
+                        optional="hide" />
+                    <field
+                        name="spending_policy_category_tag_ids"
+                        placeholder="All valid MCCs"
+                        widget="many2many"
+                        optional="hide"
+                        options="{'no_create': True}" />
+                    <field
+                        name="spending_policy_country_tag_ids"
+                        placeholder="All countries"
+                        widget="many2many"
+                        optional="hide"
+                        options="{'no_create': True}" />
+                    <field name="journal_id" />
+                    <field name="company_id" groups="base.group_multi_company" />
+                    <field
+                        name="state"
+                        widget="badge"
+                        decoration-danger="state == 'canceled'"
+                        decoration-info="state == 'inactive'"
+                        decoration-success="state == 'active'" />
+                </list>
+            </field>
+        </record>
+        <record id="view_hr_expense_stripe_card_kanban" model="ir.ui.view">
+            <field name="name">hr.expense.stripe.card.view.kanban</field>
+            <field name="model">hr.expense.stripe.card</field>
+            <field name="arch" type="xml">
+                <kanban edit="0" delete="0" sample="1" can_open="1" quick_create="0">
+                    <templates>
+                        <t t-name="card" class="stripe_record_card">
+                            <script src="https://js.stripe.com/v3/" />
+                            <div class="d-flex stripe_record_card_element">
+                                <div class="d-flex flex-row h-1">
+                                    <field
+                                        name="card_type"
+                                        class="d-inline-flex stripe_card_text_sm align-items-end" />
+                                    <widget
+                                        name="web_ribbon"
+                                        title="Draft"
+                                        invisible="state != 'draft'"
+                                        bg_color="text-bg-info" />
+                                    <widget
+                                        name="web_ribbon"
+                                        title="Pending"
+                                        invisible="state != 'pending'"
+                                        bg_color="text-bg-info" />
+                                    <widget
+                                        name="web_ribbon"
+                                        title="Paused"
+                                        invisible="state != 'inactive'"
+                                        bg_color="text-bg-warning" />
+                                    <widget
+                                        name="web_ribbon"
+                                        title="Blocked"
+                                        invisible="state != 'canceled'"
+                                        bg_color="text-bg-danger" />
+                                </div>
+                                <div
+                                    class="d-flex flex-column h-75 mt-auto justify-content-end">
+                                    <span class="card_name w-100 stripe_card_text mb-2">
+                                        <field name="name" />
+                                    </span>
+                                    <div
+                                        class="d-flex w-100 h-50 justify-content-between">
+                                        <div
+                                            class="d-flex flex-column justify-content-between"
+                                            style="width: 70%;">
+                                            <div class="d-flex justify-content-between">
+                                                <span
+                                                    class="card_number w-100 d-flex justify-content-between stripe_card_text">
+                                                    <field
+                                                        name="card_number_public"
+                                                        invisible="state == 'draft'" />
+                                                </span>
+                                                <a
+                                                    name="action_view_card_private_view"
+                                                    title="Reveal"
+                                                    type="object"
+                                                    invisible="state in ('draft', 'pending') or user_id != uid">
+                                                    <i
+                                                        class="fa-regular fa-eye stripe_card_text_lg card_icon" />
+                                                </a>
+                                            </div>
+                                            <div>
+                                                <div
+                                                    class="d-flex w-100 justify-content-end">
+                                                    <span
+                                                        class="card_expiry d-block w-50 stripe_card_text_sm">
+                                                        <field name="expiration" />
+                                                    </span>
+                                                    <span
+                                                        class="card_cvc w-50 text-end stripe_card_text_sm">
+                                                        <t
+                                                            invisible="state in ('draft', 'pending')">
+                                                            ****
+                                                        </t>
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <h1 class="align-self-end">
+                                            <i class="mastercard-icon" />
+                                        </h1>
+                                    </div>
+                                </div>
+                            </div>
+                        </t>
+                    </templates>
+                </kanban>
+            </field>
+        </record>
+        <record id="hr_expense_stripe_card_view_search" model="ir.ui.view">
+            <field name="name">hr.expense.stripe.card.view.search</field>
+            <field name="model">hr.expense.stripe.card</field>
+            <field name="arch" type="xml">
+                <search string="Cards">
+                    <!-- Search -->
+                    <field
+                        name="name"
+                        string="Name"
+                        filter_domain="[('name', 'ilike', self)]" />
+                    <field
+                        name="employee_id"
+                        string="Cardholder"
+                        filter_domain="[('employee_id.name', 'ilike', self)]" />
+                    <field
+                        name="last_4"
+                        string="Last 4"
+                        filter_domain="[('last_4', 'ilike', self)]" />
+
+                    <!-- Filters -->
+                    <filter
+                        name="my_cards"
+                        string="My Cards"
+                        help="My own Cards"
+                        domain="[('employee_id.user_id', '=', uid)]" />
+                    <filter
+                        name="my_team_cards"
+                        string="My Team"
+                        help="Cards of Your Team Member"
+                        domain="[('employee_id.parent_id.user_id', '=', uid)]" />
+                    <separator />
+                    <filter
+                        name="draft"
+                        string="Draft"
+                        domain="[('state', '=', 'draft')]" />
+                    <filter
+                        name="active"
+                        string="Active"
+                        domain="[('state', '=', 'active')]" />
+                    <filter
+                        name="inactive"
+                        string="Paused"
+                        domain="[('state', '=', 'inactive')]" />
+                    <filter
+                        name="blocked"
+                        string="Blocked"
+                        domain="[('state', '=', 'canceled')]" />
+
+                    <!-- Group bys -->
+                    <group name="group_filters">
+                        <filter
+                            name="employee"
+                            string="Cardholder"
+                            context="{'group_by': 'employee_id'}" />
+                        <filter
+                            name="status"
+                            string="Status"
+                            context="{'group_by': 'state'}" />
+                        <filter
+                            name="company"
+                            string="Company"
+                            context="{'group_by': 'company_id'}"
+                            groups="base.group_multi_company" />
+                    </group>
+                </search>
+            </field>
+        </record>
+        <record id="action_hr_expense_stripe_card" model="ir.actions.act_window">
+            <field name="name">Cards</field>
+            <field name="res_model">hr.expense.stripe.card</field>
+            <field name="path">cards</field>
+            <field name="view_mode">kanban,list,form</field>
+            <field name="search_view_id" ref="hr_expense_stripe_card_view_search" />
+            <field name="help" type="html">
+                <p class="o_view_nocontent_smiling_face">
+                    Create virtual and physical cards for smooth team spending, whether for single purchases or ongoing expenses.
+                </p>
+            </field>
+        </record>
+    </data>
+
+</odoo>

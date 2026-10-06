@@ -1,0 +1,257 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <data noupdate="1">
+        <record id="voice_term_check" model="speech.vocabulary.form">
+            <field
+                name="phrases">checa; checar; checalo; checala; checalos; checalas; checame; chequea; chequear</field>
+            <field name="word">revisa</field>
+            <field name="pronunciation">local</field>
+            <field name="source">seed</field>
+        </record>
+        <record id="voice_term_reset" model="speech.vocabulary.form">
+            <field name="phrases">resetea; resetear; resetealo; resetealos</field>
+            <field name="word">restablece</field>
+            <field name="pronunciation">local</field>
+            <field name="source">seed</field>
+        </record>
+        <record id="voice_term_set" model="speech.vocabulary.form">
+            <field name="phrases">setea; setear; setealo; seteale</field>
+            <field name="word">establece</field>
+            <field name="pronunciation">local</field>
+            <field name="source">seed</field>
+        </record>
+        <record id="voice_term_save" model="speech.vocabulary.form">
+            <field name="phrases">salva; salvalo; salvala</field>
+            <field name="word">guarda</field>
+            <field name="pronunciation">local</field>
+            <field name="source">seed</field>
+        </record>
+        <record id="voice_term_click" model="speech.vocabulary.form">
+            <field
+                name="phrases">dale clic; dale click; dale clic en; dale click en; clickea; cliquea; clickear; clickeale</field>
+            <field name="word">haz clic en</field>
+            <field name="pronunciation">local</field>
+            <field name="source">seed</field>
+        </record>
+        <record id="voice_term_post" model="speech.vocabulary.form">
+            <field name="phrases">postea; postear; postealo</field>
+            <field name="word">publica</field>
+            <field name="pronunciation">local</field>
+            <field name="source">seed</field>
+        </record>
+        <record id="voice_term_scan" model="speech.vocabulary.form">
+            <field name="phrases">escanea; escanear; scanea; escanealo</field>
+            <field name="word">escanea</field>
+            <field name="pronunciation">local</field>
+            <field name="source">seed</field>
+        </record>
+        <record id="voice_term_delivery" model="speech.vocabulary.form">
+            <field
+                name="phrases">delivery; deliveries; deliverys; delivery order; delivery orders</field>
+            <field name="word">entregas</field>
+            <field name="pronunciation">word</field>
+            <field name="source">seed</field>
+        </record>
+        <record id="voice_term_shipping" model="speech.vocabulary.form">
+            <field name="phrases">shipping; shipment; shipments</field>
+            <field name="word">envío</field>
+            <field name="pronunciation">word</field>
+            <field name="source">seed</field>
+        </record>
+        <record id="voice_term_status" model="speech.vocabulary.form">
+            <field name="phrases">status; estatus</field>
+            <field name="word">estado</field>
+            <field name="pronunciation">word</field>
+            <field name="source">seed</field>
+        </record>
+        <record id="voice_term_stock" model="speech.vocabulary.form">
+            <field name="phrases">stock; stocks</field>
+            <field name="word">existencias</field>
+            <field name="pronunciation">word</field>
+            <field name="source">seed</field>
+        </record>
+        <record id="voice_term_warehouse" model="speech.vocabulary.form">
+            <field name="phrases">warehouse</field>
+            <field name="word">almacén</field>
+            <field name="pronunciation">word</field>
+            <field name="source">seed</field>
+        </record>
+        <record id="voice_term_location" model="speech.vocabulary.form">
+            <field name="phrases">location; locations</field>
+            <field name="word">ubicación</field>
+            <field name="pronunciation">word</field>
+            <field name="source">seed</field>
+        </record>
+        <record id="voice_term_receipt" model="speech.vocabulary.form">
+            <field name="phrases">receipt; receipts; receiving</field>
+            <field name="word">recepciones</field>
+            <field name="pronunciation">word</field>
+            <field name="source">seed</field>
+        </record>
+        <record id="voice_term_picking" model="speech.vocabulary.form">
+            <field name="phrases">picking; pickings</field>
+            <field name="word">recolección</field>
+            <field name="pronunciation">word</field>
+            <field name="source">seed</field>
+        </record>
+        <record id="voice_term_transfer" model="speech.vocabulary.form">
+            <field name="phrases">transfer; transfers</field>
+            <field name="word">traslados</field>
+            <field name="pronunciation">word</field>
+            <field name="source">seed</field>
+        </record>
+        <record id="voice_term_batch" model="speech.vocabulary.form">
+            <field name="phrases">batch; batches</field>
+            <field name="word">lote</field>
+            <field name="pronunciation">word</field>
+            <field name="source">seed</field>
+        </record>
+        <record id="voice_term_serial" model="speech.vocabulary.form">
+            <field name="phrases">serial; serial number; numero de serial</field>
+            <field name="word">número de serie</field>
+            <field name="pronunciation">word</field>
+            <field name="source">seed</field>
+        </record>
+        <record id="voice_term_tracking" model="speech.vocabulary.form">
+            <field name="phrases">tracking; tracking number</field>
+            <field name="word">seguimiento</field>
+            <field name="pronunciation">word</field>
+            <field name="source">seed</field>
+        </record>
+        <record id="voice_term_pallet" model="speech.vocabulary.form">
+            <field name="phrases">pallet; pallets; palet</field>
+            <field name="word">tarimas</field>
+            <field name="pronunciation">word</field>
+            <field name="source">seed</field>
+        </record>
+        <record id="voice_term_deadline" model="speech.vocabulary.form">
+            <field name="phrases">deadline; dedlain</field>
+            <field name="word">fecha límite</field>
+            <field name="pronunciation">word</field>
+            <field name="source">seed</field>
+        </record>
+        <record id="voice_term_due_date" model="speech.vocabulary.form">
+            <field name="phrases">due date</field>
+            <field name="word">fecha de vencimiento</field>
+            <field name="pronunciation">word</field>
+            <field name="source">seed</field>
+        </record>
+        <record id="voice_term_schedule" model="speech.vocabulary.form">
+            <field name="phrases">scheduled date</field>
+            <field name="word">fecha programada</field>
+            <field name="pronunciation">word</field>
+            <field name="source">seed</field>
+        </record>
+        <record id="voice_term_tags" model="speech.vocabulary.form">
+            <field name="phrases">tag; tags</field>
+            <field name="word">etiquetas</field>
+            <field name="pronunciation">word</field>
+            <field name="source">seed</field>
+        </record>
+        <record id="voice_term_quote" model="speech.vocabulary.form">
+            <field name="phrases">quote; quotes</field>
+            <field name="word">cotizaciones</field>
+            <field name="pronunciation">word</field>
+            <field name="source">seed</field>
+        </record>
+        <record id="voice_term_lead" model="speech.vocabulary.form">
+            <field name="phrases">lead; lid</field>
+            <field name="word">leads</field>
+            <field name="pronunciation">word</field>
+            <field name="source">seed</field>
+        </record>
+        <record id="voice_term_email" model="speech.vocabulary.form">
+            <field name="phrases">email; emails; e mail; imeil</field>
+            <field name="word">correo</field>
+            <field name="pronunciation">word</field>
+            <field name="source">seed</field>
+        </record>
+        <record id="voice_term_meeting" model="speech.vocabulary.form">
+            <field name="phrases">meeting; meetings; miting</field>
+            <field name="word">reunión</field>
+            <field name="pronunciation">word</field>
+            <field name="source">seed</field>
+        </record>
+        <record id="voice_term_call" model="speech.vocabulary.form">
+            <field name="phrases">call; calls</field>
+            <field name="word">llamada</field>
+            <field name="pronunciation">word</field>
+            <field name="source">seed</field>
+        </record>
+        <record id="voice_term_follow_up" model="speech.vocabulary.form">
+            <field name="phrases">follow up; followup; folou</field>
+            <field name="word">seguimiento</field>
+            <field name="pronunciation">word</field>
+            <field name="source">seed</field>
+        </record>
+        <record id="voice_term_item" model="speech.vocabulary.form">
+            <field name="phrases">item; items; aitem</field>
+            <field name="word">artículo</field>
+            <field name="pronunciation">word</field>
+            <field name="source">seed</field>
+        </record>
+        <record id="voice_term_price_list" model="speech.vocabulary.form">
+            <field name="phrases">price list; pricelist</field>
+            <field name="word">lista de precios</field>
+            <field name="pronunciation">word</field>
+            <field name="source">seed</field>
+        </record>
+        <record id="voice_term_discount" model="speech.vocabulary.form">
+            <field name="phrases">discount</field>
+            <field name="word">descuento</field>
+            <field name="pronunciation">word</field>
+            <field name="source">seed</field>
+        </record>
+        <record id="voice_term_payment" model="speech.vocabulary.form">
+            <field name="phrases">payment; payments</field>
+            <field name="word">pago</field>
+            <field name="pronunciation">word</field>
+            <field name="source">seed</field>
+        </record>
+        <record id="voice_term_brand" model="speech.vocabulary.form">
+            <field name="phrases">brand</field>
+            <field name="word">marca</field>
+            <field name="pronunciation">word</field>
+            <field name="source">seed</field>
+        </record>
+        <record id="voice_term_overdue" model="speech.vocabulary.form">
+            <field name="phrases">overdue</field>
+            <field name="word">vencidas</field>
+            <field name="pronunciation">word</field>
+            <field name="source">seed</field>
+        </record>
+        <record id="voice_term_report" model="speech.vocabulary.form">
+            <field name="phrases">report; reports</field>
+            <field name="word">reporte</field>
+            <field name="pronunciation">word</field>
+            <field name="source">seed</field>
+        </record>
+        <record id="voice_term_sku" model="speech.vocabulary.form">
+            <field name="phrases">sku; skus</field>
+            <field name="word">referencia interna</field>
+            <field name="pronunciation">acronym</field>
+            <field name="source">seed</field>
+        </record>
+        <record id="voice_term_po" model="speech.vocabulary.form">
+            <field name="phrases">po</field>
+            <field name="word">órdenes de compra</field>
+            <field name="pronunciation">acronym</field>
+            <field name="source">seed</field>
+        </record>
+        <record id="voice_term_uom" model="speech.vocabulary.form">
+            <field name="phrases">uom</field>
+            <field name="word">unidad de medida</field>
+            <field name="pronunciation">acronym</field>
+            <field name="source">seed</field>
+        </record>
+        <record id="voice_term_purchase_order" model="speech.vocabulary.form">
+            <field
+                name="phrases">pedido de compra; pedidos de compra; orden de compra</field>
+            <field name="word">órdenes de compra</field>
+            <field name="pronunciation">local</field>
+            <field name="source">seed</field>
+        </record>
+    </data>
+
+</odoo>

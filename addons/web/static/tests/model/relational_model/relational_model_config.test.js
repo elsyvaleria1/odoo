@@ -1,0 +1,60 @@
+// @ts-check
+
+import { describe, expect, test } from "@odoo/hoot";
+import { RelationalModel } from "@web/model/relational_model/relational_model";
+
+describe.current.tags("headless");
+
+describe("RelationalModel.patchConfig", () => {
+    test("is synchronous: patch is visible immediately, no await", () => {
+        /** @type {import("@web/model/relational_model/relational_model").RelationalModelConfig} */
+        const config = {
+            resModel: "res.partner",
+            domain: [],
+            context: {},
+            orderBy: [],
+            groupBy: [],
+            fieldsToAggregate: [],
+            isRoot: true,
+            isMonoRecord: true,
+            activeFields: {},
+            fields: {},
+            mode: "readonly",
+            resId: false,
+        };
+        const result = RelationalModel.prototype.patchConfig.call(null, config, {
+            mode: "edit",
+            resId: 42,
+        });
+        expect(config.mode).toBe("edit");
+        expect(config.resId).toBe(42);
+        expect(result).toBe(undefined);
+    });
+
+    test("is not an async function (guard against reintroducing await)", () => {
+        expect(RelationalModel.prototype.patchConfig.constructor.name).toBe("Function");
+    });
+
+    test("keeps keys not present in the patch", () => {
+        /** @type {import("@web/model/relational_model/relational_model").RelationalModelConfig} */
+        const config = {
+            resModel: "res.partner",
+            domain: [],
+            context: {},
+            orderBy: [],
+            groupBy: [],
+            fieldsToAggregate: [],
+            isRoot: true,
+            isMonoRecord: true,
+            activeFields: {},
+            fields: {},
+            limit: 80,
+            offset: 40,
+        };
+        RelationalModel.prototype.patchConfig.call(null, config, {
+            offset: 0,
+        });
+        expect(config.limit).toBe(80);
+        expect(config.offset).toBe(0);
+    });
+});

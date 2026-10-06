@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="web.FlowEditor">
+        <div class="o_flow_editor position-relative overflow-hidden w-100 h-100"
+            t-att-class="{'o_flow_editor_interacting': this.isInteracting}"
+            t-att-style="this.canvasStyle"
+            t-att-aria-label="this.ariaLabel"
+            t-ref="this.canvasRef"
+            t-on-pointerdown="this.onCanvasPointerDown"
+            t-on-wheel="this.onWheel"
+            role="region" tabindex="-1">
+            <div class="o_flow_editor_content position-absolute" t-att-style="this.contentStyle">
+                <svg class="o_flow_editor_connections position-absolute overflow-visible">
+                    <t t-foreach="this.connectionGeometries" t-as="geometry" t-key="geometry.id">
+                        <FlowConnection geometry="geometry"
+                            className="this.getConnectionClass(geometry.id)"
+                            label="this.getConnectionLabel(geometry.id)"
+                            selected="this.isConnectionSelected(geometry.id)"
+                            onClick.bind="this.onConnectionClick"/>
+                    </t>
+                    <t t-set="draftGeometry" t-value="this.draftConnectionGeometry"/>
+                    <FlowConnection t-if="draftGeometry" geometry="draftGeometry"/>
+                </svg>
+                <div class="o_flow_editor_nodes position-absolute">
+                    <t t-set="connectedNodes" t-value="this.connectedNodeIds"/>
+                    <t t-foreach="this.store.nodes" t-as="node" t-key="node.id">
+                        <FlowNode node="node"
+                            connections="this.store.connections"
+                            defaultSize="this.props.defaultNodeSize"
+                            defaultHeaderHeight="this.props.defaultNodeHeaderHeight"
+                            NodeComponent="this.props.NodeComponent"
+                            getNodeComponent="this.props.getNodeComponent"
+                            hasConnectedPath="!this.props.flagUnreachableNodes or connectedNodes.has(node.id)"
+                            selected="this.isNodeSelected(node.id)"
+                            readonly="this.store.readonly"
+                            getPortValidation.bind="this.getPortValidation"
+                            onClick.bind="this.onNodeClick"
+                            onDelete.bind="this.onNodeDeleteClick"
+                            onNodePointerDown.bind="this.onNodePointerDown"
+                            onPortPointerDown.bind="this.onPortPointerDown"
+                            onResizePointerDown.bind="this.onResizePointerDown"/>
+                    </t>
+                </div>
+            </div>
+            <div t-if="this.props.showControls" class="o_flow_editor_controls btn-group position-absolute">
+                <button class="btn btn-light border" t-att-title="this.zoomOutLabel"
+                    t-att-aria-label="this.zoomOutLabel" t-on-click="this.zoomOut" type="button">
+                    <i class="fa-solid fa-minus" aria-hidden="true"/>
+                </button>
+                <button class="btn btn-light border" t-att-title="this.fitLabel"
+                    t-att-aria-label="this.fitLabel" t-on-click="this.fitToContent" type="button">
+                    <i class="fa-solid fa-expand" aria-hidden="true"/>
+                </button>
+                <button class="btn btn-light border" t-att-title="this.zoomInLabel"
+                    t-att-aria-label="this.zoomInLabel" t-on-click="this.zoomIn" type="button">
+                    <i class="fa-solid fa-plus" aria-hidden="true"/>
+                </button>
+            </div>
+            <t t-set="locationIndicator" t-value="this.flowLocationIndicator"/>
+            <button t-if="locationIndicator"
+                class="o_flow_editor_location_indicator btn rounded-circle position-absolute"
+                t-att-style="this.getFlowLocationIndicatorStyle(locationIndicator)"
+                t-att-title="this.flowLocationLabel"
+                t-att-aria-label="this.flowLocationLabel"
+                t-on-click="this.onFlowLocationClick"
+                type="button">
+                <i class="fa-solid fa-location-arrow" aria-hidden="true"/>
+            </button>
+            <div t-if="!this.store.nodes.length"
+                class="o_flow_editor_empty position-absolute top-50 start-50 translate-middle text-muted">
+                <t t-out="this.emptyLabel"/>
+            </div>
+        </div>
+    </t>
+
+</templates>

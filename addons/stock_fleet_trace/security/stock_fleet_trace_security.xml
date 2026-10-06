@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="privilege_trip_trace_record" model="res.groups">
+        <field
+            name="name">Privilege: a trip records its own log and balance and gives its vehicle a location</field>
+        <field name="is_privilege" eval="True" />
+    </record>
+
+</odoo>

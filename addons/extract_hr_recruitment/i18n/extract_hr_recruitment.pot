@@ -1,0 +1,116 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* extract_hr_recruitment
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-09-27 05:12+0000\n"
+"PO-Revision-Date: 2026-09-27 05:12+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: extract_hr_recruitment
+#. odoo-python
+#: code:addons/extract_hr_recruitment/models/hr_applicant.py:0
+msgid ""
+"A CV is read while the applicant is still in the first stage. Past it "
+"somebody has been through this record, and a reading would be correcting a "
+"person from a document they have read."
+msgstr ""
+
+#. module: extract_hr_recruitment
+#: model:ir.model.fields,help:extract_hr_recruitment.field_hr_applicant__extract_result
+msgid ""
+"Every value that was read, with which strategy proposed it and how confident"
+" it was."
+msgstr ""
+
+#. module: extract_hr_recruitment
+#: model:ir.model.fields,field_description:extract_hr_recruitment.field_hr_applicant__extract_can_be_read
+msgid "Extract Can Be Read"
+msgstr ""
+
+#. module: extract_hr_recruitment
+#: model:ir.model.fields,field_description:extract_hr_recruitment.field_hr_applicant__extract_corrections
+msgid "Extract Corrections"
+msgstr ""
+
+#. module: extract_hr_recruitment
+#: model:ir.model.fields,field_description:extract_hr_recruitment.field_hr_applicant__extract_error
+msgid "Extract Error"
+msgstr ""
+
+#. module: extract_hr_recruitment
+#: model:ir.model.fields,field_description:extract_hr_recruitment.field_hr_applicant__extract_missing
+msgid "Extract Missing"
+msgstr ""
+
+#. module: extract_hr_recruitment
+#: model:ir.model.fields,field_description:extract_hr_recruitment.field_hr_applicant__extract_pending
+msgid "Extract Pending"
+msgstr ""
+
+#. module: extract_hr_recruitment
+#: model:ir.model.fields,field_description:extract_hr_recruitment.field_hr_applicant__extract_result
+msgid "Extract Result"
+msgstr ""
+
+#. module: extract_hr_recruitment
+#: model:ir.model.fields,field_description:extract_hr_recruitment.field_hr_applicant__extract_state
+msgid "Extract State"
+msgstr ""
+
+#. module: extract_hr_recruitment
+#: model_terms:ir.ui.view,arch_db:extract_hr_recruitment.hr_applicant_view_form_extract
+msgid "Extraction"
+msgstr ""
+
+#. module: extract_hr_recruitment
+#: model:ir.model.fields,help:extract_hr_recruitment.field_hr_applicant__extract_corrections
+msgid ""
+"Fields a person changed after extraction, with what was read and what it "
+"should have been."
+msgstr ""
+
+#. module: extract_hr_recruitment
+#: model_terms:ir.ui.view,arch_db:extract_hr_recruitment.hr_applicant_view_form_extract
+msgid "Read the CV"
+msgstr ""
+
+#. module: extract_hr_recruitment
+#: model:ir.model.fields,help:extract_hr_recruitment.field_hr_applicant__extract_missing
+msgid ""
+"Required fields no strategy could read, and rules that do not hold. What a "
+"person has to supply."
+msgstr ""
+
+#. module: extract_hr_recruitment
+#. odoo-python
+#: code:addons/extract_hr_recruitment/models/hr_applicant.py:0
+msgid "The CV was read in full."
+msgstr ""
+
+#. module: extract_hr_recruitment
+#. odoo-python
+#: code:addons/extract_hr_recruitment/models/hr_applicant.py:0
+msgid "The CV was read in part. Still missing: %(fields)s"
+msgstr ""
+
+#. module: extract_hr_recruitment
+#: model:ir.model.fields,help:extract_hr_recruitment.field_hr_applicant__extract_pending
+msgid ""
+"The service this document is waiting on, and its handle. Kept so the next "
+"attempt asks again rather than submitting the document a second time."
+msgstr ""
+
+#. module: extract_hr_recruitment
+#. odoo-python
+#: code:addons/extract_hr_recruitment/models/hr_applicant.py:0
+msgid "nothing required"
+msgstr ""

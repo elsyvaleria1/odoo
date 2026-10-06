@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="privilege_trip_gps_read" model="res.groups">
+        <field
+            name="name">Privilege: a trip reads its vehicle's track, keeps its reading cursor and raises its alerts</field>
+        <field name="is_privilege" eval="True" />
+    </record>
+
+</odoo>

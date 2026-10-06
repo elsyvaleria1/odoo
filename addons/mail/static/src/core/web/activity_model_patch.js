@@ -1,0 +1,139 @@
+// @ts-check
+/** @odoo-module native */
+import { isEmptyBlock } from "@html_editor/utils/dom_info";
+import { Activity } from "@mail/core/common/activity_model";
+import { dataUrlToBlob } from "@mail/core/common/attachment_uploader_hook";
+import { fields } from "@mail/core/common/record";
+import { makeLogger } from "@web/core/debug/debug_logger";
+import { formatDate, formatDateTime } from "@web/core/l10n/dates";
+import { _t } from "@web/core/translation";
+import { createElementWithContent } from "@web/core/utils/dom/html";
+import { patch } from "@web/core/utils/patch";
+
+const log = makeLogger("mail.activity");
+patch(Activity.prototype, {
+    /** @this {import("models").Activity} */
+    setup() {
+        super.setup();
+        this.isNoteEmpty = fields.Attr(true, {
+            /** @this {import("models").Activity} */
+            compute() {
+                return (
+                    !this.note ||
+                    isEmptyBlock(createElementWithContent("div", this.note))
+                );
+            },
+        });
+    },
+    get dateDeadlineFormatted() {
+        return formatDate(this.date_deadline);
+    },
+    get dateDoneFormatted() {
+        return formatDate(this.date_done);
+    },
+    get dateCreateFormatted() {
+        return formatDateTime(this.create_date);
+    },
+    async edit() {
+        log.logic("edit", () => ({ id: this.id, res_model: this.res_model }));
+        await new Promise((resolve) =>
+            this.store.env.services.action.doAction(
+                {
+                    type: "ir.actions.act_window",
+                    name: _t("Schedule Activity"),
+                    res_model: "mail.activity",
+                    view_mode: "form",
+                    views: [[false, "form"]],
+                    target: "new",
+                    res_id: this.id,
+                    context: {
+                        default_res_model: this.res_model,
+                        default_res_id: this.res_id,
+                        dialog_size: "large",
+                    },
+                },
+                {
+                    onClose: resolve,
+                },
+            ),
+        );
+    },
+    /** @param {number[]} attachmentIds */
+    async markAsDone(attachmentIds = []) {
+        log.logic("markAsDone", () => ({
+            id: this.id,
+            attachments: attachmentIds.length,
+            hasFeedback: Boolean(this.feedback),
+        }));
+        await this.store.env.services.orm.call(
+            "mail.activity",
+            "action_feedback",
+            [[this.id]],
+            {
+                attachment_ids: attachmentIds,
+                feedback: this.feedback,
+            },
+        );
+        this.store.activityBroadcastChannel?.postMessage({
+            type: "RELOAD_CHATTER",
+            payload: { id: this.res_id, model: this.res_model },
+        });
+    },
+    /**
+     * @this {import("models").Activity}
+     * @returns {Promise<boolean>} whether the upload was accepted and the activity marked as done
+     */
+    async markAsDoneWithFile(
+        /** @type {{data: string, name: string, type: string}} */ { data, name, type },
+    ) {
+        const uploadService = this.store.env.services["mail.attachment_upload"];
+        const attachment = await uploadService.upload(
+            this.store.Thread.insert({ model: this.res_model, id: this.res_id }),
+            undefined,
+            new File([dataUrlToBlob(data, type)], name, { type }),
+            { activity: this },
+        );
+        if (!attachment) {
+            log.logic("markAsDoneWithFile upload refused", () => ({ id: this.id }));
+            return false;
+        }
+        log.logic("markAsDoneWithFile", () => ({
+            id: this.id,
+            attachmentId: attachment.id,
+        }));
+        await this.markAsDone([attachment.id]);
+        return true;
+    },
+    /** @returns {Promise<import("@web/webclient/actions/action_service").ActionDescription>} */
+    async markAsDoneAndScheduleNext() {
+        log.logic("markAsDoneAndScheduleNext", () => ({ id: this.id }));
+        const action = await this.store.env.services.orm.call(
+            "mail.activity",
+            "action_feedback_schedule_next",
+            [[this.id]],
+            { feedback: this.feedback },
+        );
+        this.store.activityBroadcastChannel?.postMessage({
+            type: "RELOAD_CHATTER",
+            payload: { id: this.res_id, model: this.res_model },
+        });
+        return action;
+    },
+    /**
+     * @param {Object} [options]
+     * @param {boolean} [options.broadcast=true]
+     */
+    remove({ broadcast = true } = {}) {
+        if (!this.exists()) {
+            return;
+        }
+        log.lifecycle("remove", () => ({ id: this.id, broadcast }));
+        this.delete();
+        if (broadcast) {
+            this.store.activityBroadcastChannel?.postMessage({
+                type: "DELETE",
+                payload: { id: this.id },
+            });
+        }
+    },
+});

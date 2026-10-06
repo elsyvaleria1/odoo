@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="access_predicate_outside_others_drives" model="ir.access.predicate">
+        <field name="name">document.outside_others_drives</field>
+        <field name="description">it is not in another person's drive</field>
+        <field name="model_id" ref="model_document_document" />
+        <field name="method">_access_predicate_outside_others_drives</field>
+    </record>
+
+    <record id="access_document_system_reach" model="ir.access">
+        <field
+            name="name">document.document: the Documents system administrators reach every document outside another person's drive</field>
+        <field name="model_id" ref="model_document_document" />
+        <field name="group_id" ref="group_documents_system" />
+        <field name="kind">permission</field>
+        <field name="predicate_id" ref="access_predicate_outside_others_drives" />
+        <field name="reach">predicate</field>
+        <field name="verbs">system_reach</field>
+    </record>
+
+    <record id="access_document_open_drives" model="ir.access">
+        <field
+            name="name">document.document: break-glass opens another person's drive to the Documents system administrators</field>
+        <field name="model_id" ref="model_document_document" />
+        <field name="group_id" ref="base.group_break_glass" />
+        <field name="kind">permission</field>
+        <field name="reach">all</field>
+        <field name="verbs">open_drives</field>
+    </record>
+
+</odoo>

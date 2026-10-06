@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="ImportAction">
+        <div t-ref="this.rootRef" class="h-100 d-flex flex-column">
+            <Layout className="'o_import_action d-flex h-100 overflow-auto'" display="this.display">
+                <t t-set-slot="control-panel-create-button">
+                    <t t-if="this.isPreviewing">
+                        <t t-if="!this.state.isTested">
+                            <button type="button" class="btn btn-primary" t-att-disabled="this.state.isImporting" t-on-click="() => this.handleImport(true)">Test</button>
+                            <button t-if="!this.state.isPaused" type="button" class="btn btn-secondary" t-att-disabled="this.state.isImporting" t-on-click="() => this.handleImport(false)">Import</button>
+                            <button t-else="" type="button" class="btn btn-secondary" t-att-disabled="this.state.isImporting" t-on-click="() => this.handleImport(false)">Resume</button>
+                        </t>
+                        <t t-else="">
+                            <button t-if="!this.state.isPaused" type="button" class="btn btn-primary" t-att-disabled="this.state.isImporting" t-on-click="() => this.handleImport(false)">Import</button>
+                            <button t-else="" type="button" class="btn btn-primary" t-att-disabled="this.state.isImporting" t-on-click="() => this.handleImport(false)">Resume</button>
+                            <button type="button" class="btn btn-secondary" t-att-disabled="this.state.isImporting" t-on-click="() => this.handleImport(true)">Test</button>
+                        </t>
+                    </t>
+                    <FileInput
+                        acceptedFileExtensions="this.acceptedFileExtensions"
+                        onUpload.bind="(data, files) => this.handleFilesUpload(files)"
+                        resId="this.model.id"
+                        resModel="this.resModel"
+                        route="this.uploadFilesRoute"
+                    >
+                        <button t-if="this.isPreviewing" type="button" class="btn btn-secondary">Load Data File</button>
+                        <button t-else="" type="button" class="btn btn-primary o_import_file">Upload Data File</button>
+                    </FileInput>
+                    <button t-on-click="this.cancel" type="button" class="btn btn-secondary">Cancel</button>
+                </t>
+                <t t-if="this.isPreviewing">
+                    <ImportDataSidepanel
+                        filename="this.state.filename"
+                        options="this.importOptions"
+                        formattingOptions="this.formattingOptions"
+                        importTemplates="this.importTemplates"
+                        isBatched="this.isBatched"
+                        onOptionChanged.bind="this.onOptionChanged"
+                        onReload.bind="this.reload"
+                        hasBinaryFields="this.hasBinaryFields"
+                        binaryFilesParams="this.model.binaryFilesParams"
+                        onBinaryFilesParamsChanged.bind="(name, value) => this.model.onBinaryFilesParamsChanged(name, value)"
+                    />
+                    <ImportDataContent
+                        columns="this.model.columns"
+                        onFieldChanged.bind="this.onFieldChanged"
+                        onOptionChanged.bind="this.onOptionChanged"
+                        options="this.importOptions"
+                        isFieldSet.bind="this.isFieldSet"
+                        previewError="this.state.previewError"
+                        importMessages="this.model.importMessages"
+                    />
+                </t>
+                <div t-else="" class="o_view_nocontent">
+                    <div class="o_nocontent_help">
+                        <p class="o_view_nocontent_smiling_face">
+                            Drop or upload a file to import
+                        </p>
+                        <p>
+                            Excel files are recommended as formatting is automatic.<br/>
+                            But, you can also use .csv files
+                        </p>
+                        <div class="mt16 mb4">
+                            Need Help? <DocumentationLink path="'/applications/general/export_import_data.html'" label.translate="Import FAQ"/>
+                        </div>
+                        <div t-foreach="this.importTemplates" t-as="template" t-key="template.template">
+                            <a class="btn btn-outline-primary my8" t-att-href="template.template" aria-label="Download" data-tooltip="Download">
+                                <i class="fa-solid fa-download"/> <span><t t-out="template.label"/></span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </Layout>
+        </div>
+    </t>
+</templates>

@@ -1,0 +1,46 @@
+{
+    "name": "Invoice Online Payments",
+    "version": "2.3",
+    "oldest_upgradable_version": "2.3",
+    "category": "Accounting/Accounting",
+    "summary": "Collect invoice payments through configured payment providers",
+    "description": "Adds portal invoice payment flows, payment links and transaction tracking. Completed transactions create and reconcile accounting payments; available capture and refund operations depend on the configured provider.",
+    "author": "Odoo S.A.",
+    "license": "LGPL-3",
+    "depends": [
+        "account",
+        "payment",
+    ],
+    "data": [
+        "data/ir_config_parameter.xml",
+        "security/res_groups.xml",
+        "security/ir.access.csv",
+        "views/account_payment_menus.xml",
+        "views/account_portal_templates.xml",
+        "views/account_move_views.xml",
+        "views/account_journal_views.xml",
+        "views/account_payment_views.xml",
+        "views/payment_form_templates.xml",
+        "views/payment_provider_views.xml",
+        "views/payment_transaction_views.xml",
+        "wizards/wizard_account_move_line_pay_views.xml",
+        "wizards/wizard_payment_transaction_view_link_views.xml",
+        "wizards/wizard_account_payment_refund_views.xml",
+        "wizards/res_config_settings_views.xml",
+    ],
+    "assets": {
+        "web.assets_unit_tests": [
+            "web/static/src/public/minimal_dom.js",
+            "account_payment_provider/static/src/interactions/**/*",
+            "account_payment_provider/static/tests/interactions/**/*",
+        ],
+        "web.assets_frontend": [
+            "account_payment_provider/static/src/interactions/**/*",
+        ],
+    },
+    "auto_install": [
+        "account",
+    ],
+    "post_init_hook": "post_init_hook",
+    "uninstall_hook": "uninstall_hook",
+}

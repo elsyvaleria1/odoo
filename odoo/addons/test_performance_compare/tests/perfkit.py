@@ -1,0 +1,176 @@
+import gc
+import importlib.util
+import json
+import math
+import os
+import platform
+import socket
+import statistics
+import time
+from pathlib import Path
+
+REPORT_VERSION = 1
+
+OUTLIER_PCT = 5
+
+
+def _percentile(sorted_data, p):
+    if not sorted_data:
+        return 0.0
+    k = (len(sorted_data) - 1) * (p / 100)
+    f = math.floor(k)
+    c = math.ceil(k)
+    if f == c:
+        return sorted_data[int(k)]
+    return sorted_data[f] * (c - k) + sorted_data[c] * (k - f)
+
+
+def _trim_outliers(data):
+    if len(data) < 20:
+        return sorted(data)
+    s = sorted(data)
+    lo = _percentile(s, OUTLIER_PCT)
+    hi = _percentile(s, 100 - OUTLIER_PCT)
+    trimmed = [x for x in s if lo <= x <= hi]
+    return trimmed or s
+
+
+def _stats_us(times_us):
+    clean = _trim_outliers(times_us)
+    mean = statistics.mean(clean)
+    std = statistics.stdev(clean) if len(clean) > 1 else 0.0
+    return {
+        "mean_us": round(mean, 3),
+        "median_us": round(statistics.median(clean), 3),
+        "min_us": round(min(clean), 3),
+        "max_us": round(max(clean), 3),
+        "p95_us": round(_percentile(clean, 95), 3),
+        "p99_us": round(_percentile(clean, 99), 3),
+        "std_us": round(std, 3),
+        "cv": round(std / mean, 4) if mean > 0 else 0.0,
+        "samples": len(clean),
+    }
+
+
+def _driver_label():
+    for name in ("psycopg", "psycopg2"):
+        if importlib.util.find_spec(name) is None:
+            continue
+        ver = getattr(importlib.import_module(name), "__version__", "")
+        return f"{name} {ver.split(' ')[0]}".strip()
+    return "unknown"
+
+
+def _odoo_version():
+    try:
+        import odoo.release
+
+        return odoo.release.version
+    except Exception:
+        return "unknown"
+
+
+def environment_meta():
+    return {
+        "label": os.environ.get("BENCH_LABEL", "unknown"),
+        "python": platform.python_version(),
+        "python_impl": platform.python_implementation(),
+        "driver": _driver_label(),
+        "odoo_version": _odoo_version(),
+        "host": socket.gethostname(),
+        "platform": platform.platform(),
+    }
+
+
+class BenchmarkRecorder:
+    @staticmethod
+    def _default_iterations():
+        return int(os.environ.get("BENCH_ITER", "60"))
+
+    @staticmethod
+    def _default_warmup():
+        return int(os.environ.get("BENCH_WARMUP", "8"))
+
+    def __init__(self, cr, logger=None):
+        self.cr = cr
+        self.logger = logger
+        self.results = []
+
+    def _log(self, msg, *args):
+        if self.logger is not None:
+            self.logger.info(msg, *args)
+
+    def measure(
+        self,
+        name,
+        func,
+        *,
+        group="",
+        iterations=None,
+        warmup=None,
+        setup=None,
+        invalidate=None,
+    ):
+        iterations = iterations or self._default_iterations()
+        warmup = self._default_warmup() if warmup is None else warmup
+        cr = self.cr
+
+        times_us = []
+        q_counts = []
+        gc_was_enabled = gc.isenabled()
+
+        gc.collect()
+        gc.disable()
+        try:
+            for i in range(warmup + iterations):
+                if setup is not None:
+                    setup()
+                if invalidate is not None:
+                    invalidate()
+                q0 = cr.sql_statement_count
+                t0 = time.perf_counter_ns()
+                func()
+                t1 = time.perf_counter_ns()
+                q1 = cr.sql_statement_count
+                if i >= warmup:
+                    times_us.append((t1 - t0) / 1000.0)
+                    q_counts.append(q1 - q0)
+        finally:
+            if gc_was_enabled:
+                gc.enable()
+
+        record = {"name": name, "group": group, "iterations": iterations}
+        record.update(_stats_us(times_us))
+        record["query_min"] = min(q_counts) if q_counts else 0
+        record["query_max"] = max(q_counts) if q_counts else 0
+        record["query_mean"] = round(statistics.mean(q_counts), 2) if q_counts else 0.0
+        self.results.append(record)
+        self._log(
+            "[PERF_CMP] %-38s mean=%9.1fµs  p95=%9.1fµs  cv=%.2f  q=%d",
+            name[:38],
+            record["mean_us"],
+            record["p95_us"],
+            record["cv"],
+            record["query_max"],
+        )
+        return record
+
+    def report(self, timestamp):
+        meta = environment_meta()
+        meta["timestamp"] = timestamp
+        meta["report_version"] = REPORT_VERSION
+        meta["benchmark_count"] = len(self.results)
+        return {"meta": meta, "results": self.results}
+
+    def write(self, timestamp):
+        report = self.report(timestamp)
+        label = report["meta"]["label"]
+        out = os.environ.get("BENCH_OUT")
+        path = (
+            Path(out) if out else Path.cwd() / f"perf_compare_{label}.json"
+        ).resolve()
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with path.open("w") as fh:
+            json.dump(report, fh, indent=2, sort_keys=True)
+        self._log("[PERF_CMP] wrote %d results -> %s", len(self.results), path)
+        return str(path)

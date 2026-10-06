@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <template id="portal_digest_unsubscribed" name="Unsubscription">
+        <t t-call="portal.portal_layout">
+            <div class="container mt8">
+                <div class="row">
+                    <div class="col-lg-6 offset-lg-3">
+                        <h3>Digest Subscriptions</h3>
+                        <div class="alert alert-success text-center" role="status">
+                            <p>You have been successfully unsubscribed from:<br />
+                            <strong t-field="digest.name" /></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </t>
+    </template>
+
+    <template id="portal_digest_unsubscribe_confirm" name="Unsubscription Confirmation">
+        <t t-call="portal.portal_layout">
+            <div class="container mt8">
+                <div class="row">
+                    <div class="col-lg-6 offset-lg-3">
+                        <h3>Digest Subscriptions</h3>
+                        <form
+                            method="post"
+                            t-attf-action="/digest/{{ digest.id }}/unsubscribe"
+                            class="text-center">
+                            <input
+                                type="hidden"
+                                name="csrf_token"
+                                t-att-value="request.csrf_token()" />
+                            <input
+                                t-if="token"
+                                type="hidden"
+                                name="token"
+                                t-att-value="token" />
+                            <input
+                                t-if="unsubscribe_user_id"
+                                type="hidden"
+                                name="user_id"
+                                t-att-value="unsubscribe_user_id" />
+                            <p>Stop receiving <strong t-field="digest.name" />?</p>
+                            <button type="submit" class="btn btn-primary">Unsubscribe</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </t>
+    </template>
+
+</odoo>

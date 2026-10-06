@@ -1,0 +1,20 @@
+.o-Discuss-CallSettings-thresholdInput {
+    &::-moz-range-track {
+        background: linear-gradient(
+            to right,
+            #{o-palette-token(--success, $o-success)} 0%,
+            #{o-palette-token(--success, $o-success)} var(--volume),
+            #{o-token(--o-range-track-bg, $form-range-track-bg)} var(--volume),
+            #{o-token(--o-range-track-bg, $form-range-track-bg)} 100%
+        );
+    }
+    &::-webkit-slider-runnable-track {
+        background: linear-gradient(
+            to right,
+            #{o-palette-token(--success, $o-success)} 0%,
+            #{o-palette-token(--success, $o-success)} var(--volume),
+            #{o-token(--o-range-track-bg, $form-range-track-bg)} var(--volume),
+            #{o-token(--o-range-track-bg, $form-range-track-bg)} 100%
+        );
+    }
+}

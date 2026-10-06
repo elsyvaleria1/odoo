@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_partner_property_form" model="ir.ui.view">
+        <field name="name">res.partner.purchase.property.form.inherit</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_form" />
+        <field name="priority">36</field>
+        <field name="arch" type="xml">
+            <group name="purchase" position="inside">
+                <div
+                    name="receipt_reminder"
+                    colspan="2"
+                    class="o_checkbox_optional_field"
+                    groups="purchase.group_send_reminder">
+                    <div class="o_cell o_wrap_label text-break text-900">
+                        <label for="receipt_reminder_email" />
+                    </div>
+                    <div class="o_cell o_wrap_input text-break d-flex gap-2">
+                        <field name="receipt_reminder_email" />
+                        <div invisible="not receipt_reminder_email">
+                            <field
+                                name="reminder_date_before_receipt"
+                                class="oe_inline" />
+                            <span> day(s) before</span>
+                        </div>
+                    </div>
+                </div>
+                <field
+                    name="property_purchase_currency_id"
+                    options="{'no_create': True, 'no_open': True}"
+                    groups="base.group_multi_currency" />
+            </group>
+            <field name="property_supplier_payment_term_id" position="before">
+                <field
+                    name="user_purchase_id"
+                    widget="many2one_avatar_user"
+                    domain="[('share', '=', False)]" />
+            </field>
+        </field>
+    </record>
+
+    <record id="act_res_partner_2_purchase_order" model="ir.actions.act_window">
+        <field name="name">RFQs and Purchases</field>
+        <field name="res_model">purchase.order</field>
+        <field name="view_mode">list,kanban,form,graph</field>
+        <field
+            name="context">{'search_default_partner_id': active_id, 'default_partner_id':
+            active_id}</field>
+        <field
+            name="group_ids"
+            eval="[Command.link(ref('purchase.group_purchase_user'))]" />
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                This vendor has no purchase order. Create a new RfQ
+            </p>
+            <p>
+                The request for quotation is the first step of the purchases flow. Once
+                converted into a purchase order, you will be able to control the receipt
+                of the products and the vendor bill.
+            </p>
+        </field>
+        <field
+            name="view_ids"
+            eval="[Command.clear(), Command.create({'view_mode': 'list', 'view_id': ref('purchase.view_purchase_order_list')}), Command.create({'view_mode': 'kanban', 'view_id': ref('purchase.view_purchase_order_kanban_without_dashboard')})]" />
+    </record>
+
+    <record id="res_partner_view_purchase_buttons" model="ir.ui.view">
+        <field name="name">res.partner.view.purchase.buttons</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_form" />
+        <field name="priority" eval="9" />
+        <field name="arch" type="xml">
+            <xpath expr="//div[@name='anchor_buttons_purchase']" position="before">
+                <button
+                    name="%(purchase.act_res_partner_2_purchase_order)d"
+                    id="button_purchase_orders"
+                    type="action"
+                    icon="fa-credit-card"
+                    groups="purchase.group_purchase_user"
+                    class="oe_stat_button">
+                    <field
+                        name="purchase_order_count"
+                        string="Purchases"
+                        widget="statinfo" />
+                </button>
+            </xpath>
+            <page name="partner_warnings" position="attributes">
+                <attribute
+                    name="groups"
+                    add="purchase.group_warning_purchase"
+                    separator="," />
+            </page>
+            <group name="warnings" position="inside">
+                <group
+                    name="purchase_warning"
+                    col="2"
+                    groups="purchase.group_warning_purchase">
+                    <separator
+                        name="purchase_warning_separator"
+                        string="Warning on Purchase Orders and Bills"
+                        colspan="2" />
+                    <field
+                        name="purchase_warn_msg"
+                        placeholder="e.g. This vendor is on vacation until the end of August."
+                        colspan="2"
+                        nolabel="1" />
+                </group>
+            </group>
+        </field>
+    </record>
+
+</odoo>

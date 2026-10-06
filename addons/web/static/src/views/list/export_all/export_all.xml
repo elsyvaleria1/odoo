@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="web.ExportAll">
+        <CogMenuItem class="'o_export_all_menu'" icon="'fa-solid fa-upload'" description.translate="Export All" onSelected.bind="this.onDirectExportData"/>
+    </t>
+
+</templates>

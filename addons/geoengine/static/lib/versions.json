@@ -1,0 +1,59 @@
+{
+  "_comment": [
+    "Single source of truth for the third-party libraries vendored under",
+    "geoengine/static/lib. Deliberately the same shape as",
+    "web/static/lib/versions.json so that odoo's",
+    "tooling/vendored/check_vendored_libs.py can be pointed at this tree too;",
+    "today it only scans web's, so nothing machine-checks these entries yet.",
+    "",
+    "'probe' locates the version inside the vendored tree: 'file' is relative",
+    "to the library directory and 'pattern' is a Python regex in which the",
+    "token {version} is replaced by the escaped 'version' value.",
+    "",
+    "All three are ES modules resolved through the browser import map. The",
+    "bare specifier each one answers to is declared by geoengine's own",
+    "__manifest__.py under the 'esm.external_libs' key, and restated as",
+    "'specifier' in each entry below. See README.md in this directory."
+  ],
+  "libs": {
+    "ol": {
+      "version": "10.10.0",
+      "npm": "ol",
+      "license": "BSD-2-Clause",
+      "source": "https://openlayers.org",
+      "specifier": "ol",
+      "rebuild": "build.sh",
+      "probe": { "file": "build.sh", "pattern": "OL_VERSION=\"\\$\\{1:-{version}\\}\"" },
+      "notes": "NOT a pristine upstream file. The npm package ships ~1100 separate modules and no single-file ESM bundle; its dist/ol.js is a legacy global build, which is what geoengine used until this version. build.sh bundles entry.js with a pinned esbuild, and entry.js is the inventory of the 62 symbols the fork uses -- tree-shaking drops the rest, which is why the shipped file is 677 KB against the 1043 KB full dist. Adding a symbol to entry.js is the only thing that grows it. Consumed by geoengine and device_gps_geoengine."
+    },
+    "chroma-js": {
+      "version": "3.2.0",
+      "npm": "chroma-js",
+      "license": "BSD-3-Clause AND Apache-2.0",
+      "source": "https://gka.github.io/chroma.js/",
+      "specifier": "chroma-js",
+      "rebuild": "build.sh",
+      "probe": { "file": "build.sh", "pattern": "CHROMA_VERSION=\"\\$\\{1:-{version}\\}\"" },
+      "notes": "Single-file ESM build of the package's default entry point. The package is native ESM but ships as a source tree, so it is bundled for the same reason ol is: an import-map external must resolve to one URL. The full entry is deliberate -- the ./light subpath drops the colour-brewer palettes and geoengine_model.js calls chroma.scale('RdYlBu'), which would then fail at runtime rather than at build time."
+    },
+    "proj4": {
+      "version": "2.22.0",
+      "npm": "proj4",
+      "license": "MIT",
+      "source": "https://github.com/proj4js/proj4js",
+      "specifier": "proj4",
+      "rebuild": "build.sh",
+      "probe": { "file": "build.sh", "pattern": "PROJ4_VERSION=\"\\$\\{1:-{version}\\}\"" },
+      "notes": "Single-file ESM build of the package's default entry point (the package's own version string is an unreplaced __VERSION__ placeholder, so the probe reads build.sh). Loaded only by a map that needs a CRS OpenLayers does not resolve itself (anything but EPSG:4326, EPSG:3857 and the UTM zones): geo_libs.registerProjections imports it and hands it to ol.proj.register with the definitions get_layers sends from PostGIS's spatial_ref_sys."
+    },
+    "geostats": {
+      "version": "2.1.0",
+      "npm": "geostats",
+      "license": "MIT",
+      "source": "https://github.com/simogeo/geostats",
+      "specifier": "geostats",
+      "probe": null,
+      "notes": "NO PROBE IS POSSIBLE, and the 2.1.0 pin is therefore an unverified assertion. Upstream's banner names the project, the author and the MIT licence but no version, and the fork ships the readable source rather than a built artifact, so no version string exists anywhere in the file to re-derive from. The probe that used to sit here -- geostats-{version}|version = '{version}' -- matched nothing and had never been run, because the check this file was shaped for only ever scanned web's tree. Confirm the pin against the npm tarball by hand when upgrading. Upstream lib/geostats.js kept readable rather than bundled, carrying 4 AgroMarin: markers -- grep them for the full list. Two of those exist because the file is now a module and module code is strict: the UMD wrapper's <script> branch assigned an implicit global, and getHtmlLegend() assigned four more (that one is on the live choropleth path). Upstream is effectively unmaintained -- 2.1.0 is the last release -- and geoengine uses only the quantile/interval/unique classifications plus min/max and the HTML legend, so replacing it outright is a live option."
+    }
+  }
+}

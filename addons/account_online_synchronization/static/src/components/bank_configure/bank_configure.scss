@@ -1,0 +1,27 @@
+.bank_configure_container {
+    .d-grid {
+        overflow: hidden;
+        column-gap: 0.25rem;
+    }
+    .dashboard_bank {
+        aspect-ratio: 1 / 1;
+        .align-self-center {
+            background-color: var(
+                --bank-configure-bg,
+                o-palette-token(--o-gray-100, $gray-100)
+            );
+            border: 1px solid o-palette-token(--o-gray-100, $gray-100);
+        }
+        margin-bottom: 0.25rem;
+        overflow: hidden;
+    }
+}
+
+// The dark half, folded in from `bank_configure.dark.scss`.
+@include media-only(screen) {
+    :root[data-color-scheme="dark"] {
+        .bank_configure_container {
+            --bank-configure-bg: #5a5e6b;
+        }
+    }
+}

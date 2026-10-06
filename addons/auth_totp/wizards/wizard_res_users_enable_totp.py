@@ -1,0 +1,108 @@
+import base64
+import functools
+import io
+import re
+from urllib.parse import quote, urlencode, urlunsplit
+
+import qrcode
+
+from odoo import api, fields, models
+from odoo.exceptions import UserError
+from odoo.http import request
+from odoo.tools import frozendict
+
+from odoo.addons.auth_totp.models.totp import ALGORITHM, DIGITS, TIMESTEP
+from odoo.addons.base.models.res_users import check_identity
+
+compress = functools.partial(re.sub, r"\s", "")
+
+
+class WizardResUsersEnableTotp(models.TransientModel):
+    _name = "wizard.res.users.enable.totp"
+    _description = "2-Factor Setup Wizard"
+    _access_anchors = frozendict(
+        {
+            "owner": "user_id",
+        }
+    )
+
+    user_id = fields.Many2one(
+        comodel_name="res.users",
+        readonly=True,
+        required=True,
+    )
+    secret = fields.Char(
+        readonly=True,
+        required=True,
+    )
+    url = fields.Char(
+        compute="_compute_qrcode",
+        store=True,
+        readonly=True,
+    )
+    qrcode = fields.Binary(
+        attachment=False,
+        compute="_compute_qrcode",
+        store=True,
+        readonly=True,
+    )
+    code = fields.Char(
+        string="Verification Code",
+        size=7,
+        store=False,
+    )
+
+    @api.depends("user_id.login", "user_id.company_id.display_name", "secret")
+    def _compute_qrcode(self) -> None:
+        # TODO: make "issuer" configurable through config parameter?
+        global_issuer = request and request.httprequest.host.split(":", 1)[0]
+        for w in self:
+            issuer = global_issuer or w.user_id.company_id.display_name
+            w.url = url = urlunsplit(
+                (
+                    "otpauth",
+                    "totp",
+                    quote(f"{issuer}:{w.user_id.login}", safe=":"),
+                    urlencode(
+                        {
+                            "secret": compress(w.secret),
+                            "issuer": issuer,
+                            # apparently a lowercase hash name is anathema to google
+                            # authenticator (error) and passlib (no token)
+                            "algorithm": ALGORITHM.upper(),
+                            "digits": DIGITS,
+                            "period": TIMESTEP,
+                        }
+                    ),
+                    "",
+                )
+            )
+
+            data = io.BytesIO()
+            qrcode.make(url.encode(), box_size=4).save(
+                data, optimise=True, format="PNG"
+            )
+            w.qrcode = base64.b64encode(data.getvalue()).decode()
+
+    @check_identity
+    def enable(self) -> dict:
+        try:
+            c = int(compress(self.env.context.get("code", "")))
+        except ValueError:
+            raise UserError(
+                self.env._("The verification code should only contain numbers")
+            ) from None
+        if self.user_id._totp_try_setting(self.secret, c):
+            self.secret = ""  # empty it, because why keep it until GC?
+            return {
+                "type": "ir.actions.client",
+                "tag": "display_notification",
+                "params": {
+                    "type": "success",
+                    "message": self.env._("2-Factor authentication is now enabled."),
+                    "next": {"type": "ir.actions.act_window_close"},
+                },
+            }
+        raise UserError(
+            self.env._("Verification failed, please double-check the 6-digit code")
+        )

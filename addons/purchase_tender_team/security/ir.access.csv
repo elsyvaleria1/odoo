@@ -1,0 +1,3 @@
+id,name,model_id/id,group_id/id,kind,operation,reach,anchor,domain
+purchase_tender_team_rule,purchase.tender: team documents,purchase_tender.model_purchase_tender,purchase_team.group_purchase_user_team,permission,crud,team,,
+purchase_tender_line_team_rule,purchase.tender.line: team documents,purchase_tender.model_purchase_tender_line,purchase_team.group_purchase_user_team,permission,crud,team,,

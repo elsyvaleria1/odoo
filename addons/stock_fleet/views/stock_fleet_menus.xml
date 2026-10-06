@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <menuitem
+        id="menu_my_trips"
+        parent="stock_picking_batch.menu_stock_jobs"
+        action="action_my_trips"
+        sequence="10"
+        groups="stock_fleet.group_trip_driver" />
+
+    <menuitem
+        id="menu_stock_picking_unbatch_reason"
+        parent="stock.menu_delivery"
+        action="action_stock_picking_unbatch_reason"
+        sequence="60"
+        groups="stock.group_stock_manager" />
+
+    <menuitem
+        id="menu_picking_delivery_proof"
+        parent="stock.menu_stock_transfers"
+        action="action_picking_delivery_proof"
+        sequence="23"
+        groups="stock_fleet.group_delivery_proof_reviewer" />
+
+</odoo>

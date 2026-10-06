@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates>
+    <t t-name="document.DocumentsFileViewer">
+        <div t-if="this.props.previewStore.files" t-ref="this.root"
+            t-attf-class="o-DocumentsFileViewer-main position-fixed start-0 top-0 vh-100 d-flex justify-content-center align-items-center {{this.isRightPanelVisible ? 'o-DocumentsFileViewer-main-with-chatter' : 'o-DocumentsFileViewer-main-without-chatter'}}"
+            t-on-keydown="this.onGlobalKeydown"
+        >
+            <DocumentsFileViewer
+                files="this.props.previewStore.files"
+                startIndex="this.props.previewStore.startIndex"
+                modal="false"
+            />
+        </div>
+    </t>
+</templates>

@@ -1,0 +1,23 @@
+.s_website_form {
+    .s_website_form_field_hidden {
+        display: block !important;
+        opacity: 0.5;
+    }
+    .s_website_form_field_hidden_if {
+        display: block !important;
+        background-color: $o-we-fg-light;
+    }
+    .s_website_form_label,
+    .s_website_form_check_label {
+        pointer-events: none;
+    }
+
+    .o_show_form_success_message {
+        &.d-none {
+            display: block !important;
+        }
+        &:not(.d-none) {
+            display: none !important;
+        }
+    }
+}

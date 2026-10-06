@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="res_config_settings_view_form" model="ir.ui.view">
+        <field name="name">res.config.settings.view.form.inherit.website</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="website.res_config_settings_view_form" />
+        <field name="priority" eval="20" />
+        <field name="arch" type="xml">
+            <setting position="after" id="website_creation_settings">
+                <setting
+                    id="website_payment_settings"
+                    type="header"
+                    invisible="has_enabled_provider"
+                    class="bg-warning">
+                    <div
+                        class="row d-flex align-items-baseline"
+                        invisible="active_provider_id">
+                        <span class="oe_inline pe-0">
+                            Enable a payment provider to accept online payments.
+                        </span>
+                        <div
+                            invisible="not onboarding_payment_module"
+                            class="d-flex align-self-baseline oe_inline px-0">
+                            <button
+                                name="action_w_payment_start_payment_onboarding"
+                                type="object"
+                                class="btn btn-link px-1">
+                                Activate
+                                <field name="onboarding_payment_module" nolabel="1" />
+                            </button>
+                        </div>
+                        <div
+                            title="Stripe Connect is not available in your country, please use another payment provider."
+                            invisible="onboarding_payment_module"
+                            class="d-flex align-self-baseline oe_inline px-0">
+                            <button
+                                string="Activate Stripe"
+                                class="btn btn-link px-1"
+                                disabled="" />
+                        </div>
+                        <span class="oe_inline px-0">or</span>
+                        <button
+                            name="%(payment.action_payment_provider)d"
+                            type="action"
+                            string="Find another provider"
+                            class="btn btn-link oe_inline px-1" />
+                    </div>
+                    <div
+                        class="d-flex align-items-baseline"
+                        invisible="not active_provider_id">
+                        <span>Enable a payment provider to accept online payments.</span>
+                        <button
+                            name="action_view_active_provider"
+                            type="object"
+                            class="btn btn-link px-1">
+                            Configure
+                            <field
+                                name="active_provider_id"
+                                nolabel="1"
+                                options="{'no_open': True}" />
+                        </button>
+                        <span>or</span>
+                        <button
+                            name="%(payment.action_payment_provider)d"
+                            type="action"
+                            string="Find another provider"
+                            class="btn btn-link px-1" />
+                    </div>
+                </setting>
+            </setting>
+            <block position="after" id="website_info_settings">
+                <block id="website_payment_block" title="Payments">
+                    <setting
+                        id="website_payment_setting"
+                        string="Configure Payment Methods"
+                        help="Visa, Mastercard, Maestro, Google Pay, Apple Pay, etc. as well as recurring charges."
+                        documentation="/applications/finance/payment_providers.html">
+                        <div class="content-group">
+                            <div class="row" invisible="active_provider_id">
+                                <div
+                                    invisible="not onboarding_payment_module"
+                                    class="oe_inline pe-0">
+                                    <button
+                                        name="action_w_payment_start_payment_onboarding"
+                                        type="object"
+                                        class="btn btn-primary">
+                                        Activate
+                                        <field
+                                            name="onboarding_payment_module"
+                                            nolabel="1"
+                                            class="oe_inline" />
+                                    </button>
+                                </div>
+                                <div
+                                    title="Stripe Connect is not available in your country, please use another payment provider."
+                                    invisible="onboarding_payment_module"
+                                    class="oe_inline pe-0">
+                                    <button
+                                        string="Activate Stripe"
+                                        class="btn btn-primary"
+                                        disabled="" />
+                                </div>
+                                <button
+                                    name="%(payment.action_payment_provider)d"
+                                    type="action"
+                                    string="Find a Payment Provider"
+                                    icon="oi-arrow-right"
+                                    class="btn btn-link oe_inline" />
+                            </div>
+                            <div invisible="not active_provider_id">
+                                <button
+                                    name="action_view_active_provider"
+                                    type="object"
+                                    class="btn btn-primary">
+                                    Configure
+                                    <field
+                                        name="active_provider_id"
+                                        nolabel="1"
+                                        options="{'no_open': True}"
+                                        class="oe_inline" />
+                                </button>
+                                <button
+                                    name="%(payment.action_payment_provider)d"
+                                    type="action"
+                                    string="Find a Payment Provider"
+                                    icon="oi-arrow-right"
+                                    class="btn btn-link" />
+                            </div>
+                        </div>
+                    </setting>
+                </block>
+            </block>
+        </field>
+    </record>
+
+</odoo>

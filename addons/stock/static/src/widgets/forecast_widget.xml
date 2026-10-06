@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<templates id="template" xml:space="preserve">
+    <t t-name="stock.ForecastWidget">
+        <button type="button" title="Forecasted Report" aria-label="Forecasted Report"
+              t-on-click="this._openReport"
+              class="badge rounded-pill align-middle border-0"
+              t-att-class="this.decoration"
+        >
+            <t t-if="this.status === 'available'">
+                Available
+            </t>
+            <t t-elif="this.status === 'expected'">
+                Exp <t t-out="this.forecastExpectedDate"/>
+            </t>
+            <t t-else="">Not Available</t>
+        </button>
+    </t>
+
+</templates>

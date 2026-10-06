@@ -1,0 +1,3 @@
+id,name,model_id/id,group_id/id,kind,operation,reach,anchor,domain
+ir_rule_worksheet_template_maintenance,Worksheet Template: Maintenance Access,model_worksheet_template,base.group_user,permission,r,all,,"[('res_model', '=', 'maintenance.order')]"
+ir_rule_worksheet_template_maintenance_group_equipment_manager,Worksheet Template: Maintenance Access,model_worksheet_template,maintenance.group_equipment_manager,permission,crud,all,,"[('res_model', '=', 'maintenance.order')]"

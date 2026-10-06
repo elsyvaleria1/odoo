@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_device_machine_bucket_list" model="ir.ui.view">
+        <field name="name">device.machine.bucket.list</field>
+        <field name="model">device.machine.bucket</field>
+        <field name="arch" type="xml">
+            <list string="IoT Machine Buckets" default_order="bucket_start desc">
+                <field name="device_id" />
+                <field name="bucket_start" />
+                <field name="bucket_end" optional="hide" />
+                <field name="count_start" optional="hide" />
+                <field name="count_end" />
+                <field name="delta" sum="Total" />
+                <field name="msg_count" sum="Pings while producing" />
+                <field name="reset_detected" optional="show" />
+            </list>
+        </field>
+    </record>
+
+    <record id="view_device_machine_bucket_form" model="ir.ui.view">
+        <field name="name">device.machine.bucket.form</field>
+        <field name="model">device.machine.bucket</field>
+        <field name="arch" type="xml">
+            <form string="IoT Machine Bucket">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="device_id" />
+                            <field name="bucket_start" />
+                            <field name="bucket_end" />
+                        </group>
+                        <group>
+                            <field name="count_start" />
+                            <field name="count_end" />
+                            <field name="delta" />
+                            <field name="msg_count" />
+                            <field name="reset_detected" />
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_device_machine_bucket_search" model="ir.ui.view">
+        <field name="name">device.machine.bucket.search</field>
+        <field name="model">device.machine.bucket</field>
+        <field name="arch" type="xml">
+            <search string="IoT Machine Buckets">
+                <field name="device_id" />
+                <field name="bucket_start" />
+                <filter
+                    name="reset"
+                    string="Reset Detected"
+                    domain="[('reset_detected', '=', True)]" />
+                <group>
+                    <filter
+                        name="group_device"
+                        string="Machine"
+                        context="{'group_by': 'device_id'}" />
+                    <filter
+                        name="group_day"
+                        string="Day"
+                        context="{'group_by': 'bucket_start:day'}" />
+                    <filter
+                        name="group_week"
+                        string="Week"
+                        context="{'group_by': 'bucket_start:week'}" />
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_device_machine_bucket" model="ir.actions.act_window">
+        <field name="name">Machine Buckets</field>
+        <field name="res_model">device.machine.bucket</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{'search_default_group_device': 1}</field>
+    </record>
+
+    <record id="action_device_machine_bucket_from_device" model="ir.actions.act_window">
+        <field name="name">Buckets</field>
+        <field name="res_model">device.machine.bucket</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+</odoo>

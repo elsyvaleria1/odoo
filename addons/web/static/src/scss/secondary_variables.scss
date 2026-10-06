@@ -1,0 +1,22 @@
+$o-webclient-background-color: $o-gray-100 !default;
+
+$o-list-footer-color: $o-black !default;
+$o-list-group-header-color: $o-black !default;
+
+$o-colors-complete: join($o-colors, $o-colors-secondary) !default;
+$o-dark-colors-complete: join($o-dark-colors, $o-dark-colors-secondary) !default;
+
+$o-sheet-cancel-hpadding: $o-horizontal-padding !default;
+$o-sheet-cancel-bpadding: $o-horizontal-padding + $o-sheet-vpadding !default;
+
+$o-line-size: $o-line-height-base * $o-font-size-base !default;
+
+$o-form-sheet-min-width: 990px !default;
+$o-form-separator-color: invert($o-view-background-color, 10%) !default;
+
+$o-caret-down: url("data:image/svg+xml," +
+    "<svg xmlns='http://www.w3.org/2000/svg' width='7' height='4' viewBox='0 0 7 4'>" +
+    "<polygon fill='%23000' points='3.5 4 7 0 0 0'/>" + "</svg>");
+
+$o-bubble-color-size: $o-font-size-base;
+$o-bubble-color-size-xl: $o-font-size-base * 1.36;

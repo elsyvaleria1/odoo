@@ -1,0 +1,28 @@
+.o-we-powerbox {
+    box-shadow: o-token(--#{$prefix}box-shadow, $box-shadow);
+}
+
+.o-we-category {
+    font-size: 11px;
+    color: o-palette-token(--o-gray-600, $o-gray-600);
+}
+
+.o-we-command {
+    &.active {
+        background: o-token-alpha(--o-bg-active, $o-component-active-bg, 0.65);
+    }
+}
+
+.o-we-command-img {
+    height: 35px;
+    width: 35px;
+    background-color: o-palette-token(--o-gray-100, $o-gray-100);
+}
+.o-we-command-name {
+    font-size: 13px;
+}
+
+.o-we-command-description {
+    font-size: 12px;
+    color: o-palette-token(--o-text-muted, $o-main-color-muted);
+}

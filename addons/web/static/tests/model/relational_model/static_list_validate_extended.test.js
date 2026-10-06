@@ -1,0 +1,113 @@
+// @ts-check
+
+import { describe, expect, test } from "@odoo/hoot";
+import { makeActiveField } from "@web/model/relational_model/field_metadata";
+import { RelationalRecord } from "@web/model/relational_model/record";
+import { StaticList } from "@web/model/relational_model/static_list";
+
+function makeList() {
+    /** @type {any[]} */
+    const updates = [];
+    const model = {
+        Class: { Record: RelationalRecord, StaticList },
+        mutex: { exec: (/** @type {any} */ fn) => Promise.resolve().then(fn) },
+        multiEdit: false,
+        hasOnRecordChangedHook: false,
+        urgentSave: {
+            isActive: false,
+            awaitUnlessUrgent: (/** @type {any} */ prom) => prom,
+            unlessUrgent: (/** @type {any} */ fn) => fn(),
+        },
+        patchConfig: (/** @type {any} */ config, /** @type {any} */ patch) =>
+            Object.assign(config, patch),
+        loadRecords: async (/** @type {any} */ { resIds }) =>
+            resIds.map((/** @type {number} */ id) => ({ id, name: `row ${id}` })),
+        loadNewRecord: async () => ({ name: "" }),
+    };
+    const config = {
+        resModel: "line",
+        activeFields: { name: makeActiveField() },
+        fields: { name: { type: "char", name: "name" } },
+        relationField: false,
+        offset: 0,
+        limit: 10,
+        resIds: [1, 2],
+        orderBy: /** @type {any[]} */ ([]),
+        context: {},
+    };
+    const list = new StaticList(
+        /** @type {any} */ (model),
+        /** @type {any} */ (config),
+        [
+            { id: 1, name: "row 1" },
+            { id: 2, name: "row 2" },
+        ],
+        {
+            parent: {
+                evalContext: {},
+                evalContextWithVirtualIds: {},
+                _isEvalContextReady: true,
+            },
+            onUpdate: async () => updates.push("parent"),
+        },
+    );
+    return { list, updates };
+}
+
+describe("validateExtendedRecord", () => {
+    test("a member confirmed with no edits KEEPS its widened active fields", async () => {
+        const { list, updates } = makeList();
+        const record = list.records[0];
+        const widened = /** @type {any} */ ({
+            ...list.config.activeFields,
+            note: makeActiveField(),
+        });
+        list.config.fields.note = { type: "char", name: "note" };
+        list.model.patchConfig(record.config, { activeFields: widened });
+        record._activeFieldsToRestore = { ...list.config.activeFields };
+
+        await list.validateExtendedRecord(/** @type {any} */ (record));
+
+        expect(Object.keys(record.activeFields).sort()).toEqual(["name", "note"]);
+        expect(record._activeFieldsToRestore).not.toBe(/** @type {any} */ (undefined));
+        expect(updates).toEqual([]);
+    });
+
+    test("a member WITH pending changes ends the extended session", async () => {
+        const { list, updates } = makeList();
+        const record = list.records[0];
+        const widened = /** @type {any} */ ({
+            ...list.config.activeFields,
+            note: makeActiveField(),
+        });
+        list.config.fields.note = { type: "char", name: "note" };
+        list.model.patchConfig(record.config, { activeFields: widened });
+        await record.updateLocked({ name: "edited" });
+        record._addSavePoint();
+        record._activeFieldsToRestore = { ...list.config.activeFields };
+        updates.length = 0;
+
+        await list.validateExtendedRecord(/** @type {any} */ (record));
+
+        expect(Object.keys(record.activeFields)).toEqual(["name"]);
+        expect(record._activeFieldsToRestore).toBe(/** @type {any} */ (undefined));
+        expect(record._savePoint).toBe(/** @type {any} */ (undefined));
+        expect(updates).toEqual(["parent"]);
+        expect(record.changes.name).toBe("edited");
+    });
+
+    test("a record that is not yet a member is added, then ends the session", async () => {
+        const { list, updates } = makeList();
+        const record = await list._createNewRecordDatapoint({ manuallyAdded: true });
+        record._addSavePoint();
+        record._activeFieldsToRestore = { ...list.config.activeFields };
+
+        await list.validateExtendedRecord(/** @type {any} */ (record));
+
+        expect(list.currentIds).toInclude(/** @type {string} */ (record.virtualId));
+        expect(list.count).toBe(3);
+        expect(record._savePoint).toBe(/** @type {any} */ (undefined));
+        expect(record._activeFieldsToRestore).toBe(/** @type {any} */ (undefined));
+        expect(updates).toEqual(["parent"]);
+    });
+});

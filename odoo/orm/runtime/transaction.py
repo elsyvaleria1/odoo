@@ -1,0 +1,505 @@
+import logging
+import typing
+from collections import deque
+from contextlib import contextmanager
+from weakref import WeakSet, WeakValueDictionary
+from weakref import ref as weakref_ref
+
+from odoo.libs.collections import FrozenList, OrderedSet, frozendict
+from odoo.libs.debug_log import DebugLog
+from odoo.libs.func import reset_cached_properties
+
+from ..components.cache import FieldCache
+from ..components.compute import ComputeEngine
+from ..components.core import OrmCore
+from ..components.unit_of_work import UnitOfWork
+from ..primitives import SUPERUSER_ID, NewId
+from ..profiling import OrmObserver, _OrmProfile, enabled_observers
+from ._backend_memory import InMemoryBackend
+from .access_memo import AccessMemo
+from .backend import POSTGRES_BACKEND
+from .origin_reads import OriginReads
+from .recordset_cache import Cache
+from .registry import Registry
+
+if typing.TYPE_CHECKING:
+    from collections.abc import Iterable, Mapping
+
+    from odoo.db import BaseCursor
+
+    from ..fields.base import Field
+    from ..primitives import IdType
+    from .environment import Environment
+
+_logger = logging.getLogger("odoo.api")
+_orm_cache = logging.getLogger("odoo.orm.cache")
+_debug = DebugLog(__name__)
+
+MAX_FIXPOINT_ITERATIONS = 1000
+RECENT_ENVIRONMENTS = 8
+
+
+def _is_new_id(record_id: object) -> bool:
+    return isinstance(record_id, NewId)
+
+
+# the privileges an environment holds: the virtual groups only code grants
+# (BaseModel.with_privilege), part of the environment's identity
+NO_PRIVILEGES: frozenset[int] = frozenset()
+
+
+class _EnvironmentSet(WeakSet["Environment"]):
+    __slots__ = ("_index",)
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.data: OrderedSet[weakref_ref[Environment]] = OrderedSet()
+        self._index: WeakValueDictionary[tuple[typing.Any, ...], Environment] = (
+            WeakValueDictionary()
+        )
+
+    @staticmethod
+    def key(
+        uid: typing.Any,
+        su: bool,
+        context: typing.Any,
+        privileges: frozenset[int] = NO_PRIVILEGES,
+    ) -> tuple[typing.Any, bool, typing.Any, frozenset[int]]:
+        return (uid, su, context, privileges)
+
+    @staticmethod
+    def matches(
+        env: Environment,
+        uid: typing.Any,
+        su: bool,
+        context: typing.Any,
+        privileges: frozenset[int] = NO_PRIVILEGES,
+    ) -> bool:
+        return (
+            env.uid == uid
+            and env.su == su
+            and env.privileges == privileges
+            and (env.context is context or env.context == context)
+        )
+
+    @typing.override
+    def add(self, env: Environment) -> None:
+        super().add(env)
+        self._index[self.key(env.uid, env.su, env.context, env.privileges)] = env
+
+    @typing.override
+    def clear(self) -> None:
+        super().clear()
+        self._index.clear()
+
+    @typing.override
+    def discard(self, env: Environment) -> None:
+        super().discard(env)
+        key = self.key(env.uid, env.su, env.context, env.privileges)
+        if self._index.get(key) is env:
+            del self._index[key]
+
+    @typing.override
+    def remove(self, env: Environment) -> None:
+        if env not in self:
+            raise KeyError(env)
+        self.discard(env)
+
+    @typing.override
+    def pop(self) -> Environment:
+        env = super().pop()
+        key = self.key(env.uid, env.su, env.context, env.privileges)
+        if self._index.get(key) is env:
+            del self._index[key]
+        return env
+
+    # WeakSet's bulk and in-place operators write its data directly; each
+    # goes through add/discard so the index never names an environment the
+    # set has left
+    @typing.override
+    def update(self, other: Iterable[Environment]) -> None:
+        for env in list(other):
+            self.add(env)
+
+    @typing.override
+    def difference_update(self, other: Iterable[Environment]) -> None:
+        for env in list(other):
+            self.discard(env)
+
+    @typing.override
+    def intersection_update(self, other: Iterable[Environment]) -> None:
+        keep = set(other)
+        for env in [env for env in self if env not in keep]:
+            self.discard(env)
+
+    @typing.override
+    def symmetric_difference_update(self, other: Iterable[Environment]) -> None:
+        for env in set(other):
+            if env in self:
+                self.discard(env)
+            else:
+                self.add(env)
+
+    def __ior__(self, other: Iterable[Environment]) -> typing.Self:  # type: ignore[override,misc]
+        self.update(other)
+        return self
+
+    def __isub__(self, other: Iterable[Environment]) -> typing.Self:  # type: ignore[override,misc]
+        self.difference_update(other)
+        return self
+
+    def __iand__(self, other: Iterable[Environment]) -> typing.Self:  # type: ignore[override,misc]
+        self.intersection_update(other)
+        return self
+
+    def __ixor__(self, other: Iterable[Environment]) -> typing.Self:  # type: ignore[override,misc]
+        self.symmetric_difference_update(other)
+        return self
+
+    def get_environment(self, key: tuple[typing.Any, ...]) -> Environment | None:
+        # every path that takes an environment out of the set takes it out of
+        # the index, and both forget a collected one, so the index alone answers
+        return self._index.get(key)
+
+
+class Transaction:
+    __slots__ = (
+        "_admissions",
+        "_cache_store",
+        "_compute_engine",
+        "_create_frames",
+        "_inserted_checks",
+        "_last_env",
+        "_recent_envs",
+        "_ref_cache",
+        "access_memo",
+        "backend",
+        "cache",
+        "core",
+        "default_env",
+        "envs",
+        "observers",
+        "origin_reads",
+        "prefetch_batch",
+        "recompute_snapshots",
+        "registry",
+        "unit_of_work",
+    )
+
+    def __init__(self, registry: Registry, storage: typing.Any = None) -> None:
+        self.registry = registry
+        self.backend = (
+            InMemoryBackend(storage) if storage is not None else POSTGRES_BACKEND
+        )
+        self.envs: _EnvironmentSet = _EnvironmentSet()
+        self.default_env: Environment | None = None
+        self._last_env: weakref_ref[Environment] | None = None
+        # the index and the last-env fast path hold environments weakly, so a
+        # transient one (record.sudo().field, in a loop) died with its
+        # recordset and was rebuilt on the next call; a short strong ring
+        # keeps the recent ones alive between those calls
+        self._recent_envs: deque[Environment] = deque(maxlen=RECENT_ENVIRONMENTS)
+
+        self._cache_store: FieldCache[Field[typing.Any]] = FieldCache(
+            dirty_factory=OrderedSet, on_detach=self._drop_field_cache_memos
+        )
+
+        self._compute_engine: ComputeEngine[Field[typing.Any]] = ComputeEngine(
+            pending_factory=OrderedSet
+        )
+
+        self.core: OrmCore[Field[typing.Any]] = OrmCore(
+            cache=self._cache_store, engine=self._compute_engine
+        )
+
+        self.unit_of_work: UnitOfWork[Field[typing.Any]] = UnitOfWork(
+            self._cache_store,
+            self._compute_engine,
+            max_iterations=MAX_FIXPOINT_ITERATIONS,
+        )
+        self.unit_of_work.set_recompute_order(self._get_live_recompute_order)
+
+        self.cache = Cache(self)
+        self._ref_cache: dict[tuple[str, int], bool] = {}
+        self._create_frames: list[dict[str, set[int]]] = []
+        self._inserted_checks: list[tuple[str, frozenset[int]]] = []
+        # the calls a wrapper let through, held here and never in a context: a
+        # context is whatever the client sent
+        self._admissions: list[tuple[str, str, frozenset[int]]] = []
+        self.prefetch_batch: tuple[str, tuple[IdType, ...]] | None = None
+        # while a recursive recompute runs: the values a fetch read for rows
+        # still pending, kept for each row's own compute to read as its old
+        # value instead of fetching the batch again, row by row
+        self.recompute_snapshots: (
+            dict[Field[typing.Any], dict[IdType, typing.Any]] | None
+        ) = None
+        self.access_memo = AccessMemo()
+        self.origin_reads = OriginReads()
+
+        self.observers: tuple[OrmObserver, ...] = enabled_observers()
+        _debug.lifecycle(
+            "transaction.new",
+            db=registry.db_name,
+            backend=type(self.backend).__name__,
+            observers=len(self.observers),
+        )
+
+    @contextmanager
+    def create_frame(self) -> typing.Iterator[None]:
+        self._create_frames.append({})
+        try:
+            yield
+        finally:
+            self._create_frames.pop()
+
+    def note_created(self, model_name: str, ids: typing.Iterable[int]) -> None:
+        if self._create_frames:
+            self._create_frames[-1].setdefault(model_name, set()).update(ids)
+
+    def is_being_created(self, model_name: str, id_: int) -> bool:
+        return any(id_ in frame.get(model_name, ()) for frame in self._create_frames)
+
+    @contextmanager
+    def checking_inserted(
+        self, model_name: str, ids: typing.Iterable[int]
+    ) -> typing.Iterator[None]:
+        self._inserted_checks.append((model_name, frozenset(ids)))
+        try:
+            yield
+        finally:
+            self._inserted_checks.pop()
+
+    def is_checking_inserted(self, model_name: str, id_: int) -> bool:
+        return any(
+            model_name == name and id_ in ids for name, ids in self._inserted_checks
+        )
+
+    @contextmanager
+    def admitting(
+        self, model_name: str, name: str, ids: typing.Iterable[int]
+    ) -> typing.Iterator[None]:
+        self._admissions.append((model_name, name, frozenset(ids)))
+        try:
+            yield
+        finally:
+            self._admissions.pop()
+
+    def admitted_ids(self, model_name: str, name: str) -> frozenset[int]:
+        return frozenset(
+            id_
+            for admitted_model, admitted_name, ids in self._admissions
+            if admitted_model == model_name and admitted_name == name
+            for id_ in ids
+        )
+
+    def admitted_names(self, model_name: str, id_: int) -> tuple[str, ...]:
+        return tuple(
+            name
+            for admitted_model, name, ids in reversed(self._admissions)
+            if admitted_model == model_name and id_ in ids
+        )
+
+    def environment(
+        self,
+        cr: BaseCursor,
+        uid: int | None,
+        context: Mapping[str, typing.Any],
+        su: bool = False,
+        privileges: frozenset[int] = NO_PRIVILEGES,
+    ) -> Environment:
+        if uid == SUPERUSER_ID:
+            su = True
+        last_ref = self._last_env
+        last = last_ref() if last_ref is not None else None
+        envs = self.envs
+        if last is not None and envs.matches(last, uid, su, context, privileges):
+            return last
+        company_ids = context.get("allowed_company_ids")
+        if type(company_ids) is list:
+            # a request's context carries the web client's JSON array; frozen, the
+            # frozendict caches its hash instead of re-freezing it on every lookup
+            frozen_context = frozendict(
+                context, allowed_company_ids=FrozenList(company_ids)
+            )
+            _debug.logic("transaction.company_ids_frozen", companies=len(company_ids))
+        elif isinstance(context, frozendict):
+            frozen_context = context
+        else:
+            frozen_context = frozendict(context)
+        env = envs.get_environment(envs.key(uid, su, frozen_context, privileges))
+        if env is None:
+            from .environment import Environment
+
+            env = Environment._interned(self, cr, uid, frozen_context, su, privileges)
+            envs.add(env)
+            if not privileges:
+                self._adopt_default_env(env)
+            _debug.lifecycle(
+                "transaction.environment_interned",
+                uid=uid,
+                su=su,
+                context_keys=len(frozen_context),
+                envs=len(envs),
+            )
+            if _debug.lifecycle.enabled and len(envs) % 100 == 0:
+                _debug.lifecycle(
+                    "transaction.environment_keys",
+                    envs=len(envs),
+                    keys=",".join(sorted(frozen_context)),
+                )
+        self._last_env = weakref_ref(env)
+        recent = self._recent_envs
+        if env in recent:
+            recent.remove(env)
+        recent.append(env)
+        return env
+
+    def _adopt_default_env(self, env: Environment) -> None:
+        if self.default_env is None and env.uid and isinstance(env.uid, int):
+            self.default_env = env
+
+    def flush(self, env: Environment | None = None) -> None:
+        if env is not None:
+            self._flush_as(env)
+            return
+        if self.default_env is not None:
+            self._flush_as(self.default_env)
+        elif (env := next(iter(self.envs), None)) is not None:
+            _logger.warning(
+                "Transaction.flush(): no default_env; flushing as SUPERUSER"
+            )
+            _debug.logic(
+                "transaction.flush.superuser_fallback",
+                db=self.registry.db_name,
+                envs=len(self.envs),
+            )
+            try:
+                self._flush_as(self.environment(env.cr, SUPERUSER_ID, {}))
+            finally:
+                self.default_env = None
+        self._report_profilers()
+
+    def _flush_as(self, env: Environment) -> None:
+        prof = _OrmProfile(_orm_cache)
+        core = self.core
+        if not core.protection_depth():
+            # checks a scope left behind with its error, about to be flushed
+            core.run_deferred()
+
+        def recompute_fn(field: Field[typing.Any]) -> None:
+            env[field.model_name]._recompute_field(field)
+
+        def flush_fn(model_names: typing.Iterable[str]) -> None:
+            with env.cr.pipeline():
+                for model_name in model_names:
+                    env[model_name].flush_model()
+
+        result = self.unit_of_work.flush_until_converged(recompute_fn, flush_fn)
+        _debug.pipeline(
+            "transaction.flush",
+            uid=env.uid,
+            iterations=result.iterations,
+            converged=result.converged,
+            stalled=len(result.stalled_fields),
+        )
+
+        if not result.converged:
+            remaining = result.stalled_fields
+            _debug.logic(
+                "transaction.flush.not_converged",
+                uid=env.uid,
+                iterations=result.iterations,
+                stalled=remaining,
+                tolerant=bool(env.context.get("tolerant_recompute")),
+            )
+            if env.context.get("tolerant_recompute"):
+                _logger.error(
+                    "flush_all() did not converge after %d iterations. "
+                    "Stalled fields: %s (tolerant mode, continuing)",
+                    result.iterations,
+                    remaining,
+                )
+            else:
+                raise RuntimeError(
+                    f"flush_all() did not converge after "
+                    f"{result.iterations} iterations.  "
+                    f"Stalled fields: {remaining}\n\n"
+                    f"This indicates a circular compute or flush dependency.  "
+                    f"Use context key 'tolerant_recompute' to suppress."
+                )
+
+        prof.stop()
+        prof.report(_orm_cache, "flush_all: %d iterations", result.iterations)
+
+    def observe_operation(
+        self,
+        operation: str,
+        model_name: str,
+        record_count: int,
+        fields: frozenset[str],
+    ) -> None:
+        for observer in self.observers:
+            observer.on_operation(operation, model_name, record_count, fields)
+
+    def observe_timing(
+        self, operation: str, model_name: str, record_count: int, elapsed: float
+    ) -> None:
+        for observer in self.observers:
+            observer.on_operation_done(operation, model_name, record_count, elapsed)
+
+    def _report_profilers(self) -> None:
+        for observer in self.observers:
+            observer.report()
+            observer.clear()
+
+    def _drop_field_cache_memos(self) -> None:
+        for env in self.envs:
+            env.__dict__.pop("_field_cache_memo", None)
+
+    def clear(self) -> None:
+        _debug.lifecycle(
+            "transaction.clear",
+            db=self.registry.db_name,
+            envs=len(self.envs),
+            ref_cache=len(self._ref_cache),
+        )
+        self._cache_store.clear()
+        self._compute_engine.clear()
+        self.core.discard_deferred()
+        self._ref_cache.clear()
+        self.access_memo.clear()
+        self.origin_reads.clear()
+        self._last_env = None
+        self._recent_envs.clear()
+        if (env := next(iter(self.envs), None)) is not None:
+            env.cr.cache.clear()
+
+    def _get_live_recompute_order(self) -> dict[typing.Any, int]:
+        registry = self.registry
+        registry._get_field_triggers()
+        return registry.model_graph.recompute_order
+
+    def reset(self) -> None:
+        _debug.lifecycle("transaction.reset", db=self.registry.db_name)
+        self.registry = Registry(self.registry.db_name)
+        for env in self.envs:
+            reset_cached_properties(env)
+        self.clear()
+
+    def forget_refs_of(self, model_names: typing.Iterable[str]) -> int:
+        ref_cache = self._ref_cache
+        if not ref_cache:
+            return 0
+        names = set(model_names)
+        keys = [key for key in ref_cache if key[0] in names]
+        for key in keys:
+            del ref_cache[key]
+        return len(keys)
+
+    def invalidate_field_data(self, *, keep_new_records: bool = False) -> None:
+        _debug.lifecycle("transaction.invalidate_field_data", db=self.registry.db_name)
+        self._cache_store.invalidate_all(keep=_is_new_id if keep_new_records else None)
+        if not keep_new_records:
+            self.origin_reads.clear()
+        self._ref_cache.clear()
+        self.access_memo.clear()

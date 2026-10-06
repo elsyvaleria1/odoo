@@ -1,0 +1,663 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* approval_ai_telegram
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: es\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: approval_ai_telegram
+#. odoo-python
+#: code:addons/approval_ai_telegram/models/telegram_handler.py:0
+msgid "\n"
+"(From what you described, it looks like it does have one.)"
+msgstr "\n"
+"(Por lo que describiste, parece que sí tiene factura.)"
+
+#. module: approval_ai_telegram
+#. odoo-python
+#: code:addons/approval_ai_telegram/models/telegram_handler.py:0
+msgid "\n"
+"(From what you described, it looks like it does not.)"
+msgstr "\n"
+"(Por lo que describiste, parece que no tiene factura.)"
+
+#. module: approval_ai_telegram
+#. odoo-python
+#: code:addons/approval_ai_telegram/models/telegram_handler.py:0
+#, python-format
+msgid "%(command)s - Cancel the request in progress."
+msgstr "%(command)s - Cancela la solicitud en curso."
+
+#. module: approval_ai_telegram
+#. odoo-python
+#: code:addons/approval_ai_telegram/models/telegram_handler.py:0
+#, python-format
+msgid "%(command)s - Start an approval request."
+msgstr "%(command)s - Inicia una solicitud de aprobación."
+
+#. module: approval_ai_telegram
+#: model_terms:ir.ui.view,arch_db:approval_ai_telegram.telegram_bot_view_form_smart_approval
+msgid ""
+"<strong>AI is off for this bot.</strong>\n"
+"                        The <code>/solicitar</code> wizard will still work but\n"
+"                        without natural-language classification — the user picks\n"
+"                        the approval category manually. Enable AI and pick a\n"
+"                        provider whose service the company is connected to under\n"
+"                        Integrations to turn it on."
+msgstr ""
+"<strong>La IA está desactivada para este bot.</strong>\n"
+"                        El asistente <code>/solicitar</code> seguirá funcionando, pero\n"
+"                        sin clasificación en lenguaje natural — el usuario elige\n"
+"                        la categoría de aprobación manualmente. Para activarla, habilita la IA\n"
+"                        y elige un proveedor a cuyo servicio esté conectada la empresa\n"
+"                        en Integraciones."
+
+#. module: approval_ai_telegram
+#: model_terms:ir.ui.view,arch_db:approval_ai_telegram.telegram_bot_view_form_smart_approval
+msgid ""
+"<strong>This provider cannot transcribe voice notes.</strong>\n"
+"                        Text classification works, but a voice note sent to\n"
+"                        <code>/solicitar</code> will be refused and the user\n"
+"                        asked to type the description instead."
+msgstr ""
+"<strong>Este proveedor no puede transcribir notas de voz.</strong>\n"
+"                        La clasificación de texto funciona, pero una nota de voz enviada a\n"
+"                        <code>/solicitar</code> será rechazada y se pedirá al usuario\n"
+"                        que escriba la descripción."
+
+#. module: approval_ai_telegram
+#: model_terms:ir.ui.view,arch_db:approval_ai_telegram.telegram_bot_view_form_smart_approval
+msgid "AI Classification"
+msgstr "Clasificación con IA"
+
+#. module: approval_ai_telegram
+#. odoo-python
+#: code:addons/approval_ai_telegram/models/telegram_handler.py:0
+msgid "Account"
+msgstr "Cuenta"
+
+#. module: approval_ai_telegram
+#. odoo-python
+#: code:addons/approval_ai_telegram/models/telegram_handler.py:0
+#, python-format
+msgid "After sending the command, describe in your own words what you need approved, in a single message (example: %(example)s)."
+msgstr "Después de enviar el comando, describe con tus propias palabras qué necesitas aprobar, en un solo mensaje (ejemplo: %(example)s)."
+
+#. module: approval_ai_telegram
+#. odoo-python
+#: code:addons/approval_ai_telegram/models/telegram_handler.py:0
+msgid "Amount"
+msgstr "Monto"
+
+#. module: approval_ai_telegram
+#: model:ir.model.fields,field_description:approval_ai_telegram.field_telegram_bot__smart_approval_ai_model_id
+msgid "Approval AI Model"
+msgstr "Modelo de IA para aprobaciones"
+
+#. module: approval_ai_telegram
+#: model:ir.model.fields,field_description:approval_ai_telegram.field_telegram_bot__smart_approval_ai_provider_id
+msgid "Approval AI Provider"
+msgstr "Proveedor de IA para aprobaciones"
+
+#. module: approval_ai_telegram
+#. odoo-python
+#: code:addons/approval_ai_telegram/models/telegram_handler.py:0
+msgid "Approval Request Commands"
+msgstr "Comandos de Solicitudes de Aprobación"
+
+#. module: approval_ai_telegram
+#. odoo-python
+#: code:addons/approval_ai_telegram/models/telegram_handler.py:0
+msgid "Bank"
+msgstr "Banco"
+
+#. module: approval_ai_telegram
+#. odoo-python
+#: code:addons/approval_ai_telegram/models/telegram_handler.py:0
+msgid "Bank statement line"
+msgstr "Línea de estado de cuenta bancario"
+
+#. module: approval_ai_telegram
+#. odoo-python
+#: code:addons/approval_ai_telegram/models/telegram_handler.py:0
+msgid "CLABE"
+msgstr "CLABE"
+
+#. module: approval_ai_telegram
+#. odoo-python
+#: code:addons/approval_ai_telegram/models/telegram_handler.py:0
+msgid "Category"
+msgstr "Categoría"
+
+#. module: approval_ai_telegram
+#. odoo-python
+#: code:addons/approval_ai_telegram/models/telegram_handler.py:0
+msgid "Choose the accounting journal for the request:"
+msgstr "Elige el diario contable de la solicitud:"
+
+#. module: approval_ai_telegram
+#. odoo-python
+#: code:addons/approval_ai_telegram/models/telegram_handler.py:0
+msgid "Choose the category for the request:"
+msgstr "Elige la categoría de la solicitud:"
+
+#. module: approval_ai_telegram
+#. odoo-python
+#: code:addons/approval_ai_telegram/models/telegram_handler.py:0
+msgid "Choose the date for the request 🗓"
+msgstr "Elige la fecha de la solicitud 🗓"
+
+#. module: approval_ai_telegram
+#. odoo-python
+#: code:addons/approval_ai_telegram/models/telegram_handler.py:0
+msgid "Continue without evidence"
+msgstr "Continuar sin evidencia"
+
+#. module: approval_ai_telegram
+#. odoo-python
+#: code:addons/approval_ai_telegram/models/telegram_handler.py:0
+msgid "Date"
+msgstr "Fecha"
+
+#. module: approval_ai_telegram
+#. odoo-python
+#: code:addons/approval_ai_telegram/models/telegram_handler.py:0
+msgid "Deadline"
+msgstr "Fecha límite"
+
+#. module: approval_ai_telegram
+#. odoo-python
+#: code:addons/approval_ai_telegram/models/telegram_handler.py:0
+msgid "Detail"
+msgstr "Detalle"
+
+#. module: approval_ai_telegram
+#: model:ir.model.fields,field_description:approval_ai_telegram.field_telegram_bot__display_name
+#: model:ir.model.fields,field_description:approval_ai_telegram.field_telegram_chat__display_name
+#: model:ir.model.fields,field_description:approval_ai_telegram.field_telegram_handler_approval_ai__display_name
+msgid "Display Name"
+msgstr "Nombre mostrado"
+
+#. module: approval_ai_telegram
+#. odoo-python
+#: code:addons/approval_ai_telegram/models/telegram_handler.py:0
+msgid "Does the purchase have an invoice (CFDI)?"
+msgstr "¿La compra tiene factura (CFDI)?"
+
+#. module: approval_ai_telegram
+#: model:ir.model.fields,field_description:approval_ai_telegram.field_telegram_bot__smart_approval_ai_enabled
+msgid "Enable AI for /solicitar wizard"
+msgstr "Habilitar IA para el asistente /solicitar"
+
+#. module: approval_ai_telegram
+#: model:ir.model.fields,field_description:approval_ai_telegram.field_telegram_bot__has_solicitar_command
+msgid "Has Solicitar Command"
+msgstr "Tiene el comando /solicitar"
+
+#. module: approval_ai_telegram
+#. odoo-python
+#: code:addons/approval_ai_telegram/models/telegram_handler.py:0
+msgid "I cannot process voice notes on this bot. Please type the description as text."
+msgstr "No puedo procesar notas de voz en este bot. Por favor escribe la descripción como texto."
+
+#. module: approval_ai_telegram
+#. odoo-python
+#: code:addons/approval_ai_telegram/models/telegram_handler.py:0
+#, python-format
+msgid "I could not create the request:\n"
+"%(error)s\n"
+"\n"
+"You can change the category or cancel with the buttons above."
+msgstr "No pude crear la solicitud:\n"
+"%(error)s\n"
+"\n"
+"Puedes cambiar la categoría o cancelar con los botones de arriba."
+
+#. module: approval_ai_telegram
+#. odoo-python
+#: code:addons/approval_ai_telegram/models/telegram_handler.py:0
+msgid "I could not download the file. Try again or tap Skip."
+msgstr "No pude descargar el archivo. Inténtalo de nuevo o toca Omitir."
+
+#. module: approval_ai_telegram
+#. odoo-python
+#: code:addons/approval_ai_telegram/models/telegram_handler.py:0
+msgid "I could not download the file. Try again or tap ✅ Done."
+msgstr "No pude descargar el archivo. Inténtalo de nuevo o toca ✅ Listo."
+
+#. module: approval_ai_telegram
+#. odoo-python
+#: code:addons/approval_ai_telegram/models/telegram_handler.py:0
+msgid "I could not transcribe the audio. Please type the description as text."
+msgstr "No pude transcribir el audio. Por favor escribe la descripción como texto."
+
+#. module: approval_ai_telegram
+#: model:ir.model.fields,field_description:approval_ai_telegram.field_telegram_bot__id
+#: model:ir.model.fields,field_description:approval_ai_telegram.field_telegram_chat__id
+#: model:ir.model.fields,field_description:approval_ai_telegram.field_telegram_handler_approval_ai__id
+msgid "ID"
+msgstr "ID"
+
+#. module: approval_ai_telegram
+#. odoo-python
+#: code:addons/approval_ai_telegram/models/telegram_handler.py:0
+msgid "No category is selected. Start again with /solicitar."
+msgstr "No hay categoría seleccionada. Inicia de nuevo con /solicitar."
+
+#. module: approval_ai_telegram
+#: model:ir.model.fields,help:approval_ai_telegram.field_telegram_bot__smart_approval_ai_model_id
+msgid ""
+"Optional model override. Leave empty to use the vendor default. Set it when "
+"a vendor retires the shipped default, which happens fast on some of them."
+msgstr "Modelo opcional que reemplaza al predeterminado. Déjalo vacío para usar el predeterminado del proveedor. Establécelo cuando un proveedor retire el modelo predeterminado incluido, algo que en algunos ocurre rápido."
+
+#. module: approval_ai_telegram
+#. odoo-python
+#: code:addons/approval_ai_telegram/models/telegram_handler.py:0
+msgid "Pay from"
+msgstr "Pagar desde"
+
+#. module: approval_ai_telegram
+#. odoo-python
+#: code:addons/approval_ai_telegram/models/telegram_handler.py:0
+msgid "Payee"
+msgstr "Beneficiario"
+
+#. module: approval_ai_telegram
+#. odoo-python
+#: code:addons/approval_ai_telegram/models/telegram_handler.py:0
+msgid "Payment details:"
+msgstr "Datos de pago:"
+
+#. module: approval_ai_telegram
+#. odoo-python
+#: code:addons/approval_ai_telegram/models/telegram_handler.py:0
+msgid "Payment method"
+msgstr "Método de pago"
+
+#. module: approval_ai_telegram
+#. odoo-python
+#: code:addons/approval_ai_telegram/models/telegram_handler.py:0
+msgid "Period (date range)"
+msgstr "Periodo (rango de fechas)"
+
+#. module: approval_ai_telegram
+#. odoo-python
+#: code:addons/approval_ai_telegram/models/telegram_handler.py:0
+msgid "Place"
+msgstr "Lugar"
+
+#. module: approval_ai_telegram
+#. odoo-python
+#: code:addons/approval_ai_telegram/models/telegram_handler.py:0
+msgid "Planned date"
+msgstr "Fecha planeada"
+
+#. module: approval_ai_telegram
+#. odoo-python
+#: code:addons/approval_ai_telegram/models/telegram_handler.py:0
+msgid "Please send the description as text or a voice note."
+msgstr "Por favor envía la descripción como texto o una nota de voz."
+
+#. module: approval_ai_telegram
+#. odoo-python
+#: code:addons/approval_ai_telegram/models/telegram_handler.py:0
+msgid "Product (I detected no items in your message)"
+msgstr "Producto (no detecté artículos en tu mensaje)"
+
+#. module: approval_ai_telegram
+#. odoo-python
+#: code:addons/approval_ai_telegram/models/telegram_handler.py:0
+msgid "Product (category with no allowed product)"
+msgstr "Producto (categoría sin producto permitido)"
+
+#. module: approval_ai_telegram
+#. odoo-python
+#: code:addons/approval_ai_telegram/models/telegram_handler.py:0
+msgid "Purchase detail:"
+msgstr "Detalle de la compra:"
+
+#. module: approval_ai_telegram
+#. odoo-python
+#: code:addons/approval_ai_telegram/models/telegram_handler.py:0
+msgid "Quantity"
+msgstr "Cantidad"
+
+#. module: approval_ai_telegram
+#. odoo-python
+#: code:addons/approval_ai_telegram/models/telegram_handler.py:0
+msgid "Reason"
+msgstr "Motivo"
+
+#. module: approval_ai_telegram
+#. odoo-python
+#: code:addons/approval_ai_telegram/models/telegram_handler.py:0
+msgid "Reference"
+msgstr "Referencia"
+
+#. module: approval_ai_telegram
+#. odoo-python
+#: code:addons/approval_ai_telegram/models/telegram_handler.py:0
+msgid "Request cancelled."
+msgstr "Solicitud cancelada."
+
+#. module: approval_ai_telegram
+#. odoo-python
+#: code:addons/approval_ai_telegram/models/telegram_handler.py:0
+msgid "Request created from Telegram."
+msgstr "Solicitud creada desde Telegram."
+
+#. module: approval_ai_telegram
+#. odoo-python
+#: code:addons/approval_ai_telegram/models/telegram_handler.py:0
+msgid "Request from Telegram"
+msgstr "Solicitud desde Telegram"
+
+#. module: approval_ai_telegram
+#. odoo-python
+#: code:addons/approval_ai_telegram/models/telegram_handler.py:0
+#, python-format
+msgid "Selected date: %(date)s 🗓"
+msgstr "Fecha seleccionada: %(date)s 🗓"
+
+#. module: approval_ai_telegram
+#. odoo-python
+#: code:addons/approval_ai_telegram/models/telegram_handler.py:0
+msgid "Send the evidence as an image or PDF, or tap ✅ Done."
+msgstr "Envía la evidencia como imagen o PDF, o toca ✅ Listo."
+
+#. module: approval_ai_telegram
+#. odoo-python
+#: code:addons/approval_ai_telegram/models/telegram_handler.py:0
+msgid "Send the invoice as an image or PDF, or tap Skip."
+msgstr "Envía la factura como imagen o PDF, o toca Omitir."
+
+#. module: approval_ai_telegram
+#. odoo-python
+#: code:addons/approval_ai_telegram/models/telegram_handler.py:0
+msgid "Skip"
+msgstr "Omitir"
+
+#. module: approval_ai_telegram
+#: model_terms:ir.ui.view,arch_db:approval_ai_telegram.telegram_bot_view_form_smart_approval
+msgid "Smart Approval"
+msgstr "Aprobación inteligente"
+
+#. module: approval_ai_telegram
+#. odoo-python
+#: code:addons/approval_ai_telegram/models/telegram_handler.py:0
+msgid "Supplier"
+msgstr "Proveedor"
+
+#. module: approval_ai_telegram
+#: model:ir.model.fields,help:approval_ai_telegram.field_telegram_bot__has_solicitar_command
+msgid ""
+"Technical field: whether the /solicitar command is enabled for this bot. "
+"Gates the Smart Approval configuration page so it only shows on bots that "
+"actually run the intake flow."
+msgstr "Campo técnico: indica si el comando /solicitar está habilitado para este bot. Controla la página de configuración de Aprobación inteligente para que solo aparezca en los bots que realmente ejecutan el flujo de captura."
+
+#. module: approval_ai_telegram
+#: model:ir.model,name:approval_ai_telegram.model_telegram_bot
+msgid "Telegram Bot Configuration"
+msgstr "Configuración del bot de Telegram"
+
+#. module: approval_ai_telegram
+#: model:ir.model,name:approval_ai_telegram.model_telegram_handler_approval_ai
+msgid "Telegram: Smart Approval Requests"
+msgstr "Telegram: solicitudes de aprobación inteligente"
+
+#. module: approval_ai_telegram
+#. odoo-python
+#: code:addons/approval_ai_telegram/models/telegram_handler.py:0
+msgid "Tell me what you need approved. You can write it in one message (example: \"compra de 3 llantas para el camión, ~12 mil con Llantera del Bajío\"). To exit, type /cancelar."
+msgstr "Cuéntame qué necesitas aprobar. Puedes escribirlo en un mensaje (ejemplo: \"compra de 3 llantas para el camión, ~12 mil con Llantera del Bajío\"). Para salir escribe /cancelar."
+
+#. module: approval_ai_telegram
+#. odoo-python
+#: code:addons/approval_ai_telegram/models/telegram_handler.py:0
+msgid "The bot classifies your request, shows you a summary to confirm and, depending on the category, asks for the date, whether the purchase has an invoice (CFDI) and extra evidence (receipt, note or photo)."
+msgstr "El bot clasifica tu solicitud, te muestra un resumen para confirmar y, según la categoría, te pedirá la fecha, si la compra tiene factura (CFDI) y evidencia extra (ticket, nota o foto)."
+
+#. module: approval_ai_telegram
+#. odoo-python
+#: code:addons/approval_ai_telegram/models/telegram_handler.py:0
+msgid "There are no approval categories configured. Let IT know."
+msgstr "No hay categorías de aprobación configuradas. Avisa a Sistemas."
+
+#. module: approval_ai_telegram
+#. odoo-python
+#: code:addons/approval_ai_telegram/models/telegram_handler.py:0
+msgid "There are no purchase journals configured for your company. Let IT know."
+msgstr "No hay diarios de compra configurados para tu compañía. Avisa a Sistemas."
+
+#. module: approval_ai_telegram
+#. odoo-python
+#: code:addons/approval_ai_telegram/models/telegram_handler.py:0
+#, python-format
+msgid "This category needs data I cannot capture over Telegram yet:\n"
+"%(fields)s\n"
+"\n"
+"Create it from Odoo, or change the category / cancel with the buttons above."
+msgstr "Esta categoría requiere datos que todavía no puedo capturar por Telegram:\n"
+"%(fields)s\n"
+"\n"
+"Créala desde Odoo, o cambia la categoría / cancela con los botones de arriba."
+
+#. module: approval_ai_telegram
+#. odoo-python
+#: code:addons/approval_ai_telegram/models/telegram_handler.py:0
+#, python-format
+msgid "This is what I understood from your request:\n"
+"\n"
+"%(summary)s\n"
+"\n"
+"Do you confirm?"
+msgstr "Esto entendí de tu solicitud:\n"
+"\n"
+"%(summary)s\n"
+"\n"
+"¿Confirmas?"
+
+#. module: approval_ai_telegram
+#. odoo-python
+#: code:addons/approval_ai_telegram/models/telegram_handler.py:0
+msgid "To raise a request your Odoo account must be linked to this chat. Ask IT to link your Telegram user."
+msgstr "Para levantar una solicitud necesitas tener tu cuenta de Odoo vinculada a este chat. Pide a Sistemas que vincule tu usuario de Telegram."
+
+#. module: approval_ai_telegram
+#. odoo-python
+#: code:addons/approval_ai_telegram/models/telegram_handler.py:0
+msgid "Today"
+msgstr "Hoy"
+
+#. module: approval_ai_telegram
+#. odoo-python
+#: code:addons/approval_ai_telegram/models/telegram_handler.py:0
+msgid "Total"
+msgstr "Total"
+
+#. module: approval_ai_telegram
+#. odoo-python
+#: code:addons/approval_ai_telegram/models/telegram_handler.py:0
+msgid "Total:"
+msgstr "Total:"
+
+#. module: approval_ai_telegram
+#: model_terms:ir.ui.view,arch_db:approval_ai_telegram.telegram_bot_view_form_smart_approval
+msgid ""
+"Used by the /solicitar wizard to classify the request and extract fields."
+msgstr "Lo usa el asistente /solicitar para clasificar la solicitud y extraer campos."
+
+#. module: approval_ai_telegram
+#. odoo-python
+#: code:addons/approval_ai_telegram/models/telegram_handler.py:0
+msgid "Voice transcript:"
+msgstr "Transcripción de voz:"
+
+#. module: approval_ai_telegram
+#. odoo-python
+#: code:addons/approval_ai_telegram/models/telegram_handler.py:0
+msgid "What date is the request for?"
+msgstr "¿De qué fecha es la solicitud?"
+
+#. module: approval_ai_telegram
+#: model:ir.model.fields,help:approval_ai_telegram.field_telegram_bot__smart_approval_ai_enabled
+msgid ""
+"When enabled, the /solicitar wizard handled by this bot calls the configured"
+" AI vendor to classify the request into an approval.category and extract "
+"fields (amount, partner, quantity) from natural language and voice. Disable "
+"to fall back to a manual category picker (no external API call)."
+msgstr "Si está habilitado, el asistente /solicitar que atiende este bot llama al proveedor de IA configurado para clasificar la solicitud en una approval.category y extraer campos (monto, contacto, cantidad) del lenguaje natural y de la voz. Deshabilítalo para usar un selector manual de categoría (sin llamadas a API externas)."
+
+#. module: approval_ai_telegram
+#: model:ir.model.fields,help:approval_ai_telegram.field_telegram_bot__smart_approval_ai_provider_id
+msgid ""
+"Which vendor answers the classification call. The API key comes from the "
+"company's connection to that vendor's service, so swapping vendor is a "
+"configuration change. Not every vendor can transcribe voice notes: the form "
+"warns when the selected one cannot."
+msgstr "Qué proveedor responde la llamada de clasificación. La clave de API proviene de la conexión de la empresa con el servicio de ese proveedor, así que cambiar de proveedor es solo un cambio de configuración. No todos los proveedores pueden transcribir notas de voz: el formulario avisa cuando el seleccionado no puede."
+
+#. module: approval_ai_telegram
+#. odoo-python
+#: code:addons/approval_ai_telegram/models/telegram_handler.py:0
+msgid "You are still on the request I summarised. Use the buttons to confirm it, change the category or cancel it. Here it is again:"
+msgstr "Sigues en la solicitud que te resumí. Usa los botones para confirmarla, cambiar la categoría o cancelarla. Te la dejo de nuevo aquí:"
+
+#. module: approval_ai_telegram
+#. odoo-python
+#: code:addons/approval_ai_telegram/models/telegram_handler.py:0
+msgid "You can also send a voice note 🎙 instead of text; if no other operation is in progress, the voice note starts the request directly, with no need to type /solicitar."
+msgstr "También puedes enviar una nota de voz 🎙 en lugar de texto; si no hay otra operación en curso, la nota de voz inicia la solicitud directamente, sin necesidad de escribir /solicitar."
+
+#. module: approval_ai_telegram
+#. odoo-python
+#: code:addons/approval_ai_telegram/models/telegram_handler.py:0
+msgid "Your Odoo account is no longer linked to this chat. Ask IT to link it again and try once more."
+msgstr "Tu cuenta de Odoo ya no está vinculada a este chat. Pide a Sistemas que la revincule e inténtalo de nuevo."
+
+#. module: approval_ai_telegram
+#. odoo-python
+#: code:addons/approval_ai_telegram/models/telegram_handler.py:0
+msgid "Your Telegram account is not linked to an internal user. Contact IT."
+msgstr "Tu cuenta de Telegram no está vinculada a un usuario interno. Contacta a Sistemas."
+
+#. module: approval_ai_telegram
+#. odoo-python
+#: code:addons/approval_ai_telegram/models/telegram_chat.py:0
+msgid "an approval request"
+msgstr "una solicitud de aprobación"
+
+#. module: approval_ai_telegram
+#: model_terms:ir.ui.view,arch_db:approval_ai_telegram.telegram_bot_view_form_smart_approval
+msgid "vendor default"
+msgstr "predeterminado del proveedor"
+
+#. module: approval_ai_telegram
+#. odoo-python
+#: code:addons/approval_ai_telegram/models/telegram_handler.py:0
+#, python-format
+msgid "✅ %(date)s (what you said)"
+msgstr "✅ %(date)s (lo que dijiste)"
+
+#. module: approval_ai_telegram
+#. odoo-python
+#: code:addons/approval_ai_telegram/models/telegram_handler.py:0
+msgid "✅ Confirm"
+msgstr "✅ Confirmar"
+
+#. module: approval_ai_telegram
+#. odoo-python
+#: code:addons/approval_ai_telegram/models/telegram_handler.py:0
+msgid "✅ Done"
+msgstr "✅ Listo"
+
+#. module: approval_ai_telegram
+#. odoo-python
+#: code:addons/approval_ai_telegram/models/telegram_handler.py:0
+#, python-format
+msgid "✅ Request %(name)s created and sent for approval."
+msgstr "✅ Solicitud %(name)s creada y enviada a aprobación."
+
+#. module: approval_ai_telegram
+#. odoo-python
+#: code:addons/approval_ai_telegram/models/telegram_handler.py:0
+msgid "✏️ Change category"
+msgstr "✏️ Cambiar categoría"
+
+#. module: approval_ai_telegram
+#. odoo-python
+#: code:addons/approval_ai_telegram/models/telegram_handler.py:0
+msgid "❌ Cancel"
+msgstr "❌ Cancelar"
+
+#. module: approval_ai_telegram
+#. odoo-python
+#: code:addons/approval_ai_telegram/models/telegram_handler.py:0
+msgid "📄 With invoice (fiscal)"
+msgstr "📄 Con factura (Fiscal)"
+
+#. module: approval_ai_telegram
+#. odoo-python
+#: code:addons/approval_ai_telegram/models/telegram_handler.py:0
+msgid "📄 Yes, I have an invoice"
+msgstr "📄 Sí, tengo factura"
+
+#. module: approval_ai_telegram
+#. odoo-python
+#: code:addons/approval_ai_telegram/models/telegram_handler.py:0
+msgid "📎 Do you want to attach extra evidence (receipt, note, photo)?"
+msgstr "📎 ¿Deseas adjuntar evidencia extra (ticket, nota, foto)?"
+
+#. module: approval_ai_telegram
+#. odoo-python
+#: code:addons/approval_ai_telegram/models/telegram_handler.py:0
+#, python-format
+msgid "📎 Evidence attached (%(count)s). Send another or tap ✅ Done."
+msgstr "📎 Evidencia adjuntada (%(count)s). Envía otra o toca ✅ Listo."
+
+#. module: approval_ai_telegram
+#. odoo-python
+#: code:addons/approval_ai_telegram/models/telegram_handler.py:0
+msgid "📎 Send the evidence (image or PDF). You can send several; when you are finished tap ✅ Done."
+msgstr "📎 Envía la evidencia (imagen o PDF). Puedes mandar varias; cuando termines toca ✅ Listo."
+
+#. module: approval_ai_telegram
+#. odoo-python
+#: code:addons/approval_ai_telegram/models/telegram_handler.py:0
+msgid "📎 Upload the invoice (image or PDF), or tap Skip."
+msgstr "📎 Sube la factura (imagen o PDF), o toca Omitir."
+
+#. module: approval_ai_telegram
+#. odoo-python
+#: code:addons/approval_ai_telegram/models/telegram_handler.py:0
+msgid "📎 Yes, attach"
+msgstr "📎 Sí, adjuntar"
+
+#. module: approval_ai_telegram
+#. odoo-python
+#: code:addons/approval_ai_telegram/models/telegram_handler.py:0
+msgid "🗓 Pick a date"
+msgstr "🗓 Elegir fecha"
+
+#. module: approval_ai_telegram
+#. odoo-python
+#: code:addons/approval_ai_telegram/models/telegram_handler.py:0
+msgid "🧾 No invoice"
+msgstr "🧾 No tiene factura"
+
+#. module: approval_ai_telegram
+#. odoo-python
+#: code:addons/approval_ai_telegram/models/telegram_handler.py:0
+msgid "🧾 Without invoice (non-fiscal)"
+msgstr "🧾 Sin factura (No fiscal)"

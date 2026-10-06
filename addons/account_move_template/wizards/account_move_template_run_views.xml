@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="account_move_template_run_form" model="ir.ui.view">
+        <field name="model">wizard.account.move.template.create.move</field>
+        <field name="arch" type="xml">
+            <form string="Create Entry from Template">
+                <field name="is_payment" invisible="1" />
+                <field name="move_type" invisible="1" />
+
+                <group name="basic_info" string="Basic Information">
+                    <group>
+                        <field
+                            name="template_id"
+                            placeholder="Select a template..."
+                            widget="selection"
+                            options="{'no_create': True}" />
+                        <field name="partner_id" placeholder="Select partner..." />
+                        <field name="date" />
+                    </group>
+                    <group>
+                        <field
+                            name="amount"
+                            help="Total amount - lines will be automatically calculated"
+                            invisible="is_payment or move_type == 'entry'" />
+                        <field name="ref" placeholder="Optional reference or note" />
+                    </group>
+                </group>
+
+                <group
+                    name="advanced_options"
+                    string="Advanced Options"
+                    invisible="is_payment">
+                    <field
+                        name="customize_lines"
+                        help="Enable to manually customize journal entry lines"
+                        widget="boolean_toggle"
+                        options="{'autosave': False}" />
+                    <field
+                        name="third_party_id"
+                        placeholder="Leave empty to issue to the partner"
+                        help="Optional: the party this entry is made out to in place of the partner" />
+                    <field
+                        name="multicompany_id"
+                        help="Optional: Create entry in a different company"
+                        groups="base.group_multi_company" />
+                </group>
+
+                <notebook invisible="not customize_lines">
+
+                    <page
+                        string="Entry Lines"
+                        invisible="not customize_lines or is_payment">
+                        <field name="line_ids">
+                            <list editable="bottom">
+                                <field name="sequence" column_invisible="1" />
+                                <field name="display_type" column_invisible="1" />
+                                <field
+                                    name="partner_id"
+                                    optional="hide"
+                                    column_invisible="parent.partner_id or parent.move_type != 'entry'" />
+                                <field
+                                    name="product_id"
+                                    invisible="display_type != 'product'"
+                                    column_invisible="parent.move_type == 'entry'" />
+                                <field name="name" widget="section_and_note_text" />
+                                <field
+                                    name="account_id"
+                                    invisible="display_type != 'product'" />
+                                <field
+                                    name="analytic_distribution"
+                                    widget="analytic_distribution"
+                                    optional="hide"
+                                    groups="analytic.group_analytic_accounting" />
+                                <field
+                                    name="quantity"
+                                    string="Qty"
+                                    invisible="display_type != 'product'"
+                                    column_invisible="parent.move_type == 'entry'" />
+                                <field
+                                    name="price_unit"
+                                    string="Price"
+                                    invisible="display_type != 'product'"
+                                    column_invisible="parent.move_type == 'entry'" />
+                                <field
+                                    name="tax_ids"
+                                    widget="many2many_tags"
+                                    optional="show"
+                                    invisible="display_type != 'product'"
+                                    column_invisible="parent.move_type == 'entry'" />
+                                <field
+                                    name="discount"
+                                    string="Disc.%"
+                                    optional="hide"
+                                    invisible="display_type != 'product'"
+                                    column_invisible="parent.move_type == 'entry'" />
+                                <field
+                                    name="balance"
+                                    invisible="display_type != 'product'"
+                                    column_invisible="parent.move_type != 'entry'" />
+                            </list>
+                        </field>
+                    </page>
+
+                </notebook>
+
+                <group
+                    name="payment_info"
+                    string="Payment Information"
+                    invisible="not is_payment">
+                    <field name="payment_type" readonly="1" />
+                    <field name="partner_type" readonly="1" />
+                    <field name="amount" string="Payment Amount" />
+                </group>
+
+                <footer>
+                    <button
+                        name="action_create_move"
+                        type="object"
+                        string="Create Entry"
+                        invisible="is_payment"
+                        class="btn-primary" />
+                    <button
+                        name="action_create_move"
+                        type="object"
+                        string="Create Payment"
+                        invisible="not is_payment"
+                        class="btn-primary" />
+                    <button special="cancel" string="Cancel" class="btn-secondary" />
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="account_move_template_run_action" model="ir.actions.act_window">
+        <field name="name">Create Entry from Template</field>
+        <field name="res_model">wizard.account.move.template.create.move</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+
+</odoo>

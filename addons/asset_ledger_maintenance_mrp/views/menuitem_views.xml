@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <menuitem
+        id="menu_mrp_maintenance"
+        name="Maintenance"
+        parent="mrp.menu_mrp_root"
+        sequence="22" />
+
+    <menuitem
+        id="menu_mrp_maintenance_machinery"
+        name="Machines &amp; Tools"
+        parent="menu_mrp_maintenance"
+        action="asset_ledger_maintenance.action_machinery_assets"
+        sequence="1" />
+
+    <menuitem
+        id="menu_mrp_maintenance_plans"
+        name="Maintenance Plans"
+        parent="menu_mrp_maintenance"
+        action="asset_ledger_maintenance.action_maintenance_plan_machinery"
+        sequence="10" />
+
+    <menuitem
+        id="menu_mrp_maintenance_orders"
+        name="Maintenance Orders"
+        parent="menu_mrp_maintenance"
+        action="asset_ledger_maintenance.action_maintenance_order_machinery"
+        sequence="20" />
+
+</odoo>

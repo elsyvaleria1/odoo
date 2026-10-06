@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="mrp.WorkorderStateDropdown" style="btn" t-if="this.props.record.data.state !== 'done' and !['draft', 'done', 'cancel'].includes(this.props.record.data.production_state)">
+        <span t-if="!this.canSetState" t-attf-class="o_status {{this.statusColor}}"/>
+        <Dropdown t-else="">
+            <button t-attf-class="btn btn-link d-flex p-0 pb-1 {{!this.props.record.resId ? 'invisible': ''}}">
+                <div class="d-flex align-items-center">
+                    <span t-attf-class="o_status {{this.statusColor}}"/>
+                </div>
+            </button>
+            <t t-set-slot="content">
+                <DropdownItem
+                    class="`d-flex align-items-center`"
+                    onSelected="() => this.setState('ready')">
+                        <span t-attf-class="fa-solid fa-circle fa-lg text-muted me-2"/>
+                        <span>To Do</span>
+                </DropdownItem>
+                <DropdownItem
+                    class="`d-flex align-items-center`"
+                    onSelected="() => this.setState('progress')">
+                        <span t-attf-class="fa-solid fa-play-circle fa-lg text-info me-2"/>
+                        <span>In Progress</span>
+                </DropdownItem>
+                <DropdownItem
+                    class="`d-flex align-items-center`"
+                    onSelected="() => this.setState('cancel')">
+                        <span t-attf-class="fa-solid fa-times-circle fa-lg text-danger me-2"/>
+                        <span>Cancelled</span>
+                </DropdownItem>
+                <DropdownItem
+                    class="`d-flex align-items-center`"
+                    onSelected="() => this.setState('done')">
+                        <span t-attf-class="fa-solid fa-check-circle fa-lg text-success me-2"/>
+                        <span>Done</span>
+                </DropdownItem>
+            </t>
+        </Dropdown>
+    </t>
+
+</templates>

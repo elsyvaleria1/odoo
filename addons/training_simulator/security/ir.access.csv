@@ -1,0 +1,5 @@
+id,name,model_id/id,group_id/id,kind,operation,reach,anchor,predicate_id/id,predicate_args,domain
+access_training_simulator_player,training.simulator.player,model_training_simulator,group_training_player,permission,r,,,,,
+access_training_simulator_instructor,training.simulator.instructor,model_training_simulator,group_training_instructor,permission,crud,,,,,
+access_training_simulator_session_player,training.simulator.session: a player plays their own sessions,model_training_simulator_session,group_training_player,permission,cru,own,,,,
+access_training_simulator_session_instructor,training.simulator.session: an instructor sees the sessions of their companies,model_training_simulator_session,group_training_instructor,permission,crud,company,,,,

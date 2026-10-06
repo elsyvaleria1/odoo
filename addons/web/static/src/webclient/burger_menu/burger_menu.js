@@ -1,0 +1,83 @@
+// @ts-check
+/** @odoo-module native */
+
+import { Component, Portal, proxy, useProps } from "@odoo/owl";
+import { isDisplayStandalone } from "@web/core/browser/feature_detection";
+import { AppEvent } from "@web/core/events";
+import { registry } from "@web/core/registry";
+import { Transition } from "@web/core/transition";
+import { user } from "@web/core/user";
+import { useBus, useEventBus } from "@web/core/utils/hooks";
+
+import { shareUrl } from "../share_url/share_url.js";
+import { SWIPE_RIGHT, SwipeTracker } from "../swipe.js";
+import { BurgerUserMenu } from "./burger_user_menu/burger_user_menu.js";
+import { MobileSwitchCompanyMenu } from "./mobile_switch_company_menu/mobile_switch_company_menu.js";
+
+export class BurgerMenu extends Component {
+    static template = "web.BurgerMenu";
+    static props = {};
+    static components = {
+        BurgerUserMenu,
+        MobileSwitchCompanyMenu,
+        Transition,
+        Portal,
+    };
+    props = useProps(this.constructor.props);
+
+    /** @type {{ isBurgerOpened: boolean }} */
+    state;
+    /** @type {SwipeTracker} */
+    swipe;
+
+    setup() {
+        this.bus = useEventBus();
+        this.user = user;
+        this.state = proxy({
+            isBurgerOpened: false,
+        });
+        this.swipe = new SwipeTracker(SWIPE_RIGHT);
+        useBus(this.bus, AppEvent.HOME_MENU_TOGGLED, () => {
+            this._closeBurger();
+        });
+        useBus(
+            this.bus,
+            AppEvent.ACTION_MANAGER_UPDATE,
+            /** @type {any} */ (
+                (/** @type {{ detail: any }} */ ev) => {
+                    if (ev.detail.id) {
+                        this._closeBurger();
+                    }
+                }
+            ),
+        );
+    }
+    get canShareUrl() {
+        return Boolean(navigator.share) && isDisplayStandalone();
+    }
+    shareUrl() {
+        return shareUrl();
+    }
+    _closeBurger() {
+        this.state.isBurgerOpened = false;
+    }
+    _openBurger() {
+        this.state.isBurgerOpened = true;
+    }
+    /** @param {any} ev */
+    _onSwipeStart(ev) {
+        this.swipe.start(ev);
+    }
+    /** @param {any} ev */
+    _onSwipeEnd(ev) {
+        if (this.swipe.end(ev)) {
+            this._closeBurger();
+        }
+    }
+}
+
+const systrayItem = {
+    Component: BurgerMenu,
+};
+
+registry.category("systray").add("burger_menu", systrayItem, { sequence: 0 });

@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="certificate_key_view_form" model="ir.ui.view">
+        <field name="name">certificate.key.form</field>
+        <field name="model">certificate.key</field>
+        <field name="arch" type="xml">
+            <form string="key form">
+                <sheet>
+                    <div
+                        class="alert alert-warning"
+                        role="alert"
+                        invisible="not loading_error">
+                        <field name="loading_error" />
+                    </div>
+                    <group id="key_input">
+                        <field name="name" />
+                        <field
+                            name="company_id"
+                            groups="base.group_multi_company"
+                            readonly="1" />
+                        <field name="content" widget="binary" />
+                        <field name="password" password="True" />
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="certificate_key_view_list" model="ir.ui.view">
+        <field name="name">certificate.key.list</field>
+        <field name="model">certificate.key</field>
+        <field name="arch" type="xml">
+            <list string="key list">
+                <field name="name" string="Key" />
+                <field
+                    name="company_id"
+                    optional="hide"
+                    groups="base.group_multi_company"
+                    readonly="1" />
+            </list>
+        </field>
+    </record>
+
+    <record id="certificate_key_view_search" model="ir.ui.view">
+        <field name="name">certificate.key.search</field>
+        <field name="model">certificate.key</field>
+        <field name="arch" type="xml">
+            <search string="key search">
+                <filter
+                    name="archived"
+                    string="Archived"
+                    help="Archived keys"
+                    domain="[('active','=',False)]" />
+                <separator />
+                <filter
+                    name="private"
+                    string="Private"
+                    domain="[('pem_key', '!=', False), ('public','=',False)]" />
+                <filter
+                    name="public"
+                    string="Public"
+                    domain="[('pem_key', '!=', False), ('public','=',True)]" />
+                <separator />
+                <filter
+                    name="invalid"
+                    string="Invalid"
+                    domain="[('pem_key', '=', False)]" />
+            </search>
+        </field>
+    </record>
+
+</odoo>

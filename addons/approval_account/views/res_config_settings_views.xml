@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="res_config_settings_view_form_account_approval" model="ir.ui.view">
+        <field name="name">res.config.settings.view.form.account.approval</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="account.res_config_settings_view_form" />
+        <field name="arch" type="xml">
+
+            <xpath expr="//block[@id='account_vendor_bills']" position="after">
+                <block id="account_approval" title="Invoice/Bill Approval">
+                    <setting
+                        id="invoice_approval_thresholds"
+                        string="Approval Thresholds"
+                        help="Configure amount thresholds for invoice and bill approvals"
+                        company_dependent="1">
+                        <div class="content-group mt16">
+                            <div class="row">
+                                <label
+                                    for="invoice_approval_threshold"
+                                    class="col-lg-4 o_light_label" />
+                                <field
+                                    name="invoice_approval_threshold"
+                                    widget="monetary"
+                                    options="{'currency_field': 'company_currency_id'}" />
+                            </div>
+                            <div class="row">
+                                <label
+                                    for="bill_approval_threshold"
+                                    class="col-lg-4 o_light_label" />
+                                <field
+                                    name="bill_approval_threshold"
+                                    widget="monetary"
+                                    options="{'currency_field': 'company_currency_id'}" />
+                            </div>
+                            <field name="company_currency_id" invisible="1" />
+                        </div>
+                    </setting>
+
+                    <setting
+                        id="auto_post_on_approval_setting"
+                        help="Automatically post invoices and bills when all approvals are granted"
+                        company_dependent="1">
+                        <field name="auto_post_on_approval" />
+                    </setting>
+
+                    <setting
+                        id="approval_workflow_management"
+                        string="Approval Workflow"
+                        help="Configure and manage invoice/bill approval workflows">
+                        <div class="content-group mt16">
+                            <div class="row">
+                                <button
+                                    name="action_view_pending_invoice_approvals"
+                                    type="object"
+                                    string="View Pending Approvals"
+                                    icon="fa-tasks"
+                                    class="btn-link" />
+                            </div>
+                            <div class="row">
+                                <button
+                                    name="action_view_invoice_approval_categories"
+                                    type="object"
+                                    string="Configure Approval Categories"
+                                    icon="fa-cogs"
+                                    class="btn-link" />
+                            </div>
+                        </div>
+                    </setting>
+                </block>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

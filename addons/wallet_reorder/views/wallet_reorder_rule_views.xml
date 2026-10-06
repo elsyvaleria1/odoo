@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_wallet_reorder_rule_form" model="ir.ui.view">
+        <field name="name">wallet.reorder.rule.form</field>
+        <field name="model">wallet.reorder.rule</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button
+                        name="action_procure"
+                        type="object"
+                        string="Order Top-up"
+                        groups="wallet.group_wallet_manager"
+                        invisible="state != 'reorder'"
+                        class="btn-primary" />
+                    <field name="state" widget="statusbar" />
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name" /></h1>
+                    </div>
+                    <group name="main">
+                        <group name="left_col">
+                            <field name="card_id" />
+                            <field name="account_id" />
+                            <field name="product_id" />
+                            <field name="active" invisible="1" />
+                        </group>
+                        <group name="right_col">
+                            <field name="currency_id" invisible="1" />
+                            <field name="amount_min" widget="monetary" />
+                            <field name="amount_max" widget="monetary" />
+                            <field name="amount_balance" widget="monetary" />
+                            <field name="date_balance" />
+                            <field name="amount_to_reload" widget="monetary" />
+                            <field name="open_purchase_line_id" />
+                        </group>
+                    </group>
+                    <notebook>
+                        <page name="purchase_lines" string="Top-ups">
+                            <field name="purchase_line_ids">
+                                <list>
+                                    <field name="order_id" />
+                                    <field name="create_date" />
+                                    <field name="price_unit" widget="monetary" />
+                                    <field name="state" />
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_wallet_reorder_rule_list" model="ir.ui.view">
+        <field name="name">wallet.reorder.rule.list</field>
+        <field name="model">wallet.reorder.rule</field>
+        <field name="arch" type="xml">
+            <list
+                decoration-info="state == 'ordered'"
+                decoration-warning="state == 'reorder'">
+                <field name="card_id" />
+                <field name="account_id" optional="show" />
+                <field name="amount_min" widget="monetary" />
+                <field name="amount_max" widget="monetary" />
+                <field name="amount_balance" widget="monetary" />
+                <field name="amount_to_reload" widget="monetary" sum="To reload" />
+                <field name="state" />
+                <field name="currency_id" column_invisible="True" />
+                <field
+                    name="company_id"
+                    optional="hide"
+                    groups="base.group_multi_company" />
+            </list>
+        </field>
+    </record>
+
+    <record id="view_wallet_reorder_rule_search" model="ir.ui.view">
+        <field name="name">wallet.reorder.rule.search</field>
+        <field name="model">wallet.reorder.rule</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="card_id" />
+                <field name="account_id" />
+                <filter
+                    name="reorder"
+                    string="To reload"
+                    domain="[('state', '=', 'reorder')]" />
+                <filter
+                    name="ordered"
+                    string="Reload ordered"
+                    domain="[('state', '=', 'ordered')]" />
+                <separator />
+                <filter
+                    name="inactive"
+                    string="Archived"
+                    domain="[('active', '=', False)]" />
+                <group>
+                    <filter
+                        name="group_by_account"
+                        string="Account"
+                        context="{'group_by': 'account_id'}" />
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_wallet_reorder_rule" model="ir.actions.act_window">
+        <field name="name">Reordering Rules</field>
+        <field name="res_model">wallet.reorder.rule</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_wallet_reorder_rule_search" />
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">No reordering rule yet</p>
+            <p>A minimum and a maximum per card: under the minimum, the top-up to the maximum is ordered from the issuer.</p>
+        </field>
+    </record>
+
+</odoo>

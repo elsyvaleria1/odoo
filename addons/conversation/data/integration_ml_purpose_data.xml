@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+
+    <record id="purpose_speech_transcription_call" model="integration.ml.purpose">
+        <field name="key">speech.transcription.call</field>
+        <field name="name">Transcribing phone calls</field>
+        <field name="sensitive" eval="True" />
+    </record>
+
+    <record id="purpose_speech_transcription_meeting" model="integration.ml.purpose">
+        <field name="key">speech.transcription.meeting</field>
+        <field name="name">Transcribing meetings</field>
+        <field name="sensitive" eval="True" />
+    </record>
+
+    <record id="purpose_speech_transcription_visit" model="integration.ml.purpose">
+        <field name="key">speech.transcription.visit</field>
+        <field name="name">Transcribing field visits</field>
+        <field name="sensitive" eval="True" />
+    </record>
+
+</odoo>

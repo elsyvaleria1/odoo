@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="conversation_conversation_view_form" model="ir.ui.view">
+        <field name="name">conversation.conversation.view.form.phone.call</field>
+        <field name="model">conversation.conversation</field>
+        <field
+            name="inherit_id"
+            ref="conversation.conversation_conversation_view_form" />
+        <field name="arch" type="xml">
+            <field name="user_id" position="after">
+                <field name="phone_call_id" invisible="not phone_call_id" />
+            </field>
+        </field>
+    </record>
+
+</odoo>

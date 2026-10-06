@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <menuitem
+        id="geoengine_base_view_menu"
+        name="GeoEngine Services"
+        parent="base.menu_custom"
+        sequence="14"
+        groups="group_geoengine_admin" />
+
+    <menuitem
+        id="geoengine_view_menu"
+        name="View Management"
+        parent="geoengine_base_view_menu"
+        action="geo_engine_view_action"
+        groups="group_geoengine_admin" />
+
+    <menuitem
+        id="geoengine_vector_layer_menu"
+        name="Vector Layer Management"
+        parent="geoengine_base_view_menu"
+        action="geo_vector_layer_list_action"
+        sequence="20"
+        groups="group_geoengine_admin" />
+
+    <menuitem
+        id="geoengine_raster_layer_menu"
+        name="Raster Layer Management"
+        parent="geoengine_base_view_menu"
+        action="geo_raster_layer_list_action"
+        sequence="30"
+        groups="group_geoengine_admin" />
+
+    <menuitem
+        id="geoengine_import_menu"
+        name="Import Geodata"
+        parent="geoengine_base_view_menu"
+        action="action_geo_import_wizard"
+        sequence="40"
+        groups="group_geoengine_admin" />
+
+    <menuitem
+        id="geoengine_export_menu"
+        name="Export Geodata"
+        parent="geoengine_base_view_menu"
+        action="action_geo_export_wizard"
+        sequence="50"
+        groups="group_geoengine_admin" />
+
+</odoo>

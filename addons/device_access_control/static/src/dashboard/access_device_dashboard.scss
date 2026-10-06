@@ -1,0 +1,420 @@
+$ad-surface: lighten($o-view-background-color, 4%);
+$ad-surface-hover: lighten($o-view-background-color, 7%);
+$ad-radius: 10px;
+
+.access_device_dashboard {
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background: var(--o-view-background-color);
+}
+
+.access_device_dashboard_content {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+.ad_header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+
+    h4 {
+        font-weight: 700;
+        font-size: 1.25rem;
+    }
+}
+
+.ad_subtitle {
+    font-size: 0.8rem;
+    opacity: 0.5;
+}
+
+.ad_icon_btn {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background: $ad-surface;
+    color: inherit;
+    cursor: pointer;
+    transition: background $o-duration-fast;
+    font-size: 0.85rem;
+
+    &:hover {
+        background: $ad-surface-hover;
+    }
+
+    &.accent {
+        background: rgba(var(--primary-rgb), 0.12);
+        border-color: transparent;
+        color: var(--primary);
+
+        &:hover {
+            background: rgba(var(--primary-rgb), 0.2);
+        }
+    }
+}
+
+.ad_stats_row {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 12px;
+    margin-bottom: 28px;
+}
+
+.ad_stat_card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px;
+    background: $ad-surface;
+    border: 1px solid var(--border-color);
+    border-radius: $ad-radius;
+    box-shadow: 0 1px 3px o-shadow-ink(8%);
+    position: relative;
+
+    &.clickable {
+        cursor: pointer;
+        transition:
+            box-shadow $o-duration-fast,
+            transform $o-duration-fast;
+
+        &:hover {
+            box-shadow: 0 3px 12px o-shadow-ink(15%);
+            transform: translateY(-1px);
+        }
+    }
+}
+
+.ad_stat_icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    flex-shrink: 0;
+
+    &.granted {
+        background: rgba(var(--success-rgb), 0.15);
+        color: var(--success);
+    }
+    &.denied {
+        background: rgba(var(--danger-rgb), 0.15);
+        color: var(--danger);
+    }
+    &.alarms {
+        background: rgba(var(--warning-rgb), 0.15);
+        color: var(--warning);
+    }
+    &.users {
+        background: rgba(var(--info-rgb), 0.15);
+        color: var(--info);
+    }
+    &.events {
+        background: rgba(var(--primary-rgb), 0.12);
+        color: var(--primary);
+    }
+}
+
+.ad_stat_info {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.ad_stat_value {
+    font-size: 1.3rem;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+.ad_stat_label {
+    font-size: 0.72rem;
+    opacity: 0.5;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    white-space: nowrap;
+}
+
+.ad_stat_arrow {
+    position: absolute;
+    right: 14px;
+    opacity: 0.3;
+    font-size: 0.7rem;
+}
+
+.ad_devices {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.ad_device_card {
+    display: flex;
+    background: $ad-surface !important;
+    border: 1px solid var(--border-color);
+    border-radius: $ad-radius;
+    box-shadow: $o-shadow-sm;
+    overflow: hidden;
+    transition: box-shadow $o-duration-normal;
+
+    &:hover {
+        box-shadow: $o-shadow-md;
+    }
+}
+
+.ad_device_status_bar {
+    width: 4px;
+    flex-shrink: 0;
+    background: var(--secondary-bg);
+
+    &.ad_bar_connected {
+        background: var(--success);
+    }
+    &.ad_bar_error {
+        background: var(--danger);
+    }
+    &.ad_bar_disconnected {
+        background: var(--secondary);
+        opacity: 0.4;
+    }
+}
+
+.ad_device_disconnected {
+    opacity: 0.6;
+}
+
+.ad_device_body {
+    flex: 1;
+    padding: 20px 24px;
+    min-width: 0;
+}
+
+.ad_device_top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.ad_device_info {
+    min-width: 0;
+    flex: 1;
+}
+
+.ad_device_name {
+    font-weight: 600;
+    font-size: 1.1rem;
+    line-height: 1.3;
+}
+
+.ad_device_meta {
+    font-size: 0.8rem;
+    opacity: 0.45;
+    margin-top: 2px;
+}
+
+.ad_badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 5px 12px;
+    border-radius: 20px;
+    flex-shrink: 0;
+    white-space: nowrap;
+    background: var(--tertiary-bg);
+    opacity: 0.6;
+}
+
+.ad_badge_dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: currentColor;
+}
+
+.ad_badge_connected {
+    background: rgba(var(--success-rgb), 0.15);
+    color: var(--success);
+    opacity: 1;
+
+    .ad_badge_dot {
+        animation: ad-pulse calc(#{$o-duration-normal} * 10) ease-in-out infinite;
+    }
+}
+
+.ad_badge_error {
+    background: rgba(var(--danger-rgb), 0.15);
+    color: var(--danger);
+    opacity: 1;
+}
+
+@keyframes ad-pulse {
+    0%,
+    100% {
+        box-shadow: 0 0 0 2px rgba(var(--success-rgb), 0.3);
+    }
+    50% {
+        box-shadow: 0 0 0 5px rgba(var(--success-rgb), 0);
+    }
+}
+
+.ad_device_metrics {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-bottom: 18px;
+}
+
+.ad_metric {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.85rem;
+    opacity: 0.65;
+
+    :is(#{$o-icon-selector}) {
+        font-size: 0.85rem;
+        width: 16px;
+        text-align: center;
+    }
+
+    &.clickable {
+        cursor: pointer;
+        padding: 4px 10px;
+        border-radius: 6px;
+        transition:
+            background $o-duration-fast,
+            opacity $o-duration-fast;
+
+        &:hover {
+            opacity: 1;
+            background: rgba(var(--primary-rgb), 0.1);
+            color: var(--primary);
+        }
+    }
+}
+
+.ad_device_actions {
+    display: flex;
+    gap: 10px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border-color);
+}
+
+.ad_action_btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 20px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition:
+        background $o-duration-fast,
+        color $o-duration-fast,
+        transform $o-duration-fast;
+    background: var(--tertiary-bg, #{o-shadow-ink(4%)});
+    color: inherit;
+
+    :is(#{$o-icon-selector}) {
+        font-size: 0.95rem;
+    }
+
+    &:hover {
+        transform: scale(1.02);
+    }
+
+    &:active {
+        transform: scale(0.98);
+    }
+
+    &.open {
+        background: rgba(var(--success-rgb), 0.15);
+        color: var(--success);
+
+        &:hover {
+            background: rgba(var(--success-rgb), 0.25);
+        }
+    }
+
+    &.lock:hover {
+        background: rgba(var(--danger-rgb), 0.15);
+        color: var(--danger);
+    }
+
+    &.reconnect {
+        background: rgba(var(--primary-rgb), 0.12);
+        color: var(--primary);
+
+        &:hover {
+            background: rgba(var(--primary-rgb), 0.22);
+        }
+    }
+}
+
+.ad_empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 48px 24px;
+    opacity: 0.4;
+    font-size: 0.9rem;
+
+    :is(#{$o-icon-selector}) {
+        font-size: 1.2rem;
+    }
+}
+
+@media (max-width: 992px) {
+    .ad_stats_row {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .ad_stats_row {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .access_device_dashboard_content {
+        padding: 16px;
+    }
+}
+
+@media (max-width: 576px) {
+    .ad_stats_row {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .ad_device_actions {
+        flex-wrap: wrap;
+
+        .ad_action_btn {
+            flex: 1;
+            min-width: 100px;
+        }
+    }
+
+    .ad_device_body {
+        padding: 16px;
+    }
+}

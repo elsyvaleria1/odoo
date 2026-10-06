@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="partner_demo_customer_telegram" model="res.partner">
+        <field name="name">Juan García (Demo Customer)</field>
+        <field name="email">juan.garcia@example.com</field>
+        <field
+            name="phone_ids"
+            eval="[Command.create({'number': '+52 999 123 4567', 'type': 'landline'})]" />
+    </record>
+
+    <record id="partner_demo_supplier_telegram" model="res.partner">
+        <field name="name">María López (Demo Supplier)</field>
+        <field name="email">maria.lopez@supplier.example.com</field>
+        <field
+            name="phone_ids"
+            eval="[Command.create({'number': '+52 999 234 5678', 'type': 'landline'})]" />
+    </record>
+
+    <record id="partner_demo_employee_telegram" model="res.partner">
+        <field name="name">Carlos Rodríguez (Demo Employee)</field>
+        <field name="email">carlos.rodriguez@agromarin.example.com</field>
+        <field
+            name="phone_ids"
+            eval="[Command.create({'number': '+52 999 345 6789', 'type': 'landline'})]" />
+    </record>
+
+    <record id="partner_demo_employee2_telegram" model="res.partner">
+        <field name="name">Ana Martínez (Demo Manager)</field>
+        <field name="email">ana.martinez@agromarin.example.com</field>
+        <field
+            name="phone_ids"
+            eval="[Command.create({'number': '+52 999 456 7890', 'type': 'landline'})]" />
+    </record>
+
+    <record id="partner_demo_customer_no_telegram" model="res.partner">
+        <field name="name">Pedro Sánchez (Demo Customer - No Telegram)</field>
+        <field name="email">pedro.sanchez@example.com</field>
+        <field
+            name="phone_ids"
+            eval="[Command.create({'number': '+52 999 567 8901', 'type': 'landline'})]" />
+    </record>
+
+    <record
+        id="user_demo_employee_telegram"
+        model="res.users"
+        context="{'no_reset_password': True}">
+        <field name="name">Carlos Rodríguez (Demo Employee)</field>
+        <field name="login">carlos.rodriguez@agromarin.example.com</field>
+        <field name="partner_id" ref="partner_demo_employee_telegram" />
+        <field name="group_ids" eval="[Command.link(ref('base.group_user'))]" />
+    </record>
+
+    <record
+        id="user_demo_manager_telegram"
+        model="res.users"
+        context="{'no_reset_password': True}">
+        <field name="name">Ana Martínez (Demo Manager)</field>
+        <field name="login">ana.martinez@agromarin.example.com</field>
+        <field name="partner_id" ref="partner_demo_employee2_telegram" />
+        <field
+            name="group_ids"
+            eval="[             Command.link(ref('base.group_user')),             Command.link(ref('base.group_system'))         ]" />
+    </record>
+
+</odoo>

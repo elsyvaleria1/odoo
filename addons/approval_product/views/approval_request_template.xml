@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <template
+        id="report_approval_request_document_products"
+        inherit_id="approval.report_approval_request_document">
+        <xpath expr="//div[@name='approval_attachments']" position="before">
+            <div t-if="o.line_ids" class="mt-3">
+                <h6 class="fw-bold">Products</h6>
+                <table class="table table-sm">
+                    <thead>
+                        <tr>
+                            <th>Product</th>
+                            <th>Description</th>
+                            <th class="text-end">Quantity</th>
+                            <th groups="uom.group_uom">Unit</th>
+                            <th class="text-end">Unit Price</th>
+                            <th class="text-end">Subtotal</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr t-foreach="o.line_ids" t-as="line">
+                            <td><span t-field="line.product_id" /></td>
+                            <td><span t-field="line.description" /></td>
+                            <td class="text-end"><span t-field="line.quantity" /></td>
+                            <td groups="uom.group_uom">
+                                <span t-field="line.product_uom_id" />
+                            </td>
+                            <td class="text-end">
+                                <span
+                                    t-out="line.price_unit"
+                                    t-options="{'widget': 'monetary', 'display_currency': o.currency_id}" />
+                            </td>
+                            <td class="text-end">
+                                <span
+                                    t-out="line.price_subtotal"
+                                    t-options="{'widget': 'monetary', 'display_currency': o.currency_id}" />
+                            </td>
+                        </tr>
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <td colspan="4" groups="uom.group_uom" />
+                            <td colspan="3" groups="!uom.group_uom" />
+                            <td class="text-end fw-bold">Total</td>
+                            <td class="text-end fw-bold">
+                                <span
+                                    t-out="sum(o.line_ids.mapped('price_subtotal'))"
+                                    t-options="{'widget': 'monetary', 'display_currency': o.currency_id}" />
+                            </td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </xpath>
+    </template>
+
+</odoo>

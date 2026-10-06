@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="document.AccessRightsUpdateConfirmationDialog">
+        <Dialog size="'md'" title="this.title" modalRef="this.modalRef">
+            <div class="o_documents_access_rights_update_dialog pb-2">
+                <div class="text-warning pb-2">
+                    <i class="fa-solid fa-triangle-exclamation pe-1"/>
+                    <t t-out="this.summary"/>
+                </div>
+                <div class="container">
+                    <div class="row" t-if="this.props.changes.access_internal.length">
+                        <div class="col-12 col-md-9 d-flex flex-column">
+                            <label id="o_documents_access_update_confirmation_access_internal" class="mb-0">Internal Users</label>
+                            <div class="fs-6 text-muted" t-out="this.internalDescription"/>
+                        </div>
+                        <div class="col-12 col-md-3 d-flex">
+                            <div aria-labelledby="o_documents_access_update_confirmation_access_internal" t-out="this.internalLabel"/>
+                        </div>
+                    </div>
+                    <div class="row" t-if="this.props.changes.access_via_link">
+                        <div class="col-12 col-md-9 d-flex flex-column">
+                            <label id="o_documents_access_update_confirmation_access_via_link" class="mb-0">Anyone with the link</label>
+                            <div class="fs-6 text-muted" t-out="this.linkDescription"/>
+                        </div>
+                        <div class="col-12 col-md-3 d-flex flex-column">
+                            <div aria-labelledby="o_documents_access_update_confirmation_access_via_link" t-out="this.linkLabel"/>
+                            <div t-if="this.props.changes.access_via_link !== 'none'" class="text-muted fst-italic">Discoverability is specific to each document and will not be changed</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <t t-set-slot="footer">
+                <button class="btn btn-primary" t-on-click="this.confirm">Move</button>
+                <button class="btn btn-secondary" t-on-click="this.cancel">Cancel</button>
+            </t>
+        </Dialog>
+    </t>
+
+</templates>

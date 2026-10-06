@@ -1,0 +1,8 @@
+id,name,model_id/id,group_id/id,kind,operation,reach,anchor,domain
+access_quality_check_wizard,access.quality_check_wizard,model_wizard_quality_check_decide,quality.group_quality_user,permission,cru,,,
+access_quality_check_spreadsheet_user,quality.check.spreadsheet,model_quality_check_spreadsheet,quality.group_quality_user,permission,cru,,,
+access_quality_check_spreadsheet_manager,quality.check.spreadsheet.manager,model_quality_check_spreadsheet,quality.group_quality_manager,permission,d,,,
+access_quality_spreadsheet_template_user,quality.spreadsheet.template,model_quality_spreadsheet_template,quality.group_quality_user,permission,r,,,
+access_quality_spreadsheet_template_manager,quality.spreadsheet.template.manager,model_quality_spreadsheet_template,quality.group_quality_manager,permission,cud,,,
+quality_check_spreadsheet_rule_company,Quality check spreadsheet company rule,model_quality_check_spreadsheet,base.group_everyone,guard,crud,company,,
+quality_spreadsheet_template_rule_company,Quality spreadsheet template company rule,model_quality_spreadsheet_template,base.group_everyone,guard,crud,company,,

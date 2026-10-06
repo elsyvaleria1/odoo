@@ -1,0 +1,169 @@
+from typing import Any
+
+from odoo import fields, models
+
+from . import approval_trace as trace
+
+
+class ApprovalRequestPrediction(models.Model):
+    _inherit = "approval.request"
+
+    def _prediction_label(self, outcome: str) -> str:
+        match outcome:
+            case "approve":
+                return self.env._("Likely approved")
+            case "refuse":
+                return self.env._("Likely refused")
+        return self.env._("Uncertain")
+
+    def _predict_outcome(self) -> tuple[str | bool, float]:
+        self.check_singleton()
+        return self._predict_outcomes()[self.id]
+
+    def _predict_outcomes(self) -> dict[int, tuple[str | bool, float]]:
+        stats_cache: dict[tuple[int, int], list] = {}
+
+        def get_stats_bucket(category_id: int, partner_id: int) -> list:
+            cache_key = (category_id, partner_id)
+            if cache_key in stats_cache:
+                trace.PREDICTION.event(
+                    "corpus_cached",
+                    category=category_id,
+                    partner=partner_id or None,
+                    rows=len(stats_cache[cache_key]),
+                )
+                return stats_cache[cache_key]
+            domain = [
+                ("category_id", "=", category_id),
+                ("state", "in", list(self._DECISION_STATES)),
+            ]
+            if partner_id:
+                domain.append(("partner_id", "=", partner_id))
+            rows = self.search_read(
+                domain,
+                ["amount", "currency_id", "state"],
+                limit=200,
+                order="date_confirmed desc",
+            )
+            stats_cache[cache_key] = rows
+            trace.PREDICTION.event(
+                "corpus_read",
+                category=category_id,
+                partner=partner_id or None,
+                rows=len(rows),
+                capped=len(rows) == 200,
+            )
+            return rows
+
+        predictions: dict[int, tuple[str | bool, float]] = {}
+        scanned = 0
+        for request in self:
+            if request.state in self._TERMINAL_STATES:
+                predictions[request.id] = (False, 0.0)
+                continue
+
+            rows = get_stats_bucket(
+                request.category_id.id,
+                request.partner_id.id if request.partner_id else False,
+            )
+            scanned += len(rows)
+            origin_id = request._origin.id or 0
+            tolerance = abs(request.amount) * 0.2
+            low, high = request.amount - tolerance, request.amount + tolerance
+            similar = [
+                r
+                for r in rows
+                if r["id"] != origin_id
+                and (
+                    not request.amount
+                    or low <= request._prediction_amount_in_own_currency(r) <= high
+                )
+            ][:20]
+
+            if len(similar) < 3:
+                trace.annotate(work=scanned, buckets=len(stats_cache))
+                trace.PREDICTION.event(
+                    "too_few_comparables",
+                    request=request.id,
+                    rows=len(rows),
+                    similar=len(similar),
+                )
+                predictions[request.id] = ("uncertain", 0.0)
+                continue
+
+            approved = sum(1 for r in similar if r["state"] == "approved")
+            rate = approved / len(similar)
+            trace.annotate(work=scanned, buckets=len(stats_cache))
+            trace.PREDICTION.event(
+                "predicted",
+                request=request.id,
+                rows=len(rows),
+                similar=len(similar),
+                approved=approved,
+                rate=rate,
+                amount=request.amount,
+                tolerance=tolerance,
+            )
+
+            if rate >= 0.75:
+                predictions[request.id] = ("approve", rate)
+            elif rate <= 0.25:
+                predictions[request.id] = ("refuse", 1.0 - rate)
+            else:
+                predictions[request.id] = ("uncertain", 0.0)
+        return predictions
+
+    def action_predict_outcome(self) -> dict[str, Any]:
+        self.check_singleton()
+        outcome, confidence = self._predict_outcome()
+        trace.PREDICTION.note(
+            "asked", request=self.id, outcome=outcome, confidence=confidence
+        )
+        if not outcome:
+            message = self.env._("This request is already decided.")
+        elif outcome == "uncertain":
+            message = self.env._(
+                "Not enough comparable decided requests to predict an outcome."
+            )
+        else:
+            message = self.env._(
+                "%(label)s (%(confidence)d%% of comparable requests went this way).",
+                label=self._prediction_label(outcome),
+                confidence=round(confidence * 100),
+            )
+        return {
+            "type": "ir.actions.client",
+            "tag": "display_notification",
+            "params": {
+                "title": self.env._("Outcome prediction"),
+                "message": message,
+                "type": "info",
+                "sticky": False,
+            },
+        }
+
+    def _prediction_amount_in_own_currency(self, row: dict) -> float:
+        self.check_singleton()
+        amount = row["amount"]
+        row_currency_id = row["currency_id"] and row["currency_id"][0]
+        own_currency = self.currency_id
+        if (
+            not row_currency_id
+            or not own_currency
+            or row_currency_id == own_currency.id
+        ):
+            return amount
+        rate_datetime = self.date or self.date_confirmed
+        rate_date = (
+            rate_datetime.date() if rate_datetime else fields.Date.context_today(self)
+        )
+        return (
+            self.env["res.currency"]
+            .browse(row_currency_id)
+            ._convert(
+                amount,
+                own_currency,
+                self.company_id or self.env.company,
+                rate_date,
+            )
+        )

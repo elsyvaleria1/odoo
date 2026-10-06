@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_order_form_credit_confirm" model="ir.ui.view">
+        <field name="name">sale.order.form.credit.confirm</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_sale_order_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//sheet" position="before">
+                <field name="credit_verdict_outcome" invisible="1" />
+                <div
+                    class="alert alert-danger"
+                    role="alert"
+                    invisible="credit_verdict_outcome != 'block'"
+                    groups="account_credit.group_credit_readonly">
+                    <strong>Credit blocked.</strong>
+                    <field name="credit_verdict_message" nolabel="1" />
+                </div>
+                <div
+                    class="alert alert-warning"
+                    role="alert"
+                    invisible="credit_verdict_outcome not in ('approve', 'warn')"
+                    groups="account_credit.group_credit_readonly">
+                    <strong>Credit needs a manager's authorization.</strong>
+                    <field name="credit_verdict_message" nolabel="1" />
+                </div>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

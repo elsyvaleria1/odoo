@@ -1,0 +1,27 @@
+from odoo import models
+from odoo.libs.debug_log import DebugLog
+
+_debug = DebugLog(__name__)
+
+
+class WizardReportConfigUpdateLayout(models.TransientModel):
+    _inherit = "wizard.report.config.update.layout"
+
+    def _get_preview_template(self):
+        if self.env.context.get(
+            "active_model"
+        ) == "sale.order" and self.env.context.get("active_id"):
+            _debug.logic("layout_preview", by="sale_order")
+            return "sale.quote_document_layout_preview"
+        return super()._get_preview_template()
+
+    def _get_render_information(self, styles):
+        res = super()._get_render_information(styles)
+        if self.env.context.get(
+            "active_model"
+        ) == "sale.order" and self.env.context.get("active_id"):
+            res["doc"] = self.env["sale.order"].browse(
+                self.env.context.get("active_id"),
+            )
+            _debug.logic("layout_render_doc", order=res["doc"])
+        return res

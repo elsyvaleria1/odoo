@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+
+    <record id="res_groups_privilege_marketing_card" model="res.groups.privilege">
+        <field name="name">Marketing Card</field>
+        <field name="sequence">100</field>
+        <field name="category_id" ref="base.module_category_marketing" />
+    </record>
+
+    <record id="marketing_card_group_user" model="res.groups">
+        <field name="name">Marketing Card User</field>
+        <field name="sequence">10</field>
+        <field name="privilege_id" ref="res_groups_privilege_marketing_card" />
+        <field
+            name="implied_ids"
+            eval="[Command.link(ref('base.group_user')), Command.link(ref('mass_mailing.group_mass_mailing_user'))]" />
+    </record>
+
+    <record id="marketing_card_group_manager" model="res.groups">
+        <field name="name">Marketing Card Manager</field>
+        <field name="sequence">20</field>
+        <field name="privilege_id" ref="res_groups_privilege_marketing_card" />
+        <field
+            name="implied_ids"
+            eval="[Command.link(ref('marketing_card_group_user'))]" />
+        <field
+            name="user_ids"
+            eval="[Command.link(ref('base.user_root')), Command.link(ref('base.user_admin'))]" />
+    </record>
+
+</odoo>

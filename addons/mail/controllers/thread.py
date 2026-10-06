@@ -1,0 +1,533 @@
+import logging
+import typing
+from typing import Any, Literal
+
+from markupsafe import Markup
+
+from odoo import http, models
+from odoo.exceptions import UserError
+from odoo.http import NotFound, request
+from odoo.libs.debug_log import DebugLog
+from odoo.tools.mail import email_normalize
+from odoo.tools.misc import is_valid_limited_field_access_token
+
+from odoo.addons.mail.controllers.utils import (
+    message_fetch_response,
+    to_record_id,
+    to_record_ids,
+)
+from odoo.addons.mail.models.res_partner import MENTION_SCOPE
+from odoo.addons.mail.tools.discuss import Store, add_guest_to_context
+
+_logger = logging.getLogger(__name__)
+_debug = DebugLog(__name__)
+
+if typing.TYPE_CHECKING:
+    from odoo.addons.mail.models.mail_message import MailMessage
+
+MAX_EMAILS_PER_REQUEST = 50
+
+RECIPIENT_RESPONSE_KEYS = ("display_name", "email", "name", "partner_id")
+
+
+def _to_thread_model(model_name: Any) -> models.Model:
+    if not isinstance(model_name, str):
+        raise NotFound
+    if model_name not in request.env:
+        raise NotFound
+    model = request.env[model_name]
+    if not isinstance(model, request.env.registry["mixin.mail.thread"]):
+        raise NotFound
+    return model
+
+
+class ThreadController(http.Controller):
+    CLIENT_CONTEXT_KEYS = frozenset(
+        {
+            "active_test",
+            "allowed_company_ids",
+            "lang",
+            "temporary_id",
+            "tz",
+        }
+    )
+
+    @classmethod
+    def _update_context_from_client(cls, context: dict | None) -> None:
+        if not context:
+            return
+        if not isinstance(context, dict):
+            raise NotFound
+        allowed = cls.CLIENT_CONTEXT_KEYS
+        if dropped := set(context) - allowed:
+            _debug.logic("client_context_dropped", keys=sorted(dropped))
+            _logger.debug("Ignoring context keys from the client: %s", sorted(dropped))
+        request.update_context(
+            **{key: value for key, value in context.items() if key in allowed}
+        )
+
+    @classmethod
+    def _get_message_with_access(
+        cls, message_id: int, mode: str = "read", **kwargs
+    ) -> models.Model:
+        return request.env["mail.message"]._get_with_access(
+            to_record_id(message_id), mode=mode, **kwargs
+        )
+
+    @classmethod
+    def _get_thread_with_access_for_post(
+        cls, thread_model: str, thread_id: int, **kwargs
+    ) -> models.Model:
+        model = _to_thread_model(thread_model)
+        record_id = to_record_id(thread_id)
+        thread_su = model.sudo().browse(record_id)
+        access_mode = thread_su._mail_get_operation_for_mail_message_operation(
+            "create"
+        ).get(thread_su)
+        _debug.logic(
+            "post_access_mode",
+            model=thread_model,
+            record=record_id,
+            mode=access_mode or None,
+        )
+        if not access_mode:
+            return model.browse()
+        return cls._resolve_thread(model, record_id, access_mode, kwargs)
+
+    @classmethod
+    def _get_thread_with_access(
+        cls, thread_model: str, thread_id: int, mode: str = "read", **kwargs
+    ) -> models.Model:
+        return cls._resolve_thread(
+            _to_thread_model(thread_model), to_record_id(thread_id), mode, kwargs
+        )
+
+    @staticmethod
+    def _resolve_thread(
+        model: models.Model, record_id: int, mode: str, access_params: dict
+    ) -> models.Model:
+        allowed_params = model._get_allowed_access_params()
+        if dropped := set(access_params) - allowed_params:
+            _debug.logic(
+                "access_params_dropped", model=model._name, params=sorted(dropped)
+            )
+        return model._get_thread_with_access(
+            record_id,
+            mode=mode,
+            **{
+                key: value
+                for key, value in access_params.items()
+                if key in allowed_params
+            },
+        )
+
+    @staticmethod
+    def _recipients_response(
+        recipients: list[dict], *, partners_only: bool = False
+    ) -> list[dict]:
+        return [
+            {key: recipient[key] for key in RECIPIENT_RESPONSE_KEYS if key in recipient}
+            for recipient in recipients
+            if recipient.get("partner_id") or not partners_only
+        ]
+
+    @classmethod
+    def _has_post_write_access(cls, thread: models.Model) -> bool:
+        return (
+            thread.sudo(False).with_context(allowed_company_ids=[]).has_access("write")
+        )
+
+    @http.route("/mail/thread/messages", methods=["POST"], type="jsonrpc", auth="user")
+    def mail_thread_messages(
+        self, thread_model: str, thread_id: int, fetch_params: dict | None = None
+    ) -> dict:
+        thread = self._get_thread_with_access(thread_model, thread_id, mode="read")
+        if not thread:
+            raise NotFound
+        with _debug.perf(
+            "thread_messages",
+            cr=request.env.cr,
+            model=thread_model,
+            record=thread.id,
+            params=sorted(fetch_params) if isinstance(fetch_params, dict) else None,
+        ):
+            return message_fetch_response(
+                thread=thread, fetch_params=fetch_params, mark_done=True
+            )
+
+    @http.route(
+        "/mail/thread/recipients", methods=["POST"], type="jsonrpc", auth="user"
+    )
+    def mail_thread_recipients(
+        self, thread_model: str, thread_id: int, message_id: int | None = None
+    ) -> list:
+        thread = self._get_thread_with_access(thread_model, thread_id, mode="read")
+        if not thread:
+            raise NotFound
+        no_create = not request.env.user.has_group("base.group_partner_manager")
+        if message_id:
+            message = self._get_message_with_access(message_id, mode="read")
+            if not message or (message.sudo().model, message.sudo().res_id) != (
+                thread._get_reference_model_name(),
+                thread.id,
+            ):
+                raise NotFound
+            suggested = thread._message_get_suggested_recipients(
+                reply_message=message,
+                no_create=no_create,
+            )
+        else:
+            suggested = thread._message_get_suggested_recipients(
+                reply_discussion=True,
+                no_create=no_create,
+            )
+        return self._recipients_response(suggested, partners_only=True)
+
+    @http.route(
+        "/mail/thread/recipients/get_suggested_recipients",
+        methods=["POST"],
+        type="jsonrpc",
+        auth="user",
+    )
+    def mail_thread_recipients_get_suggested_recipients(
+        self,
+        thread_model: str,
+        thread_id: int,
+        partner_ids: list[int] | None = None,
+        main_email: str | Literal[False] = False,
+    ) -> list:
+        thread = self._get_thread_with_access(thread_model, thread_id)
+        if not thread:
+            raise NotFound
+        partners = request.env["res.partner"].search(
+            [("id", "in", to_record_ids(partner_ids))]
+        )
+        recipients = thread._message_get_suggested_recipients(
+            reply_discussion=True,
+            additional_partners=partners,
+            primary_email=main_email,
+        )
+        if partners:
+            old_customer_ids = set(thread._mail_get_partners()[thread.id].ids) - set(
+                partners.ids
+            )
+            recipients = list(
+                filter(
+                    lambda rec: rec.get("partner_id") not in old_customer_ids,
+                    recipients,
+                )
+            )
+        return self._recipients_response(recipients)
+
+    @http.route(
+        "/mail/partner/from_email", methods=["POST"], type="jsonrpc", auth="user"
+    )
+    def mail_thread_partner_from_email(
+        self, thread_model: str, thread_id: int, emails: list[str]
+    ) -> list:
+        if isinstance(emails, str) or not isinstance(emails, (list, tuple)):
+            raise NotFound
+        if len(emails) > MAX_EMAILS_PER_REQUEST:
+            raise NotFound
+        model = _to_thread_model(thread_model)
+        record_id = to_record_id(thread_id)
+        thread = self._resolve_thread(model, record_id, "read", {})
+        if record_id and not thread:
+            raise NotFound
+        partners = (thread or model)._partner_get_or_create_from_emails_single(
+            emails,
+            no_create=not request.env.user.has_group("base.group_partner_manager"),
+        )
+        _debug.logic(
+            "partners_from_email",
+            model=thread_model,
+            record=record_id or None,
+            emails=len(emails),
+            partners=len(partners),
+        )
+        source_by_normalized = {}
+        for email in emails:
+            source_by_normalized.setdefault(
+                email_normalize(email, strict=False) or email, email
+            )
+        return [
+            {
+                "id": partner.id,
+                "name": partner.name,
+                "email": partner.email,
+                "source_email": source_by_normalized.get(
+                    email_normalize(partner.email, strict=False) or partner.email
+                ),
+            }
+            for partner in partners
+        ]
+
+    @http.route(
+        "/mail/read_subscription_data", methods=["POST"], type="jsonrpc", auth="user"
+    )
+    def read_subscription_data(self, follower_id: int) -> dict:
+        follower = request.env["mail.followers"].browse(to_record_id(follower_id))
+        if not follower.exists():
+            raise NotFound
+        follower.check_access("read")
+        record = self._get_thread_with_access(
+            follower.res_model, follower.res_id, mode="read"
+        )
+        if not record:
+            raise NotFound
+        subtypes = record._mail_get_message_subtypes()
+        store = Store().add(subtypes, ["name"]).add(follower, ["subtype_ids"])
+        return {
+            "store_data": store.get_result(),
+            "subtype_ids": subtypes.sorted(
+                key=lambda s: (
+                    s.parent_id.res_model or "",
+                    s.res_model or "",
+                    s.internal,
+                    s.sequence,
+                ),
+            ).ids,
+        }
+
+    def _mentionable_partner_ids(self, thread: models.Model) -> set[int] | None:
+        if thread._name != "discuss.channel":
+            return None
+        channel_sudo = thread.sudo()
+        channels = channel_sudo.parent_channel_id | channel_sudo
+        return set(channels.channel_member_ids.partner_id.ids)
+
+    def _prepare_message_data(
+        self,
+        post_data: dict,
+        *,
+        thread: models.Model,
+        from_create: bool = True,
+        **kwargs,
+    ) -> dict:
+        res = {
+            key: value
+            for key, value in post_data.items()
+            if key in thread._get_allowed_message_params()
+        }
+        if (attachment_ids := post_data.get("attachment_ids")) is not None:
+            attachments = request.env["ir.attachment"].browse(
+                to_record_ids(attachment_ids)
+            )
+            if not attachments._has_attachments_ownership(
+                post_data.get("attachment_tokens")
+            ):
+                msg = request.env._(
+                    "One or more attachments do not exist, or you do not have the rights to access them.",
+                )
+                raise UserError(msg)
+            res["attachment_ids"] = attachments.ids
+        if "body" in post_data:
+            body = post_data["body"]
+            if body and not isinstance(body, str):
+                raise NotFound
+            res["body"] = Markup(body) if body else body
+        if any(
+            post_data.get(key) is not None
+            for key in ("partner_ids", "partner_emails", "role_ids")
+        ):
+            res["partner_ids"] = self._get_message_partner_ids(post_data, thread)
+        if from_create:
+            res.setdefault("message_type", "comment")
+        if not self._may_choose_message_envelope(thread):
+            res["message_type"] = "comment"
+            res["subtype_xmlid"] = "mail.mt_comment"
+        return res
+
+    def _may_choose_message_envelope(self, thread: models.Model) -> bool:
+        if not request.env.user._is_internal():
+            return False
+        thread_su = thread.sudo()
+        access_mode = thread_su._mail_get_operation_for_mail_message_operation(
+            "create"
+        ).get(thread_su)
+        return bool(access_mode) and (
+            thread.sudo(False)
+            .with_context(allowed_company_ids=[])
+            .has_access(access_mode)
+        )
+
+    def _get_message_partner_ids(self, post_data: dict, thread: models.Model) -> list:
+        partners = request.env["res.partner"].browse(
+            to_record_ids(post_data.get("partner_ids"))
+        )
+        partner_emails = post_data.get("partner_emails")
+        if partner_emails:
+            if isinstance(partner_emails, str) or not isinstance(
+                partner_emails, (list, tuple)
+            ):
+                raise NotFound
+            if len(partner_emails) > MAX_EMAILS_PER_REQUEST:
+                raise NotFound
+            partners |= thread._partner_get_or_create_from_emails_single(
+                partner_emails,
+                no_create=not request.env.user.has_group("base.group_partner_manager"),
+            )
+        if role_ids := post_data.get("role_ids"):
+            partners |= (
+                request.env["res.users"]
+                .sudo()
+                .search_fetch(
+                    [("role_ids", "in", to_record_ids(role_ids))],
+                    ["partner_id"],
+                )
+                .partner_id
+            )
+        readable_ids = (
+            set(partners._filtered_access("read").ids)
+            if not request.env.user.share
+            else set()
+        )
+        mention_tokens = post_data.get("partner_ids_mention_token") or {}
+        mentionable_ids = self._mentionable_partner_ids(thread)
+        _debug.logic(
+            "message_partners",
+            model=thread._name,
+            record=thread.id,
+            asked=len(partners),
+            readable=len(readable_ids),
+            tokens=len(mention_tokens),
+            emails=len(partner_emails or ()),
+        )
+        return partners.filtered(
+            lambda p: (
+                p.id in readable_ids
+                or (
+                    is_valid_limited_field_access_token(
+                        p,
+                        "id",
+                        mention_tokens.get(str(p.id), ""),
+                        scope=MENTION_SCOPE,
+                    )
+                    and (mentionable_ids is None or p.id in mentionable_ids)
+                )
+            ),
+        ).ids
+
+    @http.route("/mail/message/post", methods=["POST"], type="jsonrpc", auth="public")
+    @add_guest_to_context
+    def mail_message_post(
+        self,
+        thread_model: str,
+        thread_id: int,
+        post_data: dict,
+        context: dict | None = None,
+        **kwargs,
+    ) -> dict:
+        store = Store()
+        request.update_context(message_post_store=store)
+        self._update_context_from_client(context)
+        thread = self._get_thread_with_access_for_post(
+            thread_model, thread_id, **kwargs
+        )
+        if not thread:
+            raise NotFound
+        if request.env.user._is_internal():
+            request.env["mail.canned.response"]._register_usage(
+                kwargs.get("canned_response_ids")
+            )
+        if not self._has_post_write_access(thread):
+            _debug.logic(
+                "post_without_write_access", model=thread._name, record=thread.id
+            )
+            thread = thread.with_context(
+                mail_post_autofollow_author_skip=True, mail_post_autofollow=False
+            )
+        with _debug.perf(
+            "message_post",
+            cr=request.env.cr,
+            model=thread._name,
+            record=thread.id,
+            uid=request.env.uid,
+        ) as span:
+            message = thread.sudo().message_post(
+                **self._prepare_message_data(
+                    post_data, thread=thread, from_create=True, **kwargs
+                ),
+            )
+            span.set(message=message.id)
+        return {
+            "store_data": store.add(message).get_result(),
+            "message_id": message.id,
+        }
+
+    @http.route(
+        "/mail/message/update_content", methods=["POST"], type="jsonrpc", auth="public"
+    )
+    @add_guest_to_context
+    def mail_message_update_content(
+        self, message_id: int, update_data: dict, **kwargs
+    ) -> dict:
+        message = self._get_message_with_access(message_id, mode="create", **kwargs)
+        if not message or not self._can_edit_message(message, **kwargs):
+            _debug.logic(
+                "update_content_refused", message=message_id, uid=request.env.uid
+            )
+            raise NotFound
+        message = message.sudo()
+        thread = _to_thread_model(message.model).browse(message.res_id)
+        thread._message_update_content(
+            message,
+            **self._prepare_message_data(
+                update_data, thread=thread, from_create=False, **kwargs
+            ),
+        )
+        return Store().add(message).get_result()
+
+    @classmethod
+    def _can_edit_message(cls, message: MailMessage, **kwargs) -> bool:
+        return (
+            message.sudo().is_current_user_or_guest_author
+            or request.env.user._is_admin()
+        )
+
+    def _follower_change_response(
+        self, res_model: str, res_id: int, partner_ids: list[int], *, subscribe: bool
+    ) -> dict:
+        thread = self._get_thread_with_access(res_model, res_id, mode="read")
+        if not thread:
+            raise NotFound
+        partner_ids = to_record_ids(partner_ids)
+        _debug.lifecycle(
+            "follower_change",
+            model=res_model,
+            record=thread.id,
+            partners=len(partner_ids),
+            subscribe=subscribe,
+        )
+        if subscribe:
+            thread.message_subscribe(partner_ids)
+        else:
+            thread.message_unsubscribe(partner_ids)
+        return (
+            Store()
+            .add(
+                thread,
+                [],
+                as_thread=True,
+                request_list=["followers", "suggestedRecipients"],
+            )
+            .get_result()
+        )
+
+    @http.route(
+        "/mail/thread/unsubscribe", methods=["POST"], type="jsonrpc", auth="user"
+    )
+    def mail_thread_unsubscribe(
+        self, res_model: str, res_id: int, partner_ids: list[int]
+    ) -> dict:
+        return self._follower_change_response(
+            res_model, res_id, partner_ids, subscribe=False
+        )
+
+    @http.route("/mail/thread/subscribe", methods=["POST"], type="jsonrpc", auth="user")
+    def mail_thread_subscribe(
+        self, res_model: str, res_id: int, partner_ids: list[int]
+    ) -> dict:
+        return self._follower_change_response(
+            res_model, res_id, partner_ids, subscribe=True
+        )

@@ -1,0 +1,598 @@
+// @ts-check
+/** @odoo-module native */
+
+import { makeLogger } from "@web/core/debug/debug_logger";
+
+import { isEmptyDomain } from "./search_domain.js";
+import { findGroupByGroupId } from "./search_group_by.js";
+import { fireAndForgetNotify } from "./search_notification.js";
+import { SPECIAL } from "./search_state.js";
+import { DEFAULT_INTERVAL, getPeriodOptions, yearSelected } from "./utils/dates.js";
+import { defaultSearchOperator, isGroupableField } from "./utils/misc.js";
+
+const log = makeLogger("web.search");
+
+/**
+ * @typedef {{
+ *   filters?: string[],
+ *   dateFilters?: { name: string, generatorIds?: string[] }[],
+ *   groupBys?: (string | { fieldName: string, interval?: string })[],
+ *   fieldSearches?: { fieldName: string, value: any, label?: string, operator?: string }[],
+ *   customDomain?: string,
+ * }} SearchSpec
+ */
+
+/**
+ * @template {new (...args: any[]) => any} T
+ * @param {T} Base
+ */
+export const SearchQueryMixin = (Base) =>
+    class extends Base {
+        /** @this {any} */
+        _checkOrderByCountStatus() {
+            if (!this.orderByCount) {
+                return;
+            }
+            const hasQueryGroupBy = this.query.some((/** @type {any} */ item) =>
+                ["dateGroupBy", "groupBy"].includes(
+                    this.searchItems[item.searchItemId].type,
+                ),
+            );
+            const hasGlobalGroupBy = Boolean(this.globalGroupBy?.length);
+            const hasDefaultGroupBy = Boolean(this.defaultGroupBy?.length);
+            if (!hasQueryGroupBy && !hasGlobalGroupBy && !hasDefaultGroupBy) {
+                this.orderByCount = /** @type {string|false} */ (false);
+            }
+        }
+
+        /** @param {number|null} defaultFavoriteId */
+        _activateDefaultSearchItems(defaultFavoriteId) {
+            if (defaultFavoriteId) {
+                this.toggleSearchItem(defaultFavoriteId);
+                return;
+            }
+            const defaults = Object.values(this.searchItems)
+                .filter((/** @type {any} */ f) => f.isDefault && f.type !== "favorite")
+                .sort(
+                    (/** @type {any} */ f1, /** @type {any} */ f2) =>
+                        (f1.defaultRank || 100) - (f2.defaultRank || 100),
+                );
+            for (const item of defaults) {
+                switch (item.type) {
+                    case "dateFilter":
+                        this.toggleDateFilter(item.id);
+                        break;
+                    case "dateGroupBy":
+                        this.toggleDateGroupBy(item.id);
+                        break;
+                    case "field":
+                        this.addAutoCompletionValues(
+                            item.id,
+                            item.defaultAutocompleteValue,
+                        );
+                        break;
+                    default:
+                        this.toggleSearchItem(item.id);
+                }
+            }
+        }
+
+        /**
+         * @param {number} searchItemId
+         * @param {Record<string, any>} autocompleteValue
+         */
+        async addAutoCompletionValues(searchItemId, autocompleteValue) {
+            const searchItem = this.searchItems[searchItemId];
+            log.logic("addAutoCompletionValues", () => ({
+                searchItemId,
+                type: searchItem.type,
+                fieldName: searchItem.fieldName,
+                label: autocompleteValue.label,
+            }));
+            if (!["field", "field_property"].includes(searchItem.type)) {
+                return;
+            }
+            const { label, value, operator } = autocompleteValue;
+            const queryElem = this.query.find(
+                (/** @type {any} */ queryElem) =>
+                    queryElem.searchItemId === searchItemId &&
+                    "autocompleteValue" in queryElem &&
+                    queryElem.autocompleteValue.value === value &&
+                    queryElem.autocompleteValue.operator === operator,
+            );
+            if (!queryElem) {
+                this.query.push({ searchItemId, autocompleteValue });
+            } else {
+                queryElem.autocompleteValue.label = label;
+            }
+            return this._notify();
+        }
+
+        async clearQuery() {
+            log.logic("clearQuery", () => ({ query: this.query.length }));
+            this.query = /** @type {any[]} */ ([]);
+            this.orderByCount = /** @type {string|false} */ (false);
+            this._dropDetachedEphemeralItems();
+            return this._notify();
+        }
+
+        /**
+         * @param {Record<string, any>[]} prefilters
+         * @returns {number[]}
+         */
+        createNewFilters(prefilters) {
+            if (!prefilters.length) {
+                return [];
+            }
+            /** @type {number[]} */
+            const searchItemIds = [];
+            prefilters.forEach((preFilter) => {
+                const filter = {
+                    ...preFilter,
+                    groupId: this.nextGroupId,
+                    groupNumber: this.nextGroupNumber,
+                    id: this.nextId,
+                    type: "filter",
+                };
+                this.searchItems[this.nextId] = filter;
+                this.query.push({ searchItemId: this.nextId });
+                searchItemIds.push(this.nextId);
+                this.nextId++;
+            });
+            this.nextGroupId++;
+            this.nextGroupNumber++;
+            fireAndForgetNotify(this._notify());
+            return searchItemIds;
+        }
+
+        /**
+         * @param {string} fieldName
+         * @param {object} [options]
+         * @param {string} [options.interval]
+         * @param {boolean} [options.invisible]
+         * @returns {number | undefined}
+         */
+        createNewGroupBy(fieldName, { interval, invisible } = {}) {
+            const field = this.searchViewFields[fieldName];
+            if (!field) {
+                console.warn(
+                    `[search] ignoring group-by on unknown field "${fieldName}"`,
+                );
+                return undefined;
+            }
+            const existing = this._findGroupByItem(fieldName);
+            log.logic("createNewGroupBy", () => ({
+                fieldName,
+                interval,
+                reusedItemId: existing?.id,
+            }));
+            if (existing) {
+                this._withNotificationsBlocked(() => {
+                    if (existing.type === "dateGroupBy") {
+                        const intervalId = interval || existing.defaultIntervalId;
+                        if (!this._isDateGroupByActive(existing.id, intervalId)) {
+                            this.toggleDateGroupBy(existing.id, intervalId);
+                        }
+                    } else if (!this._isQueried(existing.id)) {
+                        this.toggleSearchItem(existing.id);
+                    }
+                });
+                fireAndForgetNotify(this._notify());
+                return existing.id;
+            }
+            const { string, type: fieldType } = field;
+            /** @type {Record<string, any>} */
+            const preSearchItem = {
+                description: string || fieldName,
+                fieldName,
+                fieldType,
+                groupId: findGroupByGroupId(this.searchItems) ?? this.nextGroupId++,
+                groupNumber: this.nextGroupNumber,
+                id: this.nextId,
+                custom: true,
+            };
+            if (invisible) {
+                preSearchItem.invisible = "True";
+            }
+            this._withNotificationsBlocked(() => {
+                if (["date", "datetime"].includes(fieldType)) {
+                    this.searchItems[this.nextId] = Object.assign(
+                        {
+                            type: "dateGroupBy",
+                            defaultIntervalId: interval || DEFAULT_INTERVAL,
+                        },
+                        preSearchItem,
+                    );
+                    this.toggleDateGroupBy(this.nextId);
+                } else {
+                    this.searchItems[this.nextId] = Object.assign(
+                        { type: "groupBy" },
+                        preSearchItem,
+                    );
+                    this.toggleSearchItem(this.nextId);
+                }
+                this.nextGroupNumber++;
+                this.nextId++;
+            });
+            fireAndForgetNotify(this._notify());
+            return preSearchItem.id;
+        }
+
+        /**
+         * A group-by filter carrying a domain also filters, so only a plain one
+         * stands for a group-by on its field.
+         *
+         * @param {string} fieldName
+         * @returns {Record<string, any> | undefined}
+         */
+        _findGroupByItem(fieldName) {
+            return Object.values(this.searchItems).find(
+                (/** @type {any} */ item) =>
+                    ["groupBy", "dateGroupBy"].includes(item.type) &&
+                    item.fieldName === fieldName &&
+                    isEmptyDomain(item.domain),
+            );
+        }
+
+        /**
+         * @param {number} searchItemId
+         * @returns {boolean}
+         */
+        _isQueried(searchItemId) {
+            return this.query.some(
+                (/** @type {any} */ queryElem) =>
+                    queryElem.searchItemId === searchItemId,
+            );
+        }
+
+        /**
+         * @param {number} searchItemId
+         * @param {string} intervalId
+         * @returns {boolean}
+         */
+        _isDateGroupByActive(searchItemId, intervalId) {
+            return this.query.some(
+                (/** @type {any} */ queryElem) =>
+                    queryElem.searchItemId === searchItemId &&
+                    queryElem.intervalId === intervalId,
+            );
+        }
+
+        _dropDetachedEphemeralItems() {
+            const dropped = [];
+            for (const [id, item] of Object.entries(this.searchItems)) {
+                if (item.ephemeral && !this._isQueried(item.id)) {
+                    delete this.searchItems[id];
+                    dropped.push(item.id);
+                }
+            }
+            if (dropped.length) {
+                log.logic("dropDetachedEphemeralItems", () => ({
+                    dropped: dropped.join(","),
+                }));
+            }
+        }
+
+        /** @param {number|symbol} groupId */
+        async deactivateGroup(groupId) {
+            log.logic("deactivateGroup", () => ({ groupId }));
+            if (groupId === SPECIAL) {
+                delete this.defaultGroupBy;
+                this.defaultGroupByRemoved = true;
+                this._checkOrderByCountStatus();
+                return this._notify();
+            }
+            this.query = this.query.filter((/** @type {any} */ queryElem) => {
+                const searchItem = this.searchItems[queryElem.searchItemId];
+                return searchItem.groupId !== groupId;
+            });
+            this._dropDetachedEphemeralItems();
+            this._checkOrderByCountStatus();
+            return this._notify();
+        }
+
+        /** @param {number} searchItemId */
+        async toggleSearchItem(searchItemId) {
+            const searchItem = this.searchItems[searchItemId];
+            log.logic("toggleSearchItem", () => ({
+                searchItemId,
+                type: searchItem.type,
+                description: searchItem.description,
+                invalid: searchItem.isInvalid,
+            }));
+            if (searchItem.isInvalid) {
+                return;
+            }
+            switch (searchItem.type) {
+                case "dateFilter":
+                case "dateGroupBy":
+                case "field_property":
+                case "field": {
+                    return;
+                }
+            }
+            const index = this.query.findIndex(
+                (/** @type {any} */ queryElem) =>
+                    queryElem.searchItemId === searchItemId,
+            );
+            if (index >= 0) {
+                this.query.splice(index, 1);
+                this._checkOrderByCountStatus();
+            } else {
+                if (searchItem.type === "favorite") {
+                    this.query = /** @type {any[]} */ ([]);
+                    this.orderByCount = /** @type {string|false} */ (false);
+                    this._dropDetachedEphemeralItems();
+                }
+                this.query.push({ searchItemId });
+            }
+            return this._notify();
+        }
+
+        /**
+         * @param {any} searchItem
+         * @param {string} [generatorId]
+         * @param {readonly any[] | null} [knownOptions]
+         * @returns {string[]}
+         */
+        _resolveDateGeneratorIds(searchItem, generatorId, knownOptions) {
+            let generatorIds = generatorId
+                ? [generatorId]
+                : searchItem.defaultGeneratorIds;
+            if (knownOptions) {
+                const validGeneratorIds = generatorIds.filter(
+                    (/** @type {any} */ gid) =>
+                        gid.startsWith("custom") ||
+                        knownOptions.some((o) => o.id === gid),
+                );
+                if (validGeneratorIds.length !== generatorIds.length) {
+                    console.warn(
+                        `[search] unknown period generator id(s) on filter "${searchItem.name}":`,
+                        generatorIds.filter(
+                            (/** @type {any} */ gid) =>
+                                !validGeneratorIds.includes(gid),
+                        ),
+                    );
+                }
+                generatorIds = validGeneratorIds;
+            }
+            const isCustom = (/** @type {string} */ gid) => gid.startsWith("custom");
+            const customIds = generatorIds.filter(isCustom);
+            if (customIds.length && customIds.length < generatorIds.length) {
+                console.warn(
+                    `[search] date filter "${searchItem.name}": a custom period cannot be ` +
+                        `combined with a month, quarter or year; keeping the periods and ignoring`,
+                    customIds,
+                );
+                return generatorIds.filter(
+                    (/** @type {string} */ gid) => !isCustom(gid),
+                );
+            }
+            if (customIds.length > 1) {
+                console.warn(
+                    `[search] date filter "${searchItem.name}": custom periods are mutually exclusive; ` +
+                        `keeping "${customIds.at(-1)}" and ignoring`,
+                    customIds.slice(0, -1),
+                );
+                return [/** @type {string} */ (customIds.at(-1))];
+            }
+            return generatorIds;
+        }
+
+        /**
+         * @param {number} searchItemId
+         * @param {string} [generatorId]
+         */
+        async toggleDateFilter(searchItemId, generatorId) {
+            const searchItem = this.searchItems[searchItemId];
+            log.logic("toggleDateFilter", () => ({
+                searchItemId,
+                generatorId,
+                description: searchItem.description,
+            }));
+            if (searchItem.type !== "dateFilter") {
+                return;
+            }
+            const knownOptions = searchItem.optionsParams
+                ? getPeriodOptions(this.referenceMoment, searchItem.optionsParams)
+                : null;
+            const generatorIds = this._resolveDateGeneratorIds(
+                searchItem,
+                generatorId,
+                knownOptions,
+            );
+            const ensureSelected = !generatorId;
+            const yearsAddedHere = new Set();
+            for (const generatorId of generatorIds) {
+                if (yearsAddedHere.has(generatorId)) {
+                    continue;
+                }
+                const index = this.query.findIndex(
+                    (/** @type {any} */ queryElem) =>
+                        queryElem.searchItemId === searchItemId &&
+                        "generatorId" in queryElem &&
+                        queryElem.generatorId === generatorId,
+                );
+                if (index >= 0) {
+                    if (ensureSelected) {
+                        log.logic("toggleDateFilter:keepDefault", () => ({
+                            searchItemId,
+                            generatorId,
+                        }));
+                        continue;
+                    }
+                    this.query.splice(index, 1);
+                    if (!yearSelected(this._getSelectedGeneratorIds(searchItemId))) {
+                        this.query = this.query.filter(
+                            (/** @type {any} */ queryElem) =>
+                                queryElem.searchItemId !== searchItemId,
+                        );
+                    }
+                } else {
+                    if (generatorId.startsWith("custom")) {
+                        this.query = this.query.filter(
+                            (/** @type {any} */ queryElem) =>
+                                searchItemId !== queryElem.searchItemId,
+                        );
+                        this.query.push({ searchItemId, generatorId });
+                        continue;
+                    }
+                    this.query = this.query.filter(
+                        (/** @type {any} */ queryElem) =>
+                            queryElem.searchItemId !== searchItemId ||
+                            !queryElem.generatorId.startsWith("custom"),
+                    );
+                    this.query.push({ searchItemId, generatorId });
+                    if (
+                        knownOptions &&
+                        !yearSelected(this._getSelectedGeneratorIds(searchItemId))
+                    ) {
+                        const knownOption = knownOptions.find(
+                            (o) => o.id === generatorId,
+                        );
+                        if (knownOption) {
+                            this.query.push({
+                                searchItemId,
+                                generatorId: knownOption.defaultYearId,
+                            });
+                            yearsAddedHere.add(knownOption.defaultYearId);
+                        }
+                    }
+                }
+            }
+            return this._notify();
+        }
+
+        /**
+         * @param {number} searchItemId
+         * @param {string} [intervalId]
+         */
+        async toggleDateGroupBy(searchItemId, intervalId) {
+            const searchItem = this.searchItems[searchItemId];
+            log.logic("toggleDateGroupBy", () => ({
+                searchItemId,
+                intervalId,
+                fieldName: searchItem.fieldName,
+            }));
+            if (searchItem.type !== "dateGroupBy") {
+                return;
+            }
+            intervalId = intervalId || searchItem.defaultIntervalId;
+            const index = this.query.findIndex(
+                (/** @type {any} */ queryElem) =>
+                    queryElem.searchItemId === searchItemId &&
+                    "intervalId" in queryElem &&
+                    queryElem.intervalId === intervalId,
+            );
+            if (index >= 0) {
+                this.query.splice(index, 1);
+                this._checkOrderByCountStatus();
+            } else {
+                this.query.push({ searchItemId, intervalId });
+            }
+            return this._notify();
+        }
+
+        /**
+         * Filters, periods and group-bys are named by their arch `name`, or by
+         * the field they stand on; a group-by the view does not declare is
+         * created when its field is groupable. Nothing already active is
+         * toggled off.
+         *
+         * @param {SearchSpec} spec
+         */
+        async applySearchSpec(spec) {
+            log.logic("applySearchSpec", () => spec);
+            await this._withNotificationsBlockedAsync(() =>
+                this._applySearchSpec(spec),
+            );
+            return this._drainPendingNotification();
+        }
+
+        /** @param {SearchSpec} spec */
+        async _applySearchSpec({
+            filters = [],
+            dateFilters = [],
+            groupBys = [],
+            fieldSearches = [],
+            customDomain,
+        }) {
+            const named = (/** @type {string[]} */ types, /** @type {string} */ name) =>
+                this.getSearchItems(
+                    (/** @type {any} */ item) =>
+                        types.includes(item.type) &&
+                        [item.name, item.fieldName].includes(name),
+                )[0];
+            for (const name of filters) {
+                const item = named(["filter", "dateFilter"], name);
+                if (!item || item.isActive) {
+                    continue;
+                }
+                if (item.type === "dateFilter") {
+                    await this.toggleDateFilter(item.id);
+                } else {
+                    await this.toggleSearchItem(item.id);
+                }
+            }
+            for (const { name, generatorIds } of dateFilters) {
+                const item = named(["dateFilter"], name);
+                if (!item) {
+                    continue;
+                }
+                for (const generatorId of generatorIds ?? item.defaultGeneratorIds) {
+                    if (!this._getSelectedGeneratorIds(item.id).includes(generatorId)) {
+                        await this.toggleDateFilter(item.id, generatorId);
+                    }
+                }
+            }
+            for (const groupBy of groupBys) {
+                const { fieldName, interval } =
+                    typeof groupBy === "string" ? { fieldName: groupBy } : groupBy;
+                const item = named(["groupBy", "dateGroupBy"], fieldName);
+                if (item?.type === "dateGroupBy") {
+                    const intervalId = interval || item.defaultIntervalId;
+                    if (!this._isDateGroupByActive(item.id, intervalId)) {
+                        await this.toggleDateGroupBy(item.id, intervalId);
+                    }
+                } else if (item) {
+                    if (!item.isActive) {
+                        await this.toggleSearchItem(item.id);
+                    }
+                } else if (
+                    this.searchViewFields[fieldName] &&
+                    isGroupableField(fieldName, this.searchViewFields[fieldName])
+                ) {
+                    this.createNewGroupBy(fieldName, { interval });
+                }
+            }
+            for (const { fieldName, value, label, operator } of fieldSearches) {
+                const item = this.getSearchItems(
+                    (/** @type {any} */ item) =>
+                        item.type === "field" && item.fieldName === fieldName,
+                )[0];
+                if (!item) {
+                    continue;
+                }
+                await this.addAutoCompletionValues(item.id, {
+                    value,
+                    label: label ?? String(value),
+                    operator:
+                        operator ||
+                        item.operator ||
+                        defaultSearchOperator(item.fieldType, value),
+                });
+            }
+            if (customDomain && customDomain !== "[]") {
+                await this.splitAndAddDomain(customDomain);
+            }
+        }
+
+        async switchGroupBySort() {
+            if (this.orderByCount === "Desc") {
+                this.orderByCount = "Asc";
+            } else {
+                this.orderByCount = "Desc";
+            }
+            return this._notify();
+        }
+    };

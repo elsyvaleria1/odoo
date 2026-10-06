@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="wizard_sale_order_cash_collect_view_form" model="ir.ui.view">
+        <field name="name">wizard.sale.order.cash.collect.form</field>
+        <field name="model">wizard.sale.order.cash.collect</field>
+        <field name="arch" type="xml">
+            <form string="Collect Cash Sale">
+                <p class="text-muted">
+                    The order is invoiced and the invoice issued now; the money stays in
+                    your custody until you hand it in.
+                </p>
+                <group>
+                    <field name="order_id" />
+                    <field name="currency_id" invisible="1" />
+                    <field name="amount" />
+                    <field name="collection_method" widget="radio" />
+                    <field name="hand_over" />
+                    <field name="date" />
+                </group>
+                <footer>
+                    <button
+                        name="action_collect"
+                        type="object"
+                        string="Invoice and Collect"
+                        class="btn-primary" />
+                    <button special="cancel" string="Cancel" />
+                </footer>
+            </form>
+        </field>
+    </record>
+
+</odoo>

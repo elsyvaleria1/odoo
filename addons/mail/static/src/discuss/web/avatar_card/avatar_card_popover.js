@@ -1,0 +1,100 @@
+// @ts-check
+/** @odoo-module native */
+import { discussComponentRegistry } from "@mail/core/common/discuss_component_registry";
+import { ImStatus } from "@mail/core/common/im_status";
+import { useOpenChat } from "@mail/core/web/open_chat_hook";
+import { Component, t, useProps } from "@odoo/owl";
+import { makeLogger } from "@web/core/debug/debug_logger";
+import { useService } from "@web/core/utils/hooks";
+
+const log = makeLogger("mail.avatar_card");
+export class AvatarCardPopover extends Component {
+    static template = "mail.AvatarCardPopover";
+    static components = { ImStatus };
+    static props = {
+        id: t.number(),
+        close: t.function(),
+        model: t
+            .customValidator(t.string(), (m) =>
+                ["res.users", "res.partner"].includes(m),
+            )
+            .optional("res.users"),
+    };
+    props = useProps(this.constructor.props);
+
+    setup() {
+        this.actionService = useService("action");
+        this.store = useService("mail.store");
+        this.openChat = useOpenChat(this.props.model);
+        this.store.fetchStoreData("avatar_card", {
+            id: this.props.id,
+            model: this.props.model,
+        });
+    }
+
+    get user() {
+        if (this.props.model === "res.users") {
+            return this.store["res.users"].get(this.props.id);
+        }
+        return undefined;
+    }
+
+    get partner() {
+        if (this.props.model === "res.partner") {
+            return this.store["res.partner"].get(this.props.id);
+        }
+        return this.user?.partner_id;
+    }
+
+    get name() {
+        return this.partner?.name;
+    }
+
+    get email() {
+        return this.partner?.email;
+    }
+
+    get phone() {
+        return this.partner?.phone;
+    }
+
+    get showViewProfileBtn() {
+        return this.partner;
+    }
+
+    get hasFooter() {
+        return false;
+    }
+
+    async getProfileAction() {
+        return {
+            res_id: this.partner.id,
+            res_model: "res.partner",
+            type: "ir.actions.act_window",
+            views: [[false, "form"]],
+        };
+    }
+
+    onSendClick() {
+        log.logic("onSendClick", () => ({ userId: this.props.id }));
+        this.openChat(this.props.id);
+        this.props.close();
+    }
+
+    /** @param {boolean} newWindow */
+    async onClickViewProfile(newWindow) {
+        const action = await this.getProfileAction();
+        this.props.close();
+        log.logic("onClickViewProfile", () => ({
+            userId: this.props.id,
+            newWindow,
+            hasAction: Boolean(action),
+        }));
+        if (!action) {
+            return;
+        }
+        this.actionService.doAction(action, { newWindow });
+    }
+}
+
+discussComponentRegistry.add("AvatarCardPopover", AvatarCardPopover);

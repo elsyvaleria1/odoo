@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+
+    <record id="param_min_required_satellites_count" model="ir.config_parameter">
+        <field name="key">device_gps.min_required_satellites_count</field>
+        <field name="value">4</field>
+    </record>
+
+    <record id="param_max_hdop_threshold" model="ir.config_parameter">
+        <field name="key">device_gps.max_hdop_threshold</field>
+        <field name="value">5.0</field>
+    </record>
+
+    <record id="param_min_allowed_latitude_degrees" model="ir.config_parameter">
+        <field name="key">device_gps.min_allowed_latitude_degrees</field>
+        <field name="value">-90.0</field>
+    </record>
+
+    <record id="param_coord_max_latitude" model="ir.config_parameter">
+        <field name="key">device_gps.max_allowed_latitude_degrees</field>
+        <field name="value">90.0</field>
+    </record>
+
+    <record id="param_coord_min_longitude" model="ir.config_parameter">
+        <field name="key">device_gps.min_allowed_longitude_degrees</field>
+        <field name="value">-180.0</field>
+    </record>
+
+    <record id="param_coord_max_longitude" model="ir.config_parameter">
+        <field name="key">device_gps.max_allowed_longitude_degrees</field>
+        <field name="value">180.0</field>
+    </record>
+
+    <record id="param_max_realistic_speed_kmh" model="ir.config_parameter">
+        <field name="key">device_gps.max_realistic_speed_kmh</field>
+        <field name="value">300.0</field>
+    </record>
+
+    <record id="param_max_fuel_level_percentage" model="ir.config_parameter">
+        <field name="key">device_gps.max_fuel_level_percentage</field>
+        <field name="value">100.0</field>
+    </record>
+
+    <record id="param_max_engine_total_hours" model="ir.config_parameter">
+        <field name="key">device_gps.max_engine_total_hours</field>
+        <field name="value">50000</field>
+    </record>
+
+    <record id="param_max_engine_speed_rpm" model="ir.config_parameter">
+        <field name="key">device_gps.max_engine_speed_rpm</field>
+        <field name="value">20000</field>
+    </record>
+
+    <record id="param_max_time_past_hours" model="ir.config_parameter">
+        <field name="key">device_gps.max_time_past_hours</field>
+        <field name="value">24</field>
+    </record>
+
+    <record id="param_max_time_future_minutes" model="ir.config_parameter">
+        <field name="key">device_gps.max_time_future_minutes</field>
+        <field name="value">5</field>
+    </record>
+
+    <record id="param_duplicate_time_window_seconds" model="ir.config_parameter">
+        <field name="key">device_gps.duplicate_time_window_seconds</field>
+        <field name="value">15</field>
+    </record>
+
+    <record id="param_duplicate_coordinate_tolerance" model="ir.config_parameter">
+        <field name="key">device_gps.duplicate_coordinate_tolerance</field>
+        <field name="value">0.00001</field>
+    </record>
+
+    <record id="config_param_motion_threshold_speed" model="ir.config_parameter">
+        <field name="key">device_gps.motion_threshold_speed_default</field>
+        <field name="value">5.0</field>
+    </record>
+
+    <record id="config_param_motion_threshold_distance" model="ir.config_parameter">
+        <field name="key">device_gps.motion_threshold_distance_default</field>
+        <field name="value">50.0</field>
+    </record>
+
+    <record id="config_param_stationary_interval" model="ir.config_parameter">
+        <field name="key">device_gps.stationary_interval_default</field>
+        <field name="value">300</field>
+    </record>
+
+    <record id="config_param_speed_limit" model="ir.config_parameter">
+        <field name="key">device_gps.speed_limit_default</field>
+        <field name="value">120.0</field>
+    </record>
+
+    <record id="config_param_battery_threshold" model="ir.config_parameter">
+        <field name="key">device_gps.battery_threshold_default</field>
+        <field name="value">20.0</field>
+    </record>
+
+    <record id="config_param_idle_threshold" model="ir.config_parameter">
+        <field name="key">device_gps.idle_threshold_default</field>
+        <field name="value">30</field>
+    </record>
+
+    <record id="config_param_webhook_auth_mode" model="ir.config_parameter">
+        <field name="key">device_gps.webhook_auth_mode</field>
+        <field name="value">enforce</field>
+    </record>
+
+</odoo>

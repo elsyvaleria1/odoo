@@ -1,0 +1,13 @@
+.o_field_property_selection {
+    .fa-star {
+        color: o-token(--o-favorite, $o-main-favorite-color);
+    }
+}
+
+.o_field_property_selection_drag {
+    cursor: grab;
+    color: #adb5bd;
+    &:hover {
+        color: o-token(--o-black, $o-component-active-color);
+    }
+}

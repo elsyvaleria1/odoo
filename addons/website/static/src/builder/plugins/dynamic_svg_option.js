@@ -1,0 +1,39 @@
+/** @odoo-module native */
+import { BaseOptionComponent, useDomState } from "@html_builder/core/utils";
+import { dynamicSVGSelector } from "@html_builder/plugins/utils";
+import { makeLogger } from "@web/core/debug/debug_logger";
+import { useLifecycleLog } from "@web/core/debug/logger_hooks";
+import { _t } from "@web/core/translation";
+
+const log = makeLogger("website.builder.option.dynamic_svg_option");
+
+export class DynamicSvgOption extends BaseOptionComponent {
+    static template = "website.DynamicSvgOption";
+    static selector = dynamicSVGSelector;
+
+    setup() {
+        super.setup();
+        useLifecycleLog(log);
+        this.title = {
+            c1: _t("Change primary color"),
+            c2: _t("Change secondary color"),
+            c3: _t("Change color"),
+            c4: _t("Change accent color"),
+            c5: _t("Change color"),
+        };
+        this.domState = useDomState((imgEl) => {
+            const colors = {};
+            const searchParams = new URL(imgEl.src, window.location.origin)
+                .searchParams;
+            for (const colorName of ["c1", "c2", "c3", "c4", "c5"]) {
+                const color = searchParams.get(colorName);
+                if (color) {
+                    colors[colorName] = color;
+                }
+            }
+            return {
+                colors: colors,
+            };
+        });
+    }
+}

@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Menu structure-->
+    <menuitem
+        id="menu_quality_root"
+        name="Quality"
+        sequence="150"
+        groups="quality.group_quality_user"
+        web_icon="quality_control,static/description/icon.png" />
+
+    <menuitem
+        id="menu_quality_dashboard"
+        name="Overview"
+        parent="menu_quality_root"
+        action="quality_alert_team_action"
+        sequence="5" />
+
+    <menuitem
+        id="menu_quality_control"
+        name="Quality Control"
+        parent="menu_quality_root"
+        sequence="15" />
+
+    <menuitem
+        id="menu_quality_control_points"
+        name="Control Points"
+        parent="menu_quality_control"
+        action="quality_point_action"
+        sequence="17"
+        groups="quality.group_quality_manager" />
+
+    <menuitem
+        id="menu_quality_checks"
+        name="Quality Checks"
+        parent="menu_quality_control"
+        action="quality_check_action_main"
+        sequence="18" />
+
+    <menuitem
+        id="menu_quality_alert"
+        name="Quality Alerts"
+        parent="menu_quality_control"
+        action="quality_alert_action_check"
+        sequence="20" />
+
+    <menuitem
+        id="menu_quality_configuration"
+        name="Configuration"
+        parent="menu_quality_root"
+        sequence="25"
+        groups="quality.group_quality_manager" />
+
+    <menuitem
+        id="menu_quality_config_alert_team"
+        name="Quality Teams"
+        parent="menu_quality_configuration"
+        action="quality_alert_team_action_config"
+        sequence="5" />
+
+    <menuitem
+        id="menu_quality_config_alert_stage"
+        name="Quality Alert Stages"
+        parent="menu_quality_configuration"
+        action="quality_alert_stage_action"
+        sequence="15"
+        groups="base.group_no_one" />
+
+    <menuitem
+        id="menu_config_quality_tags"
+        name="Quality Tags"
+        parent="menu_quality_configuration"
+        action="quality_tag_action"
+        sequence="25"
+        groups="base.group_no_one" />
+
+    <menuitem
+        id="menu_config_quality_spreadsheet_template"
+        name="Quality Spreadsheet Templates"
+        parent="menu_quality_configuration"
+        action="quality_spreadsheet_template_action_config"
+        sequence="35" />
+
+    <menuitem
+        id="menu_quality_reporting"
+        name="Reporting"
+        parent="menu_quality_root"
+        sequence="20"
+        groups="quality.group_quality_manager" />
+
+    <menuitem
+        id="menu_quality_alert_report"
+        parent="menu_quality_reporting"
+        action="quality_alert_action_report"
+        sequence="6" />
+
+    <menuitem
+        id="menu_quality_check_report"
+        parent="menu_quality_reporting"
+        action="quality_check_action_report"
+        sequence="5" />
+
+    <menuitem
+        id="quality_control_menu_product"
+        name="Products"
+        parent="quality_control.menu_quality_root"
+        sequence="18" />
+
+    <menuitem
+        id="quality_product_menu_product_template"
+        name="Products"
+        parent="quality_control_menu_product"
+        action="stock.product_template_action_product"
+        sequence="5" />
+
+    <menuitem
+        id="quality_control_menu_product_variant"
+        name="Product Variants"
+        parent="quality_control_menu_product"
+        action="product.product_normal_action"
+        sequence="10"
+        groups="product.group_product_variant" />
+
+    <menuitem
+        id="quality_control_menu_traceability"
+        name="Lots/Serial Numbers"
+        parent="quality_control_menu_product"
+        action="stock.action_product_trace"
+        sequence="15"
+        groups="stock.group_production_lot" />
+
+</odoo>

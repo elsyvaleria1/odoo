@@ -1,0 +1,346 @@
+// @ts-check
+/** @odoo-module native */
+/** @import { SuggestedRecipient } from "@mail/core/common/thread_model" */
+import { parseEmail } from "@mail/utils/common/format";
+import { Component, t, useProps } from "@odoo/owl";
+import { AutoComplete } from "@web/components/autocomplete";
+import { useTagNavigation } from "@web/components/record_selectors";
+import { makeLogger } from "@web/core/debug/debug_logger";
+import { rpc } from "@web/core/network";
+import { _t } from "@web/core/translation";
+import { elementRef } from "@web/core/utils/element_ref";
+import { isEmail } from "@web/core/utils/format/strings";
+import { uniqueId } from "@web/core/utils/functions";
+import { useService } from "@web/core/utils/hooks";
+import { useSelectCreate } from "@web/fields/relational/many2x_autocomplete";
+import { usePopover } from "@web/ui/popover";
+
+import { RecipientsInputTagsList } from "./recipients_input_tags_list.js";
+import { RecipientsPopover } from "./recipients_popover.js";
+
+const log = makeLogger("mail.recipients");
+
+export class RecipientsInput extends Component {
+    static template = "mail.RecipientsInput";
+    static components = { AutoComplete, RecipientsInputTagsList };
+    static props = { thread: t.object() };
+    props = useProps(this.constructor.props);
+
+    setup() {
+        this.orm = useService("orm");
+        this.action = useService("action");
+        this.store = useService("mail.store");
+        this.popover = usePopover(RecipientsPopover, { position: "bottom-middle" });
+        this.recipientsInputRefRef = elementRef();
+        useTagNavigation(this.recipientsInputRefRef, {
+            delete: this.deleteTagByIndex.bind(this),
+        });
+
+        this.openListViewToSelectResPartner = useSelectCreate({
+            resModel: "res.partner",
+            activeActions: {
+                create: false,
+                link: true,
+            },
+            /** @param {Object} resIds */
+            onSelected: async (resIds) => {
+                const partners = await this.orm.searchRead(
+                    "res.partner",
+                    [["id", "in", Array.from(resIds)]],
+                    ["email", "id", "lang", "name"],
+                );
+                for (const partner of partners) {
+                    this.insertAdditionalRecipient({
+                        email: partner.email,
+                        name: partner.name,
+                        partner_id: partner.id,
+                    });
+                }
+            },
+        });
+    }
+
+    /** @param {number} index */
+    deleteTagByIndex(index) {
+        const tags = this.getTagsFromMailThread();
+        if (tags[index]) {
+            tags[index].onDelete();
+        }
+    }
+
+    /** @returns {Set<number>} */
+    getExcludedRecipientPartnerIds() {
+        return new Set(
+            this.props.thread.allRecipients
+                .map((recipient) => recipient.partner_id)
+                .filter(/** @returns {id is number} */ (id) => typeof id === "number"),
+        );
+    }
+    /**
+     * @param {string} name
+     * @param {string} email
+     * @param {Set<number>} partnerIds
+     * @param {number} limit
+     */
+    async searchRecipientCandidates(name, email, partnerIds, limit) {
+        const endSearch = log.perf("searchRecipientCandidates");
+        const matches = await this.orm.searchRead(
+            "res.partner",
+            [
+                ["id", "not in", Array.from(partnerIds)],
+                "|",
+                ["display_name", "ilike", name],
+                email ? ["email_normalized", "ilike", email] : [0, "=", 1],
+            ],
+            ["display_name", "email", "id", "lang", "name"],
+            { limit },
+        );
+        endSearch({ name, email, excluded: partnerIds.size, matches: matches.length });
+        return matches;
+    }
+    /**
+     * @param {Object[]} matches
+     * @returns {Object[]}
+     */
+    toRecipientOptions(matches) {
+        return matches.map((match) => ({
+            label: match.email
+                ? _t("%(partner_name)s <%(partner_email)s>", {
+                      partner_name: match.name || match.display_name || _t("Unnamed"),
+                      partner_email: match.email,
+                  })
+                : match.name || match.display_name || _t("Unnamed"),
+            onSelect: () => {
+                this.insertAdditionalRecipient({
+                    display_name: match.display_name,
+                    email: match.email,
+                    name: match.name,
+                    partner_id: match.id,
+                });
+            },
+        }));
+    }
+    /** @returns {Object} */
+    makeSearchMoreOption() {
+        return {
+            label: _t("Search More..."),
+            cssClass: "o_m2o_dropdown_option o_m2o_dropdown_option_search_more",
+            onSelect: () => {
+                this.openListViewToSelectResPartner({});
+            },
+        };
+    }
+    /**
+     * @param {string} name
+     * @param {string} email
+     * @param {string} term
+     * @returns {Object}
+     */
+    makeCreateRecipientOption(name, email, term) {
+        const createOption = {
+            cssClass: "o_m2o_dropdown_option o_m2o_dropdown_option_create",
+            label: _t("Create %s", name),
+        };
+
+        if (isEmail(email)) {
+            createOption.onSelect = async () => {
+                const partners = await rpc("/mail/partner/from_email", {
+                    thread_model: this.props.thread.model,
+                    thread_id: this.props.thread.id,
+                    emails: [term],
+                });
+                log.logic("create recipient from email", () => ({
+                    thread: this.props.thread.localId,
+                    email,
+                    found: partners.length,
+                }));
+                if (partners.length) {
+                    const partner = partners[0];
+                    this.insertAdditionalRecipient({
+                        email: partner.email,
+                        name: partner.name,
+                        partner_id: partner.id,
+                    });
+                } else {
+                    this.insertAdditionalRecipient({
+                        email,
+                        name,
+                        partner_id: false,
+                    });
+                }
+            };
+        } else {
+            createOption.onSelect = async () => {
+                const [partnerId] = await this.orm.create("res.partner", [
+                    { name, email },
+                ]);
+                log.logic("create recipient partner", () => ({
+                    thread: this.props.thread.localId,
+                    name,
+                    partnerId,
+                }));
+                this.insertAdditionalRecipient({
+                    email,
+                    name,
+                    partner_id: partnerId,
+                });
+            };
+        }
+        return createOption;
+    }
+    getAutoCompleteSources() {
+        return [
+            {
+                placeholder: _t("Loading..."),
+                /** @param {string} term */
+                options: async (term) => {
+                    const limit = 8;
+                    const [parsedName, parsedEmail] = term
+                        ? parseEmail(term)
+                        : ["", ""];
+                    const name = parsedName || "";
+                    const email = parsedEmail || "";
+                    const matches = await this.searchRecipientCandidates(
+                        name,
+                        email,
+                        this.getExcludedRecipientPartnerIds(),
+                        limit,
+                    );
+                    const options = this.toRecipientOptions(matches);
+                    if (matches.length >= limit) {
+                        options.push(this.makeSearchMoreOption());
+                    }
+                    if (name.trim() || email) {
+                        options.push(this.makeCreateRecipientOption(name, email, term));
+                    }
+                    return options;
+                },
+            },
+        ];
+    }
+
+    /** @returns {Object[]} */
+    getTagsFromMailThread() {
+        const tags = [];
+        /**
+         * @param {{name?: string, display_name?: string, email?: string, partner_id?: number}} recipient
+         * @param {string} recipientField
+         */
+        const createTagForRecipient = (recipient, recipientField) => {
+            const title =
+                `${recipient.name || recipient.display_name || _t("Unnamed")} ${
+                    recipient.email ? "<" + recipient.email + ">" : ""
+                }`.trim();
+            tags.push({
+                id: `${recipientField}_${
+                    recipient.partner_id ?? recipient.email ?? uniqueId("tag_")
+                }`,
+                resId: recipient.partner_id,
+                canEdit: true,
+                text:
+                    recipient.name ||
+                    recipient.display_name ||
+                    recipient.email ||
+                    _t("Unnamed"),
+                name: recipient.name || recipient.display_name || _t("Unnamed"),
+                email: recipient.email,
+                title,
+                /** @param {MouseEvent} ev */
+                onClick: (ev) => {
+                    if (recipient.partner_id && recipient.email) {
+                        const viewProfileBtnOverride = () => {
+                            const action = {
+                                type: "ir.actions.act_window",
+                                res_model: "res.partner",
+                                res_id: recipient.partner_id,
+                                views: [[false, "form"]],
+                                target: "current",
+                            };
+                            this.action.doAction(action);
+                        };
+                        this.popover.open(/** @type {HTMLElement} */ (ev.target), {
+                            viewProfileBtnOverride,
+                            id: recipient.partner_id,
+                        });
+                    }
+                },
+                onDelete: () => {
+                    log.logic("delete recipient tag", () => ({
+                        thread: this.props.thread.localId,
+                        recipientField,
+                        partnerId: recipient.partner_id,
+                    }));
+                    this.props.thread[recipientField] = this.props.thread[
+                        recipientField
+                    ].filter(
+                        (additionalOrSuggestedRecipient) =>
+                            additionalOrSuggestedRecipient.partner_id !==
+                                recipient.partner_id ||
+                            additionalOrSuggestedRecipient.email !== recipient.email,
+                    );
+                },
+            });
+        };
+        for (const recipient of this.props.thread.suggestedRecipients) {
+            createTagForRecipient(recipient, "suggestedRecipients");
+        }
+        for (const recipient of this.props.thread.additionalRecipients) {
+            createTagForRecipient(recipient, "additionalRecipients");
+        }
+        return tags;
+    }
+
+    /**
+     * @param {string} emailNormalized
+     * @param {number} recipientPartnerId
+     */
+    async updateRecipient(emailNormalized, recipientPartnerId) {
+        log.logic("updateRecipient", () => ({ recipientPartnerId }));
+        await this.orm.write("res.partner", [recipientPartnerId], {
+            email: emailNormalized,
+        });
+        const recipient = this.props.thread.allRecipients.find(
+            (candidate) => candidate.partner_id === recipientPartnerId,
+        );
+        if (recipient) {
+            recipient.email = emailNormalized;
+        }
+    }
+
+    /**
+     * @param {SuggestedRecipient} recipient
+     * @returns {boolean}
+     */
+    hasRecipient(recipient) {
+        return this.props.thread.allRecipients.some((current) =>
+            current.partner_id && recipient.partner_id
+                ? current.partner_id === recipient.partner_id
+                : Boolean(current.email) && current.email === recipient.email,
+        );
+    }
+
+    /** @param {SuggestedRecipient} recipient */
+    insertAdditionalRecipient(recipient) {
+        if (this.hasRecipient(recipient)) {
+            log.logic("insertAdditionalRecipient duplicate", () => ({
+                partnerId: recipient.partner_id,
+                email: recipient.email,
+            }));
+            return;
+        }
+        log.logic("insertAdditionalRecipient", () => ({
+            thread: this.props.thread.localId,
+            partnerId: recipient.partner_id,
+            email: recipient.email,
+        }));
+        this.props.thread.additionalRecipients.push(recipient);
+    }
+
+    /** @returns {string} */
+    getPlaceholder() {
+        const hasRecipients =
+            this.props.thread.suggestedRecipients.length ||
+            this.props.thread.additionalRecipients.length;
+        return hasRecipients ? "" : _t("Followers only");
+    }
+}

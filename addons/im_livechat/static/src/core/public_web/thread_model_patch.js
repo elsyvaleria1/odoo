@@ -1,0 +1,127 @@
+/** @odoo-module native */
+import { fields } from "@mail/core/common/record";
+import { DiscussChannel } from "@mail/discuss/core/common/discuss_channel_model";
+import { _t } from "@web/core/translation";
+import { patch } from "@web/core/utils/patch";
+
+patch(DiscussChannel.prototype, {
+    setup() {
+        super.setup(...arguments);
+        this.country_id = fields.One("res.country");
+        this.livechat_channel_id = fields.One("im_livechat.channel", {
+            inverse: "threads",
+        });
+        this.livechat_expertise_ids = fields.Many("im_livechat.expertise");
+        /** @type {"in_progress"|"waiting"|"need_help"|undefined} */
+        this.livechat_status = fields.Attr(undefined, {
+            onUpdate() {
+                if (this.livechat_status === "need_help") {
+                    this.wasLookingForHelp = true;
+                    this.unpinOnThreadSwitch = false;
+                    return;
+                }
+                if (this.wasLookingForHelp) {
+                    this.wasLookingForHelp = false;
+                    this.unpinOnThreadSwitch = this.eq(this.store.discuss?.thread);
+                }
+            },
+        });
+        this.shadowedBySelf = 0;
+    },
+    get canLeave() {
+        return (
+            super.canLeave &&
+            (this.livechat_status !== "need_help" || Boolean(this.self_member_id))
+        );
+    },
+    get hasMemberList() {
+        return this.isLivechat || super.hasMemberList;
+    },
+    get correspondents() {
+        return super.correspondents.filter(
+            (correspondent) => correspondent.livechat_member_type !== "bot",
+        );
+    },
+
+    computeCorrespondent() {
+        const correspondent = super.computeCorrespondent();
+        if (this.isLivechat && !correspondent) {
+            return this.livechatVisitorMember;
+        }
+        return correspondent;
+    },
+
+    get displayName() {
+        if (
+            !this.isLivechat ||
+            !this.correspondent ||
+            this.self_member_id?.custom_channel_name
+        ) {
+            return super.displayName;
+        }
+        if (
+            !this.correspondent.persona.is_public &&
+            this.correspondent.persona.country
+        ) {
+            return `${this.correspondent.name} (${this.correspondent.persona.country.name})`;
+        }
+        if (this.country_id) {
+            return `${this.correspondent.name} (${this.country_id.name})`;
+        }
+        return this.correspondent.name;
+    },
+
+    get avatarUrl() {
+        if (this.isLivechat && this.correspondent) {
+            return this.correspondent.avatarUrl;
+        }
+        return super.avatarUrl;
+    },
+
+    get inChathubOnNewMessage() {
+        if (this.isLivechat) {
+            return Boolean(this.self_member_id);
+        }
+        return super.inChathubOnNewMessage;
+    },
+    get notifyWhenOutOfFocus() {
+        if (this.isLivechat) {
+            return (
+                this.self_member_id ||
+                this.shadowedBySelf ||
+                this.eq(this.store.discuss?.thread)
+            );
+        }
+        return super.notifyWhenOutOfFocus;
+    },
+    get matchesSelfExpertise() {
+        return (
+            this.store.selfUser &&
+            this.livechat_expertise_ids.some((expertise) =>
+                expertise.in(
+                    this.store.self_partner.main_user_id.livechat_expertise_ids,
+                ),
+            )
+        );
+    },
+    get shouldSubscribeToBusChannel() {
+        return super.shouldSubscribeToBusChannel || Boolean(this.shadowedBySelf);
+    },
+    async leaveChannel({ force = false } = {}) {
+        if (
+            this.isLivechat &&
+            this.channel_member_ids.length <= 2 &&
+            this.self_member_id &&
+            !this.livechat_end_dt &&
+            !force
+        ) {
+            const confirmed = await this.askLeaveConfirmation(
+                _t("Leaving will end the live chat. Do you want to proceed?"),
+            );
+            if (!confirmed) {
+                return false;
+            }
+        }
+        return super.leaveChannel(...arguments);
+    },
+});

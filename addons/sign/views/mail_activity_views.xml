@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="mail_activity_type_view_form" model="ir.ui.view">
+        <field name="name">mail.activity.type.view.form.inherit.sign</field>
+        <field name="model">mail.activity.type</field>
+        <field name="inherit_id" ref="mail.mail_activity_type_view_form" />
+        <field name="mode">primary</field>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='category']" position="after">
+                <field
+                    name="default_sign_template_id"
+                    options="{'no_quick_create': True, 'no_create_edit': True}"
+                    invisible="category != 'sign_request'" />
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

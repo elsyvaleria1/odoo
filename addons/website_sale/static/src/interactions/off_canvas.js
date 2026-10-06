@@ -1,0 +1,31 @@
+/** @odoo-module native */
+import { registry } from "@web/core/registry";
+import { Interaction } from "@web/public/interaction";
+
+export class OffCanvas extends Interaction {
+    static selector = "#o_wsale_offcanvas";
+    dynamicContent = {
+        _root: {
+            "t-on-show.bs.offcanvas": this.toggleFilters,
+            "t-on-hidden.bs.offcanvas": this.toggleFilters,
+        },
+    };
+
+    /**
+     * @param {Event} ev
+     */
+    toggleFilters() {
+        for (const btn of this.el.querySelectorAll("button[data-status]")) {
+            if (
+                (btn.classList.contains("collapsed") &&
+                    btn.dataset.status === "active") ||
+                (!btn.classList.contains("collapsed") &&
+                    btn.dataset.status === "inactive")
+            ) {
+                btn.click();
+            }
+        }
+    }
+}
+
+registry.category("public.interactions").add("website_sale.off_canvas", OffCanvas);

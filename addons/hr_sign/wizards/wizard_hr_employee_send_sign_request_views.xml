@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_hr_contract_sign" model="ir.ui.view">
+        <field name="name">hr_contract_sign</field>
+        <field name="model">wizard.hr.employee.send.sign.request</field>
+        <field name="arch" type="xml">
+            <form string="Signature Request">
+                <div
+                    role="alert"
+                    class="alert alert-warning text-center d-flex align-items-center justify-content-center gap-1"
+                    invisible="not template_warning"
+                    title="No template available">
+                    <field name="template_warning" readonly="1" />
+                    <widget
+                        name="upload_pdf_button"
+                        title="Upload a PDF to set a new one." />
+                </div>
+                <group class="o_label_nowrap">
+                    <field name="version_id" invisible="1" />
+                    <field name="has_both_template" invisible="1" />
+                    <field name="sign_template_responsible_ids" invisible="1" />
+                    <field name="possible_template_ids" invisible="1" />
+                    <field
+                        name="sign_template_ids"
+                        widget="many2many_tags"
+                        force_save="1"
+                        context="{'kanban_view_ref': 'sign.sign_template_view_kanban_mobile'}"
+                        options="{'no_create': True}" />
+                    <field
+                        name="employee_ids"
+                        widget="many2many_avatar_employee"
+                        required="1" />
+                    <field
+                        name="mail_to"
+                        widget="radio"
+                        options="{'horizontal': True}" />
+                    <field
+                        name="mail_displayed"
+                        string=""
+                        invisible="not mail_displayed" />
+                </group>
+                <group string="Sign Request Options" invisible="not sign_template_ids">
+                    <field name="employee_role_id" options="{'no_create': True}" />
+                    <field
+                        name="responsible_id"
+                        widget="many2one_avatar"
+                        options="{'no_create_edit': True}"
+                        invisible="not has_both_template"
+                        required="has_both_template" />
+                    <field
+                        name="cc_partner_ids"
+                        placeholder="Write email or search contact..."
+                        widget="many2many_tags" />
+                </group>
+                <group string="Mail Options" class="o_label_nowrap">
+                    <field name="subject" placeholder="Signature Request" />
+                </group>
+                <field name="message" placeholder="Optional Message..." widget="html" />
+                <field
+                    name="attachment_ids"
+                    string="Attach a file"
+                    widget="many2many_binary" />
+                <footer>
+                    <button
+                        name="action_confirm_signature"
+                        type="object"
+                        string="Send"
+                        class="oe_highlight"
+                        data-hotkey="q" />
+                    <button
+                        special="cancel"
+                        string="Discard"
+                        class="btn-secondary"
+                        data-hotkey="x" />
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="sign_contract_wizard_action" model="ir.actions.act_window">
+        <field name="name">Document Signature</field>
+        <field name="res_model">wizard.hr.employee.send.sign.request</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+
+</odoo>

@@ -1,0 +1,30 @@
+from odoo import models
+from odoo.libs.debug_log import DebugLog
+
+_debug = DebugLog(__name__)
+
+
+class WizardResPartnerMerge(models.TransientModel):
+    _inherit = "wizard.res.partner.merge"
+
+    def _log_merge_operation(
+        self, src_partners: models.BaseModel, dst_partner: models.BaseModel
+    ) -> None:
+        super()._log_merge_operation(src_partners, dst_partner)
+        _debug.lifecycle(
+            "merge_logged", destination=dst_partner.id, sources=src_partners.ids
+        )
+        dst_partner.message_post(
+            body=self.env._(
+                "Merged with the following partners: %s",
+                [
+                    self.env._(
+                        "%(partner)s <%(email)s> (ID %(id)s)",
+                        partner=p.name,
+                        email=p.email or "n/a",
+                        id=p.id,
+                    )
+                    for p in src_partners
+                ],
+            )
+        )

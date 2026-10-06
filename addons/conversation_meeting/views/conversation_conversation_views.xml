@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="conversation_conversation_view_form_meeting" model="ir.ui.view">
+        <field name="name">conversation.conversation.view.form.meeting</field>
+        <field name="model">conversation.conversation</field>
+        <field
+            name="inherit_id"
+            ref="conversation.conversation_conversation_view_form" />
+        <field name="arch" type="xml">
+            <button name="action_analyse_speech" position="after">
+                <button
+                    name="action_export_minute"
+                    type="object"
+                    string="Export minute"
+                    invisible="kind != 'meeting' or not has_media" />
+                <button
+                    name="action_start_live"
+                    type="object"
+                    string="Start live session"
+                    groups="conversation.group_user"
+                    invisible="kind != 'meeting' or is_live or state not in ('no_audio', 'pending', 'transcribed')" />
+                <button
+                    name="action_stop_live"
+                    type="object"
+                    string="Stop live session"
+                    invisible="not is_live"
+                    class="btn-warning" />
+            </button>
+            <field name="hub_task_id" position="after">
+                <field name="calendar_event_id" invisible="kind == 'call'" />
+                <field
+                    name="minute_attachment_id"
+                    invisible="not minute_attachment_id" />
+                <field name="is_live" invisible="1" />
+                <field name="live_chunk_count" invisible="1" />
+                <field name="live_elapsed_s" invisible="1" />
+            </field>
+            <page name="summary" position="before">
+                <page
+                    name="live"
+                    string="Live"
+                    invisible="kind != 'meeting' or (not is_live and not coaching_note_ids)">
+                    <widget name="conversation_live_panel" />
+                    <separator string="Coach notices" />
+                    <field name="coaching_note_ids" nolabel="1" readonly="1">
+                        <list>
+                            <field name="at_s" />
+                            <field name="text" />
+                        </list>
+                    </field>
+                </page>
+            </page>
+        </field>
+    </record>
+
+</odoo>

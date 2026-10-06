@@ -1,0 +1,54 @@
+// @ts-check
+/** @odoo-module native */
+import { ActivityButton } from "@mail/core/web/activity_button";
+import { Component, t, useProps } from "@odoo/owl";
+import { registry } from "@web/core/registry";
+import { _t } from "@web/core/translation";
+import { standardFieldProps } from "@web/fields/standard_field_props";
+class ListActivityButton extends ActivityButton {
+    static props = { ...ActivityButton.props, slots: t.object() };
+    static template = "mail.ListActivityButton";
+
+    setup() {
+        super.setup();
+        this.defaultActivityStateClass = "";
+        this.defaultActivityDecorationClass = "fa-regular fa-clock";
+    }
+}
+
+export class ListActivity extends Component {
+    static components = { ActivityButton: ListActivityButton };
+    static fieldDependencies = [
+        { name: "activity_exception_decoration", type: "selection", selection: [] },
+        { name: "activity_exception_icon", type: "char" },
+        { name: "activity_state", type: "selection", selection: [] },
+        { name: "activity_summary", type: "char" },
+        { name: "activity_type_icon", type: "char" },
+        { name: "activity_type_id", type: "many2one", relation: "mail.activity.type" },
+    ];
+    static props = standardFieldProps;
+    static template = "mail.ListActivity";
+    props = useProps(this.constructor.props);
+
+    get summaryText() {
+        if (this.props.record.data.activity_exception_decoration) {
+            return _t("Warning");
+        }
+        if (this.props.record.data.activity_summary) {
+            return this.props.record.data.activity_summary;
+        }
+        if (this.props.record.data.activity_type_id) {
+            return this.props.record.data.activity_type_id.display_name;
+        }
+        return undefined;
+    }
+}
+
+export const listActivity = {
+    component: ListActivity,
+    fieldDependencies: ListActivity.fieldDependencies,
+    displayName: _t("List Activity"),
+    supportedTypes: ["one2many"],
+};
+
+registry.category("fields").add("list_activity", listActivity);

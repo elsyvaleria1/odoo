@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record
+        id="resource_resource_view_tree_inherit_pos_restaurant_appointment"
+        model="ir.ui.view">
+        <field
+            name="name">resource.resource.view.list.inherit.pos.restaurant.appointment</field>
+        <field name="model">resource.resource</field>
+        <field name="inherit_id" ref="calendar.resource_resource_view_list_booking" />
+        <field name="arch" type="xml">
+            <field name="capacity" position="before">
+                <field name="is_used" widget="json_field_resource" optional="show" />
+            </field>
+        </field>
+    </record>
+
+</odoo>

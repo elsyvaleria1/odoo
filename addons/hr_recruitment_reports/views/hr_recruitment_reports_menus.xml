@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <menuitem
+        id="hr_recruitment.hr_applicant_report_menu"
+        name="Application Analysis"
+        parent="hr_recruitment.report_hr_recruitment"
+        action="recruitment_report_action"
+        sequence="1" />
+
+    <menuitem
+        id="hr_applicant_report_source_menu"
+        parent="hr_recruitment.report_hr_recruitment"
+        action="recruitment_report_source_action"
+        sequence="2" />
+
+    <menuitem
+        id="hr_applicant_report_team_menu"
+        parent="hr_recruitment.report_hr_recruitment"
+        action="recruitment_report_team_action"
+        sequence="4" />
+
+    <menuitem
+        id="hr_applicant_stage_report_menu"
+        parent="hr_recruitment.report_hr_recruitment"
+        action="recruitment_stage_report_action"
+        sequence="3" />
+
+</odoo>

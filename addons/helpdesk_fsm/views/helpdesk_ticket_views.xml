@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <data>
+        <record id="helpdesk_ticket_view_form" model="ir.ui.view">
+            <field name="name">helpdesk.ticket.form.inherit</field>
+            <field name="model">helpdesk.ticket</field>
+            <field name="inherit_id" ref="helpdesk.helpdesk_ticket_view_form" />
+            <field name="priority">80</field>
+            <field name="arch" type="xml">
+                <xpath expr="header" position="inside">
+                    <field name="use_fsm" invisible="1" />
+                    <button
+                        name="action_generate_fsm_task"
+                        type="object"
+                        string="Plan Intervention"
+                        groups="industry_fsm.group_fsm_user"
+                        invisible="not use_fsm"
+                        class="btn btn-secondary"
+                        data-hotkey="w" />
+                </xpath>
+                <xpath
+                    expr="//button[@name='action_view_helpdesk_ticket']"
+                    position="before">
+                    <button
+                        name="action_view_fsm_tasks"
+                        type="object"
+                        icon="fa-tasks"
+                        groups="industry_fsm.group_fsm_user"
+                        invisible="fsm_task_count == 0"
+                        class="oe_stat_button">
+                        <field name="fsm_task_count" string="Tasks" widget="statinfo" />
+                    </button>
+                </xpath>
+            </field>
+        </record>
+    </data>
+
+</odoo>

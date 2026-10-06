@@ -1,0 +1,440 @@
+from odoo.exceptions import AccessError, UserError
+from odoo.fields import Command
+from odoo.tests import Form, common
+
+
+class TestMrpMulticompany(common.TransactionCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.env.ref("base.group_user").write(
+            {"implied_ids": [(4, cls.env.ref("stock.group_production_lot").id)]}
+        )
+
+        group_user = cls.env.ref("base.group_user")
+        group_mrp_manager = cls.env.ref("mrp.group_mrp_manager")
+        cls.company_a = cls.env["res.company"].create({"name": "Company A"})
+        cls.company_b = cls.env["res.company"].create({"name": "Company B"})
+        cls.warehouse_a = cls.env["stock.warehouse"].search(
+            [("company_id", "=", cls.company_a.id)], limit=1
+        )
+        cls.warehouse_b = cls.env["stock.warehouse"].search(
+            [("company_id", "=", cls.company_b.id)], limit=1
+        )
+        cls.stock_location_a = cls.warehouse_a.lot_stock_id
+        cls.stock_location_b = cls.warehouse_b.lot_stock_id
+
+        cls.user_a = cls.env["res.users"].create(
+            {
+                "name": "user company a with access to company b",
+                "login": "user a",
+                "group_ids": [(6, 0, [group_user.id, group_mrp_manager.id])],
+                "company_id": cls.company_a.id,
+                "company_ids": [(6, 0, [cls.company_a.id, cls.company_b.id])],
+            }
+        )
+        cls.user_b = cls.env["res.users"].create(
+            {
+                "name": "user company a with access to company b",
+                "login": "user b",
+                "group_ids": [(6, 0, [group_user.id, group_mrp_manager.id])],
+                "company_id": cls.company_b.id,
+                "company_ids": [(6, 0, [cls.company_a.id, cls.company_b.id])],
+            }
+        )
+
+    def test_bom_1(self):
+        product_b = self.env["product.product"].create(
+            {
+                "name": "p1",
+                "company_id": self.company_b.id,
+            }
+        )
+        with self.assertRaises(UserError):
+            self.env["mrp.bom"].create(
+                {
+                    "product_id": product_b.id,
+                    "product_tmpl_id": product_b.product_tmpl_id.id,
+                    "company_id": self.company_a.id,
+                }
+            )
+
+    def test_bom_2(self):
+        product_a = self.env["product.product"].create(
+            {
+                "name": "p1",
+                "company_id": self.company_a.id,
+            }
+        )
+        product_b = self.env["product.product"].create(
+            {
+                "name": "p2",
+                "company_id": self.company_b.id,
+            }
+        )
+        with self.assertRaises(UserError):
+            self.env["mrp.bom"].create(
+                {
+                    "product_id": product_a.id,
+                    "product_tmpl_id": product_b.product_tmpl_id.id,
+                    "company_id": self.company_a.id,
+                    "bom_line_ids": [(0, 0, {"product_id": product_b.id})],
+                }
+            )
+
+    def test_production_1(self):
+        product_a = self.env["product.product"].create(
+            {
+                "name": "p1",
+                "company_id": self.company_a.id,
+            }
+        )
+        mo = self.env["mrp.production"].create(
+            {
+                "product_id": product_a.id,
+                "product_uom_id": product_a.uom_id.id,
+                "company_id": self.company_b.id,
+            }
+        )
+        with self.assertRaises(UserError):
+            mo.action_confirm()
+
+    def test_production_2(self):
+        product_a = self.env["product.product"].create(
+            {
+                "name": "p1",
+                "company_id": self.company_a.id,
+            }
+        )
+        component_a = self.env["product.product"].create(
+            {
+                "name": "p2",
+                "company_id": self.company_a.id,
+            }
+        )
+        self.env["mrp.bom"].create(
+            {
+                "product_id": product_a.id,
+                "product_tmpl_id": product_a.product_tmpl_id.id,
+                "company_id": self.company_a.id,
+                "bom_line_ids": [(0, 0, {"product_id": component_a.id})],
+            }
+        )
+        mo_form = Form(self.env["mrp.production"].with_user(self.user_a))
+        mo_form.product_id = product_a
+        mo = mo_form.save()
+        mo.with_user(self.user_b).action_confirm()
+        self.assertEqual(mo.move_raw_ids.company_id, self.company_a)
+        self.assertEqual(mo.move_finished_ids.company_id, self.company_a)
+
+    def test_product_produce_1(self):
+        product = self.env["product.product"].create(
+            {
+                "name": "p1",
+                "is_storable": True,
+                "tracking": "lot",
+            }
+        )
+        component = self.env["product.product"].create(
+            {
+                "name": "p2",
+            }
+        )
+        lot_b = self.env["product.trace"].create(
+            {
+                "product_id": product.id,
+                "company_id": self.company_b.id,
+            }
+        )
+        self.env["mrp.bom"].create(
+            {
+                "product_id": product.id,
+                "product_tmpl_id": product.product_tmpl_id.id,
+                "company_id": self.company_a.id,
+                "bom_line_ids": [(0, 0, {"product_id": component.id})],
+            }
+        )
+        mo_form = Form(self.env["mrp.production"].with_user(self.user_a))
+        mo_form.product_id = product
+        mo = mo_form.save()
+        mo.action_confirm()
+        mo_form = Form(mo)
+        mo_form.trace_producing_ids.set(lot_b)
+        mo = mo_form.save()
+        with self.assertRaises(UserError):
+            mo.with_user(self.user_b).action_confirm()
+
+    def test_product_produce_2(self):
+        product = self.env["product.product"].create(
+            {
+                "name": "p1",
+            }
+        )
+        component = self.env["product.product"].create(
+            {
+                "name": "p2",
+                "is_storable": True,
+                "tracking": "lot",
+            }
+        )
+        lot_b = self.env["product.trace"].create(
+            {
+                "product_id": component.id,
+                "company_id": self.company_b.id,
+            }
+        )
+        self.env["mrp.bom"].create(
+            {
+                "product_id": product.id,
+                "product_tmpl_id": product.product_tmpl_id.id,
+                "company_id": self.company_a.id,
+                "bom_line_ids": [(0, 0, {"product_id": component.id})],
+            }
+        )
+        mo_form = Form(self.env["mrp.production"].with_user(self.user_a))
+        mo_form.product_id = product
+        mo = mo_form.save()
+        mo.with_user(self.user_b).action_confirm()
+        mo_form = Form(mo)
+        mo_form.qty_producing = 1
+        mo = mo_form.save()
+        details_operation_form = Form(
+            mo.move_raw_ids[0],
+            view=self.env.ref("stock.view_stock_move_form_operations"),
+        )
+        with details_operation_form.move_line_ids.edit(0) as ml:
+            ml.trace_id = lot_b
+            ml.quantity = 1
+        details_operation_form.save()
+        mo.move_raw_ids.picked = True
+        with self.assertRaises(UserError):
+            mo.button_mark_done()
+
+    def test_is_kit_in_multi_company_env(self):
+        product1, product2 = self.env["product.product"].create(
+            [{"name": "Kit Kat"}, {"name": "twix"}]
+        )
+        self.env["mrp.bom"].create(
+            [
+                {
+                    "product_id": product1.id,
+                    "product_tmpl_id": product1.product_tmpl_id.id,
+                    "company_id": self.company_a.id,
+                    "type": "phantom",
+                },
+                {
+                    "product_id": product2.id,
+                    "product_tmpl_id": product2.product_tmpl_id.id,
+                    "company_id": False,
+                    "type": "phantom",
+                },
+            ]
+        )
+        template1 = product1.product_tmpl_id
+        template2 = product2.product_tmpl_id
+
+        self.assertFalse(
+            product1.with_context(
+                allowed_company_ids=[self.company_b.id, self.company_a.id]
+            ).is_kit
+        )
+        self.assertFalse(
+            template1.with_context(
+                allowed_company_ids=[self.company_b.id, self.company_a.id]
+            ).is_kit
+        )
+        self.assertTrue(product1.with_company(self.company_a).is_kit)
+        self.assertTrue(template1.with_company(self.company_a).is_kit)
+        self.assertFalse(product1.with_company(self.company_b).is_kit)
+        self.assertFalse(template1.with_company(self.company_b).is_kit)
+
+        self.assertTrue(product2.with_company(self.company_a).is_kit)
+        self.assertTrue(template2.with_company(self.company_a).is_kit)
+        self.assertTrue(product2.with_company(self.company_b).is_kit)
+        self.assertTrue(template2.with_company(self.company_b).is_kit)
+
+    def test_partner_1(self):
+        shared_product = self.env["product.product"].create(
+            {
+                "name": "Shared Product",
+                "company_id": False,
+            }
+        )
+        with self.assertRaises(UserError):
+            shared_product.with_user(
+                self.user_b
+            ).property_stock_production = self.stock_location_a
+
+    def test_company_specific_routes_and_company_creation(self):
+        company = self.env.company
+        warehouse = self.env["stock.warehouse"].search(
+            [("company_id", "=", company.id)], limit=1
+        )
+
+        manufacture_rule = warehouse.manufacture_pull_id
+        manufacture_route = manufacture_rule.route_id
+
+        for rule in manufacture_route.rule_ids.sudo():
+            rule_company = rule.company_id
+            if not rule_company or rule_company == company:
+                continue
+            manufacture_route.copy(
+                {
+                    "company_id": rule_company.id,
+                    "rule_ids": [(4, rule.id)],
+                }
+            )
+        manufacture_route.company_id = company
+
+        new_company = self.env["res.company"].create({"name": "Super Company"})
+        new_warehouse = self.env["stock.warehouse"].search(
+            [("company_id", "=", new_company.id)], limit=1
+        )
+        self.assertEqual(
+            new_warehouse.manufacture_pull_id.route_id.company_id, new_company
+        )
+
+    def test_company_specific_routes_and_warehouse_creation(self):
+        group_stock_manager = self.env.ref("stock.group_stock_manager")
+        self.user_a.write({"group_ids": [(4, group_stock_manager.id)]})
+
+        manufacture_route = self.env.ref("mrp.route_warehouse0_manufacture")
+        for rule in manufacture_route.rule_ids.sudo():
+            rule_company = rule.company_id
+            if not rule_company or rule_company == self.company_a:
+                continue
+            manufacture_route.copy(
+                {
+                    "company_id": rule_company.id,
+                    "rule_ids": [(4, rule.id)],
+                }
+            )
+        manufacture_route.company_id = self.company_a
+
+        group_user = self.env.ref("base.group_user")
+        group_stock_multi_warehouses = self.env.ref(
+            "stock.group_stock_multi_warehouses"
+        )
+        group_stock_multi_locations = self.env.ref("stock.group_stock_multi_locations")
+        self.env["res.config.settings"].create(
+            {
+                "group_stock_multi_locations": True,
+            }
+        ).execute()
+        group_user.write(
+            {
+                "implied_ids": [
+                    (4, group_stock_multi_warehouses.id),
+                    (4, group_stock_multi_locations.id),
+                ]
+            }
+        )
+
+        new_warehouse = (
+            self.env["stock.warehouse"]
+            .with_user(self.user_a)
+            .with_context(allowed_company_ids=[self.company_b.id])
+            .create(
+                {
+                    "name": "Warehouse #2",
+                    "code": "WH2",
+                }
+            )
+        )
+        self.assertEqual(
+            new_warehouse.manufacture_pull_id.route_id.company_id, self.company_b
+        )
+
+    def test_multi_company_kit_reservation(self):
+        semi_kit_product = self.env["product.product"].create(
+            {
+                "name": "Kit Kat",
+                "is_storable": True,
+            }
+        )
+        self.env["mrp.bom"].create(
+            [
+                {
+                    "product_id": semi_kit_product.id,
+                    "product_tmpl_id": semi_kit_product.product_tmpl_id.id,
+                    "company_id": self.company_a.id,
+                    "type": "phantom",
+                }
+            ]
+        )
+        warehouse_b = self.env["stock.warehouse"].search(
+            [("company_id", "=", self.company_b.id)], limit=1
+        )
+        delivery = (
+            self.env["stock.picking"]
+            .with_company(self.company_b.id)
+            .create(
+                {
+                    "picking_type_id": warehouse_b.out_type_id.id,
+                    "location_id": warehouse_b.lot_stock_id.id,
+                    "location_dest_id": self.ref("stock.stock_location_customers"),
+                    "move_ids": [
+                        Command.create(
+                            {
+                                "product_id": semi_kit_product.id,
+                                "product_uom_qty": 1,
+                                "location_id": warehouse_b.lot_stock_id.id,
+                                "location_dest_id": self.ref(
+                                    "stock.stock_location_customers"
+                                ),
+                            }
+                        )
+                    ],
+                }
+            )
+        )
+        delivery.with_company(self.company_a).action_confirm()
+        delivery.with_company(self.company_a).action_assign()
+        self.assertRecordValues(
+            delivery.move_ids, [{"state": "confirmed", "quantity": 0.0}]
+        )
+
+    def test_a_capacity_follows_its_workcenters_company(self):
+        workcenter_b = self.env["mrp.workcenter"].create(
+            {"name": "WC B", "company_id": self.company_b.id}
+        )
+        capacity_b = self.env["mrp.workcenter.capacity"].create(
+            {"workcenter_id": workcenter_b.id, "capacity": 7}
+        )
+        self.user_a.company_ids = self.company_a
+        as_a = self.env["mrp.workcenter.capacity"].with_user(self.user_a)
+        self.assertFalse(as_a.search([("id", "=", capacity_b.id)]))
+        with self.assertRaises(AccessError):
+            as_a.browse(capacity_b.id).write({"capacity": 99})
+        product_b = self.env["product.product"].create(
+            {"name": "Capacity B", "company_id": self.company_b.id}
+        )
+        with self.assertRaises(AccessError):
+            as_a.create(
+                {
+                    "workcenter_id": workcenter_b.id,
+                    "product_id": product_b.id,
+                    "capacity": 3,
+                }
+            )
+
+    def test_an_mrp_user_cannot_edit_working_schedules(self):
+        calendar_b = self.env["resource.calendar"].create(
+            {"name": "Schedule B", "company_id": self.company_b.id}
+        )
+        attendance = calendar_b.attendance_ids[:1]
+        self.assertTrue(attendance)
+        user = self.env["res.users"].create(
+            {
+                "name": "MRP user A",
+                "login": "mrp user a schedules",
+                "group_ids": [Command.set([self.env.ref("mrp.group_mrp_user").id])],
+                "company_id": self.company_a.id,
+                "company_ids": [Command.set(self.company_a.ids)],
+            }
+        )
+        as_user = attendance.with_user(user)
+        with self.assertRaises(AccessError):
+            as_user.write({"hour_from": 6})
+        with self.assertRaises(AccessError):
+            as_user.unlink()

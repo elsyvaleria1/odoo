@@ -1,0 +1,50 @@
+{
+    "name": "Website Resellers and Lead Assignment",
+    "version": "1.4",
+    "oldest_upgradable_version": "1.4",
+    "category": "Website/Website",
+    "summary": "Publish partner listings and forward CRM leads to selected partners",
+    "description": "Adds website partner listings, partner assignment fields and a lead-forwarding wizard. Provides portal pages for assigned leads and opportunities and partner activity reporting. Published listings and lead access depend on partner configuration and the assignment workflow.",
+    "author": "Odoo S.A.",
+    "license": "LGPL-3",
+    "depends": [
+        "geocoding",
+        "crm",
+        "account",
+        "partnership",
+        "website_partner",
+        "website_google_map",
+        "portal",
+    ],
+    "data": [
+        "data/crm_lead_merge_template.xml",
+        "data/crm_tag_data.xml",
+        "data/mail_template_data.xml",
+        "data/res_partner_activation_data.xml",
+        "security/ir.access.csv",
+        "wizards/wizard_crm_lead_forward_to_partner_views.xml",
+        "views/res_partner_views.xml",
+        "views/res_partner_activation_views.xml",
+        "views/res_partner_grade_views.xml",
+        "views/crm_lead_views.xml",
+        "views/website_crm_partner_assign_templates.xml",
+        "reports/crm_partner_report_view.xml",
+        "views/partner_assign_menus.xml",
+    ],
+    "demo": [
+        "demo/res_partner_demo.xml",
+        "demo/crm_lead_demo.xml",
+        "demo/res_partner_grade_demo.xml",
+    ],
+    "assets": {
+        "web.assets_frontend": [
+            "website_crm_partner_assign/static/src/interactions/**/*",
+        ],
+        "website.website_builder_assets": [
+            "website_crm_partner_assign/static/src/website_builder/**/*",
+        ],
+        "web.assets_tests": [
+            "website_crm_partner_assign/static/tests/tours/*",
+        ],
+    },
+}

@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+
+    <record id="approval_category_stock_transfer" model="approval.category">
+        <field name="name">Stock Transfer Approval</field>
+        <field name="approval_type">stock</field>
+        <field
+            name="description">Approval workflow for existing stock transfers from restricted locations or with controlled products</field>
+        <field name="sequence" eval="10" />
+        <field name="approval_minimum">1</field>
+        <field name="sequence_code">STA</field>
+        <field
+            name="step_ids"
+            eval="[Command.create({'name': 'Approvers', 'minimum': 1, 'counts_added_approvers': True})]" />
+        <field name="stock_approval_mode">combined</field>
+        <field name="has_date">optional</field>
+        <field name="has_reference">optional</field>
+        <field name="has_document">optional</field>
+    </record>
+
+    <record id="approval_category_stock_request" model="approval.category">
+        <field name="name">Stock Request</field>
+        <field name="approval_type">stock</field>
+        <field name="target_model">stock.picking</field>
+        <field
+            name="description">Create stock transfer from approval request (for stock requisitions)</field>
+        <field name="sequence" eval="20" />
+        <field name="approval_minimum">1</field>
+        <field name="sequence_code">STCKREQ</field>
+        <field
+            name="step_ids"
+            eval="[Command.create({'name': 'Approvers', 'minimum': 1, 'counts_added_approvers': True})]" />
+        <field name="has_product">required</field>
+        <field name="has_date">optional</field>
+        <field name="has_reference">optional</field>
+        <field name="has_document">optional</field>
+    </record>
+
+    <record id="approval_category_high_value_transfer" model="approval.category">
+        <field name="name">High-Value Internal Transfer</field>
+        <field name="approval_type">stock</field>
+        <field
+            name="description">Approval required for high-value internal transfers</field>
+        <field name="sequence" eval="15" />
+        <field name="approval_minimum">2</field>
+        <field name="sequence_code">HVIT</field>
+        <field
+            name="step_ids"
+            eval="[Command.create({'name': 'Approvers', 'minimum': 2, 'counts_added_approvers': True, 'in_order': True})]" />
+        <field name="stock_approval_mode">picking_type</field>
+        <field name="has_date">optional</field>
+        <field name="has_reference">optional</field>
+    </record>
+
+</odoo>

@@ -1,0 +1,151 @@
+// @ts-check
+/** @odoo-module native */
+
+import { Component, onWillStart, onWillUpdateProps, t, useProps } from "@odoo/owl";
+import { makeDefaultCondition } from "@web/components/domain_selector/utils";
+import { getExpressionDisplayedOperators } from "@web/components/expression_editor/expression_editor_operator_editor";
+import { ModelFieldSelector } from "@web/components/model_field_selector/model_field_selector";
+import { getOperatorEditorInfo, TreeEditor } from "@web/components/tree_editor";
+import { useDebugMode } from "@web/core/debug/debug_context";
+import { _t } from "@web/core/translation";
+import { formatValue } from "@web/core/tree/condition_tree";
+import { expressionFromTree } from "@web/core/tree/expression_from_tree";
+import { treeFromExpression } from "@web/core/tree/tree_from_expression";
+export class ExpressionEditor extends Component {
+    static template = "web.ExpressionEditor";
+    static components = { TreeEditor };
+    static props = {
+        resModel: t.string(),
+        fields: t.object(),
+        expression: t.string(),
+        update: t.function(),
+    };
+    props = useProps(this.constructor.props);
+
+    /** @type {Record<string, Record<string, any>>} */
+    filteredFields = {};
+
+    setup() {
+        this.debug = useDebugMode();
+        onWillStart(() => this.onPropsUpdated(this.props));
+        onWillUpdateProps((nextProps) => this.onPropsUpdated(nextProps));
+    }
+
+    /**
+     * @param {typeof this.props} props
+     * @returns {Promise<void>}
+     */
+    async onPropsUpdated(props) {
+        this.filteredFields = Object.fromEntries(
+            Object.entries(props.fields).filter(
+                ([_, fieldDef]) => fieldDef.type !== "properties",
+            ),
+        );
+        try {
+            this.tree = treeFromExpression(/** @type {string} */ (props.expression), {
+                getFieldDef: (name) =>
+                    this.getFieldDef(/** @type {string | number} */ (name), props),
+                distributeNot: !this.isDebugMode,
+                generateSmartDates: false,
+            });
+        } catch {
+            this.tree = null;
+        }
+    }
+
+    /**
+     * @param {string | number} name
+     * @param {typeof this.props} [props]
+     * @returns {Object | null}
+     */
+    getFieldDef(name, props = this.props) {
+        if (typeof name === "string") {
+            return props.fields[name] || null;
+        }
+        return null;
+    }
+
+    /** @returns {Object} */
+    getDefaultCondition() {
+        return makeDefaultCondition(
+            this.filteredFields,
+            getExpressionDisplayedOperators,
+        );
+    }
+
+    /**
+     * @param {Object} fieldDef
+     * @returns {string[]}
+     */
+    getDisplayedOperators(fieldDef) {
+        return getExpressionDisplayedOperators(fieldDef);
+    }
+
+    /**
+     * @param {Object} fieldDef
+     * @returns {any}
+     */
+    getOperatorEditorInfo(fieldDef) {
+        return getOperatorEditorInfo(this.getDisplayedOperators(fieldDef), fieldDef);
+    }
+
+    /**
+     * @param {string} resModel
+     * @param {Object} defaultCondition
+     * @returns {Object}
+     */
+    getPathEditorInfo(resModel, defaultCondition) {
+        if (resModel !== this.props.resModel) {
+            throw new Error(
+                `Expression editor doesn't support tree as value so resModel has to be props.resModel`,
+            );
+        }
+        return {
+            component: ModelFieldSelector,
+            extractProps: ({ value, update }) => ({
+                path: value,
+                update,
+                resModel: this.props.resModel,
+                readonly: false,
+                filter: (fieldDef) => fieldDef.name in this.filteredFields,
+                showDebugInput: false,
+                followRelations: false,
+                isDebugMode: this.isDebugMode,
+            }),
+            isSupported: (value) =>
+                [0, 1].includes(value) || value in this.filteredFields,
+            stringify: (value) =>
+                this.props.fields[value]?.string ?? formatValue(value),
+            defaultValue: () => defaultCondition.path,
+            message: _t("Field properties not supported"),
+        };
+    }
+
+    get isDebugMode() {
+        return !!this.debug;
+    }
+
+    /** @param {string} expression */
+    onExpressionChange(expression) {
+        this.props.update(expression);
+    }
+
+    resetExpression() {
+        this.props.update("True");
+    }
+
+    /** @param {Object} tree */
+    update(tree) {
+        let expression;
+        try {
+            expression = expressionFromTree(/** @type {any} */ (tree), {
+                getFieldDef: (name) =>
+                    this.getFieldDef(/** @type {string | number} */ (name)),
+                generateSmartDates: false,
+            });
+        } catch {
+            expression = this.props.expression;
+        }
+        this.props.update(expression);
+    }
+}

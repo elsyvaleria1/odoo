@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-inherit="mail.Thread" t-inherit-mode="extension">
+        <xpath expr="//*[@name='content']" position="before">
+            <div t-if="this.props.thread?.livechatWelcomeMessage" class="bg-100 py-3" data-name="LivechatWelcomeMessage">
+                <Message message="this.props.thread.livechatWelcomeMessage" hasActions="false" thread="this.props.thread"/>
+            </div>
+        </xpath>
+        <xpath expr="(//div[hasclass('o-mail-Thread')])" position="inside">
+            <Message t-if="this.props.thread.chatbot?.typingMessage" message="this.props.thread.chatbot.typingMessage" hasActions="false" isInChatWindow="this.mailContext.inChatWindow" isTypingMessage="true"  thread="this.props.thread"/>
+        </xpath>
+        <xpath expr="//*[hasclass('o-mail-Thread-empty')]" position="replace">
+            <t t-if="this.props.thread.channel_type !== 'livechat'">$0</t>
+        </xpath>
+        <xpath expr="//*[hasclass('o-mail-Thread-newMessage')]" position="replace">
+            <t t-if="!this.props.thread.chatbot">$0</t>
+        </xpath>
+    </t>
+</templates>

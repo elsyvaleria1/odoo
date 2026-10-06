@@ -1,0 +1,34 @@
+id,name,model_id/id,group_id/id,kind,operation,reach,anchor,domain
+hr_appraisal_all_rule,All Appraisal,model_hr_appraisal,group_hr_appraisal_user,permission,cru,,,
+hr_appraisal_emp_rule_delete_new_group_hr_appraisal_user,Employee Appraisal: delete new,model_hr_appraisal,group_hr_appraisal_user,permission,d,,,"[ ('state', '=', '1_new'), '|', ('employee_id.user_id', '=', user.id), ('manager_ids', 'in', user.employee_ids.ids) ]"
+access_hr_appraisal_note_user,hr.appraisal.note.user,model_hr_appraisal_note,base.group_user,permission,r,,,
+access_hr_appraisal_note_manager,hr.appraisal.note.manager,model_hr_appraisal_note,group_hr_appraisal_manager,permission,cud,,,
+hr_appraisal_goal_all,Appraisal: An appraisal manager can see all goals,model_hr_appraisal_goal,group_hr_appraisal_user,permission,crud,,,
+hr_appraisal_goal_own_create,Appraisal: An employee can create his own goals or his subordinates',model_hr_appraisal_goal,base.group_user,permission,cr,,,"['&', ('employee_ids', '!=', False), ('is_manager', '=', True)]"
+hr_appraisal_goal_own_create_2,Appraisal: An employee can create his own goals or his subordinates' (2),model_hr_appraisal_goal,base.group_user,permission,cr,own,employee_user,"[('employee_ids', '!=', False)]"
+hr_appraisal_goal_own_create_3,Appraisal: An employee can create his own goals or his subordinates' (3),model_hr_appraisal_goal,base.group_user,permission,cr,own,manager_user,"[('employee_ids', '!=', False)]"
+hr_appraisal_goal_own_create_4,Appraisal: An employee can create his own goals or his subordinates' (4),model_hr_appraisal_goal,base.group_user,permission,cr,own,employee_parent_user,"['&', ('employee_ids', '!=', False), ('employee_ids.parent_id', '!=', False)]"
+hr_appraisal_goal_own_create_5,Appraisal: An employee can create his own goals or his subordinates' (5),model_hr_appraisal_goal,base.group_user,permission,cr,own,,"['&', ('employee_ids', '!=', False), ('employee_ids.last_appraisal_id.state', 'in', ['1_new', '2_pending'])]"
+hr_appraisal_goal_template_own_write,Appraisal: An employee can edit his own goals or his subordinates' (only goals without child),model_hr_appraisal_goal,base.group_user,permission,u,,,"['&', '&', ('child_ids', '=', False), ('employee_ids', '!=', False), ('is_manager', '=', True)]"
+hr_appraisal_goal_template_own_write_2,Appraisal: An employee can edit his own goals or his subordinates' (only goals without child) (2),model_hr_appraisal_goal,base.group_user,permission,u,own,employee_user,"['&', ('child_ids', '=', False), ('employee_ids', '!=', False)]"
+hr_appraisal_goal_template_own_write_3,Appraisal: An employee can edit his own goals or his subordinates' (only goals without child) (3),model_hr_appraisal_goal,base.group_user,permission,u,own,manager_user,"['&', ('child_ids', '=', False), ('employee_ids', '!=', False)]"
+hr_appraisal_goal_template_own_write_4,Appraisal: An employee can edit his own goals or his subordinates' (only goals without child) (4),model_hr_appraisal_goal,base.group_user,permission,u,own,employee_parent_user,"['&', '&', ('child_ids', '=', False), ('employee_ids', '!=', False), ('employee_ids.parent_id', '!=', False)]"
+hr_appraisal_goal_template_own_write_5,Appraisal: An employee can edit his own goals or his subordinates' (only goals without child) (5),model_hr_appraisal_goal,base.group_user,permission,u,own,,"['&', '&', ('child_ids', '=', False), ('employee_ids', '!=', False), ('employee_ids.last_appraisal_id.state', 'in', ['1_new', '2_pending'])]"
+hr_appraisal_goal_own_delete,"Appraisal: An employee can delete his own goals,if he created it, or his subordinates'",model_hr_appraisal_goal,base.group_user,permission,d,,,"[ ('employee_ids', '!=', False), '|', '&', ('employee_ids.user_id', '=', user.id), ('create_uid', '=', user.id), '|', '&', ('employee_ids.user_id', '!=', user.id), ('employee_ids.parent_id.user_id', '=', user.id), '&', ('employee_ids.last_appraisal_id.manager_ids.user_id', '=', user.id), ('employee_ids.last_appraisal_id.state', 'in', ['1_new', '2_pending']), ]"
+access_hr_appraisal_goal_tag_user,hr.appraisal.goal.tag.user,model_hr_appraisal_goal_tag,base.group_user,permission,r,,,
+access_hr_appraisal_goal_tag_manager,hr.appraisal.goal.tag.manager,model_hr_appraisal_goal_tag,group_hr_appraisal_manager,permission,cud,,,
+hr_appraisal_emp_rule,Employee Appraisal,model_hr_appraisal,base.group_user,permission,cru,,,"['|', ('employee_id.user_id', '=', user.id), ('manager_ids', 'in', user.employee_ids.ids)]"
+hr_appraisal_emp_rule_delete_new,Employee Appraisal: delete new,model_hr_appraisal,base.group_user,permission,crud,,,"[ ('state', '=', '1_new'), '|', ('employee_id.user_id', '=', user.id), ('manager_ids', 'in', user.employee_ids.ids) ]"
+hr_appraisal_rule_base_user,Employee Appraisal: read todo,model_hr_appraisal,base.group_user,permission,r,own,employee,
+hr_appraisal_rule_base_user_2,Employee Appraisal: read todo (2),model_hr_appraisal,base.group_user,permission,r,own,,
+access_request_appraisal,access.request.appraisal,model_wizard_hr_appraisal_send,base.group_user,permission,cru,,,
+access_hr_appraisal_template_base_user,hr.appraisal.template,model_hr_appraisal_template,base.group_user,permission,r,,,
+access_hr_appraisal_template_user,hr.appraisal.template,model_hr_appraisal_template,group_hr_appraisal_user,permission,cu,,,
+access_hr_appraisal_template_manager,hr.appraisal.template,model_hr_appraisal_template,group_hr_appraisal_manager,permission,d,,,
+hr_appraisal_campaign_responsible,Appraisal Campaign wizard Responsible,model_wizard_hr_appraisal_create,base.group_user,permission,cru,own,creator,
+hr_appraisal_campaign_wizard_manager,Admin: access appraisals campaign,model_wizard_hr_appraisal_create,group_hr_appraisal_user,permission,cru,,,
+access_hr_appraisal_campaign_wizard_manager,hr.appraisal.hr_appraisal_campaign_wizard,model_wizard_hr_appraisal_create,group_hr_appraisal_manager,permission,d,,,
+hr_appraisal_comp_rule,Appraisal multi-company,model_hr_appraisal,base.group_everyone,guard,crud,company,,
+hr_appraisal_note_comp_rule,Appraisal Plan multi-company,model_hr_appraisal_note,base.group_everyone,guard,crud,company,,
+hr_appraisal_template_comp_rule,Appraisal Template multi-company,model_hr_appraisal_template,base.group_everyone,guard,crud,company,,
+hr_appraisal_goal_company_rule,Appraisal Goal multi-company,model_hr_appraisal_goal,base.group_everyone,guard,crud,company,,

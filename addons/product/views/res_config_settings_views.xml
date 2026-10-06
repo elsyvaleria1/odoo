@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="res_config_settings_view_form" model="ir.ui.view">
+        <field name="name">res.config.settings.view.form.inherit.product</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="web.res_config_settings_view_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//div[@id='companies']" position="after">
+                <block id="product_general_settings" title="Units of Measure">
+                    <setting
+                        id="weight_uom_setting"
+                        string="Weight"
+                        help="Define your weight unit of measure">
+                        <field
+                            name="product_weight_in_lbs"
+                            widget="radio"
+                            class="o_light_label" />
+                    </setting>
+                    <setting
+                        id="manage_volume_uom_setting"
+                        string="Volume"
+                        help="Define your volume unit of measure">
+                        <field
+                            name="product_volume_volume_in_cubic_feet"
+                            widget="radio"
+                            class="o_light_label" />
+                    </setting>
+                    <setting
+                        id="product_odometer_in_mi"
+                        string="Odometer"
+                        help="Define your odometer unit of measure">
+                        <field
+                            name="product_odometer_in_mi"
+                            widget="radio"
+                            options="{'horizontal': true}"
+                            class="o_light_label" />
+                    </setting>
+                    <setting
+                        id="product_area_in_square_ft"
+                        string="Area"
+                        help="Define your area unit of measure">
+                        <field
+                            name="product_area_in_square_ft"
+                            widget="radio"
+                            options="{'horizontal': true}"
+                            class="o_light_label" />
+                    </setting>
+                    <setting
+                        id="product_power_in_hp"
+                        string="Power"
+                        help="Define your power unit of measure">
+                        <field
+                            name="product_power_in_hp"
+                            widget="radio"
+                            options="{'horizontal': true}"
+                            class="o_light_label" />
+                    </setting>
+                    <setting
+                        id="product_fuel_efficiency_in_mpg"
+                        string="Fuel Efficiency"
+                        help="Define your fuel efficiency unit of measure">
+                        <field
+                            name="product_fuel_efficiency_in_mpg"
+                            widget="radio"
+                            options="{'horizontal': true}"
+                            class="o_light_label" />
+                    </setting>
+                </block>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="sale_report_view_search_website" model="ir.ui.view">
+        <field name="name">sale.report.search</field>
+        <field name="model">sale.report</field>
+        <field name="arch" type="xml">
+            <search string="Sales">
+                <field name="website_id" groups="website.group_multi_website" />
+                <field name="product_id" />
+                <field name="product_category_id" />
+                <field name="partner_id" />
+                <field name="country_id" />
+                <field name="company_id" groups="base.group_multi_company" />
+                <filter
+                    name="confirmed"
+                    string="Confirmed Orders"
+                    domain="[('state', '=', 'done')]" />
+                <separator />
+                <filter name="filter_date" date="date_order" default_period="month" />
+                <group>
+                    <filter
+                        name="groupby_website"
+                        string="Website"
+                        context="{'group_by':'website_id'}"
+                        groups="website.group_multi_website" />
+                    <filter
+                        name="groupby_product"
+                        string="Product"
+                        context="{'group_by':'product_id'}" />
+                    <filter
+                        name="groupby_product_category"
+                        string="Product Category"
+                        context="{'group_by':'product_category_id'}" />
+                    <filter
+                        name="groupby_customer"
+                        string="Customer"
+                        context="{'group_by':'partner_id'}" />
+                    <filter
+                        name="groupby_country"
+                        string="Customer Country"
+                        context="{'group_by':'country_id'}" />
+                    <filter
+                        name="groupby_status"
+                        string="Status"
+                        context="{'group_by':'state'}" />
+                    <filter
+                        name="groupby_product_public_category"
+                        string="eCommerce Category"
+                        context="{'group_by': 'public_categ_ids'}" />
+                    <separator orientation="vertical" />
+                    <filter
+                        name="groupby_order_date"
+                        string="Order Date"
+                        context="{'group_by':'date_order'}" />
+                    <filter
+                        name="week"
+                        string="Last Week"
+                        domain="[('date_order','&gt;=', 'today -7d')]"
+                        invisible="1" />
+                    <filter
+                        name="month"
+                        string="Last Month"
+                        domain="[('date_order','&gt;=', 'today -30d')]"
+                        invisible="1" />
+                    <filter
+                        name="year"
+                        string="Last Year"
+                        domain="[('date_order','&gt;=', 'today -365d')]"
+                        invisible="1" />
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="sale_report_view_pivot_website" model="ir.ui.view">
+        <field name="name">sale.report.view.pivot.website</field>
+        <field name="model">sale.report</field>
+        <field name="arch" type="xml">
+            <pivot string="Sales Analysis" sample="1">
+                <field name="date_order" type="row" />
+                <field name="state" type="col" />
+                <field name="price_subtotal" type="measure" />
+            </pivot>
+        </field>
+    </record>
+
+    <record id="sale_report_view_graph_website" model="ir.ui.view">
+        <field name="name">sale.report.view.graph.website</field>
+        <field name="model">sale.report</field>
+        <field name="arch" type="xml">
+            <graph string="Sale Analysis" sample="1">
+                <field name="date_order" />
+                <field name="price_subtotal" type="measure" />
+            </graph>
+        </field>
+    </record>
+
+    <record id="view_sale_report_list" model="ir.ui.view">
+        <field name="name">sale.report.view.list.inherit.website.sale</field>
+        <field name="model">sale.report</field>
+        <field name="inherit_id" ref="sale.view_sale_report_list" />
+        <field name="arch" type="xml">
+            <field name="order_reference" position="after">
+                <field name="website_id" optional="hide" />
+                <field name="public_categ_ids" optional="hide" />
+            </field>
+        </field>
+    </record>
+
+    <record id="sale_report_action_dashboard" model="ir.actions.act_window">
+        <field name="name">Online Sales Analysis</field>
+        <field name="res_model">sale.report</field>
+        <field name="path">online-sales-analysis</field>
+        <field name="view_mode">pivot,graph</field>
+        <field name="search_view_id" ref="sale_report_view_search_website" />
+        <field name="domain">[('website_id', '!=', False)]</field>
+        <field name="context">{'search_default_confirmed': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_empty_folder">
+                You don't have any order from the website
+            </p>
+        </field>
+    </record>
+
+    <record
+        id="sale_report_action_view_pivot_website"
+        model="ir.actions.act_window.view">
+        <field name="sequence" eval="1" />
+        <field name="view_mode">pivot</field>
+        <field name="view_id" ref="sale_report_view_pivot_website" />
+        <field name="act_window_id" ref="sale_report_action_dashboard" />
+    </record>
+
+    <record
+        id="sale_report_action_view_graph_website"
+        model="ir.actions.act_window.view">
+        <field name="sequence" eval="1" />
+        <field name="view_mode">graph</field>
+        <field name="view_id" ref="sale_report_view_graph_website" />
+        <field name="act_window_id" ref="sale_report_action_dashboard" />
+    </record>
+
+    <record id="sale_report_action_carts" model="ir.actions.act_window">
+        <field name="name">Sales</field>
+        <field name="res_model">sale.report</field>
+        <field name="view_mode">pivot,graph</field>
+        <field name="search_view_id" ref="sale_report_view_search_website" />
+        <field name="domain">[('website_id', '!=', False)]</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_empty_folder">
+                You don't have any order from the website
+            </p>
+        </field>
+    </record>
+
+    <record id="sale_report_action_view_pivot_carts" model="ir.actions.act_window.view">
+        <field name="sequence" eval="1" />
+        <field name="view_mode">pivot</field>
+        <field name="view_id" ref="sale_report_view_pivot_website" />
+        <field name="act_window_id" ref="sale_report_action_carts" />
+    </record>
+
+    <record id="sale_report_action_view_graph_carts" model="ir.actions.act_window.view">
+        <field name="sequence" eval="1" />
+        <field name="view_mode">graph</field>
+        <field name="view_id" ref="sale_report_view_graph_website" />
+        <field name="act_window_id" ref="sale_report_action_carts" />
+    </record>
+
+</odoo>

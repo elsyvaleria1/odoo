@@ -1,0 +1,226 @@
+// @ts-check
+/** @odoo-module native */
+import { Component, proxy, t, useProps } from "@odoo/owl";
+import { makeLogger } from "@web/core/debug/debug_logger";
+import { _t } from "@web/core/translation";
+import { useService } from "@web/core/utils/hooks";
+import { useModel } from "@web/model/model";
+import { extractFieldsFromArchInfo } from "@web/model/relational_model";
+import { usePager } from "@web/search/pager_hook";
+import { useSearchModel } from "@web/search/search_model";
+import { standardViewProps } from "@web/views/standard_view_props";
+import { useViewChassis, ViewLayout } from "@web/views/view_components";
+import { SelectCreateDialog } from "@web/views/view_dialogs";
+
+const log = makeLogger("mail.activity.view");
+export class ActivityController extends Component {
+    static components = { ViewLayout };
+    static props = {
+        ...standardViewProps,
+        Model: t.function(),
+        Renderer: t.function(),
+        archInfo: t.object(),
+    };
+    static template = "mail.ActivityController";
+    props = useProps(this.constructor.props);
+
+    setup() {
+        this.searchModel = useSearchModel();
+        this.model = proxy(
+            useModel(
+                /** @type {typeof import("./activity_model").ActivityModel} */ (
+                    this.props.Model
+                ),
+                this.modelParams,
+            ),
+        );
+        this.chassis = useViewChassis(this);
+
+        this.dialog = useService("dialog");
+        this.action = useService("action");
+        this.store = useService("mail.store");
+        this.ui = useService("ui");
+        this.notification = useService("notification");
+        usePager(() => {
+            const { count, hasLimitedCount, limit, offset } = this.model.root;
+            return {
+                offset: offset,
+                limit: limit,
+                total: count,
+                /** @param {{domain?: any[], offset?: number, limit?: number}} params */
+                onUpdate: async (params) => {
+                    params.domain = [
+                        ...(this.model.originalDomain || []),
+                        ["activity_ids.active", "in", [true, false]],
+                    ];
+                    await Promise.all([
+                        this.model.root.load(params),
+                        this.model.fetchActivityData(params),
+                    ]);
+                },
+                updateTotal: hasLimitedCount
+                    ? () => this.model.root.fetchCount()
+                    : undefined,
+            };
+        });
+    }
+
+    /** @returns {Record<string, any>} */
+    get chassisProps() {
+        return {
+            ...this.chassis.props,
+            className:
+                this.props.className +
+                (this.ui.isSmall ? " o_action_delegate_scroll" : ""),
+        };
+    }
+
+    get modelParams() {
+        const { archInfo, resModel } = this.props;
+        const { activeFields, fields } = extractFieldsFromArchInfo(
+            archInfo,
+            this.props.fields,
+        );
+        return {
+            config: {
+                activeFields,
+                resModel,
+                fields,
+            },
+            limit: this.props.limit,
+        };
+    }
+
+    getSearchProps() {
+        const { context, domain, groupBy, orderBy } = this.searchModel;
+        return { context, domain, groupBy, orderBy };
+    }
+
+    get getSelectCreateDialogProps() {
+        return {
+            resModel: this.props.resModel,
+            searchViewId: this.searchModel.searchViewId,
+            domain: this.model.originalDomain,
+            title: _t("Search: %s", this.props.archInfo.title),
+            multiSelect: false,
+            context: this.props.context,
+            noCreate: this.props.context?.create === false,
+            /** @param {number[]} resIds */
+            onSelected: async (resIds) => {
+                await this.store.scheduleActivity(this.props.resModel, resIds);
+            },
+        };
+    }
+
+    scheduleActivity() {
+        log.logic("scheduleActivity", () => ({ resModel: this.props.resModel }));
+        this.dialog.add(SelectCreateDialog, this.getSelectCreateDialogProps, {
+            onClose: () => this.model.load(this.getSearchProps()),
+        });
+    }
+
+    /**
+     * @param {number|false} resId
+     * @param {number} activityTypeId
+     */
+    openActivityFormView(resId, activityTypeId) {
+        log.logic("openActivityFormView", () => ({
+            resModel: this.props.resModel,
+            resId,
+            activityTypeId,
+        }));
+        this.action.doAction(
+            {
+                type: "ir.actions.act_window",
+                res_model: "mail.activity",
+                views: [[false, "form"]],
+                view_mode: "form",
+                view_type: "form",
+                res_id: false,
+                target: "new",
+                context: {
+                    default_res_id: resId,
+                    default_res_model: this.props.resModel,
+                    default_activity_type_id: activityTypeId,
+                    dialog_size: "large",
+                },
+            },
+            {
+                onClose: () => this.model.load(this.getSearchProps()),
+            },
+        );
+    }
+
+    /**
+     * @param {number} activityTypeID
+     * @returns {number[]}
+     */
+    getActivityTypeResIds(activityTypeID) {
+        return Object.entries(this.model.activityData.grouped_activities)
+            .filter(([, activityByType]) => activityByType[activityTypeID])
+            .map(([resId]) => parseInt(resId));
+    }
+
+    /**
+     * @param {number} templateID
+     * @param {number} activityTypeID
+     * @param {number[]} [resIds] the records the column shows, when it is filtered
+     * @returns {Promise<boolean>}
+     */
+    async sendMailTemplate(
+        templateID,
+        activityTypeID,
+        resIds = this.getActivityTypeResIds(activityTypeID),
+    ) {
+        log.logic("sendMailTemplate", () => ({
+            resModel: this.props.resModel,
+            templateID,
+            activityTypeID,
+            resIds: resIds.length,
+        }));
+        const sent = await this.model.orm.call(
+            this.props.resModel,
+            "activity_send_mail",
+            [resIds, templateID],
+            {},
+        );
+        if (!sent) {
+            log.logic("sendMailTemplate refused", () => ({
+                resModel: this.props.resModel,
+                templateID,
+            }));
+            this.notification.add(
+                _t("This email template cannot be sent on these records."),
+                { type: "danger" },
+            );
+        }
+        return sent;
+    }
+
+    /**
+     * @param {import("@web/model/relational_model/record").RelationalRecord} record
+     * @param {Object} [options]
+     * @param {boolean} [options.newWindow]
+     */
+    async openRecord(record, { newWindow } = {}) {
+        const activeIds = this.model.root.records.map((datapoint) => datapoint.resId);
+        this.props.selectRecord(record.resId, { activeIds, newWindow });
+    }
+
+    get rendererProps() {
+        return {
+            activityTypes: this.model.activityData.activity_types,
+            activityResIds: this.model.activityData.activity_res_ids,
+            fields: this.model.root.fields,
+            records: this.model.root.records,
+            resModel: this.props.resModel,
+            archInfo: this.props.archInfo,
+            groupedActivities: this.model.activityData.grouped_activities,
+            scheduleActivity: this.scheduleActivity.bind(this),
+            onReloadData: () => this.model.load(this.getSearchProps()),
+            onEmptyCell: this.openActivityFormView.bind(this),
+            onSendMailTemplate: this.sendMailTemplate.bind(this),
+            openRecord: this.openRecord.bind(this),
+        };
+    }
+}

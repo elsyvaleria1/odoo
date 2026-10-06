@@ -1,0 +1,93 @@
+/** @odoo-module native */
+import { markup } from "@odoo/owl";
+import { setElementContent } from "@web/core/utils/dom/html";
+import { formatFloat } from "@web/core/utils/format/numbers";
+import { renderToFragment } from "@web/core/utils/render";
+import VariantMixin from "@website_sale/js/variant_mixin";
+
+/**
+ * @param {MouseEvent} ev
+ * @param {Element} parent
+ * @param {Array} combination
+ */
+VariantMixin._onChangeCombinationStock = async function (ev, parent, combination) {
+    const has_max_combo_quantity = "max_combo_quantity" in combination;
+    if (!combination.is_storable && !has_max_combo_quantity) {
+        return;
+    }
+
+    if (!parent.matches(".js_main_product") || !combination.product_id) {
+        return;
+    }
+
+    const addQtyInput = parent.querySelector('input[name="add_qty"]');
+    const qty = parseFloat(addQtyInput?.value) || 1;
+    const ctaWrapper = parent.querySelector("#o_wsale_cta_wrapper");
+    ctaWrapper.classList.replace("d-none", "d-flex");
+    ctaWrapper.classList.remove("out_of_stock");
+
+    if (!combination.allow_out_of_stock_order) {
+        const unavailableQty = await this.waitFor(
+            VariantMixin._getUnavailableQty(combination),
+        );
+        combination.qty_free -= unavailableQty;
+        if (combination.qty_free < 0) {
+            combination.qty_free = 0;
+        }
+        if (addQtyInput) {
+            addQtyInput.dataset.max = combination.qty_free || 1;
+            if (qty > combination.qty_free) {
+                addQtyInput.value = addQtyInput.dataset.max;
+            }
+        }
+        if (combination.qty_free < 1) {
+            ctaWrapper.classList.replace("d-flex", "d-none");
+            ctaWrapper.classList.add("out_of_stock");
+        }
+    } else if (has_max_combo_quantity) {
+        if (addQtyInput) {
+            addQtyInput.dataset.max = combination.max_combo_quantity || 1;
+            if (qty > combination.max_combo_quantity) {
+                addQtyInput.value = addQtyInput.dataset.max;
+            }
+        }
+        if (combination.max_combo_quantity < 1) {
+            ctaWrapper.classList.replace("d-flex", "d-none");
+            ctaWrapper.classList.add("out_of_stock");
+        }
+    }
+
+    combination.formatQuantity = (qty) => {
+        if (Number.isInteger(qty)) {
+            return qty;
+        } else {
+            const decimals = Math.max(
+                0,
+                Math.ceil(-Math.log10(combination.uom_rounding)),
+            );
+            return formatFloat(qty, { digits: [false, decimals] });
+        }
+    };
+
+    document
+        .querySelector(".oe_website_sale")
+        .querySelectorAll(".availability_message_" + combination.product_template)
+        .forEach((el) => el.remove());
+    if (combination.out_of_stock_message) {
+        combination.out_of_stock_message = markup(combination.out_of_stock_message);
+        const outOfStockMessage = document.createElement("div");
+        setElementContent(outOfStockMessage, combination.out_of_stock_message);
+        combination.has_out_of_stock_message = !!outOfStockMessage.textContent.trim();
+    }
+    this.el
+        .querySelector("div.availability_messages")
+        .append(
+            renderToFragment("website_sale_stock.product_availability", combination),
+        );
+};
+
+VariantMixin._getUnavailableQty = async function (combination) {
+    return parseInt(combination.cart_qty);
+};
+
+export default VariantMixin;

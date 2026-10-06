@@ -1,0 +1,7 @@
+.o_banner_stack {
+    flex: 0 0 auto;
+
+    &[data-scope="app"] {
+        border-bottom: $border-width solid var(--o-separator);
+    }
+}

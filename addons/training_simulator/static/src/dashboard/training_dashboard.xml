@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+<t t-name="training_simulator.Dashboard">
+    <Layout display="this.display">
+        <div class="o_training_dashboard">
+            <t t-if="this.state.loading">
+                <div class="text-center p-5"><i class="fa fa-spinner fa-spin fa-3x"/></div>
+            </t>
+            <t t-else="">
+                <t t-set="data" t-value="this.state.data"/>
+                <div class="o_training_head">
+                    <div>
+                        <h1>Training</h1>
+                        <span>Hello, <t t-out="data.user_name"/></span>
+                    </div>
+                    <label class="o_training_search">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+                        <input type="text" placeholder="Search simulators" aria-label="Search simulators"
+                               t-on-input="(ev) => this.state.search = ev.target.value"/>
+                    </label>
+                </div>
+
+                <div class="o_training_filters" role="tablist" aria-label="Areas">
+                    <button type="button" role="tab" t-att-class="{'active': this.state.area === 'all'}"
+                            t-att-aria-selected="this.state.area === 'all'" t-on-click="() => this.state.area = 'all'">All</button>
+                    <t t-foreach="data.all_areas" t-as="area" t-key="area.key">
+                        <button type="button" role="tab" t-att-class="{'active': this.state.area === area.key}"
+                                t-att-aria-selected="this.state.area === area.key"
+                                t-on-click="() => this.state.area = area.key" t-out="area.label"/>
+                    </t>
+                </div>
+
+                <!-- One wide card per simulator: illustration on the left, what it teaches on the right -->
+                <t t-foreach="this.cards" t-as="card" t-key="card.id">
+                    <article class="o_training_card">
+                        <div class="o_training_scene">
+                            <div class="o_training_scene_art" t-att-data-code="card.code">
+                                <span class="o_training_scene_icon" t-out="card.icon"/>
+                            </div>
+                            <div class="o_training_scene_chip">
+                                <span>
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5L20 7"/></svg>
+                                    <t t-if="!card.best">Ready for your first trip</t>
+                                    <t t-elif="card.best >= card.scenario_count">All scenarios completed</t>
+                                    <t t-else=""><t t-out="card.best"/> of <t t-out="card.scenario_count"/> scenarios done</t>
+                                </span>
+                            </div>
+                        </div>
+                        <div class="o_training_body">
+                            <div class="o_training_title">
+                                <span t-out="card.area_label"/>
+                                <h2 t-out="card.name"/>
+                            </div>
+                            <p class="o_training_tagline" t-if="card.tagline" t-out="card.tagline"/>
+                            <p class="o_training_description" t-if="card.description" t-out="card.description"/>
+                            <div class="o_training_flow" t-if="card.flow_steps.length">
+                                <t t-foreach="card.flow_steps" t-as="step" t-key="step_index">
+                                    <span class="o_training_step" t-out="step"/>
+                                    <span class="o_training_arrow" t-if="!step_last">→</span>
+                                </t>
+                            </div>
+                            <span class="o_training_safe">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 3v6c0 4.5-3.4 8-8 9-4.6-1-8-4.5-8-9V6z"/></svg>
+                                Safe practice space: nothing you do changes real inventory or orders.
+                            </span>
+                            <div class="o_training_tags" t-if="card.tags.items and card.tags.items.length">
+                                <span class="o_training_tags_label" t-out="card.tags.label"/>
+                                <t t-foreach="card.tags.items" t-as="tag" t-key="tag_index">
+                                    <span class="o_training_tag" t-out="tag"/>
+                                </t>
+                            </div>
+                            <div class="o_training_progress">
+                                <div>
+                                    <span><b><t t-out="card.best"/> of <t t-out="card.scenario_count"/></b> scenarios practised</span>
+                                    <a href="#" t-on-click.prevent="() => this.openSessions(card)">View my sessions</a>
+                                </div>
+                                <i><i t-att-style="'width:' + Math.round(100 * card.best / (card.scenario_count || 1)) + '%'"/></i>
+                            </div>
+                            <div class="o_training_actions">
+                                <button type="button" class="o_training_play" t-on-click="() => this.play(card)">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4v16l13-8z"/></svg>
+                                    <t t-if="!card.best">Start</t>
+                                    <t t-elif="card.best >= card.scenario_count">Play again</t>
+                                    <t t-else="">Continue</t>
+                                </button>
+                                <button type="button" t-if="data.is_instructor" class="o_training_settings" t-on-click="() => this.openSimulator(card)">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+                                    Settings
+                                </button>
+                            </div>
+                        </div>
+                    </article>
+                </t>
+
+                <div class="o_training_soon" t-if="this.emptyAreas.length">
+                    <h3>Coming soon</h3>
+                    <div>
+                        <t t-foreach="this.emptyAreas" t-as="area" t-key="area.key">
+                            <div class="o_training_soon_card">
+                                <span class="o_training_soon_icon">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+                                </span>
+                                <div>
+                                    <b t-out="area.label"/>
+                                    <span>Simulators for this area are on the way.</span>
+                                </div>
+                            </div>
+                        </t>
+                    </div>
+                </div>
+            </t>
+        </div>
+    </Layout>
+</t>
+
+</templates>

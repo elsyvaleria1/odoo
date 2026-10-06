@@ -1,0 +1,12 @@
+.o_snippet_preview_wrap {
+    .s_color_blocks_2 {
+        > .container,
+        > .container-fluid,
+        > .o_container_small {
+            > .row > [class*="col-lg-"] {
+                padding-top: 130px;
+                padding-bottom: 130px;
+            }
+        }
+    }
+}

@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="access_class_session_outcome" model="ir.access.class">
+        <field name="name">im_livechat.session_outcome</field>
+        <field
+            name="description">What a live chat session's KPIs are read from: its live chat channel, operator, failure and closing date. Everyone reads them; live chat users write them, and a session's opening sets them.</field>
+    </record>
+
+    <record id="access_session_outcome_livechat_user" model="ir.access">
+        <field name="name">im_livechat.session_outcome: live chat users</field>
+        <field name="group_id" ref="im_livechat_group_user" />
+        <field name="kind">permission</field>
+        <field name="operation">u</field>
+        <field name="class_id" ref="access_class_session_outcome" />
+    </record>
+
+    <record id="access_session_outcome_open_session" model="ir.access">
+        <field
+            name="name">im_livechat.session_outcome: a session's opening sets its live chat channel, operator and failure</field>
+        <field name="group_id" ref="privilege_open_session" />
+        <field name="kind">permission</field>
+        <field name="operation">u</field>
+        <field name="class_id" ref="access_class_session_outcome" />
+    </record>
+
+    <record id="access_class_session_status" model="ir.access.class">
+        <field name="name">im_livechat.session_status</field>
+        <field
+            name="description">Where a live chat session stands -- in progress, waiting for its customer, looking for help -- and since when it looks for help. Internal users read and move it, as any internal field; a session's opening sets it.</field>
+    </record>
+
+    <record id="access_session_status_internal_user" model="ir.access">
+        <field name="name">im_livechat.session_status: internal users</field>
+        <field name="group_id" ref="base.group_user" />
+        <field name="kind">permission</field>
+        <field name="operation">ru</field>
+        <field name="class_id" ref="access_class_session_status" />
+    </record>
+
+    <record id="access_session_status_open_session" model="ir.access">
+        <field
+            name="name">im_livechat.session_status: a session's opening sets where it stands</field>
+        <field name="group_id" ref="privilege_open_session" />
+        <field name="kind">permission</field>
+        <field name="operation">ru</field>
+        <field name="class_id" ref="access_class_session_status" />
+    </record>
+
+    <record id="access_class_operator_profile" model="ir.access.class">
+        <field name="name">im_livechat.operator_profile</field>
+        <field
+            name="description">What a visitor is matched to an operator by: the operator's live chat name, languages and expertise. Live chat users and access-rights administrators read and edit them; a session's opening reads them to pick its operator.</field>
+    </record>
+
+    <record id="access_operator_profile_livechat_user" model="ir.access">
+        <field name="name">im_livechat.operator_profile: live chat users</field>
+        <field name="group_id" ref="im_livechat_group_user" />
+        <field name="kind">permission</field>
+        <field name="operation">ru</field>
+        <field name="class_id" ref="access_class_operator_profile" />
+    </record>
+
+    <record id="access_operator_profile_erp_manager" model="ir.access">
+        <field
+            name="name">im_livechat.operator_profile: access-rights administrators</field>
+        <field name="group_id" ref="base.group_erp_manager" />
+        <field name="kind">permission</field>
+        <field name="operation">ru</field>
+        <field name="class_id" ref="access_class_operator_profile" />
+    </record>
+
+    <record id="access_operator_profile_open_session" model="ir.access">
+        <field
+            name="name">im_livechat.operator_profile: a session's opening reads whom its operator speaks to and knows</field>
+        <field name="group_id" ref="privilege_open_session" />
+        <field name="kind">permission</field>
+        <field name="operation">r</field>
+        <field name="class_id" ref="access_class_operator_profile" />
+    </record>
+
+</odoo>

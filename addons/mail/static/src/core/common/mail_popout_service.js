@@ -1,0 +1,293 @@
+// @ts-check
+/** @odoo-module native */
+import { App } from "@odoo/owl";
+import { browser } from "@web/core/browser/browser";
+import { makeLogger } from "@web/core/debug/debug_logger";
+import { registry } from "@web/core/registry";
+import { makeAppConfig } from "@web/env";
+
+const log = makeLogger("mail.popout");
+const DEFAULT_ID = Symbol("default");
+
+/** @typedef {{ externalWindow: Window|null, generation: number, hooks: { beforePopout?: Function, afterPopoutClosed?: Function }, app?: App }} Popout */
+
+class MailPopout {
+    /** @type {Map<any, Popout>} */
+    popouts = new Map();
+
+    /** @param {import("@web/env").OdooEnv} env */
+    constructor(env) {
+        this.env = env;
+        browser.addEventListener("beforeunload", () => this.closeAll());
+    }
+
+    closeAll() {
+        log.lifecycle("closeAll", () => ({ popouts: this.popouts.size }));
+        for (const popout of this.popouts.values()) {
+            const externalWindow = popout.externalWindow;
+            if (externalWindow && !externalWindow.closed) {
+                externalWindow.close();
+            }
+        }
+    }
+
+    /**
+     * @param {any} id
+     * @param {Object} [options]
+     * @param {Boolean} [options.useAlternativeAssets]
+     */
+    async reset(id, { useAlternativeAssets } = {}) {
+        const popout = this.popouts.get(id);
+        if (!popout) {
+            return;
+        }
+        log.lifecycle("reset", () => ({
+            id: String(id),
+            useAlternativeAssets,
+            hadApp: Boolean(popout.app),
+            hasWindow: Boolean(popout.externalWindow?.document),
+        }));
+        const doc = popout.externalWindow?.document;
+        if (doc) {
+            doc.head.textContent = "";
+            if (useAlternativeAssets) {
+                await mailPopoutService.addAssets(popout.externalWindow);
+            } else {
+                const headEl = /** @type {HTMLHeadElement} */ (
+                    window.document.head.cloneNode(true)
+                );
+                for (const scriptEl of headEl.querySelectorAll("script")) {
+                    scriptEl.remove();
+                }
+                doc.write(headEl.outerHTML);
+            }
+            doc.body = doc.createElement("body");
+        }
+        if (popout.app) {
+            popout.app.destroy();
+            popout.app = null;
+        }
+    }
+
+    /**
+     * @param {any} id
+     * @param {number} generation
+     */
+    async pollClosedWindow(id, generation) {
+        while (
+            this.popouts.get(id)?.externalWindow &&
+            this.popouts.get(id).generation === generation
+        ) {
+            const popout = this.popouts.get(id);
+            await new Promise((r) => browser.setTimeout(r, 1000));
+            if (popout.generation !== generation) {
+                return;
+            }
+            if (popout.externalWindow?.closed) {
+                log.lifecycle("external window closed", () => ({
+                    id: String(id),
+                    generation,
+                }));
+                const hooks = popout.hooks;
+                hooks?.afterPopoutClosed?.();
+                popout.externalWindow = null;
+                await this.reset(id);
+            }
+        }
+    }
+
+    /**
+     * @param {any} id
+     * @param {number} [width]
+     * @param {number} [height]
+     * @param {number} [aspectRatio]
+     * @returns {Promise<Window>}
+     */
+    async _openPipWindow(id, width, height, aspectRatio) {
+        const popout = this.popouts.get(id);
+        popout.hooks?.beforePopout?.();
+        height =
+            height ||
+            (width ? width / aspectRatio : Math.min(240, browser.innerHeight));
+        width = width || height * aspectRatio;
+        log.logic("openPipWindow", () => ({
+            id: String(id),
+            width,
+            height,
+            documentPictureInPicture: Boolean(window.documentPictureInPicture),
+        }));
+        const externalWindow = window.documentPictureInPicture
+            ? await window.documentPictureInPicture.requestWindow({ width, height })
+            : browser.open(
+                  "about:blank",
+                  "_blank",
+                  `popup=yes,width=${width},height=${height}`,
+              );
+        this._track(id, externalWindow);
+        return externalWindow;
+    }
+
+    /**
+     * @param {any} id
+     * @param {Window} externalWindow
+     */
+    _track(id, externalWindow) {
+        const popout = this.popouts.get(id);
+        popout.externalWindow = externalWindow;
+        popout.generation++;
+        this.pollClosedWindow(id, popout.generation);
+    }
+
+    /**
+     * @param {any} id
+     * @param {import("@web/env").OdooComponentConstructor} component
+     * @param {Object} [props]
+     * @param {import("@web/env").OdooEnv} [env]
+     */
+    _mount(id, component, props, env = this.env) {
+        const popout = this.popouts.get(id);
+        log.lifecycle("mount", () => ({
+            id: String(id),
+            component: component?.name,
+            generation: popout.generation,
+        }));
+        popout.app = new App(makeAppConfig(env, { name: "Popout" }));
+        popout.app
+            .createRoot(component, { props })
+            .mount(popout.externalWindow.document.body);
+    }
+
+    /**
+     * @param {any} id
+     * @param {(new (props: any, env: import("@web/env").OdooEnv) => import("@odoo/owl").Component)} component
+     * @param {Object} [param2]
+     * @param {Object} [param2.props]
+     * @param {Object} [param2.options]
+     * @param {number} [param2.options.width]
+     * @param {number} [param2.options.height]
+     * @param {number} [param2.options.aspectRatio=16/9]
+     * @param {boolean} [param2.options.useAlternativeAssets]
+     * @returns {Promise<Window|null>}
+     */
+    async pip(
+        id,
+        component,
+        {
+            props,
+            options: {
+                width,
+                height,
+                aspectRatio = 16 / 9,
+                useAlternativeAssets = false,
+            } = {},
+        } = {},
+    ) {
+        let externalWindow = this.popouts.get(id).externalWindow;
+        if (!externalWindow || externalWindow.closed) {
+            externalWindow = await this._openPipWindow(id, width, height, aspectRatio);
+        }
+        await this.reset(id, { useAlternativeAssets });
+        this._mount(
+            id,
+            component,
+            props,
+            Object.assign({}, this.env, { pipWindow: externalWindow }),
+        );
+        return externalWindow;
+    }
+
+    /**
+     * @param {any} id
+     * @param {import("@web/env").OdooComponentConstructor} component
+     * @param {Object} props
+     * @returns {Window}
+     */
+    popout(id, component, props) {
+        const popout = this.popouts.get(id);
+        if (!popout.externalWindow || popout.externalWindow.closed) {
+            log.logic("popout opens a new window", () => ({ id: String(id) }));
+            popout.hooks?.beforePopout?.();
+            this._track(id, browser.open("about:blank", "_blank", "popup=yes"));
+        }
+        this.reset(id);
+        this._mount(id, component, props);
+        return popout.externalWindow;
+    }
+
+    /**
+     * @param {any} id
+     * @returns {Window|null}
+     */
+    getExternalWindow(id) {
+        const externalWindow = this.popouts.get(id)?.externalWindow;
+        return externalWindow && !externalWindow.closed ? externalWindow : null;
+    }
+
+    /**
+     * @param {any} id
+     * @param {{beforePopout?: () => void, afterPopoutClosed?: () => void}} hooks
+     */
+    addHooks(id, hooks) {
+        this.popouts.get(id).hooks = hooks;
+    }
+
+    /** @param {any} id */
+    createManager(id = DEFAULT_ID) {
+        this.popouts.set(id, { externalWindow: null, generation: 0, hooks: {} });
+        const service = this;
+        return {
+            /**
+             * @param {() => void} beforePopout
+             * @param {() => void} afterPopoutClosed
+             */
+            addHooks(beforePopout = () => {}, afterPopoutClosed = () => {}) {
+                service.addHooks(id, { beforePopout, afterPopoutClosed });
+            },
+
+            /**
+             * @param {Object} [props]
+             * @returns {Promise<Window|null>}
+             */
+            async pip(component, props) {
+                return service.pip(id, component, props);
+            },
+
+            /**
+             * @param {Object} props
+             * @returns {Window}
+             */
+            popout(component, props) {
+                return service.popout(id, component, props);
+            },
+
+            reset() {
+                service.reset(id);
+            },
+
+            /** @returns {Window|null} */
+            get externalWindow() {
+                return service.getExternalWindow(id);
+            },
+
+            /** @returns {any} */
+            get id() {
+                return id;
+            },
+        };
+    }
+}
+
+export const mailPopoutService = {
+    /** @param {Window} window */
+    async addAssets(window) {},
+
+    /** @param {import("@web/env").OdooEnv} env */
+    start(env) {
+        const service = new MailPopout(env);
+        return Object.assign(service.createManager(), {
+            createManager: (id) => service.createManager(id),
+        });
+    },
+};
+
+registry.category("services").add("mail.popout", mailPopoutService);

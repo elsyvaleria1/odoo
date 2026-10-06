@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<templates>
+    <t t-name="spreadsheet_edition.InsertListSpreadsheetMenu">
+        <CogMenuItem class="'o_insert_list_spreadsheet_menu'" icon="'oi oi-view-list'" description.translate="Insert in Spreadsheet…" onSelected.bind="this._onClick"/>
+    </t>
+</templates>

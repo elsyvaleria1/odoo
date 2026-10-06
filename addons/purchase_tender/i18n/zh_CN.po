@@ -1,0 +1,678 @@
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-09-26 23:11+0000\n"
+"PO-Revision-Date: 2026-09-26 23:11+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: zh_CN\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: purchase_tender
+#: model:ir.model.fields,field_description:purchase_tender.field_purchase_tender__message_needaction
+msgid "Action Needed"
+msgstr "所需操作"
+
+#. module: purchase_tender
+#: model:ir.model.fields,field_description:purchase_tender.field_purchase_tender__activity_ids
+msgid "Activities"
+msgstr "活动"
+
+#. module: purchase_tender
+#: model:ir.model.fields,field_description:purchase_tender.field_purchase_tender__activity_exception_decoration
+msgid "Activity Exception Decoration"
+msgstr "活动异常标示"
+
+#. module: purchase_tender
+#: model:ir.model.fields,field_description:purchase_tender.field_purchase_tender__activity_state
+msgid "Activity State"
+msgstr "活动状态"
+
+#. module: purchase_tender
+#: model:ir.model.fields,field_description:purchase_tender.field_purchase_tender__activity_type_icon
+msgid "Activity Type Icon"
+msgstr "活动类型图标"
+
+#. module: purchase_tender
+#: model:ir.model.fields,field_description:purchase_tender.field_purchase_order__alternative_po_ids
+msgid "Alternative POs"
+msgstr "替代POs"
+
+#. module: purchase_tender
+#: model_terms:ir.ui.view,arch_db:purchase_tender.purchase_order_form_inherit_tender
+msgid "Alternative Purchase Order"
+msgstr "替代采购订单"
+
+#. module: purchase_tender
+#: model:ir.model.fields,field_description:purchase_tender.field_purchase_tender__message_attachment_count
+msgid "Attachment Count"
+msgstr "附件数量"
+
+#. module: purchase_tender
+#: model_terms:ir.ui.view,arch_db:purchase_tender.purchase_order_line_compare_tree
+#: model_terms:ir.ui.view,arch_db:purchase_tender.purchase_tender_view_form
+msgid "Award"
+msgstr ""
+
+#. module: purchase_tender
+#: model_terms:ir.ui.view,arch_db:purchase_tender.purchase_order_line_compare_tree
+msgid "Award Selected"
+msgstr ""
+
+#. module: purchase_tender
+#: model:ir.model.fields,field_description:purchase_tender.field_purchase_order_line__qty_awarded
+#: model:ir.model.fields,field_description:purchase_tender.field_purchase_tender_line__qty_awarded
+#: model_terms:ir.ui.view,arch_db:purchase_tender.purchase_tender_view_search
+msgid "Awarded"
+msgstr ""
+
+#. module: purchase_tender
+#: model:ir.model.fields,field_description:purchase_tender.field_purchase_order_line__is_best_date
+msgid "Best Date"
+msgstr ""
+
+#. module: purchase_tender
+#: model:ir.model.fields,field_description:purchase_tender.field_purchase_order_line__is_best_total
+msgid "Best Total"
+msgstr ""
+
+#. module: purchase_tender
+#: model:ir.model.fields,field_description:purchase_tender.field_purchase_order_line__is_best_unit
+msgid "Best Unit Price"
+msgstr ""
+
+#. module: purchase_tender
+#: model:ir.model,name:purchase_tender.model_purchase_tender
+#: model_terms:ir.ui.view,arch_db:purchase_tender.purchase_tender_view_form
+msgid "Call for Tenders"
+msgstr ""
+
+#. module: purchase_tender
+#: model:ir.model,name:purchase_tender.model_purchase_tender_line
+msgid "Call for Tenders Need"
+msgstr ""
+
+#. module: purchase_tender
+#: model:ir.actions.act_window,name:purchase_tender.purchase_tender_action
+#: model:ir.ui.menu,name:purchase_tender.menu_purchase_tender
+#: model_terms:ir.ui.view,arch_db:purchase_tender.purchase_tender_view_list
+#: model_terms:ir.ui.view,arch_db:purchase_tender.purchase_tender_view_search
+msgid "Calls for Tenders"
+msgstr ""
+
+#. module: purchase_tender
+#: model_terms:ir.ui.view,arch_db:purchase_tender.purchase_tender_invite_form
+#: model_terms:ir.ui.view,arch_db:purchase_tender.purchase_tender_view_form
+msgid "Cancel"
+msgstr "取消"
+
+#. module: purchase_tender
+#: model_terms:ir.ui.view,arch_db:purchase_tender.purchase_order_line_compare_tree
+msgid "Clear"
+msgstr "清除"
+
+#. module: purchase_tender
+#: model_terms:ir.ui.view,arch_db:purchase_tender.purchase_order_line_compare_tree
+msgid "Clear Award"
+msgstr ""
+
+#. module: purchase_tender
+#: model:ir.model.fields,field_description:purchase_tender.field_purchase_tender__company_id
+#: model:ir.model.fields,field_description:purchase_tender.field_purchase_tender_line__company_id
+msgid "Company"
+msgstr "公司"
+
+#. module: purchase_tender
+#: model:ir.model.fields,field_description:purchase_tender.field_purchase_order_line__company_currency_id
+msgid "Company Currency"
+msgstr "公司币别"
+
+#. module: purchase_tender
+#: model:ir.model.fields,field_description:purchase_tender.field_purchase_order_line__price_total_cc
+msgid "Company Subtotal"
+msgstr "公司小计"
+
+#. module: purchase_tender
+#: model_terms:ir.ui.view,arch_db:purchase_tender.purchase_order_line_compare_tree
+msgid "Company Total"
+msgstr "公司总计"
+
+#. module: purchase_tender
+#: model_terms:ir.ui.view,arch_db:purchase_tender.purchase_tender_view_form
+msgid "Compare Offers"
+msgstr ""
+
+#. module: purchase_tender
+#. odoo-python
+#: code:addons/purchase_tender/models/purchase_order.py:0
+msgid "Compare Order Lines"
+msgstr "比较订单明细行"
+
+#. module: purchase_tender
+#: model_terms:ir.ui.view,arch_db:purchase_tender.purchase_order_form_inherit_tender
+msgid "Compare Product Lines"
+msgstr "比较产品明细行"
+
+#. module: purchase_tender
+#: model:ir.model,name:purchase_tender.model_wizard_purchase_order_confirm_open_rival
+msgid "Confirming one offer of a tender while others are open"
+msgstr ""
+
+#. module: purchase_tender
+#: model:ir.model.fields,field_description:purchase_tender.field_wizard_purchase_order_invite_vendor__copy_products
+msgid "Copy Products"
+msgstr "复制产品"
+
+#. module: purchase_tender
+#: model_terms:ir.ui.view,arch_db:purchase_tender.purchase_order_form_inherit_tender
+msgid ""
+"Create a call for tender by adding alternative requests for quotation to "
+"different vendors.                                 Make your choice by "
+"selecting the best combination of lead time, OTD and/or total amount."
+"                                 By comparing product lines you can also "
+"decide to order some products from one vendor and others from another "
+"vendor."
+msgstr ""
+"通过向不同供应商添加备选报价单来创建招标。                                 "
+"请选择交货时间、最短交货期和/或总金额的最佳组合。                                 "
+"通过比较产品系列，您还可以决定从一个供应商那里订购某些产品，而从另一个供应商那里订购其他产品。"
+
+#. module: purchase_tender
+#: model:ir.model.fields,field_description:purchase_tender.field_purchase_tender__create_uid
+#: model:ir.model.fields,field_description:purchase_tender.field_purchase_tender_line__create_uid
+#: model:ir.model.fields,field_description:purchase_tender.field_wizard_purchase_order_confirm_open_rival__create_uid
+#: model:ir.model.fields,field_description:purchase_tender.field_wizard_purchase_order_invite_vendor__create_uid
+msgid "Created by"
+msgstr "创建人"
+
+#. module: purchase_tender
+#: model:ir.model.fields,field_description:purchase_tender.field_purchase_tender__create_date
+#: model:ir.model.fields,field_description:purchase_tender.field_purchase_tender_line__create_date
+#: model:ir.model.fields,field_description:purchase_tender.field_wizard_purchase_order_confirm_open_rival__create_date
+#: model:ir.model.fields,field_description:purchase_tender.field_wizard_purchase_order_invite_vendor__create_date
+msgid "Created on"
+msgstr "创建日期"
+
+#. module: purchase_tender
+#: model:ir.model.fields,field_description:purchase_tender.field_purchase_tender__description
+#: model:ir.model.fields,field_description:purchase_tender.field_purchase_tender_line__description
+#: model_terms:ir.ui.view,arch_db:purchase_tender.purchase_tender_view_form
+msgid "Description"
+msgstr "描述"
+
+#. module: purchase_tender
+#: model_terms:ir.ui.view,arch_db:purchase_tender.purchase_tender_warning_form
+msgid "Discard"
+msgstr "丢弃"
+
+#. module: purchase_tender
+#: model:ir.model.fields,field_description:purchase_tender.field_purchase_order__display_name
+#: model:ir.model.fields,field_description:purchase_tender.field_purchase_order_line__display_name
+#: model:ir.model.fields,field_description:purchase_tender.field_purchase_tender__display_name
+#: model:ir.model.fields,field_description:purchase_tender.field_purchase_tender_line__display_name
+#: model:ir.model.fields,field_description:purchase_tender.field_wizard_purchase_order_confirm_open_rival__display_name
+#: model:ir.model.fields,field_description:purchase_tender.field_wizard_purchase_order_invite_vendor__display_name
+msgid "Display Name"
+msgstr "显示名称"
+
+#. module: purchase_tender
+#: model:ir.model.fields,field_description:purchase_tender.field_purchase_tender__message_follower_ids
+msgid "Followers"
+msgstr "关注者"
+
+#. module: purchase_tender
+#: model:ir.model.fields,field_description:purchase_tender.field_purchase_tender__message_partner_ids
+msgid "Followers (Partners)"
+msgstr "关注者（合作伙伴）"
+
+#. module: purchase_tender
+#: model_terms:ir.actions.act_window,help:purchase_tender.purchase_tender_action
+msgid ""
+"From a request for quotation, invite other vendors to offer for the\n"
+"                same products; compare their offers line by line and award the best,\n"
+"                in full or split between vendors."
+msgstr ""
+
+#. module: purchase_tender
+#: model:ir.model.fields,field_description:purchase_tender.field_purchase_tender__has_message
+msgid "Has Message"
+msgstr "有消息"
+
+#. module: purchase_tender
+#: model:ir.model.fields,field_description:purchase_tender.field_purchase_order__id
+#: model:ir.model.fields,field_description:purchase_tender.field_purchase_order_line__id
+#: model:ir.model.fields,field_description:purchase_tender.field_purchase_tender__id
+#: model:ir.model.fields,field_description:purchase_tender.field_purchase_tender_line__id
+#: model:ir.model.fields,field_description:purchase_tender.field_wizard_purchase_order_confirm_open_rival__id
+#: model:ir.model.fields,field_description:purchase_tender.field_wizard_purchase_order_invite_vendor__id
+msgid "ID"
+msgstr "ID"
+
+#. module: purchase_tender
+#: model:ir.model.fields,field_description:purchase_tender.field_purchase_tender__activity_exception_icon
+msgid "Icon"
+msgstr "图标"
+
+#. module: purchase_tender
+#: model:ir.model.fields,help:purchase_tender.field_purchase_tender__activity_exception_icon
+msgid "Icon to indicate an exception activity."
+msgstr "指示异常活动的图标。"
+
+#. module: purchase_tender
+#: model:ir.model.fields,help:purchase_tender.field_purchase_tender__message_needaction
+msgid "If checked, new messages require your attention."
+msgstr "如果勾选此项，则需要查看新消息。"
+
+#. module: purchase_tender
+#: model:ir.model.fields,help:purchase_tender.field_purchase_tender__message_has_error
+#: model:ir.model.fields,help:purchase_tender.field_purchase_tender__message_has_sms_error
+msgid "If checked, some messages have a delivery error."
+msgstr "如果勾选此项， 某些消息将出现发送错误。"
+
+#. module: purchase_tender
+#: model_terms:ir.ui.view,arch_db:purchase_tender.purchase_tender_invite_form
+msgid "Invite"
+msgstr ""
+
+#. module: purchase_tender
+#: model_terms:ir.ui.view,arch_db:purchase_tender.purchase_order_form_inherit_tender
+#: model_terms:ir.ui.view,arch_db:purchase_tender.purchase_tender_invite_form
+#: model_terms:ir.ui.view,arch_db:purchase_tender.purchase_tender_view_form
+msgid "Invite Vendors"
+msgstr ""
+
+#. module: purchase_tender
+#: model:ir.model,name:purchase_tender.model_wizard_purchase_order_invite_vendor
+msgid "Invite vendors to a tender"
+msgstr ""
+
+#. module: purchase_tender
+#: model:ir.model.fields,field_description:purchase_tender.field_purchase_tender__message_is_follower
+msgid "Is Follower"
+msgstr "是关注者"
+
+#. module: purchase_tender
+#: model:ir.model.fields,field_description:purchase_tender.field_purchase_tender__is_overdue
+msgid "Is Overdue"
+msgstr ""
+
+#. module: purchase_tender
+#: model_terms:ir.ui.view,arch_db:purchase_tender.purchase_tender_warning_form
+msgid "Keep Them Open"
+msgstr ""
+
+#. module: purchase_tender
+#: model:ir.model.fields,field_description:purchase_tender.field_purchase_tender__write_uid
+#: model:ir.model.fields,field_description:purchase_tender.field_purchase_tender_line__write_uid
+#: model:ir.model.fields,field_description:purchase_tender.field_wizard_purchase_order_confirm_open_rival__write_uid
+#: model:ir.model.fields,field_description:purchase_tender.field_wizard_purchase_order_invite_vendor__write_uid
+msgid "Last Updated by"
+msgstr "最后更新人"
+
+#. module: purchase_tender
+#: model:ir.model.fields,field_description:purchase_tender.field_purchase_tender__write_date
+#: model:ir.model.fields,field_description:purchase_tender.field_purchase_tender_line__write_date
+#: model:ir.model.fields,field_description:purchase_tender.field_wizard_purchase_order_confirm_open_rival__write_date
+#: model:ir.model.fields,field_description:purchase_tender.field_wizard_purchase_order_invite_vendor__write_date
+msgid "Last Updated on"
+msgstr "上次更新日期"
+
+#. module: purchase_tender
+#: model_terms:ir.ui.view,arch_db:purchase_tender.purchase_order_form_inherit_tender
+msgid "Link to Existing RfQ"
+msgstr "连接到现有RfQ"
+
+#. module: purchase_tender
+#: model:ir.model.fields,field_description:purchase_tender.field_purchase_tender__message_has_error
+msgid "Message Delivery error"
+msgstr "消息发送错误"
+
+#. module: purchase_tender
+#: model:ir.model.fields,field_description:purchase_tender.field_purchase_tender__message_ids
+msgid "Messages"
+msgstr "消息"
+
+#. module: purchase_tender
+#: model:ir.model.fields,field_description:purchase_tender.field_purchase_tender__my_activity_date_deadline
+msgid "My Activity Deadline"
+msgstr "我的活动截止时间"
+
+#. module: purchase_tender
+#: model_terms:ir.ui.view,arch_db:purchase_tender.purchase_tender_view_search
+msgid "My Tenders"
+msgstr ""
+
+#. module: purchase_tender
+#: model:ir.model.fields,field_description:purchase_tender.field_purchase_tender_line__product_qty
+msgid "Needed"
+msgstr ""
+
+#. module: purchase_tender
+#: model:ir.model.fields,field_description:purchase_tender.field_purchase_tender_line__date_needed
+msgid "Needed By"
+msgstr ""
+
+#. module: purchase_tender
+#: model:ir.model.fields,field_description:purchase_tender.field_purchase_tender__line_ids
+#: model_terms:ir.ui.view,arch_db:purchase_tender.purchase_tender_view_form
+msgid "Needs"
+msgstr ""
+
+#. module: purchase_tender
+#. odoo-python
+#: code:addons/purchase_tender/hooks.py:0
+msgid "New"
+msgstr "新建"
+
+#. module: purchase_tender
+#: model:ir.model.fields,field_description:purchase_tender.field_purchase_tender__activity_date_deadline
+msgid "Next Activity Deadline"
+msgstr "下一活动截止日期"
+
+#. module: purchase_tender
+#: model:ir.model.fields,field_description:purchase_tender.field_purchase_tender__activity_summary
+msgid "Next Activity Summary"
+msgstr "下一活动摘要"
+
+#. module: purchase_tender
+#: model:ir.model.fields,field_description:purchase_tender.field_purchase_tender__activity_type_id
+msgid "Next Activity Type"
+msgstr "下一活动类型"
+
+#. module: purchase_tender
+#: model_terms:ir.actions.act_window,help:purchase_tender.purchase_tender_action
+msgid "No call for tenders yet"
+msgstr ""
+
+#. module: purchase_tender
+#: model:ir.model.fields,field_description:purchase_tender.field_purchase_tender__message_needaction_counter
+msgid "Number of Actions"
+msgstr "操作数量"
+
+#. module: purchase_tender
+#: model:ir.model.fields,field_description:purchase_tender.field_purchase_tender__message_has_error_counter
+msgid "Number of errors"
+msgstr "错误数量"
+
+#. module: purchase_tender
+#: model:ir.model.fields,help:purchase_tender.field_purchase_tender__message_needaction_counter
+msgid "Number of messages requiring action"
+msgstr "需要采取行动的消息数量"
+
+#. module: purchase_tender
+#: model:ir.model.fields,help:purchase_tender.field_purchase_tender__message_has_error_counter
+msgid "Number of messages with delivery error"
+msgstr "发送错误的消息的数量"
+
+#. module: purchase_tender
+#: model:ir.model.fields,field_description:purchase_tender.field_purchase_tender__order_count
+msgid "Offer Count"
+msgstr ""
+
+#. module: purchase_tender
+#: model:ir.model.fields,field_description:purchase_tender.field_purchase_tender__order_ids
+#: model:ir.model.fields,field_description:purchase_tender.field_purchase_tender_line__offer_count
+#: model_terms:ir.ui.view,arch_db:purchase_tender.purchase_tender_view_form
+#: model_terms:ir.ui.view,arch_db:purchase_tender.purchase_tender_view_list
+msgid "Offers"
+msgstr ""
+
+#. module: purchase_tender
+#: model:ir.model.fields,field_description:purchase_tender.field_purchase_tender__date_deadline
+msgid "Offers Due"
+msgstr ""
+
+#. module: purchase_tender
+#. odoo-python
+#: code:addons/purchase_tender/models/purchase_tender.py:0
+msgid "Offers of %(tender)s"
+msgstr ""
+
+#. module: purchase_tender
+#: model:ir.model.fields,field_description:purchase_tender.field_wizard_purchase_order_confirm_open_rival__order_ids
+msgid "Offers to Confirm"
+msgstr ""
+
+#. module: purchase_tender
+#: model_terms:ir.ui.view,arch_db:purchase_tender.purchase_tender_view_search
+msgid "Open"
+msgstr ""
+
+#. module: purchase_tender
+#: model:ir.model.fields,field_description:purchase_tender.field_wizard_purchase_order_invite_vendor__origin_order_id
+msgid "Origin"
+msgstr ""
+
+#. module: purchase_tender
+#: model_terms:ir.ui.view,arch_db:purchase_tender.purchase_tender_warning_form
+msgid "Other Offers"
+msgstr ""
+
+#. module: purchase_tender
+#: model:ir.model.fields,field_description:purchase_tender.field_wizard_purchase_order_confirm_open_rival__rival_ids
+msgid "Other Open Offers"
+msgstr ""
+
+#. module: purchase_tender
+#: model:ir.model.fields,field_description:purchase_tender.field_purchase_tender__website_message_ids
+msgid "Portal Messages"
+msgstr ""
+
+#. module: purchase_tender
+#: model:ir.model.fields,help:purchase_tender.field_purchase_tender__website_message_ids
+msgid "Portal communication history for this record."
+msgstr ""
+
+#. module: purchase_tender
+#: model:ir.model.fields,field_description:purchase_tender.field_purchase_tender_line__product_id
+msgid "Product"
+msgstr "产品"
+
+#. module: purchase_tender
+#: model:ir.model,name:purchase_tender.model_purchase_order
+msgid "Purchase Order"
+msgstr "采购订单"
+
+#. module: purchase_tender
+#: model:ir.model,name:purchase_tender.model_purchase_order_line
+msgid "Purchase Order Line"
+msgstr "采购订单明细"
+
+#. module: purchase_tender
+#: model_terms:ir.ui.view,arch_db:purchase_tender.purchase_order_line_compare_tree
+msgid "Purchase Order Lines"
+msgstr "采购订单明细"
+
+#. module: purchase_tender
+#: model_terms:ir.ui.view,arch_db:purchase_tender.purchase_order_form_inherit_tender
+#: model_terms:ir.ui.view,arch_db:purchase_tender.purchase_order_line_compare_tree
+#: model_terms:ir.ui.view,arch_db:purchase_tender.purchase_tender_view_form
+#: model_terms:ir.ui.view,arch_db:purchase_tender.purchase_tender_warning_form
+msgid "Reference"
+msgstr "参考号"
+
+#. module: purchase_tender
+#: model_terms:ir.ui.view,arch_db:purchase_tender.purchase_tender_warning_form
+msgid "Reject the Others"
+msgstr ""
+
+#. module: purchase_tender
+#: model_terms:ir.ui.view,arch_db:purchase_tender.purchase_tender_view_form
+msgid "Reopen"
+msgstr ""
+
+#. module: purchase_tender
+#: model:ir.model.fields,field_description:purchase_tender.field_purchase_tender__user_id
+msgid "Responsible"
+msgstr ""
+
+#. module: purchase_tender
+#: model:ir.model.fields,field_description:purchase_tender.field_purchase_tender__activity_user_id
+msgid "Responsible User"
+msgstr "责任用户"
+
+#. module: purchase_tender
+#: model:ir.model.fields,field_description:purchase_tender.field_purchase_tender__message_has_sms_error
+msgid "SMS Delivery error"
+msgstr "短信发送错误"
+
+#. module: purchase_tender
+#: model:ir.model.fields,field_description:purchase_tender.field_purchase_tender_line__sequence
+msgid "Sequence"
+msgstr "序列"
+
+#. module: purchase_tender
+#: model:ir.model.fields,help:purchase_tender.field_wizard_purchase_order_invite_vendor__copy_products
+msgid ""
+"Start every invited offer from the origin's lines, or from the tender's "
+"needs."
+msgstr ""
+
+#. module: purchase_tender
+#: model:ir.model.fields,field_description:purchase_tender.field_purchase_tender__state
+msgid "Status"
+msgstr "状态"
+
+#. module: purchase_tender
+#: model:ir.model.fields,help:purchase_tender.field_purchase_tender__activity_state
+msgid ""
+"Status based on activities\n"
+"Overdue: Due date is already passed\n"
+"Today: Activity date is today\n"
+"Planned: Future activities."
+msgstr ""
+"基于活动的状态\n"
+"逾期：超出到期日期\n"
+"今天：活动日期是今天\n"
+"计划：未来活动。"
+
+#. module: purchase_tender
+#: model:ir.model.fields,field_description:purchase_tender.field_purchase_order__tender_id
+#: model:ir.model.fields,field_description:purchase_tender.field_purchase_tender__name
+#: model:ir.model.fields,field_description:purchase_tender.field_purchase_tender_line__tender_id
+#: model:ir.model.fields,field_description:purchase_tender.field_wizard_purchase_order_invite_vendor__tender_id
+#: model_terms:ir.ui.view,arch_db:purchase_tender.purchase_order_form_inherit_tender
+msgid "Tender"
+msgstr ""
+
+#. module: purchase_tender
+#: model:ir.model.fields,help:purchase_tender.field_purchase_tender_line__date_needed
+msgid ""
+"The date the counterparty must meet: delivery when we buy, collection when "
+"we sell."
+msgstr ""
+
+#. module: purchase_tender
+#: model:ir.model.fields,help:purchase_tender.field_wizard_purchase_order_invite_vendor__origin_order_id
+msgid "The offer the invited counterparties are asked to match."
+msgstr ""
+
+#. module: purchase_tender
+#: model:ir.model.fields,help:purchase_tender.field_purchase_order__alternative_po_ids
+msgid "The offers of this order's tender, this one included"
+msgstr ""
+
+#. module: purchase_tender
+#: model:ir.model.fields,help:purchase_tender.field_purchase_tender_line__offer_count
+msgid "The open offers that quote this product."
+msgstr ""
+
+#. module: purchase_tender
+#: model:ir.model.fields,help:purchase_tender.field_purchase_order_line__qty_awarded
+msgid ""
+"The quantity of this offer the tender awards. Awarding the tender confirms "
+"the offers with an award at these quantities and rejects the others."
+msgstr ""
+
+#. module: purchase_tender
+#: model:ir.model.fields,help:purchase_tender.field_wizard_purchase_order_invite_vendor__tender_id
+msgid ""
+"The tender whose needs the invited counterparties are asked to offer on."
+msgstr ""
+
+#. module: purchase_tender
+#: model:ir.model.fields,help:purchase_tender.field_wizard_purchase_order_invite_vendor__partner_ids
+msgid "The vendors to invite: each receives a request for quotation."
+msgstr ""
+
+#. module: purchase_tender
+#: model:ir.model.fields,field_description:purchase_tender.field_purchase_tender_line__qty_to_award
+msgid "To Award"
+msgstr ""
+
+#. module: purchase_tender
+#: model_terms:ir.ui.view,arch_db:purchase_tender.purchase_order_line_compare_tree
+msgid "Total"
+msgstr "总计"
+
+#. module: purchase_tender
+#: model:ir.model.fields,help:purchase_tender.field_purchase_tender__activity_exception_decoration
+msgid "Type of the exception activity on record."
+msgstr "记录中异常活动的类型。"
+
+#. module: purchase_tender
+#: model:ir.model.fields,field_description:purchase_tender.field_purchase_tender_line__product_uom_id
+msgid "Unit"
+msgstr "单元"
+
+#. module: purchase_tender
+#: model_terms:ir.ui.view,arch_db:purchase_tender.purchase_order_line_compare_tree
+msgid "Vendor"
+msgstr "供应商"
+
+#. module: purchase_tender
+#: model:ir.model.fields,field_description:purchase_tender.field_wizard_purchase_order_invite_vendor__partner_ids
+msgid "Vendors"
+msgstr "供应商"
+
+#. module: purchase_tender
+#: model:ir.model.fields,field_description:purchase_tender.field_wizard_purchase_order_invite_vendor__purchase_warn_msg
+msgid "Warning Messages"
+msgstr "警告消息"
+
+#. module: purchase_tender
+#. odoo-python
+#: code:addons/purchase_tender/wizards/wizard_purchase_order_invite_vendor.py:0
+msgid ""
+"Warning for %(partner)s:\n"
+"%(warning_message)s\n"
+msgstr ""
+"%(partner)s警告：\n"
+"%(warning_message)s\n"
+
+#. module: purchase_tender
+#. odoo-python
+#: code:addons/purchase_tender/wizards/wizard_purchase_order_invite_vendor.py:0
+msgid ""
+"Warning for %(product)s:\n"
+"%(warning_message)s\n"
+msgstr ""
+"%(product)s警告：\n"
+"%(warning_message)s\n"
+
+#. module: purchase_tender
+#: model:ir.model.fields,help:purchase_tender.field_purchase_tender_line__description
+msgid "What the offers must match beyond the product: grade, packing, origin."
+msgstr ""
+
+#. module: purchase_tender
+#: model:ir.model.fields,help:purchase_tender.field_purchase_tender_line__qty_awarded
+msgid "What the offers' awarded lines give of this need, in its unit."
+msgstr ""
+
+#. module: purchase_tender
+#: model:ir.model.fields,help:purchase_tender.field_purchase_tender__line_ids
+msgid ""
+"What the tender asks for. Invited counterparties' offers start from these "
+"lines."
+msgstr ""
+
+#. module: purchase_tender
+#: model:ir.model.fields,help:purchase_tender.field_purchase_tender__date_deadline
+msgid "When the offers are due. Past it, the tender waits for its award."
+msgstr ""

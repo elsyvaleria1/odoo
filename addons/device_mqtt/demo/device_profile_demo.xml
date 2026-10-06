@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="demo_config_mqtt_standard" model="device.profile">
+        <field name="name">MQTT Standard Configuration</field>
+        <field
+            name="description">Standard MQTT configuration for sensors and devices</field>
+        <field name="protocol">mqtt</field>
+        <field name="mqtt_qos">1</field>
+        <field name="mqtt_use_tls" eval="False" />
+        <field name="auth_type">none</field>
+        <field name="alert_on_disconnect" eval="True" />
+        <field name="disconnect_timeout">300</field>
+        <field name="data_retention_days">90</field>
+    </record>
+
+    <record id="demo_config_mqtt_auth" model="device.profile">
+        <field name="name">MQTT with Authentication</field>
+        <field
+            name="description">MQTT configuration with basic authentication for production devices</field>
+        <field name="protocol">mqtt</field>
+        <field name="mqtt_qos">2</field>
+        <field name="mqtt_use_tls" eval="False" />
+        <field name="auth_type">basic</field>
+        <field name="auth_username">prod_user</field>
+        <field name="auth_password">demo_password</field>
+        <field name="alert_on_disconnect" eval="True" />
+        <field name="disconnect_timeout">180</field>
+        <field name="data_retention_days">90</field>
+    </record>
+
+</odoo>

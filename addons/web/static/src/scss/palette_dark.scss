@@ -1,0 +1,452 @@
+$o-dark-colors-lighten: 12% !default;
+$o-dark-min-contrast-ratio: 4.5 !default;
+
+$o-dark-white: #000 !default;
+$o-dark-black: #f5f5f7 !default;
+
+$o-dark-color-contrast-light: $o-dark-white !default;
+$o-dark-color-contrast-dark: $o-dark-black !default;
+
+$o-dark-gray-100: #161618 !default;
+$o-dark-gray-200: #1c1c1e !default;
+$o-dark-gray-300: #2c2c2e !default;
+$o-dark-gray-400: #3a3a3c !default;
+$o-dark-gray-500: #48484a !default;
+$o-dark-gray-600: #636366 !default;
+$o-dark-gray-700: #8e8e93 !default;
+$o-dark-gray-800: #aeaeb2 !default;
+$o-dark-gray-900: #f5f5f7 !default;
+
+$o-dark-grays: (
+    100: $o-dark-gray-100,
+    200: $o-dark-gray-200,
+    300: $o-dark-gray-300,
+    400: $o-dark-gray-400,
+    500: $o-dark-gray-500,
+    600: $o-dark-gray-600,
+    700: $o-dark-gray-700,
+    800: $o-dark-gray-800,
+    900: $o-dark-gray-900,
+) !default;
+
+$o-dark-community-color: #009aff !default;
+$o-dark-enterprise-color: #009aff !default;
+$o-dark-enterprise-action-color: #009aff !default;
+
+$o-dark-brand-odoo: $o-dark-enterprise-color !default;
+$o-dark-brand-primary: $o-dark-brand-odoo !default;
+$o-dark-action: $o-dark-enterprise-action-color !default;
+
+$o-dark-brand-primary-filled: $o-dark-brand-primary !default;
+$o-dark-action-text: $o-dark-action !default;
+
+$o-dark-theme-text-colors: (
+    "primary": #409cff,
+    "success": #30d158,
+    "info": #409cff,
+    "warning": #ff9f0a,
+    "danger": #ff5950,
+) !default;
+
+$o-dark-main-text-color: $o-dark-gray-900 !default;
+$o-dark-ring-color: map-get($o-dark-theme-text-colors, "primary") !default;
+$o-dark-main-color-muted: rgba(#9e9ea2, 0.9) !default;
+
+$o-dark-bs-light: $o-dark-gray-300 !default;
+$o-dark-bs-dark: $o-dark-gray-700 !default;
+
+$o-dark-main-favorite-color: #ffd60a !default;
+$o-dark-main-code-color: #ff7ab2 !default;
+$o-dark-main-link-color: $o-dark-action-text !default;
+$o-dark-link-shade-percentage: 15% !default;
+
+$o-dark-link-hover-color: mix(#fff, $o-dark-action, 30%) !default;
+
+$o-dark-navbar-entry-color: rgba($o-dark-black, 0.9) !default;
+$o-dark-navbar-entry-color--hover: $o-dark-black !default;
+$o-dark-navbar-entry-bg--hover: o-token(--o-fill-4, rgba($o-dark-black, 0.08)) !default;
+$o-dark-navbar-entry-color--active: $o-dark-navbar-entry-color--hover !default;
+$o-dark-navbar-brand-color: $o-dark-navbar-entry-color !default;
+$o-dark-navbar-badge-bg: map-get($o-dark-theme-text-colors, "danger") !default;
+$o-dark-navbar-badge-text-shadow: 1px 1px 0 rgba($o-dark-black, 0.3) !default;
+
+$o-dark-brand-lightsecondary: $o-dark-gray-100 !default;
+$o-dark-form-switch-color: rgba($o-dark-black, 0.5) !default;
+$o-dark-form-switch-focus-color: $o-dark-black !default;
+
+$o-dark-form-range-thumb-active-bg: lighten($o-dark-brand-primary, 10%) !default;
+$o-dark-form-range-track-bg: null !default;
+
+$o-dark-mark-bg: #ffdebc !default;
+$o-dark-mark-color: mix(#000, $o-dark-mark-bg, 75%) !default;
+$o-dark-hairline: rgba(255, 255, 255, 0.08) !default;
+$o-dark-border-color: $o-dark-hairline !default;
+
+$o-dark-box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.4) !default;
+$o-dark-box-shadow-sm: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.3) !default;
+$o-dark-box-shadow-lg: 0 1rem 3rem rgba(0, 0, 0, 0.5) !default;
+$o-dark-box-shadow-inset: inset 0 1px 2px rgba(0, 0, 0, 0.2) !default;
+
+$o-dark-webclient-background-color: $o-dark-gray-100 !default;
+$o-dark-shadow-color: $o-dark-gray-700 !default;
+
+$o-dark-input-border-required: $o-dark-black !default;
+$o-dark-input-boundary-color: #6e6e73 !default;
+
+$o-dark-form-lightsecondary: $o-dark-gray-300 !default;
+$o-dark-form-separator-color: $o-dark-gray-400 !default;
+$o-dark-glass-bg: $o-dark-gray-300 !default;
+$o-dark-glass-surface: radial-gradient(
+    circle at 97% 3.3%,
+    rgba(0, 0, 0, 0.35) 0,
+    rgba(0, 0, 0, 0.6) 164%
+) !default;
+$o-dark-glass-surface-strong: rgba(56, 56, 61, 0.6) !default;
+$o-dark-glass-bar: rgba(56, 56, 61, 0.6) !default;
+$o-dark-glass-bar-border: hsl(240, 1.6%, 23.9%) !default;
+$o-dark-glass-chip: $o-dark-glass-bar !default;
+$o-dark-glass-shadow: rgba(0, 0, 0, 0.65) !default;
+$o-dark-canvas-color: #071a5a !default;
+$o-dark-canvas-image: url("/web/static/img/home_menu_arcs_dark.svg") !default;
+$o-dark-canvas-tint-image: url("/web/static/img/home_menu_arcs_mono_dark.svg") !default;
+
+$o-dark-labels: (
+    1: rgba(255, 255, 255, 0.98),
+    2: rgba(255, 255, 255, 0.66),
+    3: rgba(255, 255, 255, 0.5),
+    4: rgba(255, 255, 255, 0.42),
+) !default;
+
+$o-dark-fills: (
+    1: rgba(182, 182, 182, 0.3),
+    2: rgba(120, 120, 128, 0.36),
+    3: rgba(118, 118, 128, 0.3),
+    4: rgba(116, 116, 128, 0.25),
+) !default;
+
+$o-dark-separator: #343436 !default;
+$o-dark-modal-backdrop-bg: $o-dark-white !default;
+$o-dark-list-group-active-bg: rgba(
+    saturate(adjust-hue(map-get($o-dark-theme-text-colors, "info"), 15), 1.8),
+    0.5
+) !default;
+
+$o-dark-bs-primary: $o-dark-brand-primary !default;
+$o-dark-bs-secondary: $o-dark-gray-300 !default;
+$o-dark-bs-success: map-get($o-dark-theme-text-colors, "success") !default;
+$o-dark-bs-info: map-get($o-dark-theme-text-colors, "info") !default;
+$o-dark-bs-warning: map-get($o-dark-theme-text-colors, "warning") !default;
+$o-dark-bs-danger: map-get($o-dark-theme-text-colors, "danger") !default;
+
+$o-dark-theme-colors: (
+    "primary": $o-dark-bs-primary,
+    "secondary": $o-dark-bs-secondary,
+    "success": $o-dark-bs-success,
+    "info": $o-dark-bs-info,
+    "warning": $o-dark-bs-warning,
+    "danger": $o-dark-bs-danger,
+    "light": $o-dark-bs-light,
+    "dark": $o-dark-bs-dark,
+) !default;
+
+$o-dark-primary-text-emphasis: mix(
+    #fff,
+    map-get($o-dark-theme-colors, "primary"),
+    60%
+) !default;
+$o-dark-primary-bg-subtle: mix(
+    #000,
+    map-get($o-dark-theme-colors, "primary"),
+    80%
+) !default;
+$o-dark-primary-border-subtle: mix(
+    #000,
+    map-get($o-dark-theme-colors, "primary"),
+    60%
+) !default;
+$o-dark-secondary-text-emphasis: mix(
+    #fff,
+    map-get($o-dark-theme-colors, "secondary"),
+    60%
+) !default;
+$o-dark-secondary-bg-subtle: mix(
+    #000,
+    map-get($o-dark-theme-colors, "secondary"),
+    80%
+) !default;
+$o-dark-secondary-border-subtle: mix(
+    #000,
+    map-get($o-dark-theme-colors, "secondary"),
+    60%
+) !default;
+$o-dark-success-text-emphasis: mix(
+    #fff,
+    map-get($o-dark-theme-colors, "success"),
+    60%
+) !default;
+$o-dark-success-bg-subtle: mix(
+    #000,
+    map-get($o-dark-theme-colors, "success"),
+    80%
+) !default;
+$o-dark-success-border-subtle: mix(
+    #000,
+    map-get($o-dark-theme-colors, "success"),
+    60%
+) !default;
+$o-dark-info-text-emphasis: mix(
+    #fff,
+    map-get($o-dark-theme-colors, "info"),
+    90%
+) !default;
+$o-dark-info-bg-subtle: mix(#000, map-get($o-dark-theme-colors, "info"), 65%) !default;
+$o-dark-info-border-subtle: map-get($o-dark-theme-colors, "info") !default;
+$o-dark-warning-text-emphasis: mix(
+    #fff,
+    map-get($o-dark-theme-colors, "warning"),
+    60%
+) !default;
+$o-dark-warning-bg-subtle: mix(
+    #000,
+    map-get($o-dark-theme-colors, "warning"),
+    80%
+) !default;
+$o-dark-warning-border-subtle: mix(
+    #000,
+    map-get($o-dark-theme-colors, "warning"),
+    60%
+) !default;
+$o-dark-danger-text-emphasis: mix(
+    #fff,
+    map-get($o-dark-theme-colors, "danger"),
+    60%
+) !default;
+$o-dark-danger-bg-subtle: mix(
+    #000,
+    map-get($o-dark-theme-colors, "danger"),
+    80%
+) !default;
+$o-dark-danger-border-subtle: mix(
+    #000,
+    map-get($o-dark-theme-colors, "danger"),
+    60%
+) !default;
+
+$o-dark-theme-colors-text: (
+    "primary": $o-dark-primary-text-emphasis,
+    "secondary": $o-dark-secondary-text-emphasis,
+    "success": $o-dark-success-text-emphasis,
+    "info": $o-dark-info-text-emphasis,
+    "warning": $o-dark-warning-text-emphasis,
+    "danger": $o-dark-danger-text-emphasis,
+    "light": $o-dark-gray-700,
+    "dark": $o-dark-gray-700,
+) !default;
+
+$o-dark-theme-colors-bg-subtle: (
+    "primary": $o-dark-primary-bg-subtle,
+    "secondary": $o-dark-secondary-bg-subtle,
+    "success": $o-dark-success-bg-subtle,
+    "info": $o-dark-info-bg-subtle,
+    "warning": $o-dark-warning-bg-subtle,
+    "danger": $o-dark-danger-bg-subtle,
+    "light": mix($o-dark-gray-100, $o-dark-white),
+    "dark": $o-dark-gray-400,
+) !default;
+
+$o-dark-theme-colors-border-subtle: (
+    "primary": $o-dark-primary-border-subtle,
+    "secondary": $o-dark-secondary-border-subtle,
+    "success": $o-dark-success-border-subtle,
+    "info": $o-dark-info-border-subtle,
+    "warning": $o-dark-warning-border-subtle,
+    "danger": $o-dark-danger-border-subtle,
+    "light": $o-dark-gray-200,
+    "dark": $o-dark-gray-500,
+) !default;
+
+$o-dark-table-bg-scale: -70% !default;
+$o-dark-table-striped-bg-factor: 0.02 !default;
+$o-dark-table-active-bg-factor: 0.1 !default;
+$o-dark-table-hover-bg-factor: 0.1 !default;
+$o-dark-table-border-factor: null !default;
+
+$o-dark-table-variants: () !default;
+@each $-name, $-color in $o-dark-theme-colors {
+    $o-dark-table-variants: map-merge(
+        $o-dark-table-variants,
+        (
+            $-name:
+                if(
+                    index(("light", "dark"), $-name),
+                    $-color,
+                    mix(#000, $-color, -$o-dark-table-bg-scale)
+                ),
+        )
+    ) !global;
+}
+
+$o-dark-view-background-color: $o-dark-gray-200 !default;
+$o-dark-navbar-background: $o-dark-gray-300 !default;
+$o-dark-component-active-bg: o-round-color(
+    mix($o-dark-action, $o-dark-gray-200, 12%)
+) !default;
+$o-dark-bg-chrome: $o-dark-gray-200 !default;
+$o-dark-bg-disabled: $o-dark-gray-300 !default;
+$o-dark-bg-raised: $o-dark-gray-300 !default;
+
+$o-dark-text-colors-custom: (
+    "action": $o-dark-action-text,
+    "favorite": $o-dark-main-favorite-color,
+) !default;
+
+$o-dark-bg-colors-custom: (
+    "action": $o-dark-action,
+    "view": $o-dark-view-background-color,
+    "favorite": $o-dark-main-favorite-color,
+) !default;
+
+$o-dark-btn-custom: (
+    "favorite": $o-dark-main-favorite-color,
+) !default;
+
+$o-dark-card-bg: $o-dark-view-background-color !default;
+$o-dark-popover-bg: $o-dark-white !default;
+$o-dark-card-border-color: o-or($o-dark-border-color, $o-dark-gray-300) !default;
+$o-dark-popover-border-color: o-or($o-dark-border-color, $o-dark-gray-300) !default;
+$o-dark-dropdown-border-color: o-or($o-dark-border-color, $o-dark-gray-300) !default;
+$o-dark-component-active-border: $o-dark-action !default;
+
+$o-dark-btns-bs-override: (
+    "primary": (
+        background: $o-dark-brand-primary-filled,
+        border: $o-dark-brand-primary-filled,
+        color: $o-dark-white,
+
+        hover-background: darken($o-dark-brand-primary-filled, 8%),
+        hover-border: darken($o-dark-brand-primary-filled, 8%),
+        hover-color: $o-dark-white,
+
+        active-background: darken($o-dark-brand-primary-filled, 12%),
+        active-border: darken($o-dark-brand-primary-filled, 12%),
+        active-color: $o-dark-white,
+    ),
+
+    "secondary": (
+        background: $o-dark-gray-300,
+        border: $o-dark-gray-300,
+        color: $o-dark-gray-900,
+
+        hover-background: $o-dark-gray-400,
+        hover-border: $o-dark-gray-400,
+        hover-color: $o-dark-gray-900,
+
+        active-background: mix($o-dark-action, $o-dark-gray-100, 15%),
+        active-border: darken($o-dark-action, 10%),
+        active-color: $o-dark-black,
+    ),
+
+    "light": (
+        background: $o-dark-gray-200,
+        border: $o-dark-gray-200,
+        color: $o-dark-gray-900,
+
+        hover-background: $o-dark-gray-300,
+        hover-border: $o-dark-gray-300,
+        hover-color: $o-dark-black,
+
+        active-background: mix($o-dark-action, $o-dark-gray-100, 15%),
+        active-border: darken($o-dark-action, 10%),
+        active-color: $o-dark-black,
+    ),
+
+    "danger": (
+        background: $o-dark-bs-danger,
+        border: $o-dark-bs-danger,
+        color: $o-dark-white,
+
+        hover-background: darken($o-dark-bs-danger, 8%),
+        hover-border: darken($o-dark-bs-danger, 8%),
+        hover-color: $o-dark-white,
+
+        active-background: darken($o-dark-bs-danger, 12%),
+        active-border: darken($o-dark-bs-danger, 12%),
+        active-color: $o-dark-white,
+    ),
+) !default;
+
+$o-dark-btns-bs-outline-override: (
+    "primary": (
+        background: transparent,
+        border: map-get($o-dark-theme-text-colors, "primary"),
+        color: map-get($o-dark-theme-text-colors, "primary"),
+        hover-background: darken($o-dark-brand-primary-filled, 8%),
+        hover-border: darken($o-dark-brand-primary-filled, 8%),
+        hover-color: $o-dark-white,
+
+        active-background: darken($o-dark-brand-primary-filled, 12%),
+        active-border: darken($o-dark-brand-primary-filled, 12%),
+        active-color: $o-dark-white,
+    ),
+
+    "secondary": (
+        background: transparent,
+        border: $o-dark-gray-300,
+        color: $o-dark-gray-900,
+
+        hover-background: $o-dark-gray-300,
+        hover-border: $o-dark-gray-300,
+        hover-color: $o-dark-black,
+
+        active-background: mix($o-dark-action, $o-dark-gray-100, 15%),
+        active-border: darken($o-dark-action, 10%),
+        active-color: $o-dark-black,
+    ),
+
+    "light": (
+        background: transparent,
+        border: $o-dark-gray-300,
+        color: $o-dark-black,
+
+        hover-background: $o-dark-gray-300,
+        hover-border: $o-dark-gray-300,
+        hover-color: $o-dark-black,
+
+        active-background: mix($o-dark-action, $o-dark-gray-100, 15%),
+        active-border: darken($o-dark-action, 10%),
+        active-color: $o-dark-black,
+    ),
+
+    "danger": (
+        background: transparent,
+        border: $o-dark-bs-danger,
+        color: $o-dark-bs-danger,
+
+        hover-background: darken($o-dark-bs-danger, 8%),
+        hover-border: darken($o-dark-bs-danger, 8%),
+        hover-color: $o-dark-white,
+
+        active-background: darken($o-dark-bs-danger, 12%),
+        active-border: darken($o-dark-bs-danger, 12%),
+        active-color: $o-dark-white,
+    ),
+) !default;
+
+$o-dark-surface-raised: $o-dark-gray-300 !default;
+$o-dark-surface-sunken: $o-dark-view-background-color !default;
+
+$o-dark-input-focus-bg: inherit !default;
+$o-dark-input-placeholder-color: mix($o-dark-gray-500, $o-dark-gray-600) !default;
+$o-dark-dropdown-header-color: $o-dark-gray-700 !default;
+$o-dark-tooltip-color: $o-dark-gray-900 !default;
+$o-dark-toast-background-color: rgba($o-dark-gray-300, 0.9) !default;
+$o-dark-alert-bg-scale: -65% !default;
+$o-dark-alert-border-scale: 0% !default;
+$o-dark-alert-color-scale: 90% !default;
+
+$o-dark-kbd-color: $o-dark-gray-200 !default;
+$o-dark-kbd-bg: $o-dark-gray-900 !default;
+$o-dark-kbd-box-shadow:
+    0px 1px 1px rgba(0, 0, 0, 0.3),
+    inset 0px -1px 1px 1px rgba($o-dark-gray-800, 0.8),
+    inset 0px 2px 0px 0px rgba($o-dark-black, 0.8) !default;

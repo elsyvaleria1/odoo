@@ -1,0 +1,266 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ACTIONS (used in views) -->
+    <record id="quick_create_account_action" model="ir.actions.act_window">
+        <field name="name">Amazon Accounts</field>
+        <field name="res_model">amazon.account</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+
+    <!-- VIEWS -->
+    <record id="amazon_account_view_tree" model="ir.ui.view">
+        <field name="name">amazon.account.list</field>
+        <field name="model">amazon.account</field>
+        <field name="arch" type="xml">
+            <list string="Amazon Accounts" create="false" delete="false">
+                <header>
+                    <button
+                        name="%(sale_amazon.quick_create_account_action)d"
+                        type="action"
+                        string="New"
+                        display="always"
+                        class="btn-primary" />
+                </header>
+                <field name="name" />
+                <field name="active_marketplace_ids" widget="many2many_tags" />
+                <field name="user_id" optional="hide" />
+                <field name="team_id" optional="hide" />
+                <field name="company_id" groups="base.group_multi_company" />
+                <field name="last_orders_sync" groups="base.group_no_one" />
+                <field
+                    name="state"
+                    widget="badge"
+                    decoration-danger="state == 'disconnected'"
+                    decoration-success="state == 'connected'" />
+            </list>
+        </field>
+    </record>
+
+    <record id="amazon_account_view_form" model="ir.ui.view">
+        <field name="name">amazon.account.form</field>
+        <field name="model">amazon.account</field>
+        <field name="arch" type="xml">
+            <form string="Amazon Account" create="false">
+                <header>
+                    <button
+                        name="action_redirect_to_oauth_url"
+                        type="object"
+                        string="Connect"
+                        help="Link your Amazon account with Odoo to start synchronizing your Amazon                               orders."
+                        invisible="state == 'connected'"
+                        class="btn-primary" />
+                    <button
+                        name="action_reset_refresh_token"
+                        type="object"
+                        string="Disconnect"
+                        confirm="Are you sure you want to disconnect this account?"
+                        invisible="state == 'disconnected'"
+                        class="btn-secondary" />
+                    <t invisible="state == 'disconnected'" groups="base.group_no_one">
+                        <button
+                            name="action_recover_order"
+                            type="object"
+                            string="Recover Order"
+                            class="btn-secondary" />
+                        <button
+                            name="action_sync_orders"
+                            type="object"
+                            string="Sync Orders"
+                            class="btn-secondary" />
+                        <button
+                            name="action_sync_pickings"
+                            type="object"
+                            string="Sync Deliveries"
+                            class="btn-secondary" />
+                        <button
+                            name="action_sync_inventory"
+                            type="object"
+                            string="Sync FBM Inventory"
+                            class="btn-secondary" />
+                        <button
+                            name="action_sync_feeds_status"
+                            type="object"
+                            string="Sync Feeds Status"
+                            class="btn-secondary" />
+                    </t>
+                </header>
+                <sheet>
+                    <field name="company_id" force_save="1" invisible="1" />
+                    <field name="active" invisible="1" />
+                    <div class="oe_button_box" name="button_box">
+                        <button
+                            name="action_view_offers"
+                            type="object"
+                            icon="fa-brands fa-amazon"
+                            invisible="not id"
+                            class="oe_stat_button">
+                            <field
+                                name="offer_count"
+                                string="Offers"
+                                widget="statinfo" />
+                        </button>
+                        <button
+                            name="action_view_orders"
+                            type="object"
+                            icon="fa-dollar"
+                            invisible="not id"
+                            class="oe_stat_button">
+                            <field
+                                name="order_count"
+                                string="Orders"
+                                widget="statinfo" />
+                        </button>
+                    </div>
+                    <widget
+                        name="web_ribbon"
+                        title="Archived"
+                        invisible="active"
+                        bg_color="text-bg-danger" />
+                    <div
+                        class="badge rounded-pill text-bg-success fs-6 float-end"
+                        invisible="state != 'connected'">
+                        Connected
+                    </div>
+                    <div
+                        class="badge rounded-pill text-bg-danger fs-6 float-end"
+                        invisible="state == 'connected'">
+                        Disconnected
+                    </div>
+                    <div class="oe_title" id="title">
+                        <label for="name" string="Account Name" />
+                        <h1>
+                            <field name="name" placeholder="e.g. American Market" />
+                        </h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field
+                                name="company_id"
+                                force_save="1"
+                                options="{'no_create_edit': True, 'no_open': True}"
+                                groups="base.group_multi_company" />
+                            <label for="active_marketplace_ids" />
+                            <div class="d-flex oe_inline">
+                                <field
+                                    name="active_marketplace_ids"
+                                    widget="many2many_tags"
+                                    options="{'no_quick_create': True}" />
+                                <button
+                                    name="action_update_available_marketplaces"
+                                    type="object"
+                                    title="Update available marketplaces"
+                                    help="Add any new marketplace that this account has gained                                           access to."
+                                    icon="fa-refresh"
+                                    class="oe_link" />
+                            </div>
+                            <field name="user_id" required="True" />
+                            <field name="team_id" />
+                        </group>
+                        <group>
+                            <field
+                                name="location_id"
+                                groups="stock.group_stock_multi_locations" />
+                            <label for="synchronize_inventory" />
+                            <div name="synchronize_inventory_dic" class="oe-inline">
+                                <field name="synchronize_inventory" /> Synchronize
+                            </div>
+                            <field name="last_orders_sync" groups="base.group_no_one" />
+                        </group>
+                    </group>
+                    <notebook groups="base.group_no_one">
+                        <page name="credentials" string="Credentials">
+                            <group>
+                                <group>
+                                    <field
+                                        name="base_marketplace_id"
+                                        force_save="True"
+                                        readonly="True" />
+                                    <field name="seller_key" readonly="True" />
+                                    <field
+                                        name="credential_id"
+                                        groups="base.group_system"
+                                        readonly="True" />
+                                </group>
+                            </group>
+                        </page>
+                        <page name="default_product_page" string="Default Products">
+                            <field name="default_product_ids" mode="kanban" />
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="quick_create_account_form" model="ir.ui.view">
+        <field name="name">Quick Create Amazon Account Form</field>
+        <field name="model">amazon.account</field>
+        <field name="priority">999</field>
+        <field name="arch" type="xml">
+            <form>
+                <field name="company_id" force_save="1" invisible="1" />
+                <field name="name" invisible="1" />
+                <group>
+                    <field
+                        name="base_marketplace_id"
+                        options="{'no_open': True, 'no_quick_create': True}" />
+                    <p class="text-muted" colspan="2">
+                        Select the amazon marketplace to log in from.
+                    </p>
+                </group>
+                <footer>
+                    <button
+                        name="action_redirect_to_oauth_url"
+                        type="object"
+                        string="Connect"
+                        class="btn-primary" />
+                    <button special="cancel" string="Cancel" class="btn-secondary" />
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="amazon_account_view_search" model="ir.ui.view">
+        <field name="name">amazon.account.search</field>
+        <field name="model">amazon.account</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name" string="Account" />
+                <field
+                    name="active_marketplace_ids"
+                    filter_domain="[('active_marketplace_ids.name', 'ilike', self)]" />
+                <filter
+                    name="archived"
+                    string="Archived"
+                    domain="[('active', '=', False)]" />
+            </search>
+        </field>
+    </record>
+
+    <!-- ACTIONS -->
+    <record id="list_amazon_account_action" model="ir.actions.act_window">
+        <field name="name">Amazon Accounts</field>
+        <field name="res_model">amazon.account</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Register your Amazon account
+            </p>
+            <p>
+                Amazon accounts correspond to Amazon Seller Central accounts.
+            </p>
+            <p>
+                Register yours to start synchronizing your orders into Odoo.
+            </p>
+        </field>
+    </record>
+
+    <record id="quick_create_account_action_form" model="ir.actions.act_window.view">
+        <field name="view_mode">form</field>
+        <field name="view_id" ref="quick_create_account_form" />
+        <field name="act_window_id" ref="quick_create_account_action" />
+    </record>
+
+</odoo>

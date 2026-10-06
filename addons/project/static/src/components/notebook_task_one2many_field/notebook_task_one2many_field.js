@@ -1,0 +1,27 @@
+/** @odoo-module native */
+import { registry } from "@web/core/registry";
+import { X2ManyField, x2ManyField } from "@web/fields/relational/x2many";
+
+import { NotebookTaskListRenderer } from "./notebook_task_list_renderer.js";
+
+export class NotebookTaskOne2ManyField extends X2ManyField {
+    static components = {
+        ...X2ManyField.components,
+        ListRenderer: NotebookTaskListRenderer,
+    };
+
+    get rendererProps() {
+        const rendererProps = super.rendererProps;
+        if (this.props.viewMode === "kanban") {
+            rendererProps.openRecord = this.rendererCallbacks.onOpenFormView;
+        }
+        return rendererProps;
+    }
+}
+
+export const notebookTaskOne2ManyField = {
+    ...x2ManyField,
+    component: NotebookTaskOne2ManyField,
+};
+
+registry.category("fields").add("notebook_task_one2many", notebookTaskOne2ManyField);

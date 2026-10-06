@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <data>
+        <menuitem
+            id="menu_event_sponsor_type"
+            name="Sponsor Levels"
+            parent="event.menu_event_configuration"
+            action="event_sponsor_type_action"
+            sequence="40"
+            groups="base.group_no_one" />
+    </data>
+
+</odoo>

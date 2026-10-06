@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<templates xml:space="preserve">
+
+  <t t-name="web.ConfirmationDialog">
+    <Dialog size="'md'" title="this.props.title" modalRef="this.modalRef">
+      <p t-out="this.props.body" class="text-prewrap"/>
+      <t t-set-slot="footer">
+        <button type="button" class="btn" t-att-class="this.props.confirmClass" t-att-disabled="this.state.isProcess" t-on-click="this.confirm" t-out="this.props.confirmLabel" data-hotkey="q"/>
+        <button type="button" t-if="this.props.cancel" class="btn btn-secondary" t-att-disabled="this.state.isProcess" t-on-click="this.cancel" t-out="this.props.cancelLabel" data-hotkey="x"/>
+      </t>
+    </Dialog>
+  </t>
+
+  <t t-name="web.AlertDialog" t-inherit="web.ConfirmationDialog" t-inherit-mode="primary">
+    <xpath expr="//Dialog" position="attributes">
+      <attribute name="size">'sm'</attribute>
+      <attribute name="contentClass">this.props.contentClass</attribute>
+    </xpath>
+  </t>
+
+</templates>

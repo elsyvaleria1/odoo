@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="project_task_description_template_view_form" model="ir.ui.view">
+        <field name="name">project.task.description.template.view.form</field>
+        <field name="model">project.task.description.template</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <widget
+                        name="web_ribbon"
+                        title="Archived"
+                        invisible="active"
+                        bg_color="text-bg-danger" />
+                    <group>
+                        <group>
+                            <field name="name" />
+                            <field name="sequence" />
+                        </group>
+                        <group>
+                            <field name="active" invisible="1" />
+                            <field
+                                name="company_id"
+                                groups="base.group_multi_company" />
+                            <field
+                                name="project_ids"
+                                placeholder="All projects if empty"
+                                widget="many2many_tags"
+                                options="{'color_field': 'color', 'no_open': True, 'no_create': True}" />
+                        </group>
+                    </group>
+                    <notebook>
+                        <page name="description" string="Description">
+                            <field name="description" />
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="project_task_description_template_view_list" model="ir.ui.view">
+        <field name="name">project.task.description.template.view.list</field>
+        <field name="model">project.task.description.template</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="sequence" widget="handle" />
+                <field name="name" />
+                <field name="description" optional="hide" />
+                <field
+                    name="company_id"
+                    optional="show"
+                    groups="base.group_multi_company" />
+                <field
+                    name="project_ids"
+                    widget="many2many_tags"
+                    optional="show"
+                    options="{'color_field': 'color'}" />
+            </list>
+        </field>
+    </record>
+
+    <record id="project_task_description_template_view_search" model="ir.ui.view">
+        <field name="name">project.task.description.template.view.search</field>
+        <field name="model">project.task.description.template</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name" />
+                <field name="project_ids" />
+                <field name="company_id" groups="base.group_multi_company" />
+                <separator />
+                <filter
+                    name="inactive"
+                    string="Archived"
+                    domain="[('active', '=', False)]" />
+                <group>
+                    <filter
+                        name="group_by_project_ids"
+                        string="Projects"
+                        context="{'group_by': 'project_ids'}" />
+                    <filter
+                        name="group_by_company_id"
+                        string="Company"
+                        context="{'group_by': 'company_id'}"
+                        groups="base.group_multi_company" />
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="project_task_description_template_action" model="ir.actions.act_window">
+        <field name="name">Task Description Template</field>
+        <field name="res_model">project.task.description.template</field>
+        <field name="view_mode">list,form</field>
+        <field
+            name="search_view_id"
+            ref="project_task_description_template_view_search" />
+        <field name="help" type="html">
+            <p class="oe_view_nocontent_create">
+                Click to create a new description template.
+            </p>
+        </field>
+    </record>
+
+</odoo>

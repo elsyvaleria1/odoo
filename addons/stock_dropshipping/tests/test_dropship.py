@@ -1,0 +1,684 @@
+from odoo import Command
+from odoo.tests import Form, common, tagged
+from odoo.tools import mute_logger
+
+
+class TestDropship(common.TransactionCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.dropshipping_route = cls.env.ref("stock_dropshipping.route_drop_shipping")
+        cls.supplier = cls.env["res.partner"].create({"name": "Vendor"})
+        cls.customer = cls.env["res.partner"].create({"name": "Customer"})
+        cls.dropship_product = cls.env["product.product"].create(
+            {
+                "name": "Pen drive",
+                "is_storable": True,
+                "lst_price": 100.0,
+                "standard_price": 0.0,
+                "uom_id": cls.env.ref("uom.product_uom_unit").id,
+                "seller_ids": [
+                    (0, 0, {"delay": 1, "partner_id": cls.supplier.id, "min_qty": 2.0})
+                ],
+            }
+        )
+
+        cls.lot_dropship_product = cls.env["product.product"].create(
+            {
+                "name": "Serial product",
+                "is_storable": True,
+                "tracking": "lot",
+                "seller_ids": [
+                    (
+                        0,
+                        0,
+                        {
+                            "partner_id": cls.supplier.id,
+                        },
+                    )
+                ],
+                "route_ids": [(4, cls.dropshipping_route.id, 0)],
+            }
+        )
+
+    def test_change_qty(self):
+        self.dropship_product.write(
+            {"route_ids": [(6, 0, [self.dropshipping_route.id])]}
+        )
+
+        so = self.env["sale.order"].create(
+            {
+                "partner_id": self.customer.id,
+                "partner_invoice_id": self.customer.id,
+                "partner_shipping_id": self.customer.id,
+                "line_ids": [
+                    (
+                        0,
+                        0,
+                        {
+                            "name": self.dropship_product.name,
+                            "product_id": self.dropship_product.id,
+                            "product_qty": 1.00,
+                            "price_unit": 12,
+                        },
+                    )
+                ],
+                "picking_policy": "direct",
+            }
+        )
+        so.action_confirm()
+        po = self.env["purchase.order"].search(
+            [("reference_ids", "=", so.reference_ids.id)]
+        )
+        po_line = po.line_ids
+
+        self.assertEqual(po.count_transfer_incoming, 0)
+        self.assertEqual(so.count_transfer_outgoing, 0)
+
+        self.assertAlmostEqual(po_line.product_qty, 1.00)
+
+        so.write({"line_ids": [[1, so.line_ids.id, {"product_qty": 2.00}]]})
+        self.assertAlmostEqual(po_line.product_qty, 2.00)
+
+        sol2 = self.env["sale.order.line"].create(
+            {
+                "order_id": so.id,
+                "product_id": self.dropship_product.id,
+                "product_qty": 3.00,
+                "price_unit": 12,
+            }
+        )
+        pol2 = po.line_ids - po_line
+        self.assertAlmostEqual(po_line.product_qty, 2.00)
+        self.assertAlmostEqual(pol2.product_qty, sol2.product_qty)
+
+    def test_00_dropship(self):
+        self.dropship_product.description_purchase = "description_purchase"
+        self.dropship_product.description = "internal note"
+        self.dropship_product.description_pickingout = "description_out"
+        self.env.user.group_ids += self.env.ref("stock.group_adv_location")
+
+        so_form = Form(self.env["sale.order"])
+        so_form.partner_id = self.customer
+        so_form.payment_term_id = self.env.ref(
+            "payment_term.account_payment_term_end_following_month"
+        )
+        with mute_logger("odoo.tests.form.onchange"):
+            with so_form.line_ids.new() as line:
+                line.product_id = self.dropship_product
+                line.product_qty = 200
+                line.price_unit = 1.00
+                line.route_ids = self.dropshipping_route
+        sale_order_drp_shpng = so_form.save()
+
+        sale_order_drp_shpng.action_confirm()
+
+        self.assertTrue(
+            sale_order_drp_shpng.reference_ids, "SO should have procurement group"
+        )
+
+        purchase = self.env["purchase.order"].search(
+            [("partner_id", "=", self.supplier.id)]
+        )
+        self.assertTrue(purchase, "an RFQ should have been created by the scheduler")
+        self.assertIn("description_purchase", purchase.line_ids.name)
+        purchase.action_confirm()
+        self.assertEqual(
+            purchase.state, "done", "Purchase order should be in the approved state"
+        )
+
+        self.assertEqual(purchase.count_transfer_incoming, 0)
+        self.assertEqual(sale_order_drp_shpng.count_transfer_outgoing, 0)
+        self.assertEqual(sale_order_drp_shpng.dropship_picking_count, 1)
+        self.assertEqual(purchase.dropship_picking_count, 1)
+
+        purchase.picking_ids.move_ids.quantity = (
+            purchase.picking_ids.move_ids.product_qty
+        )
+        purchase.picking_ids.move_ids.picked = True
+        self.assertNotIn(
+            "description_purchase", purchase.picking_ids.move_ids.description_picking
+        )
+        purchase.picking_ids.button_validate()
+
+        move_line = self.env["stock.move.line"].search(
+            [
+                (
+                    "location_dest_id",
+                    "=",
+                    self.env.ref("stock.stock_location_customers").id,
+                ),
+                ("product_id", "=", self.dropship_product.id),
+            ]
+        )
+        self.assertEqual(len(move_line.ids), 1, "There should be exactly one move line")
+
+        self.assertNotEqual(
+            move_line.move_id.description_picking, self.dropship_product.description
+        )
+        self.assertEqual(
+            move_line.move_id.description_picking,
+            self.dropship_product.description_pickingout,
+        )
+
+    def test_sale_order_picking_partner(self):
+
+        supplier_dropship = self.env["res.partner"].create({"name": "Vendor"})
+        customer = self.env["res.partner"].create({"name": "Customer"})
+
+        super_product = self.env["product.product"].create(
+            {
+                "name": "Super product",
+                "seller_ids": [
+                    (
+                        0,
+                        0,
+                        {
+                            "partner_id": supplier_dropship.id,
+                        },
+                    )
+                ],
+            }
+        )
+
+        so_form = Form(self.env["sale.order"])
+        so_form.partner_id = customer
+        with so_form.line_ids.new() as line:
+            line.product_id = super_product
+        sale_order = so_form.save()
+
+        sale_order.action_confirm()
+
+        self.assertEqual(sale_order.picking_ids.partner_id, customer)
+        self.assertEqual(sale_order.picking_ids.move_ids.partner_id, customer)
+
+        super_product.route_ids = [
+            self.env.ref("stock_dropshipping.route_drop_shipping").id
+        ]
+
+        so_form = Form(self.env["sale.order"])
+        so_form.partner_id = customer
+        with so_form.line_ids.new() as line:
+            line.product_id = super_product
+        sale_order = so_form.save()
+
+        sale_order.action_confirm()
+
+        purchase = self.env["purchase.order"].search(
+            [("partner_id", "=", supplier_dropship.id)]
+        )
+        self.assertTrue(purchase, "an RFQ should have been created by the scheduler")
+        purchase.action_confirm()
+        self.assertEqual(
+            purchase.state, "done", "Purchase order should be in the approved state"
+        )
+
+        self.assertEqual(sale_order.picking_ids.partner_id, supplier_dropship)
+        self.assertEqual(sale_order.picking_ids.move_ids.partner_id, customer)
+
+    def test_dropshipped_lot_last_delivery(self):
+        sale_order = self.env["sale.order"].create(
+            {
+                "partner_id": self.customer.id,
+                "line_ids": [(0, 0, {"product_id": self.lot_dropship_product.id})],
+            }
+        )
+        sale_order.action_confirm()
+        purchase = self.env["purchase.order"].search(
+            [("partner_id", "=", self.supplier.id)]
+        )
+        self.assertTrue(purchase, "an RFQ should have been created")
+        purchase.action_confirm()
+        sale_order.picking_ids.move_line_ids.lot_name = "123"
+        sale_order.picking_ids.move_ids.picked = True
+        sale_order.picking_ids.button_validate()
+        self.assertEqual(sale_order.picking_ids.state, "done")
+        self.assertEqual(sale_order.picking_ids.move_line_ids.trace_id.name, "123")
+        sale_order.picking_ids.move_line_ids.trace_id.invalidate_recordset(
+            fnames=["partner_ids"]
+        )
+        self.assertEqual(
+            sale_order.picking_ids.move_line_ids.trace_id.partner_ids[0], self.customer
+        )
+
+    def test_sol_reserved_qty_wizard_dropship(self):
+        product = self.dropship_product
+        product.route_ids = self.dropshipping_route
+        sale_order = self.env["sale.order"].create(
+            {
+                "partner_id": self.customer.id,
+                "line_ids": [
+                    Command.create(
+                        {
+                            "product_id": product.id,
+                            "product_qty": 3.0,
+                        }
+                    )
+                ],
+            }
+        )
+        sale_order.action_confirm()
+        self.assertEqual(sale_order.line_ids.qty_available_today, 0.0)
+        purchase_order = self.env["purchase.order"].search(
+            [("partner_id", "=", self.supplier.id)]
+        )
+        purchase_order.action_confirm()
+        picking_dropship = sale_order.picking_ids.filtered(lambda p: p.picking_type_id)
+        self.assertTrue(picking_dropship)
+        self.assertEqual(sale_order.line_ids.qty_available_today, 3.0)
+        self.assertRecordValues(
+            sale_order.line_ids, [{"qty_available_today": 3.0, "qty_transferred": 0.0}]
+        )
+        picking_dropship.move_ids.quantity = 3.0
+        picking_dropship.move_ids.picked = True
+        picking_dropship.button_validate()
+        self.assertEqual(sale_order.line_ids.qty_transferred, 3.0)
+        self.assertEqual(purchase_order.line_ids.qty_transferred, 3.0)
+        stock_return_picking_form = Form(
+            self.env["wizard.stock.picking.return"].with_context(
+                active_ids=picking_dropship.ids,
+                active_id=picking_dropship.id,
+                active_model="stock.picking",
+            )
+        )
+        return_wiz = stock_return_picking_form.save()
+        return_wiz.product_return_moves.quantity = 3
+        res = return_wiz.action_create_returns()
+        return_picking = self.env["stock.picking"].browse(res["res_id"])
+        return_picking.button_validate()
+        self.assertEqual(sale_order.line_ids.qty_transferred, 0)
+        self.assertEqual(purchase_order.line_ids.qty_transferred, 0)
+
+    def test_correct_vendor_dropship(self):
+        self.supplier_2 = self.env["res.partner"].create({"name": "Vendor 2"})
+        self.dropship_product = self.env["product.product"].create(
+            {
+                "name": "Pen drive",
+                "is_storable": "True",
+                "lst_price": 100.0,
+                "standard_price": 0.0,
+                "uom_id": self.env.ref("uom.product_uom_unit").id,
+                "seller_ids": [
+                    (
+                        0,
+                        0,
+                        {
+                            "delay": 10,
+                            "partner_id": self.supplier.id,
+                            "min_qty": 2.0,
+                            "price": 4,
+                        },
+                    ),
+                    (
+                        0,
+                        0,
+                        {
+                            "delay": 5,
+                            "partner_id": self.supplier_2.id,
+                            "min_qty": 1.0,
+                            "price": 10,
+                        },
+                    ),
+                ],
+            }
+        )
+        self.env.user.group_ids += self.env.ref("stock.group_adv_location")
+
+        so_form = Form(self.env["sale.order"])
+        so_form.partner_id = self.customer
+        with mute_logger("odoo.tests.form.onchange"):
+            with so_form.line_ids.new() as line:
+                line.product_id = self.dropship_product
+                line.product_qty = 1
+                line.route_ids = self.dropshipping_route
+        sale_order_drp_shpng = so_form.save()
+        sale_order_drp_shpng.action_confirm()
+
+        purchase = self.env["purchase.order"].search(
+            [("partner_id", "=", self.supplier_2.id)]
+        )
+        self.assertTrue(purchase, "an RFQ should have been created by the scheduler")
+        self.assertTrue(
+            (purchase.date_commitment - purchase.date_order).days == 5,
+            "The second supplier has a delay of 5 days",
+        )
+        self.assertTrue(
+            purchase.amount_untaxed == 10, "the suppliers sells the item for 10$"
+        )
+
+        so_form = Form(self.env["sale.order"])
+        so_form.partner_id = self.customer
+        with mute_logger("odoo.tests.form.onchange"):
+            with so_form.line_ids.new() as line:
+                line.product_id = self.dropship_product
+                line.product_qty = 2
+                line.route_ids = self.dropshipping_route
+        sale_order_drp_shpng = so_form.save()
+        sale_order_drp_shpng.action_confirm()
+
+        purchase = self.env["purchase.order"].search(
+            [("partner_id", "=", self.supplier.id)]
+        )
+        self.assertTrue(purchase, "an RFQ should have been created by the scheduler")
+        self.assertTrue(
+            (purchase.date_commitment - purchase.date_order).days == 10,
+            "The first supplier has a delay of 10 days",
+        )
+        self.assertTrue(purchase.amount_untaxed == 8, "The price should be 4 * 2")
+
+    def test_add_dropship_product_to_subcontracted_service_po(self):
+        supplier = self.dropship_product.seller_ids.partner_id
+        delivery_addr = self.env["res.partner"].create(
+            {
+                "name": "Super Address",
+                "type": "delivery",
+                "parent_id": self.customer.id,
+            }
+        )
+
+        subcontracted_service = self.env["product.product"].create(
+            {
+                "name": "SuperService",
+                "type": "service",
+                "service_to_purchase": True,
+                "seller_ids": [(0, 0, {"partner_id": supplier.id})],
+            }
+        )
+
+        so = self.env["sale.order"].create(
+            {
+                "partner_id": self.customer.id,
+                "partner_shipping_id": delivery_addr.id,
+                "line_ids": [
+                    (
+                        0,
+                        0,
+                        {
+                            "product_id": subcontracted_service.id,
+                            "product_qty": 1.00,
+                        },
+                    )
+                ],
+            }
+        )
+        so.action_confirm()
+        po = so._get_purchase_orders()
+        self.assertTrue(po)
+
+        po.line_ids = [
+            (
+                0,
+                0,
+                {
+                    "product_id": self.dropship_product.id,
+                    "product_qty": 1.00,
+                    "product_uom_id": self.dropship_product.uom_id.id,
+                },
+            )
+        ]
+        po.action_confirm()
+        dropship = po.picking_ids
+        self.assertTrue(dropship.is_dropship)
+        self.assertRecordValues(
+            dropship.move_ids,
+            [
+                {
+                    "product_id": self.dropship_product.id,
+                    "partner_id": delivery_addr.id,
+                },
+            ],
+        )
+
+        dropship.move_ids.quantity = 1
+        dropship.button_validate()
+        self.assertEqual(dropship.state, "done")
+        self.assertRecordValues(
+            so.line_ids,
+            [
+                {
+                    "product_id": subcontracted_service.id,
+                    "product_qty": 1.0,
+                    "qty_transferred": 0.0,
+                },
+                {
+                    "product_id": self.dropship_product.id,
+                    "product_qty": 0.0,
+                    "qty_transferred": 1.0,
+                },
+            ],
+        )
+
+    def test_search_lot_partner_from_dropship(self):
+        sale_order = self.env["sale.order"].create(
+            {
+                "partner_id": self.customer.id,
+                "line_ids": [
+                    Command.create(
+                        {
+                            "product_id": self.lot_dropship_product.id,
+                            "product_qty": 1.0,
+                        }
+                    )
+                ],
+            }
+        )
+        sale_order.action_confirm()
+        purchase_order = sale_order.reference_ids.purchase_ids
+        purchase_order.action_confirm()
+        dropship_picking = purchase_order.picking_ids
+        dropship_picking.move_line_ids.lot_name = "dropship lot"
+        dropship_picking.move_ids.picked = True
+        dropship_picking.button_validate()
+        action_view_stock_serial_domain = self.customer.action_view_stock_serial()[
+            "domain"
+        ]
+        customer_lots = self.env["product.trace"].search(
+            action_view_stock_serial_domain
+        )
+        self.assertEqual(customer_lots, dropship_picking.move_ids.trace_ids)
+
+    def test_delivery_type(self):
+        operation_type = self.env["stock.picking.type"].create(
+            {"name": "test", "sequence_code": "TEST", "code": "incoming"}
+        )
+
+        operation_type.write({"code": "outgoing"})
+
+        _ = operation_type.default_location_src_id
+        _ = operation_type.default_location_dest_id
+
+        self.assertEqual(operation_type.code, "outgoing")
+
+        self.assertEqual(
+            operation_type.default_location_src_id,
+            operation_type.warehouse_id.lot_stock_id,
+        )
+
+        self.assertEqual(
+            operation_type.default_location_dest_id,
+            self.env.ref("stock.stock_location_customers"),
+        )
+
+    def test_cancelled_sale_warns_the_buyer_of_the_dropship_rfq(self):
+        product = self.env["product.product"].create(
+            {
+                "name": "Dropshipped widget",
+                "type": "consu",
+                "is_storable": True,
+                "purchase_ok": True,
+                "route_ids": [
+                    Command.set(
+                        self.env.ref("stock_dropshipping.route_drop_shipping").ids
+                    )
+                ],
+                "seller_ids": [
+                    Command.create({"partner_id": self.supplier.id, "price": 3.0})
+                ],
+            }
+        )
+        sale_order = self.env["sale.order"].create(
+            {
+                "partner_id": self.customer.id,
+                "line_ids": [
+                    Command.create({"product_id": product.id, "product_qty": 5})
+                ],
+            }
+        )
+        sale_order.action_confirm()
+        purchase_order = sale_order.line_ids.purchase_line_ids.order_id
+        self.assertTrue(purchase_order, "the dropship RfQ links back to the sale line")
+        self.assertFalse(purchase_order.activity_ids)
+
+        sale_order._action_cancel()
+
+        self.assertEqual(len(purchase_order.activity_ids), 1)
+
+    def test_non_dropship_mtso_unaffected_by_dropship_logic(self):
+        warehouse = self.env["stock.warehouse"].search(
+            [("company_id", "=", self.env.company.id)], limit=1
+        )
+        warehouse.delivery_route_id.rule_ids.procure_method = "mts_else_mto"
+
+        product = self.env["product.product"].create(
+            {
+                "name": "Super Product",
+                "is_storable": "True",
+                "lst_price": 100.0,
+                "uom_id": self.env.ref("uom.product_uom_unit").id,
+                "seller_ids": [
+                    Command.create({"partner_id": self.supplier.id, "price": 4}),
+                ],
+            }
+        )
+        self.env["stock.quant"].with_context(inventory_mode=True).create(
+            {
+                "product_id": product.id,
+                "inventory_quantity": 5,
+                "location_id": warehouse.lot_stock_id.id,
+            }
+        ).action_apply_inventory()
+
+        sale_order = self.env["sale.order"].create(
+            {
+                "partner_id": self.customer.id,
+                "line_ids": [
+                    Command.create(
+                        {
+                            "product_id": product.id,
+                            "product_qty": 6,
+                        }
+                    )
+                ],
+            }
+        )
+        sale_order.action_confirm()
+        po = sale_order._get_purchase_orders()
+        self.assertTrue(po)
+        po.action_confirm()
+        sale_order.line_ids.product_qty = 8
+        po = sorted(sale_order._get_purchase_orders(), key=lambda order: order.id)
+        self.assertEqual(len(po), 2)
+        self.assertEqual(po[1].line_ids.product_qty, 2)
+
+
+@tagged("post_install", "-at_install")
+class TestDropshipPostInstall(common.TransactionCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.supplier, cls.customer = cls.env["res.partner"].create(
+            [
+                {"name": "Vendor Man"},
+                {"name": "Customer Man"},
+            ]
+        )
+        cls.dropship_product = cls.env["product.product"].create(
+            {
+                "name": "Dropshipped Product",
+                "tracking": "none",
+                "standard_price": 20,
+                "invoice_policy": "transferred",
+                "seller_ids": [
+                    Command.create(
+                        {
+                            "partner_id": cls.supplier.id,
+                        }
+                    )
+                ],
+                "route_ids": [
+                    Command.link(
+                        cls.env.ref("stock_dropshipping.route_drop_shipping").id
+                    )
+                ],
+            }
+        )
+
+    def test_dropshipping_tracked_product(self):
+        supplier, customer = self.supplier, self.customer
+        product_lot = self.dropship_product
+        product_lot.categ_id.property_cost_method = "standard"
+        sale_order = self.env["sale.order"].create(
+            {
+                "partner_id": customer.id,
+                "line_ids": [
+                    Command.create(
+                        {
+                            "product_id": product_lot.id,
+                            "product_qty": 1,
+                        }
+                    )
+                ],
+            }
+        )
+        sale_order.action_confirm()
+        purchase = self.env["purchase.order"].search([("partner_id", "=", supplier.id)])
+        self.assertTrue(purchase, "an RFQ should have been created")
+        purchase.action_confirm()
+        dropship_picking = sale_order.picking_ids
+        dropship_picking.action_confirm()
+        with Form(dropship_picking) as picking_form:
+            with picking_form.move_ids.new() as move:
+                move.product_id = product_lot
+                move.quantity = 1
+        dropship_picking.button_validate()
+        self.assertEqual(dropship_picking.state, "done")
+
+    def test_return_dropship_vendor_is_other_company(self):
+        other_company = self.env["res.company"].create({"name": "company vendor"})
+        product = self.dropship_product
+        product.seller_ids.partner_id = other_company.partner_id.id
+        sale_order = self.env["sale.order"].create(
+            {
+                "partner_id": self.customer.id,
+                "line_ids": [
+                    Command.create(
+                        {
+                            "product_id": product.id,
+                            "product_qty": 2,
+                        }
+                    )
+                ],
+            }
+        )
+        sale_order.action_confirm()
+        purchase_order = sale_order._get_purchase_orders()
+        purchase_order.action_confirm()
+        dropship_picking = purchase_order.picking_ids
+        dropship_picking.move_ids.quantity = 2
+        dropship_picking.button_validate()
+        self.assertEqual(sale_order.line_ids.qty_transferred, 2)
+        self.assertEqual(purchase_order.line_ids.qty_transferred, 2)
+        stock_return_picking_form = Form(
+            self.env["wizard.stock.picking.return"].with_context(
+                active_ids=dropship_picking.ids,
+                active_id=dropship_picking.id,
+                active_model="stock.picking",
+            )
+        )
+        return_wiz = stock_return_picking_form.save()
+        return_wiz.product_return_moves.quantity = 2
+        res = return_wiz.action_create_returns()
+        return_picking = self.env["stock.picking"].browse(res["res_id"])
+        return_picking.button_validate()
+        self.assertEqual(sale_order.line_ids.qty_transferred, 0)
+        self.assertEqual(purchase_order.line_ids.qty_transferred, 0)

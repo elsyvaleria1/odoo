@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_stock_package_history_search" model="ir.ui.view">
+        <field name="name">stock.package.history.search</field>
+        <field name="model">stock.package.history</field>
+        <field name="arch" type="xml">
+            <search string="Package">
+                <field name="package_name" />
+                <field name="location_id" groups="stock.group_stock_multi_locations" />
+                <field name="package_type_id" />
+                <filter
+                    name="internal"
+                    string="In internal locations"
+                    domain="['|', ('location_id.usage', '=', 'internal'), ('location_id', '=', False)]"
+                    groups="stock.group_stock_multi_locations" />
+                <filter
+                    name="main_packages"
+                    string="Main Packages"
+                    domain="[('parent_dest_id', '=', False)]" />
+                <group>
+                    <filter
+                        name="location"
+                        string="Location"
+                        context="{'group_by' : 'location_id'}"
+                        groups="stock.group_stock_multi_locations" />
+                    <filter
+                        name="package_type"
+                        string="Package Type"
+                        context="{'group_by' : 'package_type_id'}" />
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="view_stock_package_history_list" model="ir.ui.view">
+        <field name="name">stock.package.history.list</field>
+        <field name="model">stock.package.history</field>
+        <field name="priority" eval="15" />
+        <field name="arch" type="xml">
+            <list string="Packages" create="0">
+                <field name="package_name" string="Package" />
+                <field name="package_type_id" />
+                <field name="location_id" />
+                <field name="parent_orig_id" />
+                <field name="location_dest_id" />
+                <field name="parent_dest_id" />
+                <field
+                    name="company_id"
+                    optional="hide"
+                    groups="base.group_multi_company" />
+                <button
+                    name="action_view_package"
+                    type="object"
+                    string="View"
+                    width="50px" />
+            </list>
+        </field>
+    </record>
+
+</odoo>

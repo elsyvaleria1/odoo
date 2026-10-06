@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="res_groups_privilege_documents" model="res.groups.privilege">
+        <field name="name">Documents</field>
+        <field name="sequence">20</field>
+        <field name="category_id" ref="base.module_category_productivity" />
+    </record>
+
+    <record id="group_documents_user" model="res.groups">
+        <field name="name">User</field>
+        <field name="sequence">10</field>
+        <field name="privilege_id" ref="res_groups_privilege_documents" />
+        <field
+            name="comment">Can view or edit, upload, and share their own or shared documents.</field>
+        <field name="implied_ids" eval="[Command.link(ref('base.group_user'))]" />
+    </record>
+
+    <record id="group_documents_manager" model="res.groups">
+        <field name="name">Administrator</field>
+        <field name="sequence">20</field>
+        <field name="privilege_id" ref="res_groups_privilege_documents" />
+        <field
+            name="comment">Can configure folders, manage access rights, and oversee all documents
+            within their areas.</field>
+        <field name="implied_ids" eval="[Command.link(ref('group_documents_user'))]" />
+        <field
+            name="user_ids"
+            eval="[Command.link(ref('base.user_root')), Command.link(ref('base.user_admin'))]" />
+    </record>
+
+    <record id="group_documents_system" model="res.groups">
+        <field name="name">System Administrator</field>
+        <field name="sequence">30</field>
+        <field name="privilege_id" ref="res_groups_privilege_documents" />
+        <field
+            name="comment">Has full control over all document settings, folders, and user rights
+            across the application.</field>
+        <field
+            name="implied_ids"
+            eval="[Command.link(ref('group_documents_manager'))]" />
+        <field
+            name="user_ids"
+            eval="[Command.link(ref('base.user_root')), Command.link(ref('base.user_admin'))]" />
+    </record>
+
+    <record id="privilege_share_documents" model="res.groups">
+        <field name="name">Share Documents on a User's Behalf</field>
+        <field
+            name="comment">Code that shares a document for a reason of its own (a signed document with its signers, an approved access request, a moved document taking its folder's link) changes who can access it without the acting user managing it.</field>
+        <field name="is_privilege" eval="True" />
+    </record>
+
+</odoo>

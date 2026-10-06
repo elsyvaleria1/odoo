@@ -1,0 +1,354 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* documents_account
+#
+# Translators:
+# Martin Trigaux, 2022
+# Heiðar Sigurðsson, 2022
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 16.0beta+e\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2023-05-16 16:02+0000\n"
+"PO-Revision-Date: 2022-09-22 05:46+0000\n"
+"Last-Translator: Heiðar Sigurðsson, 2022\n"
+"Language-Team: Icelandic (https://www.transifex.com/odoo/teams/41243/is/)\n"
+"Language: is\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: nplurals=2; plural=(n % 10 != 1 || n % 100 == 11);\n"
+
+#. module: document_account
+#. odoo-javascript
+#: code:addons/document_account/static/src/js/tour.js:0
+msgid "<b>Deselect this page</b> as we plan to process all bills first."
+msgstr ""
+
+#. module: document_account
+#: model:ir.model,name:document_account.model_documents_workflow_rule
+msgid "A set of condition and actions which will be available to all attachments matching the conditions"
+msgstr ""
+
+#. module: document_account
+#: model:ir.model.constraint,message:document_account.constraint_documents_account_folder_setting_journal_unique
+msgid "A setting already exists for this journal"
+msgstr ""
+
+#. module: document_account
+#: model:ir.model.fields,field_description:document_account.field_res_config_settings__documents_account_settings
+msgid "Accounting "
+msgstr ""
+
+#. module: document_account
+#: model:ir.model.fields,field_description:document_account.field_res_company__account_folder
+msgid "Accounting Workspace"
+msgstr ""
+
+#. module: document_account
+#. odoo-javascript
+#: code:addons/document_account/static/src/js/tour.js:0
+msgid "As this PDF contains multiple documents, let's split and process in bulk."
+msgstr ""
+
+#. module: document_account
+#: model:ir.model,name:document_account.model_ir_attachment
+msgid "Attachment"
+msgstr ""
+
+#. module: document_account
+#: model:ir.model.fields.selection,name:document_account.selection__documents_workflow_rule__create_model__account_bank_statement
+msgid "Bank Statement"
+msgstr ""
+
+#. module: document_account
+#: model_terms:ir.ui.view,arch_db:document_account.res_config_settings_view_form
+msgid "Centralize accounting files and documents"
+msgstr ""
+
+#. module: document_account
+#: model_terms:ir.ui.view,arch_db:document_account.view_account_move_form_inherit_documents_account
+msgid "Check them"
+msgstr ""
+
+#. module: document_account
+#. odoo-javascript
+#: code:addons/document_account/static/src/js/tour.js:0
+msgid "Click on a card to <b>select the document</b>."
+msgstr ""
+
+#. module: document_account
+#. odoo-javascript
+#: code:addons/document_account/static/src/js/tour.js:0
+msgid "Click on a thumbnail to <b>preview the document</b>."
+msgstr ""
+
+#. module: document_account
+#. odoo-javascript
+#: code:addons/document_account/static/src/js/tour.js:0
+msgid "Click on the <b>page separator</b>: we don't want to split these two pages as they belong to the same document."
+msgstr ""
+
+#. module: document_account
+#: model:ir.model,name:document_account.model_res_company
+msgid "Companies"
+msgstr "Fyrirtæki"
+
+#. module: document_account
+#: model:ir.model.fields,field_description:document_account.field_document_account_folder_setting__company_id
+msgid "Company"
+msgstr ""
+
+#. module: document_account
+#: model:ir.model,name:document_account.model_res_config_settings
+msgid "Config Settings"
+msgstr ""
+
+#. module: document_account
+#: model:ir.model.fields,field_description:document_account.field_documents_workflow_rule__create_model
+msgid "Create"
+msgstr "Stofna"
+
+#. module: document_account
+#: model:document.workflow.rule,name:document_account.credit_note_rule
+msgid "Create Customer Credit Note"
+msgstr ""
+
+#. module: document_account
+#: model:document.workflow.rule,name:document_account.customer_invoice_rule
+msgid "Create Customer Invoice"
+msgstr ""
+
+#. module: document_account
+#: model:document.workflow.rule,name:document_account.misc_entry_rule
+msgid "Create Miscellaneous Operations"
+msgstr ""
+
+#. module: document_account
+#: model:document.workflow.rule,name:document_account.vendor_bill_rule_financial
+msgid "Create Vendor Bill"
+msgstr ""
+
+#. module: document_account
+#: model:document.workflow.rule,name:document_account.vendor_refund_rule
+msgid "Create Vendor Refund"
+msgstr ""
+
+#. module: document_account
+#: model:ir.model.fields,field_description:document_account.field_document_account_folder_setting__create_uid
+msgid "Created by"
+msgstr ""
+
+#. module: document_account
+#: model:ir.model.fields,field_description:document_account.field_document_account_folder_setting__create_date
+msgid "Created on"
+msgstr ""
+
+#. module: document_account
+#: model:ir.model.fields.selection,name:document_account.selection__documents_workflow_rule__create_model__account_move_out_refund
+msgid "Credit note"
+msgstr ""
+
+#. module: document_account
+#: model:ir.model.fields.selection,name:document_account.selection__documents_workflow_rule__create_model__account_move_out_invoice
+msgid "Customer invoice"
+msgstr ""
+
+#. module: document_account
+#: model:ir.model.fields,field_description:document_account.field_documents_workflow_rule__display_journal_id
+msgid "Display Journal"
+msgstr ""
+
+#. module: document_account
+#: model:ir.model.fields,field_description:document_account.field_document_account_folder_setting__display_name
+msgid "Display Name"
+msgstr ""
+
+#. module: document_account
+#: model:ir.model.fields,field_description:document_account.field_res_company__documents_account_settings
+msgid "Documents Account Settings"
+msgstr ""
+
+#. module: document_account
+#: model:ir.model,name:document_account.model_wizard_report_formula_export_attachment_format
+msgid "Export format for accounting's reports"
+msgstr ""
+
+#. module: document_account
+#: model:ir.model,name:document_account.model_wizard_report_formula_export_attachment
+msgid "Export wizard for accounting's reports"
+msgstr ""
+
+#. module: document_account
+#: model:mail.activity.type,name:document_account.mail_documents_activity_data_fs
+msgid "Financial Statement"
+msgstr ""
+
+#. module: document_account
+#: model:ir.model.fields,field_description:document_account.field_wizard_report_formula_export_attachment__folder_id
+msgid "Folder"
+msgstr ""
+
+#. module: document_account
+#: model:ir.model.fields,help:document_account.field_wizard_report_formula_export_attachment__folder_id
+msgid "Folder where to save the generated file"
+msgstr ""
+
+#. module: document_account
+#. odoo-python
+#: code:addons/document_account/wizard/account_reports_export_wizard.py:0
+msgid "Generated Documents"
+msgstr ""
+
+#. module: document_account
+#: model:ir.model.fields,field_description:document_account.field_document_account_folder_setting__id
+msgid "ID"
+msgstr ""
+
+#. module: document_account
+#: model:document.workflow.rule,name:document_account.bank_statement_rule
+msgid "Import Bank Statement"
+msgstr ""
+
+#. module: document_account
+#: model:ir.model.fields,field_description:document_account.field_document_account_folder_setting__journal_id
+#: model:ir.model.fields,field_description:document_account.field_documents_workflow_rule__journal_id
+msgid "Journal"
+msgstr "Færslubók"
+
+#. module: document_account
+#: model:ir.model,name:document_account.model_account_move
+msgid "Journal Entry"
+msgstr "Dagbókarfærsla"
+
+#. module: document_account
+#: model:ir.model,name:document_account.model_document_account_folder_setting
+msgid "Journal and Folder settings"
+msgstr ""
+
+#. module: document_account
+#: model_terms:ir.ui.view,arch_db:document_account.res_config_settings_view_form
+msgid "Journals"
+msgstr ""
+
+#. module: document_account
+#: model:ir.actions.act_window,name:document_account.action_folder_settings_installer
+msgid "Journals to synchronize"
+msgstr ""
+
+#. module: document_account
+#: model:ir.model.fields,field_description:document_account.field_document_account_folder_setting__write_uid
+msgid "Last Updated by"
+msgstr ""
+
+#. module: document_account
+#: model:ir.model.fields,field_description:document_account.field_document_account_folder_setting__write_date
+msgid "Last Updated on"
+msgstr ""
+
+#. module: document_account
+#. odoo-javascript
+#: code:addons/document_account/static/src/js/tour.js:0
+msgid "Let's process documents in your Inbox.<br/><i>Tip: Use Tags to filter documents and structure your process.</i>"
+msgstr ""
+
+#. module: document_account
+#. odoo-javascript
+#: code:addons/document_account/static/src/js/tour.js:0
+msgid "Let's process these bills: turn them into vendor bills."
+msgstr ""
+
+#. module: document_account
+#. odoo-javascript
+#: code:addons/document_account/static/src/js/tour.js:0
+msgid "Let's process this document, coming from our scanner."
+msgstr ""
+
+#. module: document_account
+#. odoo-javascript
+#: code:addons/document_account/static/src/js/tour.js:0
+msgid "Let's tag this mail as legal<br/> <i>Tips: actions can be tailored to your process, according to the workspace.</i>"
+msgstr ""
+
+#. module: document_account
+#: model:ir.model.fields.selection,name:document_account.selection__documents_workflow_rule__create_model__account_move_entry
+msgid "Miscellaneous Operations"
+msgstr ""
+
+#. module: document_account
+#: model:ir.model.fields,field_description:document_account.field_documents_workflow_rule__move_type
+msgid "Move Type"
+msgstr ""
+
+#. module: document_account
+#: model:ir.model.fields,field_description:document_account.field_account_bank_statement_line__suspense_statement_line_id
+#: model:ir.model.fields,field_description:document_account.field_account_move__suspense_statement_line_id
+#: model:ir.model.fields,field_description:document_account.field_account_payment__suspense_statement_line_id
+msgid "Request document from a bank statement line"
+msgstr ""
+
+#. module: document_account
+#. odoo-javascript
+#: code:addons/document_account/static/src/js/tour.js:0
+msgid "Send this letter to the legal department, by assigning the right tags."
+msgstr ""
+
+#. module: document_account
+#: model:ir.model.fields,field_description:document_account.field_documents_workflow_rule__suitable_journal_ids
+msgid "Suitable Journal"
+msgstr ""
+
+#. module: document_account
+#: model:ir.model.fields,field_description:document_account.field_wizard_report_formula_export_attachment__tag_ids
+#: model:ir.model.fields,field_description:document_account.field_document_account_folder_setting__tag_ids
+msgid "Tags"
+msgstr ""
+
+#. module: document_account
+#: model:mail.activity.type,name:document_account.mail_documents_activity_data_vat
+msgid "Tax Statement"
+msgstr ""
+
+#. module: document_account
+#: model_terms:ir.ui.view,arch_db:document_account.view_account_move_form_inherit_documents_account
+msgid "This invoice has been initiated by a bank transaction."
+msgstr ""
+
+#. module: document_account
+#: model:ir.model.fields.selection,name:document_account.selection__documents_workflow_rule__create_model__account_move_in_refund
+msgid "Vendor Credit Note"
+msgstr ""
+
+#. module: document_account
+#: model:ir.model.fields.selection,name:document_account.selection__documents_workflow_rule__create_model__account_move_in_invoice
+msgid "Vendor bill"
+msgstr ""
+
+#. module: document_account
+#. odoo-javascript
+#: code:addons/document_account/static/src/js/tour.js:0
+msgid "Want to become a <b>paperless company</b>? Let's discover Odoo Documents."
+msgstr ""
+
+#. module: document_account
+#: model:ir.model.fields,field_description:document_account.field_document_account_folder_setting__folder_id
+#: model_terms:ir.ui.view,arch_db:document_account.res_config_settings_view_form
+msgid "Workspace"
+msgstr ""
+
+#. module: document_account
+#. odoo-javascript
+#: code:addons/document_account/static/src/js/tour.js:0
+msgid "Wow... 6 documents processed in a few seconds, You're good.<br/>The tour is complete. Try uploading your own documents now."
+msgstr ""
+
+#. module: document_account
+#: model:ir.model.fields,field_description:document_account.field_res_config_settings__account_folder
+msgid "account default folder"
+msgstr ""
+
+#. module: document_account
+#: model_terms:ir.ui.view,arch_db:document_account.view_account_move_form_inherit_documents_account
+msgid "to mark this invoice as paid."
+msgstr ""

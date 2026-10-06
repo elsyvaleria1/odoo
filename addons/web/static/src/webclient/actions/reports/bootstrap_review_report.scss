@@ -1,0 +1,97 @@
+@each $color-name, $color-value in $utilities-bg {
+    .bg-#{$color-name} {
+        background-color: RGB($color-value)
+            if($enable-important-utilities, !important, null);
+    }
+}
+
+@each $color-name, $color-value in $grays {
+    .bg-#{$color-name} {
+        background-color: $color-value if($enable-important-utilities, !important, null);
+    }
+}
+
+$report-text-colors: map-merge-multiple(
+    $theme-colors,
+    $o-theme-text-colors,
+    $grays,
+    (
+        "body": $body-color,
+        "muted": $text-muted,
+    )
+);
+
+@each $color-name, $color-value in $report-text-colors {
+    .text-#{$color-name} {
+        color: $color-value if($enable-important-utilities, !important, null);
+    }
+}
+
+$report-text-colors: null;
+
+.jumbotron,
+.panel,
+.carousel,
+section {
+    break-inside: avoid;
+}
+
+.d-print-none {
+    display: none;
+}
+
+.col {
+    flex: 1 0 0%;
+}
+
+.report-wrapping-flexbox {
+    display: block !important;
+}
+
+.report-wrapping-flexbox > .col {
+    float: left;
+}
+
+.footer {
+    .col-lg-3,
+    .col-lg-4,
+    .col-lg-6 {
+        flex: 0 0 auto;
+    }
+
+    .col-lg-3 {
+        width: 25%;
+    }
+
+    .col-lg-4 {
+        width: 33.33333333%;
+    }
+
+    .col-lg-6 {
+        width: 50%;
+    }
+}
+
+.container {
+    padding-right: $container-padding-x;
+    padding-left: $container-padding-x;
+}
+
+.table > :not(caption) > * > * {
+    color: $table-color;
+    background-color: $table-bg;
+}
+
+.table-borderless {
+    tbody,
+    thead,
+    tfoot,
+    tr,
+    td,
+    th {
+        border: 0 none;
+    }
+    > :not(:first-child) {
+        border-top-style: none;
+    }
+}

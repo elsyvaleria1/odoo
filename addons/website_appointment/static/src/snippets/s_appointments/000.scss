@@ -1,0 +1,33 @@
+.s_appointments {
+    .s_appointments_picture_item {
+        --AppointmentMessage-line-clamp: 3;
+
+        .o_wappointment_message_intro {
+            font {
+                background: none !important;
+                color: o-token(--o-white, $white) !important;
+            }
+        }
+
+        &:where(:not(:hover):not(:focus-visible)) .s_appointments_picture_head {
+            transform: translate(0, 50%);
+        }
+    }
+
+    .s_appointments_list_item {
+        --DynamicSnippet__entry-maxWidth: auto;
+        --AppointmentMessage-line-clamp: 2;
+
+        .row {
+            --gutter-x: #{map-get($spacers, 3) * 2};
+        }
+
+        > div {
+            border: $border-width solid o-token(--border-color, $border-color);
+
+            &:hover {
+                border-color: o-token(--primary, $primary);
+            }
+        }
+    }
+}

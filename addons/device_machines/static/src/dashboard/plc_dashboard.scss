@@ -1,0 +1,220 @@
+$plc-surface: lighten($o-view-background-color, 4%);
+$plc-surface-hover: lighten($o-view-background-color, 7%);
+$plc-radius: 12px;
+
+.plc_dashboard {
+    width: 100%;
+    background: var(--o-view-background-color);
+}
+
+.plc_dashboard_content {
+    padding: 24px;
+}
+
+.plc_loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 60vh;
+}
+
+.plc_header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+
+    h4 {
+        font-weight: 700;
+        font-size: 1.35rem;
+    }
+}
+
+.plc_header_actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+}
+
+.plc_period_group {
+    .btn {
+        font-size: 0.78rem;
+        white-space: nowrap;
+    }
+}
+
+.o_datetime_picker .plc_day_produced {
+    position: relative;
+
+    &::after {
+        content: "";
+        position: absolute;
+        inset: 2px;
+        border: 2px solid var(--primary);
+        border-radius: 50%;
+        pointer-events: none;
+    }
+}
+
+.plc_icon_btn.active {
+    border-color: var(--primary);
+    color: var(--primary);
+}
+
+.plc_eyebrow {
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--primary);
+    margin-bottom: 2px;
+}
+
+.plc_subtitle {
+    font-size: 0.8rem;
+    opacity: 0.55;
+}
+
+.plc_icon_btn {
+    width: 38px;
+    height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--border-color);
+    border-radius: 9px;
+    background: $plc-surface;
+    color: inherit;
+    cursor: pointer;
+    transition: background $o-duration-fast;
+
+    &:hover {
+        background: $plc-surface-hover;
+    }
+}
+
+.plc_stats_row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 14px;
+    margin-bottom: 24px;
+}
+
+.plc_stat_card {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 18px;
+    background: $plc-surface;
+    border: 1px solid var(--border-color);
+    border-radius: $plc-radius;
+    box-shadow: 0 1px 3px o-shadow-ink(8%);
+
+    &.accent {
+        border-color: rgba(var(--primary-rgb), 0.4);
+        background: rgba(var(--primary-rgb), 0.06);
+    }
+}
+
+.plc_stat_icon {
+    width: 46px;
+    height: 46px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    flex-shrink: 0;
+
+    &.machine {
+        background: rgba(var(--info-rgb), 0.15);
+        color: var(--info);
+    }
+    &.diff {
+        background: rgba(var(--primary-rgb), 0.15);
+        color: var(--primary);
+    }
+}
+
+.plc_stat_info {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.plc_stat_value {
+    font-size: 1.9rem;
+    font-weight: 700;
+    line-height: 1.1;
+}
+
+.plc_stat_label {
+    font-size: 0.78rem;
+    opacity: 0.6;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.plc_chart_row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+    gap: 20px;
+    align-items: stretch;
+    margin-bottom: 20px;
+
+    > .plc_card {
+        margin-bottom: 0;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .plc_chart_wrap {
+        flex: 1 1 auto;
+        min-height: 320px;
+        height: auto;
+    }
+}
+
+.plc_card {
+    background: $plc-surface;
+    border: 1px solid var(--border-color);
+    border-radius: $plc-radius;
+    padding: 18px 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 3px o-shadow-ink(8%);
+}
+
+.plc_card_title {
+    font-weight: 600;
+    font-size: 0.95rem;
+    margin-bottom: 14px;
+    opacity: 0.85;
+}
+
+.plc_chart_wrap {
+    position: relative;
+    height: 340px;
+}
+
+.plc_card_footnote {
+    margin-top: 12px;
+    font-size: 0.8rem;
+    opacity: 0.6;
+}
+
+.plc_empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 40px;
+    opacity: 0.4;
+
+    i {
+        font-size: 1.8rem;
+    }
+}

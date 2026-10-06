@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="customer_due_pos_order_list_view" model="ir.ui.view">
+        <field name="name">pos.order.list</field>
+        <field name="model">pos.order</field>
+        <field name="arch" type="xml">
+            <list string="POS Orders">
+                <field name="currency_id" column_invisible="True"/>  <!-- Monetary field -->
+                <field name="date_order" />
+                <field name="name" />
+                <field name="session_id" />
+                <field name="pos_reference" />
+                <field
+                    name="amount_total"
+                    widget="monetary"
+                    sum="Amount total"
+                    decoration-bf="1" />
+                <field name="customer_due_total" widget="monetary" sum="Total due" />
+                <field
+                    name="state"
+                    widget="badge"
+                    decoration-info="state == 'draft'"
+                    decoration-success="state not in ('draft','cancel')" />
+            </list>
+        </field>
+    </record>
+
+    <record id="pos_order_form_inherit_pos_settle_due" model="ir.ui.view">
+        <field name="name">pos.order.form.inherit</field>
+        <field name="model">pos.order</field>
+        <field name="inherit_id" ref="point_of_sale.view_pos_pos_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//div[hasclass('oe_button_box')]" position="inside">
+                <button
+                    name="action_view_settled_orders"
+                    type="object"
+                    icon="fa-list"
+                    invisible="settled_orders_count == 0"
+                    class="oe_stat_button">
+                    <field
+                        name="settled_orders_count"
+                        string="Settled Orders"
+                        widget="statinfo" />
+                </button>
+                </xpath>
+        </field>
+    </record>
+
+</odoo>

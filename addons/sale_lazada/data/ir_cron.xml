@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+
+    <data>
+        <record id="ir_cron_sync_lazada_orders" model="ir.cron">
+            <field name="name">Lazada: sync orders</field>
+            <field name="model_id" ref="model_lazada_shop" />
+            <field name="state">code</field>
+            <field name="code">model._sync_orders()</field>
+            <field name="user_id" ref="base.user_root" />
+            <field name="repeat_interval">60</field>
+            <field name="repeat_unit">minute</field>
+            <field
+                name="nextcall"
+                eval="(DateTime.now() + timedelta(minutes=60)).strftime('%Y-%m-%d %H:%M:%S')" />
+            <field name="priority">1000</field>
+        </record>
+        <record id="ir_cron_sync_lazada_inventory" model="ir.cron">
+            <field name="name">Lazada: sync inventory</field>
+            <field name="model_id" ref="model_lazada_shop" />
+            <field name="state">code</field>
+            <field name="code">model._sync_inventory()</field>
+            <field name="user_id" ref="base.user_root" />
+            <field name="repeat_interval">4</field>
+            <field name="repeat_unit">hour</field>
+            <field
+                name="nextcall"
+                eval="(DateTime.now() + timedelta(hours=4)).strftime('%Y-%m-%d %H:%M:%S')" />
+            <field name="priority">1200</field>
+        </record>
+    </data>
+
+</odoo>

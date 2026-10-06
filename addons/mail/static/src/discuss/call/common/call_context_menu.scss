@@ -1,0 +1,32 @@
+.o-mail-CallContextMenu-volumeTooltip {
+    visibility: hidden;
+    opacity: 0;
+    transition:
+        visibility 0s,
+        opacity var(--o-duration-normal, 0.2s) ease-out;
+
+    position: absolute;
+    bottom: 150%;
+    left: calc(var(--progress) - 0.13 * (var(--progress)));
+    transform: translateX(calc(-50% + 8px));
+
+    background-color: #212529;
+    color: #f9fafb;
+    padding: 4px 10px;
+
+    &::after {
+        content: "";
+        position: absolute;
+        top: 100%;
+        left: 50%;
+        transform: translateX(-50%);
+        border-width: 6px;
+        border-style: solid;
+        border-color: #212529 transparent transparent transparent;
+    }
+}
+
+.form-range:hover + .o-mail-CallContextMenu-volumeTooltip {
+    visibility: visible;
+    opacity: 1;
+}

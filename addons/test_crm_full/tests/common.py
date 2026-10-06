@@ -1,0 +1,40 @@
+from datetime import datetime
+
+from odoo import Command
+
+from odoo.addons.crm.tests.common import TestCrmCommon
+from odoo.addons.crm_iap_mine.tests.common import MockIAPReveal
+from odoo.addons.website.tests.test_website_visitor import MockVisitor
+
+
+class TestCrmFullCommon(TestCrmCommon, MockIAPReveal, MockVisitor):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls._activate_multi_company()
+
+        cls.reference_now = datetime(2022, 1, 1, 10, 0, 0)
+        cls.reference_today = datetime(2022, 1, 1)
+
+        country_be = cls.env.ref("base.be")
+        cls.env["res.lang"]._activate_lang("fr_BE")
+
+        cls.partners = cls.env["res.partner"].create(
+            [
+                {
+                    "country_id": country_be.id,
+                    "email": "partner.email.%02d@test.example.com" % idx,
+                    "function": "Noisy Customer",
+                    "lang": "fr_BE",
+                    "name": "PartnerCustomer",
+                    "phone_ids": [
+                        Command.create(
+                            {"number": "04560000%02d" % idx, "type": "landline"}
+                        )
+                    ],
+                    "street": "Super Street, %092d" % idx,
+                    "zip": "1400",
+                }
+                for idx in range(10)
+            ]
+        )

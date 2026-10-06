@@ -1,0 +1,101 @@
+/** @odoo-module native */
+import { fields } from "@mail/core/common/record";
+import { DiscussChannel } from "@mail/discuss/core/common/discuss_channel_model";
+import { _t } from "@web/core/translation";
+import { patch } from "@web/core/utils/patch";
+import { url } from "@web/core/utils/urls";
+
+patch(DiscussChannel.prototype, {
+    setup() {
+        super.setup();
+        this.livechat_end_dt = fields.Datetime();
+        this.livechat_lang_id = fields.One("res.lang");
+        this.livechat_looking_for_help_since_dt = fields.Datetime();
+        this.livechat_operator_id = fields.One("res.partner");
+        this.livechat_conversation_tag_ids = fields.Many(
+            "im_livechat.conversation.tag",
+        );
+        this.chatbot = fields.One("Chatbot");
+        this.livechatVisitorMember = fields.One("discuss.channel.member", {
+            compute() {
+                if (!this.isLivechat) {
+                    return;
+                }
+                const orderedChannelMembers = [...this.channel_member_ids].sort(
+                    (a, b) => a.id - b.id,
+                );
+                const isFirstMemberOperator = orderedChannelMembers[0]?.partner_id?.eq(
+                    this.livechat_operator_id,
+                );
+                const visitor = isFirstMemberOperator
+                    ? orderedChannelMembers[1]
+                    : orderedChannelMembers[0];
+                return visitor;
+            },
+        });
+        /** @type {true|undefined} */
+        this.open_chat_window = fields.Attr(undefined, {
+            /** @this {import("models").DiscussChannel} */
+            onUpdate() {
+                if (this.open_chat_window) {
+                    this.open_chat_window = undefined;
+                    this.openChatWindow({ focus: true });
+                }
+            },
+        });
+    },
+    get isLivechat() {
+        return this.channel_type === "livechat";
+    },
+    get autoOpenChatWindowOnNewMessage() {
+        return (
+            (this.isLivechat && !this.store.chatHub.compact && this.self_member_id) ||
+            super.autoOpenChatWindowOnNewMessage
+        );
+    },
+    get showCorrespondentCountry() {
+        if (this.isLivechat) {
+            return (
+                this.correspondent?.livechat_member_type === "visitor" &&
+                Boolean(this.correspondentCountry)
+            );
+        }
+        return super.showCorrespondentCountry;
+    },
+    get typesAllowingCalls() {
+        return super.typesAllowingCalls.concat(["livechat"]);
+    },
+
+    get isChatChannel() {
+        return this.isLivechat || super.isChatChannel;
+    },
+
+    get allowDescription() {
+        return this.isLivechat || super.allowDescription;
+    },
+
+    get composerDisabled() {
+        return Boolean(this.isLivechat && this.livechat_end_dt);
+    },
+
+    get composerDisabledText() {
+        return this.isLivechat && this.livechat_end_dt
+            ? _t("This livechat conversation has ended")
+            : "";
+    },
+
+    get transcriptUrl() {
+        return url(`/im_livechat/download_transcript/${this.id}`);
+    },
+
+    /**
+     * @override
+     * @param {import("models").Persona} persona
+     */
+    getPersonaName(persona) {
+        if (this.isLivechat && persona?.user_livechat_username) {
+            return persona.user_livechat_username;
+        }
+        return super.getPersonaName(persona);
+    },
+});

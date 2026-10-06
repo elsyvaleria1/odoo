@@ -1,0 +1,3383 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* stock_fleet_trace
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-09-28 19:13+0000\n"
+"PO-Revision-Date: 2026-09-28 19:13+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: es_MX\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields.selection,name:stock_fleet_trace.selection__stock_picking_batch__fuel_unit__percent
+msgid "% of tank"
+msgstr "% del tanque"
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/models/stock_picking_batch.py:0
+msgid "%(count)s deliveries handed over to trip %(target)s (%(vehicle)s)."
+msgstr "%(count)s entregas pasaron al viaje %(target)s (%(vehicle)s)."
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/models/stock_picking_batch.py:0
+msgid "%(count)s deliveries, %(weight)s kg."
+msgstr "%(count)s entregas, %(weight)s kg."
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/controllers/main.py:0
+msgid "%(count)s of another driver"
+msgstr "%(count)s de otro chofer"
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/models/stock_picking_batch_driver.py:0
+msgid ""
+"%(count)s results captured on the phone before the trip departed were set "
+"aside: check them in the trip's offline events."
+msgstr ""
+"%(count)s resultados capturados en el teléfono antes de que saliera el viaje"
+" se apartaron: revíselos en los eventos sin conexión del viaje."
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/controllers/main.py:0
+msgid "%(count)s stops"
+msgstr "%(count)s paradas"
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/wizards/wizard_stock_trip_stop_result.py:0
+msgid ""
+"%(picking)s (%(order)s) came back partly rejected by the customer. Decide on a credit note or a new delivery:\n"
+"%(lines)s"
+msgstr ""
+"%(picking)s (%(order)s) regresó con producto rechazado por el cliente. Decida si procede nota de crédito o una nueva entrega:\n"
+"%(lines)s"
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/models/stock_trip_offline_event.py:0
+msgid "%(picking)s is not a stop of trip %(batch)s."
+msgstr "%(picking)s no es una parada del viaje %(batch)s."
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/models/stock_trip_incident.py:0
+msgid "%(product)s is not on the vehicle of trip %(batch)s."
+msgstr "%(product)s no está en el vehículo del viaje %(batch)s."
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/models/stock_picking_batch.py:0
+msgid "%(product)s lot %(lot)s: %(scanned)s of %(board)s."
+msgstr "%(product)s lote %(lot)s: %(scanned)s de %(board)s."
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/models/stock_picking_batch.py:0
+msgid "%(product)s lot %(lot)s: already complete, %(board)s of %(board)s."
+msgstr "%(product)s lote %(lot)s: ya está completo, %(board)s de %(board)s."
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/models/stock_picking_batch.py:0
+msgid ""
+"%(product)s: %(scanned)s scanned but only %(board)s travel for %(stop)s."
+msgstr ""
+"%(product)s: %(scanned)s escaneados pero solo viajan %(board)s para "
+"%(stop)s."
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/wizards/wizard_stock_trip_stop_result.py:0
+msgid ""
+"%(product)s: the quantity delivered must be between 0 and what the vehicle "
+"carries (%(qty)s)."
+msgstr ""
+"%(product)s: la cantidad entregada debe estar entre 0 y lo que lleva el "
+"vehículo (%(qty)s)."
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/models/stock_picking_batch.py:0
+msgid ""
+"%(stop)s (%(customer)s): %(units)s units registered. Scan a lot label only "
+"to check it."
+msgstr ""
+"%(stop)s (%(customer)s): %(units)s unidades registradas. Escanea una "
+"etiqueta de lote solo para revisarla."
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/models/stock_picking_batch.py:0
+msgid ""
+"%(vehicle)s still carries goods of an earlier trip in %(location)s: confirm "
+"that trip's unloading before loading trip %(batch)s."
+msgstr ""
+"%(vehicle)s todavía lleva mercancía de un viaje anterior en %(location)s: "
+"confirme la descarga de ese viaje antes de cargar el viaje %(batch)s."
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/models/stock_trip_offline_event.py:0
+msgid ""
+"%s could not be validated from the phone: validate it by hand to see what it"
+" asks."
+msgstr ""
+"%s no se pudo validar desde el teléfono: valídela a mano para ver qué "
+"pregunta."
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/wizards/wizard_stock_trip_stop_result.py:0
+msgid "%s: say why the customer did not take it."
+msgstr "%s: indique por qué el cliente no lo recibió."
+
+#. module: stock_fleet_trace
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace.report_picking_batch_trace_weights
+msgid "<span>Weight by delivery</span>"
+msgstr "<span>Peso por entrega</span>"
+
+#. module: stock_fleet_trace
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace.report_picking_batch_trace_weights
+msgid "<strong>Breakdown reported:</strong>"
+msgstr "<strong>Avería reportada:</strong>"
+
+#. module: stock_fleet_trace
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace.report_picking_batch_trace_weights
+msgid "<strong>Departure:</strong>"
+msgstr "<strong>Salida:</strong>"
+
+#. module: stock_fleet_trace
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace.report_picking_batch_trace
+msgid "<strong>Load at departure:</strong>"
+msgstr "<strong>Peso al salir:</strong>"
+
+#. module: stock_fleet_trace
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace.report_picking_batch_trace_weights
+msgid "<strong>Operator:</strong>"
+msgstr "<strong>Operador:</strong>"
+
+#. module: stock_fleet_trace
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace.report_picking_batch_trace_weights
+msgid "<strong>Reason:</strong>"
+msgstr "<strong>Motivo:</strong>"
+
+#. module: stock_fleet_trace
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace.report_delivery_document_trace
+msgid "<strong>Received By:</strong>"
+msgstr "<strong>Recibió:</strong>"
+
+#. module: stock_fleet_trace
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace.report_picking_batch_trace_weights
+msgid "<strong>Response time:</strong>"
+msgstr "<strong>Tiempo de respuesta:</strong>"
+
+#. module: stock_fleet_trace
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace.report_picking_batch_trace_weights
+msgid "<strong>Still on the vehicle:</strong>"
+msgstr "<strong>Aún en el vehículo:</strong>"
+
+#. module: stock_fleet_trace
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace.report_picking_batch_trace_weights
+msgid "<strong>Supervisor:</strong>"
+msgstr "<strong>Supervisor:</strong>"
+
+#. module: stock_fleet_trace
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace.report_picking_batch_trace_weights
+msgid "<strong>Takes over the load of trip</strong>"
+msgstr "<strong>Recibe la carga del viaje</strong>"
+
+#. module: stock_fleet_trace
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace.report_picking_batch_trace_weights
+msgid ""
+"<strong>The deliveries' weights do not add up to the trip's weight at "
+"departure: check the trip.</strong>"
+msgstr ""
+"<strong>Los pesos de las entregas no suman el peso al salir del viaje: "
+"revise el viaje.</strong>"
+
+#. module: stock_fleet_trace
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace.report_picking_batch_trace_weights
+msgid "<strong>Total</strong>"
+msgstr "<strong>Total</strong>"
+
+#. module: stock_fleet_trace
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace.report_picking_batch_trace_weights
+msgid "<strong>Vehicle:</strong>"
+msgstr "<strong>Vehículo:</strong>"
+
+#. module: stock_fleet_trace
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace.report_picking_batch_trace_weights
+msgid "<strong>Weight taken over:</strong>"
+msgstr "<strong>Peso que recibió:</strong>"
+
+#. module: stock_fleet_trace
+#: model:ir.model.constraint,message:stock_fleet_trace.constraint_stock_trip_stop_batch_picking_uniq
+msgid "A delivery boards a trip once."
+msgstr "Una entrega sube a un viaje una sola vez."
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/models/stock_trip_offline_event.py:0
+msgid ""
+"A partial delivery needs a note describing what the customer took: the "
+"supervisor captures the quantities by hand."
+msgstr ""
+"Una entrega parcial necesita una nota que describa lo que se llevó el "
+"cliente: el supervisor captura las cantidades a mano."
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/models/stock_trip_checkpoint.py:0
+msgid "A trip checkpoint cannot be changed. Record a correction instead."
+msgstr ""
+"Un checkpoint del viaje no se puede modificar. Registre una corrección."
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/models/stock_trip_checkpoint.py:0
+msgid "A trip checkpoint cannot be deleted. Record a correction instead."
+msgstr ""
+"Un checkpoint del viaje no se puede eliminar. Registre una corrección."
+
+#. module: stock_fleet_trace
+#: model:ir.model.constraint,message:stock_fleet_trace.constraint_stock_location_trip_vehicle_parent_uniq
+msgid "A vehicle has one location under each place it loads from."
+msgstr ""
+"Un vehículo tiene una sola ubicación bajo cada lugar desde el que carga."
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_incident__message_needaction
+msgid "Action Needed"
+msgstr "Se requiere una acción"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_incident__fuel_amount
+msgid "Amount Paid"
+msgstr "Importe pagado"
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/models/stock_trip_offline_event.py:0
+msgid ""
+"An event captured without connection on %(date)s could not be applied: "
+"%(error)s. Record it by hand and dismiss it."
+msgstr ""
+"Un evento capturado sin conexión el %(date)s no se pudo aplicar: %(error)s. "
+"Regístrelo a mano y descártelo."
+
+#. module: stock_fleet_trace
+#: model:ir.model.constraint,message:stock_fleet_trace.constraint_stock_trip_offline_event_client_uuid_uniq
+msgid "An offline event is recorded only once."
+msgstr "Un evento sin conexión se registra una sola vez."
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,help:stock_fleet_trace.field_stock_picking_batch__trip_offline_chain_broken
+msgid ""
+"An offline event's hash did not match its data, or did not follow the "
+"previous one: some events may have been altered or lost."
+msgstr ""
+"El hash de un evento sin conexión no coincidió con sus datos o no siguió al "
+"anterior: algunos eventos pudieron alterarse o perderse."
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/controllers/main.py:0
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_offline_event__applied_at
+#: model:ir.model.fields.selection,name:stock_fleet_trace.selection__stock_trip_offline_event__state__applied
+msgid "Applied"
+msgstr "Aplicado"
+
+#. module: stock_fleet_trace
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace.stock_trip_incident_view_form
+msgid "Approve"
+msgstr "Aprobar"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields.selection,name:stock_fleet_trace.selection__stock_trip_incident__state__approved
+msgid "Approved"
+msgstr "Aprobada"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_picking__trip_arrival_date
+msgid "Arrival"
+msgstr "Llegada"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields.selection,name:stock_fleet_trace.selection__stock_trip_checkpoint__event_type__arrival
+msgid "Arrival at customer"
+msgstr "Llegada al cliente"
+
+#. module: stock_fleet_trace
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace.stock_picking_batch_form_driver_trace
+msgid "Arrived"
+msgstr "Llegué"
+
+#. module: stock_fleet_trace
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace.wizard_stock_trip_scan_view_form
+msgid ""
+"At the warehouse scan the trip sheet. At each customer scan the\n"
+"                    delivery slip, then every lot you hand over."
+msgstr ""
+"En el almacén escanee la hoja de viaje. Con cada cliente escanee la\n"
+"                    remisión y luego cada lote que entrega."
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_incident__message_attachment_count
+msgid "Attachment Count"
+msgstr "Número de archivos adjuntos"
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/controllers/main.py:0
+msgid "Back"
+msgstr "Regresar"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_picking_batch__trip_balance_ids
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace.stock_picking_batch_form_trace
+msgid "Balance"
+msgstr "Cuadre"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_picking_batch__balance_state
+msgid "Balance State"
+msgstr "Estado del cuadre"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields.selection,name:stock_fleet_trace.selection__stock_picking_batch__balance_state__balanced
+msgid "Balanced"
+msgstr "Cuadrado"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields.selection,name:stock_fleet_trace.selection__stock_trip_checkpoint__method__barcode
+msgid "Barcode"
+msgstr "Código de barras"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_wizard_stock_trip_handover__batch_id
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_wizard_stock_trip_scan__batch_id
+msgid "Batch"
+msgstr "BATCH"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_wizard_stock_trip_stop_result__batch_id
+msgid "Batch Transfer"
+msgstr "BATCH"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,help:stock_fleet_trace.field_wizard_stock_trip_stop_result__batch_id
+msgid "Batch associated to this transfer"
+msgstr "BATCH al que pertenece este traslado"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_wizard_stock_trip_handover__breakdown_date
+msgid "Breakdown Time"
+msgstr "Hora de la avería"
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/controllers/main.py:0
+msgid "Camera"
+msgstr "Cámara"
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/controllers/main.py:0
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace.wizard_stock_trip_handover_view_form
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace.wizard_stock_trip_stop_result_view_form
+msgid "Cancel"
+msgstr "Cancelar"
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/controllers/main.py:0
+msgid "Cancelled"
+msgstr "Cancelado"
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/models/stock_trip_offline_event.py:0
+msgid "Capture the partial delivery of %s"
+msgstr "Capturar la entrega parcial de %s"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_offline_event__captured_at
+msgid "Captured"
+msgstr "Capturado"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_offline_event__payload_display
+msgid "Captured Data"
+msgstr "Datos capturados"
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/models/stock_picking_batch.py:0
+msgid "Captured offline %s"
+msgstr "Capturado sin conexión %s"
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/models/stock_trip_offline_event.py:0
+msgid ""
+"Captured offline without quantities: %(note)s. Use Partial to record what "
+"the customer took; confirming it clears the review."
+msgstr ""
+"Capturada sin conexión y sin cantidades: %(note)s. Use Parcial para "
+"registrar lo que se llevó el cliente; al confirmarlo se quita la revisión."
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,help:stock_fleet_trace.field_stock_picking__trip_partial_review
+msgid ""
+"Captured offline without quantities: the supervisor confirms what the "
+"customer took with the Partial wizard, which clears this flag. The trip's "
+"unloading is not validated while it is set."
+msgstr ""
+"Capturada sin conexión y sin cantidades: el supervisor confirma lo que se "
+"llevó el cliente con el asistente Parcial, que quita esta marca. La descarga"
+" del viaje no se valida mientras esté marcada."
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/controllers/main.py:0
+msgid "Check"
+msgstr "Revisar"
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/controllers/main.py:0
+msgid "Checked"
+msgstr "Revisado"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_picking_batch__trip_checkpoint_ids
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace.stock_picking_batch_form_trace
+msgid "Checkpoints"
+msgstr "Checkpoints"
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/wizards/wizard_stock_trip_handover.py:0
+msgid "Choose a vehicle other than the trip's own."
+msgstr "Elija un vehículo distinto al del viaje."
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/controllers/main.py:0
+msgid "Choose the reason"
+msgstr "Elige el motivo"
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/controllers/main.py:0
+msgid "Choose the reason it was not delivered."
+msgstr "Elige el motivo por el que no se entregó."
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/controllers/main.py:0
+msgid "Choose the type"
+msgstr "Elige el tipo"
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/controllers/main.py:0
+msgid "Choose the type and describe the incident."
+msgstr "Elige el tipo y describe la incidencia."
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/controllers/main.py:0
+msgid "Clear"
+msgstr "Borrar"
+
+#. module: stock_fleet_trace
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace.stock_picking_view_form_signature
+msgid "Close"
+msgstr "Cerrar"
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/controllers/main.py:0
+msgid "Closed"
+msgstr "Cerrado"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_scan__code
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_wizard_stock_trip_scan__code
+msgid "Code"
+msgstr "Código"
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/controllers/main.py:0
+msgid ""
+"Code %(code)s is not a delivery slip nor a lot on board of BATCH %(trip)s."
+msgstr ""
+"El código %(code)s no es una remisión ni un lote a bordo del BATCH %(trip)s."
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/models/stock_picking_batch.py:0
+msgid ""
+"Code %(code)s is not this trip's sheet, one of its deliveries nor a lot it "
+"carries."
+msgstr ""
+"El código %(code)s no es la hoja de este viaje, ni una de sus entregas, ni "
+"un lote que lleve."
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields.selection,name:stock_fleet_trace.selection__stock_trip_checkpoint__event_type__scan
+#: model:ir.model.fields.selection,name:stock_fleet_trace.selection__stock_trip_offline_event__event_type__scan
+msgid "Code scanned"
+msgstr "Código escaneado"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_checkpoint__company_id
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_incident__company_id
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_offline_event__company_id
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_scan__company_id
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_stop__company_id
+msgid "Company"
+msgstr "Empresa"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields.selection,name:stock_fleet_trace.selection__stock_picking__trip_delivery_result__complete
+msgid "Complete"
+msgstr "Completa"
+
+#. module: stock_fleet_trace
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace.wizard_stock_trip_stop_result_view_form
+msgid "Confirm"
+msgstr "Confirmar"
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/models/stock_picking_batch.py:0
+msgid "Confirm the unloading of trip %s"
+msgstr "Confirmar la descarga del viaje %s"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_checkpoint__partner_id
+msgid "Contact"
+msgstr "Contacto"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields.selection,name:stock_fleet_trace.selection__stock_trip_checkpoint__event_type__correction
+msgid "Correction"
+msgstr "Corrección"
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/controllers/main.py:0
+msgid "Could not sync: %(error)s"
+msgstr "No se pudo sincronizar: %(error)s"
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/models/stock_picking_batch.py:0
+msgid ""
+"Count what came back on the vehicle and validate: the quantities you confirm"
+" close the trip's balance."
+msgstr ""
+"Cuente lo que regresó en el vehículo y valide: las cantidades que confirme "
+"cierran el cuadre del viaje."
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_balance__create_uid
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_checkpoint__create_uid
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_incident__create_uid
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_incident_line__create_uid
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_offline_event__create_uid
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_scan__create_uid
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_stop__create_uid
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_wizard_stock_trip_handover__create_uid
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_wizard_stock_trip_scan__create_uid
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_wizard_stock_trip_stop_result__create_uid
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_wizard_stock_trip_stop_result_line__create_uid
+msgid "Created by"
+msgstr "Creado por"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_balance__create_date
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_checkpoint__create_date
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_incident__create_date
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_incident_line__create_date
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_offline_event__create_date
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_scan__create_date
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_stop__create_date
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_wizard_stock_trip_handover__create_date
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_wizard_stock_trip_scan__create_date
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_wizard_stock_trip_stop_result__create_date
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_wizard_stock_trip_stop_result_line__create_date
+msgid "Created on"
+msgstr "Creado el"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_picking_unbatch_reason__creates_backorder
+msgid "Creates Backorder"
+msgstr "Genera pendiente"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_incident__currency_id
+msgid "Currency"
+msgstr "Moneda"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_wizard_stock_trip_scan__picking_id
+msgid "Current Stop"
+msgstr "Parada actual"
+
+#. module: stock_fleet_trace
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace.report_picking_batch_trace_weights
+msgid "Customer"
+msgstr "Cliente"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields.selection,name:stock_fleet_trace.selection__stock_trip_incident__incident_type__damage
+msgid "Damaged goods"
+msgstr "Producto dañado"
+
+#. module: stock_fleet_trace
+#: model:stock.picking.unbatch.reason,name:stock_fleet_trace.unbatch_reason_damaged_product
+msgid "Damaged product"
+msgstr "Producto dañado"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_checkpoint__date
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_incident__date
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_scan__date
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace.report_picking_batch_trace_weights
+msgid "Date"
+msgstr "Fecha"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,help:stock_fleet_trace.field_stock_trip_balance__uom_id
+#: model:ir.model.fields,help:stock_fleet_trace.field_stock_trip_incident_line__uom_id
+msgid "Default unit of measure used for all stock operations."
+msgstr ""
+"Unidad de medida predeterminada para todas las operaciones de inventario."
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/controllers/main.py:0
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_balance__qty_delivered
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_wizard_stock_trip_stop_result_line__qty_delivered
+#: model:ir.model.fields.selection,name:stock_fleet_trace.selection__stock_trip_offline_event__event_type__deliver
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace.report_picking_batch_trace_weights
+msgid "Delivered"
+msgstr "Entregado"
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/controllers/main.py:0
+msgid "Deliveries"
+msgstr "Entregas"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_checkpoint__picking_id
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_incident_line__picking_id
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_offline_event__picking_id
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_scan__picking_id
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_stop__picking_id
+#: model:ir.model.fields.selection,name:stock_fleet_trace.selection__stock_move__trip_move_kind__delivery
+#: model:ir.model.fields.selection,name:stock_fleet_trace.selection__stock_trip_checkpoint__event_type__delivery
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace.report_picking_batch_trace_weights
+msgid "Delivery"
+msgstr "Entrega"
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/models/stock_trip_offline_event.py:0
+msgid "Delivery %s does not exist."
+msgstr "La entrega %s no existe."
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_picking__trip_delivery_result
+msgid "Delivery Result"
+msgstr "Resultado de la entrega"
+
+#. module: stock_fleet_trace
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace.stock_picking_view_form_signature
+msgid "Delivery Signature"
+msgstr "Firma de la entrega"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_picking_batch__trip_stop_ids
+msgid "Delivery Weights"
+msgstr "Pesos por entrega"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields.selection,name:stock_fleet_trace.selection__stock_trip_scan__kind__delivery
+msgid "Delivery slip"
+msgstr "Remisión"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,help:stock_fleet_trace.field_stock_trip_incident_line__picking_id
+msgid ""
+"Delivery the lost goods were for, when known: its reservation is the one "
+"reduced."
+msgstr ""
+"Entrega a la que iba la mercancía perdida, si se sabe: se reduce su reserva."
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields.selection,name:stock_fleet_trace.selection__stock_trip_checkpoint__event_type__departure
+msgid "Departure"
+msgstr "Salida"
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/controllers/main.py:0
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_incident__description
+msgid "Description"
+msgstr "Descripción"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_offline_event__device_uuid
+msgid "Device"
+msgstr "Dispositivo"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_balance__qty_difference
+msgid "Difference"
+msgstr "Diferencia"
+
+#. module: stock_fleet_trace
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace.stock_picking_batch_form_trace_offline
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace.stock_trip_offline_event_view_form
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace.stock_trip_offline_event_view_list
+msgid "Dismiss"
+msgstr "Descartar"
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/controllers/main.py:0
+#: model:ir.model.fields.selection,name:stock_fleet_trace.selection__stock_trip_offline_event__state__dismissed
+msgid "Dismissed"
+msgstr "Descartado"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_balance__display_name
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_checkpoint__display_name
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_incident__display_name
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_incident_line__display_name
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_offline_event__display_name
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_scan__display_name
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_stop__display_name
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_wizard_stock_trip_handover__display_name
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_wizard_stock_trip_scan__display_name
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_wizard_stock_trip_stop_result__display_name
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_wizard_stock_trip_stop_result_line__display_name
+msgid "Display Name"
+msgstr "Nombre en pantalla"
+
+#. module: stock_fleet_trace
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace.stock_picking_batch_filter_trace
+msgid "Does Not Balance"
+msgstr "No cuadra"
+
+#. module: stock_fleet_trace
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace.wizard_stock_trip_scan_view_form
+msgid "Done"
+msgstr "Hecho"
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/controllers/main.py:0
+msgid "Downloaded"
+msgstr "Descargado"
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/controllers/main.py:0
+msgid "Downloading the trip…"
+msgstr "Descargando el viaje…"
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/controllers/main.py:0
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace.stock_picking_batch_form_driver_trace
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace.stock_picking_batch_form_trace
+msgid "Driver Screen"
+msgstr "Pantalla del chofer"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,help:stock_fleet_trace.field_stock_trip_checkpoint__employee_id
+msgid "Driver the event concerns, e.g. the relief driver who takes over."
+msgstr "Chofer al que se refiere el evento, por ejemplo el chofer de relevo."
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,help:stock_fleet_trace.field_stock_trip_incident__employee_id
+msgid "Driver who takes the vehicle over from here."
+msgstr "Chofer que toma el vehículo a partir de aquí."
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_checkpoint__employee_id
+msgid "Employee"
+msgstr "Empleado"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_offline_event__error
+msgid "Error"
+msgstr "Error"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_checkpoint__event_type
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_offline_event__event_type
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace.stock_trip_checkpoint_view_search
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace.stock_trip_offline_event_view_search
+msgid "Event"
+msgstr "Evento"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_offline_event__client_uuid
+msgid "Event UUID"
+msgstr "UUID del evento"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,help:stock_fleet_trace.field_stock_picking_batch__trip_offline_blocking_count
+msgid ""
+"Events sent from the phone that are pending or to review: the trip does not "
+"close nor unload until they are resolved."
+msgstr ""
+"Eventos enviados desde el teléfono pendientes o por revisar: el viaje no se "
+"cierra ni se descarga hasta resolverlos."
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_balance__qty_expected
+msgid "Expected Back"
+msgstr "Debe regresar"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_incident__message_follower_ids
+msgid "Followers"
+msgstr "Seguidores"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_incident__message_partner_ids
+msgid "Followers (Partners)"
+msgstr "Seguidores (contactos)"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_picking_batch__weight_free_handed_over
+msgid "Free Weight Handed Over"
+msgstr "Peso libre pasado por trasbordo"
+
+#. module: stock_fleet_trace
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace.report_picking_batch_trace_weights
+msgid "From"
+msgstr "De"
+
+#. module: stock_fleet_trace
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace.report_picking_batch_trace
+msgid "Fuel"
+msgstr "Combustible"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_checkpoint__fuel_level
+msgid "Fuel Level"
+msgstr "Nivel de combustible"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_picking_batch__fuel_unit
+msgid "Fuel Unit"
+msgstr "Unidad de combustible"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_picking_batch__fuel_departure
+msgid "Fuel at Departure"
+msgstr "Combustible al salir"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_picking_batch__fuel_return
+msgid "Fuel at Return"
+msgstr "Combustible al regresar"
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/models/stock_picking_batch.py:0
+msgid "Fuel at departure"
+msgstr "Combustible al salir"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,help:stock_fleet_trace.field_stock_trip_checkpoint__fuel_level
+msgid "Fuel on board when the event happened."
+msgstr "Combustible en el tanque cuando ocurrió el evento."
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields.selection,name:stock_fleet_trace.selection__stock_trip_checkpoint__method__gps
+msgid "GPS"
+msgstr "GPS"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,help:stock_fleet_trace.field_stock_trip_balance__qty_handed_over
+msgid "Given to another vehicle."
+msgstr "Entregado a otro vehículo."
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_incident__line_ids
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace.stock_trip_incident_view_form
+msgid "Goods Lost"
+msgstr "Mercancía perdida"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_picking_unbatch_reason__goods_on_board
+msgid "Goods On Board"
+msgstr "La mercancía sigue a bordo"
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/models/stock_picking_batch_report.py:0
+msgid "Goods nobody reserved (rejections)"
+msgstr "Mercancía sin reservar (rechazos)"
+
+#. module: stock_fleet_trace
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace.stock_picking_batch_form_trace
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace.wizard_stock_trip_handover_view_form
+msgid "Hand Load Over"
+msgstr "Trasbordar carga"
+
+#. module: stock_fleet_trace
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace.wizard_stock_trip_handover_view_form
+msgid "Hand Over"
+msgstr "Trasbordar"
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/models/stock_picking_batch.py:0
+msgid "Hand the load over"
+msgstr "Trasbordar la carga"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_balance__qty_handed_over
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace.report_picking_batch_trace_weights
+msgid "Handed Over"
+msgstr "Trasbordado"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_picking_batch__trip_handover_to_ids
+msgid "Handed Over To"
+msgstr "Trasbordo a"
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/models/stock_picking_batch_report.py:0
+msgid "Handed over to %s"
+msgstr "Pasa por trasbordo a %s"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields.selection,name:stock_fleet_trace.selection__stock_picking__trip_support_kind__handover
+msgid "Handover"
+msgstr "Trasbordo"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields.selection,name:stock_fleet_trace.selection__stock_move__trip_move_kind__handover
+#: model:ir.model.fields.selection,name:stock_fleet_trace.selection__stock_trip_checkpoint__event_type__handover
+msgid "Handover to another vehicle"
+msgstr "Trasbordo a otro vehículo"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_incident__has_message
+msgid "Has Message"
+msgstr "Tiene un mensaje"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_checkpoint__hash
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_offline_event__event_hash
+msgid "Hash"
+msgstr "Hash"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,help:stock_fleet_trace.field_stock_trip_checkpoint__method
+msgid ""
+"How the event was captured. Only GPS, barcode and system events are "
+"verified; a manual one is someone's word."
+msgstr ""
+"Cómo se capturó el evento. Solo los de GPS, código de barras y sistema están"
+" verificados; uno manual es la palabra de alguien."
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_balance__id
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_checkpoint__id
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_incident__id
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_incident_line__id
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_offline_event__id
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_scan__id
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_stop__id
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_wizard_stock_trip_handover__id
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_wizard_stock_trip_scan__id
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_wizard_stock_trip_stop_result__id
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_wizard_stock_trip_stop_result_line__id
+msgid "ID"
+msgstr "ID"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,help:stock_fleet_trace.field_stock_trip_offline_event__client_uuid
+msgid ""
+"Identifier the phone gives the event: sending it again does not record it "
+"twice."
+msgstr ""
+"Identificador que el teléfono da al evento: enviarlo de nuevo no lo registra"
+" dos veces."
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,help:stock_fleet_trace.field_stock_trip_incident__message_needaction
+msgid "If checked, new messages require your attention."
+msgstr "Si está seleccionado, hay nuevos mensajes que requieren tu atención."
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,help:stock_fleet_trace.field_stock_trip_incident__message_has_error
+#: model:ir.model.fields,help:stock_fleet_trace.field_stock_trip_incident__message_has_sms_error
+msgid "If checked, some messages have a delivery error."
+msgstr "Si está seleccionado, algunos mensajes tienen error de envío."
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/controllers/main.py:0
+msgid "In transit"
+msgstr "En tránsito"
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/controllers/main.py:0
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_checkpoint__incident_id
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_incident_line__incident_id
+#: model:ir.model.fields.selection,name:stock_fleet_trace.selection__stock_trip_offline_event__event_type__incident
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace.report_picking_batch_trace_weights
+msgid "Incident"
+msgstr "Incidencia"
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/models/stock_trip_incident.py:0
+msgid ""
+"Incident %(incident)s is reviewed by the trip's supervisor or a stock "
+"manager."
+msgstr ""
+"La incidencia %(incident)s la revisa el supervisor del viaje o un "
+"administrador de inventario."
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/models/stock_trip_incident.py:0
+msgid "Incident %s is a loss: list the goods lost first."
+msgstr ""
+"La incidencia %s es una pérdida: primero registre la mercancía perdida."
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/models/stock_trip_incident.py:0
+msgid "Incident %s was already reviewed."
+msgstr "La incidencia %s ya fue revisada."
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields.selection,name:stock_fleet_trace.selection__stock_trip_checkpoint__event_type__incident_approved
+msgid "Incident approved"
+msgstr "Incidencia aprobada"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields.selection,name:stock_fleet_trace.selection__stock_trip_checkpoint__event_type__incident_rejected
+msgid "Incident rejected"
+msgstr "Incidencia rechazada"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields.selection,name:stock_fleet_trace.selection__stock_trip_checkpoint__event_type__incident
+msgid "Incident reported"
+msgstr "Incidencia reportada"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_picking_batch__trip_incident_ids
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace.stock_picking_batch_form_trace
+msgid "Incidents"
+msgstr "Incidencias"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_picking_batch__trip_incident_open_count
+msgid "Incidents to Review"
+msgstr "Incidencias por revisar"
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/wizards/wizard_stock_trip_stop_result.py:0
+msgid "Invoiced goods rejected on delivery"
+msgstr "Producto facturado rechazado en la entrega"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_incident__message_is_follower
+msgid "Is Follower"
+msgstr "Es un seguidor"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_incident__is_loss
+msgid "Is Loss"
+msgstr "Es pérdida"
+
+#. module: stock_fleet_trace
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace.report_delivery_document_trace
+msgid "John Doe"
+msgstr "Juan Pérez"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_scan__kind
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace.report_picking_batch_trace_weights
+msgid "Kind"
+msgstr "Tipo"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_balance__write_uid
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_checkpoint__write_uid
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_incident__write_uid
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_incident_line__write_uid
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_offline_event__write_uid
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_scan__write_uid
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_stop__write_uid
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_wizard_stock_trip_handover__write_uid
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_wizard_stock_trip_scan__write_uid
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_wizard_stock_trip_stop_result__write_uid
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_wizard_stock_trip_stop_result_line__write_uid
+msgid "Last Updated by"
+msgstr "Última actualización por"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_balance__write_date
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_checkpoint__write_date
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_incident__write_date
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_incident_line__write_date
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_offline_event__write_date
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_scan__write_date
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_stop__write_date
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_wizard_stock_trip_handover__write_date
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_wizard_stock_trip_scan__write_date
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_wizard_stock_trip_stop_result__write_date
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_wizard_stock_trip_stop_result_line__write_date
+msgid "Last Updated on"
+msgstr "Última actualización el"
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/controllers/main.py:0
+msgid "Last sync: %(time)s"
+msgstr "Última sincronización: %(time)s"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_checkpoint__latitude
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_incident__latitude
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_offline_event__latitude
+msgid "Latitude"
+msgstr "Latitud"
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/wizards/wizard_stock_trip_stop_result.py:0
+msgid "Left pending on trip %(batch)s: the customer still expects it."
+msgstr "Quedó pendiente en el viaje %(batch)s: el cliente todavía lo espera."
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/controllers/main.py:0
+msgid "Left the trip"
+msgstr "Salió del viaje"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_wizard_stock_trip_stop_result__line_ids
+msgid "Line"
+msgstr "Línea"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields.selection,name:stock_fleet_trace.selection__stock_picking_batch__fuel_unit__liter
+msgid "Litres"
+msgstr "Litros"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_incident__fuel_liters
+msgid "Litres Loaded"
+msgstr "Litros cargados"
+
+#. module: stock_fleet_trace
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace.stock_picking_batch_form_trace
+msgid "Load"
+msgstr "Cargar"
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/controllers/main.py:0
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_picking_batch__date_loaded
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_balance__qty_loaded
+#: model:ir.model.fields.selection,name:stock_fleet_trace.selection__stock_picking_batch__trip_state__loaded
+#: model:ir.model.fields.selection,name:stock_fleet_trace.selection__stock_trip_checkpoint__event_type__load
+msgid "Loaded"
+msgstr "Cargado"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields.selection,name:stock_fleet_trace.selection__stock_move__trip_move_kind__load
+#: model:ir.model.fields.selection,name:stock_fleet_trace.selection__stock_picking__trip_support_kind__load
+msgid "Loading"
+msgstr "Carga"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_picking_batch__trip_support_picking_ids
+msgid "Loading and Unloading"
+msgstr "Carga y descarga"
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/controllers/main.py:0
+msgid "Loading…"
+msgstr "Cargando…"
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/controllers/main.py:0
+msgid "Log out"
+msgstr "Cerrar sesión"
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/controllers/main.py:0
+msgid "Log out (needs internet)"
+msgstr "Cerrar sesión (requiere internet)"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_checkpoint__longitude
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_incident__longitude
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_offline_event__longitude
+msgid "Longitude"
+msgstr "Longitud"
+
+#. module: stock_fleet_trace
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace.stock_trip_incident_view_search
+msgid "Losses"
+msgstr "Pérdidas"
+
+#. module: stock_fleet_trace
+#: model:stock.picking.unbatch.reason,name:stock_fleet_trace.unbatch_reason_lost_in_transit
+msgid "Lost in transit (see incident)"
+msgstr "Perdido en ruta (ver incidencia)"
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/controllers/main.py:0
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_balance__trace_id
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_checkpoint__trace_id
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_incident_line__trace_id
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_scan__trace_id
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace.report_picking_batch_trace_weights
+msgid "Lot"
+msgstr "Lote"
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/models/stock_picking_batch.py:0
+msgid ""
+"Lot %(lot)s does not travel for %(stop)s. Check the product before handing "
+"it over."
+msgstr ""
+"El lote %(lot)s no viaja para %(stop)s. Revise el producto antes de "
+"entregarlo."
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/controllers/main.py:0
+msgid "Lot %(lot)s goes to: %(stops)s"
+msgstr "El lote %(lot)s va para: %(stops)s"
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/controllers/main.py:0
+msgid "Lot %(lot)s is correct: %(product)s (%(scanned)s of %(board)s)"
+msgstr "Lote %(lot)s correcto: %(product)s (%(scanned)s de %(board)s)"
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/controllers/main.py:0
+msgid "Lot checked"
+msgstr "Lote revisado"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_wizard_stock_trip_stop_result_line__trace_id
+msgid "Lot/Serial Number"
+msgstr "Número de lote/serie"
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/controllers/main.py:0
+msgid ""
+"Lots were scanned here but not all the goods: scan everything or use "
+"Partial."
+msgstr ""
+"Se escanearon lotes aquí pero no toda la mercancía: escanea todo o usa "
+"Parcial."
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields.selection,name:stock_fleet_trace.selection__stock_trip_checkpoint__method__manual
+msgid "Manual"
+msgstr "Manual"
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/controllers/main.py:0
+msgid "Map"
+msgstr "Mapa"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_wizard_stock_trip_scan__message
+msgid "Message"
+msgstr "Mensaje"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_incident__message_has_error
+msgid "Message Delivery error"
+msgstr "Error al enviar el mensaje"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_incident__message_ids
+msgid "Messages"
+msgstr "Mensajes"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_checkpoint__method
+msgid "Method"
+msgstr "Método"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_wizard_stock_trip_stop_result_line__move_line_id
+msgid "Move Line"
+msgstr "Línea de movimiento"
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/controllers/main.py:0
+msgid "My trips"
+msgstr "Mis viajes"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_incident__name
+msgid "Name"
+msgstr "Nombre"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_incident__negligence
+msgid "Negligence"
+msgstr "Negligencia"
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/models/stock_trip_incident.py:0
+msgid "New"
+msgstr "Nuevo"
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/controllers/main.py:0
+msgid "No connection: only the trips already downloaded are shown."
+msgstr "Sin conexión: solo se muestran los viajes ya descargados."
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/controllers/main.py:0
+msgid "No goods on board for this stop."
+msgstr "No hay mercancía a bordo para esta parada."
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/controllers/main.py:0
+msgid "No signal"
+msgstr "Sin señal"
+
+#. module: stock_fleet_trace
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace.stock_trip_checkpoint_view_search
+msgid "Not Delivered"
+msgstr "No entregado"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_wizard_stock_trip_stop_result_line__qty_rejected
+msgid "Not Taken"
+msgstr "No recibido"
+
+#. module: stock_fleet_trace
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace.stock_trip_checkpoint_view_search
+msgid "Not Verified"
+msgstr "No verificado"
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/controllers/main.py:0
+#: model:ir.model.fields.selection,name:stock_fleet_trace.selection__stock_picking__trip_delivery_result__not_delivered
+#: model:ir.model.fields.selection,name:stock_fleet_trace.selection__stock_trip_checkpoint__event_type__not_delivered
+#: model:ir.model.fields.selection,name:stock_fleet_trace.selection__stock_trip_offline_event__event_type__not_delivered
+msgid "Not delivered"
+msgstr "No entregado"
+
+#. module: stock_fleet_trace
+#: model:stock.picking.unbatch.reason,name:stock_fleet_trace.unbatch_reason_not_ordered
+msgid "Not ordered"
+msgstr "No lo pidió"
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/controllers/main.py:0
+msgid "Not sent"
+msgstr "Sin enviar"
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/controllers/main.py:0
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_checkpoint__note
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_wizard_stock_trip_stop_result__note
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_wizard_stock_trip_stop_result_line__note
+msgid "Note"
+msgstr "Nota"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_incident__message_needaction_counter
+msgid "Number of Actions"
+msgstr "Número de acciones"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_incident__message_has_error_counter
+msgid "Number of errors"
+msgstr "Número de errores"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,help:stock_fleet_trace.field_stock_trip_incident__message_needaction_counter
+msgid "Number of messages requiring action"
+msgstr "Número de mensajes que requieren una acción"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,help:stock_fleet_trace.field_stock_trip_incident__message_has_error_counter
+msgid "Number of messages with delivery error"
+msgstr "Número de mensajes con error de envío"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_checkpoint__odometer
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_incident__odometer
+msgid "Odometer"
+msgstr "Odómetro"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_picking_batch__trip_offline_chain_broken
+msgid "Offline Chain Broken"
+msgstr "Cadena sin conexión rota"
+
+#. module: stock_fleet_trace
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace.stock_trip_offline_event_view_form
+msgid "Offline Event"
+msgstr "Evento sin conexión"
+
+#. module: stock_fleet_trace
+#: model:ir.actions.act_window,name:stock_fleet_trace.action_stock_trip_offline_event
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_picking_batch__trip_offline_event_ids
+#: model:ir.ui.menu,name:stock_fleet_trace.menu_stock_trip_offline_event
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace.stock_picking_batch_form_trace_offline
+msgid "Offline Events"
+msgstr "Eventos sin conexión"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_picking_batch__trip_offline_blocking_count
+msgid "Offline Events to Resolve"
+msgstr "Eventos sin conexión por resolver"
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/models/stock_trip_offline_event.py:0
+msgid ""
+"Offline event %s breaks the chain: it does not follow the previous event "
+"captured on this trip."
+msgstr ""
+"El evento sin conexión %s rompe la cadena: no sigue al evento anterior "
+"capturado en este viaje."
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/models/stock_trip_offline_event.py:0
+msgid "Offline event %s was altered: its hash does not match its data."
+msgstr ""
+"El evento sin conexión %s fue alterado: su hash no coincide con sus datos."
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/models/stock_trip_offline_event.py:0
+msgid "Offline event has no hash: it cannot be verified."
+msgstr "El evento sin conexión no tiene hash: no se puede verificar."
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/models/stock_trip_offline_event.py:0
+msgid "Offline event of trip %s to review"
+msgstr "Evento sin conexión del viaje %s por revisar"
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/models/stock_trip_offline_event.py:0
+msgid ""
+"Offline events of trip %s are dismissed by its supervisor or a stock "
+"manager."
+msgstr ""
+"Los eventos sin conexión del viaje %s los descarta su supervisor o un "
+"gerente de inventario."
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/models/stock_trip_offline_event.py:0
+msgid "Offline events of trip %s do not verify"
+msgstr "Los eventos sin conexión del viaje %s no se verifican"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_wizard_stock_trip_stop_result_line__qty_on_board
+msgid "On Board"
+msgstr "A bordo"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,help:stock_fleet_trace.field_stock_move__trip_target_batch_id
+msgid "On a handover, the trip of the vehicle that took the goods."
+msgstr "En un trasbordo, el viaje del vehículo que recibió la mercancía."
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/models/stock_picking_batch_report.py:0
+msgid "On board"
+msgstr "A bordo"
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/controllers/main.py:0
+msgid "Online"
+msgstr "En línea"
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/models/stock_picking_batch.py:0
+msgid ""
+"Only a loaded trip that has not departed is unloaded this way; a departed "
+"one is unloaded on its return."
+msgstr ""
+"Así solo se descarga un viaje cargado que no ha salido; uno que ya salió se "
+"descarga a su regreso."
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/wizards/wizard_stock_trip_handover.py:0
+msgid "Only a trip on the route hands its load over; %s is not."
+msgstr "Solo un viaje en ruta puede trasbordar su carga; %s no lo está."
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/models/stock_trip_offline_event.py:0
+msgid "Only an event to review can be dismissed."
+msgstr "Solo se puede descartar un evento por revisar."
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields.selection,name:stock_fleet_trace.selection__stock_trip_incident__incident_type__other
+msgid "Other"
+msgstr "Otra"
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/controllers/main.py:0
+#: model:ir.model.fields.selection,name:stock_fleet_trace.selection__stock_picking__trip_delivery_result__partial
+#: model:ir.model.fields.selection,name:stock_fleet_trace.selection__stock_trip_offline_event__event_type__partial
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace.stock_picking_batch_form_driver_trace
+msgid "Partial"
+msgstr "Parcial"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_picking__trip_partial_review
+msgid "Partial Delivery to Review"
+msgstr "Entrega parcial por revisar"
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/models/stock_trip_offline_event.py:0
+msgid ""
+"Partial delivery captured offline. Received by: %(receiver)s. Note: %(note)s"
+msgstr ""
+"Entrega parcial capturada sin conexión. Recibió: %(receiver)s. Nota: "
+"%(note)s"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_offline_event__payload
+msgid "Payload"
+msgstr "Datos enviados"
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/controllers/main.py:0
+#: model:ir.model.fields.selection,name:stock_fleet_trace.selection__stock_picking_batch__balance_state__pending
+#: model:ir.model.fields.selection,name:stock_fleet_trace.selection__stock_trip_offline_event__state__pending
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace.stock_trip_offline_event_view_search
+msgid "Pending"
+msgstr "Pendiente"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,help:stock_fleet_trace.field_stock_trip_offline_event__state
+msgid ""
+"Pending and To review events keep the trip from closing; a supervisor "
+"dismisses one after resolving it by hand."
+msgstr ""
+"Los eventos pendientes y por revisar impiden cerrar el viaje; un supervisor "
+"descarta uno después de resolverlo a mano."
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/controllers/main.py:0
+msgid "Pending: %(count)s"
+msgstr "Pendientes: %(count)s"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_picking_batch__trip_offline_phone_head
+msgid "Phone Head"
+msgstr "Último evento del teléfono"
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/models/stock_picking_batch_driver.py:0
+msgid "Phone released: the events it held beyond %(head)s will not arrive."
+msgstr ""
+"Teléfono liberado: los eventos que tenía después de %(head)s no llegarán."
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,help:stock_fleet_trace.field_stock_trip_offline_event__device_uuid
+msgid "Phone that captured the event."
+msgstr "Teléfono que capturó el evento."
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_wizard_stock_trip_stop_result__picking_id
+msgid "Picking"
+msgstr "Traslado"
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/controllers/main.py:0
+msgid "Planned: wait for the warehouse to load it"
+msgstr "Planeado: espera a que el almacén lo cargue"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_incident__website_message_ids
+msgid "Portal Messages"
+msgstr "Mensajes del portal"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,help:stock_fleet_trace.field_stock_trip_incident__website_message_ids
+msgid "Portal communication history for this record."
+msgstr "Historial de comunicación del portal para este registro."
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_checkpoint__previous_hash
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_offline_event__prev_hash
+msgid "Previous Hash"
+msgstr "Hash anterior"
+
+#. module: stock_fleet_trace
+#: model:stock.picking.unbatch.reason,name:stock_fleet_trace.unbatch_reason_price_terms
+msgid "Price or terms"
+msgstr "Precio o condiciones"
+
+#. module: stock_fleet_trace
+#: model:res.groups,name:stock_fleet_trace.privilege_trip_trace_record
+msgid ""
+"Privilege: a trip records its own log and balance and gives its vehicle a "
+"location"
+msgstr ""
+"Privilegio: un viaje registra su bitácora y su cuadre y da ubicación a su "
+"vehículo"
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/controllers/main.py:0
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_balance__product_id
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_checkpoint__product_id
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_incident_line__product_id
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_scan__product_id
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_wizard_stock_trip_stop_result_line__product_id
+#: model:ir.model.fields.selection,name:stock_fleet_trace.selection__stock_picking_unbatch_reason__scope__line
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace.report_picking_batch_trace_weights
+msgid "Product"
+msgstr "Producto"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields.selection,name:stock_fleet_trace.selection__stock_trip_scan__kind__lot
+msgid "Product lot"
+msgstr "Lote de producto"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields.selection,name:stock_fleet_trace.selection__stock_trip_checkpoint__event_type__rejection
+msgid "Product rejected"
+msgstr "Producto rechazado"
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/controllers/main.py:0
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_checkpoint__quantity
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_incident_line__quantity
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_scan__quantity
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace.report_picking_batch_trace_weights
+msgid "Quantity"
+msgstr "Cantidad"
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/controllers/main.py:0
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_checkpoint__reason_id
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_wizard_stock_trip_handover__reason
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_wizard_stock_trip_stop_result_line__reason_id
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace.stock_trip_checkpoint_view_search
+msgid "Reason"
+msgstr "Motivo"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_wizard_stock_trip_stop_result__reason_id
+msgid "Reason Nothing Was Delivered"
+msgstr "Motivo de que no se entregó nada"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_balance__qty_received
+msgid "Received"
+msgstr "Recibido"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_picking__trip_receiver_name
+msgid "Received By"
+msgstr "Recibió"
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/controllers/main.py:0
+msgid "Received by"
+msgstr "Recibió"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_move__trip_target_batch_id
+msgid "Receiving Trip"
+msgstr "Viaje que recibe"
+
+#. module: stock_fleet_trace
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace.stock_picking_batch_form_trace
+msgid "Recompute"
+msgstr "Recalcular"
+
+#. module: stock_fleet_trace
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace.wizard_stock_trip_scan_view_form
+msgid "Record Scan"
+msgstr "Registrar escaneo"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_checkpoint__user_id
+msgid "Recorded By"
+msgstr "Registrado por"
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/controllers/main.py:0
+msgid "Recorded on this phone"
+msgstr "Registrado en este teléfono"
+
+#. module: stock_fleet_trace
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace.report_picking_batch_trace_weights
+msgid "Reference"
+msgstr "Referencia"
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/controllers/main.py:0
+msgid "Refresh"
+msgstr "Actualizar"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields.selection,name:stock_fleet_trace.selection__stock_trip_checkpoint__event_type__fuel
+#: model:ir.model.fields.selection,name:stock_fleet_trace.selection__stock_trip_incident__incident_type__fuel
+msgid "Refuelling"
+msgstr "Carga de combustible"
+
+#. module: stock_fleet_trace
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace.stock_trip_incident_view_form
+msgid "Reject"
+msgstr "Rechazar"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields.selection,name:stock_fleet_trace.selection__stock_trip_incident__state__rejected
+msgid "Rejected"
+msgstr "Rechazada"
+
+#. module: stock_fleet_trace
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace.stock_trip_checkpoint_view_search
+msgid "Rejections"
+msgstr "Rechazos"
+
+#. module: stock_fleet_trace
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace.stock_picking_batch_form_trace
+msgid "Release Phone"
+msgstr "Liberar teléfono"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_incident__employee_id
+msgid "Relief Driver"
+msgstr "Chofer de relevo"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields.selection,name:stock_fleet_trace.selection__stock_trip_checkpoint__event_type__driver_change
+#: model:ir.model.fields.selection,name:stock_fleet_trace.selection__stock_trip_incident__incident_type__driver_change
+msgid "Relief driver"
+msgstr "Chofer de relevo"
+
+#. module: stock_fleet_trace
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace.stock_picking_batch_form_driver_trace
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace.stock_picking_batch_form_trace
+msgid "Report Incident"
+msgstr "Reportar incidencia"
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/models/stock_picking_batch.py:0
+msgid "Report an incident"
+msgstr "Reportar una incidencia"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields.selection,name:stock_fleet_trace.selection__stock_trip_incident__state__reported
+msgid "Reported"
+msgstr "Reportada"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,help:stock_fleet_trace.field_wizard_stock_trip_stop_result__reason_id
+msgid "Required when the customer took nothing."
+msgstr "Obligatorio cuando el cliente no recibió nada."
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_wizard_stock_trip_handover__operator_id
+msgid "Rescue Driver"
+msgstr "Chofer del auxilio logístico"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_incident__trip_rescue_batch_id
+msgid "Rescue Trip"
+msgstr "Auxilio logístico"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_wizard_stock_trip_handover__vehicle_id
+msgid "Rescue Vehicle"
+msgstr "Vehículo del auxilio logístico"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_wizard_stock_trip_handover__fuel_departure
+msgid "Rescue Vehicle Fuel"
+msgstr "Combustible del vehículo del auxilio logístico"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_wizard_stock_trip_handover__odometer_departure
+msgid "Rescue Vehicle Odometer"
+msgstr "Odómetro del vehículo del auxilio logístico"
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/wizards/wizard_stock_trip_handover.py:0
+msgid "Rescue of %s"
+msgstr "Auxilio logístico de %s"
+
+#. module: stock_fleet_trace
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace.report_picking_batch_trace_weights
+msgid "Rescue trip"
+msgstr "Auxilio logístico"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,help:stock_fleet_trace.field_stock_picking_batch__trip_handover_to_ids
+msgid "Rescue trips that took over this trip's load after a breakdown."
+msgstr ""
+"Auxilios logísticos que recibieron la carga de este viaje tras una avería."
+
+#. module: stock_fleet_trace
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace.report_picking_batch_trace_weights
+msgid "Result"
+msgstr "Resultado"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields.selection,name:stock_fleet_trace.selection__stock_trip_checkpoint__event_type__return
+msgid "Return"
+msgstr "Regreso"
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/controllers/main.py:0
+#: model:ir.model.fields.selection,name:stock_fleet_trace.selection__stock_picking_batch__trip_state__returned
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace.report_picking_batch_trace_weights
+msgid "Returned"
+msgstr "Regresó"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_incident__review_note
+msgid "Review Note"
+msgstr "Nota de revisión"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_incident__reviewed_uid
+msgid "Reviewed By"
+msgstr "Revisada por"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,help:stock_fleet_trace.field_stock_trip_offline_event__event_hash
+msgid ""
+"SHA-256 the phone computed over this event; see the README for the canonical"
+" form."
+msgstr ""
+"SHA-256 que calculó el teléfono sobre este evento; la forma canónica está en"
+" el README."
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_incident__message_has_sms_error
+msgid "SMS Delivery error"
+msgstr "Error de entrega de SMS"
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/controllers/main.py:0
+msgid ""
+"STOP: lot %(lot)s is not for %(stop)s, it goes to %(stops)s. Do not hand it "
+"over."
+msgstr ""
+"ALTO: el lote %(lot)s no es para %(stop)s, va para %(stops)s. No lo "
+"entregues."
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/controllers/main.py:0
+msgid ""
+"STOP: lot %(lot)s is not on board for %(stop)s. Check the product before "
+"handing it over."
+msgstr ""
+"ALTO: el lote %(lot)s no viaja para %(stop)s. Revisa el producto antes de "
+"entregarlo."
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/controllers/main.py:0
+msgid "Save"
+msgstr "Guardar"
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/controllers/main.py:0
+msgid "Saved on the phone. It is sent as soon as there is signal."
+msgstr "Guardado en el teléfono. Se envía en cuanto haya señal."
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/controllers/main.py:0
+msgid "Saving…"
+msgstr "Guardando…"
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/models/stock_picking_batch.py:0
+#: code:addons/stock_fleet_trace/wizards/wizard_stock_trip_scan.py:0
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace.stock_picking_batch_form_driver_trace
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace.stock_picking_batch_form_trace
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace.wizard_stock_trip_scan_view_form
+msgid "Scan"
+msgstr "Escanear"
+
+#. module: stock_fleet_trace
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace.wizard_stock_trip_scan_view_form
+msgid "Scan here"
+msgstr "Escanee aquí"
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/wizards/wizard_stock_trip_scan.py:0
+msgid "Scan or type a code first."
+msgstr "Primero escanee o escriba un código."
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/controllers/main.py:0
+msgid "Scan or type a delivery slip or lot"
+msgstr "Escanea o escribe una remisión o un lote"
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/models/stock_picking_batch.py:0
+msgid "Scan the delivery slip of the stop before its lots."
+msgstr "Escanee la remisión de la parada antes que sus lotes."
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,help:stock_fleet_trace.field_wizard_stock_trip_scan__code
+msgid "Scan the trip sheet, a delivery slip or a lot label."
+msgstr "Escanee la hoja de viaje, una remisión o la etiqueta de un lote."
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_scan__user_id
+msgid "Scanned By"
+msgstr "Escaneado por"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_picking__trip_scan_ids
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_picking_batch__trip_scan_ids
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace.stock_picking_batch_form_trace
+msgid "Scans"
+msgstr "Escaneos"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_picking_unbatch_reason__scope
+msgid "Scope"
+msgstr "Alcance"
+
+#. module: stock_fleet_trace
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace.report_picking_batch_trace_weights
+msgid "Scrap"
+msgstr "Desecho"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_offline_event__user_id
+msgid "Sent By"
+msgstr "Enviado por"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_checkpoint__sequence
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_stop__sequence
+msgid "Sequence"
+msgstr "Secuencia"
+
+#. module: stock_fleet_trace
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace.wizard_stock_trip_stop_result_view_form
+msgid ""
+"Set what the customer took. What they do not take stays on the\n"
+"                    vehicle and needs a reason."
+msgstr ""
+"Indique lo que recibió el cliente. Lo que no recibe se queda en el\n"
+"                    vehículo y necesita un motivo."
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/models/stock_picking_batch.py:0
+msgid "Sheet read at departure."
+msgstr "Hoja leída a la salida."
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/models/stock_picking_batch.py:0
+msgid "Sheet read at return."
+msgstr "Hoja leída al regreso."
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/models/stock_picking_batch.py:0
+msgid "Sheet read. The GPS stamps the departure when the vehicle leaves."
+msgstr "Hoja leída. El GPS registrará la salida cuando el vehículo salga."
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/models/stock_picking_batch.py:0
+msgid "Sheet read. The GPS stamps the return when the vehicle arrives."
+msgstr "Hoja leída. El GPS registrará el regreso cuando el vehículo llegue."
+
+#. module: stock_fleet_trace
+#: model:stock.picking.unbatch.reason,name:stock_fleet_trace.unbatch_reason_short_loaded
+msgid "Short loaded"
+msgstr "Faltante de carga"
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/controllers/main.py:0
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace.stock_picking_view_form_trace
+msgid "Signature"
+msgstr "Firma"
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/models/stock_picking.py:0
+msgid "Signature of %s"
+msgstr "Firma de %s"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields.selection,name:stock_fleet_trace.selection__stock_trip_incident__incident_type__spill
+msgid "Spill"
+msgstr "Derrame"
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/wizards/wizard_stock_trip_stop_result.py:0
+msgid "Stage the goods for %s again"
+msgstr "Volver a preparar la mercancía de %s"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_incident__state
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_offline_event__state
+msgid "State"
+msgstr "Estado"
+
+#. module: stock_fleet_trace
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace.report_picking_batch_trace_weights
+msgid "Status"
+msgstr "Estado"
+
+#. module: stock_fleet_trace
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace.report_picking_batch_trace_weights
+msgid "Stock moves of the trip"
+msgstr "Movimientos de inventario del viaje"
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/controllers/main.py:0
+msgid "Stop %(stop)s: %(customer)s"
+msgstr "Parada %(stop)s: %(customer)s"
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/controllers/main.py:0
+msgid ""
+"Stop %(stop)s: %(customer)s. %(units)s units registered; scan a lot only to "
+"check it."
+msgstr ""
+"Parada %(stop)s: %(customer)s. %(units)s unidades registradas; escanea un "
+"lote solo para revisarlo."
+
+#. module: stock_fleet_trace
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace.wizard_stock_trip_stop_result_view_form
+msgid "Stop Result"
+msgstr "Resultado de la parada"
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/controllers/main.py:0
+msgid "Stop recorded: %(status)s."
+msgstr "Parada registrada: %(status)s."
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/models/stock_picking.py:0
+msgid "Stop result"
+msgstr "Resultado de la parada"
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/controllers/main.py:0
+msgid "Stops"
+msgstr "Paradas"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_wizard_stock_trip_scan__summary
+msgid "Summary"
+msgstr "Resumen"
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/controllers/main.py:0
+msgid "Sync"
+msgstr "Sincronizar"
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/controllers/main.py:0
+msgid "Syncing…"
+msgstr "Sincronizando…"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields.selection,name:stock_fleet_trace.selection__stock_trip_checkpoint__method__system
+msgid "System"
+msgstr "Sistema"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_picking_batch__handover_from_batch_id
+msgid "Taken Over From"
+msgstr "Auxilio logístico del viaje"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,help:stock_fleet_trace.field_stock_trip_balance__qty_received
+msgid "Taken over from another vehicle."
+msgstr "Recibido de otro vehículo."
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/models/stock_picking_batch.py:0
+msgid "Taken over from trip %s."
+msgstr "Recibido del viaje %s."
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/controllers/main.py:0
+msgid "That is the sheet of BATCH %(trip)s."
+msgstr "Esa es la hoja del BATCH %(trip)s."
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/models/stock_picking_batch.py:0
+msgid "The %(count)s checkpoints of trip %(batch)s are intact."
+msgstr "Los %(count)s checkpoints del viaje %(batch)s están intactos."
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/wizards/wizard_stock_trip_handover.py:0
+msgid "The breakdown time must fall between the departure of trip %s and now."
+msgstr "La hora de la avería debe estar entre la salida del viaje %s y ahora."
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/controllers/main.py:0
+msgid ""
+"The camera could not be opened. Allow it for this page or type the code."
+msgstr ""
+"No se pudo abrir la cámara. Permítela para esta página o escribe el código."
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/models/stock_trip_offline_event.py:0
+msgid "The capture time cannot be read."
+msgstr "No se puede leer la hora de captura."
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,help:stock_fleet_trace.field_stock_picking_unbatch_reason__creates_backorder
+msgid ""
+"The customer still expects the quantity: what was not delivered stays "
+"pending in a backorder. Otherwise the pending quantity is cancelled."
+msgstr ""
+"El cliente todavía espera la cantidad: lo no entregado queda pendiente en "
+"otra entrega. Si no, la cantidad pendiente se cancela."
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/wizards/wizard_stock_trip_stop_result.py:0
+msgid "The customer took nothing: give the reason for the delivery."
+msgstr "El cliente no recibió nada: indique el motivo de la entrega."
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,help:stock_fleet_trace.field_wizard_stock_trip_scan__picking_id
+msgid ""
+"The delivery whose slip was scanned last: lots scanned next count for it."
+msgstr ""
+"La entrega cuya remisión se escaneó al último: los lotes que se escaneen "
+"cuentan para ella."
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,help:stock_fleet_trace.field_stock_trip_offline_event__prev_hash
+msgid ""
+"The event_hash the phone chained this event to; empty for the trip's first "
+"event."
+msgstr ""
+"El event_hash al que el teléfono encadenó este evento; vacío en el primer "
+"evento del viaje."
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/models/stock_picking_batch.py:0
+msgid "The fuel at return is not set."
+msgstr "Falta el combustible al regresar."
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/wizards/wizard_stock_trip_handover.py:0
+msgid ""
+"The handover of trip %s is authorised by its supervisor or a stock manager."
+msgstr ""
+"El trasbordo del viaje %s lo autoriza su supervisor o un administrador de "
+"inventario."
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/models/stock_trip_offline_event.py:0
+msgid ""
+"The hash chain sent from the phone for trip %s does not check out: some "
+"events may have been altered or lost. Review them before trusting the trip's"
+" record."
+msgstr ""
+"La cadena de hash que envió el teléfono para el viaje %s no cuadra: algunos "
+"eventos pudieron alterarse o perderse. Revíselos antes de confiar en el "
+"registro del viaje."
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/models/stock_picking_batch.py:0
+msgid "The log of trip %(batch)s was altered at checkpoint(s) %(seq)s."
+msgstr ""
+"La bitácora del viaje %(batch)s fue alterada en el/los checkpoint(s) "
+"%(seq)s."
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,help:stock_fleet_trace.field_stock_trip_incident__negligence
+msgid "The loss is attributed to the driver's negligence."
+msgstr "La pérdida se atribuye a negligencia del chofer."
+
+#. module: stock_fleet_trace
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace.wizard_stock_trip_handover_view_form
+msgid ""
+"The pending deliveries and everything still on the vehicle move to\n"
+"                    a new trip on the rescue vehicle, which departs from here."
+msgstr ""
+"Las entregas pendientes y todo lo que sigue en el vehículo pasan a\n"
+"                    un auxilio logístico en otro vehículo, que sale desde aquí."
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/models/stock_picking_batch_driver.py:0
+msgid "The phone of trip %s is released by its supervisor or a stock manager."
+msgstr ""
+"El teléfono del viaje %s lo libera su supervisor o un gerente de inventario."
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,help:stock_fleet_trace.field_stock_picking_batch__trip_offline_phone_head
+msgid ""
+"The phone's own latest event_hash, as it last reported it: while it differs "
+"from the last event received, the phone still holds unsent events."
+msgstr ""
+"El último event_hash que reportó el teléfono: mientras difiera del último "
+"evento recibido, el teléfono aún tiene eventos sin enviar."
+
+#. module: stock_fleet_trace
+#: model:ir.model.constraint,message:stock_fleet_trace.constraint_stock_trip_incident_line_quantity_positive
+msgid "The quantity lost must be positive."
+msgstr "La cantidad perdida debe ser positiva."
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,help:stock_fleet_trace.field_stock_picking_unbatch_reason__goods_on_board
+msgid ""
+"The quantity stays on the vehicle and comes back with the unloading. Clear "
+"it for reasons where the goods never travelled, e.g. short loading: the "
+"trip's balance then shows the quantity as missing."
+msgstr ""
+"La cantidad se queda en el vehículo y regresa con la descarga. Desmárquelo "
+"en motivos donde la mercancía nunca viajó, por ejemplo faltante de carga: el"
+" cuadre del viaje la mostrará como faltante."
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/controllers/main.py:0
+msgid "The trip could not be downloaded. Connect and try again."
+msgstr "No se pudo descargar el viaje. Conéctate e inténtalo de nuevo."
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/models/stock_picking_batch_driver.py:0
+msgid ""
+"The trip was unloaded without departing: nothing was delivered on the road."
+msgstr "El viaje se descargó sin salir: no se entregó nada en ruta."
+
+#. module: stock_fleet_trace
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace.stock_picking_batch_form_trace
+msgid ""
+"The trip will stop waiting for the events this phone still holds. Continue?"
+msgstr ""
+"El viaje dejará de esperar los eventos que aún tiene este teléfono. "
+"¿Continuar?"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,help:stock_fleet_trace.field_stock_picking_batch__trip_location_ids
+msgid "The vehicle's locations that held this trip's goods."
+msgstr "Ubicaciones del vehículo que llevaron la mercancía de este viaje."
+
+#. module: stock_fleet_trace
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace.stock_picking_batch_form_driver_trace
+msgid ""
+"The warehouse has not loaded this trip yet: wait until the goods are on the "
+"vehicle."
+msgstr ""
+"El almacén aún no carga este viaje: espera a que la mercancía esté en el "
+"vehículo."
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields.selection,name:stock_fleet_trace.selection__stock_trip_incident__incident_type__theft
+msgid "Theft or robbery"
+msgstr "Robo o asalto"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,help:stock_fleet_trace.field_stock_picking_batch__weight_departure
+msgid ""
+"Theoretical weight of the goods loaded, frozen when the trip loaded: the "
+"product weights times the quantities, without pallets or packaging."
+msgstr ""
+"Peso teórico de lo cargado, congelado al cargar el viaje: peso de cada "
+"producto por su cantidad, sin tarimas ni empaque."
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,help:stock_fleet_trace.field_stock_picking_batch__weight_free_handed_over
+msgid ""
+"Theoretical weight of the goods nobody reserved (rejections) that a "
+"breakdown moved to the rescue trip."
+msgstr ""
+"Peso teórico de la mercancía sin reservar (rechazos) que una avería pasó al "
+"auxilio logístico."
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,help:stock_fleet_trace.field_stock_picking_batch__weight_on_board
+msgid "Theoretical weight of the goods on the vehicle now."
+msgstr "Peso teórico de lo que lleva el vehículo ahora."
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,help:stock_fleet_trace.field_stock_trip_checkpoint__weight_on_board
+msgid "Theoretical weight of the goods on the vehicle right after the event."
+msgstr "Peso teórico de lo que llevaba el vehículo justo después del evento."
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,help:stock_fleet_trace.field_stock_trip_stop__weight_departure
+msgid ""
+"Theoretical weight of this delivery when it boarded this trip: at loading, "
+"or at the handover for a rescue trip."
+msgstr ""
+"Peso teórico de esta entrega cuando subió a este viaje: al cargar, o en el "
+"trasbordo para un auxilio logístico."
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/controllers/main.py:0
+msgid ""
+"This phone cannot read codes with the camera: use the scanner or type the "
+"code."
+msgstr ""
+"Este teléfono no puede leer códigos con la cámara: usa el lector o escribe "
+"el código."
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/controllers/main.py:0
+msgid ""
+"This phone still has %(count)s events to send. They stay saved on this phone"
+" and go out the next time you sign in with this user. Log out anyway?"
+msgstr ""
+"Este teléfono aún tiene %(count)s eventos por enviar. Se quedan guardados en"
+" este teléfono y se envían la próxima vez que inicies sesión con este "
+"usuario. ¿Cerrar sesión de todos modos?"
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/controllers/main.py:0
+msgid "This trip has no stops."
+msgstr "Este viaje no tiene paradas."
+
+#. module: stock_fleet_trace
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace.report_picking_batch_trace_weights
+msgid "To"
+msgstr "A"
+
+#. module: stock_fleet_trace
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace.stock_trip_incident_view_search
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace.stock_trip_offline_event_view_search
+msgid "To Review"
+msgstr "Por revisar"
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/controllers/main.py:0
+msgid "To deliver"
+msgstr "Por entregar"
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/controllers/main.py:0
+#: model:ir.model.fields.selection,name:stock_fleet_trace.selection__stock_trip_offline_event__state__review
+msgid "To review"
+msgstr "Por revisar"
+
+#. module: stock_fleet_trace
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace.stock_picking_batch_form_trace
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace.stock_picking_view_batch_tree_trace
+msgid "Total"
+msgstr "Total"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_picking_batch__has_trip_trace
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_picking_type__trip_trace
+msgid "Trace Load on Vehicle"
+msgstr "Rastrear la carga en el vehículo"
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/models/stock_picking.py:0
+#: code:addons/stock_fleet_trace/wizards/wizard_stock_trip_stop_result.py:0
+msgid "Transfer %s is not on a trip that has departed."
+msgstr "El traslado %s no va en un viaje que haya salido."
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/wizards/wizard_stock_trip_stop_result.py:0
+msgid "Transfer %s is not ready to deliver."
+msgstr "El traslado %s no está listo para entregarse."
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/models/stock_picking_batch.py:0
+msgid ""
+"Transfer %s of the trip could not be validated: validate it by hand to see "
+"what it asks, then try again."
+msgstr ""
+"La transferencia %s del viaje no se pudo validar: valídela a mano para ver "
+"qué pregunta y vuelva a intentarlo."
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_move__trip_batch_id
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_balance__batch_id
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_checkpoint__batch_id
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_incident__batch_id
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_incident_line__batch_id
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_offline_event__batch_id
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_scan__batch_id
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_stop__batch_id
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace.stock_picking_view_form_trace
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace.stock_trip_checkpoint_view_search
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace.stock_trip_offline_event_view_search
+msgid "Trip"
+msgstr "Viaje"
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/models/stock_picking_batch.py:0
+msgid "Trip %(batch)s cannot depart, it is missing: %(fields)s."
+msgstr "El viaje %(batch)s no puede salir, le falta: %(fields)s."
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/models/stock_picking_batch.py:0
+msgid ""
+"Trip %(batch)s cannot load %(pickings)s: they leave with a third-party "
+"carrier or the customer, not on our vehicle. Take them out of the trip."
+msgstr ""
+"El viaje %(batch)s no puede cargar %(pickings)s: salen con paquetería "
+"externa o las recoge el cliente, no en nuestro vehículo. Sáquelas del viaje."
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/models/stock_picking_batch.py:0
+msgid ""
+"Trip %(batch)s cannot load deliveries that are not ready: %(pickings)s."
+msgstr ""
+"El viaje %(batch)s no puede cargar entregas que no están listas: "
+"%(pickings)s."
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/models/stock_picking_batch.py:0
+msgid ""
+"Trip %(batch)s cannot load: operation type %(type)s does not require its "
+"deliveries to leave in a trip. Enable \"Deliver in Trips\" on it first."
+msgstr ""
+"El viaje %(batch)s no puede cargar: el tipo de operación %(type)s no exige "
+"que sus entregas salgan en un viaje. Activa primero \"Entregar en viajes\" "
+"en ese tipo de operación."
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/models/stock_trip_offline_event.py:0
+msgid ""
+"Trip %(batch)s has %(count)s offline events pending or to review: resolve "
+"them first."
+msgstr ""
+"El viaje %(batch)s tiene %(count)s eventos sin conexión pendientes o por "
+"revisar: resuélvalos primero."
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/models/stock_trip_offline_event.py:0
+msgid ""
+"Trip %(batch)s has %(count)s partial deliveries to capture before its "
+"unloading is validated: %(pickings)s."
+msgstr ""
+"El viaje %(batch)s tiene %(count)s entregas parciales por capturar antes de "
+"validar su descarga: %(pickings)s."
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/models/stock_picking_batch.py:0
+msgid ""
+"Trip %(batch)s is already loaded; %(pickings)s cannot be added. Unload it "
+"first or put them on the next trip."
+msgstr ""
+"El viaje %(batch)s ya está cargado; no se puede agregar %(pickings)s. "
+"Descárguelo primero o póngalo en el siguiente viaje."
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/models/stock_picking_batch.py:0
+msgid ""
+"Trip %(batch)s is loaded: %(pickings)s cannot leave it while its goods are "
+"on the vehicle. Unload the trip first."
+msgstr ""
+"El viaje %(batch)s está cargado: %(pickings)s no puede salir de él mientras "
+"su mercancía esté en el vehículo. Descargue primero el viaje."
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/models/stock_trip_offline_event.py:0
+msgid "Trip %s cannot return: the phone still holds unsent events."
+msgstr ""
+"El viaje %s no puede regresar: el teléfono aún tiene eventos sin enviar."
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/models/stock_picking_batch.py:0
+msgid "Trip %s closed."
+msgstr "Viaje %s cerrado."
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/models/stock_picking_batch.py:0
+msgid "Trip %s departed."
+msgstr "Viaje %s despachado."
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/models/stock_picking_batch.py:0
+msgid "Trip %s does not balance"
+msgstr "El viaje %s no cuadra"
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/models/stock_picking_batch.py:0
+msgid "Trip %s has no deliveries."
+msgstr "El viaje %s no tiene entregas."
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/models/stock_picking_batch.py:0
+msgid "Trip %s has no vehicle."
+msgstr "El viaje %s no tiene vehículo."
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/models/stock_picking_batch.py:0
+msgid "Trip %s has not departed yet."
+msgstr "El viaje %s todavía no sale."
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/models/stock_picking_batch.py:0
+msgid "Trip %s is already closed."
+msgstr "El viaje %s ya está cerrado."
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/models/stock_picking_batch.py:0
+msgid "Trip %s is already loaded."
+msgstr "El viaje %s ya está cargado."
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/models/stock_picking_batch.py:0
+msgid "Trip %s is not loaded yet: load it first."
+msgstr "El viaje %s todavía no está cargado: cárguelo primero."
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/models/stock_picking_batch.py:0
+msgid ""
+"Trip %s is not of an operation type that traces its load on the vehicle."
+msgstr ""
+"El viaje %s no es de un tipo de operación que rastree la carga en el "
+"vehículo."
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/models/stock_trip_incident.py:0
+msgid ""
+"Trip %s is not on the route: incidents are recorded between its departure "
+"and its return."
+msgstr ""
+"El viaje %s no está en ruta: las incidencias se registran entre la salida y "
+"el regreso."
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/models/stock_trip_offline_event.py:0
+msgid "Trip %s is synced by its driver, its supervisor or a stock manager."
+msgstr ""
+"El viaje %s lo sincroniza su conductor, su supervisor o un gerente de "
+"inventario."
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/models/stock_picking_batch.py:0
+msgid ""
+"Trip %s still has its goods on the vehicle: unload it before cancelling."
+msgstr ""
+"El viaje %s todavía tiene mercancía en el vehículo: descárguelo antes de "
+"cancelarlo."
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/models/stock_picking_batch_driver.py:0
+msgid "Trip %s was unloaded with stop results from the phone"
+msgstr "El viaje %s se descargó con resultados de paradas desde el teléfono"
+
+#. module: stock_fleet_trace
+#: model:ir.model,name:stock_fleet_trace.model_stock_trip_balance
+msgid "Trip Balance Line"
+msgstr "Línea de cuadre del viaje"
+
+#. module: stock_fleet_trace
+#: model:ir.model,name:stock_fleet_trace.model_stock_trip_checkpoint
+msgid "Trip Checkpoint"
+msgstr "Checkpoint del viaje"
+
+#. module: stock_fleet_trace
+#: model:ir.actions.act_window,name:stock_fleet_trace.action_stock_trip_checkpoint
+#: model:ir.ui.menu,name:stock_fleet_trace.menu_stock_trip_checkpoint
+msgid "Trip Checkpoints"
+msgstr "Checkpoints de viajes"
+
+#. module: stock_fleet_trace
+#: model:ir.model,name:stock_fleet_trace.model_stock_trip_stop
+msgid "Trip Delivery Weight"
+msgstr "Peso de la entrega en el viaje"
+
+#. module: stock_fleet_trace
+#: model:ir.model,name:stock_fleet_trace.model_wizard_stock_trip_handover
+msgid "Trip Handover"
+msgstr "Trasbordo del viaje"
+
+#. module: stock_fleet_trace
+#: model:ir.model,name:stock_fleet_trace.model_stock_trip_incident
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_scrap__trip_incident_id
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace.stock_trip_incident_view_form
+msgid "Trip Incident"
+msgstr "Incidencia del viaje"
+
+#. module: stock_fleet_trace
+#: model:ir.model,name:stock_fleet_trace.model_stock_trip_incident_line
+msgid "Trip Incident Line"
+msgstr "Línea de incidencia del viaje"
+
+#. module: stock_fleet_trace
+#: model:ir.actions.act_window,name:stock_fleet_trace.action_stock_trip_incident
+#: model:ir.ui.menu,name:stock_fleet_trace.menu_stock_trip_incident
+msgid "Trip Incidents"
+msgstr "Incidencias de viajes"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_move__trip_move_kind
+msgid "Trip Movement"
+msgstr "Movimiento del viaje"
+
+#. module: stock_fleet_trace
+#: model:ir.model,name:stock_fleet_trace.model_stock_trip_offline_event
+msgid "Trip Offline Event"
+msgstr "Evento sin conexión del viaje"
+
+#. module: stock_fleet_trace
+#: model:ir.model,name:stock_fleet_trace.model_stock_trip_scan
+#: model:ir.model,name:stock_fleet_trace.model_wizard_stock_trip_scan
+msgid "Trip Scan"
+msgstr "Escaneo del viaje"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_picking__trip_support_batch_id
+msgid "Trip Served"
+msgstr "Viaje atendido"
+
+#. module: stock_fleet_trace
+#: model:ir.model,name:stock_fleet_trace.model_wizard_stock_trip_stop_result
+msgid "Trip Stop Result"
+msgstr "Resultado de la parada"
+
+#. module: stock_fleet_trace
+#: model:ir.model,name:stock_fleet_trace.model_wizard_stock_trip_stop_result_line
+msgid "Trip Stop Result Line"
+msgstr "Línea del resultado de la parada"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_picking__trip_support_kind
+msgid "Trip Support Kind"
+msgstr "Tipo de apoyo al viaje"
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/controllers/main.py:0
+msgid "Trip downloaded: %(time)s"
+msgstr "Viaje descargado: %(time)s"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields.selection,name:stock_fleet_trace.selection__stock_trip_scan__kind__trip_sheet
+msgid "Trip sheet"
+msgstr "Hoja de viaje"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,help:stock_fleet_trace.field_stock_trip_incident__trip_rescue_batch_id
+msgid "Trip that took over the load after this breakdown."
+msgstr "Viaje que recibió la carga después de esta avería."
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,help:stock_fleet_trace.field_stock_picking__trip_support_batch_id
+msgid "Trip this transfer loads, unloads or hands over."
+msgstr "Viaje que este traslado carga, descarga o trasborda."
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,help:stock_fleet_trace.field_stock_move__trip_batch_id
+msgid "Trip whose load this move carried onto, along or off the vehicle."
+msgstr ""
+"Viaje cuya carga subió, viajó o bajó del vehículo con este movimiento."
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,help:stock_fleet_trace.field_stock_picking_batch__handover_from_batch_id
+msgid "Trip whose load this one took over after a breakdown."
+msgstr "Viaje cuya carga tomó este tras una avería."
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,help:stock_fleet_trace.field_stock_picking_batch__has_trip_trace
+#: model:ir.model.fields,help:stock_fleet_trace.field_stock_picking_type__trip_trace
+msgid ""
+"Trips of this type carry their goods on the vehicle's own location: they "
+"load on departure, need the fuel at departure and return, record what each "
+"customer took and unload what comes back into a reconciled balance."
+msgstr ""
+"Los viajes de este tipo llevan la mercancía en la ubicación propia del "
+"vehículo: cargan al salir, piden el combustible al salir y al regresar, "
+"registran lo que recibió cada cliente y descargan lo que regresa en un "
+"cuadre conciliado."
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/controllers/main.py:0
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_incident__incident_type
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace.stock_trip_incident_view_search
+msgid "Type"
+msgstr "Tipo"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_balance__uom_id
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_incident_line__uom_id
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_wizard_stock_trip_stop_result_line__uom_id
+msgid "Unit"
+msgstr "Unidad"
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/models/stock_trip_offline_event.py:0
+msgid "Unknown event type."
+msgstr "Tipo de evento desconocido."
+
+#. module: stock_fleet_trace
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace.stock_picking_batch_form_trace
+msgid "Unload"
+msgstr "Descargar"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_balance__qty_returned
+msgid "Unloaded"
+msgstr "Descargado"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,help:stock_fleet_trace.field_stock_trip_balance__qty_difference
+msgid ""
+"Unloaded minus expected: negative is missing, positive is surplus. Only "
+"meaningful once the unloading is confirmed."
+msgstr ""
+"Descargado menos lo que debía regresar: negativo es faltante, positivo es "
+"sobrante. Solo vale una vez confirmada la descarga."
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_picking_batch__unload_picking_id
+#: model:ir.model.fields.selection,name:stock_fleet_trace.selection__stock_move__trip_move_kind__unload
+#: model:ir.model.fields.selection,name:stock_fleet_trace.selection__stock_picking__trip_support_kind__unload
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace.stock_picking_batch_form_trace
+msgid "Unloading"
+msgstr "Descarga"
+
+#. module: stock_fleet_trace
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace.stock_picking_batch_filter_trace
+msgid "Unloading Pending"
+msgstr "Descarga pendiente"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields.selection,name:stock_fleet_trace.selection__stock_trip_checkpoint__event_type__unload
+msgid "Unloading confirmed"
+msgstr "Descarga confirmada"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_location__trip_vehicle_id
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_incident__vehicle_id
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace.stock_trip_incident_view_search
+msgid "Vehicle"
+msgstr "Vehículo"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_picking_batch__trip_location_ids
+msgid "Vehicle Locations"
+msgstr "Ubicaciones del vehículo"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields.selection,name:stock_fleet_trace.selection__stock_trip_incident__incident_type__breakdown
+msgid "Vehicle breakdown or accident"
+msgstr "Avería o accidente del vehículo"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,help:stock_fleet_trace.field_stock_location__trip_vehicle_id
+msgid ""
+"Vehicle whose load this location holds while it travels. Goods are here from"
+" loading until they are delivered, written off or unloaded."
+msgstr ""
+"Vehículo cuya carga guarda esta ubicación mientras viaja. La mercancía está "
+"aquí desde que se carga hasta que se entrega, se da de baja o se descarga."
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_checkpoint__verified
+msgid "Verified"
+msgstr "Verificado"
+
+#. module: stock_fleet_trace
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace.stock_picking_batch_form_trace
+msgid "Verify Log"
+msgstr "Verificar bitácora"
+
+#. module: stock_fleet_trace
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace.stock_picking_view_form_trace
+msgid "View Signature"
+msgstr "Ver firma"
+
+#. module: stock_fleet_trace
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace.report_picking_batch_trace_weights
+msgid "Weight"
+msgstr "Peso"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_picking_batch__weight_on_board
+msgid "Weight On Board"
+msgstr "Peso a bordo ahora"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_stop__weight_written_off
+msgid "Weight Written Off"
+msgstr "Peso dado de baja"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_picking_batch__weight_departure
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_stop__weight_departure
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace.report_picking_batch_trace_weights
+msgid "Weight at Departure"
+msgstr "Peso al salir"
+
+#. module: stock_fleet_trace
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace.stock_picking_batch_form_trace
+msgid "Weight of the Deliveries"
+msgstr "Peso de las entregas"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,help:stock_fleet_trace.field_stock_trip_stop__weight_written_off
+msgid ""
+"Weight of this delivery's goods that approved incidents of this trip wrote "
+"off."
+msgstr ""
+"Peso de la mercancía de esta entrega que dieron de baja las incidencias "
+"aprobadas de este viaje."
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_checkpoint__weight_on_board
+msgid "Weight on Board"
+msgstr "Peso a bordo"
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/models/stock_picking_batch.py:0
+msgid ""
+"What came back differs from what the trip should have brought back. Review "
+"the Balance tab."
+msgstr ""
+"Lo que regresó no coincide con lo que el viaje debía traer de vuelta. Revise"
+" la pestaña Cuadre."
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/controllers/main.py:0
+msgid "What did the customer take?"
+msgstr "¿Qué se llevó el cliente?"
+
+#. module: stock_fleet_trace
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace.stock_trip_incident_view_form
+msgid "What happened, where, and what was done"
+msgstr "Qué pasó, dónde y qué se hizo"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,help:stock_fleet_trace.field_stock_trip_offline_event__payload
+msgid ""
+"What the phone captured, e.g. the lines of a partial delivery with the "
+"quantity taken and the reason, the reason and note of a stop not delivered, "
+"a scanned code or the incident reported."
+msgstr ""
+"Lo que capturó el teléfono, p. ej. las líneas de una entrega parcial con la "
+"cantidad recibida y el motivo, el motivo y la nota de una parada no "
+"entregada, un código escaneado o el incidente reportado."
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/models/stock_picking.py:0
+msgid ""
+"What was scanned at %(name)s does not match what the vehicle carries for it:\n"
+"%(summary)s\n"
+"Use Partial."
+msgstr ""
+"Lo escaneado en %(name)s no coincide con lo que lleva el vehículo para esa entrega:\n"
+"%(summary)s\n"
+"Use Parcial."
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,help:stock_fleet_trace.field_stock_trip_offline_event__captured_at
+msgid "When the driver recorded it, by the phone's clock."
+msgstr "Cuándo lo registró el conductor, según el reloj del teléfono."
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,help:stock_fleet_trace.field_stock_picking_batch__date_loaded
+msgid "When the goods of the trip moved onto the vehicle."
+msgstr "Cuando la mercancía del viaje subió al vehículo."
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,help:stock_fleet_trace.field_wizard_stock_trip_handover__breakdown_date
+msgid ""
+"When the vehicle broke down, as the driver reported it: the logistic "
+"support's response time is measured from it."
+msgstr ""
+"Cuándo se averió el vehículo, según lo reportó el chofer: desde ahí se mide "
+"el tiempo de respuesta del auxilio logístico."
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,help:stock_fleet_trace.field_stock_picking__trip_arrival_date
+msgid "When the vehicle reached the customer."
+msgstr "Cuando el vehículo llegó con el cliente."
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,help:stock_fleet_trace.field_stock_picking_unbatch_reason__scope
+msgid ""
+"Whether the reason explains a delivery that did not happen, a product the "
+"customer did not take, or either."
+msgstr ""
+"Si el motivo explica una entrega que no se hizo, un producto que el cliente "
+"no recibió, o ambos."
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,help:stock_fleet_trace.field_stock_picking_batch__balance_state
+msgid ""
+"Whether what came back matches what the trip loaded, less what it delivered,"
+" wrote off and handed over."
+msgstr ""
+"Si lo que regresó coincide con lo cargado, menos lo entregado, dado de baja "
+"y trasbordado."
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,help:stock_fleet_trace.field_stock_picking__trip_receiver_name
+msgid "Who took the goods, as given by the driver's phone or app."
+msgstr "Quién recibió la mercancía, según el teléfono o la app del chofer."
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields.selection,name:stock_fleet_trace.selection__stock_picking_unbatch_reason__scope__transfer
+msgid "Whole delivery"
+msgstr "Entrega completa"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields.selection,name:stock_fleet_trace.selection__stock_picking_unbatch_reason__scope__both
+msgid "Whole delivery or product"
+msgstr "Entrega completa o producto"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields.selection,name:stock_fleet_trace.selection__stock_picking_batch__balance_state__difference
+msgid "With difference"
+msgstr "Con diferencia"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_wizard_stock_trip_stop_result_line__wizard_id
+msgid "Wizard"
+msgstr "Asistente"
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/controllers/main.py:0
+msgid "Write what the customer took."
+msgstr "Escribe qué se llevó el cliente."
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/models/stock_picking_batch_report.py:0
+msgid "Write-off"
+msgstr "Baja"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields.selection,name:stock_fleet_trace.selection__stock_move__trip_move_kind__write_off
+msgid "Write-off on the route"
+msgstr "Baja en ruta"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_incident__scrap_ids
+msgid "Write-offs"
+msgstr "Bajas"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_trip_balance__qty_written_off
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace.report_picking_batch_trace_weights
+msgid "Written Off"
+msgstr "Dado de baja"
+
+#. module: stock_fleet_trace
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace.report_picking_batch_trace_weights
+msgid "Written off by incidents"
+msgstr "Dado de baja por incidencias"
+
+#. module: stock_fleet_trace
+#: model:stock.picking.unbatch.reason,name:stock_fleet_trace.unbatch_reason_wrong_product
+msgid "Wrong product"
+msgstr "Producto equivocado"
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/controllers/main.py:0
+msgid "You have no trips to work."
+msgstr "No tienes viajes por trabajar."
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/controllers/main.py:0
+msgid "Your session expired: log in. What you captured stays on the phone."
+msgstr ""
+"Tu sesión expiró: inicia sesión. Lo capturado se queda en el teléfono."
+
+#. module: stock_fleet_trace
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace.report_picking_batch_trace_weights
+msgid "h"
+msgstr "h"
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/controllers/main.py:0
+msgid "never"
+msgstr "nunca"
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/models/stock_trip_offline_event.py:0
+msgid "not given"
+msgstr "sin dato"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_warehouse__trip_origin_latitude
+msgid "Trip Origin Latitude"
+msgstr "Latitud de origen de los viajes"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_stock_warehouse__trip_origin_longitude
+msgid "Trip Origin Longitude"
+msgstr "Longitud de origen de los viajes"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,help:stock_fleet_trace.field_stock_warehouse__trip_origin_latitude
+msgid "Where the delivery trips start and end. Empty uses the coordinates of the warehouse's address."
+msgstr "Donde empiezan y terminan los viajes de reparto. Vacío usa las coordenadas de la dirección del almacén."
+
+#. module: stock_fleet_trace
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace.stock_warehouse_view_form_trace
+msgid "Delivery Trips"
+msgstr "Viajes de reparto"
+
+#~ msgid "%(stop)s (%(customer)s): scan the lots you hand over."
+#~ msgstr "%(stop)s (%(customer)s): escanee los lotes que entrega."
+
+#~ msgid "How many units one lot scan counts, e.g. 12 for a closed box."
+#~ msgstr ""
+#~ "Cuántas piezas cuenta un escaneo de lote, por ejemplo 12 para una caja "
+#~ "cerrada."
+
+#~ msgid "Units per Scan"
+#~ msgstr "Piezas por escaneo"
+
+#. module: stock_fleet_trace
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace.report_delivery_document_trace
+msgid "<strong>Signature:</strong> ______________________"
+msgstr "<strong>Firma:</strong> ______________________"
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/models/stock_picking_delivery_proof.py:0
+msgid "The signature on %(name)s does not count as the customer's: %(problem)s. Capture the name of whoever received, or upload the photo of the delivery slip signed by the customer."
+msgstr "La firma de %(name)s no cuenta como la del cliente: %(problem)s. Captura el nombre de quien recibió o sube la foto de la OUT firmada por el cliente."
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/models/stock_picking_delivery_proof.py:0
+msgid "it carries no signature"
+msgstr "no trae firma"
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/models/stock_picking_delivery_proof.py:0
+msgid "the driver"
+msgstr "del chofer"
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/models/stock_picking_delivery_proof.py:0
+msgid "the name of whoever received is %(role)s's"
+msgstr "el nombre de quien recibió es el %(role)s"
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/models/stock_picking_delivery_proof.py:0
+msgid "the name of whoever received is missing"
+msgstr "falta el nombre de quien recibió"
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/models/stock_picking_delivery_proof.py:0
+msgid "the salesperson"
+msgstr "del vendedor"
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/models/stock_picking_delivery_proof.py:0
+msgid "the trip supervisor"
+msgstr "del supervisor del viaje"
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/models/stock_picking_delivery_proof.py:0
+msgid "whoever validates"
+msgstr "de quien valida"
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/models/stock_picking.py:0
+msgid ""
+"%(pickings)s already travel on the vehicle of trip %(batch)s: register them "
+"as not delivered, with their reason, so their goods come back with the "
+"unload."
+msgstr "%(pickings)s ya van en el vehículo del viaje %(batch)s: regístralas como no entregadas, con su motivo, para que su mercancía regrese con la descarga."
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/wizards/wizard_stock_picking_delivery_proof.py:0
+msgid ""
+"Take the photo of the signed delivery slip, or have whoever received write "
+"their name and sign here."
+msgstr ""
+"Toma la foto de la remisión firmada, o pide a quien recibió que escriba su "
+"nombre y firme aquí."
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/wizards/wizard_stock_picking_delivery_proof.py:0
+msgid "The signature does not count as the customer's: %(problem)s."
+msgstr "La firma no cuenta como la del cliente: %(problem)s."
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/models/stock_picking_batch.py:0
+msgid "%(location)s does not hold all of %(products)s to load."
+msgstr "%(location)s no tiene todo %(products)s para cargar."
+
+#. module: stock_fleet_trace
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace.view_wizard_stock_trip_load_stock_form
+msgid "Discard"
+msgstr "Descartar"
+
+#. module: stock_fleet_trace
+#: model:ir.model,name:stock_fleet_trace.model_stock_location
+msgid "Inventory Locations"
+msgstr "Ubicaciones de inventario"
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/models/stock_picking_batch.py:0
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace.stock_picking_batch_form_trace
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace.view_wizard_stock_trip_load_stock_form
+msgid "Load Stock to Sell"
+msgstr "Cargar inventario para vender"
+
+#. module: stock_fleet_trace
+#: model:ir.model,name:stock_fleet_trace.model_wizard_stock_trip_load_stock
+msgid "Load Stock to Sell on a Trip"
+msgstr "Cargar inventario para vender en un viaje"
+
+#. module: stock_fleet_trace
+#: model:ir.model,name:stock_fleet_trace.model_stock_picking_type
+msgid "Picking Type"
+msgstr "Tipo de operación"
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_wizard_stock_trip_load_stock__line_ids
+msgid "Products"
+msgstr "Productos"
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/wizards/wizard_stock_trip_load_stock.py:0
+msgid "Say what the vehicle takes to sell."
+msgstr "Indica qué lleva el vehículo para vender."
+
+#. module: stock_fleet_trace
+#: model:ir.model,name:stock_fleet_trace.model_wizard_stock_picking_delivery_proof
+#: model:ir.model.fields,field_description:stock_fleet_trace.field_wizard_stock_picking_delivery_proof__delivery_proof
+msgid "Signed Delivery Slip"
+msgstr "Remisión firmada"
+
+#. module: stock_fleet_trace
+#: model:ir.model,name:stock_fleet_trace.model_stock_move
+msgid "Stock Move"
+msgstr "Movimiento de inventario"
+
+#. module: stock_fleet_trace
+#: model:ir.model,name:stock_fleet_trace.model_wizard_stock_trip_load_stock_line
+msgid "Stock to Sell on a Trip"
+msgstr "Inventario para vender en un viaje"
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/models/stock_picking_batch.py:0
+msgid "Stock to sell on the route: %(lines)s."
+msgstr "Inventario para vender en ruta: %(lines)s."
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,help:stock_fleet_trace.field_wizard_stock_picking_delivery_proof__signature
+msgid "The signature of whoever received, on this screen."
+msgstr "La firma de quien recibió, en esta pantalla."
+
+#. module: stock_fleet_trace
+#: model:ir.model,name:stock_fleet_trace.model_stock_picking
+msgid "Transfer"
+msgstr "Transferencia"
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/models/stock_picking_batch.py:0
+msgid ""
+"Trip %s does not trace its load on a vehicle, so it carries no stock to "
+"sell."
+msgstr ""
+"El viaje %s no rastrea su carga en un vehículo, así que no lleva inventario "
+"para vender."
+
+#. module: stock_fleet_trace
+#. odoo-python
+#: code:addons/stock_fleet_trace/models/stock_picking_batch.py:0
+msgid "Trip %s has departed: it loads nothing more."
+msgstr "El viaje %s ya salió: no carga nada más."
+
+#. module: stock_fleet_trace
+#: model:ir.model,name:stock_fleet_trace.model_stock_warehouse
+msgid "Warehouse"
+msgstr "Almacén"
+
+#. module: stock_fleet_trace
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace.view_wizard_stock_trip_load_stock_form
+msgid ""
+"What the vehicle takes besides its deliveries, to sell on the route. What it"
+" does not sell comes back with the unloading."
+msgstr ""
+"Lo que el vehículo lleva además de sus entregas, para vender en ruta. Lo que"
+" no venda regresa con la descarga."
+
+#. module: stock_fleet_trace
+#: model:ir.model.fields,help:stock_fleet_trace.field_wizard_stock_picking_delivery_proof__receiver_name
+msgid ""
+"Who took the goods, written by them or by whoever delivered: with their "
+"signature it counts as the signed slip."
+msgstr ""
+"Quién recibió la mercancía, escrito por esa persona o por quien entregó: con"
+" su firma cuenta como la remisión firmada."
+
+#. module: stock_fleet_trace
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace.wizard_stock_picking_delivery_proof_form
+msgid ""
+"Without the paper at hand, whoever received writes their name\n"
+"                    and signs here instead."
+msgstr ""
+"Sin la remisión a la mano, quien recibió escribe su nombre\n"
+"                    y firma aquí."

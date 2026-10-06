@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="privilege_project_vendor_prices" model="res.groups">
+        <field
+            name="name">Privilege: keep the vendor prices a blanket order projects in step with it</field>
+        <field name="is_privilege" eval="True" />
+    </record>
+
+</odoo>

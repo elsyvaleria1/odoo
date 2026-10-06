@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<templates xml:space="preserve">
+    <t t-name="geoengine.GeoengineRenderer">
+        <div class="d-flex w-100 h-100">
+            <LayersPanel
+                model="this.props.model"
+                archInfo="this.props.archInfo"
+                onLayerVisibility.bind="this.setLayerVisibility"
+                onLayerOrder.bind="this.setLayerOrder"
+                onLayersChanged.bind="this.onVectorLayerChanged"
+                onRasterChanged.bind="this.onRasterLayerChanged"
+                onZoomToRecord.bind="this.zoomOnFeature"
+                onZoomToRecords.bind="this.zoomToRecords"
+            />
+            <div
+                class="map_container"
+                style="/*rtl:ignore*/ direction: ltr /*rtl:ignore*/;"
+            >
+                <div id="olmap" t-ref="this.mapRef" />
+                <div
+                    id="map-legend"
+                    class="ol-control o_geoengine_legend"
+                    t-ref="this.legendRef"
+                />
+                <TimeSlider
+                    t-if="this.state.showTimeSlider"
+                    t-key="this.state.timeSliderKey"
+                    minTime="this.state.timeSliderMin"
+                    maxTime="this.state.timeSliderMax"
+                    onTimeChange.bind="this.onTimeSliderChange"
+                    trailColor="this.state.trailColor"
+                />
+            </div>
+        </div>
+        <div id="popup" class="ol-popup text-start" t-ref="this.popupRef">
+            <div
+                id="popup-closer"
+                class="ol-popup-closer text-primary"
+                role="button"
+                tabindex="0"
+                aria-label="Close popup"
+                t-on-click="this.clickToHidePopup"
+                t-on-keydown="(ev) => ['Enter', ' '].includes(ev.key) and this.clickToHidePopup()"
+            />
+            <div id="popup-content" t-ref="this.popupContentRef">
+                <div
+                    t-if="this.state.popupList"
+                    t-key="this.state.popupList.key"
+                    class="o_geoengine_cell_list"
+                >
+                    <strong t-out="this.cellListTitle" />
+                    <button
+                        t-foreach="this.state.popupList.records"
+                        t-as="listed"
+                        t-key="listed.id"
+                        type="button"
+                        class="btn btn-link d-block text-start p-0"
+                        t-on-click="() => this.interactions.showTiledRecord(this.state.popupList.resModel, listed.id, this.state.popupList.coord)"
+                        t-out="listed.display_name"
+                    />
+                    <div
+                        t-if="this.state.popupList.more"
+                        class="text-muted small"
+                        t-out="this.cellListMore"
+                    />
+                </div>
+                <GeoengineRecord
+                    t-if="this.state.popup"
+                    t-key="this.state.popup.key"
+                    archInfo="this.state.popup.archInfo"
+                    record="this.state.popup.record"
+                    templates="this.state.popup.templates"
+                />
+            </div>
+            <div
+                t-if="!this.state.popupList"
+                class="row d-flex justify-content-center"
+            >
+                <button
+                    t-on-click="this.onInfoBoxClicked"
+                    class="btn btn-primary w-50"
+                >OPEN</button>
+            </div>
+        </div>
+    </t>
+</templates>

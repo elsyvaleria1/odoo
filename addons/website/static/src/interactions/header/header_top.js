@@ -1,0 +1,34 @@
+/** @odoo-module native */
+import { makeLogger } from "@web/core/debug/debug_logger";
+import { registry } from "@web/core/registry";
+import { Interaction } from "@web/public/interaction";
+
+const log = makeLogger("website.interaction.header_top");
+
+export class HeaderTop extends Interaction {
+    static selector = "header#top";
+    dynamicContent = {
+        "#top_menu_collapse, #top_menu_collapse_mobile": {
+            "t-on-show.bs.offcanvas": () => (this.showCollapse = true),
+            "t-on-hidden.bs.offcanvas": () =>
+                (this.showCollapse &&= this.mobileNavbarEl.matches(".show, .showing")),
+            "t-att-class": () => ({
+                o_top_menu_collapse_shown: this.showCollapse,
+            }),
+        },
+    };
+
+    setup() {
+        this.showCollapse = false;
+        this.mobileNavbarEl = this.el.querySelector("#top_menu_collapse_mobile");
+        log.lifecycle("HeaderTop setup", () => ({
+            hasMobileNavbar: !!this.mobileNavbarEl,
+        }));
+    }
+}
+
+registry.category("public.interactions").add("website.header_top", HeaderTop);
+
+registry.category("public.interactions.edit").add("website.header_top", {
+    Interaction: HeaderTop,
+});

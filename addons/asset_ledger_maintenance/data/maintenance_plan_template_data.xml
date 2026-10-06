@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+
+    <record
+        id="maintenance_template_vehicle_semiannual"
+        model="maintenance.plan.template">
+        <field name="name">Biannual Maintenance Plan - Vehicles</field>
+        <field name="active" eval="True" />
+        <field name="repeat_interval">6</field>
+        <field name="repeat_unit">month</field>
+        <field name="duration">8.0</field>
+        <field name="asset_kind_id" ref="resource_asset.kind_vehicle" />
+        <field name="instructions" type="html">
+            <div style="font-family: Arial, sans-serif;">
+                <h3 style="color: #2c3e50; margin-bottom: 15px;">Biannual Maintenance Plan</h3>
+                <p style="color: #7f8c8d; margin-bottom: 20px;">
+                    <strong>Frequency:</strong> Every 6 months or approximately 10,000 km
+                </p>
+
+                <h4 style="color: #34495e; margin-top: 20px; margin-bottom: 10px;">Activities to Perform:</h4>
+
+                <ul style="line-height: 1.8; color: #2c3e50;">
+                    <li><strong>Engine:</strong>
+                        <ul style="margin-top: 5px;">
+                            <li>Oil and oil filter change to ensure proper engine lubrication</li>
+                            <li>Air filter inspection, cleaning or replacement</li>
+                        </ul>
+                    </li>
+
+                    <li style="margin-top: 10px;"><strong>Brake System:</strong>
+                        <ul style="margin-top: 5px;">
+                            <li>Brake system inspection and review</li>
+                            <li>Brake pads or brake blocks verification</li>
+                        </ul>
+                    </li>
+
+                    <li style="margin-top: 10px;"><strong>Fluids:</strong>
+                        <ul style="margin-top: 5px;">
+                            <li>Coolant level verification</li>
+                            <li>Brake fluid level verification</li>
+                            <li>Transmission oil level verification</li>
+                        </ul>
+                    </li>
+
+                    <li style="margin-top: 10px;"><strong>Tires:</strong>
+                        <ul style="margin-top: 5px;">
+                            <li>Wheel alignment and balancing</li>
+                            <li>Tire air pressure inspection</li>
+                        </ul>
+                    </li>
+
+                    <li style="margin-top: 10px;"><strong>Other:</strong>
+                        <ul style="margin-top: 5px;">
+                            <li>Cabin air filter inspection, cleaning or replacement</li>
+                            <li>Belts, mirrors and exterior elements inspection</li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </field>
+    </record>
+
+    <record id="maintenance_template_vehicle_annual" model="maintenance.plan.template">
+        <field name="name">Annual Maintenance Plan - Vehicles</field>
+        <field name="active" eval="True" />
+        <field name="repeat_interval">12</field>
+        <field name="repeat_unit">month</field>
+        <field name="duration">8.0</field>
+        <field name="asset_kind_id" ref="resource_asset.kind_vehicle" />
+        <field name="instructions" type="html">
+            <div style="font-family: Arial, sans-serif;">
+                <h3 style="color: #2c3e50; margin-bottom: 15px;">Annual Maintenance Plan</h3>
+                <p style="color: #7f8c8d; margin-bottom: 20px;">
+                    <strong>Frequency:</strong> Every 12 months or approximately 20,000 km
+                </p>
+
+                <h4 style="color: #34495e; margin-top: 20px; margin-bottom: 10px;">Activities to Perform:</h4>
+
+                <ul style="line-height: 1.8; color: #2c3e50;">
+                    <li><strong>Climate Control System:</strong>
+                        <ul style="margin-top: 5px;">
+                            <li>Air conditioning system inspection and maintenance</li>
+                        </ul>
+                    </li>
+
+                    <li style="margin-top: 10px;"><strong>Transmission:</strong>
+                        <ul style="margin-top: 5px;">
+                            <li>Gearbox lubricant replacement</li>
+                            <li>Transmission shaft lubricant replacement</li>
+                        </ul>
+                    </li>
+
+                    <li style="margin-top: 10px;"><strong>Fuel System:</strong>
+                        <ul style="margin-top: 5px;">
+                            <li>Fuel tank drainage and cleaning</li>
+                        </ul>
+                    </li>
+
+                    <li style="margin-top: 10px;"><strong>Steering and Suspension:</strong>
+                        <ul style="margin-top: 5px;">
+                            <li>Axle bolts, nuts and joints adjustment</li>
+                            <li>Steering bars adjustment</li>
+                        </ul>
+                    </li>
+
+                    <li style="margin-top: 10px;"><strong>Brake System:</strong>
+                        <ul style="margin-top: 5px;">
+                            <li>Brake fluid replacement</li>
+                        </ul>
+                    </li>
+
+                    <li style="margin-top: 10px;"><strong>Engine:</strong>
+                        <ul style="margin-top: 5px;">
+                            <li>Engine synchronization</li>
+                            <li>Inspection and possible replacement of critical components such as belts and cables</li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </field>
+    </record>
+
+</odoo>

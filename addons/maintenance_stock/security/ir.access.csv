@@ -1,0 +1,2 @@
+id,name,model_id/id,group_id/id,kind,operation,domain
+access_maintenance_transfer_wizard,wizard.maintenance.order.create.transfer,model_wizard_maintenance_order_create_transfer,stock.group_stock_user,permission,crud,

@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <data>
+        <!--
+            Restricting which manufacturing orders a user sees is opt in. Record rules bind
+            only the users in their groups, so a user outside both groups below
+            keeps seeing every one of them, as before this module; a user in
+            "Team Documents" also holds "Own Documents", whose rule is OR-ed in.
+            Neither group grants access: that stays with mrp.group_mrp_user.
+        -->
+        <record id="res_groups_privilege_mrp_documents" model="res.groups.privilege">
+            <field name="name">Manufacturing Documents</field>
+            <field name="sequence">6</field>
+            <field name="category_id" ref="base.module_category_supply_chain" />
+            <field name="placeholder">All Documents</field>
+            <field
+                name="description">Limit the manufacturing orders a user sees to their own, or to their teams'.</field>
+        </record>
+        <record id="group_mrp_user_own" model="res.groups">
+            <field name="name">Own Documents Only</field>
+            <field name="sequence">10</field>
+            <field name="privilege_id" ref="res_groups_privilege_mrp_documents" />
+            <field
+                name="comment">The user sees the manufacturing orders they are responsible for, and the ones nobody is.</field>
+        </record>
+        <record id="group_mrp_user_team" model="res.groups">
+            <field name="name">Team Documents</field>
+            <field name="sequence">20</field>
+            <field name="privilege_id" ref="res_groups_privilege_mrp_documents" />
+            <field
+                name="comment">The user also sees the manufacturing orders of their manufacturing teams.</field>
+            <field
+                name="implied_ids"
+                eval="[Command.link(ref('group_mrp_user_own'))]" />
+        </record>
+    </data>
+
+</odoo>

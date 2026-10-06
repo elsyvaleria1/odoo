@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <menuitem
+        id="menu_purchase_competition"
+        name="Competition"
+        parent="purchase.menu_purchase_root"
+        sequence="15"
+        groups="purchase.group_purchase_user,purchase.group_purchase_readonly">
+        <menuitem
+            id="menu_purchase_competitor_offers"
+            action="competitor_offer_action_purchase"
+            sequence="10" />
+        <menuitem
+            id="menu_purchase_competitors"
+            action="competitor_action_purchase"
+            sequence="20" />
+        <menuitem
+            id="menu_purchase_win_loss"
+            action="win_loss_action_purchase"
+            sequence="30" />
+        <menuitem
+            id="menu_purchase_market_prices"
+            action="market_price_action_purchase"
+            sequence="40" />
+    </menuitem>
+
+</odoo>

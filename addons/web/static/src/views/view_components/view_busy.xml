@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="web.ViewBusy">
+        <div t-ref="this.rootRef" class="o_view_busy" aria-hidden="true">
+            <SkeletonView t-if="this.isLoadingFirstData" viewType="this.viewType" withControlPanel="false"/>
+        </div>
+    </t>
+
+</templates>

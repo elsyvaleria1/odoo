@@ -1,0 +1,377 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="stock_lot_civic_001" model="product.trace">
+        <field name="name">CIVIC2023001</field>
+        <field name="product_id" ref="asset_ledger.product_product_civic" />
+        <field name="company_id" ref="base.main_company" />
+        <field name="license_plate">ABC-1234</field>
+        <field name="vin_sn">1HGBH41JXMN109186</field>
+        <field name="engine_sn">HN23457ABC</field>
+        <field name="model_year">2023</field>
+        <field name="brand_new" eval="True" />
+        <field
+            name="date_acquisition"
+            eval="(DateTime.now() - timedelta(days=365)).strftime('%Y-%m-%d')" />
+        <field name="value_original">28500.00</field>
+        <field name="value_residual">24000.00</field>
+        <field name="account_prefix">VEH-001</field>
+        <field name="location">Main Office Parking</field>
+    </record>
+
+    <record id="stock_lot_f150_001" model="product.trace">
+        <field name="name">F150-2022-001</field>
+        <field name="product_id" ref="asset_ledger.product_product_f150" />
+        <field name="company_id" ref="base.main_company" />
+        <field name="license_plate">XYZ-5678</field>
+        <field name="vin_sn">1FTFW1ET5NKE12345</field>
+        <field name="engine_sn">FD98765XYZ</field>
+        <field name="model_year">2022</field>
+        <field name="brand_new" eval="False" />
+        <field
+            name="date_acquisition"
+            eval="(DateTime.now() - timedelta(days=730)).strftime('%Y-%m-%d')" />
+        <field name="value_original">52000.00</field>
+        <field name="value_residual">38000.00</field>
+        <field name="account_prefix">VEH-002</field>
+        <field name="location">Construction Site Depot</field>
+    </record>
+
+    <record id="stock_lot_model3_001" model="product.trace">
+        <field name="name">MODEL3-2024-001</field>
+        <field name="product_id" ref="asset_ledger.product_product_model3" />
+        <field name="company_id" ref="base.main_company" />
+        <field name="license_plate">ECO-2024</field>
+        <field name="vin_sn">5YJ3E1EA8PF123456</field>
+        <field name="engine_sn">ELEC-T3-456789</field>
+        <field name="model_year">2024</field>
+        <field name="brand_new" eval="True" />
+        <field
+            name="date_acquisition"
+            eval="(DateTime.now() - timedelta(days=90)).strftime('%Y-%m-%d')" />
+        <field name="value_original">48000.00</field>
+        <field name="value_residual">46500.00</field>
+        <field name="account_prefix">VEH-003</field>
+        <field name="location">Executive Parking</field>
+    </record>
+
+    <record id="stock_lot_transit_001" model="product.trace">
+        <field name="name">TRANSIT-2021-001</field>
+        <field name="product_id" ref="asset_ledger.product_product_transit" />
+        <field name="company_id" ref="base.main_company" />
+        <field name="license_plate">VAN-9012</field>
+        <field name="vin_sn">NM0GE9F76M1234567</field>
+        <field name="engine_sn">FT35678VAN</field>
+        <field name="model_year">2021</field>
+        <field name="brand_new" eval="False" />
+        <field
+            name="date_acquisition"
+            eval="(DateTime.now() - timedelta(days=1095)).strftime('%Y-%m-%d')" />
+        <field name="value_original">42000.00</field>
+        <field name="value_residual">28000.00</field>
+        <field name="account_prefix">VEH-004</field>
+        <field name="location">Warehouse Loading Bay</field>
+    </record>
+
+    <record id="stock_lot_tractor_001" model="product.trace">
+        <field name="name">5075E-2020-001</field>
+        <field name="product_id" ref="asset_ledger.product_product_tractor_5075e" />
+        <field name="company_id" ref="base.main_company" />
+        <field name="vin_sn">1T05075EXLH270234</field>
+        <field name="engine_sn">JD4045-270234</field>
+        <field name="model_year">2020</field>
+        <field name="brand_new" eval="False" />
+        <field
+            name="date_acquisition"
+            eval="(DateTime.now() - timedelta(days=1460)).strftime('%Y-%m-%d')" />
+        <field name="value_original">35000.00</field>
+        <field name="value_residual">22000.00</field>
+        <field name="account_prefix">MCH-001</field>
+        <field name="location">Agricultural Field Station</field>
+    </record>
+
+    <record id="stock_lot_forklift_001" model="product.trace">
+        <field name="name">FORK-2019-001</field>
+        <field name="product_id" ref="asset_ledger.product_product_forklift" />
+        <field name="company_id" ref="base.main_company" />
+        <field name="vin_sn">HYST25FT201912345</field>
+        <field name="engine_sn">HY37KW123456</field>
+        <field name="model_year">2019</field>
+        <field name="brand_new" eval="False" />
+        <field
+            name="date_acquisition"
+            eval="(DateTime.now() - timedelta(days=1825)).strftime('%Y-%m-%d')" />
+        <field name="value_original">28000.00</field>
+        <field name="value_residual">15000.00</field>
+        <field name="account_prefix">MCH-002</field>
+        <field name="location">Warehouse Zone A</field>
+    </record>
+
+    <record id="stock_lot_generator_001" model="product.trace">
+        <field name="name">GEN-50KW-2021-001</field>
+        <field name="product_id" ref="asset_ledger.product_product_generator" />
+        <field name="company_id" ref="base.main_company" />
+        <field name="model_year">2021</field>
+        <field name="brand_new" eval="False" />
+        <field
+            name="date_acquisition"
+            eval="(DateTime.now() - timedelta(days=1095)).strftime('%Y-%m-%d')" />
+        <field name="value_original">18000.00</field>
+        <field name="value_residual">14000.00</field>
+        <field name="account_prefix">EQP-001</field>
+        <field name="location">Emergency Power Room</field>
+    </record>
+
+    <record id="stock_lot_office_building_001" model="product.trace">
+        <field name="name">OFFICE-DOWNTOWN-2015</field>
+        <field name="product_id" ref="asset_ledger.product_product_office_building" />
+        <field name="company_id" ref="base.main_company" />
+        <field name="cadastral_id">PROP-OFF-2015-001</field>
+        <field name="model_year">2015</field>
+        <field name="brand_new" eval="False" />
+        <field
+            name="date_acquisition"
+            eval="(DateTime.now() - timedelta(days=3285)).strftime('%Y-%m-%d')" />
+        <field name="value_original">2500000.00</field>
+        <field name="value_residual">2200000.00</field>
+        <field name="account_prefix">PROP-001</field>
+        <field name="location">123 Main Street, Downtown Business District</field>
+        <field name="area">5000</field>
+    </record>
+
+    <record id="stock_lot_warehouse_001" model="product.trace">
+        <field name="name">WAREHOUSE-NORTH-2018</field>
+        <field name="product_id" ref="asset_ledger.product_product_warehouse" />
+        <field name="company_id" ref="base.main_company" />
+        <field name="cadastral_id">PROP-WH-2018-001</field>
+        <field name="model_year">2018</field>
+        <field name="brand_new" eval="False" />
+        <field
+            name="date_acquisition"
+            eval="(DateTime.now() - timedelta(days=2190)).strftime('%Y-%m-%d')" />
+        <field name="value_original">1800000.00</field>
+        <field name="value_residual">1650000.00</field>
+        <field name="account_prefix">PROP-002</field>
+        <field name="location">456 Industrial Parkway, North Industrial Zone</field>
+        <field name="area">12000</field>
+    </record>
+
+    <record id="stock_lot_farmland_001" model="product.trace">
+        <field name="name">FARMLAND-PARCEL-A-2010</field>
+        <field name="product_id" ref="asset_ledger.product_product_farmland" />
+        <field name="company_id" ref="base.main_company" />
+        <field name="cadastral_id">PROP-FARM-2010-A</field>
+        <field name="model_year">2010</field>
+        <field name="brand_new" eval="False" />
+        <field
+            name="date_acquisition"
+            eval="(DateTime.now() - timedelta(days=5475)).strftime('%Y-%m-%d')" />
+        <field name="value_original">850000.00</field>
+        <field name="value_residual">920000.00</field>
+        <field name="account_prefix">PROP-003</field>
+        <field name="location">County Road 45, Agricultural District</field>
+        <field name="area">500000</field>
+    </record>
+
+    <record id="stock_lot_retail_store_001" model="product.trace">
+        <field name="name">RETAIL-PLAZA-2019</field>
+        <field name="product_id" ref="asset_ledger.product_product_retail_store" />
+        <field name="company_id" ref="base.main_company" />
+        <field name="cadastral_id">PROP-RET-2019-001</field>
+        <field name="model_year">2019</field>
+        <field name="brand_new" eval="False" />
+        <field
+            name="date_acquisition"
+            eval="(DateTime.now() - timedelta(days=1825)).strftime('%Y-%m-%d')" />
+        <field name="value_original">950000.00</field>
+        <field name="value_residual">900000.00</field>
+        <field name="account_prefix">PROP-004</field>
+        <field name="location">789 Shopping Plaza, Commercial District</field>
+        <field name="area">3500</field>
+    </record>
+
+    <record id="stock_lot_camry_001" model="product.trace">
+        <field name="name">CAMRY-2023-001</field>
+        <field name="product_id" ref="asset_ledger.product_product_civic" />
+        <field name="company_id" ref="base.main_company" />
+        <field name="license_plate">DEF-5678</field>
+        <field name="vin_sn">4T1B11HK5PU123456</field>
+        <field name="engine_sn">TC24680DEF</field>
+        <field name="model_year">2023</field>
+        <field name="brand_new" eval="True" />
+        <field
+            name="date_acquisition"
+            eval="(DateTime.now() - timedelta(days=180)).strftime('%Y-%m-%d')" />
+        <field name="value_original">32000.00</field>
+        <field name="value_residual">30500.00</field>
+        <field name="account_prefix">VEH-005</field>
+        <field name="location">Sales Department</field>
+    </record>
+
+    <record id="stock_lot_delivery_van_001" model="product.trace">
+        <field name="name">SPRINTER-2020-001</field>
+        <field name="product_id" ref="asset_ledger.product_product_transit" />
+        <field name="company_id" ref="base.main_company" />
+        <field name="license_plate">DLV-3456</field>
+        <field name="vin_sn">WD3PE8CC1L5123456</field>
+        <field name="engine_sn">SPR87654DLV</field>
+        <field name="model_year">2020</field>
+        <field name="brand_new" eval="False" />
+        <field
+            name="date_acquisition"
+            eval="(DateTime.now() - timedelta(days=1460)).strftime('%Y-%m-%d')" />
+        <field name="value_original">45000.00</field>
+        <field name="value_residual">32000.00</field>
+        <field name="account_prefix">VEH-006</field>
+        <field name="location">Distribution Center</field>
+    </record>
+
+    <record id="stock_lot_suv_001" model="product.trace">
+        <field name="name">EXPLORER-2022-001</field>
+        <field name="product_id" ref="asset_ledger.product_product_f150" />
+        <field name="company_id" ref="base.main_company" />
+        <field name="license_plate">SUV-7890</field>
+        <field name="vin_sn">1FM5K8GC9NGC12345</field>
+        <field name="engine_sn">EXP54321SUV</field>
+        <field name="model_year">2022</field>
+        <field name="brand_new" eval="False" />
+        <field
+            name="date_acquisition"
+            eval="(DateTime.now() - timedelta(days=900)).strftime('%Y-%m-%d')" />
+        <field name="value_original">49000.00</field>
+        <field name="value_residual">42000.00</field>
+        <field name="account_prefix">VEH-007</field>
+        <field name="location">Field Operations Base</field>
+    </record>
+
+    <record id="stock_lot_compressor_001" model="product.trace">
+        <field name="name">COMP-50HP-2020-001</field>
+        <field name="product_id" ref="asset_ledger.product_product_generator" />
+        <field name="company_id" ref="base.main_company" />
+        <field name="model_year">2020</field>
+        <field name="brand_new" eval="False" />
+        <field
+            name="date_acquisition"
+            eval="(DateTime.now() - timedelta(days=1460)).strftime('%Y-%m-%d')" />
+        <field name="value_original">15000.00</field>
+        <field name="value_residual">11000.00</field>
+        <field name="account_prefix">EQP-002</field>
+        <field name="location">Workshop Building A</field>
+    </record>
+
+    <record id="stock_lot_excavator_001" model="product.trace">
+        <field name="name">EXCAVATOR-2019-001</field>
+        <field name="product_id" ref="asset_ledger.product_product_tractor_5075e" />
+        <field name="company_id" ref="base.main_company" />
+        <field name="vin_sn">CAT0320GCK2019789</field>
+        <field name="engine_sn">CAT3066-789012</field>
+        <field name="model_year">2019</field>
+        <field name="brand_new" eval="False" />
+        <field
+            name="date_acquisition"
+            eval="(DateTime.now() - timedelta(days=1825)).strftime('%Y-%m-%d')" />
+        <field name="value_original">120000.00</field>
+        <field name="value_residual">85000.00</field>
+        <field name="account_prefix">MCH-003</field>
+        <field name="location">Construction Yard</field>
+    </record>
+
+    <record id="stock_lot_skid_steer_001" model="product.trace">
+        <field name="name">BOBCAT-S650-2021</field>
+        <field name="product_id" ref="asset_ledger.product_product_forklift" />
+        <field name="company_id" ref="base.main_company" />
+        <field name="vin_sn">BBCT650SSM2021567</field>
+        <field name="engine_sn">KB74HP567890</field>
+        <field name="model_year">2021</field>
+        <field name="brand_new" eval="False" />
+        <field
+            name="date_acquisition"
+            eval="(DateTime.now() - timedelta(days=1095)).strftime('%Y-%m-%d')" />
+        <field name="value_original">45000.00</field>
+        <field name="value_residual">35000.00</field>
+        <field name="account_prefix">MCH-004</field>
+        <field name="location">Equipment Depot South</field>
+    </record>
+
+    <record id="stock_lot_welder_001" model="product.trace">
+        <field name="name">WELD-MILLER-2022-001</field>
+        <field name="product_id" ref="asset_ledger.product_product_generator" />
+        <field name="company_id" ref="base.main_company" />
+        <field name="model_year">2022</field>
+        <field name="brand_new" eval="False" />
+        <field
+            name="date_acquisition"
+            eval="(DateTime.now() - timedelta(days=730)).strftime('%Y-%m-%d')" />
+        <field name="value_original">8500.00</field>
+        <field name="value_residual">7200.00</field>
+        <field name="account_prefix">EQP-003</field>
+        <field name="location">Fabrication Shop</field>
+    </record>
+
+    <record id="stock_lot_pressure_washer_001" model="product.trace">
+        <field name="name">PWASH-KARCHER-2023</field>
+        <field name="product_id" ref="asset_ledger.product_product_generator" />
+        <field name="company_id" ref="base.main_company" />
+        <field name="model_year">2023</field>
+        <field name="brand_new" eval="True" />
+        <field
+            name="date_acquisition"
+            eval="(DateTime.now() - timedelta(days=120)).strftime('%Y-%m-%d')" />
+        <field name="value_original">3500.00</field>
+        <field name="value_residual">3400.00</field>
+        <field name="account_prefix">EQP-004</field>
+        <field name="location">Maintenance Building</field>
+    </record>
+
+    <record id="stock_lot_office_suite_001" model="product.trace">
+        <field name="name">OFFICE-SUITE-2B-2017</field>
+        <field name="product_id" ref="asset_ledger.product_product_office_building" />
+        <field name="company_id" ref="base.main_company" />
+        <field name="cadastral_id">PROP-OFF-2017-2B</field>
+        <field name="model_year">2017</field>
+        <field name="brand_new" eval="False" />
+        <field
+            name="date_acquisition"
+            eval="(DateTime.now() - timedelta(days=2555)).strftime('%Y-%m-%d')" />
+        <field name="value_original">450000.00</field>
+        <field name="value_residual">420000.00</field>
+        <field name="account_prefix">PROP-005</field>
+        <field name="location">Business Park Tower, Suite 2B</field>
+        <field name="area">1200</field>
+    </record>
+
+    <record id="stock_lot_cold_storage_001" model="product.trace">
+        <field name="name">COLD-STORAGE-2016</field>
+        <field name="product_id" ref="asset_ledger.product_product_warehouse" />
+        <field name="company_id" ref="base.main_company" />
+        <field name="cadastral_id">PROP-COLD-2016-001</field>
+        <field name="model_year">2016</field>
+        <field name="brand_new" eval="False" />
+        <field
+            name="date_acquisition"
+            eval="(DateTime.now() - timedelta(days=2920)).strftime('%Y-%m-%d')" />
+        <field name="value_original">1200000.00</field>
+        <field name="value_residual">1050000.00</field>
+        <field name="account_prefix">PROP-006</field>
+        <field name="location">Industrial Zone East, Cold Chain Complex</field>
+        <field name="area">8000</field>
+    </record>
+
+    <record id="stock_lot_parking_001" model="product.trace">
+        <field name="name">PARKING-DOWNTOWN-2014</field>
+        <field name="product_id" ref="asset_ledger.product_product_farmland" />
+        <field name="company_id" ref="base.main_company" />
+        <field name="cadastral_id">PROP-PARK-2014-001</field>
+        <field name="model_year">2014</field>
+        <field name="brand_new" eval="False" />
+        <field
+            name="date_acquisition"
+            eval="(DateTime.now() - timedelta(days=3650)).strftime('%Y-%m-%d')" />
+        <field name="value_original">650000.00</field>
+        <field name="value_residual">680000.00</field>
+        <field name="account_prefix">PROP-007</field>
+        <field name="location">Downtown, 4th Street Parking Structure</field>
+        <field name="area">4500</field>
+    </record>
+
+</odoo>

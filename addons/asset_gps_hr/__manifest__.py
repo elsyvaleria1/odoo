@@ -1,0 +1,26 @@
+{
+    "name": "Asset GPS - Operators and Trips",
+    "version": "19.0.1.8.0",
+    "oldest_upgradable_version": "19.0.1.5.1",
+    "category": "Supply Chain/IoT",
+    "summary": "Add operator dimensions and trip reporting to asset GPS tracking",
+    "description": "Shows asset operator and license plate information on GPS device views and adds operator fields to GPS reports. Provides a vehicle-trip SQL report with attendance-based operator assignment and estimated fuel cost from a configured per-distance rate. Requires GPS history and appropriate asset, employee and attendance records.",
+    "author": "AgroMarin",
+    "website": "https://www.agromarin.mx",
+    "license": "OPL-1",
+    "depends": [
+        "asset_gps",
+        "asset_ledger_hr",
+        "device_gps",
+        "hr_attendance",
+    ],
+    "data": [
+        "security/ir.access.csv",
+        "views/device_device_views.xml",
+        "views/resource_asset_views.xml",
+        "reports/device_data_log_gps_report_views.xml",
+        "reports/asset_trip_report_views.xml",
+        "views/asset_gps_hr_menus.xml",
+    ],
+    "auto_install": True,
+}

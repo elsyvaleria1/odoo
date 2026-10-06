@@ -1,0 +1,57 @@
+{
+    "name": "Field Service Tasks",
+    "version": "1.1",
+    "oldest_upgradable_version": "1.1",
+    "category": "Services/Field Service",
+    "sequence": 170,
+    "summary": "Schedule onsite tasks and record the time spent on them",
+    "description": "Extend project tasks with field-service workflows, customer navigation and timesheet timer actions. Uses projects and timesheets to track onsite work.",
+    "author": "Odoo S.A.",
+    "license": "OEEL-1",
+    "depends": [
+        "project_gantt",
+        "project_map",
+        "timesheet_grid",
+        "geocoding",
+    ],
+    "data": [
+        "data/fsm_data.xml",
+        "data/industry_fsm_tour.xml",
+        "security/fsm_security.xml",
+        "security/ir.access.csv",
+        "views/res_config_settings_views.xml",
+        "views/hr_timesheet_views.xml",
+        "views/rating_rating_views.xml",
+        "views/fsm_views.xml",
+        "views/project_task_views.xml",
+        "reports/project_report_views.xml",
+        "reports/worksheet_custom_report_templates.xml",
+        "reports/worksheet_custom_reports.xml",
+        "views/res_partner_views.xml",
+        "views/project_sharing_views.xml",
+        "views/project_portal_templates.xml",
+        "data/mail_template_data.xml",
+        "wizards/hr_timesheet_stop_timer_confirmation_wizard_views.xml",
+        "wizards/wizard_project_task_validate_running_timer_views.xml",
+        "views/industry_fsm_menus.xml",
+    ],
+    "demo": [
+        "demo/fsm_demo.xml",
+    ],
+    "assets": {
+        "web.assets_backend": [
+            "industry_fsm/static/src/**/*",
+        ],
+        "web.assets_frontend": [
+            "industry_fsm/static/src/js/tours/**/*",
+        ],
+        "web.assets_unit_tests": [
+            "industry_fsm/static/tests/**/*.test.js",
+        ],
+        "web.assets_tests": [
+            "industry_fsm/static/tests/tours/**/*",
+        ],
+    },
+    "application": True,
+    "post_init_hook": "create_field_service_project",
+}

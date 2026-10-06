@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="accountant_knowledge_form_inherit" model="ir.ui.view">
+        <field name="name">accountant.knowledge.form.inherit</field>
+        <field name="model">knowledge.article</field>
+        <field name="inherit_id" ref="knowledge.knowledge_article_view_form" />
+        <field name="mode">extension</field>
+        <field name="arch" type="xml">
+            <xpath expr="//form" position="inside">
+                <field name="inherited_audit_report_id" groups="account.group_account_user" invisible="1"/> <!-- Needed for all the patches in the front-end. Not used in the templates/views.-->
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

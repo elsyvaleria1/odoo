@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<templates xml:space="preserve">
+
+<t t-name="mail.MessagingMenuEmptyChannel">
+    <MessagingMenuEmpty title="this.props.title" subtitle="this.props.subtitle" padding="'pt-3 pb-1 px-0'">
+        <div class="o-mail-MessagingMenuEmptyChannel-popularChannels d-flex flex-column gap-1 w-100 mt-3">
+            <div t-foreach="this.store.most_popular_channels" t-as="channel" t-key="channel.localId" class="d-flex px-2 py-1 gap-2 align-items-start">
+                <div class="o-mail-NotificationItem-avatarContainer flex-shrink-0" t-att-class="{ 'o-small': this.ui.isSmall }">
+                    <img class="o_avatar w-100 h-100 rounded" alt="Channel image" t-att-src="channel.avatarUrl"/>
+                </div>
+                <div class="d-flex flex-column align-items-start flex-grow-1 text-start overflow-hidden">
+                    <span class="fw-semibold text-truncate w-100" t-out="channel.displayName"/>
+                    <span t-if="channel.member_count !== undefined" class="text-muted smaller"><t t-out="channel.member_count"/> followers</span>
+                </div>
+                <button class="btn btn-outline-secondary btn-sm flex-shrink-0" t-on-click="() => this.onClickFollow(channel)">Follow</button>
+            </div>
+        </div>
+        <button t-if="this.canBrowseChannels" type="button" class="btn btn-link btn-sm mt-3" t-on-click="() => this.onClickFindMoreChannels()">Find more channels</button>
+    </MessagingMenuEmpty>
+</t>
+
+</templates>

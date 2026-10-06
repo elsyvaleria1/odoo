@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<templates xml:space="preserve">
+    <t t-name="conversation_meeting.LivePanel">
+        <div class="o_conversation_live_panel">
+            <t t-if="this.state.live">
+                <div class="d-flex align-items-center gap-2 mb-2">
+                    <span class="badge text-bg-danger">LIVE</span>
+                    <span class="text-muted">
+                        <t t-out="this.stamp(this.state.elapsed || this.record.data.live_elapsed_s)"/> · <t t-out="this.state.chunks || this.record.data.live_chunk_count"/> chunks
+                    </span>
+                </div>
+                <p class="fst-italic" t-if="this.state.lastText"><t t-out="this.state.lastText"/></p>
+                <ul class="list-unstyled mb-0" t-if="this.state.notices.length">
+                    <li t-foreach="this.state.notices" t-as="notice" t-key="notice_index" class="alert alert-warning py-1 px-2 mb-1">
+                        <span class="text-muted me-2"><t t-out="this.stamp(notice.at)"/></span><t t-out="notice.text"/>
+                    </li>
+                </ul>
+            </t>
+            <t t-else="">
+                <span class="text-muted">No live session.</span>
+            </t>
+        </div>
+    </t>
+</templates>

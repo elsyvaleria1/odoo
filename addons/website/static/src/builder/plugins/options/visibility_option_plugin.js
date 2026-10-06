@@ -1,0 +1,265 @@
+/** @odoo-module native */
+import { BuilderAction } from "@html_builder/core/builder_action";
+import { BaseOptionComponent } from "@html_builder/core/utils";
+import { Plugin } from "@html_editor/plugin";
+import { selectElements } from "@html_editor/utils/dom_traversal";
+import { withSequence } from "@html_editor/utils/resource";
+import { makeLogger } from "@web/core/debug/debug_logger";
+import { pyToJsLocale } from "@web/core/l10n/utils";
+import { registry } from "@web/core/registry";
+import {
+    CONDITIONAL_VISIBILITY,
+    DEVICE_VISIBILITY,
+} from "@website/builder/option_sequence";
+
+import { VisibilityOption } from "./visibility_option.js";
+
+const log = makeLogger("website.builder.plugin.visibility_option");
+
+/**
+ * @typedef {{ saveAttribute: string; attributeName: string; callWith: "code" | "name" | "value" | "id"; }[]} visibility_selector_parameters
+ */
+export const DEVICE_VISIBILITY_OPTION_SELECTOR = "section .row > div";
+
+export class DeviceVisibilityOption extends BaseOptionComponent {
+    static template = "website.DeviceVisibilityOption";
+    static dependencies = ["visibility"];
+    static selector = DEVICE_VISIBILITY_OPTION_SELECTOR;
+    static exclude =
+        ".s_col_no_resize.row > div, .s_masonry_block .s_col_no_resize, .s_website_form_submit";
+}
+
+class VisibilityOptionPlugin extends Plugin {
+    static id = "visibilityOption";
+    static dependencies = ["visibility", "websiteSession"];
+    /** @type {import("plugins").WebsiteResources} */
+    resources = {
+        builder_options: [
+            withSequence(CONDITIONAL_VISIBILITY, VisibilityOption),
+            withSequence(DEVICE_VISIBILITY, DeviceVisibilityOption),
+        ],
+        builder_actions: {
+            ForceVisibleAction,
+            ToggleDeviceVisibilityAction,
+        },
+        normalize_handlers: this.normalizeCSSSelectors.bind(this),
+        visibility_selector_parameters: [
+            {
+                saveAttribute: "visibilityValueCountry",
+                attributeName: "data-country",
+                callWith: "code",
+            },
+            {
+                saveAttribute: "visibilityValueLang",
+                attributeName: "lang",
+                callWith: "code",
+            },
+            {
+                saveAttribute: "visibilityValueUtmCampaign",
+                attributeName: "data-utm-campaign",
+                callWith: "name",
+            },
+            {
+                saveAttribute: "visibilityValueUtmMedium",
+                attributeName: "data-utm-medium",
+                callWith: "name",
+            },
+            {
+                saveAttribute: "visibilityValueUtmSource",
+                attributeName: "data-utm-source",
+                callWith: "name",
+            },
+            {
+                saveAttribute: "visibilityValueLogged",
+                attributeName: "data-logged",
+                callWith: "value",
+            },
+        ],
+    };
+
+    setup() {
+        this.optionsAttributes = this.getResource("visibility_selector_parameters");
+        log.lifecycle("VisibilityOptionPlugin setup", () => ({
+            attributes: this.optionsAttributes.length,
+        }));
+    }
+
+    normalizeCSSSelectors(rootEl) {
+        for (const el of selectElements(rootEl, VisibilityOption.selector)) {
+            this.updateCSSSelectors(el);
+        }
+    }
+
+    /**
+     * @param {HTMLElement} target
+     */
+    updateCSSSelectors(target) {
+        if (target.dataset.visibility !== "conditional") {
+            delete target.dataset.visibility;
+            for (const attribute of this.optionsAttributes) {
+                delete target.dataset[attribute.saveAttribute];
+                delete target.dataset[`${attribute.saveAttribute}Rule`];
+            }
+            delete target.dataset.visibilitySelectors;
+            delete target.dataset.visibilityId;
+            return;
+        }
+        const visibilityIDParts = [];
+        const onlyAttributes = [];
+        const hideAttributes = [];
+        for (const attribute of this.optionsAttributes) {
+            if (target.dataset[attribute.saveAttribute]) {
+                let records = JSON.parse(target.dataset[attribute.saveAttribute]).map(
+                    (record) => ({
+                        id: record.id,
+                        value: record[attribute.callWith],
+                    }),
+                );
+                if (attribute.saveAttribute === "visibilityValueLang") {
+                    records = records.map((lang) => {
+                        lang.value = pyToJsLocale(lang.value);
+                        return lang;
+                    });
+                }
+                const hideFor =
+                    target.dataset[`${attribute.saveAttribute}Rule`] === "hide";
+                if (hideFor) {
+                    hideAttributes.push({
+                        name: attribute.attributeName,
+                        records: records,
+                    });
+                } else {
+                    onlyAttributes.push({
+                        name: attribute.attributeName,
+                        records: records,
+                    });
+                }
+                const type = attribute.attributeName.replace("data-", "");
+                const valueIDs = records.map((record) => record.id).sort();
+                visibilityIDParts.push(
+                    `${type}_${hideFor ? "h" : "o"}_${valueIDs.join("_")}`,
+                );
+            }
+        }
+        const visibilityId = visibilityIDParts.join("_");
+        let selectors = "";
+        for (const attribute of onlyAttributes) {
+            const selector =
+                attribute.records.reduce(
+                    (acc, record) =>
+                        acc + `:not([${attribute.name}="${record.value}"])`,
+                    "html",
+                ) + ` body:not(.editor_enable) [data-visibility-id="${visibilityId}"]`;
+            selectors += selector + ", ";
+        }
+        for (const attribute of hideAttributes) {
+            const selector = attribute.records.reduce((acc, record, i, a) => {
+                acc += `html[${attribute.name}="${record.value}"] body:not(.editor_enable) [data-visibility-id="${visibilityId}"]`;
+                return acc + (i !== a.length - 1 ? "," : "");
+            }, "");
+            selectors += selector + ", ";
+        }
+        selectors = selectors.slice(0, -2);
+        log.pipeline("VisibilityOptionPlugin conditional selectors computed", () => ({
+            visibilityId,
+            onlyAttributes: onlyAttributes.length,
+            hideAttributes: hideAttributes.length,
+            hasSelectors: !!selectors,
+        }));
+        if (selectors) {
+            target.dataset.visibilitySelectors = selectors;
+        } else {
+            delete target.dataset.visibilitySelectors;
+        }
+
+        if (visibilityId) {
+            target.dataset.visibilityId = visibilityId;
+        } else {
+            delete target.dataset.visibilityId;
+        }
+    }
+}
+
+export class ForceVisibleAction extends BuilderAction {
+    static id = "forceVisible";
+    static dependencies = ["visibility"];
+    apply({ editingElement }) {
+        log.pipeline("ForceVisibleAction apply");
+        this.dependencies.visibility.onOptionVisibilityUpdate(editingElement, true);
+    }
+    isApplied() {
+        return true;
+    }
+}
+export class ToggleDeviceVisibilityAction extends BuilderAction {
+    static id = "toggleDeviceVisibility";
+    static dependencies = ["visibility", "history"];
+
+    apply({ editingElement, params: { mainParam: visibility } }) {
+        this.clean({ editingElement });
+        const style = getComputedStyle(editingElement);
+        if (visibility === "no_desktop") {
+            editingElement.classList.add("d-lg-none", "o_snippet_desktop_invisible");
+        } else if (visibility === "no_mobile") {
+            editingElement.classList.add(
+                `d-lg-${style["display"]}`,
+                "d-none",
+                "o_snippet_mobile_invisible",
+            );
+        }
+
+        const isMobile = this.services.website.context.isMobile;
+        const show = visibility !== (isMobile ? "no_mobile" : "no_desktop");
+        log.logic("ToggleDeviceVisibilityAction apply", () => ({
+            visibility,
+            isMobile,
+            show,
+        }));
+        this.dependencies.visibility.onOptionVisibilityUpdate(editingElement, show);
+        this.dependencies.history.applyCustomMutation({
+            apply: () => {},
+            revert: () => {
+                editingElement.classList.remove("o_snippet_override_invisible");
+            },
+        });
+    }
+    clean({ editingElement }) {
+        editingElement.classList.remove(
+            "d-none",
+            "d-md-none",
+            "d-lg-none",
+            "o_snippet_mobile_invisible",
+            "o_snippet_desktop_invisible",
+        );
+        const style = getComputedStyle(editingElement);
+        const display = style["display"];
+        editingElement.classList.remove(`d-md-${display}`, `d-lg-${display}`);
+        this.dependencies.history.applyCustomMutation({
+            apply: () => {
+                editingElement.classList.remove("o_snippet_override_invisible");
+            },
+            revert: () => {},
+        });
+    }
+    isApplied({ editingElement, params: { mainParam: visibilityParam } }) {
+        const classList = [...editingElement.classList];
+        if (
+            visibilityParam === "no_mobile" &&
+            classList.includes("d-none") &&
+            classList.some((className) => className.match(/^d-(md|lg)-/))
+        ) {
+            return true;
+        }
+        if (
+            visibilityParam === "no_desktop" &&
+            classList.some((className) => className.match(/d-(md|lg)-none/))
+        ) {
+            return true;
+        }
+        return false;
+    }
+}
+
+registry
+    .category("website-plugins")
+    .add(VisibilityOptionPlugin.id, VisibilityOptionPlugin);

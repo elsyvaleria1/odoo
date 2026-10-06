@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_res_partner_filter_account_approval" model="ir.ui.view">
+        <field name="name">res.partner.filter.account.approval</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_res_partner_filter" />
+        <field name="arch" type="xml">
+
+            <xpath expr="//filter[@name='customer']" position="after">
+                <filter
+                    name="invoice_approval_required"
+                    string="Requires Invoice Approval"
+                    help="Customers that require invoice approval"
+                    domain="[('invoice_approval_required', '=', True)]" />
+            </xpath>
+
+            <xpath expr="//filter[@name='supplier']" position="after">
+                <filter
+                    name="bill_approval_required"
+                    string="Requires Bill Approval"
+                    help="Vendors that require bill approval"
+                    domain="[('bill_approval_required', '=', True)]" />
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_partner_list_account_approval" model="ir.ui.view">
+        <field name="name">res.partner.list.account.approval</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_tree" />
+        <field name="arch" type="xml">
+
+            <xpath expr="//field[@name='complete_name']" position="after">
+                <field
+                    name="invoice_approval_required"
+                    string="Invoice Approval"
+                    widget="boolean_toggle"
+                    optional="hide" />
+                <field
+                    name="bill_approval_required"
+                    string="Bill Approval"
+                    widget="boolean_toggle"
+                    optional="hide" />
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_partner_form_account_approval" model="ir.ui.view">
+        <field name="name">res.partner.form.account.approval</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_form" />
+        <field name="arch" type="xml">
+
+            <!-- One Approvals group rather than a toggle buried in the
+                customer-invoice sending settings plus a one-field Vendor
+                Bills column: the two toggles are the same decision taken on
+                each side, and they read together. -->
+            <xpath expr="//group[@name='invoice_send_settings']" position="after">
+                <group name="invoice_bill_approval" string="Approvals">
+                    <field
+                        name="invoice_approval_required"
+                        string="Customer Invoices"
+                        widget="boolean_toggle" />
+                    <div
+                        class="text-muted"
+                        colspan="2"
+                        invisible="not invoice_approval_required">
+                        When enabled, all customer invoices for this partner
+                        will require approval regardless of amount.
+                    </div>
+                    <field
+                        name="bill_approval_required"
+                        string="Vendor Bills"
+                        widget="boolean_toggle" />
+                    <div
+                        class="text-muted"
+                        colspan="2"
+                        invisible="not bill_approval_required">
+                        When enabled, all vendor bills from this partner
+                        will require approval regardless of amount.
+                    </div>
+                </group>
+            </xpath>
+
+            <xpath expr="//group[@name='accounting_columns']" position="after">
+                <group
+                    name="invoice_bill_approval_notes"
+                    string="Invoice and Bill Notes"
+                    invisible="not invoice_approval_required and not bill_approval_required">
+                    <field
+                        name="invoice_approval_notes"
+                        placeholder="Add special instructions or notes for approvers regarding invoices/bills for this partner...&#10;&#10;Example: 'New customer - verify credit terms and payment history before approving first invoice'"
+                        colspan="2"
+                        nolabel="1" />
+                </group>
+
+                <div
+                    class="alert alert-info"
+                    invisible="not invoice_approval_required and not bill_approval_required"
+                    role="alert">
+                    <strong>Approval Required:</strong> This partner is flagged for invoice/bill
+                    approval. All invoices/bills for this partner will require approval through
+                    the configured approval workflow. </div>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="phone_call_view_form" model="ir.ui.view">
+        <field name="name">phone.call.form</field>
+        <field name="model">phone.call</field>
+        <field name="inherit_id" ref="phone_call.phone_call_view_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//div[hasclass('oe_button_box')]" position="inside">
+                <button
+                    name="voip_action_view_helpdesk_ticket"
+                    type="object"
+                    icon="fa-life-ring"
+                    groups="helpdesk.group_helpdesk_user"
+                    class="oe_stat_button">
+                    <span class="o_field_widget o_stat_info">
+                        <span class="d-flex align-items-baseline gap-1">
+                            <span class="o_stat_value order-1">
+                                <field name="ticket_count" nolabel="True" />
+                            </span>
+                            <span class="o_stat_text order-2">Tickets</span>
+                        </span>
+                        <span class="d-flex align-items-baseline gap-1">
+                            <span class="o_stat_value">
+                                <field name="open_ticket_count" nolabel="True" />
+                            </span>
+                            <span class="o_stat_text order-2">Open</span>
+                        </span>
+                    </span>
+                </button>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

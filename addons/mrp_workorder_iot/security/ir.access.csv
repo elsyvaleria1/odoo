@@ -1,0 +1,3 @@
+id,name,model_id/id,group_id/id,kind,operation,domain
+access_iot_trigger_user,iot.trigger,model_iot_trigger,base.group_user,permission,r,
+access_iot_trigger_admin,iot.trigger,model_iot_trigger,base.group_system,permission,cud,

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+
+    <function model="automation.rule" name="_install_demo_data">
+        <value model="res.company" eval="obj().env.company" />
+    </function>
+
+</odoo>

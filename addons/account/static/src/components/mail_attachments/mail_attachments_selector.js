@@ -1,0 +1,60 @@
+/** @odoo-module native */
+import { dataUrlToBlob } from "@mail/core/common/attachment_uploader_hook";
+import { Component, useProps } from "@odoo/owl";
+import { FileUploader } from "@web/core/file_upload";
+import { registry } from "@web/core/registry";
+import { useService } from "@web/core/utils/hooks";
+import { useX2ManyCrud } from "@web/fields/relational/x2many_crud";
+import { standardFieldProps } from "@web/fields/standard_field_props";
+
+export class MailAttachments extends Component {
+    static template = "mail.MailComposerAttachmentSelector";
+    static components = { FileUploader };
+    static props = { ...standardFieldProps };
+    props = useProps(this.constructor.props);
+
+    setup() {
+        this.mailStore = useService("mail.store");
+        this.attachmentUploadService = useService("mail.attachment_upload");
+        this.operations = useX2ManyCrud(
+            () => this.props.record.data["attachment_ids"],
+            true,
+        );
+    }
+
+    get attachments() {
+        return this.props.record.data[this.props.name] || [];
+    }
+
+    async onFileUploaded({ name, data, type }) {
+        const resIds = JSON.parse(this.props.record.data.res_ids);
+        const thread = await this.mailStore.Thread.insert({
+            model: this.props.record.data.model,
+            id: resIds[0],
+        });
+
+        const file = new File([dataUrlToBlob(data, type)], name, { type });
+        const attachment = await this.attachmentUploadService.upload(
+            thread,
+            thread.composer,
+            file,
+        );
+
+        const fileDict = {
+            id: attachment.id,
+            name: attachment.name,
+            mimetype: attachment.mimetype,
+            placeholder: false,
+            manual: true,
+        };
+        this.props.record.update({
+            [this.props.name]: this.attachments.concat([fileDict]),
+        });
+    }
+}
+
+export const mailAttachments = {
+    component: MailAttachments,
+};
+
+registry.category("fields").add("mail_attachments_selector", mailAttachments);

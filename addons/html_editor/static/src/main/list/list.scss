@@ -1,0 +1,25 @@
+[contenteditable="true"] {
+    li p {
+        margin-bottom: 0;
+    }
+
+    // Invalidate `--heading-color` when under colored element in editable
+    :where([style*="color:"]) {
+        --heading-color: none;
+    }
+}
+
+.odoo-editor-editable {
+    li {
+        &[style*="color"],
+        &[class*="text-"] {
+            // :is() keeps `font` as what the engine invalidates by. A bare
+            // [class*=…] on the subject replaces it, and every class or style
+            // change anywhere in the page then restyles the whole subtree
+            // under the element that changed.
+            font:is([class*="bg-"]):not([class*="text-"]):not([style*="color"]) {
+                color: inherit !important;
+            }
+        }
+    }
+}

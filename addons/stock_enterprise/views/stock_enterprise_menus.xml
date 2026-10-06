@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <menuitem
+        id="stock_dashboard_menuitem"
+        name="Performance"
+        parent="stock.menu_warehouse_report"
+        action="stock_report_action_performance"
+        sequence="300"
+        groups="base.group_no_one" />
+
+</odoo>

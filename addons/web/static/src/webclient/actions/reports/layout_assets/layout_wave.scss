@@ -1,0 +1,19 @@
+.o_report_layout_wave {
+    #informations {
+        margin: 0;
+        border-radius: $border-radius-lg;
+        // 92 % white painted over the secondary colour is
+        // color-mix(in srgb, white 92%, secondary), which WeasyPrint cannot parse.
+        background-color: var(--co-secondary, $o-default-report-secondary-color);
+        background-image: linear-gradient(rgba(white, 0.92), rgba(white, 0.92));
+        padding: map-get($spacers, 2) $table-cell-padding-y;
+
+        div:first-child {
+            padding-left: 0;
+        }
+
+        div:last-child {
+            padding-right: 0;
+        }
+    }
+}

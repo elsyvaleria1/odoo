@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<templates xml:space="preserve">
+
+    <t t-name="device_gps_geoengine.PolygonDrawDialog">
+        <Dialog
+            title="this.props.readonly ? 'View polygon' : 'Draw polygon on map'"
+            size="'xl'"
+        >
+            <div class="o_polygon_draw_dialog">
+                <div class="o_polygon_draw_help text-muted mb-2">
+                    <t t-if="this.props.readonly">
+                        Polygon is read-only.
+                    </t>
+                    <t t-else="">
+                        Click on the map to add vertices. Double-click to finish the polygon.
+                        Drawing a new polygon replaces the previous one.
+                    </t>
+                </div>
+                <div
+                    class="o_polygon_draw_controls d-flex align-items-center gap-3 mb-2"
+                >
+                    <div class="form-check m-0">
+                        <input
+                            type="checkbox"
+                            class="form-check-input"
+                            id="polygon_draw_show_existing"
+                            t-att-checked="this.state.showExisting"
+                            t-on-change="this.onToggleShowExisting"
+                        />
+                        <label
+                            class="form-check-label"
+                            for="polygon_draw_show_existing"
+                        >
+                            Show existing geofences
+                        </label>
+                    </div>
+                    <div
+                        class="btn-group btn-group-sm"
+                        role="group"
+                        aria-label="Base map"
+                    >
+                        <input
+                            type="radio"
+                            class="btn-check"
+                            name="polygon_draw_base_map"
+                            id="polygon_draw_base_streets"
+                            value="streets"
+                            t-att-checked="this.state.baseMap === 'streets'"
+                            t-on-change="this.onChangeBaseMap"
+                        />
+                        <label
+                            class="btn btn-outline-secondary"
+                            for="polygon_draw_base_streets"
+                        >
+                            <i class="fa fa-map me-1" /> Streets
+                        </label>
+                        <input
+                            type="radio"
+                            class="btn-check"
+                            name="polygon_draw_base_map"
+                            id="polygon_draw_base_satellite"
+                            value="satellite"
+                            t-att-checked="this.state.baseMap === 'satellite'"
+                            t-on-change="this.onChangeBaseMap"
+                        />
+                        <label
+                            class="btn btn-outline-secondary"
+                            for="polygon_draw_base_satellite"
+                        >
+                            <i class="fa fa-globe me-1" /> Satellite
+                        </label>
+                    </div>
+                </div>
+                <div class="o_polygon_draw_map" t-ref="this.mapRef" />
+            </div>
+            <t t-set-slot="footer">
+                <button
+                    class="btn btn-secondary"
+                    t-on-click="this.onClickClear"
+                    t-att-disabled="this.props.readonly"
+                >
+                    <i class="fa fa-eraser me-1" /> Clear
+                </button>
+                <button
+                    class="btn btn-primary"
+                    t-on-click="this.onClickSave"
+                    t-att-disabled="this.props.readonly"
+                >
+                    <i class="fa fa-check me-1" /> Save
+                </button>
+                <button class="btn btn-secondary" t-on-click="this.onClickCancel">
+                    <i class="fa fa-times me-1" /> Cancel
+                </button>
+            </t>
+        </Dialog>
+    </t>
+
+</templates>

@@ -1,0 +1,31 @@
+{
+    "name": "Asset Ledger Documents",
+    "version": "19.0.1.10.0",
+    "oldest_upgradable_version": "19.0.1.10.0",
+    "category": "Productivity/Documents",
+    "summary": "Expose linked asset documents and asset-specific document references",
+    "description": "Resolves a document’s asset from its resource model and record ID, and adds asset document views and references for fuel cards, highway passes and property-related documents. Supplies folders, tags and document actions alongside the asset and document dependencies. Matching is based on linked records rather than searching document text for serial numbers.",
+    "author": "AgroMarin",
+    "license": "OPL-1",
+    "depends": [
+        "document_product",
+        "document_resource_asset",
+        "asset_ledger",
+    ],
+    "data": [
+        "data/document_folder_data.xml",
+        "data/document_tag_data.xml",
+        "data/ir_actions_server_data.xml",
+        "views/document_document_views.xml",
+        "views/resource_asset_views.xml",
+    ],
+    "demo": [
+        "demo/res_partner_demo.xml",
+        "demo/product_category_demo.xml",
+        "demo/product_product_demo.xml",
+        "demo/product_trace_demo.xml",
+        "demo/document_document_demo.xml",
+    ],
+    "auto_install": True,
+    "post_init_hook": "_documents_product_asset_post_init",
+}

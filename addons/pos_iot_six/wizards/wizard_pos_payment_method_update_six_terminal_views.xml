@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_add_six_terminal" model="ir.ui.view">
+        <field name="name">Add Six Terminal</field>
+        <field name="model">wizard.pos.payment.method.update.six.terminal</field>
+        <field name="arch" type="xml">
+            <form string="Setup a Six Payment Terminal">
+                <div>
+                    <group>
+                        <field name="iot_box_id" />
+                        <field
+                            name="six_terminal_id"
+                            widget="six_terminal_id_field"
+                            invisible="not iot_box_id" />
+                        <field
+                            name="terminal_device_id"
+                            domain="[('iot_id', '=', iot_box_id), ('type', '=', 'payment'), ('manufacturer', '=', 'Six')]"
+                            invisible="not iot_box_id" />
+                        <field name="iot_box_ip" invisible="True"/>  <!-- Needed by 'six_terminal_id_field' JS widget -->
+                    </group>
+                </div>
+                <footer>
+                    <button special="cancel" string="Cancel" />
+                    <button
+                        name="action_add_payment_method"
+                        type="object"
+                        string="Add Terminal"
+                        class="btn-primary" />
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_add_six_terminal" model="ir.actions.act_window">
+        <field name="name">Setup a Six Payment Terminal</field>
+        <field name="res_model">wizard.pos.payment.method.update.six.terminal</field>
+        <field name="view_mode">form</field>
+        <field name="view_id" ref="view_add_six_terminal" />
+        <field name="target">new</field>
+    </record>
+
+</odoo>

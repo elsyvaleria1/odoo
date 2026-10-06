@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!--
+        Standalone page (not the web client) so it boots from the service
+        worker cache without connection; its texts come translated in
+        data-boot, see controllers/main.py
+    -->
+    <template id="driver_screen_page" name="Driver Screen">
+ &lt;!DOCTYPE html&gt; <html t-att-lang="lang">
+            <head>
+                <meta charset="utf-8" />
+                <meta
+                    name="viewport"
+                    content="width=device-width, initial-scale=1, viewport-fit=cover" />
+                <meta name="theme-color" content="#1f6f43" />
+                <meta name="mobile-web-app-capable" content="yes" />
+                <title t-out="terms['title']" />
+                <link
+                    rel="manifest"
+                    href="/stock_fleet_trace/driver/manifest.webmanifest"
+                    crossorigin="use-credentials" />
+                <link rel="icon" href="/web/static/img/odoo-icon-192x192.png" />
+                <link
+                    rel="apple-touch-icon"
+                    href="/web/static/img/odoo-icon-192x192.png" />
+                <link
+                    rel="stylesheet"
+                    href="/stock_fleet_trace/static/driver/driver.css" />
+                <script type="module" src="/stock_fleet_trace/static/driver/app.js" />
+            </head>
+            <body t-att-data-boot="boot">
+                <div id="sft-app">
+                    <p class="sft-loading" t-out="terms['loading']" />
+                </div>
+            </body>
+        </html>
+    </template>
+
+</odoo>

@@ -1,0 +1,112 @@
+// @ts-check
+/** @odoo-module native */
+import { ACTION_TAGS } from "@mail/core/common/action";
+import { ActionList } from "@mail/core/common/action_list";
+import { useCallActions } from "@mail/discuss/call/common/call_actions";
+import { CALL_PROMOTE_FULLSCREEN } from "@mail/discuss/call/common/thread_model_patch";
+import { useMailContext } from "@mail/utils/common/mail_context";
+import { Component, t, toRaw, useProps } from "@odoo/owl";
+import { isMobileOS } from "@web/core/browser/feature_detection";
+import { _t } from "@web/core/translation";
+import { elementRef } from "@web/core/utils/element_ref";
+import { useService } from "@web/core/utils/hooks";
+import { usePopover } from "@web/ui/popover";
+import { Tooltip } from "@web/ui/tooltip";
+export class CallActionList extends Component {
+    static components = { ActionList };
+    static props = { thread: t.any(), compact: t.any().optional() };
+    static template = "discuss.CallActionList";
+    props = useProps(this.constructor.props);
+
+    setup() {
+        super.setup();
+        this.mailContext = useMailContext();
+        this.store = useService("mail.store");
+        this.rtc = useService("discuss.rtc");
+        this.pipService = useService("discuss.pip_service");
+        this.callActions = useCallActions({
+            owner: this,
+            thread: () => this.props.thread,
+        });
+        this.more = elementRef();
+        this.root = elementRef();
+        this.popover = usePopover(Tooltip, {
+            position: "top-middle",
+        });
+    }
+
+    get actions() {
+        const partition = toRaw(this.callActions).partition;
+        const other = partition.other.filter(
+            (a) => !a.tags.includes(ACTION_TAGS.CALL_LAYOUT),
+        );
+        const group2 = [];
+        for (const groupActions of partition.group) {
+            const filtered = groupActions.filter(
+                (a) => !a.tags.includes(ACTION_TAGS.CALL_LAYOUT),
+            );
+            const sequenceGroup = filtered[0].sequenceGroup;
+            const maxQuickActions = sequenceGroup === 200 ? 1 : 4;
+            const quickActions = filtered.slice(0, maxQuickActions);
+            const moreActions = filtered.slice(maxQuickActions);
+            const newGroup = moreActions?.length
+                ? [
+                      ...quickActions,
+                      this.callActions.more(
+                          {
+                              actions: moreActions,
+                              dropdownMenuClass: "m-0 mb-1",
+                              dropdownPosition: "top-end",
+                              name: this.MORE,
+                          },
+                          sequenceGroup,
+                      ),
+                  ]
+                : quickActions;
+            group2.push(newGroup);
+        }
+        return [...group2, other];
+    }
+
+    get isPromotingFullscreen() {
+        return Boolean(
+            !this.mailContext.pipWindow &&
+            this.props.thread.promoteFullscreen === CALL_PROMOTE_FULLSCREEN.ACTIVE,
+        );
+    }
+
+    get MORE() {
+        return _t("More");
+    }
+
+    get isOfActiveCall() {
+        return Boolean(this.props.thread.eq(this.rtc.channel));
+    }
+
+    get isSmall() {
+        return Boolean(this.props.compact && this.rtc.state.isFullscreen);
+    }
+
+    get isMobileOS() {
+        return isMobileOS();
+    }
+
+    onMouseenterMore() {
+        if (this.isPromotingFullscreen) {
+            this.popover.open(this.more.el, { tooltip: _t("Enter full screen!") });
+            this.props.thread.promoteFullscreen = CALL_PROMOTE_FULLSCREEN.DISCARDED;
+        }
+    }
+
+    onMouseleaveMore() {
+        if (this.popover.isOpen) {
+            this.popover.close();
+        }
+    }
+
+    onClickMore() {
+        if (this.popover.isOpen) {
+            this.popover.close();
+        }
+    }
+}

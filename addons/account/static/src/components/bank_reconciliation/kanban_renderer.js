@@ -1,0 +1,225 @@
+/** @odoo-module native */
+import { onWillDestroy, onWillStart, proxy } from "@odoo/owl";
+import { browser } from "@web/core/browser/browser";
+import { makeLogger } from "@web/core/debug/debug_logger";
+import { useLifecycleLog } from "@web/core/debug/logger_hooks";
+import { formatMonetary } from "@web/core/formatters";
+import { registry } from "@web/core/registry";
+import { _t } from "@web/core/translation";
+import { useEventBus, useService } from "@web/core/utils/hooks";
+import { useViewModel } from "@web/model/model";
+import { KanbanRenderer, kanbanView } from "@web/views/kanban";
+
+import { useBankReconciliation } from "./bank_reconciliation_service.js";
+import { BankRecChatter } from "./chatter/chatter.js";
+import { BankRecKanbanControlPanel } from "./control_action/control_action.js";
+import { BankRecKanbanController } from "./kanban_controller.js";
+import { BankRecQuickCreate } from "./quick_create/quick_create.js";
+import { BankRecStatementLine } from "./statement_line/statement_line.js";
+import { BankRecStatementSummary } from "./statement_summary/statement_summary.js";
+
+const log = makeLogger("account.bank_rec.renderer");
+
+export class BankRecKanbanRenderer extends KanbanRenderer {
+    static template = "account.BankRecKanbanRenderer";
+    static components = {
+        ...KanbanRenderer.components,
+        BankRecQuickCreate,
+        BankRecStatementSummary,
+        BankRecStatementLine,
+        BankRecChatter,
+    };
+
+    setup() {
+        useLifecycleLog(log);
+        super.setup();
+        this.bus = useEventBus();
+        this.model = useViewModel();
+        this.action = useService("action");
+        this.orm = useService("orm");
+        this.ui = useService("ui");
+        this.bankReconciliation = useBankReconciliation();
+        this.bankReconciliation.hydrateChatterState();
+        this.globalState = proxy({
+            resModel: this.model.config.resModel,
+            context: this.model.config.context,
+            quickCreate: {
+                isVisible: false,
+                quickCreateView: this.props.archInfo.quickCreateView,
+            },
+            journalId:
+                this.model.config.context.default_journal_id ||
+                this.model.config.context.active_id,
+            totalJournalAmount: "",
+        });
+
+        this.model.hooks.lifecycle.onRootLoaded = async (newRoot) => {
+            await this.prepareInitialState(newRoot.records);
+        };
+
+        this.bus.addEventListener("createRecordQuickCreate", () => {
+            this.globalState.quickCreate.isVisible = true;
+        });
+
+        onWillStart(async () => {
+            await this.prepareInitialState(this.model.root.records);
+        });
+
+        onWillDestroy(() => {
+            browser.sessionStorage.setItem(
+                "isBankReconciliationWidgetChatterOpened",
+                this.bankReconciliation.chatterState.visible,
+            );
+            browser.sessionStorage.setItem(
+                "bankReconciliationStatementLineId",
+                this.bankReconciliation.chatterState.statementLine?.data.id,
+            );
+            this.bankReconciliation.chatterState.statementLine = null;
+        });
+    }
+
+    /**
+     * @param {Array<Object>} records
+     * @returns {Promise<void>}
+     */
+    async prepareInitialState(records) {
+        await Promise.all([
+            this.getJournalTotalAmount(),
+            this.bankReconciliation.computeReconcileLineCountPerPartnerId(records),
+            this.bankReconciliation.computeAvailableReconcileModels(records),
+            this.bankReconciliation.computeAvailableReconcileLines(records),
+            this.bankReconciliation.computeAvailableAnalyticAccounts(records),
+        ]);
+        const statementLineId =
+            parseInt(
+                browser.sessionStorage.getItem("bankReconciliationStatementLineId"),
+            ) || records[0]?.data.id;
+        const statementLine =
+            records.find((record) => record.data.id === statementLineId) ?? records[0];
+        this.bankReconciliation.selectStatementLine(statementLine);
+    }
+
+    cancelQuickCreate() {
+        this.globalState.quickCreate.isVisible = false;
+    }
+
+    async validateQuickCreate(recordId, mode) {
+        await this.bankReconciliation.updateAvailableReconcileModels(recordId);
+        await this.model.load();
+        await this.getJournalTotalAmount();
+        await this.bankReconciliation.computeReconcileLineCountPerPartnerId(
+            this.model.root.records,
+        );
+
+        if (mode === "add_close") {
+            this.globalState.quickCreate.isVisible = false;
+        }
+    }
+
+    async getJournalTotalAmount() {
+        const value = await this.orm.call(
+            "account.journal",
+            "get_total_journal_amount",
+            [this.globalState.journalId],
+        );
+        this.globalState.totalJournalAmount = value.balance_amount;
+        this.globalState.totalIsInvalid = value.has_invalid_statements;
+        return value;
+    }
+
+    async actionOpenBankGL() {
+        const actionData = await this.orm.call(
+            "account.journal",
+            "action_view_bank_balance_in_gl",
+            [
+                this.model.config.context.default_journal_id ||
+                    this.model.config.context.active_id,
+            ],
+        );
+        this.action.doAction(actionData);
+    }
+
+    actionOpenStatement(statementId) {
+        const action = {
+            type: "ir.actions.act_window",
+            res_model: "account.bank.statement",
+            res_id: statementId,
+            views: [[false, "form"]],
+            target: "current",
+            context: {
+                form_view_ref: "account.view_bank_statement_form_bank_rec_widget",
+            },
+        };
+
+        this.action.doAction(action);
+    }
+
+    get quickCreateContext() {
+        return {
+            ...this.globalState.context,
+        };
+    }
+
+    get hideCurrentBalance() {
+        return false;
+    }
+
+    get hasStatementLine() {
+        return this.model.root.count;
+    }
+
+    get totalJournalLabel() {
+        return _t("Current Balance");
+    }
+
+    get showNoContentHelper() {
+        return !this.isQuickCreateVisible && !this.props.list.model.hasData();
+    }
+
+    get statementGroups() {
+        const statementGroups = {};
+        let lastStatementId = null;
+        for (const record of this.model.root.records) {
+            const statementId = record.data.statement_id?.id;
+            if (statementId && statementId !== lastStatementId) {
+                statementGroups[record.data.id] = {
+                    statementId: statementId,
+                    name: record.data.statement_name,
+                    balance: formatMonetary(record.data.statement_balance_end_real, {
+                        currencyId: record.data.currency_id.id,
+                    }),
+                    isValid:
+                        record.data.statement_complete && record.data.statement_valid,
+                };
+                lastStatementId = statementId;
+            } else {
+                if (
+                    Object.keys(statementGroups).length &&
+                    !statementId &&
+                    typeof lastStatementId !== "string"
+                ) {
+                    statementGroups[record.data.id] = {
+                        name: _t("No Bank Statement"),
+                        isValid: true,
+                    };
+                    lastStatementId = "no_bank_statement";
+                }
+            }
+        }
+        return statementGroups;
+    }
+
+    get isQuickCreateVisible() {
+        return this.globalState.quickCreate.isVisible;
+    }
+}
+
+export const BankRecKanbanView = {
+    ...kanbanView,
+    ControlPanel: BankRecKanbanControlPanel,
+    Controller: BankRecKanbanController,
+    Renderer: BankRecKanbanRenderer,
+    searchMenuTypes: ["filter", "favorite"],
+};
+
+registry.category("views").add("bank_rec_widget_kanban", BankRecKanbanView);

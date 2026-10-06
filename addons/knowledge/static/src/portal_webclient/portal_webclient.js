@@ -1,0 +1,61 @@
+/** @odoo-module native */
+import { Component, onMounted, useProps } from "@odoo/owl";
+import { router, routerBus } from "@web/core/browser/router";
+import { provideDebugContext } from "@web/core/debug/debug_context";
+import { useBus, useEventBus, useService } from "@web/core/utils/hooks";
+import { MainComponentsContainer } from "@web/ui/main_components_container";
+import { ActionContainer } from "@web/webclient/actions";
+
+export class KnowledgePortalWebClient extends Component {
+    static props = {};
+    static components = { ActionContainer, MainComponentsContainer };
+    static template = "knowledge.KnowledgePortalWebClient";
+    props = useProps(this.constructor.props);
+
+    setup() {
+        this.bus = useEventBus();
+        window.parent.document.body.style.margin = "0"; // remove the margin in the parent body
+        this.actionService = useService("action");
+        provideDebugContext({ categories: ["default"] });
+        useBus(routerBus, "ROUTE_CHANGE", this._showView.bind(this));
+        onMounted(() => {
+            this._showView();
+        });
+    }
+
+    /**
+     * Loads the article specified in the URL path (eg. /knowledge/article/42)
+     */
+    async _showView() {
+        const isOnKnowledgeArticleFormView = () => {
+            if (this.actionService.currentController) {
+                const { action } = this.actionService.currentController;
+                return (
+                    action &&
+                    action.xml_id === "knowledge.knowledge_article_action_form"
+                );
+            }
+            return false;
+        };
+
+        // When the user is already on the Knowledge form view, we can load
+        // another record in the model to avoid reloading the sidebar.
+
+        if (isOnKnowledgeArticleFormView() && router.current.resId) {
+            this.bus.trigger("KNOWLEDGE:OPEN_ARTICLE", {
+                id: router.current.resId,
+            });
+            return;
+        }
+
+        await this.actionService.doAction(
+            "knowledge.ir_actions_server_knowledge_home_page",
+            {
+                additionalContext: router.current.resId
+                    ? { res_id: router.current.resId }
+                    : {},
+                stackPosition: "replaceCurrentAction",
+            },
+        );
+    }
+}

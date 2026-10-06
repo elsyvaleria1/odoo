@@ -1,0 +1,58 @@
+.o_features_list_section {
+    .o_features_list_content {
+        max-height: 400px;
+        overflow-y: auto;
+    }
+
+    .o_features_grouped_list {
+        max-height: 350px;
+        overflow-y: auto;
+    }
+
+    .o_features_state_header {
+        font-size: 0.85rem;
+        transition: background-color $o-duration-fast ease-in-out;
+
+        &:hover {
+            background-color: o-token(--o-gray-800, $o-gray-800) !important;
+        }
+    }
+
+    .o_features_city_header {
+        font-size: 0.8rem;
+        background-color: o-token(--o-gray-100, $o-gray-100);
+        transition: background-color $o-duration-fast ease-in-out;
+
+        &:hover {
+            background-color: o-token(--o-gray-800, $o-gray-800) !important;
+        }
+    }
+
+    .o_features_list {
+        .o_feature_item {
+            font-size: 0.75rem;
+            border-left: 12px solid transparent;
+            transition: all $o-duration-fast ease-in-out;
+
+            &:hover {
+                background-color: o-token(--o-gray-800, $o-gray-800);
+                border-left-color: var(--o-brand);
+            }
+        }
+    }
+
+    .o_features_search {
+        .form-control {
+            font-size: 0.85rem;
+        }
+    }
+
+    .badge {
+        font-size: 0.7rem;
+        font-weight: normal;
+    }
+
+    .cursor-pointer {
+        cursor: pointer;
+    }
+}

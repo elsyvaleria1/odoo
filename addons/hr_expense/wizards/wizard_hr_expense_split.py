@@ -1,0 +1,141 @@
+from odoo import api, fields, models
+from odoo.libs.debug_log import DebugLog
+from odoo.tools import frozendict
+
+_debug = DebugLog(__name__)
+
+
+class WizardHrExpenseSplit(models.TransientModel):
+    _name = "wizard.hr.expense.split"
+    _description = "Expense Split Wizard"
+    _access_anchors = frozendict(
+        {
+            "employee": "expense_id.employee_id",
+            "owner": "expense_id.manager_id",
+            "owner_or_unset": models.Anchor(
+                "expense_id.manager_id", kind="owner", shared=True
+            ),
+        }
+    )
+
+    expense_id = fields.Many2one(
+        comodel_name="hr.expense",
+        required=True,
+    )
+    expense_split_line_ids = fields.One2many(
+        comodel_name="wizard.hr.expense.split.line",
+        inverse_name="wizard_id",
+    )
+    total_amount_currency = fields.Monetary(
+        string="Total Amount",
+        currency_field="currency_id",
+        compute="_compute_total_amount_currency",
+    )
+    total_amount_currency_original = fields.Monetary(
+        related="expense_id.total_amount_currency",
+        string="Total amount original",
+        currency_field="currency_id",
+        help="Total amount of the original Expense that we are splitting",
+    )
+    tax_amount_currency = fields.Monetary(
+        string="Taxes",
+        currency_field="currency_id",
+        compute="_compute_tax_amount_currency",
+    )
+    split_possible = fields.Boolean(
+        compute="_compute_split_possible",
+        help="The sum of after split shut remain the same",
+    )
+    currency_id = fields.Many2one(
+        comodel_name="res.currency",
+        related="expense_id.currency_id",
+    )
+
+    @api.depends("expense_split_line_ids.total_amount_currency")
+    def _compute_total_amount_currency(self) -> None:
+        for wizard in self:
+            wizard.total_amount_currency = sum(
+                wizard.expense_split_line_ids.mapped("total_amount_currency")
+            )
+
+    @api.depends("expense_split_line_ids.tax_amount_currency")
+    def _compute_tax_amount_currency(self) -> None:
+        for wizard in self:
+            wizard.tax_amount_currency = sum(
+                wizard.expense_split_line_ids.mapped("tax_amount_currency")
+            )
+
+    @api.depends("total_amount_currency_original", "total_amount_currency")
+    def _compute_split_possible(self) -> None:
+        for wizard in self:
+            wizard.split_possible = (
+                wizard.total_amount_currency_original
+                and wizard.currency_id.compare_amounts(
+                    wizard.total_amount_currency_original, wizard.total_amount_currency
+                )
+                == 0
+            )
+
+    def action_split_expense(self):
+        self.check_singleton()
+        expense_split = self.expense_split_line_ids[0]
+        copied_expenses = self.env["hr.expense"]
+        _debug.pipeline(
+            "split_start",
+            expense=self.expense_id,
+            lines=self.expense_split_line_ids,
+            possible=self.split_possible,
+        )
+        if expense_split:
+            self.expense_id.write(expense_split._prepare_expense_vals())
+
+            self.expense_split_line_ids -= expense_split
+            if self.expense_split_line_ids:
+                for split in self.expense_split_line_ids:
+                    copied_expenses |= self.expense_id.with_context(
+                        {"from_split_wizard": True}
+                    ).copy(split._prepare_expense_vals())
+
+                attachment_ids = self.env["ir.attachment"].search(
+                    [
+                        ("res_model", "=", "hr.expense"),
+                        ("res_id", "=", self.expense_id.id),
+                    ]
+                )
+
+                _debug.lifecycle(
+                    "split_copies_created",
+                    origin=self.expense_id,
+                    copies=copied_expenses,
+                    attachments=attachment_ids,
+                )
+                for copied_expense in copied_expenses:
+                    for attachment in attachment_ids:
+                        attachment.copy(
+                            {"res_model": "hr.expense", "res_id": copied_expense.id}
+                        )
+
+        split_expense_ids = self.env["hr.expense"]
+        if self.expense_id.split_expense_origin_id:
+            split_expense_ids = self.env["hr.expense"].search(
+                [
+                    (
+                        "split_expense_origin_id",
+                        "=",
+                        self.expense_id.split_expense_origin_id.id,
+                    )
+                ]
+            )
+        (self.expense_id | copied_expenses).split_expense_origin_id = (
+            self.expense_id.split_expense_origin_id or self.expense_id
+        )
+        all_related_expenses = copied_expenses | self.expense_id | split_expense_ids
+        _debug.pipeline(
+            "split_done",
+            origin=self.expense_id.split_expense_origin_id or self.expense_id,
+            related=all_related_expenses,
+        )
+
+        return all_related_expenses._get_records_action(
+            name=self.env._("Split Expenses")
+        )

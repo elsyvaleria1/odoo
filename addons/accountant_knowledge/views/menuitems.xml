@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <menuitem
+        id="menu_action_accountant_audit_report"
+        name="Annual Report"
+        parent="account.account_audit_working_file_menu"
+        action="action_audit_report"
+        sequence="20" />
+
+</odoo>

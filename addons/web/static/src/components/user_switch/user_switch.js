@@ -1,0 +1,108 @@
+// @ts-check
+/** @odoo-module native */
+
+import { Component, onMounted, Portal, proxy, useProps } from "@odoo/owl";
+import { registry } from "@web/core/registry";
+import { _t } from "@web/core/translation";
+import { getLastConnectedUsers, setLastConnectedUsers } from "@web/core/user";
+import { elementRef } from "@web/core/utils/element_ref";
+import { useLayoutEffect } from "@web/core/utils/layout_effect";
+import { imageUrl } from "@web/core/utils/urls";
+
+export class UserSwitch extends Component {
+    static template = "web.login_user_switch";
+    static components = { Portal };
+    static props = {};
+    props = useProps(this.constructor.props);
+
+    /** @type {import("@odoo/owl").Ref<HTMLElement>} */
+    root;
+    /** @type {{ users: any[], displayUserChoice: boolean }} */
+    state;
+    /** @type {HTMLFormElement | null} */
+    form = null;
+
+    setup() {
+        const users = getLastConnectedUsers();
+        this.root = elementRef();
+        this.state = proxy({
+            users,
+            displayUserChoice: users.length > 1,
+        });
+        onMounted(() => {
+            this.form = document.querySelector("form.oe_login_form");
+            if (!this.form) {
+                return;
+            }
+            this.syncFormDisplay();
+        });
+        useLayoutEffect(
+            (el) => el?.querySelector("button.list-group-item-action")?.focus(),
+            () => [this.root.el],
+        );
+    }
+
+    syncFormDisplay() {
+        if (!this.form) {
+            return;
+        }
+        this.form.classList.toggle("d-none", this.state.displayUserChoice);
+        if (!this.state.displayUserChoice) {
+            /** @type {HTMLElement | null} */ (
+                this.form.querySelector(":placeholder-shown")
+            )?.focus();
+        }
+    }
+
+    toggleFormDisplay() {
+        this.state.displayUserChoice =
+            !this.state.displayUserChoice && this.state.users.length > 0;
+        this.syncFormDisplay();
+    }
+
+    /** @param {{ partnerId: number, partnerWriteDate: any }} param0 */
+    getAvatarUrl({ partnerId, partnerWriteDate: unique }) {
+        return imageUrl("res.partner", partnerId, "avatar_128", { unique });
+    }
+
+    /**
+     * @param {{ name: string }} user
+     * @returns {string}
+     */
+    removeLabel({ name }) {
+        return _t("Remove %s from the list", name);
+    }
+
+    /** @param {any} deletedUser */
+    remove(deletedUser) {
+        this.state.users = this.state.users.filter(
+            (/** @type {any} */ user) => user !== deletedUser,
+        );
+        setLastConnectedUsers(this.state.users);
+        if (!this.state.users.length) {
+            this.updateForm();
+        }
+    }
+
+    updateForm(login = "") {
+        if (this.form) {
+            const loginInput = /** @type {HTMLInputElement | null} */ (
+                this.form.querySelector("input#login")
+            );
+            const passwordInput = /** @type {HTMLInputElement | null} */ (
+                this.form.querySelector("input#password")
+            );
+            if (loginInput) {
+                loginInput.value = login;
+            }
+            if (passwordInput) {
+                passwordInput.value = "";
+            }
+        }
+        this.toggleFormDisplay();
+    }
+}
+
+registry
+    .category("public_components")
+    .add("web.user_switch", /** @type {any} */ (UserSwitch));

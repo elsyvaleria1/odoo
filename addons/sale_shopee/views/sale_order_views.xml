@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="sale_order_tree" model="ir.ui.view">
+        <field name="name">shopee.order.list</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_sale_order_list" />
+        <field name="arch" type="xml">
+            <field name="name" position="after">
+                <field
+                    name="shopee_order_ref"
+                    optional="hide"
+                    groups="base.group_no_one" />
+                <field
+                    name="shopee_shop_id"
+                    optional="hide"
+                    groups="base.group_no_one" />
+            </field>
+        </field>
+    </record>
+
+    <record id="view_order_form" model="ir.ui.view">
+        <field name="name">shopee.order.form</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_sale_order_form" />
+        <field name="arch" type="xml">
+            <div name="button_box" position="after">
+                <div
+                    class="badge rounded-pill text-bg-info fs-6 float-end"
+                    invisible="shopee_fulfillment_type != 'fbm'">
+                    Fulfilled by Merchant
+                </div>
+                <div
+                    class="badge rounded-pill text-bg-info fs-6 float-end"
+                    invisible="shopee_fulfillment_type != 'fbs'">
+                    Fulfilled by Shopee
+                </div>
+                <div
+                    class="badge rounded-pill text-bg-info fs-6 float-end"
+                    invisible="shopee_fulfillment_type != 'hybrid'">
+                    Fulfilled by Cross Border Seller
+                </div>
+            </div>
+            <button name="action_lock" position="after">
+                <!-- Anchored on the fork's single Lock button. The element
+                    this used to hang on, a t tag grouped on
+                    sale.group_auto_done_setting, is gone from
+                    sale.view_sale_order_form; the group itself is alive and
+                    still drives _auto_lock_group. The intent is unchanged: a
+                    marketplace order is lockable at 'done', where the standard
+                    button appears only at 'done'. -->
+                <t groups="!sale.group_auto_done_setting">
+                    <button
+                        name="action_lock"
+                        type="object"
+                        string="Lock"
+                        help="If the sale is locked, you can not modify it anymore. However, you will still be able to invoice or deliver."
+                        groups="sale.group_sale_manager"
+                        invisible="locked or state != 'done' or not shopee_order_ref" />
+                </t>
+            </button>
+            <group name="order_details" position="inside">
+                <field name="shopee_order_ref" invisible="not shopee_order_ref" />
+                <field name="shopee_shop_id" invisible="not shopee_shop_id" />
+            </group>
+        </field>
+    </record>
+
+    <record id="view_sales_order_filter" model="ir.ui.view">
+        <field name="name">shopee.order.search</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_sale_order_search" />
+        <field name="arch" type="xml">
+            <field name="name" position="after">
+                <field name="shopee_order_ref" groups="base.group_no_one" />
+                <field name="shopee_shop_id" groups="base.group_no_one" />
+            </field>
+        </field>
+    </record>
+
+</odoo>

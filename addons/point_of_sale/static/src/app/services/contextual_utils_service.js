@@ -1,0 +1,59 @@
+/** @odoo-module native */
+import { formatCurrency as webFormatCurrency } from "@web/core/currency";
+import { parseFloat } from "@web/core/parsers";
+import { registry } from "@web/core/registry";
+import { formatFloat } from "@web/core/utils/format/numbers";
+
+import { PRODUCT_UNIT } from "../models/decimal_precision.js";
+export const contextualUtilsService = {
+    dependencies: ["pos", "localization"],
+    start(env, { pos, localization }) {
+        const res_currency = pos.currency;
+        const ProductUnit = pos.data.models["decimal.precision"].getBy(
+            "name",
+            PRODUCT_UNIT,
+        );
+        const decimalPoint = localization.decimalPoint;
+        const thousandsSep = localization.thousandsSep;
+        const escapedDecimalPoint = RegExp.escape(decimalPoint);
+        let floatRegex;
+        if (thousandsSep) {
+            const escapedThousandsSep = RegExp.escape(thousandsSep);
+            floatRegex = new RegExp(
+                `^-?(?:\\d+(${escapedThousandsSep}\\d+)*)?(?:${escapedDecimalPoint}\\d*)?$`,
+            );
+        } else {
+            floatRegex = new RegExp(`^-?(?:\\d+)?(?:${escapedDecimalPoint}\\d*)?$`);
+        }
+
+        const formatProductQty = (qty, trailingZeros = true) =>
+            formatFloat(qty, {
+                digits: [true, ProductUnit.digits],
+                trailingZeros: trailingZeros,
+            });
+
+        const formatCurrency = (value, hasSymbol = true) =>
+            webFormatCurrency(value, res_currency.id, {
+                noSymbol: !hasSymbol,
+            });
+
+        const roundCurrency = (value) => res_currency.round(value);
+
+        const isValidFloat = (inputValue) =>
+            ![decimalPoint, "-"].includes(inputValue) && floatRegex.test(inputValue);
+
+        const parseValidFloat = (inputValue) =>
+            isValidFloat(inputValue) ? parseFloat(inputValue) : 0;
+
+        const utils = {
+            formatCurrency,
+            roundCurrency,
+            formatProductQty,
+            isValidFloat,
+            parseValidFloat,
+        };
+        env.utils = utils;
+        return utils;
+    },
+};
+registry.category("services").add("contextual_utils_service", contextualUtilsService);

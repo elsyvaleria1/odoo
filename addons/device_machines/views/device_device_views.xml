@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_device_device_form_inherit_remote_machines" model="ir.ui.view">
+        <field name="name">device.device.form.inherit.device_machines</field>
+        <field name="model">device.device</field>
+        <field name="inherit_id" ref="device.view_device_device_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <button
+                    name="%(action_device_machine_bucket_from_device)d"
+                    type="action"
+                    icon="fa-bar-chart"
+                    context="{'default_device_id': id, 'search_default_device_id': id}"
+                    invisible="not is_counter_device"
+                    class="oe_stat_button">
+                    <field name="bucket_count" string="Buckets" widget="statinfo" />
+                </button>
+            </xpath>
+
+            <xpath expr="//notebook" position="inside">
+                <page name="counter" string="Counter" invisible="not is_counter_device">
+                    <group>
+                        <group string="Counter Configuration">
+                            <field name="is_counter_device" invisible="1" />
+                            <field name="workcenter_id" />
+                            <field name="counter_timezone" />
+                            <field name="counter_reset_dow" />
+                        </group>
+                        <group string="Live State">
+                            <field name="last_count" readonly="1" />
+                            <field name="date_last_data_received" readonly="1" />
+                        </group>
+                    </group>
+                </page>
+            </xpath>
+
+            <xpath expr="//notebook" position="inside">
+                <page name="monitor" string="Monitor" invisible="not is_counter_device">
+                    <field name="reading_ids" nolabel="1" readonly="1">
+                        <list string="Recent Readings" create="false" edit="false">
+                            <field name="received_at" string="Received" />
+                            <field name="timestamp" string="PLC Timestamp" />
+                            <field name="count" string="Conteo" />
+                        </list>
+                    </field>
+                </page>
+            </xpath>
+
+            <xpath expr="//field[@name='plate']" position="attributes">
+                <attribute name="invisible">is_counter_device</attribute>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_device_device_list_inherit_remote_machines" model="ir.ui.view">
+        <field name="name">device.device.list.inherit.device_machines</field>
+        <field name="model">device.device</field>
+        <field name="inherit_id" ref="device.view_device_device_list" />
+        <field name="arch" type="xml">
+            <field name="date_last_data_received" position="after">
+                <field name="last_count" optional="hide" />
+                <field name="is_counter_device" column_invisible="True" />
+            </field>
+        </field>
+    </record>
+
+    <record id="view_device_machine_list" model="ir.ui.view">
+        <field name="name">device.device.machine.list</field>
+        <field name="model">device.device</field>
+        <field name="priority" eval="99" />
+        <field name="arch" type="xml">
+            <list
+                string="Production Machines"
+                decoration-danger="connection_state == 'error'"
+                decoration-muted="connection_state == 'disconnected'"
+                decoration-success="connection_state == 'connected'">
+                <field name="name" />
+                <field name="workcenter_id" optional="show" />
+                <field name="comm_protocol" />
+                <field name="display_endpoint" optional="hide" />
+                <field
+                    name="connection_state"
+                    widget="badge"
+                    decoration-danger="connection_state == 'error'"
+                    decoration-info="connection_state == 'disconnected'"
+                    decoration-success="connection_state == 'connected'" />
+                <field name="last_count" optional="show" />
+                <field
+                    name="date_last_data_received"
+                    string="Last Data Received"
+                    optional="show" />
+                <field
+                    name="company_id"
+                    optional="hide"
+                    groups="base.group_multi_company" />
+            </list>
+        </field>
+    </record>
+
+    <record id="action_device_machine_devices" model="ir.actions.act_window">
+        <field name="name">Production Machines</field>
+        <field name="res_model">device.device</field>
+        <field name="view_mode">list,form</field>
+        <field name="view_id" ref="view_device_machine_list" />
+        <field name="search_view_id" ref="device.view_device_device_search" />
+        <field name="domain">[('is_counter_device', '=', True)]</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Register your first counter machine
+            </p>
+            <p>
+                Counter machines publish a cumulative production counter via MQTT.
+                The hourly bucket aggregator records deltas per machine per hour.
+            </p>
+        </field>
+    </record>
+
+</odoo>

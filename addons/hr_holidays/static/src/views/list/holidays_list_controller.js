@@ -1,0 +1,78 @@
+/** @odoo-module native */
+import { registry } from "@web/core/registry";
+import { useService } from "@web/core/utils/hooks";
+import {
+    provideViewButtonContext,
+    useViewButtonContext,
+} from "@web/core/view_button_context_hooks";
+import { ListController, listView } from "@web/views/list";
+
+export class HolidaysListController extends ListController {
+    setup() {
+        super.setup();
+        this.viewButtonContext = useViewButtonContext();
+        this.orm = useService("orm");
+
+        this.onClickViewButton = this.viewButtonContext.onClickViewButton;
+
+        provideViewButtonContext({
+            onClickViewButton: (params) => this.handleViewButtonClick(params),
+        });
+    }
+
+    get actionFilters() {
+        return {
+            action_approve: (record) =>
+                record.data.can_approve || record.data.can_validate,
+            action_refuse: (record) => record.data.can_refuse,
+        };
+    }
+
+    /**
+     * @param {Object} params - Button click parameters containing action details
+     */
+    handleViewButtonClick(params) {
+        const actionName = params.clickParams.name;
+        const filter = this.actionFilters[actionName];
+        if (filter) {
+            const eligibleRecords = this.model.root.selection.filter(filter);
+            if (eligibleRecords.length) {
+                this.executeAction(actionName, eligibleRecords);
+            } else {
+                this.onClickViewButton(params);
+            }
+        } else {
+            this.onClickViewButton(params);
+        }
+    }
+
+    displaySelectionButton(button) {
+        const { selection } = this.model.root;
+        if (!selection.length) {
+            return false;
+        }
+        const filter = this.actionFilters[button.clickParams.name];
+        return filter ? selection.some(filter) : false;
+    }
+
+    /**
+     * @param {string} functionName - Name of the backend method to call
+     * @param {Array} records - Array of record objects to process
+     */
+    async executeAction(functionName, records) {
+        await this.orm.call(this.props.resModel, functionName, [
+            records.map((record) => record.resId),
+        ]);
+        await this.actionService.doAction({
+            type: "ir.actions.client",
+            tag: "soft_reload",
+        });
+    }
+}
+
+export const holidaysListView = {
+    ...listView,
+    Controller: HolidaysListController,
+};
+
+registry.category("views").add("hr_holidays_payslip_list", holidaysListView);

@@ -1,0 +1,165 @@
+// @ts-check
+/** @odoo-module native */
+import { Gif } from "@mail/core/common/gif";
+import { attClassObjectToString } from "@mail/utils/common/format";
+import { useMailContext } from "@mail/utils/common/mail_context";
+import { Component, t, useProps } from "@odoo/owl";
+import { Dropdown, DropdownItem, useDropdownState } from "@web/components/dropdown";
+import { useFileViewer } from "@web/components/file_viewer";
+import { isMobileOS } from "@web/core/browser/feature_detection";
+import { makeLogger } from "@web/core/debug/debug_logger";
+import { download } from "@web/core/network";
+import { _t } from "@web/core/translation";
+import { useService } from "@web/core/utils/hooks";
+import { url } from "@web/core/utils/urls";
+import { ConfirmationDialog } from "@web/ui/dialog";
+
+const log = makeLogger("mail.attachment_list");
+class Actions extends Component {
+    static components = { Dropdown, DropdownItem };
+    static props = { actions: t.any() };
+    static template = "mail.Actions";
+    props = useProps(this.constructor.props);
+
+    setup() {
+        super.setup();
+        this.actionsMenuState = useDropdownState();
+    }
+}
+
+/**
+ * @typedef {Object} Props
+ * @property {import("models").Attachment[]} attachments
+ * @property {function} unlinkAttachment
+ * @property {ReturnType<typeof import('@mail/core/common/message_search_hook').useMessageSearch>} [messageSearch]
+ * @extends {Component<Props, import("@web/env").OdooEnv>}
+ */
+export class AttachmentList extends Component {
+    static components = { Actions, Gif };
+    static props = {
+        attachments: t.any(),
+        unlinkAttachment: t.any(),
+        messageSearch: t.any().optional(),
+    };
+    static template = "mail.AttachmentList";
+    props = useProps(this.constructor.props);
+
+    attClassObjectToString = attClassObjectToString;
+
+    setup() {
+        super.setup();
+        this.mailContext = useMailContext();
+        this.ui = useService("ui");
+        this.dialog = useService("dialog");
+        this.fileViewer = useFileViewer();
+        this.actionsMenuState = useDropdownState();
+        this.isMobileOS = isMobileOS();
+    }
+
+    /** @param {import("models").Attachment} attachment */
+    getImageUrl(attachment) {
+        if (attachment.uploading && attachment.tmpUrl) {
+            return attachment.tmpUrl;
+        }
+        return url(attachment.urlRoute, {
+            ...attachment.urlQueryParams,
+        });
+    }
+
+    /** @param {import("models").Attachment} attachment */
+    canDownload(attachment) {
+        return !attachment.uploading && !this.mailContext.inComposer;
+    }
+
+    /** @param {import("models").Attachment} attachment */
+    onClickDownload(attachment) {
+        log.logic("onClickDownload", () => ({ attachmentId: attachment.id }));
+        download({
+            data: {},
+            url: attachment.downloadUrl,
+        });
+    }
+
+    /** @param {import("models").Attachment} attachment */
+    onClickUnlink(attachment) {
+        log.logic("onClickUnlink", () => ({
+            attachmentId: attachment.id,
+            inComposer: Boolean(this.mailContext.inComposer),
+        }));
+        if (this.mailContext.inComposer) {
+            return this.props.unlinkAttachment(attachment);
+        }
+        this.dialog.add(ConfirmationDialog, {
+            body: _t('Do you really want to delete "%s"?', attachment.name),
+            cancel: () => {},
+            confirm: () => this.onConfirmUnlink(attachment),
+        });
+    }
+
+    /** @param {import("models").Attachment} attachment */
+    onClickAttachment(attachment) {
+        log.logic("onClickAttachment", () => ({
+            attachmentId: attachment.id,
+            siblings: this.props.attachments.length,
+        }));
+        this.fileViewer.open(attachment, this.props.attachments);
+    }
+
+    /** @param {import("models").Attachment} attachment */
+    onConfirmUnlink(attachment) {
+        this.props.unlinkAttachment(attachment);
+    }
+
+    onImageLoaded() {
+        this.mailContext.onImageLoaded?.();
+    }
+
+    get isInChatWindowAndIsAlignedRight() {
+        return this.mailContext.inChatWindow && this.mailContext.alignedRight;
+    }
+
+    /**
+     * @param {import("models").Attachment} attachment
+     * @returns {Array<{label: string, icon: string, onSelect: () => void}>}
+     */
+    getActions(attachment) {
+        const res = [];
+        if (this.showDelete(attachment)) {
+            res.push({
+                label: _t("Remove"),
+                icon: "fa-solid fa-trash-can",
+                onSelect: () => this.onClickUnlink(attachment),
+            });
+        }
+        if (this.canDownload(attachment)) {
+            res.push({
+                label: _t("Download"),
+                icon: "fa-solid fa-download",
+                onSelect: () => this.onClickDownload(attachment),
+            });
+        }
+        return res;
+    }
+
+    /** @param {import("models").Attachment} attachment */
+    showDelete(attachment) {
+        if (this.mailContext.inComposer) {
+            return true;
+        }
+        if (!attachment.isDeletable) {
+            return false;
+        }
+        return (
+            !this.mailContext.message ||
+            this.mailContext.message.hasTextContent ||
+            (this.mailContext.message && this.props.attachments.length > 1)
+        );
+    }
+
+    /** @param {import("models").Attachment} attachment */
+    showUploaded(attachment) {
+        return (
+            !attachment.isImage && !attachment.uploading && this.mailContext.inComposer
+        );
+    }
+}

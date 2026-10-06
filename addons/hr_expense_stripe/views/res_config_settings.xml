@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <data>
+        <record id="res_config_settings_view_form" model="ir.ui.view">
+            <field
+                name="name">res.config.settings.view.form.inherit.hr.expense.stripe</field>
+            <field name="model">res.config.settings</field>
+            <field name="inherit_id" ref="hr_expense.res_config_settings_view_form" />
+            <field name="priority" eval="85" />
+            <field name="arch" type="xml">
+                <xpath
+                    expr="//setting[@id='expense_cards_stripe_issuing']"
+                    position="replace">
+                    <setting
+                        id="expense_cards_stripe_issuing"
+                        string="Expense Card"
+                        help="Create prepaid virtual and physical cards for both one-time and recurring expenses, integrated into Odoo through Stripe Issuing."
+                        company_dependent="True">
+                        <field
+                            name="module_hr_expense_stripe"
+                            widget="upgrade_boolean" />
+                        <div
+                            class="mt8"
+                            invisible="module_hr_expense_stripe and stripe_company_currency_id">
+                            <i
+                                class="fa-solid fa-triangle-exclamation ms-1 text-warning" />
+                            <span class="text-warning"> Stripe issuing is not yet supported for your localization.</span>
+                        </div>
+                        <div
+                            invisible="not (module_hr_expense_stripe and stripe_company_currency_id)"
+                            name="expenses_stripe_issuing_container">
+                            <group>
+                                <field
+                                    name="stripe_journal_id"
+                                    string="Journal"
+                                    help="Journal where stripe transactions are recorded"
+                                    context="{                                            'default_type': 'bank',                                            'default_code': 'STRPI',                                            'default_name': 'Stripe Issuing',                                            'default_bank_statements_source': 'stripe_issuing',                                            'default_currency_id': stripe_company_currency_id                                        }" />
+                            </group>
+                            <div class="mt8">
+                                <field
+                                    name="stripe_account_issuing_tos_accepted"
+                                    nolabel="True"
+                                    readonly="stripe_id"
+                                    class="oe_inline" />
+                                <span>I confirm agreeing to the
+                                    <a type="object" name="open_expense_stripe_issuing_terms">terms and conditions</a>.
+                                </span>
+                            </div>
+                            <div class="mt8" invisible="stripe_id">
+                                <button
+                                    name="action_create_stripe_account"
+                                    type="object"
+                                    string="Connect"
+                                    icon="oi-arrow-right"
+                                    force_save="True"
+                                    invisible="not stripe_account_issuing_tos_accepted"
+                                    class="btn-link" />
+                            </div>
+                            <div class="mt8" invisible="not stripe_id">
+                                <button
+                                    name="action_refresh_stripe_account"
+                                    type="object"
+                                    string="Refresh"
+                                    icon="oi-arrow-right"
+                                    class="btn-link mr8" />
+                                <field
+                                    name="stripe_account_issuing_status"
+                                    widget="badge"
+                                    invisible="not stripe_id"
+                                    decoration-danger="stripe_account_issuing_status == 'restricted'"
+                                    decoration-success="stripe_account_issuing_status == 'verified'" />
+                            </div>
+                            <div class="mt8" invisible="not stripe_id">
+                                <button
+                                    name="action_configure_stripe_account"
+                                    type="object"
+                                    string="Configure"
+                                    icon="oi-arrow-right"
+                                    class="btn-link" />
+                            </div>
+                        </div>
+                    </setting>
+                </xpath>
+            </field>
+        </record>
+    </data>
+
+</odoo>

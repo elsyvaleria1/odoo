@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+
+    <record id="ir_cron_route_refresh_eta" model="ir.cron">
+        <field name="name">Trips: refresh the arrival times from the GPS</field>
+        <field name="model_id" ref="stock.model_stock_picking_batch" />
+        <field name="state">code</field>
+        <field name="code">model._cron_route_refresh_eta()</field>
+        <field name="repeat_interval" eval="10" />
+        <field name="repeat_unit">minute</field>
+        <field name="active" eval="True" />
+    </record>
+
+</odoo>

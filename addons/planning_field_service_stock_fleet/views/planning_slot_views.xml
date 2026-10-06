@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="planning_slot_view_form_visit" model="ir.ui.view">
+        <field name="name">planning.slot.form.visit.deliveries</field>
+        <field name="model">planning.slot</field>
+        <field
+            name="inherit_id"
+            ref="planning_field_service.planning_slot_view_form_visit" />
+        <field name="arch" type="xml">
+            <field name="name" position="before">
+                <div
+                    class="d-flex align-items-baseline mt-3"
+                    name="deliveries"
+                    groups="stock.group_stock_user"
+                    invisible="not id or state == '4_completed' and not picking_ids">
+                    <h4 class="me-3">Deliveries</h4>
+                    <button
+                        name="action_link_trip_deliveries"
+                        type="object"
+                        string="Look for deliveries"
+                        icon="fa-truck"
+                        invisible="state == '4_completed'"
+                        class="btn-link" />
+                </div>
+                <field
+                    name="picking_ids"
+                    nolabel="1"
+                    groups="stock.group_stock_user"
+                    invisible="not picking_ids"
+                    readonly="1">
+                    <list create="0" delete="0">
+                        <field name="name" />
+                        <field name="origin" optional="show" />
+                        <field name="batch_id" column_invisible="1" />
+                        <field
+                            name="state"
+                            widget="badge"
+                            decoration-info="state == 'assigned'"
+                            decoration-success="state == 'done'" />
+                        <field name="delivery_failure_reason" optional="hide" />
+                        <button
+                            name="action_deliver"
+                            type="object"
+                            string="Delivered"
+                            icon="fa-check"
+                            invisible="state != 'assigned' or not batch_id"
+                            class="btn-link text-success" />
+                        <button
+                            name="action_not_delivered"
+                            type="object"
+                            string="Not delivered"
+                            icon="fa-times"
+                            invisible="state != 'assigned' or not batch_id"
+                            class="btn-link text-danger" />
+                    </list>
+                </field>
+            </field>
+        </field>
+    </record>
+
+</odoo>

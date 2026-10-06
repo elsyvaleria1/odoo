@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates>
+    <t t-name="document.FileViewer" t-inherit="web.FileViewer" t-inherit-mode="primary">
+        <xpath expr="//div[hasclass('o-FileViewer-download')]" position="before">
+            <div t-attf-class="d-flex align-items-center flex-shrink-0 {{this.ui.isSmall ? 'pe-2' : 'pe-4'}}">
+                <DocumentsAction folderId="this.folderId" targetRecords="[this.previewed.document?.record]" isPreview="true"/>
+            </div>
+        </xpath>
+        <xpath expr="//div[hasclass('o-FileViewer-download')]" position="replace"/>
+        <xpath expr="//div[hasclass('o-FileViewer-navigation')][@aria-label='Previous']" position="attributes">
+            <attribute name="class" add="bg-dark" separator=" "/>
+        </xpath>
+        <xpath expr="//div[hasclass('o-FileViewer-navigation')][@aria-label='Next']" position="attributes">
+            <attribute name="class" add="bg-dark" separator=" "/>
+        </xpath>
+        <xpath expr="//span[hasclass('oi-chevron-left')]" position="attributes">
+            <attribute name="class" add="pe-1 text-white" separator=" "/>
+        </xpath>
+        <xpath expr="//span[hasclass('oi-chevron-right')]" position="attributes">
+            <attribute name="class" add="ps-1 text-white" separator=" "/>
+        </xpath>
+        <xpath expr="//div[hasclass('o-FileViewer-main')]" position="inside">
+            <t t-if="this.state.file.emailContent">
+                <div class="position-absolute top-50 start-50 text-muted opacity-25 fs-1 o_documents_watermark_file_viewer">EMAIL</div>
+                <iframe class="o-FileViewer-view o-isText o_text w-75 h-100 border-0" t-att-srcdoc="this.state.file.emailContent" sandbox=""/>
+            </t>
+        </xpath>
+        <xpath expr="//iframe[@t-if='this.state.file.isText']" position="replace">
+            <iframe t-if="this.state.file.isJson || this.state.file.isHtml" class="o-FileViewer-view o-isText o_text w-75 h-100 border-0" t-att-src="this.state.file.defaultSource" sandbox=""/>
+            <pre t-elif="this.state.file.isTextual" class="o-FileViewer-view o-isText o_text w-75 h-100 m-0 p-3 overflow-auto bg-white text-wrap text-break" t-out="this.state.file.textContent"/>
+        </xpath>
+    </t>
+</templates>

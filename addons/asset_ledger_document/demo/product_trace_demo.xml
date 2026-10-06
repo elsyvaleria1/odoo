@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="stock_lot_property_main_office" model="product.trace">
+        <field name="name">PROP-OFFICE-001</field>
+        <field name="product_id" ref="product_product_property_office" />
+        <field name="company_id" ref="base.main_company" />
+        <field name="ref">MAIN-OFFICE-BLDG</field>
+        <field name="cadastral_id">CAD-2019-0001234</field>
+        <field name="model_year">2019</field>
+        <field name="brand_new" eval="False" />
+        <field
+            name="date_acquisition"
+            eval="(DateTime.now() - timedelta(days=1825)).strftime('%Y-%m-%d')" />
+        <field name="value_original">2500000.00</field>
+        <field name="value_residual">2200000.00</field>
+        <field name="account_prefix">PROP-001</field>
+        <field name="location">123 Business Avenue, Downtown</field>
+        <field name="area">5000</field>
+    </record>
+
+    <record id="stock_lot_property_warehouse_a" model="product.trace">
+        <field name="name">PROP-WH-A</field>
+        <field name="product_id" ref="product_product_property_warehouse" />
+        <field name="company_id" ref="base.main_company" />
+        <field name="ref">WAREHOUSE-A</field>
+        <field name="cadastral_id">CAD-2020-0005678</field>
+        <field name="model_year">2020</field>
+        <field name="brand_new" eval="True" />
+        <field
+            name="date_acquisition"
+            eval="(DateTime.now() - timedelta(days=1460)).strftime('%Y-%m-%d')" />
+        <field name="value_original">1800000.00</field>
+        <field name="value_residual">1700000.00</field>
+        <field name="account_prefix">PROP-002</field>
+        <field name="location">Industrial Park Zone 5</field>
+        <field name="area">12000</field>
+    </record>
+
+    <record id="stock_lot_property_retail_store" model="product.trace">
+        <field name="name">PROP-RETAIL-DT</field>
+        <field name="product_id" ref="product_product_property_retail" />
+        <field name="company_id" ref="base.main_company" />
+        <field name="ref">RETAIL-DOWNTOWN</field>
+        <field name="cadastral_id">CAD-LEASE-2024</field>
+        <field name="model_year">2015</field>
+        <field name="brand_new" eval="False" />
+        <field
+            name="date_acquisition"
+            eval="(DateTime.now() - timedelta(days=365)).strftime('%Y-%m-%d')" />
+        <field name="value_original">0.00</field>
+        <field name="value_residual">0.00</field>
+        <field name="account_prefix">PROP-LEASE-001</field>
+        <field name="location">456 Main Street, Downtown Plaza</field>
+        <field name="area">800</field>
+    </record>
+
+    <record id="stock_lot_machinery_forklift_001" model="product.trace">
+        <field name="name">FORKLIFT-001</field>
+        <field name="product_id" ref="product_product_machinery_forklift" />
+        <field name="company_id" ref="base.main_company" />
+        <field name="ref">FORK-TY-001</field>
+        <field name="vin_sn">TY8FBMT2523012345</field>
+        <field name="engine_sn">TY-ENG-456789</field>
+        <field name="model_year">2023</field>
+        <field name="brand_new" eval="True" />
+        <field
+            name="date_acquisition"
+            eval="(DateTime.now() - timedelta(days=365)).strftime('%Y-%m-%d')" />
+        <field name="value_original">35000.00</field>
+        <field name="value_residual">32000.00</field>
+        <field name="account_prefix">MACH-001</field>
+        <field name="location">Warehouse A - Loading Bay</field>
+    </record>
+
+    <record id="stock_lot_machinery_cnc_001" model="product.trace">
+        <field name="name">CNC-MILL-001</field>
+        <field name="product_id" ref="product_product_machinery_cnc" />
+        <field name="company_id" ref="base.main_company" />
+        <field name="ref">CNC-HAAS-001</field>
+        <field name="engine_sn">HAAS-SERVO-XYZ789</field>
+        <field name="model_year">2024</field>
+        <field name="brand_new" eval="True" />
+        <field
+            name="date_acquisition"
+            eval="(DateTime.now() - timedelta(days=180)).strftime('%Y-%m-%d')" />
+        <field name="value_original">125000.00</field>
+        <field name="value_residual">122000.00</field>
+        <field name="account_prefix">MACH-002</field>
+        <field name="location">Manufacturing Floor - Section B</field>
+    </record>
+
+    <record id="stock_lot_equipment_laptop_001" model="product.trace">
+        <field name="name">LAPTOP-DELL-001</field>
+        <field name="product_id" ref="product_product_equipment_laptop" />
+        <field name="company_id" ref="base.main_company" />
+        <field name="ref">IT-DELL-001</field>
+        <field name="model_year">2024</field>
+        <field name="brand_new" eval="True" />
+        <field
+            name="date_acquisition"
+            eval="(DateTime.now() - timedelta(days=90)).strftime('%Y-%m-%d')" />
+        <field name="value_original">1800.00</field>
+        <field name="value_residual">1700.00</field>
+        <field name="account_prefix">IT-001</field>
+        <field name="location">Finance Department - Desk 12</field>
+    </record>
+
+    <record id="stock_lot_equipment_printer_001" model="product.trace">
+        <field name="name">PRINTER-HP-001</field>
+        <field name="product_id" ref="product_product_equipment_printer" />
+        <field name="company_id" ref="base.main_company" />
+        <field name="ref">IT-PRINT-001</field>
+        <field name="model_year">2023</field>
+        <field name="brand_new" eval="False" />
+        <field
+            name="date_acquisition"
+            eval="(DateTime.now() - timedelta(days=545)).strftime('%Y-%m-%d')" />
+        <field name="value_original">2500.00</field>
+        <field name="value_residual">1500.00</field>
+        <field name="account_prefix">IT-002</field>
+        <field name="location">Main Office - Copy Room</field>
+    </record>
+
+</odoo>

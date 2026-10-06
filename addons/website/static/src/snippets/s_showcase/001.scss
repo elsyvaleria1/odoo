@@ -1,0 +1,45 @@
+.s_showcase[data-vcss="001"] {
+    @include media-breakpoint-up(lg) {
+        .container,
+        .container-fluid {
+            position: relative;
+
+            &:before {
+                content: " ";
+                display: block;
+                @include o-position-absolute($left: 50%);
+                height: 100%;
+                border-right: 1px solid
+                    o-palette-token(--o-gray-200, map-get($grays, "200"));
+            }
+        }
+        .row > div {
+            &:nth-child(odd) {
+                text-align: right;
+
+                .s_showcase_icon,
+                p {
+                    float: right;
+                }
+
+                .s_showcase_icon {
+                    margin-right: 0;
+                    margin-left: 15px;
+                }
+            }
+            &:nth-child(even) {
+                text-align: left;
+
+                .s_showcase_icon,
+                p {
+                    float: left;
+                }
+            }
+        }
+    }
+
+    .s_showcase_icon {
+        margin-right: 15px;
+        @include font-size(36px);
+    }
+}

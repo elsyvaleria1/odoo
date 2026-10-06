@@ -1,0 +1,84 @@
+table.o_section_and_note_list_view {
+    --o-SectionAndNote-border-color: #{o-palette-token(--o-gray-500, $gray-500)};
+    $_SectionAndNote-transition: 0.1s ease-in-out;
+
+    tr {
+        &.o_is_line_note {
+            font-style: italic;
+        }
+
+        &.o_is_line_section,
+        &.o_is_line_subsection {
+            --table-striped-bg: var(--table-bg-type);
+
+            .o_list_section_options {
+                width: 1px;
+            }
+
+            .o_field_product_label_section_and_note_cell .o_input {
+                text-overflow: ellipsis;
+            }
+        }
+
+        &.o_is_line_section {
+            --table-hover-bg: rgba(var(--#{$prefix}emphasis-color-rgb), 0.08);
+            --table-bg-type: rgba(var(--#{$prefix}emphasis-color-rgb), 0.06);
+            --ListRenderer-data-row-focused-striped-bg: var(--table-bg-type);
+
+            font-weight: $font-weight-bolder;
+
+            &:where(:not(:empty)) {
+                border-top-color: var(--o-SectionAndNote-border-color);
+            }
+
+            &.o_dragged {
+                border-width: $border-width 0;
+            }
+        }
+
+        &.o_is_line_subsection {
+            --table-hover-bg: rgba(var(--#{$prefix}emphasis-color-rgb), 0.05);
+            --table-bg-type: rgba(var(--#{$prefix}emphasis-color-rgb), 0.03);
+
+            font-weight: $font-weight-bold;
+
+            &.o_dragged {
+                --ListRenderer-data-row-border-bottom-width: 0;
+            }
+
+            td {
+                border-bottom-width: $border-width;
+
+                &:not(.o_handle_cell) {
+                    border-color: var(--o-SectionAndNote-border-color);
+                }
+            }
+        }
+
+        &:where(
+            :not(.o_dragged):has(+ .o_is_line_section:not(.o_dragged, .d-table-row))
+        ) {
+            border-color: var(--o-SectionAndNote-border-color);
+        }
+    }
+
+    // The header takes the section colour when the list opens on a section. The
+    // table says so in a variable its header cells read: asked as
+    // `table:has(…) th`, every DOM change of every screen restyled every `<th>`
+    // of the page.
+    &:where(
+        :has(tbody > tr:first-child.o_is_line_section:not(.o_dragged, .d-table-row))
+    ) {
+        --o-SectionAndNote-header-border-color: var(--o-SectionAndNote-border-color);
+    }
+
+    th {
+        border-color: var(--o-SectionAndNote-header-border-color, inherit);
+    }
+}
+
+.o_field_section_and_note_text {
+    > span {
+        white-space: pre-wrap !important;
+    }
+}

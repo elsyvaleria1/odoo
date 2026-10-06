@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_server_action_form_conversation" model="ir.ui.view">
+        <field name="name">ir.actions.server.form.conversation</field>
+        <field name="model">ir.actions.server</field>
+        <field name="inherit_id" ref="base.view_server_action_form" />
+        <field name="arch" type="xml">
+            <notebook position="inside">
+                <page
+                    name="conversation"
+                    string="Conversations"
+                    invisible="not use_in_ai">
+                    <group>
+                        <group>
+                            <field name="conversation_enabled" />
+                            <field
+                                name="conversation_key"
+                                invisible="not conversation_enabled" />
+                        </group>
+                        <group>
+                            <field
+                                name="conversation_examples"
+                                invisible="not conversation_enabled" />
+                        </group>
+                    </group>
+                </page>
+            </notebook>
+        </field>
+    </record>
+
+    <record id="action_conversation_tools" model="ir.actions.act_window">
+        <field name="name">Conversation tools</field>
+        <field name="res_model">ir.actions.server</field>
+        <field name="view_mode">list,form</field>
+        <field
+            name="domain">[('use_in_ai', '=', True), ('conversation_enabled', '=', True)]</field>
+        <field
+            name="context">{'default_use_in_ai': True, 'default_conversation_enabled': True, 'default_state': 'code'}</field>
+    </record>
+
+</odoo>

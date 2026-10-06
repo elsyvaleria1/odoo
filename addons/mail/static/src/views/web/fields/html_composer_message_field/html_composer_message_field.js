@@ -1,0 +1,129 @@
+// @ts-check
+/** @odoo-module native */
+import { DYNAMIC_PLACEHOLDER_PLUGINS } from "@html_editor/backend/plugin_sets";
+import { fillEmpty } from "@html_editor/utils/dom";
+import { isEmpty } from "@html_editor/utils/dom_info";
+import { getComposerTargetThreads } from "@mail/core/web/composer_target_threads";
+import { useMailContext } from "@mail/utils/common/mail_context";
+import { markup, toRaw } from "@odoo/owl";
+import { makeLogger } from "@web/core/debug/debug_logger";
+import { registry } from "@web/core/registry";
+import { useBus, useOptionalService } from "@web/core/utils/hooks";
+
+import { HtmlMailField, htmlMailField } from "../html_mail_field/html_mail_field.js";
+import { ContentExpandablePlugin } from "./content_expandable_plugin.js";
+import { DisableBannerCommandsPlugin } from "./disable_banner_commands_plugin.js";
+import { MentionPlugin } from "./mention_plugin.js";
+
+const log = makeLogger("mail.composer.form");
+export class HtmlComposerMessageField extends HtmlMailField {
+    setup() {
+        super.setup();
+        this.mailContext = useMailContext();
+        this.store = toRaw(useOptionalService("mail.store"));
+        if (this.mailContext.fullComposerBus) {
+            useBus(
+                this.mailContext.fullComposerBus,
+                "ACCIDENTAL_DISCARD",
+                /** @param {CustomEvent<{onAccidentalDiscard: (isEmpty: boolean) => void}>} ev */
+                (ev) => {
+                    const elContent = this.getNoSignatureElContent();
+                    log.logic("ACCIDENTAL_DISCARD", () => ({
+                        empty: isEmpty(elContent),
+                    }));
+                    ev.detail.onAccidentalDiscard(isEmpty(elContent));
+                },
+            );
+            useBus(
+                this.mailContext.fullComposerBus,
+                "SAVE_CONTENT",
+                /** @param {CustomEvent<{onSaveContent: (content: Object) => void}>} ev */
+                (ev) => {
+                    const emailAddSignature = Boolean(
+                        this.editor.editable.querySelector(".o-signature-container"),
+                    );
+                    const composerHtml = markup(
+                        this.getNoSignatureElContent().innerHTML,
+                    );
+                    log.logic("SAVE_CONTENT", () => ({
+                        emailAddSignature,
+                        length: composerHtml.toString().length,
+                    }));
+                    ev.detail.onSaveContent({ composerHtml, emailAddSignature });
+                },
+            );
+            useBus(
+                this.mailContext.fullComposerBus,
+                "ATTACHMENT_REMOVED",
+                /** @param {CustomEvent<{id: number}>} ev */
+                (ev) => {
+                    const attachmentElements = this.editor.editable.querySelectorAll(
+                        `[data-attachment-id="${ev.detail.id}"]`,
+                    );
+                    log.logic("ATTACHMENT_REMOVED", () => ({
+                        attachmentId: ev.detail.id,
+                        elements: attachmentElements.length,
+                    }));
+                    attachmentElements.forEach((element) => {
+                        const parent = element.parentElement;
+                        element.remove();
+                        fillEmpty(parent);
+                    });
+                    this.editor.shared.history.addStep();
+                },
+            );
+        }
+    }
+
+    getConfig() {
+        const config = super.getConfig();
+        config.Plugins = config.Plugins.filter(
+            (plugin) => !["video"].includes(plugin.id),
+        ).concat([DisableBannerCommandsPlugin, MentionPlugin]);
+        if (this.props.record.data.composition_comment_option === "reply_all") {
+            config.Plugins.push(ContentExpandablePlugin);
+        }
+        if (!this.props.record.data.composition_batch) {
+            config.Plugins = config.Plugins.filter(
+                (plugin) => !DYNAMIC_PLACEHOLDER_PLUGINS.includes(plugin),
+            );
+        }
+        config.onAttachmentChange =
+            /** @param {import("models").Attachment} attachment */ (attachment) => {
+                if (
+                    !(
+                        this.props.record.fieldNames.includes("attachment_ids") &&
+                        this.props.record.resModel === "wizard.mail.message.send"
+                    )
+                ) {
+                    return;
+                }
+                this.props.record.data.attachment_ids.linkTo(attachment.id, attachment);
+            };
+        const store = this.store;
+        config.thread = store
+            ? getComposerTargetThreads(store, this.props.record)[0]
+            : undefined;
+        return config;
+    }
+
+    getNoSignatureElContent() {
+        const elContent = this.editor.getElContent();
+        for (const el of elContent.querySelectorAll(".o-signature-container")) {
+            el.remove();
+        }
+        return elContent;
+    }
+}
+
+export const htmlComposerMessageField = {
+    ...htmlMailField,
+    additionalClasses: [
+        ...htmlMailField.additionalClasses,
+        "ps-0",
+        "o_mail_composer_message",
+    ],
+    component: HtmlComposerMessageField,
+};
+
+registry.category("fields").add("html_composer_message", htmlComposerMessageField);

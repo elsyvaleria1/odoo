@@ -1,0 +1,221 @@
+// @ts-check
+
+import { expect, test } from "@odoo/hoot";
+import { animationFrame } from "@odoo/hoot-mock";
+import { Component, proxy, useProps, xml } from "@odoo/owl";
+import {
+    defineModels,
+    getPagerLimit,
+    getPagerValue,
+    models,
+    mountWithSearch,
+    pagerNext,
+} from "@web/../tests/web_test_helpers";
+import { viewConfigOf } from "@web/core/view_config_hooks";
+import { ControlPanel } from "@web/search/control_panel/control_panel";
+import { usePager } from "@web/search/pager_hook";
+
+class Foo extends models.Model {}
+
+defineModels([Foo]);
+
+test("pager is correctly displayed", async () => {
+    class TestComponent extends Component {
+        static components = { ControlPanel };
+        static template = xml`<ControlPanel />`;
+        static props = null;
+        props = useProps(this.constructor.props);
+        setup() {
+            usePager(() => ({
+                offset: 0,
+                limit: 10,
+                total: 50,
+                onUpdate: () => {},
+            }));
+        }
+    }
+
+    await mountWithSearch(TestComponent, {
+        resModel: "foo",
+        searchMenuTypes: [],
+    });
+    expect(`.o_pager`).toHaveCount(1);
+    expect(".o_pager button.o_pager_next").toHaveCount(1);
+    expect(".o_pager button.o_pager_previous").toHaveCount(1);
+});
+
+test.tags("desktop");
+test("pager is correctly displayed on desktop", async () => {
+    class TestComponent extends Component {
+        static components = { ControlPanel };
+        static template = xml`<ControlPanel />`;
+        static props = null;
+        props = useProps(this.constructor.props);
+        setup() {
+            usePager(() => ({
+                offset: 0,
+                limit: 10,
+                total: 50,
+                onUpdate: () => {},
+            }));
+        }
+    }
+
+    await mountWithSearch(TestComponent, {
+        resModel: "foo",
+        searchMenuTypes: [],
+    });
+    expect(`.o_pager`).toHaveCount(1);
+    expect(getPagerValue()).toEqual([1, 10]);
+    expect(getPagerLimit()).toBe(50);
+});
+
+test("pager is correctly updated", async () => {
+    class TestComponent extends Component {
+        static components = { ControlPanel };
+        static template = xml`<ControlPanel />`;
+        static props = null;
+        props = useProps(this.constructor.props);
+        setup() {
+            this.state = proxy({ offset: 0, limit: 10 });
+            usePager(() => ({
+                offset: this.state.offset,
+                limit: this.state.limit,
+                total: 50,
+                onUpdate: (newState) => {
+                    Object.assign(this.state, newState);
+                },
+            }));
+        }
+    }
+
+    const component = await mountWithSearch(TestComponent, {
+        resModel: "foo",
+        searchMenuTypes: [],
+    });
+    expect(`.o_pager`).toHaveCount(1);
+    expect(component.state).toEqual({ offset: 0, limit: 10 });
+
+    await pagerNext();
+    expect(`.o_pager`).toHaveCount(1);
+    expect(component.state).toEqual({ offset: 10, limit: 10 });
+
+    component.state.offset = 20;
+    await animationFrame();
+    expect(`.o_pager`).toHaveCount(1);
+    expect(component.state).toEqual({ offset: 20, limit: 10 });
+});
+
+test.tags("desktop");
+test("pager is correctly updated on desktop", async () => {
+    class TestComponent extends Component {
+        static components = { ControlPanel };
+        static template = xml`<ControlPanel />`;
+        static props = null;
+        props = useProps(this.constructor.props);
+        setup() {
+            this.state = proxy({ offset: 0, limit: 10 });
+            usePager(() => ({
+                offset: this.state.offset,
+                limit: this.state.limit,
+                total: 50,
+                onUpdate: (newState) => {
+                    Object.assign(this.state, newState);
+                },
+            }));
+        }
+    }
+
+    const component = await mountWithSearch(TestComponent, {
+        resModel: "foo",
+        searchMenuTypes: [],
+    });
+    expect(`.o_pager`).toHaveCount(1);
+    expect(getPagerValue()).toEqual([1, 10]);
+    expect(getPagerLimit()).toBe(50);
+
+    await pagerNext();
+    expect(`.o_pager`).toHaveCount(1);
+    expect(getPagerValue()).toEqual([11, 20]);
+    expect(getPagerLimit()).toBe(50);
+
+    component.state.offset = 20;
+    await animationFrame();
+    expect(`.o_pager`).toHaveCount(1);
+    expect(getPagerValue()).toEqual([21, 30]);
+    expect(getPagerLimit()).toBe(50);
+});
+
+test("a key the previous answer set and this one omits does not survive", async () => {
+    /** @type {import("@web/search/pager_hook").PagerProps} */
+    let pagerProps;
+
+    class TestComponent extends Component {
+        static components = { ControlPanel };
+        static template = xml`<ControlPanel />`;
+        static props = null;
+        props = useProps(this.constructor.props);
+        setup() {
+            this.state = proxy({ withUpdateTotal: true });
+            usePager(() => {
+                /** @type {import("@web/search/pager_hook").PagerProps} */
+                const props = {
+                    offset: 0,
+                    limit: 10,
+                    total: 50,
+                    onUpdate: () => {},
+                };
+                if (this.state.withUpdateTotal) {
+                    props.updateTotal = () => 50;
+                }
+                return props;
+            });
+            pagerProps = viewConfigOf(this).pagerProps;
+        }
+    }
+
+    const component = await mountWithSearch(TestComponent, {
+        resModel: "foo",
+        searchMenuTypes: [],
+    });
+    expect("updateTotal" in pagerProps).toBe(true);
+
+    component.state.withUpdateTotal = false;
+    await animationFrame();
+
+    expect("updateTotal" in pagerProps).toBe(false);
+    expect(pagerProps.total).toBe(50);
+});
+
+test("an absent pager resets the state to a hidden pager", async () => {
+    /** @type {import("@web/search/pager_hook").PagerProps} */
+    let pagerProps;
+
+    class TestComponent extends Component {
+        static components = { ControlPanel };
+        static template = xml`<ControlPanel />`;
+        static props = null;
+        props = useProps(this.constructor.props);
+        setup() {
+            this.state = proxy({ hasPager: true });
+            usePager(() =>
+                this.state.hasPager
+                    ? { offset: 0, limit: 10, total: 50, onUpdate: () => {} }
+                    : undefined,
+            );
+            pagerProps = viewConfigOf(this).pagerProps;
+        }
+    }
+
+    const component = await mountWithSearch(TestComponent, {
+        resModel: "foo",
+        searchMenuTypes: [],
+    });
+    expect(`.o_pager`).toHaveCount(1);
+
+    component.state.hasPager = false;
+    await animationFrame();
+
+    expect(`.o_pager`).toHaveCount(0);
+    expect(Object.keys(pagerProps)).toEqual(["total"]);
+});

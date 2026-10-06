@@ -1,0 +1,1512 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* approval_account
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-09-18 04:24+0000\n"
+"PO-Revision-Date: 2026-09-18 04:24+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: approval_account
+#. odoo-python
+#: code:addons/approval_account/models/account_move.py:0
+msgid ""
+"%(document)s amount has changed since approval was granted.\n"
+"\n"
+"Approved amount: %(symbol_approved)s %(approved)s\n"
+"Current amount: %(symbol_current)s %(current)s\n"
+"\n"
+"Please refuse the current approval and request a new one with the updated amount."
+msgstr ""
+"El importe de %(document)s cambió después de otorgada la aprobación.\n"
+"\n"
+"Importe aprobado: %(symbol_approved)s %(approved)s\n"
+"Importe actual: %(symbol_current)s %(current)s\n"
+"\n"
+"Rechace la aprobación actual y solicite una nueva con el importe actualizado."
+
+#. module: approval_account
+#. odoo-python
+#: code:addons/approval_account/models/approval_request.py:0
+msgid "%(moves)s journal entries created from %(requests)s requests."
+msgstr ""
+"Se crearon %(moves)s asientos contables a partir de %(requests)s "
+"solicitudes."
+
+#. module: approval_account
+#. odoo-python
+#: code:addons/approval_account/models/approval_request.py:0
+msgid ""
+"%(skipped)s selected requests were skipped: not approved, already invoiced "
+"or without lines."
+msgstr ""
+"Se omitieron %(skipped)s solicitudes seleccionadas: no aprobadas, ya "
+"facturadas o sin líneas."
+
+#. module: approval_account
+#. odoo-python
+#: code:addons/approval_account/models/account_move.py:0
+msgid "%s Approved"
+msgstr "%s aprobada"
+
+#. module: approval_account
+#. odoo-python
+#: code:addons/approval_account/models/account_move.py:0
+msgid "%s Rejected"
+msgstr "%s rechazada"
+
+#. module: approval_account
+#: model_terms:ir.ui.view,arch_db:approval_account.view_approval_category_form_inherit_accounting_link
+msgid "0 = no limit"
+msgstr "0 = sin límite"
+
+#. module: approval_account
+#: model_terms:ir.ui.view,arch_db:approval_account.view_account_journal_form_approval
+msgid ""
+"<strong>Approval Required:</strong> This journal is flagged for approval. All\n"
+"                    invoices and bills using this journal will require approval through the\n"
+"                    configured approval workflow."
+msgstr ""
+"<strong>Requiere aprobación:</strong> este diario está marcado para aprobación.\n"
+"                    Todas las facturas que usen este diario requerirán aprobación a través del\n"
+"                    flujo de aprobación configurado."
+
+#. module: approval_account
+#: model_terms:ir.ui.view,arch_db:approval_account.view_partner_form_account_approval
+msgid ""
+"<strong>Approval Required:</strong> This partner is flagged for invoice/bill\n"
+"                    approval. All invoices/bills for this partner will require approval through\n"
+"                    the configured approval workflow."
+msgstr ""
+
+#. module: approval_account
+#: model_terms:ir.ui.view,arch_db:approval_account.view_approval_category_form_inherit_accounting_link
+msgid ""
+"<strong>Creation Flow (Approval → Move)</strong><br/> Approval\n"
+"                                request creates invoice/bill when approved. Ensure \"Has Product\" is\n"
+"                                set to Required."
+msgstr ""
+"<strong>Flujo de creación (Aprobación → Movimiento)</strong><br/> La solicitud\n"
+"                                de aprobación crea la factura al ser aprobada. Asegúrese de que\n"
+"                                \"Tiene producto\" esté en Requerido."
+
+#. module: approval_account
+#: model_terms:ir.ui.view,arch_db:approval_account.view_approval_category_form_inherit_accounting_link
+msgid ""
+"<strong>Mixin Flow (Move → Approval)</strong><br/> Invoices/bills\n"
+"                                trigger approval automatically based on rules below."
+msgstr ""
+"<strong>Flujo mixin (Movimiento → Aprobación)</strong><br/> Las facturas\n"
+"                                disparan la aprobación automáticamente según las reglas de abajo."
+
+#. module: approval_account
+#: model:ir.model.fields,field_description:approval_account.field_approval_request_line__account_move_line_id
+msgid "Account Move Line"
+msgstr "Apunte contable"
+
+#. module: approval_account
+#: model:ir.model.fields,field_description:approval_account.field_approval_category__account_move_type
+#: model:ir.model.fields,field_description:approval_account.field_approval_request__account_move_type
+msgid "Account Move Type"
+msgstr "Tipo de movimiento contable"
+
+#. module: approval_account
+#: model:ir.model.fields,help:approval_account.field_approval_request_line__account_move_id
+msgid "Account move that contains the line created from this approval"
+msgstr ""
+"Asiento contable que contiene la línea creada a partir de esta aprobación"
+
+#. module: approval_account
+#: model:ir.model.fields.selection,name:approval_account.selection__approval_category__approval_type__accounting
+#: model_terms:ir.ui.view,arch_db:approval_account.view_approval_category_form_inherit_accounting_link
+msgid "Accounting"
+msgstr "Contabilidad"
+
+#. module: approval_account
+#: model:ir.actions.act_window,name:approval_account.action_approval_category_accounting
+msgid "Accounting Approval Types"
+msgstr "Tipos de aprobación contable"
+
+#. module: approval_account
+#: model_terms:ir.ui.view,arch_db:approval_account.view_approval_request_form_inherit_accounting
+msgid "Accounting Details"
+msgstr "Detalles contables"
+
+#. module: approval_account
+#: model_terms:ir.ui.view,arch_db:approval_account.view_partner_form_account_approval
+msgid ""
+"Add special instructions or notes for approvers regarding invoices/bills for this partner...\n"
+"\n"
+"Example: 'New customer - verify credit terms and payment history before approving first invoice'"
+msgstr ""
+"Agregue instrucciones o notas para los aprobadores sobre las facturas de este contacto...\n"
+"\n"
+"Ejemplo: 'Cliente nuevo: verificar condiciones de crédito e historial de pago antes de aprobar la primera factura'"
+
+#. module: approval_account
+#: model_terms:ir.ui.view,arch_db:approval_account.view_account_journal_form_approval
+msgid ""
+"Add special instructions or notes for approvers...\n"
+"\n"
+"Example: 'Foreign currency journal - verify exchange rate before approving'"
+msgstr ""
+"Agregue instrucciones o notas para los aprobadores...\n"
+"\n"
+"Ejemplo: 'Diario en moneda extranjera: verificar el tipo de cambio antes de aprobar'"
+
+#. module: approval_account
+#: model_terms:ir.ui.view,arch_db:approval_account.view_account_journal_list_approval
+#: model_terms:ir.ui.view,arch_db:approval_account.view_account_move_form_approval
+msgid "Approval"
+msgstr "Aprobación"
+
+#. module: approval_account
+#: model:ir.model,name:approval_account.model_approval_category
+msgid "Approval Category"
+msgstr "Categoría de aprobación"
+
+#. module: approval_account
+#: model:ir.model.fields,field_description:approval_account.field_account_move__date_approval_granted
+msgid "Approval Granted Date"
+msgstr "Fecha de aprobación otorgada"
+
+#. module: approval_account
+#: model:ir.model.fields,field_description:approval_account.field_account_journal__approval_notes
+#: model_terms:ir.ui.view,arch_db:approval_account.view_account_journal_form_approval
+msgid "Approval Notes"
+msgstr "Notas de aprobación"
+
+#. module: approval_account
+#: model:ir.model.fields,field_description:approval_account.field_account_move__approval_progress
+msgid "Approval Progress"
+msgstr "Avance de la aprobación"
+
+#. module: approval_account
+#: model:ir.model,name:approval_account.model_approval_request
+#: model:ir.model.fields,field_description:approval_account.field_account_move__approval_request_id
+msgid "Approval Request"
+msgstr "Solicitud de aprobación"
+
+#. module: approval_account
+#: model:ir.model.fields,field_description:approval_account.field_account_move_line__approval_request_line_id
+msgid "Approval Request Line"
+msgstr "Línea de solicitud de aprobación"
+
+#. module: approval_account
+#: model:ir.model.fields,field_description:approval_account.field_account_move__date_approval_requested
+msgid "Approval Requested Date"
+msgstr "Fecha de solicitud de aprobación"
+
+#. module: approval_account
+#: model:ir.model.fields,field_description:approval_account.field_account_journal__approval_required
+#: model:ir.model.fields,field_description:approval_account.field_account_move__approval_required
+#: model_terms:ir.ui.view,arch_db:approval_account.view_account_journal_search_approval
+msgid "Approval Required"
+msgstr "Requiere aprobación"
+
+#. module: approval_account
+#: model_terms:ir.ui.view,arch_db:approval_account.view_account_journal_form_approval
+msgid "Approval Settings"
+msgstr "Ajustes de aprobación"
+
+#. module: approval_account
+#: model:ir.model.fields,field_description:approval_account.field_account_move__approval_state
+#: model_terms:ir.ui.view,arch_db:approval_account.view_account_move_form_approval
+msgid "Approval Status"
+msgstr "Estado de aprobación"
+
+#. module: approval_account
+#: model_terms:ir.ui.view,arch_db:approval_account.res_config_settings_view_form_account_approval
+msgid "Approval Thresholds"
+msgstr "Umbrales de aprobación"
+
+#. module: approval_account
+#: model:ir.model.fields,field_description:approval_account.field_approval_category__approval_type
+msgid "Approval Type"
+msgstr "Tipo de aprobación"
+
+#. module: approval_account
+#: model:ir.ui.menu,name:approval_account.menu_approval_category_accounting
+msgid "Approval Types"
+msgstr "Tipos de aprobación"
+
+#. module: approval_account
+#: model_terms:ir.ui.view,arch_db:approval_account.res_config_settings_view_form_account_approval
+msgid "Approval Workflow"
+msgstr "Flujo de aprobación"
+
+#. module: approval_account
+#: model:ir.model.fields,help:approval_account.field_account_bank_statement_line__approval_request_ids
+msgid ""
+"Approval requests that claim this bank transaction. Used by the request's "
+"own picker to leave out transactions another live request already holds."
+msgstr ""
+"Solicitudes de aprobación que reclaman esta transacción bancaria. El "
+"selector de la propia solicitud la usa para excluir transacciones que otra "
+"solicitud vigente ya tiene tomadas."
+
+#. module: approval_account
+#. odoo-python
+#: code:addons/approval_account/models/account_move.py:0
+msgid ""
+"Approval was granted but the document could not be auto-posted: %(error)s"
+msgstr ""
+"Se otorgó la aprobación pero el documento no pudo contabilizarse "
+"automáticamente: %(error)s"
+
+#. module: approval_account
+#: model:approval.category,description:approval_account.approval_category_account_move
+msgid "Approval workflow for existing invoices and bills"
+msgstr "Flujo de aprobación para facturas existentes"
+
+#. module: approval_account
+#. odoo-python
+#: code:addons/approval_account/models/account_move.py:0
+#: model_terms:ir.ui.view,arch_db:approval_account.view_account_move_form_approval
+#: model_terms:ir.ui.view,arch_db:approval_account.view_partner_form_account_approval
+msgid "Approvals"
+msgstr "Aprobaciones"
+
+#. module: approval_account
+#. odoo-python
+#: code:addons/approval_account/models/account_move.py:0
+#: model:mail.message.subtype,name:approval_account.mt_invoice_approved
+msgid "Approved"
+msgstr "Aprobada"
+
+#. module: approval_account
+#: model:ir.model.fields,field_description:approval_account.field_approval_request__account_move_ids
+msgid "Approved Invoices/Bills"
+msgstr ""
+
+#. module: approval_account
+#. odoo-python
+#: code:addons/approval_account/models/account_move.py:0
+msgid "Approved amount"
+msgstr "Importe aprobado"
+
+#. module: approval_account
+#. odoo-python
+#: code:addons/approval_account/models/account_move.py:0
+msgid "Approved by"
+msgstr "Aprobada por"
+
+#. module: approval_account
+#: model_terms:ir.ui.view,arch_db:approval_account.view_approval_search_search_inherit_payment
+msgid "Approved requests that create a journal entry and have none yet"
+msgstr "Solicitudes aprobadas que generan asiento contable y aún no lo tienen"
+
+#. module: approval_account
+#: model:approval.category.step,name:approval_account.approval_category_account_move_step_approvers
+#: model:approval.category.step,name:approval_account.approval_category_accounting_request_step_approvers
+#: model:approval.category.step,name:approval_account.approval_category_collection_in_kind_step_approvers
+#: model:ir.model.fields,field_description:approval_account.field_account_move__approval_user_ids
+#: model_terms:ir.ui.view,arch_db:approval_account.view_account_move_form_approval
+msgid "Approvers"
+msgstr "Aprobadores"
+
+#. module: approval_account
+#: model:ir.model.fields,field_description:approval_account.field_res_company__auto_post_on_approval
+#: model:ir.model.fields,field_description:approval_account.field_res_config_settings__auto_post_on_approval
+msgid "Auto-Post on Approval"
+msgstr "Contabilizar al aprobar"
+
+#. module: approval_account
+#: model:ir.model.fields,help:approval_account.field_approval_category__move_auto_post
+msgid ""
+"Automatically post invoice/bill when all approvals are granted. Defaults "
+"from the company's Auto-Post on Approval setting; this field is what "
+"actually commands auto-posting per category."
+msgstr ""
+"Contabiliza la factura automáticamente cuando se otorgan todas las "
+"aprobaciones. Toma su valor inicial del ajuste 'Contabilizar al aprobar' de "
+"la compañía; este campo es el que realmente manda por categoría."
+
+#. module: approval_account
+#: model_terms:ir.ui.view,arch_db:approval_account.res_config_settings_view_form_account_approval
+msgid "Automatically post invoices and bills when all approvals are granted"
+msgstr ""
+"Contabilizar las facturas automáticamente cuando se otorgan todas las "
+"aprobaciones"
+
+#. module: approval_account
+#: model:ir.model.fields,help:approval_account.field_res_company__auto_post_on_approval
+#: model:ir.model.fields,help:approval_account.field_res_config_settings__auto_post_on_approval
+msgid ""
+"Automatically post invoices/bills when all required approvals are granted. "
+"If disabled, users must manually post after approval."
+msgstr ""
+"Contabiliza las facturas automáticamente cuando se otorgan todas las "
+"aprobaciones requeridas. Si se desactiva, los usuarios deben contabilizar "
+"manualmente tras la aprobación."
+
+#. module: approval_account
+#: model_terms:ir.ui.view,arch_db:approval_account.view_approval_category_form_inherit_accounting_link
+msgid "Automation"
+msgstr "Automatización"
+
+#. module: approval_account
+#: model_terms:ir.ui.view,arch_db:approval_account.view_approval_request_form_inherit_accounting
+msgid "Bank Reconciliation"
+msgstr "Conciliación bancaria"
+
+#. module: approval_account
+#: model:ir.model.fields,field_description:approval_account.field_approval_request__bank_statement_date
+msgid "Bank Statement Date"
+msgstr "Fecha del extracto bancario"
+
+#. module: approval_account
+#: model:ir.model.fields,field_description:approval_account.field_approval_request__bank_statement_date_end
+msgid "Bank Statement Date End"
+msgstr ""
+
+#. module: approval_account
+#: model:ir.model,name:approval_account.model_account_bank_statement_line
+#: model:ir.model.fields,field_description:approval_account.field_approval_category__has_bsl
+#: model:ir.model.fields,field_description:approval_account.field_approval_request__bank_statement_line_id
+msgid "Bank Statement Line"
+msgstr "Línea de estado de cuenta bancario"
+
+#. module: approval_account
+#: model:ir.model.fields,field_description:approval_account.field_approval_request__has_bsl
+msgid "Bank Statement Line Requirement"
+msgstr "Requisito de línea de extracto bancario"
+
+#. module: approval_account
+#: model:ir.model.fields,field_description:approval_account.field_approval_request__bank_statement_settlement_days
+msgid "Bank Statement Settlement Days"
+msgstr ""
+
+#. module: approval_account
+#. odoo-python
+#: code:addons/approval_account/models/approval_request.py:0
+msgid ""
+"Bank transaction %(line)s is already assigned to approval request "
+"%(request)s. Refuse or cancel that request first, or pick another "
+"transaction."
+msgstr ""
+"La transacción bancaria %(line)s ya está asignada a la solicitud de "
+"aprobación %(request)s. Rechace o cancele esa solicitud primero, o elija "
+"otra transacción."
+
+#. module: approval_account
+#: model_terms:ir.ui.view,arch_db:approval_account.view_partner_list_account_approval
+msgid "Bill Approval"
+msgstr "Aprobación de factura de proveedor"
+
+#. module: approval_account
+#: model:ir.model.fields,field_description:approval_account.field_res_partner__bill_approval_required
+#: model:ir.model.fields,field_description:approval_account.field_res_users__bill_approval_required
+msgid "Bill Approval Required"
+msgstr "Requiere aprobación de factura de proveedor"
+
+#. module: approval_account
+#: model:ir.model.fields,field_description:approval_account.field_res_company__bill_approval_threshold
+#: model:ir.model.fields,field_description:approval_account.field_res_config_settings__bill_approval_threshold
+msgid "Bill Approval Threshold Amount"
+msgstr "Umbral de aprobación de facturas de proveedor"
+
+#. module: approval_account
+#: model:approval.category,name:approval_account.approval_category_accounting_request
+msgid "Bill Request"
+msgstr "Solicitud de factura de proveedor"
+
+#. module: approval_account
+#: model:ir.model.fields,field_description:approval_account.field_account_move__can_request_approval
+msgid "Can Request Approval"
+msgstr "Puede solicitar aprobación"
+
+#. module: approval_account
+#. odoo-python
+#: code:addons/approval_account/models/approval_request.py:0
+msgid ""
+"Cannot approve request '%(request)s': its category '%(category)s' requires a"
+" bank statement line. Select the matching bank transaction before approving."
+msgstr ""
+"No se puede aprobar la solicitud '%(request)s': su categoría '%(category)s' "
+"requiere una línea de extracto bancario. Seleccione la transacción bancaria "
+"correspondiente antes de aprobar."
+
+#. module: approval_account
+#. odoo-python
+#: code:addons/approval_account/models/approval_request.py:0
+msgid ""
+"Cannot assign the same bank transaction to %(count)d requests at once — a "
+"bank line can only be assigned to one live approval request."
+msgstr ""
+"No se puede asignar la misma transacción bancaria a %(count)d solicitudes a "
+"la vez: una línea bancaria solo puede asignarse a una solicitud de "
+"aprobación vigente."
+
+#. module: approval_account
+#: model:ir.model.fields,help:approval_account.field_approval_category__approval_type
+msgid ""
+"Category of approval for filtering and grouping purposes (e.g., 'purchase', "
+"'expense', 'vacation'). Used to organize and filter approval requests."
+msgstr ""
+"Categoría de aprobación para filtrar y agrupar (por ejemplo 'compra', "
+"'gasto', 'vacaciones'). Sirve para organizar y filtrar las solicitudes de "
+"aprobación."
+
+#. module: approval_account
+#: model:ir.model.fields,field_description:approval_account.field_account_bank_statement_line__approval_request_ids
+msgid "Claiming Approval Requests"
+msgstr "Solicitud de aprobación"
+
+#. module: approval_account
+#: model:approval.category,name:approval_account.approval_category_collection_in_kind
+msgid "Collection in Kind"
+msgstr "Cobro en especie"
+
+#. module: approval_account
+#: model:ir.model,name:approval_account.model_res_company
+msgid "Companies"
+msgstr "Empresas"
+
+#. module: approval_account
+#: model:ir.model.fields,field_description:approval_account.field_res_config_settings__company_currency_id
+msgid "Company Currency"
+msgstr "Moneda de la compañía"
+
+#. module: approval_account
+#: model:ir.model.fields,help:approval_account.field_approval_request__journal_type
+msgid "Computed journal type based on account move type for filtering."
+msgstr ""
+"Tipo de diario calculado a partir del tipo de movimiento contable, para "
+"filtrar."
+
+#. module: approval_account
+#: model:ir.model,name:approval_account.model_res_config_settings
+msgid "Config Settings"
+msgstr "Ajustes de configuración"
+
+#. module: approval_account
+#: model_terms:ir.ui.view,arch_db:approval_account.res_config_settings_view_form_account_approval
+msgid "Configure Approval Categories"
+msgstr "Configurar categorías de aprobación"
+
+#. module: approval_account
+#: model_terms:ir.ui.view,arch_db:approval_account.res_config_settings_view_form_account_approval
+msgid "Configure amount thresholds for invoice and bill approvals"
+msgstr "Configure los umbrales de importe para la aprobación de facturas"
+
+#. module: approval_account
+#: model_terms:ir.ui.view,arch_db:approval_account.res_config_settings_view_form_account_approval
+msgid "Configure and manage invoice/bill approval workflows"
+msgstr "Configure y administre los flujos de aprobación de facturas"
+
+#. module: approval_account
+#: model:ir.model,name:approval_account.model_res_partner
+msgid "Contact"
+msgstr "Contacto"
+
+#. module: approval_account
+#: model:ir.model.fields,field_description:approval_account.field_approval_request__count_account_move
+msgid "Count Account Move"
+msgstr "Número de asientos contables"
+
+#. module: approval_account
+#: model:ir.model.fields,field_description:approval_account.field_account_bank_statement_line__count_approval
+#: model:ir.model.fields,field_description:approval_account.field_account_move__count_approval
+msgid "Count Approval"
+msgstr "Número de aprobaciones"
+
+#. module: approval_account
+#: model_terms:ir.ui.view,arch_db:approval_account.view_approval_request_tree
+msgid "Create Journal Entries"
+msgstr "Crear asientos contables"
+
+#. module: approval_account
+#: model_terms:ir.ui.view,arch_db:approval_account.view_approval_request_form_inherit_accounting
+msgid "Create Journal Entry"
+msgstr "Crear asiento contable"
+
+#. module: approval_account
+#: model:approval.category,description:approval_account.approval_category_accounting_request
+msgid "Create vendor bill from approval request"
+msgstr "Crear factura de proveedor a partir de la solicitud de aprobación"
+
+#. module: approval_account
+#: model_terms:ir.actions.act_window,help:approval_account.action_approval_category_accounting
+msgid "Create your first accounting approval type"
+msgstr "Cree su primer tipo de aprobación contable"
+
+#. module: approval_account
+#: model:ir.model.fields,help:approval_account.field_approval_category__move_amount_currency_id
+msgid ""
+"Currency the invoice/bill amount criteria are expressed in. A global "
+"category has no company of its own, so it falls back to the active company's"
+" currency instead of leaving the thresholds currency-less. That fallback is "
+"a display currency only: for a global category the criteria are read in the "
+"currency of the company the document belongs to."
+msgstr ""
+"Moneda en la que están expresados los criterios de importe de las facturas. "
+"Una categoría global no tiene compañía propia, así que recurre a la moneda "
+"de la compañía activa en lugar de dejar los umbrales sin moneda."
+
+#. module: approval_account
+#: model:ir.model.fields,help:approval_account.field_account_move__approval_state
+msgid ""
+"Current approval status:\n"
+"        • new: Approval created but not submitted\n"
+"        • pending: Waiting for approvers\n"
+"        • approved: All required approvals obtained\n"
+"        • refused: Approval was refused (terminal)\n"
+"        • cancelled: Approval was retracted or expired (terminal)"
+msgstr ""
+"Estado actual de la aprobación:\n"
+"        • nueva: aprobación creada pero no enviada\n"
+"        • pendiente: esperando a los aprobadores\n"
+"        • aprobada: se obtuvieron todas las aprobaciones requeridas\n"
+"        • rechazada: la aprobación fue rechazada (terminal)\n"
+"        • cancelada: la aprobación fue retirada o expiró (terminal)"
+
+#. module: approval_account
+#: model:ir.model.fields.selection,name:approval_account.selection__approval_category__account_move_type__out_refund
+msgid "Customer Credit Note"
+msgstr "Nota de crédito de cliente"
+
+#. module: approval_account
+#. odoo-python
+#: code:addons/approval_account/models/approval_request.py:0
+msgid "Customer Credit Notes"
+msgstr "Notas de crédito de cliente"
+
+#. module: approval_account
+#: model:ir.model.fields.selection,name:approval_account.selection__approval_category__account_move_type__out_invoice
+msgid "Customer Invoice"
+msgstr "Factura de cliente"
+
+#. module: approval_account
+#. odoo-python
+#: code:addons/approval_account/models/approval_request.py:0
+#: model_terms:ir.ui.view,arch_db:approval_account.view_partner_form_account_approval
+msgid "Customer Invoices"
+msgstr "Facturas de cliente"
+
+#. module: approval_account
+#. odoo-python
+#: code:addons/approval_account/models/approval_request.py:0
+msgid "Customer Invoices & Credit Notes"
+msgstr "Facturas y notas de crédito de cliente"
+
+#. module: approval_account
+#: model:ir.model.fields,help:approval_account.field_res_company__invoice_approval_threshold
+#: model:ir.model.fields,help:approval_account.field_res_config_settings__invoice_approval_threshold
+msgid ""
+"Customer invoices with total >= this amount require approval. Set to 0 to "
+"disable amount-based approval for invoices."
+msgstr ""
+"Las facturas de cliente cuyo total sea >= este importe requieren aprobación."
+" Ponga 0 para desactivar la aprobación por importe en facturas de cliente."
+
+#. module: approval_account
+#: model_terms:ir.ui.view,arch_db:approval_account.view_res_partner_filter_account_approval
+msgid "Customers that require invoice approval"
+msgstr "Clientes que requieren aprobación de factura"
+
+#. module: approval_account
+#: model:ir.model.fields,help:approval_account.field_account_move__date_approval_requested
+msgid "Date and time when approval was requested for this document"
+msgstr "Fecha y hora en que se solicitó la aprobación de este documento"
+
+#. module: approval_account
+#: model:ir.model.fields,help:approval_account.field_account_move__date_approval_granted
+msgid "Date and time when final approval was granted"
+msgstr "Fecha y hora en que se otorgó la aprobación final"
+
+#. module: approval_account
+#: model:ir.model.fields,help:approval_account.field_approval_request__payment_date
+msgid "Date the request was marked paid. Cleared when reverted to Not Paid."
+msgstr ""
+"Fecha en que la solicitud se marcó como pagada. Se borra al revertirla a No "
+"pagada."
+
+#. module: approval_account
+#: model_terms:ir.actions.act_window,help:approval_account.action_approval_category_accounting
+msgid ""
+"Define approval workflows for invoices and bills: <br><br>\n"
+"                <strong>Flow 1: Mixin\n"
+"                Flow (Move → Approval)</strong><br> • Set Approval Type = \"Accounting\"<br> •\n"
+"                Leave Target Model empty<br> • Configure approval triggers (amount, partner,\n"
+"                journal, etc.)<br> • Moves trigger approval automatically based on rules <br><br>\n"
+"                <strong>Flow\n"
+"                2: Creation Flow (Approval → Move)</strong><br> • Set Approval Type = \"Accounting\"<br>\n"
+"                • Set Target Model = \"Journal Entry\"<br> • Set \"Has Product\" = Required<br> •\n"
+"                Approval creates invoice/bill when approved"
+msgstr ""
+"Defina los flujos de aprobación de facturas: <br><br>\n"
+"                <strong>Flujo 1: flujo mixin\n"
+"                (Movimiento → Aprobación)</strong><br> • Ponga Tipo de aprobación = \"Contabilidad\"<br> •\n"
+"                Deje vacío el Modelo destino<br> • Configure los disparadores de aprobación (importe, contacto,\n"
+"                diario, etc.)<br> • Los movimientos disparan la aprobación automáticamente según las reglas <br><br>\n"
+"                <strong>Flujo\n"
+"                2: flujo de creación (Aprobación → Movimiento)</strong><br> • Ponga Tipo de aprobación = \"Contabilidad\"<br>\n"
+"                • Ponga Modelo destino = \"Asiento contable\"<br> • Ponga \"Tiene producto\" = Requerido<br> •\n"
+"                La aprobación crea la factura al ser aprobada"
+
+#. module: approval_account
+#: model:ir.model.fields,field_description:approval_account.field_account_bank_statement_line__display_name
+#: model:ir.model.fields,field_description:approval_account.field_account_journal__display_name
+#: model:ir.model.fields,field_description:approval_account.field_account_move__display_name
+#: model:ir.model.fields,field_description:approval_account.field_account_move_line__display_name
+#: model:ir.model.fields,field_description:approval_account.field_approval_category__display_name
+#: model:ir.model.fields,field_description:approval_account.field_approval_request__display_name
+#: model:ir.model.fields,field_description:approval_account.field_approval_request_line__display_name
+#: model:ir.model.fields,field_description:approval_account.field_res_company__display_name
+#: model:ir.model.fields,field_description:approval_account.field_res_config_settings__display_name
+#: model:ir.model.fields,field_description:approval_account.field_res_partner__display_name
+msgid "Display Name"
+msgstr "Nombre a mostrar"
+
+#. module: approval_account
+#: model:ir.model.fields,help:approval_account.field_approval_request__bank_statement_date
+msgid ""
+"First date a matching bank statement line may carry: the date part of the "
+"request's own date."
+msgstr ""
+"Fecha que debe llevar la línea de extracto bancario: la parte de fecha de la"
+" propia fecha de la solicitud."
+
+#. module: approval_account
+#: model_terms:ir.ui.view,arch_db:approval_account.view_approval_category_form_inherit_accounting_link
+msgid "Flow"
+msgstr "Flujo"
+
+#. module: approval_account
+#. odoo-python
+#: code:addons/approval_account/models/approval_request.py:0
+msgid ""
+"General journal entries are not supported in creation flow.\n"
+"Only invoices and bills can be created from approval requests."
+msgstr ""
+"Los asientos contables generales no están soportados en el flujo de creación.\n"
+"Solo pueden crearse facturas a partir de solicitudes de aprobación."
+
+#. module: approval_account
+#: model:res.groups,comment:approval_account.group_treasury_payment
+msgid ""
+"Grants the \"Mark as Paid\" / \"Not Paid\" toggle on approved requests, "
+"write access to the request's payment tracking fields (payment_state, "
+"payment_date, paid_by_user_id — enforced at the ORM level, not just UI), the"
+" \"Treasury > To Pay\" menu, and eligibility for automatic payment-marking "
+"on bank reconciliation."
+msgstr ""
+"Otorga el interruptor \"Marcar como pagado\" / \"No pagado\" en las "
+"solicitudes aprobadas, acceso de escritura a los campos de seguimiento de "
+"pago de la solicitud (payment_state, payment_date, paid_by_user_id — "
+"aplicado a nivel del ORM, no solo en la interfaz), el menú \"Tesorería > Por"
+" pagar\" y la elegibilidad para el marcado automático de pago al conciliar "
+"el banco."
+
+#. module: approval_account
+#: model:ir.model.fields,field_description:approval_account.field_approval_category__has_journal
+#: model:ir.model.fields,field_description:approval_account.field_approval_request__has_journal
+msgid "Has Journal"
+msgstr "Tiene diario"
+
+#. module: approval_account
+#: model:ir.model.fields,help:approval_account.field_approval_request__bank_statement_settlement_days
+msgid ""
+"How many days after the request date the bank may still settle this payment."
+" Zero here, because this module does not know how the payment was made; a "
+"module that knows overrides the compute."
+msgstr ""
+
+#. module: approval_account
+#: model:ir.model.fields,field_description:approval_account.field_account_bank_statement_line__id
+#: model:ir.model.fields,field_description:approval_account.field_account_journal__id
+#: model:ir.model.fields,field_description:approval_account.field_account_move__id
+#: model:ir.model.fields,field_description:approval_account.field_account_move_line__id
+#: model:ir.model.fields,field_description:approval_account.field_approval_category__id
+#: model:ir.model.fields,field_description:approval_account.field_approval_request__id
+#: model:ir.model.fields,field_description:approval_account.field_approval_request_line__id
+#: model:ir.model.fields,field_description:approval_account.field_res_company__id
+#: model:ir.model.fields,field_description:approval_account.field_res_config_settings__id
+#: model:ir.model.fields,field_description:approval_account.field_res_partner__id
+msgid "ID"
+msgstr ""
+
+#. module: approval_account
+#: model:ir.model.fields,help:approval_account.field_res_partner__invoice_approval_required
+#: model:ir.model.fields,help:approval_account.field_res_users__invoice_approval_required
+msgid ""
+"If checked, all customer invoices for this partner will require approval "
+"regardless of amount or other settings. Use this for high-value customers or"
+" special approval requirements."
+msgstr ""
+"Si se marca, todas las facturas de cliente de este contacto requerirán "
+"aprobación sin importar el monto ni otros ajustes. Úselo para clientes de "
+"alto valor o con requisitos especiales de aprobación."
+
+#. module: approval_account
+#: model:ir.model.fields,help:approval_account.field_account_journal__approval_required
+msgid ""
+"If checked, all invoices and bills using this journal will require approval "
+"regardless of amount or other settings. Use this for controlled journals "
+"(high-value, foreign currency, etc.)."
+msgstr ""
+"Si se marca, todas las facturas que usen este diario requerirán aprobación "
+"sin importar el monto ni otros ajustes. Úselo para diarios controlados (alto"
+" valor, moneda extranjera, etc.)."
+
+#. module: approval_account
+#: model:ir.model.fields,help:approval_account.field_res_partner__bill_approval_required
+#: model:ir.model.fields,help:approval_account.field_res_users__bill_approval_required
+msgid ""
+"If checked, all vendor bills from this partner will require approval "
+"regardless of amount or other settings. Use this for new vendors or high-"
+"risk suppliers."
+msgstr ""
+"Si se marca, todas las facturas de proveedor de este contacto requerirán "
+"aprobación sin importar el monto ni otros ajustes. Úselo para proveedores "
+"nuevos o de alto riesgo."
+
+#. module: approval_account
+#: model:ir.model.fields,help:approval_account.field_approval_category__move_partner_ids
+msgid "If set, this category applies only to these partners"
+msgstr "Si se define, esta categoría aplica únicamente a estos contactos"
+
+#. module: approval_account
+#: model:ir.model.fields,help:approval_account.field_approval_category__journal_ids
+msgid "If set, this category applies when move uses these journals"
+msgstr ""
+"Si se define, esta categoría aplica cuando el movimiento usa estos diarios"
+
+#. module: approval_account
+#: model:ir.model.fields,field_description:approval_account.field_approval_request__include_reconciled_bsl
+msgid "Include already-reconciled transactions"
+msgstr "Incluir transacciones ya conciliadas"
+
+#. module: approval_account
+#: model_terms:ir.ui.view,arch_db:approval_account.view_partner_list_account_approval
+msgid "Invoice Approval"
+msgstr "Aprobación de factura de cliente"
+
+#. module: approval_account
+#: model:ir.model.fields,field_description:approval_account.field_res_partner__invoice_approval_required
+#: model:ir.model.fields,field_description:approval_account.field_res_users__invoice_approval_required
+msgid "Invoice Approval Required"
+msgstr "Requiere aprobación de factura de cliente"
+
+#. module: approval_account
+#: model:ir.model.fields,field_description:approval_account.field_res_company__invoice_approval_threshold
+#: model:ir.model.fields,field_description:approval_account.field_res_config_settings__invoice_approval_threshold
+msgid "Invoice Approval Threshold Amount"
+msgstr "Umbral de aprobación de facturas de cliente"
+
+#. module: approval_account
+#: model_terms:ir.ui.view,arch_db:approval_account.view_partner_form_account_approval
+msgid "Invoice and Bill Notes"
+msgstr ""
+
+#. module: approval_account
+#. odoo-python
+#: code:addons/approval_account/models/approval_request.py:0
+msgid "Invoice/Bill "
+msgstr "Factura "
+
+#. module: approval_account
+#: model:approval.category,name:approval_account.approval_category_account_move
+#: model_terms:ir.ui.view,arch_db:approval_account.res_config_settings_view_form_account_approval
+msgid "Invoice/Bill Approval"
+msgstr "Aprobación de facturas"
+
+#. module: approval_account
+#: model:ir.model.fields,field_description:approval_account.field_res_partner__invoice_approval_notes
+#: model:ir.model.fields,field_description:approval_account.field_res_users__invoice_approval_notes
+msgid "Invoice/Bill Approval Notes"
+msgstr "Notas de aprobación de facturas"
+
+#. module: approval_account
+#: model:mail.message.subtype,description:approval_account.mt_invoice_refused
+msgid "Invoice/Bill approval refused"
+msgstr "Aprobación de factura rechazada"
+
+#. module: approval_account
+#: model:mail.message.subtype,description:approval_account.mt_invoice_approved
+msgid "Invoice/Bill approved"
+msgstr "Factura aprobada"
+
+#. module: approval_account
+#: model:ir.model.fields,help:approval_account.field_approval_request__account_move_ids
+msgid ""
+"Invoices and bills that carry this request as their approval — the mixin "
+"flow. Documents this request CREATED are reached through line_ids instead."
+msgstr ""
+
+#. module: approval_account
+#: model:ir.model.fields,help:approval_account.field_approval_category__move_amount_max
+msgid ""
+"Invoices/bills with amount <= this value will use this category (0 = no "
+"limit)"
+msgstr ""
+"Las facturas con importe <= este valor usarán esta categoría (0 = sin "
+"límite)"
+
+#. module: approval_account
+#: model:ir.model.fields,help:approval_account.field_approval_category__move_amount_min
+msgid "Invoices/bills with amount >= this value will use this category"
+msgstr "Las facturas con importe >= este valor usarán esta categoría"
+
+#. module: approval_account
+#: model:ir.ui.menu,name:approval_account.approvals_menu_invoicing
+msgid "Invoicing"
+msgstr "Facturación"
+
+#. module: approval_account
+#: model:ir.model.fields,field_description:approval_account.field_approval_request__is_payable
+msgid "Is Payable"
+msgstr "Es pagable"
+
+#. module: approval_account
+#. odoo-python
+#: code:addons/approval_account/models/approval_request.py:0
+#: model:ir.model,name:approval_account.model_account_journal
+#: model:ir.model.fields,field_description:approval_account.field_approval_category__journal_ids
+#: model:ir.model.fields,field_description:approval_account.field_approval_request__journal_id
+#: model_terms:ir.ui.view,arch_db:approval_account.report_approval_request_document_journal
+#: model_terms:ir.ui.view,arch_db:approval_account.view_approval_category_form_inherit_accounting_link
+#: model_terms:ir.ui.view,arch_db:approval_account.view_approval_search_search_inherit_payment
+msgid "Journal"
+msgstr "Diario"
+
+#. module: approval_account
+#. odoo-python
+#: code:addons/approval_account/models/approval_request.py:0
+#: model_terms:ir.ui.view,arch_db:approval_account.view_approval_request_form_inherit_accounting
+msgid "Journal Entries"
+msgstr "Asientos contables"
+
+#. module: approval_account
+#: model:ir.model,name:approval_account.model_account_move
+#: model:ir.model.fields,field_description:approval_account.field_approval_request_line__account_move_id
+#: model:ir.model.fields.selection,name:approval_account.selection__approval_category__target_model__account_move
+msgid "Journal Entry"
+msgstr "Asiento contable"
+
+#. module: approval_account
+#: model:ir.model,name:approval_account.model_account_move_line
+msgid "Journal Item"
+msgstr "Apunte contable"
+
+#. module: approval_account
+#. odoo-python
+#: code:addons/approval_account/models/account_move.py:0
+msgid "Journal Notes"
+msgstr "Notas del diario"
+
+#. module: approval_account
+#: model:ir.model.fields,field_description:approval_account.field_approval_request__journal_type
+msgid "Journal Type"
+msgstr "Tipo de diario"
+
+#. module: approval_account
+#: model_terms:ir.ui.view,arch_db:approval_account.view_approval_category_form_inherit_accounting_link
+msgid "Journals"
+msgstr "Diarios"
+
+#. module: approval_account
+#: model_terms:ir.ui.view,arch_db:approval_account.view_account_journal_search_approval
+msgid "Journals that require approval for all moves"
+msgstr "Diarios que requieren aprobación para todos sus movimientos"
+
+#. module: approval_account
+#: model_terms:ir.ui.view,arch_db:approval_account.view_approval_search_search_inherit_payment
+msgid "Last 7 Days"
+msgstr "Últimos 7 días"
+
+#. module: approval_account
+#: model:ir.model.fields,help:approval_account.field_approval_request__bank_statement_date_end
+msgid ""
+"Last date a matching bank statement line may carry: the request date plus "
+"the settlement days."
+msgstr ""
+
+#. module: approval_account
+#: model_terms:ir.ui.view,arch_db:approval_account.view_approval_category_form_inherit_accounting_link
+msgid "Leave empty for all journals"
+msgstr "Déjelo vacío para todos los diarios"
+
+#. module: approval_account
+#: model_terms:ir.ui.view,arch_db:approval_account.view_approval_category_form_inherit_accounting_link
+msgid "Leave empty for all partners"
+msgstr "Déjelo vacío para todos los contactos"
+
+#. module: approval_account
+#: model:ir.model.fields,help:approval_account.field_approval_request_line__account_move_line_id
+msgid "Link to the account move line created from this approval line"
+msgstr "Enlace al apunte contable creado a partir de esta línea de aprobación"
+
+#. module: approval_account
+#: model:ir.model.fields,help:approval_account.field_account_move__approval_request_id
+msgid ""
+"Link to the approval request for this document. Automatically created when "
+"approval is requested."
+msgstr ""
+"Enlace a la solicitud de aprobación de este documento. Se crea "
+"automáticamente al solicitar la aprobación."
+
+#. module: approval_account
+#: model:ir.model.fields,help:approval_account.field_account_move_line__approval_request_line_id
+msgid "Link to the approval request line that created this account move line"
+msgstr ""
+"Enlace a la línea de solicitud de aprobación que creó este apunte contable"
+
+#. module: approval_account
+#: model:ir.actions.server,name:approval_account.action_approval_request_mark_not_paid
+msgid "Mark as Not Paid"
+msgstr "Marcar como no pagado"
+
+#. module: approval_account
+#: model:ir.actions.server,name:approval_account.action_approval_request_mark_paid
+#: model_terms:ir.ui.view,arch_db:approval_account.view_approval_request_form_inherit_accounting
+msgid "Mark as Paid"
+msgstr "Marcar como pagado"
+
+#. module: approval_account
+#. odoo-python
+#: code:addons/approval_account/models/approval_category.py:0
+msgid ""
+"Minimum amount (%(minimum)s) cannot be greater than maximum amount "
+"(%(maximum)s)."
+msgstr ""
+"El importe mínimo (%(minimum)s) no puede ser mayor que el importe máximo "
+"(%(maximum)s)."
+
+#. module: approval_account
+#: model:ir.model.fields,field_description:approval_account.field_approval_category__move_amount_currency_id
+msgid "Move Amount Currency"
+msgstr "Moneda del importe del movimiento"
+
+#. module: approval_account
+#: model:ir.model.fields,field_description:approval_account.field_approval_category__move_amount_max
+msgid "Move Amount Max"
+msgstr "Importe máximo del movimiento"
+
+#. module: approval_account
+#: model:ir.model.fields,field_description:approval_account.field_approval_category__move_amount_min
+msgid "Move Amount Min"
+msgstr "Importe mínimo del movimiento"
+
+#. module: approval_account
+#: model:ir.model.fields,field_description:approval_account.field_approval_category__move_auto_post
+msgid "Move Auto Post"
+msgstr "Contabilizar movimiento automáticamente"
+
+#. module: approval_account
+#: model:ir.model.fields,field_description:approval_account.field_approval_category__move_partner_ids
+msgid "Move Partner"
+msgstr "Contacto del movimiento"
+
+#. module: approval_account
+#. odoo-python
+#: code:addons/approval_account/models/account_move.py:0
+msgid ""
+"No accounting approval category is available for %(company)s, but %(document)s requires approval.\n"
+"\n"
+"Create one for that company, or make an existing category global by clearing its Company field.\n"
+"\n"
+"Go to: Accounting → Configuration → Approval Types"
+msgstr ""
+
+#. module: approval_account
+#: model:ir.model.fields.selection,name:approval_account.selection__approval_category__has_bsl__no
+#: model:ir.model.fields.selection,name:approval_account.selection__approval_category__has_journal__no
+msgid "None"
+msgstr "Ninguno"
+
+#. module: approval_account
+#. odoo-python
+#: code:addons/approval_account/models/approval_request.py:0
+msgid ""
+"None of the selected requests can be invoiced. A request must be approved, "
+"target journal entries, have lines and not have been invoiced already."
+msgstr ""
+"Ninguna de las solicitudes seleccionadas se puede facturar. Una solicitud "
+"debe estar aprobada, generar asientos contables, tener líneas y no haber "
+"sido facturada antes."
+
+#. module: approval_account
+#: model:ir.model.fields.selection,name:approval_account.selection__approval_request__payment_state__not_paid
+#: model_terms:ir.ui.view,arch_db:approval_account.view_approval_request_form_inherit_accounting
+msgid "Not Paid"
+msgstr "No pagado"
+
+#. module: approval_account
+#: model_terms:ir.actions.act_window,help:approval_account.action_approval_request_to_pay
+msgid "Nothing pending — all approved payments are up to date."
+msgstr "Nada pendiente: todos los pagos aprobados están al corriente."
+
+#. module: approval_account
+#: model_terms:ir.actions.act_window,help:approval_account.action_approval_request_to_invoice
+msgid ""
+"Nothing to invoice — every approved request already has its journal entry."
+msgstr ""
+"Nada por facturar: todas las solicitudes aprobadas ya tienen su asiento "
+"contable."
+
+#. module: approval_account
+#. odoo-python
+#: code:addons/approval_account/models/approval_request.py:0
+msgid ""
+"Only members of the 'Release Payments' group can change the payment status "
+"of an approval request."
+msgstr ""
+"Solo los miembros del grupo 'Liberar pagos' pueden cambiar el estado de pago"
+" de una solicitud de aprobación."
+
+#. module: approval_account
+#: model:ir.model.fields,help:approval_account.field_approval_request__include_reconciled_bsl
+msgid ""
+"Opt-in: allow selecting a bank statement line that is already reconciled, "
+"for payments processed outside the approval flow. Off by default, so the "
+"picker shows only unreconciled lines."
+msgstr ""
+"Opcional: permite seleccionar una línea de extracto bancario ya conciliada, "
+"para pagos procesados fuera del flujo de aprobación. Desactivado por "
+"defecto, de modo que el selector muestra solo líneas sin conciliar."
+
+#. module: approval_account
+#: model:ir.model.fields.selection,name:approval_account.selection__approval_category__has_bsl__optional
+#: model:ir.model.fields.selection,name:approval_account.selection__approval_category__has_journal__optional
+msgid "Optional"
+msgstr "Opcional"
+
+#. module: approval_account
+#: model:ir.model.fields.selection,name:approval_account.selection__approval_request__payment_state__paid
+#: model_terms:ir.ui.view,arch_db:approval_account.view_approval_search_search_inherit_payment
+msgid "Paid"
+msgstr "Pagado"
+
+#. module: approval_account
+#: model:ir.model.fields,field_description:approval_account.field_approval_request__paid_by_user_id
+msgid "Paid By User"
+msgstr "Marcada como pagada por"
+
+#. module: approval_account
+#. odoo-python
+#: code:addons/approval_account/models/account_move.py:0
+msgid "Partner Notes"
+msgstr "Notas del contacto"
+
+#. module: approval_account
+#: model_terms:ir.ui.view,arch_db:approval_account.view_approval_category_form_inherit_accounting_link
+msgid "Partners"
+msgstr "Contactos"
+
+#. module: approval_account
+#: model:ir.model.fields.selection,name:approval_account.selection__approval_category__approval_type__payment
+#: model:ir.model.fields.selection,name:approval_account.selection__approval_category__target_model__account_payment
+msgid "Payment"
+msgstr "Pago"
+
+#. module: approval_account
+#: model:ir.model.fields,field_description:approval_account.field_approval_request__payment_date
+msgid "Payment Date"
+msgstr "Fecha de pago"
+
+#. module: approval_account
+#: model:ir.model.fields,field_description:approval_account.field_approval_request__payment_state
+msgid "Payment State"
+msgstr "Estado de pago"
+
+#. module: approval_account
+#: model_terms:ir.ui.view,arch_db:approval_account.view_approval_search_search_inherit_payment
+msgid "Payment Status"
+msgstr "Estado de pago"
+
+#. module: approval_account
+#: model_terms:ir.ui.view,arch_db:approval_account.view_approval_request_form_inherit_accounting
+msgid "Payment Tracking"
+msgstr "Seguimiento del pago"
+
+#. module: approval_account
+#: model:approval.category,description:approval_account.approval_category_collection_in_kind
+msgid "Payment-in-kind approval for assets received as debt payment"
+msgstr ""
+"Aprobación de cobro en especie por activos recibidos como pago de deuda"
+
+#. module: approval_account
+#: model:ir.model.fields,field_description:approval_account.field_account_move__pending_approver_ids
+msgid "Pending Approvers"
+msgstr "Aprobadores pendientes"
+
+#. module: approval_account
+#. odoo-python
+#: code:addons/approval_account/wizards/res_config_settings.py:0
+msgid "Pending Invoice/Bill Approvals"
+msgstr "Aprobaciones de facturas pendientes"
+
+#. module: approval_account
+#: model:ir.model.fields,help:approval_account.field_account_move__approval_progress
+msgid "Percentage of approvals completed (approved / total approvers)"
+msgstr ""
+"Porcentaje de aprobaciones completadas (aprobadas / total de aprobadores)"
+
+#. module: approval_account
+#: model:ir.model.fields.selection,name:approval_account.selection__approval_request__journal_type__purchase
+msgid "Purchase"
+msgstr "Compra"
+
+#. module: approval_account
+#: model:mail.message.subtype,name:approval_account.mt_invoice_refused
+msgid "Refused"
+msgstr "Rechazada"
+
+#. module: approval_account
+#. odoo-python
+#: code:addons/approval_account/models/account_move.py:0
+msgid "Rejected"
+msgstr "Rechazada"
+
+#. module: approval_account
+#. odoo-python
+#: code:addons/approval_account/models/account_move.py:0
+msgid "Rejected by"
+msgstr "Rechazada por"
+
+#. module: approval_account
+#: model:res.groups,name:approval_account.group_treasury_payment
+msgid "Release Payments"
+msgstr "Liberar pagos"
+
+#. module: approval_account
+#: model:ir.model,name:approval_account.model_approval_request_line
+msgid "Request Line"
+msgstr "Línea de solicitud"
+
+#. module: approval_account
+#: model:ir.model.fields.selection,name:approval_account.selection__approval_category__has_bsl__required
+#: model:ir.model.fields.selection,name:approval_account.selection__approval_category__has_journal__required
+msgid "Required"
+msgstr "Requerido"
+
+#. module: approval_account
+#: model_terms:ir.ui.view,arch_db:approval_account.view_account_journal_search_approval
+msgid "Requires Approval"
+msgstr "Requiere aprobación"
+
+#. module: approval_account
+#: model_terms:ir.ui.view,arch_db:approval_account.view_res_partner_filter_account_approval
+msgid "Requires Bill Approval"
+msgstr "Requiere aprobación de factura de proveedor"
+
+#. module: approval_account
+#: model_terms:ir.ui.view,arch_db:approval_account.view_res_partner_filter_account_approval
+msgid "Requires Invoice Approval"
+msgstr "Requiere aprobación de factura de cliente"
+
+#. module: approval_account
+#: model:ir.model.fields.selection,name:approval_account.selection__approval_request__journal_type__sale
+msgid "Sale"
+msgstr "Venta"
+
+#. module: approval_account
+#: model:ir.model.fields,help:approval_account.field_approval_request__bank_statement_line_id
+msgid ""
+"Select the bank transaction that corresponds to this payment. The amount is "
+"matched on its absolute value: an outgoing payment appears as a negative "
+"statement line."
+msgstr ""
+"Seleccione la transacción bancaria que corresponde a este pago. El importe "
+"se compara por su valor absoluto: un pago de salida aparece como una línea "
+"de extracto negativa."
+
+#. module: approval_account
+#: model_terms:ir.actions.act_window,help:approval_account.action_approval_request_to_invoice
+msgid ""
+"Select the requests and use \"Create Journal Entries\" to invoice them all "
+"at once."
+msgstr ""
+"Selecciona las solicitudes y usa \"Crear asientos contables\" para "
+"facturarlas todas de una vez."
+
+#. module: approval_account
+#: model:ir.model.fields,help:approval_account.field_res_partner__invoice_approval_notes
+#: model:ir.model.fields,help:approval_account.field_res_users__invoice_approval_notes
+msgid ""
+"Special instructions or notes for approvers regarding invoices/bills for "
+"this partner. Example: 'New customer - verify credit terms before approving'"
+msgstr ""
+"Instrucciones o notas para los aprobadores sobre las facturas de este "
+"contacto. Ejemplo: 'Cliente nuevo: verificar condiciones de crédito antes de"
+" aprobar'"
+
+#. module: approval_account
+#: model:ir.model.fields,help:approval_account.field_account_journal__approval_notes
+msgid ""
+"Special instructions or notes for approvers regarding invoices/bills using "
+"this journal. Example: 'Foreign currency journal - verify exchange rate'"
+msgstr ""
+"Instrucciones o notas para los aprobadores sobre las facturas que usan este "
+"diario. Ejemplo: 'Diario en moneda extranjera: verificar el tipo de cambio'"
+
+#. module: approval_account
+#: model:ir.model.fields,help:approval_account.field_approval_category__has_bsl
+#: model:ir.model.fields,help:approval_account.field_approval_request__has_bsl
+msgid ""
+"Specify if a bank statement line must be selected for this type of approval."
+msgstr ""
+"Indique si debe seleccionarse una línea de extracto bancario para este tipo "
+"de aprobación."
+
+#. module: approval_account
+#: model:ir.model.fields,field_description:approval_account.field_approval_category__target_model
+msgid "Target Model"
+msgstr "Modelo destino"
+
+#. module: approval_account
+#: model:ir.model.fields,help:approval_account.field_approval_category__target_model
+msgid ""
+"Technical name of the model to create when this approval is granted. Leave "
+"empty if the approval is for an existing record (e.g., approving a purchase "
+"order). Set to model name (e.g., 'purchase.order') if approval should create"
+" a new record."
+msgstr ""
+"Nombre técnico del modelo a crear cuando se otorga esta aprobación. Déjelo "
+"vacío si la aprobación es sobre un registro existente (por ejemplo, aprobar "
+"una orden de compra). Póngale el nombre del modelo (por ejemplo, "
+"'purchase.order') si la aprobación debe crear un registro nuevo."
+
+#. module: approval_account
+#: model:ir.model.constraint,message:approval_account.constraint_approval_request_bank_statement_line_live_uniq
+msgid ""
+"This bank transaction is already assigned to another live approval request. "
+"Refuse or cancel that request first, or pick another transaction."
+msgstr ""
+"Esta transacción bancaria ya está asignada a otra solicitud de aprobación "
+"vigente. Rechace o cancele esa solicitud primero, o elija otra transacción."
+
+#. module: approval_account
+#. odoo-python
+#: code:addons/approval_account/models/account_move.py:0
+msgid ""
+"This invoice/bill was created from an approval request (%s). It does not "
+"need a separate approval."
+msgstr ""
+"Esta factura se creó a partir de una solicitud de aprobación (%s). No "
+"necesita una aprobación aparte."
+
+#. module: approval_account
+#: model:ir.actions.act_window,name:approval_account.action_approval_request_to_invoice
+#: model:ir.ui.menu,name:approval_account.approvals_invoicing_menu_to_invoice
+#: model_terms:ir.ui.view,arch_db:approval_account.view_approval_search_search_inherit_payment
+msgid "To Invoice"
+msgstr "Por facturar"
+
+#. module: approval_account
+#: model:ir.actions.act_window,name:approval_account.action_approval_request_to_pay
+#: model:ir.ui.menu,name:approval_account.approvals_treasury_menu_to_pay
+#: model_terms:ir.ui.view,arch_db:approval_account.view_approval_search_search_inherit_payment
+msgid "To Pay"
+msgstr "Por pagar"
+
+#. module: approval_account
+#: model:ir.ui.menu,name:approval_account.approvals_menu_treasury
+#: model:res.groups.privilege,name:approval_account.res_groups_privilege_treasury
+msgid "Treasury"
+msgstr "Tesorería"
+
+#. module: approval_account
+#: model_terms:ir.ui.view,arch_db:approval_account.view_approval_category_form_inherit_accounting_link
+msgid "Trigger Conditions"
+msgstr "Condiciones de activación"
+
+#. module: approval_account
+#: model:ir.model.fields,help:approval_account.field_approval_request__is_payable
+msgid ""
+"True when this request's category is Accounting/Payment and its amount is "
+"positive — i.e. it belongs in the Treasury payment queue."
+msgstr ""
+"Verdadero cuando la categoría de esta solicitud es Contabilidad/Pago y su "
+"importe es positivo, es decir, cuando pertenece a la cola de pagos de "
+"Tesorería."
+
+#. module: approval_account
+#. odoo-python
+#: code:addons/approval_account/models/approval_request.py:0
+msgid ""
+"Two requests in this batch claim the same bank transaction — a bank line can"
+" only be assigned to one live approval request."
+msgstr ""
+"Dos solicitudes de este lote reclaman la misma transacción bancaria: una "
+"línea bancaria solo puede asignarse a una solicitud de aprobación vigente."
+
+#. module: approval_account
+#: model:ir.model.fields,help:approval_account.field_approval_category__account_move_type
+#: model:ir.model.fields,help:approval_account.field_approval_request__account_move_type
+msgid ""
+"Type of invoice/bill to create when this approval is granted. Only "
+"applicable when target_model is 'account.move'. General journal entries are "
+"not supported in creation flow."
+msgstr ""
+"Tipo de factura a crear cuando se otorga esta aprobación. Solo aplica cuando"
+" target_model es 'account.move'. Los asientos contables generales no están "
+"soportados en el flujo de creación."
+
+#. module: approval_account
+#. odoo-python
+#: code:addons/approval_account/models/account_move.py:0
+msgid "Unknown"
+msgstr "Desconocido"
+
+#. module: approval_account
+#: model:ir.model.fields,help:approval_account.field_approval_request__paid_by_user_id
+msgid ""
+"User who marked this request as paid (manually or via bank reconciliation)."
+msgstr ""
+"Usuario que marcó esta solicitud como pagada (manualmente o mediante "
+"conciliación bancaria)."
+
+#. module: approval_account
+#: model:ir.model.fields,help:approval_account.field_account_move__approval_user_ids
+msgid "Users who need to approve this document"
+msgstr "Usuarios que deben aprobar este documento"
+
+#. module: approval_account
+#: model:ir.model.fields,help:approval_account.field_account_move__pending_approver_ids
+msgid "Users who still need to approve this document"
+msgstr "Usuarios a los que todavía les falta aprobar este documento"
+
+#. module: approval_account
+#: model:ir.model.fields.selection,name:approval_account.selection__approval_category__account_move_type__in_invoice
+msgid "Vendor Bill"
+msgstr "Factura de proveedor"
+
+#. module: approval_account
+#. odoo-python
+#: code:addons/approval_account/models/approval_request.py:0
+#: model_terms:ir.ui.view,arch_db:approval_account.view_partner_form_account_approval
+msgid "Vendor Bills"
+msgstr "Facturas de proveedor"
+
+#. module: approval_account
+#. odoo-python
+#: code:addons/approval_account/models/approval_request.py:0
+msgid "Vendor Bills & Credit Notes"
+msgstr "Facturas y notas de crédito de proveedor"
+
+#. module: approval_account
+#: model:ir.model.fields.selection,name:approval_account.selection__approval_category__account_move_type__in_refund
+msgid "Vendor Credit Note"
+msgstr "Nota de crédito de proveedor"
+
+#. module: approval_account
+#. odoo-python
+#: code:addons/approval_account/models/approval_request.py:0
+msgid "Vendor Credit Notes"
+msgstr "Notas de crédito de proveedor"
+
+#. module: approval_account
+#: model:ir.model.fields,help:approval_account.field_res_company__bill_approval_threshold
+#: model:ir.model.fields,help:approval_account.field_res_config_settings__bill_approval_threshold
+msgid ""
+"Vendor bills with total >= this amount require approval. Set to 0 to disable"
+" amount-based approval for bills."
+msgstr ""
+"Las facturas de proveedor cuyo total sea >= este importe requieren "
+"aprobación. Ponga 0 para desactivar la aprobación por importe en facturas de"
+" proveedor."
+
+#. module: approval_account
+#: model_terms:ir.ui.view,arch_db:approval_account.view_res_partner_filter_account_approval
+msgid "Vendors that require bill approval"
+msgstr "Proveedores que requieren aprobación de factura"
+
+#. module: approval_account
+#: model_terms:ir.ui.view,arch_db:approval_account.view_account_move_form_approval
+msgid "View Approval"
+msgstr "Ver aprobación"
+
+#. module: approval_account
+#: model_terms:ir.ui.view,arch_db:approval_account.res_config_settings_view_form_account_approval
+msgid "View Pending Approvals"
+msgstr "Ver aprobaciones pendientes"
+
+#. module: approval_account
+#: model_terms:ir.ui.view,arch_db:approval_account.view_partner_form_account_approval
+msgid ""
+"When enabled, all customer invoices for this partner\n"
+"                        will require approval regardless of amount."
+msgstr ""
+
+#. module: approval_account
+#: model_terms:ir.ui.view,arch_db:approval_account.view_account_journal_form_approval
+msgid ""
+"When enabled, all invoices and bills using this journal\n"
+"                            will require approval regardless of other settings."
+msgstr ""
+"Al activarse, todas las facturas que usen este diario\n"
+"                            requerirán aprobación sin importar los demás ajustes."
+
+#. module: approval_account
+#: model_terms:ir.ui.view,arch_db:approval_account.view_partner_form_account_approval
+msgid ""
+"When enabled, all vendor bills from this partner\n"
+"                        will require approval regardless of amount."
+msgstr ""
+
+#. module: approval_account
+#: model:ir.model.fields,help:approval_account.field_account_move__can_request_approval
+msgid "Whether approval can be requested (all required fields filled)"
+msgstr ""
+"Indica si puede solicitarse la aprobación (todos los campos requeridos están"
+" llenos)"
+
+#. module: approval_account
+#: model:ir.model.fields,help:approval_account.field_approval_request__payment_state
+msgid ""
+"Whether the underlying payment for this approved request has actually been "
+"made. Independent from `state` — approval and payment are tracked "
+"separately."
+msgstr ""
+"Indica si el pago correspondiente a esta solicitud aprobada se realizó "
+"realmente. Es independiente de `state`: la aprobación y el pago se registran"
+" por separado."
+
+#. module: approval_account
+#: model:ir.model.fields,help:approval_account.field_account_move__approval_required
+msgid "Whether this document requires approval based on current rules"
+msgstr ""
+"Indica si este documento requiere aprobación según las reglas vigentes"
+
+#. module: approval_account
+#. odoo-python
+#: code:addons/approval_account/models/approval_request.py:0
+msgid ""
+"You cannot confirm an empty accounting request. Please add product lines to "
+"create journal entries."
+msgstr ""
+"No puede confirmar una solicitud contable vacía. Agregue líneas de producto "
+"para crear asientos contables."
+
+#. module: approval_account
+#: model_terms:ir.ui.view,arch_db:approval_account.view_approval_category_form_inherit_accounting_link
+msgid "e.g., 5000"
+msgstr "por ejemplo, 5000"
+
+#. module: approval_account
+#. odoo-python
+#: code:addons/approval_account/models/approval_request.py:0
+msgid "invoices/bills"
+msgstr "facturas"
+
+#. module: approval_account
+#. odoo-python
+#: code:addons/approval_account/models/approval_request.py:0
+msgid "journal entry"
+msgstr "asiento contable"
+
+#. module: approval_account
+#: model_terms:ir.ui.view,arch_db:approval_account.view_approval_category_form_inherit_accounting_link
+msgid "to"
+msgstr "a"

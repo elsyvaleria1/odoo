@@ -1,0 +1,535 @@
+// @ts-check
+/** @odoo-module native */
+
+import { Component, onWillStart, onWillUnmount, t, useProps } from "@odoo/owl";
+import { Dropdown } from "@web/components/dropdown/dropdown";
+import { DropdownItem } from "@web/components/dropdown/dropdown_item";
+import { useAction } from "@web/core/action_port";
+import { useColorScheme } from "@web/core/color_scheme";
+import { makeLogger } from "@web/core/debug/debug_logger";
+import { useLifecycleLog } from "@web/core/debug/logger_hooks";
+import { Chart, loadChartJS } from "@web/core/lib/chartjs";
+import { _t } from "@web/core/translation";
+import { createElementWithContent } from "@web/core/utils/dom/html";
+import { elementRef } from "@web/core/utils/element_ref";
+import { useService } from "@web/core/utils/hooks";
+import { useLayoutEffect } from "@web/core/utils/layout_effect";
+import { renderToMarkup } from "@web/core/utils/render";
+import { useRenderCounter } from "@web/core/utils/render_instrumentation";
+import { useViewConfig } from "@web/core/view_config_hooks";
+import { useReactiveModel } from "@web/model/model";
+import { ReportViewMeasures } from "@web/views/view_components/report_view_measures";
+import {
+    drillDownContext,
+    drillDownViews,
+    openDrillDownView,
+} from "@web/views/view_utils";
+import { Widget } from "@web/views/widgets/widget";
+
+import {
+    generateBarLineLegendLabels,
+    generatePieLegendLabels,
+    getAnimationOptions,
+    getElementOptions,
+    getMaxWidth,
+    getTooltipItems,
+    gridOnTop,
+    prepareScaleOptions,
+    styleBarChartData,
+    styleLineChartData,
+    stylePieChartData,
+    styleScatterChartData,
+} from "./graph_chart_config.js";
+
+const log = makeLogger("web.view.graph");
+
+export class GraphRenderer extends Component {
+    static template = "web.GraphRenderer";
+    static components = { Dropdown, DropdownItem, ReportViewMeasures, Widget };
+    static props = {
+        class: t.any().optional(),
+        model: t.any(),
+        buttonTemplate: t.any(),
+    };
+    props = useProps(this.constructor.props);
+
+    setup() {
+        this.config = useViewConfig();
+        this.ui = useService("ui");
+        useRenderCounter("graph.GraphRenderer");
+        useLifecycleLog(log);
+        this.model = useReactiveModel(this.props.model);
+
+        this.rootRef = elementRef();
+        this.canvasRef = elementRef();
+        this.containerRef = elementRef();
+        this.actionService = useAction();
+        this.colorScheme = useColorScheme();
+
+        this.chart = null;
+        this.tooltip = null;
+        this.legendTooltip = null;
+
+        onWillStart(async () => {
+            await loadChartJS();
+        });
+
+        useLayoutEffect(
+            () => this.renderChart(),
+            () => [this.model.data, this.model.metaData, this.colorScheme.current],
+        );
+        onWillUnmount(this.onWillUnmount);
+    }
+
+    onWillUnmount() {
+        if (this.chart) {
+            this.chart.destroy();
+        }
+    }
+
+    /**
+     * @param {HTMLElement} tooltip
+     * @param {number} maxTooltipHeight
+     */
+    adjustTooltipHeight(tooltip, maxTooltipHeight) {
+        const sizeOneLine = tooltip.querySelector("tbody tr").clientHeight;
+        const tbodySize = tooltip.querySelector("tbody").clientHeight;
+        const toKeep = Math.max(
+            0,
+            Math.floor(
+                (maxTooltipHeight - (tooltip.clientHeight - tbodySize)) / sizeOneLine,
+            ) - 1,
+        );
+        const lines = tooltip.querySelectorAll("tbody tr");
+        const toRemove = lines.length - toKeep;
+        if (toRemove > 0) {
+            for (let index = toKeep; index < lines.length; ++index) {
+                lines[index].remove();
+            }
+            const tr = document.createElement("tr");
+            const td = document.createElement("td");
+            tr.classList.add("o_show_more", "text-center", "fw-bold");
+            td.setAttribute("colspan", "2");
+            td.innerText = _t("...");
+            tr.appendChild(td);
+            tooltip.querySelector("tbody").appendChild(tr);
+        }
+    }
+
+    /**
+     * @param {Object} data
+     * @param {Object} metaData
+     * @param {Object} context
+     */
+    customTooltip(data, metaData, context) {
+        const tooltipModel = context.tooltip;
+        const { measure, measures, disableLinking, mode } = metaData;
+        this.containerRef.el.style.cursor = "";
+        this.removeTooltips();
+        if (tooltipModel.opacity === 0 || !tooltipModel.dataPoints.length) {
+            return;
+        }
+        if (!disableLinking && mode !== "line" && mode !== "scatter") {
+            this.containerRef.el.style.cursor = "pointer";
+        }
+        const chartAreaTop = this.chart.chartArea.top;
+        const viewContentTop = this.containerRef.el.getBoundingClientRect().top;
+        const content = renderToMarkup("web.GraphRenderer.CustomTooltip", {
+            maxWidth: getMaxWidth(this.chart.chartArea),
+            measure: measures[measure].string,
+            mode: this.model.metaData.mode,
+            tooltipItems: getTooltipItems(
+                data,
+                metaData,
+                tooltipModel,
+                this.model.lineOverlayDataset,
+            ),
+        });
+        const template = createElementWithContent("template", content);
+        const tooltip = /** @type {HTMLElement} */ (
+            /** @type {HTMLTemplateElement} */ (template).content.firstChild
+        );
+        this.containerRef.el.prepend(tooltip);
+
+        let top;
+        const tooltipHeight = tooltip.clientHeight;
+        const minTopAllowed = Math.floor(chartAreaTop);
+        const maxTopAllowed =
+            Math.floor(window.innerHeight - (viewContentTop + tooltipHeight)) - 2;
+        const y = Math.floor(tooltipModel.y);
+        if (minTopAllowed <= maxTopAllowed) {
+            if (y <= maxTopAllowed) {
+                if (y >= minTopAllowed) {
+                    top = y;
+                } else {
+                    top = minTopAllowed;
+                }
+            } else {
+                top = maxTopAllowed;
+            }
+        } else {
+            top = minTopAllowed;
+            const maxTooltipHeight =
+                window.innerHeight - (viewContentTop + chartAreaTop) - 2;
+            this.adjustTooltipHeight(tooltip, maxTooltipHeight);
+        }
+        this.fixTooltipLeftPosition(tooltip, tooltipModel.x);
+        tooltip.style.top = `${Math.floor(top)}px`;
+
+        this.tooltip = tooltip;
+    }
+
+    /**
+     * @param {HTMLElement} tooltip
+     * @param {number} x
+     */
+    fixTooltipLeftPosition(tooltip, x) {
+        let left;
+        const tooltipWidth = tooltip.clientWidth;
+        const minLeftAllowed = Math.floor(this.chart.chartArea.left + 2);
+        const maxLeftAllowed = Math.floor(
+            this.chart.chartArea.right - tooltipWidth - 2,
+        );
+        x = Math.floor(x);
+        if (x < minLeftAllowed) {
+            left = minLeftAllowed;
+        } else if (x > maxLeftAllowed) {
+            left = maxLeftAllowed;
+        } else {
+            left = x;
+        }
+        tooltip.style.left = `${left}px`;
+    }
+
+    /**
+     * The metaData the chart draws with: `stacked` is the one the model can
+     * honour, not the one the user asked for.
+     *
+     * @returns {Object}
+     */
+    get chartMetaData() {
+        const { metaData, isStacked } = this.model;
+        return metaData.stacked === isStacked
+            ? metaData
+            : { ...metaData, stacked: isStacked };
+    }
+
+    /** @returns {Object} */
+    getBarChartData() {
+        return styleBarChartData(
+            this.model.data,
+            this.chartMetaData,
+            this.model.lineOverlayDataset,
+        );
+    }
+
+    /** @returns {Object} */
+    getChartConfig() {
+        const { mode } = this.model.metaData;
+        let data;
+        switch (mode) {
+            case "bar":
+                data = this.getBarChartData();
+                break;
+            case "line":
+                data = this.getLineChartData();
+                break;
+            case "pie":
+                data = this.getPieChartData();
+                break;
+            case "scatter":
+                data = this.getScatterChartData();
+                break;
+        }
+        const options = this.prepareOptions();
+        const type = mode === "scatter" ? "line" : mode;
+        const config = { data, options, type };
+        if (mode === "line" || mode === "scatter") {
+            config.plugins = [gridOnTop];
+        }
+        return config;
+    }
+
+    /** @returns {Object} */
+    getLegendOptions() {
+        const { mode } = this.model.metaData;
+        const legendOptions = {
+            onHover: this.onLegendHover.bind(this),
+            onLeave: this.onLegendLeave.bind(this),
+        };
+        if (mode === "line" || mode === "scatter") {
+            legendOptions.onClick = this.onLegendClick.bind(this);
+        }
+        if (mode === "pie") {
+            legendOptions.labels = {
+                generateLabels: generatePieLegendLabels,
+            };
+        } else {
+            legendOptions.position = "top";
+            legendOptions.align = "end";
+            legendOptions.labels = {
+                generateLabels: (chart) => generateBarLineLegendLabels(chart, mode),
+            };
+        }
+        return legendOptions;
+    }
+
+    /** @returns {Object} */
+    getLineChartData() {
+        return styleLineChartData(this.model.data, this.model.metaData);
+    }
+
+    /** @returns {Object} */
+    getPieChartData() {
+        return stylePieChartData(this.model.data);
+    }
+
+    /** @returns {Object} */
+    getScatterChartData() {
+        return styleScatterChartData(this.model.data);
+    }
+
+    /** @returns {Object} */
+    getScaleOptions() {
+        return prepareScaleOptions(this.model.data, this.chartMetaData);
+    }
+
+    loadAll() {
+        return this.model.forceLoadAll();
+    }
+
+    /** @returns {Object} */
+    getTooltipOptions() {
+        const { data, metaData } = this.model;
+        const { mode } = metaData;
+        const tooltipOptions = {
+            enabled: false,
+            external: this.customTooltip.bind(this, data, metaData),
+        };
+        if (mode === "line") {
+            tooltipOptions.mode = "index";
+            tooltipOptions.intersect = false;
+            tooltipOptions.position = "average";
+        }
+        if (mode === "scatter") {
+            tooltipOptions.mode = "nearest";
+            tooltipOptions.intersect = true;
+        }
+        if (mode === "bar") {
+            tooltipOptions.xAlign = "center";
+            tooltipOptions.yAlign = "bottom";
+        }
+        if (mode === "pie") {
+            tooltipOptions.xAlign = "center";
+            tooltipOptions.yAlign = "center";
+        }
+        return tooltipOptions;
+    }
+
+    /** @param {MouseEvent} ev */
+    onGraphClicked(ev, isMiddleClick) {
+        const { disableLinking, mode } = this.model.metaData;
+        if (disableLinking || mode === "line" || mode === "scatter") {
+            return;
+        }
+        const [activeElement] = this.chart.getElementsAtEventForMode(
+            ev,
+            "nearest",
+            { intersect: true },
+            false,
+        );
+        if (!activeElement) {
+            return;
+        }
+        const { datasetIndex, index } = activeElement;
+        const { domains } = this.chart.data.datasets[datasetIndex];
+        if (domains) {
+            this.onGraphClickedFinal(domains[index], isMiddleClick);
+        }
+    }
+
+    /**
+     * @param {Event} ev
+     * @param {Object} legendItem
+     */
+    onLegendClick(ev, legendItem) {
+        this.removeTooltips();
+        const index = legendItem.datasetIndex;
+        const meta = this.chart.getDatasetMeta(index);
+        meta.hidden =
+            meta.hidden === null ? !this.chart.data.datasets[index].hidden : null;
+        this.chart.update();
+    }
+
+    /**
+     * @param {Event} ev
+     * @param {Object} legendItem
+     */
+    onLegendHover(ev, legendItem) {
+        ev = /** @type {any} */ (ev).native;
+        this.canvasRef.el.style.cursor = "pointer";
+        const { fullText, text } = legendItem;
+        if (this.legendTooltip || text === fullText) {
+            return;
+        }
+        const viewContentTop = this.canvasRef.el.getBoundingClientRect().top;
+        const legendTooltip = Object.assign(document.createElement("div"), {
+            className: "o_tooltip_legend popover p-3 pe-none position-absolute",
+            innerText: fullText,
+        });
+        legendTooltip.style.top = `${/** @type {MouseEvent} */ (ev).clientY - viewContentTop}px`;
+        legendTooltip.style.maxWidth = getMaxWidth(this.chart.chartArea);
+        this.containerRef.el.appendChild(legendTooltip);
+        this.fixTooltipLeftPosition(
+            legendTooltip,
+            /** @type {MouseEvent} */ (ev).clientX,
+        );
+        this.legendTooltip = legendTooltip;
+    }
+
+    onLegendLeave() {
+        this.canvasRef.el.style.cursor = "";
+        this.removeLegendTooltip();
+    }
+
+    prepareOptions() {
+        const { mode, stacked } = this.chartMetaData;
+        const options = {
+            maintainAspectRatio: false,
+            scales: this.getScaleOptions(),
+            plugins: {
+                legend: this.getLegendOptions(),
+                tooltip: this.getTooltipOptions(),
+            },
+            elements: getElementOptions(mode, stacked),
+            onResize: () => {
+                this.resizeChart(options);
+            },
+            animation: getAnimationOptions(mode, this.model.data.labels.length),
+        };
+        if (mode === "line") {
+            options.interaction = {
+                mode: "index",
+                intersect: false,
+            };
+        }
+        if (mode === "scatter") {
+            options.interaction = {
+                mode: "nearest",
+                intersect: true,
+            };
+        }
+        if (mode === "pie") {
+            options.radius = "90%";
+        }
+        return options;
+    }
+
+    /** @param {Object} context */
+    resizeChart(context) {
+        const { mode } = this.model.metaData;
+        if (mode === "pie") {
+            if (this.ui.isSmall) {
+                context.plugins.legend.position = "bottom";
+                context.plugins.legend.align = "center";
+            } else {
+                context.plugins.legend.position = "right";
+                context.plugins.legend.align = "start";
+            }
+        }
+    }
+
+    removeLegendTooltip() {
+        if (this.legendTooltip) {
+            this.legendTooltip.remove();
+            this.legendTooltip = null;
+        }
+    }
+
+    removeTooltips() {
+        if (this.tooltip) {
+            this.tooltip.remove();
+            this.tooltip = null;
+        }
+        this.removeLegendTooltip();
+    }
+
+    renderChart() {
+        this.removeTooltips();
+        if (!this.canvasRef.el) {
+            if (this.chart) {
+                this.chart.destroy();
+                this.chart = null;
+            }
+            return;
+        }
+        const config = this.getChartConfig();
+        if (this.chart && this.chart.config.type === config.type) {
+            this.chart.data = config.data;
+            this.chart.options = config.options;
+            this.chart.update();
+        } else {
+            if (this.chart) {
+                this.chart.destroy();
+            }
+            this.chart = new Chart(this.canvasRef.el, config);
+        }
+    }
+
+    /**
+     * @param {Array} domain
+     * @param {Array} views
+     * @param {Object} context
+     */
+    openView(domain, views, context, newWindow) {
+        openDrillDownView(this, domain, views, context, newWindow);
+    }
+    /** @param {any[]} domain */
+    onGraphClickedFinal(domain, isMiddleClick = false) {
+        this.openView(
+            domain,
+            drillDownViews(this.config.views),
+            drillDownContext(this.model.metaData.context),
+            isMiddleClick,
+        );
+    }
+
+    /**
+     * @param {Object} param0
+     * @param {string} param0.measure
+     */
+    onMeasureSelected({ measure }) {
+        this.model.updateMetaData({ measure });
+    }
+
+    /** @param {"bar"|"line"|"pie"|"scatter"} mode */
+    onModeSelected(mode) {
+        if (this.model.metaData.mode !== mode) {
+            this.model.updateMetaData({ mode });
+        }
+    }
+
+    /** @param {"ASC"|"DESC"} order */
+    toggleOrder(order) {
+        const { order: currentOrder } = this.model.metaData;
+        const nextOrder = currentOrder === order ? null : order;
+        this.model.updateMetaData({ order: nextOrder });
+    }
+
+    /** @returns {string} */
+    get stackedTooltip() {
+        return this.model.seriesOverlap
+            ? _t("Not stackable: a record can be in several of these groups")
+            : _t("Stacked");
+    }
+
+    toggleStacked() {
+        const { stacked } = this.model.metaData;
+        this.model.updateMetaData({ stacked: !stacked });
+    }
+
+    toggleCumulated() {
+        const { cumulated } = this.model.metaData;
+        this.model.updateMetaData({ cumulated: !cumulated });
+    }
+}

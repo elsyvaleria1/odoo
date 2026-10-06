@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="service_ehome_bridge" model="integration.service">
+        <field name="name">EHOME Bridge (access devices)</field>
+        <field name="code">ehome_bridge</field>
+        <field name="category">other</field>
+        <field name="provider">Hikvision EHOME</field>
+        <field name="environment">production</field>
+        <field name="auth_type">none</field>
+        <field name="per_record_connections" eval="True" />
+        <field name="endpoint_url" eval="False" />
+        <field name="timeout_read">10</field>
+        <field name="retry_enabled" eval="False" />
+        <field name="health_check_enabled" eval="False" />
+        <field name="rate_limit_enabled" eval="True" />
+        <field name="rate_limit_requests">120</field>
+        <field name="rate_limit_period">minute</field>
+    </record>
+
+    <record id="service_isapi_device" model="integration.service">
+        <field name="name">ISAPI Device (direct LAN)</field>
+        <field name="code">isapi_device</field>
+        <field name="category">other</field>
+        <field name="provider">Hikvision ISAPI</field>
+        <field name="environment">production</field>
+        <field name="auth_type">digest</field>
+        <field name="per_record_connections" eval="True" />
+        <field name="endpoint_url" eval="False" />
+        <field name="allowed_hosts">private</field>
+        <field name="verify_tls" eval="False" />
+        <field name="timeout_read">10</field>
+        <field name="retry_enabled" eval="False" />
+        <field name="health_check_enabled" eval="False" />
+        <field name="rate_limit_enabled" eval="False" />
+    </record>
+
+</odoo>

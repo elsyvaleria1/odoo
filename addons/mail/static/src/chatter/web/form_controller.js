@@ -1,0 +1,105 @@
+// @ts-check
+/** @odoo-module native */
+import { WEB_CHATTER_REQUEST_LIST } from "@mail/chatter/web/web_chatter";
+import { prefetchThreadData } from "@mail/chatter/web_portal/chatter_prefetch";
+import { provideMailContext, useMailContext } from "@mail/utils/common/mail_context";
+import { EventBus, proxy, t } from "@odoo/owl";
+import { makeLogger } from "@web/core/debug/debug_logger";
+import { x2ManyCommands } from "@web/core/network";
+import { createDocumentFragmentFromContent } from "@web/core/utils/dom/html";
+import { useEventBus, useOptionalService } from "@web/core/utils/hooks";
+import { patch } from "@web/core/utils/patch";
+import { FormController } from "@web/views/form";
+import { formControllerProps } from "@web/views/form/form_controller";
+
+const log = makeLogger("mail.chatter.form");
+Object.assign(formControllerProps, {
+    fullComposerBus: t.instanceOf(EventBus).optional(),
+});
+
+patch(FormController.prototype, {
+    setup() {
+        super.setup();
+        this.bus = useEventBus();
+        this.mailStore = useOptionalService("mail.store");
+        provideMailContext({
+            chatter: proxy({
+                fetchThreadData: true,
+                fetchMessages: true,
+            }),
+        });
+        this.mailContext = useMailContext();
+    },
+    /** @param {{resId: number, resModel: string}} nextConfiguration */
+    onWillLoadRoot(nextConfiguration) {
+        super.onWillLoadRoot(...arguments);
+        const isSameThread =
+            this.model.root?.resId === nextConfiguration.resId &&
+            this.model.root?.resModel === nextConfiguration.resModel;
+        log.pipeline("onWillLoadRoot", () => ({
+            resModel: nextConfiguration.resModel,
+            resId: nextConfiguration.resId,
+            isSameThread,
+        }));
+        if (isSameThread) {
+            this.mailContext.chatter.fetchThreadData = true;
+        }
+        this.mailContext.chatter.fetchMessages = true;
+        if (isSameThread) {
+            const { resModel, resId } = this.model.root;
+            this.bus.trigger("MAIL:RELOAD-THREAD", { model: resModel, id: resId });
+        }
+        if (
+            this.mailStore &&
+            this.archInfo.has_chatter &&
+            nextConfiguration.resId &&
+            !this.dialogContext.inDialog &&
+            !(this.model.isReady && isSameThread)
+        ) {
+            // the chatter's fetches leave with the read of the record rather
+            // than after the form that holds the chatter is shown
+            const thread = this.mailStore.Thread.insert({
+                model: this.archInfo.thread_model || nextConfiguration.resModel,
+                id: nextConfiguration.resId,
+            });
+            log.pipeline("prefetch chatter", () => ({ thread: thread.localId }));
+            prefetchThreadData(thread, [...WEB_CHATTER_REQUEST_LIST]);
+            thread.fetchNewMessages();
+            this.mailContext.chatter.fetchMessages = false;
+        }
+    },
+
+    /**
+     * @param {import("@web/model/relational_model/record").RelationalRecord} record
+     * @param {Object} changes
+     */
+    async onWillSaveRecord(record, changes) {
+        if (record.resModel === "wizard.mail.message.send") {
+            if (!changes.body) {
+                return;
+            }
+            const doc = createDocumentFragmentFromContent(changes.body);
+            const partnerElements = doc.querySelectorAll(
+                '[data-oe-model="res.partner"]',
+            );
+            const partnerIds = Array.from(partnerElements).map((element) =>
+                parseInt(/** @type {HTMLElement} */ (element).dataset.oeId),
+            );
+            if (partnerIds.length) {
+                log.logic("mentioned partners linked on save", () => ({
+                    partnerIds,
+                }));
+                changes.partner_ids ??= [];
+                if (
+                    changes.partner_ids[0] &&
+                    changes.partner_ids[0][0] === x2ManyCommands.SET
+                ) {
+                    partnerIds.push(...changes.partner_ids[0][2]);
+                }
+                changes.partner_ids.push(
+                    ...partnerIds.map((pid) => x2ManyCommands.link(pid)),
+                );
+            }
+        }
+    },
+});

@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_order_form_inherit_sale_project" model="ir.ui.view">
+        <field name="name">sale.order.form.sale.project</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_sale_order_form" />
+        <field name="priority">10</field>
+        <field name="arch" type="xml">
+            <button name="action_view_invoice" position="after">
+                <button
+                    name="action_view_project_ids"
+                    type="object"
+                    icon="fa-puzzle-piece"
+                    groups="project.group_project_user"
+                    invisible="not show_project_button"
+                    class="oe_stat_button">
+                    <div class="o_stat_info">
+                        <div class="o_row">
+                            <span class="o_stat_value order-first">
+                                <field name="project_count" />
+                            </span>
+                            <span class="o_stat_text"> Projects</span>
+                        </div>
+                        <div class="o_row">
+                            <span class="o_stat_value order-first">
+                                <field name="tasks_count" />
+                            </span>
+                            <span class="o_stat_text"> Tasks</span>
+                        </div>
+                    </div>
+                </button>
+                <button
+                    name="action_view_milestone"
+                    type="object"
+                    icon="fa-regular fa-square-check"
+                    groups="project.group_project_milestone"
+                    invisible="not is_product_milestone or not project_ids or state == 'draft'"
+                    class="oe_stat_button">
+                    <field
+                        name="milestone_count"
+                        string="Milestones"
+                        widget="statinfo" />
+                </button>
+            </button>
+            <field name="journal_id" position="before">
+                <field
+                    name="project_id"
+                    context="{'default_allow_billable': True, 'default_partner_id': partner_id, 'order_id': id, 'order_state' : state}"
+                    groups="project.group_project_user" />
+            </field>
+        </field>
+    </record>
+
+    <record id="view_sale_order_search_inherit_sale_project" model="ir.ui.view">
+        <field name="name">sale.order.list.select.inherit.sale_project</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_sale_order_search" />
+        <field name="arch" type="xml">
+            <field name="product_id" position="after">
+                <field name="project_id" groups="project.group_project_user" />
+            </field>
+        </field>
+    </record>
+
+    <record id="model_sale_order_action_create_project" model="ir.actions.server">
+        <field name="name">Create Project</field>
+        <field name="model_id" ref="sale.model_sale_order" />
+        <field name="binding_model_id" ref="sale.model_sale_order" />
+        <field name="binding_view_types">form</field>
+        <field name="state">code</field>
+        <field name="code">action = records.action_create_project()</field>
+    </record>
+
+    <record id="view_order_simple_form" model="ir.ui.view">
+        <field name="name">sale.order.form.from.task</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_sale_order_form" />
+        <field name="mode">primary</field>
+        <field name="arch" type="xml">
+            <header position="replace" />
+            <sheet position="after">
+                <footer>
+                    <button
+                        special="save"
+                        string="Confirm &amp; Close"
+                        class="btn btn-primary" />
+                    <button
+                        special="cancel"
+                        string="Discard"
+                        class="btn btn-secondary" />
+                </footer>
+            </sheet>
+        </field>
+    </record>
+
+</odoo>

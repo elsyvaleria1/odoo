@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates>
+    <t t-name="knowledge.MacrosFileButtons">
+        <EmbeddedComponentToolbarButton
+            hidden="!this.targetRecordInfo?.canAttachFiles"
+            icon="'fa-paperclip'"
+            label.translate="Attach"
+            onClick.bind="this.onClickUseAsAttachment"
+            title.translate="Use as Attachment"
+        />
+        <EmbeddedComponentToolbarButton
+            hidden="!this.targetRecordInfo?.canPostMessages"
+            icon="'fa-envelope'"
+            label.translate="Send"
+            onClick.bind="this.onClickAttachToMessage"
+            title.translate="Send as Message"
+        />
+    </t>
+</templates>

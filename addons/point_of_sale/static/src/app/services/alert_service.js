@@ -1,0 +1,48 @@
+/** @odoo-module native */
+import { Component, t, useProps, xml } from "@odoo/owl";
+import { makeLogger } from "@web/core/debug/debug_logger";
+import { registry } from "@web/core/registry";
+const log = makeLogger("pos.alert");
+class Alert extends Component {
+    static template = xml`
+        <div t-attf-class="alert pos-navbar-height fixed-top p-1 rounded-0 alert-{{this.props.type}} fade show d-flex align-items-center justify-content-center" role="alert">
+            <strong class="flex-grow-1 text-center" t-out="this.props.message" />
+        </div>
+    `;
+    static props = {
+        message: t.string(),
+        type: t
+            .customValidator(t.string(), (type) =>
+                ["info", "warning", "danger", "success"].includes(type),
+            )
+            .optional("info"),
+    };
+    props = useProps(this.constructor.props);
+}
+
+export const alertService = {
+    dependencies: ["overlay"],
+    start(env, { overlay }) {
+        let dismiss = undefined;
+
+        const add = (message, options = {}, overlayOptions = {}) => {
+            log.lifecycle("add", () => ({
+                type: options.type || "info",
+                replaced: Boolean(dismiss),
+            }));
+            dismiss?.();
+            dismiss = overlay.add(
+                Alert,
+                {
+                    message,
+                    ...options,
+                },
+                overlayOptions,
+            );
+        };
+
+        return { add, dismiss: () => dismiss?.() };
+    },
+};
+
+registry.category("services").add("alert", alertService);

@@ -1,0 +1,101 @@
+{
+  "calibration_ms": 15.8,
+  "partner_create_one": {
+    "statements": 3,
+    "non_sql_ms": 1.84,
+    "sql_chars": 1232
+  },
+  "partner_create_batch_1000": {
+    "statements": 13,
+    "non_sql_ms": 161,
+    "sql_chars": 50685
+  },
+  "partner_read_warm_1000": {
+    "statements": 0,
+    "non_sql_ms": 0.24
+  },
+  "partner_write_loop_1000": {
+    "statements": 1,
+    "non_sql_ms": 55.2,
+    "sql_chars": 119
+  },
+  "partner_write_batch_1000": {
+    "statements": 1,
+    "non_sql_ms": 2.88,
+    "sql_chars": 119
+  },
+  "partner_search_fetch_1000": {
+    "statements": 1,
+    "non_sql_ms": 0.387,
+    "sql_chars": 240
+  },
+  "partner_read_check_repeated_1000": {
+    "statements": 0,
+    "calls_rule_evaluations": 2,
+    "non_sql_ms": 0.5
+  },
+  "registry_warm_load_base": {
+    "seconds": 0.285
+  },
+  "in_memory_floor": {
+    "create_one_us": 83,
+    "per_stored_compute_us": 28.8
+  },
+  "sale_order_create_3_lines": {
+    "statements": 12,
+    "non_sql_ms": 16.1,
+    "sql_chars": 6027
+  },
+  "sale_order_create_confirm": {
+    "statements": 44,
+    "non_sql_ms": 44.2,
+    "sql_chars": 21156
+  },
+  "partner_create_one_sale_set": {
+    "statements": 4,
+    "non_sql_ms": 4.14,
+    "sql_chars": 2022
+  },
+  "sale_order_entry_as_salesman": {
+    "statements": 315,
+    "sql_chars": 224827
+  },
+  "document_list_50_folder_grants": {
+    "statements": 3,
+    "non_sql_ms": 3.53,
+    "sql_chars": 11059
+  },
+  "document_count_50_folder_grants": {
+    "statements": 1,
+    "non_sql_ms": 3.0,
+    "sql_chars": 9794
+  },
+  "document_folder_grant_write": {
+    "statements": 6,
+    "non_sql_ms": 2.25,
+    "sql_chars": 3297
+  },
+  "document_folder_move": {
+    "statements": 16,
+    "non_sql_ms": 8.3,
+    "sql_chars": 14812
+  },
+  "model_has_access_warm_1000": {
+    "statements": 0,
+    "non_sql_ms": 0.24
+  },
+  "partner_search_fetch_80_policy": {
+    "statements": 2,
+    "non_sql_ms": 1.14,
+    "sql_chars": 1439
+  },
+  "explain_one_record": {
+    "statements": 15,
+    "non_sql_ms": 4.83,
+    "sql_chars": 8060
+  },
+  "qweb_render_10k_rows": {
+    "flat_ms": 35.2,
+    "call_per_row_ms": 64.4
+  }
+}

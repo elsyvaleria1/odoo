@@ -1,0 +1,93 @@
+// @ts-check
+/** @odoo-module native */
+
+import { Component, proxy, useProps } from "@odoo/owl";
+import { CheckBox } from "@web/components/checkbox/checkbox";
+import { AccordionItem } from "@web/components/dropdown/accordion_item";
+import { useAction } from "@web/core/action_port";
+import { registry } from "@web/core/registry";
+import { _t } from "@web/core/translation";
+import { elementRef } from "@web/core/utils/element_ref";
+import { useService } from "@web/core/utils/hooks";
+import { useViewConfig } from "@web/core/view_config_hooks";
+import { useSearchModel } from "@web/search/search_model";
+import { editFavoriteFilter } from "@web/search/utils/misc";
+const favoriteMenuRegistry = registry.category("favoriteMenu");
+
+export class CustomFavoriteItem extends Component {
+    static template = "web.CustomFavoriteItem";
+    static components = { CheckBox, AccordionItem };
+    static props = {};
+    props = useProps(this.constructor.props);
+
+    setup() {
+        this.config = useViewConfig();
+        this.searchModel = useSearchModel();
+        this.actionService = useAction();
+        this.notificationService = useService("notification");
+        this.descriptionRef = elementRef();
+        this.state = proxy({
+            description: this.config.getDisplayName(),
+            isDefault: false,
+        });
+    }
+
+    /** @param {Event} ev */
+    async saveFavorite(ev, isShared = false) {
+        const description = this.state.description?.trim() ?? "";
+        if (!description) {
+            this.notificationService.add(
+                _t("A name for your favorite filter is required."),
+                {
+                    type: "danger",
+                },
+            );
+            ev.stopPropagation();
+            this.descriptionRef.el.focus();
+            return false;
+        }
+        const { isDefault } = this.state;
+        const embeddedActionId = this.config.currentEmbeddedActionId || false;
+        const serverSideId = await this.searchModel.createNewFavorite({
+            description,
+            isDefault,
+            isShared,
+            embeddedActionId,
+        });
+
+        Object.assign(this.state, {
+            description: this.config.getDisplayName(),
+            isDefault: false,
+        });
+        return serverSideId;
+    }
+
+    /** @param {Event} ev */
+    async editFavorite(ev) {
+        const serverSideId = await this.saveFavorite(ev);
+        if (!serverSideId) {
+            return;
+        }
+        editFavoriteFilter(this.actionService, serverSideId);
+    }
+
+    /** @param {KeyboardEvent} ev */
+    onInputKeydown(ev) {
+        switch (ev.key) {
+            case "Enter":
+                ev.preventDefault();
+                this.saveFavorite(ev);
+                break;
+            case "Escape":
+                ev.preventDefault();
+                /** @type {HTMLElement} */ (ev.target).blur();
+                break;
+        }
+    }
+}
+
+favoriteMenuRegistry.add(
+    "custom-favorite-item",
+    { Component: CustomFavoriteItem, groupNumber: 3 },
+    { sequence: 0 },
+);

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="privilege_read_urban_piper_configs" model="res.groups">
+        <field
+            name="name">Privilege: read the point of sale configurations linked to a product</field>
+        <field name="is_privilege" eval="True" />
+    </record>
+
+</odoo>

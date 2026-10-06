@@ -1,0 +1,148 @@
+from odoo import api, fields, models
+from odoo.exceptions import UserError
+
+
+class WizardSaleOrderAddShipping(models.TransientModel):
+    """Wizard to select a delivery method and its computed price for a sales order."""
+
+    _name = "wizard.sale.order.add.shipping"
+    _description = "Delivery Carrier Selection Wizard"
+
+    def _default_weight_uom_name(self):
+        return self.env[
+            "product.template"
+        ]._get_weight_uom_name_from_ir_config_parameter()
+
+    order_id = fields.Many2one(
+        comodel_name="sale.order",
+        required=True,
+        ondelete="cascade",
+    )
+    partner_id = fields.Many2one(
+        comodel_name="res.partner",
+        related="order_id.partner_id",
+        required=True,
+    )
+    carrier_id = fields.Many2one(
+        comodel_name="delivery.carrier",
+        string="Shipping Method",
+        required=True,
+        domain="[('id', 'in', available_carrier_ids)]",
+    )
+    delivery_type = fields.Selection(related="carrier_id.delivery_type")
+    delivery_price = fields.Float()
+    display_price = fields.Float(
+        string="Cost",
+        readonly=True,
+    )
+    currency_id = fields.Many2one(
+        comodel_name="res.currency",
+        related="order_id.currency_id",
+    )
+    company_id = fields.Many2one(
+        comodel_name="res.company",
+        related="order_id.company_id",
+    )
+    available_carrier_ids = fields.Many2many(
+        comodel_name="delivery.carrier",
+        string="Available Carriers",
+        compute="_compute_available_carrier_ids",
+    )
+    invoicing_message = fields.Text(compute="_compute_invoicing_message")
+    delivery_message = fields.Text(readonly=True)
+    total_weight = fields.Float(
+        related="order_id.shipping_weight",
+        string="Total Order Weight",
+        readonly=False,
+    )
+    weight_uom_name = fields.Char(
+        default=lambda self: self._default_weight_uom_name(),
+        readonly=True,
+    )
+
+    @api.onchange("carrier_id", "total_weight")
+    def _onchange_carrier_id(self) -> dict | None:
+        self.delivery_message = False
+        if self.delivery_type in ("fixed", "base_on_rule"):
+            vals = self._acquire_delivery_rate()
+            if vals.get("error_message"):
+                return {"error": vals["error_message"]}
+        else:
+            self.display_price = 0
+            self.delivery_price = 0
+        return None
+
+    @api.onchange("order_id")
+    def _onchange_order_id(self) -> dict | None:
+        # fixed and base_on_rule delivery price will computed on each carrier change so no need to recompute here
+        if (
+            self.carrier_id
+            and self.order_id.delivery_set
+            and self.delivery_type not in ("fixed", "base_on_rule")
+        ):
+            vals = self._acquire_delivery_rate()
+            if vals.get("error_message"):
+                warning = {
+                    "title": self.env._(
+                        "%(carrier)s Error", carrier=self.carrier_id.name
+                    ),
+                    "message": vals["error_message"],
+                    "type": "notification",
+                }
+                return {"warning": warning}
+        return None
+
+    @api.depends("carrier_id")
+    def _compute_invoicing_message(self) -> None:
+        self.check_singleton()
+        self.invoicing_message = ""
+
+    @api.depends("partner_id")
+    def _compute_available_carrier_ids(self) -> None:
+        for rec in self:
+            carriers = self.env["delivery.carrier"].search(  # noqa: E8507 - a transient wizard: one record
+                self.env["delivery.carrier"]._check_company_domain(
+                    rec.order_id.company_id
+                )
+            )
+            rec.available_carrier_ids = (
+                carriers._filtered_available_carriers(
+                    rec.order_id.partner_shipping_id, rec.order_id
+                )
+                if rec.partner_id
+                else carriers
+            )
+
+    def _acquire_delivery_rate(self) -> dict:
+        vals = self.carrier_id.with_context(
+            order_weight=self.total_weight
+        ).rate_shipment(self.order_id)
+        if vals.get("success"):
+            self.delivery_message = vals.get("warning_message", False)
+            self.delivery_price = vals["price"]
+            self.display_price = vals["carrier_price"]
+            return {"no_rate": vals.get("no_rate", False)}
+        return {"error_message": vals["error_message"]}
+
+    def update_price(self) -> dict:
+        vals = self._acquire_delivery_rate()
+        if vals.get("error_message"):
+            raise UserError(vals.get("error_message"))
+        return {
+            "name": self.env._("Add a shipping method"),
+            "type": "ir.actions.act_window",
+            "view_mode": "form",
+            "res_model": "wizard.sale.order.add.shipping",
+            "res_id": self.id,
+            "target": "new",
+            "context": vals,
+        }
+
+    def button_confirm(self):
+        self.order_id.set_delivery_line(self.carrier_id, self.delivery_price)
+        self.order_id.write(
+            {
+                "recompute_delivery_price": False,
+                "delivery_message": self.delivery_message,
+            }
+        )

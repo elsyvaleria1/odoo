@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <data>
+        <record id="contract_recruitment_report_view_search" model="ir.ui.view">
+            <field name="name">contract.recruitment.report.view.search</field>
+            <field name="model">hr.contract.recruitment.report</field>
+            <field name="arch" type="xml">
+                <search string="Offer Analysis">
+                    <field name="job_id" />
+                    <field name="offer_create_date" />
+                    <filter
+                        name="year"
+                        string="Last 365 Days Offers"
+                        domain="[                             ('offer_create_date', '&gt;=', 'today -365d'),                             ('offer_create_date', '&lt;', 'today +1d')                             ]" />
+                    <separator />
+                    <group>
+                        <filter
+                            name="group_by_offer_id"
+                            string="Offer"
+                            context="{'group_by': 'offer_id'}" />
+                        <filter
+                            name="group_by_applicant_id"
+                            string="Applicant"
+                            context="{'group_by': 'applicant_id'}" />
+                        <filter
+                            name="group_by_job_id"
+                            string="Job"
+                            context="{'group_by': 'job_id'}" />
+                        <filter
+                            name="group_by_offer_state"
+                            string="Offer State"
+                            context="{'group_by': 'offer_state'}" />
+                        <filter
+                            name="group_by_offer_create_date"
+                            string="Offer Create Date"
+                            context="{'group_by': 'offer_create_date'}" />
+
+                        <filter
+                            name="group_by_in_progress"
+                            string="In Progress"
+                            context="{'group_by': 'in_progress'}"
+                            invisible="1" />
+                        <filter
+                            name="group_by_fully_signed"
+                            string="Fully Signed"
+                            context="{'group_by': 'fully_signed'}"
+                            invisible="1" />
+                        <filter
+                            name="group_by_partially_signed"
+                            string="Partially Signed"
+                            context="{'group_by': 'partially_signed'}"
+                            invisible="1" />
+                        <filter
+                            name="group_by_refused"
+                            string="Refused"
+                            context="{'group_by': 'refused'}"
+                            invisible="1" />
+                        <filter
+                            name="group_by_expired"
+                            string="Expired"
+                            context="{'group_by': 'expired'}"
+                            invisible="1" />
+                        <filter
+                            name="group_by_cancelled"
+                            string="Cancelled"
+                            context="{'group_by': 'cancelled'}"
+                            invisible="1" />
+                    </group>
+                </search>
+            </field>
+        </record>
+        <record id="contract_recruitment_report_view_graph" model="ir.ui.view">
+            <field name="name">contract.recruitment.report.view.graph</field>
+            <field name="model">hr.contract.recruitment.report</field>
+            <field name="arch" type="xml">
+                <graph type="bar" string="Offer Analysis" sample="1">
+                    <field name="job_id" />
+                    <field name="offer_state" />
+                </graph>
+            </field>
+        </record>
+        <record id="contract_recruitment_report_view_pivot" model="ir.ui.view">
+            <field name="name">contract.recruitment.report.view.pivot</field>
+            <field name="model">hr.contract.recruitment.report</field>
+            <field name="arch" type="xml">
+                <pivot string="Offer Analysis" sample="1">
+                    <field name="job_id" type="col" />
+                    <field name="offer_state" type="row" />
+                </pivot>
+            </field>
+        </record>
+        <record id="contract_recruitment_report_view_list" model="ir.ui.view">
+            <field name="name">contract.recruitment.report.view.list</field>
+            <field name="model">hr.contract.recruitment.report</field>
+            <field name="arch" type="xml">
+                <list
+                    type="object"
+                    string="Offer Analysis"
+                    action="action_view_applicant">
+                    <field name="applicant_id" optional="show" />
+                    <field name="offer_id" optional="show" />
+                    <field name="job_id" optional="show" />
+                    <field name="offer_state" optional="show" />
+                    <field name="offer_create_date" optional="show" />
+                </list>
+            </field>
+        </record>
+        <record id="contract_recruitment_report_action" model="ir.actions.act_window">
+            <field name="name">Offer Analysis</field>
+            <field name="res_model">hr.contract.recruitment.report</field>
+            <field name="view_mode">graph,pivot,list</field>
+            <field
+                name="search_view_id"
+                ref="contract_recruitment_report_view_search" />
+            <field
+                name="context">{
+                'search_default_year': True,
+                }</field>
+            <field name="help" type="html">
+                <p class="o_view_nocontent_empty_folder">
+                    No data to display
+                </p>
+            </field>
+        </record>
+    </data>
+
+</odoo>

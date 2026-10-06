@@ -1,0 +1,6 @@
+id,name,model_id/id,group_id/id,kind,operation,domain
+access_l10n_mx_municipality_user,l10n_mx.municipality: read by every employee,model_l10n_mx_municipality,base.group_user,permission,r,
+access_l10n_mx_municipality_maintain,l10n_mx.municipality: written by the catalogue loaders,model_l10n_mx_municipality,privilege_maintain_l10n_mx_catalogue,permission,cud,
+access_l10n_mx_postal_code_user,l10n_mx.postal_code: read by every employee,model_l10n_mx_postal_code,base.group_user,permission,r,
+access_l10n_mx_postal_code_maintain,l10n_mx.postal_code: written by the catalogue loaders,model_l10n_mx_postal_code,privilege_maintain_l10n_mx_catalogue,permission,cud,
+access_wizard_l10n_mx_postal_code_import,wizard.l10n_mx.postal_code.import,model_wizard_l10n_mx_postal_code_import,base.group_system,permission,crud,

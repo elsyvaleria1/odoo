@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="device.DevicesTile">
+        <div class="o_devices_tile d-flex flex-column gap-2">
+            <div class="d-flex gap-3 o_devices_tile_totals">
+                <button type="button" class="btn btn-link p-0" t-on-click="() => this.openAll('filter_connected')">
+                    <strong class="text-success" t-out="this.props.data.connected"/> <small class="text-muted">Online</small>
+                </button>
+                <button type="button" class="btn btn-link p-0" t-on-click="() => this.openAll('filter_disconnected')">
+                    <strong class="text-warning" t-out="this.props.data.disconnected"/> <small class="text-muted">Silent</small>
+                </button>
+                <button type="button" class="btn btn-link p-0" t-on-click="() => this.openAll('filter_error')">
+                    <strong class="text-danger" t-out="this.props.data.error"/> <small class="text-muted">Error</small>
+                </button>
+            </div>
+            <ul t-if="this.devices.length" class="list-unstyled mb-0">
+                <li t-foreach="this.devices" t-as="device" t-key="device.id">
+                    <HomeTileRecordLink resModel="'device.device'" resId="device.id" className="'d-flex flex-column o_devices_tile_device'">
+                        <span class="d-flex gap-2 align-items-center">
+                            <i t-att-class="device.state === 'error' ? 'fa fa-exclamation-circle text-danger' : 'fa fa-circle-o text-warning'" aria-hidden="true"/>
+                            <span class="text-truncate" t-out="device.name"/>
+                        </span>
+                        <small class="text-muted text-truncate">
+                            <t t-if="device.last_data">Last data <t t-out="this.lastDataOf(device)"/></t>
+                            <t t-else="">Never reported</t>
+                        </small>
+                    </HomeTileRecordLink>
+                </li>
+            </ul>
+            <p t-else="" class="text-muted small mb-0">Every device is reporting.</p>
+        </div>
+    </t>
+
+</templates>

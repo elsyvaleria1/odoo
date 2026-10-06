@@ -1,0 +1,227 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="ir_job_view_search" model="ir.ui.view">
+        <field name="model">ir.job</field>
+        <field name="arch" type="xml">
+            <search string="Background Jobs">
+                <field name="model_name" />
+                <field name="method_name" />
+                <field name="channel" />
+                <field name="user_id" />
+                <field name="uuid" />
+                <field name="identity_key" />
+                <separator />
+                <filter
+                    name="wait_deps"
+                    string="Waiting Dependencies"
+                    domain="[('state', '=', 'wait_deps')]" />
+                <filter
+                    name="scheduled"
+                    string="Scheduled"
+                    domain="[('state', '=', 'scheduled')]" />
+                <filter
+                    name="pending"
+                    string="Pending"
+                    domain="[('state', '=', 'pending')]" />
+                <filter
+                    name="started"
+                    string="Started"
+                    domain="[('state', '=', 'started')]" />
+                <filter name="done" string="Done" domain="[('state', '=', 'done')]" />
+                <filter
+                    name="failed"
+                    string="Failed"
+                    domain="[('state', '=', 'failed')]" />
+                <filter
+                    name="cancelled"
+                    string="Cancelled"
+                    domain="[('state', '=', 'cancelled')]" />
+                <group>
+                    <filter
+                        name="groupby_state"
+                        string="State"
+                        context="{'group_by': 'state'}" />
+                    <filter
+                        name="groupby_channel"
+                        string="Channel"
+                        context="{'group_by': 'channel'}" />
+                    <filter
+                        name="groupby_model"
+                        string="Model"
+                        context="{'group_by': 'model_name'}" />
+                    <filter
+                        name="groupby_create_date"
+                        string="Created on"
+                        context="{'group_by': 'create_date'}" />
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="ir_job_view_tree" model="ir.ui.view">
+        <field name="model">ir.job</field>
+        <field name="arch" type="xml">
+            <list
+                string="Background Jobs"
+                create="0"
+                decoration-danger="state == 'failed'"
+                decoration-info="state == 'started'"
+                decoration-muted="state == 'cancelled'"
+                decoration-success="state == 'done'">
+                <field name="id" />
+                <field name="name" optional="show" />
+                <field name="model_name" />
+                <field name="method_name" />
+                <field name="channel" />
+                <field name="priority" optional="hide" />
+                <field
+                    name="state"
+                    widget="badge"
+                    decoration-danger="state == 'failed'"
+                    decoration-info="state in ('pending', 'started')"
+                    decoration-success="state == 'done'"
+                    decoration-warning="state in ('wait_deps', 'scheduled')" />
+                <field name="retry" optional="show" />
+                <field name="defer_count" optional="hide" />
+                <field name="eta" optional="show" />
+                <field name="create_date" />
+                <field name="started_at" optional="hide" />
+                <field name="done_at" optional="hide" />
+                <field name="user_id" widget="many2one_avatar_user" optional="show" />
+                <field name="worker_ident" optional="hide" />
+                <field name="exc_name" optional="hide" />
+            </list>
+        </field>
+    </record>
+
+    <record id="ir_job_view_form" model="ir.ui.view">
+        <field name="model">ir.job</field>
+        <field name="arch" type="xml">
+            <form string="Background Job" create="0">
+                <header>
+                    <button
+                        name="action_run_now"
+                        type="object"
+                        string="Run Manually"
+                        invisible="state not in ('scheduled', 'pending')"
+                        class="oe_highlight" />
+                    <button
+                        name="action_cancel"
+                        type="object"
+                        string="Cancel"
+                        invisible="state not in ('wait_deps', 'scheduled', 'pending')" />
+                    <button
+                        name="action_requeue"
+                        type="object"
+                        string="Requeue"
+                        invisible="state not in ('failed', 'cancelled')"
+                        class="oe_highlight" />
+                    <field
+                        name="state"
+                        widget="statusbar"
+                        statusbar_visible="scheduled,pending,started,done" />
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="display_name" /></h1>
+                    </div>
+                    <group>
+                        <group string="Call">
+                            <field name="model_name" />
+                            <field name="method_name" />
+                            <field name="record_ids" widget="json" />
+                            <field name="args" widget="json" />
+                            <field name="kwargs" widget="json" />
+                            <field name="context" widget="json" />
+                        </group>
+                        <group string="Scheduling">
+                            <field name="channel" />
+                            <field name="priority" />
+                            <field name="eta" />
+                            <field name="identity_key" />
+                            <field name="user_id" />
+                            <field name="company_id" />
+                            <field name="uuid" />
+                        </group>
+                        <group string="Execution">
+                            <field name="retry" />
+                            <field name="max_retries" />
+                            <field name="defer_count" />
+                            <field name="max_defers" />
+                            <field name="defer_reason" invisible="not defer_reason" />
+                            <field name="worker_ident" />
+                            <field name="create_date" />
+                            <field name="started_at" />
+                            <field name="done_at" />
+                        </group>
+                        <group
+                            string="Dependencies"
+                            invisible="not depends_on_ids and not dependent_ids">
+                            <field name="depends_on_ids" widget="many2many_tags" />
+                            <field name="dependent_ids" widget="many2many_tags" />
+                        </group>
+                    </group>
+                    <notebook invisible="not exc_name">
+                        <page name="error" string="Error">
+                            <group>
+                                <field name="exc_name" />
+                                <field name="exc_message" />
+                            </group>
+                            <field name="exc_info" readonly="1" />
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="ir_job_act" model="ir.actions.act_window">
+        <field name="name">Background Jobs</field>
+        <field name="res_model">ir.job</field>
+        <field name="path">jobs</field>
+        <field name="view_mode">list,form</field>
+        <field name="view_id" ref="ir_job_view_tree" />
+    </record>
+
+    <record id="ir_job_channel_view_tree" model="ir.ui.view">
+        <field name="model">ir.job.channel</field>
+        <field name="arch" type="xml">
+            <list string="Job Channels" editable="bottom" decoration-muted="not active">
+                <field name="name" />
+                <field name="capacity" />
+                <field name="running_count" />
+                <field name="pending_count" />
+                <field name="active" widget="boolean_toggle" />
+            </list>
+        </field>
+    </record>
+
+    <record id="ir_job_channel_view_search" model="ir.ui.view">
+        <field name="model">ir.job.channel</field>
+        <field name="arch" type="xml">
+            <search string="Job Channels">
+                <field name="name" />
+                <filter
+                    name="paused"
+                    string="Paused"
+                    domain="[('active', '=', False)]" />
+            </search>
+        </field>
+    </record>
+
+    <record id="ir_job_channel_act" model="ir.actions.act_window">
+        <field name="name">Job Channels</field>
+        <field name="res_model">ir.job.channel</field>
+        <field name="view_mode">list</field>
+        <field name="context">{'active_test': False}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Define a job channel</p>
+            <p>A channel bounds how many background jobs of its kind run
+            concurrently across all job workers. Jobs whose channel is not
+            listed here run with a capacity of 1. Archiving a channel pauses
+            it: none of its jobs is claimed until it is restored.</p>
+        </field>
+    </record>
+
+</odoo>

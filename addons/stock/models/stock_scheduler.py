@@ -1,0 +1,126 @@
+import logging
+from itertools import batched
+
+from odoo import api, fields, models
+from odoo.fields import Domain
+from odoo.libs.debug_log import DebugLog
+
+_logger = logging.getLogger(__name__)
+_debug = DebugLog(__name__)
+
+
+class StockScheduler(models.AbstractModel):
+    _name = "stock.scheduler"
+    _description = "Stock Scheduler"
+
+    _BATCH_SIZE = 1000
+
+    @_debug.perf.timed
+    @api.model
+    def run(self, use_new_cursor=False, company_id=False):
+        _debug.lifecycle(
+            "scheduler_start", new_cursor=use_new_cursor, company=company_id
+        )
+        try:
+            self._run_tasks(use_new_cursor=use_new_cursor, company_id=company_id)
+        except Exception:
+            _logger.exception("Error during stock scheduler")
+            raise
+        _debug.lifecycle("scheduler_done")
+
+    @api.model
+    def _get_tasks(self) -> list:
+        return ["_update_orderpoint_values", "_replenish", "_run_quant_tasks"]
+
+    @api.model
+    def _get_tasks_to_do(self) -> int:
+        return len(self._get_tasks())
+
+    @api.model
+    def _run_tasks(self, use_new_cursor=False, company_id=False) -> None:
+        Cron = self.env["ir.cron"]
+        if use_new_cursor:
+            Cron._commit_progress(remaining=self._get_tasks_to_do())
+        for task in self._get_tasks():
+            with _debug.perf("scheduler_task", cr=self.env.cr, task=task):
+                getattr(self, task)(
+                    use_new_cursor=use_new_cursor,
+                    company_id=company_id,
+                )
+            if use_new_cursor:
+                Cron._commit_progress(1)
+
+    @api.model
+    def _update_orderpoint_values(self, use_new_cursor=False, company_id=False) -> None:
+        Orderpoint = self.env["stock.warehouse.orderpoint"]
+        orderpoints = Orderpoint.search(
+            self._get_domain_orderpoint(company_id=company_id, only_automatic=False),
+        )
+        for batch_ids in batched(orderpoints.ids, self._BATCH_SIZE, strict=False):
+            batch = Orderpoint.browse(batch_ids).sudo()
+            _debug.pipeline("scheduler_update_orderpoints", orderpoints=batch)
+            batch._update_stored_values()
+            if use_new_cursor:
+                self.env["ir.cron"]._commit_progress()
+
+    @api.model
+    def _replenish(self, use_new_cursor=False, company_id=False) -> None:
+        orderpoints = self.env["stock.warehouse.orderpoint"].search(
+            self._get_domain_orderpoint(company_id=company_id),
+        )
+        _debug.pipeline("scheduler_replenish", orderpoints=orderpoints)
+        orderpoints.sudo()._procure_orderpoint_confirm(
+            use_new_cursor=use_new_cursor,
+            company_id=company_id,
+            raise_user_error=False,
+        )
+        self._reserve_due_moves(use_new_cursor=use_new_cursor, company_id=company_id)
+
+    @api.model
+    def _reserve_due_moves(self, use_new_cursor=False, company_id=False) -> None:
+        moves_to_assign = self.env["stock.move"].search(
+            self._get_domain_moves_to_assign(company_id),
+            order="date_reservation, priority desc, date asc, id asc",
+        )
+        _debug.pipeline("scheduler_reserve_due_moves", moves=len(moves_to_assign))
+        for moves_chunk in batched(moves_to_assign.ids, self._BATCH_SIZE, strict=False):
+            self.env["stock.move"].browse(moves_chunk).sudo()._action_assign()
+            if not use_new_cursor:
+                continue
+            remaining_time = self.env["ir.cron"]._commit_progress()
+            _logger.info(
+                "A batch of %d moves are assigned and committed",
+                len(moves_chunk),
+            )
+            if not remaining_time:
+                _logger.info(
+                    "Stock scheduler ran out of time with moves left to assign;"
+                    " the next run resumes from them.",
+                )
+                break
+
+    @api.model
+    def _run_quant_tasks(self, use_new_cursor=False, company_id=False) -> None:
+        self.env["stock.quant"]._run_maintenance_tasks()
+
+    @api.model
+    def _get_domain_orderpoint(self, company_id=False, only_automatic=True):
+        domain = Domain("product_id.active", "=", True)
+        if only_automatic:
+            domain &= Domain("trigger", "=", "auto")
+        if company_id:
+            domain &= Domain("company_id", "=", company_id)
+        return domain
+
+    @api.model
+    def _get_domain_moves_to_assign(self, company_id):
+        return Domain(
+            [
+                ("company_id", "=?", company_id),
+                ("state", "in", ["confirmed", "partially_available"]),
+                ("product_uom_qty", "!=", 0.0),
+                "|",
+                ("date_reservation", "<=", fields.Date.today()),
+                ("picking_type_id.reservation_method", "=", "at_confirm"),
+            ],
+        )

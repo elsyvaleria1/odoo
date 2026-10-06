@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<templates xml:space="preserve">
+
+<t t-name="device_machines.PlcDashboard">
+    <div class="o_action plc_dashboard">
+      <div class="o_content">
+        <div class="plc_dashboard_content">
+            <div t-if="this.state.loading" class="plc_loading">
+                <div class="spinner-border text-primary" role="status" />
+            </div>
+
+            <t t-else="">
+                <div class="plc_header">
+                    <div>
+                        <div class="plc_eyebrow">
+                            <i class="fa fa-tachometer me-1" />
+                            <t
+                                        t-if="this.state.data.workorder"
+                                    >Filling and labeling · Work order</t>
+                            <t t-else="">Bottle filling and labeling — Packaging</t>
+                        </div>
+                        <h4 class="mb-0">
+                            <t
+                                        t-if="this.state.data.workorder"
+                                        t-out="this.state.data.workorder.name"
+                                    />
+                            <t t-else="">Overview</t>
+                        </h4>
+                        <span class="plc_subtitle">
+                            <t t-if="this.state.data.workorder">
+                                <t t-out="this.state.data.workorder.product" /> ·
+                                <t t-out="this.state.data.workorder.workcenter" /> ·
+                            </t>
+                            <t t-if="this.state.data.workorder">
+                                <t t-out="this.state.data.totals.runs" /> runs ·
+                            </t>
+                            <t t-else="">
+                                <t t-out="this.state.data.totals.runs" /> hours with output ·
+                            </t>
+                            <t t-out="this.state.data.totals.bottles" /> pieces ·
+                            <t t-out="this.state.data.totals.machines" /> machines
+                            <t t-if="this.state.data.period_label">
+                                · <t t-out="this.state.data.period_label" />
+                            </t>
+                        </span>
+                    </div>
+                    <div class="plc_header_actions">
+                        <div
+                                    t-if="!this.state.data.workorder"
+                                    class="btn-group plc_period_group"
+                                    role="group"
+                                >
+                            <button
+                                        t-foreach="this.periods"
+                                        t-as="p"
+                                        t-key="p.key"
+                                        type="button"
+                                        class="btn btn-sm"
+                                        t-att-class="!this.state.days and p.key === this.state.period ? 'btn-primary' : 'btn-outline-secondary'"
+                                        t-on-click="() => this.onPeriodChange(p.key)"
+                                        t-out="p.label"
+                                    />
+                        </div>
+                        <button
+                                    t-if="!this.state.data.workorder"
+                                    t-ref="this.dayPickerBtnRef"
+                                    class="plc_icon_btn"
+                                    t-att-class="{'active': this.state.days}"
+                                    t-on-click.prevent="() => this.dayPicker.open()"
+                                    title="View a day or a date range"
+                                >
+                            <i class="fa fa-calendar" />
+                        </button>
+                        <button
+                                    class="plc_icon_btn"
+                                    t-on-click="this.onRefresh"
+                                    title="Refresh"
+                                >
+                            <i class="fa fa-refresh" />
+                        </button>
+                    </div>
+                </div>
+
+                <div class="plc_stats_row">
+                    <t t-foreach="this.state.data.machines" t-as="m" t-key="m.id">
+                        <div class="plc_stat_card">
+                            <div class="plc_stat_icon machine"><i
+                                            class="fa fa-industry"
+                                        /></div>
+                            <div class="plc_stat_info">
+                                <span class="plc_stat_value" t-out="m.bottles" />
+                                <span class="plc_stat_label" t-out="m.name" />
+                            </div>
+                        </div>
+                    </t>
+                    <div t-if="this.state.data.difference" class="plc_stat_card accent">
+                        <div class="plc_stat_icon diff"><i
+                                        class="fa fa-exchange"
+                                    /></div>
+                        <div class="plc_stat_info">
+                            <span
+                                        class="plc_stat_value"
+                                        t-out="this.state.data.difference.diff"
+                                    />
+                            <span class="plc_stat_label">
+                                Difference (<t t-out="this.state.data.difference.a" /> −
+                                <t t-out="this.state.data.difference.b" />)
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="plc_chart_row">
+                <div class="plc_card">
+                    <div class="plc_card_title">
+                        <t t-if="this.state.data.workorder">Pieces per machine and order</t>
+                        <t t-else="">Pieces per machine and day</t>
+                    </div>
+                    <div t-if="this.state.data.chart.labels.length" class="plc_chart_wrap">
+                        <canvas t-ref="this.chartRef" />
+                    </div>
+                    <div t-else="" class="plc_empty">
+                        <i class="fa fa-bar-chart" />
+                        <span>No data yet</span>
+                    </div>
+                </div>
+
+                <div t-if="this.state.data.hourly.labels.length" class="plc_card">
+                    <div class="plc_card_title">Bottles per hour of day</div>
+                    <div class="plc_chart_wrap">
+                        <canvas t-ref="this.hourlyRef" />
+                    </div>
+                    <div class="plc_card_footnote">
+                        <span t-if="this.state.data.hourly.peak">
+                            Peak hour: <strong><t
+                                                t-out="this.state.data.hourly.peak.hour"
+                                            /></strong>
+                            (<t t-out="this.state.data.hourly.peak.pieces" /> pieces)
+                        </span>
+                        <span t-if="this.state.data.rate">
+                            · Average while producing:
+                            <strong><t
+                                                t-out="this.state.data.rate.avg_active"
+                                            /> pcs/h</strong>
+                        </span>
+                    </div>
+                </div>
+                </div>
+
+            </t>
+        </div>
+      </div>
+    </div>
+</t>
+
+</templates>

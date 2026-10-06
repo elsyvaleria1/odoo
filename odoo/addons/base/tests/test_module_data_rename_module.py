@@ -1,0 +1,328 @@
+from odoo.tests.common import TransactionCase, tagged
+from odoo.tools.module_data import drop_views, fold_module, rename_module
+
+
+@tagged("post_install", "-at_install")
+class TestRenameModule(TransactionCase):
+    def _insert_module(self, name, state="installed"):
+        self.env.cr.execute(
+            "INSERT INTO ir_module_module (name, state, data_file_checksums) "
+            "VALUES (%s, %s, '{}'::jsonb) RETURNING id",
+            [name, state],
+        )
+        module_id = self.env.cr.fetchone()[0]
+        self.env.cr.execute(
+            "INSERT INTO ir_model_data (module, name, model, res_id, noupdate) "
+            "VALUES ('base', %s, 'ir.module.module', %s, true)",
+            [f"module_{name}", module_id],
+        )
+        return module_id
+
+    def _insert_xmlid(self, module, name):
+        self.env.cr.execute(
+            "INSERT INTO ir_model_data (module, name, model, res_id) "
+            "VALUES (%s, %s, 'res.partner', 1)",
+            [module, name],
+        )
+
+    def _read(self, query, params=None):
+        self.env.cr.execute(query, params)
+        return self.env.cr.fetchall()
+
+    def setUp(self):
+        super().setUp()
+        self.old_id = self._insert_module("probe_old")
+        dependant_id = self._insert_module("probe_dependant")
+        self.env.cr.execute(
+            "INSERT INTO ir_module_module_dependency (module_id, name) "
+            "VALUES (%s, 'probe_old')",
+            [dependant_id],
+        )
+        self._insert_xmlid("probe_old", "probe_record")
+        self.env["ir.config_parameter"].set_param("probe_old.setting", "kept")
+        self.view = self.env["ir.ui.view"].create(
+            {
+                "name": "probe",
+                "type": "qweb",
+                "key": "probe_old.probe_template",
+                "arch": "<t t-name='probe'><t t-call='probe_old.probe_template'/></t>",
+            }
+        )
+        self.action = self.env["ir.actions.server"].create(
+            {
+                "name": "probe",
+                "model_id": self.env.ref("base.model_res_partner").id,
+                "state": "code",
+                "code": "tpl = env.ref('probe_old.probe_template')\n"
+                "boxes = env['probe_old.box']",
+            }
+        )
+        self.env.cr.execute(
+            "INSERT INTO ir_ui_view (name, model, type, arch_db, active, priority, mode) "
+            "VALUES ('probe', 'res.partner', 'form', jsonb_build_object('en_US', %s::text), "
+            "true, 16, 'primary') RETURNING id",
+            [
+                (
+                    '<form><field name="name" '
+                    'groups="base.group_user,probe_old.group_probe"/></form>'
+                )
+            ],
+        )
+        self.form = self.env["ir.ui.view"].browse(self.env.cr.fetchone()[0])
+        self.bundle = self.env["ir.asset"].create(
+            {
+                "name": "probe",
+                "bundle": "probe_old.assets_probe",
+                "path": "web/static/src/probe.js",
+            }
+        )
+        self.asset = self.env["ir.asset"].create(
+            {
+                "name": "probe",
+                "bundle": "web.assets_backend",
+                "path": "probe_old/static/src/probe.js",
+            }
+        )
+
+    def test_the_row_its_xmlids_and_every_stored_reference_take_the_new_name(self):
+        self.assertTrue(rename_module(self.env.cr, "probe_old", "probe_new"))
+        self.assertEqual(
+            self._read(
+                "SELECT name FROM ir_module_module WHERE id = %s", [self.old_id]
+            ),
+            [("probe_new",)],
+        )
+        self.assertEqual(
+            self._read("SELECT module FROM ir_model_data WHERE name = 'probe_record'"),
+            [("probe_new",)],
+        )
+        self.assertEqual(
+            self._read(
+                "SELECT name FROM ir_model_data "
+                "WHERE module = 'base' AND res_id = %s AND model = 'ir.module.module'",
+                [self.old_id],
+            ),
+            [("module_probe_new",)],
+        )
+        self.assertEqual(
+            self._read(
+                "SELECT count(*) FROM ir_module_module_dependency "
+                "WHERE name = 'probe_new'"
+            ),
+            [(1,)],
+        )
+        self.assertEqual(
+            self._read(
+                "SELECT value FROM ir_config_parameter WHERE key = 'probe_new.setting'"
+            ),
+            [("kept",)],
+        )
+        self.assertEqual(
+            self._read("SELECT key FROM ir_ui_view WHERE id = %s", [self.view.id]),
+            [("probe_new.probe_template",)],
+        )
+        self.assertEqual(
+            self._read("SELECT path FROM ir_asset WHERE id = %s", [self.asset.id]),
+            [("probe_new/static/src/probe.js",)],
+        )
+
+    def test_an_xml_id_is_renamed_where_it_stands_and_a_model_name_is_not(self):
+        self.env.flush_all()
+        rename_module(self.env.cr, "probe_old", "probe_new")
+        self.assertEqual(
+            self._read(
+                "SELECT code FROM ir_act_server WHERE id = %s", [self.action.id]
+            ),
+            [
+                (
+                    (
+                        "tpl = env.ref('probe_new.probe_template')\n"
+                        "boxes = env['probe_old.box']"
+                    ),
+                )
+            ],
+        )
+        arches = dict(
+            self._read(
+                "SELECT id, arch_db->>'en_US' FROM ir_ui_view WHERE id = ANY(%s)",
+                [[self.view.id, self.form.id]],
+            )
+        )
+        self.assertIn('t-call="probe_new.probe_template"', arches[self.view.id])
+        self.assertIn(
+            'groups="base.group_user,probe_new.group_probe"', arches[self.form.id]
+        )
+        self.assertEqual(
+            self._read("SELECT bundle FROM ir_asset WHERE id = %s", [self.bundle.id]),
+            [("probe_new.assets_probe",)],
+        )
+
+    def test_a_quoted_xml_id_or_key_of_the_module_follows_and_a_model_name_not(self):
+        for name in ("probe_kanban", "probe_act", "box"):
+            self._insert_xmlid("probe_old", name)
+        self.env.cr.execute(
+            'INSERT INTO ir_model (model, name, "order", state) '
+            "VALUES ('probe_old.box', '{\"en_US\": \"probe\"}', 'id', 'base')"
+        )
+        window = self.env["ir.actions.act_window"].create(
+            {
+                "name": "probe",
+                "res_model": "res.partner",
+                "context": "{'kanban_view_ref': 'probe_old.probe_kanban'}",
+            }
+        )
+        code = (
+            "act = env['ir.actions.act_window']._for_xml_id('probe_old.probe_act')\n"
+            "multi = env['ir.config_parameter'].get_param('probe_old.setting')\n"
+            "ok = env.user.has_group('probe_old.probe_kanban')\n"
+            "boxes = env['probe_old.box']"
+        )
+        self.action.code = code
+        form_arch = (
+            '<form><field name="child_ids" '
+            "context=\"{'form_view_ref': 'probe_old.probe_kanban'}\"/>"
+            '<kanban on_create="probe_old.probe_act"/>'
+            '<a href="/odoo/action-probe_old.probe_act"/></form>'
+        )
+        self.env.cr.execute(
+            "UPDATE ir_ui_view SET arch_db = jsonb_build_object('en_US', %s::text) "
+            "WHERE id = %s",
+            [form_arch, self.form.id],
+        )
+        self.env.flush_all()
+        rename_module(self.env.cr, "probe_old", "probe_new")
+        self.assertEqual(
+            self._read("SELECT context FROM ir_act_window WHERE id = %s", [window.id]),
+            [("{'kanban_view_ref': 'probe_new.probe_kanban'}",)],
+        )
+        renamed = code.replace("'probe_old.probe_", "'probe_new.probe_").replace(
+            "'probe_old.setting'", "'probe_new.setting'"
+        )
+        self.assertIn("env['probe_old.box']", renamed)
+        self.assertEqual(
+            self._read(
+                "SELECT code FROM ir_act_server WHERE id = %s", [self.action.id]
+            ),
+            [(renamed,)],
+        )
+        [(arch,)] = self._read(
+            "SELECT arch_db->>'en_US' FROM ir_ui_view WHERE id = %s", [self.form.id]
+        )
+        self.assertNotIn("probe_old.", arch)
+        for expected in (
+            "'form_view_ref': 'probe_new.probe_kanban'",
+            'on_create="probe_new.probe_act"',
+            'href="/odoo/action-probe_new.probe_act"',
+        ):
+            self.assertIn(expected, arch)
+
+    def test_a_database_without_the_module_is_left_alone(self):
+        self.assertFalse(rename_module(self.env.cr, "probe_absent", "probe_new"))
+        self.assertEqual(
+            self._read(
+                "SELECT name FROM ir_module_module WHERE id = %s", [self.old_id]
+            ),
+            [("probe_old",)],
+        )
+
+    def test_an_uninstalled_placeholder_under_the_new_name_gives_way(self):
+        placeholder_id = self._insert_module("probe_new", state="uninstalled")
+        rename_module(self.env.cr, "probe_old", "probe_new")
+        self.assertEqual(
+            self._read("SELECT id FROM ir_module_module WHERE name = 'probe_new'"),
+            [(self.old_id,)],
+        )
+        self.assertFalse(
+            self._read(
+                "SELECT 1 FROM ir_model_data WHERE model = 'ir.module.module' "
+                "AND res_id = %s",
+                [placeholder_id],
+            )
+        )
+
+    def test_an_installed_module_under_the_new_name_stops_the_upgrade(self):
+        self._insert_module("probe_new")
+        with self.assertRaisesRegex(ValueError, "probe_new is installed"):
+            rename_module(self.env.cr, "probe_old", "probe_new")
+
+    def test_an_xmlid_both_modules_own_stops_the_upgrade(self):
+        self._insert_module("probe_new", state="uninstalled")
+        self._insert_xmlid("probe_new", "probe_record")
+        with self.assertRaisesRegex(ValueError, "both own \\['probe_record'\\]"):
+            rename_module(self.env.cr, "probe_old", "probe_new")
+
+    def test_folding_into_an_installed_module_moves_what_the_folded_one_owned(self):
+        into_id = self._insert_module("probe_into")
+        self._insert_xmlid("probe_into", "probe_shared")
+        self._insert_xmlid("probe_old", "probe_shared")
+        fold_module(self.env.cr, "probe_old", "probe_into")
+        self.assertEqual(
+            self._read(
+                "SELECT module, name FROM ir_model_data "
+                "WHERE name IN ('probe_record', 'probe_shared') ORDER BY name"
+            ),
+            [("probe_into", "probe_record"), ("probe_into", "probe_shared")],
+        )
+        self.assertEqual(
+            self._read(
+                "SELECT state, auto_install FROM ir_module_module WHERE id = %s",
+                [self.old_id],
+            ),
+            [("uninstalled", False)],
+        )
+        self.assertEqual(
+            self._read(
+                "SELECT name FROM ir_module_module_dependency "
+                "WHERE name IN ('probe_old', 'probe_into')"
+            ),
+            [("probe_into",)],
+        )
+        self.assertNotEqual(into_id, self.old_id)
+
+    def test_folding_into_an_absent_module_is_a_rename(self):
+        fold_module(self.env.cr, "probe_old", "probe_into")
+        self.assertEqual(
+            self._read(
+                "SELECT name FROM ir_module_module WHERE id = %s", [self.old_id]
+            ),
+            [("probe_into",)],
+        )
+
+    def test_folding_a_name_each_module_gives_another_record_stops_the_upgrade(self):
+        self._insert_module("probe_into")
+        self.env.cr.execute(
+            "INSERT INTO ir_model_data (module, name, model, res_id) "
+            "VALUES ('probe_into', 'probe_record', 'res.partner', 2)"
+        )
+        with self.assertRaisesRegex(ValueError, "both own \\['probe_record'\\]"):
+            fold_module(self.env.cr, "probe_old", "probe_into")
+
+    def test_a_dropped_view_takes_the_views_inheriting_it_along(self):
+        parent = self.env["ir.ui.view"].create(
+            {
+                "name": "probe parent",
+                "model": "res.partner",
+                "arch": '<form><field name="name"/></form>',
+            }
+        )
+        child = self.env["ir.ui.view"].create(
+            {
+                "name": "probe child",
+                "model": "res.partner",
+                "inherit_id": parent.id,
+                "arch": '<field name="name" position="after"><field name="ref"/></field>',
+            }
+        )
+        self.env.cr.execute(
+            "INSERT INTO ir_model_data (module, name, model, res_id) "
+            "VALUES ('probe_old', 'probe_form', 'ir.ui.view', %s)",
+            [parent.id],
+        )
+        self.assertEqual(drop_views(self.env.cr, "probe_old", ["probe_form"]), 2)
+        self.assertFalse((parent | child).exists())
+        self.assertFalse(
+            self._read(
+                "SELECT 1 FROM ir_model_data WHERE module = 'probe_old' "
+                "AND name = 'probe_form'"
+            )
+        )

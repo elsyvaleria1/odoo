@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="hr_payslip_correction_wizard_form" model="ir.ui.view">
+        <field name="name">hr.payslip.correction.wizard.view.form</field>
+        <field name="model">wizard.hr.payslip.correct</field>
+        <field name="arch" type="xml">
+            <form string="Payslip Correction">
+                <div
+                    class="alert alert-warning d-flex align-items-center"
+                    role="alert"
+                    invisible="not is_multi_payslip">
+                    <button
+                        name="action_show_related_payslips"
+                        type="object"
+                        class="btn btn-link me-1 p-0">
+                        <field name="payslip_count" /> payslips
+                    </button>
+                    have been affected by this version's changes.
+                </div>
+                <field
+                    name="payslip_id"
+                    widget="many2one"
+                    invisible="is_multi_payslip"
+                    readonly="1" />
+                <field
+                    name="correction_choice"
+                    widget="radio"
+                    invisible="not is_multi_payslip" />
+                <footer>
+                    <button
+                        name="action_correct_payslips"
+                        type="object"
+                        string="Correct payslip"
+                        class="oe_highlight" />
+                    <button
+                        name="action_revert_payslips"
+                        type="object"
+                        string="Revert only"
+                        class="btn-secondary" />
+                    <button
+                        special="cancel"
+                        string="Discard"
+                        class="btn-secondary"
+                        data-hotkey="x" />
+                </footer>
+            </form>
+        </field>
+    </record>
+
+</odoo>

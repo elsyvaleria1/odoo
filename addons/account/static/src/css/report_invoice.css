@@ -1,0 +1,34 @@
+#payment_terms_note_id > p {
+    margin-bottom: 0 !important;
+}
+
+.avoid-page-break-inside {
+    break-inside: avoid;
+}
+
+#qrcode_odoo_logo {
+    transform: translate(-50%, -50%);
+    height: 18%;
+    width: 18%;
+    border-color: white !important;
+}
+
+.tax_computation_company_currency {
+    margin-bottom: 5px;
+}
+
+.o_total_table td.o_tax_group_label {
+    max-width: 200px;
+}
+
+.o_signature_image {
+    max-height: 6rem;
+}
+
+.o_signature_placeholder {
+    min-height: 10rem;
+}
+
+.o_signature_line {
+    border-top: thin solid;
+}

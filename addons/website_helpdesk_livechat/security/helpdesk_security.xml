@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="group_use_website_helpdesk_livechat" model="res.groups">
+        <field name="name">Use Live Chat</field>
+    </record>
+
+</odoo>

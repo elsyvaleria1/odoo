@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <menuitem
+        id="menu_hr_expense_stripe_card"
+        name="Cards"
+        parent="hr_expense.menu_hr_expense_root"
+        action="action_hr_expense_stripe_card"
+        sequence="3" />
+
+    <menuitem
+        id="menu_product_mcc_stripe_tag"
+        name="MCC"
+        parent="hr_expense.menu_hr_expense_configuration"
+        action="product_mcc_stripe_tag"
+        sequence="10"
+        groups="base.group_no_one" />
+
+</odoo>

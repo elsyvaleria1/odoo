@@ -1,0 +1,14 @@
+/** @odoo-module native */
+import { registry } from "@web/core/registry";
+import { calendarView } from "@web/views/calendar";
+
+import { CalendarWithRecurrenceModel } from "./calendar_with_recurrence_model.js";
+import { CalendarWithRecurrenceRenderer } from "./calendar_with_recurrence_renderer.js";
+
+const CalendarWithRecurrenceView = {
+    ...calendarView,
+    Model: CalendarWithRecurrenceModel,
+    Renderer: CalendarWithRecurrenceRenderer,
+};
+
+registry.category("views").add("calendar_with_recurrence", CalendarWithRecurrenceView);

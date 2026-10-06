@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <data noupdate="1">
+        <record id="time_type_work" model="resource.time.type">
+            <field name="name">Worked Time</field>
+            <field name="code">work</field>
+            <field name="sequence">10</field>
+            <field name="is_work" eval="True" />
+        </record>
+        <record id="time_type_leave" model="resource.time.type">
+            <field name="name">Time Off</field>
+            <field name="code">leave</field>
+            <field name="sequence">20</field>
+        </record>
+        <record id="resource_calendar_fully_flexible" model="resource.calendar">
+            <field name="name">Fully Flexible</field>
+            <field name="company_id" eval="False" />
+            <field name="schedule_type">fully_flexible</field>
+            <field name="tz" eval="False" />
+            <field name="hours_per_day">8</field>
+            <field name="hours_per_week">40</field>
+            <field name="full_time_required_hours">40</field>
+        </record>
+        <record id="resource_calendar_std" model="resource.calendar">
+            <field name="name">Standard 40 hours/week</field>
+            <field name="company_id" ref="base.main_company" />
+            <field name="full_time_required_hours">40</field>
+        </record>
+        <record id="base.main_company" model="res.company">
+            <field name="resource_calendar_id" ref="resource_calendar_std" />
+        </record>
+        <function model="res.company" name="_init_data_resource_calendar" eval="[]" />
+    </data>
+
+</odoo>

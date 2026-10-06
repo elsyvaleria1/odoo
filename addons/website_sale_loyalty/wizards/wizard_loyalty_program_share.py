@@ -1,0 +1,145 @@
+from urllib.parse import urlencode
+
+from odoo import api, fields, models
+from odoo.exceptions import UserError, ValidationError
+
+
+class WizardLoyaltyProgramShare(models.TransientModel):
+    _name = "wizard.loyalty.program.share"
+    _description = "Create links that apply a coupon and redirect to a specific page"
+
+    def _default_website_id(self):
+        program_website_id = (
+            self.env["loyalty.program"]
+            .browse(self.env.context.get("default_program_id"))
+            .website_id
+        )
+        if program_website_id:
+            return program_website_id
+        else:
+            Website = self.env["website"]
+            websites = Website.search([])
+            return (len(websites) == 1 and websites) or Website
+
+    website_id = fields.Many2one(
+        comodel_name="website",
+        default=lambda self: self._default_website_id(),
+        required=True,
+    )
+    coupon_id = fields.Many2one(
+        comodel_name="loyalty.card",
+        domain="[('program_id', '=', program_id)]",
+    )
+    program_id = fields.Many2one(
+        comodel_name="loyalty.program",
+        required=True,
+        domain=[
+            "|",
+            ("program_type", "=", "coupons"),
+            "|",
+            ("trigger", "=", "with_code"),
+            (
+                "rule_ids.code",
+                "!=",
+                False,
+            ),
+        ],
+    )
+    program_website_id = fields.Many2one(
+        comodel_name="website",
+        related="program_id.website_id",
+        string="Program Website",
+    )
+
+    promo_code = fields.Char(compute="_compute_promo_code")
+    share_link = fields.Char(compute="_compute_share_link")
+    redirect = fields.Char(
+        default="/shop",
+        required=True,
+    )
+
+    @api.constrains("coupon_id", "program_id")
+    def _check_program(self) -> None:
+        if self.filtered(
+            lambda record: (
+                not record.coupon_id and record.program_id.program_type == "coupons"
+            )
+        ):
+            raise ValidationError(self.env._("A coupon is needed for coupon programs."))
+
+    @api.constrains("website_id", "program_id")
+    def _check_website(self) -> None:
+        if self.filtered(
+            lambda record: (
+                record.program_website_id
+                and record.program_website_id != record.website_id
+            )
+        ):
+            raise ValidationError(
+                self.env._(
+                    "The shared website should correspond to the website of the program."
+                )
+            )
+
+    @api.depends("coupon_id.code", "program_id.rule_ids.code")
+    def _compute_promo_code(self) -> None:
+        for record in self:
+            record.promo_code = (
+                record.coupon_id.code
+                or record.program_id.rule_ids.filtered("code")[:1].code
+            )
+
+    @api.depends("website_id", "redirect")
+    @api.depends_context("use_short_link")
+    def _compute_share_link(self) -> None:
+        for record in self:
+            target_url = "{base}/coupon/{code}?{query}".format(
+                base=record.website_id.get_base_url(),
+                code=record.promo_code,
+                query=urlencode({"r": record.redirect}),
+            )
+
+            if record.env.context.get("use_short_link"):
+                tracker = self.env["link.tracker"].search(  # noqa: E8507 - a transient wizard: one record
+                    [("url", "=", target_url)], limit=1
+                )
+                if not tracker:
+                    tracker = self.env["link.tracker"].create({"url": target_url})
+                record.share_link = tracker.short_url
+            else:
+                record.share_link = target_url
+
+    def action_generate_short_link(self) -> dict:
+        return {
+            "name": self.env._("Share"),
+            "type": "ir.actions.act_window",
+            "view_mode": "form",
+            "res_model": "wizard.loyalty.program.share",
+            "target": "new",
+            "res_id": self.id,
+            "context": {
+                "use_short_link": True,
+            },
+        }
+
+    @api.model
+    def create_share_action(self, coupon=None, program=None) -> dict:
+        if bool(program) == bool(coupon):
+            raise UserError(self.env._("Provide either a coupon or a program."))
+
+        return {
+            "name": self.env._(
+                "Share %s",
+                self.env["loyalty.program"]
+                ._program_items_name()
+                .get((program or coupon).program_type, ""),
+            ),
+            "type": "ir.actions.act_window",
+            "view_mode": "form",
+            "res_model": "wizard.loyalty.program.share",
+            "target": "new",
+            "context": {
+                "default_program_id": (program and program.id) or coupon.program_id.id,
+                "default_coupon_id": (coupon and coupon.id) or None,
+            },
+        }

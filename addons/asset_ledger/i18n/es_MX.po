@@ -1,0 +1,283 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* asset_ledger
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Language: es_MX\n"
+"Plural-Forms: \n"
+
+#. module: asset_ledger
+#: model:ir.actions.act_window,name:asset_ledger.action_resource_asset_all
+#: model:ir.ui.menu,name:asset_ledger.menu_all_assets
+msgid "All Assets"
+msgstr "Todos los activos"
+
+#. module: asset_ledger
+#: model:ir.ui.menu,name:asset_ledger.menu_property_all
+msgid "All Properties"
+msgstr "Todas las propiedades"
+
+#. module: asset_ledger
+#: model:ir.ui.menu,name:asset_ledger.menu_general_service_logs
+msgid "All Service Logs"
+msgstr "Todos los registros de servicio"
+
+#. module: asset_ledger
+#: model_terms:ir.ui.view,arch_db:asset_ledger.resource_asset_tag_view_search
+#: model_terms:ir.ui.view,arch_db:asset_ledger.resource_asset_view_search_asset
+#: model_terms:ir.ui.view,arch_db:asset_ledger.view_form_product_asset_log
+#: model_terms:ir.ui.view,arch_db:asset_ledger.view_search_product_asset_log
+msgid "Archived"
+msgstr "Archivado"
+
+#. module: asset_ledger
+#: model_terms:ir.ui.view,arch_db:asset_ledger.resource_asset_view_search_asset
+#: model_terms:ir.ui.view,arch_db:asset_ledger.view_search_product_asset_log
+msgid "Asset"
+msgstr "Activo"
+
+#. module: asset_ledger
+#: model:ir.actions.act_window,name:asset_ledger.action_resource_asset_tag
+#: model:ir.model.fields,field_description:asset_ledger.field_account_depreciation_board__asset_tag_ids
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset__asset_tag_ids
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_device__asset_tag_ids
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_equipment__asset_tag_ids
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_furniture__asset_tag_ids
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_it__asset_tag_ids
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_machinery__asset_tag_ids
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_property__asset_tag_ids
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_room__asset_tag_ids
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_telecom__asset_tag_ids
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_vehicle__asset_tag_ids
+#: model:ir.ui.menu,name:asset_ledger.menu_asset_tags
+#: model_terms:ir.ui.view,arch_db:asset_ledger.resource_asset_tag_view_list
+#: model_terms:ir.ui.view,arch_db:asset_ledger.resource_asset_tag_view_search
+msgid "Asset Tags"
+msgstr "Etiquetas de activos"
+
+#. module: asset_ledger
+#: model:ir.ui.menu,name:asset_ledger.menu_general_asset_templates
+msgid "Asset Templates"
+msgstr "Plantillas de activos"
+
+#. module: asset_ledger
+#: model_terms:ir.ui.view,arch_db:asset_ledger.resource_asset_view_search_asset
+#: model_terms:ir.ui.view,arch_db:asset_ledger.view_product_template_search_asset
+msgid "Asset Type"
+msgstr "Tipo de activo"
+
+#. module: asset_ledger
+#: model:ir.actions.act_window,name:asset_ledger.action_product_template_asset
+#: model:ir.module.category,name:asset_ledger.module_category_asset_management
+#: model:ir.ui.menu,name:asset_ledger.menu_general_assets_root
+#: model_terms:ir.ui.view,arch_db:asset_ledger.resource_asset_view_list_general
+#: model_terms:ir.ui.view,arch_db:asset_ledger.resource_asset_view_search_asset
+msgid "Assets"
+msgstr "Activos"
+
+#. module: asset_ledger
+#: model_terms:ir.ui.view,arch_db:asset_ledger.view_form_product_asset_log
+msgid "Cancel"
+msgstr "Cancelar"
+
+#. module: asset_ledger
+#: model:ir.ui.menu,name:asset_ledger.menu_general_catalog
+#: model:ir.ui.menu,name:asset_ledger.menu_property_catalog
+msgid "Catalog"
+msgstr "Catálogo"
+
+#. module: asset_ledger
+#: model_terms:ir.ui.view,arch_db:asset_ledger.view_search_product_asset_log
+msgid "Category"
+msgstr "Categoría"
+
+#. module: asset_ledger
+#: model_terms:ir.ui.view,arch_db:asset_ledger.view_search_product_asset_log
+msgid "Date"
+msgstr "Fecha"
+
+#. module: asset_ledger
+#: model_terms:ir.ui.view,arch_db:asset_ledger.view_search_product_asset_log
+msgid "Done"
+msgstr "Hecho"
+
+#. module: asset_ledger
+#: model:ir.actions.act_window,name:asset_ledger.action_resource_asset_general
+#: model:ir.ui.menu,name:asset_ledger.menu_equipment_assets
+#: model_terms:ir.ui.view,arch_db:asset_ledger.view_product_template_search_asset
+msgid "Equipment"
+msgstr "Equipo"
+
+#. module: asset_ledger
+#: model:ir.model.fields.selection,name:asset_ledger.selection__product_category__log_type__fuel
+#: model_terms:ir.ui.view,arch_db:asset_ledger.resource_asset_view_form_ledger
+#: model_terms:ir.ui.view,arch_db:asset_ledger.view_search_product_asset_log
+msgid "Fuel"
+msgstr "Combustible"
+
+#. module: asset_ledger
+#: model:ir.model.fields.selection,name:asset_ledger.selection__product_category__log_type__highway
+#: model_terms:ir.ui.view,arch_db:asset_ledger.view_search_product_asset_log
+msgid "Highway"
+msgstr "Carretera"
+
+#. module: asset_ledger
+#: model:ir.actions.act_window,name:asset_ledger.action_resource_asset_it_asset
+#: model:ir.ui.menu,name:asset_ledger.menu_it_assets
+msgid "IT Assets"
+msgstr "Activos de TI"
+
+#. module: asset_ledger
+#: model_terms:ir.ui.view,arch_db:asset_ledger.resource_asset_view_search_asset
+msgid "Location"
+msgstr "Ubicación"
+
+#. module: asset_ledger
+#: model_terms:ir.ui.view,arch_db:asset_ledger.view_search_product_asset_log
+msgid "Log Type"
+msgstr "Tipo de registro"
+
+#. module: asset_ledger
+#: model:ir.actions.act_window,name:asset_ledger.action_resource_asset_machinery
+#: model:ir.ui.menu,name:asset_ledger.menu_machinery_assets
+#: model_terms:ir.ui.view,arch_db:asset_ledger.view_product_template_search_asset
+msgid "Machinery"
+msgstr "Maquinaria"
+
+#. module: asset_ledger
+#: model_terms:ir.ui.view,arch_db:asset_ledger.view_form_product_asset_log
+msgid "Mark as Done"
+msgstr "Marcar como hecho"
+
+#. module: asset_ledger
+#: model_terms:ir.ui.view,arch_db:asset_ledger.resource_asset_view_search_asset
+msgid "Missing Identifiers"
+msgstr "Identificadores faltantes"
+
+#. module: asset_ledger
+#: model_terms:ir.ui.view,arch_db:asset_ledger.resource_asset_view_search_asset
+#: model_terms:ir.ui.view,arch_db:asset_ledger.resource_asset_view_search_ledger
+msgid "Model"
+msgstr "Modelo"
+
+#. module: asset_ledger
+#: model_terms:ir.ui.view,arch_db:asset_ledger.view_search_product_asset_log
+msgid "New"
+msgstr "Nuevo"
+
+#. module: asset_ledger
+#: model:ir.model.fields.selection,name:asset_ledger.selection__product_category__log_type__operator
+#: model_terms:ir.ui.view,arch_db:asset_ledger.view_search_product_asset_log
+msgid "Operator Assignment"
+msgstr "Asignación de operador"
+
+#. module: asset_ledger
+#: model:ir.ui.menu,name:asset_ledger.menu_property_assets
+#: model_terms:ir.ui.view,arch_db:asset_ledger.resource_asset_view_list_property
+msgid "Properties"
+msgstr "Propiedades"
+
+#. module: asset_ledger
+#: model:ir.ui.menu,name:asset_ledger.menu_property_root
+#: model_terms:ir.ui.view,arch_db:asset_ledger.view_product_template_search_asset
+msgid "Property"
+msgstr "Propiedad"
+
+#. module: asset_ledger
+#: model:ir.actions.act_window,name:asset_ledger.action_product_template_property
+#: model:ir.ui.menu,name:asset_ledger.menu_property_models
+msgid "Property Types"
+msgstr "Tipos de propiedad"
+
+#. module: asset_ledger
+#: model_terms:ir.ui.view,arch_db:asset_ledger.view_form_product_asset_log
+msgid "Reset to New"
+msgstr "Restablecer a nuevo"
+
+#. module: asset_ledger
+#: model_terms:ir.ui.view,arch_db:asset_ledger.view_search_product_asset_log
+msgid "Running"
+msgstr "En curso"
+
+#. module: asset_ledger
+#: model_terms:ir.ui.view,arch_db:asset_ledger.view_search_product_asset_log
+msgid "Service"
+msgstr "Servicio"
+
+#. module: asset_ledger
+#: model:ir.model.fields,field_description:asset_ledger.field_account_depreciation_board__service_activity
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset__service_activity
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_device__service_activity
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_equipment__service_activity
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_furniture__service_activity
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_it__service_activity
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_machinery__service_activity
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_property__service_activity
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_room__service_activity
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_telecom__service_activity
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_vehicle__service_activity
+#: model_terms:ir.ui.view,arch_db:asset_ledger.resource_asset_view_search_asset
+msgid "Service Activity"
+msgstr "Actividad de servicio"
+
+#. module: asset_ledger
+#: model:ir.ui.menu,name:asset_ledger.menu_property_service_logs
+msgid "Service Logs"
+msgstr "Registros de servicio"
+
+#. module: asset_ledger
+#: model_terms:ir.ui.view,arch_db:asset_ledger.resource_asset_view_search_asset
+#: model_terms:ir.ui.view,arch_db:asset_ledger.resource_asset_view_search_ledger
+msgid "Service Overdue"
+msgstr "Servicio vencido"
+
+#. module: asset_ledger
+#: model_terms:ir.ui.view,arch_db:asset_ledger.resource_asset_view_search_asset
+msgid "Service Today"
+msgstr "Servicio hoy"
+
+#. module: asset_ledger
+#: model:ir.ui.menu,name:asset_ledger.menu_general_services
+#: model:ir.ui.menu,name:asset_ledger.menu_property_services
+#: model_terms:ir.ui.view,arch_db:asset_ledger.resource_asset_view_form_ledger
+msgid "Services"
+msgstr "Servicios"
+
+#. module: asset_ledger
+#: model_terms:ir.ui.view,arch_db:asset_ledger.view_search_product_asset_log
+msgid "Source"
+msgstr "Origen"
+
+#. module: asset_ledger
+#: model_terms:ir.ui.view,arch_db:asset_ledger.resource_asset_view_search_asset
+msgid "State"
+msgstr "Estado"
+
+#. module: asset_ledger
+#: model:ir.actions.act_window,name:asset_ledger.action_resource_asset_tools
+#: model:ir.ui.menu,name:asset_ledger.menu_tools_assets
+msgid "Tools"
+msgstr "Herramientas"
+
+#. module: asset_ledger
+#: model_terms:ir.ui.view,arch_db:asset_ledger.view_search_product_asset_log
+msgid "Unclassified"
+msgstr "Sin clasificar"
+
+#. module: asset_ledger
+#: model_terms:ir.ui.view,arch_db:asset_ledger.view_product_template_search_asset
+msgid "Vehicles"
+msgstr "Vehículos"
+
+#. module: asset_ledger
+#: model_terms:ir.ui.view,arch_db:asset_ledger.view_search_product_asset_log
+msgid "Vendor"
+msgstr "Proveedor"

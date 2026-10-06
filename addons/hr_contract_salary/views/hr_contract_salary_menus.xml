@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <menuitem
+        id="menu_hr_recruitment_config_contract_templates"
+        name="Contracts"
+        parent="hr_recruitment.menu_hr_recruitment_configuration"
+        sequence="35" />
+
+    <menuitem
+        id="hr_recruitment_menu_contract_templates"
+        name="Templates"
+        parent="menu_hr_recruitment_config_contract_templates"
+        action="hr.action_hr_contract_templates"
+        sequence="10"
+        groups="hr.group_hr_manager" />
+
+    <menuitem
+        id="salary_package_menu"
+        name="Salary Package Configurator"
+        parent="hr.menu_human_resources_configuration"
+        sequence="100" />
+
+    <menuitem
+        id="salary_package_benefit"
+        parent="hr_contract_salary.salary_package_menu"
+        action="hr_contract_benefit_action"
+        sequence="1" />
+
+    <menuitem
+        id="salary_package_personal_info"
+        parent="hr_contract_salary.salary_package_menu"
+        action="hr_contract_salary_personal_info_action"
+        sequence="2" />
+
+    <menuitem
+        id="salary_package_resume"
+        parent="hr_contract_salary.salary_package_menu"
+        action="hr_contract_salary_resume_action"
+        sequence="3" />
+
+    <menuitem
+        id="menu_salary_package_offer"
+        parent="hr_contract_salary.salary_package_menu"
+        action="hr_contract_salary_offer_action"
+        sequence="10" />
+
+    <menuitem
+        id="menu_hr_contract_salary_job_offer"
+        parent="hr_recruitment.menu_crm_case_categ0_act_job"
+        action="hr_contract_salary_offer_recruitment_action"
+        sequence="23" />
+
+    <menuitem
+        id="menu_hr_contract_salary_offer_refusal_reasons"
+        parent="hr_recruitment.menu_hr_recruitment_config_applications"
+        action="hr_contract_salary_offer_refusal_reasons"
+        sequence="15" />
+
+    <menuitem
+        id="menu_report_contract_recruitment_all"
+        name="Offer Analysis"
+        parent="hr_recruitment.report_hr_recruitment"
+        action="contract_recruitment_report_action"
+        groups="hr_recruitment.group_hr_recruitment_user" />
+
+</odoo>

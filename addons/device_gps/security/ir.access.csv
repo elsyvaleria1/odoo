@@ -1,0 +1,8 @@
+id,name,model_id/id,group_id/id,kind,operation,reach,anchor,domain
+device_data_log_gps_company_rule,GPS Tracking Points: company rule,model_device_data_log_gps,group_device_gps_user,permission,r,company,,
+device_data_log_gps_company_rule_group_device_gps_manager,GPS Tracking Points: company rule,model_device_data_log_gps,group_device_gps_manager,permission,crud,company,,
+device_data_log_gps_report_company_rule,GPS Report: company rule,model_device_data_log_gps_report,group_device_gps_user,permission,r,company,,
+device_data_log_gps_report_company_rule_group_device_gps_manager,GPS Report: company rule,model_device_data_log_gps_report,group_device_gps_manager,permission,r,company,,
+privilege_read_resource_odometer_logs,GPS observations: a resource reads its own odometer,model_device_data_log_gps,privilege_read_resource_odometer,permission,r,company,,
+resource_gps_binding_user,GPS attachment history,model_resource_gps_binding,group_device_gps_user,permission,r,company,,
+resource_gps_binding_odometer,Resource GPS attachment history,model_resource_gps_binding,privilege_read_resource_odometer,permission,r,company,,

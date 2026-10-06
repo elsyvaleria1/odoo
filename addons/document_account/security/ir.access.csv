@@ -1,0 +1,5 @@
+id,name,model_id/id,group_id/id,kind,operation,reach,anchor,domain
+access_documents_account_folder_setting_group_system,documents_account_folder_setting_group_system,model_document_account_folder_setting,base.group_system,permission,r,,,
+access_documents_account_folder_setting_group_manager,documents_account_folder_setting_group_manager,model_document_account_folder_setting,document.group_documents_manager,permission,crud,,,
+documents_folder_setting_company_rule,document.account.folder.settings: multicompany,model_document_account_folder_setting,base.group_everyone,guard,crud,company,,
+privilege_read_folder_setting_settings,document.account.folder.setting: read by code filing a record into its journal folder,model_document_account_folder_setting,privilege_read_folder_setting,permission,r,,,

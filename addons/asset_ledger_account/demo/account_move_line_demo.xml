@@ -1,0 +1,204 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="bill_line_fuel_civic_001" model="account.move.line">
+        <field name="move_id" ref="bill_fuel_civic_001" />
+        <field name="product_id" ref="asset_ledger.product_product_fuel_credit" />
+        <field
+            name="asset_id"
+            search="[('trace_id', '=', ref('asset_ledger.stock_lot_civic_001'))]" />
+        <field name="name">Gasoline - Premium 91 Octane (45.5 liters)</field>
+        <field name="quantity">45.5</field>
+        <field name="price_unit">1.65</field>
+    </record>
+
+    <record id="bill_line_fuel_f150_001" model="account.move.line">
+        <field name="move_id" ref="bill_fuel_f150_001" />
+        <field name="product_id" ref="asset_ledger.product_product_fuel_credit" />
+        <field
+            name="asset_id"
+            search="[('trace_id', '=', ref('asset_ledger.stock_lot_f150_001'))]" />
+        <field name="name">Diesel Fuel (85.0 liters)</field>
+        <field name="quantity">85.0</field>
+        <field name="price_unit">1.85</field>
+    </record>
+
+    <record id="bill_line_fuel_transit_001" model="account.move.line">
+        <field name="move_id" ref="bill_fuel_transit_001" />
+        <field name="product_id" ref="asset_ledger.product_product_fuel_credit" />
+        <field
+            name="asset_id"
+            search="[('trace_id', '=', ref('asset_ledger.stock_lot_transit_001'))]" />
+        <field name="name">Diesel Fuel (95.0 liters)</field>
+        <field name="quantity">95.0</field>
+        <field name="price_unit">1.85</field>
+    </record>
+
+    <record id="bill_line_fuel_tractor_001" model="account.move.line">
+        <field name="move_id" ref="bill_fuel_tractor_001" />
+        <field name="product_id" ref="asset_ledger.product_product_fuel_credit" />
+        <field
+            name="asset_id"
+            search="[('trace_id', '=', ref('asset_ledger.stock_lot_tractor_001'))]" />
+        <field name="name">Agricultural Diesel Fuel (120.0 liters)</field>
+        <field name="quantity">120.0</field>
+        <field name="price_unit">1.75</field>
+    </record>
+
+    <record id="bill_line_maintenance_civic_oil" model="account.move.line">
+        <field name="move_id" ref="bill_maintenance_civic_001" />
+        <field name="product_id" ref="asset_ledger.product_product_maintenance" />
+        <field
+            name="asset_id"
+            search="[('trace_id', '=', ref('asset_ledger.stock_lot_civic_001'))]" />
+        <field name="name">Synthetic Oil Change - 5W-30</field>
+        <field name="quantity">1.0</field>
+        <field name="price_unit">75.00</field>
+    </record>
+
+    <record id="bill_line_maintenance_civic_filter" model="account.move.line">
+        <field name="move_id" ref="bill_maintenance_civic_001" />
+        <field name="product_id" ref="asset_ledger.product_product_maintenance" />
+        <field
+            name="asset_id"
+            search="[('trace_id', '=', ref('asset_ledger.stock_lot_civic_001'))]" />
+        <field name="name">Engine Air Filter Replacement</field>
+        <field name="quantity">1.0</field>
+        <field name="price_unit">35.00</field>
+    </record>
+
+    <record id="bill_line_maintenance_f150_parts" model="account.move.line">
+        <field name="move_id" ref="bill_maintenance_f150_001" />
+        <field name="product_id" ref="asset_ledger.product_product_maintenance" />
+        <field
+            name="asset_id"
+            search="[('trace_id', '=', ref('asset_ledger.stock_lot_f150_001'))]" />
+        <field
+            name="name">30,000 Mile Service - Parts (filters, fluids, spark plugs)</field>
+        <field name="quantity">1.0</field>
+        <field name="price_unit">285.00</field>
+    </record>
+
+    <record id="bill_line_maintenance_f150_labor" model="account.move.line">
+        <field name="move_id" ref="bill_maintenance_f150_001" />
+        <field name="product_id" ref="asset_ledger.product_product_maintenance" />
+        <field
+            name="asset_id"
+            search="[('trace_id', '=', ref('asset_ledger.stock_lot_f150_001'))]" />
+        <field name="name">30,000 Mile Service - Labor (3.5 hours)</field>
+        <field name="quantity">3.5</field>
+        <field name="price_unit">95.00</field>
+    </record>
+
+    <record id="bill_line_maintenance_model3_brakes" model="account.move.line">
+        <field name="move_id" ref="bill_maintenance_model3_001" />
+        <field name="product_id" ref="asset_ledger.product_product_maintenance" />
+        <field
+            name="asset_id"
+            search="[('trace_id', '=', ref('asset_ledger.stock_lot_model3_001'))]" />
+        <field name="name">Brake Pad Replacement - Front and Rear</field>
+        <field name="quantity">1.0</field>
+        <field name="price_unit">450.00</field>
+    </record>
+
+    <record id="bill_line_maintenance_model3_tires" model="account.move.line">
+        <field name="move_id" ref="bill_maintenance_model3_001" />
+        <field name="product_id" ref="asset_ledger.product_product_maintenance" />
+        <field
+            name="asset_id"
+            search="[('trace_id', '=', ref('asset_ledger.stock_lot_model3_001'))]" />
+        <field name="name">Tire Rotation and Balance</field>
+        <field name="quantity">1.0</field>
+        <field name="price_unit">85.00</field>
+    </record>
+
+    <record id="bill_line_maintenance_tractor_hydraulic" model="account.move.line">
+        <field name="move_id" ref="bill_maintenance_tractor_001" />
+        <field name="product_id" ref="asset_ledger.product_product_maintenance" />
+        <field
+            name="asset_id"
+            search="[('trace_id', '=', ref('asset_ledger.stock_lot_tractor_001'))]" />
+        <field name="name">Hydraulic System Overhaul - Parts and Fluids</field>
+        <field name="quantity">1.0</field>
+        <field name="price_unit">850.00</field>
+    </record>
+
+    <record id="bill_line_maintenance_tractor_labor" model="account.move.line">
+        <field name="move_id" ref="bill_maintenance_tractor_001" />
+        <field name="product_id" ref="asset_ledger.product_product_maintenance" />
+        <field
+            name="asset_id"
+            search="[('trace_id', '=', ref('asset_ledger.stock_lot_tractor_001'))]" />
+        <field name="name">Heavy Equipment Service Labor (8.0 hours)</field>
+        <field name="quantity">8.0</field>
+        <field name="price_unit">125.00</field>
+    </record>
+
+    <record id="bill_line_insurance_civic_001" model="account.move.line">
+        <field name="move_id" ref="bill_insurance_civic_001" />
+        <field name="product_id" ref="asset_ledger.product_product_insurance" />
+        <field
+            name="asset_id"
+            search="[('trace_id', '=', ref('asset_ledger.stock_lot_civic_001'))]" />
+        <field name="name">Annual Auto Insurance - Comprehensive Coverage</field>
+        <field name="quantity">1.0</field>
+        <field name="price_unit">1200.00</field>
+    </record>
+
+    <record id="bill_line_insurance_f150_001" model="account.move.line">
+        <field name="move_id" ref="bill_insurance_f150_001" />
+        <field name="product_id" ref="asset_ledger.product_product_insurance" />
+        <field
+            name="asset_id"
+            search="[('trace_id', '=', ref('asset_ledger.stock_lot_f150_001'))]" />
+        <field name="name">Annual Commercial Vehicle Insurance</field>
+        <field name="quantity">1.0</field>
+        <field name="price_unit">1850.00</field>
+    </record>
+
+    <record id="bill_line_insurance_model3_001" model="account.move.line">
+        <field name="move_id" ref="bill_insurance_model3_001" />
+        <field name="product_id" ref="asset_ledger.product_product_insurance" />
+        <field
+            name="asset_id"
+            search="[('trace_id', '=', ref('asset_ledger.stock_lot_model3_001'))]" />
+        <field
+            name="name">Annual Electric Vehicle Insurance with Battery Coverage</field>
+        <field name="quantity">1.0</field>
+        <field name="price_unit">1650.00</field>
+    </record>
+
+    <record id="bill_line_multi_civic_tires" model="account.move.line">
+        <field name="move_id" ref="bill_multi_asset_001" />
+        <field name="product_id" ref="asset_ledger.product_product_maintenance" />
+        <field
+            name="asset_id"
+            search="[('trace_id', '=', ref('asset_ledger.stock_lot_civic_001'))]" />
+        <field name="name">Tire Rotation - Honda Civic</field>
+        <field name="quantity">1.0</field>
+        <field name="price_unit">45.00</field>
+    </record>
+
+    <record id="bill_line_multi_transit_oil" model="account.move.line">
+        <field name="move_id" ref="bill_multi_asset_001" />
+        <field name="product_id" ref="asset_ledger.product_product_maintenance" />
+        <field
+            name="asset_id"
+            search="[('trace_id', '=', ref('asset_ledger.stock_lot_transit_001'))]" />
+        <field name="name">Oil Change - Ford Transit Van</field>
+        <field name="quantity">1.0</field>
+        <field name="price_unit">85.00</field>
+    </record>
+
+    <record id="bill_line_multi_camry_inspection" model="account.move.line">
+        <field name="move_id" ref="bill_multi_asset_001" />
+        <field name="product_id" ref="asset_ledger.product_product_maintenance" />
+        <field
+            name="asset_id"
+            search="[('trace_id', '=', ref('asset_ledger.stock_lot_camry_001'))]" />
+        <field name="name">Annual Safety Inspection - Toyota Camry</field>
+        <field name="quantity">1.0</field>
+        <field name="price_unit">65.00</field>
+    </record>
+
+</odoo>

@@ -1,0 +1,165 @@
+/** @odoo-module native */
+import { proxy } from "@odoo/owl";
+import { registry } from "@web/core/registry";
+import { _t } from "@web/core/translation";
+import { useService } from "@web/core/utils/hooks";
+import { useRecordObserver } from "@web/fields/hooks/record_observer";
+import {
+    SelectionField,
+    selectionField,
+} from "@web/fields/selection/selection/selection_field";
+
+import { TRIGGER_FILTERS } from "./utils.js";
+
+const OPT_GROUPS = [
+    {
+        group: { sequence: 10, key: "values", label: _t("Values Updated") },
+        triggers: [
+            "on_stage_set",
+            "on_user_set",
+            "on_tag_set",
+            "on_state_set",
+            "on_priority_set",
+            "on_archive",
+            "on_unarchive",
+        ],
+    },
+    {
+        group: { sequence: 20, key: "mail", label: _t("Email Events") },
+        triggers: ["on_message_sent", "on_message_received"],
+    },
+    {
+        group: { sequence: 30, key: "timing", label: _t("Timing Conditions") },
+        triggers: ["on_time", "on_time_created", "on_time_updated"],
+    },
+    {
+        group: { sequence: 40, key: "custom", label: _t("Custom") },
+        triggers: [
+            "on_create",
+            "on_create_or_write",
+            "on_unlink",
+            "on_change",
+            "on_hand",
+        ],
+    },
+    {
+        group: { sequence: 50, key: "external", label: _t("External") },
+        triggers: ["on_webhook"],
+    },
+    {
+        group: {
+            sequence: 60,
+            key: "deprecated",
+            label: _t("Deprecated (do not use)"),
+        },
+        triggers: ["on_write"],
+    },
+];
+
+function computeDerivedOptions(
+    options,
+    fields,
+    currentSelection,
+    { excludeGroups = [] } = {},
+) {
+    const derivedOptions = [];
+    for (const [value, label] of options) {
+        const entry = OPT_GROUPS.find((g) => g.triggers.includes(value));
+        if (!entry) {
+            console.warn(`automation: trigger "${value}" is missing from OPT_GROUPS`);
+            continue;
+        }
+        const { group, triggers } = entry;
+        if (
+            (group.key === "deprecated" && !triggers.includes(currentSelection)) ||
+            excludeGroups.includes(group.key)
+        ) {
+            continue;
+        }
+        const filterFn = TRIGGER_FILTERS[value];
+        if (filterFn) {
+            const triggerFields = fields.filter(filterFn);
+            if (triggerFields.length === 0) {
+                continue;
+            }
+        }
+
+        const option = { group, value, label };
+        derivedOptions.push(option);
+    }
+    return derivedOptions;
+}
+
+export class TriggerSelectionField extends SelectionField {
+    static template = "automation.TriggerSelectionField";
+    setup() {
+        super.setup();
+        this.groupedOptions = proxy([]);
+
+        const orm = useService("orm");
+        // One object holding a model id and the fields of THAT model, assigned
+        // only once they have arrived. Claiming the id before the fetch returns
+        // makes the next observer run skip the fetch and filter against the
+        // PREVIOUS model's fields, which is how a model carrying stage_id,
+        // tag_ids and priority came out offering none of their triggers.
+        let loaded = null;
+        useRecordObserver(async (record) => {
+            const { data, fields } = record;
+            const modelId = data.model_id?.id ?? false;
+            if (loaded?.modelId !== modelId) {
+                // Nothing to offer until the new model's fields arrive. Leaving
+                // the old list up would present triggers this model does not
+                // support, and a reader quick enough to open the dropdown can
+                // pick one before the fetch lands.
+                this.groupedOptions.length = 0;
+                const relatedFields = modelId
+                    ? await orm.searchRead(
+                          "ir.model.fields",
+                          [["model_id", "=", modelId]],
+                          ["field_description", "name", "ttype", "relation"],
+                      )
+                    : [];
+                if ((record.data.model_id?.id ?? false) !== modelId) {
+                    // A newer model landed while this was in flight; the run
+                    // that observed it owns the options.
+                    return;
+                }
+                loaded = { modelId, fields: relatedFields };
+            }
+
+            const derivedOptions = computeDerivedOptions(
+                fields[this.props.name].selection,
+                loaded.fields,
+                data[this.props.name],
+                { excludeGroups: data.model_is_mail_thread ? [] : ["mail"] },
+            );
+
+            this.groupedOptions.length = 0;
+            for (const option of derivedOptions) {
+                const group = this.groupedOptions.find(
+                    (g) => g.key === option.group.key,
+                ) ?? {
+                    ...option.group,
+                    choices: [],
+                };
+                delete option.group;
+                group.choices.push(option);
+                if (!this.groupedOptions.includes(group)) {
+                    this.groupedOptions.push(group);
+                }
+            }
+            this.groupedOptions.sort((a, b) => a.sequence - b.sequence);
+        });
+    }
+
+    get groups() {
+        return this.groupedOptions.map(({ label, choices }) => ({ label, choices }));
+    }
+}
+
+export const triggerSelectionField = {
+    ...selectionField,
+    component: TriggerSelectionField,
+    fieldDependencies: [{ name: "model_is_mail_thread", type: "boolean" }],
+};
+registry.category("fields").add("automation_trigger_selection", triggerSelectionField);

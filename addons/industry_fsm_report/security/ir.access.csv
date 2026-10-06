@@ -1,0 +1,4 @@
+id,name,model_id/id,group_id/id,kind,operation,reach,anchor,domain
+ir_rule_worksheet_template_project_group_project_manager,Worksheet Template: Project Only,model_worksheet_template,project.group_project_manager,permission,crud,all,,"[('res_model', '=', 'project.task')]"
+ir_rule_worksheet_template_project_group_project_user,Worksheet Template: Project Only,model_worksheet_template,project.group_project_user,permission,r,all,,"[('res_model', '=', 'project.task')]"
+access_project_worksheet_template_load_wizard_manager,access_project_worksheet_template_load_wizard_manager,model_wizard_project_task_create_worksheet_template,project.group_project_manager,permission,crud,,,

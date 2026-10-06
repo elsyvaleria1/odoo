@@ -1,0 +1,432 @@
+// @ts-check
+
+import { before, expect, test } from "@odoo/hoot";
+import { queryAll, queryAllTexts, queryOne } from "@odoo/hoot-dom";
+import { animationFrame } from "@odoo/hoot-mock";
+import { Component, markup, proxy, useProps, xml } from "@odoo/owl";
+import {
+    contains,
+    editAce,
+    mountWithCleanup,
+    patchWithCleanup,
+    preventResizeObserverError,
+} from "@web/../tests/web_test_helpers";
+import { CodeEditor } from "@web/components/code_editor/code_editor";
+import { ace, loadAce } from "@web/core/lib/ace";
+import { debounce } from "@web/core/utils/timing";
+
+before(() => loadAce());
+preventResizeObserverError();
+
+function getDomValue() {
+    return queryAll(".ace_line")
+        .map((root) => queryAllTexts(`:scope > span`, { root }).join(""))
+        .join("\n");
+}
+
+function getFakeAceEditor() {
+    return {
+        session: {
+            on: () => {},
+            /** @type {(mode: any) => void} */
+            setMode: () => {},
+            setUseWorker: () => {},
+            setOptions: () => {},
+            getValue: () => {},
+            setValue: () => {},
+        },
+        renderer: {
+            setOptions: () => {},
+            $cursorLayer: { element: { style: {} } },
+        },
+        setOptions: () => {},
+        setValue: () => {},
+        getValue: () => "",
+        /** @type {(theme: any) => void} */
+        setTheme: () => {},
+        resize: () => {},
+        destroy: () => {},
+        setSession: () => {},
+        getSession() {
+            return this.session;
+        },
+        on: () => {},
+    };
+}
+
+function dispatchKeyboardEvents(el, tupleArray) {
+    for (const [evType, eventInit] of tupleArray) {
+        el.dispatchEvent(new KeyboardEvent(evType, { ...eventInit, bubbles: true }));
+    }
+}
+
+test("Can be rendered", async () => {
+    class Parent extends Component {
+        static components = { CodeEditor };
+        static template = xml`<CodeEditor maxLines="10" mode="'xml'" />`;
+        static props = null;
+        props = useProps(this.constructor.props);
+    }
+    await mountWithCleanup(Parent);
+    expect(".ace_editor").toHaveCount(1);
+});
+
+test("CodeEditor shouldn't accepts markup values", async () => {
+    expect.errors(1);
+
+    class Parent extends Component {
+        static components = { CodeEditor };
+        static template = xml`<CodeEditor value="this.props.value" />`;
+        static props = null;
+        props = useProps(this.constructor.props);
+    }
+    class GrandParent extends Component {
+        static components = { Parent };
+        static template = xml`<Parent value="this.state.value"/>`;
+        static props = null;
+        props = useProps(this.constructor.props);
+        setup() {
+            /** @type {{value: string | import("@odoo/owl").Markup}} */
+            this.state = proxy({ value: `<div>Some Text</div>` });
+        }
+    }
+
+    const codeEditor = await mountWithCleanup(GrandParent);
+    const textMarkup = markup`<div>Some Text</div>`;
+
+    codeEditor.state.value = textMarkup;
+    await animationFrame();
+
+    expect.verifyErrors([/Invalid component props \(CodeEditor\)/]);
+});
+
+test("onChange props called when code is edited", async () => {
+    class Parent extends Component {
+        static components = { CodeEditor };
+        static template = xml`<CodeEditor maxLines="10" onChange.bind="this.onChange" />`;
+        static props = null;
+        props = useProps(this.constructor.props);
+        onChange(value) {
+            expect.step(value);
+        }
+    }
+
+    await mountWithCleanup(Parent);
+    await editAce("Some Text");
+    expect.verifySteps(["Some Text"]);
+});
+
+test("onChange props not called when value props is updated", async () => {
+    class Parent extends Component {
+        static components = { CodeEditor };
+        static template = xml`
+            <CodeEditor
+                value="this.state.value"
+                maxLines="10"
+                onChange.bind="this.onChange"
+            />
+        `;
+        static props = null;
+        props = useProps(this.constructor.props);
+        state = proxy({ value: "initial value" });
+        onChange(value) {
+            expect.step(value || "__emptystring__");
+        }
+    }
+
+    const parent = await mountWithCleanup(Parent);
+    expect(".ace_line").toHaveText("initial value");
+
+    parent.state.value = "new value";
+    await animationFrame();
+    await animationFrame();
+    expect(".ace_line").toHaveText("new value");
+
+    expect.verifySteps([]);
+});
+
+test("Default value correctly set and updates", async () => {
+    const textA = "<div>\n<p>A Paragraph</p>\n</div>";
+    const textB = "<div>\n<p>An Other Paragraph</p>\n</div>";
+    const textC = "<div>\n<p>A Paragraph</p>\n</div>\n<p>And More</p>";
+
+    class Parent extends Component {
+        static components = { CodeEditor };
+        static template = xml`
+            <CodeEditor
+                mode="'xml'"
+                value="this.state.value"
+                onChange.bind="this.onChange"
+                maxLines="200"
+            />
+        `;
+        static props = null;
+        props = useProps(this.constructor.props);
+        setup() {
+            this.state = proxy({ value: textA });
+            this.onChange = debounce(this.onChange.bind(this));
+        }
+        onChange(value) {
+            if (value.length <= 0) {
+                return;
+            }
+            expect.step(value);
+        }
+        changeValue(newValue) {
+            this.state.value = newValue;
+        }
+    }
+
+    const codeEditor = await mountWithCleanup(Parent);
+    expect(getDomValue()).toBe(textA);
+
+    const ace_editor = ace.edit(queryOne(".ace_editor"));
+    ace_editor.setBehavioursEnabled(false);
+
+    const aceEditor = ace.edit(queryOne(".ace_editor"));
+    aceEditor.selectAll();
+    await editAce(textB);
+    expect(getDomValue()).toBe(textB);
+
+    codeEditor.changeValue(textC);
+    await animationFrame();
+    await animationFrame();
+    expect(getDomValue()).toBe(textC);
+    expect.verifySteps([textB]);
+});
+
+test("Mode props update sets the mode", async () => {
+    const fakeAceEditor = getFakeAceEditor();
+    fakeAceEditor.session.setMode = (mode) => {
+        // a mode object, keyed by the id ace gives it
+        expect.step(mode.$id);
+    };
+
+    patchWithCleanup(ace, {
+        edit: () => fakeAceEditor,
+    });
+
+    class Parent extends Component {
+        static components = { CodeEditor };
+        static template = xml`<CodeEditor maxLines="10" mode="this.state.mode" />`;
+        static props = null;
+        props = useProps(this.constructor.props);
+        setup() {
+            this.state = proxy({ mode: "xml" });
+        }
+        setMode(newMode) {
+            this.state.mode = newMode;
+        }
+    }
+
+    const codeEditor = await mountWithCleanup(Parent);
+    expect.verifySteps(["ace/mode/xml"]);
+
+    await codeEditor.setMode("javascript");
+    await animationFrame();
+    expect.verifySteps(["ace/mode/javascript"]);
+});
+
+test("Theme props updates set the theme", async () => {
+    const fakeAceEditor = getFakeAceEditor();
+    fakeAceEditor.setTheme = (theme) => {
+        // a theme module, named by its CSS class
+        expect.step(theme ? theme.cssClass : "default");
+    };
+
+    patchWithCleanup(ace, {
+        edit: () => fakeAceEditor,
+    });
+
+    class Parent extends Component {
+        static components = { CodeEditor };
+        static template = xml`<CodeEditor maxLines="10" theme="this.state.theme" />`;
+        static props = null;
+        props = useProps(this.constructor.props);
+        setup() {
+            this.state = proxy({ theme: "" });
+        }
+        setTheme(newTheme) {
+            this.state.theme = newTheme;
+        }
+    }
+
+    const codeEditor = await mountWithCleanup(Parent);
+    expect.verifySteps(["default"]);
+
+    await codeEditor.setTheme("monokai");
+    await animationFrame();
+    expect.verifySteps(["ace-monokai"]);
+});
+
+test("initial value cannot be undone", async () => {
+    class Parent extends Component {
+        static components = { CodeEditor };
+        static template = xml`<CodeEditor mode="'xml'" value="'some value'" class="'h-100'" />`;
+        static props = null;
+        props = useProps(this.constructor.props);
+    }
+    await mountWithCleanup(Parent);
+    await animationFrame();
+    expect(".ace_editor").toHaveCount(1);
+    expect(".ace_editor .ace_content").toHaveText("some value");
+
+    const editor = ace.edit(queryOne(".ace_editor"));
+    const undo = editor.session.$undoManager.undo.bind(editor.session.$undoManager);
+    editor.session.$undoManager.undo = (...args) => {
+        expect.step("ace undo");
+        return undo(...args);
+    };
+
+    const aceContent = queryOne(".ace_editor textarea");
+    dispatchKeyboardEvents(aceContent, [
+        ["keydown", { key: "Control", keyCode: 17 }],
+        ["keypress", { key: "Control", keyCode: 17 }],
+        ["keydown", { key: "z", keyCode: 90, ctrlKey: true }],
+        ["keypress", { key: "z", keyCode: 90, ctrlKey: true }],
+        ["keyup", { key: "z", keyCode: 90, ctrlKey: true }],
+        ["keyup", { key: "Control", keyCode: 17 }],
+    ]);
+    await animationFrame();
+    expect(".ace_editor .ace_content").toHaveText("some value");
+    expect.verifySteps(["ace undo"]);
+});
+
+test("code editor can take an initial cursor position", async () => {
+    class Parent extends Component {
+        static components = { CodeEditor };
+        static template = xml`<CodeEditor maxLines="2" value="this.value" initialCursorPosition="this.initialPosition" onChange="this.onChange"/>`;
+        static props = null;
+        props = useProps(this.constructor.props);
+
+        setup() {
+            this.value = `
+            1
+            2
+            3
+            4aa
+            5
+            `.replace(/^\s*/gm, "");
+
+            this.initialPosition = { row: 3, column: 2 };
+        }
+
+        onChange(value, startPosition) {
+            expect.step({ value, startPosition });
+        }
+    }
+    await mountWithCleanup(Parent);
+    await animationFrame();
+
+    const editor = ace.edit(queryOne(".ace_editor"));
+    expect(document.activeElement).toBe(editor.textInput.getElement());
+    expect(editor.getCursorPosition()).toEqual({ row: 3, column: 2 });
+
+    expect(queryAllTexts(".ace_gutter-cell")).toEqual(["3", "4", "5"]);
+    expect.verifySteps([]);
+    await contains(".ace_editor textarea", { displayed: true, visible: false }).edit(
+        "new\nvalue",
+        {
+            instantly: true,
+        },
+    );
+    expect.verifySteps([
+        {
+            startPosition: {
+                column: 0,
+                row: 0,
+            },
+            value: "",
+        },
+        {
+            startPosition: {
+                column: 0,
+                row: 0,
+            },
+            value: "new\nvalue",
+        },
+    ]);
+});
+
+test("a value change does not re-attach the session", async () => {
+    /** @type {CodeEditor} */
+    let editor;
+    patchWithCleanup(CodeEditor.prototype, {
+        setup() {
+            super.setup();
+            editor = this;
+        },
+    });
+    class Parent extends Component {
+        static components = { CodeEditor };
+        static template = xml`<CodeEditor mode="'python'" value="this.state.value" onChange="() => {}"/>`;
+        static props = null;
+        props = useProps(this.constructor.props);
+        setup() {
+            this.state = proxy({ value: "a = 1\n" });
+        }
+    }
+    const parent = await mountWithCleanup(Parent);
+    await animationFrame();
+
+    let setSessionCalls = 0;
+    const origSetSession = editor.aceEditor.setSession.bind(editor.aceEditor);
+    editor.aceEditor.setSession = (...args) => {
+        setSessionCalls++;
+        return origSetSession(...args);
+    };
+
+    parent.state.value = "a = 2\n";
+    await animationFrame();
+
+    expect(setSessionCalls).toBe(0, {
+        message: `setSession ran ${setSessionCalls}x for a pure value change`,
+    });
+    expect(editor.aceEditor.getValue()).toBe("a = 2\n");
+});
+
+test("a mode change does re-attach the session", async () => {
+    /** @type {CodeEditor} */
+    let editor;
+    patchWithCleanup(CodeEditor.prototype, {
+        setup() {
+            super.setup();
+            editor = this;
+        },
+    });
+    class Parent extends Component {
+        static components = { CodeEditor };
+        static template = xml`<CodeEditor mode="this.state.mode" value="'a = 1'" onChange="() => {}"/>`;
+        static props = null;
+        props = useProps(this.constructor.props);
+        setup() {
+            this.state = proxy({ mode: "python" });
+        }
+    }
+    const parent = await mountWithCleanup(Parent);
+    await animationFrame();
+
+    let setSessionCalls = 0;
+    const origSetSession = editor.aceEditor.setSession.bind(editor.aceEditor);
+    editor.aceEditor.setSession = (...args) => {
+        setSessionCalls++;
+        return origSetSession(...args);
+    };
+
+    parent.state.mode = "xml";
+    await animationFrame();
+    expect(setSessionCalls).toBe(1);
+});
+
+test("the qweb mode reports itself as qweb", async () => {
+    class Parent extends Component {
+        static components = { CodeEditor };
+        static template = xml`<CodeEditor mode="'qweb'" value="'&lt;t/&gt;'" class="'h-100'" />`;
+        static props = null;
+        props = useProps(this.constructor.props);
+    }
+    await mountWithCleanup(Parent);
+    await animationFrame();
+    // the website editor waits on this attribute when it switches to QWeb
+    expect(".ace_editor").toHaveAttribute("data-mode", "qweb");
+});

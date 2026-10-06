@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="stock_picking_batch_form_route" model="ir.ui.view">
+        <field name="name">stock.picking.batch.form.route</field>
+        <field name="model">stock.picking.batch</field>
+        <field
+            name="inherit_id"
+            ref="stock_fleet_trace.stock_picking_batch_form_trace" />
+        <field name="arch" type="xml">
+            <xpath expr="//header" position="inside">
+                <button
+                    name="action_route_suggest"
+                    type="object"
+                    string="Suggest Route"
+                    icon="fa-random"
+                    invisible="trip_state not in ('planned', 'loaded') or not picking_ids" />
+                <button
+                    name="action_route_refresh_eta"
+                    type="object"
+                    string="Refresh ETA"
+                    icon="fa-clock-o"
+                    invisible="trip_state != 'in_transit'" />
+                <button
+                    name="action_route_google_maps"
+                    type="object"
+                    string="Google Maps"
+                    icon="fa-map"
+                    invisible="not picking_ids" />
+            </xpath>
+            <xpath expr="//sheet" position="before">
+                <div
+                    class="alert alert-warning mb-0"
+                    role="alert"
+                    invisible="not route_warning">
+                    <field name="route_warning" nolabel="1" />
+                </div>
+            </xpath>
+            <xpath expr="//group[@id='batch_trip_data']" position="after">
+                <group
+                    id="batch_route_data"
+                    string="Route"
+                    invisible="not route_computed_at">
+                    <field name="route_computed_at" />
+                    <field name="route_total_minutes" />
+                    <field name="route_distance_km" />
+                </group>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="stock_picking_batch_form_driver_route" model="ir.ui.view">
+        <field name="name">stock.picking.batch.form.driver.route</field>
+        <field name="model">stock.picking.batch</field>
+        <field
+            name="inherit_id"
+            ref="stock_fleet_trace.stock_picking_batch_form_driver_trace" />
+        <field name="arch" type="xml">
+            <xpath expr="//header/button[@name='action_return']" position="before">
+                <button
+                    name="action_route_google_maps"
+                    type="object"
+                    string="Google Maps"
+                    icon="fa-map"
+                    invisible="date_return" />
+            </xpath>
+            <xpath
+                expr="//field[@name='picking_ids']/list/field[@name='partner_id']"
+                position="after">
+                <field name="trip_eta" optional="show" />
+            </xpath>
+        </field>
+    </record>
+
+    <record id="stock_picking_view_batch_tree_ref_route" model="ir.ui.view">
+        <field name="name">stock.picking.view.list.batch.route</field>
+        <field name="model">stock.picking</field>
+        <field
+            name="inherit_id"
+            ref="stock_picking_batch.stock_picking_view_batch_tree_ref" />
+        <field name="arch" type="xml">
+            <field name="partner_id" position="after">
+                <field name="trip_eta" optional="show" />
+            </field>
+        </field>
+    </record>
+
+</odoo>

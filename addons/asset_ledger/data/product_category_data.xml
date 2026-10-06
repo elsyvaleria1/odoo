@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+
+    <record id="product_category_fuel" model="product.category">
+        <field name="name">Fuels</field>
+        <field name="log_type">fuel</field>
+    </record>
+
+    <record id="product_category_highway_toll" model="product.category">
+        <field name="name">Highways</field>
+        <field name="log_type">highway</field>
+    </record>
+
+    <record id="product_category_insurance_and_policies" model="product.category">
+        <field name="name">Insurances and policies</field>
+    </record>
+
+    <record id="product_category_maintenance_and_repairs" model="product.category">
+        <field name="name">Maintenance and repairs</field>
+        <field name="log_type">service</field>
+    </record>
+
+    <record id="product_category_operator_assignment" model="product.category">
+        <field name="name">Operator assignment</field>
+        <field name="log_type">operator</field>
+    </record>
+
+    <record id="product_category_electric_power" model="product.category">
+        <field name="name">Electric power supply</field>
+    </record>
+
+    <record id="product_category_telephone" model="product.category">
+        <field name="name">Telephone and connectivity</field>
+    </record>
+
+    <record id="product_category_vehicles" model="product.category">
+        <field name="name">Vehicles</field>
+    </record>
+
+</odoo>

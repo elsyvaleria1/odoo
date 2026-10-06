@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="conversation_config_view_list" model="ir.ui.view">
+        <field name="name">conversation.config.view.list</field>
+        <field name="model">conversation.config</field>
+        <field name="arch" type="xml">
+            <list string="Analysis context" editable="bottom" create="0" delete="0">
+                <field name="company_id" readonly="1" />
+                <field name="analysis_context" />
+            </list>
+        </field>
+    </record>
+
+    <record id="action_conversation_config" model="ir.actions.server">
+        <field name="name">Analysis context</field>
+        <field name="model_id" ref="model_conversation_config" />
+        <field name="state">code</field>
+        <field name="code">action = model.action_open_configs()</field>
+    </record>
+
+</odoo>

@@ -1,0 +1,51 @@
+// @ts-check
+/** @odoo-module native */
+import { fields, Record } from "@mail/core/common/record";
+import { makeLogger } from "@web/core/debug/debug_logger";
+import { rpc } from "@web/core/network";
+import { _t } from "@web/core/translation";
+
+const log = makeLogger("mail.follower");
+export class Follower extends Record {
+    static _name = "mail.followers";
+    static id = "id";
+
+    thread = fields.One("Thread");
+    /** @type {number} */
+    id;
+    /** @type {boolean} */
+    is_active;
+    /** @type {string} */
+    display_name;
+    partner_id = fields.One("res.partner");
+    subtype_ids = fields.Many("mail.message.subtype");
+
+    get displayName() {
+        return this.partner_id.name || this.display_name || _t("Unnamed");
+    }
+
+    /** @returns {boolean} */
+    get isEditable() {
+        if (!this.thread) {
+            return false;
+        }
+        return this.partner_id.eq(this.store.self_partner)
+            ? this.thread.hasReadAccess
+            : this.thread.hasWriteAccess;
+    }
+
+    async remove() {
+        log.logic("remove", () => ({
+            thread: this.thread?.localId,
+            partnerId: this.partner_id?.id,
+        }));
+        const data = await rpc("/mail/thread/unsubscribe", {
+            res_model: this.thread.model,
+            res_id: this.thread.id,
+            partner_ids: [this.partner_id.id],
+        });
+        this.store.insert(data);
+    }
+}
+
+Follower.register();

@@ -1,0 +1,161 @@
+from odoo import Command, fields
+from odoo.exceptions import UserError
+from odoo.tests import tagged
+
+from .common import TestAccountAssetCommon
+
+
+@tagged("post_install", "-at_install")
+class TestResourceAssetComponents(TestAccountAssetCommon):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.vehicle = cls.env.ref("resource_asset.kind_vehicle")
+        cls.account = cls.company_data["default_account_assets"].copy()
+        cls.account.write({"can_create_asset": True, "create_asset": "draft"})
+        cls.depreciable = cls._profile("Automovil FF")
+        cls.non_depreciable = cls._profile("Automovil NF")
+
+    @classmethod
+    def _profile(cls, name):
+        return cls.env["account.depreciation.profile"].create(
+            {
+                "name": name,
+                "kind_id": cls.env.ref("resource_asset.kind_vehicle").id,
+                "account_asset_id": cls.company_data["default_account_assets"].id,
+                "account_depreciation_id": cls.company_data[
+                    "default_account_assets"
+                ].id,
+                "account_depreciation_expense_id": cls.company_data[
+                    "default_account_expense"
+                ].id,
+                "depreciation_journal_id": cls.company_data["default_journal_misc"].id,
+                "depreciation_duration": 5,
+                "depreciation_period": "12",
+            }
+        )
+
+    def _bill(self, price=10000, quantity=1, asset=None, label="Truck"):
+        line = {
+            "name": label,
+            "account_id": self.account.id,
+            "price_unit": price,
+            "quantity": quantity,
+            "tax_ids": [Command.clear()],
+        }
+        if asset is not None:
+            line["asset_id"] = asset.id
+        bill = self.env["account.move"].create(
+            {
+                "move_type": "in_invoice",
+                "partner_id": self.env["res.partner"].create({"name": "Vendor"}).id,
+                "invoice_date": fields.Date.today(),
+                "invoice_line_ids": [Command.create(line)],
+            }
+        )
+        bill.action_post()
+        return bill
+
+    def _plain_asset(self, name="Truck 7"):
+        return self.env["resource.asset"].create(
+            {"name": name, "kind_id": self.vehicle.id}
+        )
+
+    def _draft_bill_without_label(self):
+        product = self.env["product.product"].create({"name": "Asset product"})
+        bill = self.env["account.move"].create(
+            {
+                "move_type": "in_invoice",
+                "partner_id": self.env["res.partner"].create({"name": "Vendor"}).id,
+                "invoice_date": fields.Date.today(),
+                "invoice_line_ids": [
+                    Command.create(
+                        {
+                            "product_id": product.id,
+                            "account_id": self.account.id,
+                            "price_unit": 10000,
+                            "quantity": 1,
+                            "tax_ids": [Command.clear()],
+                        }
+                    )
+                ],
+            }
+        )
+        bill.invoice_line_ids.name = False
+        return bill
+
+    def test_preparing_and_planning_assets_do_not_write_the_bill_label(self):
+        self.account.depreciation_profile_ids = self.depreciable
+        line = self._draft_bill_without_label().invoice_line_ids
+        label = line.product_id.display_name
+        self.assertEqual(line._prepare_asset_vals()["name"], label)
+        self.assertFalse(line.name)
+        self.assertEqual(line._plan_assets()[0]["vals"]["name"], label)
+        self.assertFalse(line.name)
+
+    def test_posting_fills_the_missing_label_before_creating_assets(self):
+        self.account.depreciation_profile_ids = self.depreciable
+        bill = self._draft_bill_without_label()
+        bill.action_post()
+        self.assertEqual(
+            bill.invoice_line_ids.name, bill.invoice_line_ids.product_id.display_name
+        )
+        self.assertEqual(len(bill.capitalised_board_ids), 1)
+
+    def test_preparing_an_asset_without_label_or_product_is_rejected(self):
+        line = self._draft_bill_without_label().invoice_line_ids
+        line.write({"product_id": False, "name": False})
+        with self.assertRaises(UserError):
+            line._prepare_asset_vals()
+        self.assertFalse(line.name)
+
+    def test_one_profile_creates_one_root_asset(self):
+        self.account.depreciation_profile_ids = self.depreciable
+        assets = self._bill().capitalised_board_ids
+        self.assertEqual(len(assets), 1)
+        self.assertFalse(assets.parent_id)
+        self.assertEqual(assets.depreciation_profile_id, self.depreciable)
+
+    def test_a_second_profile_lands_on_a_component(self):
+        self.account.depreciation_profile_ids = self.depreciable | self.non_depreciable
+        assets = self._bill().capitalised_board_ids
+        self.assertEqual(len(assets), 2)
+        root = assets.filtered(lambda asset: not asset.parent_id)
+        component = assets - root
+        self.assertEqual(len(root), 1)
+        self.assertEqual(component.parent_id, root.asset_id)
+        self.assertIn(component.depreciation_profile_id.name, component.name)
+        self.assertIn(root.name, component.name)
+
+    def test_a_line_naming_an_asset_without_a_board_depreciates_that_asset(self):
+        self.account.depreciation_profile_ids = self.depreciable
+        van = self._plain_asset()
+        assets = self._bill(asset=van).capitalised_board_ids
+        self.assertEqual(assets.asset_id, van)
+        self.assertEqual(van.depreciation_state, "draft")
+        self.assertFalse(van.parent_id)
+
+    def test_a_line_naming_a_depreciating_asset_creates_a_component(self):
+        self.account.depreciation_profile_ids = self.depreciable
+        van = self._plain_asset()
+        self._bill(asset=van)
+        second = self._bill(asset=van, label="Crane").capitalised_board_ids
+        self.assertNotEqual(second.asset_id, van)
+        self.assertEqual(second.parent_id, van)
+        self.assertIn(van.name, second.name)
+
+    def test_a_line_naming_an_asset_with_two_profiles_keeps_one_root(self):
+        self.account.depreciation_profile_ids = self.depreciable | self.non_depreciable
+        van = self._plain_asset()
+        assets = self._bill(asset=van).capitalised_board_ids
+        self.assertEqual(len(assets), 2)
+        self.assertIn(van, assets.asset_id)
+        component = assets.filtered(lambda board: board.asset_id != van)
+        self.assertEqual(component.parent_id, van)
+
+    def test_several_units_of_one_line_are_siblings(self):
+        self.account.multiple_assets_per_line = True
+        self.account.depreciation_profile_ids = self.depreciable
+        assets = self._bill(price=1000, quantity=3).capitalised_board_ids
+        self.assertEqual(len(assets), 3)
+        self.assertFalse(assets.parent_id)

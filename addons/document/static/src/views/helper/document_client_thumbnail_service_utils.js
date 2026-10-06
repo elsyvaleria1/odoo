@@ -1,0 +1,40 @@
+/** @odoo-module native */
+import { generatePdfThumbnail } from "@mail/utils/common/pdf_thumbnail";
+
+/**
+ * @return {Promise<{thumbnail: string|undefined, isPdfValid: boolean|undefined,
+ * pdfEnabled: boolean}>}
+ */
+export async function getPdfThumbnail(record, width, height) {
+    return generatePdfThumbnail(
+        `/documents/content/pdf_first_page/${encodeURIComponent(record.data.access_token)}`,
+        { height, width },
+    );
+}
+
+/**
+ * @return {Promise<{thumbnail: string|false}>} false when the image has no
+ *      intrinsic size (an SVG without one): there is nothing to scale
+ */
+export async function getImageThumbnail(img, width, height) {
+    if (!img.width || !img.height) {
+        return { thumbnail: false };
+    }
+    const canvas = document.createElement("canvas");
+    const widthRatio = width / img.width;
+    const heightRatio = height / img.height;
+    const scale = Math.min(widthRatio, heightRatio, 1);
+    const scaledWidth = img.width * scale;
+    const scaledHeight = img.height * scale;
+    canvas.width = scaledWidth;
+    canvas.height = scaledHeight;
+    const context = canvas.getContext("2d");
+    // JPEG has no alpha: a transparent pixel would come out black
+    context.fillStyle = "#fff";
+    context.fillRect(0, 0, scaledWidth, scaledHeight);
+    context.drawImage(img, 0, 0, scaledWidth, scaledHeight);
+    const thumbnail = canvas
+        .toDataURL("image/jpeg")
+        .replace("data:image/jpeg;base64,", "");
+    return { thumbnail };
+}

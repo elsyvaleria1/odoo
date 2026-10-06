@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="mail.InboxTile">
+        <div class="o_inbox_tile d-flex flex-column gap-2">
+            <button type="button" class="btn btn-link p-0 text-start o_inbox_tile_count" t-on-click="() => this.openInbox()">
+                <strong t-out="this.props.data.count"/> <small class="text-muted">to read</small>
+            </button>
+            <ul t-if="this.messages.length" class="list-unstyled mb-0">
+                <li t-foreach="this.messages" t-as="message" t-key="message.id">
+                    <t t-set="messageBody">
+                        <span class="d-flex gap-2">
+                            <strong class="text-truncate flex-grow-1" t-out="message.record_name or message.author"/>
+                            <small class="text-muted flex-shrink-0" t-out="this.dateOf(message)"/>
+                        </span>
+                        <small class="text-muted text-truncate">
+                            <t t-if="message.record_name and message.author"><t t-out="message.author"/>: </t><t t-out="message.preview"/>
+                        </small>
+                    </t>
+                    <HomeTileRecordLink t-if="message.model and message.res_id" resModel="message.model" resId="message.res_id" className="'d-flex flex-column o_inbox_tile_message'">
+                        <t t-out="messageBody"/>
+                    </HomeTileRecordLink>
+                    <button t-else="" type="button" class="btn btn-link p-0 text-start text-reset d-flex flex-column w-100 o_inbox_tile_message" t-on-click="() => this.openInbox()">
+                        <t t-out="messageBody"/>
+                    </button>
+                </li>
+            </ul>
+            <p t-else="" class="text-muted small mb-0">Your inbox is empty.</p>
+        </div>
+    </t>
+
+</templates>

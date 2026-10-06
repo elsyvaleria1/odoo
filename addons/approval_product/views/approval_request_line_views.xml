@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="approval_request_line_view_tree_independent" model="ir.ui.view">
+        <field name="name">approval.request.line.view.list</field>
+        <field name="model">approval.request.line</field>
+        <field name="priority" eval="10" />
+        <field name="arch" type="xml">
+            <list string="Products" editable="bottom">
+                <field name="company_id" column_invisible="True" />
+                <field name="allowed_product_ids" column_invisible="True" />
+                <field name="approval_request_id" />
+                <field name="partner_id" />
+                <field
+                    name="product_id"
+                    domain="[('id', 'in', allowed_product_ids)] if allowed_product_ids else []" />
+                <field name="description" />
+                <field name="quantity" />
+                <field
+                    name="product_uom_id"
+                    widget="many2one_uom"
+                    options="{'no_create': True, 'no_open': True}"
+                    groups="uom.group_uom" />
+            </list>
+        </field>
+    </record>
+
+    <record id="approval_request_line_view_tree" model="ir.ui.view">
+        <field name="name">approval.request.line.view.list</field>
+        <field name="model">approval.request.line</field>
+        <field name="priority" eval="15" />
+        <field name="arch" type="xml">
+            <list string="Products" editable="bottom">
+                <field name="company_id" column_invisible="True" />
+                <field name="allowed_product_ids" column_invisible="True" />
+                <field name="partner_id" required="parent.has_partner == 'required'" />
+                <field
+                    name="product_id"
+                    domain="[('id', 'in', allowed_product_ids)] if allowed_product_ids else []"
+                    context="{'search_default_filter_to_purchase': 1, 'search_view_ref': 'product.view_product_template_search'}"
+                    required="parent.has_product == 'required'" />
+                <field name="description" />
+                <field
+                    name="quantity"
+                    column_invisible="parent.has_quantity == 'no'"
+                    required="parent.has_quantity == 'required' and parent.state != 'new'" />
+                <field
+                    name="product_uom_id"
+                    widget="many2one_uom"
+                    options="{'no_create': True, 'no_open': True}"
+                    groups="uom.group_uom" />
+                <field
+                    name="price_unit"
+                    column_invisible="parent.has_quantity == 'no'"
+                    required="parent.has_quantity == 'required' and parent.state != 'new'" />
+                <field
+                    name="price_subtotal"
+                    column_invisible="parent.has_quantity == 'no'" />
+            </list>
+        </field>
+    </record>
+
+    <record id="approval_product_kanban_mobile_view" model="ir.ui.view">
+        <field name="name">approval.product.kanban.mobile</field>
+        <field name="model">approval.request.line</field>
+        <field name="priority" eval="15" />
+        <field name="arch" type="xml">
+            <kanban string="Products" editable="bottom">
+                <templates>
+                    <t t-name="card" class="d-flex justify-content-between">
+                        <field name="product_id" class="fw-bolder fs-5" />
+                        <field name="quantity" class="fw-bolder fs-5" />
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
+    <record id="approval_request_line_view_form" model="ir.ui.view">
+        <field name="name">approval.request.line.view.form</field>
+        <field name="model">approval.request.line</field>
+        <field name="arch" type="xml">
+            <form string="Products">
+                <sheet>
+                    <group>
+                        <field name="company_id" invisible="1" />
+                        <field name="allowed_product_ids" invisible="1" />
+                        <field name="partner_id" />
+                        <field
+                            name="product_id"
+                            domain="[('id', 'in', allowed_product_ids)] if allowed_product_ids else []" />
+                        <field name="description" />
+                        <field name="quantity" />
+                        <field
+                            name="product_uom_id"
+                            widget="many2one_uom"
+                            groups="uom.group_uom" />
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+</odoo>

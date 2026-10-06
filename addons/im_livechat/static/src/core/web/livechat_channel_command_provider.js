@@ -1,0 +1,45 @@
+/** @odoo-module native */
+import { Component, t, useProps } from "@odoo/owl";
+import { registry } from "@web/core/registry";
+
+class LivechatChannelCommand extends Component {
+    static template = "im_livechat.LivechatChannelCommand";
+    static props = {
+        executeCommand: t.function(),
+        iconClass: t.string(),
+        name: t.string(),
+        searchValue: t.string(),
+        slots: t.object(),
+    };
+    props = useProps(this.constructor.props);
+}
+
+registry.category("command_provider").add("im_livechat.channel_join_leave", {
+    /**
+     * @param {import("@web/env").OdooEnv} env
+     */
+    async provide(env) {
+        const store = env.services["mail.store"];
+        if (!store?.has_access_livechat) {
+            return [];
+        }
+        await store.livechatChannels.fetch();
+        const activeChannels = new Set(
+            Object.values(store["im_livechat.channel"].records)
+                .filter((c) => c.threads.length > 0)
+                .map((c) => c.id),
+        );
+        return Object.values(store["im_livechat.channel"].records)
+            .sort((c) => (activeChannels.has(c.id) ? -1 : 1))
+            .map((c) => ({
+                action: c.are_you_inside ? c.leave.bind(c) : c.join.bind(c),
+                Component: LivechatChannelCommand,
+                name: c.are_you_inside ? c.leaveTitle : c.joinTitle,
+                props: {
+                    iconClass: c.are_you_inside
+                        ? "fa-solid fa-right-from-bracket text-danger"
+                        : "fa-solid fa-right-to-bracket text-success",
+                },
+            }));
+    },
+});

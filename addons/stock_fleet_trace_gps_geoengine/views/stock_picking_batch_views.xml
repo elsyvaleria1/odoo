@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="stock_picking_batch_form_trace_gps_track" model="ir.ui.view">
+        <field name="name">stock.picking.batch.form.trace.gps.track</field>
+        <field name="model">stock.picking.batch</field>
+        <field
+            name="inherit_id"
+            ref="stock_fleet_trace.stock_picking_batch_form_trace" />
+        <field name="arch" type="xml">
+            <xpath expr="//header" position="inside">
+                <button
+                    name="action_trip_view_gps_track"
+                    type="object"
+                    string="View GPS Track"
+                    icon="fa-map-marker"
+                    invisible="not date_departure or not has_trip_trace" />
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

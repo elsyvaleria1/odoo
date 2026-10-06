@@ -1,0 +1,20 @@
+from odoo import models
+from odoo.exceptions import UserError
+
+
+class ResUsers(models.Model):
+    _inherit = "res.users"
+
+    def get_last_validated_timesheet_date(self):
+        if self.env.user.has_group("hr_timesheet.group_timesheet_manager"):
+            return False
+
+        if not self.env.user.has_group("hr_timesheet.group_hr_timesheet_user"):
+            raise UserError(self.env._("You are not allowed to see timesheets."))
+
+        return self.sudo().employee_id.last_validated_timesheet_date
+
+    def get_daily_working_hours(self, date_start, date_stop):
+        return self.employee_id._count_daily_working_hours(date_start, date_stop)[
+            self.employee_id.id
+        ]

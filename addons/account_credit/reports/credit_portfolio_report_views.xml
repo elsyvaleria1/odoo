@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_credit_portfolio_report_pivot" model="ir.ui.view">
+        <field name="name">credit.portfolio.report.pivot</field>
+        <field name="model">credit.portfolio.report</field>
+        <field name="arch" type="xml">
+            <pivot string="Credit Portfolio" sample="1">
+                <field name="grade_id" type="row" />
+                <field name="amount_current" type="measure" />
+                <field name="amount_b1_30" type="measure" />
+                <field name="amount_b31_60" type="measure" />
+                <field name="amount_b61_90" type="measure" />
+                <field name="amount_b91_180" type="measure" />
+                <field name="amount_b180_plus" type="measure" />
+                <field name="amount_open" type="measure" />
+                <field name="expected_loss" type="measure" />
+            </pivot>
+        </field>
+    </record>
+
+    <record id="view_credit_portfolio_report_graph" model="ir.ui.view">
+        <field name="name">credit.portfolio.report.graph</field>
+        <field name="model">credit.portfolio.report</field>
+        <field name="arch" type="xml">
+            <graph type="bar" string="Credit Portfolio" sample="1" stacked="1">
+                <field name="grade_id" />
+                <field name="amount_overdue" type="measure" />
+            </graph>
+        </field>
+    </record>
+
+    <record id="view_credit_portfolio_report_list" model="ir.ui.view">
+        <field name="name">credit.portfolio.report.list</field>
+        <field name="model">credit.portfolio.report</field>
+        <field name="arch" type="xml">
+            <list create="0" edit="0" delete="0">
+                <field name="partner_id" />
+                <field
+                    name="company_id"
+                    optional="show"
+                    groups="base.group_multi_company" />
+                <field name="grade_id" />
+                <field name="state" />
+                <field name="score" optional="hide" />
+                <field name="dbt_weighted" optional="show" />
+                <field name="amount_current" sum="Total" />
+                <field name="amount_b1_30" sum="Total" />
+                <field name="amount_b31_60" sum="Total" />
+                <field name="amount_b61_90" sum="Total" />
+                <field name="amount_b91_180" sum="Total" />
+                <field name="amount_b180_plus" sum="Total" />
+                <field name="amount_open" sum="Total" />
+                <field name="expected_loss" sum="Total" />
+                <field name="limit_amount" optional="hide" />
+                <field name="currency_id" column_invisible="1" />
+            </list>
+        </field>
+    </record>
+
+    <record id="view_credit_portfolio_report_search" model="ir.ui.view">
+        <field name="name">credit.portfolio.report.search</field>
+        <field name="model">credit.portfolio.report</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="partner_id" />
+                <field name="grade_id" />
+                <filter
+                    name="with_exposure"
+                    string="With open receivable"
+                    domain="[('amount_open', '&gt;', 0)]" />
+                <filter
+                    name="overdue"
+                    string="Overdue"
+                    domain="[('amount_overdue', '&gt;', 0)]" />
+                <filter
+                    name="exceptions"
+                    string="Under exception"
+                    domain="[('exception_until', '!=', False)]" />
+                <group>
+                    <filter
+                        name="group_grade"
+                        string="Grade"
+                        context="{'group_by': 'grade_id'}" />
+                    <filter
+                        name="group_state"
+                        string="State"
+                        context="{'group_by': 'state'}" />
+                    <filter
+                        name="group_company"
+                        string="Company"
+                        context="{'group_by': 'company_id'}" />
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_credit_portfolio_report" model="ir.actions.act_window">
+        <field name="name">Credit Portfolio</field>
+        <field name="res_model">credit.portfolio.report</field>
+        <field name="view_mode">pivot,graph,list</field>
+        <field
+            name="context">{'search_default_with_exposure': 1, 'search_default_group_grade': 1}</field>
+    </record>
+
+</odoo>

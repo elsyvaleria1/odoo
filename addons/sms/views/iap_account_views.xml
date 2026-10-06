@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <data>
+        <record id="iap_account_view_form" model="ir.ui.view">
+            <field name="name">iap.account.view.form</field>
+            <field name="model">iap.account</field>
+            <field name="inherit_id" ref="iap.iap_account_view_form" />
+            <field name="arch" type="xml">
+                <xpath expr="//group[@name='account']" position="before">
+                    <div
+                        role="status"
+                        class="alert alert-danger mb-0"
+                        invisible="service_name != 'sms' or (state != 'unregistered' and state)">
+                        <i class="fa-solid fa-triangle-exclamation" /> You cannot send SMS while your account is not registered.
+                        <button
+                            name="action_view_registration_wizard"
+                            type="object"
+                            class="btn-link p-0">
+                            <i class="oi oi-arrow-right" />
+                            Register
+                        </button>
+                    </div>
+                    <div
+                        role="status"
+                        class="alert alert-danger mb-0"
+                        invisible="service_name != 'sms' or (state != 'banned')">
+                        <i class="fa-solid fa-triangle-exclamation" /> An error occurred with your account. Please contact the support for more information...
+                    </div>
+                </xpath>
+                <xpath
+                    expr="//button[@name='action_buy_credits']"
+                    position="attributes">
+                    <attribute name="invisible">service_name == 'sms' and not state</attribute>
+                </xpath>
+                <xpath expr="//group[@name='external']/*[1]" position="before">
+                    <label
+                        for="sender_name"
+                        invisible="service_name != 'sms' or not (state == 'registered' and state)"
+                        class="oe_inline" />
+                    <div
+                        invisible="service_name != 'sms'  or not (state == 'registered' and state)">
+                        <field
+                            name="sender_name"
+                            invisible="not sender_name"
+                            class="oe_inline" />
+                        <button
+                            name="action_view_sender_name_wizard"
+                            type="object"
+                            invisible="sender_name"
+                            class="btn-link p-0">
+                            <i class="oi oi-arrow-right" />
+                            Set Sender Name
+                        </button>
+                    </div>
+                </xpath>
+            </field>
+        </record>
+    </data>
+
+</odoo>

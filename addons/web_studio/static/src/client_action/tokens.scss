@@ -1,0 +1,23 @@
+:root {
+    --o-web-studio-bg-lighter: #{$o-web-studio-bg-lighter};
+    --o-web-studio-bg-light: #{$o-web-studio-bg-light};
+    --o-web-studio-bg-medium: #{$o-web-studio-bg-medium};
+    --o-web-studio-bg-dark: #{$o-web-studio-bg-dark};
+    --o-web-studio-bg-darker: #{$o-web-studio-bg-darker};
+    --o-web-studio-bg-action: #{$o-web-studio-bg-action};
+    --o-web-studio-app-creator-border: #{$o-web-studio-app-creator-border};
+    --o-web-studio-icon-invert: #{$o-web-studio-icon-invert};
+}
+
+@include media-only(screen) {
+    :root[data-color-scheme="dark"] {
+        --o-web-studio-bg-lighter: #{$o-dark-web-studio-bg-lighter};
+        --o-web-studio-bg-light: #{$o-dark-web-studio-bg-light};
+        --o-web-studio-bg-medium: #{$o-dark-web-studio-bg-medium};
+        --o-web-studio-bg-dark: #{$o-dark-web-studio-bg-dark};
+        --o-web-studio-bg-darker: #{$o-dark-web-studio-bg-darker};
+        --o-web-studio-bg-action: #{$o-dark-web-studio-bg-action};
+        --o-web-studio-app-creator-border: #{$o-dark-web-studio-app-creator-border};
+        --o-web-studio-icon-invert: #{$o-dark-web-studio-icon-invert};
+    }
+}

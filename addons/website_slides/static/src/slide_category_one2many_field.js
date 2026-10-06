@@ -1,0 +1,26 @@
+/** @odoo-module native */
+import { registry } from "@web/core/registry";
+import { X2ManyField, x2ManyField } from "@web/fields/relational/x2many";
+
+import { SlideCategoryListRenderer } from "./slide_category_list_renderer.js";
+
+class SlideCategoryOneToManyField extends X2ManyField {
+    static components = {
+        ...X2ManyField.components,
+        ListRenderer: SlideCategoryListRenderer,
+    };
+    static props = {
+        ...X2ManyField.props,
+        editable: X2ManyField.props.editable.optional("bottom"),
+    };
+    setup() {
+        super.setup();
+        this.canOpenRecord = true;
+    }
+}
+
+registry.category("fields").add("slide_category_one2many", {
+    ...x2ManyField,
+    component: SlideCategoryOneToManyField,
+    additionalClasses: [...(x2ManyField.additionalClasses || []), "o_field_one2many"],
+});

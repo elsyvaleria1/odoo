@@ -1,0 +1,104 @@
+.o_website_page_templates_dialog {
+    max-height: $modal-lg !important;
+
+    .modal-body {
+        display: flex;
+        padding: 0;
+
+        .list-group {
+            --list-group-active-bg: #{o-token(--o-brand, $o-brand-primary)};
+            --list-group-active-border-color: #{o-token(--o-brand, $o-brand-primary)};
+            --list-group-active-color: #{color-contrast($o-brand-primary)};
+
+            min-width: 200px;
+            max-width: 250px;
+        }
+    }
+
+    .o_website_page_templates_pane.active {
+        z-index: 1;
+    }
+
+    .o_page_template {
+        $-iframe-width: 1024;
+        $-preview-width: 275;
+        $-preview-width-xl: 220;
+        $-preview-width-lg: 408;
+        width: #{$-preview-width}px;
+        box-shadow: 0 0 1rem rgba(0, 0, 0, 0.16);
+
+        @include media-breakpoint-down(xl) {
+            width: #{$-preview-width-xl}px;
+        }
+        @include media-breakpoint-down(lg) {
+            width: #{$-preview-width-lg}px;
+        }
+
+        .o_page_template_preview {
+            height: 300px;
+            min-height: 100px;
+            padding: 0;
+            overflow: hidden;
+
+            iframe {
+                width: #{$-iframe-width}px;
+                transform: scale(calc($-preview-width / $-iframe-width));
+                @include media-breakpoint-down(xl) {
+                    transform: scale(calc($-preview-width-xl / $-iframe-width));
+                }
+                @include media-breakpoint-down(lg) {
+                    transform: scale(calc($-preview-width-lg / $-iframe-width));
+                }
+                transform-origin: 0 0;
+            }
+
+            &,
+            iframe {
+                opacity: 0;
+                transition:
+                    height var(--o-duration-slow, 300ms) ease-in,
+                    opacity var(--o-duration-slow, 300ms) ease
+                        var(--o-duration-slow, 300ms);
+            }
+        }
+
+        .placeholder {
+            transition: opacity 1s ease;
+        }
+
+        .o_button_area {
+            opacity: 0;
+            outline: $border-width * 2 solid $o-we-handles-accent-color;
+            outline-offset: $border-width * -1;
+        }
+
+        &:empty {
+            opacity: 0;
+        }
+
+        &.o_loading {
+            cursor: wait;
+        }
+
+        &.o_ready {
+            .placeholder {
+                animation: none;
+                opacity: 0;
+            }
+
+            .o_page_template_preview,
+            iframe {
+                opacity: 1;
+            }
+
+            &:hover,
+            &:focus-within {
+                box-shadow: 0 0.5rem 2rem rgba(0, 0, 0, 0.2);
+
+                .o_button_area {
+                    opacity: 1;
+                }
+            }
+        }
+    }
+}

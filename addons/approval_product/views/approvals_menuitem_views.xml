@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <menuitem
+        id="approvals_menu_product_template"
+        name="Products"
+        parent="approval_app.approvals_menu_config"
+        action="product.action_product_template"
+        sequence="30" />
+
+    <menuitem
+        id="approvals_menu_product_variant"
+        name="Product Variants"
+        parent="approval_app.approvals_menu_config"
+        action="product.product_variant_action"
+        sequence="40"
+        groups="product.group_product_variant" />
+
+</odoo>

@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_account_payment_form" model="ir.ui.view">
+        <field name="name">account.payment.form.inherit.account.collection</field>
+        <field name="model">account.payment</field>
+        <field name="inherit_id" ref="account.view_account_payment_form" />
+        <field name="arch" type="xml">
+            <button name="action_draft" position="before">
+                <button
+                    name="action_open_bounce_wizard"
+                    type="object"
+                    string="Check Bounced"
+                    groups="account.group_account_invoice"
+                    invisible="collection_check_state not in ('deposited', 'cleared')" />
+            </button>
+            <field name="memo" position="after">
+                <field name="is_collection_custody" invisible="1" />
+                <field
+                    name="collector_id"
+                    options="{'no_create': True}"
+                    readonly="state != 'draft'"
+                    required="is_collection_custody" />
+                <field
+                    name="collection_method"
+                    invisible="not collector_id"
+                    readonly="state != 'draft'" />
+                <field
+                    name="collection_check_date"
+                    invisible="collection_method != 'check'"
+                    readonly="state != 'draft'" />
+                <field
+                    name="collection_check_state"
+                    invisible="not collection_check_state" />
+                <field
+                    name="collection_remittance_id"
+                    invisible="not collection_remittance_id" />
+                <field
+                    name="collection_bounce_move_id"
+                    invisible="not collection_bounce_move_id" />
+                <field name="collection_latitude" invisible="not collection_latitude" />
+                <field
+                    name="collection_longitude"
+                    invisible="not collection_longitude" />
+                <field
+                    name="collection_distance_km"
+                    invisible="not collection_distance_km" />
+                <field
+                    name="is_far_from_customer"
+                    invisible="not is_far_from_customer" />
+            </field>
+        </field>
+    </record>
+
+    <record id="view_account_payment_tree" model="ir.ui.view">
+        <field name="name">account.payment.list.inherit.account.collection</field>
+        <field name="model">account.payment</field>
+        <field name="inherit_id" ref="account.view_account_payment_tree" />
+        <field name="arch" type="xml">
+            <field name="partner_id" position="after">
+                <field name="collector_id" optional="hide" />
+                <field name="collection_method" optional="hide" />
+                <field name="collection_check_state" optional="hide" />
+            </field>
+        </field>
+    </record>
+
+    <record id="view_account_payment_search" model="ir.ui.view">
+        <field name="name">account.payment.search.inherit.account.collection</field>
+        <field name="model">account.payment</field>
+        <field name="inherit_id" ref="account.view_account_payment_search" />
+        <field name="arch" type="xml">
+            <field name="journal_id" position="after">
+                <field name="collector_id" />
+            </field>
+            <filter name="state_in_process" position="after">
+                <filter
+                    name="in_custody"
+                    string="In Custody"
+                    domain="[('is_in_custody', '=', True)]" />
+                <filter
+                    name="far_from_customer"
+                    string="Far From Customer"
+                    domain="[('is_far_from_customer', '=', True)]" />
+            </filter>
+            <filter name="journal" position="before">
+                <filter
+                    name="group_by_collector"
+                    string="Collector"
+                    context="{'group_by': 'collector_id'}" />
+            </filter>
+        </field>
+    </record>
+
+    <record id="action_account_payment_custody" model="ir.actions.act_window">
+        <field name="name">Collections in Custody</field>
+        <field name="res_model">account.payment</field>
+        <field name="path">collections-in-custody</field>
+        <field name="view_mode">list,form</field>
+        <field
+            name="context">{'search_default_in_custody': 1, 'search_default_group_by_collector': 1, 'create': False}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Nothing is in custody</p>
+            <p>Collections a collector holds appear here until a validated remittance hands them in.</p>
+        </field>
+    </record>
+
+</odoo>

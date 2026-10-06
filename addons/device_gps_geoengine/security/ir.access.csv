@@ -1,0 +1,14 @@
+id,name,model_id/id,group_id/id,kind,operation,reach,anchor,domain
+access_device_state_boundary_user,device.state.boundary.user,model_device_state_boundary,device_gps.group_device_gps_user,permission,r,,,
+access_device_state_boundary_manager,device.state.boundary.manager,model_device_state_boundary,device_gps.group_device_gps_manager,permission,cud,,,
+access_device_weekday_user,device.weekday.user,model_device_weekday,device_gps.group_device_gps_user,permission,r,,,
+access_device_weekday_manager,device.weekday.manager,model_device_weekday,device_gps.group_device_gps_manager,permission,cud,,,
+device_geo_fence_company_rule,GPS Geofences: company rule,model_device_geo_fence,device_gps.group_device_gps_user,permission,r,company,,
+device_geo_fence_company_rule_group_device_gps_manager,GPS Geofences: company rule,model_device_geo_fence,device_gps.group_device_gps_manager,permission,crud,company,,
+device_geo_fence_company_rule_group_device_gps_geofence_editor,GPS Geofences: company rule,model_device_geo_fence,group_device_gps_geofence_editor,permission,cru,company,,
+access_gps_trail_wizard_user,gps.trail.wizard.user,model_wizard_device_device_view_trail,device_gps.group_device_gps_user,permission,crud,,,
+access_gps_trail_result_user,gps.trail.result.user,model_wizard_device_device_view_trail_result,device_gps.group_device_gps_user,permission,crud,,,
+device_client_visit_company_rule,GPS Client Visits: company rule,model_device_client_visit,device_gps.group_device_gps_user,permission,r,company,,
+device_client_visit_company_rule_group_device_gps_manager,GPS Client Visits: company rule,model_device_client_visit,device_gps.group_device_gps_manager,permission,crud,company,,
+privilege_cache_current_address_device,device.device: the live map caches the address of a device's last position,device.model_device_device,privilege_cache_current_address,permission,u,,,"[('log_gps_last_id', '!=', False)]"
+access_device_gps_visit_rebuild_wizard_manager,device.client.visit.rebuild.wizard.manager,model_wizard_device_gps_visit_rebuild,device_gps.group_device_gps_manager,permission,crud,,,

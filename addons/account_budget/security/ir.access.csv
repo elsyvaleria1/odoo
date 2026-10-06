@@ -1,0 +1,10 @@
+id,name,model_id/id,group_id/id,kind,operation,reach,anchor,domain
+access_budget_analytic_readonly,budget.analytic readonly,model_budget_analytic,account.group_account_readonly,permission,r,,,
+access_budget_analytic_accountant,budget.analytic accountant,model_budget_analytic,account.group_account_user,permission,cud,,,
+access_budget_line_accountant,budget.line accountant,model_budget_line,account.group_account_user,permission,cud,,,
+access_budget_line_internal_user,budget.line internal user,model_budget_line,base.group_user,permission,r,,,
+access_budget_report,budget.report readonly,model_budget_report,account.group_account_readonly,permission,r,,,
+access_budget_split_wizard,wizard.budget.analytic.create,model_wizard_budget_analytic_create,account.group_account_user,permission,crud,,,
+budget_comp_rule,Budget multi-company,model_budget_analytic,base.group_everyone,guard,crud,company,,
+budget_lines_comp_rule,Budget lines multi-company,model_budget_line,base.group_everyone,guard,crud,company,,
+budget_report_comp_rule,Budget report multi-company,model_budget_report,base.group_everyone,guard,crud,company,,

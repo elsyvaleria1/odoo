@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <template
+        id="appointment_form"
+        name="Website Appointment: Your Data"
+        inherit_id="calendar.appointment_form">
+        <xpath expr="//t[@t-call='survey.question_form_fields']" position="after">
+            <small
+                t-if="main_phone_question and appointment_type.reminder_ids.filtered(lambda r:r.alarm_type == 'sms')"
+                class="form-text">
+                <i class="fa-regular fa-lightbulb me-1" />
+                We will use it to remind you of this appointment.
+            </small>
+        </xpath>
+    </template>
+
+</odoo>

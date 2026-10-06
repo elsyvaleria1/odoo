@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="hr_appraisal_survey_user_input_view_tree" model="ir.ui.view">
+        <field name="name">survey.user.input.view.list.inherit.appraisal</field>
+        <field name="model">survey.user_input</field>
+        <field name="arch" type="xml">
+            <list create="0">
+                <header>
+                    <button
+                        name="action_view_appraisal_survey_results"
+                        type="object"
+                        string="See results"
+                        display="always"
+                        class="btn-primary" />
+                    <button
+                        name="action_ask_feedback"
+                        type="object"
+                        string="Resend all"
+                        icon="fa-repeat" />
+                    <button
+                        name="%(hr_appraisal_survey.appraisal_ask_feedback_action)d"
+                        type="action"
+                        string="Ask Feedback"
+                        display="always" />
+                </header>
+                <field name="partner_id" string="Employee" />
+                <field
+                    name="state"
+                    widget="badge"
+                    decoration-info="state == 'new'"
+                    decoration-success="state == 'done'"
+                    decoration-warning="state == 'in_progress'" />
+                <field name="deadline" />
+                <field name="survey_id" />
+                <button
+                    name="action_view_survey_inputs"
+                    type="object"
+                    string="See Answers"
+                    icon="fa-external-link"
+                    invisible="state != 'done'"
+                    class="oe_stat_button" />
+                <button
+                    name="action_ask_feedback"
+                    type="object"
+                    string="Resend"
+                    icon="fa-check-square-o"
+                    invisible="state == 'done'"
+                    class="oe_stat_button" />
+            </list>
+        </field>
+    </record>
+
+</odoo>

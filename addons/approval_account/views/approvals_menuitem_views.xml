@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <menuitem
+        id="menu_approval_category_accounting"
+        name="Approval Types"
+        parent="account.menu_finance_configuration"
+        action="action_approval_category_accounting"
+        sequence="50" />
+
+    <menuitem
+        id="approvals_menu_treasury"
+        name="Treasury"
+        parent="approval_app.approvals_menu_root"
+        sequence="25"
+        groups="approval_account.group_treasury_payment" />
+
+    <menuitem
+        id="approvals_treasury_menu_to_pay"
+        name="To Pay"
+        parent="approvals_menu_treasury"
+        action="action_approval_request_to_pay"
+        sequence="10"
+        groups="approval_account.group_treasury_payment" />
+
+    <menuitem
+        id="approvals_menu_invoicing"
+        name="Invoicing"
+        parent="approval_app.approvals_menu_root"
+        sequence="26"
+        groups="account.group_account_basic" />
+
+    <menuitem
+        id="approvals_invoicing_menu_to_invoice"
+        name="To Invoice"
+        parent="approvals_menu_invoicing"
+        action="action_approval_request_to_invoice"
+        sequence="10"
+        groups="account.group_account_basic" />
+
+</odoo>

@@ -1,0 +1,221 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_email_server_tree" model="ir.ui.view">
+        <field name="name">fetchmail.server.list</field>
+        <field name="model">fetchmail.server</field>
+        <field name="arch" type="xml">
+            <list string="POP/IMAP Servers">
+                <field name="name" />
+                <field name="server_type" />
+                <field name="company_id" groups="base.group_multi_company" />
+                <field name="user" readonly="state != 'draft'" />
+                <field name="date" />
+                <field
+                    name="state"
+                    widget="badge"
+                    decoration-info="state == 'draft'"
+                    decoration-success="state == 'done'" />
+            </list>
+        </field>
+    </record>
+
+    <record id="view_email_server_form" model="ir.ui.view">
+        <field name="name">fetchmail.server.form</field>
+        <field name="model">fetchmail.server</field>
+        <field name="arch" type="xml">
+            <form string="Incoming Mail Server">
+                <header invisible="server_type == 'local'">
+                    <button
+                        name="button_confirm_login"
+                        type="object"
+                        string="Test &amp; Confirm"
+                        invisible="state != 'draft'" />
+                    <button
+                        name="action_poll_mailbox"
+                        type="object"
+                        string="Fetch Now"
+                        invisible="state != 'done'" />
+                    <button
+                        name="set_draft"
+                        type="object"
+                        string="Reset Confirmation"
+                        invisible="state != 'done'" />
+                    <field name="state" widget="statusbar" />
+                </header>
+                <sheet>
+                    <field name="active" invisible="1" />
+                    <widget
+                        name="web_ribbon"
+                        title="Archived"
+                        invisible="active"
+                        bg_color="text-bg-danger" />
+                    <group>
+                        <group>
+                            <field name="name" />
+                            <field
+                                name="server_type"
+                                widget="radio"
+                                readonly="state == 'done'" />
+                            <field
+                                name="company_id"
+                                groups="base.group_multi_company" />
+                        </group>
+                        <group>
+                            <field name="date" invisible="not date" />
+                            <field name="error_since" invisible="not error_since" />
+                            <field name="error_message" invisible="not error_message" />
+                            <field
+                                name="quarantined_count"
+                                invisible="not quarantined_count"
+                                class="text-warning" />
+                            <div
+                                class="text-muted fst-italic"
+                                colspan="8"
+                                role="alert"
+                                invisible="not server_type_info">
+                                <field name="server_type_info" />
+                            </div>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page name="server_login_details" string="Server &amp; Login">
+                            <group>
+                                <group
+                                    string="Server Information"
+                                    invisible="server_type == 'local'">
+                                    <field
+                                        name="server"
+                                        readonly="state != 'draft'"
+                                        required="server_type != 'local'" />
+                                    <field
+                                        name="port"
+                                        options="{'enable_formatting': false}"
+                                        readonly="state != 'draft'"
+                                        required="1" />
+                                    <field name="encryption" />
+                                </group>
+                                <group
+                                    string="Login Information"
+                                    invisible="server_type == 'local'">
+                                    <field
+                                        name="user"
+                                        readonly="state != 'draft'"
+                                        required="server_type != 'local'" />
+                                    <field
+                                        name="password"
+                                        password="True"
+                                        invisible="server_type not in ('imap', 'pop')"
+                                        readonly="state != 'draft'"
+                                        required="server_type in ('imap', 'pop')" />
+                                </group>
+                                <group string="Actions to Perform on Incoming Mails">
+                                    <field name="object_id" />
+                                </group>
+                                <group
+                                    string="Configuration"
+                                    invisible="server_type != 'local'">
+                                    <field name="configuration" />
+                                    <field name="script" widget="url" />
+                                    <button
+                                        name="action_issue_inbound_token"
+                                        type="object"
+                                        string="Issue Inbound Token"
+                                        confirm="A new token replaces the current one: the MTA's deliveries are deferred until its token file holds the new one."
+                                        colspan="2"
+                                        class="btn-secondary" />
+                                </group>
+                            </group>
+                        </page>
+                        <page
+                            name="failed_messages"
+                            string="Failed Messages"
+                            invisible="not failure_ids">
+                            <field name="failure_ids">
+                                <list
+                                    create="0"
+                                    edit="0"
+                                    decoration-warning="is_quarantined">
+                                    <field name="last_attempt_date" />
+                                    <field name="email_from" />
+                                    <field name="subject" />
+                                    <field name="message_id" optional="hide" />
+                                    <field name="attempt_count" />
+                                    <field name="is_quarantined" />
+                                    <field name="error_message" />
+                                </list>
+                            </field>
+                        </page>
+                        <page
+                            name="advanced_options"
+                            string="Advanced"
+                            groups="base.group_no_one">
+                            <group>
+                                <group string="Advanced Options">
+                                    <field
+                                        name="priority"
+                                        readonly="state != 'draft'" />
+                                    <field name="attach" />
+                                    <field name="original" />
+                                </group>
+                            </group>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_email_server_search" model="ir.ui.view">
+        <field name="name">fetchmail.server.search</field>
+        <field name="model">fetchmail.server</field>
+        <field name="arch" type="xml">
+            <search string="Search Incoming Mail Servers">
+                <field name="name" string="Incoming Mail Server" />
+                <field name="user" />
+                <filter
+                    name="imap"
+                    string="IMAP"
+                    help="Server type IMAP."
+                    domain="[('server_type', '=', 'imap')]" />
+                <filter
+                    name="pop"
+                    string="POP"
+                    help="Server type POP."
+                    domain="[('server_type', '=', 'pop')]" />
+                <separator />
+                <filter
+                    name="encrypted"
+                    string="Encrypted"
+                    help="Connection is encrypted."
+                    domain="[('encryption', '!=', 'none')]" />
+                <filter
+                    name="unencrypted"
+                    string="Unencrypted"
+                    help="Credentials travel in cleartext."
+                    domain="[('encryption', '=', 'none')]" />
+                <separator />
+                <filter
+                    name="inactive"
+                    string="Archived"
+                    domain="[('active', '=', False)]" />
+            </search>
+        </field>
+    </record>
+
+    <record id="action_email_server_tree" model="ir.actions.act_window">
+        <field name="name">Incoming Mail Servers</field>
+        <field name="res_model">fetchmail.server</field>
+        <field name="view_mode">list,form</field>
+        <field name="view_id" ref="view_email_server_tree" />
+        <field name="search_view_id" ref="view_email_server_search" />
+        <field name="help" type="html">
+            <div>
+                <b class="o_view_nocontent_smiling_face">
+                    No Incoming Servers yet
+                </b>
+            </div>
+        </field>
+    </record>
+
+</odoo>

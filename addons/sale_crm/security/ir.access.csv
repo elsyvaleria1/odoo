@@ -1,0 +1,2 @@
+id,name,model_id/id,group_id/id,kind,operation,domain
+access_crm_quotation_partner,access.crm.quotation.partner,model_wizard_crm_lead_create_quotation_missing_customer,sale.group_sale_salesman,permission,cru,

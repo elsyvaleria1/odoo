@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="fleet_vehicle_send_mail_view_form" model="ir.ui.view">
+        <field name="model">wizard.resource.asset.vehicle.send.mail.driver</field>
+        <field name="arch" type="xml">
+            <form>
+                <group>
+                    <field
+                        name="subject"
+                        placeholder="Communication about your vehicle."
+                        required="1" />
+                </group>
+                <field
+                    name="body"
+                    placeholder="Write your message here..."
+                    widget="html_mail"
+                    force_save="1"
+                    class="oe-bordered-editor" />
+                <group>
+                    <field name="attachment_ids" widget="many2many_binary" />
+                    <field name="template_id" string="Load template" />
+                </group>
+                <footer>
+                    <button
+                        name="action_send"
+                        type="object"
+                        string="Send"
+                        class="btn-primary"
+                        data-hotkey="q" />
+                    <button
+                        special="cancel"
+                        string="Cancel"
+                        class="btn-secondary"
+                        data-hotkey="x" />
+                    <button
+                        name="action_save_as_template"
+                        type="object"
+                        string="Save as new template"
+                        class="btn-secondary" />
+                </footer>
+            </form>
+        </field>
+    </record>
+
+</odoo>

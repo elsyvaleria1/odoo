@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="product_label_layout_form_picking" model="ir.ui.view">
+        <field name="name">product.label.layout.form</field>
+        <field name="model">wizard.product.product.print.label</field>
+        <field name="inherit_id" ref="product.product_label_layout_form" />
+        <field name="mode">primary</field>
+        <field name="priority">25</field>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name=&quot;custom_quantity&quot;]" position="before">
+                <field name="move_quantity" />
+            </xpath>
+            <xpath expr="//field[@name='custom_quantity']" position="attributes">
+                <attribute name="invisible">move_quantity == 'move'</attribute>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="product_label_layout_form_stock" model="ir.ui.view">
+        <field name="name">product.label.layout.form.stock</field>
+        <field name="model">wizard.product.product.print.label</field>
+        <field name="inherit_id" ref="product.product_label_layout_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name=&quot;pricelist_id&quot;]" position="after">
+                <field name="zpl_template" invisible="'zpl' not in print_format" />
+                <field
+                    name="zpl_preview"
+                    widget="image"
+                    nolabel="1"
+                    options="{'img_class': 'border'}"
+                    invisible="'zpl' not in print_format" />
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

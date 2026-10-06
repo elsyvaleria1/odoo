@@ -1,0 +1,428 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* partner_l10n_mx
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-09-29 08:43+0000\n"
+"PO-Revision-Date: 2026-09-29 08:43+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: partner_l10n_mx
+#. odoo-python
+#: code:addons/partner_l10n_mx/wizards/wizard_l10n_mx_postal_code_import.py:0
+msgid ""
+"%(created)s settlements created, %(linked)s linked to their municipality, "
+"%(unknown)s rows with an unknown state skipped."
+msgstr ""
+
+#. module: partner_l10n_mx
+#: model:ir.model.fields,help:partner_l10n_mx.field_l10n_mx_postal_code__code
+msgid "5-digit postal code (e.g., '64000', '06600')"
+msgstr ""
+
+#. module: partner_l10n_mx
+#: model:ir.model.constraint,message:partner_l10n_mx.constraint_l10n_mx_postal_code_code_state_name_uniq
+msgid "A colony name must be unique per postal code per state."
+msgstr ""
+
+#. module: partner_l10n_mx
+#: model:ir.model.fields,field_description:partner_l10n_mx.field_l10n_mx_postal_code__active
+#: model_terms:ir.ui.view,arch_db:partner_l10n_mx.view_l10n_mx_postal_code_search
+msgid "Active"
+msgstr ""
+
+#. module: partner_l10n_mx
+#: model_terms:ir.ui.view,arch_db:partner_l10n_mx.view_l10n_mx_postal_code_search
+msgid "Archived"
+msgstr ""
+
+#. module: partner_l10n_mx
+#: model_terms:ir.ui.view,arch_db:partner_l10n_mx.view_wizard_l10n_mx_postal_code_import_form
+msgid "Cancel"
+msgstr ""
+
+#. module: partner_l10n_mx
+#: model:ir.model.fields,field_description:partner_l10n_mx.field_l10n_mx_postal_code__city
+msgid "City"
+msgstr ""
+
+#. module: partner_l10n_mx
+#: model:ir.model.fields,help:partner_l10n_mx.field_l10n_mx_postal_code__city
+msgid "City name for this postal code"
+msgstr ""
+
+#. module: partner_l10n_mx
+#: model:ir.model.fields,help:partner_l10n_mx.field_l10n_mx_postal_code__zone_type
+msgid "Classification of the postal code area"
+msgstr ""
+
+#. module: partner_l10n_mx
+#: model:ir.model.fields,field_description:partner_l10n_mx.field_l10n_mx_municipality__code
+#: model:ir.model.fields,field_description:partner_l10n_mx.field_l10n_mx_postal_code__code
+msgid "Code"
+msgstr ""
+
+#. module: partner_l10n_mx
+#: model:ir.model,name:partner_l10n_mx.model_res_partner
+msgid "Contact"
+msgstr ""
+
+#. module: partner_l10n_mx
+#: model:ir.model.fields,field_description:partner_l10n_mx.field_l10n_mx_municipality__create_uid
+#: model:ir.model.fields,field_description:partner_l10n_mx.field_l10n_mx_postal_code__create_uid
+#: model:ir.model.fields,field_description:partner_l10n_mx.field_wizard_l10n_mx_postal_code_import__create_uid
+msgid "Created by"
+msgstr ""
+
+#. module: partner_l10n_mx
+#: model:ir.model.fields,field_description:partner_l10n_mx.field_l10n_mx_municipality__create_date
+#: model:ir.model.fields,field_description:partner_l10n_mx.field_l10n_mx_postal_code__create_date
+#: model:ir.model.fields,field_description:partner_l10n_mx.field_wizard_l10n_mx_postal_code_import__create_date
+msgid "Created on"
+msgstr ""
+
+#. module: partner_l10n_mx
+#: model:ir.model.fields,field_description:partner_l10n_mx.field_l10n_mx_municipality__display_name
+#: model:ir.model.fields,field_description:partner_l10n_mx.field_l10n_mx_postal_code__display_name
+#: model:ir.model.fields,field_description:partner_l10n_mx.field_res_partner__display_name
+#: model:ir.model.fields,field_description:partner_l10n_mx.field_wizard_l10n_mx_postal_code_import__display_name
+msgid "Display Name"
+msgstr ""
+
+#. module: partner_l10n_mx
+#: model_terms:ir.ui.view,arch_db:partner_l10n_mx.view_wizard_l10n_mx_postal_code_import_form
+msgid ""
+"Download <code>cpdescarga.txt</code> from Correos de México and upload it\n"
+"                    as it comes. Each settlement is linked to its municipality by its INEGI key,\n"
+"                    and importing a newer catalogue over an older one adds what is new."
+msgstr ""
+
+#. module: partner_l10n_mx
+#: model:ir.model.fields,field_description:partner_l10n_mx.field_l10n_mx_municipality__id
+#: model:ir.model.fields,field_description:partner_l10n_mx.field_l10n_mx_postal_code__id
+#: model:ir.model.fields,field_description:partner_l10n_mx.field_res_partner__id
+#: model:ir.model.fields,field_description:partner_l10n_mx.field_wizard_l10n_mx_postal_code_import__id
+msgid "ID"
+msgstr ""
+
+#. module: partner_l10n_mx
+#: model:ir.model.fields,help:partner_l10n_mx.field_l10n_mx_municipality__code
+msgid "INEGI municipality code (CVE_MUN) - 3 digit code"
+msgstr ""
+
+#. module: partner_l10n_mx
+#: model_terms:ir.ui.view,arch_db:partner_l10n_mx.view_wizard_l10n_mx_postal_code_import_form
+msgid "Import"
+msgstr ""
+
+#. module: partner_l10n_mx
+#: model:ir.ui.menu,name:partner_l10n_mx.menu_wizard_l10n_mx_postal_code_import
+msgid "Import SEPOMEX Catalogue"
+msgstr ""
+
+#. module: partner_l10n_mx
+#: model:ir.actions.act_window,name:partner_l10n_mx.action_wizard_l10n_mx_postal_code_import
+msgid "Import SEPOMEX catalogue…"
+msgstr ""
+
+#. module: partner_l10n_mx
+#: model:ir.model,name:partner_l10n_mx.model_wizard_l10n_mx_postal_code_import
+msgid "Import the SEPOMEX Postal Code Catalogue"
+msgstr ""
+
+#. module: partner_l10n_mx
+#: model_terms:ir.ui.view,arch_db:partner_l10n_mx.view_wizard_l10n_mx_postal_code_import_form
+msgid "Import the SEPOMEX catalogue"
+msgstr ""
+
+#. module: partner_l10n_mx
+#: model_terms:ir.actions.act_window,help:partner_l10n_mx.action_l10n_mx_postal_code
+msgid ""
+"Import the SEPOMEX catalogue from Settings: each database downloads\n"
+"                cpdescarga.txt from Correos de México itself."
+msgstr ""
+
+#. module: partner_l10n_mx
+#: model:ir.model.fields,help:partner_l10n_mx.field_l10n_mx_postal_code__active
+msgid "Inactive postal codes are hidden from searches"
+msgstr ""
+
+#. module: partner_l10n_mx
+#: model:ir.model.fields,field_description:partner_l10n_mx.field_res_bank__l10n_mx_municipality_id
+#: model:ir.model.fields,field_description:partner_l10n_mx.field_res_company__l10n_mx_municipality_id
+#: model:ir.model.fields,field_description:partner_l10n_mx.field_res_partner__l10n_mx_municipality_id
+#: model:ir.model.fields,field_description:partner_l10n_mx.field_res_users__l10n_mx_municipality_id
+msgid "L10N Mx Municipality"
+msgstr ""
+
+#. module: partner_l10n_mx
+#: model:ir.model.fields,field_description:partner_l10n_mx.field_res_bank__l10n_mx_postal_code_id
+#: model:ir.model.fields,field_description:partner_l10n_mx.field_res_company__l10n_mx_postal_code_id
+#: model:ir.model.fields,field_description:partner_l10n_mx.field_res_partner__l10n_mx_postal_code_id
+#: model:ir.model.fields,field_description:partner_l10n_mx.field_res_users__l10n_mx_postal_code_id
+msgid "L10N Mx Postal Code"
+msgstr ""
+
+#. module: partner_l10n_mx
+#: model:ir.model.fields,field_description:partner_l10n_mx.field_l10n_mx_municipality__write_uid
+#: model:ir.model.fields,field_description:partner_l10n_mx.field_l10n_mx_postal_code__write_uid
+#: model:ir.model.fields,field_description:partner_l10n_mx.field_wizard_l10n_mx_postal_code_import__write_uid
+msgid "Last Updated by"
+msgstr ""
+
+#. module: partner_l10n_mx
+#: model:ir.model.fields,field_description:partner_l10n_mx.field_l10n_mx_municipality__write_date
+#: model:ir.model.fields,field_description:partner_l10n_mx.field_l10n_mx_postal_code__write_date
+#: model:ir.model.fields,field_description:partner_l10n_mx.field_wizard_l10n_mx_postal_code_import__write_date
+msgid "Last Updated on"
+msgstr ""
+
+#. module: partner_l10n_mx
+#: model_terms:ir.ui.view,arch_db:partner_l10n_mx.view_l10n_mx_municipality_list
+msgid "Mexican Municipalities"
+msgstr ""
+
+#. module: partner_l10n_mx
+#: model:ir.model,name:partner_l10n_mx.model_l10n_mx_municipality
+#: model_terms:ir.ui.view,arch_db:partner_l10n_mx.view_l10n_mx_municipality_form
+msgid "Mexican Municipality"
+msgstr ""
+
+#. module: partner_l10n_mx
+#: model:ir.model,name:partner_l10n_mx.model_l10n_mx_postal_code
+msgid "Mexican Postal Code"
+msgstr ""
+
+#. module: partner_l10n_mx
+#: model_terms:ir.actions.act_window,help:partner_l10n_mx.action_l10n_mx_municipality
+msgid ""
+"Mexican municipalities are the second-level administrative divisions.\n"
+"                Filter them by state and see which contacts are located in each one."
+msgstr ""
+
+#. module: partner_l10n_mx
+#: model:ir.model.fields,help:partner_l10n_mx.field_res_bank__l10n_mx_municipality_id
+#: model:ir.model.fields,help:partner_l10n_mx.field_res_company__l10n_mx_municipality_id
+#: model:ir.model.fields,help:partner_l10n_mx.field_res_partner__l10n_mx_municipality_id
+#: model:ir.model.fields,help:partner_l10n_mx.field_res_users__l10n_mx_municipality_id
+msgid "Mexican municipality where this partner is located"
+msgstr ""
+
+#. module: partner_l10n_mx
+#: model:ir.model.fields,help:partner_l10n_mx.field_res_bank__l10n_mx_postal_code_id
+#: model:ir.model.fields,help:partner_l10n_mx.field_res_company__l10n_mx_postal_code_id
+#: model:ir.model.fields,help:partner_l10n_mx.field_res_partner__l10n_mx_postal_code_id
+#: model:ir.model.fields,help:partner_l10n_mx.field_res_users__l10n_mx_postal_code_id
+msgid "Mexican postal code (código postal) for this partner"
+msgstr ""
+
+#. module: partner_l10n_mx
+#: model:ir.actions.act_window,name:partner_l10n_mx.action_l10n_mx_municipality
+#: model:ir.ui.menu,name:partner_l10n_mx.menu_l10n_mx_municipality
+msgid "Municipalities"
+msgstr ""
+
+#. module: partner_l10n_mx
+#: model:ir.model.fields,field_description:partner_l10n_mx.field_l10n_mx_postal_code__municipality_id
+#: model_terms:ir.ui.view,arch_db:partner_l10n_mx.view_l10n_mx_postal_code_search
+msgid "Municipality"
+msgstr ""
+
+#. module: partner_l10n_mx
+#: model:ir.model.constraint,message:partner_l10n_mx.constraint_l10n_mx_municipality_code_state_uniq
+msgid "Municipality code must be unique per state."
+msgstr ""
+
+#. module: partner_l10n_mx
+#: model:ir.model.fields,help:partner_l10n_mx.field_l10n_mx_postal_code__municipality_id
+msgid "Municipality to which this postal code belongs"
+msgstr ""
+
+#. module: partner_l10n_mx
+#: model:ir.model.fields,field_description:partner_l10n_mx.field_l10n_mx_municipality__name
+#: model:ir.model.fields,field_description:partner_l10n_mx.field_l10n_mx_postal_code__name
+msgid "Name"
+msgstr ""
+
+#. module: partner_l10n_mx
+#: model:ir.model.fields,help:partner_l10n_mx.field_l10n_mx_postal_code__name
+msgid "Name of the locality or colony (colonia) for this postal code"
+msgstr ""
+
+#. module: partner_l10n_mx
+#: model_terms:ir.actions.act_window,help:partner_l10n_mx.action_l10n_mx_municipality
+msgid "No municipalities loaded yet"
+msgstr ""
+
+#. module: partner_l10n_mx
+#: model_terms:ir.actions.act_window,help:partner_l10n_mx.action_l10n_mx_postal_code
+msgid "No postal codes loaded yet"
+msgstr ""
+
+#. module: partner_l10n_mx
+#: model:ir.model.fields,help:partner_l10n_mx.field_l10n_mx_municipality__partner_count
+msgid "Number of partners in this municipality"
+msgstr ""
+
+#. module: partner_l10n_mx
+#: model:ir.model.fields,help:partner_l10n_mx.field_l10n_mx_postal_code__partner_count
+msgid "Number of partners in this postal code area"
+msgstr ""
+
+#. module: partner_l10n_mx
+#: model:ir.model.fields,help:partner_l10n_mx.field_l10n_mx_municipality__name
+msgid "Official municipality name (e.g., \"Guadalajara\", \"Monterrey\")"
+msgstr ""
+
+#. module: partner_l10n_mx
+#: model:ir.model.fields,field_description:partner_l10n_mx.field_l10n_mx_municipality__partner_ids
+#: model:ir.model.fields,field_description:partner_l10n_mx.field_l10n_mx_postal_code__partner_ids
+msgid "Partner"
+msgstr ""
+
+#. module: partner_l10n_mx
+#: model:ir.model.fields,field_description:partner_l10n_mx.field_l10n_mx_municipality__partner_count
+#: model:ir.model.fields,field_description:partner_l10n_mx.field_l10n_mx_postal_code__partner_count
+msgid "Partner Count"
+msgstr ""
+
+#. module: partner_l10n_mx
+#: model_terms:ir.ui.view,arch_db:partner_l10n_mx.view_l10n_mx_municipality_form
+#: model_terms:ir.ui.view,arch_db:partner_l10n_mx.view_l10n_mx_postal_code_form
+msgid "Partners"
+msgstr ""
+
+#. module: partner_l10n_mx
+#: model:ir.model.fields,help:partner_l10n_mx.field_l10n_mx_municipality__partner_ids
+msgid "Partners located in this municipality"
+msgstr ""
+
+#. module: partner_l10n_mx
+#: model:ir.model.fields,help:partner_l10n_mx.field_l10n_mx_postal_code__partner_ids
+msgid "Partners located in this postal code area"
+msgstr ""
+
+#. module: partner_l10n_mx
+#: model_terms:ir.ui.view,arch_db:partner_l10n_mx.view_l10n_mx_postal_code_form
+msgid "Postal Code"
+msgstr ""
+
+#. module: partner_l10n_mx
+#: model:ir.actions.act_window,name:partner_l10n_mx.action_l10n_mx_postal_code
+#: model:ir.ui.menu,name:partner_l10n_mx.menu_l10n_mx_postal_code
+#: model_terms:ir.ui.view,arch_db:partner_l10n_mx.view_l10n_mx_postal_code_list
+msgid "Postal Codes"
+msgstr ""
+
+#. module: partner_l10n_mx
+#: model:res.groups,name:partner_l10n_mx.privilege_maintain_l10n_mx_catalogue
+msgid ""
+"Privilege: maintain the Mexican municipality and postal code catalogues"
+msgstr ""
+
+#. module: partner_l10n_mx
+#: model:ir.model.fields.selection,name:partner_l10n_mx.selection__l10n_mx_postal_code__zone_type__rural
+#: model_terms:ir.ui.view,arch_db:partner_l10n_mx.view_l10n_mx_postal_code_search
+msgid "Rural"
+msgstr ""
+
+#. module: partner_l10n_mx
+#: model:ir.model.fields,field_description:partner_l10n_mx.field_wizard_l10n_mx_postal_code_import__sepomex_file
+msgid "SEPOMEX catalogue"
+msgstr ""
+
+#. module: partner_l10n_mx
+#. odoo-python
+#: code:addons/partner_l10n_mx/wizards/wizard_l10n_mx_postal_code_import.py:0
+msgid "SEPOMEX catalogue imported"
+msgstr ""
+
+#. module: partner_l10n_mx
+#: model_terms:ir.ui.view,arch_db:partner_l10n_mx.view_l10n_mx_municipality_search
+msgid "Search Municipalities"
+msgstr ""
+
+#. module: partner_l10n_mx
+#: model_terms:ir.ui.view,arch_db:partner_l10n_mx.view_l10n_mx_postal_code_search
+msgid "Search Postal Codes"
+msgstr ""
+
+#. module: partner_l10n_mx
+#: model_terms:ir.ui.view,arch_db:partner_l10n_mx.view_res_partner_form_inherit_l10n_mx
+msgid "Search postal code..."
+msgstr ""
+
+#. module: partner_l10n_mx
+#: model:ir.model.fields.selection,name:partner_l10n_mx.selection__l10n_mx_postal_code__zone_type__semiurban
+msgid "Semi-Urban"
+msgstr ""
+
+#. module: partner_l10n_mx
+#: model:ir.model.fields,field_description:partner_l10n_mx.field_wizard_l10n_mx_postal_code_import__sepomex_filename
+msgid "Sepomex Filename"
+msgstr ""
+
+#. module: partner_l10n_mx
+#: model:ir.model.fields,field_description:partner_l10n_mx.field_l10n_mx_municipality__state_id
+#: model:ir.model.fields,field_description:partner_l10n_mx.field_l10n_mx_postal_code__state_id
+#: model_terms:ir.ui.view,arch_db:partner_l10n_mx.view_l10n_mx_municipality_search
+#: model_terms:ir.ui.view,arch_db:partner_l10n_mx.view_l10n_mx_postal_code_search
+msgid "State"
+msgstr ""
+
+#. module: partner_l10n_mx
+#: model:ir.model.fields,help:partner_l10n_mx.field_l10n_mx_municipality__state_id
+msgid "State to which this municipality belongs"
+msgstr ""
+
+#. module: partner_l10n_mx
+#: model:ir.model.fields,help:partner_l10n_mx.field_l10n_mx_postal_code__state_id
+msgid "State to which this postal code belongs"
+msgstr ""
+
+#. module: partner_l10n_mx
+#. odoo-python
+#: code:addons/partner_l10n_mx/wizards/wizard_l10n_mx_postal_code_import.py:0
+msgid ""
+"This is not the SEPOMEX catalogue: its header line starts with d_codigo|. "
+"Download cpdescarga.txt from Correos de México."
+msgstr ""
+
+#. module: partner_l10n_mx
+#: model:ir.model.fields.selection,name:partner_l10n_mx.selection__l10n_mx_postal_code__zone_type__urban
+#: model_terms:ir.ui.view,arch_db:partner_l10n_mx.view_l10n_mx_postal_code_search
+msgid "Urban"
+msgstr ""
+
+#. module: partner_l10n_mx
+#: model_terms:ir.ui.view,arch_db:partner_l10n_mx.view_l10n_mx_municipality_form
+#: model_terms:ir.ui.view,arch_db:partner_l10n_mx.view_l10n_mx_postal_code_form
+msgid "View Partners"
+msgstr ""
+
+#. module: partner_l10n_mx
+#: model_terms:ir.ui.view,arch_db:partner_l10n_mx.view_l10n_mx_municipality_search
+msgid "With Partners"
+msgstr ""
+
+#. module: partner_l10n_mx
+#: model:ir.model.fields,field_description:partner_l10n_mx.field_l10n_mx_postal_code__zone_type
+#: model_terms:ir.ui.view,arch_db:partner_l10n_mx.view_l10n_mx_postal_code_search
+msgid "Zone Type"
+msgstr ""
+
+#. module: partner_l10n_mx
+#: model:ir.model.fields,help:partner_l10n_mx.field_wizard_l10n_mx_postal_code_import__sepomex_file
+msgid ""
+"cpdescarga.txt as downloaded from Correos de México "
+"(https://www.correosdemexico.gob.mx/datosabiertos/cp/cpdescarga.txt). Its "
+"licence allows private use only, so each database imports it itself."
+msgstr ""

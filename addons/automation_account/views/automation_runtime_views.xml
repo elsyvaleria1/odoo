@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_automation_runtime_search" model="ir.ui.view">
+        <field name="name">automation.runtime.search.accounting</field>
+        <field name="model">automation.runtime</field>
+        <field name="inherit_id" ref="automation.view_automation_runtime_search" />
+        <field name="arch" type="xml">
+            <filter name="done" position="after">
+                <separator />
+                <filter
+                    name="filter_with_bank_statement"
+                    string="With Bank Statement"
+                    domain="[('st_line_id', '!=', False)]" />
+                <filter
+                    name="filter_with_third_party"
+                    string="With Third Party"
+                    domain="[('third_party_id', '!=', False)]" />
+            </filter>
+            <filter name="group_automation" position="after">
+                <filter
+                    name="group_by_st_line"
+                    string="Bank Statement Line"
+                    context="{'group_by': 'st_line_id'}" />
+            </filter>
+        </field>
+    </record>
+
+    <record id="view_automation_runtime_list" model="ir.ui.view">
+        <field name="name">automation.runtime.list.accounting</field>
+        <field name="model">automation.runtime</field>
+        <field name="inherit_id" ref="automation.view_automation_runtime_tree" />
+        <field name="arch" type="xml">
+            <field name="partner_id" position="after">
+                <field name="st_line_id" optional="hide" />
+            </field>
+        </field>
+    </record>
+
+    <record id="view_automation_runtime_form" model="ir.ui.view">
+        <field name="name">automation.runtime.form.accounting</field>
+        <field name="model">automation.runtime</field>
+        <field name="inherit_id" ref="automation.view_automation_runtime_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//div[hasclass('oe_title')]" position="before">
+                <div
+                    name="problem_banner"
+                    class="alert alert-warning"
+                    role="alert"
+                    invisible="not problem_message or state in ('done', 'cancel')">
+                    <strong>This run cannot complete as it stands:</strong>
+                    <field name="problem_message" />
+                </div>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="action_automation_runtime_accounting" model="ir.actions.act_window">
+        <field name="name">Accounting Workflows</field>
+        <field name="res_model">automation.runtime</field>
+        <field name="view_mode">list,form</field>
+        <field
+            name="context">{'search_default_in_progress': 1, 'search_default_filter_with_bank_statement': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Create an accounting workflow
+            </p>
+            <p>
+                Accounting workflows help you automate multi-step operations like
+                creating invoices, payments, and reconciliations.
+            </p>
+        </field>
+    </record>
+
+    <record id="ir_actions_server_view_form_workflow_steps" model="ir.ui.view">
+        <field name="name">ir.actions.server.form.workflow.steps</field>
+        <field name="model">ir.actions.server</field>
+        <field name="inherit_id" ref="base.view_server_action_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//t[@name='action_content']//notebook" position="before">
+                <group
+                    name="workflow_create_document"
+                    invisible="state != 'workflow_create_document'">
+                    <group name="workflow_document">
+                        <field
+                            name="workflow_template_id"
+                            options="{'no_create': True}"
+                            required="state == 'workflow_create_document'" />
+                        <field name="workflow_company_source" />
+                        <field name="workflow_partner_source" />
+                    </group>
+                    <group name="workflow_document_options">
+                        <field name="workflow_date_source" />
+                        <field
+                            name="workflow_tax_ids"
+                            widget="many2many_tags"
+                            options="{'no_create': True}" />
+                        <field name="workflow_auto_post" />
+                    </group>
+                </group>
+                <div
+                    name="workflow_register_statement_help"
+                    class="text-muted"
+                    invisible="state != 'workflow_register_statement'">
+                    Links the journal entry of the run's bank statement line to this step.
+                </div>
+                <div
+                    name="workflow_reconcile_statement_help"
+                    class="text-muted"
+                    invisible="state != 'workflow_reconcile_statement'">
+                    Reconciles the run's bank statement line with the nearest document a previous step created.
+                </div>
+                <group
+                    name="workflow_change_partner"
+                    invisible="state != 'workflow_change_partner'">
+                    <group>
+                        <field name="workflow_partner_source" />
+                    </group>
+                    <div class="text-muted" colspan="2">
+                        Issues the nearest document a previous step created to this partner instead, keeping its number and date. It refuses a document already applied to others, or one whose electronic invoice the tax authority must cancel first.
+                    </div>
+                </group>
+                <div
+                    name="workflow_apply_credit_note_help"
+                    class="text-muted"
+                    invisible="state != 'workflow_apply_credit_note'">
+                    Applies the nearest credit note a previous step created to its partner's open invoices, oldest first.
+                </div>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="ir_actions_server_view_form_workflow_run_at_start" model="ir.ui.view">
+        <field name="name">ir.actions.server.form.workflow.run_at_start</field>
+        <field name="model">ir.actions.server</field>
+        <field
+            name="inherit_id"
+            ref="automation.view_ir_actions_server_form_workflow_dag" />
+        <field name="arch" type="xml">
+            <field name="node_type" position="after">
+                <field name="run_at_start" invisible="node_type != 'action'" />
+            </field>
+        </field>
+    </record>
+
+</odoo>

@@ -1,0 +1,39 @@
+/** @odoo-module native */
+import { registry } from "@web/core/registry";
+import { BaseHeaderSpecial } from "@website/interactions/header/base_header_special";
+
+export class HeaderFadeOut extends BaseHeaderSpecial {
+    static selector = "header.o_header_fade_out:not(.o_header_sidebar)";
+
+    setup() {
+        super.setup();
+        this.isAnimated = true;
+        this.el.style.transitionDuration = "400ms";
+        this.el.style.transitionProperty = "opacity";
+        this.fadeTimeout = null;
+    }
+
+    transformShow() {
+        this.el.style.opacity = 1;
+        if (this.fadeTimeout) {
+            clearTimeout(this.fadeTimeout);
+        }
+        super.transformShow();
+    }
+
+    transformHide() {
+        this.el.style.opacity = 0;
+        this.isVisible = false;
+        this.fadeTimeout = this.waitForTimeout(
+            () => (this.transformValue = "translate(0, -100%)"),
+            400,
+        );
+        this.adaptToHeaderChangeLoop(1);
+    }
+}
+
+registry.category("public.interactions").add("website.header_fade_out", HeaderFadeOut);
+
+registry.category("public.interactions.edit").add("website.header_fade_out", {
+    Interaction: HeaderFadeOut,
+});

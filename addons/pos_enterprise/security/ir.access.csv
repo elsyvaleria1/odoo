@@ -1,0 +1,11 @@
+id,name,model_id/id,group_id/id,kind,operation,reach,anchor,domain
+access_prep_line,pos.prep.line,model_pos_prep_line,point_of_sale.group_pos_user,permission,crud,,,
+access_prep_state,pos.prep.state,model_pos_prep_state,point_of_sale.group_pos_user,permission,crud,,,
+access_prep_order,pos.prep.order,model_pos_prep_order,point_of_sale.group_pos_user,permission,crud,,,
+access_prep_stage_manager,pos.prep.stage,model_pos_prep_stage,point_of_sale.group_pos_manager,permission,cud,,,
+access_prep_stage,pos.prep.stage,model_pos_prep_stage,point_of_sale.group_pos_user,permission,r,,,
+access_prep_display_manager,pos.prep.display,model_pos_prep_display,point_of_sale.group_pos_manager,permission,cud,,,
+access_prep_display,pos.prep.display,model_pos_prep_display,point_of_sale.group_pos_user,permission,r,,,
+access_preparation_display_reset_wizard,wizard.pos.prep.display.reset,model_wizard_pos_prep_display_reset,point_of_sale.group_pos_user,permission,crud,,,
+access_preparation_time_report,access.preparation.time.report,model_preparation_time_report,point_of_sale.group_pos_user,permission,r,,,
+record_restricted_company_rule,Restricted Record: multi-company,model_pos_prep_display,base.group_everyone,guard,crud,company,,

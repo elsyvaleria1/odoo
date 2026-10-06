@@ -1,0 +1,159 @@
+from odoo import api, fields, models
+from odoo.exceptions import AccessError, UserError
+from odoo.tools import frozendict
+
+
+class ForumPostVote(models.Model):
+    _name = "forum.post.vote"
+    _description = "Post Vote"
+    _order = "create_date desc, id desc"
+    _access_anchors = frozendict(
+        {
+            "owner": "user_id",
+        }
+    )
+
+    post_id = fields.Many2one(
+        comodel_name="forum.post",
+        index=True,
+        required=True,
+        ondelete="cascade",
+    )
+    user_id = fields.Many2one(
+        comodel_name="res.users",
+        default=lambda self: self.env.uid,
+        required=True,
+        ondelete="cascade",
+    )
+    vote = fields.Selection(
+        selection=[("1", "1"), ("-1", "-1"), ("0", "0")],
+        default="1",
+        required=True,
+    )
+    create_date = fields.Datetime(
+        index=True,
+        readonly=True,
+    )
+    forum_id = fields.Many2one(
+        comodel_name="forum.forum",
+        related="post_id.forum_id",
+        string="Forum",
+        readonly=False,
+    )
+    recipient_id = fields.Many2one(
+        comodel_name="res.users",
+        related="post_id.create_uid",
+        string="To",
+        readonly=False,
+    )
+
+    _vote_uniq = models.Constraint(
+        "unique (post_id, user_id)",
+        "Vote already exists!",
+    )
+
+    def _get_karma_value(self, old_vote, new_vote, up_karma, down_karma) -> tuple:
+        karma_values = {"-1": down_karma, "0": 0, "1": up_karma}
+        karma = karma_values[new_vote] - karma_values[old_vote]
+
+        if old_vote == new_vote:
+            reason = self.env._("no changes")
+        elif new_vote == "1":
+            reason = self.env._("upvoted")
+        elif new_vote == "-1":
+            reason = self.env._("downvoted")
+        elif old_vote == "1":
+            reason = self.env._("no more upvoted")
+        else:
+            reason = self.env._("no more downvoted")
+
+        return karma, reason
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        if not self.env.is_admin():
+            for vals in vals_list:
+                vals.pop("user_id", None)
+                vals.pop("recipient_id", None)
+            self = self.with_context(
+                {
+                    k: v
+                    for k, v in self.env.context.items()
+                    if k not in ["default_user_id", "default_recipient_id"]
+                }
+            )
+
+        votes = super().create(vals_list)
+
+        for vote in votes:
+            vote._check_general_rights()
+            vote._check_karma_rights(vote.vote == "1")
+
+            vote._vote_update_karma("0", vote.vote)
+        return votes
+
+    def write(self, vals):
+        if not self.env.is_admin():
+            vals.pop("user_id", None)
+            vals.pop("recipient_id", None)
+
+        for vote in self:
+            vote._check_general_rights(vals)
+            vote_value = vals.get("vote")
+            if vote_value is not None:
+                upvote = vote.vote == "-1" if vote_value == "0" else vote_value == "1"
+                vote._check_karma_rights(upvote)
+
+                vote._vote_update_karma(vote.vote, vote_value)
+
+        return super().write(vals)
+
+    def _check_general_rights(self, vals=None) -> None:
+        if vals is None:
+            vals = {}
+        post = self.post_id
+        if vals.get("post_id"):
+            post = self.env["forum.post"].browse(vals.get("post_id"))
+        if not self.env.is_admin():
+            if self.env.uid == post.create_uid.id:
+                raise UserError(
+                    self.env._("It is not allowed to vote for its own post.")
+                )
+            if self.env.uid != self.user_id.id:
+                raise UserError(
+                    self.env._("It is not allowed to modify someone else's vote.")
+                )
+
+    def _check_karma_rights(self, upvote=False) -> None:
+        if upvote and not self.post_id.can_upvote:
+            raise AccessError(
+                self.env._(
+                    "%d karma required to upvote.", self.post_id.forum_id.karma_upvote
+                )
+            )
+        if not upvote and not self.post_id.can_downvote:
+            raise AccessError(
+                self.env._(
+                    "%d karma required to downvote.",
+                    self.post_id.forum_id.karma_downvote,
+                )
+            )
+
+    def _vote_update_karma(self, old_vote, new_vote) -> None:
+        if self.post_id.parent_id:
+            karma, reason = self._get_karma_value(
+                old_vote,
+                new_vote,
+                self.forum_id.karma_gen_answer_upvote,
+                self.forum_id.karma_gen_answer_downvote,
+            )
+            source = self.env._("Answer %s", reason)
+        else:
+            karma, reason = self._get_karma_value(
+                old_vote,
+                new_vote,
+                self.forum_id.karma_gen_question_upvote,
+                self.forum_id.karma_gen_question_downvote,
+            )
+            source = self.env._("Question %s", reason)
+        self.recipient_id.sudo()._add_karma(karma, self.post_id, source)

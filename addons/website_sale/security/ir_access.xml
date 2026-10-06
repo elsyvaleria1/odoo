@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="access_predicate_pricelist_offered" model="ir.access.predicate">
+        <field name="name">website_sale.pricelist_offered</field>
+        <field
+            name="description">the website offers it, or it is your own pricelist</field>
+        <field name="model_id" ref="product.model_product_pricelist" />
+        <field name="method">_access_predicate_website_offered</field>
+    </record>
+
+    <record id="access_predicate_pricelist_item_offered" model="ir.access.predicate">
+        <field name="name">website_sale.pricelist_item_offered</field>
+        <field
+            name="description">its pricelist is offered by the website, or it is your own</field>
+        <field name="model_id" ref="product.model_product_pricelist_item" />
+        <field name="method">_access_predicate_website_offered</field>
+    </record>
+
+    <record id="access_product_pricelist_public_public" model="ir.access">
+        <field
+            name="name">product.pricelist: a shop visitor (public) reads the pricelists the website offers and their own</field>
+        <field name="model_id" ref="product.model_product_pricelist" />
+        <field name="group_id" ref="base.group_public" />
+        <field name="kind">permission</field>
+        <field name="operation">r</field>
+        <field name="predicate_id" ref="access_predicate_pricelist_offered" />
+        <field name="reach">predicate</field>
+    </record>
+
+    <record id="access_product_pricelist_item_public_public" model="ir.access">
+        <field
+            name="name">product.pricelist.item: a shop visitor (public) reads the items of the pricelists the website offers and their own</field>
+        <field name="model_id" ref="product.model_product_pricelist_item" />
+        <field name="group_id" ref="base.group_public" />
+        <field name="kind">permission</field>
+        <field name="operation">r</field>
+        <field name="predicate_id" ref="access_predicate_pricelist_item_offered" />
+        <field name="reach">predicate</field>
+    </record>
+
+    <record id="access_product_product_attribute_custom_value_public" model="ir.access">
+        <field
+            name="name">product.attribute.custom.value: a shop visitor (public) reads the custom values of the order lines they may read</field>
+        <field name="model_id" ref="sale.model_product_attribute_custom_value" />
+        <field name="group_id" ref="base.group_public" />
+        <field name="kind">permission</field>
+        <field name="operation">r</field>
+        <field name="domain">[('sale_order_line_id', 'access', 'read')]</field>
+    </record>
+
+    <record id="access_product_pricelist_public_portal" model="ir.access">
+        <field
+            name="name">product.pricelist: a shop visitor (portal) reads the pricelists the website offers and their own</field>
+        <field name="model_id" ref="product.model_product_pricelist" />
+        <field name="group_id" ref="base.group_portal" />
+        <field name="kind">permission</field>
+        <field name="operation">r</field>
+        <field name="predicate_id" ref="access_predicate_pricelist_offered" />
+        <field name="reach">predicate</field>
+    </record>
+
+    <record id="access_product_pricelist_item_public_portal" model="ir.access">
+        <field
+            name="name">product.pricelist.item: a shop visitor (portal) reads the items of the pricelists the website offers and their own</field>
+        <field name="model_id" ref="product.model_product_pricelist_item" />
+        <field name="group_id" ref="base.group_portal" />
+        <field name="kind">permission</field>
+        <field name="operation">r</field>
+        <field name="predicate_id" ref="access_predicate_pricelist_item_offered" />
+        <field name="reach">predicate</field>
+    </record>
+
+    <record id="access_product_product_attribute_custom_value_portal" model="ir.access">
+        <field
+            name="name">product.attribute.custom.value: a shop visitor (portal) reads the custom values of the order lines they may read</field>
+        <field name="model_id" ref="sale.model_product_attribute_custom_value" />
+        <field name="group_id" ref="base.group_portal" />
+        <field name="kind">permission</field>
+        <field name="operation">r</field>
+        <field name="domain">[('sale_order_line_id', 'access', 'read')]</field>
+    </record>
+
+    <record id="product.product_pricelist_comp_rule" model="ir.access">
+        <field name="active" eval="False" />
+    </record>
+
+    <record id="product.product_pricelist_item_comp_rule" model="ir.access">
+        <field name="active" eval="False" />
+    </record>
+
+</odoo>

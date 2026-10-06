@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="homework_location_wizard_view_form" model="ir.ui.view">
+        <field name="name">homework.location.wizard.view.form</field>
+        <field name="model">wizard.hr.employee.update.work.location</field>
+        <field name="arch" type="xml">
+            <form string="Location">
+                <group>
+                    <label for="date" />
+                    <div class="o_row w-100">
+                        <field name="date" />
+                    </div>
+                    <label for="weekly" />
+                    <div class="o_row w-100">
+                        <field name="weekly" class="oe_inline" />
+                        <span class="w-100">
+                            Repeat every <field name="day_week_string" class="oe_inline" />
+                        </span>
+                    </div>
+                    <field name="work_location_id" />
+                </group>
+                <footer>
+                    <button
+                        name="set_employee_location"
+                        type="object"
+                        string="Set Location"
+                        class="btn-primary" />
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="set_location_wizard_action" model="ir.actions.act_window">
+        <field name="name">Set Location…</field>
+        <field name="res_model">wizard.hr.employee.update.work.location</field>
+        <field name="view_mode">form</field>
+        <field name="view_id" ref="homework_location_wizard_view_form" />
+        <field name="target">new</field>
+        <!--
+            Opened by XML id from the attendee calendar; it reads no active_id,
+            so no Action menu offers it. False also clears the old binding.
+        -->
+        <field name="binding_model_id" eval="False" />
+    </record>
+
+</odoo>

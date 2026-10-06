@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!--
+        Run on install AND on every upgrade, so a database that reaches this
+        module through the project_enterprise rename gets its view modes too;
+        a post_init_hook would only fire on a fresh install. Idempotent.
+    -->
+    <function
+        model="ir.actions.act_window"
+        name="_add_task_view_mode"
+        eval="('gantt', 'activity')" />
+
+    <function
+        model="ir.actions.act_window"
+        name="_add_project_view_mode"
+        eval="('gantt', 'activity')" />
+
+</odoo>

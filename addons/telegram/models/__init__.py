@@ -1,0 +1,16 @@
+from . import (
+    mixin_telegram_handler,
+    res_partner,
+    res_users,
+    telegram_account,
+    telegram_binding,
+    telegram_bot,
+    telegram_bot_receiver,
+    telegram_business_connection,
+    telegram_chat,
+    telegram_command,
+    telegram_handler_base,
+    telegram_link_token,
+    telegram_message,
+    telegram_router,
+)

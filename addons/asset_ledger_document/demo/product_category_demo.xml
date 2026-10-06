@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="product_category_properties" model="product.category">
+        <field name="name">Properties</field>
+    </record>
+
+    <record id="product_category_machinery" model="product.category">
+        <field name="name">Machinery</field>
+    </record>
+
+    <record id="product_category_it_equipment" model="product.category">
+        <field name="name">IT Equipment</field>
+    </record>
+
+</odoo>

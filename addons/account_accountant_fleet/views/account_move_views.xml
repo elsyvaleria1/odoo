@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_bank_rec_edit_line_fleet" model="ir.ui.view">
+        <field name="name">account.move.line.bank.rec.edit.line.fleet</field>
+        <field name="model">account.move.line</field>
+        <field name="inherit_id" ref="account.view_bank_rec_edit_line" />
+        <field name="arch" type="xml">
+            <field name="analytic_distribution" position="after">
+                <field name="asset_id" />
+            </field>
+        </field>
+    </record>
+
+</odoo>

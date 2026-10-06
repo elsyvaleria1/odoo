@@ -1,0 +1,283 @@
+$enable-deprecation-messages: false !default;
+
+@function o-is-color($-value) {
+    @return type-of($-value) == "color";
+}
+
+@mixin o-button-variant-from($-spec) {
+    $-background: map-get($-spec, background);
+    $-border: map-get($-spec, border);
+    $-color: map-get($-spec, color);
+    $-disabled-background: o-safe-get($-spec, disabled-background, $-background);
+    $-disabled-border: o-safe-get($-spec, disabled-border, $-border);
+
+    --#{$prefix}btn-color: #{$-color};
+    --#{$prefix}btn-bg: #{$-background};
+    --#{$prefix}btn-border-color: #{$-border};
+    --#{$prefix}btn-hover-color: #{map-get($-spec, hover-color)};
+    --#{$prefix}btn-hover-bg: #{map-get($-spec, hover-background)};
+    --#{$prefix}btn-hover-border-color: #{map-get($-spec, hover-border)};
+    --#{$prefix}btn-active-color: #{map-get($-spec, active-color)};
+    --#{$prefix}btn-active-bg: #{map-get($-spec, active-background)};
+    --#{$prefix}btn-active-border-color: #{map-get($-spec, active-border)};
+    --#{$prefix}btn-active-shadow: #{$btn-active-box-shadow};
+    --#{$prefix}btn-disabled-bg: #{$-disabled-background};
+    --#{$prefix}btn-disabled-border-color: #{$-disabled-border};
+
+    $-focus-shadow-rgb: o-safe-get($-spec, focus-shadow-rgb, null);
+    @if $-focus-shadow-rgb == null and o-is-color($-color) and o-is-color($-border) {
+        $-focus-shadow-rgb: to-rgb(mix($-color, $-border, 15%));
+    }
+    @if $-focus-shadow-rgb != null {
+        --#{$prefix}btn-focus-shadow-rgb: #{$-focus-shadow-rgb};
+    }
+
+    $-disabled-color: o-safe-get($-spec, disabled-color, null);
+    @if $-disabled-color == null {
+        $-disabled-color: if(
+            o-is-color($-disabled-background),
+            color-contrast($-disabled-background),
+            $-color
+        );
+    }
+    --#{$prefix}btn-disabled-color: #{$-disabled-color};
+}
+
+$-o-published-text-colors: ("primary", "success", "info", "warning", "danger");
+
+@function o-text-color($key) {
+    $-all-text-colors: map-merge($theme-colors, $o-theme-text-colors);
+
+    @if map-has-key($-all-text-colors, $key) {
+        $-color: map-get($-all-text-colors, $key);
+        @if index($-o-published-text-colors, $key) {
+            @return o-token(--o-#{$key}-text, $-color);
+        }
+        @return $-color;
+    }
+
+    @return false;
+}
+
+@function color-contrast(
+    $background,
+    $color-contrast-dark: $color-contrast-dark,
+    $color-contrast-light: $color-contrast-light,
+    $min-contrast-ratio: $min-contrast-ratio,
+    $main-background: $body-bg
+) {
+    $real-color: opaque($main-background, $background);
+
+    $foregrounds: $color-contrast-light, $color-contrast-dark, $white, $black;
+    $max-ratio: 0;
+    $max-ratio-color: null;
+
+    @each $color in $foregrounds {
+        $contrast-ratio: contrast-ratio($real-color, $color);
+        @if $contrast-ratio > $min-contrast-ratio {
+            @return $color;
+        } @else if $contrast-ratio > $max-ratio {
+            $max-ratio: $contrast-ratio;
+            $max-ratio-color: $color;
+        }
+    }
+
+    @return $max-ratio-color;
+}
+
+@function mute-color($color) {
+    @return scale-color($color, $alpha: -30%);
+}
+
+%o-bg-color-component-color-reset {
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
+        color: inherit;
+    }
+}
+
+$o-yiq-min-opacity-threshold: 0.3 !default;
+$o-color-extras-nesting-selector: "&" !default;
+
+@mixin o-bg-color(
+    $color,
+    $text-color: null,
+    $with-extras: true,
+    $important: true,
+    $yiq-min-opacity-threshold: $o-yiq-min-opacity-threshold,
+    $background: $body-bg,
+    $nesting-selector: $o-color-extras-nesting-selector,
+    $extend-heading-reset: true
+) {
+    @if ($color) {
+        $-yiq-threshold-met: alpha($color) > $yiq-min-opacity-threshold;
+
+        $-yiq-color: if(
+            $text-color,
+            $text-color,
+            if(
+                $-yiq-threshold-met,
+                color-contrast($color, $main-background: $background),
+                null
+            )
+        );
+
+        --background-color: #{$color};
+        --color: #{$-yiq-color};
+
+        background-color: $color#{if($important, " !important", "")};
+        color: $-yiq-color;
+
+        @if $with-extras and $-yiq-threshold-met {
+            #{$nesting-selector} {
+                @if $extend-heading-reset {
+                    @extend %o-bg-color-component-color-reset;
+                }
+
+                .text-muted {
+                    color: mute-color($-yiq-color) !important;
+                }
+            }
+        }
+    }
+}
+
+@mixin bg-variant($parent, $color, $text-color: null, $extend-heading-reset: true) {
+    #{$parent} {
+        @include o-bg-color(
+            $color,
+            $text-color,
+            $extend-heading-reset: $extend-heading-reset
+        );
+    }
+    a#{$parent},
+    button#{$parent} {
+        &:hover,
+        &:focus {
+            @include o-bg-color(darken($color, 10%), $text-color, false);
+        }
+    }
+}
+
+@function o-dark-button-spec($-spec, $-scheme) {
+    @if map-get($-spec, disabled-color) {
+        @return $-spec;
+    }
+    $-background: o-safe-get($-spec, disabled-background, map-get($-spec, background));
+    @return map-merge(
+        $-spec,
+        (
+            disabled-color:
+                if(
+                    o-is-color($-background),
+                    o-scheme-contrast($-background, $-scheme),
+                    map-get($-spec, color)
+                ),
+        )
+    );
+}
+
+@mixin o-scheme-button-variant(
+    $-background,
+    $-border,
+    $-scheme,
+    $-color: null,
+    $-hover-background: null,
+    $-active-background: null,
+    $-active-border: null
+) {
+    $-color: o-or($-color, o-scheme-contrast($-background, $-scheme));
+    $-shades: $-color == o-scheme-contrast-light($-scheme);
+    $-hover-background: o-or(
+        $-hover-background,
+        if(
+            $-shades,
+            o-scheme-shade($-background, $btn-hover-bg-shade-amount, $-scheme),
+            o-scheme-tint($-background, $btn-hover-bg-tint-amount, $-scheme)
+        )
+    );
+    $-active-background: o-or(
+        $-active-background,
+        if(
+            $-shades,
+            o-scheme-shade($-background, $btn-active-bg-shade-amount, $-scheme),
+            o-scheme-tint($-background, $btn-active-bg-tint-amount, $-scheme)
+        )
+    );
+    @include button-variant(
+        $-background,
+        $-border,
+        $color: $-color,
+        $hover-background: $-hover-background,
+        $hover-border:
+            if(
+                $-shades,
+                o-scheme-shade($-border, $btn-hover-border-shade-amount, $-scheme),
+                o-scheme-tint($-border, $btn-hover-border-tint-amount, $-scheme)
+            ),
+        $hover-color: o-scheme-contrast($-hover-background, $-scheme),
+        $active-background: $-active-background,
+        $active-border:
+            o-or(
+                $-active-border,
+                if(
+                    $-shades,
+                    o-scheme-shade($-border, $btn-active-border-shade-amount, $-scheme),
+                    o-scheme-tint($-border, $btn-active-border-tint-amount, $-scheme)
+                )
+            ),
+        $active-color: o-scheme-contrast($-active-background, $-scheme),
+        $disabled-background: $-background,
+        $disabled-border: $-border,
+        $disabled-color: o-scheme-contrast($-background, $-scheme)
+    );
+}
+
+@mixin o-scheme-button-outline-variant($-color, $-scheme) {
+    @include button-outline-variant(
+        $-color,
+        $color-hover: o-scheme-contrast($-color, $-scheme),
+        $active-background: $-color,
+        $active-border: $-color,
+        $active-color: o-scheme-contrast($-color, $-scheme)
+    );
+}
+
+@mixin o-scheme-text-emphasis-variant($-parent, $-color, $-scheme, $-shade) {
+    @include text-emphasis-variant(
+        $-parent,
+        $-color,
+        o-scheme-shift($-color, $-shade, $-scheme)
+    );
+}
+
+@mixin o-bg-light-variants(
+    $-theme-colors,
+    $-view-background,
+    $-scheme,
+    $-extend-reset: true
+) {
+    @each $-name, $-color in $-theme-colors {
+        @include bg-variant(
+            ".bg-#{$-name}-light",
+            rgba($-color, 0.5),
+            o-scheme-contrast(mix($-color, $-view-background), $-scheme),
+            $extend-heading-reset: $-extend-reset
+        );
+    }
+}
+@mixin bg-gradient-variant($parent, $color, $text-color: null) {
+    #{$parent} {
+        @include o-bg-color($color, $text-color);
+        background-image: linear-gradient(
+            180deg,
+            mix($body-bg, $color, 15%),
+            $color
+        ) !important;
+        background-repeat: repeat-x !important;
+    }
+}

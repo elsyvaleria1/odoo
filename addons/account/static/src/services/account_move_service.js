@@ -1,0 +1,65 @@
+/** @odoo-module native */
+import { markup } from "@odoo/owl";
+import { makeLogger } from "@web/core/debug/debug_logger";
+import { registry } from "@web/core/registry";
+import { _t } from "@web/core/translation";
+
+const log = makeLogger("account.move");
+
+export class AccountMoveService {
+    constructor(env, services) {
+        this.setup(env, services);
+    }
+
+    setup(env, services) {
+        this.env = env;
+        this.action = services.action;
+        this.dialog = services.dialog;
+        this.orm = services.orm;
+    }
+
+    async getDeletionDialogBody(body, moveIds) {
+        const isMoveEndOfChain = await this.orm.call(
+            "account.move",
+            "check_move_sequence_chain",
+            [moveIds],
+        );
+        if (!isMoveEndOfChain) {
+            const message = _t("This operation will create a gap in the sequence.");
+            return markup`<div class="text-danger">${message}</div>${body}`;
+        }
+        return body;
+    }
+
+    async downloadPdf(accountMoveId, target = "download") {
+        log.logic("downloadPdf", () => ({ accountMoveId, target }));
+        const downloadAction = await this.orm.call(
+            "account.move",
+            "action_invoice_download_pdf",
+            [accountMoveId, target],
+        );
+        await this.action.doAction(downloadAction);
+    }
+
+    /** @param {{resModel: string, resId: number, context?: Object, */
+    openBusinessDoc({ resModel, resId, context, onClose }) {
+        log.logic("openBusinessDoc", () => ({ resModel, resId }));
+        return this.action.doActionButton({
+            type: "object",
+            name: "action_view_business_doc",
+            resModel,
+            resId,
+            context,
+            onClose,
+        });
+    }
+}
+
+export const accountMoveService = {
+    dependencies: ["action", "dialog", "orm"],
+    start(env, services) {
+        return new AccountMoveService(env, services);
+    },
+};
+
+registry.category("services").add("account_move", accountMoveService);

@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="portal_share_wizard" model="ir.ui.view">
+        <field name="name">portal.share.wizard</field>
+        <field name="model">wizard.mail.message.send.portal.link</field>
+        <field name="arch" type="xml">
+            <form string="Share Document">
+                <p
+                    class="alert alert-warning"
+                    invisible="access_warning == ''"
+                    role="alert">
+                    <field name="access_warning" />
+                </p>
+                <group name="share_link">
+                    <field name="res_model" invisible="1" />
+                    <field name="res_id" invisible="1" />
+                    <field
+                        name="share_link"
+                        widget="CopyClipboardChar"
+                        options="{'string': 'Copy Link'}" />
+                    <field
+                        name="partner_ids"
+                        placeholder="Add contacts to share the document..."
+                        widget="many2many_tags_email" />
+                    <field name="note" placeholder="Add a note" />
+                </group>
+                <footer>
+                    <button
+                        name="action_send_mail"
+                        type="object"
+                        string="Send"
+                        invisible="access_warning != ''"
+                        class="btn-primary"
+                        data-hotkey="q" />
+                    <button
+                        special="cancel"
+                        string="Cancel"
+                        class="btn-default"
+                        data-hotkey="x" />
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="portal_share_action" model="ir.actions.act_window">
+        <field name="name">Share Document…</field>
+        <field name="res_model">wizard.mail.message.send.portal.link</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+        <field name="context">{'dialog_size': 'medium'}</field>
+        <field
+            name="binding_model_id"
+            ref="model_wizard_mail_message_send_portal_link" />
+        <field name="binding_icon">fa-solid fa-share-nodes</field>
+        <!--
+            Match the wizard.mail.message.send.portal.link ACL (group_partner_manager) so the "Share"
+            contextual action is hidden from users who would only hit an
+            AccessError when opening the wizard.
+        -->
+        <field
+            name="group_ids"
+            eval="[Command.link(ref('base.group_partner_manager'))]" />
+    </record>
+
+</odoo>

@@ -1,0 +1,42 @@
+from odoo import api, fields, models
+from odoo.libs.debug_log import DebugLog
+from odoo.tools.date_utils import add
+
+_debug = DebugLog(__name__)
+
+
+class WizardStockWarehouseOrderpointSnooze(models.TransientModel):
+    _name = "wizard.stock.warehouse.orderpoint.snooze"
+    _description = "Snooze Orderpoint"
+
+    orderpoint_ids = fields.Many2many(
+        comodel_name="stock.warehouse.orderpoint",
+        relation="stock_orderpoint_snooze_stock_warehouse_orderpoint_rel",
+    )
+    predefined_date = fields.Selection(
+        selection=[
+            ("day", "1 Day"),
+            ("week", "1 Week"),
+            ("month", "1 Month"),
+            ("custom", "Custom"),
+        ],
+        string="Snooze for",
+        default="day",
+    )
+    snoozed_until = fields.Date(string="Snooze Date")
+
+    @api.onchange("predefined_date")
+    def _onchange_predefined_date(self) -> None:
+        today = fields.Date.context_today(self)
+        if self.predefined_date == "day":
+            self.snoozed_until = add(today, days=1)
+        elif self.predefined_date == "week":
+            self.snoozed_until = add(today, weeks=1)
+        elif self.predefined_date == "month":
+            self.snoozed_until = add(today, months=1)
+
+    def action_snooze(self) -> None:
+        _debug.lifecycle(
+            "snooze", orderpoints=self.orderpoint_ids, until=self.snoozed_until
+        )
+        self.orderpoint_ids.write({"snoozed_until": self.snoozed_until})

@@ -1,0 +1,20 @@
+// the item is `bg-transparent`, whose background-color is !important: tint with an image
+.o-mail-NotificationItem.o-livechat-help {
+    $-tint: o-token-alpha(--livechat-LivechatStatusLabel-helpColor, $purple, 0.1);
+    background-image: linear-gradient(#{$-tint}, #{$-tint});
+
+    &.o-livechat-selfMember {
+        background-image:
+            repeating-linear-gradient(
+                45deg,
+                #{o-token-alpha(
+                            --livechat-LivechatStatusLabel-helpColor,
+                            $purple,
+                            0.12
+                        )}
+                    0 6px,
+                transparent 6px 12px
+            ),
+            linear-gradient(#{$-tint}, #{$-tint});
+    }
+}

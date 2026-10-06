@@ -1,0 +1,143 @@
+from odoo import api, fields, models
+from odoo.tools import frozendict
+
+
+class TimesheetsAnalysisReport(models.Model):
+    _name = "timesheets.analysis.report"
+    _inherit = ["mixin.hr.manager.department.report"]
+    _description = "Timesheets Analysis Report"
+    _auto = False
+    _depends = frozendict(
+        {
+            "account.analytic.line": [
+                "amount",
+                "company_id",
+                "date",
+                "department_id",
+                "employee_id",
+                "name",
+                "parent_task_id",
+                "partner_id",
+                "product_uom_id",
+                "project_id",
+                "task_id",
+                "unit_amount",
+                "user_id",
+            ],
+            "hr.employee": ["parent_id"],
+            "res.company": ["currency_id"],
+            "uom.uom": ["factor"],
+        }
+    )
+    _access_anchors = frozendict(
+        {
+            "company": models.Anchor("company_id", shared=False),
+        }
+    )
+
+    name = fields.Char(
+        string="Description",
+        readonly=True,
+    )
+    user_id = fields.Many2one(
+        comodel_name="res.users",
+        readonly=True,
+    )
+    project_id = fields.Many2one(
+        comodel_name="project.project",
+        readonly=True,
+    )
+    task_id = fields.Many2one(
+        comodel_name="project.task",
+        readonly=True,
+    )
+    parent_task_id = fields.Many2one(
+        comodel_name="project.task",
+        readonly=True,
+    )
+    manager_id = fields.Many2one(
+        comodel_name="hr.employee",
+        readonly=True,
+    )
+    company_id = fields.Many2one(
+        comodel_name="res.company",
+        readonly=True,
+    )
+    department_id = fields.Many2one(
+        comodel_name="hr.department",
+        readonly=True,
+    )
+    currency_id = fields.Many2one(
+        comodel_name="res.currency",
+        readonly=True,
+    )
+    date = fields.Date(readonly=True)
+    amount = fields.Monetary(
+        currency_field="currency_id",
+        readonly=True,
+    )
+    unit_amount = fields.Float(
+        string="Time Spent",
+        readonly=True,
+    )
+    partner_id = fields.Many2one(
+        comodel_name="res.partner",
+        readonly=True,
+    )
+    milestone_id = fields.Many2one(
+        comodel_name="project.milestone",
+        related="task_id.milestone_id",
+    )
+    message_partner_ids = fields.Many2many(
+        comodel_name="res.partner",
+        compute="_compute_message_partner_ids",
+        search="_search_message_partner_ids",
+        readonly=True,
+    )
+
+    @api.depends("task_id.message_partner_ids")
+    def _compute_message_partner_ids(self) -> None:
+        for line in self:
+            line.message_partner_ids = line.task_id.message_partner_ids
+
+    def _search_message_partner_ids(self, operator, value):
+        return self.env["account.analytic.line"]._search_message_partner_ids(
+            operator, value
+        )
+
+    @property
+    def _table_query(self):
+        return "%s %s %s" % (self._select(), self._from(), self._where())
+
+    @api.model
+    def _select(self):
+        return """
+            SELECT
+                A.id AS id,
+                A.name AS name,
+                A.user_id AS user_id,
+                A.project_id AS project_id,
+                A.task_id AS task_id,
+                A.parent_task_id AS parent_task_id,
+                A.employee_id AS employee_id,
+                E.parent_id AS manager_id,
+                A.company_id AS company_id,
+                A.department_id AS department_id,
+                C.currency_id AS currency_id,
+                A.date AS date,
+                A.amount AS amount,
+                A.unit_amount AS unit_amount,
+                A.partner_id AS partner_id
+        """
+
+    @api.model
+    def _from(self):
+        return """
+            FROM account_analytic_line A
+            LEFT JOIN hr_employee E ON E.id = A.employee_id
+            LEFT JOIN res_company C ON C.id = A.company_id
+        """
+
+    @api.model
+    def _where(self):
+        return "WHERE A.project_id IS NOT NULL"

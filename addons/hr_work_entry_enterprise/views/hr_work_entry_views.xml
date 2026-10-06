@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="hr_work_entry_action_view_gantt" model="ir.actions.act_window.view">
+        <field name="sequence" eval="2" />
+        <field name="view_mode">gantt</field>
+        <field name="act_window_id" ref="hr_work_entry.hr_work_entry_action" />
+    </record>
+
+    <record
+        id="hr_work_entry_action_conflict_view_gantt"
+        model="ir.actions.act_window.view">
+        <field name="sequence" eval="2" />
+        <field name="view_mode">gantt</field>
+        <field name="act_window_id" ref="hr_work_entry.hr_work_entry_action_conflict" />
+    </record>
+
+    <!--
+        Both actions pin gantt at sequence 2 above, which is what `_compute_views`
+        emits FIRST, so gantt is the view that opens and neither community
+        `view_mode` could say so: `hr_work_entry` does not depend on `web_gantt`
+        and naming the mode there fails `_check_view_type_vocabulary` at install.
+        The declaration therefore belongs on this side, the same way
+        `hr_holidays_gantt` re-declares `hr_holidays.action_hr_holidays_dashboard`.
+    -->
+    <record id="hr_work_entry.hr_work_entry_action" model="ir.actions.act_window">
+        <field name="view_mode">gantt,list,form,pivot</field>
+    </record>
+
+    <record
+        id="hr_work_entry.hr_work_entry_action_conflict"
+        model="ir.actions.act_window">
+        <field name="view_mode">gantt,list,form,pivot</field>
+    </record>
+
+    <record id="hr_work_entry_view_gantt_multi_create_form" model="ir.ui.view">
+        <field name="name">hr.work.entry.gantt.multi_create</field>
+        <field name="model">hr.work.entry</field>
+        <field
+            name="inherit_id"
+            ref="hr_work_entry.hr_work_entry_view_calendar_multi_create_form" />
+        <field name="mode">primary</field>
+        <field name="priority" eval="50" />
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='employee_id']" position="replace" />
+        </field>
+    </record>
+
+    <record id="hr_work_entry_gantt" model="ir.ui.view">
+        <field name="name">hr.work.entry.gantt</field>
+        <field name="model">hr.work.entry</field>
+        <field name="arch" type="xml">
+            <gantt
+                string="Work Entries"
+                default_group_by="employee_id"
+                create="0"
+                sample="1"
+                color="color"
+                date_start="date"
+                date_stop="date"
+                decoration-warning="state == 'conflict'"
+                default_range="month"
+                disable_drag_drop="1"
+                display_unavailability="1"
+                js_class="work_entries_gantt"
+                multi_create_view="hr_work_entry_enterprise.hr_work_entry_view_gantt_multi_create_form"
+                pill_label="True"
+                plan="0"
+                precision="{'week': 'day:full', 'month': 'day:full'}"
+                progress_bar="employee_id"
+                scales="week,month"
+                total_row="1">
+                <templates>
+                    <div t-name="gantt-popover">
+                        <div
+                            class="d-grid column-gap-2"
+                            style="grid-template-columns: min-content minmax(0,1fr);">
+                            <span class="fw-medium">Date</span>
+                            <t
+                                t-out="dates.toLocaleString(date, { month: 'numeric', day: 'numeric', year: 'numeric' })" />
+                            <span class="fw-medium">Duration</span>
+                            <t t-out="durationToStr(duration)" />
+                            <span t-if="name" class="fw-medium">Description</span>
+                            <t t-out="name" />
+                            <span class="mt-2" style="grid-column: 2 span;" t-if="state === 'validated'" name="work_entry_validated_message"><i class="fa-solid fa-lock me-1" /> You cannot edit a validated work entry</span>
+                        </div>
+                    </div>
+                </templates>
+                <field name="work_entry_type_id" />
+                <field name="display_code" />
+                <field name="duration" />
+                <field name="color" />
+                <field name="state" />
+                <field name="employee_id" />
+                <field name="name" />
+            </gantt>
+        </field>
+    </record>
+
+</odoo>

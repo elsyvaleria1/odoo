@@ -1,0 +1,157 @@
+from odoo.orm.profiling import orm_profiler
+from odoo.tests.common import TransactionCase, tagged
+
+
+@tagged("-standard", "profiler")
+class TestOrmProfiler(TransactionCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls._original_enabled = orm_profiler._orm_profiling_enabled
+        orm_profiler._orm_profiling_enabled = True
+        cls._original_observers = cls.env.transaction.observers
+        cls.env.transaction.observers = (orm_profiler.OrmProfiler(),)
+
+    @classmethod
+    def tearDownClass(cls):
+        orm_profiler._orm_profiling_enabled = cls._original_enabled
+        cls.env.transaction.observers = cls._original_observers
+        super().tearDownClass()
+
+    def setUp(self):
+        super().setUp()
+        (self.profiler,) = self.env.transaction.observers
+        self.profiler.clear()
+
+    def test_create_recorded(self):
+        self.env["res.partner.tag"].create(
+            [{"name": f"Prof Cat {i}"} for i in range(3)]
+        )
+
+        entries = {
+            key: stats
+            for key, stats in self.profiler._data.items()
+            if key[0] == "create" and key[1] == "res.partner.tag"
+        }
+        self.assertTrue(entries, "create should be recorded")
+        stats = next(iter(entries.values()))
+        self.assertGreaterEqual(stats.count, 1)
+        self.assertGreaterEqual(stats.records, 3)
+        self.assertGreater(stats.time, 0)
+
+    def test_write_recorded(self):
+        categories = self.env["res.partner.tag"].create(
+            [{"name": f"Prof Cat {i}"} for i in range(3)]
+        )
+        self.profiler.clear()
+
+        categories.write({"name": "Updated"})
+
+        entries = {
+            key: stats
+            for key, stats in self.profiler._data.items()
+            if key[0] == "write" and key[1] == "res.partner.tag"
+        }
+        self.assertTrue(entries, "write should be recorded")
+        stats = next(iter(entries.values()))
+        self.assertEqual(stats.records, 3)
+
+    def test_unlink_recorded(self):
+        categories = self.env["res.partner.tag"].create(
+            [{"name": f"Prof Cat {i}"} for i in range(3)]
+        )
+        self.profiler.clear()
+
+        categories.unlink()
+
+        entries = {
+            key: stats
+            for key, stats in self.profiler._data.items()
+            if key[0] == "unlink" and key[1] == "res.partner.tag"
+        }
+        self.assertTrue(entries, "unlink should be recorded")
+
+    def test_search_recorded(self):
+        self.profiler.clear()
+
+        self.env["res.partner.tag"].search([("name", "like", "Prof")])
+
+        entries = {
+            key: stats
+            for key, stats in self.profiler._data.items()
+            if key[0] == "search" and key[1] == "res.partner.tag"
+        }
+        self.assertTrue(entries, "search should be recorded")
+
+    def test_read_recorded(self):
+        categories = self.env["res.partner.tag"].create(
+            [{"name": f"Prof Cat {i}"} for i in range(3)]
+        )
+        self.profiler.clear()
+
+        categories.read(["name"])
+
+        entries = {
+            key: stats
+            for key, stats in self.profiler._data.items()
+            if key[0] == "read" and key[1] == "res.partner.tag"
+        }
+        self.assertTrue(entries, "read should be recorded")
+
+    def test_report_emits_warning(self):
+        self.env["res.partner.tag"].create(
+            [{"name": f"Report Cat {i}"} for i in range(3)]
+        )
+
+        with self.assertLogs("odoo.orm.profile", level="WARNING") as log:
+            self.profiler.report()
+
+        self.assertTrue(
+            any("ORM Profile Summary" in msg for msg in log.output),
+            "Report should emit ORM Profile Summary",
+        )
+        self.assertTrue(
+            any("res.partner.tag" in msg for msg in log.output),
+            "Report should mention the model name",
+        )
+
+    def test_clear_resets_data(self):
+        self.env["res.partner.tag"].create({"name": "Clear Test"})
+        self.assertTrue(self.profiler._data, "Data should exist before clear")
+
+        self.profiler.clear()
+
+        self.assertFalse(self.profiler._data, "Data should be empty after clear")
+        self.assertEqual(self.profiler._total_time, 0.0)
+
+    def test_timing_accumulates(self):
+        for i in range(3):
+            self.env["res.partner.tag"].create({"name": f"Acc Cat {i}"})
+
+        total = sum(stats.time for stats in self.profiler._data.values())
+        self.assertAlmostEqual(
+            total,
+            self.profiler._total_time,
+            places=10,
+            msg="Individual times should sum to _total_time",
+        )
+
+
+@tagged("-standard", "profiler")
+class TestOrmProfilerDisabled(TransactionCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls._original_enabled = orm_profiler._orm_profiling_enabled
+        orm_profiler._orm_profiling_enabled = False
+
+    @classmethod
+    def tearDownClass(cls):
+        orm_profiler._orm_profiling_enabled = cls._original_enabled
+        super().tearDownClass()
+
+    def test_no_profiler_when_disabled(self):
+        self.assertFalse(orm_profiler._orm_profiling_enabled)
+        cat = self.env["res.partner.tag"].create({"name": "Disabled Test"})
+        cat.write({"name": "Updated"})
+        cat.unlink()

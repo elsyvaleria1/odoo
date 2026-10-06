@@ -1,0 +1,48 @@
+{
+    "name": "SMS Messaging",
+    "version": "3.2",
+    "oldest_upgradable_version": "3.2",
+    "category": "Sales/Sales",
+    "summary": "Compose SMS messages and track provider delivery statuses",
+    "description": "Adds SMS records, templates, composition actions and messaging integration for business records. Uses the configured SMS API, with the Odoo IAP service as the supplied implementation. Sending requires service access and any applicable account verification and credits.",
+    "author": "Odoo S.A.",
+    "license": "LGPL-3",
+    "depends": [
+        "base",
+        "iap_mail",
+        "mail",
+        "phone_validation",
+    ],
+    "data": [
+        "data/iap_service_data.xml",
+        "data/ir_cron_data.xml",
+        "wizards/wizard_iap_account_register_sms_views.xml",
+        "wizards/wizard_iap_account_send_sms_code_views.xml",
+        "wizards/wizard_iap_account_update_sms_sender_views.xml",
+        "wizards/wizard_sms_sms_send_views.xml",
+        "wizards/wizard_sms_template_preview_views.xml",
+        "wizards/wizard_sms_template_reset_views.xml",
+        "views/ir_actions_server_views.xml",
+        "views/mail_notification_views.xml",
+        "views/res_config_settings_views.xml",
+        "views/res_partner_views.xml",
+        "views/iap_account_views.xml",
+        "views/sms_sms_views.xml",
+        "views/sms_template_views.xml",
+        "security/ir.access.csv",
+        "views/sms_menus.xml",
+    ],
+    "demo": [
+        "demo/sms_demo.xml",
+        "demo/mail_demo.xml",
+    ],
+    "assets": {
+        "web.assets_backend": [
+            "sms/static/src/**/*",
+        ],
+        "web.assets_unit_tests": [
+            "sms/static/tests/**/*",
+        ],
+    },
+    "auto_install": True,
+}

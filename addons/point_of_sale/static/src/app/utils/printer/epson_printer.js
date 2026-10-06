@@ -1,0 +1,241 @@
+/** @odoo-module native */
+import { getLNATargetAddressSpace } from "@point_of_sale/app/utils/init_lna";
+import { BasePrinter } from "@point_of_sale/app/utils/printer/base_printer";
+import { makeLogger } from "@web/core/debug/debug_logger";
+import { getTemplate } from "@web/core/templates";
+import { _t } from "@web/core/translation";
+import { append, createElement, createTextNode } from "@web/core/utils/dom/xml";
+const log = makeLogger("pos.printer.epson");
+const STATUS_ROLL_PAPER_HAS_RUN_OUT = 0x00080000;
+const STATUS_ROLL_PAPER_HAS_ALMOST_RUN_OUT = 0x00020000;
+const ERROR_CODE_PRINTER_NOT_REACHABLE = "PRINTER_NOT_REACHABLE";
+
+function ePOSPrint(children) {
+    let ePOSLayout = getTemplate("point_of_sale.ePOSLayout");
+    if (!ePOSLayout) {
+        throw new Error("'ePOSLayout' not loaded");
+    }
+    ePOSLayout = ePOSLayout.cloneNode(true);
+    const [eposPrintEl] = ePOSLayout.getElementsByTagName("epos-print");
+    append(eposPrintEl, children);
+    return ePOSLayout.innerHTML.replaceAll(`xmlns=""`, "");
+}
+
+export class EpsonPrinter extends BasePrinter {
+    setup({ ip }) {
+        super.setup(...arguments);
+
+        const protocol = odoo.use_lna ? "http:" : window.location.protocol;
+        this.url = protocol + "//" + ip;
+        this.address = this.url + "/cgi-bin/epos/service.cgi?devid=local_printer";
+        if (odoo.use_lna) {
+            this.lnaTargetAddressSpace = getLNATargetAddressSpace(this.address);
+        }
+        log.lifecycle("setup", () => ({
+            url: this.url,
+            lna: odoo.use_lna,
+            targetAddressSpace: this.lnaTargetAddressSpace,
+        }));
+    }
+
+    /**
+     * @override Create
+     */
+    processCanvas(canvas) {
+        const endRaster = log.perf("canvasToRaster");
+        const rasterData = this.canvasToRaster(canvas);
+        endRaster({ width: canvas.width, height: canvas.height });
+        const endEncode = log.perf("encodeRaster");
+        const encodedData = this.encodeRaster(rasterData);
+        endEncode({ bytes: encodedData.length });
+        return ePOSPrint([
+            createElement(
+                "image",
+                {
+                    width: canvas.width,
+                    height: canvas.height,
+                    align: "center",
+                },
+                [createTextNode(encodedData)],
+            ),
+            createElement("cut", { type: "feed" }),
+        ]);
+    }
+
+    /**
+     * @override
+     */
+    openCashbox() {
+        log.pipeline("openCashbox", () => ({ url: this.url }));
+        const pulse = ePOSPrint([createElement("pulse")]);
+        this.sendPrintingJob(pulse);
+    }
+
+    /**
+     * @override
+     */
+    async sendPrintingJob(img) {
+        const params = {
+            method: "POST",
+            body: img,
+            signal: AbortSignal.timeout(15000),
+        };
+
+        if (this.lnaTargetAddressSpace) {
+            params.targetAddressSpace = this.lnaTargetAddressSpace;
+        }
+
+        const endSend = log.perf("sendPrintingJob");
+        try {
+            const res = await fetch(this.address, params);
+            const body = await res.text();
+            const parser = new DOMParser();
+            const parsedBody = parser.parseFromString(body, "application/xml");
+            const response = parsedBody.querySelector("response");
+            const result = {
+                result: response.getAttribute("success") === "true",
+                errorCode: response.getAttribute("code"),
+                status: parseInt(response.getAttribute("status")) || 0,
+                canRetry: true,
+            };
+            endSend({ http: res.status, ...result });
+            return result;
+        } catch (error) {
+            endSend({ unreachable: true, error: error?.name });
+            return {
+                result: false,
+                canRetry: true,
+                errorCode: ERROR_CODE_PRINTER_NOT_REACHABLE,
+            };
+        }
+    }
+
+    canvasToRaster(canvas) {
+        const imageData = canvas
+            .getContext("2d")
+            .getImageData(0, 0, canvas.width, canvas.height);
+        const pixels = imageData.data;
+        const width = imageData.width;
+        const height = imageData.height;
+        const paddedWidth = Math.ceil(width / 8) * 8;
+        const errors = Array.from(Array(width), (_) => Array(height).fill(0));
+        const rasterData = new Array(paddedWidth * height).fill(0);
+
+        for (let y = 0; y < height; y++) {
+            for (let x = 0; x < width; x++) {
+                let oldColor, newColor;
+
+                const idx = (y * width + x) * 4;
+                oldColor =
+                    pixels[idx] * 0.299 +
+                    pixels[idx + 1] * 0.587 +
+                    pixels[idx + 2] * 0.114;
+
+                oldColor += errors[x][y];
+                oldColor = Math.min(255, Math.max(0, oldColor));
+
+                if (oldColor < 128) {
+                    newColor = 0;
+                    rasterData[y * paddedWidth + x] = 1;
+                } else {
+                    newColor = 255;
+                    rasterData[y * paddedWidth + x] = 0;
+                }
+
+                const error = oldColor - newColor;
+                if (error) {
+                    if (x < width - 1) {
+                        errors[x + 1][y] += (7 / 16) * error;
+                    }
+                    if (x > 0 && y < height - 1) {
+                        errors[x - 1][y + 1] += (3 / 16) * error;
+                    }
+                    if (y < height - 1) {
+                        errors[x][y + 1] += (5 / 16) * error;
+                    }
+                    if (x < width - 1 && y < height - 1) {
+                        errors[x + 1][y + 1] += (1 / 16) * error;
+                    }
+                }
+            }
+        }
+
+        return rasterData.join("");
+    }
+
+    encodeRaster(rasterData) {
+        const bytes = new Uint8Array(Math.ceil(rasterData.length / 8));
+        for (let i = 0; i < rasterData.length; i += 8) {
+            bytes[i / 8] = parseInt(rasterData.slice(i, i + 8), 2);
+        }
+        return bytes.toBase64();
+    }
+
+    /**
+     * @override
+     */
+    getActionError() {
+        const printRes = super.getResultsError();
+        if (window.location.protocol === "https:") {
+            printRes.message.body += _t(
+                "If you are on a secure server (HTTPS) please make sure you manually accepted the certificate by accessing %s. ",
+                this.url,
+            );
+        }
+        return printRes;
+    }
+
+    hasStatus(status, attribute) {
+        return (status & attribute) === attribute;
+    }
+
+    /**
+     * @override
+     */
+    getResultsError(printResult) {
+        const errorCode = printResult.errorCode;
+        const status = printResult.status;
+        let message;
+        if (errorCode === "DeviceNotFound") {
+            message = _t(
+                "Check the printer configuration for the 'Device ID' setting.\nIt should be set to: local_printer",
+            );
+        } else if (errorCode === ERROR_CODE_PRINTER_NOT_REACHABLE) {
+            message = _t("The printer is not reachable.");
+        } else if (errorCode === "EPTR_COVER_OPEN") {
+            message = _t("Printer cover is open. Please close it and try again!");
+        } else if (
+            errorCode === "EPTR_REC_EMPTY" ||
+            this.hasStatus(status, STATUS_ROLL_PAPER_HAS_RUN_OUT)
+        ) {
+            message = _t("It seems that the printer runs out of paper.");
+        } else {
+            message = _t(
+                "The following error code was given by the printer: %s \nTo find more details on the error reason, please search online for: Epson Server Direct Print %s ",
+                errorCode,
+                errorCode,
+            );
+        }
+        return {
+            successful: false,
+            errorCode: errorCode,
+            status: status,
+            message: {
+                title: _t("Printing failed"),
+                body: message,
+            },
+            canRetry: printResult.canRetry || false,
+        };
+    }
+
+    getResultWarningCode(printResult) {
+        const status = printResult?.status;
+        if (!status) {
+            return undefined;
+        }
+        if (this.hasStatus(status, STATUS_ROLL_PAPER_HAS_ALMOST_RUN_OUT)) {
+            return "ROLL_PAPER_HAS_ALMOST_RUN_OUT";
+        }
+        return undefined;
+    }
+}

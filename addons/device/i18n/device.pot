@@ -1,0 +1,2851 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* device
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-09-27 02:54+0000\n"
+"PO-Revision-Date: 2026-09-27 02:54+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: device
+#: model_terms:ir.ui.view,arch_db:device.view_device_device_form
+msgid "/api/data"
+msgstr ""
+
+#. module: device
+#: model:device.device,description:device.demo_device_https_api_01
+msgid ""
+"4K security camera with motion detection and night vision (SecureVision Ltd."
+" SV-CAM-4K-PRO)"
+msgstr ""
+
+#. module: device
+#: model_terms:ir.ui.view,arch_db:device.device_dashboard_kanban_view
+msgid ""
+"<i class=\"fa fa-car\" title=\"License plate\" role=\"img\" aria-"
+"label=\"License plate\"/><span>Placa: </span>"
+msgstr ""
+
+#. module: device
+#: model_terms:ir.ui.view,arch_db:device.device_dashboard_kanban_view
+msgid "<i class=\"fa fa-chain-broken me-1\"/>Disconnect"
+msgstr ""
+
+#. module: device
+#: model_terms:ir.ui.view,arch_db:device.device_dashboard_kanban_view
+msgid ""
+"<i class=\"fa fa-database\" title=\"Data points\" role=\"img\" aria-"
+"label=\"Data points\"/>"
+msgstr ""
+
+#. module: device
+#: model_terms:ir.ui.view,arch_db:device.device_dashboard_kanban_view
+msgid "<i class=\"fa fa-exchange me-1\" title=\"Protocol\"/>"
+msgstr ""
+
+#. module: device
+#: model_terms:ir.ui.view,arch_db:device.device_dashboard_kanban_view
+msgid ""
+"<i class=\"fa fa-id-card\" title=\"IMEI\" role=\"img\" aria-"
+"label=\"IMEI\"/><span>IMEI: </span>"
+msgstr ""
+
+#. module: device
+#: model_terms:ir.ui.view,arch_db:device.device_dashboard_kanban_view
+msgid "<i class=\"fa fa-plug me-1\"/>Connect"
+msgstr ""
+
+#. module: device
+#: model_terms:ir.ui.view,arch_db:device.view_device_device_kanban
+msgid "<i class=\"fa-solid fa-right-left\" title=\"Protocol\"/>"
+msgstr ""
+
+#. module: device
+#: model_terms:ir.ui.view,arch_db:device.view_device_data_log_form
+msgid ""
+"<span class=\"o_stat_text\">View</span>\n"
+"                                <span class=\"o_stat_text\">Device</span>"
+msgstr ""
+
+#. module: device
+#: model_terms:ir.ui.view,arch_db:device.view_device_device_form
+msgid ""
+"<strong>Authentication:</strong> Based on selected type\n"
+"                                            above"
+msgstr ""
+
+#. module: device
+#: model_terms:ir.ui.view,arch_db:device.view_device_device_form
+msgid ""
+"<strong>Endpoint:</strong>\n"
+"                                            <code>/remote/device/&lt;identifier&gt;/data</code>"
+msgstr ""
+
+#. module: device
+#: model_terms:ir.ui.view,arch_db:device.view_device_device_form
+msgid ""
+"<strong>Example:</strong>\n"
+"                                            <code>X-Hub-Signature-256: sha256=&lt;hmac_hex&gt;</code>"
+msgstr ""
+
+#. module: device
+#: model_terms:ir.ui.view,arch_db:device.view_device_device_form
+msgid ""
+"<strong>Example:</strong>\n"
+"                                            <code>X-Webhook-Timestamp: 1704088800</code>"
+msgstr ""
+
+#. module: device
+#: model_terms:ir.ui.view,arch_db:device.view_device_device_form
+msgid "<strong>HMAC Authentication:</strong>"
+msgstr ""
+
+#. module: device
+#: model_terms:ir.ui.view,arch_db:device.view_device_device_form
+msgid "<strong>Method:</strong> POST"
+msgstr ""
+
+#. module: device
+#: model_terms:ir.ui.view,arch_db:device.view_device_device_form
+msgid "<strong>Timestamp Verification Enabled:</strong>"
+msgstr ""
+
+#. module: device
+#. odoo-python
+#: code:addons/device/models/device_device.py:0
+msgid "A device cannot be part of itself."
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,help:device.field_device_device__comm_protocol
+msgid ""
+"A value here exists only where a transport implements it. Each protocol "
+"module adds its own through selection_add and supplies the three verbs in "
+"TRANSPORT_VERBS."
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,help:device.field_device_profile__auth_token
+msgid "API token or key for token-based authentication"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_device__message_needaction
+msgid "Action Needed"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_device__active
+#: model:ir.model.fields,field_description:device.field_device_kind__active
+#: model:ir.model.fields,field_description:device.field_device_profile__active
+#: model_terms:ir.ui.view,arch_db:device.view_device_profile_search
+msgid "Active"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_device__credential_id
+msgid "Active Credential"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_device__activity_ids
+msgid "Activities"
+msgstr ""
+
+#. module: device
+#: model_terms:ir.ui.view,arch_db:device.view_device_device_form
+msgid "Activity"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_device__activity_exception_decoration
+msgid "Activity Exception Decoration"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_device__activity_state
+msgid "Activity State"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_device__activity_type_icon
+msgid "Activity Type Icon"
+msgstr ""
+
+#. module: device
+#: model_terms:ir.ui.view,arch_db:device.view_device_device_form
+msgid "Additional notes about this device..."
+msgstr ""
+
+#. module: device
+#: model:res.groups,name:device.group_device_manager
+msgid "Administrator"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_profile__alert_on_disconnect
+msgid "Alert On Disconnect"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,help:device.field_device_profile__alert_on_disconnect
+msgid "Alert when device stops reporting data"
+msgstr ""
+
+#. module: device
+#: model_terms:ir.ui.view,arch_db:device.view_device_profile_form
+msgid "Alerts"
+msgstr ""
+
+#. module: device
+#: model:ir.ui.menu,name:device.menu_device_device
+msgid "All Devices"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields.selection,name:device.selection__device_device__auto_reconnect_override__on
+msgid "Always reconnect"
+msgstr ""
+
+#. module: device
+#: model_terms:ir.actions.act_window,help:device.action_device_data_log_report_device
+msgid "Analyze device activity patterns:"
+msgstr ""
+
+#. module: device
+#: model_terms:ir.actions.act_window,help:device.action_device_data_log_report_volume
+msgid "Anomaly detection in data flow"
+msgstr ""
+
+#. module: device
+#: model_terms:ir.ui.view,arch_db:device.device_kind_view_form
+#: model_terms:ir.ui.view,arch_db:device.view_device_device_form
+#: model_terms:ir.ui.view,arch_db:device.view_device_device_search
+#: model_terms:ir.ui.view,arch_db:device.view_device_profile_form
+msgid "Archived"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_device__message_attachment_count
+msgid "Attachment Count"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_profile__auth_password
+msgid "Auth Password"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_profile__auth_token
+msgid "Auth Token"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_profile__auth_username
+msgid "Auth Username"
+msgstr ""
+
+#. module: device
+#: model_terms:ir.ui.view,arch_db:device.view_device_profile_form
+msgid "Authentication"
+msgstr ""
+
+#. module: device
+#: model_terms:ir.ui.view,arch_db:device.view_device_device_form
+msgid "Authentication Configuration"
+msgstr ""
+
+#. module: device
+#: model_terms:ir.ui.view,arch_db:device.view_device_profile_form
+msgid "Authentication Settings"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_device__auth_type
+#: model:ir.model.fields,field_description:device.field_device_profile__auth_type
+msgid "Authentication Type"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,help:device.field_device_profile__auth_type
+msgid "Authentication scheme the devices of this model are dialled with."
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_profile__auto_reconnect
+#: model_terms:ir.ui.view,arch_db:device.view_device_device_search
+msgid "Auto Reconnect"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_device__auto_reconnect_override
+msgid "Auto Reconnect Override"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,help:device.field_device_profile__auto_reconnect
+msgid ""
+"Automatically reconnect if connection is lost (applies to all protocols)"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,help:device.field_device_device__retry_enabled
+msgid "Automatically retry failed operations with exponential backoff"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields.selection,name:device.selection__device_data_log__quality__bad
+msgid "Bad"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields.selection,name:device.selection__device_data_log__data_type__boolean
+#: model:ir.model.fields.selection,name:device.selection__device_data_log_report__data_type__boolean
+#: model:ir.model.fields.selection,name:device.selection__mixin_device_data_log__data_type__boolean
+msgid "Boolean"
+msgstr ""
+
+#. module: device
+#: model:device.device,name:device.demo_device_http_api_01
+msgid "Building Energy Monitor"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_device__contract_routes
+msgid "Called At"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_kind__capabilities
+#: model_terms:ir.ui.view,arch_db:device.device_kind_view_form
+msgid "Capabilities"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_device__category_color
+msgid "Category Color"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_device__category_icon
+msgid "Category Icon"
+msgstr ""
+
+#. module: device
+#: model_terms:ir.ui.view,arch_db:device.res_config_settings_view_form
+msgid "Check Device Health Every"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_res_config_settings__device_health_check_interval
+msgid "Check Device Health Every (minutes)"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_device__child_count
+msgid "Child Count"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_device__certificate_id
+msgid "Client Certificate"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_device__code
+#: model:ir.model.fields,field_description:device.field_device_kind__code
+msgid "Code"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_kind__color
+msgid "Color"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,help:device.field_device_kind__color
+msgid "Color for kanban view"
+msgstr ""
+
+#. module: device
+#: model:device.kind,description:device.device_category_temp_humidity
+msgid "Combined temperature and humidity environmental sensor"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_device__comm_protocol
+#: model:ir.model.fields,field_description:device.field_device_kind__comm_protocol
+msgid "Comm Protocol"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,help:device.field_device_device__ip_whitelist
+msgid ""
+"Comma-separated list of allowed IPs or CIDRs (e.g., '192.168.1.0/24, "
+"10.0.0.5'). Leave empty to allow all IPs."
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_data_log__company_id
+#: model:ir.model.fields,field_description:device.field_device_data_log_report__company_id
+#: model:ir.model.fields,field_description:device.field_device_device__company_id
+#: model:ir.model.fields,field_description:device.field_mixin_device_data_log__company_id
+#: model_terms:ir.ui.view,arch_db:device.view_device_data_log_form
+#: model_terms:ir.ui.view,arch_db:device.view_device_data_log_report_search
+#: model_terms:ir.ui.view,arch_db:device.view_device_device_search
+msgid "Company"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,help:device.field_device_data_log__company_id
+#: model:ir.model.fields,help:device.field_device_device__company_id
+#: model:ir.model.fields,help:device.field_mixin_device_data_log__company_id
+msgid "Company that owns this channel (for multi-tenancy isolation)"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_data_log_report__config_id
+#: model:ir.model.fields,field_description:device.field_device_device__config_id
+msgid "Config"
+msgstr ""
+
+#. module: device
+#: model:ir.model,name:device.model_res_config_settings
+msgid "Config Settings"
+msgstr ""
+
+#. module: device
+#: model:ir.ui.menu,name:device.menu_device_profileuration
+#: model_terms:ir.ui.view,arch_db:device.view_device_data_log_report_search
+msgid "Configuration"
+msgstr ""
+
+#. module: device
+#: model_terms:ir.ui.view,arch_db:device.view_device_profile_form
+msgid "Configuration Name"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,help:device.field_device_device__config_id
+msgid ""
+"Configuration profile with communication settings, authentication, and data "
+"retention policies"
+msgstr ""
+
+#. module: device
+#: model_terms:ir.actions.act_window,help:device.action_device_profile
+msgid ""
+"Configuration profiles define how devices communicate,\n"
+"                authenticate, and manage data retention."
+msgstr ""
+
+#. module: device
+#: model_terms:ir.ui.view,arch_db:device.device_dashboard_kanban_view
+#: model_terms:ir.ui.view,arch_db:device.view_device_device_form
+msgid "Connect"
+msgstr ""
+
+#. module: device
+#: model_terms:ir.actions.act_window,help:device.action_device_device
+msgid "Connect your first Remote device"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields.selection,name:device.selection__device_device__connection_state__connected
+#: model_terms:ir.ui.view,arch_db:device.view_device_device_search
+msgid "Connected"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_device__connection_id
+#: model_terms:ir.ui.view,arch_db:device.view_device_device_form
+msgid "Connection"
+msgstr ""
+
+#. module: device
+#: model_terms:ir.ui.view,arch_db:device.view_device_profile_form
+msgid "Connection Alerts"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_device__connection_state
+#: model_terms:ir.ui.view,arch_db:device.view_device_device_search
+msgid "Connection State"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_device__connection_state_message
+msgid "Connection State Message"
+msgstr ""
+
+#. module: device
+#. odoo-python
+#: code:addons/device/models/device_device.py:0
+msgid "Connection Test"
+msgstr ""
+
+#. module: device
+#. odoo-python
+#: code:addons/device/models/device_device.py:0
+msgid "Connection failed: %s"
+msgstr ""
+
+#. module: device
+#. odoo-python
+#: code:addons/device/models/device_device.py:0
+msgid "Connection successful!"
+msgstr ""
+
+#. module: device
+#. odoo-python
+#: code:addons/device/models/device_device.py:0
+msgid "Could not connect to device %s; see the server log."
+msgstr ""
+
+#. module: device
+#: model_terms:ir.actions.act_window,help:device.action_device_profile
+msgid "Create a device configuration profile"
+msgstr ""
+
+#. module: device
+#: model_terms:ir.actions.act_window,help:device.device_kind_action
+msgid "Create your first device type"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_data_log__create_uid
+#: model:ir.model.fields,field_description:device.field_device_device__create_uid
+#: model:ir.model.fields,field_description:device.field_device_kind__create_uid
+#: model:ir.model.fields,field_description:device.field_device_profile__create_uid
+msgid "Created by"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_data_log__create_date
+#: model:ir.model.fields,field_description:device.field_device_device__create_date
+#: model:ir.model.fields,field_description:device.field_device_kind__create_date
+#: model:ir.model.fields,field_description:device.field_device_profile__create_date
+msgid "Created on"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_device__credential_fingerprint
+msgid "Credential Fingerprint"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,help:device.field_device_device__http_headers
+msgid "Custom HTTP headers in JSON format. Leave empty to use config default."
+msgstr ""
+
+#. module: device
+#: model:device.device,name:device.demo_device_generic_01
+msgid "Custom IoT Sensor Array"
+msgstr ""
+
+#. module: device
+#: model:device.device,description:device.demo_device_generic_01
+msgid ""
+"Custom IoT device array for R&D experiments and prototyping (Custom Built "
+"ESP32-DevKit)"
+msgstr ""
+
+#. module: device
+#: model_terms:ir.actions.act_window,help:device.action_device_data_log_report_volume
+msgid "Daily and hourly data volume"
+msgstr ""
+
+#. module: device
+#: model:ir.ui.menu,name:device.menu_device_data_analytics
+msgid "Data & Analytics"
+msgstr ""
+
+#. module: device
+#: model_terms:ir.ui.view,arch_db:device.view_device_device_form
+msgid "Data & History"
+msgstr ""
+
+#. module: device
+#: model:ir.actions.act_window,name:device.action_device_data_log_report
+#: model:ir.ui.menu,name:device.menu_device_data_log_analysis
+msgid "Data Analysis"
+msgstr ""
+
+#. module: device
+#: model_terms:ir.ui.view,arch_db:device.view_device_profile_form
+msgid "Data Collection"
+msgstr ""
+
+#. module: device
+#: model_terms:ir.ui.view,arch_db:device.view_device_data_log_report_list
+#: model_terms:ir.ui.view,arch_db:device.view_device_data_log_report_pivot
+#: model_terms:ir.ui.view,arch_db:device.view_device_data_log_report_search
+msgid "Data Log Analysis"
+msgstr ""
+
+#. module: device
+#: model:ir.ui.menu,name:device.menu_device_data_log_log
+msgid "Data Logs"
+msgstr ""
+
+#. module: device
+#: model_terms:ir.ui.view,arch_db:device.view_device_data_log_form
+msgid "Data Point"
+msgstr ""
+
+#. module: device
+#: model:ir.actions.act_window,name:device.action_device_data_log
+#: model_terms:ir.ui.view,arch_db:device.view_device_data_log_graph
+#: model_terms:ir.ui.view,arch_db:device.view_device_data_log_tree
+msgid "Data Points"
+msgstr ""
+
+#. module: device
+#: model_terms:ir.ui.view,arch_db:device.view_device_device_form
+msgid "Data Points (24h)"
+msgstr ""
+
+#. module: device
+#: model_terms:ir.ui.view,arch_db:device.view_device_data_log_pivot
+msgid "Data Points Analysis"
+msgstr ""
+
+#. module: device
+#: model_terms:ir.ui.view,arch_db:device.view_device_data_log_report_graph_bar
+msgid "Data Points by Device"
+msgstr ""
+
+#. module: device
+#: model_terms:ir.ui.view,arch_db:device.res_config_settings_view_form
+#: model_terms:ir.ui.view,arch_db:device.view_device_profile_form
+msgid "Data Retention"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_res_config_settings__device_data_retention_days
+msgid "Data Retention (days)"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_profile__data_retention_days
+msgid "Data Retention Days"
+msgstr ""
+
+#. module: device
+#: model_terms:ir.ui.view,arch_db:device.view_device_data_log_report_graph_source
+msgid "Data Source Distribution"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_data_log__data_type
+#: model:ir.model.fields,field_description:device.field_device_data_log_report__data_type
+#: model:ir.model.fields,field_description:device.field_mixin_device_data_log__data_type
+#: model_terms:ir.ui.view,arch_db:device.view_device_data_log_report_search
+#: model_terms:ir.ui.view,arch_db:device.view_device_data_log_search
+msgid "Data Type"
+msgstr ""
+
+#. module: device
+#: model_terms:ir.ui.view,arch_db:device.view_device_data_log_report_graph_pie
+msgid "Data Type Distribution"
+msgstr ""
+
+#. module: device
+#: model:ir.actions.act_window,name:device.action_device_data_log_report_type
+#: model:ir.ui.menu,name:device.menu_device_data_type_analysis
+msgid "Data Types"
+msgstr ""
+
+#. module: device
+#: model:ir.actions.act_window,name:device.action_device_data_log_report_volume
+#: model:ir.ui.menu,name:device.menu_device_data_volume_analysis
+msgid "Data Volume"
+msgstr ""
+
+#. module: device
+#: model_terms:ir.ui.view,arch_db:device.view_device_data_log_report_graph_line
+msgid "Data Volume Over Time"
+msgstr ""
+
+#. module: device
+#: model_terms:ir.actions.act_window,help:device.action_device_data_log
+msgid ""
+"Data points are automatically created when devices send or receive data.\n"
+"                Connect your devices and start collecting data to see it here."
+msgstr ""
+
+#. module: device
+#: model_terms:ir.actions.act_window,help:device.action_device_data_log_report
+msgid "Data points distribution by device"
+msgstr ""
+
+#. module: device
+#: model_terms:ir.actions.act_window,help:device.action_device_data_log_report_device
+msgid "Data points per device"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,help:device.field_device_device__log_count
+msgid "Data points received in the last 24 hours."
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,help:device.field_device_data_log__quality
+msgid "Data quality indicator"
+msgstr ""
+
+#. module: device
+#. odoo-python
+#: code:addons/device/models/device_device.py:0
+msgid "Data read successfully"
+msgstr ""
+
+#. module: device
+#. odoo-python
+#: code:addons/device/models/device_device.py:0
+msgid "Data reading not implemented for protocol %s"
+msgstr ""
+
+#. module: device
+#: model_terms:ir.actions.act_window,help:device.action_device_data_log_report
+msgid "Data type and source analysis"
+msgstr ""
+
+#. module: device
+#: model_terms:ir.actions.act_window,help:device.action_device_data_log_report_type
+msgid "Data type trends over time"
+msgstr ""
+
+#. module: device
+#: model_terms:ir.actions.act_window,help:device.action_device_data_log_report
+msgid "Data volume trends over time"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_data_log_report__date
+#: model_terms:ir.ui.view,arch_db:device.view_device_data_log_report_search
+msgid "Date"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_device__date_last_data_received
+msgid "Date Last Data Received"
+msgstr ""
+
+#. module: device
+#: model_terms:ir.ui.view,arch_db:device.view_device_data_log_search
+msgid "Day"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_data_log_report__day_of_week
+msgid "Day Of Week"
+msgstr ""
+
+#. module: device
+#: model_terms:ir.ui.view,arch_db:device.view_device_data_log_report_search
+msgid "Day of Week"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,help:device.field_device_data_log_report__day_of_week
+msgid "Day of week (0=Sunday, 6=Saturday)"
+msgstr ""
+
+#. module: device
+#: model_terms:ir.ui.view,arch_db:device.res_config_settings_view_form
+msgid ""
+"Days to keep the verbatim device payload on each data point.\n"
+"                                        0 keeps it forever. The row and every parsed column are kept\n"
+"                                        either way; only the debugging copy is discarded, and not\n"
+"                                        reversibly."
+msgstr ""
+
+#. module: device
+#: model_terms:ir.ui.view,arch_db:device.view_device_device_form
+msgid "Debug Settings"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_profile__endpoint_url
+msgid "Default Address"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,help:device.field_device_profile__http_headers
+msgid ""
+"Default custom HTTP headers in JSON format. Can be overridden at device "
+"level."
+msgstr ""
+
+#. module: device
+#: model_terms:ir.ui.view,arch_db:device.device_kind_view_form
+msgid "Define device capabilities in JSON format. Example:"
+msgstr ""
+
+#. module: device
+#: model_terms:ir.ui.view,arch_db:device.device_dashboard_kanban_view
+msgid "Delete"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,help:device.field_device_device__log_retention_days
+msgid ""
+"Delete this gate's exchange rows older than this many days. 0 uses the "
+"retention set in API Transport settings."
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,help:device.field_device_device__is_demo
+msgid "Demo devices skip actual network connections to prevent timeout errors"
+msgstr ""
+
+#. module: device
+#: model_terms:ir.ui.view,arch_db:device.view_device_device_form
+msgid "Demo devices skip network connections to prevent timeout errors"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,help:device.field_device_device__rate_limit_strict
+msgid ""
+"Deny the request when the rate-limit bucket cannot be read (lock contention,"
+" timeout, internal error) instead of allowing it. Enable wherever the limit "
+"is a security control rather than a best-effort cap."
+msgstr ""
+
+#. module: device
+#: model_terms:ir.ui.view,arch_db:device.device_kind_view_form
+msgid "Describe this device type..."
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_device__description
+#: model:ir.model.fields,field_description:device.field_device_kind__description
+#: model:ir.model.fields,field_description:device.field_device_profile__description
+#: model_terms:ir.ui.view,arch_db:device.device_kind_view_form
+#: model_terms:ir.ui.view,arch_db:device.view_device_device_form
+msgid "Description"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,help:device.field_device_profile__description
+msgid "Description of this configuration profile"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,help:device.field_device_device__description
+msgid "Description of what this channel does"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_data_log__device_id
+#: model:ir.model.fields,field_description:device.field_device_data_log_report__device_id
+#: model:ir.model.fields,field_description:device.field_device_kind__device_ids
+#: model:ir.model.fields,field_description:device.field_device_profile__device_ids
+#: model:ir.model.fields,field_description:device.field_mixin_device_data_log__device_id
+#: model_terms:ir.ui.view,arch_db:device.view_device_data_log_report_search
+#: model_terms:ir.ui.view,arch_db:device.view_device_data_log_search
+#: model_terms:ir.ui.view,arch_db:device.view_device_data_log_tree
+#: model_terms:ir.ui.view,arch_db:device.view_device_device_form
+#: model_terms:ir.ui.view,arch_db:device.view_device_device_search
+msgid "Device"
+msgstr ""
+
+#. module: device
+#. odoo-python
+#: code:addons/device/models/device_device.py:0
+msgid "Device %s has no connection to call it through."
+msgstr ""
+
+#. module: device
+#: model:ir.actions.act_window,name:device.action_device_data_log_report_device
+#: model:ir.ui.menu,name:device.menu_device_device_activity_analysis
+msgid "Device Activity"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_data_log_report__device_category_id
+#: model:ir.model.fields,field_description:device.field_device_device__device_category_id
+#: model_terms:ir.ui.view,arch_db:device.view_device_data_log_report_search
+msgid "Device Category"
+msgstr ""
+
+#. module: device
+#: model_terms:ir.ui.view,arch_db:device.view_device_profile_form
+msgid "Device Configuration"
+msgstr ""
+
+#. module: device
+#: model:ir.actions.act_window,name:device.action_device_profile
+#: model:ir.ui.menu,name:device.menu_device_profile
+msgid "Device Configurations"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_kind__device_count
+#: model:ir.model.fields,field_description:device.field_device_profile__device_count
+msgid "Device Count"
+msgstr ""
+
+#. module: device
+#: model_terms:ir.ui.view,arch_db:device.device_dashboard_graph_view
+msgid "Device Distribution"
+msgstr ""
+
+#. module: device
+#: model_terms:ir.ui.view,arch_db:device.view_device_device_form
+#: model_terms:ir.ui.view,arch_db:device.view_device_profile_form
+msgid "Device Information"
+msgstr ""
+
+#. module: device
+#: model_terms:ir.ui.view,arch_db:device.view_device_device_form
+msgid "Device Integration"
+msgstr ""
+
+#. module: device
+#: model_terms:ir.ui.view,arch_db:device.view_device_device_form
+msgid "Device Receiver"
+msgstr ""
+
+#. module: device
+#: model_terms:ir.ui.view,arch_db:device.device_dashboard_pivot_view
+msgid "Device Statistics"
+msgstr ""
+
+#. module: device
+#: model_terms:ir.ui.view,arch_db:device.device_kind_view_form
+#: model_terms:ir.ui.view,arch_db:device.view_device_device_search
+msgid "Device Type"
+msgstr ""
+
+#. module: device
+#: model_terms:ir.ui.view,arch_db:device.device_kind_view_form
+msgid "Device Type Name"
+msgstr ""
+
+#. module: device
+#: model:ir.actions.act_window,name:device.device_kind_action
+#: model:ir.ui.menu,name:device.menu_device_kind
+#: model_terms:ir.ui.view,arch_db:device.device_kind_view_tree
+msgid "Device Types"
+msgstr ""
+
+#. module: device
+#: model_terms:ir.actions.act_window,help:device.action_device_data_log_report_device
+msgid "Device category comparisons"
+msgstr ""
+
+#. module: device
+#: model:ir.model.constraint,message:device.constraint_device_device_company_device_uniq
+msgid "Device identifier must be unique per company and parent device."
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,help:device.field_device_profile__manufacturer
+msgid "Device manufacturer (e.g., Teltonika, Queclink)"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,help:device.field_device_profile__model
+msgid "Device model number"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,help:device.field_device_data_log__device_id
+#: model:ir.model.fields,help:device.field_mixin_device_data_log__device_id
+msgid ""
+"Device that generated this data point. Deliberately not index=True: "
+"_device_timestamp_idx below leads with this column, so a btree on it alone "
+"answers nothing the composite does not, and this is the append-heavy table "
+"in the family."
+msgstr ""
+
+#. module: device
+#: model_terms:ir.actions.act_window,help:device.device_kind_action
+msgid ""
+"Device types define templates for different categories of Remote devices.<br>\n"
+"                Examples: Temperature Sensors, Smart Switches, Industrial PLCs, etc."
+msgstr ""
+
+#. module: device
+#: model_terms:ir.ui.view,arch_db:device.device_kind_view_kanban
+msgid "Device(s)"
+msgstr ""
+
+#. module: device
+#: model_terms:ir.actions.act_window,help:device.action_device_data_log_report_type
+msgid "Device-specific data patterns"
+msgstr ""
+
+#. module: device
+#. odoo-python
+#: code:addons/device/models/home_tile.py:0
+#: model:ir.actions.act_window,name:device.action_device_device
+#: model:ir.ui.menu,name:device.menu_device_devices
+#: model_terms:ir.ui.view,arch_db:device.device_kind_view_form
+#: model_terms:ir.ui.view,arch_db:device.view_device_device_list
+#: model_terms:ir.ui.view,arch_db:device.view_device_profile_form
+msgid "Devices"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,help:device.field_device_kind__device_ids
+msgid "Devices assigned to this category"
+msgstr ""
+
+#. module: device
+#: model_terms:ir.ui.view,arch_db:device.view_device_device_form
+msgid ""
+"Devices must sign each request with HMAC using the shared\n"
+"                                            secret from the credential."
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,help:device.field_device_profile__device_ids
+msgid "Devices using this configuration"
+msgstr ""
+
+#. module: device
+#. odoo-python
+#: code:addons/device/models/device_kind.py:0
+msgid "Devices: %s"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_device__dial_credential_id
+msgid "Dial Secret"
+msgstr ""
+
+#. module: device
+#: model_terms:ir.ui.view,arch_db:device.view_device_device_search
+msgid "Dialled"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,help:device.field_res_config_settings__device_raw_payload_retention_days
+msgid ""
+"Discard the verbatim device payload on data points older than this, keeping "
+"the row and every parsed column. 0 keeps them forever. On a busy fleet the "
+"payload is the largest thing in the database: 3.1 GB across 6.7M GPS points "
+"here, about a third of the whole database, for a debugging copy of readings "
+"that parsed correctly months ago. Discarding is not reversible."
+msgstr ""
+
+#. module: device
+#: model_terms:ir.ui.view,arch_db:device.device_dashboard_kanban_view
+#: model_terms:ir.ui.view,arch_db:device.view_device_device_form
+msgid "Disconnect"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_profile__disconnect_timeout
+#: model_terms:ir.ui.view,arch_db:device.res_config_settings_view_form
+msgid "Disconnect Timeout"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_res_config_settings__device_disconnect_timeout
+msgid "Disconnect Timeout (seconds)"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_kind__disconnect_timeout_seconds
+msgid "Disconnect Timeout Seconds"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields.selection,name:device.selection__device_device__connection_state__disconnected
+#: model_terms:ir.ui.view,arch_db:device.view_device_device_search
+msgid "Disconnected"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_device__display_endpoint
+msgid "Display Endpoint"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_data_log__display_name
+#: model:ir.model.fields,field_description:device.field_device_data_log_report__display_name
+#: model:ir.model.fields,field_description:device.field_device_device__display_name
+#: model:ir.model.fields,field_description:device.field_device_kind__display_name
+#: model:ir.model.fields,field_description:device.field_device_profile__display_name
+#: model:ir.model.fields,field_description:device.field_home_tile__display_name
+#: model:ir.model.fields,field_description:device.field_mixin_device_data_log__display_name
+#: model:ir.model.fields,field_description:device.field_res_config_settings__display_name
+msgid "Display Name"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_device__duplicate_detection_enabled
+msgid "Duplicate Detection Enabled"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_device__duplicate_window_seconds
+msgid "Duplicate Window Seconds"
+msgstr ""
+
+#. module: device
+#: model_terms:ir.ui.view,arch_db:device.device_dashboard_kanban_view
+msgid "Edit"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,help:device.field_device_device__use_auto_reconnect
+msgid "Effective auto-reconnect setting (device override or config default)"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_device__rate_limit_enabled
+msgid "Enable Rate Limiting"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_device__retry_enabled
+msgid "Enable Retry"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,help:device.field_device_device__rate_limit_enabled
+msgid "Enable rate limiting using token bucket algorithm"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,help:device.field_device_device__timestamp_verification_enabled
+msgid "Enable timestamp verification to prevent replay attacks"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,help:device.field_device_device__credential_id
+msgid "Encrypted credential for authentication. Managed by credential."
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_device__endpoint
+msgid "Endpoint"
+msgstr ""
+
+#. module: device
+#: model_terms:ir.ui.view,arch_db:device.view_device_device_form
+msgid "Endpoint Configuration"
+msgstr ""
+
+#. module: device
+#: model:device.kind,name:device.device_category_energy_monitor
+msgid "Energy Monitor"
+msgstr ""
+
+#. module: device
+#: model:device.kind,description:device.device_category_energy_monitor
+msgid "Energy consumption monitoring device"
+msgstr ""
+
+#. module: device
+#. odoo-javascript
+#: code:addons/device/static/src/home_tile/devices_tile.xml:0
+#: model:ir.model.fields.selection,name:device.selection__device_device__connection_state__error
+#: model_terms:ir.ui.view,arch_db:device.view_device_device_search
+msgid "Error"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_device__event_count
+msgid "Event Count"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_device__event_log_ids
+msgid "Event Log"
+msgstr ""
+
+#. module: device
+#. odoo-javascript
+#: code:addons/device/static/src/home_tile/devices_tile.xml:0
+msgid "Every device is reporting."
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,help:device.field_device_profile__odometer_correction_factor
+msgid ""
+"Factor to correct odometer readings (e.g., 0.001 to convert from meters to "
+"kilometers)"
+msgstr ""
+
+#. module: device
+#. odoo-python
+#: code:addons/device/models/device_device.py:0
+msgid "Failed to read data: %s"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_device__firmware_version
+msgid "Firmware Version"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_device__message_follower_ids
+msgid "Followers"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_device__message_partner_ids
+msgid "Followers (Partners)"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,help:device.field_device_device__category_icon
+msgid "Font Awesome class used to badge the device by type in the kanban."
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,help:device.field_device_kind__icon
+msgid "Font Awesome icon class (e.g., fa-thermometer, fa-wifi)"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields.selection,name:device.selection__device_profile__http_method__get
+msgid "GET"
+msgstr ""
+
+#. module: device
+#: model:device.kind,name:device.device_category_gps
+msgid "GPS Tracker"
+msgstr ""
+
+#. module: device
+#: model:device.kind,description:device.device_category_gps
+msgid "GPS tracking device"
+msgstr ""
+
+#. module: device
+#: model_terms:ir.ui.view,arch_db:device.view_device_data_log_form
+msgid "General Information"
+msgstr ""
+
+#. module: device
+#: model:ir.ui.menu,name:device.menu_device_general_iot_analysis
+msgid "General IoT Analysis"
+msgstr ""
+
+#. module: device
+#: model:ir.ui.menu,name:device.menu_device_gps_raw_data
+msgid "General IoT Raw Data"
+msgstr ""
+
+#. module: device
+#: model_terms:ir.ui.view,arch_db:device.view_device_profile_form
+msgid "General Settings"
+msgstr ""
+
+#. module: device
+#: model:device.kind,name:device.device_category_generic
+msgid "Generic Remote Device"
+msgstr ""
+
+#. module: device
+#: model:device.kind,description:device.device_category_generic
+msgid "Generic Remote device with custom capabilities"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields.selection,name:device.selection__device_data_log__quality__good
+msgid "Good"
+msgstr ""
+
+#. module: device
+#: model_terms:ir.ui.view,arch_db:device.view_device_device_form
+msgid "HMAC Signature Configuration"
+msgstr ""
+
+#. module: device
+#: model_terms:ir.ui.view,arch_db:device.view_device_device_form
+msgid "HTTP Configuration"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,help:device.field_device_device__signature_header
+msgid "HTTP header containing the HMAC signature"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,help:device.field_device_device__timestamp_header
+msgid "HTTP header containing the request timestamp"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,help:device.field_device_profile__http_method
+msgid "HTTP method for data requests"
+msgstr ""
+
+#. module: device
+#: model_terms:ir.ui.view,arch_db:device.view_device_profile_form
+msgid "HTTP/HTTPS Settings"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields.selection,name:device.selection__device_device__comm_protocol__http
+#: model:ir.model.fields.selection,name:device.selection__device_kind__comm_protocol__http
+#: model:ir.model.fields.selection,name:device.selection__device_profile__protocol__http
+msgid "HTTP/REST"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields.selection,name:device.selection__device_device__comm_protocol__https
+#: model:ir.model.fields.selection,name:device.selection__device_kind__comm_protocol__https
+#: model:ir.model.fields.selection,name:device.selection__device_profile__protocol__https
+msgid "HTTPS/REST"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_device__hardware_version
+msgid "Hardware Version"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_device__has_message
+msgid "Has Message"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_device__contract_limits
+msgid "Held To"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields.selection,name:device.selection__device_device__link_mode__stream
+#: model:ir.model.fields.selection,name:device.selection__device_kind__link_mode__stream
+msgid "Held open by the stream worker"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,help:device.field_device_device__log_ids
+msgid "Historical data points received from this device"
+msgstr ""
+
+#. module: device
+#: model:ir.model,name:device.model_home_tile
+msgid "Home Dashboard Tile"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,help:device.field_device_device__endpoint
+msgid "Hostname or IP address of the device"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_data_log_report__hour
+#: model_terms:ir.ui.view,arch_db:device.view_device_data_log_report_search
+#: model_terms:ir.ui.view,arch_db:device.view_device_data_log_search
+msgid "Hour"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,help:device.field_device_data_log_report__hour
+msgid "Hour of day (0-23) for intraday analysis"
+msgstr ""
+
+#. module: device
+#: model_terms:ir.actions.act_window,help:device.action_device_data_log_report
+msgid "Hourly and daily patterns"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,help:device.field_device_profile__service_id
+msgid ""
+"How Odoo dials the devices of this model: the default address, the "
+"authentication scheme, the timeouts. One per profile; every device's own "
+"connection hangs from it."
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,help:device.field_device_kind__link_mode
+msgid ""
+"How devices of this kind and Odoo reach each other, when the kind knows "
+"better than the protocol and the address: a phone pushes whatever address it"
+" carries."
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,help:device.field_device_profile__data_retention_days
+msgid ""
+"How long to keep historical data from devices using this profile. Leave at 0"
+" to fall back to the global retention setting."
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,help:device.field_res_config_settings__device_health_check_interval
+msgid "How often device connection state is recomputed from data recency."
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,help:device.field_res_config_settings__device_polling_interval
+msgid "How often pull-based devices are polled."
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,help:device.field_device_device__link_mode
+msgid ""
+"How the device and Odoo reach each other. The kind's word when it has one, "
+"else proposed from the protocol and the address; a device that is reachable "
+"but reports on its own is set to push by hand."
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_device__http_endpoint_path
+msgid "Http Endpoint Path"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_device__http_headers
+#: model:ir.model.fields,field_description:device.field_device_profile__http_headers
+msgid "Http Headers"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_profile__http_method
+msgid "Http Method"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,help:device.field_device_device__name
+msgid "Human-readable name for this channel"
+msgstr ""
+
+#. module: device
+#: model:device.kind,name:device.device_category_humidity_sensor
+msgid "Humidity Sensor"
+msgstr ""
+
+#. module: device
+#: model:device.kind,description:device.device_category_humidity_sensor
+msgid "Humidity monitoring sensor"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_data_log__id
+#: model:ir.model.fields,field_description:device.field_device_data_log_report__id
+#: model:ir.model.fields,field_description:device.field_device_device__id
+#: model:ir.model.fields,field_description:device.field_device_kind__id
+#: model:ir.model.fields,field_description:device.field_device_profile__id
+#: model:ir.model.fields,field_description:device.field_home_tile__id
+#: model:ir.model.fields,field_description:device.field_mixin_device_data_log__id
+#: model:ir.model.fields,field_description:device.field_res_config_settings__id
+msgid "ID"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,help:device.field_device_device__imei
+msgid "IMEI (International Mobile Equipment Identity) different than MAC"
+msgstr ""
+
+#. module: device
+#: model:device.kind,name:device.device_category_camera
+msgid "IP Camera"
+msgstr ""
+
+#. module: device
+#: model:device.kind,description:device.device_category_camera
+msgid "IP-based surveillance camera"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_device__activity_exception_icon
+#: model:ir.model.fields,field_description:device.field_device_kind__icon
+msgid "Icon"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,help:device.field_device_device__activity_exception_icon
+msgid "Icon to indicate an exception activity."
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_device__identifier
+msgid "Identifier"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,help:device.field_device_device__message_needaction
+msgid "If checked, new messages require your attention."
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,help:device.field_device_device__message_has_error
+#: model:ir.model.fields,help:device.field_device_device__message_has_sms_error
+msgid "If checked, some messages have a delivery error."
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_device__imei
+msgid "Imei"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields.selection,name:device.selection__device_data_log__source__import
+#: model:ir.model.fields.selection,name:device.selection__device_data_log_report__source__import
+#: model:ir.model.fields.selection,name:device.selection__mixin_device_data_log__source__import
+msgid "Imported"
+msgstr ""
+
+#. module: device
+#: model_terms:ir.ui.view,arch_db:device.view_device_profile_search
+msgid "Inactive"
+msgstr ""
+
+#. module: device
+#: model_terms:ir.ui.view,arch_db:device.view_device_device_form
+msgid "Inbound Authentication"
+msgstr ""
+
+#. module: device
+#: model:device.kind,name:device.device_category_industrial_plc
+msgid "Industrial PLC"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_device__retry_initial_delay
+msgid "Initial Retry Delay (seconds)"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,help:device.field_device_device__retry_initial_delay
+msgid "Initial delay before first retry. Increases exponentially."
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields.selection,name:device.selection__device_data_log__source__iot
+#: model:ir.model.fields.selection,name:device.selection__device_data_log_report__source__iot
+#: model:ir.model.fields.selection,name:device.selection__mixin_device_data_log__source__iot
+msgid "IoT Channel"
+msgstr ""
+
+#. module: device
+#: model:ir.actions.act_window,name:device.action_device_dashboard
+#: model:ir.ui.menu,name:device.menu_device_dashboard
+msgid "IoT Dashboard"
+msgstr ""
+
+#. module: device
+#: model:ir.model,name:device.model_device_data_log_report
+msgid "IoT Data Log Analysis Report"
+msgstr ""
+
+#. module: device
+#: model_terms:ir.actions.act_window,help:device.action_device_dashboard
+msgid "IoT Device Dashboard"
+msgstr ""
+
+#. module: device
+#: model_terms:ir.ui.view,arch_db:device.res_config_settings_view_form
+msgid "IoT Remote"
+msgstr ""
+
+#. module: device
+#: model:ir.model,name:device.model_device_device
+msgid "IoT Remote Device"
+msgstr ""
+
+#. module: device
+#: model_terms:ir.ui.view,arch_db:device.view_device_data_log_report_search
+msgid "IoT Source"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_device__ip_whitelist
+msgid "Ip Whitelist"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_device__is_demo
+msgid "Is Demo"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_device__message_is_follower
+msgid "Is Follower"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields.selection,name:device.selection__device_data_log__data_type__json
+#: model:ir.model.fields.selection,name:device.selection__device_data_log_report__data_type__json
+#: model:ir.model.fields.selection,name:device.selection__mixin_device_data_log__data_type__json
+#: model_terms:ir.ui.view,arch_db:device.view_device_data_log_search
+msgid "JSON"
+msgstr ""
+
+#. module: device
+#: model_terms:ir.ui.view,arch_db:device.view_device_data_log_report_search
+msgid "JSON Data"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,help:device.field_device_kind__capabilities
+msgid "JSON definition of device capabilities (e.g., sensors, actuators)"
+msgstr ""
+
+#. module: device
+#: model_terms:ir.actions.act_window,help:device.action_device_data_log_report_type
+msgid "JSON vs Numeric vs Boolean vs Text"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,help:device.field_device_device__category_color
+msgid "Kanban accent color (Odoo palette index) resolved per device type."
+msgstr ""
+
+#. module: device
+#: model_terms:ir.ui.view,arch_db:device.res_config_settings_view_form
+msgid "Keep Raw Payloads"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_res_config_settings__device_raw_payload_retention_days
+msgid "Keep Raw Payloads (days)"
+msgstr ""
+
+#. module: device
+#: model_terms:ir.ui.view,arch_db:device.view_device_data_log_report_search
+msgid "Last 30 Days"
+msgstr ""
+
+#. module: device
+#: model_terms:ir.ui.view,arch_db:device.view_device_data_log_report_search
+#: model_terms:ir.ui.view,arch_db:device.view_device_data_log_search
+msgid "Last 7 Days"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_device__date_last_activity
+msgid "Last Activity"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_device__contract_last_call
+msgid "Last Call"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_data_log__write_uid
+#: model:ir.model.fields,field_description:device.field_device_device__write_uid
+#: model:ir.model.fields,field_description:device.field_device_kind__write_uid
+#: model:ir.model.fields,field_description:device.field_device_profile__write_uid
+msgid "Last Updated by"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_data_log__write_date
+#: model:ir.model.fields,field_description:device.field_device_device__write_date
+#: model:ir.model.fields,field_description:device.field_device_kind__write_date
+#: model:ir.model.fields,field_description:device.field_device_profile__write_date
+msgid "Last Updated on"
+msgstr ""
+
+#. module: device
+#. odoo-javascript
+#: code:addons/device/static/src/home_tile/devices_tile.xml:0
+msgid "Last data"
+msgstr ""
+
+#. module: device
+#: model_terms:ir.ui.view,arch_db:device.view_device_device_form
+msgid "Latest Data"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,help:device.field_device_device__port
+msgid "Leave empty to use protocol default"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,help:device.field_device_device__rate_limit_window_seconds
+msgid "Length of the rate-limit window in seconds."
+msgstr ""
+
+#. module: device
+#: model_terms:ir.ui.view,arch_db:device.view_device_device_search
+msgid "Link"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_device__link_mode
+#: model:ir.model.fields,field_description:device.field_device_kind__link_mode
+msgid "Link Mode"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_device__location
+msgid "Location"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_device__log_ids
+msgid "Log"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_data_log_report__log_count
+#: model:ir.model.fields,field_description:device.field_device_device__log_count
+msgid "Log Count"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_device__log_last_id
+msgid "Log Last"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_device__log_request_payload_max_bytes
+msgid "Log Request Payload Max Bytes"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_device__log_retention_days
+msgid "Log Retention Days"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,help:device.field_device_profile__auth_username
+msgid "Login of the shared dial secret, for a scheme that takes one."
+msgstr ""
+
+#. module: device
+#: model_terms:ir.ui.view,arch_db:device.view_device_device_form
+msgid "MAC address, Serial number, etc."
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,help:device.field_device_data_log__source_topic
+msgid "MQTT topic, HTTP endpoint, or protocol URI that delivered this record"
+msgstr ""
+
+#. module: device
+#: model:ir.module.category,description:device.module_category_device_device
+msgid "Manage access to IoT and remote devices"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields.selection,name:device.selection__device_data_log__source__manual
+#: model:ir.model.fields.selection,name:device.selection__device_data_log_report__source__manual
+#: model:ir.model.fields.selection,name:device.selection__mixin_device_data_log__source__manual
+msgid "Manual"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_profile__manufacturer
+#: model_terms:ir.ui.view,arch_db:device.view_device_profile_search
+msgid "Manufacturer"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_device__max_payload_size
+msgid "Max Payload Size"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_device__rate_limit_requests
+msgid "Max Requests"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_device__retry_max_attempts
+msgid "Max Retry Attempts"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,help:device.field_device_device__timestamp_max_age_seconds
+msgid "Maximum age of request timestamp. Default: 5 minutes"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,help:device.field_device_device__max_payload_size
+msgid "Maximum allowed payload size for DoS prevention. Default: 1MB"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,help:device.field_device_device__rate_limit_requests
+msgid "Maximum number of requests allowed per time period"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,help:device.field_device_device__retry_max_attempts
+msgid "Maximum number of retry attempts before marking as failed"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_device__message_has_error
+msgid "Message Delivery error"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_device__message_ids
+msgid "Messages"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,help:device.field_device_device__auth_type
+msgid "Method used for authentication"
+msgstr ""
+
+#. module: device
+#: model_terms:ir.ui.view,arch_db:device.res_config_settings_view_form
+msgid ""
+"Minutes between polls of pull-based devices.\n"
+"                                        This is the schedule of the \"Poll Devices\" scheduled action."
+msgstr ""
+
+#. module: device
+#: model_terms:ir.ui.view,arch_db:device.res_config_settings_view_form
+msgid "Minutes between recomputations of device connection state."
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_profile__model
+msgid "Model"
+msgstr ""
+
+#. module: device
+#: model_terms:ir.actions.act_window,help:device.action_device_dashboard
+msgid ""
+"Monitor your connected IoT devices in real-time.<br> View device status, protocol\n"
+"                distribution, and recent activity."
+msgstr ""
+
+#. module: device
+#: model_terms:ir.ui.view,arch_db:device.view_device_data_log_search
+msgid "Month"
+msgstr ""
+
+#. module: device
+#: model_terms:ir.actions.act_window,help:device.action_device_data_log_report_device
+msgid "Most active devices"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,help:device.field_device_device__log_last_id
+msgid "Most recent data point value"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_device__contract_scheme
+msgid "Must Send"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_device__my_activity_date_deadline
+msgid "My Activity Deadline"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_device__name
+#: model:ir.model.fields,field_description:device.field_device_kind__name
+#: model:ir.model.fields,field_description:device.field_device_profile__name
+msgid "Name"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,help:device.field_device_profile__name
+msgid "Name for this configuration profile"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields.selection,name:device.selection__device_device__auto_reconnect_override__off
+msgid "Never reconnect"
+msgstr ""
+
+#. module: device
+#. odoo-javascript
+#: code:addons/device/static/src/home_tile/devices_tile.xml:0
+msgid "Never reported"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_device__activity_calendar_event_id
+msgid "Next Activity Calendar Event"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_device__activity_date_deadline
+msgid "Next Activity Deadline"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_device__activity_summary
+msgid "Next Activity Summary"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_device__activity_type_id
+msgid "Next Activity Type"
+msgstr ""
+
+#. module: device
+#: model_terms:ir.actions.act_window,help:device.action_device_data_log_report
+msgid "No IoT data logs found"
+msgstr ""
+
+#. module: device
+#: model_terms:ir.actions.act_window,help:device.action_device_data_log
+msgid "No data points yet!"
+msgstr ""
+
+#. module: device
+#. odoo-python
+#: code:addons/device/models/device_device.py:0
+msgid ""
+"No data received from this device. Last reading: %(last_seen)s. Status is "
+"now %(state)s."
+msgstr ""
+
+#. module: device
+#: model_terms:ir.actions.act_window,help:device.action_device_data_log_report_type
+msgid "No data type information available"
+msgstr ""
+
+#. module: device
+#: model_terms:ir.actions.act_window,help:device.action_device_data_log_report_volume
+msgid "No data volume to display"
+msgstr ""
+
+#. module: device
+#: model_terms:ir.actions.act_window,help:device.action_device_data_log_report_device
+msgid "No device activity to display"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_device__message_needaction_counter
+msgid "Number of Actions"
+msgstr ""
+
+#. module: device
+#: model_terms:ir.ui.view,arch_db:device.res_config_settings_view_form
+msgid "Number of days to keep device data before automatic cleanup"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,help:device.field_res_config_settings__device_data_retention_days
+msgid "Number of days to keep device data points before auto-cleanup"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,help:device.field_device_kind__device_count
+msgid "Number of devices assigned to this category"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,help:device.field_device_profile__device_count
+msgid "Number of devices using this configuration"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_device__message_has_error_counter
+msgid "Number of errors"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,help:device.field_device_device__message_needaction_counter
+msgid "Number of messages requiring action"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,help:device.field_device_device__message_has_error_counter
+msgid "Number of messages with delivery error"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields.selection,name:device.selection__device_data_log__data_type__numeric
+#: model:ir.model.fields.selection,name:device.selection__device_data_log_report__data_type__numeric
+#: model:ir.model.fields.selection,name:device.selection__mixin_device_data_log__data_type__numeric
+#: model_terms:ir.ui.view,arch_db:device.view_device_data_log_search
+#: model:ir.model.fields.selection,name:device.selection__device_data_log_gps__data_type__numeric
+msgid "Numeric"
+msgstr ""
+
+#. module: device
+#: model_terms:ir.ui.view,arch_db:device.view_device_data_log_report_search
+msgid "Numeric Data"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_profile__odometer_correction_factor
+msgid "Odometer Correction Factor"
+msgstr ""
+
+#. module: device
+#. odoo-python
+#: code:addons/device/models/device_profile.py:0
+msgid "Odometer correction factor must be positive"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields.selection,name:device.selection__device_device__link_mode__pull
+#: model:ir.model.fields.selection,name:device.selection__device_kind__link_mode__pull
+msgid "Odoo dials it"
+msgstr ""
+
+#. module: device
+#. odoo-javascript
+#: code:addons/device/static/src/home_tile/devices_tile.xml:0
+msgid "Online"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,help:device.field_device_data_log__raw_payload
+#: model:ir.model.fields,help:device.field_mixin_device_data_log__raw_payload
+msgid ""
+"Original raw data received from the device, kept for debugging. Discarded "
+"after 'device.raw_payload_retention_days' if that is set; the parsed columns"
+" are unaffected."
+msgstr ""
+
+#. module: device
+#: model_terms:ir.ui.view,arch_db:device.view_device_device_form
+msgid "Outbound Authentication"
+msgstr ""
+
+#. module: device
+#: model_terms:ir.ui.view,arch_db:device.view_device_device_form
+msgid ""
+"Outbound authentication (when Odoo connects to devices) is\n"
+"                                        configured in the <strong>Configuration Profile</strong>."
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,help:device.field_device_device__auto_reconnect_override
+msgid ""
+"Override the configuration profile's auto-reconnect setting for this device."
+" Leave empty to inherit the profile."
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields.selection,name:device.selection__device_profile__http_method__post
+msgid "POST"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields.selection,name:device.selection__device_profile__http_method__put
+msgid "PUT"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_device__parent_id
+msgid "Part Of"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_device__child_ids
+#: model_terms:ir.ui.view,arch_db:device.view_device_device_form
+msgid "Parts"
+msgstr ""
+
+#. module: device
+#. odoo-python
+#: code:addons/device/models/device_device.py:0
+msgid "Parts of %(device)s"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,help:device.field_device_profile__auth_password
+msgid "Password for Basic Auth (system admins only)"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,help:device.field_device_device__http_endpoint_path
+msgid "Path to append to the endpoint (e.g., /api/data)"
+msgstr ""
+
+#. module: device
+#: model_terms:ir.actions.act_window,help:device.action_device_data_log_report_volume
+msgid "Peak data ingestion times"
+msgstr ""
+
+#. module: device
+#: model_terms:ir.ui.view,arch_db:device.view_device_device_form
+msgid "Physical Location"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,help:device.field_device_device__location
+msgid "Physical location of the device"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_device__plate
+msgid "Plate"
+msgstr ""
+
+#. module: device
+#: model_terms:ir.ui.view,arch_db:device.res_config_settings_view_form
+msgid "Poll Devices Every"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_res_config_settings__device_polling_interval
+msgid "Poll Devices Every (minutes)"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_device__port
+msgid "Port"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_device__website_message_ids
+msgid "Portal Messages"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,help:device.field_device_device__website_message_ids
+msgid "Portal communication history for this record."
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,help:device.field_device_device__signature_prefix
+msgid "Prefix before signature value (e.g., 'sha256=')"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,help:device.field_device_device__duplicate_detection_enabled
+msgid "Prevent duplicate event processing using payload hash"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,help:device.field_device_profile__protocol
+msgid ""
+"Primary communication protocol for devices using this config. A protocol "
+"module adds its own value here alongside the one it adds to "
+"device.device.comm_protocol."
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_device__processing_mode
+msgid "Processing Mode"
+msgstr ""
+
+#. module: device
+#: model:device.kind,description:device.device_category_industrial_plc
+msgid "Programmable Logic Controller for industrial automation"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_profile__protocol
+#: model_terms:ir.ui.view,arch_db:device.view_device_device_search
+#: model_terms:ir.ui.view,arch_db:device.view_device_profile_search
+msgid "Protocol"
+msgstr ""
+
+#. module: device
+#. odoo-python
+#: code:addons/device/models/device_device.py:0
+msgid "Protocol %s is not implemented yet"
+msgstr ""
+
+#. module: device
+#: model_terms:ir.ui.view,arch_db:device.view_device_profile_form
+msgid "Protocol Settings"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields.selection,name:device.selection__device_device__link_mode__push
+#: model:ir.model.fields.selection,name:device.selection__device_kind__link_mode__push
+msgid "Pushes to Odoo"
+msgstr ""
+
+#. module: device
+#: model_terms:ir.ui.view,arch_db:device.view_device_device_search
+msgid "Pushing"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,help:device.field_device_device__verification_method
+msgid ""
+"Python method path for custom verification (format: 'model.method_name'). "
+"Method signature: method(headers: dict, body: str) -> bool"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_data_log__quality
+msgid "Quality"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_device__rate_limit_window_seconds
+msgid "Rate Window (s)"
+msgstr ""
+
+#. module: device
+#: model_terms:ir.ui.view,arch_db:device.view_device_data_log_form
+msgid "Raw Data"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_data_log__raw_payload
+#: model:ir.model.fields,field_description:device.field_mixin_device_data_log__raw_payload
+msgid "Raw Payload"
+msgstr ""
+
+#. module: device
+#: model_terms:ir.ui.view,arch_db:device.view_device_device_form
+msgid "Read Data"
+msgstr ""
+
+#. module: device
+#: model:device.device,description:device.demo_device_http_api_01
+msgid ""
+"Real-time building energy consumption monitoring via REST API (PowerMetrics "
+"Inc. PM-EM-1000)"
+msgstr ""
+
+#. module: device
+#: model_terms:ir.ui.view,arch_db:device.view_device_device_form
+msgid "Recent Data Points"
+msgstr ""
+
+#. module: device
+#: model_terms:ir.actions.act_window,help:device.action_device_device
+msgid ""
+"Register and manage Remote devices over HTTP/REST and\n"
+"                HTTPS/REST. Every other transport arrives as its own module."
+msgstr ""
+
+#. module: device
+#: model:ir.ui.menu,name:device.menu_device_root
+msgid "Remote"
+msgstr ""
+
+#. module: device
+#: model:ir.model,name:device.model_mixin_device_data_log
+msgid "Remote Data Point Mixin"
+msgstr ""
+
+#. module: device
+#: model:ir.model,name:device.model_device_kind
+msgid "Remote Device Category"
+msgstr ""
+
+#. module: device
+#: model:ir.model,name:device.model_device_profile
+msgid "Remote Device Configuration"
+msgstr ""
+
+#. module: device
+#: model:ir.model,name:device.model_device_data_log
+msgid "Remote Device Data Point"
+msgstr ""
+
+#. module: device
+#: model:ir.module.category,name:device.module_category_device_device
+#: model:res.groups.privilege,name:device.res_groups_privilege_device_device
+msgid "Remote Devices"
+msgstr ""
+
+#. module: device
+#: model:ir.actions.server,name:device.ir_cron_auto_reconnect_ir_actions_server
+msgid "Remote: Auto Reconnect"
+msgstr ""
+
+#. module: device
+#: model:ir.actions.server,name:device.ir_cron_check_device_health_ir_actions_server
+msgid "Remote: Check Device Health"
+msgstr ""
+
+#. module: device
+#: model:ir.actions.server,name:device.ir_cron_poll_demo_devices_ir_actions_server
+msgid "Remote: Poll Demo Devices"
+msgstr ""
+
+#. module: device
+#: model:ir.actions.server,name:device.ir_cron_poll_devices_ir_actions_server
+msgid "Remote: Poll Devices"
+msgstr ""
+
+#. module: device
+#: model:ir.actions.server,name:device.ir_cron_refresh_data_log_report_ir_actions_server
+msgid "Remote: Refresh Data Log Report"
+msgstr ""
+
+#. module: device
+#: model_terms:ir.ui.view,arch_db:device.view_device_device_form
+msgid "Replay Attack Prevention"
+msgstr ""
+
+#. module: device
+#: model_terms:ir.ui.view,arch_db:device.view_device_device_form
+msgid ""
+"Requests must include a timestamp header. Requests older\n"
+"                                            than the max age will be rejected."
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_device__activity_user_id
+msgid "Responsible User"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_device__retry_backoff_type
+msgid "Retry Backoff Type"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_device__service_user_id
+msgid "Runs As"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,help:device.field_device_device__credential_fingerprint
+msgid ""
+"SHA-256 of the credential's secret. Lets a presented token be verified, and "
+"its channel found, without decrypting anything."
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_device__message_has_sms_error
+msgid "SMS Delivery error"
+msgstr ""
+
+#. module: device
+#: model_terms:ir.ui.view,arch_db:device.view_device_data_log_search
+msgid "Search Data Points"
+msgstr ""
+
+#. module: device
+#: model_terms:ir.ui.view,arch_db:device.view_device_device_search
+msgid "Search Devices"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,help:device.field_device_profile__http_timeout
+msgid "Seconds Odoo waits for a device of this model to answer."
+msgstr ""
+
+#. module: device
+#: model_terms:ir.ui.view,arch_db:device.res_config_settings_view_form
+msgid ""
+"Seconds without inbound data before a device counts as\n"
+"                                        disconnected. A device category or a configuration profile\n"
+"                                        may override it."
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,help:device.field_res_config_settings__device_disconnect_timeout
+msgid ""
+"Seconds without inbound data before a device is considered disconnected. The"
+" floor: a configuration profile overrides it, and a device category "
+"overrides both."
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,help:device.field_device_kind__disconnect_timeout_seconds
+msgid ""
+"Seconds without inbound data before a device is considered stale. 0 = use "
+"the global 'device.disconnect_timeout_default' parameter."
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,help:device.field_device_profile__disconnect_timeout
+msgid ""
+"Seconds without inbound data before devices on this profile are considered "
+"stale. 0 = inherit the global 'device.disconnect_timeout_default' parameter."
+" Overridden by the device category when that sets its own."
+msgstr ""
+
+#. module: device
+#: model:device.device,name:device.demo_device_https_api_01
+msgid "Security Camera System"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_device__sequence
+#: model:ir.model.fields,field_description:device.field_device_kind__sequence
+msgid "Sequence"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_device__serial_number
+msgid "Serial Number"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_profile__ca_certificate_id
+msgid "Server Authority"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_profile__service_id
+msgid "Service"
+msgstr ""
+
+#. module: device
+#: model_terms:ir.ui.view,arch_db:device.view_device_profile_form
+msgid "Shared Connection Settings"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_profile__credential_id
+msgid "Shared Dial Secret"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_device__signature_header
+msgid "Signature Header"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_device__signature_prefix
+msgid "Signature Prefix"
+msgstr ""
+
+#. module: device
+#. odoo-javascript
+#: code:addons/device/static/src/home_tile/devices_tile.xml:0
+msgid "Silent"
+msgstr ""
+
+#. module: device
+#: model:device.kind,name:device.device_category_smart_switch
+msgid "Smart Switch"
+msgstr ""
+
+#. module: device
+#: model:device.kind,description:device.device_category_smart_switch
+msgid "Smart on/off switch with remote control"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_data_log__source
+#: model:ir.model.fields,field_description:device.field_device_data_log_report__source
+#: model:ir.model.fields,field_description:device.field_mixin_device_data_log__source
+#: model_terms:ir.ui.view,arch_db:device.view_device_data_log_report_search
+#: model_terms:ir.ui.view,arch_db:device.view_device_data_log_search
+msgid "Source"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_data_log__source_topic
+msgid "Source Topic"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,help:device.field_device_data_log__source
+#: model:ir.model.fields,help:device.field_mixin_device_data_log__source
+msgid "Source of this log"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,help:device.field_device_device__activity_state
+msgid ""
+"Status based on activities\n"
+"Overdue: Due date is already passed\n"
+"Today: Activity date is today\n"
+"Planned: Future activities."
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,help:device.field_device_device__log_request_payload_max_bytes
+msgid ""
+"Store at most this many bytes of each request body on the integration.exchange row; 0 keeps the whole body.\n"
+"\n"
+"For an endpoint that accepts a file the body is the file: a phone posting a call recording as base64 wrote roughly 48 MB of text into a log column, beside the same audio already stored as an attachment. Duplicate detection is unaffected -- the hash of the body as received is kept either way. Ignored for an asynchronous endpoint, where the stored body is the work queue and not merely a record of it."
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,help:device.field_device_device__retry_backoff_type
+msgid "Strategy for increasing delay between retries"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_device__stream_id
+msgid "Stream"
+msgstr ""
+
+#. module: device
+#: model_terms:ir.ui.view,arch_db:device.view_device_device_search
+msgid "Streamed"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_device__rate_limit_strict
+msgid "Strict Rate Limiting"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,help:device.field_device_data_log__value_json
+msgid "Structured JSON payload (full device transmission stored as-is)"
+msgstr ""
+
+#. module: device
+#. odoo-python
+#: code:addons/device/models/device_device.py:0
+msgid "Success"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,help:device.field_device_kind__comm_protocol
+msgid "Suggested protocol for this device type"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,help:device.field_device_device__processing_mode
+msgid "Sync: Process immediately. Async: Queue for background processing."
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,help:device.field_device_kind__code
+msgid "Technical identifier for this device type"
+msgstr ""
+
+#. module: device
+#: model:device.kind,name:device.device_category_temp_humidity
+msgid "Temperature & Humidity Sensor"
+msgstr ""
+
+#. module: device
+#: model:device.kind,name:device.device_category_temperature_sensor
+msgid "Temperature Sensor"
+msgstr ""
+
+#. module: device
+#: model:device.kind,description:device.device_category_temperature_sensor
+msgid "Temperature monitoring sensor for environmental control"
+msgstr ""
+
+#. module: device
+#: model_terms:ir.ui.view,arch_db:device.view_device_device_form
+msgid "Test Connection"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields.selection,name:device.selection__device_data_log__data_type__text
+#: model:ir.model.fields.selection,name:device.selection__device_data_log_report__data_type__text
+#: model:ir.model.fields.selection,name:device.selection__mixin_device_data_log__data_type__text
+msgid "Text"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,help:device.field_device_data_log__value_text
+msgid "Text or string data from device"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,help:device.field_device_profile__ca_certificate_id
+msgid ""
+"The authority the devices' servers are checked against when it is not one of"
+" the system's (a private broker CA, Amazon Root CA 1)."
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,help:device.field_device_profile__endpoint_url
+msgid ""
+"The base URL a device of this model answers on when it names no address of "
+"its own (the AWS IoT ATS endpoint, a shared gateway)."
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,help:device.field_device_device__contract_last_call
+msgid ""
+"The body of the last call this gate admitted, as it was logged (masked, and "
+"capped at the gate's own payload limit)."
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,help:device.field_device_device__contract_limits
+msgid "The caps a call is refused for crossing."
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,help:device.field_device_device__connection_id
+msgid ""
+"The connection Odoo dials this device through, for a protocol Odoo reaches "
+"out on: its address, its secret, its breaker and budget."
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,help:device.field_device_device__stream_id
+msgid ""
+"The connection the stream worker holds for this device, for a protocol that "
+"keeps one open."
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,help:device.field_device_device__parent_id
+msgid ""
+"The device this one is a part of: a peripheral belongs to the box that "
+"carries it, and goes with it."
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,help:device.field_device_device__contract_routes
+msgid "The routes that reach this gate, as the server serves them."
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,help:device.field_device_device__dial_credential_id
+msgid ""
+"The secret Odoo dials this device with, when it is not the profile's shared "
+"one."
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,help:device.field_device_profile__credential_id
+msgid ""
+"The secret every device of this model is dialled with unless it carries its "
+"own: a login and password, a bearer token, an API key."
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,help:device.field_device_device__service_user_id
+msgid ""
+"The service principal an admitted call runs as, instead of the public user: "
+"what it writes is its own, and its grants are what it may do."
+msgstr ""
+
+#. module: device
+#: model_terms:ir.actions.act_window,help:device.action_device_data_log_report
+msgid ""
+"This report provides analytical insights into IoT device data including:"
+msgstr ""
+
+#. module: device
+#: model_terms:ir.ui.view,arch_db:device.view_device_data_log_tree
+msgid "Time"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,help:device.field_device_device__duplicate_window_seconds
+msgid "Time window for duplicate detection"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_profile__http_timeout
+msgid "Timeout Read"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_data_log__timestamp
+#: model:ir.model.fields,field_description:device.field_mixin_device_data_log__timestamp
+msgid "Timestamp"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_device__timestamp_header
+msgid "Timestamp Header"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_device__timestamp_max_age_seconds
+msgid "Timestamp Max Age Seconds"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_device__timestamp_verification_enabled
+msgid "Timestamp Verification Enabled"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,help:device.field_device_device__date_last_activity
+msgid "Timestamp of most recent activity (request received or sent)"
+msgstr ""
+
+#. module: device
+#: model_terms:ir.ui.view,arch_db:device.view_device_data_log_search
+msgid "Today"
+msgstr ""
+
+#. module: device
+#: model_terms:ir.ui.view,arch_db:device.view_device_data_log_report_list
+msgid "Total Data Points"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,help:device.field_device_data_log_report__log_count
+msgid "Total number of data points in this aggregation bucket"
+msgstr ""
+
+#. module: device
+#: model_terms:ir.actions.act_window,help:device.action_device_data_log_report_volume
+msgid "Track data ingestion trends:"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,help:device.field_device_data_log__data_type
+#: model:ir.model.fields,help:device.field_mixin_device_data_log__data_type
+msgid "Type of data stored in this record"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,help:device.field_device_device__activity_exception_decoration
+msgid "Type of the exception activity on record."
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields.selection,name:device.selection__device_data_log__quality__uncertain
+msgid "Uncertain"
+msgstr ""
+
+#. module: device
+#: model_terms:ir.actions.act_window,help:device.action_device_data_log_report_type
+msgid "Understand your data composition:"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,help:device.field_device_device__code
+msgid "Unique identifier code for programmatic access"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,help:device.field_device_device__identifier
+msgid ""
+"Unique identifier for the device (MAC address, serial number, etc.) "
+"different than IMEI"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_device__use_auto_reconnect
+msgid "Use Auto Reconnect"
+msgstr ""
+
+#. module: device
+#: model:res.groups,name:device.group_device_user
+msgid "User"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_data_log__value_json
+msgid "Value Json"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_data_log__value_text
+msgid "Value Text"
+msgstr ""
+
+#. module: device
+#: model_terms:ir.ui.view,arch_db:device.view_device_device_form
+msgid "Vehicle license plate (GPS assets)"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,help:device.field_device_device__plate
+msgid "Vehicle license plate, mainly for GPS-tracked assets."
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_device__verification_method
+msgid "Verification Method"
+msgstr ""
+
+#. module: device
+#: model_terms:ir.ui.view,arch_db:device.view_device_device_form
+msgid "Version Information"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields.selection,name:device.selection__device_data_log__source__webhook
+#: model:ir.model.fields.selection,name:device.selection__device_data_log_report__source__webhook
+#: model:ir.model.fields.selection,name:device.selection__mixin_device_data_log__source__webhook
+msgid "Webhook"
+msgstr ""
+
+#. module: device
+#: model_terms:ir.ui.view,arch_db:device.view_device_data_log_report_search
+msgid "Webhook Source"
+msgstr ""
+
+#. module: device
+#: model_terms:ir.ui.view,arch_db:device.view_device_data_log_search
+msgid "Week"
+msgstr ""
+
+#. module: device
+#: model_terms:ir.ui.view,arch_db:device.view_device_device_form
+msgid "What This Device Must Send"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,help:device.field_device_device__contract_scheme
+msgid "What the caller proves itself with."
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,help:device.field_device_data_log__timestamp
+#: model:ir.model.fields,help:device.field_mixin_device_data_log__timestamp
+msgid ""
+"When the data was recorded (device time or receipt time) Note that this may "
+"differ from the record creation time."
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,help:device.field_device_profile__active
+msgid "Whether this configuration is active"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,help:device.field_device_device__certificate_id
+msgid ""
+"X.509 client certificate and private key the device's own connection "
+"presents (mutual TLS). Distinct from the device's credential, which holds "
+"its REST bearer token."
+msgstr ""
+
+#. module: device
+#: model_terms:ir.ui.view,arch_db:device.device_dashboard_kanban_view
+msgid "data points (24h)"
+msgstr ""
+
+#. module: device
+#: model_terms:ir.ui.view,arch_db:device.view_device_device_form
+msgid "e.g., Building A, Floor 2, Room 201"
+msgstr ""
+
+#. module: device
+#: model_terms:ir.ui.view,arch_db:device.device_kind_view_form
+msgid "e.g., Temperature Sensor"
+msgstr ""
+
+#. module: device
+#: model_terms:ir.ui.view,arch_db:device.view_device_device_form
+msgid "e.g., Warehouse Temperature Sensor 01"
+msgstr ""
+
+#. module: device
+#: model_terms:ir.ui.view,arch_db:device.view_device_profile_form
+msgid "https://xxxxx-ats.iot.region.amazonaws.com:8883"
+msgstr ""
+
+#. module: device
+#. odoo-python
+#: code:addons/device/models/device_device.py:0
+msgid "never"
+msgstr ""
+
+#. module: device
+#: model_terms:ir.ui.view,arch_db:device.device_kind_view_form
+msgid ""
+"{\n"
+"  \"sensors\": [\"temperature\", \"humidity\"],\n"
+"  \"actuators\": [\"relay\"],\n"
+"  \"units\": {\n"
+"    \"temperature\": \"°C\",\n"
+"    \"humidity\": \"%\"\n"
+"  }\n"
+"}"
+msgstr ""
+
+#. module: device
+#: model_terms:ir.ui.view,arch_db:device.view_device_profile_form
+msgid "{\"Accept\": \"application/json\"}"
+msgstr ""
+
+#. module: device
+#: model_terms:ir.ui.view,arch_db:device.view_device_device_form
+msgid "{\"Content-Type\": \"application/json\"}"
+msgstr ""

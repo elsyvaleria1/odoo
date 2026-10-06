@@ -1,0 +1,163 @@
+// @ts-check
+/** @odoo-module native */
+
+import { t } from "@odoo/owl";
+import { CopyButton } from "@web/components/copy_button/copy_button";
+import { evaluateBooleanExpr } from "@web/core/py_js/py";
+import { _t } from "@web/core/translation";
+import { omit } from "@web/core/utils/collections/objects";
+import { registerField } from "@web/fields/_registry";
+import { CharField, charField } from "@web/fields/basic/char/char_field";
+import { UrlField, urlField } from "@web/fields/basic/url/url_field";
+import { FieldComponent } from "@web/fields/field_component";
+import { archAttribute } from "@web/fields/field_options";
+import { standardFieldProps } from "@web/fields/standard_field_props";
+
+class CopyClipboardField extends FieldComponent {
+    static template = "web.CopyClipboardField";
+    static props = {
+        ...standardFieldProps,
+        string: t.string().optional(),
+        disabledExpr: t.string().optional(),
+    };
+
+    setup() {
+        this.copyText = this.props.string || _t("Copy");
+        this.successText = _t("Copied");
+    }
+
+    /** @returns {string} */
+    get copyButtonClassName() {
+        return `o_btn_${this.type}_copy btn-sm`;
+    }
+    /** @returns {Object} */
+    get fieldProps() {
+        return omit(this.props, "string", "disabledExpr");
+    }
+    /** @returns {string} */
+    get type() {
+        return this.field.type;
+    }
+    /** @returns {boolean} */
+    get disabled() {
+        return this.props.disabledExpr
+            ? evaluateBooleanExpr(
+                  this.props.disabledExpr,
+                  this.props.record.evalContextWithVirtualIds,
+              )
+            : false;
+    }
+}
+
+export class CopyClipboardButtonField extends CopyClipboardField {
+    static template = "web.CopyClipboardButtonField";
+    static components = { CopyButton };
+    static props = {
+        ...CopyClipboardField.props,
+        btnClass: t.string().optional("primary"),
+    };
+
+    get copyButtonClassName() {
+        return `o_btn_${this.type}_copy btn-${this.props.btnClass} rounded-2`;
+    }
+}
+
+export class CopyClipboardCharField extends CopyClipboardField {
+    static components = { Field: CharField, CopyButton };
+    static get props() {
+        return { ...CopyClipboardField.props, ...CharField.props };
+    }
+
+    /** @returns {string} */
+    get copyButtonIcon() {
+        return "fa-clipboard";
+    }
+}
+
+export class CopyClipboardURLField extends CopyClipboardField {
+    static components = { Field: UrlField, CopyButton };
+    static get props() {
+        return { ...CopyClipboardField.props, ...UrlField.props };
+    }
+
+    /** @returns {string} */
+    get copyButtonIcon() {
+        return "fa-link";
+    }
+}
+
+/**
+ * @param {{ string?: string, attrs: Record<string, string> }} fieldInfo
+ * @returns {{ string?: string, disabledExpr?: string }}
+ */
+function extractProps({ string, attrs }) {
+    return {
+        string,
+        disabledExpr: attrs.disabled,
+    };
+}
+
+/** @type {import("registries").FieldsRegistryItemShape["supportedAttributes"]} */
+const copyClipboardAttributes = [
+    archAttribute("disabled", _t("Disabled when"), {
+        help: _t("Python expression; when it is true the copy button is inert."),
+    }),
+];
+
+export const copyClipboardButtonField = {
+    component: CopyClipboardButtonField,
+    displayName: _t("Copy to Clipboard"),
+    supportedAttributes: copyClipboardAttributes,
+    supportedTypes: ["char", "text"],
+    supportedOptions: [
+        {
+            label: _t("Button style"),
+            name: "btn_class",
+            type: "string",
+            help: _t("Bootstrap button variant, e.g. 'primary' or 'secondary'."),
+        },
+    ],
+    extractProps: (/** @type {any} */ fieldInfo) => ({
+        ...extractProps(fieldInfo),
+        btnClass: fieldInfo.options.btn_class,
+    }),
+};
+
+registerField("CopyClipboardButton", copyClipboardButtonField);
+
+/**
+ * @param {import("@odoo/owl").ComponentConstructor} component
+ * @param {Record<string, any>} wrapped
+ * @returns {Record<string, any>}
+ */
+function makeCopyClipboardField(component, wrapped) {
+    return {
+        ...wrapped,
+        component,
+        supportedAttributes: [
+            ...copyClipboardAttributes,
+            ...(wrapped.supportedAttributes || []),
+        ],
+        extractProps: (
+            /** @type {any} */ fieldInfo,
+            /** @type {any} */ dynamicInfo,
+        ) => ({
+            ...wrapped.extractProps?.(fieldInfo, dynamicInfo),
+            ...extractProps(fieldInfo),
+        }),
+    };
+}
+
+export const copyClipboardCharField = {
+    ...makeCopyClipboardField(CopyClipboardCharField, charField),
+    displayName: _t("Copy Text to Clipboard"),
+};
+
+registerField("CopyClipboardChar", copyClipboardCharField);
+
+export const copyClipboardURLField = {
+    ...makeCopyClipboardField(CopyClipboardURLField, urlField),
+    displayName: _t("Copy URL to Clipboard"),
+};
+
+registerField("CopyClipboardURL", copyClipboardURLField);

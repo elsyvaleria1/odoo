@@ -1,0 +1,13 @@
+/** @odoo-module native */
+import { registry } from "@web/core/registry";
+import { booleanFavoriteField } from "@web/fields/basic/boolean_favorite/boolean_favorite_field";
+
+export const lunchIsUserFavoriteField = {
+    ...booleanFavoriteField,
+    extractProps: (fieldsInfo, dynamicInfo) => ({
+        ...booleanFavoriteField.extractProps(fieldsInfo, dynamicInfo),
+        readonly: Boolean(fieldsInfo.attrs.readonly),
+    }),
+};
+
+registry.category("fields").add("lunch_is_user_favorite", lunchIsUserFavoriteField);

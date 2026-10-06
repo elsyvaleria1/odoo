@@ -1,0 +1,11 @@
+.s_carousel_wrapper[data-vcss="001"] {
+    .s_carousel {
+        @extend %s_carousel_variants;
+
+        &.s_carousel_arrows_hidden .carousel-item {
+            @include media-breakpoint-up(md) {
+                padding: 0;
+            }
+        }
+    }
+}

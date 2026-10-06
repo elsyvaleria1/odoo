@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="product_attribute_fuel_type" model="product.attribute">
+        <field name="name">Fuel type</field>
+        <field name="sequence" eval="10" />
+        <field name="create_variant">no_variant</field>
+        <field name="display_type">select</field>
+    </record>
+
+    <record id="product_attribute_transmission" model="product.attribute">
+        <field name="name">Transmission</field>
+        <field name="sequence" eval="10" />
+        <field name="create_variant">no_variant</field>
+        <field name="display_type">select</field>
+    </record>
+
+    <record id="product_attribute_displacement" model="product.attribute">
+        <field name="name">Displacement</field>
+        <field name="sequence" eval="10" />
+        <field name="create_variant">no_variant</field>
+        <field name="display_type">select</field>
+    </record>
+
+    <record id="fuel_type_cng" model="product.attribute.value">
+        <field name="name">CNG</field>
+        <field name="attribute_id" ref="asset_ledger.product_attribute_fuel_type" />
+    </record>
+
+    <record id="fuel_type_diesel" model="product.attribute.value">
+        <field name="name">Diesel</field>
+        <field name="attribute_id" ref="asset_ledger.product_attribute_fuel_type" />
+    </record>
+
+    <record id="fuel_type_diesel_hybrid" model="product.attribute.value">
+        <field name="name">Diesel hybrid</field>
+        <field name="attribute_id" ref="asset_ledger.product_attribute_fuel_type" />
+    </record>
+
+    <record id="fuel_type_electric" model="product.attribute.value">
+        <field name="name">Electric</field>
+        <field name="attribute_id" ref="asset_ledger.product_attribute_fuel_type" />
+    </record>
+
+    <record id="fuel_type_gasoline" model="product.attribute.value">
+        <field name="name">Gasoline</field>
+        <field name="attribute_id" ref="asset_ledger.product_attribute_fuel_type" />
+    </record>
+
+    <record id="fuel_type_gasoline_hybrid" model="product.attribute.value">
+        <field name="name">Gasoline hybrid</field>
+        <field name="attribute_id" ref="asset_ledger.product_attribute_fuel_type" />
+    </record>
+
+    <record id="fuel_type_hydrogen" model="product.attribute.value">
+        <field name="name">Hydrogen</field>
+        <field name="attribute_id" ref="asset_ledger.product_attribute_fuel_type" />
+    </record>
+
+    <record id="fuel_type_lpg" model="product.attribute.value">
+        <field name="name">LPG</field>
+        <field name="attribute_id" ref="asset_ledger.product_attribute_fuel_type" />
+    </record>
+
+    <record id="transmission_manual" model="product.attribute.value">
+        <field name="name">Manual</field>
+        <field name="attribute_id" ref="asset_ledger.product_attribute_transmission" />
+    </record>
+
+    <record id="transmission_automatic" model="product.attribute.value">
+        <field name="name">Automatic</field>
+        <field name="attribute_id" ref="asset_ledger.product_attribute_transmission" />
+    </record>
+
+    <record id="displacement_0" model="product.attribute.value">
+        <field name="name">No cylinders</field>
+        <field name="attribute_id" ref="asset_ledger.product_attribute_displacement" />
+    </record>
+
+    <record id="displacement_1" model="product.attribute.value">
+        <field name="name">1 cylinder</field>
+        <field name="attribute_id" ref="asset_ledger.product_attribute_displacement" />
+    </record>
+
+    <record id="displacement_2" model="product.attribute.value">
+        <field name="name">2 cylinders</field>
+        <field name="attribute_id" ref="asset_ledger.product_attribute_displacement" />
+    </record>
+
+    <record id="displacement_3" model="product.attribute.value">
+        <field name="name">3 cylinders</field>
+        <field name="attribute_id" ref="asset_ledger.product_attribute_displacement" />
+    </record>
+
+    <record id="displacement_4" model="product.attribute.value">
+        <field name="name">4 cylinders</field>
+        <field name="attribute_id" ref="asset_ledger.product_attribute_displacement" />
+    </record>
+
+    <record id="displacement_6" model="product.attribute.value">
+        <field name="name">6 cylinders</field>
+        <field name="attribute_id" ref="asset_ledger.product_attribute_displacement" />
+    </record>
+
+    <record id="displacement_8" model="product.attribute.value">
+        <field name="name">8 cylinders</field>
+        <field name="attribute_id" ref="asset_ledger.product_attribute_displacement" />
+    </record>
+
+    <record id="displacement_10" model="product.attribute.value">
+        <field name="name">10 cylinders</field>
+        <field name="attribute_id" ref="asset_ledger.product_attribute_displacement" />
+    </record>
+
+</odoo>

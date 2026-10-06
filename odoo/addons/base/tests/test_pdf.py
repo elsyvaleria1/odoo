@@ -1,0 +1,122 @@
+import io
+
+from odoo.tests.common import TransactionCase
+from odoo.tools import pdf
+from odoo.tools.misc import file_open
+from odoo.tools.pdf import reshape_text
+
+
+class TestPdf(TransactionCase):
+    def setUp(self):
+        super().setUp()
+        with file_open("base/tests/minimal.pdf", "rb") as f:
+            self.file = f.read()
+        self.minimal_reader_buffer = io.BytesIO(self.file)
+        self.minimal_pdf_reader = pdf.OdooPdfFileReader(self.minimal_reader_buffer)
+
+    def test_odoo_pdf_file_reader(self):
+        attachments = list(self.minimal_pdf_reader.get_attachments())
+        self.assertEqual(len(attachments), 0)
+
+        pdf_writer = pdf.BrandedFileWriter()
+        pdf_writer.clone_reader_document_root(self.minimal_pdf_reader)
+        pdf_writer.add_attachment("test_attachment.txt", b"My awesome attachment")
+        out = io.BytesIO()
+        pdf_writer.write(out)
+
+        r = pdf.OdooPdfFileReader(io.BytesIO(out.getvalue()))
+        self.assertEqual(len(list(r.get_attachments())), 1)
+
+    def test_odoo_pdf_file_writer(self):
+        attachments = list(self.minimal_pdf_reader.get_attachments())
+        self.assertEqual(len(attachments), 0)
+        r = self.minimal_pdf_reader
+
+        for count, (name, data) in enumerate(
+            [
+                ("test_attachment.txt", b"My awesome attachment"),
+                ("another_attachment.txt", b"My awesome OTHER attachment"),
+            ],
+            start=1,
+        ):
+            pdf_writer = pdf.OdooPdfFileWriter()
+            pdf_writer.clone_reader_document_root(r)
+            pdf_writer.add_attachment(name, data)
+            out = io.BytesIO()
+            pdf_writer.write(out)
+
+            r = pdf.OdooPdfFileReader(io.BytesIO(out.getvalue()))
+            self.assertEqual(len(list(r.get_attachments())), count)
+
+    def test_odoo_pdf_file_reader_with_owner_encryption(self):
+        pdf_writer = pdf.OdooPdfFileWriter()
+        pdf_writer.clone_reader_document_root(self.minimal_pdf_reader)
+
+        pdf_writer.add_attachment("test_attachment.txt", b"My awesome attachment")
+        pdf_writer.add_attachment(
+            "another_attachment.txt", b"My awesome OTHER attachment"
+        )
+
+        pdf_writer.encrypt("", "foo")
+
+        with io.BytesIO() as writer_buffer:
+            pdf_writer.write(writer_buffer)
+            encrypted_content = writer_buffer.getvalue()
+
+        with io.BytesIO(encrypted_content) as reader_buffer:
+            pdf_reader = pdf.OdooPdfFileReader(reader_buffer)
+            attachments = list(pdf_reader.get_attachments())
+
+        self.assertEqual(len(attachments), 2)
+
+    def test_merge_pdf(self):
+        self.assertEqual(len(self.minimal_pdf_reader.pages), 1)
+        self.minimal_pdf_reader.pages[0]
+
+        merged_pdf = pdf.merge_pdf([self.file, self.file])
+        merged_reader_buffer = io.BytesIO(merged_pdf)
+        merged_pdf_reader = pdf.OdooPdfFileReader(merged_reader_buffer)
+        self.assertEqual(len(merged_pdf_reader.pages), 2)
+        merged_reader_buffer.close()
+
+    def test_branded_file_writer(self):
+        pdf_writer = pdf.BrandedFileWriter()
+        pdf_writer.clone_reader_document_root(self.minimal_pdf_reader)
+        writer_buffer = io.BytesIO()
+        pdf_writer.write(writer_buffer)
+        branded_content = writer_buffer.getvalue()
+        writer_buffer.close()
+
+        reader_buffer = io.BytesIO(branded_content)
+        pdf_reader = pdf.PdfReader(reader_buffer)
+        pdf_info = pdf_reader.metadata
+        self.assertEqual(pdf_info["/Producer"], "Odoo")
+        self.assertEqual(pdf_info["/Creator"], "Odoo")
+        reader_buffer.close()
+
+    def tearDown(self):
+        super().tearDown()
+        self.minimal_reader_buffer.close()
+
+    def test_reshaping_non_arabic_text(self):
+        english_text = "Hello, I'm just an English text"
+        processed_text = reshape_text(english_text)
+        self.assertEqual(
+            english_text, processed_text, "English text shouldn't be altered."
+        )
+
+        brazilian_text = "Ayrton Senna foi o melhor piloto de Formula 1 que já existiu"
+        processed_brazilian_text = reshape_text(brazilian_text)
+        self.assertEqual(
+            brazilian_text,
+            processed_brazilian_text,
+            "Brazilian text shouldn't be altered.",
+        )
+
+    def test_reshaping_arabic_text(self):
+        text = "بث مباشر"
+        processed_text = reshape_text(text)
+        expected_shapes = ["ﺮ", "ﺷ", "ﺎ", "ﺒ", "ﻣ", " ", "ﺚ", "ﺑ"]
+
+        for i, expected_shape in enumerate(expected_shapes):
+            self.assertEqual(processed_text[i], expected_shape)

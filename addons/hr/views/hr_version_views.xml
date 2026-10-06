@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="hr_version_list_view" model="ir.ui.view">
+        <field name="name">hr.version.list</field>
+        <field name="model">hr.version</field>
+        <field name="arch" type="xml">
+            <list
+                type="object"
+                string="Records"
+                default_order="date_version DESC"
+                create="0"
+                multi_edit="1"
+                class="o_hr_version_list_view"
+                action="action_view_version">
+                <field name="date_version" string="Effective Date" readonly="False" />
+                <field name="contract_date_start" string="Start" />
+                <field name="contract_date_end" string="End" />
+                <field name="employee_id" optional="show" />
+                <field name="additional_note" string="Note" optional="show" />
+                <field name="currency_id" column_invisible="1" />
+                <field name="wage" widget="monetary" optional="hide" />
+                <field name="contract_type_id" optional="show" />
+                <field name="structure_type_id" optional="hide" />
+                <field name="job_id" optional="show" />
+                <field name="department_id" optional="show" />
+                <field name="hr_responsible_id" optional="hide" />
+                <field name="resource_calendar_id" optional="show" />
+                <field
+                    name="company_id"
+                    optional="hide"
+                    groups="base.group_multi_company"
+                    readonly="1" />
+                <field name="create_uid" optional="hide" />
+                <field name="create_date" optional="hide" />
+                <field name="last_modified_uid" optional="hide" readonly="1" />
+                <field name="last_modified_date" optional="hide" readonly="1" />
+            </list>
+        </field>
+    </record>
+
+    <record id="hr_version_graph_view" model="ir.ui.view">
+        <field name="name">hr.version.graph</field>
+        <field name="model">hr.version</field>
+        <field name="arch" type="xml">
+            <graph type="bar" string="Employee Records" sample="1">
+                <field name="date_version" type="row" />
+                <field name="wage" type="measure" widget="monetary" />
+            </graph>
+        </field>
+    </record>
+
+    <record id="hr_version_pivot_view" model="ir.ui.view">
+        <field name="name">hr.version.pivot</field>
+        <field name="model">hr.version</field>
+        <field name="arch" type="xml">
+            <pivot string="Employee Records" sample="1">
+                <field name="date_version" type="row" />
+                <field name="wage" widget="monetary" />
+            </pivot>
+        </field>
+    </record>
+
+    <record id="hr_version_search_view" model="ir.ui.view">
+        <field name="name">hr.version.search</field>
+        <field name="model">hr.version</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="employee_id" />
+                <field name="job_id" />
+                <field name="department_id" operator="child_of" />
+                <field name="resource_calendar_id" />
+
+                <filter
+                    name="running_contract"
+                    string="Running Contract"
+                    domain="[                             ('contract_date_start', '!=', False),                             ('contract_date_start', '&lt;', 'today'),                             '|',                                 ('contract_date_end', '=', False),                                 ('contract_date_end', '&gt;=', 'today')                         ]" />
+                <filter
+                    name="expired_contracts"
+                    string="Expired Contracts"
+                    domain="[                             ('contract_date_end', '!=', False),                             ('contract_date_end', '&lt;', 'today')                         ]" />
+                <filter
+                    name="future_contracts"
+                    string="Future Contracts"
+                    domain="[                             ('contract_date_start', '!=', False),                             ('contract_date_start', '&gt;', 'today'),                         ]" />
+                <separator />
+                <filter
+                    name="contract_date_start"
+                    string="Contract Start Date"
+                    date="contract_date_start"
+                    groups="hr.group_hr_manager" />
+                <filter
+                    name="contract_date_end"
+                    string="Contract End Date"
+                    date="contract_date_end"
+                    groups="hr.group_hr_manager" />
+                <separator />
+                <filter
+                    name="archived"
+                    string="Archived"
+                    domain="[('active', '=', False)]" />
+                <filter
+                    name="activities_overdue"
+                    string="Late Activities"
+                    help="Show all records whose next activity date is past"
+                    domain="[('my_activity_date_deadline', '&lt;', context_today().strftime('%Y-%m-%d'))]"
+                    invisible="1" />
+                <filter
+                    name="activities_today"
+                    string="Today Activities"
+                    domain="[('my_activity_date_deadline', '=', context_today().strftime('%Y-%m-%d'))]"
+                    invisible="1" />
+                <filter
+                    name="activities_upcoming_all"
+                    string="Future Activities"
+                    domain="[('my_activity_date_deadline', '&gt;', context_today().strftime('%Y-%m-%d'))]"
+                    invisible="1" />
+
+                <filter
+                    name="group_by_employee"
+                    string="Employee"
+                    context="{'group_by': 'employee_id'}" />
+                <separator />
+                <filter
+                    name="group_by_job"
+                    string="Job Position"
+                    context="{'group_by': 'job_id'}" />
+                <filter
+                    name="group_by_department"
+                    string="Department"
+                    context="{'group_by': 'department_id'}" />
+                <separator />
+                <filter
+                    name="group_by_resource_calendar_id"
+                    string="Working Schedule"
+                    context="{'group_by': 'resource_calendar_id'}" />
+                <filter
+                    name="group_by_structure_type_id"
+                    string="Salary Structure Type"
+                    context="{'group_by': 'structure_type_id'}" />
+            </search>
+        </field>
+    </record>
+
+    <record id="action_hr_version" model="ir.actions.act_window">
+        <field name="name">Employee Records</field>
+        <field name="res_model">hr.version</field>
+        <field name="path">versions</field>
+        <field name="view_mode">list,graph,pivot</field>
+        <field name="search_view_id" ref="hr.hr_version_search_view" />
+        <field name="domain">[('employee_id', '!=', False)]</field>
+        <field
+            name="view_ids"
+            eval="[Command.clear(), Command.create({'view_mode': 'list', 'view_id': ref('hr.hr_version_list_view')}), Command.create({'view_mode': 'kanban'}), Command.create({'view_mode': 'pivot'})]" />
+    </record>
+
+</odoo>

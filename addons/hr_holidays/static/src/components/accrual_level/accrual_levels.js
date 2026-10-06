@@ -1,0 +1,169 @@
+/** @odoo-module native */
+import { Component, onWillStart, proxy, useProps } from "@odoo/owl";
+import { formatLocalized } from "@web/core/l10n/date_format";
+import { dateSettings, dateTime, today, withWeekday } from "@web/core/l10n/dates";
+import { registry } from "@web/core/registry";
+import { _t } from "@web/core/translation";
+import { useService } from "@web/core/utils/hooks";
+import { useRecordObserver } from "@web/fields/hooks/record_observer";
+import { standardFieldProps } from "@web/fields/standard_field_props";
+import { useViewModel } from "@web/model/model";
+import { ConfirmationDialog } from "@web/ui/dialog";
+
+const WEEKDAY_CODES = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"];
+
+export class AccrualLevels extends Component {
+    static template = "hr_holidays.AccrualLevels";
+    static props = { ...standardFieldProps };
+    props = useProps(this.constructor.props);
+
+    setup() {
+        this.model = useViewModel();
+        this.orm = useService("orm");
+        this.action = useService("action");
+        this.dialog = useService("dialog");
+        this.state = proxy({});
+
+        useRecordObserver(async (record) => {
+            this.state.carryOverDate = this.getCarryOverDate(record);
+            this.state.data = await this.orm.read(
+                "hr.leave.accrual.level",
+                record.data[this.props.name]._currentIds,
+            );
+            if (
+                !this.state.newMilestoneIds.some((id) =>
+                    record.data[this.props.name]._currentIds.includes(id),
+                )
+            ) {
+                this.state.newMilestoneIds = record.data[this.props.name]._currentIds;
+            }
+        });
+
+        onWillStart(async () => {
+            this.state.newMilestoneIds =
+                this.props.record.data[this.props.name]._currentIds;
+        });
+    }
+
+    get milestones() {
+        return this.props.record.data[this.props.name].records.map((record) => ({
+            id: record.id,
+            resId: record.evalContext.id,
+            data: this.state.data.filter((r) => r.id === record.evalContext.id)[0],
+            onDelete: () => this.deleteMilestone(record.id),
+        }));
+    }
+
+    get langFormatOptions() {
+        return {
+            locale: this.model.config.context.lang.replace("_", "-"),
+            numberingSystem: dateSettings.numberingSystem,
+        };
+    }
+
+    getFullDay(weekday) {
+        const isoWeekday = String(WEEKDAY_CODES.indexOf(weekday) + 1);
+        return formatLocalized(
+            withWeekday(today(), Number(isoWeekday)),
+            { weekday: "long" },
+            this.langFormatOptions,
+        );
+    }
+
+    getDayLabel(day) {
+        return day === "last" ? _t("last day") : day;
+    }
+
+    getFullMonth(month) {
+        return formatLocalized(
+            dateTime({ month: Number(month) }),
+            { month: "long" },
+            this.langFormatOptions,
+        );
+    }
+
+    getNewMilestoneClass(id) {
+        return this.state.newMilestoneIds.includes(id) ? "" : "new";
+    }
+
+    getCarryOverDate(planRecord) {
+        switch (planRecord.savedData.carryover_date) {
+            case "year_start":
+                return _t("start of the year");
+            case "allocation":
+                return _t("allocation date");
+            default:
+                return formatLocalized(
+                    dateTime({
+                        year: 2020,
+                        month: Number(planRecord._values.carryover_month),
+                        day: Number(planRecord._values.carryover_day),
+                    }),
+                    { day: "numeric", month: "long" },
+                    this.langFormatOptions,
+                );
+        }
+    }
+
+    async openMilestone(id) {
+        let action;
+        if (id) {
+            action = await this.orm.call(
+                "hr.leave.accrual.plan",
+                "action_view_accrual_plan_level",
+                [this.props.record.evalContext.id],
+                { level_id: id },
+            );
+        } else {
+            action = await this.orm.call(
+                "hr.leave.accrual.plan",
+                "action_create_accrual_plan_level",
+                [this.props.record.evalContext.id],
+            );
+        }
+        this.action.doAction(action, {
+            additionalContext: {
+                active_id: this.props.record.evalContext.id,
+            },
+            onClose: () => this.model.root.load(),
+        });
+    }
+
+    deleteMilestone(id) {
+        const milestoneRecord = this.props.record.data[this.props.name].records.find(
+            (record) => record.id === id,
+        );
+        this.props.record.data[this.props.name].delete(milestoneRecord);
+    }
+
+    async editMilestone(id) {
+        if (this.props.record.dirty) {
+            this.dialog.add(ConfirmationDialog, {
+                body: id
+                    ? _t(
+                          "Do you want to save the changes made to the accrual plan before editing this milestone?",
+                      )
+                    : _t(
+                          "Do you want to save the changes made to the accrual plan before creating a new milestone?",
+                      ),
+                confirmLabel: _t("Yes, save changes"),
+                cancelLabel: _t("No, keep the old version"),
+                cancel: async () => await this.openMilestone(id),
+                confirm: async () => {
+                    await this.props.record.save({ reload: false });
+                    await this.openMilestone(id);
+                },
+            });
+        } else {
+            await this.openMilestone(id);
+        }
+    }
+}
+
+export const accrualLevels = {
+    component: AccrualLevels,
+    fieldDependencies: [{ name: "carryover_day", type: "integer" }],
+    relatedFields: () => [{ name: "id", type: "integer" }],
+};
+
+registry.category("fields").add("accrual_levels", accrualLevels);

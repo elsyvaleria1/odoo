@@ -1,0 +1,35 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* purchase_team
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Language: es\n"
+"Plural-Forms: \n"
+
+#. module: purchase_team
+#: model_terms:ir.ui.view,arch_db:purchase_team.view_purchase_order_search_team
+msgid "My Teams' Orders"
+msgstr "Órdenes de mis equipos"
+
+#. module: purchase_team
+#. odoo-python
+#: code:addons/purchase_team/models/team_team.py:0
+#: model:ir.model.fields,field_description:purchase_team.field_team_team__use_purchase
+#: model_terms:ir.ui.view,arch_db:purchase_team.team_view_search_purchase
+msgid "Purchase"
+msgstr "Compra"
+
+#. module: purchase_team
+#: model:ir.actions.act_window,name:purchase_team.team_action_purchase
+#: model:ir.model.fields,field_description:purchase_team.field_res_users__purchase_team_ids
+#: model:ir.ui.menu,name:purchase_team.menu_purchase_team_config
+msgid "Purchase Teams"
+msgstr "Equipos de compras"

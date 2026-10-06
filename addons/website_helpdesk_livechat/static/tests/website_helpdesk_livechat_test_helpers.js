@@ -1,0 +1,16 @@
+import { helpdeskModels } from "@helpdesk/../tests/helpdesk_test_helpers";
+import { defineLivechatModels } from "@im_livechat/../tests/livechat_test_helpers";
+import { mailModels } from "@mail/../tests/mail_test_helpers";
+import { ResUsers } from "@website_helpdesk_livechat/../tests/mock_server/models/res_users";
+import { websiteLivechatModels } from "@website_livechat/../tests/website_livechat_test_helpers";
+
+export const websiteHelpdeskLivechatModels = {
+    ...helpdeskModels,
+    ...mailModels,
+    ...websiteLivechatModels,
+    ResUsers,
+};
+
+export function defineWebsiteHelpdeskLivechatModels() {
+    return defineLivechatModels(websiteHelpdeskLivechatModels);
+}

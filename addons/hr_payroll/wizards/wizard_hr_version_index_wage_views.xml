@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="hr_payroll_index_form_view" model="ir.ui.view">
+        <field name="name">hr.payroll.index.form.view</field>
+        <field name="model">wizard.hr.version.index.wage</field>
+        <field name="arch" type="xml">
+            <form string="Contract indexing">
+                <group colspan="4">
+                    <field
+                        name="version_ids"
+                        widget="many2many_tags"
+                        domain="[('employee_id', '=', context.get('active_employee_id', False))]"
+                        options="{'no_create': True}"
+                        invisible="not context.get('default_version_ids')" />
+                    <field
+                        name="employee_ids"
+                        widget="many2many_tags"
+                        domain="[('company_id', 'in', allowed_company_ids)]"
+                        options="{'no_create': True}"
+                        invisible="context.get('default_version_ids')" />
+                    <field
+                        name="percentage"
+                        widget="percentage"
+                        class="o_hr_narrow_field" />
+                    <field name="description" />
+                </group>
+                <div
+                    role="status"
+                    class="alert alert-info"
+                    invisible="not affected_version_ids or not context.get('default_version_ids')">
+                    <field name="informative_message" />
+                </div>
+                <div
+                    role="status"
+                    class="alert alert-info"
+                    invisible="context.get('default_version_ids')">
+                    The current employee records for each employee will be indexed. All posterior records corresponding to the same contract will also be indexed.
+                </div>
+                <footer>
+                    <button
+                        name="action_confirm"
+                        type="object"
+                        string="Confirm"
+                        invisible="not version_ids"
+                        class="oe_highlight"
+                        data-hotkey="q" />
+                    <button
+                        name="action_confirm"
+                        type="object"
+                        string="Confirm"
+                        invisible="version_ids"
+                        class="btn btn-primary disabled" />
+                    <button
+                        special="cancel"
+                        string="Cancel"
+                        class="btn btn-secondary"
+                        data-hotkey="x" />
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_hr_payroll_index" model="ir.actions.act_window">
+        <field name="name">Index contract(s)</field>
+        <field name="res_model">wizard.hr.version.index.wage</field>
+        <field name="view_mode">form</field>
+        <field name="view_id" ref="hr_payroll_index_form_view" />
+        <field name="target">new</field>
+    </record>
+
+</odoo>

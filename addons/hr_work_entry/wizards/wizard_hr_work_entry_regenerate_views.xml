@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="hr_work_entry_regeneration_wizard" model="ir.ui.view">
+        <field name="name">hr_work_entry_regeneration_wizard</field>
+        <field name="model">wizard.hr.work.entry.regenerate</field>
+        <field name="arch" type="xml">
+            <form string="Regenerate Employee Work Entries">
+                <group>
+                    <field
+                        name="employee_ids"
+                        widget="many2many_avatar_employee_error"
+                        domain="[('company_id', 'in', allowed_company_ids), ('version_ids.id','!=', False)]"
+                        in_error="validated_work_entry_employee_ids" />
+                    <field name="date_to" invisible="1" />
+                    <label for="date_from" string="Period" />
+                    <field
+                        name="date_from"
+                        widget="daterange"
+                        nolabel="1"
+                        options="{'end_date_field': 'date_to'}"
+                        style="width: 200px;" />
+                    <div
+                        colspan="2"
+                        class="text-info"
+                        invisible="earliest_available_date_message == ''">
+                        <i class="fa-solid fa-info-circle me-1" title="Hint" />
+                        <field
+                            name="earliest_available_date_message"
+                            class="oe_inline" />
+                    </div>
+                    <div
+                        colspan="2"
+                        class="text-info"
+                        invisible="latest_available_date_message == ''">
+                        <i class="fa-solid fa-info-circle me-1" title="Hint" />
+                        <field name="latest_available_date_message" class="oe_inline" />
+                    </div>
+                </group>
+                <div>
+                    <span class="text-muted">Warning: The work entry regeneration will delete all manual changes on the selected period.</span>
+                </div>
+                <field name="search_criteria_completed" invisible="1" />
+                <div
+                    invisible="not search_criteria_completed or not validated_work_entry_employee_ids">
+                    <div class="text-danger"><i class="fa-solid fa-exclamation-triangle me-1" title="Warning" />Employees in red will be skipped because they have at least one validated work entry.</div>
+                </div>
+                <footer>
+                    <button
+                        name="regenerate_work_entries"
+                        type="object"
+                        string="Regenerate Work Entries"
+                        invisible="not valid"
+                        class="btn btn-primary oe_highlight"
+                        data-hotkey="q" />
+                    <button
+                        name="regenerate_work_entries_disabled"
+                        string="Regenerate Work Entries"
+                        invisible="valid"
+                        class="btn btn-primary disabled" />
+                    <button
+                        name="cancel_button"
+                        special="cancel"
+                        string="Cancel"
+                        class="btn-secondary"
+                        data-hotkey="x" />
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="hr_work_entry_regeneration_wizard_action" model="ir.actions.act_window">
+        <field name="name">Work Entry Regeneration</field>
+        <field name="res_model">wizard.hr.work.entry.regenerate</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+
+</odoo>

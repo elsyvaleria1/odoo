@@ -1,0 +1,2 @@
+id,name,model_id/id,group_id/id,kind,operation,domain
+access_audit_report,access_audit_report,model_audit_report,account.group_account_user,permission,crud,

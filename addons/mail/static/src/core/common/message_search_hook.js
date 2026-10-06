@@ -1,0 +1,148 @@
+// @ts-check
+/** @odoo-module native */
+import { makeSequential } from "@mail/utils/common/misc";
+import { markup, onWillUnmount, proxy } from "@odoo/owl";
+import { makeLogger } from "@web/core/debug/debug_logger";
+import { createDocumentFragmentFromContent } from "@web/core/utils/dom/html";
+import { useService } from "@web/core/utils/hooks";
+
+const log = makeLogger("mail.message.search");
+export const HIGHLIGHT_CLASS = "o-mail-Message-searchHighlight";
+
+/**
+ * @param {string} searchTerm
+ * @param {string | import("@odoo/owl").Markup} target
+ */
+export function searchHighlight(searchTerm, target) {
+    if (!searchTerm) {
+        return target;
+    }
+    const htmlDoc = createDocumentFragmentFromContent(target);
+    for (const term of searchTerm.split(" ").filter(Boolean)) {
+        const regexp = new RegExp(`(${RegExp.escape(term)})`, "gi");
+        const split = term.toLowerCase().split("'");
+        let lowercase = split.map((s) => `'${s}'`).join(', "\'", ');
+        let uppercase = lowercase.toUpperCase();
+        if (split.length > 1) {
+            lowercase = `concat(${lowercase})`;
+            uppercase = `concat(${uppercase})`;
+        }
+        const matchs = htmlDoc.evaluate(
+            `//*[text()[contains(translate(., ${uppercase}, ${lowercase}), ${lowercase})]]`,
+            htmlDoc,
+            null,
+            XPathResult.ORDERED_NODE_SNAPSHOT_TYPE,
+        );
+        for (let i = 0; i < matchs.snapshotLength; i++) {
+            const element = matchs.snapshotItem(i);
+            const newNode = [];
+            for (const node of element.childNodes) {
+                const match = node.textContent.match(regexp);
+                if (node.nodeType === Node.TEXT_NODE && match?.length > 0) {
+                    let curIndex = 0;
+                    for (const match of node.textContent.matchAll(regexp)) {
+                        const start = htmlDoc.createTextNode(
+                            node.textContent.slice(curIndex, match.index),
+                        );
+                        newNode.push(start);
+                        const span = htmlDoc.createElement("span");
+                        span.setAttribute("class", HIGHLIGHT_CLASS);
+                        span.textContent = match[0];
+                        newNode.push(span);
+                        curIndex = match.index + match[0].length;
+                    }
+                    const end = htmlDoc.createTextNode(
+                        node.textContent.slice(curIndex),
+                    );
+                    newNode.push(end);
+                } else {
+                    newNode.push(node);
+                }
+            }
+            /** @type {ParentNode} */ (element).replaceChildren(...newNode);
+        }
+    }
+    return markup(htmlDoc.body.innerHTML);
+}
+
+/** @param {import('models').Thread} [thread] */
+export function useMessageSearch(thread) {
+    const store = useService("mail.store");
+    const sequential = makeSequential();
+    const state = proxy({
+        thread,
+        /** @param {number | false} [before=false] */
+        async search(before = false) {
+            if (this.searchTerm || this.is_notification !== undefined) {
+                this.searching = true;
+                let data;
+                try {
+                    data = await sequential(() =>
+                        store.searchMessagesInThread(
+                            this.searchTerm,
+                            this.thread,
+                            before,
+                            this.is_notification,
+                        ),
+                    );
+                } finally {
+                    this.searching = false;
+                }
+                if (!data) {
+                    return;
+                }
+                const { count, countIsCapped, loadMore, messages } = data;
+                log.pipeline("search", () => ({
+                    thread: this.thread?.localId,
+                    term: this.searchTerm,
+                    is_notification: this.is_notification,
+                    before,
+                    count,
+                    countIsCapped,
+                    loadMore,
+                    messages: messages.length,
+                }));
+                this.searched = true;
+                this.count = count;
+                this.countIsCapped = countIsCapped;
+                this.loadMore = loadMore;
+                if (before) {
+                    const known = new Set(this.messages.map((m) => m.id));
+                    this.messages.push(...messages.filter((m) => !known.has(m.id)));
+                } else {
+                    this.messages = messages;
+                }
+            } else {
+                this.clear();
+            }
+        },
+        count: 0,
+        countIsCapped: false,
+        clear() {
+            log.logic("clear", () => ({
+                thread: this.thread?.localId,
+                hadResults: this.messages.length,
+            }));
+            this.is_notification = undefined;
+            this.messages = [];
+            this.searched = false;
+            this.searching = false;
+            this.searchTerm = undefined;
+        },
+        /** @type {true | false | undefined} */
+        is_notification: undefined,
+        loadMore: false,
+        /** @type {import("models").Message[]} */
+        messages: [],
+        /** @type {string|undefined} */
+        searchTerm: undefined,
+        searched: false,
+        searching: false,
+        /** @param {string | import("@odoo/owl").Markup} target */
+        highlight: (target) => searchHighlight(state.searchTerm, target),
+    });
+    onWillUnmount(() => {
+        state.clear();
+    });
+    return state;
+}

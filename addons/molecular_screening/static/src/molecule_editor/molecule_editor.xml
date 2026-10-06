@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<templates xml:space="preserve">
+
+    <t t-name="molecular_screening.MoleculeEditor">
+        <div class="o_molecule_editor">
+            <div class="o_molecule_editor_board">
+                <div class="o_molecule_editor_sketch">
+                    <div class="o_molecule_editor_toolbar" t-if="!this.readonly">
+                        <div class="o_molecule_editor_group">
+                            <span>Element</span>
+                            <div class="o_molecule_editor_row">
+                                <button
+                                    t-foreach="this.elements"
+                                    t-as="symbol"
+                                    t-key="symbol"
+                                    type="button"
+                                    class="btn btn-sm o_molecule_editor_el"
+                                    t-att-class="this.state.element === symbol ? 'btn-primary' : 'btn-secondary'"
+                                    t-att-aria-pressed="this.state.element === symbol"
+                                    t-on-click="() => this.selectElement(symbol)"
+                                    t-out="symbol"
+                                />
+                            </div>
+                        </div>
+                        <div class="o_molecule_editor_group">
+                            <span>Mode</span>
+                            <div class="o_molecule_editor_row">
+                                <button
+                                    t-foreach="this.modes"
+                                    t-as="mode"
+                                    t-key="mode"
+                                    type="button"
+                                    class="btn btn-sm"
+                                    t-att-class="this.state.mode === mode ? 'btn-primary' : 'btn-secondary'"
+                                    t-att-aria-pressed="this.state.mode === mode"
+                                    t-on-click="() => this.selectMode(mode)"
+                                    t-out="this.modeLabel(mode)"
+                                />
+                            </div>
+                        </div>
+                        <div class="o_molecule_editor_group">
+                            <span>Examples</span>
+                            <div class="o_molecule_editor_row">
+                                <button
+                                    type="button"
+                                    class="btn btn-sm btn-secondary"
+                                    t-on-click="() => this.loadSample('benzene')"
+                                >Benzene</button>
+                                <button
+                                    type="button"
+                                    class="btn btn-sm btn-secondary"
+                                    t-on-click="() => this.loadSample('acetonitrile')"
+                                >Acetonitrile</button>
+                                <button
+                                    type="button"
+                                    class="btn btn-sm btn-secondary"
+                                    t-on-click="() => this.loadSample('clear')"
+                                >Clear</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="o_molecule_editor_canvas_shell">
+                        <canvas
+                            t-ref="this.canvasRef"
+                            class="o_molecule_editor_canvas"
+                            t-on-pointerdown="this.onPointerDown"
+                            t-on-pointermove="this.onPointerMove"
+                            t-on-pointerup="this.onPointerUp"
+                            t-on-pointerleave="this.onPointerLeave"
+                        />
+                        <div class="o_molecule_editor_hint" t-if="!this.readonly" t-out="this.modeHint" />
+                    </div>
+                </div>
+
+                <div class="o_molecule_editor_rail">
+                    <div class="o_molecule_editor_card">
+                        <h6>Properties</h6>
+                        <dl t-if="this.state.info">
+                            <div>
+                                <dt>Formula (Hill)</dt>
+                                <dd t-out="this.state.info.formula or '—'" />
+                            </div>
+                            <div>
+                                <dt>Average mass</dt>
+                                <dd t-out="this.formatMass(this.state.info.weight, 3)" />
+                            </div>
+                            <div>
+                                <dt>Monoisotopic mass</dt>
+                                <dd t-out="this.formatMass(this.state.info.monoisotopic, 4)" />
+                            </div>
+                            <div>
+                                <dt>Total charge</dt>
+                                <dd t-out="this.state.info.charge > 0 ? '+' + this.state.info.charge : this.state.info.charge" />
+                            </div>
+                            <div>
+                                <dt>Unsaturation</dt>
+                                <dd><t t-out="this.state.info.unsaturation" /> (<t
+                                        t-out="this.state.info.rings"
+                                    /> rings + <t t-out="this.state.info.piBonds" /> π)</dd>
+                            </div>
+                            <div>
+                                <dt>Aromatic rings</dt>
+                                <dd t-out="this.state.info.aromaticRings" />
+                            </div>
+                            <div>
+                                <dt>Heavy atoms</dt>
+                                <dd t-out="this.state.info.heavyAtoms" />
+                            </div>
+                            <div>
+                                <dt>Bonds</dt>
+                                <dd t-out="this.state.info.bondCount" />
+                            </div>
+                            <div>
+                                <dt>Rotatable bonds</dt>
+                                <dd t-out="this.state.info.rotatableBonds" />
+                            </div>
+                        </dl>
+                        <div
+                            class="o_molecule_editor_warning"
+                            t-foreach="this.state.info and this.state.info.exceeded or []"
+                            t-as="problem"
+                            t-key="problem.index"
+                        >
+                            <strong><t t-out="problem.element" /><t
+                                    t-out="problem.index + 1"
+                                /></strong>
+                            <span>Valence exceeded: <t t-out="problem.used" /> bonds, maximum <t
+                                    t-out="problem.max"
+                                />. No implicit H and no mass are computed.</span>
+                        </div>
+                    </div>
+
+                    <div class="o_molecule_editor_card">
+                        <h6>
+                            3D view
+                            <span class="o_molecule_editor_actions">
+                                <button
+                                    type="button"
+                                    class="btn btn-sm btn-secondary"
+                                    t-on-click="this.relaxGeometry"
+                                >Relax</button>
+                                <button
+                                    type="button"
+                                    class="btn btn-sm btn-secondary"
+                                    t-on-click="this.toggleStyle"
+                                    t-out="this.state.spheres ? 'Sticks' : 'Spheres'"
+                                />
+                                <button
+                                    t-if="this.hasRelaxedTarget"
+                                    type="button"
+                                    class="btn btn-sm btn-secondary"
+                                    t-on-click="this.useRelaxed"
+                                >Keep</button>
+                            </span>
+                        </h6>
+                        <p class="o_molecule_editor_note" t-out="this.state.relaxNote" />
+                        <div t-ref="this.viewerRef" class="o_molecule_editor_viewer" />
+                    </div>
+                </div>
+            </div>
+        </div>
+    </t>
+
+</templates>

@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <menuitem
+        id="menu_hr_referral_root"
+        name="Referrals"
+        sequence="215"
+        groups="hr_referral.group_hr_recruitment_referral_user"
+        web_icon="hr_referral,static/description/icon.png" />
+
+    <menuitem
+        id="menu_hr_referral_configuration"
+        name="Configuration"
+        parent="menu_hr_referral_root"
+        sequence="50"
+        groups="hr_referral.group_hr_referral_manager,hr_referral.group_hr_referral_reward_responsible_user" />
+
+    <menuitem
+        id="menu_hr_referral_job_configuration"
+        parent="menu_hr_referral_configuration"
+        action="hr.action_hr_job"
+        sequence="2"
+        groups="hr_referral.group_hr_referral_manager" />
+
+    <menuitem
+        id="menu_hr_referral_onboarding_configuration"
+        parent="menu_hr_referral_configuration"
+        action="action_hr_referral_onboarding_configuration"
+        sequence="7"
+        groups="hr_referral.group_hr_referral_manager" />
+
+    <menuitem
+        id="menu_hr_referral_level_configuration"
+        parent="menu_hr_referral_configuration"
+        action="action_hr_referral_level_configuration"
+        sequence="4"
+        groups="hr_referral.group_hr_referral_manager" />
+
+    <menuitem
+        id="menu_hr_referral_friend_configuration"
+        parent="menu_hr_referral_configuration"
+        action="action_hr_referral_friend_configuration"
+        sequence="5"
+        groups="hr_referral.group_hr_referral_manager" />
+
+    <menuitem
+        id="menu_hr_referral_alert_configuration"
+        parent="menu_hr_referral_configuration"
+        action="action_hr_referral_alert_configuration"
+        sequence="6"
+        groups="hr_referral.group_hr_referral_manager" />
+
+    <menuitem
+        id="menu_hr_referral_reward_configuration"
+        parent="menu_hr_referral_configuration"
+        action="action_hr_referral_reward_configuration"
+        sequence="3" />
+
+    <menuitem
+        id="menu_hr_applicant_employee_referral_dashboard"
+        parent="menu_hr_referral_root"
+        action="action_hr_referral_welcome_screen"
+        sequence="1" />
+
+    <menuitem
+        id="menu_hr_referral_reporting"
+        name="Reporting"
+        parent="menu_hr_referral_root"
+        sequence="30" />
+
+    <menuitem
+        id="menu_hr_points_referral"
+        parent="menu_hr_referral_reporting"
+        action="action_hr_referral_points"
+        sequence="10"
+        groups="group_hr_recruitment_referral_user" />
+
+    <menuitem
+        id="hr_referral_menu_configuration"
+        name="Settings"
+        parent="menu_hr_referral_configuration"
+        action="action_hr_referral_configuration"
+        sequence="0"
+        groups="hr_referral.group_hr_referral_manager" />
+
+    <menuitem
+        id="menu_report_employee_referral_all"
+        name="Referral Analysis"
+        parent="menu_hr_referral_reporting"
+        action="employee_referral_report_action"
+        sequence="1"
+        groups="hr_referral.group_hr_referral_manager" />
+
+    <menuitem
+        id="menu_report_employee_referral_reward_all"
+        name="Rewards"
+        parent="menu_hr_referral_reporting"
+        action="employee_referral_reward_report_action"
+        sequence="2"
+        groups="hr_referral.group_hr_referral_manager" />
+
+</odoo>

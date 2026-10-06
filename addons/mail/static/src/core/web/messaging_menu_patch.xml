@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-inherit="mail.MessagingMenu" t-inherit-mode="extension">
+        <xpath expr="//*[@name='extraItems']" position="before">
+            <NotificationItem
+                t-if="this.prefixItems.includes('installationRequest')"
+                important="1"
+                isActive="this.isPrefixItemActive('installationRequest')"
+                iconSrc="this.installationRequest.iconSrc"
+                onClick="this.installationRequest.onClick"
+                onSwipeRight="this.hasTouch() ? { action: () => this.pwa.decline(), icon: 'fa-times-circle', bgColor: 'bg-warning' } : undefined"
+            >
+                <t t-set-slot="body" t-out="this.installationRequest.body"/>
+                <t t-set-slot="name"><t t-out="this.installationRequest.displayName"/></t>
+                <t t-set-slot="icon">
+                    <ImStatus t-if="this.installationRequest.partner" persona="this.installationRequest.partner" className="'position-absolute top-100 start-100 translate-middle mt-n1 ms-n1'"/>
+                </t>
+                <t t-set-slot="sideContent">
+                    <div class="d-flex align-items-center justify-content-center o-gap-1_5" t-att-class="{ 'o-pe-0_5': !this.ui.isSmall }">
+                        <a t-if="this.ui.isSmall" class="btn fa-solid fa-cloud-arrow-down px-0"/>
+                        <t t-else="">
+                            <a class="btn btn-primary px-1 py-0 smaller">Install</a>
+                            <span t-if="!this.hasTouch()" t-on-click.stop="() => this.pwa.decline()" class="text-dark bg-transparent oi oi-close opacity-50 opacity-100-hover" title="Dismiss"></span>
+                        </t>
+                    </div>
+                </t>
+            </NotificationItem>
+        </xpath>
+        <xpath expr="//*[@name='extraItems']" position="inside">
+            <t t-foreach="this.visibleFailures" t-as="failure" t-key="failure.localId">
+                <NotificationItem
+                    important="1"
+                    isActive="this.isPrefixItemActive(failure.localId)"
+                    counter="failure.notifications.length > 1 ? failure.notifications.length : undefined"
+                    datetime="failure.datetime"
+                    iconSrc="failure.iconSrc"
+                    hasMarkAsReadButton="true"
+                    onClick="(isMarkAsRead) => isMarkAsRead ? this.cancelNotifications(failure) : this.onClickFailure(failure)"
+                    onSwipeRight="this.hasTouch() ? { action: () => this.cancelNotifications(failure), icon: 'fa-times-circle', bgColor: 'bg-warning' } : undefined"
+                >
+                    <t t-set-slot="body" t-out="failure.body"/>
+                    <t t-set-slot="name"><t t-out="this.getFailureNotificationName(failure)"/></t>
+                </NotificationItem>
+            </t>
+        </xpath>
+    </t>
+</templates>

@@ -1,0 +1,52 @@
+/** @odoo-module native */
+import "./autofill.js";
+import "./operational_transform.js";
+
+import * as spreadsheet from "@odoo/o-spreadsheet";
+import { initCallbackRegistry } from "@spreadsheet/o_spreadsheet/init_callbacks";
+import { _t } from "@web/core/translation";
+
+import { insertList } from "./list_init_callback.js";
+import { ListAutofillPlugin } from "./plugins/list_autofill_plugin.js";
+import { ListDetailsSidePanel } from "./side_panels/list_details_side_panel.js";
+
+const { featurePluginRegistry, sidePanelRegistry, cellMenuRegistry } =
+    spreadsheet.registries;
+
+featurePluginRegistry.add("odooListAutofillPlugin", ListAutofillPlugin);
+
+sidePanelRegistry.add("LIST_PROPERTIES_PANEL", {
+    title: (env, props) => _t("List #%s", props.listId),
+    Body: ListDetailsSidePanel,
+    computeState(getters, initialProps) {
+        return {
+            isOpen: getters.isExistingList(initialProps.listId),
+            props: initialProps,
+            key: initialProps.listId,
+        };
+    },
+});
+
+initCallbackRegistry.add("insertList", insertList);
+
+cellMenuRegistry.add("listing_properties", {
+    separator: true,
+    name: _t("See list properties"),
+    sequence: 190,
+    isReadonlyAllowed: true,
+    execute(env) {
+        const position = env.model.getters.getActivePosition();
+        const listId = env.model.getters.getListIdFromPosition(position);
+        env.openSidePanel("LIST_PROPERTIES_PANEL", { listId });
+    },
+    isVisible: (env) => {
+        const position = env.model.getters.getActivePosition();
+        return (
+            !env.isSmall &&
+            env.model.getters.isExistingList(
+                env.model.getters.getListIdFromPosition(position),
+            )
+        );
+    },
+    icon: "o-spreadsheet-Icon.ODOO_LIST",
+});

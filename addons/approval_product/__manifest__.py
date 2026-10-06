@@ -1,0 +1,25 @@
+{
+    "name": "Approval Product Lines and Document Rules",
+    "version": "19.0.1.2.2",
+    "oldest_upgradable_version": "19.0.1.2.1",
+    "category": "Human Resources/Approvals",
+    "sequence": 191,
+    "summary": "Add product lines and shared document approval criteria",
+    "description": "Adds product quantities, units, prices and subtotals to approval requests, plus category criteria and shared document approval helpers. Provides hooks for linked target documents, protected fields and approval snapshots. Sales, purchase and other integration addons supply their specific document bindings and target creation behavior.",
+    "author": "AgroMarin",
+    "license": "LGPL-3",
+    "depends": [
+        "approval_app",
+        "product",
+    ],
+    "data": [
+        "security/ir.access.csv",
+        "data/approval_category_data.xml",
+        "views/approval_request_line_views.xml",
+        "views/approval_category_views.xml",
+        "views/approval_request_views.xml",
+        "views/approval_request_template.xml",
+        "views/approvals_menuitem_views.xml",
+    ],
+    "auto_install": True,
+}

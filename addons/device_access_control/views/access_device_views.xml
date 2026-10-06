@@ -1,0 +1,254 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_access_device_list" model="ir.ui.view">
+        <field name="name">device.device.access.list</field>
+        <field name="model">device.device</field>
+        <field name="priority">50</field>
+        <field name="arch" type="xml">
+            <list
+                string="Access Devices"
+                decoration-danger="connection_state == 'error'"
+                decoration-muted="connection_state == 'disconnected'"
+                decoration-success="connection_state == 'connected'">
+                <field name="name" />
+                <field name="access_connection_mode" widget="badge" />
+                <field name="device_model" optional="show" />
+                <field name="serial_number" optional="hide" />
+                <field name="endpoint" string="Device IP" optional="hide" />
+                <field
+                    name="connection_state"
+                    widget="badge"
+                    decoration-danger="connection_state == 'error'"
+                    decoration-info="connection_state == 'disconnected'"
+                    decoration-success="connection_state == 'connected'" />
+                <field name="access_door_state" widget="badge" optional="show" />
+                <field
+                    name="date_last_data_received"
+                    string="Last Heartbeat"
+                    optional="show" />
+            </list>
+        </field>
+    </record>
+
+    <record id="view_device_device_form_inherit_access" model="ir.ui.view">
+        <field name="name">device.device.form.inherit.access</field>
+        <field name="model">device.device</field>
+        <field name="inherit_id" ref="device.view_device_device_form" />
+        <field name="arch" type="xml">
+
+            <xpath
+                expr="//field[@name='connection_state'][@widget='statusbar']"
+                position="before">
+                <field name="is_access_device" invisible="1" />
+            </xpath>
+
+            <xpath expr="//button[@name='action_connect']" position="before">
+                <button
+                    name="action_view_door"
+                    type="object"
+                    string="Open Door"
+                    icon="fa-unlock"
+                    invisible="not is_access_device"
+                    class="oe_highlight" />
+                <button
+                    name="action_close_door"
+                    type="object"
+                    string="Close Door"
+                    icon="fa-lock"
+                    invisible="not is_access_device" />
+                <button
+                    name="action_always_close"
+                    type="object"
+                    string="Lock"
+                    confirm="This will lock the door and deny all access until manually unlocked. Continue?"
+                    icon="fa-ban"
+                    invisible="not is_access_device" />
+                <button
+                    name="action_check_connection"
+                    type="object"
+                    string="Check Connection"
+                    icon="fa-wifi"
+                    invisible="not is_access_device" />
+
+
+            </xpath>
+
+            <xpath expr="//button[@name='action_disconnect']" position="attributes">
+                <attribute name="invisible">is_access_device or connection_state != 'connected'</attribute>
+            </xpath>
+            <xpath expr="//button[@name='action_read_data']" position="attributes">
+                <attribute name="invisible">is_access_device or connection_state != 'connected'</attribute>
+            </xpath>
+            <xpath
+                expr="//button[@name='action_test_connection']"
+                position="attributes">
+                <attribute name="invisible">is_access_device</attribute>
+            </xpath>
+
+            <xpath expr="//page[@name='connection']" position="attributes">
+                <attribute name="invisible">is_access_device and access_connection_mode == 'ehome'</attribute>
+            </xpath>
+            <xpath expr="//page[@name='api_auth']" position="attributes">
+                <attribute name="groups">base.group_no_one</attribute>
+            </xpath>
+            <xpath expr="//page[@name='data_history']" position="attributes">
+                <attribute name="groups">base.group_no_one</attribute>
+            </xpath>
+            <xpath expr="//page[@name='activity']" position="attributes">
+                <attribute name="groups">base.group_no_one</attribute>
+            </xpath>
+
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <button
+                    name="action_view_events"
+                    type="object"
+                    icon="fa-list"
+                    invisible="not is_access_device"
+                    class="oe_stat_button">
+                    <field
+                        name="access_event_count"
+                        string="Events"
+                        widget="statinfo" />
+                </button>
+                <button
+                    name="action_view_commands"
+                    type="object"
+                    icon="fa-terminal"
+                    invisible="not is_access_device"
+                    class="oe_stat_button">
+                    <field
+                        name="access_command_count"
+                        string="Commands"
+                        widget="statinfo" />
+                </button>
+                <button
+                    name="action_view_users"
+                    type="object"
+                    icon="fa-users"
+                    invisible="not is_access_device"
+                    class="oe_stat_button">
+                    <field name="access_user_count" string="Users" widget="statinfo" />
+                </button>
+            </xpath>
+
+            <xpath expr="//field[@name='device_category_id']" position="after">
+                <field name="device_model" invisible="not is_access_device" />
+                <field
+                    name="access_connection_mode"
+                    widget="radio"
+                    invisible="not is_access_device" />
+                <field name="access_door_state" invisible="not is_access_device" />
+            </xpath>
+
+            <xpath expr="//field[@name='connection_state_message']" position="before">
+                <field
+                    name="dial_credential_id"
+                    string="Device Login"
+                    domain="[('category_code', '=', 'basic_auth')]"
+                    invisible="not is_access_device or access_connection_mode != 'direct'"
+                    required="is_access_device and access_connection_mode == 'direct'" />
+                <field
+                    name="ehome_device_id"
+                    invisible="not is_access_device or access_connection_mode != 'ehome'"
+                    required="is_access_device and access_connection_mode == 'ehome'" />
+                <field
+                    name="ehome_bridge_url"
+                    invisible="not is_access_device or access_connection_mode != 'ehome'" />
+                <field name="inbound_credential_shared" invisible="1" />
+            </xpath>
+            <xpath expr="//sheet" position="before">
+                <div
+                    class="alert alert-warning mb-0"
+                    role="alert"
+                    invisible="not is_access_device or not inbound_credential_shared"
+                    groups="base.group_system">
+                    This device authenticates its calls to Odoo with its panel login or its
+                    EHOME record, so the token Odoo accepts from it is a password or the
+                    EHOME device id.
+                    <button
+                        name="action_rotate_inbound_token"
+                        type="object"
+                        string="Give it a token of its own"
+                        class="btn-link p-0 align-baseline" />
+                    , then configure the new token on the panel or bridge.
+                </div>
+            </xpath>
+
+            <xpath expr="//page[@name='connection']" position="before">
+                <page
+                    name="access_config"
+                    string="Access Config"
+                    invisible="not is_access_device">
+                    <group col="12">
+                        <group string="Access Configuration" colspan="4">
+                            <field name="access_verify_mode" />
+                            <field
+                                name="collaborator_calendar_id"
+                                placeholder="Uses company schedule"
+                                domain="[('company_id', 'in', [company_id, False])]" />
+                            <field name="access_early" placeholder="30" />
+                        </group>
+                        <group colspan="8">
+                            <separator string="Device Schedules" />
+                            <field name="schedule_summary" nolabel="1" readonly="1" />
+                            <separator string="Actions" />
+                            <div
+                                class="d-flex align-items-center gap-3"
+                                style="white-space: nowrap;">
+                                <button
+                                    name="action_sync_work_schedule"
+                                    type="object"
+                                    string="Push Schedule"
+                                    confirm="This will push the company work schedule to the device. Continue?"
+                                    icon="fa-upload"
+                                    class="btn-link" />
+                                <span class="text-muted">|</span>
+                                <button
+                                    name="action_fetch_access_config"
+                                    type="object"
+                                    string="Pull Config"
+                                    icon="fa-download"
+                                    class="btn-link" />
+                                <span class="text-muted">|</span>
+                                <button
+                                    name="action_fetch_users"
+                                    type="object"
+                                    string="Fetch Users"
+                                    confirm="This will import users registered on the device into Odoo. Continue?"
+                                    icon="fa-users"
+                                    groups="base.group_system"
+                                    class="btn-link" />
+                            </div>
+                        </group>
+                    </group>
+                    <group groups="base.group_no_one">
+                        <group string="Device Actions">
+                            <button
+                                name="action_get_device_info"
+                                type="object"
+                                string="Get Device Info"
+                                icon="fa-info-circle"
+                                class="btn btn-secondary" />
+                        </group>
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="action_access_device" model="ir.actions.act_window">
+        <field name="name">Access Devices</field>
+        <field name="res_model">device.device</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="device.view_device_device_search" />
+        <field name="domain">[('is_access_device', '=', True)]</field>
+        <field
+            name="context"
+            eval="{'default_device_category_id': ref('device_access_control.device_kind_access_control')}" />
+        <field
+            name="view_ids"
+            eval="[Command.clear(), Command.create({'view_mode': 'list', 'view_id': ref('view_access_device_list')}), Command.create({'view_mode': 'form', 'view_id': ref('device.view_device_device_form')})]" />
+    </record>
+
+</odoo>

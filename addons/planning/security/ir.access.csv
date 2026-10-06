@@ -1,0 +1,26 @@
+id,name,model_id/id,group_id/id,kind,operation,reach,anchor,domain
+planning_rule_internal_user_read,Planning: internal user can read their own shifts only and open shifts,model_planning_slot,base.group_user,permission,r,own,,"[('state', '!=', '1_draft')]"
+planning_rule_internal_user_read_2,Planning: internal user can read their own shifts only and open shifts (2),model_planning_slot,base.group_user,permission,r,all,,"['&', ('resource_id', '=', False), ('state', '!=', '1_draft')]"
+planning_rule_internal_user_read_3,Planning: internal user can read their own shifts only and open shifts (3),model_planning_slot,base.group_user,permission,r,all,,"['&', ('request_to_switch', '=', True), ('state', '!=', '1_draft')]"
+planning_rule_user_is_published,Planning: user can only see published shifts,model_planning_slot,group_planning_user,permission,r,all,,"[('state', '!=', '1_draft')]"
+planning_rule_manager,Planning: manager can create/update/delete all planning entries,model_planning_slot,group_planning_manager,permission,crud,,,
+planning_rule_internal_user_read_group_planning_user,Planning: internal user can read their own shifts only and open shifts,model_planning_slot,group_planning_user,permission,r,own,,"[('state', '!=', '1_draft')]"
+planning_rule_internal_user_read_group_planning_user_2,Planning: internal user can read their own shifts only and open shifts (2),model_planning_slot,group_planning_user,permission,r,all,,"['&', ('resource_id', '=', False), ('state', '!=', '1_draft')]"
+planning_rule_internal_user_read_group_planning_user_3,Planning: internal user can read their own shifts only and open shifts (3),model_planning_slot,group_planning_user,permission,r,all,,"['&', ('request_to_switch', '=', True), ('state', '!=', '1_draft')]"
+access_resource_role_planning_manager,resource.role.planning.manager,resource.model_resource_role,group_planning_manager,permission,cud,,,
+access_planning_recurrency_employee,planning.recurrency.employee,model_planning_recurrency,base.group_user,permission,r,,,
+access_planning_recurrency_manager,planning.recurrency.manager,model_planning_recurrency,group_planning_manager,permission,cud,,,
+access_planning_planning,access_planning_planning,model_planning_planning,group_planning_manager,permission,crud,,,
+access_planning_slot_template_employee_r,planning.slot.template.employee,model_planning_slot_template,base.group_user,permission,r,,,
+access_planning_slot_template_user_r,planning.slot.template.user,model_planning_slot_template,group_planning_user,permission,r,,,
+access_planning_slot_template_manager_crud,planning.slot.template.manager,model_planning_slot_template,group_planning_manager,permission,crud,,,
+access_planning_send,access.planning.send,model_wizard_planning_slot_publish,group_planning_manager,permission,cru,,,
+access_planning_preview,access.planning_preview,model_wizard_planning_planning_preview,group_planning_manager,permission,cru,,,
+planning_analysis_report_planning_user_rule,Planning analysis report: user can read their own shifts,model_planning_analysis_report,group_planning_user,permission,r,own,,"[('state', '!=', '1_draft')]"
+planning_analysis_report_planning_manager_rule,Planning analysis report: manager can read all the shifts,model_planning_analysis_report,group_planning_manager,permission,r,,,
+access_planning_calendar_resource,planning.calendar.resource,model_planning_calendar_resource,group_planning_user,permission,crud,,,
+planning_slot_rule_multi_company,Planning Shift multi-company,model_planning_slot,base.group_everyone,guard,crud,company,,
+planning_recurrency_rule_multi_company,Planning Recurrence multi-company,model_planning_recurrency,base.group_everyone,guard,crud,company,,
+planning_planning_rule_multi_company,Planning Planning multi-company,model_planning_planning,base.group_everyone,guard,crud,company,,
+planning_analysis_report_rule_multi_company,Planning Analysis Report multi-company,model_planning_analysis_report,base.group_everyone,guard,crud,company,,
+planning_calendar_resource_rule_own,Planning Calendar Filter: user can only access their own filters,model_planning_calendar_resource,base.group_everyone,guard,crud,own,,

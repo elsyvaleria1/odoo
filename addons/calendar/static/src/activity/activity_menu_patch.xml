@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-inherit="mail.ActivityMenu" t-inherit-mode="extension">
+        <xpath expr="//*[@name='activityTitle']" position="after">
+            <div t-if="group.type === 'meeting'">
+                <t t-foreach="group.meetings" t-as="meeting" t-key="meeting.id">
+                    <div class="o-calendar-meeting d-flex px-2">
+                        <span class="flex-grow-1 text-truncate" t-att-class="!meeting.allday and !group.meetings.slice(0, meeting_index).some((m) => !m.allday and m.formattedStart) ? 'fw-bold' : ''" t-out="meeting.name"/>
+                        <span t-if="meeting.formattedStart">
+                            <t t-if="meeting.allday">All Day</t>
+                            <t t-else='' t-out="meeting.formattedStart"/>
+                        </span>
+                    </div>
+                </t>
+            </div>
+        </xpath>
+    </t>
+</templates>

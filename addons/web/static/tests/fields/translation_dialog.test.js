@@ -1,0 +1,224 @@
+// @ts-check
+
+import { describe, expect, test } from "@odoo/hoot";
+import { queryAll } from "@odoo/hoot-dom";
+import {
+    contains,
+    defineModels,
+    fieldInput,
+    fields,
+    models,
+    mountView,
+    onRpc,
+    serverState,
+} from "@web/../tests/web_test_helpers";
+
+class Partner extends models.Model {
+    _name = "res.partner";
+    /** @type {string[]} */
+    _inherit = [];
+
+    name = fields.Char({ string: "Name" });
+    description = fields.Text({ string: "Description" });
+
+    _records = [{ id: 1, name: "yop", description: "a description" }];
+}
+
+defineModels([Partner]);
+
+function setupTranslationMocks({ translations = null, type = "char" } = {}) {
+    onRpc("res.lang", "get_installed", () => [
+        ["en_US", "English"],
+        ["fr_BE", "French (Belgium)"],
+    ]);
+
+    onRpc("res.partner", "get_field_translations", () => [
+        translations ?? [
+            { lang: "en_US", source: "yop", value: "yop" },
+            { lang: "fr_BE", source: "yop", value: "yop français" },
+        ],
+        { translation_type: type, translation_show_source: false },
+    ]);
+}
+
+describe("translate button", () => {
+    test("translate button appears on a translatable char field when multiLang is on", async () => {
+        Partner._fields.name.translate = true;
+        serverState.lang = "en_US";
+        serverState.multiLang = true;
+
+        await mountView({
+            type: "form",
+            resModel: "res.partner",
+            resId: 1,
+            arch: `<form><field name="name"/></form>`,
+        });
+
+        await contains("[name=name] input").click();
+        expect(".o_field_char .btn.o_field_translate").toHaveCount(1, {
+            message: "translate button should appear when the field is translatable",
+        });
+    });
+
+    test("no translate button on a non-translatable char field", async () => {
+        serverState.lang = "en_US";
+        serverState.multiLang = true;
+
+        await mountView({
+            type: "form",
+            resModel: "res.partner",
+            resId: 1,
+            arch: `<form><field name="name"/></form>`,
+        });
+
+        expect(".o_field_char .btn.o_field_translate").toHaveCount(0);
+    });
+});
+
+describe("dialog open / close", () => {
+    test("clicking the translate button opens TranslationDialog with correct title", async () => {
+        Partner._fields.name.translate = true;
+        serverState.lang = "en_US";
+        serverState.multiLang = true;
+
+        setupTranslationMocks();
+
+        await mountView({
+            type: "form",
+            resModel: "res.partner",
+            resId: 1,
+            arch: `<form><field name="name"/></form>`,
+        });
+
+        await contains("[name=name] input").click();
+        await contains(".o_field_char .btn.o_field_translate").click();
+
+        expect(".modal").toHaveCount(1, { message: "dialog should be open" });
+        expect(".modal .modal-title").toHaveText("Translate: name");
+    });
+
+    test("clicking Close dismisses the dialog without calling update_field_translations", async () => {
+        Partner._fields.name.translate = true;
+        serverState.lang = "en_US";
+        serverState.multiLang = true;
+
+        setupTranslationMocks();
+        onRpc("res.partner", "update_field_translations", () => {
+            expect.step("update_field_translations");
+        });
+
+        await mountView({
+            type: "form",
+            resModel: "res.partner",
+            resId: 1,
+            arch: `<form><field name="name"/></form>`,
+        });
+
+        await contains("[name=name] input").click();
+        await contains(".o_field_char .btn.o_field_translate").click();
+        expect(".modal").toHaveCount(1);
+
+        await contains(".modal-footer .btn:not(.btn-primary)").click();
+
+        expect(".modal").toHaveCount(0, { message: "dialog should be closed" });
+        expect.verifySteps([]);
+    });
+});
+
+describe("language rows", () => {
+    test("dialog renders one input row per installed language", async () => {
+        Partner._fields.name.translate = true;
+        serverState.lang = "en_US";
+        serverState.multiLang = true;
+
+        setupTranslationMocks();
+
+        await mountView({
+            type: "form",
+            resModel: "res.partner",
+            resId: 1,
+            arch: `<form><field name="name"/></form>`,
+        });
+
+        await contains("[name=name] input").click();
+        await contains(".o_field_char .btn.o_field_translate").click();
+
+        expect(".modal .o_translation_dialog .translation").toHaveCount(2);
+
+        const inputs = queryAll(
+            ".modal .o_translation_dialog .translation input",
+        ).filter((el) => el instanceof HTMLInputElement);
+        const values = inputs.map((el) =>
+            el instanceof HTMLInputElement ? el.value : null,
+        );
+        expect(values).toInclude("yop");
+        expect(values).toInclude("yop français");
+    });
+
+    test("user's current language row is pre-filled with the record's current field value", async () => {
+        Partner._fields.name.translate = true;
+        serverState.lang = "en_US";
+        serverState.multiLang = true;
+
+        setupTranslationMocks();
+
+        await mountView({
+            type: "form",
+            resModel: "res.partner",
+            resId: 1,
+            arch: `<form><field name="name"/></form>`,
+        });
+
+        await fieldInput("name").edit("modified english");
+
+        await contains("[name=name] input").click();
+        await contains(".o_field_char .btn.o_field_translate").click();
+
+        const inputs = queryAll(
+            ".modal .o_translation_dialog .translation input",
+        ).filter((el) => el instanceof HTMLInputElement);
+        const enInput = inputs.find((el) => el.value === "modified english");
+        expect(enInput).not.toBe(undefined, {
+            message:
+                "the user's language row should reflect the current (unsaved) field value",
+        });
+    });
+});
+
+describe("save payload", () => {
+    test("saving changed translations calls update_field_translations with correct args", async () => {
+        Partner._fields.name.translate = true;
+        serverState.lang = "en_US";
+        serverState.multiLang = true;
+
+        setupTranslationMocks();
+
+        onRpc("res.partner", "update_field_translations", ({ args }) => {
+            expect(args[0]).toEqual([1]);
+            expect(args[1]).toBe("name");
+            expect(args[2].fr_BE).toBe("nouveau");
+            expect.step("update_field_translations");
+            return true;
+        });
+
+        await mountView({
+            type: "form",
+            resModel: "res.partner",
+            resId: 1,
+            arch: `<form><field name="name"/></form>`,
+        });
+
+        await contains("[name=name] input").click();
+        await contains(".o_field_char .btn.o_field_translate").click();
+
+        const inputs = queryAll(
+            ".modal .o_translation_dialog .translation input",
+        ).filter((el) => el instanceof HTMLInputElement);
+        const frInput = inputs.find((el) => el.value === "yop français");
+        await contains(frInput).edit("nouveau");
+
+        await contains(".modal footer .btn-primary").click();
+
+        expect.verifySteps(["update_field_translations"]);
+    });
+});

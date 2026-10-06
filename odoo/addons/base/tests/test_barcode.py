@@ -1,0 +1,158 @@
+from unittest.mock import patch
+
+from odoo.libs.barcode import (
+    createBarcodeDrawing,
+    get_barcode_check_digit,
+    is_barcode_encoding_valid,
+)
+from odoo.tests.common import TransactionCase
+
+
+class TestBarcode(TransactionCase):
+    def test_barcode_check_digit(self):
+        ean8 = "87111125"
+        self.assertEqual(get_barcode_check_digit("0" * 10 + ean8), int(ean8[-1]))
+        ean13 = "1234567891231"
+        self.assertEqual(get_barcode_check_digit("0" * 5 + ean13), int(ean13[-1]))
+
+    def test_barcode_encoding(self):
+        self.assertTrue(is_barcode_encoding_valid("20220006", "ean8"))
+        self.assertTrue(is_barcode_encoding_valid("93855341", "ean8"))
+        self.assertTrue(is_barcode_encoding_valid("2022071416014", "ean13"))
+        self.assertTrue(is_barcode_encoding_valid("9745213796142", "ean13"))
+
+        self.assertFalse(
+            is_barcode_encoding_valid("2022a006", "ean8"),
+            "should contains digits only",
+        )
+        self.assertFalse(
+            is_barcode_encoding_valid("20220000", "ean8"), "incorrect check digit"
+        )
+        self.assertFalse(
+            is_barcode_encoding_valid("93855341", "ean13"),
+            "ean13 is a 13-digits barcode",
+        )
+        self.assertFalse(
+            is_barcode_encoding_valid("9745213796142", "ean8"),
+            "ean8 is a 8-digits barcode",
+        )
+        self.assertFalse(
+            is_barcode_encoding_valid("9745213796148", "ean13"),
+            "incorrect check digit",
+        )
+        self.assertFalse(
+            is_barcode_encoding_valid("2022!71416014", "ean13"),
+            "should contains digits only",
+        )
+        self.assertFalse(
+            is_barcode_encoding_valid("0022071416014", "ean13"),
+            "when starting with one zero, it indicates that a 12-digit UPC-A code follows",
+        )
+
+    def test_barcode_fallback_to_code128(self):
+        Report = self.env["ir.actions.report"]
+        result = Report.prepare_barcode("EAN8", "ABCDEFGH")
+        self.assertTrue(result, "barcode fallback to Code128 should produce output")
+        self.assertTrue(
+            result[:4] == b"\x89PNG",
+            "barcode fallback should produce a valid PNG image",
+        )
+
+    def test_barcode_fallback_preserves_humanreadable(self):
+        Report = self.env["ir.actions.report"]
+        result = Report.prepare_barcode("EAN8", "ABCDEFGH", humanreadable=1)
+        self.assertTrue(result, "barcode with humanreadable should produce output")
+
+    def test_barcode_bool_options_read_the_str2bool_vocabulary(self):
+        Report = self.env["ir.actions.report"]
+        drawn = {}
+
+        def draw(barcode_type, **kwargs):
+            drawn.update(kwargs)
+            raise ValueError("stop before rendering")
+
+        cases = (
+            ("t", True, True),
+            ("Y", True, True),
+            (" On ", True, True),
+            ("f", False, False),
+            ("n", False, False),
+            ("", False, False),
+            (0, False, False),
+            (1, True, True),
+            (None, False, True),
+            ("garbage", False, True),
+        )
+        for value, humanreadable, quiet in cases:
+            with (
+                self.subTest(value=value),
+                patch(
+                    "odoo.addons.base.models.ir_actions_report.createBarcodeDrawing",
+                    draw,
+                ),
+                self.assertRaises(ValueError),
+            ):
+                Report.prepare_barcode(
+                    "Code128", "HELLO", humanreadable=value, quiet=value
+                )
+            self.assertIs(drawn["humanReadable"], humanreadable)
+            self.assertIs(drawn["quiet"], quiet)
+
+    def test_barcode_tolerates_string_bool_options(self):
+        Report = self.env["ir.actions.report"]
+        for value in ("true", "yes", "on", "1", "false", "0", "", "garbage"):
+            result = Report.prepare_barcode(
+                "Code128", "HELLO", quiet=value, humanreadable=value
+            )
+            self.assertEqual(
+                result[:4],
+                b"\x89PNG",
+                f"barcode(quiet={value!r}) should still produce a PNG",
+            )
+
+    def test_gtin_symbology_drawn_scans_back_as_the_value(self):
+        Report = self.env["ir.actions.report"]
+        drawn = []
+
+        def draw(barcode_type, **kwargs):
+            drawn.append((barcode_type, kwargs["value"]))
+            raise ValueError("stop before rendering")
+
+        cases = (
+            ("auto", "036000291452", ("UPCA", "036000291452")),
+            ("auto", "036000291453", ("Code128", "036000291453")),
+            ("auto", "0036000291452", ("Code128", "0036000291452")),
+            ("auto", "5449000096241", ("EAN13", "5449000096241")),
+            ("auto", "96385074", ("EAN8", "96385074")),
+            ("UPCA", "036000291452", ("UPCA", "036000291452")),
+            ("UPCA", "03600029145", ("UPCA", "036000291452")),
+            ("UPCA", "0036000291452", ("EAN13", "0036000291452")),
+            ("EAN13", "0036000291452", ("EAN13", "0036000291452")),
+        )
+        for barcode_type, value, expected in cases:
+            drawn.clear()
+            with (
+                self.subTest(barcode_type=barcode_type, value=value),
+                patch(
+                    "odoo.addons.base.models.ir_actions_report.createBarcodeDrawing",
+                    draw,
+                ),
+                self.assertRaises(ValueError),
+            ):
+                Report.prepare_barcode(barcode_type, value)
+            self.assertEqual(drawn[0], expected)
+
+    def test_auto_upca_renders(self):
+        Report = self.env["ir.actions.report"]
+        drawn = []
+
+        def spy(barcode_type, **kwargs):
+            drawn.append(barcode_type)
+            return createBarcodeDrawing(barcode_type, **kwargs)
+
+        with patch(
+            "odoo.addons.base.models.ir_actions_report.createBarcodeDrawing", spy
+        ):
+            result = Report.prepare_barcode("auto", "036000291452", humanreadable=1)
+        self.assertEqual(drawn, ["UPCA"])
+        self.assertEqual(result[:4], b"\x89PNG")

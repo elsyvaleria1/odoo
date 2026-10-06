@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <menuitem
+        id="pos_menu_urban_piper_configuration"
+        name="UrbanPiper"
+        parent="point_of_sale.menu_point_config_product"
+        sequence="12" />
+
+    <menuitem
+        id="menu_products_pos_store_timing"
+        parent="pos_urban_piper_enhancements.pos_menu_urban_piper_configuration"
+        action="pos_urban_piper_enhancements.action_pos_store_timing"
+        sequence="14" />
+
+</odoo>

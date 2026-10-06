@@ -1,0 +1,340 @@
+import base64
+import io
+import logging
+import time
+import typing
+import zipfile
+from collections.abc import Iterator
+from pathlib import Path
+from typing import Any
+
+from odoo import http
+from odoo.exceptions import AccessError, UserError
+from odoo.http import (
+    NotFound,
+    Response,
+    Stream,
+    UnsupportedMediaType,
+    prepare_content_disposition_header,
+    request,
+)
+from odoo.libs.debug_log import DebugLog
+from odoo.tools.misc import file_open
+from odoo.tools.pdf import DependencyError, PdfReadError, extract_page
+
+from odoo.addons.mail.controllers.thread import ThreadController
+from odoo.addons.mail.controllers.utils import to_record_id, to_record_ids
+from odoo.addons.mail.tools.discuss import Store, add_guest_to_context
+
+if typing.TYPE_CHECKING:
+    from odoo.addons.base.models.ir_attachment import IrAttachment
+
+logger = logging.getLogger(__name__)
+_debug = DebugLog(__name__)
+
+MAX_THUMBNAIL_B64_BYTES = 10 * 1024 * 1024
+
+MAX_ZIP_ATTACHMENTS = 200
+
+MAX_ZIP_BYTES = 512 * 1024 * 1024
+
+ZIP_CHUNK_SIZE = 256 * 1024
+
+
+class _ZipSink(io.RawIOBase):
+    def __init__(self) -> None:
+        super().__init__()
+        self._chunks: list[bytes] = []
+
+    def writable(self) -> bool:
+        return True
+
+    def write(self, data: Any) -> int:
+        self._chunks.append(bytes(data))
+        return len(data)
+
+    def drain(self) -> bytes:
+        out = b"".join(self._chunks)
+        self._chunks.clear()
+        return out
+
+
+def _iter_stream_chunks(stream: Stream) -> Iterator[bytes]:
+    if stream.type == "path" and stream.path:
+        with Path(stream.path).open("rb") as source:
+            while chunk := source.read(ZIP_CHUNK_SIZE):
+                yield chunk
+        return
+    yield stream.read()
+
+
+def _zip_member_names(streams: list[Stream]) -> list[str]:
+    taken: set[str] = set()
+    names = []
+    for stream in streams:
+        name = (stream.download_name or "").replace("/", "_").replace("\\", "_")
+        name = name.strip(". ") or "attachment"
+        stem, dot, extension = name.rpartition(".")
+        if not stem:
+            stem, dot, extension = name, "", ""
+        candidate, copy = name, 0
+        while candidate.casefold() in taken:
+            copy += 1
+            candidate = f"{stem} ({copy}){dot}{extension}"
+        taken.add(candidate.casefold())
+        names.append(candidate)
+    return names
+
+
+class AttachmentController(ThreadController):
+    def _check_zip_size(self, written: int) -> None:
+        if written > MAX_ZIP_BYTES:
+            raise UserError(
+                request.env._(
+                    "These attachments are too large to download together. "
+                    "Select fewer of them."
+                )
+            )
+
+    def _get_zip_response(self, name: str, attachments: IrAttachment) -> Response:
+        streams = []
+        for record in attachments:
+            stream = request.env["ir.binary"]._get_stream_from_record(record, "raw")
+            if not stream:
+                continue
+            if stream.type == "url":
+                _debug.logic("zip_member_skipped", attachment=record.id, reason="url")
+                continue
+            streams.append(stream)
+        if not streams:
+            raise NotFound
+        self._check_zip_size(sum(stream.size or 0 for stream in streams))
+        headers = [
+            ("Content-Type", "application/zip"),
+            ("X-Content-Type-Options", "nosniff"),
+            ("Content-Disposition", prepare_content_disposition_header(name)),
+        ]
+        return request.prepare_response(self._iter_zip(streams), headers)
+
+    def _iter_zip(self, streams: list[Stream]) -> Iterator[bytes]:
+        sink = _ZipSink()
+        written = 0
+        with zipfile.ZipFile(sink, "w") as archive:
+            for stream, member_name in zip(
+                streams, _zip_member_names(streams), strict=True
+            ):
+                info = zipfile.ZipInfo(member_name, date_time=time.localtime()[:6])
+                info.compress_type = zipfile.ZIP_DEFLATED
+                with archive.open(info, "w") as member:
+                    for chunk in _iter_stream_chunks(stream):
+                        written += len(chunk)
+                        if written > MAX_ZIP_BYTES:
+                            _debug.logic("zip_aborted", written=written)
+                        self._check_zip_size(written)
+                        member.write(chunk)
+                        if compressed := sink.drain():
+                            yield compressed
+                if compressed := sink.drain():
+                    yield compressed
+        _debug.perf.count("zip_built", attachments=len(streams), written=written)
+        yield sink.drain()
+
+    @http.route("/mail/attachment/upload", methods=["POST"], type="http", auth="public")
+    @add_guest_to_context
+    def mail_attachment_upload(
+        self,
+        ufile: Any,
+        thread_id: int,
+        thread_model: str,
+        is_pending: bool | str = False,
+        **kwargs,
+    ) -> Response:
+        thread = self._get_thread_with_access_for_post(
+            thread_model, thread_id, **kwargs
+        )
+        if not thread:
+            raise NotFound
+        vals = {
+            "res_id": thread.id,
+            "res_model": thread_model,
+        }
+        if company := thread._mail_get_companies()[thread.id]:
+            vals["company_id"] = company.id
+        elif cids := request.env["ir.http"]._get_cookie_company_ids():
+            allowed_company_ids = [
+                cid for cid in cids if cid in request.env.user.company_ids.ids
+            ]
+            if allowed_company_ids:
+                user_company_id = request.env.user.company_id.id
+                vals["company_id"] = (
+                    user_company_id
+                    if user_company_id in allowed_company_ids
+                    else allowed_company_ids[0]
+                )
+        if is_pending and str(is_pending).lower() not in ("false", "0", ""):
+            vals.update(
+                {
+                    "res_id": 0,
+                    "res_model": "wizard.mail.message.send",
+                }
+            )
+        try:
+            attachment = (
+                request.env["ir.attachment"]
+                .sudo()
+                ._create_from_request_file(ufile, **vals)
+            )
+            attachment._post_add_create(**kwargs)
+            _debug.lifecycle(
+                "uploaded",
+                attachment=attachment.id,
+                model=vals["res_model"],
+                record=vals["res_id"],
+                company=vals.get("company_id"),
+                size=attachment.file_size,
+            )
+            res = {
+                "data": {
+                    "store_data": Store()
+                    .add(
+                        attachment,
+                        extra_fields=request.env[
+                            "ir.attachment"
+                        ]._get_fields_store_ownership(),
+                    )
+                    .get_result(),
+                    "attachment_id": attachment.id,
+                }
+            }
+        except AccessError:
+            _debug.logic("upload_refused", model=thread_model, record=thread.id)
+            res = {
+                "error": request.env._(
+                    "You are not allowed to upload an attachment here."
+                )
+            }
+        return request.prepare_json_response(res)
+
+    @http.route(
+        "/mail/attachment/delete", methods=["POST"], type="jsonrpc", auth="public"
+    )
+    @add_guest_to_context
+    def mail_attachment_delete(  # noqa: E8539  content: an attachment's own token or ownership token
+        self, attachment_id: int, access_token: str | None = None
+    ) -> None:
+        attachment_id = to_record_id(attachment_id)
+        attachment = request.env["ir.attachment"].browse(attachment_id).exists()
+        if not attachment or not attachment._has_attachments_ownership([access_token]):
+            _debug.logic(
+                "delete_refused",
+                attachment=attachment_id,
+                reason="missing" if not attachment else "not_owner",
+            )
+            partner, guest = request.env["res.partner"]._get_current_persona()
+            if persona := partner.main_user_id or guest:
+                persona._bus_send("ir.attachment/delete", {"id": attachment_id})
+            raise NotFound
+        message = (
+            request.env["mail.message"]
+            .sudo()
+            .search([("attachment_ids", "in", attachment.ids)], limit=1)
+        )
+        _debug.lifecycle(
+            "deleted", attachment=attachment_id, message=message.id or None
+        )
+        attachment.sudo()._remove_and_notify(message)
+
+    @http.route(["/mail/attachment/zip"], methods=["POST"], type="http", auth="public")
+    @add_guest_to_context
+    def mail_attachment_get_zip(self, file_ids: str, zip_name: str, **kw) -> Response:
+        if not isinstance(file_ids, str):
+            raise NotFound
+        ids_list = to_record_ids(file_ids.split(",")) if file_ids else []
+        if not ids_list or len(ids_list) > MAX_ZIP_ATTACHMENTS:
+            raise NotFound
+        attachments = request.env["ir.attachment"].browse(ids_list).exists()
+        accessible = attachments._filtered_access("read")
+        if not accessible:
+            raise NotFound
+        return self._get_zip_response(zip_name, accessible.sudo())
+
+    @http.route(
+        "/mail/attachment/pdf_first_page/<int:attachment_id>",
+        auth="public",
+        methods=["GET"],
+        readonly=True,
+        type="http",
+    )
+    @add_guest_to_context
+    def mail_attachment_pdf_first_page(  # noqa: E8539  content: an attachment's own token or ownership token
+        self, attachment_id: int, access_token: str | None = None
+    ) -> Response:
+        attachment = request.env["ir.attachment"].browse(attachment_id).exists()
+        if not attachment or (
+            not attachment.has_access("read")
+            and not attachment._has_attachments_ownership([access_token])
+        ):
+            raise NotFound
+        return self._get_pdf_first_page_response(attachment.sudo())
+
+    @http.route(
+        "/mail/attachment/update_thumbnail",
+        auth="public",
+        methods=["POST"],
+        type="jsonrpc",
+    )
+    @add_guest_to_context
+    def mail_attachment_update_thumbnail(  # noqa: E8539  content: an attachment's own token or ownership token
+        self,
+        attachment_id: int,
+        thumbnail: str | None = None,
+        access_token: str | None = None,
+    ) -> None:
+        attachment = (
+            request.env["ir.attachment"].browse(to_record_id(attachment_id)).exists()
+        )
+        if not attachment or not attachment._has_attachments_ownership([access_token]):
+            raise NotFound
+        attachment_sudo = attachment.sudo()
+        if attachment_sudo.mimetype != "application/pdf":
+            raise UserError(request.env._("Only PDF files can have thumbnail."))
+        if not thumbnail:
+            with file_open("web/static/img/mimetypes/unknown.svg") as unknown_svg:
+                thumbnail = base64.b64encode(unknown_svg.read().encode()).decode()
+        else:
+            if not isinstance(thumbnail, str):
+                raise NotFound
+            if len(thumbnail) > MAX_THUMBNAIL_B64_BYTES:
+                raise UserError(request.env._("The thumbnail is too large."))
+            try:
+                base64.b64decode(thumbnail, validate=True)
+            except ValueError:
+                raise UserError(
+                    request.env._("The thumbnail is not valid base64.")
+                ) from None
+        attachment_sudo.thumbnail = thumbnail
+        Store(bus_channel=attachment_sudo).add(
+            attachment_sudo, ["has_thumbnail"]
+        ).bus_send()
+
+    def _get_pdf_first_page_response(self, attachment: IrAttachment) -> Response:
+        try:
+            page_stream = extract_page(attachment, 0)
+        except (PdfReadError, DependencyError, UnicodeDecodeError) as e:
+            raise UnsupportedMediaType from e
+        if not page_stream:
+            raise UnsupportedMediaType
+        content = page_stream.getvalue()
+        headers = [
+            ("Content-Type", "application/pdf"),
+            ("X-Content-Type-Options", "nosniff"),
+            ("Content-Length", len(content)),
+        ]
+        if attachment.name:
+            headers.append(
+                (
+                    "Content-Disposition",
+                    prepare_content_disposition_header(attachment.name),
+                )
+            )
+        return request.prepare_response(content, headers)

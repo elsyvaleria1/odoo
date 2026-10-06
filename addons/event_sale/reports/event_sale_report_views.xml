@@ -1,0 +1,204 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="event_sale_report_view_graph" model="ir.ui.view">
+        <field name="name">event.sale.report.view.graph</field>
+        <field name="model">event.sale.report</field>
+        <field name="arch" type="xml">
+            <graph type="line" string="Revenues" sample="1">
+                <field name="sale_price" type="measure" />
+                <field name="event_registration_create_date" interval="day" />
+                <field name="event_ticket_price" type="measure" invisible="True" />
+            </graph>
+        </field>
+    </record>
+
+    <record id="event_sale_report_view_form" model="ir.ui.view">
+        <field name="name">event.sale.report.view.form</field>
+        <field name="model">event.sale.report</field>
+        <field name="arch" type="xml">
+            <form string="Registration revenues" create="false" edit="false">
+                <sheet>
+                    <group col="2">
+                        <group string="Event">
+                            <field name="event_type_id" />
+                            <field name="event_id" placeholder="All Events" />
+                            <field name="event_date_begin" />
+                        </group>
+                        <group string="Registration">
+                            <field name="event_registration_id" />
+                            <field name="event_registration_name" />
+                            <field name="event_registration_create_date" />
+                            <field name="event_slot_id" />
+                            <field name="event_ticket_id" />
+                            <field name="event_registration_state" />
+                        </group>
+                    </group>
+                    <group col="2">
+                        <group string="Sale Order">
+                            <field name="sale_order_partner_id" />
+                            <field name="sale_order_id" />
+                            <field name="product_id" />
+                        </group>
+                        <group string="Revenues">
+                            <field name="event_ticket_price" />
+                            <field name="sale_price_untaxed" />
+                            <field name="sale_price" />
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="event_sale_report_view_pivot" model="ir.ui.view">
+        <field name="name">event.sale.report.view.pivot</field>
+        <field name="model">event.sale.report</field>
+        <field name="arch" type="xml">
+            <pivot string="Revenues" sample="1">
+                <field name="sale_price_untaxed" type="measure" />
+                <field name="sale_price" type="measure" />
+                <field name="event_id" type="row" />
+                <field name="product_id" type="row" />
+                <field name="event_ticket_price" invisible="True" />
+            </pivot>
+        </field>
+    </record>
+
+    <record id="event_view_sale_report_list" model="ir.ui.view">
+        <field name="name">event.sale.report.view.list</field>
+        <field name="model">event.sale.report</field>
+        <field name="arch" type="xml">
+            <list string="Revenues" create="false" edit="false">
+                <field name="event_id" />
+                <field name="event_slot_id" />
+                <field name="event_ticket_id" />
+                <field name="product_id" optional="hide" />
+                <field name="event_ticket_price" />
+                <field name="sale_price_untaxed" optional="hide" />
+                <field name="sale_price" optional="hide" />
+                <field name="event_registration_state" optional="hide" />
+                <field name="sale_order_partner_id" />
+                <field name="invoice_partner_id" optional="hide" />
+                <field name="event_registration_name" optional="hide" />
+                <field
+                    name="sale_order_state"
+                    widget="badge"
+                    decoration-info="sale_order_state == 'draft'"
+                    decoration-success="sale_order_state == 'done'" />
+            </list>
+        </field>
+    </record>
+
+    <record id="event_sale_report_view_search" model="ir.ui.view">
+        <field name="name">event.sale.report.view.search</field>
+        <field name="model">event.sale.report</field>
+        <field name="arch" type="xml">
+            <search string="Event Sales Analysis">
+                <field name="event_id" />
+                <field name="event_registration_name" string="Participant" />
+                <field name="sale_order_partner_id" string="Booked by" />
+                <field name="company_id" />
+                <filter
+                    name="priced_tickets"
+                    string="Non-free tickets"
+                    domain="[('event_ticket_price', '!=', 0)]" />
+                <separator />
+                <filter
+                    name="free"
+                    string="Free"
+                    domain="[('sale_status', '=', 'free')]" />
+                <filter
+                    name="payment_pending"
+                    string="Pending payment"
+                    domain="[('sale_status', '=', 'to_pay')]" />
+                <filter
+                    name="is_sold"
+                    string="Sold"
+                    domain="[('sale_status', '=', 'sold')]" />
+                <separator />
+                <filter
+                    name="event_registration_create_date"
+                    string="Registration Date"
+                    date="event_registration_create_date"
+                    default_period="year" />
+                <separator />
+                <filter
+                    name="upcoming"
+                    string="Upcoming/Running"
+                    help="Upcoming events from today"
+                    domain="[('event_date_end', '&gt;=', 'now')]" />
+                <filter
+                    name="past"
+                    string="Past Events"
+                    help="Events that have ended"
+                    domain="[('event_date_end', '&lt;', 'now')]" />
+                <filter
+                    name="event_date_start"
+                    string="Event Start Date"
+                    date="event_date_begin"
+                    default_period="year" />
+                <filter
+                    name="event_date_end"
+                    string="Event End Date"
+                    date="event_date_end" />
+                <group>
+                    <filter
+                        name="group_by_event_type_id"
+                        string="Event Type"
+                        context="{'group_by': 'event_type_id' }" />
+                    <filter
+                        name="group_by_event_id"
+                        string="Event"
+                        context="{'group_by': 'event_id' }" />
+                    <separator />
+                    <filter
+                        name="group_by_product_id"
+                        string="Product"
+                        context="{'group_by': 'product_id'}" />
+                    <filter
+                        name="group_by_slot_id"
+                        string="Slot"
+                        context="{'group_by': 'event_slot_id'}" />
+                    <filter
+                        name="group_by_ticket_id"
+                        string="Ticket"
+                        context="{'group_by': 'event_ticket_id'}" />
+                    <separator />
+                    <filter
+                        name="group_by_registration_state"
+                        string="Registration Status"
+                        context="{'group_by': 'event_registration_state'}" />
+                    <filter
+                        name="group_by_sale_order_state"
+                        string="Sale Order Status"
+                        context="{'group_by': 'sale_order_state'}" />
+                    <filter
+                        name="group_by_customer"
+                        string="Customer"
+                        context="{'group_by': 'sale_order_partner_id'}" />
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="event_sale_report_action" model="ir.actions.act_window">
+        <field name="name">Revenues</field>
+        <field name="res_model">event.sale.report</field>
+        <field name="view_mode">graph,pivot</field>
+        <field
+            name="context">{
+            'search_default_priced_tickets': 1,
+            'search_default_event_date_start': 1,
+            'pivot_measures': ['__count__', 'sale_price_untaxed', 'sale_price'],
+        }</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No Event Revenues yet!
+            </p><p>
+                Come back once tickets have been sold to overview your sales income.
+            </p>
+        </field>
+    </record>
+
+</odoo>

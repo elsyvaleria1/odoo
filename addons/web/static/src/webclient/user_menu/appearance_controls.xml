@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="web.AppearanceControls">
+        <div class="o_appearance_controls d-flex flex-column gap-2 px-3 py-2">
+            <div class="o_segmented o_appearance_scheme" role="radiogroup" aria-label="Appearance">
+                <button t-foreach="this.schemes" t-as="scheme" t-key="scheme.value" type="button" role="radio"
+                        class="o_segment" t-att-data-value="scheme.value"
+                        t-att-aria-checked="scheme.value === this.state.scheme ? 'true' : 'false'"
+                        t-on-click="() => this.setScheme(scheme.value)">
+                    <i t-attf-class="fa-solid {{ scheme.icon }} me-1" aria-hidden="true"/><t t-out="scheme.label"/>
+                </button>
+            </div>
+            <div class="o_segmented o_appearance_density" role="radiogroup" aria-label="Density">
+                <button t-foreach="this.densities" t-as="density" t-key="density.value" type="button" role="radio"
+                        class="o_segment" t-att-data-value="density.value"
+                        t-att-aria-checked="density.value === this.density.density ? 'true' : 'false'"
+                        t-on-click="() => this.setDensity(density.value)"
+                        t-out="density.label"/>
+            </div>
+        </div>
+    </t>
+
+</templates>

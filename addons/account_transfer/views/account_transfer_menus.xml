@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- MENU -->
+    <menuitem
+        id="menu_auto_transfer"
+        name="Transfers"
+        parent="account.menu_account_transactions"
+        action="transfer_model_action"
+        sequence="30"
+        groups="account.group_account_user" />
+
+</odoo>

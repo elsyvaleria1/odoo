@@ -1,0 +1,26 @@
+/** @odoo-module native */
+import { Component, t, useProps } from "@odoo/owl";
+import { usePos } from "@point_of_sale/app/hooks/pos_hook";
+import { Dropdown, DropdownItem } from "@web/components/dropdown";
+import { useService } from "@web/core/utils/hooks";
+export class PartnerLine extends Component {
+    static template = "point_of_sale.PartnerLine";
+    static components = { Dropdown, DropdownItem };
+    static props = {
+        close: t.any(),
+        partner: t.any(),
+        isSelected: t.any(),
+        isBalanceDisplayed: t.any(),
+        onClickEdit: t.any(),
+        onClickUnselect: t.any(),
+        onClickPartner: t.any(),
+        onClickOrders: t.any(),
+    };
+    props = useProps(this.constructor.props);
+
+    setup() {
+        this.utils = useService("contextual_utils_service");
+        this.pos = usePos();
+        this.ui = useService("ui");
+    }
+}

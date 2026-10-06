@@ -1,0 +1,7 @@
+.o_field_applicant_char {
+    color: o-token(--link-color, $link-color);
+
+    &:hover {
+        color: o-token(--link-hover-color, $link-hover-color);
+    }
+}

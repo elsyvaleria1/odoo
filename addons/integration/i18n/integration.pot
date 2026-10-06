@@ -1,0 +1,3926 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* integration
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-09-27 05:12+0000\n"
+"PO-Revision-Date: 2026-09-27 05:12+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: integration
+#. odoo-python
+#: code:addons/integration/models/integration_connection.py:0
+msgid ""
+"%(connection)s has used its call budget of %(budget)s calls per %(window)s "
+"seconds."
+msgstr ""
+
+#. module: integration
+#. odoo-python
+#: code:addons/integration/models/integration_connection.py:0
+msgid ""
+"%(connection)s is paused after repeated failures; it will be tried again "
+"shortly."
+msgstr ""
+
+#. module: integration
+#. odoo-python
+#: code:addons/integration/models/integration_stream.py:0
+msgid "%(protocol)s dials %(schemes)s, not %(scheme)s://."
+msgstr ""
+
+#. module: integration
+#. odoo-python
+#: code:addons/integration/models/mixin_integration_receiver.py:0
+msgid "'%(model)s.%(method)s' is not callable"
+msgstr ""
+
+#. module: integration
+#. odoo-python
+#: code:addons/integration/models/ir_actions_server.py:0
+msgid ""
+"'%(name)s' is not a webhook action, so it has nothing to send through an "
+"endpoint."
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields.selection,name:integration.selection__integration_exchange__status_category__success
+msgid "2xx Success"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields.selection,name:integration.selection__integration_exchange__status_category__redirect
+msgid "3xx Redirect"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields.selection,name:integration.selection__integration_exchange__status_category__client_error
+msgid "4xx Client Error"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields.selection,name:integration.selection__integration_exchange__status_category__server_error
+msgid "5xx Server Error"
+msgstr ""
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_api_credential_form
+msgid "<code>api_key</code> - API Key for authentication"
+msgstr ""
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_api_credential_form
+msgid "<code>api_secret</code> - API Secret"
+msgstr ""
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_api_credential_form
+msgid "<code>bearer</code> - Bearer Token"
+msgstr ""
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_api_credential_form
+msgid "<code>oauth_access_token</code> - OAuth Access Token"
+msgstr ""
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_api_credential_form
+msgid "<code>oauth_client_id</code> - OAuth Client ID"
+msgstr ""
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_api_credential_form
+msgid "<code>oauth_client_secret</code> - OAuth Client Secret"
+msgstr ""
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_api_credential_form
+msgid "<code>oauth_refresh_token</code> - OAuth Refresh Token"
+msgstr ""
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_api_credential_form
+msgid "<code>password</code> - Password for Basic Auth"
+msgstr ""
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_api_credential_form
+msgid "<code>username</code> - Username for Basic Auth"
+msgstr ""
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_integration_exchange_form
+msgid "<span>Related Events</span>"
+msgstr ""
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_integration_exchange_form
+msgid "<span>View Channel</span>"
+msgstr ""
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_api_credential_form
+msgid ""
+"<strong>Power User Mode:</strong> Edit credentials directly as JSON.\n"
+"                                This provides maximum flexibility for complex credential structures.\n"
+"                                Changes made here will automatically sync with the Simple tab\n"
+"                                fields."
+msgstr ""
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_api_credential_form
+msgid "<strong>Supported Fields:</strong>"
+msgstr ""
+
+#. module: integration
+#: model_terms:ir.actions.act_window,help:integration.action_integration_connection
+msgid ""
+"A connection binds a credential to a service for a company, an environment\n"
+"                and optionally a user, and may override the service's URL."
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,help:integration.field_integration_connection__breaker_max_cooldown
+msgid ""
+"A paused connection lets one call through after its pause; each failed probe"
+" doubles the pause up to this."
+msgstr ""
+
+#. module: integration
+#. odoo-python
+#: code:addons/integration/models/integration_service.py:0
+msgid "A public endpoint must use HTTPS: %s"
+msgstr ""
+
+#. module: integration
+#: model_terms:ir.actions.act_window,help:integration.action_integration_receiver
+msgid ""
+"A receiver admits inbound calls for a feature: who may call, how they\n"
+"                authenticate, and how much they may send."
+msgstr ""
+
+#. module: integration
+#: model:ir.model.constraint,message:integration.constraint_integration_connection_record_unique
+msgid "A record has one connection."
+msgstr ""
+
+#. module: integration
+#. odoo-python
+#: code:addons/integration/models/integration_exchange.py:0
+msgid ""
+"A refusal is not deletable. The retention sweep removes it once it ages out."
+msgstr ""
+
+#. module: integration
+#. odoo-python
+#: code:addons/integration/models/integration_exchange.py:0
+msgid "A refusal is not editable: %(fields)s"
+msgstr ""
+
+#. module: integration
+#: model_terms:ir.actions.act_window,help:integration.action_integration_stream
+msgid ""
+"A stream is a connection the server keeps open on behalf of a record: an MQTT\n"
+"            session, a websocket, a Modbus link. The stream worker that leads this database\n"
+"            holds it, redials it when it drops and sends what its outbox holds."
+msgstr ""
+
+#. module: integration
+#. odoo-python
+#: code:addons/integration/models/integration_stream.py:0
+msgid "A stream's heartbeat and backoff are positive seconds."
+msgstr ""
+
+#. module: integration
+#. odoo-python
+#: code:addons/integration/models/integration_stream.py:0
+msgid "A stream's longest wait is at least its first."
+msgstr ""
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_api_credential_form
+msgid "API Authentication"
+msgstr ""
+
+#. module: integration
+#: model:ir.actions.server,name:integration.ir_cron_reset_cache_errors_ir_actions_server
+msgid "API Communications: Reset Cache Errors"
+msgstr ""
+
+#. module: integration
+#: model:ir.actions.server,name:integration.ir_cron_retry_failed_events_ir_actions_server
+msgid "API Communications: Retry Failed Events"
+msgstr ""
+
+#. module: integration
+#: model:ir.actions.server,name:integration.ir_cron_health_check_ir_actions_server
+msgid "API Communications: Service Health Check"
+msgstr ""
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_integration_service_form
+msgid "API Configuration"
+msgstr ""
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_api_credential_form
+msgid "API Credential"
+msgstr ""
+
+#. module: integration
+#: model:ir.actions.act_window,name:integration.action_api_credential_access_log
+msgid "API Credential Access Logs"
+msgstr ""
+
+#. module: integration
+#: model:ir.actions.act_window,name:integration.action_api_credential_security_report
+msgid "API Credential Security Report"
+msgstr ""
+
+#. module: integration
+#: model:ir.actions.act_window,name:integration.action_api_credential
+#: model_terms:ir.ui.view,arch_db:integration.view_api_credential_list
+msgid "API Credentials"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_service__api_key_header
+msgid "API Key Header"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_service__api_key_scheme
+msgid "API Key Scheme"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_res_config_settings__integration_max_cache_entries
+msgid "API Max Cache Entries"
+msgstr ""
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.res_config_settings_view_form_inherit
+msgid "API Response Cache Configuration"
+msgstr ""
+
+#. module: integration
+#: model:ir.actions.act_window,name:integration.action_integration_service
+#: model:ir.ui.menu,name:integration.menu_integration_service_list
+msgid "API Services"
+msgstr ""
+
+#. module: integration
+#: model:ir.ui.menu,name:integration.menu_integration_root
+#: model:res.groups.privilege,name:integration.res_groups_privilege_api_transport
+#: model_terms:ir.ui.view,arch_db:integration.res_config_settings_view_form_inherit
+msgid "API Transport"
+msgstr ""
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.res_config_settings_view_form_inherit
+msgid "API Transport Configuration"
+msgstr ""
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_api_credential_form
+msgid "API URL"
+msgstr ""
+
+#. module: integration
+#. odoo-python
+#: code:addons/integration/models/credential_credential.py:0
+msgid "API Usage Logs"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_service__api_version_header
+msgid "API Version Header"
+msgstr ""
+
+#. module: integration
+#: model_terms:ir.actions.act_window,help:integration.action_api_credential
+msgid ""
+"API credentials provide secure authentication for external services.\n"
+"                Link them to an API service to enable API calls."
+msgstr ""
+
+#. module: integration
+#. odoo-python
+#: code:addons/integration/tools/api_client.py:0
+msgid "API service '%s' not found or inactive"
+msgstr ""
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_api_credential_access_log_search
+msgid "Access Date"
+msgstr ""
+
+#. module: integration
+#. odoo-python
+#: code:addons/integration/controllers/oauth.py:0
+msgid "Access Denied"
+msgstr ""
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_api_credential_access_log_form
+msgid "Access Information"
+msgstr ""
+
+#. module: integration
+#: model:ir.ui.menu,name:integration.menu_api_credential_access_log
+msgid "Access Logs"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_connection__active
+#: model:ir.model.fields,field_description:integration.field_integration_receiver__active
+#: model:ir.model.fields,field_description:integration.field_integration_service__active
+#: model:ir.model.fields,field_description:integration.field_integration_stream__active
+#: model:ir.model.fields,field_description:integration.field_mixin_integration_channel__active
+#: model:ir.model.fields,field_description:integration.field_mixin_integration_receiver__active
+#: model_terms:ir.ui.view,arch_db:integration.view_api_credential_search
+msgid "Active"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_receiver__credential_id
+#: model:ir.model.fields,field_description:integration.field_integration_service__credential_id
+#: model:ir.model.fields,field_description:integration.field_mixin_inbound_gate__credential_id
+#: model:ir.model.fields,field_description:integration.field_mixin_integration_channel__credential_id
+#: model:ir.model.fields,field_description:integration.field_mixin_integration_receiver__credential_id
+msgid "Active Credential"
+msgstr ""
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_api_credential_form
+msgid "Add any custom fields as needed"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,help:integration.field_credential_credential__custom_headers
+msgid "Additional HTTP headers in JSON format: {'X-Custom-Header': 'value'}"
+msgstr ""
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_api_credential_form
+msgid "Additional Settings"
+msgstr ""
+
+#. module: integration
+#: model:res.groups,name:integration.group_api_transport_admin
+msgid "Administrator"
+msgstr ""
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_api_credential_form
+msgid "Advanced (JSON)"
+msgstr ""
+
+#. module: integration
+#. odoo-python
+#: code:addons/integration/models/integration_connection.py:0
+msgid "All companies"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_service__allow_multiple_credentials
+msgid "Allow Multiple Credentials"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_service__allow_user_credentials
+msgid "Allow Personal Credentials"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,help:integration.field_integration_service__allow_multiple_credentials
+msgid ""
+"Allow multiple active credentials per company/environment. Useful for "
+"services like Telegram that support multiple bots."
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_service__allowed_hosts
+msgid "Allowed Hosts"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.constraint,message:integration.constraint_integration_exchange_channel_or_refusal
+msgid ""
+"An exchange names its channel, unless it is the refusal of a caller no "
+"channel answers for."
+msgstr ""
+
+#. module: integration
+#: model:ir.model.constraint,message:integration.constraint_integration_egress_purpose_purpose_uniq
+msgid "An outbound purpose is recorded once."
+msgstr ""
+
+#. module: integration
+#. odoo-python
+#: code:addons/integration/controllers/oauth.py:0
+msgid "An unexpected error occurred. Please contact your administrator."
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields.selection,name:integration.selection__integration_service__category__analytics
+msgid "Analytics"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields.selection,name:integration.selection__integration_service__health_check_environment__any
+msgid "Any Active Credential"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_service__api_version
+msgid "Api Version"
+msgstr ""
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_integration_connection_search
+#: model_terms:ir.ui.view,arch_db:integration.view_integration_receiver_search
+#: model_terms:ir.ui.view,arch_db:integration.view_integration_service_form
+msgid "Archived"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields.selection,name:integration.selection__integration_service__category__ai
+msgid "Artificial Intelligence"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields.selection,name:integration.selection__device_device__processing_mode__async
+#: model:ir.model.fields.selection,name:integration.selection__integration_receiver__processing_mode__async
+#: model:ir.model.fields.selection,name:integration.selection__mixin_integration_receiver__processing_mode__async
+msgid "Asynchronous"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_exchange__attempt_count
+msgid "Attempt Count"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_stream__attempts
+#: model:ir.model.fields,field_description:integration.field_integration_stream_outbox__attempts
+msgid "Attempts"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_exchange__auth_mode
+msgid "Auth Mode"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields.selection,name:integration.selection__integration_exchange__error_type__auth
+msgid "Authentication Error"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_credential_credential__endpoint_auth_type
+#: model:ir.model.fields,field_description:integration.field_integration_service__auth_type
+#: model:ir.model.fields,field_description:integration.field_mixin_inbound_gate__auth_type
+#: model:ir.model.fields,field_description:integration.field_mixin_integration_channel__auth_type
+#: model:ir.model.fields,field_description:integration.field_mixin_integration_receiver__auth_type
+msgid "Authentication Type"
+msgstr ""
+
+#. module: integration
+#. odoo-python
+#: code:addons/integration/tools/api_client.py:0
+msgid "Authentication failed: %s"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,help:integration.field_credential_credential__endpoint_auth_type
+msgid "Authentication scheme declared by the outbound endpoint."
+msgstr ""
+
+#. module: integration
+#. odoo-python
+#: code:addons/integration/controllers/oauth.py:0
+msgid "Authorization Denied"
+msgstr ""
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_api_credential_form_oauth
+msgid "Authorize with OAuth"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,help:integration.field_integration_receiver__retry_enabled
+#: model:ir.model.fields,help:integration.field_integration_service__retry_enabled
+#: model:ir.model.fields,help:integration.field_mixin_integration_channel__retry_enabled
+#: model:ir.model.fields,help:integration.field_mixin_integration_receiver__retry_enabled
+msgid "Automatically retry failed operations with exponential backoff"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields.selection,name:integration.selection__integration_exchange__performance_rating__average
+msgid "Average (500-1000ms)"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_service__avg_response_time
+msgid "Avg Response Time"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_stream__backoff_max_seconds
+msgid "Backoff Max Seconds"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_stream__backoff_seconds
+msgid "Backoff Seconds"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_connection__base_url
+msgid "Base URL"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,help:integration.field_integration_service__endpoint_url
+msgid "Base URL for production environment"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,help:integration.field_integration_service__endpoint_url_test
+msgid "Base URL for test environment"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields.selection,name:integration.selection__integration_service__auth_type__basic
+#: model_terms:ir.ui.view,arch_db:integration.view_api_credential_form
+msgid "Basic Authentication"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_connection__budget_window_seconds
+msgid "Budget Window (s)"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_stream__ca_certificate_id
+msgid "Ca Certificate"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_service__cache_enabled
+msgid "Cache Enabled"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_service__cache_error_count
+msgid "Cache Error Count"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_service__cache_health
+msgid "Cache Health"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_exchange__cache_hit
+msgid "Cache Hit"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_exchange__cache_key
+#: model:ir.model.fields,field_description:integration.field_integration_response_cache__cache_key
+msgid "Cache Key"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_service__cache_last_error
+msgid "Cache Last Error"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_service__cache_ttl
+msgid "Cache Ttl"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.constraint,message:integration.constraint_integration_response_cache_cache_key_company_uniq
+msgid "Cache key must be unique per company!"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,help:integration.field_integration_exchange__channel_name
+msgid "Cached channel name for faster searches"
+msgstr ""
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_integration_service_form
+msgid "Caching"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields.selection,name:integration.selection__integration_service__category__calendar
+msgid "Calendar & Scheduling"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_connection__budget_requests
+msgid "Call Budget"
+msgstr ""
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_integration_connection_form
+msgid "Call budget"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_receiver__contract_routes
+#: model:ir.model.fields,field_description:integration.field_mixin_inbound_gate__contract_routes
+#: model:ir.model.fields,field_description:integration.field_mixin_integration_receiver__contract_routes
+msgid "Called At"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields.selection,name:integration.selection__integration_connection__circuit_state__closed
+msgid "Calling"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,help:integration.field_integration_connection__budget_requests
+msgid ""
+"Calls allowed per budget window, shared by every worker. 0 turns the budget "
+"off."
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_service__category
+#: model_terms:ir.ui.view,arch_db:integration.view_integration_service_search
+msgid "Category"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_stream__certificate_id
+msgid "Certificate"
+msgstr ""
+
+#. module: integration
+#. odoo-python
+#: code:addons/integration/models/integration_stream.py:0
+msgid "Certificate %s carries no certificate or no private key."
+msgstr ""
+
+#. module: integration
+#. odoo-python
+#: code:addons/integration/models/integration_stream.py:0
+msgid "Certificate %s carries no certificate."
+msgstr ""
+
+#. module: integration
+#. odoo-python
+#: code:addons/integration/models/integration_exchange.py:0
+#: model:ir.model.fields,field_description:integration.field_integration_exchange__channel_id
+#: model_terms:ir.ui.view,arch_db:integration.view_integration_exchange_search
+msgid "Channel"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_exchange__channel_name
+msgid "Channel Name"
+msgstr ""
+
+#. module: integration
+#. odoo-python
+#: code:addons/integration/models/integration_exchange.py:0
+msgid "Channel does not support event processing"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields.selection,name:integration.selection__integration_receiver__auth_type__caller_check
+msgid "Checked by the receiving controller"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_connection__circuit_state
+msgid "Circuit State"
+msgstr ""
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_api_credential_form_oauth
+msgid "Clear existing tokens and restart OAuth authorization"
+msgstr ""
+
+#. module: integration
+#. odoo-python
+#: code:addons/integration/tools/api_client.py:0
+msgid "Client error: %s"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields.selection,name:integration.selection__integration_service__category__cloud
+msgid "Cloud Storage"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_receiver__code
+#: model:ir.model.fields,field_description:integration.field_integration_service__code
+#: model:ir.model.fields,field_description:integration.field_mixin_integration_channel__code
+#: model:ir.model.fields,field_description:integration.field_mixin_integration_receiver__code
+msgid "Code"
+msgstr ""
+
+#. module: integration
+#. odoo-python
+#: code:addons/integration/models/integration_service.py:0
+msgid "Code must contain only lowercase letters, numbers, and underscores"
+msgstr ""
+
+#. module: integration
+#: model:integration.service,name:integration.demo_service_coingecko
+msgid "CoinGecko API - Crypto Prices"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,help:integration.field_integration_receiver__ip_whitelist
+#: model:ir.model.fields,help:integration.field_mixin_inbound_gate__ip_whitelist
+#: model:ir.model.fields,help:integration.field_mixin_integration_receiver__ip_whitelist
+msgid ""
+"Comma-separated list of allowed IPs or CIDRs (e.g., '192.168.1.0/24, "
+"10.0.0.5'). Leave empty to allow all IPs."
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,help:integration.field_integration_exchange__tags
+msgid "Comma-separated tags for categorization"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields.selection,name:integration.selection__integration_service__category__communication
+msgid "Communication"
+msgstr ""
+
+#. module: integration
+#: model:ir.model,name:integration.model_mixin_integration_channel
+msgid "Communication Channel Mixin"
+msgstr ""
+
+#. module: integration
+#: model:ir.model,name:integration.model_integration_exchange
+msgid "Communication Event Log"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_connection__company_id
+#: model:ir.model.fields,field_description:integration.field_integration_exchange__company_id
+#: model:ir.model.fields,field_description:integration.field_integration_receiver__company_id
+#: model:ir.model.fields,field_description:integration.field_integration_response_cache__company_id
+#: model:ir.model.fields,field_description:integration.field_integration_service__company_id
+#: model:ir.model.fields,field_description:integration.field_integration_stream__company_id
+#: model:ir.model.fields,field_description:integration.field_mixin_integration_channel__company_id
+#: model:ir.model.fields,field_description:integration.field_mixin_integration_receiver__company_id
+#: model_terms:ir.ui.view,arch_db:integration.view_api_credential_access_log_search
+#: model_terms:ir.ui.view,arch_db:integration.view_api_credential_search
+msgid "Company"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,help:integration.field_integration_service__provider
+msgid "Company providing the service"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,help:integration.field_integration_receiver__company_id
+#: model:ir.model.fields,help:integration.field_integration_service__company_id
+#: model:ir.model.fields,help:integration.field_mixin_integration_channel__company_id
+#: model:ir.model.fields,help:integration.field_mixin_integration_receiver__company_id
+msgid "Company that owns this channel (for multi-tenancy isolation)"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,help:integration.field_integration_exchange__company_id
+msgid ""
+"Company that owns this log entry. Defaults to the channel (endpoint) "
+"company, but the caller can override at create time with the effective "
+"request company (e.g. the credential's company in multi-tenant outbound "
+"calls)."
+msgstr ""
+
+#. module: integration
+#: model:ir.ui.menu,name:integration.menu_integration_config
+msgid "Configuration"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields.selection,name:integration.selection__integration_stream__state__connecting
+msgid "Connecting"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_exchange__connection_id
+#: model:ir.model.fields,field_description:integration.field_integration_stream__connection_id
+msgid "Connection"
+msgstr ""
+
+#. module: integration
+#. odoo-python
+#: code:addons/integration/tools/api_client.py:0
+msgid ""
+"Connection %(connection)s is not an active connection of service "
+"'%(service)s'"
+msgstr ""
+
+#. module: integration
+#. odoo-python
+#: code:addons/integration/models/integration_service.py:0
+msgid "Connection OK"
+msgstr ""
+
+#. module: integration
+#. odoo-python
+#: code:addons/integration/models/integration_service.py:0
+msgid "Connection failed"
+msgstr ""
+
+#. module: integration
+#: model:ir.actions.act_window,name:integration.action_integration_connection
+#: model:ir.model.fields,field_description:integration.field_credential_credential__connection_ids
+#: model:ir.model.fields,field_description:integration.field_integration_service__connection_ids
+#: model:ir.ui.menu,name:integration.menu_integration_connection
+#: model_terms:ir.ui.view,arch_db:integration.view_integration_service_form
+msgid "Connections"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_service__per_record_connections
+msgid "Connections per Record"
+msgstr ""
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_api_credential_access_log_form
+msgid "Context Information"
+msgstr ""
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_integration_receiver_form
+msgid "Contract"
+msgstr ""
+
+#. module: integration
+#: model_terms:ir.actions.act_window,help:integration.action_api_credential
+msgid "Create your first API credential"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_connection__create_uid
+#: model:ir.model.fields,field_description:integration.field_integration_egress_purpose__create_uid
+#: model:ir.model.fields,field_description:integration.field_integration_exchange__create_uid
+#: model:ir.model.fields,field_description:integration.field_integration_receiver__create_uid
+#: model:ir.model.fields,field_description:integration.field_integration_response_cache__create_uid
+#: model:ir.model.fields,field_description:integration.field_integration_service__create_uid
+#: model:ir.model.fields,field_description:integration.field_integration_stream__create_uid
+#: model:ir.model.fields,field_description:integration.field_integration_stream_outbox__create_uid
+msgid "Created by"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_connection__create_date
+#: model:ir.model.fields,field_description:integration.field_integration_egress_purpose__create_date
+#: model:ir.model.fields,field_description:integration.field_integration_exchange__create_date
+#: model:ir.model.fields,field_description:integration.field_integration_receiver__create_date
+#: model:ir.model.fields,field_description:integration.field_integration_response_cache__create_date
+#: model:ir.model.fields,field_description:integration.field_integration_service__create_date
+#: model:ir.model.fields,field_description:integration.field_integration_stream__create_date
+#: model:ir.model.fields,field_description:integration.field_integration_stream_outbox__create_date
+msgid "Created on"
+msgstr ""
+
+#. module: integration
+#: model:ir.model,name:integration.model_credential_credential
+#: model:ir.model.fields,field_description:integration.field_integration_connection__credential_id
+#: model:ir.model.fields,field_description:integration.field_integration_exchange__credential_id
+#: model:ir.model.fields,field_description:integration.field_integration_stream__credential_id
+#: model_terms:ir.ui.view,arch_db:integration.view_api_credential_access_log_search
+msgid "Credential"
+msgstr ""
+
+#. module: integration
+#. odoo-python
+#: code:addons/integration/models/integration_connection.py:0
+msgid ""
+"Credential %(credential)s is bound to %(bound)s and cannot connect "
+"%(service)s."
+msgstr ""
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_api_credential_access_log_pivot
+msgid "Credential Access Analysis"
+msgstr ""
+
+#. module: integration
+#: model:ir.model,name:integration.model_credential_access_log
+#: model_terms:ir.ui.view,arch_db:integration.view_api_credential_access_log_form
+msgid "Credential Access Log"
+msgstr ""
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_api_credential_access_log_graph
+msgid "Credential Access Trends"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_service__credential_count
+msgid "Credential Count"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_receiver__credential_fingerprint
+#: model:ir.model.fields,field_description:integration.field_integration_service__credential_fingerprint
+#: model:ir.model.fields,field_description:integration.field_mixin_inbound_gate__credential_fingerprint
+#: model:ir.model.fields,field_description:integration.field_mixin_integration_channel__credential_fingerprint
+#: model:ir.model.fields,field_description:integration.field_mixin_integration_receiver__credential_fingerprint
+msgid "Credential Fingerprint"
+msgstr ""
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_api_credential_access_log_form
+msgid "Credential Information"
+msgstr ""
+
+#. module: integration
+#. odoo-python
+#: code:addons/integration/controllers/oauth.py:0
+msgid "Credential is inactive"
+msgstr ""
+
+#. module: integration
+#. odoo-python
+#: code:addons/integration/models/credential_credential.py:0
+msgid "Credential is not linked to an API service"
+msgstr ""
+
+#. module: integration
+#. odoo-python
+#: code:addons/integration/controllers/oauth.py:0
+msgid "Credential not found"
+msgstr ""
+
+#. module: integration
+#. odoo-python
+#: code:addons/integration/controllers/oauth.py:0
+msgid "Credential not found (ID: %s)"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,help:integration.field_integration_exchange__credential_id
+msgid "Credential used for this communication"
+msgstr ""
+
+#. module: integration
+#. odoo-python
+#: code:addons/integration/models/integration_service.py:0
+#: model:ir.model.fields,field_description:integration.field_integration_service__credential_ids
+#: model:ir.ui.menu,name:integration.menu_api_credential_list
+#: model_terms:ir.ui.view,arch_db:integration.view_api_credential_form
+#: model_terms:ir.ui.view,arch_db:integration.view_integration_service_form
+msgid "Credentials"
+msgstr ""
+
+#. module: integration
+#. odoo-python
+#: code:addons/integration/tools/api_client.py:0
+msgid "Credentials have expired on %s"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,help:integration.field_integration_exchange__state
+msgid ""
+"Current processing state. `refused`: the gate turned the call away before "
+"any handler ran; `refusal_reason` says why."
+msgstr ""
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_api_credential_form
+msgid "Custom HTTP headers in JSON format"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_credential_credential__custom_headers
+msgid "Custom Headers"
+msgstr ""
+
+#. module: integration
+#. odoo-python
+#: code:addons/integration/models/credential_credential.py:0
+msgid "Custom headers must be a JSON object of header names to values."
+msgstr ""
+
+#. module: integration
+#. odoo-python
+#: code:addons/integration/models/credential_credential.py:0
+msgid "Custom headers must be valid JSON: %(error)s"
+msgstr ""
+
+#. module: integration
+#. odoo-python
+#: code:addons/integration/models/mixin_integration_receiver.py:0
+msgid "Custom verification method is required when auth type is 'custom'"
+msgstr ""
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_integration_exchange_search
+msgid "Date"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_exchange__date_completed
+msgid "Date Completed"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_response_cache__date_created
+msgid "Date Created"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_response_cache__date_expiration
+msgid "Date Expiration"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_stream__date_last_frame
+msgid "Date Last Frame"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_stream__date_next_attempt
+msgid "Date Next Attempt"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_exchange__date_next_retry
+msgid "Date Next Retry"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_stream_outbox__date_sent
+msgid "Date Sent"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_stream__date_state
+msgid "Date State"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields.selection,name:integration.selection__integration_service__cache_health__degraded
+msgid "Degraded"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,help:integration.field_integration_service__log_retention_days
+msgid ""
+"Delete this endpoint's event logs older than this many days. 0 uses the "
+"retention set in API Transport settings."
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,help:integration.field_integration_receiver__log_retention_days
+#: model:ir.model.fields,help:integration.field_mixin_inbound_gate__log_retention_days
+#: model:ir.model.fields,help:integration.field_mixin_integration_receiver__log_retention_days
+msgid ""
+"Delete this gate's exchange rows older than this many days. 0 uses the "
+"retention set in API Transport settings."
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields.selection,name:integration.selection__integration_service__category__delivery
+msgid "Delivery & Shipping"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,help:integration.field_integration_receiver__rate_limit_strict
+#: model:ir.model.fields,help:integration.field_integration_service__rate_limit_strict
+#: model:ir.model.fields,help:integration.field_mixin_inbound_gate__rate_limit_strict
+#: model:ir.model.fields,help:integration.field_mixin_integration_channel__rate_limit_strict
+#: model:ir.model.fields,help:integration.field_mixin_integration_receiver__rate_limit_strict
+msgid ""
+"Deny the request when the rate-limit bucket cannot be read (lock contention,"
+" timeout, internal error) instead of allowing it. Enable wherever the limit "
+"is a security control rather than a best-effort cap."
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_receiver__description
+#: model:ir.model.fields,field_description:integration.field_integration_service__description
+#: model:ir.model.fields,field_description:integration.field_mixin_integration_channel__description
+#: model:ir.model.fields,field_description:integration.field_mixin_integration_receiver__description
+msgid "Description"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,help:integration.field_integration_receiver__description
+#: model:ir.model.fields,help:integration.field_integration_service__description
+#: model:ir.model.fields,help:integration.field_mixin_integration_channel__description
+#: model:ir.model.fields,help:integration.field_mixin_integration_receiver__description
+msgid "Description of what this channel does"
+msgstr ""
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_api_credential_form
+msgid "Device ID"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields.selection,name:integration.selection__integration_service__category__device
+msgid "Devices"
+msgstr ""
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_integration_stream_form
+msgid "Dial"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields.selection,name:integration.selection__integration_service__auth_type__digest
+msgid "Digest Authentication"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_exchange__direction
+#: model_terms:ir.ui.view,arch_db:integration.view_integration_exchange_search
+msgid "Direction"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,help:integration.field_integration_exchange__direction
+msgid "Direction of communication: inbound (receiving) or outbound (sending)"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_credential_access_log__display_name
+#: model:ir.model.fields,field_description:integration.field_credential_credential__display_name
+#: model:ir.model.fields,field_description:integration.field_integration_connection__display_name
+#: model:ir.model.fields,field_description:integration.field_integration_egress_purpose__display_name
+#: model:ir.model.fields,field_description:integration.field_integration_exchange__display_name
+#: model:ir.model.fields,field_description:integration.field_integration_response_cache__display_name
+#: model:ir.model.fields,field_description:integration.field_integration_service__display_name
+#: model:ir.model.fields,field_description:integration.field_integration_stream__display_name
+#: model:ir.model.fields,field_description:integration.field_integration_stream_outbox__display_name
+#: model:ir.model.fields,field_description:integration.field_ir_egress__display_name
+#: model:ir.model.fields,field_description:integration.field_mixin_inbound_gate__display_name
+#: model:ir.model.fields,field_description:integration.field_mixin_integration_channel__display_name
+#: model:ir.model.fields,field_description:integration.field_mixin_integration_connected__display_name
+#: model:ir.model.fields,field_description:integration.field_mixin_integration_receiver__display_name
+msgid "Display Name"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_service__documentation_url
+msgid "Documentation Url"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields.selection,name:integration.selection__integration_exchange__state__duplicate
+msgid "Duplicate"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_receiver__duplicate_detection_enabled
+#: model:ir.model.fields,field_description:integration.field_mixin_integration_receiver__duplicate_detection_enabled
+msgid "Duplicate Detection Enabled"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields.selection,name:integration.selection__integration_exchange__error_type__duplicate
+msgid "Duplicate Event"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_receiver__duplicate_window_seconds
+#: model:ir.model.fields,field_description:integration.field_mixin_integration_receiver__duplicate_window_seconds
+msgid "Duplicate Window Seconds"
+msgstr ""
+
+#. module: integration
+#. odoo-python
+#: code:addons/integration/models/mixin_integration_receiver.py:0
+msgid "Duplicate detection window cannot exceed %(max)d seconds"
+msgstr ""
+
+#. module: integration
+#. odoo-python
+#: code:addons/integration/models/mixin_integration_receiver.py:0
+msgid "Duplicate detection window must be greater than 0"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_exchange__duration_ms
+msgid "Duration Ms"
+msgstr ""
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_api_credential_form
+msgid "EHOME Connection"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,help:integration.field_integration_service__per_record_connections
+msgid ""
+"Each connection belongs to one record, such as a device, and carries its own"
+" address. Calls name the connection they use; none is picked by company, and"
+" the service needs no URL of its own."
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,help:integration.field_integration_connection__company_id
+msgid "Empty: the connection serves every company that has none of its own."
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_receiver__rate_limit_enabled
+#: model:ir.model.fields,field_description:integration.field_integration_service__rate_limit_enabled
+#: model:ir.model.fields,field_description:integration.field_mixin_inbound_gate__rate_limit_enabled
+#: model:ir.model.fields,field_description:integration.field_mixin_integration_channel__rate_limit_enabled
+#: model:ir.model.fields,field_description:integration.field_mixin_integration_receiver__rate_limit_enabled
+msgid "Enable Rate Limiting"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_receiver__retry_enabled
+#: model:ir.model.fields,field_description:integration.field_integration_service__retry_enabled
+#: model:ir.model.fields,field_description:integration.field_mixin_integration_channel__retry_enabled
+#: model:ir.model.fields,field_description:integration.field_mixin_integration_receiver__retry_enabled
+msgid "Enable Retry"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,help:integration.field_integration_receiver__rate_limit_enabled
+#: model:ir.model.fields,help:integration.field_integration_service__rate_limit_enabled
+#: model:ir.model.fields,help:integration.field_mixin_inbound_gate__rate_limit_enabled
+#: model:ir.model.fields,help:integration.field_mixin_integration_channel__rate_limit_enabled
+#: model:ir.model.fields,help:integration.field_mixin_integration_receiver__rate_limit_enabled
+msgid "Enable rate limiting using token bucket algorithm"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,help:integration.field_integration_receiver__timestamp_verification_enabled
+#: model:ir.model.fields,help:integration.field_mixin_inbound_gate__timestamp_verification_enabled
+#: model:ir.model.fields,help:integration.field_mixin_integration_receiver__timestamp_verification_enabled
+msgid "Enable timestamp verification to prevent replay attacks"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,help:integration.field_integration_receiver__credential_id
+#: model:ir.model.fields,help:integration.field_integration_service__credential_id
+#: model:ir.model.fields,help:integration.field_mixin_inbound_gate__credential_id
+#: model:ir.model.fields,help:integration.field_mixin_integration_channel__credential_id
+#: model:ir.model.fields,help:integration.field_mixin_integration_receiver__credential_id
+msgid "Encrypted credential for authentication. Managed by credential."
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_response_cache__endpoint_id
+msgid "Endpoint"
+msgstr ""
+
+#. module: integration
+#. odoo-python
+#: code:addons/integration/models/ir_actions_server.py:0
+msgid ""
+"Endpoint '%(endpoint)s' has retry enabled, which would hold a worker through"
+" the backoff after the transaction has already committed. Turn retry off on "
+"the endpoint, or point '%(name)s' at one that does not retry."
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_service__endpoint_url
+msgid "Endpoint Url"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_service__endpoint_url_test
+msgid "Endpoint Url Test"
+msgstr ""
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_integration_service_form
+msgid "Endpoints"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_connection__environment
+#: model:ir.model.fields,field_description:integration.field_integration_service__environment
+#: model_terms:ir.ui.view,arch_db:integration.view_api_credential_search
+#: model_terms:ir.ui.view,arch_db:integration.view_integration_connection_search
+#: model_terms:ir.ui.view,arch_db:integration.view_integration_service_search
+msgid "Environment"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_stream_outbox__error
+#: model:ir.model.fields.selection,name:integration.selection__integration_stream__state__error
+#: model_terms:ir.ui.view,arch_db:integration.view_integration_exchange_form
+msgid "Error"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_exchange__error_message
+msgid "Error Message"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_exchange__error_type
+msgid "Error Type"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_receiver__event_count
+#: model:ir.model.fields,field_description:integration.field_mixin_integration_receiver__event_count
+msgid "Event Count"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_exchange__event_id_external
+msgid "Event Id External"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_receiver__event_log_ids
+#: model:ir.model.fields,field_description:integration.field_integration_service__event_log_ids
+#: model:ir.model.fields,field_description:integration.field_mixin_integration_channel__event_log_ids
+#: model:ir.model.fields,field_description:integration.field_mixin_integration_receiver__event_log_ids
+msgid "Event Log"
+msgstr ""
+
+#. module: integration
+#: model:ir.actions.act_window,name:integration.action_integration_exchange
+#: model:ir.ui.menu,name:integration.menu_integration_exchanges
+msgid "Event Logs"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_exchange__event_type
+msgid "Event Type"
+msgstr ""
+
+#. module: integration
+#. odoo-python
+#: code:addons/integration/models/integration_exchange.py:0
+msgid "Event has been queued for retry"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields.selection,name:integration.selection__integration_exchange__performance_rating__excellent
+msgid "Excellent (< 100ms)"
+msgstr ""
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_api_credential_form
+msgid "Expiration"
+msgstr ""
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_api_credential_search
+msgid "Expired"
+msgstr ""
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_api_credential_search
+msgid "Expiring Soon"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields.selection,name:integration.selection__device_device__retry_backoff_type__exponential
+#: model:ir.model.fields.selection,name:integration.selection__integration_receiver__retry_backoff_type__exponential
+#: model:ir.model.fields.selection,name:integration.selection__integration_service__retry_backoff_type__exponential
+#: model:ir.model.fields.selection,name:integration.selection__mixin_integration_channel__retry_backoff_type__exponential
+#: model:ir.model.fields.selection,name:integration.selection__mixin_integration_receiver__retry_backoff_type__exponential
+msgid "Exponential Backoff"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields.selection,name:integration.selection__integration_exchange__state__failed
+#: model:ir.model.fields.selection,name:integration.selection__integration_service__cache_health__failed
+#: model:ir.model.fields.selection,name:integration.selection__integration_stream_outbox__state__failed
+#: model_terms:ir.ui.view,arch_db:integration.view_integration_exchange_search
+msgid "Failed"
+msgstr ""
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_api_credential_access_log_search
+msgid "Failed Access"
+msgstr ""
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_api_credential_access_log_form
+msgid "Failure Information"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_credential_access_log__failure_reason
+msgid "Failure Reason"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_connection__breaker_failure_window
+msgid "Failure Window (s)"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_connection__breaker_failure_threshold
+msgid "Failures Before Pausing"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_credential_access_log__field_accessed
+msgid "Field Accessed"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields.selection,name:integration.selection__device_device__retry_backoff_type__fixed
+#: model:ir.model.fields.selection,name:integration.selection__integration_receiver__retry_backoff_type__fixed
+#: model:ir.model.fields.selection,name:integration.selection__integration_service__retry_backoff_type__fixed
+#: model:ir.model.fields.selection,name:integration.selection__mixin_integration_channel__retry_backoff_type__fixed
+#: model:ir.model.fields.selection,name:integration.selection__mixin_integration_receiver__retry_backoff_type__fixed
+msgid "Fixed Delay"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_stream__frames_in
+msgid "Frames In"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_stream__frames_out
+msgid "Frames Out"
+msgstr ""
+
+#. module: integration
+#: model:integration.service,description:integration.demo_service_coingecko
+msgid ""
+"Free cryptocurrency data API.\n"
+"Get real-time crypto prices, market data, historical data, and more for 10,000+ cryptocurrencies."
+msgstr ""
+
+#. module: integration
+#: model:integration.service,description:integration.demo_service_jsonplaceholder
+msgid "Free fake REST API for testing and prototyping"
+msgstr ""
+
+#. module: integration
+#: model:integration.service,description:integration.demo_service_openmeteo
+msgid ""
+"Free weather forecast API with no API key required.\n"
+"Get weather forecasts, historical weather data, and climate information worldwide."
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,help:integration.field_integration_exchange__stack_trace
+msgid "Full stack trace for debugging failed events"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields.selection,name:integration.selection__integration_service__category__geocoding
+msgid "Geocoding & Maps"
+msgstr ""
+
+#. module: integration
+#: model:integration.service,description:integration.demo_service_restcountries
+msgid ""
+"Get information about countries via a RESTful API.\n"
+"Provides data about countries including names, capitals, currencies, languages, flags, and more."
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields.selection,name:integration.selection__integration_exchange__performance_rating__good
+msgid "Good (100-500ms)"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,help:integration.field_integration_exchange__user_agent
+msgid "HTTP User-Agent header from the inbound request"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,help:integration.field_integration_receiver__signature_header
+#: model:ir.model.fields,help:integration.field_mixin_inbound_gate__signature_header
+#: model:ir.model.fields,help:integration.field_mixin_integration_receiver__signature_header
+msgid "HTTP header containing the HMAC signature"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,help:integration.field_integration_receiver__timestamp_header
+#: model:ir.model.fields,help:integration.field_mixin_inbound_gate__timestamp_header
+#: model:ir.model.fields,help:integration.field_mixin_integration_receiver__timestamp_header
+msgid "HTTP header containing the request timestamp"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,help:integration.field_integration_service__api_version_header
+msgid ""
+"Header carrying the API Version for a vendor that names its own — "
+"'anthropic-version' for Anthropic. Leave empty when the version travels the "
+"generic way (see Send Generic Version Headers) or not in a header at all, as"
+" Google's does in the URL path."
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,help:integration.field_integration_service__api_key_header
+msgid ""
+"Header carrying the API key for this vendor, when it wants one of its own — "
+"'x-api-key' for Anthropic, 'x-goog-api-key' for Google. Leave empty for the "
+"generic 'Authorization: Bearer' and 'X-API-Key' pair, which most vendors "
+"accept."
+msgstr ""
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_integration_response_cache_form
+msgid "Headers"
+msgstr ""
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_api_credential_form
+msgid "Headers & Metadata"
+msgstr ""
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_integration_connection_form
+msgid "Health"
+msgstr ""
+
+#. module: integration
+#. odoo-python
+#: code:addons/integration/models/integration_service.py:0
+#: model_terms:ir.ui.view,arch_db:integration.view_integration_service_form
+msgid "Health Check"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_service__health_check_enabled
+msgid "Health Check Enabled"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_service__health_check_endpoint
+msgid "Health Check Endpoint"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_service__health_check_environment
+msgid "Health Check Environment"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_service__health_check_interval
+msgid "Health Check Interval"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_service__health_message
+msgid "Health Message"
+msgstr ""
+
+#. module: integration
+#. odoo-python
+#: code:addons/integration/models/integration_service.py:0
+msgid "Health check completed for %s service(s)."
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields.selection,name:integration.selection__integration_service__cache_health__healthy
+#: model_terms:ir.ui.view,arch_db:integration.view_integration_service_search
+msgid "Healthy"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_stream__heartbeat_seconds
+msgid "Heartbeat Seconds"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_receiver__contract_limits
+#: model:ir.model.fields,field_description:integration.field_mixin_inbound_gate__contract_limits
+#: model:ir.model.fields,field_description:integration.field_mixin_integration_receiver__contract_limits
+msgid "Held To"
+msgstr ""
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_integration_stream_form
+msgid "Held by"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_response_cache__hit_count
+msgid "Hit Count"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,help:integration.field_integration_service__allowed_hosts
+msgid ""
+"Hosts, besides those of the endpoint URLs, that may receive this endpoint's "
+"credential, separated by commas. 'private' admits any private-network host, "
+"for an endpoint that reaches devices at their own addresses. A call to any "
+"other host that would carry the credential is refused."
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,help:integration.field_res_config_settings__integration_log_retention_days
+msgid "How long to keep request logs before automatic deletion"
+msgstr ""
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.res_config_settings_view_form_inherit
+msgid "How long to keep request logs before deletion"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,help:integration.field_integration_stream__heartbeat_seconds
+msgid "How often the wire is asked whether it is still open."
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,help:integration.field_integration_receiver__name
+#: model:ir.model.fields,help:integration.field_integration_service__name
+#: model:ir.model.fields,help:integration.field_mixin_integration_channel__name
+#: model:ir.model.fields,help:integration.field_mixin_integration_receiver__name
+msgid "Human-readable name for this channel"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_credential_access_log__id
+#: model:ir.model.fields,field_description:integration.field_credential_credential__id
+#: model:ir.model.fields,field_description:integration.field_integration_connection__id
+#: model:ir.model.fields,field_description:integration.field_integration_egress_purpose__id
+#: model:ir.model.fields,field_description:integration.field_integration_exchange__id
+#: model:ir.model.fields,field_description:integration.field_integration_response_cache__id
+#: model:ir.model.fields,field_description:integration.field_integration_service__id
+#: model:ir.model.fields,field_description:integration.field_integration_stream__id
+#: model:ir.model.fields,field_description:integration.field_integration_stream_outbox__id
+#: model:ir.model.fields,field_description:integration.field_ir_egress__id
+#: model:ir.model.fields,field_description:integration.field_mixin_inbound_gate__id
+#: model:ir.model.fields,field_description:integration.field_mixin_integration_channel__id
+#: model:ir.model.fields,field_description:integration.field_mixin_integration_connected__id
+#: model:ir.model.fields,field_description:integration.field_mixin_integration_receiver__id
+msgid "ID"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,help:integration.field_integration_exchange__source_ip
+msgid "IP address of the client that sent the event"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields.selection,name:integration.selection__integration_exchange__direction__inbound
+#: model_terms:ir.ui.view,arch_db:integration.view_integration_exchange_search
+msgid "Inbound"
+msgstr ""
+
+#. module: integration
+#: model:ir.model,name:integration.model_mixin_integration_receiver
+msgid "Inbound Endpoint"
+msgstr ""
+
+#. module: integration
+#: model:ir.model,name:integration.model_mixin_inbound_gate
+msgid "Inbound Request Gate Mixin"
+msgstr ""
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_integration_service_form
+msgid "Info"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_receiver__retry_initial_delay
+#: model:ir.model.fields,field_description:integration.field_integration_service__retry_initial_delay
+#: model:ir.model.fields,field_description:integration.field_mixin_integration_channel__retry_initial_delay
+#: model:ir.model.fields,field_description:integration.field_mixin_integration_receiver__retry_initial_delay
+msgid "Initial Retry Delay (seconds)"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,help:integration.field_integration_receiver__retry_initial_delay
+#: model:ir.model.fields,help:integration.field_integration_service__retry_initial_delay
+#: model:ir.model.fields,help:integration.field_mixin_integration_channel__retry_initial_delay
+#: model:ir.model.fields,help:integration.field_mixin_integration_receiver__retry_initial_delay
+msgid "Initial delay before first retry. Increases exponentially."
+msgstr ""
+
+#. module: integration
+#. odoo-python
+#: code:addons/integration/models/mixin_integration_channel.py:0
+msgid "Initial retry delay must be greater than 0"
+msgstr ""
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_api_credential_form_oauth
+msgid "Initiate OAuth 2.0 authorization flow to obtain access tokens"
+msgstr ""
+
+#. module: integration
+#: model:ir.model,name:integration.model_integration_connection
+msgid "Integration Connection"
+msgstr ""
+
+#. module: integration
+#. odoo-python
+#: code:addons/integration/models/credential_credential.py:0
+msgid "Invalid Configuration"
+msgstr ""
+
+#. module: integration
+#. odoo-python
+#: code:addons/integration/controllers/oauth.py:0
+msgid "Invalid database in state parameter"
+msgstr ""
+
+#. module: integration
+#. odoo-python
+#: code:addons/integration/tools/api_client.py:0
+msgid "Invalid or inactive credential"
+msgstr ""
+
+#. module: integration
+#. odoo-python
+#: code:addons/integration/controllers/oauth.py:0
+msgid "Invalid or missing OAuth state nonce"
+msgstr ""
+
+#. module: integration
+#. odoo-python
+#: code:addons/integration/controllers/oauth.py:0
+msgid "Invalid state parameter"
+msgstr ""
+
+#. module: integration
+#. odoo-python
+#: code:addons/integration/controllers/oauth.py:0
+msgid ""
+"Invalid state timestamp (from future). Check your server clock "
+"synchronization."
+msgstr ""
+
+#. module: integration
+#. odoo-python
+#: code:addons/integration/controllers/oauth.py:0
+msgid "Invalid timestamp format in state parameter"
+msgstr ""
+
+#. module: integration
+#. odoo-python
+#: code:addons/integration/controllers/oauth.py:0
+msgid "Invalid token response format: %s"
+msgstr ""
+
+#. module: integration
+#. odoo-python
+#: code:addons/integration/controllers/oauth.py:0
+msgid "Invalid user in state parameter"
+msgstr ""
+
+#. module: integration
+#. odoo-python
+#: code:addons/integration/models/mixin_integration_receiver.py:0
+msgid "Invalid verification method format: '%s'"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_receiver__ip_whitelist
+#: model:ir.model.fields,field_description:integration.field_mixin_inbound_gate__ip_whitelist
+#: model:ir.model.fields,field_description:integration.field_mixin_integration_receiver__ip_whitelist
+msgid "Ip Whitelist"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_response_cache__is_expired
+msgid "Is Expired"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_service__is_healthy
+msgid "Is Healthy"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_exchange__is_success
+msgid "Is Success"
+msgstr ""
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_api_credential_form
+msgid ""
+"JSON format required. Example: {'api_key': 'value', 'api_secret': 'value'}"
+msgstr ""
+
+#. module: integration
+#: model:integration.service,name:integration.demo_service_jsonplaceholder
+msgid "JSONPlaceholder"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,help:integration.field_integration_connection__synced_from_credential
+msgid ""
+"Kept in step with its credential's Outbound Endpoint, company, owner, "
+"environment and priority, for code that still binds credentials that way."
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,help:integration.field_integration_service__max_response_bytes
+msgid ""
+"Largest response body accepted from this service; 0 keeps the server-wide "
+"cap of the outbound pipeline."
+msgstr ""
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_api_credential_access_log_search
+msgid "Last 30 Days"
+msgstr ""
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_api_credential_access_log_search
+msgid "Last 7 Days"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_response_cache__last_accessed
+msgid "Last Accessed"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_receiver__date_last_activity
+#: model:ir.model.fields,field_description:integration.field_integration_service__date_last_activity
+#: model:ir.model.fields,field_description:integration.field_mixin_integration_channel__date_last_activity
+#: model:ir.model.fields,field_description:integration.field_mixin_integration_receiver__date_last_activity
+msgid "Last Activity"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_receiver__contract_last_call
+#: model:ir.model.fields,field_description:integration.field_mixin_inbound_gate__contract_last_call
+#: model:ir.model.fields,field_description:integration.field_mixin_integration_receiver__contract_last_call
+msgid "Last Call"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_connection__last_error
+msgid "Last Error"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_connection__last_failure_at
+msgid "Last Failure At"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_service__last_health_check
+msgid "Last Health Check"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_exchange__last_seen_at
+msgid "Last Seen At"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_connection__last_success_at
+msgid "Last Success At"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_connection__write_uid
+#: model:ir.model.fields,field_description:integration.field_integration_egress_purpose__write_uid
+#: model:ir.model.fields,field_description:integration.field_integration_exchange__write_uid
+#: model:ir.model.fields,field_description:integration.field_integration_receiver__write_uid
+#: model:ir.model.fields,field_description:integration.field_integration_response_cache__write_uid
+#: model:ir.model.fields,field_description:integration.field_integration_service__write_uid
+#: model:ir.model.fields,field_description:integration.field_integration_stream__write_uid
+#: model:ir.model.fields,field_description:integration.field_integration_stream_outbox__write_uid
+msgid "Last Updated by"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_connection__write_date
+#: model:ir.model.fields,field_description:integration.field_integration_egress_purpose__write_date
+#: model:ir.model.fields,field_description:integration.field_integration_exchange__write_date
+#: model:ir.model.fields,field_description:integration.field_integration_receiver__write_date
+#: model:ir.model.fields,field_description:integration.field_integration_response_cache__write_date
+#: model:ir.model.fields,field_description:integration.field_integration_service__write_date
+#: model:ir.model.fields,field_description:integration.field_integration_stream__write_date
+#: model:ir.model.fields,field_description:integration.field_integration_stream_outbox__write_date
+msgid "Last Updated on"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,help:integration.field_integration_receiver__rate_limit_window_seconds
+#: model:ir.model.fields,help:integration.field_mixin_inbound_gate__rate_limit_window_seconds
+#: model:ir.model.fields,help:integration.field_mixin_integration_receiver__rate_limit_window_seconds
+msgid "Length of the rate-limit window in seconds."
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,help:integration.field_integration_service__allow_user_credentials
+msgid ""
+"Let a user hold their own credential for this endpoint, so calls they "
+"trigger are attributed to them rather than to the company. When a user has "
+"no personal credential the company one is used, so turning this on changes "
+"nothing until someone creates one."
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields.selection,name:integration.selection__device_device__retry_backoff_type__linear
+#: model:ir.model.fields.selection,name:integration.selection__integration_receiver__retry_backoff_type__linear
+#: model:ir.model.fields.selection,name:integration.selection__integration_service__retry_backoff_type__linear
+#: model:ir.model.fields.selection,name:integration.selection__mixin_integration_channel__retry_backoff_type__linear
+#: model:ir.model.fields.selection,name:integration.selection__mixin_integration_receiver__retry_backoff_type__linear
+msgid "Linear Backoff"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_service__log_request_payload
+msgid "Log Request Payload"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_receiver__log_request_payload_max_bytes
+#: model:ir.model.fields,field_description:integration.field_mixin_inbound_gate__log_request_payload_max_bytes
+#: model:ir.model.fields,field_description:integration.field_mixin_integration_receiver__log_request_payload_max_bytes
+msgid "Log Request Payload Max Bytes"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_receiver__log_retention_days
+#: model:ir.model.fields,field_description:integration.field_integration_service__log_retention_days
+#: model:ir.model.fields,field_description:integration.field_mixin_inbound_gate__log_retention_days
+#: model:ir.model.fields,field_description:integration.field_mixin_integration_receiver__log_retention_days
+msgid "Log Retention Days"
+msgstr ""
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.res_config_settings_view_form_inherit
+msgid "Log Retention Period"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_stream__login
+msgid "Login"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_connection__breaker_max_cooldown
+msgid "Longest Pause (s)"
+msgstr ""
+
+#. module: integration
+#: model:res.groups,name:integration.group_api_transport_manager
+msgid "Manager"
+msgstr ""
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.res_config_settings_view_form_inherit
+msgid "Max Entries"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_receiver__max_payload_size
+#: model:ir.model.fields,field_description:integration.field_mixin_inbound_gate__max_payload_size
+#: model:ir.model.fields,field_description:integration.field_mixin_integration_receiver__max_payload_size
+msgid "Max Payload Size"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_receiver__rate_limit_requests
+#: model:ir.model.fields,field_description:integration.field_integration_service__rate_limit_requests
+#: model:ir.model.fields,field_description:integration.field_mixin_inbound_gate__rate_limit_requests
+#: model:ir.model.fields,field_description:integration.field_mixin_integration_channel__rate_limit_requests
+#: model:ir.model.fields,field_description:integration.field_mixin_integration_receiver__rate_limit_requests
+msgid "Max Requests"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_service__max_response_bytes
+msgid "Max Response (bytes)"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_receiver__retry_max_attempts
+#: model:ir.model.fields,field_description:integration.field_integration_service__retry_max_attempts
+#: model:ir.model.fields,field_description:integration.field_mixin_integration_channel__retry_max_attempts
+#: model:ir.model.fields,field_description:integration.field_mixin_integration_receiver__retry_max_attempts
+msgid "Max Retry Attempts"
+msgstr ""
+
+#. module: integration
+#. odoo-python
+#: code:addons/integration/models/mixin_integration_receiver.py:0
+msgid "Max payload size cannot exceed %(max_mb).0fMB (%(max_bytes)d bytes)"
+msgstr ""
+
+#. module: integration
+#. odoo-python
+#: code:addons/integration/models/mixin_integration_receiver.py:0
+msgid "Max payload size must be greater than 0"
+msgstr ""
+
+#. module: integration
+#. odoo-python
+#: code:addons/integration/models/mixin_integration_channel.py:0
+msgid "Max retry attempts must be greater than 0"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,help:integration.field_integration_receiver__timestamp_max_age_seconds
+#: model:ir.model.fields,help:integration.field_mixin_inbound_gate__timestamp_max_age_seconds
+#: model:ir.model.fields,help:integration.field_mixin_integration_receiver__timestamp_max_age_seconds
+msgid "Maximum age of request timestamp. Default: 5 minutes"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,help:integration.field_integration_receiver__max_payload_size
+#: model:ir.model.fields,help:integration.field_mixin_inbound_gate__max_payload_size
+#: model:ir.model.fields,help:integration.field_mixin_integration_receiver__max_payload_size
+msgid "Maximum allowed payload size for DoS prevention. Default: 1MB"
+msgstr ""
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.res_config_settings_view_form_inherit
+msgid "Maximum number of cached API responses"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,help:integration.field_res_config_settings__integration_max_cache_entries
+msgid "Maximum number of cached API responses to keep"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,help:integration.field_integration_receiver__rate_limit_requests
+#: model:ir.model.fields,help:integration.field_integration_service__rate_limit_requests
+#: model:ir.model.fields,help:integration.field_mixin_inbound_gate__rate_limit_requests
+#: model:ir.model.fields,help:integration.field_mixin_integration_channel__rate_limit_requests
+#: model:ir.model.fields,help:integration.field_mixin_integration_receiver__rate_limit_requests
+msgid "Maximum number of requests allowed per time period"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,help:integration.field_integration_receiver__retry_max_attempts
+#: model:ir.model.fields,help:integration.field_integration_service__retry_max_attempts
+#: model:ir.model.fields,help:integration.field_mixin_integration_channel__retry_max_attempts
+#: model:ir.model.fields,help:integration.field_mixin_integration_receiver__retry_max_attempts
+msgid "Maximum number of retry attempts before marking as failed"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_stream_outbox__meta
+msgid "Meta"
+msgstr ""
+
+#. module: integration
+#. odoo-python
+#: code:addons/integration/models/mixin_integration_receiver.py:0
+msgid "Method '%(method)s' not found in model '%(model)s'"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,help:integration.field_integration_service__auth_type
+#: model:ir.model.fields,help:integration.field_mixin_inbound_gate__auth_type
+#: model:ir.model.fields,help:integration.field_mixin_integration_channel__auth_type
+#: model:ir.model.fields,help:integration.field_mixin_integration_receiver__auth_type
+msgid "Method used for authentication"
+msgstr ""
+
+#. module: integration
+#. odoo-python
+#: code:addons/integration/controllers/oauth.py:0
+msgid "Missing access_token in response"
+msgstr ""
+
+#. module: integration
+#. odoo-python
+#: code:addons/integration/controllers/oauth.py:0
+msgid "Missing authorization code"
+msgstr ""
+
+#. module: integration
+#. odoo-python
+#: code:addons/integration/controllers/oauth.py:0
+msgid "Missing credential_id in state"
+msgstr ""
+
+#. module: integration
+#. odoo-python
+#: code:addons/integration/controllers/oauth.py:0
+msgid "Missing state parameter"
+msgstr ""
+
+#. module: integration
+#. odoo-python
+#: code:addons/integration/controllers/oauth.py:0
+msgid "Missing timestamp in state parameter"
+msgstr ""
+
+#. module: integration
+#. odoo-python
+#: code:addons/integration/models/mixin_integration_receiver.py:0
+msgid "Model '%s' does not exist"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_receiver__contract_scheme
+#: model:ir.model.fields,field_description:integration.field_mixin_inbound_gate__contract_scheme
+#: model:ir.model.fields,field_description:integration.field_mixin_integration_receiver__contract_scheme
+msgid "Must Send"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_connection__name
+#: model:ir.model.fields,field_description:integration.field_integration_receiver__name
+#: model:ir.model.fields,field_description:integration.field_integration_service__name
+#: model:ir.model.fields,field_description:integration.field_integration_stream__name
+#: model:ir.model.fields,field_description:integration.field_mixin_integration_channel__name
+#: model:ir.model.fields,field_description:integration.field_mixin_integration_receiver__name
+msgid "Name"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,help:integration.field_credential_access_log__service_name
+msgid "Name of the API service (if credential is linked to one)"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields.selection,name:integration.selection__integration_exchange__error_type__network
+msgid "Network Error"
+msgstr ""
+
+#. module: integration
+#. odoo-python
+#: code:addons/integration/models/integration_service.py:0
+msgid "No active credentials configured"
+msgstr ""
+
+#. module: integration
+#. odoo-python
+#: code:addons/integration/tools/api_client.py:0
+msgid ""
+"No active credentials for service '%(service)s' and company ID %(company)s "
+"in its %(environment)s environment"
+msgstr ""
+
+#. module: integration
+#. odoo-python
+#: code:addons/integration/models/integration_exchange.py:0
+msgid "No channel associated with this event"
+msgstr ""
+
+#. module: integration
+#: model_terms:ir.actions.act_window,help:integration.action_integration_connection
+msgid "No connection yet"
+msgstr ""
+
+#. module: integration
+#: model_terms:ir.actions.act_window,help:integration.action_api_credential_access_log
+msgid "No credential access logs yet"
+msgstr ""
+
+#. module: integration
+#. odoo-python
+#: code:addons/integration/models/mixin_inbound_gate.py:0
+msgid "No credential configured for endpoint '%s'"
+msgstr ""
+
+#. module: integration
+#: model_terms:ir.actions.act_window,help:integration.action_integration_receiver
+msgid "No receiver yet"
+msgstr ""
+
+#. module: integration
+#: model_terms:ir.actions.act_window,help:integration.action_integration_stream
+msgid "No stream yet"
+msgstr ""
+
+#. module: integration
+#: model_terms:ir.actions.act_window,help:integration.action_api_credential_security_report
+msgid "No suspicious access detected"
+msgstr ""
+
+#. module: integration
+#. odoo-python
+#: code:addons/integration/models/credential_credential.py:0
+msgid "Not Applicable"
+msgstr ""
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_integration_stream_search
+msgid "Not open"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields.selection,name:integration.selection__integration_service__auth_type__oauth2
+#: model_terms:ir.ui.view,arch_db:integration.view_api_credential_form_oauth
+#: model_terms:ir.ui.view,arch_db:integration.view_integration_service_form
+msgid "OAuth 2.0"
+msgstr ""
+
+#. module: integration
+#. odoo-python
+#: code:addons/integration/controllers/oauth.py:0
+msgid "OAuth Authorization Error"
+msgstr ""
+
+#. module: integration
+#. odoo-python
+#: code:addons/integration/controllers/oauth.py:0
+msgid "OAuth Authorization URL not configured for service '%s'"
+msgstr ""
+
+#. module: integration
+#. odoo-python
+#: code:addons/integration/controllers/oauth.py:0
+msgid ""
+"OAuth Client ID not configured for service '%(service)s'. Set it on the "
+"service, or on the credential itself."
+msgstr ""
+
+#. module: integration
+#. odoo-python
+#: code:addons/integration/controllers/oauth.py:0
+msgid "OAuth Error"
+msgstr ""
+
+#. module: integration
+#. odoo-python
+#: code:addons/integration/controllers/oauth.py:0
+msgid "OAuth Token URL not configured for service '%s'"
+msgstr ""
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_api_credential_form_oauth
+msgid "OAuth access token obtained via authorization flow"
+msgstr ""
+
+#. module: integration
+#. odoo-python
+#: code:addons/integration/controllers/oauth.py:0
+msgid "OAuth authorization was denied: %s"
+msgstr ""
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_api_credential_form_oauth
+msgid ""
+"OAuth client ID issued by the provider (optional if set on the service)"
+msgstr ""
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_api_credential_form_oauth
+msgid "OAuth client secret used during the token exchange"
+msgstr ""
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_api_credential_form_oauth
+msgid "OAuth refresh token for obtaining new access tokens"
+msgstr ""
+
+#. module: integration
+#. odoo-python
+#: code:addons/integration/controllers/oauth.py:0
+msgid ""
+"OAuth requires the 'web.base.url' system parameter to be configured. Set it "
+"in Settings → Technical → System Parameters before using OAuth."
+msgstr ""
+
+#. module: integration
+#. odoo-python
+#: code:addons/integration/controllers/oauth.py:0
+msgid ""
+"OAuth state expired (%d minutes old). The authorization flow took too long. "
+"Please try again."
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_service__oauth_auth_endpoint
+msgid "Oauth Auth Endpoint"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_service__oauth_client_id
+msgid "Oauth Client"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_service__oauth_scope
+msgid "Oauth Scope"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_service__oauth_token_endpoint
+msgid "Oauth Token Endpoint"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,help:integration.field_integration_exchange__origin_model
+msgid "Odoo model that triggered this communication"
+msgstr ""
+
+#. module: integration
+#. odoo-python
+#: code:addons/integration/models/integration_exchange.py:0
+msgid "Only failed, pending, or scheduled-retry events can be retried"
+msgstr ""
+
+#. module: integration
+#. odoo-python
+#: code:addons/integration/models/integration_connection.py:0
+msgid ""
+"Only one active connection per service, company and environment, and per "
+"user for a personal one, unless the service allows several."
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields.selection,name:integration.selection__integration_stream__state__open
+#: model_terms:ir.ui.view,arch_db:integration.view_integration_stream_search
+msgid "Open"
+msgstr ""
+
+#. module: integration
+#: model:integration.service,name:integration.demo_service_openmeteo
+msgid "Open-Meteo Weather API"
+msgstr ""
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_api_credential_access_log_search
+msgid "Operation"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_stream__options
+#: model_terms:ir.ui.view,arch_db:integration.view_integration_stream_form
+msgid "Options"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_exchange__origin_model
+msgid "Origin Model"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_exchange__origin_record_id
+msgid "Origin Record"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields.selection,name:integration.selection__integration_exchange__error_type__other
+#: model:ir.model.fields.selection,name:integration.selection__integration_service__category__other
+msgid "Other"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields.selection,name:integration.selection__integration_exchange__direction__outbound
+#: model_terms:ir.ui.view,arch_db:integration.view_integration_exchange_search
+msgid "Outbound"
+msgstr ""
+
+#. module: integration
+#: model:ir.model,name:integration.model_integration_service
+#: model:ir.model.fields,field_description:integration.field_credential_credential__endpoint_id
+msgid "Outbound Endpoint"
+msgstr ""
+
+#. module: integration
+#: model:ir.model,name:integration.model_ir_egress
+msgid "Outbound HTTP"
+msgstr ""
+
+#. module: integration
+#: model:ir.model,name:integration.model_integration_egress_purpose
+msgid "Outbound Purpose"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_stream__outbox_pending_count
+msgid "Outbox Pending Count"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,help:integration.field_integration_connection__base_url
+msgid ""
+"Overrides the service's URL for this connection, for a service whose address"
+" differs per installation: a device, a bridge, a portal."
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_stream__owner
+msgid "Owner"
+msgstr ""
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_integration_connection_form
+msgid "Pause after failures"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields.selection,name:integration.selection__integration_connection__circuit_state__open
+msgid "Paused"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,help:integration.field_integration_connection__circuit_state
+msgid ""
+"Paused after repeated failures: calls fail at once instead of waiting for "
+"their timeout, until a probe succeeds."
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_stream_outbox__payload
+msgid "Payload"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields.selection,name:integration.selection__integration_service__category__payment
+msgid "Payment Gateway"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields.selection,name:integration.selection__integration_exchange__state__pending
+#: model:ir.model.fields.selection,name:integration.selection__integration_stream_outbox__state__pending
+#: model_terms:ir.ui.view,arch_db:integration.view_integration_exchange_search
+msgid "Pending"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields.selection,name:integration.selection__integration_service__rate_limit_period__day
+msgid "Per Day"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields.selection,name:integration.selection__integration_service__rate_limit_period__hour
+msgid "Per Hour"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields.selection,name:integration.selection__integration_service__rate_limit_period__minute
+msgid "Per Minute"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields.selection,name:integration.selection__integration_service__rate_limit_period__second
+msgid "Per Second"
+msgstr ""
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_api_credential_form
+msgid "Performance"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_exchange__performance_rating
+msgid "Performance Rating"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_connection__user_id
+msgid "Personal To"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,help:integration.field_integration_receiver__signature_prefix
+#: model:ir.model.fields,help:integration.field_mixin_inbound_gate__signature_prefix
+#: model:ir.model.fields,help:integration.field_mixin_integration_receiver__signature_prefix
+msgid "Prefix before signature value (e.g., 'sha256=')"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,help:integration.field_integration_receiver__duplicate_detection_enabled
+#: model:ir.model.fields,help:integration.field_mixin_integration_receiver__duplicate_detection_enabled
+msgid "Prevent duplicate event processing using payload hash"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields.selection,name:integration.selection__integration_exchange__state__processing
+msgid "Processing"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_receiver__processing_mode
+#: model:ir.model.fields,field_description:integration.field_mixin_integration_receiver__processing_mode
+msgid "Processing Mode"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_exchange__processing_result
+msgid "Processing Result"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,help:integration.field_integration_exchange__duration_ms
+msgid "Processing time in milliseconds"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields.selection,name:integration.selection__integration_connection__environment__production
+#: model:ir.model.fields.selection,name:integration.selection__integration_service__environment__production
+#: model:ir.model.fields.selection,name:integration.selection__integration_service__health_check_environment__production
+#: model_terms:ir.ui.view,arch_db:integration.view_api_credential_search
+#: model_terms:ir.ui.view,arch_db:integration.view_integration_service_search
+msgid "Production"
+msgstr ""
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_integration_connection_form
+msgid "Protection"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_stream__protocol
+#: model_terms:ir.ui.view,arch_db:integration.view_integration_stream_search
+msgid "Protocol"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,help:integration.field_integration_stream__options
+msgid "Protocol options: TLS, QoS, client id, unit id."
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_service__provider
+msgid "Provider"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_egress_purpose__purpose
+msgid "Purpose"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,help:integration.field_integration_receiver__verification_method
+#: model:ir.model.fields,help:integration.field_mixin_inbound_gate__verification_method
+#: model:ir.model.fields,help:integration.field_mixin_integration_receiver__verification_method
+msgid ""
+"Python method path for custom verification (format: 'model.method_name'). "
+"Method signature: method(headers: dict, body: str) -> bool"
+msgstr ""
+
+#. module: integration
+#: model:integration.service,name:integration.demo_service_restcountries
+msgid "REST Countries API"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields.selection,name:integration.selection__integration_exchange__error_type__rate_limit
+msgid "Rate Limit Exceeded"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_service__rate_limit_period
+msgid "Rate Limit Period"
+msgstr ""
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_integration_service_form
+msgid "Rate Limiting"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_receiver__rate_limit_window_seconds
+#: model:ir.model.fields,field_description:integration.field_mixin_inbound_gate__rate_limit_window_seconds
+#: model:ir.model.fields,field_description:integration.field_mixin_integration_receiver__rate_limit_window_seconds
+msgid "Rate Window (s)"
+msgstr ""
+
+#. module: integration
+#. odoo-python
+#: code:addons/integration/models/integration_connection.py:0
+msgid "Rate limit exceeded for service '%(service)s'. Please try again later."
+msgstr ""
+
+#. module: integration
+#. odoo-python
+#: code:addons/integration/tools/api_client.py:0
+msgid "Rate limit exceeded: %s"
+msgstr ""
+
+#. module: integration
+#. odoo-python
+#: code:addons/integration/models/mixin_integration_channel.py:0
+msgid "Rate limit requests must be greater than 0"
+msgstr ""
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_api_credential_form_oauth
+msgid "Re-authorize"
+msgstr ""
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_api_credential_access_log_search
+msgid "Read"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,help:integration.field_credential_access_log__failure_reason
+msgid "Reason for access failure (if applicable)"
+msgstr ""
+
+#. module: integration
+#. odoo-python
+#: code:addons/integration/models/integration_receiver.py:0
+msgid ""
+"Receiver %s is checked by its subject, and the request resolved none that "
+"can verify it."
+msgstr ""
+
+#. module: integration
+#: model:ir.actions.act_window,name:integration.action_integration_receiver
+#: model:ir.ui.menu,name:integration.menu_integration_receiver
+msgid "Receivers"
+msgstr ""
+
+#. module: integration
+#: model:ir.model,name:integration.model_mixin_integration_connected
+msgid "Record With Its Own Connection"
+msgstr ""
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_integration_exchange_search
+msgid "Refusal"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_exchange__refusal_reason
+msgid "Refusal Reason"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields.selection,name:integration.selection__integration_exchange__state__refused
+#: model_terms:ir.ui.view,arch_db:integration.view_integration_exchange_search
+msgid "Refused"
+msgstr ""
+
+#. module: integration
+#: model:ir.actions.act_window,name:integration.action_integration_exchange_refused
+#: model:ir.ui.menu,name:integration.menu_inbound_access_logs
+msgid "Refused Calls"
+msgstr ""
+
+#. module: integration
+#. odoo-python
+#: code:addons/integration/tools/api_client.py:0
+msgid ""
+"Refusing to call '%(host)s' with TLS verification disabled: it is not a "
+"private-network host, so the credential for service '%(service)s' would be "
+"exposed to whoever answers."
+msgstr ""
+
+#. module: integration
+#. odoo-python
+#: code:addons/integration/tools/api_client.py:0
+msgid ""
+"Refusing to send the credential of service '%(service)s' to '%(host)s'. Add "
+"the host to the endpoint's Allowed Hosts if it is meant to receive it."
+msgstr ""
+
+#. module: integration
+#. odoo-python
+#: code:addons/integration/models/integration_exchange.py:0
+msgid "Related Events"
+msgstr ""
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_integration_exchange_form
+msgid "Request"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_exchange__request_endpoint
+msgid "Request Endpoint"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_exchange__request_headers
+#: model_terms:ir.ui.view,arch_db:integration.view_integration_exchange_form
+msgid "Request Headers"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_res_config_settings__integration_log_retention_days
+msgid "Request Log Retention (days)"
+msgstr ""
+
+#. module: integration
+#. odoo-python
+#: code:addons/integration/models/integration_service.py:0
+msgid "Request Logs"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_exchange__request_method
+msgid "Request Method"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_response_cache__request_params_hash
+msgid "Request Params Hash"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_exchange__request_payload
+#: model_terms:ir.ui.view,arch_db:integration.view_integration_exchange_form
+msgid "Request Payload"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_exchange__request_payload_hash
+msgid "Request Payload Hash"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_exchange__request_payload_hash_override
+msgid "Request Payload Hash Override"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_exchange__request_payload_omitted_bytes
+msgid "Request Payload Omitted Bytes"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_exchange__request_payload_size
+msgid "Request Payload Size"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_exchange__request_url
+#: model:ir.model.fields,field_description:integration.field_integration_response_cache__request_url
+msgid "Request Url"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,help:integration.field_integration_exchange__request_payload
+msgid "Request body (inbound: received payload, outbound: sent body)"
+msgstr ""
+
+#. module: integration
+#. odoo-python
+#: code:addons/integration/tools/api_client.py:0
+msgid "Request failed: %s"
+msgstr ""
+
+#. module: integration
+#. odoo-python
+#: code:addons/integration/tools/api_client.py:0
+msgid "Request timed out: %s"
+msgstr ""
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_integration_service_form
+msgid "Requests"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,help:integration.field_integration_exchange__attempt_count
+msgid ""
+"Requests this row stands for. Above 1 only where repeated refusals from one "
+"caller were collapsed into a single row."
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_stream__res_id
+msgid "Res"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_stream__res_model
+msgid "Res Model"
+msgstr ""
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_integration_exchange_form
+#: model_terms:ir.ui.view,arch_db:integration.view_integration_response_cache_form
+msgid "Response"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_response_cache__response_body
+msgid "Response Body"
+msgstr ""
+
+#. module: integration
+#: model:ir.actions.act_window,name:integration.action_integration_response_cache
+#: model:ir.model,name:integration.model_integration_response_cache
+#: model:ir.ui.menu,name:integration.menu_integration_response_cache
+msgid "Response Cache"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_exchange__response_headers
+#: model:ir.model.fields,field_description:integration.field_integration_response_cache__response_headers
+#: model_terms:ir.ui.view,arch_db:integration.view_integration_exchange_form
+msgid "Response Headers"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_exchange__response_payload
+#: model_terms:ir.ui.view,arch_db:integration.view_integration_exchange_form
+msgid "Response Payload"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_exchange__response_payload_size
+msgid "Response Payload Size"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,help:integration.field_integration_exchange__response_payload
+msgid "Response body (inbound: our response, outbound: received response)"
+msgstr ""
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.res_config_settings_view_form_inherit
+msgid "Retention Days"
+msgstr ""
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_integration_exchange_form
+#: model_terms:ir.ui.view,arch_db:integration.view_integration_service_form
+#: model_terms:ir.ui.view,arch_db:integration.view_integration_stream_outbox_list
+msgid "Retry"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_receiver__retry_backoff_type
+#: model:ir.model.fields,field_description:integration.field_integration_service__retry_backoff_type
+#: model:ir.model.fields,field_description:integration.field_mixin_integration_channel__retry_backoff_type
+#: model:ir.model.fields,field_description:integration.field_mixin_integration_receiver__retry_backoff_type
+msgid "Retry Backoff Type"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_exchange__retry_count
+msgid "Retry Count"
+msgstr ""
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_integration_exchange_form
+msgid "Retry Now"
+msgstr ""
+
+#. module: integration
+#. odoo-python
+#: code:addons/integration/models/integration_exchange.py:0
+#: model:ir.model.fields.selection,name:integration.selection__integration_exchange__state__retry
+msgid "Retry Scheduled"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,help:integration.field_integration_exchange__processing_result
+msgid "Return value or result from handler execution"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_receiver__service_user_id
+#: model:ir.model.fields,field_description:integration.field_mixin_inbound_gate__service_user_id
+#: model:ir.model.fields,field_description:integration.field_mixin_integration_receiver__service_user_id
+msgid "Runs As"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,help:integration.field_integration_receiver__credential_fingerprint
+#: model:ir.model.fields,help:integration.field_integration_service__credential_fingerprint
+#: model:ir.model.fields,help:integration.field_mixin_inbound_gate__credential_fingerprint
+#: model:ir.model.fields,help:integration.field_mixin_integration_channel__credential_fingerprint
+#: model:ir.model.fields,help:integration.field_mixin_integration_receiver__credential_fingerprint
+msgid ""
+"SHA-256 of the credential's secret. Lets a presented token be verified, and "
+"its channel found, without decrypting anything."
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,help:integration.field_integration_exchange__request_payload_hash
+msgid "SHA256 hash for duplicate detection"
+msgstr ""
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_api_credential_search
+msgid "Search API Credentials"
+msgstr ""
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_api_credential_access_log_search
+msgid "Search Credential Access Logs"
+msgstr ""
+
+#. module: integration
+#: model:ir.ui.menu,name:integration.menu_integration_security
+msgid "Security & Audit"
+msgstr ""
+
+#. module: integration
+#: model:ir.ui.menu,name:integration.menu_api_credential_security_report
+msgid "Security Report"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,help:integration.field_integration_service__send_version_headers
+msgid ""
+"Send API-Version and X-API-Version built from the API Version field. Turn "
+"this off for a vendor that carries its version its own way — in the URL "
+"path, or in a header of its own name — where the generic pair is at best "
+"ignored and at worst rejected."
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_service__send_version_headers
+msgid "Send Generic Version Headers"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,help:integration.field_ir_actions_server__webhook_endpoint_id
+#: model:ir.model.fields,help:integration.field_ir_cron__webhook_endpoint_id
+msgid ""
+"Send this webhook through a configured outbound endpoint, so it carries that"
+" endpoint's credential, is subject to its rate limit and is recorded in its "
+"event log. The webhook URL must be on the endpoint's host or listed in its "
+"Allowed Hosts. Leave empty to POST the URL directly with no authentication, "
+"which is what a webhook action does by default."
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields.selection,name:integration.selection__integration_stream_outbox__state__sent
+msgid "Sent"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_connection__sequence
+#: model:ir.model.fields,field_description:integration.field_integration_receiver__sequence
+#: model:ir.model.fields,field_description:integration.field_integration_service__sequence
+#: model:ir.model.fields,field_description:integration.field_mixin_integration_channel__sequence
+#: model:ir.model.fields,field_description:integration.field_mixin_integration_receiver__sequence
+msgid "Sequence"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields.selection,name:integration.selection__integration_exchange__error_type__server
+msgid "Server Error"
+msgstr ""
+
+#. module: integration
+#. odoo-python
+#: code:addons/integration/tools/api_client.py:0
+msgid "Server error: %s"
+msgstr ""
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_integration_connection_form
+msgid "Serves"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_connection__res_model
+#: model:ir.model.fields,field_description:integration.field_integration_receiver__res_model
+msgid "Serves Model"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_receiver__res_purpose
+msgid "Serves Purpose"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_connection__res_id
+#: model:ir.model.fields,field_description:integration.field_integration_receiver__res_id
+msgid "Serves Record"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_credential_access_log__service_name
+#: model:ir.model.fields,field_description:integration.field_integration_connection__service_id
+#: model_terms:ir.ui.view,arch_db:integration.view_api_credential_access_log_search
+#: model_terms:ir.ui.view,arch_db:integration.view_api_credential_search
+#: model_terms:ir.ui.view,arch_db:integration.view_integration_connection_search
+msgid "Service"
+msgstr ""
+
+#. module: integration
+#. odoo-python
+#: code:addons/integration/models/integration_connection.py:0
+msgid ""
+"Service %(service)s calls without verifying TLS, so its connections must "
+"stay on a private network. '%(host)s' is not on one."
+msgstr ""
+
+#. module: integration
+#. odoo-python
+#: code:addons/integration/models/integration_service.py:0
+msgid ""
+"Service %s needs a URL, unless each of its connections carries its own."
+msgstr ""
+
+#. module: integration
+#. odoo-python
+#: code:addons/integration/models/credential_credential.py:0
+msgid "Service '%s' answered with this credential."
+msgstr ""
+
+#. module: integration
+#. odoo-python
+#: code:addons/integration/tools/api_client.py:0
+msgid ""
+"Service '%s' connects each record on its own connection; the call must name "
+"one"
+msgstr ""
+
+#. module: integration
+#. odoo-python
+#: code:addons/integration/models/credential_credential.py:0
+msgid "Service '%s' did not answer successfully."
+msgstr ""
+
+#. module: integration
+#. odoo-python
+#: code:addons/integration/controllers/oauth.py:0
+#: code:addons/integration/models/credential_credential.py:0
+msgid "Service '%s' is not configured for OAuth 2.0 authentication"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_connection__service_environment
+msgid "Service Environment"
+msgstr ""
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_integration_service_form
+msgid "Service Name"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.constraint,message:integration.constraint_integration_service_code_unique
+msgid "Service code must be unique!"
+msgstr ""
+
+#. module: integration
+#: model:integration.service,description:integration.service_test
+msgid "Service for testing and development purposes"
+msgstr ""
+
+#. module: integration
+#. odoo-python
+#: code:addons/integration/models/integration_service.py:0
+msgid "Service responded with HTTP %s"
+msgstr ""
+
+#. module: integration
+#: model:ir.ui.menu,name:integration.menu_integration_services
+msgid "Services"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,help:integration.field_integration_connection__user_id
+msgid "Set for a personal connection, used only when the service allows them."
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_receiver__signature_header
+#: model:ir.model.fields,field_description:integration.field_mixin_inbound_gate__signature_header
+#: model:ir.model.fields,field_description:integration.field_mixin_integration_receiver__signature_header
+msgid "Signature Header"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_receiver__signature_prefix
+#: model:ir.model.fields,field_description:integration.field_mixin_inbound_gate__signature_prefix
+#: model:ir.model.fields,field_description:integration.field_mixin_integration_receiver__signature_prefix
+msgid "Signature Prefix"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_exchange__signature_verified
+msgid "Signature Verified"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,help:integration.field_integration_exchange__request_payload_omitted_bytes
+msgid ""
+"Size of the body that was not stored, so the recorded size still describes "
+"the request rather than the placeholder standing in for it."
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields.selection,name:integration.selection__integration_exchange__performance_rating__slow
+msgid "Slow (1-3s)"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields.selection,name:integration.selection__integration_service__category__social
+msgid "Social Media"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_exchange__source_ip
+msgid "Source Ip"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_exchange__stack_trace
+msgid "Stack Trace"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields.selection,name:integration.selection__integration_connection__environment__staging
+#: model:ir.model.fields.selection,name:integration.selection__integration_service__environment__staging
+#: model:ir.model.fields.selection,name:integration.selection__integration_service__health_check_environment__staging
+#: model_terms:ir.ui.view,arch_db:integration.view_api_credential_search
+msgid "Staging"
+msgstr ""
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_integration_stream_form
+msgid "Start"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_exchange__state
+#: model:ir.model.fields,field_description:integration.field_integration_stream__state
+#: model:ir.model.fields,field_description:integration.field_integration_stream_outbox__state
+#: model_terms:ir.ui.view,arch_db:integration.view_integration_exchange_search
+#: model_terms:ir.ui.view,arch_db:integration.view_integration_stream_search
+msgid "State"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_stream__state_message
+msgid "State Message"
+msgstr ""
+
+#. module: integration
+#. odoo-python
+#: code:addons/integration/controllers/oauth.py:0
+msgid "State signature verification failed"
+msgstr ""
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_integration_service_form
+msgid "Statistics"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_exchange__status_category
+msgid "Status Category"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_exchange__status_code
+#: model:ir.model.fields,field_description:integration.field_integration_response_cache__status_code
+msgid "Status Code"
+msgstr ""
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_integration_stream_form
+msgid "Stop"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields.selection,name:integration.selection__integration_stream__state__stopped
+#: model_terms:ir.ui.view,arch_db:integration.view_integration_stream_search
+msgid "Stopped"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,help:integration.field_integration_receiver__log_request_payload_max_bytes
+#: model:ir.model.fields,help:integration.field_mixin_inbound_gate__log_request_payload_max_bytes
+#: model:ir.model.fields,help:integration.field_mixin_integration_receiver__log_request_payload_max_bytes
+msgid ""
+"Store at most this many bytes of each request body on the integration.exchange row; 0 keeps the whole body.\n"
+"\n"
+"For an endpoint that accepts a file the body is the file: a phone posting a call recording as base64 wrote roughly 48 MB of text into a log column, beside the same audio already stored as an attachment. Duplicate detection is unaffected -- the hash of the body as received is kept either way. Ignored for an asynchronous endpoint, where the stored body is the work queue and not merely a record of it."
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,help:integration.field_integration_service__log_request_payload
+msgid ""
+"Store the request body on each integration.exchange row.\n"
+"\n"
+"Turn this off for a service whose payload is secret by construction rather than by field name — signing and cancellation calls that carry a private key, for instance. Redaction matches key names, so it cannot protect a payload whose names it does not know, and these rows are readable by everyone with API Transport access. The exchange is still recorded: URL, status, timing, error and trace id are unaffected."
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,help:integration.field_integration_receiver__retry_backoff_type
+#: model:ir.model.fields,help:integration.field_integration_service__retry_backoff_type
+#: model:ir.model.fields,help:integration.field_mixin_integration_channel__retry_backoff_type
+#: model:ir.model.fields,help:integration.field_mixin_integration_receiver__retry_backoff_type
+msgid "Strategy for increasing delay between retries"
+msgstr ""
+
+#. module: integration
+#: model:ir.model,name:integration.model_integration_stream
+#: model:ir.model.fields,field_description:integration.field_integration_stream_outbox__stream_id
+msgid "Stream"
+msgstr ""
+
+#. module: integration
+#: model:ir.actions.act_window,name:integration.action_integration_stream_outbox
+#: model:ir.model,name:integration.model_integration_stream_outbox
+#: model:ir.ui.menu,name:integration.menu_integration_stream_outbox
+msgid "Stream Outbox"
+msgstr ""
+
+#. module: integration
+#: model:ir.actions.act_window,name:integration.action_integration_stream
+#: model:ir.ui.menu,name:integration.menu_integration_stream_list
+msgid "Streams"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_receiver__rate_limit_strict
+#: model:ir.model.fields,field_description:integration.field_integration_service__rate_limit_strict
+#: model:ir.model.fields,field_description:integration.field_mixin_inbound_gate__rate_limit_strict
+#: model:ir.model.fields,field_description:integration.field_mixin_integration_channel__rate_limit_strict
+#: model:ir.model.fields,field_description:integration.field_mixin_integration_receiver__rate_limit_strict
+msgid "Strict Rate Limiting"
+msgstr ""
+
+#. module: integration
+#: model:integration.service,name:integration.service_stripe
+msgid "Stripe Payment Gateway"
+msgstr ""
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_integration_stream_form
+msgid "Subject"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_stream__subscriptions
+#: model_terms:ir.ui.view,arch_db:integration.view_integration_stream_form
+msgid "Subscriptions"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_credential_access_log__success
+#: model:ir.model.fields.selection,name:integration.selection__integration_exchange__state__success
+#: model_terms:ir.ui.view,arch_db:integration.view_integration_exchange_search
+msgid "Success"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_service__success_rate
+msgid "Success Rate"
+msgstr ""
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_api_credential_access_log_search
+msgid "Successful Access"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,help:integration.field_integration_receiver__processing_mode
+#: model:ir.model.fields,help:integration.field_mixin_integration_receiver__processing_mode
+msgid "Sync: Process immediately. Async: Queue for background processing."
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_connection__synced_from_credential
+msgid "Synced From Credential"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields.selection,name:integration.selection__device_device__processing_mode__sync
+#: model:ir.model.fields.selection,name:integration.selection__integration_receiver__processing_mode__sync
+#: model:ir.model.fields.selection,name:integration.selection__mixin_integration_receiver__processing_mode__sync
+msgid "Synchronous"
+msgstr ""
+
+#. module: integration
+#. odoo-python
+#: code:addons/integration/models/integration_service.py:0
+msgid ""
+"TLS verification can only be disabled for an endpoint on a private network. "
+"'%(host)s' is not one, so disabling it would expose this endpoint's "
+"credential to anyone able to answer in its place."
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_exchange__tags
+msgid "Tags"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields.selection,name:integration.selection__integration_service__category__tax
+msgid "Tax & EDI"
+msgstr ""
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_api_credential_search
+#: model_terms:ir.ui.view,arch_db:integration.view_integration_service_search
+msgid "Test"
+msgstr ""
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_integration_service_form
+msgid "Test Connection"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields.selection,name:integration.selection__integration_connection__environment__test
+#: model:ir.model.fields.selection,name:integration.selection__integration_service__environment__test
+#: model:ir.model.fields.selection,name:integration.selection__integration_service__health_check_environment__test
+msgid "Test/Sandbox"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,help:integration.field_integration_stream__ca_certificate_id
+msgid ""
+"The authority the peer's certificate is checked against, when it is not one "
+"of the system's."
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,help:integration.field_integration_receiver__contract_last_call
+#: model:ir.model.fields,help:integration.field_mixin_inbound_gate__contract_last_call
+#: model:ir.model.fields,help:integration.field_mixin_integration_receiver__contract_last_call
+msgid ""
+"The body of the last call this gate admitted, as it was logged (masked, and "
+"capped at the gate's own payload limit)."
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,help:integration.field_integration_receiver__contract_limits
+#: model:ir.model.fields,help:integration.field_mixin_inbound_gate__contract_limits
+#: model:ir.model.fields,help:integration.field_mixin_integration_receiver__contract_limits
+msgid "The caps a call is refused for crossing."
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,help:integration.field_integration_exchange__channel_id
+msgid ""
+"The channel (endpoint or service) of this event. Empty only on a refusal of "
+"a caller no channel answers for; `channel_name` then holds what the caller "
+"asked for."
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,help:integration.field_integration_stream__certificate_id
+msgid "The client certificate and key the dial presents (mutual TLS)."
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,help:integration.field_integration_stream__backoff_seconds
+msgid "The first wait before redialling a stream that dropped."
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,help:integration.field_integration_exchange__refusal_reason
+msgid ""
+"The gate's verdict, as the caller's problem document names it "
+"(`authentication_failed`, `ip_not_allowed`, `payload_too_large`, "
+"`rate_limit_exceeded`, `caller_limited`, `misconfigured`, "
+"`endpoint_not_found`, ...). Set only on a refused row."
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,help:integration.field_integration_exchange__request_payload_hash_override
+msgid ""
+"The hash of the body as received, set when the body itself was not stored in full.\n"
+"\n"
+"Duplicate detection compares this column against a hash the caller computed from the request. Deriving it from a stored body that was truncated would answer a different question and silently stop detecting anything."
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,help:integration.field_integration_exchange__last_seen_at
+msgid "The last request a collapsed refusal row stands for."
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,help:integration.field_integration_stream__login
+msgid "The login presented beside the credential."
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,help:integration.field_integration_stream__backoff_max_seconds
+msgid "The longest wait between redials."
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,help:integration.field_integration_connection__res_model
+msgid ""
+"The model of the record this connection belongs to: a payment provider, a "
+"terminal, a carrier."
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,help:integration.field_integration_receiver__res_model
+msgid "The model of the record whose inbound calls this receiver admits."
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,help:integration.field_credential_credential__endpoint_id
+msgid "The outbound API endpoint this credential is associated with."
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,help:integration.field_integration_stream__connection_id
+msgid "The outbound connection whose breaker and budget this stream shares."
+msgstr ""
+
+#. module: integration
+#. odoo-python
+#: code:addons/integration/models/mixin_inbound_gate.py:0
+msgid "The payload log limit cannot be negative."
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,help:integration.field_integration_egress_purpose__purpose
+msgid "The purpose a caller named when it sent traffic through ir.egress."
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,help:integration.field_integration_exchange__connection_id
+msgid ""
+"The record's connection the call went through: which provider, terminal or "
+"carrier it was for."
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,help:integration.field_integration_receiver__contract_routes
+#: model:ir.model.fields,help:integration.field_mixin_inbound_gate__contract_routes
+#: model:ir.model.fields,help:integration.field_mixin_integration_receiver__contract_routes
+msgid "The routes that reach this gate, as the server serves them."
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,help:integration.field_integration_stream__credential_id
+msgid "The secret the dial presents; its login, when the wire takes one."
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,help:integration.field_integration_connection__credential_id
+msgid ""
+"The secret this connection authenticates with. Empty only for a service that"
+" authenticates with nothing."
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,help:integration.field_integration_receiver__service_user_id
+#: model:ir.model.fields,help:integration.field_mixin_inbound_gate__service_user_id
+#: model:ir.model.fields,help:integration.field_mixin_integration_receiver__service_user_id
+msgid ""
+"The service principal an admitted call runs as, instead of the public user: "
+"what it writes is its own, and its grants are what it may do."
+msgstr ""
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_integration_connection_form
+msgid "The service's URL for this environment"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,help:integration.field_integration_stream__owner
+msgid "The worker holding the connection: host:pid."
+msgstr ""
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_integration_exchange_search
+msgid "This Week"
+msgstr ""
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_integration_connection_form
+msgid "This connection is not used: its service runs in the"
+msgstr ""
+
+#. module: integration
+#: model_terms:ir.actions.act_window,help:integration.action_api_credential_security_report
+msgid ""
+"This report shows failed credential access attempts and suspicious patterns."
+msgstr ""
+
+#. module: integration
+#: model_terms:ir.actions.act_window,help:integration.action_api_credential_access_log
+msgid ""
+"This view shows all access to API credentials for security auditing.\n"
+"                Access logs are automatically created when credentials are viewed, edited, or used."
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_ir_actions_server__webhook_endpoint_id
+#: model:ir.model.fields,field_description:integration.field_ir_cron__webhook_endpoint_id
+msgid "Through Endpoint"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,help:integration.field_integration_service__rate_limit_period
+msgid "Time period for rate limiting"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,help:integration.field_integration_receiver__duplicate_window_seconds
+#: model:ir.model.fields,help:integration.field_mixin_integration_receiver__duplicate_window_seconds
+msgid "Time window for duplicate detection"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields.selection,name:integration.selection__integration_exchange__error_type__timeout
+msgid "Timeout"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_service__timeout_connect
+msgid "Timeout Connect"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_service__timeout_read
+msgid "Timeout Read"
+msgstr ""
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_integration_service_form
+msgid "Timeouts"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_exchange__timestamp
+msgid "Timestamp"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_receiver__timestamp_header
+#: model:ir.model.fields,field_description:integration.field_mixin_inbound_gate__timestamp_header
+#: model:ir.model.fields,field_description:integration.field_mixin_integration_receiver__timestamp_header
+msgid "Timestamp Header"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_receiver__timestamp_max_age_seconds
+#: model:ir.model.fields,field_description:integration.field_mixin_inbound_gate__timestamp_max_age_seconds
+#: model:ir.model.fields,field_description:integration.field_mixin_integration_receiver__timestamp_max_age_seconds
+msgid "Timestamp Max Age Seconds"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_receiver__timestamp_verification_enabled
+#: model:ir.model.fields,field_description:integration.field_mixin_inbound_gate__timestamp_verification_enabled
+#: model:ir.model.fields,field_description:integration.field_mixin_integration_receiver__timestamp_verification_enabled
+msgid "Timestamp Verification Enabled"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,help:integration.field_integration_receiver__date_last_activity
+#: model:ir.model.fields,help:integration.field_integration_service__date_last_activity
+#: model:ir.model.fields,help:integration.field_mixin_integration_channel__date_last_activity
+#: model:ir.model.fields,help:integration.field_mixin_integration_receiver__date_last_activity
+msgid "Timestamp of most recent activity (request received or sent)"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,help:integration.field_integration_exchange__date_completed
+msgid "Timestamp when processing completed"
+msgstr ""
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_integration_stream_form
+msgid "Timing"
+msgstr ""
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_api_credential_access_log_search
+#: model_terms:ir.ui.view,arch_db:integration.view_integration_exchange_search
+msgid "Today"
+msgstr ""
+
+#. module: integration
+#. odoo-python
+#: code:addons/integration/controllers/oauth.py:0
+msgid "Token exchange failed: %s"
+msgstr ""
+
+#. module: integration
+#. odoo-python
+#: code:addons/integration/controllers/oauth.py:0
+msgid "Token exchange request failed: %s"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_service__total_requests
+msgid "Total Requests"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_exchange__trace_id
+msgid "Trace"
+msgstr ""
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_integration_exchange_form
+msgid "Tracing"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,help:integration.field_integration_connection__breaker_failure_threshold
+msgid ""
+"Transport errors, timeouts and 5xx answers within the failure window that "
+"pause the connection. A 4xx answer is the provider's reply and does not "
+"count."
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_response_cache__ttl_seconds
+msgid "Ttl Seconds"
+msgstr ""
+
+#. module: integration
+#: model:integration.service,name:integration.service_twilio
+msgid "Twilio SMS"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,help:integration.field_integration_exchange__event_type
+msgid ""
+"Type of event (e.g., 'payment.success', 'push'). Used for inbound webhooks."
+msgstr ""
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_server_action_form_endpoint
+msgid "Unauthenticated POST"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,help:integration.field_integration_service__verify_tls
+msgid ""
+"Uncheck only for an endpoint presenting a certificate this server cannot "
+"validate — typically a device on the local network with a self-signed "
+"certificate. Unchecking makes the connection interceptable; it is not a way "
+"to silence a certificate warning from a public endpoint."
+msgstr ""
+
+#. module: integration
+#. odoo-python
+#: code:addons/integration/tools/api_client.py:0
+msgid "Unexpected error: %s"
+msgstr ""
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_integration_service_search
+msgid "Unhealthy"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,help:integration.field_integration_exchange__trace_id
+msgid "Unique ID for correlating related events"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,help:integration.field_integration_exchange__event_id_external
+msgid "Unique event ID from external service for deduplication"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,help:integration.field_integration_receiver__code
+#: model:ir.model.fields,help:integration.field_integration_service__code
+#: model:ir.model.fields,help:integration.field_mixin_integration_channel__code
+#: model:ir.model.fields,help:integration.field_mixin_integration_receiver__code
+msgid "Unique identifier code for programmatic access"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields.selection,name:integration.selection__integration_exchange__status_category__unknown
+msgid "Unknown"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_stream__url
+msgid "Url"
+msgstr ""
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_api_credential_form
+msgid "Usage Statistics"
+msgstr ""
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_api_credential_form
+msgid "Usage Tracking"
+msgstr ""
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_api_credential_access_log_search
+msgid "Use"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_exchange__user_id
+#: model:res.groups,name:integration.group_api_transport_user
+#: model_terms:ir.ui.view,arch_db:integration.view_api_credential_access_log_search
+msgid "User"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_exchange__user_agent
+msgid "User Agent"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,help:integration.field_integration_exchange__user_id
+msgid ""
+"User who initiated the request (outbound) or processed the event (inbound)"
+msgstr ""
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_api_credential_access_log_search
+msgid "Validate"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields.selection,name:integration.selection__integration_exchange__error_type__validation
+msgid "Validation Error"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_receiver__verification_method
+#: model:ir.model.fields,field_description:integration.field_mixin_inbound_gate__verification_method
+#: model:ir.model.fields,field_description:integration.field_mixin_integration_receiver__verification_method
+msgid "Verification Method"
+msgstr ""
+
+#. module: integration
+#. odoo-python
+#: code:addons/integration/models/mixin_integration_receiver.py:0
+msgid "Verification method must be in format 'model_name.method_name'"
+msgstr ""
+
+#. module: integration
+#. odoo-python
+#: code:addons/integration/models/mixin_integration_receiver.py:0
+msgid ""
+"Verification method name must start with 'verify_' or '_verify_' (got '%s')."
+" Custom verification runs with elevated rights and only dedicated verify "
+"methods may be invoked."
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_service__verify_tls
+msgid "Verify TLS certificate"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields.selection,name:integration.selection__integration_exchange__performance_rating__very_slow
+msgid "Very Slow (> 3s)"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields.selection,name:integration.selection__integration_stream__state__backoff
+msgid "Waiting to redial"
+msgstr ""
+
+#. module: integration
+#. odoo-python
+#: code:addons/integration/models/integration_service.py:0
+msgid "Warning"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_service__website
+msgid "Website"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,help:integration.field_integration_receiver__contract_scheme
+#: model:ir.model.fields,help:integration.field_mixin_inbound_gate__contract_scheme
+#: model:ir.model.fields,help:integration.field_mixin_integration_receiver__contract_scheme
+msgid "What the caller proves itself with."
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,help:integration.field_integration_stream__subscriptions
+msgid ""
+"What the stream listens to: topics, registers or paths, as the protocol "
+"reads them."
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,help:integration.field_integration_connection__name
+msgid ""
+"What this connection reaches, for a service whose connections each belong to"
+" one record: the device or the account."
+msgstr ""
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_api_credential_form_oauth
+msgid "When the OAuth access token expires"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,help:integration.field_integration_exchange__timestamp
+msgid ""
+"When the event was received (inbound) or request was initiated (outbound)"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,help:integration.field_integration_stream_outbox__meta
+msgid "Where and how the frame goes: topic, QoS, register."
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,help:integration.field_integration_stream__url
+msgid "Where the stream dials: ws://, wss://, mqtt://, mqtts://, modbus://."
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,help:integration.field_credential_access_log__success
+msgid "Whether the access was successful"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,help:integration.field_integration_exchange__signature_verified
+msgid "Whether the inbound request signature was successfully verified"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,help:integration.field_credential_access_log__field_accessed
+msgid "Which credential field was accessed (api_key, bearer_token, etc.)"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,help:integration.field_integration_receiver__res_purpose
+msgid ""
+"Which of the record's inbound flows this receiver admits, when a record "
+"receives more than one."
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,help:integration.field_integration_connection__environment
+msgid ""
+"Which of the service's URLs this connection calls. Only connections in the "
+"service's own environment are used."
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,help:integration.field_integration_service__api_key_scheme
+msgid ""
+"Word in front of the key in the Authorization header when the vendor does "
+"not use 'Bearer' — 'Token' for Deepgram. Ignored when an API Key Header "
+"names a header of its own."
+msgstr ""
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_api_credential_access_log_search
+msgid "Write"
+msgstr ""
+
+#. module: integration
+#. odoo-python
+#: code:addons/integration/controllers/oauth.py:0
+msgid "You are not allowed to authorize API credentials."
+msgstr ""
+
+#. module: integration
+#. odoo-python
+#: code:addons/integration/controllers/oauth.py:0
+msgid "You are not allowed to complete API credential authorization."
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,help:integration.field_integration_exchange__auth_mode
+msgid ""
+"`enforce` or `audit`, as the gate ran for this call. An audit row was "
+"admitted with no valid credential."
+msgstr ""
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_api_credential_form
+msgid "e.g. DSK1T341C001"
+msgstr ""
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_integration_stream_form
+msgid "e.g. Scale MQTT"
+msgstr ""
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_integration_connection_form
+msgid "environment."
+msgstr ""
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_api_credential_form
+msgid "http://localhost:8085"
+msgstr ""
+
+#. module: integration
+#: model:integration.service,name:integration.service_test
+msgid "httpbin.org"
+msgstr ""
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_api_credential_form
+msgid "{\"X-Custom-Header\": \"value\", \"X-API-Version\": \"v1\"}"
+msgstr ""
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_api_credential_form
+msgid ""
+"{\"api_key\": \"your-key-here\", \"api_secret\": \"your-secret-here\", "
+"\"custom_field\": \"any-value\"}"
+msgstr ""

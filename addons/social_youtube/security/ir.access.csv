@@ -1,0 +1,2 @@
+id,name,model_id/id,group_id/id,kind,operation,domain
+access_social_account_revoke_youtube_manager,social.account.revoke.youtube.manager,model_wizard_social_account_revoke_youtube,social.group_social_manager,permission,crud,

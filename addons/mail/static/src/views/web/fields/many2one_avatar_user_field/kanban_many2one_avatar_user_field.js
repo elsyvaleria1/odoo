@@ -1,0 +1,68 @@
+// @ts-check
+/** @odoo-module native */
+import { Component, t, useProps } from "@odoo/owl";
+import { registry } from "@web/core/registry";
+import { _t } from "@web/core/translation";
+import {
+    buildM2OFieldDescription,
+    computeM2OProps,
+    extractM2OFieldProps,
+    KanbanMany2One,
+    m2oSupportedOptions,
+    Many2OneField,
+} from "@web/fields/relational/many2one";
+
+import { Avatar } from "../avatar/avatar.js";
+
+export class KanbanMany2OneAvatarUserField extends Component {
+    static template = "mail.KanbanMany2OneAvatarUserField";
+    static components = { Avatar, KanbanMany2One };
+    static props = {
+        ...Many2OneField.props,
+        displayAvatarName: t.boolean().optional(),
+    };
+    props = useProps(this.constructor.props);
+
+    get displayName() {
+        return this.props.displayAvatarName && this.value
+            ? this.value.display_name
+            : "";
+    }
+
+    get m2oProps() {
+        return computeM2OProps(this.props);
+    }
+
+    get value() {
+        return this.props.record.data[this.props.name];
+    }
+}
+
+/** @type {import("registries").FieldsRegistryItemShape} */
+const fieldDescr = {
+    ...buildM2OFieldDescription(KanbanMany2OneAvatarUserField),
+    additionalClasses: ["o_field_many2one_avatar_kanban", "o_field_many2one_avatar"],
+    /**
+     * @param {{attrs: Object, options: Object, viewType?: string}} staticInfo
+     * @param {{readonly: boolean}} dynamicInfo
+     * @returns {Object}
+     */
+    extractProps(staticInfo, dynamicInfo) {
+        return {
+            ...extractM2OFieldProps(staticInfo, dynamicInfo),
+            displayAvatarName: staticInfo.options.display_avatar_name || false,
+            readonly: dynamicInfo.readonly,
+        };
+    },
+    supportedOptions: [
+        ...m2oSupportedOptions,
+        {
+            label: _t("Display avatar name"),
+            name: "display_avatar_name",
+            type: "boolean",
+        },
+    ],
+};
+
+registry.category("fields").add("activity.many2one_avatar_user", fieldDescr);
+registry.category("fields").add("kanban.many2one_avatar_user", fieldDescr);

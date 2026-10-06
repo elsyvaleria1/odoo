@@ -1,0 +1,2 @@
+id,name,model_id/id,group_id/id,kind,operation,domain
+access_crm_rental_partner,access.crm.lead.rental,model_wizard_crm_lead_create_rental_quotation,sale.group_sale_salesman,permission,cru,

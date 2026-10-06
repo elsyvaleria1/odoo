@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates>
+    <!-- video settings template -->
+    <t t-name="html_editor.VideoSettings">
+        <Dropdown state="this.props.dropdown">
+            <button t-ref="this.menuRef" class="btn btn-light shadow border py-1 px-1 ms-1" title="More options">
+                <i class="oi oi-fw oi-ellipsis-v" />
+            </button>
+            <t t-set-slot="content">
+                <DropdownItem onSelected="this.props.replaceVideo">
+                    <i class="fa-solid fa-right-left me-1"></i>Replace
+                </DropdownItem>
+                <DropdownItem onSelected="this.props.removeVideo" class="'text-danger'">
+                    <i class="fa-solid fa-trash-can me-1"></i>Remove
+                </DropdownItem>
+            </t>
+        </Dropdown>
+    </t>
+</templates>

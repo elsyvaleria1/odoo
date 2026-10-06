@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_geo_trail_wizard_form" model="ir.ui.view">
+        <field name="name">geo.trail.wizard.form</field>
+        <field name="model">wizard.base.view.trail</field>
+        <field name="arch" type="xml">
+            <form string="Generate Historical Trails">
+                <group>
+                    <group string="Source Data">
+                        <field name="model_id" options="{'no_create': True}" />
+                        <field name="model_name" invisible="1" />
+                        <field name="date_field_id" options="{'no_create': True}" />
+                    </group>
+                    <group string="Date Range">
+                        <field name="date_from" />
+                        <field name="date_to" />
+                    </group>
+                </group>
+                <group string="Grouping Options">
+                    <field name="group_by" widget="radio" />
+                </group>
+                <group string="Additional Filters">
+                    <field name="domain" placeholder="[('status', '=', 'active')]" />
+                </group>
+                <group string="Trail Styling">
+                    <group>
+                        <field name="trail_color" widget="color" />
+                        <field name="trail_width" />
+                    </group>
+                    <group>
+                        <field name="trail_opacity" />
+                    </group>
+                </group>
+                <group string="Results" invisible="trail_count == 0">
+                    <field name="trail_count" readonly="1" />
+                </group>
+                <footer>
+                    <button
+                        name="action_generate_trails"
+                        type="object"
+                        string="Generate Trails"
+                        class="btn-primary" />
+                    <button special="cancel" string="Cancel" class="btn-secondary" />
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_geo_trail_result_list" model="ir.ui.view">
+        <field name="name">geo.trail.result.list</field>
+        <field name="model">wizard.base.view.trail.result</field>
+        <field name="arch" type="xml">
+            <list string="Generated Trails">
+                <field name="name" />
+                <field name="record_count" />
+                <field name="length_km" digits="[12,2]" />
+            </list>
+        </field>
+    </record>
+
+    <record id="view_geo_trail_result_form" model="ir.ui.view">
+        <field name="name">geo.trail.result.form</field>
+        <field name="model">wizard.base.view.trail.result</field>
+        <field name="arch" type="xml">
+            <form string="Trail Result">
+                <group>
+                    <group>
+                        <field name="name" />
+                        <field name="record_count" />
+                        <field name="length_km" digits="[12,2]" />
+                    </group>
+                    <group string="Styling">
+                        <field name="trail_color" widget="color" />
+                        <field name="trail_width" />
+                        <field name="trail_opacity" />
+                    </group>
+                </group>
+                <group>
+                    <field name="the_trail" readonly="1" />
+                </group>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_geo_trail_result_geoengine" model="ir.ui.view">
+        <field name="name">geo.trail.result.geoengine</field>
+        <field name="model">wizard.base.view.trail.result</field>
+        <field name="arch" type="xml">
+            <geoengine>
+                <field name="name" />
+                <field name="record_count" />
+                <field name="length_km" />
+                <field name="the_trail" />
+                <templates>
+                    <t t-name="info_box">
+                        <div>
+                            <h4>
+                                <t t-out="record.name.value" />
+                            </h4>
+                            <ul style="margin: 0; padding-left: 20px;">
+                                <li>
+                                    <strong>Points:</strong>
+                                    <t t-out="record.record_count.value" />
+                                </li>
+                                <li><strong>Length:</strong> <t t-out="record.length_km.value" /> km</li>
+                            </ul>
+                        </div>
+                    </t>
+                </templates>
+            </geoengine>
+        </field>
+    </record>
+
+    <record id="raster_layer_trail_result" model="geoengine.raster.layer">
+        <field name="name">OpenStreetMap - Trail Results</field>
+        <field name="view_id" ref="view_geo_trail_result_geoengine" />
+        <field name="raster_type">osm</field>
+        <field name="overlay">0</field>
+        <field name="url">https://tile.openstreetmap.org/{z}/{x}/{y}.png</field>
+        <field name="sequence" eval="1" />
+    </record>
+
+    <record id="vector_layer_trail_result" model="geoengine.vector.layer">
+        <field name="name">Generated Trails</field>
+        <field name="view_id" ref="view_geo_trail_result_geoengine" />
+        <field
+            name="geo_field_id"
+            ref="field_wizard_base_view_trail_result__the_trail" />
+        <field name="geo_repr">colored_field</field>
+        <field
+            name="color_field_id"
+            ref="field_wizard_base_view_trail_result__trail_color" />
+        <field name="begin_color">#0000FF</field>
+        <field name="layer_opacity">0.9</field>
+        <field name="sequence" eval="2" />
+        <field name="active_on_startup" eval="True" />
+    </record>
+
+    <record id="action_geo_trail_wizard" model="ir.actions.act_window">
+        <field name="name">Generate Trails</field>
+        <field name="res_model">wizard.base.view.trail</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+
+</odoo>

@@ -1,0 +1,351 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="res_config_settings_view_form_inherit_auth_signup" model="ir.ui.view">
+        <field name="name">res.config.settings.view.form.inherit.website</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="auth_signup.res_config_settings_view_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//setting[@id='login_documents']" position="replace" />
+        </field>
+    </record>
+
+    <record id="res_config_settings_view_form" model="ir.ui.view">
+        <field name="name">res.config.settings.view.form.inherit.website</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="base.res_config_settings_view_form" />
+        <field name="priority" eval="20" />
+        <field name="arch" type="xml">
+            <xpath expr="//form" position="inside">
+                <app
+                    name="website"
+                    string="Website"
+                    groups="website.group_website_designer"
+                    data-string="Website">
+                    <setting
+                        id="website_creation_settings"
+                        type="header"
+                        class="bg-secondary">
+                        <field
+                            name="website_id"
+                            title="Settings on this page will apply to this website"
+                            options="{'no_open': True, 'no_create': True}" />
+                        <button
+                            name="action_website_create_new"
+                            type="object"
+                            string="+ New Website"
+                            class="btn btn-secondary mx-2 rounded-2" />
+                    </setting>
+                    <block id="website_info_settings" title="General">
+                        <setting
+                            string="Domain"
+                            title="Display this website when users visit this domain"
+                            help="Display this website for this web address"
+                            documentation="/applications/websites/website/configuration/domain_names.html#domain-name-website-map">
+                            <field
+                                name="website_domain"
+                                placeholder="https://www.odoo.com" />
+                        </setting>
+                        <setting
+                            string="Languages"
+                            title="Languages available on your website"
+                            documentation="/applications/websites/website/configuration/translate.html">
+                            <field
+                                name="language_ids"
+                                widget="many2many_tags"
+                                options="{'no_create': True, 'no_open': True}"
+                                required="website_id" />
+                            <div
+                                class="row mt8"
+                                invisible="website_language_count &lt; 2">
+                                <field name="website_language_count" invisible="1" />
+                                <label
+                                    for="website_default_lang_id"
+                                    string="Default"
+                                    class="col-lg-3" />
+                                <field
+                                    name="website_default_lang_id"
+                                    options="{'no_open': True, 'no_create': True}"
+                                    required="website_id" />
+                            </div>
+                            <div class="mt8">
+                                <button
+                                    name="%(base.action_view_base_language_install)d"
+                                    type="action"
+                                    string="Install new languages"
+                                    icon="oi-arrow-right"
+                                    class="btn-link" />
+                            </div>
+                        </setting>
+                        <setting
+                            string="Website Identification"
+                            help="Set your website's name and favicon, displayed in the browser tab next to the page title.">
+                            <div class="content-group">
+                                <div class="row mt8">
+                                    <label
+                                        for="website_name"
+                                        string="Name"
+                                        class="col-lg-3" />
+                                    <field name="website_name" required="website_id" />
+                                </div>
+                                <div class="row mt8">
+                                    <label
+                                        for="favicon"
+                                        string="Favicon"
+                                        class="col-lg-3" />
+                                    <field
+                                        name="favicon"
+                                        widget="image"
+                                        class="float-start o_avatar bg-view" />
+                                </div>
+                            </div>
+                        </setting>
+                        <setting
+                            string="Company"
+                            title="The company this website is linked to"
+                            groups="base.group_multi_company">
+                            <field name="website_company_id" required="website_id" />
+                        </setting>
+                        <setting
+                            id="shared_user_account_setting"
+                            help="Accounts are usable across all your multiple websites"
+                            groups="website.group_multi_website"
+                            info="This setting is common to all websites.">
+                            <field name="shared_user_account" />
+                        </setting>
+                        <setting
+                            id="website_login_documents"
+                            title=" To send invitations in B2B mode, open a contact or select several ones in list view and click on 'Portal Access Management' option in the dropdown menu *Action*."
+                            help="Let your customers log in to see their documents">
+                            <field
+                                name="auth_signup_uninvited"
+                                widget="radio"
+                                options="{'horizontal': true}"
+                                required="True"
+                                class="o_light_label" />
+                            <div
+                                class="content-group"
+                                invisible="auth_signup_uninvited == 'b2b'">
+                                <div class="mt8">
+                                    <button
+                                        name="action_view_template_user"
+                                        type="object"
+                                        string="Default Access Rights"
+                                        icon="oi-arrow-right"
+                                        class="btn-link" />
+                                </div>
+                            </div>
+                        </setting>
+                        <setting
+                            id="livechat"
+                            string="Livechat"
+                            help="Allows your visitors to chat with you">
+                            <field name="module_website_livechat" />
+                        </setting>
+                    </block>
+                    <block
+                        id="website_settings"
+                        title="Tracking &amp; SEO"
+                        invisible="not website_id">
+                        <setting
+                            id="plausible_setting"
+                            help="Simple and privacy-friendly Google Analytics alternative"
+                            documentation="/applications/websites/website/reporting/analytics.html#analytics-plausible">
+                            <field name="has_plausible_shared_key" />
+                            <div
+                                class="content-group"
+                                invisible="not has_plausible_shared_key">
+                                <div class="row mt16">
+                                    <label
+                                        for="plausible_shared_key"
+                                        string="Shared Link Auth"
+                                        class="col-lg-3 o_light_label" />
+                                    <field
+                                        name="plausible_shared_key"
+                                        required="has_plausible_shared_key" />
+                                </div>
+                                <div class="row mt16">
+                                    <label
+                                        for="plausible_site"
+                                        string="Site"
+                                        class="col-lg-3 o_light_label" />
+                                    <field
+                                        name="plausible_site"
+                                        required="has_plausible_shared_key" />
+                                </div>
+                            </div>
+                            <div invisible="not has_plausible_shared_key">
+                                <button
+                                    name="%(website.backend_dashboard)d"
+                                    type="action"
+                                    string=" See Analytics Report"
+                                    icon="oi-arrow-right d-inline me-auto"
+                                    class="btn-link fw-normal border-0" />
+                            </div>
+                            <div invisible="not has_plausible_shared_key">
+                                <widget
+                                    name="documentation_link"
+                                    icon="oi oi-arrow-right"
+                                    class="oe_link"
+                                    label=" How to create my Plausible Shared Link"
+                                    path="/applications/websites/website/reporting/analytics.html#analytics-plausible" />
+                            </div>
+                        </setting>
+                        <setting
+                            id="google_analytics_setting"
+                            help="Track visits using Google Analytics or Google Tag Manager"
+                            documentation="/applications/websites/website/reporting/analytics.html#analytics-google-analytics">
+                            <field name="has_google_analytics" />
+                            <div
+                                class="content-group"
+                                invisible="not has_google_analytics">
+                                <div class="row mt16">
+                                    <label
+                                        for="google_analytics_key"
+                                        string="Measurement ID or Tag"
+                                        class="col-lg-3 o_light_label" />
+                                    <field
+                                        name="google_analytics_key"
+                                        placeholder="G-XXXXXXXXXX or GTM-XXXXXXX"
+                                        required="has_google_analytics" />
+                                </div>
+                            </div>
+                            <div invisible="not has_google_analytics">
+                                <widget
+                                    name="documentation_link"
+                                    icon="oi oi-arrow-right"
+                                    class="oe_link"
+                                    label=" How to get my Measurement ID"
+                                    path="/applications/websites/website/reporting/analytics.html#analytics-google-analytics" />
+                            </div>
+                        </setting>
+                        <setting
+                            id="cdn_setting"
+                            title="A CDN helps you serve your website’s content with high availability and high performance to any visitor wherever they are located."
+                            help="Use a CDN to optimize the availability of your website's content"
+                            groups="base.group_no_one"
+                            documentation="/applications/websites/website/configuration/cdn.html">
+                            <field name="cdn_activated" />
+                            <div class="content-group" invisible="not cdn_activated">
+                                <div class="row mt16">
+                                    <label
+                                        for="cdn_url"
+                                        class="col-lg-3 o_light_label" />
+                                    <field
+                                        name="cdn_url"
+                                        placeholder="//mycompany.mycdn.com/"
+                                        required="cdn_activated"
+                                        t-translation="off" />
+                                </div>
+                                <div class="row">
+                                    <label
+                                        for="cdn_filters"
+                                        class="col-lg-3 o_light_label" />
+                                    <field
+                                        name="cdn_filters"
+                                        required="cdn_activated"
+                                        class="oe_inline" />
+                                </div>
+                            </div>
+                        </setting>
+                        <setting
+                            id="robots_setting"
+                            string="Robots.txt"
+                            help="Robots.txt: This file tells to search engine crawlers which pages or files they can or can't request from your site."
+                            groups="base.group_no_one">
+                            <div class="mt4">
+                                <button
+                                    name="action_view_robots"
+                                    type="object"
+                                    string="Edit robots.txt"
+                                    icon="fa-brands fa-android"
+                                    class="btn-link"
+                                    noSaveDialog="true" />
+                            </div>
+                        </setting>
+                        <setting
+                            id="social_default_image_setting"
+                            string="Default Social Share Image"
+                            help="If set, replaces the website logo as the default social share image.">
+                            <field name="has_default_share_image" />
+                            <field
+                                name="social_default_image"
+                                widget="image"
+                                invisible="not has_default_share_image"
+                                class="w-25 mt-2" />
+                        </setting>
+                        <setting
+                            id="google_console_setting"
+                            help="Monitor Google Search results data"
+                            documentation="/applications/websites/website/configuration/google_search_console.html">
+                            <field name="has_google_search_console" />
+                            <div
+                                class="content-group"
+                                invisible="not has_google_search_console">
+                                <div class="row mt16">
+                                    <label
+                                        for="google_search_console"
+                                        string="Code"
+                                        class="col-lg-3 o_light_label" />
+                                    <field
+                                        name="google_search_console"
+                                        placeholder="google1234567890123456.html"
+                                        required="has_google_search_console" />
+                                </div>
+                            </div>
+                            <div invisible="not has_google_search_console">
+                                <widget
+                                    name="documentation_link"
+                                    icon="oi oi-arrow-right"
+                                    class="oe_link"
+                                    label=" How to?"
+                                    path="/applications/websites/website/configuration/google_search_console.html" />
+                            </div>
+                        </setting>
+                        <setting
+                            id="website_cookies_bar_setting"
+                            help="Display a customizable cookies bar on your website. Please ensure your site is GDPR-compliant (e.g. Google Fonts usage)."
+                            documentation="/applications/websites/website/configuration/cookies_bar.html">
+                            <field name="website_cookies_bar" />
+                            <div
+                                class="content-group"
+                                invisible="not website_cookies_bar">
+                                <div>
+                                    <field
+                                        name="website_block_third_party_domains"
+                                        required="website_cookies_bar" />
+                                    <label
+                                        for="website_block_third_party_domains"
+                                        string="Block tracking 3rd-party services"
+                                        class="o_light_label" />
+                                </div>
+                                <div>
+                                    <small class="text-muted">
+                                        Block 3rd-party services that track users (e.g. YouTube, Google Maps, Facebook...) when the user has not given their consent.
+                                    </small>
+                                </div>
+                                <div class="mt4">
+                                    <button
+                                        name="action_view_blocked_third_party_domains"
+                                        type="object"
+                                        string="Add domains to the block list"
+                                        icon="fa-ban"
+                                        class="btn-link"
+                                        noSaveDialog="true" />
+                                </div>
+                            </div>
+                        </setting>
+                    </block>
+                </app>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="action_website_configuration" model="ir.actions.act_window">
+        <field name="name">Settings</field>
+        <field name="res_model">res.config.settings</field>
+        <field name="view_mode">form</field>
+        <field name="context">{'module' : 'website', 'bin_size': False}</field>
+    </record>
+
+</odoo>

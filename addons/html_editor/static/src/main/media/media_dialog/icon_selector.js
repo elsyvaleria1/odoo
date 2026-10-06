@@ -1,0 +1,83 @@
+/** @odoo-module native */
+import { fonts } from "@html_editor/utils/fonts";
+import { Component, proxy, useProps } from "@odoo/owl";
+import { iconClasses } from "@web/core/utils/icons";
+
+import { SearchMedia } from "./search_media.js";
+
+export class IconSelector extends Component {
+    static mediaSpecificClasses = iconClasses;
+    static mediaSpecificStyles = ["color", "background-color"];
+    static mediaExtraClasses = [/^text-\S+$/, /^bg-\S+$/, /^fa-\S+$/];
+    static tagNames = ["SPAN", "I"];
+    static template = "html_editor.IconSelector";
+    static components = {
+        SearchMedia,
+    };
+    static props = null;
+    props = useProps(this.constructor.props);
+
+    setup() {
+        this.state = proxy({
+            fonts: this.props.fonts,
+            needle: "",
+        });
+    }
+
+    get selectedMediaIds() {
+        return this.props.selectedMedia[this.props.id].map(({ id }) => id);
+    }
+
+    search(needle) {
+        this.state.needle = needle;
+        if (!this.state.needle) {
+            this.state.fonts = this.props.fonts;
+        } else {
+            this.state.fonts = this.props.fonts.map((font) => {
+                const icons = font.icons.filter(
+                    (icon) => icon.alias.indexOf(this.state.needle.toLowerCase()) >= 0,
+                );
+                return { ...font, icons };
+            });
+        }
+    }
+
+    async onClickIcon(font, icon) {
+        this.props.selectMedia({
+            ...icon,
+            fontBase: font.base,
+            initialIconChanged:
+                this.props.media &&
+                !icon.names.some((name) => this.props.media.classList.contains(name)),
+        });
+        await this.props.save();
+    }
+
+    static getMediaSpecificClasses(icon) {
+        return [icon.fontBase];
+    }
+
+    static createElements(selectedMedia) {
+        return selectedMedia.map((icon) => {
+            const iconEl = document.createElement("span");
+            iconEl.classList.add(icon.fontBase, icon.names[0]);
+            return iconEl;
+        });
+    }
+    static initFonts() {
+        fonts.computeFonts();
+        const allFonts = fonts.fontIcons.map(({ cssData, base }) => {
+            const uniqueIcons = Array.from(
+                new Map(
+                    cssData.map((icon) => {
+                        const alias = icon.names.join(",");
+                        const id = `${base}_${alias}`;
+                        return [id, { ...icon, alias, id }];
+                    }),
+                ).values(),
+            );
+            return { base, icons: uniqueIcons };
+        });
+        return allFonts;
+    }
+}

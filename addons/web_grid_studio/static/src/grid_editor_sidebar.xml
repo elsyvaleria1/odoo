@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates>
+
+    <t t-name="web_grid_studio.GridEditorSidebar">
+        <InteractiveEditorSidebar>
+            <t t-set-slot="view">
+                <t t-foreach="this.toggles" t-as="toggle" t-key="toggle.name">
+                    <Property
+                        name="toggle.name"
+                        type="'boolean'"
+                        value="this.archInfo[toggle.key]"
+                        onChange.bind="this.onViewAttributeChanged"
+                    >
+                        <t t-out="toggle.label"/>
+                    </Property>
+                </t>
+                <SidebarViewToolbox onMore="this.props.openViewInForm"
+                    canEditXml="!this.viewEditorModel.isEditingSubview"
+                    openDefaultValues="this.props.openDefaultValues" />
+            </t>
+        </InteractiveEditorSidebar>
+    </t>
+
+</templates>

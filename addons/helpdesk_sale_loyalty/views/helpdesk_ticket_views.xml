@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record
+        id="helpdesk_ticket_view_form_inherit_helpdesk_sale_coupon"
+        model="ir.ui.view">
+        <field name="name">helpdesk.ticket.form.inherit.sale.coupon</field>
+        <field name="model">helpdesk.ticket</field>
+        <field name="inherit_id" ref="helpdesk.helpdesk_ticket_view_form" />
+        <field name="priority">40</field>
+        <field name="arch" type="xml">
+            <field name="stage_id" position="before">
+                <field name="use_coupons" invisible="1" />
+                <field name="default_giftcard_program_id" invisible="1" />
+                <button
+                    name="%(helpdesk_sale_giftcard_generate_wizard_action)d"
+                    type="action"
+                    string="Gift Card"
+                    context="{'default_ticket_id': id, 'default_company_id': company_id, 'default_program_id': default_giftcard_program_id}"
+                    groups="sale.group_sale_salesman"
+                    invisible="not use_giftcards or not partner_id"
+                    data-hotkey="g" />
+                <button
+                    name="%(helpdesk_sale_coupon_generate_action)d"
+                    type="action"
+                    string="Coupon"
+                    context="{'default_ticket_id': id, 'default_company_id': company_id}"
+                    groups="sale.group_sale_salesman"
+                    invisible="not use_coupons"
+                    data-hotkey="o" />
+            </field>
+            <button name="action_view_helpdesk_ticket" position="before">
+                <button
+                    name="open_coupons"
+                    type="object"
+                    icon="fa-tags"
+                    context="{'program_type': 'gift_card'}"
+                    groups="sale.group_sale_salesman"
+                    invisible="gift_card_count == 0 or not use_giftcards"
+                    class="oe_stat_button">
+                    <field
+                        name="gift_card_count"
+                        string="Gift Cards"
+                        widget="statinfo" />
+                </button>
+                <button
+                    name="open_coupons"
+                    type="object"
+                    icon="fa-ticket"
+                    context="{'program_type': 'coupons'}"
+                    groups="sale.group_sale_salesman"
+                    invisible="coupons_count == 0"
+                    class="oe_stat_button">
+                    <field name="coupons_count" string="Coupons" widget="statinfo" />
+                </button>
+            </button>
+        </field>
+    </record>
+
+</odoo>

@@ -1,0 +1,44 @@
+.o_export_data_dialog .modal-body {
+    display: flex;
+
+    .row {
+        flex: 1;
+    }
+
+    .o_left_panel,
+    .o_right_panel {
+        .o_left_field_panel,
+        .o_right_field_panel {
+            user-select: none;
+
+            .o_export_tree_item {
+                &:hover:not(.o_expanded) {
+                    background: color-mix(
+                        in srgb,
+                        var(--o-brand-odoo) 70%,
+                        transparent
+                    );
+                    color: white;
+                }
+
+                &.o_expanded {
+                    border-bottom: 1px solid grey;
+                    background: color-mix(
+                        in srgb,
+                        var(--o-brand-odoo) 20%,
+                        transparent
+                    );
+                }
+
+                .o_expand_parent {
+                    inset: 4px auto auto 0.5em;
+                    line-height: inherit;
+                }
+            }
+
+            .o_export_field_sortable > *:not(.o_remove_field) {
+                cursor: grab;
+            }
+        }
+    }
+}

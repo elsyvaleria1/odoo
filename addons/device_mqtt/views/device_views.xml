@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_device_device_form_mqtt" model="ir.ui.view">
+        <field name="name">device.device.form.mqtt</field>
+        <field name="model">device.device</field>
+        <field name="inherit_id" ref="device.view_device_device_form" />
+        <field name="arch" type="xml">
+            <page name="connection" position="inside">
+                <group string="MQTT Configuration" invisible="comm_protocol != 'mqtt'">
+                    <group>
+                        <field
+                            name="mqtt_client_id"
+                            readonly="connection_state == 'connected'" />
+                        <field
+                            name="mqtt_publish_topic"
+                            readonly="connection_state == 'connected'" />
+                    </group>
+                </group>
+                <group invisible="comm_protocol != 'mqtt'">
+                    <field
+                        name="mqtt_subscribe_topics"
+                        placeholder="device/+/temperature&#10;device/+/humidity"
+                        widget="text"
+                        readonly="connection_state == 'connected'" />
+                </group>
+            </page>
+        </field>
+    </record>
+
+    <record id="view_device_profile_form_mqtt" model="ir.ui.view">
+        <field name="name">device.profile.form.mqtt</field>
+        <field name="model">device.profile</field>
+        <field name="inherit_id" ref="device.view_device_profile_form" />
+        <field name="arch" type="xml">
+            <page name="protocol_settings" position="inside">
+                <group string="MQTT v5.0 Settings">
+                    <group string="Basic MQTT Settings">
+                        <field name="mqtt_qos" />
+                        <field name="mqtt_use_tls" />
+                        <field
+                            name="mqtt_subscribe_topics"
+                            placeholder="topic1&#10;topic2&#10;topic3" />
+                        <field name="mqtt_publish_topic" />
+                    </group>
+                    <group string="MQTT v5.0 Advanced Settings">
+                        <field
+                            name="mqtt_session_expiry_interval"
+                            help="0 = session ends on disconnect" />
+                        <field
+                            name="mqtt_receive_maximum"
+                            help="Max concurrent QoS 1/2 messages (1-65535)" />
+                        <field name="mqtt_max_packet_size" help="0 = no limit" />
+                    </group>
+                </group>
+            </page>
+        </field>
+    </record>
+
+</odoo>

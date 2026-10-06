@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+
+    <record id="weekday_0_monday" model="device.weekday">
+        <field name="name">Monday</field>
+        <field name="code">0</field>
+        <field name="sequence" eval="0" />
+    </record>
+
+    <record id="weekday_1_tuesday" model="device.weekday">
+        <field name="name">Tuesday</field>
+        <field name="code">1</field>
+        <field name="sequence" eval="1" />
+    </record>
+
+    <record id="weekday_2_wednesday" model="device.weekday">
+        <field name="name">Wednesday</field>
+        <field name="code">2</field>
+        <field name="sequence" eval="2" />
+    </record>
+
+    <record id="weekday_3_thursday" model="device.weekday">
+        <field name="name">Thursday</field>
+        <field name="code">3</field>
+        <field name="sequence" eval="3" />
+    </record>
+
+    <record id="weekday_4_friday" model="device.weekday">
+        <field name="name">Friday</field>
+        <field name="code">4</field>
+        <field name="sequence" eval="4" />
+    </record>
+
+    <record id="weekday_5_saturday" model="device.weekday">
+        <field name="name">Saturday</field>
+        <field name="code">5</field>
+        <field name="sequence" eval="5" />
+    </record>
+
+    <record id="weekday_6_sunday" model="device.weekday">
+        <field name="name">Sunday</field>
+        <field name="code">6</field>
+        <field name="sequence" eval="6" />
+    </record>
+
+</odoo>

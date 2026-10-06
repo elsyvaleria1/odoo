@@ -1,0 +1,138 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* stock_team
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-09-27 05:12+0000\n"
+"PO-Revision-Date: 2026-09-27 05:12+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: stock_team
+#: model:ir.model,name:stock_team.model_stock_picking_batch
+msgid "Batch Transfer"
+msgstr ""
+
+#. module: stock_team
+#: model_terms:ir.actions.act_window,help:stock_team.team_action_stock
+msgid "Create an inventory team"
+msgstr ""
+
+#. module: stock_team
+#: model:ir.model.fields,field_description:stock_team.field_stock_picking__display_name
+#: model:ir.model.fields,field_description:stock_team.field_stock_picking_batch__display_name
+#: model:ir.model.fields,field_description:stock_team.field_stock_picking_type__display_name
+msgid "Display Name"
+msgstr ""
+
+#. module: stock_team
+#: model_terms:ir.actions.act_window,help:stock_team.team_action_stock
+msgid ""
+"Give each operation type a team: its members see and run its transfers."
+msgstr ""
+
+#. module: stock_team
+#: model:ir.model.fields,field_description:stock_team.field_stock_picking__id
+#: model:ir.model.fields,field_description:stock_team.field_stock_picking_batch__id
+#: model:ir.model.fields,field_description:stock_team.field_stock_picking_type__id
+msgid "ID"
+msgstr ""
+
+#. module: stock_team
+#. odoo-python
+#: code:addons/stock_team/models/team_team.py:0
+#: model:ir.model.fields,field_description:stock_team.field_team_team__use_stock
+#: model_terms:ir.ui.view,arch_db:stock_team.team_view_search_stock
+msgid "Inventory"
+msgstr ""
+
+#. module: stock_team
+#: model:res.groups.privilege,name:stock_team.res_groups_privilege_stock_documents
+msgid "Inventory Documents"
+msgstr ""
+
+#. module: stock_team
+#: model:ir.actions.act_window,name:stock_team.team_action_stock
+#: model:ir.model.fields,field_description:stock_team.field_res_users__stock_team_ids
+msgid "Inventory Teams"
+msgstr ""
+
+#. module: stock_team
+#: model_terms:ir.ui.view,arch_db:stock_team.view_stock_picking_type_search_team
+msgid "My Teams"
+msgstr ""
+
+#. module: stock_team
+#: model_terms:ir.ui.view,arch_db:stock_team.view_stock_picking_search_team
+msgid "My Teams' Transfers"
+msgstr ""
+
+#. module: stock_team
+#: model:ir.model.fields,field_description:stock_team.field_team_team__stock_picking_type_ids
+#: model_terms:ir.ui.view,arch_db:stock_team.team_view_form_stock
+msgid "Operation Types"
+msgstr ""
+
+#. module: stock_team
+#: model:res.groups,name:stock_team.group_stock_user_own
+msgid "Own Documents Only"
+msgstr ""
+
+#. module: stock_team
+#: model:ir.model,name:stock_team.model_stock_picking_type
+msgid "Picking Type"
+msgstr ""
+
+#. module: stock_team
+#: model:ir.model.fields,field_description:stock_team.field_stock_picking__team_id
+#: model:ir.model.fields,field_description:stock_team.field_stock_picking_batch__team_id
+#: model:ir.model.fields,field_description:stock_team.field_stock_picking_type__team_id
+#: model_terms:ir.ui.view,arch_db:stock_team.view_stock_picking_type_search_team
+msgid "Team"
+msgstr ""
+
+#. module: stock_team
+#: model:res.groups,name:stock_team.group_stock_user_team
+msgid "Team Documents"
+msgstr ""
+
+#. module: stock_team
+#: model:ir.ui.menu,name:stock_team.menu_stock_team_config
+msgid "Teams"
+msgstr ""
+
+#. module: stock_team
+#: model:ir.model.fields,help:stock_team.field_stock_picking_type__team_id
+msgid "The team running this operation: its transfers are filed under it."
+msgstr ""
+
+#. module: stock_team
+#: model:ir.model.fields,help:stock_team.field_team_team__use_stock
+msgid ""
+"The team runs warehouse operations: operation types and their transfers "
+"belong to it."
+msgstr ""
+
+#. module: stock_team
+#: model:res.groups,comment:stock_team.group_stock_user_team
+msgid "The user also sees the transfers of their inventory teams."
+msgstr ""
+
+#. module: stock_team
+#: model:res.groups,comment:stock_team.group_stock_user_own
+msgid ""
+"The user sees the transfers they are responsible for, and the ones nobody "
+"is."
+msgstr ""
+
+#. module: stock_team
+#: model:ir.model,name:stock_team.model_stock_picking
+msgid "Transfer"
+msgstr ""

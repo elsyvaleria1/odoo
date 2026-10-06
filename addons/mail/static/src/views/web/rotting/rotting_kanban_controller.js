@@ -1,0 +1,23 @@
+// @ts-check
+/** @odoo-module native */
+import { patch } from "@web/core/utils/patch";
+import { KanbanController } from "@web/views/kanban";
+
+import { rottingProgressBarPatch } from "./rotting_progress_bar_hook.js";
+
+export class RottingKanbanController extends KanbanController {
+    setup() {
+        super.setup();
+        if (this.progressBarState) {
+            patch(this.progressBarState, rottingProgressBarPatch());
+        }
+    }
+
+    get progressBarAggregateFields() {
+        const res = super.progressBarAggregateFields;
+        if (this.props.fields.is_rotting) {
+            res.push(this.props.fields.is_rotting);
+        }
+        return res;
+    }
+}

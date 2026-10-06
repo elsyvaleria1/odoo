@@ -1,0 +1,707 @@
+/** @odoo-module native */
+import { BuilderAction } from "@html_builder/core/builder_action";
+import { BaseOptionComponent } from "@html_builder/core/utils";
+import {
+    SNIPPET_SPECIFIC,
+    SNIPPET_SPECIFIC_END,
+} from "@html_builder/utils/option_sequence";
+import { forwardToThumbnail } from "@html_builder/utils/utils_css";
+import { Plugin } from "@html_editor/plugin";
+import { loadImageInfo } from "@html_editor/utils/image_processing";
+import { withSequence } from "@html_editor/utils/resource";
+import { makeLogger } from "@web/core/debug/debug_logger";
+import { registry } from "@web/core/registry";
+import { uniqueId } from "@web/core/utils/functions";
+import { renderToElement } from "@web/core/utils/render";
+
+import { updateCarouselIndicators } from "../carousel_option_plugin.js";
+import { ImageGalleryComponent } from "./image_gallery_option.js";
+
+const log = makeLogger("website.builder.plugin.image_gallery_option");
+
+/**
+ * @typedef { Object } ImageGalleryOptionShared
+ * @property { ImageGalleryOption['getColumns'] } getColumns
+ * @property { ImageGalleryOption['getMode'] } getMode
+ * @property { ImageGalleryOption['processImage'] } processImage
+ * @property { ImageGalleryOption['restoreSelection'] } restoreSelection
+ * @property { ImageGalleryOption['setImages'] } setImages
+ */
+
+export class ImageGalleryImagesOption extends BaseOptionComponent {
+    static template = "website.ImageGalleryImagesOption";
+    static selector = ".s_image_gallery";
+}
+
+class ImageGalleryOption extends Plugin {
+    static id = "imageGalleryOption";
+    static dependencies = [
+        "media",
+        "dom",
+        "history",
+        "operation",
+        "selection",
+        "builderOptions",
+        "imagePostProcess",
+    ];
+    static shared = [
+        "processImages",
+        "getMode",
+        "setImages",
+        "restoreSelection",
+        "getColumns",
+    ];
+    /** @type {import("plugins").WebsiteResources} */
+    resources = {
+        builder_options: [
+            withSequence(SNIPPET_SPECIFIC, ImageGalleryImagesOption),
+            withSequence(SNIPPET_SPECIFIC_END, ImageGalleryComponent),
+        ],
+        builder_actions: {
+            AddImageAction,
+            RemoveAllImagesAction,
+            SetImageGalleryLayoutAction,
+            SetImageGalleryColumnsAction,
+            SetCarouselSpeedAction,
+        },
+        system_classes: ["o_empty_gallery_alert"],
+        get_gallery_items_handlers: this.getGalleryItems.bind(this),
+        reorder_items_handlers: this.reorderGalleryItems.bind(this),
+        on_will_remove_handlers: this.onWillRemove.bind(this),
+        on_removed_handlers: this.onRemoved.bind(this),
+        on_replaced_media_handlers: ({ newMediaEl }) =>
+            this.updateCarouselThumbnail(newMediaEl),
+        on_image_updated_handlers: ({ imageEl }) =>
+            this.updateCarouselThumbnail(imageEl),
+        on_image_saved_handlers: ({ imageEl }) => this.updateCarouselThumbnail(imageEl),
+        on_snippet_dropped_handlers: ({ snippetEl }) => {
+            const carousels = snippetEl.querySelectorAll(".s_image_gallery .carousel");
+            log.pipeline("ImageGalleryOption onSnippetDropped", () => ({
+                carousels: carousels.length,
+            }));
+            for (const carousel of carousels) {
+                carousel.style.margin = "0 12px";
+            }
+            this.addCarouselListener(carousels);
+            this.addUniqueIds(carousels);
+        },
+        on_cloned_handlers: ({ cloneEl }) => {
+            const carousels = cloneEl.querySelectorAll(".s_image_gallery .carousel");
+            log.pipeline("ImageGalleryOption onCloned", () => ({
+                carousels: carousels.length,
+            }));
+            this.addUniqueIds(carousels);
+        },
+    };
+
+    setup() {
+        this.onCarouselSlidBound = this.onCarouselSlid.bind(this);
+        this.carouselsWithSlidListener = new Set();
+        const slideshowCarousels = this.document.querySelectorAll(
+            ".s_image_gallery .carousel",
+        );
+        this.addCarouselListener(slideshowCarousels);
+        log.lifecycle("ImageGalleryOption setup", () => ({
+            slidListeners: this.carouselsWithSlidListener.size,
+        }));
+    }
+
+    destroy() {
+        super.destroy();
+        log.lifecycle("ImageGalleryOption destroy: remove slid listeners", () => ({
+            slidListeners: this.carouselsWithSlidListener.size,
+        }));
+        for (const el of this.carouselsWithSlidListener) {
+            el.removeEventListener("slid.bs.carousel", this.onCarouselSlidBound);
+        }
+        this.carouselsWithSlidListener.clear();
+    }
+
+    addUniqueIds(carousels) {
+        for (const carousel of carousels) {
+            const id = uniqueId("slideshow_");
+            carousel.id = id;
+            const controllerButtons = carousel.querySelectorAll(
+                ".o_carousel_controllers button",
+            );
+            for (const button of controllerButtons) {
+                button.setAttribute("data-bs-target", `#${id}`);
+            }
+        }
+    }
+
+    addCarouselListener(slideshowCarousels) {
+        for (const carousel of slideshowCarousels) {
+            this.bindCarouselSlid(carousel);
+        }
+    }
+
+    bindCarouselSlid(el) {
+        if (this.carouselsWithSlidListener.has(el)) {
+            return;
+        }
+        this.carouselsWithSlidListener.add(el);
+        el.addEventListener("slid.bs.carousel", this.onCarouselSlidBound);
+        log.lifecycle("ImageGalleryOption slid listener attached", () => ({
+            id: el.id,
+        }));
+    }
+
+    unbindCarouselSlid(el) {
+        if (this.carouselsWithSlidListener.delete(el)) {
+            log.lifecycle("ImageGalleryOption slid listener detached", () => ({
+                id: el.id,
+            }));
+            el.removeEventListener("slid.bs.carousel", this.onCarouselSlidBound);
+        }
+    }
+
+    restoreSelection(imageToSelect, isPreviewing) {
+        if (imageToSelect && !isPreviewing) {
+            this.dependencies.builderOptions.setNextTarget(imageToSelect);
+        }
+    }
+
+    /**
+     * @param {HTMLElement} activeItemEl
+     * @param {String} optionName
+     * @returns {Array<HTMLElement>}
+     */
+    getGalleryItems(activeItemEl, optionName) {
+        let itemEls = [];
+        if (optionName === "GalleryImageList") {
+            const galleryEl = activeItemEl.closest(".s_image_gallery");
+            const containerEl = this.getContainer(galleryEl);
+            itemEls = this.getImageHolder(containerEl);
+        }
+        return itemEls;
+    }
+
+    /**
+     * @param {HTMLElement} activeItemEl
+     * @param {Array<HTMLElement>} itemEls
+     * @param {String} optionName
+     */
+    reorderGalleryItems(activeItemEl, itemEls, optionName) {
+        if (optionName === "GalleryImageList") {
+            const galleryEl = activeItemEl.closest(".s_image_gallery");
+            log.pipeline("ImageGalleryOption reorderGalleryItems", () => ({
+                items: itemEls.length,
+            }));
+
+            itemEls.forEach((itemEl, i) => {
+                const imgEl = this.getImageElement(itemEl);
+                imgEl.dataset.index = i;
+            });
+            const mode = this.getMode(galleryEl);
+            this.setImages(galleryEl, mode, itemEls);
+
+            if (mode === "slideshow") {
+                const newPosition = itemEls.indexOf(activeItemEl);
+                log.logic(
+                    "ImageGalleryOption reorder slideshow: activate slide",
+                    () => ({
+                        newPosition,
+                    }),
+                );
+                const carouselEl = galleryEl.querySelector(".carousel");
+                const carouselItemEls = carouselEl.querySelectorAll(".carousel-item");
+                carouselItemEls.forEach((itemEl, i) => {
+                    itemEl.classList.toggle("active", i === newPosition);
+                });
+                updateCarouselIndicators(carouselEl, newPosition);
+
+                const activeImageEl = galleryEl.querySelector(
+                    ".carousel-item.active img",
+                );
+                this.dependencies.builderOptions.setNextTarget(activeImageEl);
+            }
+        }
+    }
+
+    /**
+     * @param {Element} imageGalleryElement
+     * @param {String('slideshow'|'masonry'|'grid'|'nomode')} mode
+     * @param {Element[]} images
+     */
+    setImages(imageGalleryElement, mode, images) {
+        log.pipeline("ImageGalleryOption setImages", () => ({
+            mode,
+            images: images.length,
+            modeChanged: mode !== this.getMode(imageGalleryElement),
+        }));
+        if (mode !== this.getMode(imageGalleryElement)) {
+            imageGalleryElement.classList.remove(
+                "o_nomode",
+                "o_masonry",
+                "o_grid",
+                "o_slideshow",
+            );
+            imageGalleryElement.classList.add(`o_${mode}`);
+        }
+        switch (mode) {
+            case "masonry":
+                this.masonry(imageGalleryElement, images);
+                break;
+            case "grid":
+                this.grid(imageGalleryElement, images);
+                break;
+            case "nomode":
+                this.nomode(imageGalleryElement, images);
+                break;
+            case "slideshow":
+                this.slideshow(imageGalleryElement, images);
+                break;
+        }
+    }
+
+    /**
+     * @param {Element} imageGalleryElement
+     * @param {Element[]} images
+     */
+    masonry(imageGalleryElement, images) {
+        const columnsNumber = this.getColumns(imageGalleryElement);
+        const colClass = "col-lg-" + 12 / columnsNumber;
+        const columns = [];
+        const endMasonry = log.perf("ImageGalleryOption masonry layout", () => ({
+            images: images.length,
+            columns: columnsNumber,
+        }));
+
+        const row = document.createElement("div");
+        row.classList.add("row", "s_nb_column_fixed");
+        this.getContainer(imageGalleryElement).replaceChildren(row);
+
+        for (let i = 0; i < columnsNumber; i++) {
+            const column = document.createElement("div");
+            column.classList.add("o_masonry_col", "o_snippet_not_selectable", colClass);
+            row.append(column);
+            columns.push(column);
+        }
+
+        for (const imageEl of images) {
+            let min = Infinity;
+            let smallestColEl;
+            for (const colEl of columns) {
+                const imagesInCol = colEl.querySelectorAll("img");
+                const lastImageRect =
+                    imagesInCol.length &&
+                    imagesInCol[imagesInCol.length - 1].getBoundingClientRect();
+                const height = lastImageRect
+                    ? Math.round(lastImageRect.top + lastImageRect.height)
+                    : 0;
+                if (height < min) {
+                    min = height;
+                    smallestColEl = colEl;
+                }
+            }
+            smallestColEl.append(imageEl);
+        }
+        endMasonry();
+    }
+
+    /**
+     * @param {Element} imageGalleryElement
+     * @param {Element[]} images
+     */
+    grid(imageGalleryElement, images) {
+        const columnsNumber = this.getColumns(imageGalleryElement);
+        const colClass = "col-lg-" + 12 / columnsNumber;
+
+        const container = this.getContainer(imageGalleryElement);
+        let row = document.createElement("div");
+        row.classList.add("row", "s_nb_column_fixed");
+        container.replaceChildren(row);
+
+        for (const [index, img] of images.entries()) {
+            const col = this.document.createElement("div");
+            col.classList.add(colClass);
+            col.appendChild(img);
+            row.appendChild(col);
+            if ((index + 1) % columnsNumber === 0) {
+                row = document.createElement("div");
+                row.classList.add("row", "s_nb_column_fixed");
+                container.appendChild(row);
+            }
+        }
+    }
+
+    nomode(imageGalleryElement, itemEls) {
+        const row = this.document.createElement("div");
+        row.classList.add("row", "s_nb_column_fixed");
+        const container = this.getContainer(imageGalleryElement);
+        container.replaceChildren(row);
+        for (const itemEl of itemEls) {
+            const imgEl = this.getImageElement(itemEl);
+            let wrapClass = "col-lg-3";
+            if (imgEl.width >= imgEl.height * 2 || imgEl.width > 600) {
+                wrapClass = "col-lg-6";
+            }
+
+            const wrap = this.document.createElement("div");
+            wrap.classList.add(wrapClass);
+            wrap.appendChild(itemEl);
+            row.appendChild(wrap);
+        }
+    }
+
+    slideshow(imageGalleryElement, itemEls) {
+        const container = this.getContainer(imageGalleryElement);
+        const currentInterval =
+            imageGalleryElement.querySelector(".carousel")?.dataset.bsInterval;
+        const carouselEl = imageGalleryElement.querySelector(".carousel");
+        const colorContrast =
+            carouselEl && carouselEl.classList.contains("carousel-dark")
+                ? "carousel-dark"
+                : " ";
+
+        const imagesData = itemEls.map((itemEl) => {
+            const imgEl = this.getImageElement(itemEl);
+            const linkEl = itemEl.tagName === "A" ? itemEl : null;
+            return { imgEl, linkEl };
+        });
+
+        const images = imagesData.map((data) => data.imgEl);
+        const endRender = log.perf("ImageGalleryOption render slideshow", () => ({
+            images: images.length,
+        }));
+        const slideshowEl = renderToElement("website.s_image_gallery_slideshow", {
+            images: images,
+            index: 0,
+            interval: currentInterval || 0,
+            ride: !currentInterval ? "false" : "carousel",
+            id: "slideshow_" + new Date().getTime(),
+            colorContrast,
+            copyAttributes: true,
+        });
+        endRender();
+        if (carouselEl) {
+            this.unbindCarouselSlid(carouselEl);
+        }
+        container.replaceChildren(slideshowEl);
+        slideshowEl.querySelectorAll("img").forEach((img, index) => {
+            img.setAttribute("data-index", index);
+            if (imagesData[index]?.linkEl) {
+                const linkEl = imagesData[index].linkEl.cloneNode(false);
+                img.before(linkEl);
+                linkEl.append(img);
+            }
+        });
+        if (images.length) {
+            slideshowEl
+                .querySelector(".carousel .o_carousel_controllers")
+                ?.classList.remove("d-none");
+            slideshowEl
+                .querySelector(".carousel .carousel-inner")
+                ?.classList.remove("d-none");
+        } else {
+            log.logic("ImageGalleryOption slideshow without images: hide controls");
+            imageGalleryElement.style.removeProperty("height");
+            slideshowEl
+                .querySelector(".carousel .o_carousel_controllers")
+                ?.classList.add("d-none");
+            slideshowEl
+                .querySelector(".carousel .carousel-inner")
+                ?.classList.add("d-none");
+        }
+        this.bindCarouselSlid(slideshowEl);
+    }
+
+    onCarouselSlid(ev) {
+        const activeImageEl = ev.target.querySelector(".carousel-item.active img");
+        this.dependencies.builderOptions.updateContainers(activeImageEl);
+    }
+
+    async processImages(editingElement, newImages = []) {
+        const endWebp = log.perf("ImageGalleryOption transformImagesToWebp", () => ({
+            images: newImages.length,
+        }));
+        await this.transformImagesToWebp(newImages);
+        endWebp();
+        this.setImageProperties(editingElement, newImages);
+        const endClone = log.perf("ImageGalleryOption cloneContainerImages");
+        const { clonedImgs, imageToSelect } =
+            await this.cloneContainerImages(editingElement);
+        endClone(() => ({ cloned: clonedImgs.length, selected: !!imageToSelect }));
+        return { images: [...clonedImgs, ...newImages], imageToSelect };
+    }
+
+    setImageProperties(imageGalleryElement, images) {
+        const lastImage = this.getImages(imageGalleryElement).at(-1);
+        let lastIndex = lastImage ? this.getIndex(lastImage) : -1;
+        for (const image of images) {
+            image.classList.add(
+                "d-block",
+                "mh-100",
+                "mw-100",
+                "mx-auto",
+                "rounded",
+                "object-fit-cover",
+            );
+            image.dataset.index = ++lastIndex;
+        }
+    }
+
+    async transformImagesToWebp(images) {
+        const process = async (img) => {
+            const newDataset = await loadImageInfo(img);
+            const { mimetypeBeforeConversion } = { ...img.dataset, ...newDataset };
+            if (
+                mimetypeBeforeConversion &&
+                !["image/gif", "image/svg+xml", "image/webp"].includes(
+                    mimetypeBeforeConversion,
+                )
+            ) {
+                log.logic("ImageGalleryOption convert image to webp", () => ({
+                    mimetypeBeforeConversion,
+                }));
+                const update = await this.dependencies.imagePostProcess.processImage({
+                    img,
+                    newDataset: {
+                        formatMimetype: "image/webp",
+                        ...newDataset,
+                    },
+                });
+                update();
+            }
+        };
+        return await Promise.all(images.map(process));
+    }
+
+    async cloneContainerImages(imageGalleryElement) {
+        const imagesHolder = this.getImageHolder(imageGalleryElement);
+        const clonedImgs = [];
+        const imgLoaded = [];
+        let imageToSelect;
+        const currentContainers = this.dependencies.builderOptions.getContainers();
+        for (const image of imagesHolder) {
+            const newImg = image.cloneNode(true);
+            const imgEl =
+                newImg.tagName === "IMG"
+                    ? newImg
+                    : newImg.querySelector(":scope > img");
+            imgEl.loading = "eager";
+            imgLoaded.push(
+                imgEl.decode().then(() => {
+                    imgEl.loading = "lazy";
+                }),
+            );
+            if (currentContainers.at(-1)?.element === image) {
+                imageToSelect = newImg;
+            }
+            clonedImgs.push(newImg);
+        }
+        const endDecode = log.perf("ImageGalleryOption decode cloned images", () => ({
+            images: imgLoaded.length,
+        }));
+        await Promise.allSettled(imgLoaded);
+        endDecode();
+        return { clonedImgs, imageToSelect };
+    }
+
+    /**
+     * @returns {String('slideshow'|'masonry'|'grid'|'nomode')}
+     */
+    getMode(imageGalleryElement) {
+        if (imageGalleryElement.classList.contains("o_masonry")) {
+            return "masonry";
+        }
+        if (imageGalleryElement.classList.contains("o_grid")) {
+            return "grid";
+        }
+        if (imageGalleryElement.classList.contains("o_nomode")) {
+            return "nomode";
+        }
+        return "slideshow";
+    }
+
+    getImages(currentContainer) {
+        const imgs = currentContainer.querySelectorAll("img");
+        return [...imgs].sort(
+            (imgA, imgB) => this.getIndex(imgA) - this.getIndex(imgB),
+        );
+    }
+
+    getIndex(img) {
+        return parseInt(img.dataset.index) || 0;
+    }
+
+    getImageHolder(currentContainer) {
+        const images = this.getImages(currentContainer);
+        return [...images].map((image) => image.closest("a") || image);
+    }
+
+    getColumns(imageGalleryElement) {
+        return parseInt(imageGalleryElement.dataset.columns) || 3;
+    }
+
+    getContainer(imageGalleryElement) {
+        return imageGalleryElement.querySelector(
+            ".container, .container-fluid, .o_container_small",
+        );
+    }
+
+    onWillRemove(toRemoveEl) {
+        if (toRemoveEl.matches(".s_image_gallery img")) {
+            log.logic(
+                "ImageGalleryOption gallery image will be removed: relayout after",
+            );
+            this.imageRemovedGalleryElement = toRemoveEl.closest(".s_image_gallery");
+        }
+    }
+
+    onRemoved() {
+        if (this.imageRemovedGalleryElement) {
+            const mode = this.getMode(this.imageRemovedGalleryElement);
+            const images = this.getImageHolder(this.imageRemovedGalleryElement);
+            log.pipeline("ImageGalleryOption relayout after image removal", () => ({
+                mode,
+                images: images.length,
+            }));
+            this.setImages(this.imageRemovedGalleryElement, mode, images);
+            this.imageRemovedGalleryElement = undefined;
+        }
+    }
+
+    updateCarouselThumbnail(mediaEl) {
+        if (mediaEl.matches(".s_image_gallery img")) {
+            log.pipeline("ImageGalleryOption forward image to thumbnail");
+            forwardToThumbnail(mediaEl);
+        }
+    }
+
+    getImageElement(el) {
+        return el.tagName === "IMG" ? el : el.querySelector("img");
+    }
+}
+
+export class AddImageAction extends BuilderAction {
+    static id = "addImage";
+    static dependencies = ["media", "imageGalleryOption"];
+    async load({ editingElement }) {
+        let selectedImages;
+        log.lifecycle("AddImageAction open media dialog");
+        await new Promise((resolve) => {
+            const onClose = this.dependencies.media.openMediaDialog({
+                onlyImages: true,
+                multiImages: true,
+                save: (images) => {
+                    selectedImages = images;
+                    resolve();
+                },
+            });
+            onClose.then(resolve);
+        });
+        if (!selectedImages) {
+            log.logic("AddImageAction no image selected");
+            return [];
+        }
+        log.pipeline("AddImageAction process selected images", () => ({
+            images: selectedImages.length,
+        }));
+        return this.dependencies.imageGalleryOption.processImages(
+            editingElement,
+            selectedImages,
+        );
+    }
+    apply({ editingElement, loadResult: { images } }) {
+        if (images && images.length) {
+            const mode = this.dependencies.imageGalleryOption.getMode(editingElement);
+            log.pipeline("AddImageAction apply", () => ({
+                mode,
+                images: images.length,
+            }));
+            this.dependencies.imageGalleryOption.setImages(
+                editingElement,
+                mode,
+                images,
+            );
+        }
+    }
+}
+export class RemoveAllImagesAction extends BuilderAction {
+    static id = "removeAllImages";
+    static dependencies = ["imageGalleryOption"];
+    apply({ editingElement: el }) {
+        const mode = this.dependencies.imageGalleryOption.getMode(el);
+        log.pipeline("RemoveAllImagesAction apply", () => ({ mode }));
+        this.dependencies.imageGalleryOption.setImages(el, mode, []);
+    }
+}
+export class SetImageGalleryLayoutAction extends BuilderAction {
+    static id = "setImageGalleryLayout";
+    static dependencies = ["imageGalleryOption"];
+    load({ editingElement }) {
+        return this.dependencies.imageGalleryOption.processImages(editingElement);
+    }
+    apply({ isPreviewing, editingElement, params: { mainParam: mode }, loadResult }) {
+        if (mode !== this.dependencies.imageGalleryOption.getMode(editingElement)) {
+            log.logic("SetImageGalleryLayoutAction switch layout", () => ({
+                mode,
+                isPreviewing,
+            }));
+            this.dependencies.imageGalleryOption.setImages(
+                editingElement,
+                mode,
+                loadResult.images,
+            );
+            this.dependencies.imageGalleryOption.restoreSelection(
+                loadResult.imageToSelect,
+                isPreviewing,
+            );
+        }
+    }
+    isApplied({ editingElement, params: { mainParam: mode } }) {
+        return mode === this.dependencies.imageGalleryOption.getMode(editingElement);
+    }
+}
+export class SetImageGalleryColumnsAction extends BuilderAction {
+    static id = "setImageGalleryColumns";
+    static dependencies = ["imageGalleryOption"];
+    load({ editingElement }) {
+        return this.dependencies.imageGalleryOption.processImages(editingElement);
+    }
+    apply({
+        isPreviewing,
+        editingElement,
+        params: { mainParam: columns },
+        loadResult,
+    }) {
+        if (
+            columns !== this.dependencies.imageGalleryOption.getColumns(editingElement)
+        ) {
+            log.logic("SetImageGalleryColumnsAction change columns", () => ({
+                columns,
+                isPreviewing,
+            }));
+            editingElement.dataset.columns = columns;
+            this.dependencies.imageGalleryOption.setImages(
+                editingElement,
+                this.dependencies.imageGalleryOption.getMode(editingElement),
+                loadResult.images,
+            );
+            this.dependencies.imageGalleryOption.restoreSelection(
+                loadResult.imageToSelect,
+                isPreviewing,
+            );
+        }
+    }
+    isApplied({ editingElement, params: { mainParam: columns } }) {
+        return (
+            columns === this.dependencies.imageGalleryOption.getColumns(editingElement)
+        );
+    }
+}
+
+export class SetCarouselSpeedAction extends BuilderAction {
+    static id = "setCarouselSpeed";
+    apply({ editingElement, value }) {
+        log.pipeline("SetCarouselSpeedAction apply", () => ({ seconds: value }));
+        editingElement.dataset.bsInterval = value * 1000;
+    }
+    getValue({ editingElement }) {
+        return editingElement.dataset.bsInterval / 1000;
+    }
+}
+
+registry.category("website-plugins").add(ImageGalleryOption.id, ImageGalleryOption);

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="access_channel_agent_open_session" model="ir.access">
+        <field
+            name="name">ai.channel_agent: a live chat session's opening names the agent that serves it</field>
+        <field name="group_id" ref="im_livechat.privilege_open_session" />
+        <field name="kind">permission</field>
+        <field name="operation">u</field>
+        <field name="class_id" ref="ai.access_class_channel_agent" />
+    </record>
+
+</odoo>

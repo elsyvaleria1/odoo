@@ -1,0 +1,3 @@
+id,name,model_id/id,group_id/id,kind,operation,domain
+access_purchase_agreement_stock_manager,purchase.agreement,purchase_agreement.model_purchase_agreement,stock.group_stock_manager,permission,cr,
+access_purchase_agreement_line_stock_manager,purchase.agreement.line,purchase_agreement.model_purchase_agreement_line,stock.group_stock_manager,permission,cr,

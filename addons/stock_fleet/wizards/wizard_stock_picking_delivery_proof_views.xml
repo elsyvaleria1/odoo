@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="wizard_stock_picking_delivery_proof_form" model="ir.ui.view">
+        <field name="name">wizard.stock.picking.delivery.proof.form</field>
+        <field name="model">wizard.stock.picking.delivery.proof</field>
+        <field name="arch" type="xml">
+            <form>
+                <group>
+                    <field name="picking_id" readonly="1" />
+                    <field name="resume" invisible="1" />
+                </group>
+                <p class="text-muted">
+                    Take a photo of the delivery slip signed by the customer. On a
+                    phone the button opens the camera.
+                </p>
+                <field
+                    name="delivery_proof"
+                    widget="image"
+                    options="{'size': [0, 360]}"
+                    class="w-100" />
+                <footer>
+                    <button
+                        name="action_confirm"
+                        type="object"
+                        string="Confirm"
+                        class="btn-primary"
+                        data-hotkey="q" />
+                    <button special="cancel" string="Discard" data-hotkey="x" />
+                </footer>
+            </form>
+        </field>
+    </record>
+
+</odoo>

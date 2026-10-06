@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="helpdesk_ticket_view_form_inherit_helpdesk_stock" model="ir.ui.view">
+        <field name="name">helpdesk.ticket.form.inherit.stock</field>
+        <field name="model">helpdesk.ticket</field>
+        <field name="inherit_id" ref="helpdesk.helpdesk_ticket_view_form" />
+        <field name="arch" type="xml">
+            <button name="action_view_helpdesk_ticket" position="before">
+                <button
+                    name="action_view_pickings"
+                    type="object"
+                    icon="fa-truck"
+                    groups="stock.group_stock_user"
+                    invisible="pickings_count == 0"
+                    class="oe_stat_button">
+                    <field name="pickings_count" string="Returns" widget="statinfo" />
+                </button>
+                <button
+                    name="action_view_replacements"
+                    type="object"
+                    icon="fa-truck"
+                    groups="stock.group_stock_user"
+                    invisible="replacement_count == 0 or not use_product_replacements"
+                    class="oe_stat_button">
+                    <field
+                        name="replacement_count"
+                        string="Deliveries"
+                        widget="statinfo" />
+                </button>
+            </button>
+            <xpath
+                expr="//page[@name='extra_info']//field[@name='company_id']"
+                position="after">
+                <field name="use_credit_notes" invisible="1" />
+                <field name="use_product_returns" invisible="1" />
+                <field name="use_product_repairs" invisible="1" />
+                <field name="suitable_product_ids" invisible="1" />
+                <field name="tracking" invisible="1" />
+            </xpath>
+        </field>
+    </record>
+
+    <record id="helpdesk_ticket_view_form_inherit_stock_user" model="ir.ui.view">
+        <field name="name">helpdesk.ticket.form.inherit.return.stock.user</field>
+        <field name="model">helpdesk.ticket</field>
+        <field name="inherit_id" ref="helpdesk.helpdesk_ticket_view_form" />
+        <field name="priority">45</field>
+        <field name="arch" type="xml">
+            <field name="stage_id" position="before">
+                <field
+                    name="has_partner_picking"
+                    groups="stock.group_stock_user"
+                    invisible="1" />
+                <field
+                    name="use_product_returns"
+                    groups="stock.group_stock_user"
+                    invisible="1" />
+                <button
+                    name="%(stock.act_stock_return_picking)d"
+                    type="action"
+                    string="Return"
+                    context="{'default_ticket_id': id, 'default_company_id': company_id}"
+                    groups="stock.group_stock_user"
+                    invisible="not use_product_returns"
+                    data-hotkey="q" />
+                <button
+                    name="action_create_replacement"
+                    type="object"
+                    string="Replace"
+                    groups="stock.group_stock_user"
+                    invisible="not use_product_replacements or not partner_id"
+                    data-hotkey="l" />
+            </field>
+        </field>
+    </record>
+
+</odoo>

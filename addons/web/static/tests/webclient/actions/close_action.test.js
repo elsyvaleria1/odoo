@@ -1,0 +1,218 @@
+// @ts-check
+
+import { expect, test } from "@odoo/hoot";
+import { animationFrame, Deferred } from "@odoo/hoot-mock";
+import {
+    contains,
+    defineActions,
+    defineModels,
+    getService,
+    models,
+    mountWebClient,
+    onRpc,
+    patchWithCleanup,
+    webModels,
+} from "@web/../tests/web_test_helpers";
+import { viewConfigOf } from "@web/core/view_config_hooks";
+import { listView } from "@web/views/list/list_view";
+
+const { ResCompany, ResPartner, ResUsers } = webModels;
+
+class Partner extends models.Model {
+    _rec_name = "display_name";
+
+    _records = [
+        { id: 1, display_name: "First record" },
+        { id: 2, display_name: "Second record" },
+    ];
+    _views = {
+        form: `
+            <form>
+                <group>
+                    <field name="display_name"/>
+                </group>
+            </form>`,
+        "kanban,1": `
+            <kanban>
+                <templates>
+                    <t t-name="card">
+                        <field name="display_name"/>
+                    </t>
+                </templates>
+            </kanban>`,
+        list: `<list><field name="display_name"/></list>`,
+    };
+}
+
+defineModels([Partner, ResCompany, ResPartner, ResUsers]);
+
+defineActions([
+    {
+        id: 1,
+        xml_id: "action_1",
+        name: "Partners Action 1",
+        res_model: "partner",
+        views: [[1, "kanban"]],
+    },
+    {
+        id: 3,
+        xml_id: "action_3",
+        name: "Partners",
+        res_model: "partner",
+        views: [
+            [false, "list"],
+            [1, "kanban"],
+            [false, "form"],
+        ],
+    },
+    {
+        id: 5,
+        xml_id: "action_5",
+        name: "Create a Partner",
+        res_model: "partner",
+        target: "new",
+        views: [[false, "form"]],
+    },
+]);
+
+test("close the currently opened dialog", async () => {
+    await mountWebClient();
+    await getService("action").doAction(5);
+    expect(".o_technical_modal .o_form_view").toHaveCount(1);
+    await getService("action").doAction({
+        type: "ir.actions.act_window_close",
+    });
+    await animationFrame();
+    expect(".o_technical_modal .o_form_view").toHaveCount(0);
+});
+
+test("close dialog by clicking on the header button", async () => {
+    await mountWebClient();
+    function onClose() {
+        expect.step("on_close");
+    }
+    await getService("action").doAction(5, { onClose });
+    expect(".o_dialog").toHaveCount(1);
+    await contains(".o_dialog .modal-header button").click();
+    expect(".o_dialog").toHaveCount(0);
+    expect.verifySteps(["on_close"]);
+
+    await getService("action").doAction({ type: "ir.actions.act_window_close" });
+    expect.verifySteps([]);
+});
+
+test('execute "on_close" only if there is no dialog to close', async () => {
+    await mountWebClient();
+    await getService("action").doAction(5);
+    function onClose() {
+        expect.step("on_close");
+    }
+    const options = { onClose };
+    await getService("action").doAction(
+        { type: "ir.actions.act_window_close" },
+        options,
+    );
+    expect.verifySteps([]);
+    await getService("action").doAction(
+        { type: "ir.actions.act_window_close" },
+        options,
+    );
+    expect.verifySteps(["on_close"]);
+});
+
+test("close action with provided infos", async () => {
+    expect.assertions(1);
+
+    await mountWebClient();
+    const options = {
+        onClose: function (/** @type {any} */ infos) {
+            expect(infos).toBe("just for testing", {
+                message: "should have the correct close infos",
+            });
+        },
+    };
+    await getService("action").doAction(
+        {
+            type: "ir.actions.act_window_close",
+            infos: "just for testing",
+        },
+        options,
+    );
+});
+
+test("on_close chaining a follow-up inline action fires exactly once", async () => {
+    onRpc("/web/action/load", async (request) => {
+        const { params } = await request.json();
+        expect.step(`load action ${params.action_id}`);
+    });
+    await mountWebClient();
+    function onClose() {
+        expect.step("on_close");
+        return getService("action").doAction(1);
+    }
+    await getService("action").doAction(5, { onClose });
+    expect(".o_technical_modal .o_form_view").toHaveCount(1);
+    await getService("action").doAction({ type: "ir.actions.act_window_close" });
+    await animationFrame();
+    expect(".o_technical_modal").toHaveCount(0);
+    expect(".o_kanban_view").toHaveCount(1);
+    expect.verifySteps(["load action 5", "on_close", "load action 1"]);
+});
+
+test.tags("desktop");
+test("history back called within on_close", async () => {
+    let list;
+    patchWithCleanup(listView.Controller.prototype, {
+        setup() {
+            super.setup(...arguments);
+            list = this;
+        },
+    });
+    await mountWebClient();
+
+    await getService("action").doAction(1);
+    expect(".o_kanban_view").toHaveCount(1);
+    await getService("action").doAction(3);
+    expect(".o_list_view").toHaveCount(1);
+
+    function onClose() {
+        viewConfigOf(list).historyBack();
+        expect.step("on_close");
+    }
+    await getService("action").doAction(5, { onClose });
+
+    await contains(".modal-header button.btn-close").click();
+    expect(".modal").toHaveCount(0);
+    expect(".o_list_view").toHaveCount(0);
+    expect(".o_kanban_view").toHaveCount(1);
+    expect.verifySteps(["on_close"]);
+});
+
+test.tags("desktop");
+test("web client is not deadlocked when a view crashes", async () => {
+    expect.assertions(4);
+    expect.errors(1);
+
+    const readOnFirstRecordDef = new Deferred();
+    onRpc("web_read", ({ args }) => {
+        if (args[0][0] === 1) {
+            return readOnFirstRecordDef;
+        }
+    });
+    await mountWebClient();
+    await getService("action").doAction(3);
+    await contains(".o_list_view .o_data_cell").click();
+    readOnFirstRecordDef.reject(new Error("not working as intended"));
+    await expect.waitForErrors(["not working as intended"]);
+
+    expect(".o_list_view").toHaveCount(1, {
+        message: "there should still be a list view in dom",
+    });
+    await contains(".o_list_view .o_data_row:eq(1) .o_data_cell").click();
+    expect(".o_list_view").toHaveCount(0, {
+        message: "there should not be a list view in dom",
+    });
+    expect(".o_form_view").toHaveCount(1, {
+        message: "there should be a form view in dom",
+    });
+});

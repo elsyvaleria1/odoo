@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!--
+        Run on install AND on every upgrade; see the sibling file in
+        project_gantt. Idempotent.
+    -->
+    <function
+        model="ir.actions.act_window"
+        name="_add_task_view_mode"
+        eval="('map',)" />
+
+</odoo>

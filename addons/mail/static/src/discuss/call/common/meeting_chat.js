@@ -1,0 +1,40 @@
+// @ts-check
+/** @odoo-module native */
+import { ActionPanel } from "@mail/core/common/action_panel";
+import { Composer } from "@mail/core/common/composer";
+import { Thread } from "@mail/core/common/thread";
+import { Typing } from "@mail/discuss/typing/common/typing";
+import { provideMailContext } from "@mail/utils/common/mail_context";
+import { Component, proxy, t, useProps } from "@odoo/owl";
+import { isMobileOS } from "@web/core/browser/feature_detection";
+import { useChildRef, useService } from "@web/core/utils/hooks";
+/**
+ * @typedef {Object} Props
+ * @property {import("models").Thread} [thread]
+ * @extends {Component<Props, import("@web/env").OdooEnv>}
+ */
+export class MeetingChat extends Component {
+    static template = "mail.MeetingChat";
+    static components = {
+        ActionPanel,
+        Composer,
+        Thread,
+        Typing,
+    };
+    static props = { thread: t.any().optional() };
+    props = useProps(this.constructor.props);
+
+    setup() {
+        this.store = useService("mail.store");
+        this.ui = useService("ui");
+        this.rtc = useService("discuss.rtc");
+        this.state = proxy({ jumpPresent: 0 });
+        this.panelContentRef = useChildRef();
+        this.isMobileOS = isMobileOS();
+        provideMailContext({ inMeetingChat: true });
+    }
+
+    get thread() {
+        return this.store.rtc.channel;
+    }
+}

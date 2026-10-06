@@ -1,0 +1,1160 @@
+// @ts-check
+
+import { describe, expect, getFixture, test } from "@odoo/hoot";
+import { click, queryOne, queryValue } from "@odoo/hoot-dom";
+import { animationFrame, Deferred, mockTouch } from "@odoo/hoot-mock";
+import { Component, onMounted, onWillStart, proxy, t, useProps, xml } from "@odoo/owl";
+import {
+    contains,
+    getService,
+    makeMockEnv,
+    mountWithCleanup,
+    patchWithCleanup,
+} from "@web/../tests/web_test_helpers";
+import { appContextOf } from "@web/core/app_context";
+import { browser } from "@web/core/browser/browser";
+import { registry } from "@web/core/registry";
+import { elementRef } from "@web/core/utils/element_ref";
+import {
+    useAutofocus,
+    useBodyClass,
+    useBus,
+    useChildRef,
+    useForwardRefToParent,
+    useMountedListener,
+    useService,
+    useServiceProtectMethodHandling,
+    useSpellCheck,
+    useSyncedInputProperty,
+} from "@web/core/utils/hooks";
+import { CommandPalette } from "@web/ui/commands/command_palette";
+
+describe("useAutofocus", () => {
+    test.tags("desktop");
+    test("simple usecase", async () => {
+        const state = proxy({ text: "" });
+
+        class MyComponent extends Component {
+            static props = null;
+            static template = xml`
+                <span>
+                    <input type="text" t-ref="this.autofocusRef" t-att-value="this.state.text" />
+                </span>
+            `;
+            props = useProps(this.constructor.props);
+            setup() {
+                this.autofocusRef = elementRef();
+                useAutofocus({ ref: this.autofocusRef });
+
+                this.state = proxy(state);
+            }
+        }
+
+        await mountWithCleanup(MyComponent);
+
+        expect("input").toBeFocused();
+
+        state.text = "a";
+        await animationFrame();
+
+        expect("input").toBeFocused();
+    });
+
+    test.tags("desktop");
+    test("simple usecase when input type is number", async () => {
+        const state = proxy({ counter: 0 });
+
+        class MyComponent extends Component {
+            static props = null;
+            static template = xml`
+                <span>
+                    <input type="number" t-ref="this.autofocusRef" t-att-value="this.state.counter" />
+                </span>
+            `;
+            props = useProps(this.constructor.props);
+            setup() {
+                this.autofocusRef = elementRef();
+                useAutofocus({ ref: this.autofocusRef });
+
+                this.state = proxy(state);
+            }
+        }
+
+        await mountWithCleanup(MyComponent);
+
+        expect("input").toBeFocused();
+
+        state.counter++;
+        await animationFrame();
+
+        expect("input").toBeFocused();
+    });
+
+    test.tags("desktop");
+    test("conditional autofocus", async () => {
+        const state = proxy({ showInput: true });
+
+        class MyComponent extends Component {
+            static props = null;
+            static template = xml`
+                <span>
+                    <input t-if="this.state.showInput" type="text" t-ref="this.autofocusRef" />
+                </span>
+            `;
+            props = useProps(this.constructor.props);
+            setup() {
+                this.autofocusRef = elementRef();
+                useAutofocus({ ref: this.autofocusRef });
+
+                this.state = proxy(state);
+            }
+        }
+
+        await mountWithCleanup(MyComponent);
+
+        expect("input").toBeFocused();
+
+        state.showInput = false;
+        await animationFrame();
+
+        expect(document.body).toBeFocused();
+
+        state.showInput = true;
+        await animationFrame();
+
+        expect("input").toBeFocused();
+    });
+
+    test("returns also a ref when screen has touch but it does not focus", async () => {
+        expect.assertions(2);
+
+        mockTouch(true);
+
+        class MyComponent extends Component {
+            static template = xml`
+                <span>
+                    <input type="text" t-ref="this.autofocusRef" />
+                </span>
+            `;
+            static props = null;
+            props = useProps(this.constructor.props);
+            setup() {
+                this.autofocusRef = elementRef();
+                const inputRef = useAutofocus({ ref: this.autofocusRef });
+                onMounted(() => {
+                    expect(inputRef.el).toBeInstanceOf(HTMLInputElement);
+                });
+            }
+        }
+
+        await mountWithCleanup(MyComponent);
+        expect("input").not.toBeFocused();
+    });
+
+    test("works when screen has touch and you provide mobile param", async () => {
+        class MyComponent extends Component {
+            static props = null;
+            static template = xml`
+                <span>
+                    <input type="text" t-ref="this.autofocusRef" />
+                </span>
+            `;
+            props = useProps(this.constructor.props);
+            setup() {
+                this.autofocusRef = elementRef();
+                useAutofocus({ ref: this.autofocusRef, mobile: true });
+            }
+        }
+
+        patchWithCleanup(browser, {
+            matchMedia(media) {
+                if (media === "(pointer:coarse)") {
+                    return { matches: true };
+                }
+                return super.matchMedia(media);
+            },
+        });
+
+        await mountWithCleanup(MyComponent);
+
+        expect("input").toBeFocused();
+    });
+
+    test.tags("desktop");
+    test("supports different ref names", async () => {
+        const state = proxy({ showSecond: true });
+
+        class MyComponent extends Component {
+            static props = null;
+            static template = xml`
+                <span>
+                    <input type="text" t-ref="this.firstRef" />
+                    <input t-if="this.state.showSecond" type="text" t-ref="this.secondRef" />
+                </span>
+            `;
+            props = useProps(this.constructor.props);
+            setup() {
+                this.secondRef = elementRef();
+                useAutofocus({ ref: this.secondRef });
+                this.firstRef = elementRef();
+                useAutofocus({ ref: this.firstRef });
+
+                this.state = proxy(state);
+            }
+        }
+
+        await mountWithCleanup(MyComponent);
+
+        expect("input:first").toBeFocused();
+
+        state.showSecond = false;
+        await animationFrame();
+
+        expect("input:first").toBeFocused();
+
+        state.showSecond = true;
+        await animationFrame();
+
+        expect("input:last").toBeFocused();
+    });
+
+    test.tags("desktop");
+    test("can select its content", async () => {
+        class MyComponent extends Component {
+            static props = null;
+            static template = xml`
+                <span>
+                    <input type="text" value="input content" t-ref="this.autofocusRef" />
+                </span>
+            `;
+            props = useProps(this.constructor.props);
+            setup() {
+                this.autofocusRef = elementRef();
+                useAutofocus({ ref: this.autofocusRef, selectAll: true });
+            }
+        }
+
+        await mountWithCleanup(MyComponent);
+
+        expect("input").toBeFocused();
+        expect("input").toHaveProperty("selectionStart", 0);
+        expect("input").toHaveProperty("selectionEnd", 13);
+    });
+
+    test.tags("desktop");
+    test("autofocus outside of active element doesn't work (CommandPalette)", async () => {
+        const state = proxy({
+            showPalette: true,
+            text: "",
+        });
+
+        class MyComponent extends Component {
+            static props = null;
+            static template = xml`
+                    <div>
+                        <input type="text" t-ref="this.autofocusRef" t-att-value="this.state.text" />
+                    </div>
+                `;
+            props = useProps(this.constructor.props);
+            setup() {
+                this.autofocusRef = elementRef();
+                useAutofocus({ ref: this.autofocusRef });
+
+                this.state = proxy(state);
+            }
+        }
+
+        await mountWithCleanup(MyComponent);
+
+        expect("input:first").toBeFocused();
+
+        getService("dialog").add(CommandPalette, {
+            config: { providers: [] },
+        });
+        await animationFrame();
+
+        expect(".o_command_palette").toHaveCount(1);
+        expect("input:first").not.toBeFocused();
+
+        state.text = "a";
+        await animationFrame();
+
+        expect("input:first").not.toBeFocused();
+    });
+});
+
+describe("useBus", () => {
+    test("simple usecase", async () => {
+        const state = proxy({ child: true });
+
+        class MyComponent extends Component {
+            static props = null;
+            static template = xml`<div/>`;
+            props = useProps(this.constructor.props);
+            setup() {
+                useBus(appContextOf(this).bus, "test-event", this.myCallback);
+            }
+            myCallback() {
+                expect.step("callback");
+            }
+        }
+
+        class Parent extends Component {
+            static components = { MyComponent };
+            static props = null;
+            static template = xml`<MyComponent t-if="this.state.child" />`;
+            props = useProps(this.constructor.props);
+
+            setup() {
+                this.state = proxy(state);
+            }
+        }
+
+        const { bus } = await makeMockEnv();
+        await mountWithCleanup(Parent);
+
+        bus.trigger("test-event");
+        expect.verifySteps(["callback"]);
+
+        state.child = false;
+        await animationFrame();
+
+        bus.trigger("test-event");
+        expect.verifySteps([]);
+    });
+});
+
+describe("useMountedListener", () => {
+    class Blocker extends Component {
+        static props = { pending: t.instanceOf(Promise) };
+        static template = xml`<span class="o_blocker"/>`;
+        props = useProps(this.constructor.props);
+        setup() {
+            onWillStart(() => this.props.pending);
+        }
+    }
+
+    function spyTarget() {
+        const target = new EventTarget();
+        const add = target.addEventListener.bind(target);
+        const remove = target.removeEventListener.bind(target);
+        target.addEventListener = (type, listener, options) => {
+            expect.step(`add:${type}`);
+            add(type, listener, options);
+        };
+        target.removeEventListener = (type, listener, options) => {
+            expect.step(`remove:${type}`);
+            remove(type, listener, options);
+        };
+        return target;
+    }
+
+    /**
+     * @param {EventTarget} target
+     * @param {Promise<void>} pending
+     */
+    async function mountParent(target, pending) {
+        const state = proxy({ shown: false });
+        class Listening extends Component {
+            static props = null;
+            static template = xml`<div class="o_listening" t-ref="this.root"/>`;
+            props = useProps(this.constructor.props);
+            setup() {
+                const root = (this.root = elementRef());
+                useMountedListener(target, "o-ping", (ev) => {
+                    expect.step(`${ev.type}:${root.el?.isConnected}`);
+                });
+            }
+        }
+        class Parent extends Component {
+            static components = { Blocker, Listening };
+            static props = null;
+            static template = xml`
+                <t t-if="this.state.shown">
+                    <Listening/>
+                    <Blocker pending="this.pending"/>
+                </t>`;
+            props = useProps(this.constructor.props);
+            setup() {
+                this.state = state;
+                this.pending = pending;
+            }
+        }
+        await mountWithCleanup(Parent);
+        return state;
+    }
+
+    test("fires only while mounted, when its refs are in the DOM", async () => {
+        const target = spyTarget();
+        const pending = new Deferred();
+        const state = await mountParent(target, pending);
+
+        state.shown = true;
+        await animationFrame();
+        expect(".o_listening").toHaveCount(0);
+        target.dispatchEvent(new Event("o-ping"));
+        expect.verifySteps([]);
+
+        pending.resolve();
+        await animationFrame();
+        expect(".o_listening").toHaveCount(1);
+        expect.verifySteps(["add:o-ping"]);
+        target.dispatchEvent(new Event("o-ping"));
+        expect.verifySteps(["o-ping:true"]);
+
+        state.shown = false;
+        await animationFrame();
+        expect.verifySteps(["remove:o-ping"]);
+        target.dispatchEvent(new Event("o-ping"));
+        expect.verifySteps([]);
+    });
+
+    test("a render cancelled before mount never attaches", async () => {
+        const target = spyTarget();
+        const state = await mountParent(target, new Deferred());
+
+        state.shown = true;
+        await animationFrame();
+        state.shown = false;
+        await animationFrame();
+        target.dispatchEvent(new Event("o-ping"));
+        expect.verifySteps([]);
+    });
+});
+
+describe("useService", () => {
+    test("unavailable service", async () => {
+        class MyComponent extends Component {
+            static props = null;
+            static template = xml`<div/>`;
+            props = useProps(this.constructor.props);
+            setup() {
+                useService(/** @type {any} */ ("toy_service"));
+            }
+        }
+
+        await expect(mountWithCleanup(MyComponent)).rejects.toThrow(
+            "Service toy_service is not available",
+        );
+    });
+
+    test("service that returns null", async () => {
+        let toyService;
+        class MyComponent extends Component {
+            static props = null;
+            static template = xml`<div/>`;
+            props = useProps(this.constructor.props);
+            setup() {
+                toyService = useService(/** @type {any} */ ("toy_service"));
+            }
+        }
+
+        registry.category("services").add("toy_service", {
+            start: () => null,
+        });
+
+        await mountWithCleanup(MyComponent);
+
+        expect(toyService).toBe(null);
+    });
+
+    test("an async: method of a class-shaped service writes to the service, not the view", async () => {
+        class Counter {
+            constructor() {
+                this.nextId = 1;
+            }
+            async mint() {
+                return this.nextId++;
+            }
+        }
+        registry.category("services").add("toy_counter", {
+            async: ["mint"],
+            start: () => new Counter(),
+        });
+
+        const minted = [];
+        class Child extends Component {
+            static props = null;
+            static template = xml`<div/>`;
+            props = useProps(this.constructor.props);
+            setup() {
+                const counter = useService(/** @type {any} */ ("toy_counter"));
+                onMounted(async () => {
+                    minted.push(await counter.mint());
+                });
+            }
+        }
+        class Parent extends Component {
+            static props = null;
+            static components = { Child };
+            static template = xml`<Child/><Child/>`;
+            props = useProps(this.constructor.props);
+        }
+        await mountWithCleanup(Parent);
+        await animationFrame();
+
+        expect(minted).toEqual([1, 2]);
+        expect(getService(/** @type {any} */ ("toy_counter")).nextId).toBe(3);
+    });
+
+    test("async service with protected methods", async () => {
+        useServiceProtectMethodHandling.fn = useServiceProtectMethodHandling.original;
+        const state = proxy({ child: true });
+        let nbCalls = 0;
+        let def = new Deferred();
+        /** @type {any} */
+        let objectService;
+        /** @type {any} */
+        let functionService;
+
+        class MyComponent extends Component {
+            static props = null;
+            static template = xml`<div/>`;
+            props = useProps(this.constructor.props);
+
+            setup() {
+                objectService = useService(/** @type {any} */ ("object_service"));
+                functionService = useService(/** @type {any} */ ("function_service"));
+            }
+        }
+
+        class Parent extends Component {
+            static components = { MyComponent };
+            static props = null;
+            static template = xml`<MyComponent t-if="this.state.child" />`;
+            props = useProps(this.constructor.props);
+
+            setup() {
+                this.state = proxy(state);
+            }
+        }
+
+        registry.category("services").add("object_service", {
+            async: ["asyncMethod"],
+            start() {
+                return {
+                    async asyncMethod() {
+                        nbCalls++;
+                        await def;
+                        return this;
+                    },
+                };
+            },
+        });
+
+        registry.category("services").add("function_service", {
+            async: true,
+            start() {
+                return async function asyncFunc() {
+                    nbCalls++;
+                    await def;
+                    return this;
+                };
+            },
+        });
+
+        await mountWithCleanup(Parent);
+
+        def.resolve();
+        await expect(objectService.asyncMethod()).resolves.toBe(objectService);
+        await expect(objectService.asyncMethod.call("boundThis")).resolves.toBe(
+            "boundThis",
+        );
+        await expect(functionService()).resolves.toBe(undefined);
+        await expect(functionService.call("boundThis")).resolves.toBe("boundThis");
+        expect(nbCalls).toBe(4);
+
+        def = new Deferred();
+        objectService.asyncMethod().then(() => expect.step("resolved"));
+        objectService.asyncMethod.call("boundThis").then(() => expect.step("resolved"));
+        functionService().then(() => expect.step("resolved"));
+        functionService.call("boundThis").then(() => expect.step("resolved"));
+        expect(nbCalls).toBe(8);
+
+        state.child = false;
+        await animationFrame();
+        def.resolve();
+        expect.verifySteps([]);
+
+        await expect(objectService.asyncMethod()).rejects.toThrow(
+            "Component is destroyed",
+        );
+        await expect(objectService.asyncMethod.call("boundThis")).rejects.toThrow(
+            "Component is destroyed",
+        );
+        await expect(functionService()).rejects.toThrow("Component is destroyed");
+        await expect(functionService.call("boundThis")).rejects.toThrow(
+            "Component is destroyed",
+        );
+        expect(nbCalls).toBe(8);
+        useServiceProtectMethodHandling.fn = useServiceProtectMethodHandling.mocked;
+    });
+
+    test("a rejection after destroy is withheld, like a resolution", async () => {
+        useServiceProtectMethodHandling.fn = useServiceProtectMethodHandling.original;
+        const state = proxy({ child: true });
+        const def = new Deferred();
+        /** @type {import("services").ServiceFactories["failing_service"]} */
+        let failing;
+
+        class Child extends Component {
+            static props = null;
+            static template = xml`<div/>`;
+            props = useProps(this.constructor.props);
+            setup() {
+                failing = useService("failing_service");
+            }
+        }
+        class Parent extends Component {
+            static components = { Child };
+            static props = null;
+            static template = xml`<Child t-if="this.state.child"/>`;
+            props = useProps(this.constructor.props);
+            setup() {
+                this.state = proxy(state);
+            }
+        }
+
+        registry.category("services").add("failing_service", {
+            async: ["boom"],
+            start: () => ({
+                async boom() {
+                    await def;
+                    throw new Error("network down");
+                },
+            }),
+        });
+
+        await mountWithCleanup(Parent);
+
+        failing.boom().then(
+            () => expect.step("resolved"),
+            (error) => expect.step(`rejected:${error.message}`),
+        );
+        failing.boom();
+
+        state.child = false;
+        await animationFrame();
+        def.resolve();
+        await animationFrame();
+        await animationFrame();
+
+        expect.verifySteps([]);
+        useServiceProtectMethodHandling.fn = useServiceProtectMethodHandling.mocked;
+    });
+
+    test("a rejection while the owner is alive still propagates", async () => {
+        useServiceProtectMethodHandling.fn = useServiceProtectMethodHandling.original;
+        const def = new Deferred();
+        /** @type {import("services").ServiceFactories["failing_service"]} */
+        let failing;
+
+        class Child extends Component {
+            static props = null;
+            static template = xml`<div/>`;
+            props = useProps(this.constructor.props);
+            setup() {
+                failing = useService("live_failing_service");
+            }
+        }
+
+        registry.category("services").add("live_failing_service", {
+            async: ["boom"],
+            start: () => ({
+                async boom() {
+                    await def;
+                    throw new Error("still mounted");
+                },
+            }),
+        });
+
+        await mountWithCleanup(Child);
+        failing.boom().catch((error) => expect.step(`rejected:${error.message}`));
+        def.resolve();
+        await animationFrame();
+        await animationFrame();
+        expect.verifySteps(["rejected:still mounted"]);
+        useServiceProtectMethodHandling.fn = useServiceProtectMethodHandling.mocked;
+    });
+
+    test("a getter modifier's async methods stay destroy-guarded", async () => {
+        useServiceProtectMethodHandling.fn = useServiceProtectMethodHandling.original;
+        const state = proxy({ child: true });
+        let def = new Deferred();
+        /** @type {import("services").ServiceFactories["modifier_service"]} */
+        let svc;
+
+        class Child extends Component {
+            static props = null;
+            static template = xml`<div/>`;
+            props = useProps(this.constructor.props);
+            setup() {
+                svc = useService("modifier_service");
+            }
+        }
+        class Parent extends Component {
+            static components = { Child };
+            static props = null;
+            static template = xml`<Child t-if="this.state.child"/>`;
+            props = useProps(this.constructor.props);
+            setup() {
+                this.state = proxy(state);
+            }
+        }
+
+        registry.category("services").add("modifier_service", {
+            async: ["asyncMethod"],
+            start: () => ({
+                _silent: false,
+                get silent() {
+                    return Object.assign(Object.create(this), { _silent: true });
+                },
+                async asyncMethod() {
+                    await def;
+                    return this._silent;
+                },
+            }),
+        });
+
+        await mountWithCleanup(Parent);
+
+        def.resolve();
+        await expect(svc.asyncMethod()).resolves.toBe(false);
+        await expect(svc.silent.asyncMethod()).resolves.toBe(true);
+
+        def = new Deferred();
+        svc.asyncMethod().then(() => expect.step("resolved"));
+        svc.silent.asyncMethod().then(() => expect.step("resolved"));
+        state.child = false;
+        await animationFrame();
+        def.resolve();
+        await animationFrame();
+        expect.verifySteps([]);
+
+        await expect(svc.silent.asyncMethod()).rejects.toThrow(
+            "Component is destroyed",
+        );
+        useServiceProtectMethodHandling.fn = useServiceProtectMethodHandling.mocked;
+    });
+});
+
+describe("useSpellCheck", () => {
+    test("ref is on the textarea", async () => {
+        class MyComponent extends Component {
+            static props = null;
+            static template = xml`<div><textarea t-ref="this.spellcheckRef" class="textArea"/></div>`;
+            props = useProps(this.constructor.props);
+            setup() {
+                this.spellcheckRef = elementRef();
+                useSpellCheck({ ref: this.spellcheckRef });
+            }
+        }
+
+        await mountWithCleanup(MyComponent);
+
+        expect(".textArea").toHaveProperty("spellcheck", true);
+        expect(".textArea").not.toHaveAttribute("spellcheck");
+
+        await click(".textArea");
+        expect(".textArea").toBeFocused();
+
+        await click(getFixture());
+
+        expect(".textArea").toHaveProperty("spellcheck", false);
+        expect(".textArea").toHaveAttribute("spellcheck", "false");
+
+        await click(".textArea");
+
+        expect(".textArea").toHaveProperty("spellcheck", true);
+        expect(".textArea").toHaveAttribute("spellcheck", "true");
+    });
+
+    test("use a different refName", async () => {
+        class MyComponent extends Component {
+            static props = null;
+            static template = xml`<div><textarea t-ref="this.myreferenceRef" class="textArea"/></div>`;
+            props = useProps(this.constructor.props);
+            setup() {
+                this.myreferenceRef = elementRef();
+                useSpellCheck({ ref: this.myreferenceRef });
+            }
+        }
+
+        await mountWithCleanup(MyComponent);
+
+        expect(".textArea").toHaveProperty("spellcheck", true);
+        expect(".textArea").not.toHaveAttribute("spellcheck");
+
+        await click(".textArea");
+
+        expect(".textArea").toBeFocused();
+
+        await click(getFixture());
+
+        expect(".textArea").toHaveProperty("spellcheck", false);
+        expect(".textArea").toHaveAttribute("spellcheck", "false");
+    });
+
+    test("ref is on the root element and two editable elements", async () => {
+        class MyComponent extends Component {
+            static props = null;
+            static template = xml`
+                <div t-ref="this.spellcheckRef">
+                    <textarea class="textArea"/>
+                    <div contenteditable="true" class="editableDiv"/>
+                </div>`;
+            props = useProps(this.constructor.props);
+            setup() {
+                this.spellcheckRef = elementRef();
+                useSpellCheck({ ref: this.spellcheckRef });
+            }
+        }
+
+        await mountWithCleanup(MyComponent);
+
+        expect(".textArea").toHaveProperty("spellcheck", true);
+        expect(".editableDiv").toHaveProperty("spellcheck", true);
+        expect(".textArea").not.toHaveAttribute("spellcheck");
+        expect(".editableDiv").not.toHaveAttribute("spellcheck");
+
+        await click(".textArea");
+        expect(".textArea").toBeFocused();
+
+        await click(".editableDiv");
+        expect(".editableDiv").toBeFocused();
+
+        await click(getFixture());
+
+        expect(".textArea").toHaveProperty("spellcheck", false);
+        expect(".editableDiv").toHaveProperty("spellcheck", false);
+        expect(".textArea").toHaveAttribute("spellcheck", "false");
+        expect(".editableDiv").toHaveAttribute("spellcheck", "false");
+
+        await click(".textArea");
+
+        expect(".textArea").toHaveProperty("spellcheck", true);
+        expect(".textArea").toHaveAttribute("spellcheck", "true");
+        expect(".editableDiv").toHaveProperty("spellcheck", false);
+        expect(".editableDiv").toHaveAttribute("spellcheck", "false");
+
+        await click(".editableDiv");
+
+        expect(".textArea").toHaveProperty("spellcheck", false);
+        expect(".textArea").toHaveAttribute("spellcheck", "false");
+        expect(".editableDiv").toHaveProperty("spellcheck", true);
+        expect(".editableDiv").toHaveAttribute("spellcheck", "true");
+    });
+
+    test("ref is on the root element and one element has disabled the spellcheck", async () => {
+        class MyComponent extends Component {
+            static props = null;
+            static template = xml`
+                <div t-ref="this.spellcheckRef">
+                    <textarea class="textArea"/>
+                    <div contenteditable="true" spellcheck="false" class="editableDiv"/>
+                </div>`;
+            props = useProps(this.constructor.props);
+            setup() {
+                this.spellcheckRef = elementRef();
+                useSpellCheck({ ref: this.spellcheckRef });
+            }
+        }
+
+        await mountWithCleanup(MyComponent);
+
+        expect(".textArea").toHaveProperty("spellcheck", true);
+        expect(".editableDiv").toHaveProperty("spellcheck", false);
+        expect(".textArea").not.toHaveAttribute("spellcheck");
+        expect(".editableDiv").toHaveAttribute("spellcheck", "false");
+
+        await click(".textArea");
+        expect(".textArea").toBeFocused();
+
+        await click(".editableDiv");
+        expect(".editableDiv").toBeFocused();
+
+        await click(getFixture());
+
+        expect(".textArea").toHaveProperty("spellcheck", false);
+        expect(".textArea").toHaveAttribute("spellcheck", "false");
+        expect(".editableDiv").toHaveProperty("spellcheck", false);
+        expect(".editableDiv").toHaveAttribute("spellcheck", "false");
+
+        await click(".textArea");
+
+        expect(".textArea").toHaveProperty("spellcheck", true);
+        expect(".textArea").toHaveAttribute("spellcheck", "true");
+        expect(".editableDiv").toHaveProperty("spellcheck", false);
+        expect(".editableDiv").toHaveAttribute("spellcheck", "false");
+
+        await click(".editableDiv");
+
+        expect(".textArea").toHaveProperty("spellcheck", false);
+        expect(".textArea").toHaveAttribute("spellcheck", "false");
+        expect(".editableDiv").toHaveProperty("spellcheck", false);
+        expect(".editableDiv").toHaveAttribute("spellcheck", "false");
+    });
+
+    test("ref is on an element with contenteditable attribute", async () => {
+        class MyComponent extends Component {
+            static props = null;
+            static template = xml`
+                <div t-ref="this.spellcheckRef"  contenteditable="true" class="editableDiv" />`;
+            props = useProps(this.constructor.props);
+            setup() {
+                this.spellcheckRef = elementRef();
+                useSpellCheck({ ref: this.spellcheckRef });
+            }
+        }
+
+        await mountWithCleanup(MyComponent);
+        expect(".editableDiv").toHaveProperty("spellcheck", true);
+        await contains(".editableDiv").click();
+        expect(".editableDiv").toBeFocused();
+        expect(".editableDiv").toHaveAttribute("spellcheck", "true");
+        await click(getFixture());
+        expect(".editableDiv").toHaveAttribute("spellcheck", "false");
+    });
+});
+
+describe("useChildRef and useForwardRefToParent", () => {
+    test("simple usecase", async () => {
+        /** @type {import("@odoo/owl").Ref} */
+        let childRef;
+        /** @type {import("@web/core/utils/hooks").ForwardRef} */
+        let parentRef;
+
+        class Child extends Component {
+            static props = null;
+            static template = xml`<span t-ref="this.someRefRef" class="my_span">Hello</span>`;
+            props = useProps(this.constructor.props);
+            setup() {
+                this.someRefRef = elementRef();
+                childRef = useForwardRefToParent("someRef", this.someRefRef);
+            }
+        }
+
+        class Parent extends Component {
+            static props = null;
+            static template = xml`<div><Child someRef="this.someRef"/></div>`;
+            static components = { Child };
+            props = useProps(this.constructor.props);
+            setup() {
+                this.someRef = useChildRef();
+                parentRef = this.someRef;
+            }
+        }
+
+        await mountWithCleanup(Parent);
+        expect(childRef.el).toBe(queryOne(".my_span"));
+        expect(parentRef.el).toBe(queryOne(".my_span"));
+    });
+
+    test("in a conditional child", async () => {
+        class Child extends Component {
+            static props = null;
+            static template = xml`<span t-ref="this.someRefRef" class="my_span">Hello</span>`;
+            props = useProps(this.constructor.props);
+            setup() {
+                this.someRefRef = elementRef();
+                useForwardRefToParent("someRef", this.someRefRef);
+            }
+        }
+
+        class Parent extends Component {
+            static props = null;
+            static template = xml`<div><Child t-if="this.state.hasChild" someRef="this.someRef"/></div>`;
+            static components = { Child };
+            props = useProps(this.constructor.props);
+            setup() {
+                this.someRef = useChildRef();
+                this.state = proxy({ hasChild: true });
+            }
+        }
+
+        const parentComponent = await mountWithCleanup(Parent);
+
+        expect(".my_span").toHaveCount(1);
+        expect(parentComponent.someRef.el).toBe(queryOne(".my_span"));
+
+        parentComponent.state.hasChild = false;
+        await animationFrame();
+
+        expect(".my_span").toHaveCount(0);
+        expect(parentComponent.someRef.el).toBe(null);
+
+        parentComponent.state.hasChild = true;
+        await animationFrame();
+
+        expect(".my_span").toHaveCount(1);
+        expect(parentComponent.someRef.el).toBe(queryOne(".my_span"));
+    });
+});
+
+describe("useSyncedInputProperty", () => {
+    /** @param {any} initial */
+    function makeHost(initial) {
+        class Host extends Component {
+            static props = {};
+            static template = xml`<input t-ref="this.ref" t-att-value="this.state.v"/>`;
+            props = useProps(this.constructor.props);
+
+            /** @type {{ v: any }} */
+            state;
+
+            /** @type {() => boolean} */
+            sync;
+
+            setup() {
+                const state = proxy({ v: initial });
+                const ref = (this.ref = elementRef(HTMLInputElement));
+                this.state = state;
+                this.sync = useSyncedInputProperty(
+                    () => ref.el,
+                    () => state.v,
+                );
+            }
+        }
+        return Host;
+    }
+
+    test("a value the user typed over is written back on the next patch", async () => {
+        const host = await mountWithCleanup(makeHost("a"));
+        const input = /** @type {HTMLInputElement} */ (queryOne("input"));
+        input.value = "typed over";
+
+        host.state.v = "a";
+        host.__owl__.render(false);
+        await animationFrame();
+
+        expect(queryValue("input")).toBe("a");
+    });
+
+    test("undefined means the component is not the authority", async () => {
+        class Host extends Component {
+            static props = {};
+            static template = xml`<input t-ref="this.ref"/>`;
+            props = useProps(this.constructor.props);
+
+            /** @type {{ v: any }} */
+            state;
+
+            /** @type {() => boolean} */
+            sync;
+
+            setup() {
+                const state = proxy({ v: undefined });
+                const ref = (this.ref = elementRef(HTMLInputElement));
+                this.state = state;
+                this.sync = useSyncedInputProperty(
+                    () => ref.el,
+                    () => state.v,
+                );
+            }
+        }
+        const host = await mountWithCleanup(Host);
+        const input = /** @type {HTMLInputElement} */ (queryOne("input"));
+        input.value = "user owns this";
+
+        expect(host.sync()).toBe(false);
+        host.__owl__.render(false);
+        await animationFrame();
+
+        expect(queryValue("input")).toBe("user owns this");
+    });
+
+    test("the returned sync reports whether it had to write", async () => {
+        const host = await mountWithCleanup(makeHost("a"));
+
+        expect(host.sync()).toBe(false);
+        const input = /** @type {HTMLInputElement} */ (queryOne("input"));
+        input.value = "drifted";
+        expect(host.sync()).toBe(true);
+        expect(queryValue("input")).toBe("a");
+        expect(host.sync()).toBe(false);
+    });
+
+    test("a boolean property is synced too", async () => {
+        class Host extends Component {
+            static props = {};
+            static template = xml`<input type="checkbox" t-ref="this.ref" t-att-checked="this.state.v"/>`;
+            props = useProps(this.constructor.props);
+
+            /** @type {{ v: any }} */
+            state;
+
+            /** @type {() => boolean} */
+            sync;
+
+            setup() {
+                const state = proxy({ v: true });
+                const ref = (this.ref = elementRef(HTMLInputElement));
+                this.state = state;
+                this.sync = useSyncedInputProperty(
+                    () => ref.el,
+                    () => state.v,
+                    { property: "checked" },
+                );
+            }
+        }
+        const host = await mountWithCleanup(Host);
+        const input = /** @type {HTMLInputElement} */ (queryOne("input"));
+        input.checked = false;
+
+        expect(host.sync()).toBe(true);
+        expect(input.checked).toBe(true);
+    });
+});
+
+describe("useBodyClass", () => {
+    test("the class is on <body> while the component is mounted", async () => {
+        const state = proxy({ shown: true });
+        class Screen extends Component {
+            static props = null;
+            static template = xml`<div class="screen"/>`;
+            setup() {
+                useBodyClass("o_test_screen_open");
+            }
+        }
+        class Parent extends Component {
+            static props = null;
+            static components = { Screen };
+            static template = xml`<div><Screen t-if="this.state.shown"/></div>`;
+            state = state;
+        }
+        expect(document.body).not.toHaveClass("o_test_screen_open");
+        await mountWithCleanup(Parent);
+        expect(document.body).toHaveClass("o_test_screen_open");
+        state.shown = false;
+        await animationFrame();
+        expect(document.body).not.toHaveClass("o_test_screen_open");
+    });
+
+    test("two holders of the same class do not undo each other", async () => {
+        const state = proxy({ first: true, second: true });
+        class Screen extends Component {
+            static props = null;
+            static template = xml`<div class="screen"/>`;
+            setup() {
+                useBodyClass("o_test_screen_open");
+            }
+        }
+        class Parent extends Component {
+            static props = null;
+            static components = { Screen };
+            static template = xml`
+                <div>
+                    <Screen t-if="this.state.first"/>
+                    <Screen t-if="this.state.second"/>
+                </div>`;
+            state = state;
+        }
+        await mountWithCleanup(Parent);
+        state.first = false;
+        await animationFrame();
+        expect(document.body).toHaveClass("o_test_screen_open");
+        state.second = false;
+        await animationFrame();
+        expect(document.body).not.toHaveClass("o_test_screen_open");
+    });
+});

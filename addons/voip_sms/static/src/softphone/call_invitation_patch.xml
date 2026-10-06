@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<templates>
+    <t t-inherit="voip.CallInvitation" t-inherit-mode="extension">
+        <xpath expr="//t[hasclass('o-voip-CallInvitation-xpathTarget')]" position="before">
+            <t t-set="resModel" t-value="this.props.call.partner_id ? 'res.partner' : 'phone.call'"/>
+            <t t-set="resId" t-value="this.props.call.partner_id ? this.props.call.partner_id.id : this.props.call.id"/>
+            <SmsButton phoneNumber="this.props.call.phone_number" resId="resId" resModel="resModel"/>
+        </xpath>
+    </t>
+</templates>

@@ -1,0 +1,3 @@
+id,name,model_id/id,group_id/id,kind,operation,reach,anchor,domain
+access_sign_import_documents,wizard.sign.template.import.document,model_wizard_sign_template_import_document,document.group_documents_user,permission,cru,,,
+sign_import_document_own_rule,Sign template import: its creator's rows only,model_wizard_sign_template_import_document,base.group_everyone,guard,crud,own,creator,

@@ -1,0 +1,9 @@
+id,name,model_id/id,group_id/id,kind,operation,reach,anchor,domain
+frontdesk_frontdesk_administrator_rule,Allow to create or edit all stations,model_frontdesk_frontdesk,frontdesk_group_administrator,permission,crud,,,
+frontdesk_visitor_administrator_rule,Allow to create or edit all visitors,model_frontdesk_visitor,frontdesk_group_administrator,permission,crud,,,
+access_frontdesk_drink_admin,frontdesk.drink,model_frontdesk_drink,frontdesk_group_administrator,permission,cud,,,
+frontdesk_frontdesk_user_rule,User Group Frontdesk Frontdesk Model,model_frontdesk_frontdesk,frontdesk_group_user,permission,ru,own,,
+frontdesk_visitor_user_rule,User Group Frontdesk Visitor Model,model_frontdesk_visitor,frontdesk_group_user,permission,cru,own,,
+access_frontdesk_drink_group_user,frontdesk.drink,model_frontdesk_drink,frontdesk_group_user,permission,r,,,
+frontdesk_frontdesk_company_rule,Access stations of own companies only,model_frontdesk_frontdesk,base.group_everyone,guard,crud,company,,
+frontdesk_visitor_company_rule,Access visitors of own companies only,model_frontdesk_visitor,base.group_everyone,guard,crud,company,,

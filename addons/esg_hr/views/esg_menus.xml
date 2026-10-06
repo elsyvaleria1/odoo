@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <menuitem
+        id="menu_esg_social"
+        name="Social"
+        parent="esg.menu_esg_measure"
+        sequence="10">
+        <menuitem
+            id="menu_esg_sex_parity"
+            name="Sex Parity"
+            action="action_esg_employee_report_sex_parity"
+            sequence="10"
+            groups="hr.group_hr_user" />
+        <menuitem
+            id="menu_esg_pay_gap"
+            name="Pay Gap"
+            action="action_esg_employee_report_pay_gap"
+            sequence="20"
+            groups="hr.group_hr_user" />
+    </menuitem>
+
+</odoo>

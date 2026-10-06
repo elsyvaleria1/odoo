@@ -1,0 +1,116 @@
+/** @odoo-module native */
+import { ChatGPTTranslateDialog } from "@html_editor/main/chatgpt/chatgpt_translate_dialog";
+import { LanguageSelector } from "@html_editor/main/chatgpt/language_selector";
+import { Plugin } from "@html_editor/plugin";
+import { isContentEditable } from "@html_editor/utils/dom_info";
+import { closestElement } from "@html_editor/utils/dom_traversal";
+import { withSequence } from "@html_editor/utils/resource";
+import { _t } from "@web/core/translation";
+import { user } from "@web/core/user";
+
+export class ChatGPTTranslatePlugin extends Plugin {
+    static id = "chatgpt_translate";
+    static dependencies = [
+        "baseContainer",
+        "selection",
+        "history",
+        "dom",
+        "sanitize",
+        "dialog",
+        "split",
+    ];
+    /** @type {import("plugins").EditorResources} */
+    resources = {
+        toolbar_groups: withSequence(50, {
+            id: "ai",
+        }),
+        toolbar_items: [
+            {
+                id: "translate",
+                groupId: "ai",
+                description: _t("Translate with AI"),
+                isAvailable: (selection) => !selection.isCollapsed && user.userId,
+                isDisabled: this.isNotReplaceableByAI.bind(this),
+                Component: LanguageSelector,
+                props: {
+                    onSelected: (language) => this.openDialog({ language }),
+                },
+            },
+        ],
+    };
+
+    isNotReplaceableByAI(
+        selection = this.dependencies.selection.getEditableSelection(),
+    ) {
+        const isEmpty = !selection.textContent().replace(/\s+/g, "");
+        const cannotReplace = this.dependencies.selection
+            .getTargetedNodes()
+            .find(
+                (el) =>
+                    this.dependencies.split.isUnsplittable(el) ||
+                    !isContentEditable(el),
+            );
+        return cannotReplace || isEmpty;
+    }
+
+    openDialog(params = {}) {
+        const selection = this.dependencies.selection.getEditableSelection();
+        const dialogParams = {
+            insert: (content) => {
+                const insertedNodes = this.dependencies.dom.insert(content);
+                this.dependencies.history.addStep();
+                const start = insertedNodes?.length && closestElement(insertedNodes[0]);
+                const end =
+                    insertedNodes?.length &&
+                    closestElement(insertedNodes[insertedNodes.length - 1]);
+                if (start && end) {
+                    const divContainer = this.editable.parentElement;
+                    let [parent, left, top] = [
+                        start.offsetParent,
+                        start.offsetLeft,
+                        start.offsetTop - start.scrollTop,
+                    ];
+                    while (parent && !parent.contains(divContainer)) {
+                        left += parent.offsetLeft;
+                        top += parent.offsetTop - parent.scrollTop;
+                        parent = parent.offsetParent;
+                    }
+                    let [endParent, endTop] = [
+                        end.offsetParent,
+                        end.offsetTop - end.scrollTop,
+                    ];
+                    while (endParent && !endParent.contains(divContainer)) {
+                        endTop += endParent.offsetTop - endParent.scrollTop;
+                        endParent = endParent.offsetParent;
+                    }
+                    const div = document.createElement("div");
+                    div.classList.add("o-chatgpt-content");
+                    const FRAME_PADDING = 3;
+                    div.style.left = `${left - FRAME_PADDING}px`;
+                    div.style.top = `${top - FRAME_PADDING}px`;
+                    div.style.width = `${
+                        Math.max(start.offsetWidth, end.offsetWidth) + FRAME_PADDING * 2
+                    }px`;
+                    div.style.height = `${endTop + end.offsetHeight - top + FRAME_PADDING * 2}px`;
+                    divContainer.prepend(div);
+                    setTimeout(() => div.remove(), 2000);
+                }
+            },
+            ...params,
+        };
+        dialogParams.baseContainer =
+            this.dependencies.baseContainer.getDefaultNodeName();
+        const sanitize = this.dependencies.sanitize.sanitize;
+        const originalText = selection.textContent() || "";
+        this.dependencies.dialog.addDialog(ChatGPTTranslateDialog, {
+            ...dialogParams,
+            originalText,
+            sanitize,
+        });
+        if (this.services.ui.isTouch) {
+            Promise.resolve().then(() => {
+                this.document.getSelection()?.removeAllRanges();
+            });
+        }
+    }
+}

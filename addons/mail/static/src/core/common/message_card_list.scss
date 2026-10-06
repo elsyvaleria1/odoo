@@ -1,0 +1,35 @@
+.o-mail-MessageCardList {
+    .card {
+        --border-opacity: 0.075;
+    }
+
+    .card-body {
+        background-color: var(
+            --mail-MessageCardList-cardBodyBg,
+            #{o-token(--o-bg-view, $o-view-background-color)}
+        );
+
+        &:hover .o-mail-MessageCard-jump {
+            opacity: 100 !important;
+        }
+    }
+}
+
+.o-mail-MessageCard-jump {
+    color: white;
+}
+
+[data-input-modality="touch"] .o-mail-MessageCard-jump.btn {
+    font-size: 0.9rem;
+}
+
+@include media-only(screen) {
+    :root[data-color-scheme="dark"] {
+        .o-mail-MessageCardList {
+            --mail-MessageCardList-cardBodyBg: #{mix(
+                    $o-dark-gray-100,
+                    $o-dark-gray-200
+                )};
+        }
+    }
+}

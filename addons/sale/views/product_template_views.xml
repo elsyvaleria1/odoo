@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="product_template_view_form" model="ir.ui.view">
+        <field
+            name="name">product.template.form.inherit.sale.product.configurator</field>
+        <field name="model">product.template</field>
+        <field name="inherit_id" ref="product.view_product_template_form" />
+        <field name="arch" type="xml">
+            <group name="upsell" position="attributes">
+                <attribute name="invisible">0</attribute>
+            </group>
+            <group name="upsell" position="inside">
+                <field
+                    name="optional_product_ids"
+                    placeholder="Recommend when 'Adding to Cart' or quotation"
+                    widget="many2many_tags"
+                    domain="[('id', '!=', id), '|', ('company_id', '=', company_id), ('company_id', '=', False)]"
+                    context="{'search_product_product': True}"
+                    options="{'color_field': 'color'}" />
+            </group>
+            <page name="sales" position="attributes">
+                <attribute name="invisible" remove="1" separator="or" />
+            </page>
+            <field name="product_variant_count" position="after">
+                <field name="service_type" widget="radio" invisible="True" />
+                <field name="visible_expense_policy" invisible="1" />
+            </field>
+            <field name="type" position="after">
+                <field
+                    name="invoice_policy"
+                    invisible="not sale_ok or type == 'combo'"
+                    required="1" />
+            </field>
+            <field name="service_tracking" position="attributes">
+                <attribute name="invisible" add="not sale_ok" separator="or" />
+            </field>
+            <group name="description" position="after">
+                <t groups="sale.group_sale_salesman">
+                    <group
+                        string="Warning on Sales Orders"
+                        groups="sale.group_warning_sale">
+                        <field
+                            name="sale_line_warn_msg"
+                            placeholder="e.g. This product is defective."
+                            colspan="2"
+                            nolabel="1" />
+                    </group>
+                </t>
+                <group
+                    name="expense_info"
+                    string="Expense"
+                    invisible="not visible_expense_policy">
+                    <field name="expense_policy" widget="radio" />
+                </group>
+            </group>
+        </field>
+    </record>
+
+    <record id="product_template_form_view_sale_order_button" model="ir.ui.view">
+        <field name="name">product.template.sale.order.button</field>
+        <field name="model">product.template</field>
+        <field name="inherit_id" ref="product.view_product_template_form_only" />
+        <field name="arch" type="xml">
+            <span id="button_documents_after" position="after">
+                <button
+                    name="action_view_sales"
+                    type="object"
+                    help="Sold in the last 365 days"
+                    icon="fa-signal"
+                    groups="sale.group_sale_salesman"
+                    invisible="not sale_ok"
+                    class="oe_stat_button">
+                    <div class="o_field_widget o_stat_info">
+                        <span class="o_stat_value d-flex gap-1">
+                            <field
+                                name="sales_count"
+                                widget="statinfo"
+                                nolabel="1"
+                                class="oe_inline" />
+                            <field
+                                name="uom_name"
+                                groups="uom.group_uom"
+                                class="oe_inline" />
+                        </span>
+                        <span class="o_stat_text">Sold</span>
+                    </div>
+                </button>
+            </span>
+        </field>
+    </record>
+
+    <record id="action_product_template" model="ir.actions.act_window">
+        <field name="name">Products</field>
+        <field name="res_model">product.template</field>
+        <field name="path">products</field>
+        <field name="search_view_id" ref="product.view_product_template_search" />
+        <field
+            name="context">{"search_default_filter_to_sell":1,
+            "sale_multi_pricelist_product_template": 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Create a new product
+            </p>
+            <p>
+                You must define a product for everything you sell or purchase,
+                whether it's a storable product, a consumable or a service.
+            </p>
+        </field>
+        <field
+            name="view_ids"
+            eval="[Command.clear(),             Command.create({'view_mode': 'kanban'}),             Command.create({'view_mode': 'list', 'view_id': ref('account.view_product_template_list_sellable_inherit')}),             Command.create({'view_mode': 'form'}),             Command.create({'view_mode': 'activity'})]" />
+    </record>
+
+</odoo>

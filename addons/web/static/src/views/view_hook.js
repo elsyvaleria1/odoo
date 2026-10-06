@@ -1,0 +1,296 @@
+// @ts-check
+/** @odoo-module native */
+
+import { useAction } from "@web/core/action_port";
+import { browser } from "@web/core/browser/browser";
+import { makeLogger } from "@web/core/debug/debug_logger";
+import { ModelEvent, SearchModelEvent } from "@web/core/events";
+import { download } from "@web/core/network/download";
+import { rpc } from "@web/core/network/rpc";
+import { evaluateExpr } from "@web/core/py_js/py";
+import { defineScope } from "@web/core/scope";
+import { _t } from "@web/core/translation";
+import { useBus, useMountedListener, useService } from "@web/core/utils/hooks";
+import { useLayoutEffect } from "@web/core/utils/layout_effect";
+import { orderByToString } from "@web/core/utils/order_by";
+import { applyFieldDirtyPayload } from "@web/fields/field_dirty_signal";
+import { DynamicList } from "@web/model/relational_model/dynamic_list";
+import {
+    ConfirmationDialog,
+    deleteConfirmationMessage,
+} from "@web/ui/dialog/confirmation_dialog";
+import { ExportDataDialog } from "@web/views/view_dialogs/export_data_dialog";
+
+const envScope = defineScope("web/views/view_hook");
+const log = makeLogger("web.view");
+
+/** @param {import("@web/core/utils/concurrency").KeepLast} keepLast */
+export function provideViewKeepLast(keepLast) {
+    envScope.provide({ keepLast });
+}
+
+/** @returns {import("@web/core/utils/concurrency").KeepLast} */
+export function useViewKeepLast() {
+    return envScope.use().keepLast;
+}
+
+/**
+ * @param {Object} params
+ * @param {String} params.resModel
+ * @param {Function} [params.reload]
+ */
+export function useActionLinks({ resModel, reload }) {
+    const keepLast = useViewKeepLast();
+
+    const orm = useService("orm");
+    const { doAction } = useAction();
+
+    /**
+     * @param {Event} ev
+     * @param {HTMLAnchorElement} target
+     */
+    async function handler(ev, target) {
+        ev.preventDefault();
+        ev.stopPropagation();
+        const data = target.dataset;
+
+        if (data.method !== undefined && data.model !== undefined) {
+            const options = {};
+            if (data.reloadOnClose && reload) {
+                options.onClose = reload;
+            }
+            const action = await keepLast.add(orm.call(data.model, data.method));
+            if (action !== undefined) {
+                keepLast.add(Promise.resolve(doAction(action, options)));
+            }
+        } else if (target.getAttribute("name")) {
+            const options = {};
+            if (data.context) {
+                options.additionalContext = evaluateExpr(data.context);
+            }
+            keepLast.add(doAction(target.getAttribute("name"), options));
+        } else {
+            let views;
+            const parsedId = data.resid ? Number.parseInt(data.resid, 10) : null;
+            const resId = Number.isNaN(parsedId) ? null : parsedId;
+            if (data.views) {
+                views = evaluateExpr(data.views);
+            } else {
+                views = resId
+                    ? [[false, "form"]]
+                    : [
+                          [false, "list"],
+                          [false, "form"],
+                      ];
+            }
+            const action = {
+                name: target.getAttribute("title") || target.textContent?.trim() || "",
+                type: "ir.actions.act_window",
+                res_model: data.model || resModel,
+                target: "current",
+                views,
+                domain: data.domain ? evaluateExpr(data.domain) : [],
+            };
+            if (resId) {
+                action.res_id = resId;
+            }
+
+            const options = {};
+            if (data.context) {
+                options.additionalContext = evaluateExpr(data.context);
+            }
+            keepLast.add(doAction(/** @type {any} */ (action), options));
+        }
+    }
+
+    return (ev) => {
+        const a = ev.target.closest(`a[type="action"]`);
+        if (a && ev.currentTarget.contains(a)) {
+            handler(ev, a);
+        }
+    };
+}
+
+/**
+ * @param {{ el: HTMLElement | null }} containerRef
+ * @param {(target: HTMLElement) => boolean} shouldBounce
+ */
+export function useBounceButton(containerRef, shouldBounce) {
+    let timeout;
+    const ui = useService("ui");
+    useLayoutEffect(
+        (containerEl) => {
+            if (!containerEl) {
+                return;
+            }
+            const handler = (ev) => {
+                const activeElement = /** @type {ParentNode} */ (ui.activeElement);
+                const button = activeElement?.querySelector("[data-bounce-button]");
+                if (button && shouldBounce(ev.target)) {
+                    button.classList.add("o_catch_attention");
+                    browser.clearTimeout(timeout);
+                    timeout = browser.setTimeout(() => {
+                        button.classList.remove("o_catch_attention");
+                    }, 400);
+                }
+            };
+            containerEl.addEventListener("click", handler);
+            return () => {
+                browser.clearTimeout(timeout);
+                containerEl.removeEventListener("click", handler);
+            };
+        },
+        () => [containerRef.el],
+    );
+}
+
+/**
+ * @param {import("@web/model/model").Model} model
+ * @param {import("@web/search/search_model").SearchModel} searchModel
+ * @param {() => Object[]} getDefaultExportList
+ * @returns {() => void}
+ */
+export function useExportRecords(model, searchModel, getDefaultExportList) {
+    const dialog = useService("dialog");
+    useBus(searchModel, SearchModelEvent.DIRECT_EXPORT_DATA, () =>
+        _downloadExport(getDefaultExportList(), false, "xlsx"),
+    );
+    const _getExportedFields = async (isCompatible, parentParams) => {
+        const root = model.root;
+        let domain = parentParams ? [] : root.domain;
+        if (!parentParams && root.selectedResIds) {
+            domain = [["id", "in", root.selectedResIds]];
+        }
+        return await rpc("/web/export/get_fields", {
+            model: root.resModel,
+            domain,
+            import_compat: isCompatible,
+            ...parentParams,
+        });
+    };
+
+    const _downloadExport = async (fields, import_compat, format) => {
+        const root = model.root;
+        const exportedFields = fields.map((field) => ({
+            name: field.name || field.id,
+            label: field.label || field.string,
+            store: field.store,
+            type: field.field_type || field.type,
+        }));
+        if (import_compat) {
+            exportedFields.unshift({
+                name: "id",
+                label: _t("External ID"),
+            });
+        }
+        const orderBy = (root.orderBy || []).filter((o) => o.name !== "__count");
+        await download({
+            data: {
+                data: JSON.stringify({
+                    import_compat,
+                    context: root.context,
+                    domain: root.domain,
+                    fields: exportedFields,
+                    groupby: root.groupBy,
+                    ids: root.selectedResIds,
+                    model: root.resModel,
+                    order: orderBy.length ? orderByToString(orderBy) : undefined,
+                }),
+            },
+            url: `/web/export/${format}`,
+        });
+    };
+
+    return () => {
+        const root = model.root;
+        dialog.add(ExportDataDialog, {
+            context: root.context,
+            defaultExportList: getDefaultExportList(),
+            download: _downloadExport,
+            getExportedFields: _getExportedFields,
+            root,
+        });
+    };
+}
+
+/**
+ * @param {() => any} confirm
+ * @param {{ multi?: boolean }} [options]
+ * @returns {Record<string, any>}
+ */
+export function deleteConfirmationProps(confirm, { multi = false } = {}) {
+    return {
+        body: multi
+            ? _t("Are you sure you want to delete these records?")
+            : deleteConfirmationMessage,
+        cancel: () => {},
+        cancelLabel: _t("No, keep it"),
+        confirm,
+        confirmLabel: _t("Delete"),
+        title: _t("Bye-bye, record!"),
+    };
+}
+
+/**
+ * @param {Object} model
+ * @returns {(dialogProps?: Object, records?: Object[]) => void}
+ */
+export function useDeleteRecords(model) {
+    const dialog = useService("dialog");
+    function getDefaultDialogProps(records) {
+        const isDynamicList = model.root instanceof DynamicList;
+        const multi = records?.length
+            ? records.length > 1
+            : isDynamicList &&
+              (model.root.isDomainSelected || model.root.selection.length > 1);
+        log.logic("deleteRecords.confirm", () => ({
+            records: records?.length,
+            isDynamicList,
+            multi,
+        }));
+        const confirm = isDynamicList
+            ? () => model.root.deleteRecords(records)
+            : () => Promise.all((records ?? []).map((r) => r.delete()));
+        return deleteConfirmationProps(confirm, { multi });
+    }
+    return (dialogProps, records) => {
+        const defaultProps = getDefaultDialogProps(records);
+        dialog.add(ConfirmationDialog, { ...defaultProps, ...dialogProps });
+    };
+}
+
+/**
+ * @param {{ bus: import("@odoo/owl").EventBus }} model
+ * @param {(fieldIsDirty: boolean) => void} onChange
+ */
+export function useFieldDirtyOwners(model, onChange) {
+    /** @type {Set<symbol>} */
+    const dirtyOwners = new Set();
+    useBus(model.bus, ModelEvent.FIELD_IS_DIRTY, (ev) => {
+        onChange(applyFieldDirtyPayload(dirtyOwners, ev.detail).size > 0);
+    });
+}
+
+/**
+ * Calls `onClick` for every click in the window, with the element the press
+ * started on: a drag that starts inside and ends outside counts as inside.
+ *
+ * @param {(target: HTMLElement, ev: MouseEvent) => void} onClick
+ */
+export function useWindowClickFromPress(onClick) {
+    /** @type {EventTarget | null} */
+    let mousedownTarget = null;
+    useMountedListener(window, "mousedown", (/** @type {MouseEvent} */ ev) => {
+        mousedownTarget = ev.target;
+    });
+    useMountedListener(
+        window,
+        "click",
+        (/** @type {MouseEvent} */ ev) => {
+            const target = /** @type {HTMLElement} */ (mousedownTarget || ev.target);
+            mousedownTarget = null;
+            onClick(target, ev);
+        },
+        { capture: true },
+    );
+}

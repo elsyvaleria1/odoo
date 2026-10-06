@@ -1,0 +1,334 @@
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-09-27 00:08+0000\n"
+"PO-Revision-Date: 2026-09-27 00:08+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: mn\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: purchase_competition
+#: model_terms:ir.ui.view,arch_db:purchase_competition.purchase_order_form_competition
+msgid "<span>of</span>"
+msgstr ""
+
+#. module: purchase_competition
+#: model_terms:ir.ui.view,arch_db:purchase_competition.purchase_order_form_competition
+msgid "<span>offers</span>"
+msgstr ""
+
+#. module: purchase_competition
+#: model:ir.model,name:purchase_competition.model_purchase_config
+msgid "A company's purchase configuration"
+msgstr ""
+
+#. module: purchase_competition
+#: model:ir.model.fields,field_description:purchase_competition.field_purchase_order_line__limit_price
+msgid "Ceiling Price"
+msgstr ""
+
+#. module: purchase_competition
+#: model_terms:ir.ui.view,arch_db:purchase_competition.res_config_settings_view_form_purchase_competition
+msgid ""
+"Compare offers on what they are worth to the vendor, not only on their price"
+msgstr ""
+
+#. module: purchase_competition
+#: model_terms:ir.ui.view,arch_db:purchase_competition.purchase_order_form_competition
+msgid "Compare the Offers"
+msgstr ""
+
+#. module: purchase_competition
+#: model:ir.ui.menu,name:purchase_competition.menu_purchase_competition
+#: model_terms:ir.ui.view,arch_db:purchase_competition.res_config_settings_view_form_purchase_competition
+msgid "Competition"
+msgstr ""
+
+#. module: purchase_competition
+#: model:ir.model,name:purchase_competition.model_competitor_offer
+msgid "Competitor Offer"
+msgstr ""
+
+#. module: purchase_competition
+#: model:ir.model.fields,field_description:purchase_competition.field_purchase_order__competitor_offer_count
+msgid "Competitor Offer Count"
+msgstr ""
+
+#. module: purchase_competition
+#: model:ir.actions.act_window,name:purchase_competition.competitor_offer_action_purchase
+#: model:ir.model.fields,field_description:purchase_competition.field_purchase_order__competitor_offer_ids
+#: model:ir.ui.menu,name:purchase_competition.menu_purchase_competitor_offers
+msgid "Competitor Offers"
+msgstr ""
+
+#. module: purchase_competition
+#: model_terms:ir.ui.view,arch_db:purchase_competition.view_purchase_order_line_price_history_form_competition
+msgid "Competitor Prices"
+msgstr ""
+
+#. module: purchase_competition
+#: model:ir.actions.act_window,name:purchase_competition.competitor_action_purchase
+#: model:ir.ui.menu,name:purchase_competition.menu_purchase_competitors
+#: model_terms:ir.ui.view,arch_db:purchase_competition.view_purchase_order_line_price_history_form_competition
+msgid "Competitors"
+msgstr ""
+
+#. module: purchase_competition
+#: model:ir.model,name:purchase_competition.model_res_config_settings
+msgid "Config Settings"
+msgstr "Тохиргооны тохируулга"
+
+#. module: purchase_competition
+#: model:ir.model.fields,field_description:purchase_competition.field_competitor_offer__display_name
+#: model:ir.model.fields,field_description:purchase_competition.field_product_category__display_name
+#: model:ir.model.fields,field_description:purchase_competition.field_purchase_config__display_name
+#: model:ir.model.fields,field_description:purchase_competition.field_purchase_order__display_name
+#: model:ir.model.fields,field_description:purchase_competition.field_purchase_order_line__display_name
+#: model:ir.model.fields,field_description:purchase_competition.field_res_config_settings__display_name
+msgid "Display Name"
+msgstr "Дэлгэрэнгүй нэр"
+
+#. module: purchase_competition
+#: model:ir.model.fields,field_description:purchase_competition.field_purchase_order_line__price_gap
+msgid "Gap to Market (%)"
+msgstr ""
+
+#. module: purchase_competition
+#: model:ir.model.fields,field_description:purchase_competition.field_purchase_order__price_gap_at_close
+msgid "Gap to Market at Close (%)"
+msgstr ""
+
+#. module: purchase_competition
+#: model:ir.model.fields,help:purchase_competition.field_purchase_config__competition_leader_gap
+#: model:ir.model.fields,help:purchase_competition.field_res_config_settings__purchase_competition_leader_gap
+msgid ""
+"How far above the market a price must be to count as leading it, with room "
+"to lower."
+msgstr ""
+
+#. module: purchase_competition
+#: model:ir.model.fields,help:purchase_competition.field_purchase_config__competition_overbid
+#: model:ir.model.fields,help:purchase_competition.field_res_config_settings__purchase_competition_overbid
+msgid "How far above the market price the recommended price goes."
+msgstr ""
+
+#. module: purchase_competition
+#: model:ir.model.fields,help:purchase_competition.field_purchase_order_line__price_gap
+msgid ""
+"How far our net price sits above (positive) or below (negative) the market "
+"price."
+msgstr ""
+
+#. module: purchase_competition
+#: model_terms:ir.ui.view,arch_db:purchase_competition.res_config_settings_view_form_purchase_competition
+msgid "How requests for quotation are measured against rival buyers' offers"
+msgstr ""
+
+#. module: purchase_competition
+#: model:ir.model.fields,field_description:purchase_competition.field_competitor_offer__id
+#: model:ir.model.fields,field_description:purchase_competition.field_product_category__id
+#: model:ir.model.fields,field_description:purchase_competition.field_purchase_config__id
+#: model:ir.model.fields,field_description:purchase_competition.field_purchase_order__id
+#: model:ir.model.fields,field_description:purchase_competition.field_purchase_order_line__id
+#: model:ir.model.fields,field_description:purchase_competition.field_res_config_settings__id
+msgid "ID"
+msgstr "ID"
+
+#. module: purchase_competition
+#: model:ir.model.fields.selection,name:purchase_competition.selection__purchase_order_line__market_scope__segment
+msgid "Its Industry"
+msgstr ""
+
+#. module: purchase_competition
+#: model:ir.model.fields,field_description:purchase_competition.field_purchase_config__competition_leader_gap
+msgid "Leader Gap (%)"
+msgstr ""
+
+#. module: purchase_competition
+#: model:ir.model.fields.selection,name:purchase_competition.selection__purchase_order_line__market_scope__market
+#: model_terms:ir.ui.view,arch_db:purchase_competition.purchase_order_form_competition
+msgid "Market"
+msgstr ""
+
+#. module: purchase_competition
+#: model:ir.model.fields,field_description:purchase_competition.field_purchase_order__market_position
+#: model:ir.model.fields,field_description:purchase_competition.field_purchase_order_line__market_position
+msgid "Market Position"
+msgstr ""
+
+#. module: purchase_competition
+#: model:ir.model.fields,field_description:purchase_competition.field_purchase_order_line__market_price
+msgid "Market Price"
+msgstr ""
+
+#. module: purchase_competition
+#: model:ir.actions.act_window,name:purchase_competition.market_price_action_purchase
+#: model:ir.ui.menu,name:purchase_competition.menu_purchase_market_prices
+msgid "Market Prices"
+msgstr ""
+
+#. module: purchase_competition
+#: model:ir.model.fields,field_description:purchase_competition.field_purchase_order_line__market_scope
+msgid "Market Scope"
+msgstr ""
+
+#. module: purchase_competition
+#: model:ir.model.fields,field_description:purchase_competition.field_purchase_config__competition_min_margin
+msgid "Minimum Margin (%)"
+msgstr ""
+
+#. module: purchase_competition
+#: model:ir.model.fields,field_description:purchase_competition.field_product_category__purchase_min_margin
+msgid "Minimum Purchase Margin (%)"
+msgstr ""
+
+#. module: purchase_competition
+#: model:ir.model.fields,field_description:purchase_competition.field_purchase_order__market_offer_count
+msgid "Offers Compared"
+msgstr ""
+
+#. module: purchase_competition
+#: model:ir.model.fields,field_description:purchase_competition.field_purchase_order__market_rank
+msgid "Our Rank"
+msgstr ""
+
+#. module: purchase_competition
+#: model:ir.model.fields,help:purchase_competition.field_competitor_offer__purchase_order_id
+msgid "Our request for quotation this offer competes with."
+msgstr ""
+
+#. module: purchase_competition
+#: model:ir.model.fields,help:purchase_competition.field_purchase_order_line__limit_price
+msgid "Our resale price less the minimum margin: the highest price to pay."
+msgstr ""
+
+#. module: purchase_competition
+#: model:ir.model.fields,field_description:purchase_competition.field_purchase_config__competition_overbid
+#: model:ir.model.fields,field_description:purchase_competition.field_res_config_settings__purchase_competition_overbid
+msgid "Overbid (%)"
+msgstr ""
+
+#. module: purchase_competition
+#: model_terms:ir.actions.act_window,help:purchase_competition.competitor_offer_action_purchase
+msgid ""
+"Price, terms, source and confidence: every offer feeds the market\n"
+"                price your requests for quotation are compared with."
+msgstr ""
+
+#. module: purchase_competition
+#: model:ir.model,name:purchase_competition.model_product_category
+msgid "Product Category"
+msgstr "Барааны ангилал"
+
+#. module: purchase_competition
+#: model:ir.model.fields,field_description:purchase_competition.field_res_config_settings__purchase_competition_leader_gap
+msgid "Purchase Leader Gap (%)"
+msgstr ""
+
+#. module: purchase_competition
+#: model:ir.model.fields,field_description:purchase_competition.field_res_config_settings__purchase_competition_min_margin
+msgid "Purchase Minimum Margin (%)"
+msgstr ""
+
+#. module: purchase_competition
+#: model:ir.model,name:purchase_competition.model_purchase_order
+msgid "Purchase Order"
+msgstr "Худалдан авалтын захиалга"
+
+#. module: purchase_competition
+#: model:ir.model,name:purchase_competition.model_purchase_order_line
+msgid "Purchase Order Line"
+msgstr "Худалдан авалтын захиалгын мөр"
+
+#. module: purchase_competition
+#: model:ir.model.fields,field_description:purchase_competition.field_purchase_order_line__recommended_price
+msgid "Recommended Price"
+msgstr ""
+
+#. module: purchase_competition
+#: model_terms:ir.ui.view,arch_db:purchase_competition.purchase_order_form_competition
+msgid "Record a Competitor Offer"
+msgstr ""
+
+#. module: purchase_competition
+#: model_terms:ir.actions.act_window,help:purchase_competition.competitor_offer_action_purchase
+msgid "Record what a rival buyer offered one of your vendors"
+msgstr ""
+
+#. module: purchase_competition
+#: model:ir.model.fields,field_description:purchase_competition.field_competitor_offer__purchase_order_id
+msgid "Request for Quotation"
+msgstr "Үнийн санал"
+
+#. module: purchase_competition
+#: model:ir.model.fields,field_description:purchase_competition.field_purchase_order__competitor_ids
+msgid "Rival Buyers"
+msgstr ""
+
+#. module: purchase_competition
+#: model:ir.model.fields,help:purchase_competition.field_purchase_order_line__market_price
+msgid ""
+"The highest comparable price a rival buyer offers for this product: to this "
+"vendor when known, else to its industry, else to the market. Per this line's"
+" unit."
+msgstr ""
+
+#. module: purchase_competition
+#: model:ir.model.fields,help:purchase_competition.field_purchase_order__market_position
+msgid "The least favourable position among the order's lines."
+msgstr ""
+
+#. module: purchase_competition
+#: model:ir.model.fields,help:purchase_competition.field_product_category__purchase_min_margin
+msgid ""
+"The margin over what we pay that our resale price must keep for a product of"
+" this category. Empty: the company's."
+msgstr ""
+
+#. module: purchase_competition
+#: model:ir.model.fields,help:purchase_competition.field_purchase_config__competition_min_margin
+#: model:ir.model.fields,help:purchase_competition.field_res_config_settings__purchase_competition_min_margin
+msgid ""
+"The margin over what we pay that our resale price must keep, for a product "
+"whose category sets none."
+msgstr ""
+
+#. module: purchase_competition
+#: model:ir.model.fields,help:purchase_competition.field_purchase_order_line__recommended_price
+msgid "The market price plus the overbid, never above the ceiling."
+msgstr ""
+
+#. module: purchase_competition
+#: model:ir.model.fields,help:purchase_competition.field_purchase_order__price_gap_at_close
+msgid ""
+"The order's gap to the market, weighted by line, when it was won or lost."
+msgstr ""
+
+#. module: purchase_competition
+#: model:ir.model.fields,help:purchase_competition.field_purchase_order__competitor_ids
+msgid "The rival buyers whose offers compete with this request."
+msgstr ""
+
+#. module: purchase_competition
+#: model:ir.model.fields.selection,name:purchase_competition.selection__purchase_order_line__market_scope__partner
+msgid "This Vendor"
+msgstr ""
+
+#. module: purchase_competition
+#: model:ir.model.fields,help:purchase_competition.field_purchase_order__market_rank
+msgid ""
+"Where this order stands among the competitor offers linked to it, compared "
+"on the products each offer quotes: 1 when no offer beats it."
+msgstr ""
+
+#. module: purchase_competition
+#: model:ir.actions.act_window,name:purchase_competition.win_loss_action_purchase
+#: model:ir.ui.menu,name:purchase_competition.menu_purchase_win_loss
+msgid "Win/Loss Analysis"
+msgstr ""

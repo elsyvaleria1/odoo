@@ -1,0 +1,29 @@
+html, body {
+    height: auto !important;
+}
+
+.header {
+    position: running(page-header);
+}
+
+.footer {
+    position: running(page-footer);
+}
+
+.o_css_margins .header,
+.o_css_margins .footer {
+    padding-left: 8mm;
+    padding-right: 8mm;
+}
+
+.footer .header {
+    position: static;
+}
+
+span.page::after {
+    content: counter(page);
+}
+
+span.topage::after {
+    content: counter(pages);
+}

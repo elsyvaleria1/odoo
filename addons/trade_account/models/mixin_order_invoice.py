@@ -1,0 +1,767 @@
+from itertools import groupby
+from typing import Self
+
+from odoo import api, fields, models
+from odoo.exceptions import AccessError, UserError
+from odoo.fields import Command, Domain
+from odoo.libs.debug_log import DebugLog
+from odoo.tools import format_list
+
+from odoo.addons.trade.tools import direction_of
+
+# An order line's invoiceable quantity is split three ways and each state names
+# where it stands: "to do" and "partial" still have a part no invoice claims,
+# "draft" has every part claimed but at least one by an invoice that is not
+# posted, "done" has every part on a posted invoice.
+INVOICE_STATE = [
+    ("no", "Nothing to invoice"),
+    ("to do", "To invoice"),
+    ("partial", "Partially invoiced"),
+    ("draft", "Invoice in draft"),
+    ("done", "Fully invoiced"),
+    ("over done", "Over-invoiced"),
+]
+
+_debug = DebugLog(__name__)
+
+
+class MixinOrderInvoice(models.AbstractModel):
+    _name = "mixin.order.invoice"
+    # mixin.lifecycle ends the _action_cancel chain; inheriting it places it
+    # after this mixin, so cancelling an order reaches its draft invoices
+    _inherit = ["mixin.order.state.rollup", "mixin.lifecycle"]
+    _description = "Order Invoice Integration"
+
+    currency_id = fields.Many2one(comodel_name="res.currency")
+
+    invoice_ids = fields.Many2many(
+        comodel_name="account.move",
+        string="Invoices",
+        compute="_compute_invoices",
+        search="_search_invoice_ids",
+    )
+    invoice_count = fields.Integer(compute="_compute_invoices")
+    invoice_state = fields.Selection(
+        selection=INVOICE_STATE,
+        string="Invoice Status",
+        compute="_compute_invoice_state",
+        default="no",
+        store=True,
+        copy=False,
+    )
+    force_fully_invoiced = fields.Boolean(
+        copy=False,
+        help="Report this order as fully invoiced regardless of its lines.",
+    )
+
+    journal_id = fields.Many2one(
+        comodel_name="account.journal",
+        compute="_compute_journal_id",
+        precompute=True,
+        store=True,
+        readonly=False,
+        check_company=True,
+        help="If set, the order will invoice in this journal; otherwise the "
+        "journal with the lowest sequence is used.",
+    )
+
+    amount_taxexc_invoiced = fields.Monetary(
+        string="Already Invoiced (Tax Excl.)",
+        compute="_compute_amounts_invoice",
+    )
+    amount_taxinc_invoiced = fields.Monetary(
+        string="Already Invoiced (Tax Incl.)",
+        compute="_compute_amounts_invoice",
+    )
+    amount_taxexc_invoiced_draft = fields.Monetary(
+        string="In Draft Invoices (Tax Excl.)",
+        compute="_compute_amounts_invoice",
+    )
+    amount_taxinc_invoiced_draft = fields.Monetary(
+        string="In Draft Invoices (Tax Incl.)",
+        compute="_compute_amounts_invoice",
+    )
+    amount_taxexc_to_invoice = fields.Monetary(
+        string="To Invoice (Tax Excl.)",
+        compute="_compute_amounts_invoice",
+        help="What no invoice claims yet, posted or draft.",
+    )
+    amount_taxinc_to_invoice = fields.Monetary(
+        string="To Invoice (Tax Incl.)",
+        compute="_compute_amounts_invoice",
+        help="What no invoice claims yet, posted or draft.",
+    )
+
+    partner_credit_warning = fields.Text(compute="_compute_partner_credit_warning")
+
+    def _get_invoice_move_types(self):
+        return direction_of(self).move_types
+
+    @api.depends(
+        "line_ids.invoice_line_ids",
+        "line_ids.invoice_line_ids.move_id.reversal_move_ids",
+    )
+    def _compute_invoices(self):
+        move_types = self._get_invoice_move_types()
+        refund_type = move_types[1]
+
+        order_invoices = {}
+        all_invoice_ids = set()
+        for order in self:
+            invoices = order.line_ids.invoice_line_ids.move_id.filtered(
+                lambda r: r.move_type in move_types,
+            )
+            order_invoices[order.id] = set(invoices.ids)
+            all_invoice_ids.update(invoices.ids)
+
+        orphan_refunds_by_reversed_id = self._get_orphan_refunds_by_reversed_id(
+            all_invoice_ids,
+            refund_type,
+        )
+
+        AccountMove = self.env["account.move"]
+        for order in self:
+            invoice_ids = order_invoices.get(order.id, set())
+            pending = list(invoice_ids)
+            while pending:
+                inv_id = pending.pop()
+                for orphan_id in orphan_refunds_by_reversed_id.get(inv_id, ()):
+                    if orphan_id not in invoice_ids:
+                        invoice_ids.add(orphan_id)
+                        pending.append(orphan_id)
+            order.invoice_ids = AccountMove.browse(sorted(invoice_ids))
+            order.invoice_count = len(invoice_ids)
+            if _debug.logic.enabled and len(invoice_ids) != len(
+                order_invoices.get(order.id, ())
+            ):
+                _debug.logic(
+                    "orphan_refunds_attached",
+                    order=order,
+                    invoices=len(invoice_ids),
+                )
+
+    def _get_orphan_refunds_by_reversed_id(self, invoice_ids, refund_type):
+        """Map every invoice/refund id reachable from `invoice_ids` through a
+        chain of reversals to the orphan refund ids that reverse it -- an
+        orphan refund can itself be reversed by a further orphan refund, so
+        this resolves the whole chain, not just its first level."""
+        orphan_refunds_by_reversed_id = {}
+        known_ids = set(invoice_ids)
+        frontier = set(invoice_ids)
+        while frontier:
+            orphans = self.env["account.move"].search(
+                [
+                    ("reversed_entry_id", "in", list(frontier)),
+                    ("move_type", "=", refund_type),
+                    ("id", "not in", list(known_ids)),
+                ],
+            )
+            if not orphans:
+                break
+            frontier = set()
+            for refund in orphans:
+                orphan_refunds_by_reversed_id.setdefault(
+                    refund.reversed_entry_id.id,
+                    [],
+                ).append(refund.id)
+                known_ids.add(refund.id)
+                frontier.add(refund.id)
+        _debug.perf.count(
+            "orphan_refund_chain",
+            seeds=len(invoice_ids),
+            reversed_entries=len(orphan_refunds_by_reversed_id),
+        )
+        return orphan_refunds_by_reversed_id
+
+    def _search_invoice_ids(self, operator, value):
+        if operator in Domain.NEGATIVE_OPERATORS:
+            return NotImplemented
+        move_types = self._get_invoice_move_types()
+
+        def linked(condition=None):
+            conditions = [("move_id.move_type", "in", move_types)]
+            if condition:
+                conditions.append(condition)
+            return Domain("line_ids.invoice_line_ids", "any", conditions)
+
+        if operator != "in" or not value:
+            return linked(("move_id", operator, value))
+
+        move_ids = [v for v in value if v is not False]
+        matched = Domain.FALSE
+        if move_ids:
+            matched = linked(("move_id", "in", move_ids))
+        if False in value:
+            matched |= ~linked()
+        return matched
+
+    @api.depends(
+        "state", "line_ids.invoice_state", "invoice_ids", "force_fully_invoiced"
+    )
+    def _compute_invoice_state(self):
+        forced_orders = self.filtered("force_fully_invoiced")
+        forced_orders.invoice_state = "done"
+        confirmed_orders = (self - forced_orders).filtered(lambda o: o.state == "done")
+        (self - forced_orders - confirmed_orders).invoice_state = "no"
+        _debug.perf.count(
+            "invoice_state_rollup",
+            orders=len(self),
+            forced=len(forced_orders),
+            confirmed=len(confirmed_orders),
+        )
+        if not confirmed_orders:
+            return
+
+        line_invoice_state_all, pending_no_ids = confirmed_orders._rollup_line_states(
+            "invoice_state", nothing_may_be_pending=True
+        )
+
+        for order in confirmed_orders:
+            states = line_invoice_state_all.get(order._origin.id, set())
+            if not states:
+                order.invoice_state = "no"
+                continue
+            order.invoice_state = order._resolve_invoice_state(
+                states,
+                order._origin.id in pending_no_ids,
+            )
+            _debug.logic(
+                "invoice_state",
+                order=order,
+                state=order.invoice_state,
+                line_states=",".join(sorted(states)),
+            )
+
+    def _resolve_invoice_state(self, states, nothing_is_pending):
+        self.check_singleton()
+        if "over done" in states:
+            return "over done"
+        if "partial" in states:
+            return "partial"
+        billed = "done" in states
+        outstanding = "to do" in states or nothing_is_pending
+        if billed and outstanding:
+            return "partial"
+        if outstanding:
+            return self._get_outstanding_invoice_state(states)
+        # nothing is left to raise: a draft invoice still to post keeps the
+        # order from reading as invoiced
+        if "draft" in states:
+            return "draft"
+        if billed:
+            return "done"
+        return "no"
+
+    def _get_outstanding_invoice_state(self, states) -> str:
+        self.check_singleton()
+        return "to do"
+
+    def action_force_invoice_state(self) -> None:
+        _debug.lifecycle("invoice_state_forced", orders=self, forced=True)
+        self.force_fully_invoiced = True
+
+    def action_unforce_invoice_state(self) -> None:
+        _debug.lifecycle("invoice_state_forced", orders=self, forced=False)
+        self.force_fully_invoiced = False
+
+    @api.readonly
+    def action_view_invoice(self, invoices=False):
+        if not invoices:
+            invoices = self.mapped("invoice_ids")
+
+        direction = direction_of(self).move_prefix
+        action = self.env["ir.actions.actions"]._get_action_dict_by_xml_id(
+            f"account.action_move_{direction}_invoice_type",
+        )
+
+        if len(invoices) > 1:
+            action["domain"] = [("id", "in", invoices.ids)]
+        elif len(invoices) == 1:
+            form_view = [(self.env.ref("account.view_move_form").id, "form")]
+            if "views" in action:
+                action["views"] = form_view + [
+                    (state, view) for state, view in action["views"] if view != "form"
+                ]
+            else:
+                action["views"] = form_view
+            action["res_id"] = invoices.id
+        else:
+            action = {"type": "ir.actions.act_window_close"}
+
+        context = {"default_move_type": f"{direction}_invoice"}
+        if len(self) == 1:
+            context.update(self._prepare_invoice_action_context())
+        action["context"] = context
+        return action
+
+    def _prepare_invoice_action_context(self):
+        self.check_singleton()
+        pt_field = direction_of(self).partner_payment_term_field
+        return {
+            "default_partner_id": self.partner_id.id,
+            "default_invoice_payment_term_id": (
+                self.payment_term_id.id
+                or self.partner_id[pt_field].id
+                or self.env["account.move"]
+                .default_get(["invoice_payment_term_id"])
+                .get("invoice_payment_term_id")
+            ),
+        }
+
+    def _get_invoice_grouping_keys(self):
+        return ["company_id", "partner_id", "currency_id", "fiscal_position_id"]
+
+    def _get_invoice_partner(self):
+        self.check_singleton()
+        return self.partner_id
+
+    def _prepare_invoice_vals(self):
+        self.check_singleton()
+        direction = direction_of(self).move_prefix
+        move_type = self.env.context.get("default_move_type", f"{direction}_invoice")
+        invoice_partner = self._get_invoice_partner()
+        values = {
+            "company_id": self.company_id.id,
+            "currency_id": self.currency_id.id,
+            "partner_id": invoice_partner.id,
+            "invoice_payment_term_id": self.payment_term_id.id,
+            "fiscal_position_id": (
+                self.fiscal_position_id
+                or self.env["account.fiscal.position"]._get_fiscal_position(
+                    invoice_partner,
+                )
+            ).id,
+            "invoice_user_id": self.user_id.id,
+            "move_type": move_type,
+            "narration": self.notes,
+            "invoice_origin": self.name,
+            "invoice_line_ids": [],
+        }
+        if self.journal_id:
+            values["journal_id"] = self.journal_id.id
+        return values
+
+    def _create_invoices(self, grouped=False, final=False, date=None):
+        if not self.env["account.move"].has_access("create"):
+            try:
+                self.check_access("write")
+            except AccessError:
+                _debug.logic("create_invoices_denied", orders=self, reason="no_access")
+                return self.env["account.move"]
+
+        invoice_vals_list = []
+        sequence = self._get_invoice_line_sequence_start()
+        for order in self:
+            order = order._get_invoicing_order()
+            invoice_vals = order._prepare_invoice_vals()
+            line_commands, sequence = order._prepare_invoice_line_commands(
+                order._get_invoiceable_lines(final),
+                sequence,
+            )
+            if not line_commands:
+                _debug.logic("order_not_invoiceable", order=order, reason="no_lines")
+                continue
+            invoice_vals["invoice_line_ids"] += line_commands
+            invoice_vals_list.append(invoice_vals)
+
+        if not invoice_vals_list:
+            if self.env.context.get("raise_if_nothing_to_invoice", True):
+                _debug.logic("nothing_to_invoice", orders=self, raising=True)
+                raise UserError(self._get_nothing_to_invoice_error_message())
+            _debug.logic("nothing_to_invoice", orders=self, raising=False)
+            return self.env["account.move"]
+
+        if not grouped:
+            invoice_vals_list = self._group_invoice_vals(invoice_vals_list)
+        invoice_vals_list = self._post_group_invoice_vals(invoice_vals_list)
+
+        with _debug.perf(
+            "create_invoices",
+            cr=self.env.cr,
+            orders=self,
+            invoices=len(invoice_vals_list),
+        ):
+            moves = self._create_invoice_moves(invoice_vals_list)
+
+            self._switch_negative_moves(moves, final)
+
+            self._post_create_invoices(moves)
+        _debug.lifecycle(
+            "invoices_created",
+            orders=self,
+            invoices=moves,
+            final=final,
+            grouped=grouped,
+        )
+        return moves
+
+    def _get_invoicing_order(self) -> Self:
+        self.check_singleton()
+        return self.with_company(self.company_id)
+
+    def _get_invoice_line_sequence_start(self) -> int:
+        return 10
+
+    def _post_group_invoice_vals(self, invoice_vals_list):
+        return invoice_vals_list
+
+    def _create_invoice_moves(self, invoice_vals_list):
+        invoice_type = self._get_invoice_move_types()[0]
+        return (
+            self.env["account.move"]
+            .sudo()
+            .with_context(default_move_type=invoice_type)
+            .create(invoice_vals_list)
+        )
+
+    def _switch_negative_moves(self, moves, final) -> None:
+        """Switch every negative-total move to a credit note/refund.
+
+        The base implementation ignores ``final`` and switches
+        unconditionally -- that is the live behavior for any concrete model
+        that does not override this method (e.g. `purchase.order`).
+        `sale.order` overrides it to gate on `final` instead; a future
+        override that wants that gating must implement it itself rather than
+        relying on a `super()` call to apply it.
+        """
+        moves_to_switch = moves.sudo().filtered(
+            lambda m: m.currency_id.round(m.amount_total) < 0,
+        )
+        if moves_to_switch:
+            _debug.lifecycle(
+                "negative_moves_switched", orders=self, moves=moves_to_switch
+            )
+            moves_to_switch.action_switch_move_type()
+
+    def _get_invoiceable_lines(self, final=False):
+        invoiceable_line_ids = []
+        down_payment_line_ids = []
+        for order in self:
+            line_ids, down_payment_ids = order._split_invoiceable_line_ids(final)
+            invoiceable_line_ids += line_ids
+            down_payment_line_ids += down_payment_ids
+        _debug.perf.count(
+            "invoiceable_lines",
+            orders=self,
+            lines=len(self.line_ids),
+            invoiceable=len(invoiceable_line_ids),
+            down_payments=len(down_payment_line_ids),
+        )
+        return self.line_ids.browse(
+            invoiceable_line_ids + down_payment_line_ids,
+        ).with_prefetch(self.line_ids._prefetch_ids)
+
+    def _split_invoiceable_line_ids(self, final) -> tuple:
+        self.check_singleton()
+        invoiceable_line_ids = []
+        down_payment_line_ids = []
+        section_line_ids = []
+        subsection_line_ids = []
+        for line in self.line_ids:
+            if line.display_type == "line_section":
+                section_line_ids = [line.id]
+                subsection_line_ids = []
+                continue
+            if line.display_type == "line_subsection":
+                subsection_line_ids = [line.id]
+                continue
+            if not line._is_invoiceable(final):
+                continue
+            if line.is_downpayment:
+                down_payment_line_ids.append(line.id)
+                continue
+            if subsection_line_ids:
+                if line.display_type:
+                    subsection_line_ids.append(line.id)
+                    continue
+                invoiceable_line_ids.extend(section_line_ids + subsection_line_ids)
+                subsection_line_ids = []
+                section_line_ids = []
+            elif section_line_ids:
+                if line.display_type:
+                    section_line_ids.append(line.id)
+                    continue
+                invoiceable_line_ids.extend(section_line_ids)
+                section_line_ids = []
+            invoiceable_line_ids.append(line.id)
+        return invoiceable_line_ids, down_payment_line_ids
+
+    def _prepare_down_payment_section_line(self, **optional_values) -> dict:
+        self.check_singleton()
+        lang = self._get_lang()
+        self_lang = self.with_context(lang=lang) if lang != self.env.lang else self
+        return {
+            "display_type": "line_section",
+            "name": self_lang.env._("Down Payments"),
+            "product_id": False,
+            "product_uom_id": False,
+            "quantity": 0,
+            "discount": 0,
+            "price_unit": 0,
+            "account_id": False,
+            **optional_values,
+        }
+
+    def _prepare_down_payment_line_section_values(self) -> dict:
+        self.check_singleton()
+        return {
+            "order_id": self.id,
+            "display_type": "line_section",
+            "is_downpayment": True,
+            "sequence": self._get_next_line_sequence(),
+        }
+
+    def _get_next_line_sequence(self):
+        self.check_singleton()
+        return max(self.line_ids.mapped("sequence"), default=9) + 1
+
+    def _get_down_payment_section_line(self):
+        self.check_singleton()
+        section = self.line_ids.filtered(
+            lambda line: line.display_type and line.is_downpayment,
+        )[:1]
+        return section or self._create_order_lines(
+            [self._prepare_down_payment_line_section_values()],
+        )
+
+    def _prepare_down_payment_line_values_from_base_line(self, base_line):
+        self.check_singleton()
+        return {
+            "order_id": self.id,
+            "is_downpayment": True,
+            "product_qty": 0.0,
+            "price_unit": base_line["price_unit"],
+            "tax_ids": [Command.set(base_line["tax_ids"].ids)],
+            "analytic_distribution": base_line["analytic_distribution"],
+            "extra_tax_data": self.env["account.tax"]._export_base_line_extra_tax_data(
+                base_line
+            ),
+        }
+
+    def _create_down_payment_lines_from_base_lines(self, down_payment_base_lines):
+        self.check_singleton()
+        return self._create_down_payment_lines(
+            [
+                self._prepare_down_payment_line_values_from_base_line(base_line)
+                for base_line in down_payment_base_lines
+            ],
+        )
+
+    def _create_down_payment_lines(self, vals_list):
+        self.check_singleton()
+        section = self._get_down_payment_section_line()
+        return self._create_order_lines(
+            [
+                {**vals, "sequence": section.sequence + index}
+                for index, vals in enumerate(vals_list, start=1)
+            ],
+        )
+
+    def _create_order_lines(self, vals_list):
+        self.check_singleton()
+        lines = (
+            self.env[self._get_line_model()]
+            .with_context(no_log_for_new_lines=True)
+            .create(vals_list)
+        )
+        self.with_context(bypass_locked_check=True).line_ids = [
+            Command.link(line_id) for line_id in lines.ids
+        ]
+        _debug.lifecycle("order_lines_created", order=self, lines=lines)
+        return lines
+
+    def _prepare_invoice_line_commands(self, invoiceable_lines, sequence=10) -> tuple:
+        if all(line.display_type for line in invoiceable_lines):
+            _debug.logic(
+                "invoice_line_commands_empty",
+                order=self,
+                reason="all_display_type",
+                lines=invoiceable_lines,
+            )
+            return [], sequence
+
+        commands = []
+        down_payment_section_added = False
+        for line in invoiceable_lines:
+            if not down_payment_section_added and line.is_downpayment:
+                commands.append(
+                    Command.create(
+                        self._prepare_down_payment_section_line(sequence=sequence),
+                    ),
+                )
+                down_payment_section_added = True
+                sequence += 1
+
+            optional_values = {"sequence": sequence}
+            if line.is_downpayment:
+                optional_values |= line._prepare_down_payment_deduction_aml_vals()
+            commands.extend(
+                Command.create(vals)
+                for vals in line._prepare_aml_vals_list(**optional_values)
+            )
+            sequence += 1
+        _debug.pipeline(
+            "invoice_line_commands",
+            order=self,
+            lines=len(invoiceable_lines),
+            commands=len(commands),
+            down_payment_section=down_payment_section_added,
+        )
+        return commands, sequence
+
+    def _group_invoice_vals(self, invoice_vals_list):
+        grouping_keys = self._get_invoice_grouping_keys()
+
+        def key(vals):
+            return [vals.get(k) for k in grouping_keys]
+
+        grouped = []
+        for _keys, group in groupby(sorted(invoice_vals_list, key=key), key=key):
+            origins = set()
+            payment_refs = set()
+            refs = set()
+            ref_vals = None
+            for vals in group:
+                if not ref_vals:
+                    ref_vals = vals
+                else:
+                    ref_vals["invoice_line_ids"] += vals["invoice_line_ids"]
+                origins.add(vals.get("invoice_origin"))
+                payment_refs.add(vals.get("payment_reference"))
+                refs.add(vals.get("ref"))
+            ref_vals["invoice_origin"] = ", ".join(sorted(o for o in origins if o))
+            if refs - {None}:
+                ref_vals["ref"] = ", ".join(sorted(r for r in refs if r))[:2000]
+            if payment_refs - {None}:
+                ref_vals["payment_reference"] = (
+                    len(payment_refs) == 1 and payment_refs.pop()
+                ) or False
+            grouped.append(ref_vals)
+        _debug.pipeline(
+            "invoice_vals_grouped",
+            orders=self,
+            before=len(invoice_vals_list),
+            after=len(grouped),
+            keys=format_list(self.env, grouping_keys),
+        )
+        return grouped
+
+    def _post_create_invoices(self, moves):
+        return moves
+
+    def _get_nothing_to_invoice_error_message(self):
+        return self.env._("There is nothing to invoice for this order.")
+
+    def _compute_journal_id(self) -> None:
+        self.journal_id = False
+
+    def _get_cancel_validation_methods(self) -> list:
+        return [
+            *super()._get_cancel_validation_methods(),
+            "_check_cancel_except_invoiced",
+        ]
+
+    def _get_invoices_blocking_cancel(self):
+        self.check_singleton()
+        invoice_type = self._get_invoice_move_types()[0]
+        return self.invoice_ids.filtered(
+            lambda invoice: (
+                invoice.state == "posted"
+                and invoice.move_type == invoice_type
+                and invoice.payment_state != "reversed"
+            )
+        )
+
+    def _check_cancel_except_invoiced(self) -> None:
+        blocking = {
+            order: invoices
+            for order in self
+            if (invoices := order._get_invoices_blocking_cancel())
+        }
+        if not blocking:
+            return
+        _debug.logic("cancel_refused", orders=list(blocking), reason="posted_invoices")
+        details = "\n".join(
+            self.env._(
+                "• %(order)s: %(invoices)s",
+                order=order.display_name,
+                invoices=", ".join(invoices.mapped("name")),
+            )
+            for order, invoices in blocking.items()
+        )
+        raise UserError(
+            self.env._(
+                "Cannot cancel an order whose invoices are posted and not fully "
+                "refunded:\n\n%(details)s\n\nRefund them in full, cancel them or "
+                "reset them to draft first.",
+                details=details,
+            )
+        )
+
+    def _action_cancel(self):
+        draft_invoices = self.invoice_ids.filtered(
+            lambda invoice: invoice.state == "draft",
+        )
+        if draft_invoices:
+            _debug.lifecycle("draft_invoices_cancelled", invoices=draft_invoices)
+            draft_invoices.action_cancel()
+        return super()._action_cancel()
+
+    @api.depends(
+        "line_ids.amount_taxexc_invoiced",
+        "line_ids.amount_taxexc_invoiced_draft",
+        "line_ids.amount_taxexc_to_invoice",
+        "line_ids.amount_taxinc_invoiced",
+        "line_ids.amount_taxinc_invoiced_draft",
+        "line_ids.amount_taxinc_to_invoice",
+    )
+    def _compute_amounts_invoice(self) -> None:
+        for order in self:
+            taxexc_invoiced = 0.0
+            taxexc_invoiced_draft = 0.0
+            taxexc_to_invoice = 0.0
+            taxinc_invoiced = 0.0
+            taxinc_invoiced_draft = 0.0
+            taxinc_to_invoice = 0.0
+
+            for line in order.line_ids:
+                taxexc_invoiced += line.amount_taxexc_invoiced
+                taxexc_invoiced_draft += line.amount_taxexc_invoiced_draft
+                taxexc_to_invoice += line.amount_taxexc_to_invoice
+                taxinc_invoiced += line.amount_taxinc_invoiced
+                taxinc_invoiced_draft += line.amount_taxinc_invoiced_draft
+                taxinc_to_invoice += line.amount_taxinc_to_invoice
+
+            order.amount_taxexc_invoiced = taxexc_invoiced
+            order.amount_taxexc_invoiced_draft = taxexc_invoiced_draft
+            order.amount_taxexc_to_invoice = taxexc_to_invoice
+            order.amount_taxinc_invoiced = taxinc_invoiced
+            order.amount_taxinc_invoiced_draft = taxinc_invoiced_draft
+            order.amount_taxinc_to_invoice = taxinc_to_invoice
+
+    @api.depends("company_id", "partner_id", "amount_total", "state")
+    def _compute_partner_credit_warning(self) -> None:
+        for order in self:
+            order = order.with_company(order.company_id)
+            order.partner_credit_warning = ""
+            show_warning = order._is_partner_credit_warning_applicable()
+            _debug.logic("credit_warning_checked", order=order, show=show_warning)
+            if show_warning:
+                order.partner_credit_warning = self.env[
+                    "account.move"
+                ]._prepare_credit_warning_message(
+                    order.sudo(),
+                    current_amount=(order.amount_total / (order.currency_rate or 1.0)),
+                )
+
+    def _is_partner_credit_warning_applicable(self) -> bool:
+        self.check_singleton()
+        return bool(
+            self.state == "draft"
+            and self.company_id.account_config_id.account_use_credit_limit
+        )
+
+    def _get_partner_credit_exposure(self) -> tuple[float, float]:
+        self.check_singleton()
+        partner = self.partner_id.commercial_partner_id
+        return partner.credit, partner.credit_to_invoice

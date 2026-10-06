@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="tool_create_invoice_draft" model="ir.actions.server">
+        <field name="name">Conversation: create draft customer invoice</field>
+        <field name="model_id" ref="conversation.model_conversation_conversation" />
+        <field name="state">code</field>
+        <field
+            name="code">partner = tools.find("res.partner", customer_name) or record.partner_id
+if not partner:
+    raise UserError("La factura necesita un cliente.")
+invoice_lines = []
+for line in tools.lines(lines, extra="price"):
+    product = tools.find("product.product", line["name"])
+    vals = {"name": line["name"], "quantity": line["quantity"]}
+    if product:
+        vals["product_id"] = product.id
+    if line["price"]:
+        try:
+            vals["price_unit"] = float(line["price"])
+        except ValueError:
+            raise UserError("Precio ilegible en la línea '%s'." % line["name"])
+    invoice_lines.append((0, 0, vals))
+move = env["account.move"].create({
+    "move_type": "out_invoice",
+    "partner_id": partner.id,
+    "invoice_date": datetime.date.today(),
+    "invoice_origin": record._tool_origin(),
+    "narration": note or False,
+    "invoice_line_ids": invoice_lines,
+})
+ai["result"] = {"model": "account.move", "id": move.id}</field>
+        <field
+            name="ai_approval_category_id"
+            ref="conversation.approval_category_tool_manager" />
+        <field
+            name="ai_tool_description">Crear una factura de cliente en borrador con las líneas dichas. Nunca se valida sola; Contabilidad la revisa. Un producto que no existe queda como línea de nota.</field>
+        <field
+            name="ai_tool_schema">{
+    "type": "object",
+    "properties": {
+        "customer_name": {"type": "string", "description": "Vacío = cliente de la conversación"},
+        "lines": {"type": "array", "items": {"type": "string"}, "description": "Una línea por concepto: 'producto o concepto | cantidad | precio unitario'"},
+        "note": {"type": "string"}
+    },
+    "required": ["lines"]
+}</field>
+        <field name="conversation_enabled" eval="True" />
+        <field
+            name="conversation_examples">"factúrale", "hay que emitir la factura de", acuerdos de Contabilidad con un cliente</field>
+        <field name="conversation_key">create_invoice_draft</field>
+        <field name="use_in_ai" eval="True" />
+    </record>
+
+</odoo>

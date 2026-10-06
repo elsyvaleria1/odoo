@@ -1,0 +1,7 @@
+.o-mail-Meeting {
+    background-color: $o-meeting-view-bg;
+}
+
+.o-overlay-item:has(.o-mail-Meeting) {
+    z-index: $zindex-modal - 1;
+}

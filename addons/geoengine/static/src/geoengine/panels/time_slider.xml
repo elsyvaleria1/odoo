@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<templates xml:space="preserve">
+
+    <t t-name="geoengine.TimeSlider">
+        <div class="o_geoengine_time_slider" t-att-style="this.trailColorStyle">
+            <div class="time_slider_header">
+                <div class="time_display">
+                    <span class="current_time" t-out="this.formatTime(this.state.currentTime)" />
+                </div>
+                <div class="duration_display">
+                    <span class="text-muted small">
+                        Duration: <t t-out="this.formatDuration(this.duration)" />
+                    </span>
+                </div>
+            </div>
+
+            <div class="time_slider_track">
+                <input
+                    type="range"
+                    class="form-range time_slider_input"
+                    t-ref="this.sliderRef"
+                    t-att-min="this.props.minTime"
+                    t-att-max="this.props.maxTime"
+                    t-att-value="this.state.currentTime"
+                    step="1"
+                    t-on-input="this.onSliderInput"
+                />
+                <div
+                    class="time_slider_progress"
+                    t-attf-style="width: {{ this.progress }}%"
+                />
+            </div>
+
+            <div class="time_labels">
+                <span
+                    class="time_start small text-muted"
+                    t-out="this.formatTime(this.props.minTime)"
+                />
+                <span
+                    class="time_end small text-muted"
+                    t-out="this.formatTime(this.props.maxTime)"
+                />
+            </div>
+
+            <div class="time_slider_controls">
+                <button
+                    class="btn btn-sm btn-outline-secondary"
+                    t-on-click="this.jumpToStart"
+                    title="Jump to start"
+                >
+                    <i class="fa-solid fa-fast-backward" />
+                </button>
+
+                <button
+                    class="btn btn-sm btn-outline-secondary"
+                    t-on-click="this.stepBackward"
+                    title="Step backward (1/8)"
+                >
+                    <i class="fa-solid fa-step-backward" />
+                </button>
+
+                <button
+                    class="btn btn-sm btn-primary play_button"
+                    t-on-click="this.togglePlay"
+                    t-att-title="this.state.isPlaying ? 'Pause' : 'Play'"
+                >
+                    <i
+                        t-attf-class="fa-solid {{ this.state.isPlaying ? 'fa-pause' : 'fa-play' }}"
+                    />
+                </button>
+
+                <button
+                    class="btn btn-sm btn-outline-secondary"
+                    t-on-click="this.stepForward"
+                    title="Step forward (1/8)"
+                >
+                    <i class="fa-solid fa-step-forward" />
+                </button>
+
+                <button
+                    class="btn btn-sm btn-outline-secondary"
+                    t-on-click="this.jumpToEnd"
+                    title="Jump to end"
+                >
+                    <i class="fa-solid fa-fast-forward" />
+                </button>
+
+                <button
+                    class="btn btn-sm btn-outline-secondary speed_button"
+                    t-on-click="this.cycleSpeed"
+                    t-att-title="'Playback speed: ' + this.state.speed + 'x'"
+                >
+                    <span t-out="this.state.speed + 'x'" />
+                </button>
+            </div>
+        </div>
+    </t>
+
+</templates>

@@ -1,0 +1,26 @@
+/** @odoo-module native */
+import { t } from "@odoo/owl";
+import { ProductCatalogOrderLine } from "@product/product_catalog/order_line/order_line";
+import { _t } from "@web/core/translation";
+
+export const productCatalogSaleOrderLineProps = {
+    ...ProductCatalogOrderLine.props,
+    deliveredQty: t.number(),
+};
+
+export class ProductCatalogSaleOrderLine extends ProductCatalogOrderLine {
+    static props = productCatalogSaleOrderLineProps;
+
+    get disableRemove() {
+        return this.props.quantity === this.props.deliveredQty;
+    }
+
+    get disabledButtonTooltip() {
+        if (this.disableRemove) {
+            return _t(
+                "The ordered quantity cannot be decreased below the amount already delivered. Instead, create a return in your inventory.",
+            );
+        }
+        return super.disabledButtonTooltip;
+    }
+}

@@ -1,0 +1,296 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="pos_config_view_form" model="ir.ui.view">
+        <field name="name">pos.config.form.view</field>
+        <field name="model">pos.config</field>
+        <field name="arch" type="xml">
+            <form string="Point of Sale Configuration">
+                <sheet>
+                    <widget
+                        name="web_ribbon"
+                        title="Archived"
+                        invisible="active"
+                        bg_color="text-bg-danger" />
+                    <field name="active" invisible="1" />
+                    <field name="company_has_template" invisible="1" />
+                    <field name="has_active_session" invisible="1" />
+                    <field name="other_devices" invisible="1" />
+                    <field name="is_posbox" invisible="1" />
+                    <field name="module_pos_hr" invisible="1" />
+
+                    <div class="oe_title" id="title">
+                        <label for="name" />
+                        <h1><field name="name" placeholder="e.g. NYC Shop" /></h1>
+                    </div>
+                    <div invisible="context.get('pos_config_create_mode', False)">
+                        <div
+                            class="o_notification_alert alert alert-warning"
+                            invisible="not has_active_session"
+                            role="alert">
+                            A session is currently opened for this PoS. Some settings can only be changed after the session is closed.
+                            <button name="close_ui" type="object" class="btn" style="padding:0">Click here to close the session</button>
+                        </div>
+                        <div
+                            class="o_notification_alert alert alert-warning"
+                            invisible="company_has_template"
+                            role="alert">
+                            There is no Chart of Accounts configured on the company. Please go to the invoicing settings to install a Chart of Accounts.
+                        </div>
+                    </div>
+
+                    <div
+                        id="restaurant_on_create"
+                        class="row mt16 o_settings_container"
+                        invisible="not context.get('pos_config_create_mode', False)">
+                        <setting>
+                            <field name="module_pos_restaurant" />
+                        </setting>
+                    </div>
+
+                    <div
+                        class="row mt16 o_settings_container"
+                        invisible="context.get('pos_config_create_mode', False)">
+                        <setting
+                            string="Log in with Employees"
+                            title="Employees can scan their badge or enter a PIN to log in to a PoS session. These credentials are configurable in the *HR Settings* tab of the employee form."
+                            help="Allow to log and switch between selected Employees">
+                            <field name="module_pos_hr" readonly="has_active_session" />
+                            <div
+                                class="content-group mt16"
+                                invisible="not module_pos_hr">
+                                <div class="text-warning" id="warning_text_employees">
+                                    Save this page and come back here to set up the feature.
+                                </div>
+                            </div>
+                        </setting>
+                        <setting
+                            id="other_devices"
+                            string="ePos Printer"
+                            help="Connect device to your PoS without an IoT Box">
+                            <field name="other_devices" />
+                            <div class="content-group" invisible="not other_devices">
+                                <div class="row mb-2">
+                                    <div class="col-lg-6">
+                                        <field
+                                            name="epson_printer_ip"
+                                            placeholder="Epson Receipt Printer IP Address"
+                                            class="w-100 pt-1" />
+                                    </div>
+                                    <div class="col-lg-6">
+                                        <widget name="point_of_sale_test_epos" />
+                                    </div>
+                                </div>
+                                <div
+                                    class="row"
+                                    invisible="epson_printer_ip in [False, '']">
+                                    <div class="col-lg-6 o_light_label">
+                                        <label
+                                            for="iface_cashdrawer"
+                                            string="Link Cashdrawer" />
+                                    </div>
+                                    <div class="col-lg-6">
+                                        <field name="iface_cashdrawer" />
+                                    </div>
+                                </div>
+                            </div>
+                            <div
+                                role="alert"
+                                class="alert alert-warning"
+                                invisible="not iface_print_via_proxy or not other_devices or epson_printer_ip in [False, '']">
+                                The Epson receipt printer will be used instead of the receipt printer connected to the IoT Box.
+                            </div>
+                        </setting>
+                        <setting
+                            string="IoT Box"
+                            help="Connect devices using an IoT Box">
+                            <field name="is_posbox" />
+                            <div
+                                class="content-group pos_iot_config ms-3"
+                                invisible="not is_posbox">
+                                <div class="row">
+                                    <div class="col-lg-4 o_light_label">
+                                        <label
+                                            for="proxy_ip"
+                                            string="IoT Box IP Address" />
+                                    </div>
+                                    <div class="col-lg-8">
+                                        <field name="proxy_ip" />
+                                    </div>
+                                </div>
+                                <div class="row iot_barcode_scanner">
+                                    <div class="col-lg-5 o_light_label">
+                                        <label
+                                            for="iface_scan_via_proxy"
+                                            string="Scanner" />
+                                    </div>
+                                    <div class="col-lg-7">
+                                        <field name="iface_scan_via_proxy" />
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-lg-5 o_light_label">
+                                        <label
+                                            for="iface_electronic_scale"
+                                            string="Electronic Scale" />
+                                    </div>
+                                    <div class="col-lg-7">
+                                        <field name="iface_electronic_scale" />
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-lg-5 o_light_label">
+                                        <label
+                                            for="iface_print_via_proxy"
+                                            string="Receipt Printer" />
+                                    </div>
+                                    <div class="col-lg-7">
+                                        <field name="iface_print_via_proxy" />
+                                    </div>
+                                </div>
+                                <div class="row" invisible="not iface_print_via_proxy">
+                                    <div class="col-lg-5 o_light_label ps-4">
+                                        <label
+                                            for="iface_cashdrawer"
+                                            string="Cashdrawer" />
+                                    </div>
+                                    <div class="col-lg-7">
+                                        <field name="iface_cashdrawer" />
+                                    </div>
+                                </div>
+                            </div>
+                        </setting>
+                        <setting
+                            string="Stock Display"
+                            help="Display product stock quantities on POS product cards">
+                            <field name="show_stock_in_pos" />
+                            <div
+                                class="content-group mt16"
+                                invisible="not show_stock_in_pos">
+                                <div class="row">
+                                    <label
+                                        for="stock_display_location"
+                                        string="Display Position"
+                                        class="col-lg-3 o_light_label" />
+                                    <field name="stock_display_location" />
+                                </div>
+                                <div class="row">
+                                    <label
+                                        for="low_stock_threshold"
+                                        string="Low Stock Threshold"
+                                        class="col-lg-3 o_light_label" />
+                                    <field name="low_stock_threshold" />
+                                </div>
+                                <div class="row mt8">
+                                    <label
+                                        for="stock_warehouse_id"
+                                        string="Stock Warehouse"
+                                        class="col-lg-3 o_light_label" />
+                                    <field
+                                        name="stock_warehouse_id"
+                                        placeholder="All Warehouses" />
+                                </div>
+                                <div class="row mt8">
+                                    <field
+                                        name="stock_warehouse_view_location_id"
+                                        invisible="1" />
+                                    <label
+                                        for="stock_location_ids"
+                                        string="Stock Locations"
+                                        class="col-lg-3 o_light_label" />
+                                    <field
+                                        name="stock_location_ids"
+                                        placeholder="All locations from warehouse"
+                                        widget="many2many_tags"
+                                        domain="[('usage', '=', 'internal'), ('location_id', 'child_of', stock_warehouse_view_location_id)]"
+                                        options="{'no_create': True}"
+                                        invisible="not stock_warehouse_id" />
+                                </div>
+                                <div class="row mt8" invisible="stock_warehouse_id">
+                                    <span class="text-muted ms-3">Select a warehouse first to filter by specific locations</span>
+                                </div>
+                            </div>
+                        </setting>
+                        <div groups="base.group_system">
+                            <p>
+                                More settings: <a href="#" name="%(action_pos_configuration)d" type="action" class="btn-link o_form_uri" role="button">Configurations &gt; Settings</a>
+                            </p>
+                        </div>
+                    </div>
+                </sheet>
+
+                <footer invisible="not context.get('pos_config_open_modal', False)">
+                    <button special="save" string="Save" class="btn-primary" />
+                    <button special="cancel" string="Discard" class="btn-secondary" />
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_pos_config_tree" model="ir.ui.view">
+        <field name="name">pos.config.list.view</field>
+        <field name="model">pos.config</field>
+        <field name="arch" type="xml">
+            <list string="Point of Sale Configuration">
+                <field name="name" />
+                <field
+                    name="company_id"
+                    options="{'no_create': True}"
+                    groups="base.group_multi_company" />
+                <field name="last_session_closing_date" string="Closing" />
+                <field name="currency_id" column_invisible="True" />
+                <field
+                    name="last_session_closing_cash"
+                    string="Balance"
+                    widget="monetary" />
+            </list>
+        </field>
+    </record>
+
+    <record id="view_pos_config_search" model="ir.ui.view">
+        <field name="name">pos.config.search.view</field>
+        <field name="model">pos.config</field>
+        <field name="arch" type="xml">
+            <search string="Point of Sale Config">
+                <field name="name" />
+                <field name="picking_type_id" />
+                <filter
+                    name="inactive"
+                    string="Archived"
+                    domain="[('active', '=', False)]" />
+            </search>
+        </field>
+    </record>
+
+    <record id="action_pos_config_kanban" model="ir.actions.act_window">
+        <field name="name">Point of Sale</field>
+        <field name="res_model">pos.config</field>
+        <field name="path">point-of-sale</field>
+        <field name="view_mode">kanban,list,form</field>
+        <field name="search_view_id" ref="view_pos_config_search" />
+        <field name="domain" />
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Create a new PoS
+            </p><p>
+                Configure at least one Point of Sale.
+            </p>
+        </field>
+    </record>
+
+    <record id="action_pos_config_tree" model="ir.actions.act_window">
+        <field name="name">Point of Sale List</field>
+        <field name="res_model">pos.config</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_pos_config_search" />
+        <field name="domain" />
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Create a new PoS
+            </p><p>
+                Configure at least one Point of Sale.
+            </p>
+        </field>
+    </record>
+
+</odoo>

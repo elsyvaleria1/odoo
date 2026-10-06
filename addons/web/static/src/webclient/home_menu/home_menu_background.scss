@@ -1,0 +1,11 @@
+// Screens that stand on the canvas outside the web client's body: the login
+// and share pages (frontend bundle), and the barcode and kiosk screens.
+.o_home_menu_background:not(.o_web_client) {
+    background: {
+        color: var(--homeMenu-bg-color, var(--o-canvas-color, #{$o-canvas-color}));
+        image: var(--homeMenu-bg-image, var(--o-canvas-image, #{$o-canvas-image}));
+        size: cover;
+        attachment: fixed;
+        position: center;
+    }
+}

@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="sale_subscription_sale_order_line_list" model="ir.ui.view">
+        <field name="name">sale.subscription.plan.inherit.line.tree</field>
+        <field name="model">sale.order.line</field>
+        <field name="arch" type="xml">
+            <list string="Subscription Items" multi_edit="1">
+                <field name="name" string="Product" />
+                <field
+                    name="product_template_variant_value_ids"
+                    string="Product Varient"
+                    widget="many2many_tags"
+                    groups="product.group_product_variant" />
+                <field name="order_id" string="Subscription" readonly="1" />
+                <field name="partner_id" />
+                <field name="pricelist_id" groups="product.group_product_pricelist" />
+                <field name="price_unit" string="Price" />
+                <field name="next_invoice_date" />
+                <field name="subscription_start_date" optional="hide" />
+                <field name="subscription_end_date" optional="hide" />
+            </list>
+        </field>
+    </record>
+
+    <record id="sale_subscription_sales_order_line_filter" model="ir.ui.view">
+        <field name="name">sale.subscription.sale.order.line.select</field>
+        <field name="model">sale.order.line</field>
+        <field name="arch" type="xml">
+            <search string="Search Sales Order">
+                <field name="order_id" string="Sale order" />
+                <field name="partner_id" operator="child_of" />
+                <field name="name" string="Product" />
+                <group>
+                    <filter
+                        name="product"
+                        string="Product"
+                        context="{'group_by':'product_id'}" />
+                    <filter
+                        name="product variant"
+                        string="Product Variant"
+                        context="{'group_by':'product_template_variant_value_ids'}" />
+                    <filter
+                        name="pricelist"
+                        string="Pricelist"
+                        context="{'group_by':'pricelist_id'}" />
+                    <filter
+                        name="customer"
+                        string="Customer"
+                        context="{'group_by':'partner_id'}" />
+                    <filter
+                        name="next invoice date"
+                        string="Next Invoice Date"
+                        context="{'group_by':'next_invoice_date'}" />
+                    <filter
+                        name="start date"
+                        string="Start Date"
+                        context="{'group_by':'subscription_start_date'}" />
+                    <filter
+                        name="end date"
+                        string="End Date"
+                        context="{'group_by':'subscription_end_date'}" />
+                </group>
+            </search>
+        </field>
+    </record>
+
+</odoo>

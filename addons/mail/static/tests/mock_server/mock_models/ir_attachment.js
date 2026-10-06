@@ -1,0 +1,88 @@
+// @ts-check
+import { mailDataHelpers } from "@mail/../tests/mock_server/mail_mock_server";
+import { getKwArgs, makeKwArgs, webModels } from "@web/../tests/web_test_helpers";
+
+export class IrAttachment extends webModels.IrAttachment {
+    /**
+     * @param {number} ids
+     * @param {boolean} [force]
+     */
+    register_as_main_attachment(ids, force) {
+        const kwargs = getKwArgs(arguments, "ids", "force");
+        ids = kwargs.ids;
+        delete kwargs.ids;
+        force = kwargs.force ?? true;
+
+        const [attachment] = this.browse(ids);
+        if (!attachment.res_model) {
+            return true;
+        }
+        if (!this.env[attachment.res_model]._fields.message_main_attachment_id) {
+            return true;
+        }
+        const [record] = this.env[attachment.res_model].search_read([
+            ["id", "=", attachment.res_id],
+        ]);
+        if (force || !record.message_main_attachment_id) {
+            this.env[attachment.res_model].write([record.id], {
+                message_main_attachment_id: attachment.id,
+            });
+        }
+        return true;
+    }
+
+    /**
+     * @param {import("@mail/../tests/mock_server/mail_mock_server").Store} store
+     * @param {Array} fields
+     */
+    _to_store(store, fields) {
+        const kwargs = getKwArgs(arguments, "store", "fields");
+        fields = kwargs.fields;
+
+        for (const attachment of this) {
+            store._add_record_fields(
+                this.browse(attachment.id),
+                fields.filter((field) => field !== "thread"),
+            );
+            if (fields.includes("thread")) {
+                const data = {
+                    thread:
+                        attachment.model !== "wizard.mail.message.send" &&
+                        attachment.res_id
+                            ? mailDataHelpers.Store.one(
+                                  this.env[attachment.res_model].browse(
+                                      attachment.res_id,
+                                  ),
+                                  makeKwArgs({
+                                      as_thread: true,
+                                      only_id: true,
+                                  }),
+                              )
+                            : false,
+                };
+                store._add_record_fields(this.browse(attachment.id), data);
+            }
+        }
+    }
+
+    get _to_store_defaults() {
+        return [
+            "checksum",
+            "create_date",
+            "file_size",
+            mailDataHelpers.Store.attr("has_thumbnail", (a) =>
+                Boolean(a.has_thumbnail),
+            ),
+            "mimetype",
+            "name",
+            mailDataHelpers.Store.attr("raw_access_token", (a) => a.id),
+            "res_model",
+            "res_name",
+            "thread",
+            mailDataHelpers.Store.attr("thumbnail_access_token", (a) => a.id),
+            "type",
+            "url",
+            "voice_ids",
+        ];
+    }
+}

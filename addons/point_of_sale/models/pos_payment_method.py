@@ -1,0 +1,476 @@
+from odoo import Command, api, fields, models
+from odoo.exceptions import UserError, ValidationError
+from odoo.libs.debug_log import DebugLog
+from odoo.tools import frozendict
+
+_debug = DebugLog(__name__)
+
+
+class PosPaymentMethod(models.Model):
+    _name = "pos.payment.method"
+    _description = "Point of Sale Payment Methods"
+    _order = "sequence, id"
+    _inherit = ["mixin.pos.load", "mixin.credential.holder"]
+    _credential_holder_field = "terminal_credential_id"
+    _credential_purpose = "pos:payment_method"
+    _access_anchors = frozendict(
+        {
+            "company": models.Anchor("company_id", shared=False),
+        }
+    )
+
+    def _selection_payment_terminals(self):
+        return []
+
+    def _selection_payment_method_types(self):
+        selection = [
+            ("none", self.env._("None required")),
+            ("terminal", self.env._("Terminal")),
+        ]
+        if self.env["res.partner.bank.account"].get_available_qr_methods_in_sequence():
+            selection.append(("qr_code", self.env._("Bank App (QR Code)")))
+        return selection
+
+    def _is_online_payment(self) -> bool:
+        return False
+
+    terminal_credential_id = fields.Many2one(
+        comodel_name="credential.credential",
+        string="Credential",
+        copy=False,
+        ondelete="restrict",
+        groups="base.group_system",
+        help="Holds the secrets of this method's payment terminal.",
+    )
+    name = fields.Char(
+        string="Method",
+        translate=True,
+        required=True,
+        help="Defines the name of the payment method that will be displayed in the Point of Sale when the payments are selected.",
+    )
+    sequence = fields.Integer(copy=False)
+    outstanding_account_id = fields.Many2one(
+        comodel_name="account.account",
+        ondelete="restrict",
+        help="Account used as outstanding account when creating accounting payment records for bank payments.",
+    )
+    receivable_account_id = fields.Many2one(
+        comodel_name="account.account",
+        string="Intermediary Account",
+        domain=[("reconcile", "=", True), ("account_type", "=", "asset_receivable")],
+        ondelete="restrict",
+        help="Leave empty to use the default account from the company setting.\n"
+        "Overrides the company's receivable account (for Point of Sale) used in the journal entries.",
+    )
+    is_cash_count = fields.Boolean(
+        string="Cash",
+        compute="_compute_is_cash_count",
+        store=True,
+    )
+    journal_id = fields.Many2one(
+        comodel_name="account.journal",
+        index="btree_not_null",
+        domain=[
+            "|",
+            "&",
+            ("type", "=", "cash"),
+            ("pos_payment_method_ids", "=", False),
+            ("type", "=", "bank"),
+        ],
+        ondelete="restrict",
+        check_company=True,
+        help="Leave empty to use the receivable account of customer.\n"
+        "Defines the journal where to book the accumulated payments (or individual payment if Identify Customer is true) after closing the session.\n"
+        "For cash journal, we directly write to the default account in the journal via statement lines.\n"
+        "For bank journal, we write to the outstanding account specified in this payment method.\n"
+        "Only cash and bank journals are allowed.",
+    )
+    split_transactions = fields.Boolean(
+        string="Identify Customer",
+        default=False,
+        help="Forces to set a customer when using this payment method and splits the journal entries for each customer. It could slow down the closing process.",
+    )
+    open_session_ids = fields.Many2many(
+        comodel_name="pos.session",
+        string="Pos Sessions",
+        compute="_compute_open_session_ids",
+        help="Open PoS sessions that are using this payment method.",
+    )
+    config_ids = fields.Many2many(
+        comodel_name="pos.config",
+        string="Point of Sale",
+    )
+    company_id = fields.Many2one(
+        comodel_name="res.company",
+        default=lambda self: self.env.company,
+    )
+    default_pos_receivable_account_name = fields.Char(
+        related="company_id.account_config_id.account_default_pos_receivable_account_id.display_name",
+        string="Default Receivable Account Name",
+    )
+    use_payment_terminal = fields.Selection(
+        selection=lambda self: self._selection_payment_terminals(),
+        string="Use a Payment Terminal",
+        help="Record payments with a terminal on this journal.",
+    )
+    hide_use_payment_terminal = fields.Boolean(
+        compute="_compute_hide_use_payment_terminal"
+    )
+    active = fields.Boolean(default=True)
+    type = fields.Selection(
+        selection=[
+            ("cash", "Cash"),
+            ("bank", "Bank"),
+            ("pay_later", "Customer Account"),
+        ],
+        compute="_compute_type",
+    )
+    image = fields.Image(
+        max_width=50,
+        max_height=50,
+    )
+    payment_method_type = fields.Selection(
+        selection=lambda self: self._selection_payment_method_types(),
+        string="Integration",
+        default="none",
+        required=True,
+    )
+    default_qr = fields.Char(compute="_compute_default_qr")
+    qr_code_method = fields.Selection(
+        selection=lambda self: self.env[
+            "res.partner.bank.account"
+        ].get_available_qr_methods_in_sequence(),
+        string="QR Code Format",
+        copy=False,
+        help="Type of QR-code to be generated for this payment method.",
+    )
+    hide_qr_code_method = fields.Boolean(compute="_compute_hide_qr_code_method")
+
+    def _is_inbound_request_authentic(self, headers, body) -> bool:
+        """Whether a terminal notification that resolved this method is the
+        vendor's -- each terminal integration decides how."""
+        self.check_singleton()
+        return False
+
+    @api.model
+    def get_provider_status(self, modules_list) -> dict:
+        return {
+            "state": self.env["ir.module.module"].search_read(
+                [("name", "in", modules_list)], ["name", "state"]
+            ),
+        }
+
+    @api.model
+    def _load_pos_data_domain(self, data, config):
+        return ["|", ("active", "=", False), ("active", "=", True)]
+
+    @api.model
+    def _load_pos_data_fields(self, config):
+        return [
+            "id",
+            "name",
+            "is_cash_count",
+            "use_payment_terminal",
+            "split_transactions",
+            "type",
+            "image",
+            "sequence",
+            "payment_method_type",
+            "default_qr",
+        ]
+
+    @api.depends("type", "payment_method_type")
+    def _compute_hide_use_payment_terminal(self) -> None:
+        no_terminals = not bool(self._fields["use_payment_terminal"].selection(self))
+        for payment_method in self:
+            payment_method.hide_use_payment_terminal = (
+                no_terminals
+                or payment_method.type in ("cash", "pay_later")
+                or payment_method.payment_method_type != "terminal"
+            )
+
+    @api.depends("payment_method_type")
+    def _compute_hide_qr_code_method(self) -> None:
+        for payment_method in self:
+            payment_method.hide_qr_code_method = (
+                payment_method.payment_method_type != "qr_code"
+                or len(
+                    self.env[
+                        "res.partner.bank.account"
+                    ].get_available_qr_methods_in_sequence()
+                )
+                == 1
+            )
+
+    @api.onchange("payment_method_type")
+    def _onchange_payment_method_type(self) -> None:
+        if self.payment_method_type == "none":
+            self.use_payment_terminal = False
+
+        selection_options = self.env[
+            "res.partner.bank.account"
+        ].get_available_qr_methods_in_sequence()
+        if len(selection_options) == 1:
+            self.qr_code_method = selection_options[0][0]
+
+    @api.onchange("use_payment_terminal")
+    def _onchange_use_payment_terminal(self):
+        pass
+
+    @api.depends("config_ids.session_ids.state")
+    def _compute_open_session_ids(self) -> None:
+        all_configs = self.config_ids
+        open_sessions = self.env["pos.session"].search(
+            [
+                ("config_id", "in", all_configs.ids),
+                ("state", "!=", "closed"),
+            ]
+        )
+        sessions_by_config = {}
+        for session in open_sessions:
+            sessions_by_config.setdefault(session.config_id.id, self.env["pos.session"])
+            sessions_by_config[session.config_id.id] |= session
+        empty_sessions = self.env["pos.session"]
+        for payment_method in self:
+            method_sessions = empty_sessions
+            for config_id in payment_method.config_ids.ids:
+                method_sessions |= sessions_by_config.get(config_id, empty_sessions)
+            payment_method.open_session_ids = method_sessions
+
+    @api.depends("journal_id", "split_transactions")
+    def _compute_type(self) -> None:
+        for pm in self:
+            if pm.journal_id.type in {"cash", "bank"}:
+                pm.type = pm.journal_id.type
+            else:
+                pm.type = "pay_later"
+
+    @api.onchange("journal_id")
+    def _onchange_journal_id(self) -> None:
+        for pm in self:
+            if pm.journal_id and pm.journal_id.type not in ["cash", "bank"]:
+                raise UserError(
+                    self.env._(
+                        "Only journals of type 'Cash' or 'Bank' could be used with payment methods."
+                    )
+                )
+            if pm.journal_id and pm.journal_id.type == "bank":
+                chart_template = self.with_context(
+                    allowed_company_ids=self.env.company.root_id.ids
+                ).env["account.chart.template"]
+                pm.outstanding_account_id = (
+                    chart_template.ref(
+                        "account_journal_payment_debit_account_id",
+                        raise_if_not_found=False,
+                    )
+                    or self.company_id.account_config_id.transfer_account_id
+                )
+        if self.is_cash_count:
+            self.use_payment_terminal = False
+
+    @api.depends("type")
+    def _compute_is_cash_count(self) -> None:
+        for pm in self:
+            pm.is_cash_count = pm.type == "cash"
+
+    def _is_write_forbidden(self, fields) -> bool:
+        whitelisted_fields = {"sequence"}
+        return bool(fields - whitelisted_fields and self.open_session_ids)
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        if _debug.lifecycle.enabled:
+            _debug.lifecycle(
+                "payment_method_create",
+                vals=len(vals_list),
+                fields=sorted({k for vals in vals_list for k in vals}),
+            )
+        for vals in vals_list:
+            if vals.get("payment_method_type", False):
+                self._force_payment_method_type_values(
+                    vals, vals["payment_method_type"]
+                )
+        return super().create(vals_list)
+
+    def write(self, vals):
+        if _debug.lifecycle.enabled:
+            _debug.lifecycle(
+                "payment_method_write",
+                methods=self,
+                fields=sorted(vals),
+                open_sessions=self.open_session_ids,
+            )
+        if self._is_write_forbidden(set(vals.keys())):
+            raise UserError(
+                self.env._(
+                    "Please close and validate the following open PoS Sessions before modifying this payment method.\n"
+                    "Open sessions: %s",
+                    (" ".join(self.open_session_ids.mapped("name")),),
+                )
+            )
+
+        if "payment_method_type" in vals:
+            self._force_payment_method_type_values(vals, vals["payment_method_type"])
+            return super().write(vals)
+
+        pmt_terminal = self.filtered(lambda pm: pm.payment_method_type == "terminal")
+        pmt_qr = self.filtered(lambda pm: pm.payment_method_type == "qr_code")
+        not_pmt = self - pmt_terminal - pmt_qr
+        _debug.logic(
+            "payment_method_write_split",
+            terminal=pmt_terminal,
+            qr=pmt_qr,
+            other=not_pmt,
+        )
+
+        res = True
+        if pmt_terminal:
+            forced_vals = vals.copy()
+            self._force_payment_method_type_values(forced_vals, "terminal", True)
+            res = super(PosPaymentMethod, pmt_terminal).write(forced_vals) and res
+        if pmt_qr:
+            forced_vals = vals.copy()
+            self._force_payment_method_type_values(forced_vals, "qr_code", True)
+            res = super(PosPaymentMethod, pmt_qr).write(forced_vals) and res
+        if not_pmt:
+            res = super(PosPaymentMethod, not_pmt).write(vals) and res
+
+        return res
+
+    @staticmethod
+    def _force_payment_method_type_values(
+        vals, payment_method_type, if_present=False
+    ) -> None:
+        if payment_method_type == "terminal":
+            disabled_fields_name = ["qr_code_method"]
+        elif payment_method_type == "qr_code":
+            disabled_fields_name = ["use_payment_terminal"]
+        else:
+            disabled_fields_name = ["use_payment_terminal", "qr_code_method"]
+        if if_present:
+            for name in disabled_fields_name:
+                if name in vals:
+                    vals[name] = False
+        else:
+            for name in disabled_fields_name:
+                vals[name] = False
+
+    def copy_data(self, default=None):
+        default = dict(default or {}, config_ids=[Command.clear()])
+        vals_list = super().copy_data(default=default)
+
+        for pm, vals in zip(self, vals_list, strict=False):
+            if pm.journal_id and pm.journal_id.type == "cash":
+                if (
+                    "journal_id" in default
+                    and default["journal_id"] == pm.journal_id.id
+                ) or ("journal_id" not in default):
+                    vals["journal_id"] = False
+        return vals_list
+
+    @api.constrains("payment_method_type", "journal_id", "qr_code_method")
+    def _check_payment_method(self) -> None:
+        for rec in self:
+            if rec.payment_method_type == "qr_code":
+                if rec.journal_id.type != "bank" or not rec.journal_id.bank_account_id:
+                    raise ValidationError(
+                        self.env._(
+                            "At least one bank account must be defined on the journal to allow registering QR code payments with Bank apps."
+                        )
+                    )
+                if not rec.qr_code_method:
+                    raise ValidationError(
+                        self.env._(
+                            "You must select a QR-code method to generate QR-codes for this payment method."
+                        )
+                    )
+                error_msg = self.journal_id.bank_account_id._get_error_messages_for_qr(
+                    self.qr_code_method, False, rec.company_id.currency_id
+                )
+                if error_msg:
+                    raise ValidationError(error_msg)
+
+    @api.constrains("config_ids")
+    def _check_company_config(self) -> None:
+        for payment in self:
+            if any(
+                config.company_id != payment.company_id for config in payment.config_ids
+            ):
+                raise ValidationError(
+                    self.env._(
+                        "The points of sale for the payment method %s must belong to its company.",
+                        payment.name,
+                    )
+                )
+
+    @api.depends("payment_method_type", "journal_id")
+    def _compute_default_qr(self) -> None:
+        for pm in self:
+            if pm.payment_method_type != "qr_code":
+                pm.default_qr = False
+                continue
+            try:
+                pm.default_qr = pm._get_qr_code(
+                    False, "", "", pm.company_id.currency_id.id, False
+                )
+            except UserError:
+                pm.default_qr = False
+
+    def get_qr_code(
+        self,
+        amount,
+        free_communication,
+        structured_communication,
+        currency,
+        debtor_partner,
+    ):
+        self.check_singleton()
+        _debug.lifecycle(
+            "qr_code_requested",
+            method=self.id,
+            amount=amount,
+            currency=currency,
+            partner=debtor_partner,
+        )
+        if self not in self.open_session_ids.config_id.payment_method_ids:
+            raise UserError(
+                self.env._(
+                    "This payment method is not available in any of your open PoS sessions."
+                )
+            )
+        return self._get_qr_code(
+            amount,
+            free_communication,
+            structured_communication,
+            currency,
+            debtor_partner,
+        )
+
+    def _get_qr_code(
+        self,
+        amount,
+        free_communication,
+        structured_communication,
+        currency,
+        debtor_partner,
+    ):
+        self.check_singleton()
+        if self.payment_method_type != "qr_code" or not self.qr_code_method:
+            raise UserError(
+                self.env._(
+                    "This payment method is not configured to generate QR codes."
+                )
+            )
+        payment_bank = self.journal_id.bank_account_id
+        debtor_partner = self.env["res.partner"].browse(debtor_partner)
+        currency = self.env["res.currency"].browse(currency)
+
+        return payment_bank.with_context(is_online_qr=True).prepare_qr_code_base64(
+            float(amount),
+            free_communication,
+            structured_communication,
+            currency,
+            debtor_partner,
+            self.qr_code_method,
+            silent_errors=False,
+        )

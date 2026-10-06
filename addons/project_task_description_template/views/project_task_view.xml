@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="project_task_view_form" model="ir.ui.view">
+        <field name="name">project.task.view.form</field>
+        <field name="model">project.task</field>
+        <field name="inherit_id" ref="project.view_task_form2" />
+        <field name="arch" type="xml">
+            <xpath expr="//group/field[@name='tag_ids']" position="after">
+                <field name="show_apply_template" invisible="1" />
+                <label for="description_template_id" />
+                <div class="o_row">
+                    <field name="description_template_id" nolabel="1" />
+                    <button
+                        name="action_apply_template"
+                        type="object"
+                        string="Apply Template"
+                        help="Replace current description with template content"
+                        confirm="This will replace the current description with the template content. Continue?"
+                        icon="fa-refresh"
+                        groups="base.group_user"
+                        invisible="not show_apply_template"
+                        class="btn-link px-0" />
+                </div>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

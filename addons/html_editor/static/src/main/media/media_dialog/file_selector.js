@@ -1,0 +1,490 @@
+/** @odoo-module native */
+import { Component, onWillStart, proxy, t, useProps, xml } from "@odoo/owl";
+import { rpc } from "@web/core/network";
+import { _t } from "@web/core/translation";
+import { KeepLast } from "@web/core/utils/concurrency";
+import { elementRef } from "@web/core/utils/element_ref";
+import { useService } from "@web/core/utils/hooks";
+import { useLayoutEffect } from "@web/core/utils/layout_effect";
+import { withDefaults } from "@web/core/utils/props";
+import { useDebounced } from "@web/core/utils/timing";
+import { ConfirmationDialog, Dialog } from "@web/ui/dialog";
+
+import { SearchMedia } from "./search_media.js";
+
+export const IMAGE_MIMETYPES = [
+    "image/jpg",
+    "image/jpeg",
+    "image/jpe",
+    "image/png",
+    "image/svg+xml",
+    "image/gif",
+    "image/webp",
+];
+export const IMAGE_EXTENSIONS = [
+    ".jpg",
+    ".jpeg",
+    ".jpe",
+    ".png",
+    ".svg",
+    ".gif",
+    ".webp",
+];
+
+class RemoveButton extends Component {
+    static template = xml`<i class="fa-solid fa-trash-can o_existing_attachment_remove position-absolute top-0 end-0 p-2 bg-white-25 cursor-pointer opacity-0 opacity-100-hover z-1 transition-base" t-att-title="this.removeTitle" role="img" t-att-aria-label="this.removeTitle" t-on-click="this.remove"/>`;
+    static props = { model: t.any().optional(), remove: t.any() };
+    props = useProps(this.constructor.props);
+    setup() {
+        this.removeTitle = _t("This file is attached to the current record.");
+        if (this.props.model === "ir.ui.view") {
+            this.removeTitle = _t("This file is a public view attachment.");
+        }
+    }
+
+    remove(ev) {
+        ev.stopPropagation();
+        this.props.remove();
+    }
+}
+
+export class AttachmentError extends Component {
+    static components = { Dialog };
+    static template = "html_editor.AttachmentError";
+    static props = { views: t.any(), close: t.any() };
+    props = useProps(this.constructor.props);
+    setup() {
+        this.title = _t("Alert");
+    }
+}
+
+export class Attachment extends Component {
+    static template = "";
+    static components = {
+        RemoveButton,
+    };
+    static props = null;
+    props = useProps(this.constructor.props);
+    setup() {
+        this.dialogs = useService("dialog");
+    }
+
+    remove() {
+        this.dialogs.add(ConfirmationDialog, {
+            body: _t("Are you sure you want to delete this file?"),
+            confirm: async () => {
+                const prevented = await rpc("/html_editor/attachment/remove", {
+                    ids: [this.props.id],
+                });
+                if (!Object.keys(prevented).length) {
+                    this.props.onRemoved(this.props.id);
+                } else {
+                    this.dialogs.add(AttachmentError, {
+                        views: prevented[this.props.id],
+                    });
+                }
+            },
+        });
+    }
+}
+
+export class FileSelectorControlPanel extends Component {
+    static template = "html_editor.FileSelectorControlPanel";
+    static components = {
+        SearchMedia,
+    };
+    static props = {
+        uploadUrl: t.function(),
+        validateUrl: t.function(),
+        uploadFiles: t.function(),
+        changeSearchService: t.function(),
+        changeShowOptimized: t.function(),
+        search: t.function(),
+        accept: t.string().optional(),
+        addText: t.string().optional(),
+        multiSelect: t.any().optional(),
+        needle: t.string().optional(),
+        searchPlaceholder: t.string().optional(),
+        searchService: t.string().optional(),
+        showOptimized: t.boolean().optional(),
+        showOptimizedOption: t.string().optional(),
+        uploadText: t.string().optional(),
+        urlPlaceholder: t.string().optional(),
+        urlWarningTitle: t.string().optional(),
+        useMediaLibrary: t.boolean().optional(),
+        useUnsplash: t.boolean().optional(),
+    };
+    props = useProps(this.constructor.props);
+    setup() {
+        this.state = proxy({
+            showUrlInput: false,
+            urlInput: "",
+            isValidUrl: false,
+            isValidFileFormat: false,
+            isValidatingUrl: false,
+        });
+        this.debouncedValidateUrl = useDebounced(this.props.validateUrl, 500);
+
+        this.fileInput = elementRef();
+        const urlInputRef = (this.urlInputRef = elementRef());
+
+        useLayoutEffect(
+            () => {
+                if (this.state.showUrlInput) {
+                    urlInputRef.el.focus();
+                }
+            },
+            () => [this.state.showUrlInput],
+        );
+    }
+
+    get showSearchServiceSelect() {
+        return this.props.searchService && this.props.needle;
+    }
+
+    get enableUrlUploadClick() {
+        return (
+            !this.state.showUrlInput ||
+            (this.state.urlInput &&
+                this.state.isValidUrl &&
+                this.state.isValidFileFormat)
+        );
+    }
+
+    async onUrlUploadClick() {
+        if (!this.state.showUrlInput) {
+            this.state.showUrlInput = true;
+        } else {
+            await this.props.uploadUrl(this.state.urlInput);
+            this.state.urlInput = "";
+        }
+    }
+
+    async onUrlInput(ev) {
+        this.state.isValidatingUrl = true;
+        const { isValidUrl, isValidFileFormat } = await this.debouncedValidateUrl(
+            ev.target.value,
+        );
+        this.state.isValidFileFormat = isValidFileFormat;
+        this.state.isValidUrl = isValidUrl;
+        this.state.isValidatingUrl = false;
+    }
+
+    onClickUpload() {
+        this.fileInput.el.click();
+    }
+
+    async onChangeFileInput() {
+        const inputFiles = this.fileInput.el.files;
+        if (!inputFiles.length) {
+            return;
+        }
+        await this.props.uploadFiles(inputFiles);
+        const fileInputEl = this.fileInput.el;
+        if (fileInputEl) {
+            fileInputEl.value = "";
+        }
+    }
+}
+
+export class FileSelector extends Component {
+    static template = "html_editor.FileSelector";
+    static components = {
+        FileSelectorControlPanel,
+    };
+    static props = null;
+    props = withDefaults(
+        useProps(this.constructor.props),
+        this.constructor.defaultProps,
+    );
+
+    setup() {
+        this.notificationService = useService("notification");
+        this.orm = useService("orm");
+        this.uploadService = useService("upload");
+        this.keepLast = new KeepLast();
+
+        this.loadMoreButtonRef = elementRef();
+        this.existingAttachmentsRef = elementRef();
+
+        this.state = proxy({
+            attachments: [],
+            canScrollAttachments: false,
+            canLoadMoreAttachments: false,
+            isFetchingAttachments: false,
+            needle: "",
+        });
+
+        this.NUMBER_OF_ATTACHMENTS_TO_DISPLAY = 30;
+
+        onWillStart(async () => {
+            this.state.attachments = await this.fetchAttachments(
+                this.NUMBER_OF_ATTACHMENTS_TO_DISPLAY,
+                0,
+            );
+        });
+
+        this.debouncedOnScroll = useDebounced(this.updateScroll.bind(this), 15);
+        this.debouncedScrollUpdate = useDebounced(this.updateScroll.bind(this), 500);
+
+        useLayoutEffect(
+            (modalEl) => {
+                if (modalEl) {
+                    modalEl.addEventListener("scroll", this.debouncedOnScroll);
+                    return () => {
+                        modalEl.removeEventListener("scroll", this.debouncedOnScroll);
+                    };
+                }
+            },
+            () => [this.props.modalRef.el?.querySelector("main.modal-body")],
+        );
+
+        useLayoutEffect(
+            () => {
+                this.loadMoreButtonRef.el.classList.add("o_hide_loading");
+                this.state.canScrollAttachments = false;
+                this.debouncedScrollUpdate();
+            },
+            () => [this.allAttachments.length],
+        );
+    }
+
+    get canLoadMore() {
+        return this.state.canLoadMoreAttachments;
+    }
+
+    get hasContent() {
+        return this.state.attachments.length;
+    }
+
+    get isFetching() {
+        return this.state.isFetchingAttachments;
+    }
+
+    get selectedAttachmentIds() {
+        return this.props.selectedMedia[this.props.id]
+            .filter((media) => media.mediaType === "attachment")
+            .map(({ id }) => id);
+    }
+
+    get attachmentsDomain() {
+        const domain = [
+            "&",
+            ["res_model", "=", this.props.resModel],
+            ["res_id", "=", this.props.resId || 0],
+        ];
+        domain.unshift("|", ["public", "=", true]);
+        domain.push(["name", "ilike", this.state.needle]);
+        return domain;
+    }
+
+    get allAttachments() {
+        return this.state.attachments;
+    }
+
+    validateUrl(url) {
+        const path = url.split("?")[0];
+        const isValidUrl = /^.+\..+$/.test(path);
+        const isValidFileFormat = true;
+        return { isValidUrl, isValidFileFormat, path };
+    }
+
+    async fetchAttachments(limit, offset) {
+        this.state.isFetchingAttachments = true;
+        let attachments = [];
+        try {
+            attachments = await this.orm.call("ir.attachment", "search_read", [], {
+                domain: this.attachmentsDomain,
+                fields: [
+                    "name",
+                    "mimetype",
+                    "description",
+                    "checksum",
+                    "url",
+                    "type",
+                    "res_id",
+                    "res_model",
+                    "public",
+                    "access_token",
+                    "image_src",
+                    "image_width",
+                    "image_height",
+                    "original_id",
+                ],
+                order: "id desc",
+                limit,
+                offset,
+            });
+            attachments.forEach((attachment) => (attachment.mediaType = "attachment"));
+        } catch (e) {
+            if (e.exceptionName !== "odoo.exceptions.AccessError") {
+                throw e;
+            }
+        }
+        this.state.canLoadMoreAttachments =
+            attachments.length >= this.NUMBER_OF_ATTACHMENTS_TO_DISPLAY;
+        this.state.isFetchingAttachments = false;
+        return attachments;
+    }
+
+    async handleLoadMore() {
+        await this.loadMore();
+    }
+
+    async loadMore() {
+        return this.keepLast
+            .add(
+                this.fetchAttachments(
+                    this.NUMBER_OF_ATTACHMENTS_TO_DISPLAY,
+                    this.state.attachments.length,
+                ),
+            )
+            .then((newAttachments) => {
+                this.state.attachments.push(...newAttachments);
+            });
+    }
+
+    async handleSearch(needle) {
+        await this.search(needle);
+    }
+
+    async search(needle) {
+        this.state.attachments = [];
+        this.state.needle = needle;
+        return this.keepLast
+            .add(this.fetchAttachments(this.NUMBER_OF_ATTACHMENTS_TO_DISPLAY, 0))
+            .then((attachments) => {
+                this.state.attachments = attachments;
+            });
+    }
+
+    async uploadFiles(files) {
+        await this.uploadService.uploadFiles(
+            files,
+            { resModel: this.props.resModel, resId: this.props.resId },
+            (attachment) => this.onUploaded(attachment),
+        );
+    }
+
+    async uploadUrl(url) {
+        await fetch(url)
+            .then(async (result) => {
+                const blob = await result.blob();
+                blob.id = new Date().getTime();
+                blob.name = new URL(url, window.location.href).pathname
+                    .split("/")
+                    .findLast((s) => s);
+                await this.uploadFiles([blob]);
+            })
+            .catch(async () => {
+                await new Promise((resolve) => {
+                    const imageEl = document.createElement("img");
+                    imageEl.onerror = () => {
+                        this.notificationService.add(
+                            _t("An error occurred while fetching the entered URL."),
+                            {
+                                type: "danger",
+                                sticky: true,
+                            },
+                        );
+                        resolve();
+                    };
+                    imageEl.onload = () => {
+                        this.onLoadUploadedUrl(url, resolve);
+                    };
+                    imageEl.src = url;
+                });
+            });
+    }
+
+    async onLoadUploadedUrl(url, resolve) {
+        await this.uploadService.uploadUrl(
+            url,
+            {
+                resModel: this.props.resModel,
+                resId: this.props.resId,
+            },
+            (attachment) => this.onUploaded(attachment),
+        );
+        resolve();
+    }
+
+    async onUploaded(attachment) {
+        this.state.attachments = [
+            attachment,
+            ...this.state.attachments.filter((attach) => attach.id !== attachment.id),
+        ];
+        this.selectAttachment(attachment);
+        if (!this.props.multiSelect) {
+            await this.props.save();
+        }
+        if (this.props.onAttachmentChange) {
+            this.props.onAttachmentChange(attachment);
+        }
+    }
+
+    onRemoved(attachmentId) {
+        this.state.attachments = this.state.attachments.filter(
+            (attachment) => attachment.id !== attachmentId,
+        );
+    }
+
+    selectAttachment(attachment) {
+        this.props.selectMedia({ ...attachment, mediaType: "attachment" });
+    }
+
+    selectInitialMedia() {
+        return (
+            this.props.media &&
+            this.constructor.tagNames.includes(this.props.media.tagName) &&
+            !this.selectedAttachmentIds.length
+        );
+    }
+
+    updateScroll() {
+        const loadMoreTop = this.loadMoreButtonRef.el.getBoundingClientRect().top;
+        const modalEl = this.props.modalRef.el.querySelector("main.modal-body");
+        const modalBottom = modalEl.getBoundingClientRect().bottom;
+        this.state.canScrollAttachments = loadMoreTop >= modalBottom;
+        this.loadMoreButtonRef.el.classList.remove("o_hide_loading");
+    }
+
+    /**
+     * @param {Element} attachmentEl
+     * @returns {Boolean}
+     */
+    isAttachmentHidden(attachmentEl) {
+        const attachmentBottom = Math.round(
+            attachmentEl.getBoundingClientRect().bottom,
+        );
+        const modalEl = this.props.modalRef.el.querySelector("main.modal-body");
+        const modalBottom = modalEl.getBoundingClientRect().bottom;
+        return attachmentBottom > modalBottom;
+    }
+
+    handleScrollAttachments() {
+        let scrollToEl = this.loadMoreButtonRef.el;
+        const attachmentEls = [
+            ...this.existingAttachmentsRef.el.querySelectorAll(
+                ".o_existing_attachment_cell",
+            ),
+        ];
+        const firstHiddenAttachmentEl = attachmentEls.find((el) =>
+            this.isAttachmentHidden(el),
+        );
+        if (firstHiddenAttachmentEl) {
+            const attachmentBottom =
+                firstHiddenAttachmentEl.getBoundingClientRect().bottom;
+            const attachmentIndex = attachmentEls.indexOf(firstHiddenAttachmentEl);
+            const firstNextRowAttachmentEl = attachmentEls
+                .slice(attachmentIndex)
+                .find((el) => el.getBoundingClientRect().bottom > attachmentBottom);
+            scrollToEl = firstNextRowAttachmentEl || scrollToEl;
+        }
+        scrollToEl.scrollIntoView({
+            block: "end",
+            inline: "nearest",
+            behavior: "smooth",
+        });
+    }
+}

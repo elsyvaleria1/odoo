@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="stock_inventory_adjustment_name_form_view" model="ir.ui.view">
+        <field name="name">stock.inventory.adjustment.name.form.view</field>
+        <field name="model">wizard.stock.quant.apply.inventory</field>
+        <field name="mode">primary</field>
+        <field name="arch" type="xml">
+            <form>
+                <div>
+                    <group>
+                        <field name="inventory_adjustment_name" />
+                        <field
+                            name="counting_date"
+                            placeholder="Today"
+                            widget="datetime" />
+                    </group>
+                </div>
+                <footer>
+                    <button
+                        name="action_apply"
+                        type="object"
+                        string="Update Quantities"
+                        class="btn-primary"
+                        data-hotkey="q" />
+                    <button
+                        name="cancel_button"
+                        special="cancel"
+                        string="Discard"
+                        class="btn-secondary"
+                        data-hotkey="x" />
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_stock_inventory_adjustement_name" model="ir.actions.act_window">
+        <field name="name">Physical Inventory</field>
+        <field name="res_model">wizard.stock.quant.apply.inventory</field>
+        <field name="view_mode">form</field>
+        <field name="view_id" ref="stock_inventory_adjustment_name_form_view" />
+        <field name="target">new</field>
+        <field
+            name="context">{
+            'default_quant_ids': active_ids
+            }</field>
+    </record>
+
+</odoo>

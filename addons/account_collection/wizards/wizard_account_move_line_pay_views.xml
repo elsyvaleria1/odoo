@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_account_payment_register_form" model="ir.ui.view">
+        <field
+            name="name">account.payment.register.form.inherit.account.collection</field>
+        <field name="model">wizard.account.move.line.pay</field>
+        <field name="inherit_id" ref="account.view_account_payment_register_form" />
+        <field name="arch" type="xml">
+            <field name="payment_channel_id" position="after">
+                <field name="is_collection_custody" invisible="1" />
+                <field
+                    name="collector_id"
+                    options="{'no_create': True}"
+                    invisible="not is_collection_custody"
+                    required="is_collection_custody" />
+                <field
+                    name="collection_method"
+                    invisible="not is_collection_custody"
+                    required="is_collection_custody" />
+                <field
+                    name="collection_check_date"
+                    invisible="not is_collection_custody or collection_method != 'check'" />
+            </field>
+        </field>
+    </record>
+
+</odoo>

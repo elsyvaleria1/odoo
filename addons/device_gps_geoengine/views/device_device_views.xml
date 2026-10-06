@@ -1,0 +1,308 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_device_device_geoengine" model="ir.ui.view">
+        <field name="name">device.device.geoengine</field>
+        <field name="model">device.device</field>
+        <field name="arch" type="xml">
+            <geoengine editable="0">
+                <field name="name" />
+                <field name="the_point" />
+
+                <field name="map_title" />
+                <field name="map_subtitle" />
+
+                <field name="gps_movement_state" />
+                <field name="log_gps_last_speed" />
+                <field name="gps_speed_avg_today" />
+                <field name="gps_speed_max_today" />
+                <field name="gps_battery_level" />
+                <field name="date_last_data_received" />
+                <field name="log_gps_last_latitude" />
+                <field name="log_gps_last_longitude" />
+
+                <templates>
+                    <t t-name="info_box">
+                        <!-- Two unrelated kinds of pin share this map: device.device
+                            (this view's own model) and, through the "Client
+                            Locations (overlay)" layer, res.partner. A cross-model
+                            layer only ever fetches id + its geo/attribute field
+                            (geoengine_model.js _getLayerFields), so a partner
+                            feature carries none of the device fields below;
+                            gps_movement_state is unique to device.device and never
+                            present on a partner row, which is what tells the two
+                            apart without guessing from field values. -->
+                        <div
+                            t-if="'gps_movement_state' in record"
+                            class="o_gps_device_info">
+                            <div class="border-bottom pb-2 mb-2">
+                                <div class="fw-bold fs-6">
+                                    <t t-out="record.map_title.value" />
+                                </div>
+                                <div
+                                    t-if="record.map_subtitle.value"
+                                    class="small text-muted">
+                                    <t t-out="record.map_subtitle.value" />
+                                </div>
+                            </div>
+
+                            <table class="small w-100">
+                                <tr>
+                                    <td class="pe-2 text-muted">Status:</td>
+                                    <td>
+                                        <t t-if="record.gps_movement_state.value">
+                                            <span class="badge text-bg-success">Moving</span>
+                                        </t>
+                                        <t t-else="">
+                                            <span class="badge text-bg-secondary">Stopped</span>
+                                        </t>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="pe-2 text-muted">Speed:</td>
+                                    <td class="fw-bold">
+                                        <t t-out="record.log_gps_last_speed.value" /> km/h
+                                    </td>
+                                </tr>
+                                <tr t-if="record.gps_speed_max_today.value">
+                                    <td class="pe-2 text-muted">Hoy:</td>
+                                    <td>
+                                        prom. <t t-out="record.gps_speed_avg_today.value" /> km/h,
+                                        máx. <t t-out="record.gps_speed_max_today.value" /> km/h
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="pe-2 text-muted">Battery:</td>
+                                    <td>
+                                        <t t-out="record.gps_battery_level.value" /> %
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <div name="current_location" class="border-top pt-2 mt-2">
+                                <div class="small text-muted">Ubicación actual:</div>
+                                <t
+                                    t-set="address"
+                                    t-value="record.current_address_live" />
+                                <div
+                                    t-if="address and address.loading"
+                                    class="small text-muted">
+                                    Buscando dirección…
+                                </div>
+                                <div t-elif="address and address.value">
+                                    <t t-out="address.value" />
+                                </div>
+                                <div t-else="" class="small">
+                                    <t t-out="record.log_gps_last_latitude.value" />,
+                                    <t t-out="record.log_gps_last_longitude.value" />
+                                </div>
+                                <div class="small text-muted">
+                                    <t t-out="record.date_last_data_received.value" />
+                                    <a t-if="record.log_gps_last_latitude.raw_value" class="ms-2" target="_blank" t-attf-href="https://www.google.com/maps?q={{ record.log_gps_last_latitude.raw_value }},{{ record.log_gps_last_longitude.raw_value }}">Ver en Google Maps</a>
+                                </div>
+                                <div
+                                    t-if="record.map_title.value != record.name.value"
+                                    class="small opacity-50">
+                                    GPS: <t t-out="record.name.value" />
+                                </div>
+                            </div>
+                        </div>
+                        <div t-else="" class="o_gps_device_info">
+                            <span class="badge text-bg-success mb-1">Cliente</span>
+                            <div class="fw-bold fs-6">
+                                <t t-out="record.name.value" />
+                            </div>
+                            <div
+                                t-if="record.client_salesperson_name.value"
+                                class="small text-muted">
+                                Vendedor: <t t-out="record.client_salesperson_name.value" />
+                            </div>
+                            <div class="small text-muted">
+                                Ver detalle completo en Client Locations
+                            </div>
+                        </div>
+                    </t>
+                </templates>
+            </geoengine>
+        </field>
+    </record>
+
+    <record id="raster_layer_device_device_osm" model="geoengine.raster.layer">
+        <field name="name">OpenStreetMap</field>
+        <field name="view_id" ref="view_device_device_geoengine" />
+        <field name="raster_type">osm</field>
+        <field name="overlay">0</field>
+        <field name="url">https://tile.openstreetmap.org/{z}/{x}/{y}.png</field>
+        <field name="sequence" eval="1" />
+    </record>
+
+    <record id="raster_layer_device_device_google_sat" model="geoengine.raster.layer">
+        <field name="name">Google Satellite</field>
+        <field name="view_id" ref="view_device_device_geoengine" />
+        <field name="raster_type">xyz</field>
+        <field name="overlay">0</field>
+        <field
+            name="url">https://mt1.google.com/vt/lyrs=s&amp;x={x}&amp;y={y}&amp;z={z}</field>
+        <field name="sequence" eval="2" />
+    </record>
+
+    <record
+        id="raster_layer_device_device_google_hybrid"
+        model="geoengine.raster.layer">
+        <field name="name">Google Hybrid</field>
+        <field name="view_id" ref="view_device_device_geoengine" />
+        <field name="raster_type">xyz</field>
+        <field name="overlay">0</field>
+        <field
+            name="url">https://mt1.google.com/vt/lyrs=y&amp;x={x}&amp;y={y}&amp;z={z}</field>
+        <field name="sequence" eval="3" />
+    </record>
+
+    <record
+        id="raster_layer_device_device_google_terrain"
+        model="geoengine.raster.layer">
+        <field name="name">Google Terrain</field>
+        <field name="view_id" ref="view_device_device_geoengine" />
+        <field name="raster_type">xyz</field>
+        <field name="overlay">0</field>
+        <field
+            name="url">https://mt1.google.com/vt/lyrs=p&amp;x={x}&amp;y={y}&amp;z={z}</field>
+        <field name="sequence" eval="4" />
+    </record>
+
+    <record
+        id="raster_layer_device_device_esri_satellite"
+        model="geoengine.raster.layer">
+        <field name="name">ESRI Satellite</field>
+        <field name="view_id" ref="view_device_device_geoengine" />
+        <field name="raster_type">xyz</field>
+        <field name="overlay">0</field>
+        <field
+            name="url">https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}</field>
+        <field name="sequence" eval="5" />
+    </record>
+
+    <record id="raster_layer_device_device_carto_light" model="geoengine.raster.layer">
+        <field name="name">CartoDB Light</field>
+        <field name="view_id" ref="view_device_device_geoengine" />
+        <field name="raster_type">xyz</field>
+        <field name="overlay">0</field>
+        <field
+            name="url">https://cartodb-basemaps-a.global.ssl.fastly.net/light_all/{z}/{x}/{y}.png</field>
+        <field name="sequence" eval="6" />
+    </record>
+
+    <record id="raster_layer_device_device_carto_dark" model="geoengine.raster.layer">
+        <field name="name">CartoDB Dark</field>
+        <field name="view_id" ref="view_device_device_geoengine" />
+        <field name="raster_type">xyz</field>
+        <field name="overlay">0</field>
+        <field
+            name="url">https://cartodb-basemaps-a.global.ssl.fastly.net/dark_all/{z}/{x}/{y}.png</field>
+        <field name="sequence" eval="7" />
+    </record>
+
+    <record id="raster_layer_device_device_topo" model="geoengine.raster.layer">
+        <field name="name">OpenTopoMap</field>
+        <field name="view_id" ref="view_device_device_geoengine" />
+        <field name="raster_type">xyz</field>
+        <field name="overlay">0</field>
+        <field name="url">https://tile.opentopomap.org/{z}/{x}/{y}.png</field>
+        <field name="sequence" eval="8" />
+    </record>
+
+    <record id="vector_layer_device_device_location" model="geoengine.vector.layer">
+        <field name="name">Device Locations</field>
+        <field name="view_id" ref="view_device_device_geoengine" />
+        <field
+            name="geo_field_id"
+            ref="device_gps_geoengine.field_device_device__the_point" />
+        <field name="geo_repr">basic</field>
+        <field name="nb_class">1</field>
+        <field name="begin_color">#3366FF</field>
+        <field name="sequence" eval="1" />
+        <field name="active_on_startup" eval="True" />
+        <field name="layer_opacity">0.9</field>
+    </record>
+
+    <record
+        id="vector_layer_device_device_client_locations"
+        model="geoengine.vector.layer">
+        <field name="name">Client Locations (overlay)</field>
+        <field name="view_id" ref="view_device_device_geoengine" />
+        <!--
+            The client's own mapped parcel(s) when any exist, otherwise a
+            small circle around Geo Latitude/Geo Longitude; one polygon
+            field covers both cases, so no client with either kind of
+            location drops off this layer. See res.partner.client_the_area.
+        -->
+        <field
+            name="geo_field_id"
+            ref="device_gps_geoengine.field_res_partner__client_the_area" />
+        <!--
+            A cross-model layer only ever fetches id + geo_field_id, plus
+            whichever of these three is set; attribute_field_id and
+            color_field_id are not used for classification/coloring here
+            (geo_repr stays 'basic'), only to get the client's name and
+            salesperson onto the pin's info_box.
+        -->
+        <field name="attribute_field_id" ref="base.field_res_partner__name" />
+        <field
+            name="color_field_id"
+            ref="device_gps_geoengine.field_res_partner__client_salesperson_name" />
+        <field
+            name="model_domain">[('client_the_area', '!=', False), ('customer_rank', '&gt;', 0)]</field>
+        <field name="geo_repr">basic</field>
+        <field name="nb_class">1</field>
+        <field name="begin_color">#22AA44</field>
+        <field name="sequence" eval="2" />
+        <field name="active_on_startup" eval="True" />
+        <field name="layer_opacity">0.55</field>
+    </record>
+
+    <record id="view_device_device_form_geofence" model="ir.ui.view">
+        <field name="name">device.device.form.geofence</field>
+        <field name="model">device.device</field>
+        <field name="inherit_id" ref="device_gps.view_device_device_form" />
+        <field name="arch" type="xml">
+            <xpath
+                expr="//page[@name='gps']//group[@name='geofencing']"
+                position="inside">
+                <field name="gps_geofence_ids" widget="many2many_tags" />
+                <field
+                    name="gps_inside_geofence_ids"
+                    widget="many2many_tags"
+                    readonly="1" />
+                <field name="current_client_geofence_id" readonly="1" />
+                <field name="current_client_distance_m" readonly="1" />
+                <field name="current_client_partner_id" readonly="1" />
+            </xpath>
+        </field>
+    </record>
+
+    <record id="action_device_device_gps_map" model="ir.actions.act_window">
+        <field name="name">GPS Live Tracking</field>
+        <field name="res_model">device.device</field>
+        <field name="view_mode">geoengine,kanban,list,form</field>
+        <field name="search_view_id" ref="device_gps.view_device_device_search" />
+        <field name="domain">[('is_gps_device', '=', True)]</field>
+        <!--
+            The filter's real name: search_default_tracking_enabled matched no
+            filter in any search view on this model, so the default never
+            applied. The GPS-tracker filter this also used to name is dropped
+            rather than fixed, because the action's own domain already says
+            is_gps_device.
+        -->
+        <field
+            name="context">{'gps_columns': 1, 'search_default_filter_tracking_enabled': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No GPS devices found
+            </p>
+            <p>
+                GPS Live Tracking shows devices in real-time on a map.
+            </p>
+        </field>
+    </record>
+
+</odoo>

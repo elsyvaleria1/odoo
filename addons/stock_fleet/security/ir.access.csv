@@ -1,0 +1,7 @@
+id,name,model_id/id,group_id/id,kind,operation,reach,anchor,domain
+access_wizard_stock_picking_unbatch_correction,wizard.stock.picking.unbatch.correction,model_wizard_stock_picking_unbatch_correction,group_trip_correction,permission,crud,,,
+access_wizard_stock_picking_unbatch_undelivered_user,wizard.stock.picking.unbatch.undelivered.user,model_wizard_stock_picking_unbatch_undelivered,stock.group_stock_user,permission,crud,,,
+access_stock_picking_unbatch_reason_user,stock.picking.unbatch.reason.user,model_stock_picking_unbatch_reason,stock.group_stock_user,permission,r,,,
+access_stock_picking_unbatch_reason_manager,stock.picking.unbatch.reason.manager,model_stock_picking_unbatch_reason,stock.group_stock_manager,permission,crud,,,
+stock_picking_unbatch_reason_company_rule,Trip removal reason multi-company,model_stock_picking_unbatch_reason,base.group_everyone,guard,crud,company,,
+access_wizard_stock_picking_delivery_proof_user,wizard.stock.picking.delivery.proof.user,model_wizard_stock_picking_delivery_proof,stock.group_stock_user,permission,crud,,,

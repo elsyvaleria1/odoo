@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="0">
+
+    <record id="demo_journal_invoice" model="account.journal">
+        <field name="name">DEMO Customer Invoices</field>
+        <field name="code">DINV</field>
+        <field name="type">sale</field>
+    </record>
+
+    <record id="demo_journal_refund" model="account.journal">
+        <field name="name">DEMO Customer Refunds</field>
+        <field name="code">DREF</field>
+        <field name="type">sale</field>
+    </record>
+
+    <record id="demo_journal_bill" model="account.journal">
+        <field name="name">DEMO Vendor Bills</field>
+        <field name="code">DBIL</field>
+        <field name="type">purchase</field>
+    </record>
+
+    <record id="demo_journal_misc" model="account.journal">
+        <field name="name">DEMO Miscellaneous</field>
+        <field name="code">DMIS</field>
+        <field name="type">general</field>
+    </record>
+
+</odoo>

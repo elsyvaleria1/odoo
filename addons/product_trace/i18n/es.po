@@ -1,0 +1,524 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# * stock
+#
+# Translators:
+# marcescu, 2022
+# Martin Trigaux, 2022
+# Leonardo J. Caballero G. <leonardocaballero@gmail.com>, 2022
+# María Florencia Frigieri Parma, 2022
+# Óscar Fonseca <tecnico@extreme-micro.com>, 2023
+# Sergio Del Castillo Baranda, 2023
+# Francisco Santos, 2023
+# Carlos Gómez, 2023
+# Pedro M. Baeza <pedro.baeza@tecnativa.com>, 2023
+# "Dylan Kiss (dyki)" <dyki@odoo.com>, 2025.
+# "Noemi Pla Garcia (nopl)" <nopl@odoo.com>, 2025, 2026.
+# "Larissa Manderfeld (lman)" <lman@odoo.com>, 2025.
+# Weblate <noreply-mt-weblate@weblate.org>, 2025.
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 16.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-02-06 18:35+0000\n"
+"PO-Revision-Date: 2026-02-11 17:40+0000\n"
+"Last-Translator: \"Noemi Pla Garcia (nopl)\" <nopl@odoo.com>\n"
+"Language-Team: Spanish <https://translate.odoo.com/projects/odoo-19/stock/es/>\n"
+"Language: es\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: nplurals=3; plural=(n == 1) ? 0 : ((n != 0 && n % 1000000 == 0) ? 1 : 2);\n"
+"X-Generator: Weblate 5.14.3\n"
+
+#. module: product_trace
+#: model:ir.model.fields,help:product_trace.field_product_product__serial_prefix_format
+#: model:ir.model.fields,help:product_trace.field_product_template__serial_prefix_format
+msgid ""
+"\n"
+"            If multiple products share the same prefix, they will share the same sequence, otherwise the sequence will be dedicated to the product.\n"
+"\n"
+"            * Legend (for prefix):\n"
+"            - Current Year with Century: %(year)s\n"
+"            - Current Year without Century: %(y)s\n"
+"            - Month: %(month)s\n"
+"            - Day: %(day)s\n"
+"            - Day of the Year: %(doy)s\n"
+"            - Week of the Year: %(woy)s\n"
+"            - Day of the Week (0:Monday): %(weekday)s\n"
+"            - Hour 00->24: %(h24)s\n"
+"            - Hour 00->12: %(h12)s\n"
+"            - Minute: %(min)s\n"
+"            - Second: %(sec)s\n"
+"        "
+msgstr ""
+"\n"
+"            Si varios productos comparten el mismo prefijo, compartirán la misma secuencia. De lo contrario, la secuencia será exclusiva para el producto.\n"
+"\n"
+"            * Leyenda (para el prefijo):\n"
+"            - Año actual con siglo: %(year)s\n"
+"            - Año actual sin siglo: %(y)s\n"
+"            - Mes: %(month)s\n"
+"            - Día: %(day)s\n"
+"            - Día del año: %(doy)s\n"
+"            - Semana del año: %(woy)s\n"
+"            - Día de la semana (0: lunes): %(weekday)s\n"
+"            - Hora 00->24: %(h24)s\n"
+"            - Hora 00->12: %(h12)s\n"
+"            - Minuto: %(min)s\n"
+"            - Segundo: %(sec)s\n"
+"        "
+
+#. module: product_trace
+#. odoo-python
+#: code:addons/product_trace/models/product_trace.py:0
+msgid " - Product: %(product)s, Lot/Serial Number: %(lot)s"
+msgstr " - Producto: %(product)s, Número de lote o de serie: %(lot)s"
+
+#. module: product_trace
+#. odoo-python
+#: code:addons/product_trace/models/product_trace.py:0
+msgid "(copy of) %s"
+msgstr "(copia de) %s"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__message_needaction
+msgid "Action Needed"
+msgstr "Acción requerida"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__active
+msgid "Active"
+msgstr "Activo"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__activity_ids
+msgid "Activities"
+msgstr "Actividades"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__activity_exception_decoration
+msgid "Activity Exception Decoration"
+msgstr "Decoración de Actividad de Excepción"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__activity_state
+msgid "Activity State"
+msgstr "Estado de la actividad"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__activity_type_icon
+msgid "Activity Type Icon"
+msgstr "Icono de tipo de actvidad"
+
+#. module: product_trace
+#: model_terms:ir.ui.view,arch_db:product_trace.view_product_trace_form
+msgid "Add an internal note"
+msgstr ""
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__message_attachment_count
+msgid "Attachment Count"
+msgstr "Número de archivos adjuntos"
+
+#. module: product_trace
+#: model:ir.model.fields.selection,name:product_trace.selection__product_template__tracking__lot
+msgid "By Lots"
+msgstr "Por lotes"
+
+#. module: product_trace
+#: model:ir.model.fields.selection,name:product_trace.selection__product_template__tracking__none
+msgid "By Quantity"
+msgstr "Por cantidad"
+
+#. module: product_trace
+#: model:ir.model.fields.selection,name:product_trace.selection__product_template__tracking__serial
+msgid "By Unique Serial Number"
+msgstr "Por número de serie único"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__company_id
+#: model_terms:ir.ui.view,arch_db:product_trace.view_product_trace_search
+msgid "Company"
+msgstr "Compañía"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__create_uid
+msgid "Created by"
+msgstr "Creado por"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__create_date
+msgid "Created on"
+msgstr "Creado el"
+
+#. module: product_trace
+#: model_terms:ir.ui.view,arch_db:product_trace.view_product_trace_search
+msgid "Creation Date"
+msgstr "Fecha de creación"
+
+#. module: product_trace
+#: model_terms:ir.ui.view,arch_db:product_trace.view_product_trace_search
+msgid "Creation date"
+msgstr "Fecha de creación"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_product__serial_prefix_format
+#: model:ir.model.fields,field_description:product_trace.field_product_template__serial_prefix_format
+msgid "Custom Lot/Serial"
+msgstr "Número de serie/lote personalizado"
+
+#. module: product_trace
+#: model:ir.model.fields,help:product_trace.field_product_trace__product_uom_id
+msgid "Default unit of measure used for all stock operations."
+msgstr ""
+"Unidad de medida por defecto utilizada para todas las operaciones de stock"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__note
+#: model_terms:ir.ui.view,arch_db:product_trace.view_product_trace_form
+msgid "Description"
+msgstr "Descripción"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__display_complete
+msgid "Display Complete"
+msgstr "Mostrar Completo"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_product__display_name
+#: model:ir.model.fields,field_description:product_trace.field_product_template__display_name
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__display_name
+msgid "Display Name"
+msgstr "Nombre para mostrar"
+
+#. module: product_trace
+#: model:ir.model.fields,help:product_trace.field_product_product__tracking
+#: model:ir.model.fields,help:product_trace.field_product_template__tracking
+msgid "Ensure the traceability of a storable product in your warehouse."
+msgstr "Asegure la trazabilidad de un producto almacenable en su almacén."
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__message_follower_ids
+msgid "Followers"
+msgstr "Seguidores"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__message_partner_ids
+msgid "Followers (Partners)"
+msgstr "Seguidores (Contactos)"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__has_message
+msgid "Has Message"
+msgstr "Tiene un mensaje"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_product__id
+#: model:ir.model.fields,field_description:product_trace.field_product_template__id
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__id
+msgid "ID"
+msgstr "ID"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__activity_exception_icon
+msgid "Icon"
+msgstr "Icono"
+
+#. module: product_trace
+#: model:ir.model.fields,help:product_trace.field_product_trace__activity_exception_icon
+msgid "Icon to indicate an exception activity."
+msgstr "Icono para indicar una actividad de excepción."
+
+#. module: product_trace
+#: model:ir.model.fields,help:product_trace.field_product_trace__message_needaction
+msgid "If checked, new messages require your attention."
+msgstr "Si está marcada, hay nuevos mensajes que requieren su atención."
+
+#. module: product_trace
+#: model:ir.model.fields,help:product_trace.field_product_trace__message_has_error
+msgid "If checked, some messages have a delivery error."
+msgstr "Si está marcada, algunos mensajes tienen error de envío."
+
+#. module: product_trace
+#: model_terms:ir.ui.view,arch_db:product_trace.view_product_trace_form
+msgid "Information"
+msgstr "Información"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__ref
+msgid "Internal Reference"
+msgstr "Referencia interna"
+
+#. module: product_trace
+#: model:ir.model.fields,help:product_trace.field_product_trace__ref
+msgid ""
+"Internal reference number in case it differs from the manufacturer's "
+"lot/serial number"
+msgstr ""
+"Número de referencia interno en caso de que difiera del número de lote/serie"
+" del fabricante"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__message_is_follower
+msgid "Is Follower"
+msgstr "Es un seguidor"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__write_uid
+msgid "Last Updated by"
+msgstr "Última actualización por"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__write_date
+msgid "Last Updated on"
+msgstr "Última actualización el"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_product__lot_properties_definition
+msgid "Lot Properties"
+msgstr "Propiedades del lote"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_product__lot_name_format
+#: model:ir.model.fields,field_description:product_trace.field_product_template__lot_name_format
+msgid "Lot/Serial Name Format"
+msgstr ""
+
+#. module: product_trace
+#: model:ir.model,name:product_trace.model_product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__name
+#: model_terms:ir.ui.view,arch_db:product_trace.view_product_trace_search
+msgid "Lot/Serial Number"
+msgstr "Número de lote/serie"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_product__trace_ids
+msgid "Lot/Serial Numbers"
+msgstr "Lote / Números de serie"
+
+#. module: product_trace
+#: model_terms:ir.ui.view,arch_db:product_trace.view_product_trace_form
+#: model_terms:ir.ui.view,arch_db:product_trace.view_product_trace_list
+msgid "Lots/Serial Numbers"
+msgstr "Números de lote/serie"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__message_has_error
+msgid "Message Delivery error"
+msgstr "Error de envío de mensaje"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__message_ids
+msgid "Messages"
+msgstr "Mensajes"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__my_activity_date_deadline
+msgid "My Activity Deadline"
+msgstr "Fecha límite de mi actividad"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__activity_date_deadline
+msgid "Next Activity Deadline"
+msgstr "Fecha límite de la siguiente actividad"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__activity_summary
+msgid "Next Activity Summary"
+msgstr "Resumen de la siguiente actividad"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__activity_type_id
+msgid "Next Activity Type"
+msgstr "Tipo de la siguiente actividad"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_product__next_serial
+#: model:ir.model.fields,field_description:product_trace.field_product_template__next_serial
+msgid "Next Serial"
+msgstr "Siguiente número de serie"
+
+#. module: product_trace
+#. odoo-python
+#: code:addons/product_trace/models/product_trace.py:0
+msgid ""
+"No sequence can name a lot for %(product)s. Set a Serial/Lot Numbers "
+"Sequence on the product, or restore the default one."
+msgstr ""
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__message_needaction_counter
+msgid "Number of Actions"
+msgstr "Número de acciones"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__message_has_error_counter
+msgid "Number of errors"
+msgstr "Número de errores"
+
+#. module: product_trace
+#: model:ir.model.fields,help:product_trace.field_product_trace__message_needaction_counter
+msgid "Number of messages requiring action"
+msgstr "Número de mensajes que requieren una acción"
+
+#. module: product_trace
+#: model:ir.model.fields,help:product_trace.field_product_trace__message_has_error_counter
+msgid "Number of messages with delivery error"
+msgstr "Número de mensajes con error de envío"
+
+#. module: product_trace
+#: model_terms:ir.ui.view,arch_db:product_trace.view_product_trace_form
+msgid "Other Info"
+msgstr ""
+
+#. module: product_trace
+#: model:ir.model,name:product_trace.model_product_template
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__product_id
+#: model_terms:ir.ui.view,arch_db:product_trace.view_product_trace_search
+msgid "Product"
+msgstr "Producto"
+
+#. module: product_trace
+#: model_terms:ir.ui.view,arch_db:product_trace.view_product_trace_search
+msgid "Product Lots Filter"
+msgstr "Filtro de lotes de producto"
+
+#. module: product_trace
+#: model:ir.model,name:product_trace.model_product_product
+msgid "Product Variant"
+msgstr "Variante de producto"
+
+#. module: product_trace
+#: model_terms:ir.ui.view,arch_db:product_trace.view_product_trace_form
+msgid ""
+"Product this lot/serial number contains. You cannot change it anymore if it "
+"has already been moved."
+msgstr ""
+"Producto que contiene este número de lote o serie. Ya no puede cambiarlo si "
+"ya se movió."
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__lot_properties
+#: model_terms:ir.ui.view,arch_db:product_trace.view_product_trace_search
+msgid "Properties"
+msgstr "Propiedades"
+
+#. module: product_trace
+#: model_terms:ir.ui.view,arch_db:product_trace.view_product_trace_form
+msgid "Reference"
+msgstr "Referencia"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__activity_user_id
+msgid "Responsible User"
+msgstr "Usuario responsable"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_product__lot_sequence_id
+#: model:ir.model.fields,field_description:product_trace.field_product_template__lot_sequence_id
+msgid "Serial/Lot Numbers Sequence"
+msgstr "Secuencia de números de serie o lote"
+
+#. module: product_trace
+#: model:ir.model.fields,help:product_trace.field_product_product__lot_name_format
+#: model:ir.model.fields,help:product_trace.field_product_template__lot_name_format
+msgid ""
+"Shape this product's lot/serial names take, in the same placeholder form as a sequence prefix (%(year)s, %(month)s, %(day)s, ...) plus the mandatory %(ref)s: the manufacturer's lot number, or the next number of the lot sequence when there is none.\n"
+"Set it when the name has to carry information — a manufacturing date, a supplier's own lot number — rather than just be unique. Left empty, names are drawn from the sequence as usual."
+msgstr ""
+
+#. module: product_trace
+#: model:ir.model.fields,help:product_trace.field_product_trace__activity_state
+msgid ""
+"Status based on activities\n"
+"Overdue: Due date is already passed\n"
+"Today: Activity date is today\n"
+"Planned: Future activities."
+msgstr ""
+"Estado basado en actividades\n"
+"Vencida: la fecha límite ya ha pasado\n"
+"Hoy: la fecha límite es hoy\n"
+"Planificada: actividades futuras."
+
+#. module: product_trace
+#: model:ir.model.fields,help:product_trace.field_product_product__lot_sequence_id
+#: model:ir.model.fields,help:product_trace.field_product_template__lot_sequence_id
+msgid ""
+"Technical Field: The Ir.Sequence record that is used to generate serial/lot "
+"numbers for this product"
+msgstr ""
+"Campo técnico: el registro Ir.Sequence que se utiliza para generar los "
+"números de serie o lote para este producto."
+
+#. module: product_trace
+#. odoo-python
+#: code:addons/product_trace/models/product_template.py:0
+msgid ""
+"The Lot/Serial Name Format of %(product)s must contain %%(ref)s: it is what "
+"keeps the names apart, the manufacturer's lot number or, without one, the "
+"next number of the lot sequence."
+msgstr ""
+
+#. module: product_trace
+#. odoo-python
+#: code:addons/product_trace/models/product_trace.py:0
+msgid ""
+"The Lot/Serial Name Format on %(product)s cannot be used: %(error)s.\n"
+"Expected placeholders are %(placeholders)s."
+msgstr ""
+
+#. module: product_trace
+#. odoo-python
+#: code:addons/product_trace/models/product_trace.py:0
+msgid ""
+"The combination of lot/serial number and product must be unique within a company including when no company is defined.\n"
+"The following combinations contain duplicates:\n"
+"%(error_lines)s"
+msgstr ""
+"La combinación de número de serie o lote y producto debe ser única dentro de una compañía, incluso cuando no hay ninguna definida.\n"
+"Las siguientes combinaciones contienen duplicados:\n"
+"%(error_lines)s"
+
+#. module: product_trace
+#: model:ir.model.constraint,message:product_trace.constraint_product_trace_name_product_company_uniq
+msgid ""
+"The combination of lot/serial number and product must be unique within a "
+"company."
+msgstr ""
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_product__tracking
+#: model:ir.model.fields,field_description:product_trace.field_product_template__tracking
+msgid "Tracking"
+msgstr "Rastreo"
+
+#. module: product_trace
+#: model:ir.model.fields,help:product_trace.field_product_trace__activity_exception_decoration
+msgid "Type of the exception activity on record."
+msgstr "Tipo de actividad de excepción en el registro."
+
+#. module: product_trace
+#: model:ir.model.fields,help:product_trace.field_product_trace__name
+msgid "Unique Lot/Serial Number"
+msgstr "Número de lote/serie único"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__product_uom_id
+msgid "Unit"
+msgstr "Unidad"
+
+#. module: product_trace
+#: model_terms:ir.ui.view,arch_db:product_trace.view_product_trace_form
+msgid "Visible to all"
+msgstr "Visible para todos"
+
+#. module: product_trace
+#: model_terms:ir.ui.view,arch_db:product_trace.view_product_trace_form
+msgid "Visible to all coompanies"
+msgstr ""
+
+#. module: product_trace
+#: model_terms:ir.ui.view,arch_db:product_trace.view_product_trace_form
+msgid "e.g. LOT/0001/20121"
+msgstr "p. ej. LOT/0001/20121"

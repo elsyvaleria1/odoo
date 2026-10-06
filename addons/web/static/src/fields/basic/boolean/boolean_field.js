@@ -1,0 +1,52 @@
+// @ts-check
+/** @odoo-module native */
+
+import { proxy } from "@odoo/owl";
+import { CheckBox } from "@web/components/checkbox/checkbox";
+import { _t } from "@web/core/translation";
+import { registerField } from "@web/fields/_registry";
+import { FieldComponent } from "@web/fields/field_component";
+import { fieldHandleFor } from "@web/fields/field_handle";
+import { useRecordObserver } from "@web/fields/hooks/record_observer";
+import { standardFieldProps } from "@web/fields/standard_field_props";
+
+export class BooleanField extends FieldComponent {
+    static template = "web.BooleanField";
+    static components = { CheckBox };
+    static props = { ...standardFieldProps };
+
+    /** @type {{ value?: boolean }} */
+    state;
+
+    setup() {
+        this.state = proxy(/** @type {{ value?: boolean }} */ ({}));
+        useRecordObserver((record) => {
+            this.state.value = fieldHandleFor(record, this.props.name).value;
+        });
+    }
+
+    /** @returns {{ save?: boolean } | undefined} */
+    get updateOptions() {
+        return undefined;
+    }
+
+    /** @param {boolean} newValue */
+    async onChange(newValue) {
+        this.state.value = newValue;
+        try {
+            await this.field.update(newValue, this.updateOptions);
+        } catch (error) {
+            this.state.value = this.field.value;
+            throw error;
+        }
+    }
+}
+
+export const booleanField = {
+    component: BooleanField,
+    displayName: _t("Checkbox"),
+    supportedTypes: ["boolean"],
+    isEmpty: () => false,
+};
+
+registerField("boolean", /** @type {any} */ (booleanField));

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <menuitem
+        id="voice_sentence_menu"
+        name="Voice Sentences"
+        parent="base.menu_custom"
+        action="voice_sentence_action"
+        sequence="61" />
+
+    <menuitem
+        id="voice_spoken_form_menu"
+        name="Spoken Forms"
+        parent="base.menu_custom"
+        action="voice_spoken_form_action"
+        sequence="62" />
+
+</odoo>

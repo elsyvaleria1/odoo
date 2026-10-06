@@ -1,0 +1,317 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* documents_hr
+#
+#
+# Translated by:
+# Deepvision - info@deepvision.uz | +998 77-093-0007
+# Amon Olimov - amon.bars@gmail.com
+# Jonibek Yorqulov - j.yorqulov@deepvision.uz
+# Mirzohidkhon Ulugkhujaev ulugkhujayevmirzohidxon@gmail.com
+#
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0+e\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-10-08 18:46+0000\n"
+"PO-Revision-Date: 2025-10-08 18:46+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: uz\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. module: document_hr
+#: model_terms:ir.ui.view,arch_db:document_hr.documents_hr_portal_view
+#, fuzzy
+msgid "<i class=\"fa fa-download fa-fw\"/> Download file"
+msgstr "<i class=\"fa fa-download fa-fw\"/> Faylni yuklab olish"
+
+#. module: document_hr
+#: model_terms:ir.ui.view,arch_db:document_hr.res_config_settings_view_form
+#, fuzzy
+msgid "<span class=\"o_form_label\">Default tags</span>"
+msgstr "<span class=\"o_form_label\">Standart teglar</span>"
+
+#. module: document_hr
+#: model:document.tag,name:document_hr.documents_tag_absences
+#, fuzzy
+msgid "Absences"
+msgstr "Ishga kelmasliklar"
+
+#. module: document_hr
+#: model_terms:ir.ui.view,arch_db:document_hr.res_config_settings_view_form
+#, fuzzy
+msgid "Centralize your employees' documents (contracts, payslips, etc.)"
+msgstr ""
+"Xodimlaringizning hujjatlarini (shartnomalar, ish haqi hisob-kitoblari va "
+"boshqalar) markazlashtirib saqlang"
+
+#. module: document_hr
+#: model:document.tag,name:document_hr.documents_tag_certification
+#, fuzzy
+msgid "Certifications"
+msgstr "Sertifikatlar"
+
+#. module: document_hr
+#: model:ir.model.fields,help:document_hr.field_res_company__employee_subfolders
+#: model_terms:ir.ui.view,arch_db:document_hr.res_config_settings_view_form
+#, fuzzy
+msgid ""
+"Comma separated list of folder names that need to be created under each "
+"employee folder."
+msgstr ""
+"Har bir xodim papkasi ostida yaratilishi kerak bo‘lgan papka nomlarining "
+"vergul bilan ajratilgan ro‘yxati"
+
+#. module: document_hr
+#: model:ir.model.fields,help:document_hr.field_res_config_settings__employee_subfolders
+#, fuzzy
+msgid ""
+"Comma separated string of folder names that need to be created under each "
+"employee folder."
+msgstr ""
+"Har bir xodim papkasi ostida yaratilishi kerak bo‘lgan papka nomlarining "
+"vergul bilan ajratilgan qatori"
+
+#. module: document_hr
+#: model:ir.model,name:document_hr.model_res_company
+#, fuzzy
+msgid "Companies"
+msgstr "Kompaniyalar"
+
+#. module: document_hr
+#: model:ir.model,name:document_hr.model_res_config_settings
+#, fuzzy
+msgid "Config Settings"
+msgstr "Konfiguratsiya sozlamalari"
+
+#. module: document_hr
+#. odoo-python
+#: code:addons/document_hr/models/hr_employee.py:0
+#: model:ir.model.fields,field_description:document_hr.field_res_config_settings__documents_hr_contracts_tags
+#, fuzzy
+msgid "Contracts"
+msgstr "Shartnomalar"
+
+#. module: document_hr
+#: model:document.tag,name:document_hr.documents_hr_tag_contracts
+#, fuzzy
+msgid "Contracts (HR)"
+msgstr "Shartnomalar (HR)"
+
+#. module: document_hr
+#: model:ir.model.fields,field_description:document_hr.field_document_document__display_name
+#: model:ir.model.fields,field_description:document_hr.field_document_redirect__display_name
+#: model:ir.model.fields,field_description:document_hr.field_document_tag__display_name
+#: model:ir.model.fields,field_description:document_hr.field_hr_employee__display_name
+#: model:ir.model.fields,field_description:document_hr.field_hr_employee_public__display_name
+#: model:ir.model.fields,field_description:document_hr.field_hr_version__display_name
+#: model:ir.model.fields,field_description:document_hr.field_res_company__display_name
+#: model:ir.model.fields,field_description:document_hr.field_res_config_settings__display_name
+#, fuzzy
+msgid "Display Name"
+msgstr "Ko‘rsatiladigan nom"
+
+#. module: document_hr
+#: model:ir.model,name:document_hr.model_document_document
+#, fuzzy
+msgid "Document"
+msgstr "Hujjat"
+
+#. module: document_hr
+#: model:ir.model.fields,field_description:document_hr.field_hr_employee__document_count
+#: model:ir.model.fields,field_description:document_hr.field_hr_employee_public__document_count
+#, fuzzy
+msgid "Document Count"
+msgstr "Hujjatlar soni"
+
+#. module: document_hr
+#: model:ir.model,name:document_hr.model_document_redirect
+#, fuzzy
+msgid "Document Redirect"
+msgstr "Hujjatni qayta yo‘naltirish"
+
+#. module: document_hr
+#: model_terms:ir.ui.view,arch_db:document_hr.hr_employee_public_view_form
+#: model_terms:ir.ui.view,arch_db:document_hr.hr_employee_view_form
+#, fuzzy
+msgid "Documents"
+msgstr "Hujjatlar"
+
+#. module: document_hr
+#: model:ir.model.fields,field_description:document_hr.field_res_company__documents_hr_contracts_tags
+#, fuzzy
+msgid "Documents Hr Contracts Tags"
+msgstr "Hujjatlar HR shartnomalari teglari"
+
+#. module: document_hr
+#: model:ir.model.fields,field_description:document_hr.field_res_company__documents_hr_settings
+#, fuzzy
+msgid "Documents Hr Settings"
+msgstr "Hujjatlar HR sozlamalari"
+
+#. module: document_hr
+#: model_terms:ir.ui.view,arch_db:document_hr.documents_hr_portal_view
+#, fuzzy
+msgid "Download file"
+msgstr "Faylni yuklab olish"
+
+#. module: document_hr
+#: model:ir.model,name:document_hr.model_hr_employee
+#: model:ir.model.fields,field_description:document_hr.field_document_redirect__employee_id
+#, fuzzy
+msgid "Employee"
+msgstr "Xodim"
+
+#. module: document_hr
+#: model:ir.model,name:document_hr.model_hr_version
+#, fuzzy
+msgid "Employee Contract"
+msgstr "Xodim shartnomasi"
+
+#. module: document_hr
+#. odoo-python
+#: code:addons/document_hr/models/res_company.py:0
+#, fuzzy
+msgid "Employees - %s"
+msgstr "Xodimlar - %s"
+
+#. module: document_hr
+#: model:document.tag,name:document_hr.documents_tag_employees
+#, fuzzy
+msgid "Employees Documents"
+msgstr "Xodimlar hujjatlari"
+
+#. module: document_hr
+#: model:ir.model.fields,field_description:document_hr.field_res_company__documents_employee_folder_id
+#: model:ir.model.fields,field_description:document_hr.field_res_config_settings__documents_employee_folder_id
+#: model_terms:ir.ui.view,arch_db:document_hr.res_config_settings_view_form
+#, fuzzy
+msgid "Employees Folder"
+msgstr "Xodimlar papkasi"
+
+#. module: document_hr
+#: model:ir.model.fields,field_description:document_hr.field_res_company__employee_subfolders
+#: model:ir.model.fields,field_description:document_hr.field_res_config_settings__employee_subfolders
+#, fuzzy
+msgid "Employees Subfolder"
+msgstr "Xodimlar quyi papkasi"
+
+#. module: document_hr
+#: model_terms:ir.ui.view,arch_db:document_hr.res_config_settings_view_form
+#, fuzzy
+msgid "Employees Subfolders"
+msgstr "Xodimlar quyi papkalari"
+
+#. module: document_hr
+#: model:ir.model.fields,field_description:document_hr.field_hr_employee__hr_employee_contract_folder_id
+#, fuzzy
+msgid "HR Employee Contract Folder"
+msgstr "HR xodim shartnomasi papkasi"
+
+#. module: document_hr
+#: model:ir.model.fields,field_description:document_hr.field_hr_employee__hr_employee_folder_id
+#, fuzzy
+msgid "HR Employee Folder"
+msgstr "HR xodim papkasi"
+
+#. module: document_hr
+#: model:ir.model.fields,field_description:document_hr.field_res_config_settings__documents_hr_settings
+#, fuzzy
+msgid "Human Resources"
+msgstr "Inson resurslari"
+
+#. module: document_hr
+#: model:ir.model.fields,field_description:document_hr.field_document_document__id
+#: model:ir.model.fields,field_description:document_hr.field_document_redirect__id
+#: model:ir.model.fields,field_description:document_hr.field_document_tag__id
+#: model:ir.model.fields,field_description:document_hr.field_hr_employee__id
+#: model:ir.model.fields,field_description:document_hr.field_hr_employee_public__id
+#: model:ir.model.fields,field_description:document_hr.field_hr_version__id
+#: model:ir.model.fields,field_description:document_hr.field_res_company__id
+#: model:ir.model.fields,field_description:document_hr.field_res_config_settings__id
+#, fuzzy
+msgid "ID"
+msgstr "ID"
+
+#. module: document_hr
+#. odoo-python
+#: code:addons/document_hr/models/document_document.py:0
+#, fuzzy
+msgid "Impossible to delete employee folder or employee 'Contract' folder"
+msgstr ""
+"Xodim papkasini yoki xodimning \"Shartnoma\" papkasini o‘chirib bo‘lmaydi"
+
+#. module: document_hr
+#: model_terms:ir.ui.view,arch_db:document_hr.documents_hr_portal_view
+#, fuzzy
+msgid "My documents"
+msgstr "Mening hujjatlarim"
+
+#. module: document_hr
+#: model:ir.model,name:document_hr.model_hr_employee_public
+#, fuzzy
+msgid "Public Employee"
+msgstr "Davlat xizmatchisi"
+
+#. module: document_hr
+#: model:document.tag,name:document_hr.document_tag_signature_request
+#, fuzzy
+msgid "Signature Request"
+msgstr "Imzo so‘rovi"
+
+#. module: document_hr
+#: model_terms:ir.ui.view,arch_db:document_hr.documents_hr_portal_view
+#, fuzzy
+msgid "Size:"
+msgstr "Hajmi:"
+
+#. module: document_hr
+#: model:ir.model,name:document_hr.model_document_tag
+#, fuzzy
+msgid "Tag"
+msgstr "Teg"
+
+#. module: document_hr
+#. odoo-python
+#: code:addons/document_hr/models/hr_employee.py:0
+#, fuzzy
+msgid "You cannot access the employee's folder."
+msgstr "Siz xodimning papkasiga kira olmaysiz"
+
+#. module: document_hr
+#. odoo-python
+#: code:addons/document_hr/models/document_tag.py:0
+#, fuzzy
+msgid ""
+"You cannot delete this tag as it is used to link employee contracts and "
+"signatures."
+msgstr ""
+"Bu tegni o‘chirib tashlay olmaysiz, chunki u xodimlar shartnomalari va "
+"imzolarini bog‘lash uchun ishlatiladi"
+
+#. module: document_hr
+#. odoo-python
+#: code:addons/document_hr/models/hr_employee.py:0
+#, fuzzy
+msgid ""
+"You must configure the HR Employee folder in document settings to use "
+"Document's features."
+msgstr ""
+"Hujjat funksiyalaridan foydalanish uchun hujjat sozlamalarida HR xodimi "
+"papkasini sozlashingiz kerak"
+
+#. module: document_hr
+#. odoo-python
+#: code:addons/document_hr/models/hr_employee.py:0
+#, fuzzy
+msgid ""
+"You must have a contact linked to the employee in order to use Document's "
+"features."
+msgstr ""
+"Hujjat funksiyalaridan foydalanish uchun xodimga bog‘langan kontaktga ega "
+"bo‘lishingiz kerak"

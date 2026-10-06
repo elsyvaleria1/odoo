@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="planning.access_planning_slot_template_employee_r" model="ir.access">
+        <field name="active" eval="False" />
+    </record>
+
+    <record id="planning.access_planning_slot_template_manager_crud" model="ir.access">
+        <field name="active" eval="False" />
+    </record>
+
+    <record id="planning.access_planning_slot_template_user_r" model="ir.access">
+        <field name="active" eval="False" />
+    </record>
+
+</odoo>

@@ -1,0 +1,497 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="log_insurance_civic_001" model="resource.asset.log">
+        <field
+            name="asset_id"
+            search="[('trace_id', '=', ref('asset_ledger.stock_lot_civic_001'))]" />
+        <field name="product_id" ref="product_product_insurance" />
+        <field name="vendor_id" ref="base.res_partner_2" />
+        <field name="state">running</field>
+        <field
+            name="date"
+            eval="(DateTime.now() - timedelta(days=300)).strftime('%Y-%m-%d')" />
+        <field
+            name="date_start"
+            eval="(DateTime.now() - timedelta(days=300)).strftime('%Y-%m-%d')" />
+        <field
+            name="date_end"
+            eval="(DateTime.now() + timedelta(days=65)).strftime('%Y-%m-%d')" />
+        <field name="amount">1200.00</field>
+        <field name="inv_ref">INS-2023-CIVIC-001</field>
+        <field name="odometer">15250</field>
+        <field
+            name="notes">Comprehensive coverage including collision and liability</field>
+    </record>
+
+    <record id="log_insurance_f150_001" model="resource.asset.log">
+        <field
+            name="asset_id"
+            search="[('trace_id', '=', ref('asset_ledger.stock_lot_f150_001'))]" />
+        <field name="product_id" ref="product_product_insurance" />
+        <field name="vendor_id" ref="base.res_partner_2" />
+        <field name="state">running</field>
+        <field
+            name="date"
+            eval="(DateTime.now() - timedelta(days=200)).strftime('%Y-%m-%d')" />
+        <field
+            name="date_start"
+            eval="(DateTime.now() - timedelta(days=200)).strftime('%Y-%m-%d')" />
+        <field
+            name="date_end"
+            eval="(DateTime.now() + timedelta(days=165)).strftime('%Y-%m-%d')" />
+        <field name="amount">1800.00</field>
+        <field name="inv_ref">INS-2024-F150-001</field>
+        <field name="odometer">48500</field>
+        <field
+            name="notes">Commercial vehicle insurance with increased liability coverage</field>
+    </record>
+
+    <record id="log_insurance_model3_001" model="resource.asset.log">
+        <field
+            name="asset_id"
+            search="[('trace_id', '=', ref('asset_ledger.stock_lot_model3_001'))]" />
+        <field name="product_id" ref="product_product_insurance" />
+        <field name="vendor_id" ref="base.res_partner_2" />
+        <field name="state">running</field>
+        <field
+            name="date"
+            eval="(DateTime.now() - timedelta(days=60)).strftime('%Y-%m-%d')" />
+        <field
+            name="date_start"
+            eval="(DateTime.now() - timedelta(days=60)).strftime('%Y-%m-%d')" />
+        <field
+            name="date_end"
+            eval="(DateTime.now() + timedelta(days=305)).strftime('%Y-%m-%d')" />
+        <field name="amount">1500.00</field>
+        <field name="inv_ref">INS-2024-MODEL3-001</field>
+        <field name="odometer">5200</field>
+        <field name="notes">Electric vehicle insurance with battery coverage</field>
+    </record>
+
+    <record id="log_fuel_civic_001" model="resource.asset.log">
+        <field
+            name="asset_id"
+            search="[('trace_id', '=', ref('asset_ledger.stock_lot_civic_001'))]" />
+        <field name="product_id" ref="product_product_fuel_credit" />
+        <field name="vendor_id" ref="base.res_partner_12" />
+        <field name="state">done</field>
+        <field
+            name="date"
+            eval="(DateTime.now() - timedelta(days=5)).strftime('%Y-%m-%d')" />
+        <field name="amount">65.00</field>
+        <field name="qty_fuel">42.5</field>
+        <field name="efficiency">16.8</field>
+        <field name="odometer">15950</field>
+        <field name="inv_ref">FUEL-001234</field>
+        <field name="notes">Premium gasoline fill-up at Shell Station</field>
+    </record>
+
+    <record id="log_fuel_civic_002" model="resource.asset.log">
+        <field
+            name="asset_id"
+            search="[('trace_id', '=', ref('asset_ledger.stock_lot_civic_001'))]" />
+        <field name="product_id" ref="product_product_fuel_debit" />
+        <field name="state">done</field>
+        <field
+            name="date"
+            eval="(DateTime.now() - timedelta(days=30)).strftime('%Y-%m-%d')" />
+        <field name="amount">-500.00</field>
+        <field name="odometer">15250</field>
+        <field name="inv_ref">RELOAD-2024-001</field>
+        <field name="notes">Monthly fuel card reload</field>
+    </record>
+
+    <record id="log_fuel_f150_001" model="resource.asset.log">
+        <field
+            name="asset_id"
+            search="[('trace_id', '=', ref('asset_ledger.stock_lot_f150_001'))]" />
+        <field name="product_id" ref="product_product_fuel_credit" />
+        <field name="vendor_id" ref="base.res_partner_12" />
+        <field name="state">done</field>
+        <field
+            name="date"
+            eval="(DateTime.now() - timedelta(days=3)).strftime('%Y-%m-%d')" />
+        <field name="amount">125.00</field>
+        <field name="qty_fuel">95.0</field>
+        <field name="efficiency">10.8</field>
+        <field name="odometer">49800</field>
+        <field name="inv_ref">FUEL-001567</field>
+        <field name="notes">Diesel fill-up for construction site work</field>
+    </record>
+
+    <record id="log_fuel_transit_001" model="resource.asset.log">
+        <field
+            name="asset_id"
+            search="[('trace_id', '=', ref('asset_ledger.stock_lot_transit_001'))]" />
+        <field name="product_id" ref="product_product_fuel_credit" />
+        <field name="vendor_id" ref="base.res_partner_12" />
+        <field name="state">done</field>
+        <field
+            name="date"
+            eval="(DateTime.now() - timedelta(days=2)).strftime('%Y-%m-%d')" />
+        <field name="amount">98.00</field>
+        <field name="qty_fuel">80.0</field>
+        <field name="efficiency">10.2</field>
+        <field name="odometer">87500</field>
+        <field name="inv_ref">FUEL-001589</field>
+        <field name="notes">Regular delivery route fuel purchase</field>
+    </record>
+
+    <record id="log_highway_civic_001" model="resource.asset.log">
+        <field
+            name="asset_id"
+            search="[('trace_id', '=', ref('asset_ledger.stock_lot_civic_001'))]" />
+        <field name="product_id" ref="product_product_highway_debit" />
+        <field name="state">done</field>
+        <field
+            name="date"
+            eval="(DateTime.now() - timedelta(days=30)).strftime('%Y-%m-%d')" />
+        <field name="amount">-200.00</field>
+        <field name="odometer">15250</field>
+        <field name="inv_ref">TOLL-RELOAD-001</field>
+        <field name="notes">Monthly highway pass reload</field>
+    </record>
+
+    <record id="log_highway_f150_001" model="resource.asset.log">
+        <field
+            name="asset_id"
+            search="[('trace_id', '=', ref('asset_ledger.stock_lot_f150_001'))]" />
+        <field name="product_id" ref="product_product_highway_credit" />
+        <field name="state">done</field>
+        <field
+            name="date"
+            eval="(DateTime.now() - timedelta(days=7)).strftime('%Y-%m-%d')" />
+        <field name="amount">45.50</field>
+        <field name="odometer">49200</field>
+        <field name="inv_ref">TOLL-CHARGE-234</field>
+        <field name="notes">Toll charges for route 101</field>
+    </record>
+
+    <record id="log_maintenance_civic_001" model="resource.asset.log">
+        <field
+            name="asset_id"
+            search="[('trace_id', '=', ref('asset_ledger.stock_lot_civic_001'))]" />
+        <field name="product_id" ref="product_product_maintenance" />
+        <field name="vendor_id" ref="base.res_partner_12" />
+        <field name="state">done</field>
+        <field
+            name="date"
+            eval="(DateTime.now() - timedelta(days=45)).strftime('%Y-%m-%d')" />
+        <field name="amount">85.00</field>
+        <field name="odometer">15250</field>
+        <field name="inv_ref">MAINT-2024-001</field>
+        <field
+            name="notes">Regular oil change and filter replacement - Synthetic 5W-30</field>
+    </record>
+
+    <record id="log_repair_f150_001" model="resource.asset.log">
+        <field
+            name="asset_id"
+            search="[('trace_id', '=', ref('asset_ledger.stock_lot_f150_001'))]" />
+        <field name="product_id" ref="product_product_repair" />
+        <field name="vendor_id" ref="base.res_partner_12" />
+        <field name="state">done</field>
+        <field
+            name="date"
+            eval="(DateTime.now() - timedelta(days=15)).strftime('%Y-%m-%d')" />
+        <field name="amount">450.00</field>
+        <field name="odometer">48900</field>
+        <field name="inv_ref">REP-2024-123</field>
+        <field
+            name="notes">Front brake pads and rotors replacement. Heavy duty parts used.</field>
+    </record>
+
+    <record id="log_repair_transit_001" model="resource.asset.log">
+        <field
+            name="asset_id"
+            search="[('trace_id', '=', ref('asset_ledger.stock_lot_transit_001'))]" />
+        <field name="product_id" ref="product_product_repair" />
+        <field name="vendor_id" ref="base.res_partner_12" />
+        <field name="state">done</field>
+        <field
+            name="date"
+            eval="(DateTime.now() - timedelta(days=90)).strftime('%Y-%m-%d')" />
+        <field name="amount">680.00</field>
+        <field name="odometer">85000</field>
+        <field name="inv_ref">REP-2024-089</field>
+        <field
+            name="notes">All four tires replaced - Commercial grade Michelin tires</field>
+    </record>
+
+    <record id="log_maintenance_model3_001" model="resource.asset.log">
+        <field
+            name="asset_id"
+            search="[('trace_id', '=', ref('asset_ledger.stock_lot_model3_001'))]" />
+        <field name="product_id" ref="product_product_maintenance" />
+        <field name="vendor_id" ref="base.res_partner_2" />
+        <field name="state">done</field>
+        <field
+            name="date"
+            eval="(DateTime.now() - timedelta(days=30)).strftime('%Y-%m-%d')" />
+        <field name="amount">250.00</field>
+        <field name="odometer">5300</field>
+        <field name="inv_ref">TESLA-SVC-001</field>
+        <field
+            name="notes">First scheduled service - Tire rotation, brake check, software update</field>
+    </record>
+
+    <record id="log_maintenance_tractor_001" model="resource.asset.log">
+        <field
+            name="asset_id"
+            search="[('trace_id', '=', ref('asset_ledger.stock_lot_tractor_001'))]" />
+        <field name="product_id" ref="product_product_maintenance" />
+        <field name="vendor_id" ref="base.res_partner_12" />
+        <field name="state">done</field>
+        <field
+            name="date"
+            eval="(DateTime.now() - timedelta(days=60)).strftime('%Y-%m-%d')" />
+        <field name="amount">850.00</field>
+        <field name="odometer">2450</field>
+        <field name="inv_ref">TRAC-MAINT-2024</field>
+        <field
+            name="notes">Annual preventive maintenance - Engine service, hydraulic system check, PTO inspection</field>
+    </record>
+
+    <record id="log_repair_forklift_001" model="resource.asset.log">
+        <field
+            name="asset_id"
+            search="[('trace_id', '=', ref('asset_ledger.stock_lot_forklift_001'))]" />
+        <field name="product_id" ref="product_product_repair" />
+        <field name="vendor_id" ref="base.res_partner_12" />
+        <field name="state">done</field>
+        <field
+            name="date"
+            eval="(DateTime.now() - timedelta(days=120)).strftime('%Y-%m-%d')" />
+        <field name="amount">1200.00</field>
+        <field name="odometer">5200</field>
+        <field name="inv_ref">FORK-REP-2024-001</field>
+        <field name="notes">Industrial battery replacement - 48V 500Ah</field>
+    </record>
+
+    <record id="log_scheduled_civic_001" model="resource.asset.log">
+        <field
+            name="asset_id"
+            search="[('trace_id', '=', ref('asset_ledger.stock_lot_civic_001'))]" />
+        <field name="product_id" ref="product_product_maintenance" />
+        <field name="vendor_id" ref="base.res_partner_12" />
+        <field name="state">new</field>
+        <field
+            name="date"
+            eval="(DateTime.now() + timedelta(days=15)).strftime('%Y-%m-%d')" />
+        <field name="amount">45.00</field>
+        <field name="odometer">16000</field>
+        <field name="notes">Scheduled tire rotation at 16,000 km</field>
+    </record>
+
+    <record id="log_scheduled_f150_001" model="resource.asset.log">
+        <field
+            name="asset_id"
+            search="[('trace_id', '=', ref('asset_ledger.stock_lot_f150_001'))]" />
+        <field name="product_id" ref="product_product_maintenance" />
+        <field name="vendor_id" ref="base.res_partner_12" />
+        <field name="state">new</field>
+        <field
+            name="date"
+            eval="(DateTime.now() + timedelta(days=30)).strftime('%Y-%m-%d')" />
+        <field name="amount">150.00</field>
+        <field name="odometer">50000</field>
+        <field name="notes">Annual vehicle safety inspection required by law</field>
+    </record>
+
+    <record id="log_insurance_office_001" model="resource.asset.log">
+        <field
+            name="asset_id"
+            search="[('trace_id', '=', ref('asset_ledger.stock_lot_office_building_001'))]" />
+        <field name="product_id" ref="product_product_insurance" />
+        <field name="vendor_id" ref="base.res_partner_2" />
+        <field name="state">running</field>
+        <field
+            name="date"
+            eval="(DateTime.now() - timedelta(days=180)).strftime('%Y-%m-%d')" />
+        <field
+            name="date_start"
+            eval="(DateTime.now() - timedelta(days=180)).strftime('%Y-%m-%d')" />
+        <field
+            name="date_end"
+            eval="(DateTime.now() + timedelta(days=185)).strftime('%Y-%m-%d')" />
+        <field name="amount">45000.00</field>
+        <field name="inv_ref">INS-PROP-2024-001</field>
+        <field
+            name="notes">Commercial property insurance - Coverage includes fire, flood, liability, and business interruption</field>
+    </record>
+
+    <record id="log_maintenance_office_001" model="resource.asset.log">
+        <field
+            name="asset_id"
+            search="[('trace_id', '=', ref('asset_ledger.stock_lot_office_building_001'))]" />
+        <field name="product_id" ref="product_product_maintenance" />
+        <field name="vendor_id" ref="vendor_heavy_equipment_service" />
+        <field name="state">done</field>
+        <field
+            name="date"
+            eval="(DateTime.now() - timedelta(days=90)).strftime('%Y-%m-%d')" />
+        <field name="amount">3500.00</field>
+        <field name="inv_ref">HVAC-MAINT-2024-Q1</field>
+        <field
+            name="notes">Quarterly HVAC system maintenance - Filter replacement, coolant check, system calibration</field>
+    </record>
+
+    <record id="log_maintenance_office_002" model="resource.asset.log">
+        <field
+            name="asset_id"
+            search="[('trace_id', '=', ref('asset_ledger.stock_lot_office_building_001'))]" />
+        <field name="product_id" ref="product_product_maintenance" />
+        <field name="vendor_id" ref="vendor_heavy_equipment_service" />
+        <field name="state">done</field>
+        <field
+            name="date"
+            eval="(DateTime.now() - timedelta(days=30)).strftime('%Y-%m-%d')" />
+        <field name="amount">850.00</field>
+        <field name="inv_ref">ELEV-INSP-2024-001</field>
+        <field name="notes">Annual elevator safety inspection and certification</field>
+    </record>
+
+    <record id="log_insurance_warehouse_001" model="resource.asset.log">
+        <field
+            name="asset_id"
+            search="[('trace_id', '=', ref('asset_ledger.stock_lot_warehouse_001'))]" />
+        <field name="product_id" ref="product_product_insurance" />
+        <field name="vendor_id" ref="base.res_partner_2" />
+        <field name="state">running</field>
+        <field
+            name="date"
+            eval="(DateTime.now() - timedelta(days=120)).strftime('%Y-%m-%d')" />
+        <field
+            name="date_start"
+            eval="(DateTime.now() - timedelta(days=120)).strftime('%Y-%m-%d')" />
+        <field
+            name="date_end"
+            eval="(DateTime.now() + timedelta(days=245)).strftime('%Y-%m-%d')" />
+        <field name="amount">28000.00</field>
+        <field name="inv_ref">INS-PROP-2024-002</field>
+        <field
+            name="notes">Industrial property insurance - Warehouse and inventory coverage</field>
+    </record>
+
+    <record id="log_repair_warehouse_001" model="resource.asset.log">
+        <field
+            name="asset_id"
+            search="[('trace_id', '=', ref('asset_ledger.stock_lot_warehouse_001'))]" />
+        <field name="product_id" ref="product_product_repair" />
+        <field name="vendor_id" ref="vendor_heavy_equipment_service" />
+        <field name="state">done</field>
+        <field
+            name="date"
+            eval="(DateTime.now() - timedelta(days=45)).strftime('%Y-%m-%d')" />
+        <field name="amount">12500.00</field>
+        <field name="inv_ref">ROOF-REP-2024-001</field>
+        <field
+            name="notes">Emergency roof repair - Section C leak repair and waterproofing</field>
+    </record>
+
+    <record id="log_maintenance_warehouse_001" model="resource.asset.log">
+        <field
+            name="asset_id"
+            search="[('trace_id', '=', ref('asset_ledger.stock_lot_warehouse_001'))]" />
+        <field name="product_id" ref="product_product_maintenance" />
+        <field name="vendor_id" ref="vendor_heavy_equipment_service" />
+        <field name="state">done</field>
+        <field
+            name="date"
+            eval="(DateTime.now() - timedelta(days=15)).strftime('%Y-%m-%d')" />
+        <field name="amount">2800.00</field>
+        <field name="inv_ref">FIRE-TEST-2024-001</field>
+        <field
+            name="notes">Annual fire suppression system testing and certification</field>
+    </record>
+
+    <record id="log_farmland_tax_001" model="resource.asset.log">
+        <field
+            name="asset_id"
+            search="[('trace_id', '=', ref('asset_ledger.stock_lot_farmland_001'))]" />
+        <field name="product_id" ref="product_product_insurance" />
+        <field name="vendor_id" ref="base.res_partner_2" />
+        <field name="state">done</field>
+        <field
+            name="date"
+            eval="(DateTime.now() - timedelta(days=200)).strftime('%Y-%m-%d')" />
+        <field
+            name="date_start"
+            eval="(DateTime.now() - timedelta(days=365)).strftime('%Y-%m-%d')" />
+        <field name="date_end" eval="(DateTime.now()).strftime('%Y-%m-%d')" />
+        <field name="amount">12000.00</field>
+        <field name="inv_ref">TAX-FARM-2024</field>
+        <field name="notes">Annual agricultural property tax payment</field>
+    </record>
+
+    <record id="log_repair_farmland_001" model="resource.asset.log">
+        <field
+            name="asset_id"
+            search="[('trace_id', '=', ref('asset_ledger.stock_lot_farmland_001'))]" />
+        <field name="product_id" ref="product_product_repair" />
+        <field name="vendor_id" ref="vendor_heavy_equipment_service" />
+        <field name="state">done</field>
+        <field
+            name="date"
+            eval="(DateTime.now() - timedelta(days=60)).strftime('%Y-%m-%d')" />
+        <field name="amount">8500.00</field>
+        <field name="inv_ref">IRR-REP-2024-001</field>
+        <field
+            name="notes">Irrigation system pump replacement and pipe section repairs</field>
+    </record>
+
+    <record id="log_insurance_retail_001" model="resource.asset.log">
+        <field
+            name="asset_id"
+            search="[('trace_id', '=', ref('asset_ledger.stock_lot_retail_store_001'))]" />
+        <field name="product_id" ref="product_product_insurance" />
+        <field name="vendor_id" ref="base.res_partner_2" />
+        <field name="state">running</field>
+        <field
+            name="date"
+            eval="(DateTime.now() - timedelta(days=90)).strftime('%Y-%m-%d')" />
+        <field
+            name="date_start"
+            eval="(DateTime.now() - timedelta(days=90)).strftime('%Y-%m-%d')" />
+        <field
+            name="date_end"
+            eval="(DateTime.now() + timedelta(days=275)).strftime('%Y-%m-%d')" />
+        <field name="amount">18000.00</field>
+        <field name="inv_ref">INS-PROP-2024-003</field>
+        <field
+            name="notes">Retail property insurance - Building and tenant liability coverage</field>
+    </record>
+
+    <record id="log_repair_retail_001" model="resource.asset.log">
+        <field
+            name="asset_id"
+            search="[('trace_id', '=', ref('asset_ledger.stock_lot_retail_store_001'))]" />
+        <field name="product_id" ref="product_product_repair" />
+        <field name="vendor_id" ref="vendor_heavy_equipment_service" />
+        <field name="state">done</field>
+        <field
+            name="date"
+            eval="(DateTime.now() - timedelta(days=120)).strftime('%Y-%m-%d')" />
+        <field name="amount">22000.00</field>
+        <field name="inv_ref">PARK-RESURF-2024</field>
+        <field
+            name="notes">Parking lot resurfacing - 150 space capacity, new asphalt and line painting</field>
+    </record>
+
+    <record id="log_scheduled_retail_001" model="resource.asset.log">
+        <field
+            name="asset_id"
+            search="[('trace_id', '=', ref('asset_ledger.stock_lot_retail_store_001'))]" />
+        <field name="product_id" ref="product_product_maintenance" />
+        <field name="vendor_id" ref="vendor_heavy_equipment_service" />
+        <field name="state">new</field>
+        <field
+            name="date"
+            eval="(DateTime.now() + timedelta(days=20)).strftime('%Y-%m-%d')" />
+        <field name="amount">1500.00</field>
+        <field
+            name="notes">Scheduled quarterly HVAC maintenance for retail space</field>
+    </record>
+
+</odoo>

@@ -1,0 +1,139 @@
+/** @odoo-module native */
+import { darkenColor, getColor, withOpacity } from "@web/core/colors/colors";
+import { registry } from "@web/core/registry";
+import { _t } from "@web/core/translation";
+import { JournalDashboardGraphField } from "@web/fields/specialized/journal_dashboard_graph/journal_dashboard_graph_field";
+
+export class WorkcenterDashboardGraphField extends JournalDashboardGraphField {
+    getBarChartConfig() {
+        const labels = this.data[0].labels;
+        const color19 = getColor(1, "odoo");
+        const color13 = getColor(2, "odoo");
+        const color10 = getColor(3, "odoo");
+        const loadBarColor = this.data[0].is_sample_data
+            ? withOpacity(color19, 0.1)
+            : color19;
+        const excessBarColor = this.data[0].is_sample_data
+            ? withOpacity(color13, 0.1)
+            : color13;
+        const maxLoadLineColor = this.data[0].is_sample_data
+            ? withOpacity(color10, 0.1)
+            : withOpacity(color10, 0.5);
+        const darkColorOnHover = this.data[0].is_sample_data
+            ? loadBarColor
+            : darkenColor(loadBarColor, 0.1);
+        return {
+            type: "scatter",
+            data: {
+                datasets: [
+                    {
+                        type: "line",
+                        borderColor: maxLoadLineColor,
+                        data: [undefined, undefined, this.data[0].values[1]],
+                        showLine: false,
+                        pointStyle: "line",
+                        pointRadius: 500,
+                        pointBorderWidth: 2,
+                        pointHoverRadius: 500,
+                        pointHoverBorderWidth: 2,
+                    },
+                    {
+                        type: "bar",
+                        backgroundColor: loadBarColor,
+                        data: this.data[0].values[0],
+                        label: _t("Total Load"),
+                        borderWidth: 0,
+                        stack: "mainStack",
+                        hoverBackgroundColor: function (ctx, options) {
+                            return ctx.parsed._stacks.y[2] !== 0
+                                ? excessBarColor
+                                : darkColorOnHover;
+                        },
+                    },
+                    {
+                        type: "bar",
+                        backgroundColor: excessBarColor,
+                        data: this.data[0].values[2],
+                        label: _t("Excess Load"),
+                        borderWidth: 0,
+                        stack: "mainStack",
+                    },
+                ],
+                labels,
+            },
+            options: {
+                layout: {
+                    autoPadding: false,
+                },
+                interaction: {
+                    includeInvisible: true,
+                    axis: "x",
+                },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        enabled: !this.data[0].is_sample_data,
+                        intersect: true,
+                        mode: "nearest",
+                        position: "nearest",
+                        caretSize: 0,
+                        filter: function (ctx) {
+                            if (ctx.dataset.type !== "line") {
+                                return ctx;
+                            }
+                        },
+                        callbacks: {
+                            label: function (ctx) {
+                                if (ctx.datasetIndex === 1) {
+                                    const totalLoadValue = Object.values(
+                                        ctx.parsed._stacks.y._visualValues,
+                                    ).reduce((accu, curr) => accu + curr, 0);
+                                    return _t("%(label)s: %(value)s hours", {
+                                        label: ctx.dataset.label,
+                                        value: totalLoadValue,
+                                    });
+                                }
+                                return _t("%(label)s: %(value)s hours", {
+                                    label: ctx.dataset.label,
+                                    value: ctx.parsed.y,
+                                });
+                            },
+                            title: function (ctx) {
+                                return "";
+                            },
+                        },
+                    },
+                },
+                scales: {
+                    y: {
+                        display: false,
+                        suggestedMax: this.data[0].values[1] * 1.5,
+                        stacked: true,
+                    },
+                    x: {
+                        type: "category",
+                        grid: {
+                            display: false,
+                        },
+                        border: {
+                            display: false,
+                        },
+                    },
+                },
+                maintainAspectRatio: false,
+            },
+        };
+    }
+}
+
+export const workcenterDashboardGraphField = {
+    component: WorkcenterDashboardGraphField,
+    supportedTypes: ["text"],
+    extractProps: ({ attrs }) => ({
+        graphType: attrs.graph_type,
+    }),
+};
+
+registry
+    .category("fields")
+    .add("workcenter_dashboard_graph", workcenterDashboardGraphField);

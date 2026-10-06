@@ -1,0 +1,194 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_device_profile_search_inherit_gps" model="ir.ui.view">
+        <field name="name">device.profile.search.inherit.gps</field>
+        <field name="model">device.profile</field>
+        <field name="inherit_id" ref="device.view_device_profile_search" />
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='protocol']" position="after">
+                <field name="gps_protocol" />
+            </xpath>
+
+            <xpath expr="//filter[@name='inactive']" position="after">
+                <separator />
+                <filter
+                    name="teltonika"
+                    string="Teltonika"
+                    domain="[('gps_protocol', '=', 'teltonika')]" />
+                <filter
+                    name="queclink"
+                    string="Queclink"
+                    domain="[('gps_protocol', '=', 'queclink')]" />
+                <filter
+                    name="concox"
+                    string="Concox"
+                    domain="[('gps_protocol', '=', 'concox')]" />
+            </xpath>
+
+            <xpath expr="//filter[@name='group_manufacturer']" position="after">
+                <filter
+                    name="group_gps_protocol"
+                    string="GPS Protocol"
+                    context="{'group_by': 'gps_protocol'}" />
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_device_profile_list_inherit_gps" model="ir.ui.view">
+        <field name="name">device.profile.tree.inherit.gps</field>
+        <field name="model">device.profile</field>
+        <field name="inherit_id" ref="device.view_device_profile_list" />
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='protocol']" position="after">
+                <field name="gps_protocol" optional="show" />
+                <field name="gps_tracking_enabled" optional="hide" />
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_device_profile_form_inherit_gps" model="ir.ui.view">
+        <field name="name">device.profile.form.inherit.gps</field>
+        <field name="model">device.profile</field>
+        <field name="inherit_id" ref="device.view_device_profile_form" />
+        <field name="arch" type="xml">
+
+            <xpath expr="//field[@name='protocol']" position="after">
+                <field name="gps_protocol" />
+            </xpath>
+
+            <xpath expr="//field[@name='active']" position="after">
+                <field name="gps_tracking_enabled" />
+            </xpath>
+
+            <xpath expr="//page[@name='protocol_settings']" position="after">
+                <page
+                    name="gps_update_settings"
+                    string="GPS Update Settings"
+                    invisible="not gps_tracking_enabled">
+                    <group>
+                        <group string="Motion Detection">
+                            <field
+                                name="motion_threshold_speed"
+                                help="Speed threshold in km/h to detect motion" />
+                            <field
+                                name="motion_threshold_distance"
+                                help="Distance threshold in meters to detect motion" />
+                            <field
+                                name="stationary_interval"
+                                help="Interval in seconds for stationary updates" />
+                        </group>
+                        <group />
+                    </group>
+                </page>
+            </xpath>
+
+            <xpath expr="//page[@name='alerts']/group" position="inside">
+                <group string="GPS Alerts" invisible="not gps_tracking_enabled">
+                    <field name="alert_overspeeding" />
+                    <label
+                        for="speed_limit_warning"
+                        string="Speed Thresholds"
+                        invisible="not alert_overspeeding" />
+                    <div class="o_row" invisible="not alert_overspeeding">
+                        <field
+                            name="speed_limit_warning"
+                            placeholder="Warning"
+                            class="oe_inline" />
+                        <span class="mx-1">/</span>
+                        <field
+                            name="speed_limit_alert"
+                            placeholder="Alert"
+                            class="oe_inline" />
+                        <span class="mx-1">/</span>
+                        <field
+                            name="speed_limit_critical"
+                            placeholder="Critical"
+                            class="oe_inline" />
+                        <span class="ms-2 text-muted">km/h</span>
+                    </div>
+                    <field name="alert_idle" />
+                    <field name="idle_threshold" invisible="not alert_idle" />
+                    <field name="alert_battery" />
+                    <field name="battery_threshold" invisible="not alert_battery" />
+                </group>
+            </xpath>
+
+            <xpath expr="//page[@name='data_collection']" position="after">
+                <page
+                    name="vehicle_calibration"
+                    string="Vehicle Calibration"
+                    invisible="not gps_tracking_enabled">
+                    <group>
+                        <group string="Odometer Calibration">
+                            <field name="reports_odometer" />
+                            <field
+                                name="odometer_correction_factor"
+                                help="Correction factor to apply to raw odometer values (e.g., 1.05 = +5%)"
+                                invisible="not reports_odometer" />
+                        </group>
+                        <group string="Fuel Reporting">
+                            <field
+                                name="fuel_reports_percentage"
+                                help="If enabled, fuel level is reported as percentage; otherwise as liters" />
+                            <field
+                                name="fuel_level_l_unit"
+                                help="Unit for volume-based fuel reporting (CAN bus field 84)"
+                                invisible="fuel_reports_percentage" />
+                        </group>
+                    </group>
+                </page>
+
+                <page
+                    name="device_capabilities"
+                    string="Device Capabilities"
+                    invisible="not gps_tracking_enabled or gps_protocol != 'teltonika'">
+                    <group>
+                        <group string="Odometer Capabilities">
+                            <field name="odometer_source" />
+                        </group>
+                        <group string="Fuel Capabilities">
+                            <field name="fuel_source" />
+                        </group>
+                    </group>
+                    <group>
+                        <group string="Speed Capabilities">
+                            <field name="speed_source" />
+                        </group>
+                        <group string="Ignition &amp; Engine">
+                            <field name="reports_ignition" />
+                            <field name="reports_engine_hours" />
+                            <field name="reports_engine_rpm" />
+                            <field name="reports_engine_temp" />
+                        </group>
+                    </group>
+                </page>
+            </xpath>
+
+            <xpath
+                expr="//page[@name='devices']//field[@name='device_ids']//list/field[@name='identifier']"
+                position="after">
+                <field name="gps_receiver_key" optional="show" />
+                <field name="gps_tracking_enabled" optional="hide" />
+            </xpath>
+        </field>
+    </record>
+
+    <record id="action_device_gps_config" model="ir.actions.act_window">
+        <field name="name">GPS Configurations</field>
+        <field name="res_model">device.profile</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{'search_default_active': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Create a GPS device configuration profile
+            </p>
+            <p>
+                GPS configuration profiles extend standard device configurations
+                with GPS-specific settings like motion detection, speed alerts,
+                vehicle calibration, and tracking behavior.
+            </p>
+        </field>
+    </record>
+
+</odoo>

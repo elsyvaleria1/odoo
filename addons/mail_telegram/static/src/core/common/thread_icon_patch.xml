@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates>
+    <t t-name="mail_telegram.ThreadIcon" t-inherit="mail.ThreadIcon" t-inherit-mode="extension">
+        <xpath expr="//*[hasclass('o-mail-ThreadIcon')]" position="inside">
+            <t t-if="this.props.thread.channel_type === 'telegram'">
+                <div class="fa-brands fa-telegram text-info" title="Telegram" />
+            </t>
+        </xpath>
+    </t>
+</templates>

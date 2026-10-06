@@ -1,0 +1,164 @@
+from datetime import datetime
+
+from odoo.tests import tagged
+
+from odoo.addons.hr_homeworking_calendar.tests.common import TestHrHomeworkingCommon
+
+
+@tagged("post_install", "-at_install", "homeworking_tests")
+class TestHrHomeworkingHrEmployeeLocation(TestHrHomeworkingCommon):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.HrEmployeeLocation = cls.env["hr.employee.location"]
+
+    def test_set_location_with_weekly_option_changes_employee_location(self):
+        wizard = self.env["wizard.hr.employee.update.work.location"].create(
+            {
+                "work_location_id": self.work_home.id,
+                "date": datetime(2023, 10, 4),
+                "employee_id": self.employee_emp.id,
+                "weekly": True,
+            }
+        )
+        wizard.set_employee_location()
+        self.assertEqual(self.employee_emp.wednesday_location_id.id, self.work_home.id)
+        created_worklocations = self.HrEmployeeLocation.search(
+            [
+                ("employee_id", "=", self.employee_emp.id),
+                ("date", "=", datetime(2023, 10, 4)),
+            ]
+        )
+        self.assertEqual(
+            len(created_worklocations), 0, "should have created 0 worklocation records"
+        )
+
+    def test_set_location_without_weekly_option_should_create_an_exception(self):
+        wizard = self.env["wizard.hr.employee.update.work.location"].create(
+            {
+                "work_location_id": self.work_home.id,
+                "date": datetime(2023, 10, 4),
+                "employee_id": self.employee_emp.id,
+                "weekly": False,
+            }
+        )
+        wizard.set_employee_location()
+        created_worklocations = self.HrEmployeeLocation.search(
+            [
+                ("employee_id", "=", self.employee_emp.id),
+                ("date", "=", datetime(2023, 10, 4)),
+            ]
+        )
+        self.assertEqual(
+            len(created_worklocations), 1, "should have created 1 worklocation record"
+        )
+        self.assertEqual(created_worklocations.work_location_id.id, self.work_home.id)
+
+    def test_create_exception_on_top_of_exception_keeps_a_single_record(self):
+        wizard = self.env["wizard.hr.employee.update.work.location"].create(
+            {
+                "work_location_id": self.work_home.id,
+                "date": datetime(2023, 10, 4),
+                "employee_id": self.employee_emp.id,
+                "weekly": False,
+            }
+        )
+        wizard.set_employee_location()
+        created_worklocations = self.HrEmployeeLocation.search(
+            [
+                ("employee_id", "=", self.employee_emp.id),
+                ("date", "=", datetime(2023, 10, 4)),
+            ]
+        )
+        self.assertEqual(
+            len(created_worklocations), 1, "should have created 1 worklocation record"
+        )
+        wizard.work_location_id = self.work_office_2
+        wizard.set_employee_location()
+        created_worklocations = self.HrEmployeeLocation.search(
+            [
+                ("employee_id", "=", self.employee_emp.id),
+                ("date", "=", datetime(2023, 10, 4)),
+            ]
+        )
+        self.assertEqual(
+            len(created_worklocations), 1, "should have created 1 worklocation record"
+        )
+        self.assertEqual(
+            created_worklocations.work_location_id.id, self.work_office_2.id
+        )
+
+    def test_set_same_location_as_default_one_should_not_create_exception(self):
+        wizard = self.env["wizard.hr.employee.update.work.location"].create(
+            {
+                "work_location_id": self.work_office_1.id,
+                "date": datetime(2023, 10, 4),
+                "employee_id": self.employee_emp.id,
+                "weekly": False,
+            }
+        )
+        wizard.set_employee_location()
+        created_worklocations = self.HrEmployeeLocation.search(
+            [
+                ("employee_id", "=", self.employee_emp.id),
+                ("date", "=", datetime(2023, 10, 4)),
+            ]
+        )
+        self.assertEqual(
+            len(created_worklocations), 0, "should have created 0 worklocation records"
+        )
+
+    def test_set_default_day_location_as_exception_will_delete_exception(self):
+        wizard = self.env["wizard.hr.employee.update.work.location"].create(
+            {
+                "work_location_id": self.work_home.id,
+                "date": datetime(2023, 10, 4),
+                "employee_id": self.employee_emp.id,
+                "weekly": False,
+            }
+        )
+        wizard.set_employee_location()
+
+        created_worklocations = self.HrEmployeeLocation.search(
+            [
+                ("employee_id", "=", self.employee_emp.id),
+                ("date", "=", datetime(2023, 10, 4)),
+            ]
+        )
+
+        self.assertEqual(
+            len(created_worklocations), 1, "should have created 1 worklocation records"
+        )
+
+        wizard.work_location_id = self.work_office_1
+        wizard.set_employee_location()
+
+        created_worklocations = self.HrEmployeeLocation.search(
+            [
+                ("employee_id", "=", self.employee_emp.id),
+                ("date", "=", datetime(2023, 10, 4)),
+            ]
+        )
+
+        self.assertEqual(
+            len(created_worklocations), 0, "should have deleted the worklocation record"
+        )
+
+    def test_setting_a_weekly_location_works_for_an_employee_without_a_user(self):
+        employee = self.env["hr.employee"].create({"name": "No user"})
+        wizard = self.env["wizard.hr.employee.update.work.location"].create(
+            {
+                "work_location_id": self.work_home.id,
+                "date": datetime(2023, 10, 4),
+                "employee_id": employee.id,
+                "weekly": True,
+            }
+        )
+        wizard.set_employee_location()
+        self.assertEqual(employee.wednesday_location_id, self.work_home)
+
+    def test_set_location_action_is_offered_by_no_action_menu(self):
+        # The calendar opens it by XML id; it reads no active_id, so a binding
+        # would offer it on records it then ignores.
+        action = self.env.ref("hr_homeworking_calendar.set_location_wizard_action")
+        self.assertFalse(action.binding_model_id)

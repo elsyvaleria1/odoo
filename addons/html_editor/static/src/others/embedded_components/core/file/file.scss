@@ -1,0 +1,15 @@
+[data-embedded="file"] {
+    [data-embedded-editable] {
+        background-color: o-token(--o-bg-view, $o-view-background-color);
+    }
+
+    .o_file_name_container {
+        &:hover i {
+            visibility: visible !important;
+        }
+    }
+
+    input[type="text"] {
+        width: 190px;
+    }
+}

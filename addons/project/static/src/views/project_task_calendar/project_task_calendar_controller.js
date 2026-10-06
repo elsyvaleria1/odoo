@@ -1,0 +1,96 @@
+/** @odoo-module native */
+import { subTaskDeleteConfirmationMessage } from "@project/views/project_task_form/project_task_form_controller";
+import { parseISO } from "@web/core/l10n/dates";
+import { _t } from "@web/core/translation";
+import { useService } from "@web/core/utils/hooks";
+import { CalendarController } from "@web/views/calendar";
+
+import { useCalendarTaskToPlanDraggable } from "./hooks/project_task_calendar_task_to_plan_draggable.js";
+import { ProjectTaskCalendarSidePanel } from "./side_panel/project_task_calendar_side_panel.js";
+
+export class ProjectTaskCalendarController extends CalendarController {
+    static components = {
+        ...ProjectTaskCalendarController.components,
+        CalendarSidePanel: ProjectTaskCalendarSidePanel,
+    };
+
+    setup() {
+        super.setup();
+        this.ui = useService("ui");
+        useCalendarTaskToPlanDraggable({
+            ref: this.rootRef,
+            enable: () => this.draggable,
+            elements: ".o_task_to_plan_draggable",
+            ignore: "button",
+            onElementEnter: ({ addClass, element }) => {
+                addClass(element, "o-highlight");
+            },
+            onElementLeave: ({ removeClass, element }) => {
+                removeClass(element, "o-highlight");
+            },
+            onDrop: (params) => {
+                this.dropTaskToPlan(params);
+            },
+        });
+    }
+
+    get modelParams() {
+        return {
+            ...super.modelParams,
+            showTasksToPlan: this.showTasksToPlan,
+        };
+    }
+
+    get editRecordDefaultDisplayText() {
+        return _t("New Task");
+    }
+
+    get sidePanelProps() {
+        return {
+            ...super.sidePanelProps,
+            editRecord: this.editRecord.bind(this),
+        };
+    }
+
+    get showTasksToPlan() {
+        return this.draggable && !this.ui.isSmall;
+    }
+
+    get draggable() {
+        return Boolean(this.props.context.default_project_id);
+    }
+
+    deleteConfirmationDialogProps(record) {
+        const deleteConfirmationDialogProps = super.deleteConfirmationDialogProps(
+            record,
+        );
+        if (!record.rawRecord.subtask_count) {
+            return deleteConfirmationDialogProps;
+        }
+
+        return {
+            ...deleteConfirmationDialogProps,
+            body: subTaskDeleteConfirmationMessage,
+        };
+    }
+
+    async dropTaskToPlan(params) {
+        const { element, calendarCell, timeSlotElement } = params;
+        const taskId = Number(element.dataset.resId);
+        let dateStr = calendarCell.dataset.date;
+        if (timeSlotElement) {
+            dateStr += `T${timeSlotElement.dataset.time}`;
+        }
+        const date = parseISO(dateStr);
+        if (date) {
+            element.hidden = true;
+            try {
+                await this.model.planTask(taskId, date, Boolean(timeSlotElement));
+            } finally {
+                if (element.isConnected) {
+                    element.hidden = false;
+                }
+            }
+        }
+    }
+}

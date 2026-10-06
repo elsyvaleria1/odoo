@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="command_entrega" model="telegram.command">
+        <field name="name">/entrega</field>
+    </record>
+
+</odoo>

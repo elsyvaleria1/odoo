@@ -1,0 +1,72 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* account_collection_sale_telegram
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: es\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: account_collection_sale_telegram
+#. odoo-python
+#: code:addons/account_collection_sale_telegram/models/telegram_handler.py:0
+msgid "Cash sale"
+msgstr "Venta de contado"
+
+#. module: account_collection_sale_telegram
+#. odoo-python
+#: code:addons/account_collection_sale_telegram/models/telegram_handler.py:0
+msgid "Cash sale %(name)s · %(amount)s"
+msgstr "Venta de contado %(name)s · %(amount)s"
+
+#. module: account_collection_sale_telegram
+#: model:ir.model.fields,field_description:account_collection_sale_telegram.field_telegram_handler_account_collection__display_name
+msgid "Display Name"
+msgstr "Nombre para mostrar"
+
+#. module: account_collection_sale_telegram
+#: model:ir.model.fields,field_description:account_collection_sale_telegram.field_telegram_handler_account_collection__id
+msgid "ID"
+msgstr "ID"
+
+#. module: account_collection_sale_telegram
+#: model:ir.model,name:account_collection_sale_telegram.model_telegram_handler_account_collection
+msgid "Telegram: Field Collections"
+msgstr "Telegram: cobranza en campo"
+
+#. module: account_collection_sale_telegram
+#. odoo-python
+#: code:addons/account_collection_sale_telegram/models/telegram_handler.py:0
+msgid "That sale is no longer to collect."
+msgstr "Esa venta ya no está por cobrar."
+
+#. module: account_collection_sale_telegram
+#. odoo-python
+#: code:addons/account_collection_sale_telegram/models/telegram_handler.py:0
+msgid "%(order)s, the customer takes the goods now"
+msgstr "%(order)s, el cliente se lleva la mercancía ahora"
+
+#. module: account_collection_sale_telegram
+#. odoo-python
+#: code:addons/account_collection_sale_telegram/models/telegram_handler.py:0
+msgid "Does the customer take the goods now?"
+msgstr "¿El cliente se lleva la mercancía ahora?"
+
+#. module: account_collection_sale_telegram
+#. odoo-python
+#: code:addons/account_collection_sale_telegram/models/telegram_handler.py:0
+msgid "No, deliver later"
+msgstr "No, entregar después"
+
+#. module: account_collection_sale_telegram
+#. odoo-python
+#: code:addons/account_collection_sale_telegram/models/telegram_handler.py:0
+msgid "Yes, now"
+msgstr "Sí, ahora"

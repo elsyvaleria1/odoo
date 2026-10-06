@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+
+    <record id="ir_cron_gps_process_geofence_alerts" model="ir.cron">
+        <field name="name">GPS: Process Geofence Alerts</field>
+        <field name="model_id" ref="model_device_geo_fence" />
+        <field name="state">code</field>
+        <field name="code">model._cron_process_geofence_alerts()</field>
+        <field name="repeat_interval" eval="5" />
+        <field name="repeat_unit">minute</field>
+        <field name="priority" eval="4" />
+        <field name="active" eval="True" />
+    </record>
+
+    <record id="ir_cron_gps_check_unmapped_dwell" model="ir.cron">
+        <field name="name">GPS: Check Unmapped Parcel Dwell</field>
+        <field name="model_id" ref="device.model_device_device" />
+        <field name="state">code</field>
+        <field name="code">model._cron_check_unmapped_dwell()</field>
+        <field name="repeat_interval" eval="15" />
+        <field name="repeat_unit">minute</field>
+        <field name="priority" eval="4" />
+        <!--
+            Off by default: this raises real to-dos for real salespeople /
+            the sales lead. Turn on deliberately once someone has reviewed
+            it end to end (Settings > Technical > Automation > Scheduled
+            Actions).
+        -->
+        <field name="active" eval="False" />
+    </record>
+
+    <record id="ir_cron_gps_track_client_visits" model="ir.cron">
+        <field name="name">GPS: Track Client Visit Arrival/Departure</field>
+        <field name="model_id" ref="device.model_device_device" />
+        <field name="state">code</field>
+        <field name="code">model._cron_track_client_visits()</field>
+        <field name="repeat_interval" eval="5" />
+        <field name="repeat_unit">minute</field>
+        <field name="priority" eval="4" />
+        <field name="active" eval="True" />
+    </record>
+
+</odoo>

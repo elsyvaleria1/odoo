@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="hr_work_entry_gantt_payroll_inherit" model="ir.ui.view">
+        <field name="name">hr.work.entry.gantt.payroll.inherit</field>
+        <field name="model">hr.work.entry</field>
+        <field name="inherit_id" ref="hr_work_entry_enterprise.hr_work_entry_gantt" />
+        <field name="arch" type="xml">
+            <xpath expr="//gantt" position="inside">
+                <field name="has_payslip" />
+            </xpath>
+            <!-- Added next to the lock message, not in place of it: the entry is
+                locked by its state alone, so the message stays true even when
+                no payslip record backs it and there is nothing to link to. -->
+            <xpath expr="//span[@name='work_entry_validated_message']" position="after">
+                <div t-if="has_payslip" class="mt-1" style="grid-column: 2 span;">
+                    <button
+                        name="action_view_payslip"
+                        type="object"
+                        string="View Payslip"
+                        class="btn btn-secondary btn-sm" />
+                </div>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

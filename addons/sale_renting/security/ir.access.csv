@@ -1,0 +1,11 @@
+id,name,model_id/id,group_id/id,kind,operation,reach,anchor,domain
+access_sale_rental_report_salesman,rental.report,model_sale_rental_report,sale.group_sale_salesman,permission,r,,,
+access_rental_order_wizard,access.rental.order.wizard,model_wizard_sale_order_pickup_return,sale.group_sale_salesman,permission,cru,,,
+access_rental_order_wizard_line,access.rental.order.wizard.line,model_wizard_sale_order_pickup_return_line,sale.group_sale_salesman,permission,cru,,,
+access_product_pricing_user,product.pricing.internal.user,model_product_pricing,base.group_user,permission,r,,,
+access_product_pricing_sale_manager,product.pricing.sale.manager,model_product_pricing,sale.group_sale_manager,permission,cud,,,
+access_sale_temporal_recurrence_public,sale_temporal_recurrence.public,model_sale_temporal_recurrence,base.group_public,permission,r,,,
+access_sale_temporal_recurrence_portal,sale_temporal_recurrence.portal,model_sale_temporal_recurrence,base.group_portal,permission,r,,,
+access_sale_temporal_recurrence_user,sale_temporal_recurrence.internal.user,model_sale_temporal_recurrence,base.group_user,permission,r,,,
+access_sale_temporal_recurrence_sale_manager,sale_temporal_recurrence.sale.manager,model_sale_temporal_recurrence,sale.group_sale_manager,permission,cud,,,
+rental_report_comp_rule,Sales Order multi-company,model_sale_rental_report,base.group_everyone,guard,crud,company,,

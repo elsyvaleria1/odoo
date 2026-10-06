@@ -1,0 +1,86 @@
+// @ts-check
+/** @odoo-module native */
+
+import { onMounted, useScope } from "@odoo/owl";
+import { defineScope } from "@web/core/scope";
+import { getComponentElement } from "@web/core/utils/components";
+
+const envScope = defineScope("web/core/utils/active_element_scope");
+
+const ACTIVE_ELEMENT_SCOPE = Symbol("ui.activeElementScope");
+
+/** @param {{ el: HTMLElement | null }} scope */
+function provideActiveElementScope(scope) {
+    envScope.provide({ [ACTIVE_ELEMENT_SCOPE]: scope });
+}
+
+/** @returns {{ el: HTMLElement | null } | undefined} */
+function useInheritedActiveElementScope() {
+    return /** @type {any} */ (envScope.use())[ACTIVE_ELEMENT_SCOPE];
+}
+
+/** @type {WeakMap<object, { el: HTMLElement | null }>} */
+const OWN_SCOPES = new WeakMap();
+
+/** @type {(node: Node) => Document | HTMLElement} */
+let enclosingScopeOf = () => document;
+/** @type {() => Document | HTMLElement} */
+let currentActiveElement = () => document;
+
+/**
+ * @param {(node: Node) => Document | HTMLElement} resolve
+ * @param {() => Document | HTMLElement} [current]
+ * @returns {() => void}
+ */
+export function publishEnclosingScopeResolver(resolve, current = () => document) {
+    enclosingScopeOf = resolve;
+    currentActiveElement = current;
+    return () => {
+        enclosingScopeOf = () => document;
+        currentActiveElement = () => document;
+    };
+}
+
+/** @returns {{ el: HTMLElement | null }} */
+export function useOwnedActiveElement() {
+    /** @type {{ el: HTMLElement | null }} */
+    const scope = { el: null };
+    OWN_SCOPES.set(useScope(), scope);
+    provideActiveElementScope(scope);
+    return scope;
+}
+
+// a component that renders a dialog mounts after that dialog took the
+// active element (children mount first): the element it was mounted in
+// is its scope while that element stands, exactly as a scope captured at
+// registration would be. An active element a child takes later is not.
+/** @returns {() => Document | HTMLElement} */
+export function useActiveElementScope() {
+    const node = /** @type {any} */ (useScope());
+    const inherited = useInheritedActiveElementScope();
+    /** @type {Document | HTMLElement} */
+    let mountedIn = document;
+    onMounted(() => {
+        mountedIn = currentActiveElement();
+    });
+    return () => {
+        const own = OWN_SCOPES.get(node) ?? inherited;
+        if (own?.el) {
+            return own.el;
+        }
+        const el = getComponentElement(node.component);
+        if (!el) {
+            return document;
+        }
+        const enclosing = enclosingScopeOf(el);
+        if (
+            enclosing === document &&
+            mountedIn !== document &&
+            el.contains(mountedIn) &&
+            mountedIn.isConnected
+        ) {
+            return mountedIn;
+        }
+        return enclosing;
+    };
+}

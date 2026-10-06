@@ -1,0 +1,54 @@
+// @ts-check
+/** @odoo-module native */
+import { DiscussClientAction } from "@mail/core/public_web/discuss_client_action";
+import { browser } from "@web/core/browser/browser";
+import { makeLogger } from "@web/core/debug/debug_logger";
+import { useService } from "@web/core/utils/hooks";
+import { patch } from "@web/core/utils/patch";
+
+const log = makeLogger("mail.rtc");
+patch(DiscussClientAction.prototype, {
+    setup() {
+        super.setup();
+        this.rtc = useService("discuss.rtc");
+    },
+    async restoreDiscussThread() {
+        const hasFullScreenUrl = new URL(browser.location.href).searchParams.has(
+            "fullscreen",
+        );
+        await super.restoreDiscussThread(...arguments);
+        const action = this.props.action;
+        if (!action) {
+            return;
+        }
+        const call = action.context?.call || action.params?.call;
+        if (call === "accept") {
+            log.logic("restore accepts call", () => ({
+                thread: this.store.discuss.thread?.localId,
+            }));
+            await this.rtc.joinCall(this.store.discuss.thread);
+            return;
+        }
+        if (
+            hasFullScreenUrl &&
+            this.store.discuss.thread?.channel?.default_display_mode ===
+                "video_full_screen" &&
+            this.store.discuss.thread.channel.rtc_session_ids.length > 0
+        ) {
+            log.logic("restore auto-joins fullscreen call", () => ({
+                thread: this.store.discuss.thread.localId,
+                sessions: this.store.discuss.thread.channel.rtc_session_ids.length,
+            }));
+            this.joinCallWithDefaultSettings();
+        }
+    },
+    async joinCallWithDefaultSettings() {
+        const mute =
+            browser.localStorage.getItem("discuss_call_preview_join_mute") === "true";
+        const camera =
+            browser.localStorage.getItem("discuss_call_preview_join_video") === "true";
+        log.logic("joinCallWithDefaultSettings", () => ({ mute, camera }));
+        await this.rtc.toggleCall(this.store.discuss.thread, { audio: !mute, camera });
+        await this.rtc.enterFullscreen();
+    },
+});

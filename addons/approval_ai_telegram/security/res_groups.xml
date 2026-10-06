@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="privilege_read_confidence_threshold" model="res.groups">
+        <field
+            name="name">Privilege: the request intake reads how sure a suggested category must be</field>
+        <field
+            name="comment">The Telegram request intake runs as its sender, who reads no system parameter: the confidence a model's category suggestion needs before the intake offers it is the intake's own setting.</field>
+        <field name="is_privilege" eval="True" />
+    </record>
+
+</odoo>

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+
+    <record id="device_profile_isapi_access" model="device.profile">
+        <field name="name">ISAPI Access Control</field>
+        <field
+            name="description">Default configuration profile for Hikvision ISAPI access control devices.</field>
+        <field name="protocol">https</field>
+        <field name="auth_type">basic</field>
+        <field name="auto_reconnect" eval="False" />
+    </record>
+
+</odoo>

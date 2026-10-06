@@ -1,0 +1,51 @@
+.o-mail-CallParticipants-avatar.o-isTalking {
+    outline: 3px solid
+        var(
+            --discuss-talkingColor,
+            light-dark(#{$o-discuss-talkingColor}, #{$o-dark-discuss-talkingColor})
+        );
+    outline-offset: -2px;
+}
+
+.o-mail-CallParticipants-expandBtn {
+    aspect-ratio: 1;
+    transform: translateY(50%);
+    opacity: 75%;
+
+    .o-mail-CallParticipants:hover & {
+        opacity: 100%;
+    }
+
+    &:hover {
+        background-color: o-palette-token(--o-gray-300, $gray-300);
+    }
+}
+
+.o-mail-CallParticipants-name {
+    color: o-token(--o-black, $black);
+    opacity: 60%;
+
+    &.o-isTalking {
+        opacity: 100%;
+    }
+}
+
+.o-mail-CallParticipants-status {
+    &.o-compact {
+        bottom: - map-get($spacers, 1);
+        right: - map-get($spacers, 1);
+
+        span {
+            padding: calc(map-get($spacers, 1) / 2);
+        }
+
+        .o-live {
+            font-size: 0.5rem;
+        }
+    }
+
+    .o-live {
+        font-size: 0.6rem;
+        padding: calc(map-get($spacers, 1) / 2);
+    }
+}

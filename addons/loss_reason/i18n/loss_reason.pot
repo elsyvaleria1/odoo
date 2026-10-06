@@ -1,0 +1,158 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* loss_reason
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-09-26 20:24+0000\n"
+"PO-Revision-Date: 2026-09-26 20:24+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: loss_reason
+#: model:ir.model.fields,field_description:loss_reason.field_loss_reason__active
+msgid "Active"
+msgstr ""
+
+#. module: loss_reason
+#: model_terms:ir.ui.view,arch_db:loss_reason.loss_reason_view_form
+#: model_terms:ir.ui.view,arch_db:loss_reason.loss_reason_view_search
+msgid "Archived"
+msgstr ""
+
+#. module: loss_reason
+#: model:loss.reason,name:loss_reason.loss_reason_budget
+msgid "Budget"
+msgstr ""
+
+#. module: loss_reason
+#: model:ir.model.fields,field_description:loss_reason.field_loss_reason__company_id
+msgid "Company"
+msgstr ""
+
+#. module: loss_reason
+#: model:ir.model.fields,field_description:loss_reason.field_loss_reason__create_uid
+msgid "Created by"
+msgstr ""
+
+#. module: loss_reason
+#: model:ir.model.fields,field_description:loss_reason.field_loss_reason__create_date
+msgid "Created on"
+msgstr ""
+
+#. module: loss_reason
+#: model:loss.reason,name:loss_reason.loss_reason_delivery
+msgid "Delivery date"
+msgstr ""
+
+#. module: loss_reason
+#: model:ir.model.fields,field_description:loss_reason.field_loss_reason__display_name
+msgid "Display Name"
+msgstr ""
+
+#. module: loss_reason
+#: model:ir.model.fields,field_description:loss_reason.field_loss_reason__id
+msgid "ID"
+msgstr ""
+
+#. module: loss_reason
+#: model:ir.model.fields,field_description:loss_reason.field_loss_reason__write_uid
+msgid "Last Updated by"
+msgstr ""
+
+#. module: loss_reason
+#: model:ir.model.fields,field_description:loss_reason.field_loss_reason__write_date
+msgid "Last Updated on"
+msgstr ""
+
+#. module: loss_reason
+#: model:ir.model.fields,help:loss_reason.field_loss_reason__scope
+msgid "Leave empty to offer the reason everywhere a document can be lost."
+msgstr ""
+
+#. module: loss_reason
+#: model:ir.model.fields,help:loss_reason.field_loss_reason__company_id
+msgid "Leave empty to share the reason between companies."
+msgstr ""
+
+#. module: loss_reason
+#: model_terms:ir.ui.view,arch_db:loss_reason.loss_reason_view_form
+msgid "Loss Reason"
+msgstr ""
+
+#. module: loss_reason
+#: model_terms:ir.ui.view,arch_db:loss_reason.loss_reason_view_list
+#: model_terms:ir.ui.view,arch_db:loss_reason.loss_reason_view_search
+msgid "Loss Reasons"
+msgstr ""
+
+#. module: loss_reason
+#: model:loss.reason,name:loss_reason.loss_reason_no_decision
+msgid "No decision"
+msgstr ""
+
+#. module: loss_reason
+#: model:loss.reason,name:loss_reason.loss_reason_payment_terms
+msgid "Payment terms"
+msgstr ""
+
+#. module: loss_reason
+#: model:loss.reason,name:loss_reason.loss_reason_price
+msgid "Price"
+msgstr ""
+
+#. module: loss_reason
+#: model:ir.model.fields.selection,name:loss_reason.selection__loss_reason__scope__purchase
+msgid "Purchases"
+msgstr ""
+
+#. module: loss_reason
+#: model:loss.reason,name:loss_reason.loss_reason_quality
+msgid "Quality or specification"
+msgstr ""
+
+#. module: loss_reason
+#: model:ir.model.fields,field_description:loss_reason.field_loss_reason__name
+msgid "Reason"
+msgstr ""
+
+#. module: loss_reason
+#: model:loss.reason,name:loss_reason.loss_reason_relationship
+msgid "Relationship"
+msgstr ""
+
+#. module: loss_reason
+#: model:ir.model.fields.selection,name:loss_reason.selection__loss_reason__scope__sale
+msgid "Sales"
+msgstr ""
+
+#. module: loss_reason
+#: model:ir.model.fields,field_description:loss_reason.field_loss_reason__scope
+msgid "Scope"
+msgstr ""
+
+#. module: loss_reason
+#: model:ir.model.fields,field_description:loss_reason.field_loss_reason__sequence
+msgid "Sequence"
+msgstr ""
+
+#. module: loss_reason
+#: model:ir.model.fields.selection,name:loss_reason.selection__loss_reason__scope__task
+msgid "Tasks"
+msgstr ""
+
+#. module: loss_reason
+#: model:ir.model,name:loss_reason.model_loss_reason
+msgid "Why a deal did not go ahead"
+msgstr ""
+
+#. module: loss_reason
+#: model_terms:ir.ui.view,arch_db:loss_reason.loss_reason_view_form
+msgid "e.g. Too expensive"
+msgstr ""

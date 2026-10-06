@@ -1,0 +1,7 @@
+id,name,model_id/id,group_id/id,kind,operation,reach,anchor,domain
+access_amazon_recover_order_wizard,access.amazon.recover.order.wizard.sale.manager,model_wizard_amazon_account_sync_order,sale.group_sale_manager,permission,cru,,,
+access_amazon_account_sale_manager,access.amazon.account.sale.manager,model_amazon_account,sale.group_sale_manager,permission,crud,,,
+access_amazon_marketplace_sale_manager,access.amazon.marketplace.sale.manager,model_amazon_marketplace,sale.group_sale_manager,permission,cru,,,
+access_amazon_offer_sale_manager,access.amazon.offer.sale.manager,model_amazon_offer,sale.group_sale_manager,permission,crud,,,
+amazon_account_comp_rule,Amazon Account multi-company,model_amazon_account,base.group_everyone,guard,crud,company,,
+amazon_offer_comp_rule,Amazon Offer multi-company,model_amazon_offer,base.group_everyone,guard,crud,company,,

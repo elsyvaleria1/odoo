@@ -1,0 +1,184 @@
+/** @odoo-module native */
+import "@mail/discuss/core/common/thread_model_patch";
+
+import { fields } from "@mail/core/common/record";
+import { Thread } from "@mail/core/common/thread_model";
+import { DiscussChannel } from "@mail/discuss/core/common/discuss_channel_model";
+import { generateEmojisOnHtml } from "@mail/utils/common/format";
+import { _t } from "@web/core/translation";
+import { Deferred } from "@web/core/utils/concurrency";
+import { patch } from "@web/core/utils/patch";
+
+/** @type {typeof Thread} */
+const threadStaticPatch = {
+    async getOrFetch(data, fieldNames = []) {
+        const thread = await super.getOrFetch(...arguments);
+        if (thread) {
+            return thread;
+        }
+        await this.store.env.services["im_livechat.livechat"].initialized;
+        return super.getOrFetch(...arguments);
+    },
+};
+patch(Thread, threadStaticPatch);
+
+patch(DiscussChannel.prototype, {
+    setup() {
+        super.setup();
+        this.livechat_operator_id = fields.One("res.partner");
+        this.chatbotTypingMessage = fields.One("mail.message", {
+            compute() {
+                if (this.chatbot) {
+                    return {
+                        id: -0.1 - this.id,
+                        thread: this,
+                        author_id: this.livechat_operator_id,
+                    };
+                }
+            },
+        });
+        this.livechatWelcomeMessage = fields.One("mail.message", {
+            compute() {
+                if (this.hasWelcomeMessage) {
+                    const livechatService =
+                        this.store.env.services["im_livechat.livechat"];
+                    return {
+                        id: -0.2 - this.id,
+                        body: livechatService.options.default_message,
+                        thread: this,
+                        author_id: this.livechat_operator_id,
+                    };
+                }
+            },
+        });
+        /**
+         * @type {Deferred}
+         */
+        this.readyToSwapDeferred = new Deferred();
+        this._toggleChatbot = fields.Attr(false, {
+            compute() {
+                return this.chatbot && !this.livechat_end_dt;
+            },
+            onUpdate() {
+                this.isLoadedDeferred.then(() => {
+                    if (this._toggleChatbot) {
+                        this.chatbot.start();
+                    } else {
+                        this.chatbot?.stop();
+                    }
+                });
+            },
+        });
+        this.storeAsActiveLivechats = fields.One("Store", {
+            compute() {
+                return this.isLivechat && !this.livechat_end_dt ? this.store : null;
+            },
+        });
+        this.requested_by_operator = false;
+    },
+    /** @returns {boolean} */
+    get isLastMessageFromCustomer() {
+        return this.newestPersistentOfAllMessage?.isSelfAuthored;
+    },
+
+    get membersThatCanSeen() {
+        return super.membersThatCanSeen.filter(
+            (member) => member.livechat_member_type !== "bot",
+        );
+    },
+
+    get avatarUrl() {
+        if (this.isLivechat) {
+            return this.livechat_operator_id.avatarUrl;
+        }
+        return super.avatarUrl;
+    },
+    get displayName() {
+        if (this.isLivechat && this.livechat_operator_id) {
+            return this.getPersonaName(this.livechat_operator_id);
+        }
+        return super.displayName;
+    },
+    get hasWelcomeMessage() {
+        return this.isLivechat && !this.chatbot && !this.requested_by_operator;
+    },
+    /** @returns {Promise<import("models").Message} */
+    async post(body, postData, extraData = {}) {
+        if (
+            this.chatbot &&
+            !this.chatbot.forwarded &&
+            this.chatbot.currentStep?.step_type !== "free_input_multi"
+        ) {
+            this.chatbot.isProcessingAnswer = true;
+        }
+        if (this.isLivechat && this.isTransient) {
+            if (this.chatbot && extraData.selected_answer_id) {
+                this.chatbot.currentStep.selectedAnswer = this.store[
+                    "chatbot.script.answer"
+                ].get(extraData.selected_answer_id);
+            }
+            const authorModelName = this.store.self?.Model.getName();
+            const temporaryMsg = this.store["mail.message"].insert({
+                author_id:
+                    authorModelName === "res.partner" ? this.store.self : undefined,
+                author_guest_id:
+                    authorModelName === "mail.guest" ? this.store.self : undefined,
+                body: await generateEmojisOnHtml(body, { allowEmojiLoading: false }),
+                id: this.store.getNextTemporaryId(),
+                model: "discuss.channel",
+                res_id: this.id,
+                thread: this,
+            });
+            this.messages.push(temporaryMsg);
+            this?.chatbot?._simulateTyping(2 ** 31 - 1);
+            const thread =
+                await this.store.env.services["im_livechat.livechat"].persist(this);
+            if (this.store.self_partner) {
+                temporaryMsg.author_id = this.store.self_partner;
+            } else {
+                temporaryMsg.author_guest_id = this.store.self_guest;
+            }
+            if (!thread) {
+                return;
+            }
+            await thread.isLoadedDeferred;
+            return thread
+                .post(...arguments)
+                .then(() => thread.readyToSwapDeferred.resolve());
+        }
+        const message = await super.post(...arguments);
+        await this.chatbot?.processAnswer(message);
+        return message;
+    },
+
+    get composerDisabled() {
+        const step = this.chatbot?.currentStep;
+        if (this.chatbot?.forwarded && !this.livechat_end_dt) {
+            return false;
+        }
+        return (
+            super.composerDisabled ||
+            this.chatbot?.isProcessingAnswer ||
+            (step &&
+                !step.operatorFound &&
+                (step.completed || !step.expectAnswer || step.answer_ids.length > 0))
+        );
+    },
+
+    get composerDisabledText() {
+        const text = super.composerDisabledText;
+        if (text || !this.chatbot) {
+            return text;
+        }
+        if (this.chatbot.completed) {
+            return _t("This livechat conversation has ended");
+        }
+        if (
+            this.chatbot.currentStep?.step_type === "question_selection" &&
+            !this.chatbot.currentStep.selectedAnswer
+        ) {
+            return _t("Select an option above");
+        }
+        return _t("Say something");
+    },
+});

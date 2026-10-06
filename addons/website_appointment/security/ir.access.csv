@@ -1,0 +1,3 @@
+id,name,model_id/id,group_id/id,kind,operation,reach,anchor,domain
+appointment_type_rule_public_group_public,Calendar: public: published only,model_appointment_type,base.group_public,permission,r,all,,"[('website_published', '=', True)]"
+appointment_type_rule_public_group_portal,Calendar: public: published only,model_appointment_type,base.group_portal,permission,r,all,,"[('website_published', '=', True)]"

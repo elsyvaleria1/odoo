@@ -1,0 +1,331 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_credit_profile_form" model="ir.ui.view">
+        <field name="name">credit.profile.form</field>
+        <field name="model">credit.profile</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button
+                        name="action_refresh_metrics"
+                        type="object"
+                        string="Refresh Metrics"
+                        groups="account_credit.group_credit_user" />
+                    <button
+                        name="action_open_review"
+                        type="object"
+                        string="Review"
+                        groups="account_credit.group_credit_user"
+                        class="oe_highlight" />
+                    <button
+                        name="action_grant_exception"
+                        type="object"
+                        string="Grant Exception"
+                        groups="account_credit.group_credit_manager"
+                        invisible="exception_active or hold_active" />
+                    <button
+                        name="action_end_exception"
+                        type="object"
+                        string="End Exception"
+                        groups="account_credit.group_credit_manager"
+                        invisible="not exception_active" />
+                    <button
+                        name="action_toggle_legal"
+                        type="object"
+                        string="Send to Legal Process"
+                        groups="account_credit.group_credit_manager"
+                        invisible="hold_active" />
+                    <button
+                        name="action_toggle_legal"
+                        type="object"
+                        string="Legal Process Done"
+                        groups="account_credit.group_credit_manager"
+                        invisible="not hold_active" />
+                    <field
+                        name="state"
+                        widget="statusbar"
+                        statusbar_visible="cash,active,watch,default" />
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button
+                            name="action_view_facilities"
+                            type="object"
+                            icon="fa-credit-card"
+                            class="oe_stat_button">
+                            <field
+                                name="facility_count"
+                                string="Facilities"
+                                widget="statinfo" />
+                        </button>
+                        <button
+                            name="action_view_reviews"
+                            type="object"
+                            icon="fa-check-square-o"
+                            class="oe_stat_button">
+                            <field
+                                name="review_count"
+                                string="Reviews"
+                                widget="statinfo" />
+                        </button>
+                        <button
+                            name="action_view_events"
+                            type="object"
+                            icon="fa-bolt"
+                            class="oe_stat_button">
+                            <field
+                                name="event_count"
+                                string="Events"
+                                widget="statinfo" />
+                        </button>
+                    </div>
+                    <widget
+                        name="web_ribbon"
+                        title="Archived"
+                        invisible="active"
+                        bg_color="text-bg-danger" />
+                    <div class="oe_title">
+                        <h1><field name="partner_id" placeholder="Customer" readonly="id" /></h1>
+                    </div>
+                    <div
+                        class="alert alert-warning"
+                        role="alert"
+                        invisible="not warning">
+                        <field name="warning" />
+                    </div>
+                    <group>
+                        <group name="rating" string="Rating">
+                            <field
+                                name="company_id"
+                                groups="base.group_multi_company"
+                                readonly="id" />
+                            <field name="grade_id" readonly="1" />
+                            <field name="grade_effective_id" />
+                            <field name="grade_proposed_id" />
+                            <field name="score" />
+                            <field name="next_review_date" />
+                            <field name="active" invisible="1" />
+                            <field name="hold_active" invisible="1" />
+                            <field name="exception_active" invisible="1" />
+                            <field name="currency_id" invisible="1" />
+                        </group>
+                        <group name="exposure" string="Exposure and Limit">
+                            <field name="exposure_open" />
+                            <field name="exposure_overdue" />
+                            <field name="exposure_overdue_days" />
+                            <field name="exposure_draft" />
+                            <field name="exposure_uninvoiced" />
+                            <field name="exposure_total" />
+                            <field name="collateral_amount" />
+                            <field name="facility_amount" />
+                            <field name="limit_amount" />
+                            <field name="limit_available" />
+                            <field name="limit_suggested" />
+                        </group>
+                    </group>
+                    <group>
+                        <group name="behaviour" string="Payment Behaviour">
+                            <field name="metrics_date" />
+                            <field name="dbt_weighted" />
+                            <field name="late_ratio" />
+                            <field name="max_days_late" />
+                            <field name="oldest_open_days" />
+                            <field name="overdue_amount" />
+                            <field name="tenure_months" />
+                            <field name="purchases_12m" />
+                        </group>
+                        <group name="external" string="Bureau and Financials">
+                            <field name="bureau_score" />
+                            <field name="bureau_date" />
+                            <field name="fin_date" />
+                            <field name="z_score" />
+                        </group>
+                        <group name="exception" string="Exception">
+                            <field name="exception_until" readonly="1" />
+                            <field name="exception_reason" readonly="1" />
+                            <field name="exception_user_id" />
+                            <field name="document_compliant" />
+                        </group>
+                    </group>
+                    <notebook>
+                        <page name="financials" string="Financial Statements">
+                            <group>
+                                <group>
+                                    <field name="fin_total_assets" />
+                                    <field name="fin_current_assets" />
+                                    <field name="fin_current_liabilities" />
+                                </group>
+                                <group>
+                                    <field name="fin_total_liabilities" />
+                                    <field name="fin_retained_earnings" />
+                                    <field name="fin_ebit" />
+                                    <field name="fin_equity_book" />
+                                </group>
+                            </group>
+                        </page>
+                        <page name="score" string="Score">
+                            <field name="score_line_ids">
+                                <list>
+                                    <field name="dimension_id" />
+                                    <field name="source_ref" />
+                                    <field name="value" />
+                                    <field name="points" sum="Total" />
+                                    <field name="max_points" sum="Total" />
+                                    <field name="applicable" />
+                                    <field name="note" optional="hide" />
+                                </list>
+                            </field>
+                        </page>
+                        <page name="facilities" string="Facilities">
+                            <field
+                                name="facility_ids"
+                                context="{'default_profile_id': id}">
+                                <list>
+                                    <field name="date_start" />
+                                    <field name="source" />
+                                    <field name="amount" />
+                                    <field name="currency_id" column_invisible="1" />
+                                    <field name="date_end" />
+                                    <field name="state" widget="badge" />
+                                    <field name="user_id" />
+                                    <field name="reason" />
+                                </list>
+                            </field>
+                        </page>
+                        <page name="events" string="Events">
+                            <field name="event_ids" readonly="1">
+                                <list decoration-muted="not is_open">
+                                    <field name="date" />
+                                    <field name="type_id" />
+                                    <field name="severity" widget="badge" />
+                                    <field name="amount" />
+                                    <field name="currency_id" column_invisible="1" />
+                                    <field name="note" />
+                                    <field name="is_open" />
+                                </list>
+                            </field>
+                        </page>
+                        <page name="reviews" string="Reviews">
+                            <field name="review_ids" readonly="1">
+                                <list>
+                                    <field name="create_date" />
+                                    <field name="kind" />
+                                    <field name="score" />
+                                    <field name="grade_proposed_id" />
+                                    <field name="grade_decided_id" />
+                                    <field name="limit_decided" />
+                                    <field name="currency_id" column_invisible="1" />
+                                    <field name="state" widget="badge" />
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter />
+            </form>
+        </field>
+    </record>
+
+    <record id="view_credit_profile_list" model="ir.ui.view">
+        <field name="name">credit.profile.list</field>
+        <field name="model">credit.profile</field>
+        <field name="arch" type="xml">
+            <list
+                decoration-danger="state == 'default'"
+                decoration-muted="state == 'cash'"
+                decoration-warning="state == 'watch'">
+                <field name="partner_id" />
+                <field
+                    name="company_id"
+                    optional="show"
+                    groups="base.group_multi_company" />
+                <field name="grade_id" />
+                <field name="grade_proposed_id" optional="show" />
+                <field name="score" />
+                <field name="state" widget="badge" />
+                <field name="exposure_total" />
+                <field name="exposure_overdue" />
+                <field name="limit_amount" />
+                <field name="currency_id" column_invisible="1" />
+                <field name="dbt_weighted" optional="show" />
+                <field name="exception_until" optional="show" />
+                <field name="next_review_date" optional="show" />
+            </list>
+        </field>
+    </record>
+
+    <record id="view_credit_profile_search" model="ir.ui.view">
+        <field name="name">credit.profile.search</field>
+        <field name="model">credit.profile</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="partner_id" />
+                <field name="grade_id" />
+                <filter
+                    name="exceptions"
+                    string="Under exception"
+                    domain="[('exception_until', '!=', False)]" />
+                <filter
+                    name="in_default"
+                    string="In default"
+                    domain="[('state', '=', 'default')]" />
+                <filter
+                    name="watch"
+                    string="Watch"
+                    domain="[('state', '=', 'watch')]" />
+                <filter
+                    name="downgrade"
+                    string="Proposed lower"
+                    domain="[('grade_proposed_id.sequence', '&gt;', 0)]" />
+                <filter
+                    name="review_due"
+                    string="Review due"
+                    domain="[('next_review_date', '&lt;=', context_today().strftime('%Y-%m-%d'))]" />
+                <group>
+                    <filter
+                        name="group_grade"
+                        string="Grade"
+                        context="{'group_by': 'grade_id'}" />
+                    <filter
+                        name="group_state"
+                        string="State"
+                        context="{'group_by': 'state'}" />
+                    <filter
+                        name="group_company"
+                        string="Company"
+                        context="{'group_by': 'company_id'}" />
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="view_credit_profile_pivot" model="ir.ui.view">
+        <field name="name">credit.profile.pivot</field>
+        <field name="model">credit.profile</field>
+        <field name="arch" type="xml">
+            <pivot>
+                <field name="grade_id" type="row" />
+                <field name="overdue_amount" type="measure" />
+                <field name="purchases_12m" type="measure" />
+            </pivot>
+        </field>
+    </record>
+
+    <record id="action_credit_profile" model="ir.actions.act_window">
+        <field name="name">Credit Profiles</field>
+        <field name="res_model">credit.profile</field>
+        <field name="view_mode">list,form,pivot</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No credit profile yet
+            </p>
+            <p>
+                A profile is created the first time a customer is graded or buys on
+                credit. It carries the grade, the measured payment behaviour, the
+                exposure, the facilities and every decision taken.
+            </p>
+        </field>
+    </record>
+
+</odoo>

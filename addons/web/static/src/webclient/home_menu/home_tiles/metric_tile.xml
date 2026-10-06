@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="web.MetricTile">
+        <p t-if="!this.data.configured" class="text-muted small mb-0">Choose a favourite filter to follow in customize mode.</p>
+        <button t-else="" type="button" class="btn btn-link p-0 text-start d-flex flex-column w-100 o_metric_tile" t-on-click="() => this.open()">
+            <span class="o_metric_tile_value" t-out="this.value"/>
+            <small class="text-muted text-truncate w-100"><t t-out="this.data.label"/> · <t t-out="this.data.name"/></small>
+            <svg class="o_metric_tile_spark mt-1" viewBox="0 0 100 24" preserveAspectRatio="none" aria-hidden="true">
+                <polyline t-att-points="this.sparkPoints" fill="none" stroke="currentColor" stroke-width="2" vector-effect="non-scaling-stroke"/>
+            </svg>
+        </button>
+    </t>
+
+    <t t-name="web.MetricSettings">
+        <div class="o_metric_settings d-flex flex-column gap-2">
+            <p t-if="this.state.failed" class="text-muted small mb-0 o_metric_settings_failed">Your favourite filters could not be loaded.</p>
+            <p t-elif="!this.state.choices.length" class="text-muted small mb-0">Save a favourite filter in any list first.</p>
+            <t t-else="">
+                <label class="d-flex flex-column small">
+                    Favourite
+                    <select class="form-select form-select-sm o_metric_settings_filter" t-on-change="this.onFilterChange">
+                        <option t-foreach="this.state.choices" t-as="choice" t-key="choice.id" t-att-value="choice.id"
+                                t-att-selected="choice.id === this.state.filterId">
+                            <t t-out="choice.name"/> (<t t-out="choice.model_name"/>)
+                        </option>
+                    </select>
+                </label>
+                <label t-if="this.choice" class="d-flex flex-column small">
+                    Measure
+                    <select class="form-select form-select-sm o_metric_settings_measure" t-on-change="this.onMeasureChange">
+                        <option t-foreach="this.choice.measures" t-as="measure" t-key="measure.name" t-att-value="measure.name"
+                                t-att-selected="measure.name === this.state.measure" t-out="measure.label"/>
+                    </select>
+                </label>
+            </t>
+            <div class="d-flex gap-2">
+                <button type="button" class="btn btn-sm btn-primary o_metric_settings_save" t-att-disabled="!this.choice" t-on-click="() => this.save()">Save</button>
+                <button type="button" class="btn btn-sm btn-secondary o_metric_settings_cancel" t-on-click="() => this.props.onCancel()">Cancel</button>
+            </div>
+        </div>
+    </t>
+
+</templates>

@@ -1,0 +1,50 @@
+/** @odoo-module native */
+import { Component, useProps } from "@odoo/owl";
+import { getNonzeroColorIndex } from "@web/core/colors/colors";
+import { registry } from "@web/core/registry";
+import { useService } from "@web/core/utils/hooks";
+import { standardFieldProps } from "@web/fields/standard_field_props";
+
+class MatchingLink extends Component {
+    static props = { ...standardFieldProps };
+    static template = "account.MatchingLink";
+    props = useProps(this.constructor.props);
+
+    setup() {
+        this.orm = useService("orm");
+        this.action = useService("action");
+    }
+
+    async reconcile() {
+        this.action.doAction("account.action_move_line_posted_unreconciled", {
+            additionalContext: {
+                search_default_partner_id: this.props.record.data.partner_id.id,
+                search_default_account_id: this.props.record.data.account_id.id,
+            },
+        });
+    }
+
+    async viewMatch() {
+        const action = await this.orm.call(
+            "account.move.line",
+            "open_reconcile_view",
+            [this.props.record.resId],
+            {},
+        );
+        this.action.doAction(action, { additionalContext: { is_matched_view: true } });
+    }
+
+    get colorCode() {
+        const matchValue = this.props.record.data[this.props.name];
+        const matchColorValue = matchValue.replace("P", "");
+        if (matchColorValue === "*") {
+            return 0;
+        } else {
+            return getNonzeroColorIndex(parseInt(matchColorValue));
+        }
+    }
+}
+
+registry.category("fields").add("matching_link_widget", {
+    component: MatchingLink,
+});

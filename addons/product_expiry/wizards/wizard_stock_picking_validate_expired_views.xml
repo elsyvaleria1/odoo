@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="confirm_expiry_view" model="ir.ui.view">
+        <field name="name">Confirm</field>
+        <field name="model">wizard.stock.picking.validate.expired</field>
+        <field name="arch" type="xml">
+            <form string="Confirmation">
+                <p>
+                    <field name="description" />
+                </p>
+                <field name="show_lots" invisible="1" />
+                <field name="trace_ids" invisible="not show_lots">
+                    <list string="Expired Lot(s)">
+                        <field name="product_id" />
+                        <field name="name" />
+                    </list>
+                </field>
+                <footer>
+                    <button
+                        name="process"
+                        type="object"
+                        string="Confirm"
+                        groups="stock.group_stock_manager"
+                        class="btn-primary"
+                        data-hotkey="q" />
+                    <button
+                        name="process_no_expired"
+                        type="object"
+                        string="Proceed except expired"
+                        class="btn-secondary"
+                        data-hotkey="w" />
+                    <button
+                        special="cancel"
+                        string="Discard"
+                        class="btn-secondary"
+                        data-hotkey="x" />
+                </footer>
+            </form>
+        </field>
+    </record>
+
+</odoo>

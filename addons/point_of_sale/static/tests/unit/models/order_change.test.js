@@ -1,0 +1,60 @@
+import { expect, test } from "@odoo/hoot";
+import {
+    changesToOrder,
+    getOrderChanges,
+} from "@point_of_sale/app/models/utils/order_change";
+
+import { definePosModels } from "../data/generate_model_definitions.js";
+import { getFilledOrder, setupPosEnv } from "../utils.js";
+
+definePosModels();
+
+test("changesToOrder(cancelled) does not mutate the persisted prep-change lines", async () => {
+    const store = await setupPosEnv();
+    const order = await getFilledOrder(store);
+    const categIds = new Set(order.lines[0].product_id.parentPosCategIds);
+
+    order.updateLastOrderChange();
+    const persisted = order.last_order_preparation_change.lines;
+    const persistedEntries = Object.values(persisted);
+    const quantitiesBefore = persistedEntries.map((l) => l.quantity);
+    expect(persistedEntries.length).toBeGreaterThan(0);
+
+    const result = changesToOrder(order, categIds, true);
+
+    for (const item of result.cancelled) {
+        expect(persistedEntries.includes(item)).toBe(false);
+    }
+    expect(Object.values(persisted).map((l) => l.quantity)).toEqual(quantitiesBefore);
+});
+
+test("qty + note changed together keeps the qty delta on the ticket", async () => {
+    const store = await setupPosEnv();
+    const order = await getFilledOrder(store);
+    const line = order.lines[0];
+    const categIds = new Set(line.product_id.parentPosCategIds);
+
+    order.updateLastOrderChange();
+    const sentQty = line.getQuantity();
+
+    line.setQuantity(sentQty + 1);
+    line.setNote("extra sauce");
+
+    const changes = getOrderChanges(order, categIds);
+    expect(changes.orderlines[line.uuid].quantity).toBe(1);
+    expect(changes.noteUpdate[line.uuid].quantity).toBe(sentQty);
+});
+
+test("a note-only edit counts as a pending change", async () => {
+    const store = await setupPosEnv();
+    const order = await getFilledOrder(store);
+    const line = order.lines[0];
+    const categIds = new Set(line.product_id.parentPosCategIds);
+
+    order.updateLastOrderChange();
+    line.setNote("no onions");
+
+    const changes = getOrderChanges(order, categIds);
+    expect(changes.nbrOfChanges).toBe(1);
+    expect(changes.noteUpdate[line.uuid].quantity).toBe(line.getQuantity());
+});

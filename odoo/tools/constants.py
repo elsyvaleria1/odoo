@@ -1,0 +1,83 @@
+__all__ = [
+    "CACHES_BY_KEY",
+    "CRON_TRIGGER_CHANNEL",
+    "JOB_QUEUE_CHANNEL",
+    "REGISTRY_CACHES",
+    "ROLLBACK_SAFE_CACHES",
+    "STREAM_CHANNEL",
+]
+
+CRON_TRIGGER_CHANNEL = "cron_trigger"
+
+JOB_QUEUE_CHANNEL = "job_queue"
+
+STREAM_CHANNEL = "stream_reconcile"
+
+
+REGISTRY_CACHES = {
+    "default": 8192,
+    "assets": 512,
+    "assets.links": 8192,
+    "assets.files": 8192,
+    "stable": 1024,
+    "templates": 1024,
+    "templates.mail": 512,
+    "routing": 1024,
+    "routing.rewrites": 8192,
+    "templates.cached_values": 2048,
+    "groups": 64,
+    "memberships": 2048,
+    "product_variants": 8192,
+    "actions": 256,
+    "xmlid": 8192,
+    "mail": 64,
+}
+
+CACHES_BY_KEY = {
+    "default": (
+        "default",
+        "templates.cached_values",
+        "product_variants",
+        "xmlid",
+        "mail",
+    ),
+    "assets": ("assets", "assets.links", "assets.files", "templates.cached_values"),
+    "stable": (
+        "stable",
+        "default",
+        "templates.cached_values",
+        "product_variants",
+        "xmlid",
+        "mail",
+    ),
+    "templates": ("templates", "templates.mail", "templates.cached_values"),
+    "routing": ("routing", "routing.rewrites", "templates.cached_values"),
+    "groups": (
+        "groups",
+        "memberships",
+        "templates",
+        "templates.mail",
+        "templates.cached_values",
+    ),
+    "product_variants": ("product_variants",),
+    "actions": ("actions",),
+    "xmlid": ("xmlid",),
+    "mail": ("mail",),
+    "memberships": ("memberships",),
+}
+
+# every write a value of these depends on invalidates them, so an entry stored by
+# a transaction that never invalidated its cache is still right after a rollback;
+# not templates.cached_values: its rendered fragments read records whose writes
+# do not clear it
+ROLLBACK_SAFE_CACHES = frozenset(
+    {
+        "assets",
+        "assets.links",
+        "assets.files",
+        "routing",
+        "routing.rewrites",
+        "templates",
+        "templates.mail",
+    }
+)

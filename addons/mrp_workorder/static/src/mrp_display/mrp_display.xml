@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="mrp_workorder.MrpDisplay">
+        <div class="o_action o_mrp_display h-100 overflow-auto">
+            <div class="d-flex py-2 px-3 bg-view border-bottom flex-wrap flex-md-nowrap" t-att-class="{'gap-1': !this.state.firstLoad}">
+                <div class="d-flex flex-nowrap justify-content-end align-items-center gap-2 overflow-auto" t-att-class="{'flex-grow-1': !this.state.firstLoad}">
+                    <button class="o_mrp_display_back_button o_btn_icon btn btn-secondary" t-on-click="this.onClickBack" t-if="this.displayBackButton &amp;&amp; !this.ui.isSmall">
+                        <i class="fa-solid fa-chevron-left" role="img"/>
+                    </button>
+                    <t t-if="this.ui.isSmall" t-call="mrp_workorder.MrpDisplay.BurgerMenu"/>
+                    <ControlPanelButtons t-if="this.groups.workorders &amp;&amp; !this.state.firstLoad"
+                        productionCount="this.productions.length"
+                        workorders="this.filteredWorkorders"
+                        workcenters="this.state.workcenters"
+                        toggleWorkcenter="this.toggleWorkcenterDialog.bind(this)"
+                        selectWorkcenter="this.selectWorkcenter.bind(this)"
+                        activeWorkcenter="this.state.activeWorkcenter"
+                        relevantCount="this.relevantRecords.length"
+                        adminWorkorders="this.adminWorkorderIds"
+                        hideNewWorkcenterButton="this.shouldHideNewWorkcenterButton"
+                    />
+                    <MrpDisplayEmployeesPanel t-if="this.groups.workorders &amp;&amp; this.ui.isSmall &amp;&amp; !this.state.firstLoad" employees="this.useEmployee.employees"
+                    setSessionOwner.bind="this.useEmployee.toggleSessionOwner"
+                    popupAddEmployee.bind="this.popupAddEmployee"/>
+                </div>
+                <div class="d-flex align-items-center justify-content-end gap-2 flex-grow-1 flex-grow-md-0" t-att-class="{'flex-basis-100': this.ui.isSmall}">
+                    <MrpDisplaySearchBar t-if="!this.state.firstLoad">
+                        <t t-set-slot="search-bar-additional-menu" t-if="this.groups.workorders">
+                            <div class="o_dropdown_container border-start px-3">
+                                <div class="px-3 fs-5 mb-2">
+                                    <i class="me-2 text-info fa-solid fa-filter" role="img"/>
+                                    <h5 class="o_dropdown_title d-inline">WO Filters</h5>
+                                </div>
+                                <t t-foreach="this.searchModel.state.workorderFilters" t-as="item" t-key="item.name">
+                                    <CheckboxItem
+                                            class="{ 'o_menu_item text-truncate': true, selected: item.isActive }"
+                                            checked="item.isActive"
+                                            closingMode="'none'"
+                                            onSelected="() => {item.isActive = !item.isActive; this.invalidateRecordIdsCache();}"
+                                            t-out="item.string"/>
+                                </t>
+                            </div>
+                        </t>
+                    </MrpDisplaySearchBar>
+                    <Pager
+                        t-if="this.model.root.count > this.model.root.limit &amp;&amp; !this.state.firstLoad"
+                        total="this.model.root.count"
+                        offset="this.model.root.offset"
+                        limit="this.model.root.limit"
+                        onUpdate.bind="this._onPagerChanged"/>
+                    <t t-if="!this.ui.isSmall" t-call="mrp_workorder.MrpDisplay.BurgerMenu"/>
+                </div>
+            </div>
+            <div t-if="this.state.firstLoad" class="d-flex align-items-center justify-content-center overflow-hidden">
+                <div class="o_mrp_display_onboarding_image position-relative">
+                    <img class="position-absolute z-n1" src="/mrp_workorder/static/img/op_sidebar.png" alt="Shop Floor Onboarding Image"/>
+                    <span class="o_annotation o_annotation_1 o_annotation_end position-absolute fw-bolder">Time Clock</span>
+                    <span class="o_annotation o_annotation_2 o_annotation_end position-absolute fw-bolder">Quality Control</span>
+                    <span class="o_annotation o_annotation_3 o_annotation_start position-absolute fw-bolder">Feedback Loop</span>
+                    <span class="o_annotation o_annotation_4 o_annotation_start position-absolute fw-bolder">Register Materials</span>
+                    <span class="o_annotation o_annotation_5 o_annotation_start position-absolute fw-bolder">Select Operator</span>
+                </div>
+                <div class="o_mrp_display_onboarding_button_container position-fixed bottom-0 w-100 text-center">
+                    <button class="btn btn-lg btn-primary my-5" t-on-click="() => this.toggleWorkcenterDialog()">Activate your Work Centers</button>
+                </div>
+            </div>
+            <main t-else="" class="o_mrp_display_content o_content o_component_with_search_panel">
+                <MrpDisplayEmployeesPanel t-if="this.groups.workorders &amp;&amp; !this.ui.isSmall" employees="this.useEmployee.employees"
+                    setSessionOwner.bind="this.useEmployee.toggleSessionOwner"
+                    popupAddEmployee.bind="this.popupAddEmployee"/>
+                <div class="o_mrp_display_records position-relative d-grid align-items-start align-content-start flex-grow-1 gap-3 p-3 h-auto h-md-100">
+                <t t-foreach="this.relevantRecords" t-as="record" t-key="record.id">
+                    <MrpDisplayRecord
+                        groups="this.groups"
+                        record="record"
+                        production="this.getProduction(record)"
+                        workcenters="this.state.workcenters"
+                        selectWorkcenter.bind="this.selectWorkcenter"
+                        updateEmployees.bind="this.useEmployee.getConnectedEmployees"
+                        sessionOwner="this.useEmployee.employees.admin"
+                        removeFromCache.bind="this.removeRecordIdFromCache"
+                        barcodeTarget="this.barcodeTargetRecord === record.resId"
+                        />
+                </t>
+                <t t-if="!this.relevantRecords.length">
+                    <t t-foreach="this.demoMORecords" t-as="record" t-key="record.id">
+                        <MrpDisplayRecord
+                        groups="this.groups"
+                        record="record"
+                        production="this.getProduction(record)"
+                        workcenters="this.state.workcenters"
+                        selectWorkcenter.bind="this.selectWorkcenter"
+                        updateEmployees.bind="this.useEmployee.getConnectedEmployees"
+                        sessionOwner="this.useEmployee.employees.admin"
+                        removeFromCache.bind="this.removeRecordIdFromCache"
+                        demoRecord="true"
+                        />
+                    </t>
+                    <div class="o_view_nocontent">
+                        <div class="o_nocontent_help">
+                            <p>
+                                Shop Floor Control Panel
+                            </p><p>
+                                Track work orders, show instructions and record manufacturing operations from here:
+                                quality control, consumed quantities, lot/serial numbers, etc.
+                            </p>
+                            <button role="button" class="btn btn-lg btn-primary" t-on-click="this.setMaxLimit" t-if="this.model.root.count > this.state.limit">Load All Manufacturing Orders</button>
+                            <button role="button" class="btn btn-lg btn-primary" t-on-click="this.loadSamples" t-if="this.state.canLoadSamples" t-att-disabled="this.state.canLoadSamples === 'disabled'">Load Samples</button>
+                        </div>
+                    </div>
+                </t>
+            </div>
+            </main>
+        </div>
+    </t>
+    <t t-name="mrp_workorder.MrpDisplay.BurgerMenu">
+        <div class="o_cp_burger_menu">
+            <Dropdown>
+                <button class="o_btn_icon btn btn-light" type="button">
+                    <i class="fa-solid fa-bars" role="img"/>
+                </button>
+                <t t-set-slot="content">
+                    <DropdownItem class="'py-2'" onSelected="() => this.onClickRefresh()">
+                        <i class="fa-solid fa-arrows-rotate me-2" role="img"/>Reload Data
+                    </DropdownItem>
+                    <DropdownItem class="'py-2'"
+                        attrs="{ href: '/scoped_app?app_id=mrp_shop_floor&amp;path=scoped_app/shop-floor&amp;app_name=' + this.appName, target: '_blank' }">
+                        <i class="fa-solid fa-arrow-circle-down me-2" role="img"/>Install App
+                    </DropdownItem>
+                    <DropdownItem t-if="this.displayBackButton &amp;&amp; this.ui.isSmall" class="'py-2'" onSelected="() => this.onClickBack()">
+                        <i class="fa-solid fa-arrow-left me-2" role="img"/>
+                        Back
+                    </DropdownItem>
+                    <DropdownItem t-if="!this.pwaService.isScopedApp" class="'py-2'" onSelected="() => this.close()">
+                        <i class="fa-solid fa-th me-2" role="img"/>Close
+                    </DropdownItem>
+                </t>
+            </Dropdown>
+        </div>
+    </t>
+</templates>

@@ -1,0 +1,6 @@
+id,name,model_id/id,group_id/id,kind,operation,reach,anchor,domain
+voip_call_officer_rule,phone.call: officers have full access to records in their companies.,phone_call.model_phone_call,group_voip_officer,permission,crud,company,,
+voip_provider_user_rule,voip.provider: users can only read records in their companies.,model_voip_provider,base.group_user,permission,r,company,,
+voip_provider_administrator_rule,voip.provider: administrators have full access to records in their companies.,model_voip_provider,group_voip_admin,permission,crud,company,,
+voip_provider_user_rule_group_voip_officer,voip.provider: users can only read records in their companies.,model_voip_provider,group_voip_officer,permission,r,company,,
+voip_provider_user_rule_group_voip_admin,voip.provider: users can only read records in their companies.,model_voip_provider,group_voip_admin,permission,crud,company,,

@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <data noupdate="1">
+        <record id="access_review_administrators" model="access.review.campaign">
+            <field name="name">Administrators</field>
+            <field name="kind">memberships</field>
+            <field
+                name="group_ids"
+                eval="[Command.set([ref('base.group_system'), ref('base.group_erp_manager')])]" />
+            <field name="reviewer">admin_group</field>
+            <field name="recurrence_months">3</field>
+        </record>
+        <record id="access_review_links" model="access.review.campaign">
+            <field name="name">External links issued by hand</field>
+            <field name="kind">links</field>
+            <field
+                name="description">Links a person shared by hand, each asked of whoever shared it (or of the access administrators when they are gone). The links carried over by the upgrade under their old address are not reviewed: they stop opening a year after the upgrade.</field>
+            <field
+                name="link_domain">[('state', '=', 'live'), ('legacy_source', '=', False), ('cause', '=', 'share')]</field>
+            <field name="reviewer">issuer</field>
+            <field name="recurrence_months">3</field>
+        </record>
+        <record id="access_review_exceptions" model="access.review.campaign">
+            <field name="name">Exceptions ending soon</field>
+            <field name="kind">exceptions</field>
+            <field name="reviewer">issuer</field>
+            <field name="ending_within_days">30</field>
+            <field name="recurrence_months">1</field>
+        </record>
+    </data>
+
+</odoo>

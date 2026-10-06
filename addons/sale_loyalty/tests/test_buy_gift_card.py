@@ -1,0 +1,89 @@
+from odoo import Command
+from odoo.tests.common import tagged
+
+from odoo.addons.sale_loyalty.tests.common import TestSaleCouponCommon
+
+
+@tagged("-at_install", "post_install")
+class TestBuyGiftCard(TestSaleCouponCommon):
+    def test_buying_gift_card(self):
+        order = self.empty_order
+        self.immediate_promotion_program.active = False
+        order.write(
+            {
+                "line_ids": [
+                    (
+                        0,
+                        False,
+                        {
+                            "product_id": self.product_A.id,
+                            "name": "Ordinary Product A",
+                            "product_qty": 1.0,
+                        },
+                    ),
+                    (
+                        0,
+                        False,
+                        {
+                            "product_id": self.product_gift_card.id,
+                            "name": "Gift Card Product",
+                            "product_qty": 1.0,
+                        },
+                    ),
+                ]
+            }
+        )
+        self.assertEqual(len(order.line_ids.ids), 2)
+        self.assertEqual(len(order._get_reward_coupons()), 0)
+        order._update_programs_and_rewards()
+        self.assertEqual(len(order._get_reward_coupons()), 1)
+        order.line_ids[1].product_qty = 2
+        order._update_programs_and_rewards()
+        self.assertEqual(len(order._get_reward_coupons()), 2)
+        order.line_ids[1].product_qty = 1
+        order._update_programs_and_rewards()
+        self.assertEqual(len(order._get_reward_coupons()), 1)
+
+    def test_gift_card_email_sender(self):
+        mail_template = self.env["mail.template"].create(
+            {
+                "name": "Gift Card Mail",
+                "model_id": self.env.ref("loyalty.model_loyalty_card").id,
+                "auto_delete": False,
+            }
+        )
+        self.program_gift_card.communication_plan_ids = [
+            Command.clear(),
+            Command.create({"trigger": "create", "mail_template_id": mail_template.id}),
+        ]
+        order = self.empty_order
+        salesman = order.user_id.partner_id.check_singleton()
+        salesman.email = "sales@company.co"
+        company = order.company_id.partner_id
+        company.email = "noreply@company.co"
+        order.write(
+            {
+                "line_ids": [Command.create({"product_id": self.product_gift_card.id})],
+            }
+        )
+        order._update_programs_and_rewards()
+
+        orders = order + order.copy({"user_id": None})
+
+        self.env["mail.mail"].search([]).sudo().unlink()
+
+        public_user = self.env.ref("base.public_user")
+        orders.with_user(public_user).with_company(
+            order.company_id
+        ).sudo().action_confirm()
+
+        mails = self.env["mail.mail"].search([])
+        self.assertEqual(len(mails), 2)
+        salesman_mail = mails.filtered(
+            lambda m: m.author_id == salesman
+        ).check_singleton()
+        company_mail = mails.filtered(
+            lambda m: m.author_id == company
+        ).check_singleton()
+        self.assertEqual(salesman_mail.email_from, salesman.email_formatted)
+        self.assertEqual(company_mail.email_from, company.email_formatted)

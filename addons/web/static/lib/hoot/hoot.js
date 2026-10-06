@@ -1,0 +1,167 @@
+/** @odoo-module alias=@odoo/hoot default=false */
+
+import { logger } from "./core/logger.js";
+import { Runner } from "./core/runner.js";
+import { urlParams } from "./core/url.js";
+import { copyAndBind, makeRuntimeHook } from "./hoot_utils.js";
+import { setRunner } from "./main_runner.js";
+import { setupHootUI } from "./ui/setup_hoot_ui.js";
+
+/**
+ * @typedef {import("../hoot-dom/helpers/dom").Dimensions} Dimensions
+ * @typedef {import("../hoot-dom/helpers/dom").FormatXmlOptions} FormatXmlOptions
+ * @typedef {import("../hoot-dom/helpers/dom").Position} Position
+ * @typedef {import("../hoot-dom/helpers/dom").QueryOptions} QueryOptions
+ * @typedef {import("../hoot-dom/helpers/dom").QueryRectOptions} QueryRectOptions
+ * @typedef {import("../hoot-dom/helpers/dom").QueryTextOptions} QueryTextOptions
+ * @typedef {import("../hoot-dom/helpers/dom").Target} Target
+ * @typedef {import("../hoot-dom/helpers/events").DragHelpers} DragHelpers
+ * @typedef {import("../hoot-dom/helpers/events").DragOptions} DragOptions
+ * @typedef {import("../hoot-dom/helpers/events").EventType} EventType
+ * @typedef {import("../hoot-dom/helpers/events").FillOptions} FillOptions
+ * @typedef {import("../hoot-dom/helpers/events").InputValue} InputValue
+ * @typedef {import("../hoot-dom/helpers/events").KeyStrokes} KeyStrokes
+ * @typedef {import("../hoot-dom/helpers/events").PointerOptions} PointerOptions
+ * @typedef {import("./mock/network").ServerWebSocket} ServerWebSocket
+ * @typedef {{
+ *  runner: Runner;
+ *  ui: import("./ui/setup_hoot_ui").UiState
+ * }} Environment
+ */
+
+const runner = new Runner(urlParams);
+
+setRunner(runner);
+
+export const describe = runner.describe;
+export const expect = runner.expect;
+export const test = runner.test;
+
+export const after = makeRuntimeHook("after");
+export const afterEach = makeRuntimeHook("afterEach");
+export const before = makeRuntimeHook("before");
+export const beforeEach = makeRuntimeHook("beforeEach");
+export const onError = makeRuntimeHook("onError");
+
+export const getFixture = runner.fixture.get;
+
+export const definePreset = runner.exportFn(runner.definePreset);
+export const dryRun = runner.exportFn(runner.dryRun);
+export const getCurrent = runner.exportFn(runner.getCurrent);
+export const start = runner.exportFn(runner.start);
+export const stop = runner.exportFn(runner.stop);
+
+export { makeExpect } from "./core/expect.js";
+export { destroy } from "./core/fixture.js";
+export { defineTags } from "./core/tag.js";
+export { createJobScopedGetter } from "./hoot_utils.js";
+
+export const globals = copyAndBind(globalThis);
+const _inTestPage =
+    typeof window !== "undefined" &&
+    (window.location.pathname.startsWith("/web/tests") ||
+        window.location.pathname.startsWith("/web/static/lib/hoot/tests/"));
+export const isHootReady = _inTestPage ? setupHootUI() : Promise.resolve();
+
+export { exposeHelpers } from "../hoot-dom/hoot_dom_utils.js";
+export { disableAnimations, enableTransitions } from "./mock/animation.js";
+export { mockDate, mockLocale, mockTimeZone, onTimeZoneChange } from "./mock/date.js";
+export { makeSeededRandom } from "./mock/math.js";
+export {
+    mockPermission,
+    mockSendBeacon,
+    mockUserAgent,
+    mockVibrate,
+} from "./mock/navigator.js";
+export {
+    mockFetch,
+    mockHistory,
+    mockLocation,
+    mockWebSocket,
+    mockWorker,
+    withFetch,
+} from "./mock/network.js";
+export { flushNotifications } from "./mock/notification.js";
+export {
+    mockMatchMedia,
+    mockTouch,
+    watchAddedNodes,
+    watchKeys,
+    watchListeners,
+} from "./mock/window.js";
+export {
+    advanceFrame,
+    advanceTime,
+    animationFrame,
+    cancelAllTimers,
+    check,
+    clear,
+    click,
+    dblclick,
+    Deferred,
+    delay,
+    drag,
+    edit,
+    fill,
+    formatXml,
+    freezeTime,
+    getActiveElement,
+    getFocusableElements,
+    getNextFocusableElement,
+    getParentFrame,
+    getPreviousFocusableElement,
+    hover,
+    isDisplayed,
+    isEditable,
+    isFocusable,
+    isInDOM,
+    isInViewPort,
+    isScrollable,
+    isVisible,
+    keyDown,
+    keyUp,
+    leave,
+    manuallyDispatchProgrammaticEvent,
+    matches,
+    microTick,
+    middleClick,
+    observe,
+    on,
+    pointerDown,
+    pointerUp,
+    press,
+    queryAll,
+    queryAllAttributes,
+    queryAllProperties,
+    queryAllRects,
+    queryAllTexts,
+    queryAllValues,
+    queryAny,
+    queryAttribute,
+    queryFirst,
+    queryOne,
+    queryRect,
+    queryText,
+    queryValue,
+    resize,
+    rightClick,
+    runAllTimers,
+    scroll,
+    select,
+    setFrameRate,
+    setInputFiles,
+    setInputRange,
+    tick,
+    uncheck,
+    unfreezeTime,
+    unload,
+    waitFor,
+    waitForNone,
+    waitUntil,
+} from "@odoo/hoot-dom";
+export const __debug__ = runner;
+
+/** @param {...unknown} values */
+export function registerDebugInfo(...values) {
+    logger.logDebug(...values);
+}

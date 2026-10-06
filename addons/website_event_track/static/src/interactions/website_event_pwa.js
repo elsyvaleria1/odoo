@@ -1,0 +1,128 @@
+/** @odoo-module native */
+import { makeLogger } from "@web/core/debug/debug_logger";
+import { registry } from "@web/core/registry";
+import { Interaction } from "@web/public/interaction";
+import { utils as uiUtils } from "@web/ui/viewport";
+
+const log = makeLogger("website_event_track.pwa");
+
+export class WebsiteEventPWA extends Interaction {
+    static selector = "#wrapwrap.event";
+
+    dynamicContent = {
+        _window: {
+            "t-on-beforeinstallprompt.prevent": (event) =>
+                this.showInstallBanner(event),
+        },
+        ".o_btn_close": { "t-on-click": this.hideInstallBanner },
+        ".o_btn_install": { "t-on-click": this.onPromptInstall },
+    };
+
+    async willStart() {
+        await this.registerServiceWorker().then(this.prefetch());
+    }
+
+    /**
+     * @returns {String}
+     */
+    getScope() {
+        const matches = window.location.pathname.match(
+            /^(\/(?:event|[^/]+\/event))\/?/,
+        );
+        if (matches && matches[1]) {
+            return matches[1];
+        }
+        return "/event";
+    }
+
+    hideInstallBanner() {
+        this.installBanner ? this.installBanner[0].remove() : undefined;
+        const shadowHostEl = document.querySelector(".o-livechat-root");
+        const livechatButtonEl = shadowHostEl?.shadowRoot.querySelector(
+            ".o-livechat-LivechatButton",
+        );
+        if (livechatButtonEl) {
+            livechatButtonEl.style.position = "";
+            livechatButtonEl.style.bottom = "0";
+        }
+    }
+
+    prefetch() {
+        if (!("serviceWorker" in navigator)) {
+            return;
+        }
+        const assetsUrls = Array.from(
+            document.querySelectorAll("link[rel='stylesheet'], script[src]"),
+        ).map(function (el) {
+            return el.href || el.src;
+        });
+        navigator.serviceWorker.ready
+            .then(function (registration) {
+                registration.active.postMessage({
+                    action: "prefetch-assets",
+                    urls: assetsUrls,
+                });
+            })
+            .catch(function (error) {
+                console.error("Service worker ready failed, error:", error);
+            });
+        const currentPageUrl = window.location.href;
+        const childrenPagesUrls = Array.from(
+            document.querySelectorAll("a[href^='" + this.getScope() + "/']"),
+        ).map(function (el) {
+            return el.href;
+        });
+        navigator.serviceWorker.ready
+            .then(function (registration) {
+                registration.active.postMessage({
+                    action: "prefetch-pages",
+                    urls: childrenPagesUrls.concat(currentPageUrl),
+                });
+            })
+            .catch(function (error) {
+                console.error("Service worker ready failed, error:", error);
+            });
+    }
+
+    async registerServiceWorker() {
+        if (!("serviceWorker" in navigator)) {
+            return;
+        }
+        const scope = this.getScope();
+        return navigator.serviceWorker
+            .register(scope + "/service-worker.js", { scope: scope })
+            .catch(function (error) {
+                console.error("Service worker registration failed, error:", error);
+            });
+    }
+
+    showInstallBanner(ev) {
+        if (!uiUtils.isSmall()) {
+            return;
+        }
+        this.beforeInstallEvent = ev;
+        this.installBanner = this.renderAt("website_event_track.pwa_install_banner");
+
+        const height = document.querySelector(".o_pwa_install_banner").offsetHeight;
+        const shadowHostEl = document.querySelector(".o-livechat-root");
+        const livechatButtonEl = shadowHostEl?.shadowRoot.querySelector(
+            ".o-livechat-LivechatButton",
+        );
+        if (livechatButtonEl) {
+            livechatButtonEl.style.position = "relative";
+            livechatButtonEl.style.bottom = `${height}px`;
+        }
+    }
+
+    onPromptInstall() {
+        this.hideInstallBanner();
+        this.beforeInstallEvent.prompt();
+        this.beforeInstallEvent.userChoice.then((choiceResult) => {
+            log.logic("install prompt answered", { outcome: choiceResult.outcome });
+        });
+    }
+}
+
+registry
+    .category("public.interactions")
+    .add("website_event_track.website_event_pwa", WebsiteEventPWA);

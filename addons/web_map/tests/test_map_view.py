@@ -1,0 +1,150 @@
+from lxml import etree
+
+from odoo.exceptions import UserError, ValidationError
+from odoo.tests import TransactionCase
+from odoo.tools import mute_logger, view_validation
+
+
+def schema_map_view(arch):
+    return view_validation.relaxng("map").validate(arch)
+
+
+class TestMapDefaultView(TransactionCase):
+    """Cover the map view derived for models without an explicit one."""
+
+    def test_default_view_points_at_the_contact_field(self):
+        """Check that a model carrying partner_id gets a map bound to it."""
+        view = self.env["res.users"]._get_default_map_view()
+
+        self.assertEqual(view.tag, "map")
+        self.assertEqual(view.get("res_partner"), "partner_id")
+
+    def test_default_view_without_contact_field_is_refused(self):
+        """Check that a model without a contact field is refused a map view."""
+        with self.assertRaisesRegex(UserError, "no Contact field"):
+            self.env["res.country"]._get_default_map_view()
+
+
+class TestMapViewRegistration(TransactionCase):
+    """Cover how the map type registers itself against ir.ui.view."""
+
+    def test_map_declares_its_client_icon(self):
+        """Check that the map view type declares its switcher icon."""
+        info = self.env["ir.ui.view"]._get_view_info()
+
+        self.assertEqual(info["map"], {"icon": "fa-solid fa-location-dot"})
+
+
+class TestMapArchValidation(TransactionCase):
+    """Cover the RelaxNG schema guarding the map arch.
+
+    The schema is declared to `view_validation` beside the type's
+    `selection_add`, as cohort's and grid's are; `web_map/validation.py` and
+    its hand-rolled loader are gone. The two declaration tests pin what a
+    copied function could not lose and a one-line declaration can.
+    """
+
+    def test_the_map_schema_is_declared(self):
+        self.assertEqual(
+            view_validation.registered_schemas().get("map"),
+            "web_map/rng/map_view.rng",
+        )
+
+    def test_the_declared_map_schema_loads(self):
+        self.assertIsNotNone(view_validation.relaxng("map"))
+
+    def test_a_stored_map_view_is_refused_by_the_schema(self):
+        """Check that `ir.ui.view` refuses an unknown map attribute through the
+        registry, with the same arch accepted once the declaration is None."""
+        rejected = '<map res_partner="partner_id" not_a_map_attribute="1"/>'
+        view = self.env["ir.ui.view"]
+        with (
+            mute_logger(
+                "odoo.addons.base.models.ir_ui_view",
+                "odoo.tools.view_validation",
+            ),
+            self.assertRaises(ValidationError),
+        ):
+            view.create(
+                {
+                    "name": "unknown map attribute",
+                    "model": "res.users",
+                    "arch": rejected,
+                }
+            )
+        self.addCleanup(
+            view_validation.register_schema, "map", "web_map/rng/map_view.rng"
+        )
+        view_validation.register_schema("map", None)
+        view.create(
+            {"name": "unknown map attribute", "model": "res.users", "arch": rejected}
+        )
+
+    def test_arch_with_known_attributes_validates(self):
+        """Check that a map arch with declared attributes passes the schema."""
+        arch = etree.fromstring(
+            '<map res_partner="partner_id" string="Deliveries" routing="1"/>'
+        )
+
+        self.assertTrue(schema_map_view(arch))
+
+    def test_arch_without_attributes_validates(self):
+        """Check that a bare map arch without attributes passes the schema."""
+        self.assertTrue(schema_map_view(etree.fromstring("<map/>")))
+
+    def test_arch_with_unknown_attribute_is_rejected(self):
+        """Check that a map arch with an unknown attribute fails validation."""
+        arch = etree.fromstring('<map res_partner="partner_id" bogus="1"/>')
+
+        self.assertFalse(schema_map_view(arch))
+
+    def test_arch_with_unknown_tag_is_rejected(self):
+        """Check that a root tag other than map fails validation."""
+        self.assertFalse(schema_map_view(etree.fromstring("<not_a_map/>")))
+
+    def test_arch_field_keeps_the_attributes_of_the_views_it_inherits(self):
+        """Check that a field carrying another view type's attributes validates.
+
+        The schema runs against the *composed* arch, so an inheriting view that
+        adds a field with `widget` or `invisible` used to make its whole module
+        uninstallable: `industry_fsm`'s map view adds
+        `<field name="phone_ids" widget="many2many_tags"/>` and the schema
+        rejected it with "Element map has extra content: field".
+        """
+        arch = etree.fromstring(
+            '<map res_partner="partner_id">'
+            '<field name="phone_ids" string="Phones" widget="many2many_tags"/>'
+            '<field name="user_id" invisible="1"/>'
+            "</map>"
+        )
+
+        self.assertTrue(schema_map_view(arch))
+
+    def test_arch_keeps_the_attributes_the_framework_reads(self):
+        """Check that the generic view-root attributes validate.
+
+        `sample` and `class` are read off any view's arch root by
+        web/views/view.js, whatever the view type, so rejecting them makes a
+        map view carrying either one uninstallable.
+        """
+        arch = etree.fromstring(
+            '<map res_partner="partner_id" sample="1" class="o_custom"/>'
+        )
+
+        self.assertTrue(schema_map_view(arch))
+
+    def test_arch_field_without_a_name_is_rejected(self):
+        """Check that a field the view cannot resolve fails validation."""
+        arch = etree.fromstring(
+            '<map res_partner="partner_id"><field string="X"/></map>'
+        )
+
+        self.assertFalse(schema_map_view(arch))
+
+    def test_arch_with_an_unknown_child_is_rejected(self):
+        """Check that an element the map view cannot render fails validation."""
+        arch = etree.fromstring(
+            '<map res_partner="partner_id"><widget name="x"/></map>'
+        )
+
+        self.assertFalse(schema_map_view(arch))

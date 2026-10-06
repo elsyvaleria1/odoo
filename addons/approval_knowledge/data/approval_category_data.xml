@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+
+    <record id="approval_category_article_access" model="approval.category">
+        <field name="name">Knowledge Article Access</field>
+        <field name="sequence_code">KBACCESS</field>
+        <field name="company_id" eval="False" />
+        <field name="approval_minimum">1</field>
+        <field name="activity_target">request</field>
+    </record>
+
+    <record
+        id="approval_category_article_access_step_editors"
+        model="approval.category.step">
+        <field name="category_id" ref="approval_category_article_access" />
+        <field name="activity_type_id" ref="mail.mail_activity_data_todo" />
+        <field name="name">Article Editors</field>
+        <field name="sequence">10</field>
+        <field name="minimum">1</field>
+        <field name="subject_model_id" ref="knowledge.model_knowledge_article" />
+        <field name="subject_user_path">access_approver_user_ids</field>
+        <field name="group_id" ref="base.group_system" />
+    </record>
+
+</odoo>

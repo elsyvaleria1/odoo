@@ -1,0 +1,47 @@
+.o_notification_manager {
+    position: fixed;
+    inset: calc(var(--o-navbar-height, #{$o-navbar-height}) * 1.15)
+        $o-notification-margin auto $o-notification-margin;
+    z-index: $o-notification-zindex;
+
+    @include media-breakpoint-up(sm) {
+        left: auto;
+        width: $o-notification-max-width-sm;
+    }
+
+    .o_notification {
+        background-color: var(
+            --Notification__background-color,
+            #{o-token-alpha(--o-glass-bg, $o-glass-bg, 0.92)}
+        );
+        @include o-material("thin");
+        box-shadow: $o-shadow-md;
+        border-radius: $o-border-radius-lg;
+        animation: o-slideInRight $o-duration-slow $o-easing-spring;
+    }
+
+    .o_notification_bar {
+        width: $o-notification-bar-width;
+    }
+}
+
+@include owl-fade(0.5s, "o_notification");
+
+.o_notification_progress {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 3px;
+    width: 100%;
+    transform: scaleX(0);
+    transform-origin: left;
+}
+
+@keyframes o-notification-progress {
+    from {
+        transform: scaleX(1);
+    }
+    to {
+        transform: scaleX(0);
+    }
+}

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="ir_cron_raise_critical_speed" model="ir.cron">
+        <field name="name">GPS: Alert Critical Speed</field>
+        <field name="model_id" ref="model_device_gps_speed_alert" />
+        <field name="state">code</field>
+        <field name="code">model._cron_raise_critical()</field>
+        <field name="repeat_interval" eval="5" />
+        <field name="repeat_unit">minute</field>
+        <field name="active" eval="True" />
+    </record>
+
+    <record id="ir_cron_refresh_gps_stops" model="ir.cron">
+        <field name="name">GPS: Refresh Vehicle Stops</field>
+        <field name="model_id" ref="model_device_gps_stop" />
+        <field name="state">code</field>
+        <field name="code">model._cron_refresh()</field>
+        <field name="repeat_interval" eval="10" />
+        <field name="repeat_unit">minute</field>
+        <field name="active" eval="True" />
+    </record>
+
+</odoo>

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="ir_cron_dispose_departed_resources" model="ir.cron">
+        <field
+            name="name">Employees: a departed person's resource is disposed on the departure date</field>
+        <field name="model_id" ref="model_hr_employee" />
+        <field name="state">code</field>
+        <field name="code">model._cron_dispose_departed_resources()</field>
+        <field name="repeat_interval">1</field>
+        <field name="repeat_unit">day</field>
+    </record>
+
+</odoo>

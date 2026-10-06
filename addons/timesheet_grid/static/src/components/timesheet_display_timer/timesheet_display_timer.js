@@ -1,0 +1,148 @@
+/** @odoo-module native */
+import {
+    Component,
+    onWillDestroy,
+    onWillStart,
+    onWillUpdateProps,
+    proxy,
+    status,
+    t,
+    useProps,
+} from "@odoo/owl";
+import { formatFloatTime } from "@web/core/formatters";
+import { useService } from "@web/core/utils/hooks";
+import { FloatTimeField } from "@web/fields/basic/float_time/float_time_field";
+import { standardFieldProps } from "@web/fields/standard_field_props";
+
+export class TimesheetTimerFloatTimerField extends FloatTimeField {
+    static template = "timesheet_grid.TimesheetTimerFloatTimeField";
+    static props = {
+        ...FloatTimeField.props,
+        timerRunning: t.boolean(),
+        displayRed: t.boolean(),
+        value: t.any(),
+        name: t.any().optional(),
+        context: t.object().optional(),
+    };
+
+    get formattedValue() {
+        return formatFloatTime(this.value, { displaySeconds: this.props.timerRunning });
+    }
+
+    get value() {
+        const { timerRunning, value, record, name } = this.props;
+        return timerRunning || !record.data ? value : record.data[name];
+    }
+}
+
+export class TimesheetDisplayTimer extends Component {
+    static template = "timesheet_grid.TimesheetDisplayTimer";
+
+    static components = { TimesheetTimerFloatTimerField };
+
+    static props = {
+        ...standardFieldProps,
+        timerRunning: t.boolean().optional(false),
+        context: t.object().optional(),
+        displayRed: t.boolean().optional(true),
+    };
+
+    static fieldDependencies = {
+        timer_pause: { type: "datetime" },
+        timer_start: { type: "datetime" },
+    };
+    props = useProps(this.constructor.props);
+
+    setup() {
+        this.timerService = useService("timesheet_timer");
+        this.timerReactive = this.timerService.timer;
+        this.state = proxy({
+            timerStart: this.props.record.data.timer_start,
+            timerRunning:
+                this.props.record.data.is_timer_running || this.props.timerRunning,
+            value: this.props.record.data[this.props.name],
+        });
+        onWillStart(this.onWillStart);
+        onWillUpdateProps(this.onWillUpdateProps);
+        onWillDestroy(this._stopTimeRefresh);
+    }
+
+    async onWillUpdateProps(nextProps) {
+        let newValue = nextProps.record.data[nextProps.name];
+        this.state.timerRunning =
+            Boolean(nextProps.record.data.timer_start || nextProps.timerRunning) &&
+            !nextProps.record.data.timer_pause;
+        if (this.state.timerRunning !== this.timerService.timerState.isRunning) {
+            this.timerService.updateTimer(
+                this.state.timerRunning ? nextProps.record.data : null,
+            );
+        }
+        const shouldReloadTimer =
+            this.props.record.data.timer_start !== nextProps.record.data.timer_start ||
+            this.props.record.data.timer_pause !== nextProps.record.data.timer_pause ||
+            this.props.record.data[this.props.name] !==
+                nextProps.record.data[nextProps.name];
+        if (this.state.timerRunning && shouldReloadTimer) {
+            this._stopTimeRefresh();
+            this.timerReactive.resetTimer();
+            if (nextProps.record.data.timer_start) {
+                this.state.timerStart = nextProps.record.data.timer_start;
+            }
+            this.timerReactive.setTimer(
+                newValue,
+                this.state.timerStart,
+                this.serverTime,
+            );
+            this.timerReactive.updateTimer(this.state.timerStart);
+            newValue = this.timerReactive.floatValue;
+            this._startTimeRefresh();
+        }
+        this.state.value = newValue;
+    }
+
+    async onWillStart() {
+        if (this.state.timerRunning) {
+            if (!this.timerService.timerState.isRunning) {
+                this.timerService.updateTimer(this.props.record.data);
+            }
+            await this.timerService.getServerOffset();
+            if (!this.state.timerStart) {
+                this.state.timerStart = this.timerReactive.getCurrentTime();
+            }
+            this.timerReactive.setTimer(
+                this.state.value,
+                this.state.timerStart,
+                this.serverTime,
+            );
+            this.timerReactive.updateTimer(this.state.timerStart);
+            this.state.value = this.timerReactive.floatValue;
+            this._startTimeRefresh();
+        }
+    }
+
+    _startTimeRefresh() {
+        if (!this.timeRefresh && status(this) !== "destroyed") {
+            this.timeRefresh = setInterval(() => {
+                this.timerReactive.updateTimer(this.state.timerStart);
+                this.state.value = this.timerReactive.floatValue;
+            }, 1000);
+        }
+    }
+
+    _stopTimeRefresh() {
+        if (this.timeRefresh) {
+            clearTimeout(this.timeRefresh);
+            this.timeRefresh = 0;
+        }
+    }
+
+    get TimesheetTimerFloatTimerFieldProps() {
+        const props = { ...this.props };
+        delete props.timerReactive;
+        return {
+            ...props,
+            timerRunning: this.state.timerRunning,
+            value: this.state.value,
+        };
+    }
+}

@@ -1,0 +1,18 @@
+$o-mail-Avatar-size: 32px !default;
+$o-mail-ChatWindow-width: 380px !default;
+$o-mail-Discuss-inspector: 300px !default;
+$o-mail-Avatar-sizeSmall: 24px !default;
+$o-RoundedRectangle-small: 0.2rem !default;
+$o-RoundedRectangle-large: 3 * $o-RoundedRectangle-small !default;
+
+$o-mail-Message-sidebarWidth: 48px !default;
+
+$o-mail-LinkPreview-width: 320px !default;
+$o-mail-LinkPreview-height: 240px !default;
+$o-mail-LinkPreviewCard-height: 80px !default;
+
+$o-dark-discuss-talkingColor: rgba(
+    darken($o-dark-enterprise-action-color, 5%),
+    0.75
+) !default;
+$o-meeting-view-bg: #111827 !default;

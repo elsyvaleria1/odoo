@@ -1,0 +1,56 @@
+/** @odoo-module native */
+import { Component, useProps } from "@odoo/owl";
+import { RESOURCE_TYPE_ICONS } from "@resource/resource_type_icons";
+import { AvatarResource } from "@resource_mail/components/avatar_resource/avatar_resource";
+import { registry } from "@web/core/registry";
+import {
+    buildM2OFieldDescription,
+    computeM2OProps,
+    extractM2OFieldProps,
+    Many2One,
+    Many2OneField,
+} from "@web/fields/relational/many2one";
+
+export class Many2OneAvatarResourceField extends Component {
+    static template = "resource_mail.Many2OneAvatarResourceField";
+    static components = { AvatarResource, Many2One };
+    static props = { ...Many2OneField.props };
+    props = useProps(this.constructor.props);
+
+    get m2oProps() {
+        return {
+            ...computeM2OProps(this.props),
+            specification: {
+                type: {},
+            },
+        };
+    }
+
+    typeIcon(type) {
+        return RESOURCE_TYPE_ICONS[type];
+    }
+}
+
+/** @type {import("registries").FieldsRegistryItemShape} */
+export const many2OneAvatarResourceField = {
+    ...buildM2OFieldDescription(Many2OneAvatarResourceField),
+    additionalClasses: ["o_field_many2one_avatar"],
+    extractProps(staticInfo, dynamicInfo) {
+        return {
+            ...extractM2OFieldProps(staticInfo, dynamicInfo),
+            canOpen:
+                "no_open" in staticInfo.options
+                    ? !staticInfo.options.no_open
+                    : staticInfo.viewType === "form",
+        };
+    },
+    fieldDependencies: [
+        { name: "display_name", type: "char" },
+        // to add in model that will use this widget for m2o field related to resource.resource record (as related field is only supported for x2m)
+        { name: "resource_type", type: "selection" },
+    ],
+};
+
+registry
+    .category("fields")
+    .add("many2one_avatar_resource", many2OneAvatarResourceField);

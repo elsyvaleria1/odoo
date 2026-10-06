@@ -1,0 +1,415 @@
+id,name,kind,sequence
+vocab_xiuman,"Xiuman",product,1
+vocab_proxity,"Proxity",product,2
+vocab_asanit,"Asanit",product,3
+vocab_captacol,"Captacol",product,4
+vocab_captive,"Captive",product,5
+vocab_neonic,"Neonic",product,6
+vocab_linexar,"Linexar",product,7
+vocab_omenix,"Omenix",product,8
+vocab_omipro,"Omipro",product,9
+vocab_dorquat,"Dorquat",product,10
+vocab_paraquat_xm,"Paraquat XM",product,11
+vocab_ikkiquat,"Ikkiquat",product,12
+vocab_raigon,"Raigon",product,13
+vocab_exelon,"Exelon",product,14
+vocab_fortexyl,"Fortexyl",product,15
+vocab_outstay,"Outstay",product,16
+vocab_pental,"Pental",product,17
+vocab_veridia,"Veridia",product,18
+vocab_demolition,"Demolition",product,19
+vocab_deprebac,"Deprebac",product,20
+vocab_draifun,"Draifun",product,21
+vocab_draisig,"Draisig",product,22
+vocab_distriva,"Distriva",product,23
+vocab_dagalet,"Dagalet",product,24
+vocab_estelis,"Estelis",product,25
+vocab_eterbel,"Eterbel",product,26
+vocab_evilost,"Evilost",product,27
+vocab_fentrix,"Fentrix",product,28
+vocab_gabal,"Gabal",product,29
+vocab_galan,"Galan",product,30
+vocab_hibonde,"Hibonde",product,31
+vocab_ingenux,"Ingenux",product,32
+vocab_magistop,"Magistop",product,33
+vocab_mephistum,"Mephistum",product,34
+vocab_noviler,"Noviler",product,35
+vocab_pretecto,"Pretecto",product,36
+vocab_pridesto,"Pridesto",product,37
+vocab_radians,"Radians",product,38
+vocab_safeirus,"Safeirus",product,39
+vocab_syrius,"Syrius",product,40
+vocab_tenzole,"Tenzole",product,41
+vocab_tertius,"Tertius",product,42
+vocab_verance,"Verance",product,43
+vocab_zelen,"Zelen",product,44
+vocab_zinamit,"Zinamit",product,45
+vocab_alcento,"Alcento",product,46
+vocab_alfaspray,"Alfaspray",product,47
+vocab_acefate_xm,"Acefate XM",product,48
+vocab_benzimid,"Benzimid",product,49
+vocab_breisse,"Breisse",product,50
+vocab_clarus,"Clarus",product,51
+vocab_ferti_beet,"Ferti Beet",product,52
+vocab_combo_desinfeccion_papa,"Combo desinfección papa",product,53
+vocab_amistar,"Amistar",product,54
+vocab_ridomil_gold,"Ridomil Gold",product,55
+vocab_actara,"Actara",product,56
+vocab_karate_zeon,"Karate Zeon",product,57
+vocab_engeo,"Engeo",product,58
+vocab_score,"Score",product,59
+vocab_switch,"Switch",product,60
+vocab_coragen,"Coragen",product,61
+vocab_confidor,"Confidor",product,62
+vocab_curacron,"Curacron",product,63
+vocab_gramoxone,"Gramoxone",product,64
+vocab_reglone,"Reglone",product,65
+vocab_dual_gold,"Dual Gold",product,66
+vocab_gesaprim,"Gesaprim",product,67
+vocab_primagram_gold,"Primagram Gold",product,68
+vocab_lumax_gold,"Lumax Gold",product,69
+vocab_callisto_xtra,"Callisto Xtra",product,70
+vocab_elumis,"Elumis",product,71
+vocab_fusilade,"Fusilade",product,72
+vocab_goal,"Goal",product,73
+vocab_banvel,"Banvel",product,74
+vocab_hierbamina,"Hierbamina",product,75
+vocab_finale_ultra,"Finale Ultra",product,76
+vocab_glufosinato,"Glufosinato",product,77
+vocab_manzate,"Manzate",product,78
+vocab_mancozeb,"Mancozeb",product,79
+vocab_antracol,"Antracol",product,80
+vocab_bravo,"Bravo",product,81
+vocab_cabrio,"Cabrio",product,82
+vocab_headline,"Headline",product,83
+vocab_orkestra,"Orkestra",product,84
+vocab_miravis,"Miravis",product,85
+vocab_orondis,"Orondis",product,86
+vocab_quadris,"Quadris",product,87
+vocab_tilt,"Tilt",product,88
+vocab_alto,"Alto",product,89
+vocab_emesto,"Emesto",product,90
+vocab_cruiser_maxx,"Cruiser Maxx",product,91
+vocab_vibrance,"Vibrance",product,92
+vocab_vitavax,"Vitavax",product,93
+vocab_rizolex,"Rizolex",product,94
+vocab_moncut,"Moncut",product,95
+vocab_tecto,"Tecto",product,96
+vocab_ranman,"Ranman",product,97
+vocab_consento,"Consento",product,98
+vocab_acrobat,"Acrobat",product,99
+vocab_fontelis,"Fontelis",product,100
+vocab_pulsor,"Pulsor",product,101
+vocab_priori_xtra,"Priori Xtra",product,102
+vocab_inspire_gold,"Inspire Gold",product,103
+vocab_folio_gold,"Folio Gold",product,104
+vocab_merivon,"Merivon",product,105
+vocab_serifel,"Serifel",product,106
+vocab_delegate,"Delegate",product,107
+vocab_entrust,"Entrust",product,108
+vocab_proclaim,"Proclaim",product,109
+vocab_ampligo,"Ampligo",product,110
+vocab_denim,"Denim",product,111
+vocab_minecto_duo,"Minecto Duo",product,112
+vocab_verango_prime,"Verango Prime",product,113
+vocab_sivanto_prime,"Sivanto Prime",product,114
+vocab_velum_one,"Velum One",product,115
+vocab_nemacur,"Nemacur",product,116
+vocab_furadan,"Furadan",product,117
+vocab_force,"Force",product,118
+vocab_regent,"Regent",product,119
+vocab_lorsban,"Lorsban",product,120
+vocab_agrimec,"Agrimec",product,121
+vocab_vertimec,"Vertimec",product,122
+vocab_abamectina,"Abamectina",product,123
+vocab_acaritouch,"Acaritouch",product,124
+vocab_kanemite,"Kanemite",product,125
+vocab_oberon,"Oberon",product,126
+vocab_movento,"Movento",product,127
+vocab_beleaf,"Beleaf",product,128
+vocab_plenum,"Plenum",product,129
+vocab_kasumin,"Kasumin",product,130
+vocab_agry_gent,"Agry-gent",product,131
+vocab_bactrol,"Bactrol",product,132
+vocab_cercobin,"Cercobin",product,133
+vocab_elatus,"Elatus",product,134
+vocab_terracrop,"Terracrop",product,135
+vocab_humitron,"Humitron",product,136
+vocab_poliquel,"Poliquel",product,137
+vocab_complesal,"Complesal",product,138
+vocab_crecitec,"Crecitec",product,139
+vocab_biozyme,"Biozyme",product,140
+vocab_isabion,"Isabion",product,141
+vocab_nanofos,"Nanofos",product,142
+vocab_k_fol,"K-Fol",product,143
+vocab_fitobolic,"Fitobolic",product,144
+vocab_fitobor,"Fitobor",product,145
+vocab_kiloton,"Kiloton",product,146
+vocab_fertigro,"Fertigro",product,147
+vocab_mezcla_papera_la_fortaleza,"Mezcla papera La Fortaleza",product,148
+vocab_yaraliva_nitrabor,"YaraLiva Nitrabor",product,149
+vocab_nitrato_de_potasio,"Nitrato de potasio",product,150
+vocab_papa_fianna,"Papa Fianna",product,151
+vocab_papa_agatha,"Papa Agatha",product,152
+vocab_papa_orchesta,"Papa Orchesta",product,153
+vocab_papa_okra,"Papa Okra",product,154
+vocab_hectareas,"hectáreas",term,155
+vocab_parcela,"parcela",term,156
+vocab_cosecha,"cosecha",term,157
+vocab_zinacantepec,"Zinacantepec",place,158
+vocab_san_miguel_balderas,"San Miguel Balderas",place,159
+vocab_agromarin,"AgroMarin",company,160
+vocab_ing_2_4_d,"2,4-D",ingredient,162
+vocab_ing_abamectin,"Abamectin",ingredient,163
+vocab_ing_acephate,"Acephate",ingredient,164
+vocab_ing_acequinocyl,"Acequinocyl",ingredient,165
+vocab_ing_acetamiprid,"Acetamiprid",ingredient,166
+vocab_ing_acibenzolar_s_methyl,"Acibenzolar-S-methyl",ingredient,167
+vocab_ing_alpha_cypermethrin,"Alpha-cypermethrin",ingredient,168
+vocab_ing_amitraz,"Amitraz",ingredient,169
+vocab_ing_atrazine,"Atrazine",ingredient,170
+vocab_ing_azoxystrobin,"Azoxystrobin",ingredient,171
+vocab_ing_benomyl,"Benomyl",ingredient,172
+vocab_ing_beta_cyfluthrin,"Beta-cyfluthrin",ingredient,173
+vocab_ing_bifenazate,"Bifenazate",ingredient,174
+vocab_ing_bifenthrin,"Bifenthrin",ingredient,175
+vocab_ing_boscalid,"Boscalid",ingredient,176
+vocab_ing_brassinolide,"Brassinolide",ingredient,177
+vocab_ing_buprofezin,"Buprofezin",ingredient,178
+vocab_ing_cadusafos,"Cadusafos",ingredient,179
+vocab_ing_captan,"Captan",ingredient,180
+vocab_ing_carbaryl,"Carbaryl",ingredient,181
+vocab_ing_carbendazim,"Carbendazim",ingredient,182
+vocab_ing_carbofuran,"Carbofuran",ingredient,183
+vocab_ing_carbon_disulfide,"Carbon disulfide",ingredient,184
+vocab_ing_carboxin,"Carboxin",ingredient,185
+vocab_ing_carfentrazone,"Carfentrazone",ingredient,186
+vocab_ing_chlorantraniliprole,"Chlorantraniliprole",ingredient,187
+vocab_ing_chlorothalonil,"Chlorothalonil",ingredient,188
+vocab_ing_chlorpyrifos,"Chlorpyrifos",ingredient,189
+vocab_ing_clethodim,"Clethodim",ingredient,190
+vocab_ing_clothianidin,"Clothianidin",ingredient,191
+vocab_ing_copper_hydroxide,"Copper hydroxide",ingredient,192
+vocab_ing_copper_oxychloride,"Copper oxychloride",ingredient,193
+vocab_ing_copper_sulfate,"Copper sulfate",ingredient,194
+vocab_ing_cyantraniliprole,"Cyantraniliprole",ingredient,195
+vocab_ing_cyazofamid,"Cyazofamid",ingredient,196
+vocab_ing_cyclaniliprole,"Cyclaniliprole",ingredient,197
+vocab_ing_cyclobutrifluram,"Cyclobutrifluram",ingredient,198
+vocab_ing_cymoxanil,"Cymoxanil",ingredient,199
+vocab_ing_cypermethrin,"Cypermethrin",ingredient,200
+vocab_ing_cyproconazole,"Cyproconazole",ingredient,201
+vocab_ing_cyprodinil,"Cyprodinil",ingredient,202
+vocab_ing_cyromazine,"Cyromazine",ingredient,203
+vocab_ing_deltamethrin,"Deltamethrin",ingredient,204
+vocab_ing_dicamba,"Dicamba",ingredient,205
+vocab_ing_dichlorvos,"Dichlorvos",ingredient,206
+vocab_ing_difenoconazole,"Difenoconazole",ingredient,207
+vocab_ing_dimethoate,"Dimethoate",ingredient,208
+vocab_ing_dimethomorph,"Dimethomorph",ingredient,209
+vocab_ing_dinotefuran,"Dinotefuran",ingredient,210
+vocab_ing_diquat,"Diquat",ingredient,211
+vocab_ing_diuron,"Diuron",ingredient,212
+vocab_ing_emamectin_benzoate,"Emamectin benzoate",ingredient,213
+vocab_ing_ethiprole,"Ethiprole",ingredient,214
+vocab_ing_ethoprophos,"Ethoprophos",ingredient,215
+vocab_ing_famoxadone,"Famoxadone",ingredient,216
+vocab_ing_fenamidone,"Fenamidone",ingredient,217
+vocab_ing_fenamiphos,"Fenamiphos",ingredient,218
+vocab_ing_fenhexamid,"Fenhexamid",ingredient,219
+vocab_ing_fenpropathrin,"Fenpropathrin",ingredient,220
+vocab_ing_fenpropidin,"Fenpropidin",ingredient,221
+vocab_ing_fenpyroximate,"Fenpyroximate",ingredient,222
+vocab_ing_fipronil,"Fipronil",ingredient,223
+vocab_ing_flonicamid,"Flonicamid",ingredient,224
+vocab_ing_fluazifop,"Fluazifop",ingredient,225
+vocab_ing_fluazinam,"Fluazinam",ingredient,226
+vocab_ing_fludioxonil,"Fludioxonil",ingredient,227
+vocab_ing_fluopicolide,"Fluopicolide",ingredient,228
+vocab_ing_fluopyram,"Fluopyram",ingredient,229
+vocab_ing_fluoxastrobin,"Fluoxastrobin",ingredient,230
+vocab_ing_flupiradifurone,"Flupiradifurone",ingredient,231
+vocab_ing_flutolanil,"Flutolanil",ingredient,232
+vocab_ing_flutriafol,"Flutriafol",ingredient,233
+vocab_ing_fluxapyroxad,"Fluxapyroxad",ingredient,234
+vocab_ing_folic_acid,"Folic acid",ingredient,235
+vocab_ing_fomesafen,"Fomesafen",ingredient,236
+vocab_ing_fosetyl_aluminium,"Fosetyl-aluminium",ingredient,237
+vocab_ing_gamma_cyhalothrin,"Gamma-cyhalothrin",ingredient,238
+vocab_ing_gentamicin_sulfate,"Gentamicin sulfate",ingredient,239
+vocab_ing_gibberellic_acid,"Gibberellic acid",ingredient,240
+vocab_ing_glufosinate_ammonium,"Glufosinate-ammonium",ingredient,241
+vocab_ing_glycine_betaine,"Glycine betaine",ingredient,242
+vocab_ing_glyphosate,"Glyphosate",ingredient,243
+vocab_ing_haloxyfop,"Haloxyfop",ingredient,244
+vocab_ing_imazethapyr,"Imazethapyr",ingredient,245
+vocab_ing_imidacloprid,"Imidacloprid",ingredient,246
+vocab_ing_iprodione,"Iprodione",ingredient,247
+vocab_ing_isocycloseram,"Isocycloseram",ingredient,248
+vocab_ing_isoxaflutole,"Isoxaflutole",ingredient,249
+vocab_ing_kanamycin,"Kanamycin",ingredient,250
+vocab_ing_kasugamycin,"Kasugamycin",ingredient,251
+vocab_ing_l_cysteine,"L-Cysteine",ingredient,252
+vocab_ing_lambda_cyhalothrin,"Lambda-cyhalothrin",ingredient,253
+vocab_ing_linuron,"Linuron",ingredient,254
+vocab_ing_lufenuron,"Lufenuron",ingredient,255
+vocab_ing_malathion,"Malathion",ingredient,256
+vocab_ing_mandipropamid,"Mandipropamid",ingredient,258
+vocab_ing_mesotrione,"Mesotrione",ingredient,259
+vocab_ing_metalaxyl,"Metalaxyl",ingredient,260
+vocab_ing_metalaxyl_m_mefenoxam,"Metalaxyl-M (mefenoxam)",ingredient,261
+vocab_ing_methamidophos,"Methamidophos",ingredient,262
+vocab_ing_methomyl,"Methomyl",ingredient,263
+vocab_ing_metolachlor,"Metolachlor",ingredient,264
+vocab_ing_metribuzin,"Metribuzin",ingredient,265
+vocab_ing_metsulfuron_methyl,"Metsulfuron-methyl",ingredient,266
+vocab_ing_modified_heptamethyltrisiloxane_polyalkylene_oxide,"Modified heptamethyltrisiloxane (polyalkylene oxide)",ingredient,267
+vocab_ing_monocrotophos,"Monocrotophos",ingredient,268
+vocab_ing_myclobutanil,"Myclobutanil",ingredient,269
+vocab_ing_naled,"Naled",ingredient,270
+vocab_ing_nicosulfuron,"Nicosulfuron",ingredient,271
+vocab_ing_omethoate,"Omethoate",ingredient,272
+vocab_ing_oxadiazon,"Oxadiazon",ingredient,273
+vocab_ing_oxamyl,"Oxamyl",ingredient,274
+vocab_ing_oxathiapiprolin,"Oxathiapiprolin",ingredient,275
+vocab_ing_oxycarboxin,"Oxycarboxin",ingredient,276
+vocab_ing_oxyfluorfen,"Oxyfluorfen",ingredient,277
+vocab_ing_oxytetracycline,"Oxytetracycline",ingredient,278
+vocab_ing_paecilomyces_lilacinus,"Paecilomyces lilacinus",ingredient,279
+vocab_ing_paraquat,"Paraquat",ingredient,280
+vocab_ing_parathion_methyl,"Parathion-methyl",ingredient,281
+vocab_ing_pencycuron,"Pencycuron",ingredient,282
+vocab_ing_pendimethalin,"Pendimethalin",ingredient,283
+vocab_ing_penflufen,"Penflufen",ingredient,284
+vocab_ing_pentiopirad,"Pentiopirad",ingredient,285
+vocab_ing_permethrin,"Permethrin",ingredient,286
+vocab_ing_phorate,"Phorate",ingredient,287
+vocab_ing_phosphoric_acid,"Phosphoric acid",ingredient,288
+vocab_ing_picloram,"Picloram",ingredient,289
+vocab_ing_pidiflumetofen,"Pidiflumetofen",ingredient,290
+vocab_ing_pirifluquinazon,"Pirifluquinazon",ingredient,291
+vocab_ing_prochloraz,"Prochloraz",ingredient,292
+vocab_ing_profenofos,"Profenofos",ingredient,293
+vocab_ing_propamocarb_hydrochloride,"Propamocarb hydrochloride",ingredient,294
+vocab_ing_propargite,"Propargite",ingredient,295
+vocab_ing_propiconazole,"Propiconazole",ingredient,296
+vocab_ing_propineb,"Propineb",ingredient,297
+vocab_ing_prosulfuron,"Prosulfuron",ingredient,298
+vocab_ing_pymetrozine,"Pymetrozine",ingredient,299
+vocab_ing_pyraclostrobin,"Pyraclostrobin",ingredient,300
+vocab_ing_pyrethrins,"Pyrethrins",ingredient,301
+vocab_ing_pyrimethanil,"Pyrimethanil",ingredient,302
+vocab_ing_pyriproxyfen,"Pyriproxyfen",ingredient,303
+vocab_ing_quintozene_pcnb,"Quintozene (PCNB)",ingredient,304
+vocab_ing_rimsulfuron,"Rimsulfuron",ingredient,305
+vocab_ing_sedaxane,"Sedaxane",ingredient,306
+vocab_ing_spinetoram,"Spinetoram",ingredient,307
+vocab_ing_spinosad,"Spinosad",ingredient,308
+vocab_ing_spiromesifen,"Spiromesifen",ingredient,309
+vocab_ing_spirotetramat,"Spirotetramat",ingredient,310
+vocab_ing_streptomycin,"Streptomycin",ingredient,311
+vocab_ing_sulfoxaflor,"Sulfoxaflor",ingredient,312
+vocab_ing_sulfur,"Sulfur",ingredient,313
+vocab_ing_tcmtb,"TCMTB",ingredient,314
+vocab_ing_tebuconazole,"Tebuconazole",ingredient,315
+vocab_ing_tefluthrin,"Tefluthrin",ingredient,316
+vocab_ing_tembotrione,"Tembotrione",ingredient,317
+vocab_ing_terbufos,"Terbufos",ingredient,318
+vocab_ing_terbuthylazine,"Terbuthylazine",ingredient,319
+vocab_ing_terbutryn,"Terbutryn",ingredient,320
+vocab_ing_thiabendazole,"Thiabendazole",ingredient,321
+vocab_ing_thiacloprid,"Thiacloprid",ingredient,322
+vocab_ing_thiametoxam,"Thiametoxam",ingredient,323
+vocab_ing_thifensulfuron_methyl,"Thifensulfuron-methyl",ingredient,324
+vocab_ing_thifluzamide,"Thifluzamide",ingredient,325
+vocab_ing_thiocyclam_hydrogen_oxalate,"Thiocyclam hydrogen oxalate",ingredient,326
+vocab_ing_thiodicarb,"Thiodicarb",ingredient,327
+vocab_ing_thiophanate_methyl,"Thiophanate-methyl",ingredient,328
+vocab_ing_thiram,"Thiram",ingredient,329
+vocab_ing_tolclofos_methyl,"Tolclofos methyl",ingredient,330
+vocab_ing_triasulfuron,"Triasulfuron",ingredient,331
+vocab_ing_trifloxystrobin,"Trifloxystrobin",ingredient,332
+vocab_ing_triflumuron,"Triflumuron",ingredient,333
+vocab_es_azoxistrobina,"azoxistrobina",ingredient,600
+vocab_es_clorotalonil,"clorotalonil",ingredient,601
+vocab_es_espinosad,"espinosad",ingredient,602
+vocab_es_espinetoram,"espinetoram",ingredient,603
+vocab_es_metalaxil,"metalaxil",ingredient,604
+vocab_es_mefenoxam,"mefenoxam",ingredient,605
+vocab_es_cimoxanilo,"cimoxanilo",ingredient,606
+vocab_es_propamocarb,"propamocarb",ingredient,607
+vocab_es_fluopicolida,"fluopicolida",ingredient,608
+vocab_es_dimetomorf,"dimetomorf",ingredient,609
+vocab_es_mandipropamida,"mandipropamida",ingredient,610
+vocab_es_ciazofamida,"ciazofamida",ingredient,611
+vocab_es_difenoconazol,"difenoconazol",ingredient,612
+vocab_es_propiconazol,"propiconazol",ingredient,613
+vocab_es_tebuconazol,"tebuconazol",ingredient,614
+vocab_es_ciproconazol,"ciproconazol",ingredient,615
+vocab_es_boscalida,"boscalida",ingredient,616
+vocab_es_piraclostrobina,"piraclostrobina",ingredient,617
+vocab_es_trifloxistrobina,"trifloxistrobina",ingredient,618
+vocab_es_fluxapiroxad,"fluxapiroxad",ingredient,619
+vocab_es_tiofanato_metilico,"tiofanato metílico",ingredient,620
+vocab_es_benomilo,"benomilo",ingredient,621
+vocab_es_captan,"captán",ingredient,622
+vocab_es_oxicloruro_de_cobre,"oxicloruro de cobre",ingredient,623
+vocab_es_hidroxido_de_cobre,"hidróxido de cobre",ingredient,624
+vocab_es_sulfato_de_cobre,"sulfato de cobre",ingredient,625
+vocab_es_azufre,"azufre",ingredient,626
+vocab_es_tiametoxam,"tiametoxam",ingredient,627
+vocab_es_clotianidina,"clotianidina",ingredient,628
+vocab_es_lambda_cialotrina,"lambda cialotrina",ingredient,629
+vocab_es_cipermetrina,"cipermetrina",ingredient,630
+vocab_es_deltametrina,"deltametrina",ingredient,631
+vocab_es_bifentrina,"bifentrina",ingredient,632
+vocab_es_permetrina,"permetrina",ingredient,633
+vocab_es_clorpirifos,"clorpirifos",ingredient,634
+vocab_es_clorantraniliprol,"clorantraniliprol",ingredient,635
+vocab_es_ciantraniliprol,"ciantraniliprol",ingredient,636
+vocab_es_benzoato_de_emamectina,"benzoato de emamectina",ingredient,637
+vocab_es_metomilo,"metomilo",ingredient,638
+vocab_es_carbofurano,"carbofurano",ingredient,639
+vocab_es_malation,"malatión",ingredient,640
+vocab_es_dimetoato,"dimetoato",ingredient,641
+vocab_es_metamidofos,"metamidofós",ingredient,642
+vocab_es_profenofos,"profenofós",ingredient,643
+vocab_es_flonicamida,"flonicamida",ingredient,644
+vocab_es_pimetrozina,"pimetrozina",ingredient,645
+vocab_es_espirotetramat,"espirotetramat",ingredient,646
+vocab_es_espiromesifeno,"espiromesifeno",ingredient,647
+vocab_es_buprofezina,"buprofezina",ingredient,648
+vocab_es_piriproxifen,"piriproxifen",ingredient,649
+vocab_es_glifosato,"glifosato",ingredient,650
+vocab_es_glufosinato_de_amonio,"glufosinato de amonio",ingredient,651
+vocab_es_atrazina,"atrazina",ingredient,652
+vocab_es_metribuzina,"metribuzina",ingredient,653
+vocab_es_linuron,"linurón",ingredient,654
+vocab_es_pendimetalina,"pendimetalina",ingredient,655
+vocab_es_metolacloro,"metolacloro",ingredient,656
+vocab_es_mesotriona,"mesotriona",ingredient,657
+vocab_es_nicosulfuron,"nicosulfurón",ingredient,658
+vocab_es_rimsulfuron,"rimsulfurón",ingredient,659
+vocab_es_dos_cuatro_d,"dos cuatro D",ingredient,660
+vocab_es_cletodim,"cletodim",ingredient,661
+vocab_es_fomesafen,"fomesafén",ingredient,662
+vocab_es_oxifluorfen,"oxifluorfén",ingredient,663
+vocab_es_oxamilo,"oxamilo",ingredient,664
+vocab_es_fenamifos,"fenamifós",ingredient,665
+vocab_es_fluopiram,"fluopiram",ingredient,666
+vocab_es_fosetil_aluminio,"fosetil aluminio",ingredient,667
+vocab_es_kasugamicina,"kasugamicina",ingredient,668
+vocab_es_estreptomicina,"estreptomicina",ingredient,669
+vocab_es_oxitetraciclina,"oxitetraciclina",ingredient,670
+vocab_es_gentamicina,"gentamicina",ingredient,671
+vocab_es_acido_giberelico,"ácido giberélico",ingredient,672
+vocab_es_pencicuron,"pencicurón",ingredient,673
+vocab_es_tiabendazol,"tiabendazol",ingredient,674
+vocab_es_iprodiona,"iprodiona",ingredient,675
+vocab_es_fenhexamida,"fenhexamida",ingredient,676
+vocab_es_pirimetanil,"pirimetanil",ingredient,677
+vocab_es_ciprodinil,"ciprodinil",ingredient,678
+vocab_es_monopropilenglicol,"monopropilenglicol",term,679
+vocab_es_propilenglicol,"propilenglicol",term,680
+vocab_zomec,"Zomec",product,60
+vocab_hexadel,"Hexadel",product,60

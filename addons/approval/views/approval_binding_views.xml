@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="approval_binding_view_list" model="ir.ui.view">
+        <field name="name">approval.binding.list</field>
+        <field name="model">approval.binding</field>
+        <field name="arch" type="xml">
+            <list string="Approval Bindings">
+                <field name="sequence" widget="handle" />
+                <field name="model_name" />
+                <field name="verb" />
+                <field name="method" />
+                <field name="action_id" optional="show" />
+                <field name="origin" optional="show" />
+                <field name="is_enforced" optional="show" />
+                <field name="mode" />
+                <field name="sudo_policy" />
+                <field name="category_id" />
+                <field name="subject_domain" optional="hide" />
+                <field name="observation_count" />
+                <field name="self_elevated_count" />
+                <field name="active" column_invisible="1" />
+            </list>
+        </field>
+    </record>
+
+    <record id="approval_binding_view_form" model="ir.ui.view">
+        <field name="name">approval.binding.form</field>
+        <field name="model">approval.binding</field>
+        <field name="arch" type="xml">
+            <form string="Approval Binding">
+                <sheet>
+                    <widget
+                        name="web_ribbon"
+                        title="Archived"
+                        invisible="active"
+                        bg_color="text-bg-danger" />
+                    <div class="oe_title">
+                        <h1><field name="name" readonly="1" /></h1>
+                    </div>
+                    <field name="is_enforced" invisible="1" />
+                    <div
+                        class="alert alert-warning"
+                        role="alert"
+                        invisible="is_enforced or not action_id">
+                        This action only opens a view, so the server has nothing to refuse: the
+                        binding is honoured by the client's check alone.
+                    </div>
+                    <group>
+                        <group string="Gated Operation">
+                            <field
+                                name="model_id"
+                                options="{'no_create': True}"
+                                readonly="origin == 'module'" />
+                            <field
+                                name="verb"
+                                invisible="method or action_id"
+                                readonly="origin == 'module'" />
+                            <field name="method" invisible="action_id or verb" />
+                            <field
+                                name="action_id"
+                                options="{'no_create': True}"
+                                invisible="method or verb" />
+                            <field
+                                name="subject_domain"
+                                placeholder="e.g. [('state', '=', 'draft')]"
+                                invisible="origin == 'module'" />
+                            <field name="origin" />
+                            <field name="sequence" />
+                            <field name="active" invisible="1" />
+                        </group>
+                        <group string="Behaviour">
+                            <field name="mode" />
+                            <field name="sudo_policy" />
+                            <field
+                                name="category_id"
+                                invisible="mode == 'advise' or origin == 'module'"
+                                required="mode != 'advise' and origin == 'manual'" />
+                        </group>
+                    </group>
+                    <group string="Observed" invisible="not observation_count">
+                        <field name="observation_count" />
+                        <field name="elevated_count" />
+                        <field name="self_elevated_count" />
+                    </group>
+                    <notebook invisible="not observation_count">
+                        <page name="observations" string="Observations">
+                            <field name="observation_ids" readonly="1">
+                                <list>
+                                    <field name="date" />
+                                    <field name="user_id" />
+                                    <field name="res_id" />
+                                    <field name="elevation" />
+                                    <field name="would_block" />
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_approval_binding" model="ir.actions.act_window">
+        <field name="name">Approval Bindings</field>
+        <field name="res_model">approval.binding</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Gate an operation on an approval</p>
+            <p>
+                A binding intercepts a verb, a method or an action so the approval is consulted
+                before it runs, for every caller rather than only the user interface. Start a
+                new one in Observe mode: it changes nothing and counts who reaches
+                the operation, including callers that arrive elevated.
+            </p>
+        </field>
+    </record>
+
+    <record id="action_approval_binding_module" model="ir.actions.act_window">
+        <field name="name">Code Gates</field>
+        <field name="res_model">approval.binding</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('origin', '=', 'module')]</field>
+        <field name="context">{'active_test': False}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">No module ships an approval obligation</p>
+            <p>
+                A module that holds one of its model's verbs on the document's own approval ships
+                that obligation here. What is left to decide is its mode: Request, as every one
+                ships, asks at the verb's door and refuses any other path to it; Observe only
+                records those paths.
+            </p>
+        </field>
+    </record>
+
+</odoo>

@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_partner_bank_form_inherit_account" model="ir.ui.view">
+        <field name="name">res.partner.bank.account.form.inherit.account</field>
+        <field name="model">res.partner.bank.account</field>
+        <field name="inherit_id" ref="base.view_partner_bank_form" />
+        <field name="mode">primary</field>
+        <field name="priority">14</field>
+        <field name="arch" type="xml">
+            <xpath expr="//sheet" position="before">
+                <div
+                    class="alert alert-warning"
+                    role="alert"
+                    invisible="not duplicate_bank_partner_ids">
+                    <span>The Bank Account could be a duplicate of</span>
+                    <field
+                        name="duplicate_bank_partner_ids"
+                        string="Partners with same bank"
+                        widget="x2many_buttons" />
+                </div>
+            </xpath>
+
+            <xpath expr="//form[@name='bank_account_form']/sheet[1]" position="after">
+                <chatter />
+            </xpath>
+
+            <xpath expr="//field[@name='acc_number']" position="attributes">
+                <attribute name="readonly">lock_trust_fields</attribute>
+                <attribute name="force_save">1</attribute>
+            </xpath>
+
+            <xpath expr="//field[@name='partner_id']" position="attributes">
+                <attribute name="readonly">lock_trust_fields</attribute>
+                <attribute name="force_save">1</attribute>
+            </xpath>
+
+            <xpath expr="//field[@name='allow_out_payment']" position="replace">
+                <field name="user_has_group_validate_bank_account" invisible="1" />
+                <field name="lock_trust_fields" invisible="1" />
+                <label for="allow_out_payment" />
+                <div class="d-flex gap-2">
+                    <field
+                        name="allow_out_payment"
+                        widget="boolean_toggle"
+                        options="{'autosave': False}"
+                        readonly="not user_has_group_validate_bank_account"
+                        class="w-25" />
+                    <span class="d-flex gap-2 w-100">
+                        <span invisible="allow_out_payment" class="text-muted">Untrusted</span>
+                        <span invisible="not allow_out_payment" class="text-success">Trusted</span>
+                    </span>
+                </div>
+                <div invisible="allow_out_payment" colspan="2">
+                    <field name="has_money_transfer_warning" invisible="1" />
+                    <div invisible="not has_money_transfer_warning" class="mb-1">
+                        <span class="text-danger">High risk</span>: <field name="money_transfer_service" nolabel="1" class="oe_inline" /> is a
+                        money transfer service and not a bank. Double check if the account can be
+                        trusted by calling the vendor.<br />
+                            <widget
+                                name="documentation_link"
+                                label="Check why."
+                                path="/applications/finance/accounting/payables/pay/trusted_accounts.html" />
+                    </div>
+                    <field name="has_iban_warning" invisible="1" />
+                    <div invisible="not has_iban_warning">
+                        <span class="text-warning">Medium risk</span>: Iban <field name="sanitized_acc_number" nolabel="1" class="oe_inline fw-bold" /> is
+                        not from the same country as the partner (<field name="partner_country_name" nolabel="1" class="oe_inline" />).<br />
+                            <widget
+                                name="documentation_link"
+                                label="Check why it's risky."
+                                path="/applications/finance/accounting/payables/pay/trusted_accounts.html" />
+                    </div>
+                </div>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_partner_bank_search_inherit" model="ir.ui.view">
+        <field name="name">res.partner.bank.account.search.inherit</field>
+        <field name="model">res.partner.bank.account</field>
+        <field name="inherit_id" ref="base.view_partner_bank_search" />
+        <field name="arch" type="xml">
+            <xpath expr="//search" position="inside">
+                <filter
+                    name="trusted"
+                    string="Trusted"
+                    domain="[('allow_out_payment', '=', True)]" />
+                <filter
+                    name="untrusted"
+                    string="Untrusted"
+                    domain="[('allow_out_payment', '=', False)]" />
+                <filter
+                    name="to_validate"
+                    string="To validate"
+                    domain="[('allow_out_payment', '=', False), ('related_moves', '!=', False)]" />
+                <separator />
+                <filter
+                    name="customer"
+                    string="Customers"
+                    domain="[('partner_customer_rank','&gt;', 0)]" />
+                <filter
+                    name="supplier"
+                    string="Vendors"
+                    domain="[('partner_supplier_rank','&gt;', 0)]" />
+                <separator />
+                <filter
+                    name="high_phishing_risk"
+                    string="Phishing risk: High"
+                    domain="[('has_money_transfer_warning', '!=', False)]" />
+                <filter
+                    name="medium_phishing_risk"
+                    string="Phishing risk: Medium"
+                    domain="[('has_iban_warning', '!=', False)]" />
+                <separator />
+                <filter name="create_date" string="Created On" date="create_date" />
+                <group>
+                    <filter
+                        name="groupby_create_date"
+                        string="Created On"
+                        context="{'group_by': 'create_date'}" />
+                    <filter
+                        name="groupby_create_by"
+                        string="Created By"
+                        context="{'group_by': 'create_uid'}" />
+                </group>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="action_account_supplier_accounts" model="ir.actions.act_window">
+        <field name="name">Bank Accounts</field>
+        <field name="res_model">res.partner.bank.account</field>
+        <field name="view_mode">list,form</field>
+        <field name="view_id" ref="base.view_partner_bank_tree" />
+        <field name="search_view_id" ref="view_partner_bank_search_inherit" />
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Create a new bank account
+            </p>
+        </field>
+        <field name="type">ir.actions.act_window</field>
+    </record>
+
+</odoo>

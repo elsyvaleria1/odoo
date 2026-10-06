@@ -1,0 +1,158 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* account_move_template
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Language: es_MX\n"
+"Plural-Forms: \n"
+
+#. module: account_move_template
+#: model_terms:ir.ui.view,arch_db:account_move_template.account_move_template_form
+#: model_terms:ir.ui.view,arch_db:account_move_template.account_move_template_search
+msgid "Archived"
+msgstr "Archivado"
+
+#. module: account_move_template
+#: model_terms:ir.ui.view,arch_db:account_move_template.account_move_template_run_form
+msgid "Cancel"
+msgstr "Cancelar"
+
+#. module: account_move_template
+#: model:ir.model.fields,field_description:account_move_template.field_account_move_template__company_id
+#: model:ir.model.fields,field_description:account_move_template.field_account_move_template_line__company_id
+#: model_terms:ir.ui.view,arch_db:account_move_template.account_move_template_search
+msgid "Company"
+msgstr "Empresa"
+
+#. module: account_move_template
+#: model_terms:ir.ui.view,arch_db:account_move_template.account_move_template_run_form
+msgid "Create Entry"
+msgstr "Crear asiento"
+
+#. module: account_move_template
+#. odoo-python
+#: code:addons/account_move_template/models/account_move_template.py:0
+#: model:ir.actions.act_window,name:account_move_template.account_move_template_run_action
+#: model:ir.ui.menu,name:account_move_template.account_move_template_run_menu
+#: model_terms:ir.ui.view,arch_db:account_move_template.account_move_template_run_form
+msgid "Create Entry from Template"
+msgstr "Crear asiento desde plantilla"
+
+#. module: account_move_template
+#: model_terms:ir.ui.view,arch_db:account_move_template.account_move_template_run_form
+msgid "Create Payment"
+msgstr "Crear pago"
+
+#. module: account_move_template
+#: model_terms:ir.ui.view,arch_db:account_move_template.account_move_template_search
+msgid "Customer Invoices"
+msgstr "Facturas de cliente"
+
+#. module: account_move_template
+#: model:ir.model.fields,field_description:account_move_template.field_account_move_template__journal_code
+#: model_terms:ir.ui.view,arch_db:account_move_template.account_move_template_search
+msgid "Journal Code"
+msgstr "Código del diario"
+
+#. module: account_move_template
+#: model_terms:ir.ui.view,arch_db:account_move_template.account_move_template_search
+msgid "Journal Entries"
+msgstr "Asientos contables"
+
+#. module: account_move_template
+#: model:ir.actions.act_window,name:account_move_template.account_move_template_action
+#: model:ir.ui.menu,name:account_move_template.account_move_template_menu
+#: model_terms:ir.ui.view,arch_db:account_move_template.account_move_template_list
+msgid "Journal Entry Templates"
+msgstr "Plantillas de asiento contable"
+
+#. module: account_move_template
+#: model:ir.model.fields,field_description:account_move_template.field_account_move_template__move_type
+#: model:ir.model.fields,field_description:account_move_template.field_wizard_account_move_template_create_move__move_type
+#: model_terms:ir.ui.view,arch_db:account_move_template.account_move_template_search
+msgid "Move Type"
+msgstr "Tipo de movimiento"
+
+#. module: account_move_template
+#: model_terms:ir.ui.view,arch_db:account_move_template.account_move_template_search
+msgid "Payments"
+msgstr "Pagos"
+
+#. module: account_move_template
+#: model_terms:ir.ui.view,arch_db:account_move_template.account_move_template_form
+#: model_terms:ir.ui.view,arch_db:account_move_template.account_move_template_list
+msgid "Use Template"
+msgstr "Usar plantilla"
+
+#. module: account_move_template
+#: model_terms:ir.ui.view,arch_db:account_move_template.account_move_template_search
+msgid "Vendor Bills"
+msgstr "Facturas de proveedor"
+
+#. module: account_move_template
+#: model_terms:ir.ui.view,arch_db:account_move_template.account_move_template_form
+msgid ""
+"Check to issue the document to the run's third party, when it names one, "
+"instead of the partner the operation is about"
+msgstr ""
+"Active para emitir el documento al tercero de la ejecución, cuando indica "
+"uno, en lugar del contacto de quien trata la operación"
+
+#. module: account_move_template
+#: model:ir.model.fields,help:account_move_template.field_account_move_template__use_third_party
+msgid ""
+"If checked, the generated document is issued to the run's third party when "
+"it names one -- the party a document is made out to in place of the partner,"
+" such as the generic public for a customer who takes no fiscal invoice -- "
+"instead of the partner the operation is about. Leave it off wherever the "
+"partner himself has to be on the document: the credit note that reduces his "
+"debt is one of those."
+msgstr ""
+"Si se activa, el documento generado se emite al tercero de la ejecución "
+"cuando esta indica uno -- a quien se emite un documento en lugar del "
+"contacto, como el público en general para un cliente que no pide factura "
+"fiscal -- en lugar del contacto de quien trata la operación. Déjelo "
+"desactivado donde el propio contacto debe aparecer en el documento: la nota "
+"de crédito que reduce su deuda es uno de esos casos."
+
+#. module: account_move_template
+#: model:ir.model.fields,field_description:account_move_template.field_account_move_template__use_third_party
+msgid "Issue to the Third Party"
+msgstr "Emitir al tercero"
+
+#. module: account_move_template
+#: model_terms:ir.ui.view,arch_db:account_move_template.account_move_template_run_form
+msgid "Leave empty to issue to the partner"
+msgstr "Deje vacío para emitir al contacto"
+
+#. module: account_move_template
+#: model_terms:ir.ui.view,arch_db:account_move_template.account_move_template_run_form
+msgid "Optional: the party this entry is made out to in place of the partner"
+msgstr "Opcional: a quien se emite este asiento en lugar del contacto"
+
+#. module: account_move_template
+#: model:ir.model.fields,help:account_move_template.field_wizard_account_move_template_create_move__third_party_id
+msgid ""
+"The party a document is made out to in place of the partner, such as the "
+"generic public for a customer who takes no fiscal invoice. Informational by "
+"default: partner_id stays on the generated document (task t22217). Only a "
+"template that ticks 'Issue to the Third Party' is issued to this one "
+"instead."
+msgstr ""
+"A quien se emite un documento en lugar del contacto, como el público en "
+"general para un cliente que no pide factura fiscal. Informativo por defecto:"
+" partner_id permanece en el documento generado (tarea t22217). Solo una "
+"plantilla que activa 'Emitir al tercero' se emite a este."
+
+#. module: account_move_template
+#: model:ir.model.fields,field_description:account_move_template.field_wizard_account_move_template_create_move__third_party_id
+msgid "Third Party"
+msgstr "Tercero"

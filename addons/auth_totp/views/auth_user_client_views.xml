@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="auth_user_client_view_kanban" model="ir.ui.view">
+        <field name="name">auth.user.client.kanban.auth_totp</field>
+        <field name="model">auth.user.client</field>
+        <field name="inherit_id" ref="base.auth_user_client_view_kanban" />
+        <field name="arch" type="xml">
+            <field name="ip_address" position="before">
+                <field name="has_valid_totp_trust" invisible="1" />
+                <span t-if="record.has_valid_totp_trust.raw_value" class="badge text-bg-info align-self-start">Trusted for 2FA</span>
+            </field>
+        </field>
+    </record>
+
+    <record id="auth_user_client_view_form" model="ir.ui.view">
+        <field name="name">auth.user.client.form.auth_totp</field>
+        <field name="model">auth.user.client</field>
+        <field name="inherit_id" ref="base.auth_user_client_view_form" />
+        <field name="arch" type="xml">
+            <field name="last_activity" position="after">
+                <field name="totp_trust_ids" widget="many2many_tags" />
+            </field>
+        </field>
+    </record>
+
+</odoo>

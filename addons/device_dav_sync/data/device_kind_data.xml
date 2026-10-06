@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="device_category_dav_client" model="device.kind">
+        <field name="name">DAV Client</field>
+        <field name="code">dav_client</field>
+        <field
+            name="description">CalDAV/CardDAV sync clients (DAVx5, iOS, Thunderbird, etc.)</field>
+    </record>
+
+</odoo>

@@ -1,0 +1,33 @@
+/** @odoo-module native */
+import { parseDate, toRelative } from "@web/core/l10n/dates";
+import { registry } from "@web/core/registry";
+import { Popover } from "@web/libs/bootstrap";
+import { Interaction } from "@web/public/interaction";
+
+export class ProjectRatingImage extends Interaction {
+    static selector = ".o_portal_project_rating .o_rating_image";
+
+    start() {
+        const popover = Popover.getOrCreateInstance(this.el, {
+            placement: "bottom",
+            trigger: "hover",
+            html: true,
+            content: () => {
+                const ratingEl = document.querySelector(
+                    "#rating_" + this.el.dataset.id,
+                );
+                if (!ratingEl) {
+                    return "";
+                }
+                const duration = toRelative(parseDate(this.el.dataset.ratingDate));
+                ratingEl.querySelector(".rating_timeduration").textContent = duration;
+                return ratingEl.outerHTML;
+            },
+        });
+        this.registerCleanup(() => popover.dispose());
+    }
+}
+
+registry
+    .category("public.interactions")
+    .add("project.project_rating_image", ProjectRatingImage);

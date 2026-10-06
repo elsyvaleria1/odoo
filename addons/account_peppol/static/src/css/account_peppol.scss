@@ -1,0 +1,12 @@
+.itsme_button {
+    background-color: #ff4612;
+    border-color: #ff4612;
+    color: white;
+    text-transform: none;
+
+    &:hover {
+        color: white;
+        background-color: #ff4612;
+        border-color: #ff4612;
+    }
+}

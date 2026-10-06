@@ -1,0 +1,1 @@
+from . import wizard_res_partner_view_relation_path

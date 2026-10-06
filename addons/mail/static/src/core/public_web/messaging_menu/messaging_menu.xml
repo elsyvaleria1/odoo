@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<templates xml:space="preserve">
+
+<t t-name="mail.MessagingMenu">
+    <div t-ref="this.rootRef" class="o-mail-MessagingMenu-container d-flex flex-grow-1 overflow-hidden min-h-0 min-w-0 w-100 h-100" t-att-class="{ 'o-small flex-column-reverse': this.ui.isSmall }">
+        <t t-call="mail.MessagingMenu.navigation"/>
+        <div t-if="!this.props.collapsed" class="o-mail-MessagingMenu d-flex flex-column flex-grow-1 overflow-hidden min-h-0 min-w-0" t-att-class="{ 'o-small': this.ui.isSmall }">
+            <div t-if="this.activeTab" class="o-mail-MessagingMenu-header d-flex flex-column gap-2 o-px-1_5 py-2 flex-shrink-0">
+                <div class="d-flex align-items-stretch gap-1">
+                    <input class="o-mail-MessagingMenu-search form-control form-control-sm flex-grow-1 min-w-0" type="search" t-ref="this.searchInputRef" t-att-value="this.state.searchTerm" t-on-input="this.onInputSearch" t-att-placeholder="this.searchPlaceholder" aria-label="Search"/>
+                    <t t-foreach="this.activeTab.actions" t-as="action" t-key="action.id">
+                        <IsolatedDropdown t-if="action.subActions?.length" position="'bottom-end'" menuClass="'o-mail-MessagingMenu-actionMenu'">
+                            <t t-call="mail.MessagingMenu.action"/>
+                            <t t-set-slot="content">
+                                <button t-foreach="action.subActions" t-as="subAction" t-key="subAction.id" class="dropdown-item" t-att-disabled="subAction.isDisabled?.()" t-on-click="() => this.onClickAction(subAction)" t-out="subAction.text"/>
+                            </t>
+                        </IsolatedDropdown>
+                        <t t-else="" t-call="mail.MessagingMenu.action"/>
+                    </t>
+                </div>
+                <t t-set="pluginFilterGroups" t-value="this.pluginFilterGroups"/>
+                <div t-if="this.activeTab.filters.length or pluginFilterGroups.length" class="o-mail-MessagingMenu-filters d-flex align-items-center flex-nowrap gap-1 overflow-auto o-scrollbar-thin" role="tablist">
+                    <t t-if="this.activeTab.filters.length">
+                        <button class="o-mail-MessagingMenu-filter btn btn-sm rounded-pill o-px-2_5 o-py-0_5 flex-shrink-0" t-att-class="{ 'o-active': !this.state.selectedFilter, 'text-muted': this.state.selectedFilter }" t-att-aria-pressed="!this.state.selectedFilter" t-on-click="() => this.onClickFilter(undefined)">All</button>
+                        <button t-foreach="this.activeTab.sortedFilters" t-as="filter" t-key="filter.id" class="o-mail-MessagingMenu-filter btn btn-sm rounded-pill o-px-2_5 o-py-0_5 flex-shrink-0" t-att-class="{ 'o-active': this.state.selectedFilter?.id === filter.id, 'text-muted': this.state.selectedFilter?.id !== filter.id }" t-att-aria-pressed="this.state.selectedFilter?.id === filter.id" t-att-data-filter="filter.id" t-on-click="() => this.onClickFilter(filter)" t-out="filter.text"/>
+                    </t>
+                    <t t-foreach="pluginFilterGroups" t-as="group" t-key="group.key">
+                        <t t-set="selectedPluginFilter" t-value="this.selectedPluginFilter(group.key)"/>
+                        <IsolatedDropdown t-if="group.filters.length > this.pluginFilterChipLimit" position="'bottom-start'">
+                            <button class="o-mail-MessagingMenu-filter o-mail-MessagingMenu-pluginFilterToggle btn btn-sm rounded-pill o-px-2_5 o-py-0_5 flex-shrink-0 d-flex align-items-center gap-1" t-att-class="{ 'o-active': selectedPluginFilter, 'text-muted': !selectedPluginFilter }" t-att-data-plugin-filter-group="group.key">
+                                <span class="text-truncate" t-out="selectedPluginFilter?.text ?? group.text"/>
+                                <i class="fa-solid fa-chevron-down o-xsmaller"/>
+                            </button>
+                            <t t-set-slot="content">
+                                <DropdownItem t-foreach="group.filters" t-as="filter" t-key="filter.id" class="{ 'active': selectedPluginFilter?.id === filter.id }" attrs="{ 'data-filter': filter.id }" closingMode="'closest'" onSelected="() => this.onClickPluginFilter(group.key, filter)"><t t-out="filter.text"/></DropdownItem>
+                            </t>
+                        </IsolatedDropdown>
+                        <t t-else="">
+                            <button t-foreach="group.filters" t-as="filter" t-key="filter.id" class="o-mail-MessagingMenu-filter btn btn-sm rounded-pill o-px-2_5 o-py-0_5 flex-shrink-0" t-att-class="{ 'o-active': selectedPluginFilter?.id === filter.id, 'text-muted': selectedPluginFilter?.id !== filter.id }" t-att-aria-pressed="selectedPluginFilter?.id === filter.id" t-att-data-filter="filter.id" t-on-click="() => this.onClickPluginFilter(group.key, filter)" t-out="filter.text"/>
+                        </t>
+                    </t>
+                </div>
+            </div>
+            <div class="o-mail-MessagingMenu-list d-flex flex-column overflow-auto o-scrollbar-thin flex-grow-1 list-group list-group-flush" t-ref="this.listRef">
+                <NotificationItem
+                    t-if="this.prefixItems.includes('notificationRequest')"
+                    important="1"
+                    isActive="this.isPrefixItemActive('notificationRequest')"
+                    iconSrc="this.notificationRequest.iconSrc"
+                    onClick="() => this.notification.requestPermission()"
+                >
+                    <t t-set-slot="body" t-out="this.notificationRequest.body"/>
+                    <t t-set-slot="name"><t t-out="this.notificationRequest.displayName"/></t>
+                    <t t-set-slot="icon">
+                        <ImStatus t-if="this.notificationRequest.partner" persona="this.notificationRequest.partner" className="'position-absolute top-100 start-100 translate-middle mt-n1 ms-n1'"/>
+                    </t>
+                    <t t-set-slot="sideContent">
+                        <div class="d-flex align-items-center justify-content-center o-gap-1_5" t-att-class="{ 'o-pe-0_5': !this.ui.isSmall }">
+                            <a t-if="this.ui.isSmall" class="btn fa-solid fa-bell px-0"/>
+                            <t t-else="">
+                                <a class="btn btn-primary btn-sm px-1 py-0">Enable</a>
+                                <span t-if="!this.hasTouch()" t-on-click.stop="() => this.store.isNotificationPermissionDismissed = true" class="text-dark bg-transparent oi oi-close opacity-50 opacity-100-hover" title="Dismiss"></span>
+                            </t>
+                        </div>
+                    </t>
+                </NotificationItem>
+                <t name="extraItems"/>
+                <MessagingMenuItem
+                    t-foreach="this.messages" t-as="message" t-key="message.localId"
+                    message="message"
+                    tab="this.activeTab"
+                    isActive="this.isItemActive(message_index)"
+                    onClick="(options) => this.onClickMessage(message, options)"
+                />
+                <t name="items"/>
+                <t t-if="this.isEmpty">
+                    <MessagingMenuEmpty t-if="this.noSearchResultText and !this.isLoading" title="this.noSearchResultText"/>
+                    <t t-elif="this.isFullyLoaded">
+                        <MessagingMenuEmpty t-if="this.showFilterEmptyState" title="this.noFilterResultText"/>
+                        <t t-elif="this.activeTab?.emptyState">
+                            <t t-set="emptyState" t-value="this.activeTab.emptyState"/>
+                            <t t-if="emptyState.component" t-component="emptyState.component" title="emptyState.title" subtitle="emptyState.subtitle" close="() => this.close()"/>
+                            <MessagingMenuEmpty t-else="" title="emptyState.title" subtitle="emptyState.subtitle"/>
+                        </t>
+                    </t>
+                </t>
+                <div t-if="this.isLoading" class="o-mail-MessagingMenu-loading d-flex align-items-center justify-content-center gap-2 py-4 px-2"><span class="o-visible-short-delay"><i class="fa-solid fa-circle-notch fa-spin me-1"/> Loading…</span></div>
+            </div>
+        </div>
+    </div>
+</t>
+
+<t t-name="mail.MessagingMenu.action">
+    <button class="o-mail-MessagingMenu-action btn btn-sm btn-primary d-flex align-items-center flex-shrink-0 gap-1" t-att-disabled="action.isDisabled?.()" t-att-title="action.title" t-att-data-action="action.id" t-on-click="() => action.subActions?.length ? undefined : this.onClickAction(action)">
+        <i t-if="action.icon" t-att-class="action.icon"/>
+        <span t-if="action.text" class="text-truncate" t-out="action.text"/>
+        <i t-if="action.subActions?.length" class="fa-solid fa-chevron-down o-xsmaller"/>
+    </button>
+</t>
+
+<t t-name="mail.MessagingMenu.navigation">
+    <nav t-if="this.visibleTabs.length" class="o-mail-MessagingMenu-navbar d-flex flex-shrink-0 gap-2 o-scrollbar-thin" t-att-class="{ 'flex-row bg-view border-top w-100 p-2 overflow-x-auto': this.ui.isSmall, 'flex-column px-1 py-2 overflow-y-auto': !this.ui.isSmall, 'border-end': !this.ui.isSmall and !this.props.collapsed }" role="tablist">
+        <button
+            t-foreach="this.visibleTabs" t-as="tab" t-key="tab.localId"
+            class="o-mail-MessagingMenu-tab btn d-flex flex-column align-items-center p-1 bg-transparent position-relative border-0"
+            t-att-class="{
+                'active': this.activeTab?.eq(tab),
+                'flex-grow-1 flex-shrink-1': this.ui.isSmall,
+                'w-100 flex-shrink-0': !this.ui.isSmall,
+                'pb-4': this.isIosPwa,
+                'pb-2': !this.isIosPwa,
+            }"
+            role="tab"
+            t-att-aria-selected="this.activeTab?.eq(tab) ? 'true' : 'false'"
+            t-att-aria-label="tab.label"
+            t-att-data-id="tab.id"
+            t-on-click="() => this.onClickTab(tab)"
+        >
+            <i t-attf-class="o-mail-MessagingMenu-tabIcon {{ tab.icon }} rounded-pill mx-auto p-2 fs-5"/>
+            <span class="o-xsmaller text-center lh-1 mt-1" t-out="tab.label"/>
+            <span t-if="this.getTabCounter(tab)" class="badge o-discuss-badge rounded-pill position-absolute o-mail-MessagingMenu-tabCounter overflow-visible d-inline-block" t-att-class="{ 'o-muted': !tab.important }" t-out="this.getTabCounter(tab)"/>
+        </button>
+        <button t-if="this.props.onToggleCollapsed and !this.ui.isSmall" class="o-mail-MessagingMenu-collapseToggle btn btn-link text-muted mt-auto w-100 flex-shrink-0" t-att-title="this.props.collapsed ? this.expandTitle : this.collapseTitle" t-att-aria-expanded="this.props.collapsed ? 'false' : 'true'" t-on-click="() => this.props.onToggleCollapsed()">
+            <i t-att-class="this.props.collapsed ? 'fa-solid fa-angles-right' : 'fa-solid fa-angles-left'"/>
+        </button>
+    </nav>
+</t>
+
+</templates>

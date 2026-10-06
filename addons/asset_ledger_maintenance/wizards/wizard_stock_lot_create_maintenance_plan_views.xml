@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_stock_lot_maintenance_plan_form" model="ir.ui.view">
+        <field name="name">stock.lot.maintenance.plan.form</field>
+        <field name="model">wizard.stock.lot.create.maintenance.plan</field>
+        <field name="arch" type="xml">
+            <form string="Apply Maintenance Template to Equipment">
+                <group>
+                    <group>
+                        <field
+                            name="template_id"
+                            options="{'no_create': True, 'no_open': True}" />
+                        <field name="company_id" invisible="1" />
+                    </group>
+                    <group>
+                        <label for="equipment_ids" string="Selected Equipment" />
+                        <div>
+                            <field name="equipment_count" class="oe_inline" /> equipment(s) selected
+                        </div>
+                    </group>
+                </group>
+                <group>
+                    <field
+                        name="equipment_ids"
+                        widget="many2many_tags"
+                        nolabel="1"
+                        readonly="1" />
+                </group>
+                <footer>
+                    <button
+                        name="action_apply_template"
+                        type="object"
+                        string="Generate"
+                        class="btn-primary" />
+                    <button special="cancel" string="Cancel" class="btn-secondary" />
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_stock_lot_maintenance_plan" model="ir.actions.act_window">
+        <field name="name">Generate Maintenance Plans…</field>
+        <field name="res_model">wizard.stock.lot.create.maintenance.plan</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+        <field name="binding_model_id" ref="product_trace.model_product_trace" />
+        <field name="binding_view_types">list</field>
+    </record>
+
+</odoo>

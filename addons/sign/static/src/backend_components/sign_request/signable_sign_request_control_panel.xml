@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates>
+    <t t-name="sign.SignSignableRequestControlPanel" t-inherit="sign.SignRequestControlPanel">
+        <xpath expr="//t[@t-set-slot='control-panel-navigation-additional']//div[@class='signer-status']" position="after">
+            <div class="dropdown">
+                <Dropdown t-if="this.signInfo.get('refusalAllowed')" position="'bottom-end'">
+                    <button
+                        class="btn btn-primary dropdown-toggle btn-sm"
+                        aria-label="Dropdown menu"
+                        title="Dropdown menu"
+                    />
+                    <t t-set-slot="content">
+                        <DropdownItem class="'o_sign_refuse_document_button'" onSelected="() => this.refuseDocument()">
+                            Decline to sign
+                        </DropdownItem>
+                    </t>
+                </Dropdown>
+            </div>
+        </xpath>
+    </t>
+</templates>

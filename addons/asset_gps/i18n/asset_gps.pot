@@ -1,0 +1,559 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* asset_gps
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-09-27 05:12+0000\n"
+"PO-Revision-Date: 2026-09-27 05:12+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: asset_gps
+#. odoo-python
+#: code:addons/asset_gps/models/resource_asset.py:0
+msgid "%(device)s is already installed on %(asset)s."
+msgstr ""
+
+#. module: asset_gps
+#: model_terms:ir.ui.view,arch_db:asset_gps.resource_asset_view_kanban_fleet_gps
+msgid "<i class=\"fa-solid fa-battery-half text-secondary\" title=\"GPS Battery\"/>"
+msgstr ""
+
+#. module: asset_gps
+#: model_terms:ir.ui.view,arch_db:asset_gps.resource_asset_view_kanban_general_gps
+msgid "<i class=\"fa-solid fa-car me-1\"/>Moving"
+msgstr ""
+
+#. module: asset_gps
+#: model_terms:ir.ui.view,arch_db:asset_gps.resource_asset_view_kanban_fleet_gps
+msgid "<i class=\"fa-solid fa-car text-muted\" title=\"Stopped\"/>"
+msgstr ""
+
+#. module: asset_gps
+#: model_terms:ir.ui.view,arch_db:asset_gps.resource_asset_view_kanban_fleet_gps
+msgid "<i class=\"fa-solid fa-car text-primary\" title=\"Moving\"/>"
+msgstr ""
+
+#. module: asset_gps
+#: model_terms:ir.ui.view,arch_db:asset_gps.resource_asset_view_kanban_general_gps
+msgid "<i class=\"fa-solid fa-crosshairs me-1\"/>GPS Active"
+msgstr ""
+
+#. module: asset_gps
+#: model_terms:ir.ui.view,arch_db:asset_gps.resource_asset_view_kanban_fleet_gps
+msgid "<i class=\"fa-solid fa-crosshairs me-1\"/>Tracking"
+msgstr ""
+
+#. module: asset_gps
+#: model_terms:ir.ui.view,arch_db:asset_gps.resource_asset_view_kanban_fleet_gps
+msgid "<i class=\"fa-solid fa-exclamation-circle me-1\"/>GPS Error"
+msgstr ""
+
+#. module: asset_gps
+#: model_terms:ir.ui.view,arch_db:asset_gps.resource_asset_view_kanban_fleet_gps
+msgid "<i class=\"fa-solid fa-gas-pump text-warning\" title=\"Fuel Level\"/>"
+msgstr ""
+
+#. module: asset_gps
+#: model_terms:ir.ui.view,arch_db:asset_gps.resource_asset_view_kanban_fleet_gps
+msgid "<i class=\"fa-solid fa-gauge-high text-info\" title=\"Speed\"/>"
+msgstr ""
+
+#. module: asset_gps
+#: model_terms:ir.ui.view,arch_db:asset_gps.resource_asset_view_kanban_fleet_gps
+msgid "<i class=\"fa-solid fa-location-dot me-1\" title=\"GPS History\"/>GPS History"
+msgstr ""
+
+#. module: asset_gps
+#: model_terms:ir.ui.view,arch_db:asset_gps.resource_asset_view_kanban_fleet_gps
+msgid "<i class=\"fa-solid fa-power-off text-muted\" title=\"Ignition Off\"/>"
+msgstr ""
+
+#. module: asset_gps
+#: model_terms:ir.ui.view,arch_db:asset_gps.resource_asset_view_kanban_fleet_gps
+msgid "<i class=\"fa-solid fa-power-off text-success\" title=\"Ignition On\"/>"
+msgstr ""
+
+#. module: asset_gps
+#: model_terms:ir.ui.view,arch_db:asset_gps.resource_asset_view_kanban_fleet_gps
+msgid "<i class=\"fa-solid fa-satellite-dish me-1\"/>GPS Live Status"
+msgstr ""
+
+#. module: asset_gps
+#: model_terms:ir.ui.view,arch_db:asset_gps.view_device_device_kanban_gps_dashboard_asset
+msgid ""
+"<i class=\"fa-solid fa-truck\"/>\n"
+"                        <span class=\"ms-1\">Asset: </span>"
+msgstr ""
+
+#. module: asset_gps
+#: model_terms:ir.ui.view,arch_db:asset_gps.resource_asset_view_form_gps
+msgid ""
+"<span class=\"o_stat_text\">GPS</span>\n"
+"                        <span class=\"o_stat_text\">Device</span>"
+msgstr ""
+
+#. module: asset_gps
+#: model_terms:ir.ui.view,arch_db:asset_gps.resource_asset_view_form_gps
+msgid ""
+"<span class=\"o_stat_text\">Tracking</span>\n"
+"                        <span class=\"o_stat_text\">History</span>"
+msgstr ""
+
+#. module: asset_gps
+#: model_terms:ir.ui.view,arch_db:asset_gps.view_device_device_form_asset
+msgid ""
+"<span class=\"o_stat_text\">View</span>\n"
+"                        <span class=\"o_stat_text\">Asset</span>"
+msgstr ""
+
+#. module: asset_gps
+#: model_terms:ir.ui.view,arch_db:asset_gps.resource_asset_view_kanban_fleet_gps
+msgid "<span class=\"text-muted\"> %</span>"
+msgstr ""
+
+#. module: asset_gps
+#: model_terms:ir.ui.view,arch_db:asset_gps.resource_asset_view_kanban_fleet_gps
+msgid "<span class=\"text-muted\"> L</span>"
+msgstr ""
+
+#. module: asset_gps
+#: model_terms:ir.ui.view,arch_db:asset_gps.resource_asset_view_kanban_fleet_gps
+msgid "<span class=\"text-muted\"> V</span>"
+msgstr ""
+
+#. module: asset_gps
+#: model_terms:ir.ui.view,arch_db:asset_gps.resource_asset_view_kanban_fleet_gps
+msgid "<span class=\"text-muted\"> km/h</span>"
+msgstr ""
+
+#. module: asset_gps
+#: model:ir.model.fields,field_description:asset_gps.field_device_data_log_gps_report__asset_id
+#: model_terms:ir.ui.view,arch_db:asset_gps.view_device_data_log_gps_report_search_asset
+msgid "Asset"
+msgstr ""
+
+#. module: asset_gps
+#: model:ir.model.fields,field_description:asset_gps.field_device_data_log_gps_report__asset_name
+msgid "Asset Name"
+msgstr ""
+
+#. module: asset_gps
+#: model:ir.model.fields,help:asset_gps.field_device_device__asset_id
+msgid "Asset this GPS device is installed on, archived or not"
+msgstr ""
+
+#. module: asset_gps
+#: model:ir.model.fields,field_description:asset_gps.field_device_device__asset_id
+msgid "Assigned Asset"
+msgstr ""
+
+#. module: asset_gps
+#: model_terms:ir.ui.view,arch_db:asset_gps.resource_asset_view_kanban_fleet_gps
+msgid "Battery"
+msgstr ""
+
+#. module: asset_gps
+#: model:ir.model.fields,help:asset_gps.field_account_depreciation_board__gps_battery_level
+#: model:ir.model.fields,help:asset_gps.field_resource_asset__gps_battery_level
+#: model:ir.model.fields,help:asset_gps.field_resource_asset_device__gps_battery_level
+#: model:ir.model.fields,help:asset_gps.field_resource_asset_equipment__gps_battery_level
+#: model:ir.model.fields,help:asset_gps.field_resource_asset_furniture__gps_battery_level
+#: model:ir.model.fields,help:asset_gps.field_resource_asset_it__gps_battery_level
+#: model:ir.model.fields,help:asset_gps.field_resource_asset_machinery__gps_battery_level
+#: model:ir.model.fields,help:asset_gps.field_resource_asset_property__gps_battery_level
+#: model:ir.model.fields,help:asset_gps.field_resource_asset_room__gps_battery_level
+#: model:ir.model.fields,help:asset_gps.field_resource_asset_telecom__gps_battery_level
+#: model:ir.model.fields,help:asset_gps.field_resource_asset_vehicle__gps_battery_level
+#: model:ir.model.fields,help:asset_gps.field_product_trace__gps_battery_level
+msgid "Battery level (voltage or percentage depending on device)"
+msgstr ""
+
+#. module: asset_gps
+#: model:ir.model.fields,help:asset_gps.field_account_depreciation_board__gps_ignition_state
+#: model:ir.model.fields,help:asset_gps.field_resource_asset__gps_ignition_state
+#: model:ir.model.fields,help:asset_gps.field_resource_asset_device__gps_ignition_state
+#: model:ir.model.fields,help:asset_gps.field_resource_asset_equipment__gps_ignition_state
+#: model:ir.model.fields,help:asset_gps.field_resource_asset_furniture__gps_ignition_state
+#: model:ir.model.fields,help:asset_gps.field_resource_asset_it__gps_ignition_state
+#: model:ir.model.fields,help:asset_gps.field_resource_asset_machinery__gps_ignition_state
+#: model:ir.model.fields,help:asset_gps.field_resource_asset_property__gps_ignition_state
+#: model:ir.model.fields,help:asset_gps.field_resource_asset_room__gps_ignition_state
+#: model:ir.model.fields,help:asset_gps.field_resource_asset_telecom__gps_ignition_state
+#: model:ir.model.fields,help:asset_gps.field_resource_asset_vehicle__gps_ignition_state
+#: model:ir.model.fields,help:asset_gps.field_product_trace__gps_ignition_state
+msgid "Current vehicle ignition state"
+msgstr ""
+
+#. module: asset_gps
+#: model:ir.model.fields,help:asset_gps.field_account_depreciation_board__gps_movement_state
+#: model:ir.model.fields,help:asset_gps.field_resource_asset__gps_movement_state
+#: model:ir.model.fields,help:asset_gps.field_resource_asset_device__gps_movement_state
+#: model:ir.model.fields,help:asset_gps.field_resource_asset_equipment__gps_movement_state
+#: model:ir.model.fields,help:asset_gps.field_resource_asset_furniture__gps_movement_state
+#: model:ir.model.fields,help:asset_gps.field_resource_asset_it__gps_movement_state
+#: model:ir.model.fields,help:asset_gps.field_resource_asset_machinery__gps_movement_state
+#: model:ir.model.fields,help:asset_gps.field_resource_asset_property__gps_movement_state
+#: model:ir.model.fields,help:asset_gps.field_resource_asset_room__gps_movement_state
+#: model:ir.model.fields,help:asset_gps.field_resource_asset_telecom__gps_movement_state
+#: model:ir.model.fields,help:asset_gps.field_resource_asset_vehicle__gps_movement_state
+#: model:ir.model.fields,help:asset_gps.field_product_trace__gps_movement_state
+msgid "Current vehicle movement state"
+msgstr ""
+
+#. module: asset_gps
+#: model:ir.model.fields,help:asset_gps.field_account_depreciation_board__gps_tracking_enabled
+#: model:ir.model.fields,help:asset_gps.field_resource_asset__gps_tracking_enabled
+#: model:ir.model.fields,help:asset_gps.field_resource_asset_device__gps_tracking_enabled
+#: model:ir.model.fields,help:asset_gps.field_resource_asset_equipment__gps_tracking_enabled
+#: model:ir.model.fields,help:asset_gps.field_resource_asset_furniture__gps_tracking_enabled
+#: model:ir.model.fields,help:asset_gps.field_resource_asset_it__gps_tracking_enabled
+#: model:ir.model.fields,help:asset_gps.field_resource_asset_machinery__gps_tracking_enabled
+#: model:ir.model.fields,help:asset_gps.field_resource_asset_property__gps_tracking_enabled
+#: model:ir.model.fields,help:asset_gps.field_resource_asset_room__gps_tracking_enabled
+#: model:ir.model.fields,help:asset_gps.field_resource_asset_telecom__gps_tracking_enabled
+#: model:ir.model.fields,help:asset_gps.field_resource_asset_vehicle__gps_tracking_enabled
+#: model:ir.model.fields,help:asset_gps.field_product_trace__gps_tracking_enabled
+msgid ""
+"Enable continuous GPS tracking. Defaults to config setting but can be "
+"overridden."
+msgstr ""
+
+#. module: asset_gps
+#: model_terms:ir.ui.view,arch_db:asset_gps.resource_asset_view_kanban_fleet_gps
+msgid "Fuel"
+msgstr ""
+
+#. module: asset_gps
+#: model:ir.model.fields,field_description:asset_gps.field_account_depreciation_board__gps_fuel_level
+#: model:ir.model.fields,field_description:asset_gps.field_resource_asset__gps_fuel_level
+#: model:ir.model.fields,field_description:asset_gps.field_resource_asset_device__gps_fuel_level
+#: model:ir.model.fields,field_description:asset_gps.field_resource_asset_equipment__gps_fuel_level
+#: model:ir.model.fields,field_description:asset_gps.field_resource_asset_furniture__gps_fuel_level
+#: model:ir.model.fields,field_description:asset_gps.field_resource_asset_it__gps_fuel_level
+#: model:ir.model.fields,field_description:asset_gps.field_resource_asset_machinery__gps_fuel_level
+#: model:ir.model.fields,field_description:asset_gps.field_resource_asset_property__gps_fuel_level
+#: model:ir.model.fields,field_description:asset_gps.field_resource_asset_room__gps_fuel_level
+#: model:ir.model.fields,field_description:asset_gps.field_resource_asset_telecom__gps_fuel_level
+#: model:ir.model.fields,field_description:asset_gps.field_resource_asset_vehicle__gps_fuel_level
+#: model:ir.model.fields,field_description:asset_gps.field_product_trace__gps_fuel_level
+msgid "Fuel Level (%)"
+msgstr ""
+
+#. module: asset_gps
+#: model:ir.model.fields,field_description:asset_gps.field_account_depreciation_board__gps_fuel_level_l
+#: model:ir.model.fields,field_description:asset_gps.field_resource_asset__gps_fuel_level_l
+#: model:ir.model.fields,field_description:asset_gps.field_resource_asset_device__gps_fuel_level_l
+#: model:ir.model.fields,field_description:asset_gps.field_resource_asset_equipment__gps_fuel_level_l
+#: model:ir.model.fields,field_description:asset_gps.field_resource_asset_furniture__gps_fuel_level_l
+#: model:ir.model.fields,field_description:asset_gps.field_resource_asset_it__gps_fuel_level_l
+#: model:ir.model.fields,field_description:asset_gps.field_resource_asset_machinery__gps_fuel_level_l
+#: model:ir.model.fields,field_description:asset_gps.field_resource_asset_property__gps_fuel_level_l
+#: model:ir.model.fields,field_description:asset_gps.field_resource_asset_room__gps_fuel_level_l
+#: model:ir.model.fields,field_description:asset_gps.field_resource_asset_telecom__gps_fuel_level_l
+#: model:ir.model.fields,field_description:asset_gps.field_resource_asset_vehicle__gps_fuel_level_l
+#: model:ir.model.fields,field_description:asset_gps.field_product_trace__gps_fuel_level_l
+msgid "Fuel Level (L)"
+msgstr ""
+
+#. module: asset_gps
+#: model:ir.model.fields,field_description:asset_gps.field_account_depreciation_board__gps_battery_level
+#: model:ir.model.fields,field_description:asset_gps.field_resource_asset__gps_battery_level
+#: model:ir.model.fields,field_description:asset_gps.field_resource_asset_device__gps_battery_level
+#: model:ir.model.fields,field_description:asset_gps.field_resource_asset_equipment__gps_battery_level
+#: model:ir.model.fields,field_description:asset_gps.field_resource_asset_furniture__gps_battery_level
+#: model:ir.model.fields,field_description:asset_gps.field_resource_asset_it__gps_battery_level
+#: model:ir.model.fields,field_description:asset_gps.field_resource_asset_machinery__gps_battery_level
+#: model:ir.model.fields,field_description:asset_gps.field_resource_asset_property__gps_battery_level
+#: model:ir.model.fields,field_description:asset_gps.field_resource_asset_room__gps_battery_level
+#: model:ir.model.fields,field_description:asset_gps.field_resource_asset_telecom__gps_battery_level
+#: model:ir.model.fields,field_description:asset_gps.field_resource_asset_vehicle__gps_battery_level
+#: model:ir.model.fields,field_description:asset_gps.field_product_trace__gps_battery_level
+msgid "GPS Battery"
+msgstr ""
+
+#. module: asset_gps
+#: model:ir.model.fields,field_description:asset_gps.field_account_depreciation_board__gps_connection_state
+#: model:ir.model.fields,field_description:asset_gps.field_resource_asset__gps_connection_state
+#: model:ir.model.fields,field_description:asset_gps.field_resource_asset_device__gps_connection_state
+#: model:ir.model.fields,field_description:asset_gps.field_resource_asset_equipment__gps_connection_state
+#: model:ir.model.fields,field_description:asset_gps.field_resource_asset_furniture__gps_connection_state
+#: model:ir.model.fields,field_description:asset_gps.field_resource_asset_it__gps_connection_state
+#: model:ir.model.fields,field_description:asset_gps.field_resource_asset_machinery__gps_connection_state
+#: model:ir.model.fields,field_description:asset_gps.field_resource_asset_property__gps_connection_state
+#: model:ir.model.fields,field_description:asset_gps.field_resource_asset_room__gps_connection_state
+#: model:ir.model.fields,field_description:asset_gps.field_resource_asset_telecom__gps_connection_state
+#: model:ir.model.fields,field_description:asset_gps.field_resource_asset_vehicle__gps_connection_state
+#: model:ir.model.fields,field_description:asset_gps.field_product_trace__gps_connection_state
+msgid "GPS Connection"
+msgstr ""
+
+#. module: asset_gps
+#: model:ir.model.fields,field_description:asset_gps.field_account_depreciation_board__gps_device_id
+#: model:ir.model.fields,field_description:asset_gps.field_resource_asset__gps_device_id
+#: model:ir.model.fields,field_description:asset_gps.field_resource_asset_device__gps_device_id
+#: model:ir.model.fields,field_description:asset_gps.field_resource_asset_equipment__gps_device_id
+#: model:ir.model.fields,field_description:asset_gps.field_resource_asset_furniture__gps_device_id
+#: model:ir.model.fields,field_description:asset_gps.field_resource_asset_it__gps_device_id
+#: model:ir.model.fields,field_description:asset_gps.field_resource_asset_machinery__gps_device_id
+#: model:ir.model.fields,field_description:asset_gps.field_resource_asset_property__gps_device_id
+#: model:ir.model.fields,field_description:asset_gps.field_resource_asset_room__gps_device_id
+#: model:ir.model.fields,field_description:asset_gps.field_resource_asset_telecom__gps_device_id
+#: model:ir.model.fields,field_description:asset_gps.field_resource_asset_vehicle__gps_device_id
+#: model:ir.model.fields,field_description:asset_gps.field_product_trace__gps_device_id
+#: model:ir.model.fields.selection,name:asset_gps.selection__resource_asset_log__source__gps
+#: model_terms:ir.ui.view,arch_db:asset_gps.resource_asset_view_list_fleet_gps
+msgid "GPS Device"
+msgstr ""
+
+#. module: asset_gps
+#. odoo-python
+#: code:addons/asset_gps/models/resource_asset.py:0
+#: code:addons/asset_gps/models/product_trace.py:0
+msgid "GPS Device: %s"
+msgstr ""
+
+#. module: asset_gps
+#: model_terms:ir.ui.view,arch_db:asset_gps.resource_asset_view_kanban_fleet_gps
+#: model_terms:ir.ui.view,arch_db:asset_gps.resource_asset_view_kanban_general_gps
+msgid "GPS Error"
+msgstr ""
+
+#. module: asset_gps
+#: model:ir.model.fields,field_description:asset_gps.field_account_depreciation_board__gps_date_last_data
+#: model:ir.model.fields,field_description:asset_gps.field_resource_asset__gps_date_last_data
+#: model:ir.model.fields,field_description:asset_gps.field_resource_asset_device__gps_date_last_data
+#: model:ir.model.fields,field_description:asset_gps.field_resource_asset_equipment__gps_date_last_data
+#: model:ir.model.fields,field_description:asset_gps.field_resource_asset_furniture__gps_date_last_data
+#: model:ir.model.fields,field_description:asset_gps.field_resource_asset_it__gps_date_last_data
+#: model:ir.model.fields,field_description:asset_gps.field_resource_asset_machinery__gps_date_last_data
+#: model:ir.model.fields,field_description:asset_gps.field_resource_asset_property__gps_date_last_data
+#: model:ir.model.fields,field_description:asset_gps.field_resource_asset_room__gps_date_last_data
+#: model:ir.model.fields,field_description:asset_gps.field_resource_asset_telecom__gps_date_last_data
+#: model:ir.model.fields,field_description:asset_gps.field_resource_asset_vehicle__gps_date_last_data
+#: model:ir.model.fields,field_description:asset_gps.field_product_trace__gps_date_last_data
+msgid "GPS Last Update"
+msgstr ""
+
+#. module: asset_gps
+#: model_terms:ir.ui.view,arch_db:asset_gps.resource_asset_view_kanban_fleet_gps
+msgid "GPS Offline"
+msgstr ""
+
+#. module: asset_gps
+#: model_terms:ir.ui.view,arch_db:asset_gps.resource_asset_view_kanban_fleet_gps
+#: model_terms:ir.ui.view,arch_db:asset_gps.resource_asset_view_kanban_general_gps
+msgid "GPS Online"
+msgstr ""
+
+#. module: asset_gps
+#: model:ir.model.fields,field_description:asset_gps.field_account_depreciation_board__gps_ignition_state
+#: model:ir.model.fields,field_description:asset_gps.field_resource_asset__gps_ignition_state
+#: model:ir.model.fields,field_description:asset_gps.field_resource_asset_device__gps_ignition_state
+#: model:ir.model.fields,field_description:asset_gps.field_resource_asset_equipment__gps_ignition_state
+#: model:ir.model.fields,field_description:asset_gps.field_resource_asset_furniture__gps_ignition_state
+#: model:ir.model.fields,field_description:asset_gps.field_resource_asset_it__gps_ignition_state
+#: model:ir.model.fields,field_description:asset_gps.field_resource_asset_machinery__gps_ignition_state
+#: model:ir.model.fields,field_description:asset_gps.field_resource_asset_property__gps_ignition_state
+#: model:ir.model.fields,field_description:asset_gps.field_resource_asset_room__gps_ignition_state
+#: model:ir.model.fields,field_description:asset_gps.field_resource_asset_telecom__gps_ignition_state
+#: model:ir.model.fields,field_description:asset_gps.field_resource_asset_vehicle__gps_ignition_state
+#: model:ir.model.fields,field_description:asset_gps.field_product_trace__gps_ignition_state
+#: model_terms:ir.ui.view,arch_db:asset_gps.resource_asset_view_kanban_fleet_gps
+msgid "Ignition"
+msgstr ""
+
+#. module: asset_gps
+#: model_terms:ir.ui.view,arch_db:asset_gps.resource_asset_view_kanban_fleet_gps
+msgid "Last data received from the device"
+msgstr ""
+
+#. module: asset_gps
+#: model:ir.model.fields,field_description:asset_gps.field_device_data_log_gps_report__license_plate
+msgid "License Plate"
+msgstr ""
+
+#. module: asset_gps
+#: model:ir.model.fields,help:asset_gps.field_account_depreciation_board__gps_fuel_level_l
+#: model:ir.model.fields,help:asset_gps.field_resource_asset__gps_fuel_level_l
+#: model:ir.model.fields,help:asset_gps.field_resource_asset_device__gps_fuel_level_l
+#: model:ir.model.fields,help:asset_gps.field_resource_asset_equipment__gps_fuel_level_l
+#: model:ir.model.fields,help:asset_gps.field_resource_asset_furniture__gps_fuel_level_l
+#: model:ir.model.fields,help:asset_gps.field_resource_asset_it__gps_fuel_level_l
+#: model:ir.model.fields,help:asset_gps.field_resource_asset_machinery__gps_fuel_level_l
+#: model:ir.model.fields,help:asset_gps.field_resource_asset_property__gps_fuel_level_l
+#: model:ir.model.fields,help:asset_gps.field_resource_asset_room__gps_fuel_level_l
+#: model:ir.model.fields,help:asset_gps.field_resource_asset_telecom__gps_fuel_level_l
+#: model:ir.model.fields,help:asset_gps.field_resource_asset_vehicle__gps_fuel_level_l
+#: model:ir.model.fields,help:asset_gps.field_product_trace__gps_fuel_level_l
+msgid ""
+"Most recent fuel level in liters from tracking point (CAN bus field 84)"
+msgstr ""
+
+#. module: asset_gps
+#: model:ir.model.fields,help:asset_gps.field_account_depreciation_board__gps_fuel_level
+#: model:ir.model.fields,help:asset_gps.field_resource_asset__gps_fuel_level
+#: model:ir.model.fields,help:asset_gps.field_resource_asset_device__gps_fuel_level
+#: model:ir.model.fields,help:asset_gps.field_resource_asset_equipment__gps_fuel_level
+#: model:ir.model.fields,help:asset_gps.field_resource_asset_furniture__gps_fuel_level
+#: model:ir.model.fields,help:asset_gps.field_resource_asset_it__gps_fuel_level
+#: model:ir.model.fields,help:asset_gps.field_resource_asset_machinery__gps_fuel_level
+#: model:ir.model.fields,help:asset_gps.field_resource_asset_property__gps_fuel_level
+#: model:ir.model.fields,help:asset_gps.field_resource_asset_room__gps_fuel_level
+#: model:ir.model.fields,help:asset_gps.field_resource_asset_telecom__gps_fuel_level
+#: model:ir.model.fields,help:asset_gps.field_resource_asset_vehicle__gps_fuel_level
+#: model:ir.model.fields,help:asset_gps.field_product_trace__gps_fuel_level
+msgid "Most recent fuel level percentage from tracking point (field 89)"
+msgstr ""
+
+#. module: asset_gps
+#: model:ir.model.fields,help:asset_gps.field_account_depreciation_board__gps_current_speed
+#: model:ir.model.fields,help:asset_gps.field_resource_asset__gps_current_speed
+#: model:ir.model.fields,help:asset_gps.field_resource_asset_device__gps_current_speed
+#: model:ir.model.fields,help:asset_gps.field_resource_asset_equipment__gps_current_speed
+#: model:ir.model.fields,help:asset_gps.field_resource_asset_furniture__gps_current_speed
+#: model:ir.model.fields,help:asset_gps.field_resource_asset_it__gps_current_speed
+#: model:ir.model.fields,help:asset_gps.field_resource_asset_machinery__gps_current_speed
+#: model:ir.model.fields,help:asset_gps.field_resource_asset_property__gps_current_speed
+#: model:ir.model.fields,help:asset_gps.field_resource_asset_room__gps_current_speed
+#: model:ir.model.fields,help:asset_gps.field_resource_asset_telecom__gps_current_speed
+#: model:ir.model.fields,help:asset_gps.field_resource_asset_vehicle__gps_current_speed
+#: model:ir.model.fields,help:asset_gps.field_product_trace__gps_current_speed
+msgid "Most recent speed from tracking point"
+msgstr ""
+
+#. module: asset_gps
+#: model:ir.model.fields,field_description:asset_gps.field_account_depreciation_board__gps_movement_state
+#: model:ir.model.fields,field_description:asset_gps.field_resource_asset__gps_movement_state
+#: model:ir.model.fields,field_description:asset_gps.field_resource_asset_device__gps_movement_state
+#: model:ir.model.fields,field_description:asset_gps.field_resource_asset_equipment__gps_movement_state
+#: model:ir.model.fields,field_description:asset_gps.field_resource_asset_furniture__gps_movement_state
+#: model:ir.model.fields,field_description:asset_gps.field_resource_asset_it__gps_movement_state
+#: model:ir.model.fields,field_description:asset_gps.field_resource_asset_machinery__gps_movement_state
+#: model:ir.model.fields,field_description:asset_gps.field_resource_asset_property__gps_movement_state
+#: model:ir.model.fields,field_description:asset_gps.field_resource_asset_room__gps_movement_state
+#: model:ir.model.fields,field_description:asset_gps.field_resource_asset_telecom__gps_movement_state
+#: model:ir.model.fields,field_description:asset_gps.field_resource_asset_vehicle__gps_movement_state
+#: model:ir.model.fields,field_description:asset_gps.field_product_trace__gps_movement_state
+#: model_terms:ir.ui.view,arch_db:asset_gps.resource_asset_view_kanban_fleet_gps
+msgid "Moving"
+msgstr ""
+
+#. module: asset_gps
+#: model_terms:ir.ui.view,arch_db:asset_gps.resource_asset_view_kanban_fleet_gps
+msgid "N/A"
+msgstr ""
+
+#. module: asset_gps
+#. odoo-python
+#: code:addons/asset_gps/models/resource_asset.py:0
+#: code:addons/asset_gps/models/product_trace.py:0
+msgid "No GPS device assigned to this asset"
+msgstr ""
+
+#. module: asset_gps
+#: model_terms:ir.ui.view,arch_db:asset_gps.resource_asset_view_kanban_fleet_gps
+msgid "OFF"
+msgstr ""
+
+#. module: asset_gps
+#: model_terms:ir.ui.view,arch_db:asset_gps.resource_asset_view_kanban_fleet_gps
+msgid "ON"
+msgstr ""
+
+#. module: asset_gps
+#. odoo-python
+#: code:addons/asset_gps/models/resource_asset.py:0
+msgid "Odometer snapshot from %(device)s."
+msgstr ""
+
+#. module: asset_gps
+#: model:ir.model.fields,help:asset_gps.field_account_depreciation_board__gps_device_id
+#: model:ir.model.fields,help:asset_gps.field_resource_asset__gps_device_id
+#: model:ir.model.fields,help:asset_gps.field_resource_asset_device__gps_device_id
+#: model:ir.model.fields,help:asset_gps.field_resource_asset_equipment__gps_device_id
+#: model:ir.model.fields,help:asset_gps.field_resource_asset_furniture__gps_device_id
+#: model:ir.model.fields,help:asset_gps.field_resource_asset_it__gps_device_id
+#: model:ir.model.fields,help:asset_gps.field_resource_asset_machinery__gps_device_id
+#: model:ir.model.fields,help:asset_gps.field_resource_asset_property__gps_device_id
+#: model:ir.model.fields,help:asset_gps.field_resource_asset_room__gps_device_id
+#: model:ir.model.fields,help:asset_gps.field_resource_asset_telecom__gps_device_id
+#: model:ir.model.fields,help:asset_gps.field_resource_asset_vehicle__gps_device_id
+#: model:ir.model.fields,help:asset_gps.field_product_trace__gps_device_id
+msgid "Primary GPS tracking device installed on this asset"
+msgstr ""
+
+#. module: asset_gps
+#: model:res.groups,name:asset_gps.privilege_read_vehicle_gps
+msgid "Privilege: an asset reads its own GPS odometer"
+msgstr ""
+
+#. module: asset_gps
+#: model:ir.actions.server,name:asset_gps.cron_record_gps_odometer_ir_actions_server
+msgid "Record GPS Odometer Readings"
+msgstr ""
+
+#. module: asset_gps
+#: model_terms:ir.ui.view,arch_db:asset_gps.resource_asset_view_kanban_fleet_gps
+msgid "Speed"
+msgstr ""
+
+#. module: asset_gps
+#: model:ir.model.fields,field_description:asset_gps.field_account_depreciation_board__gps_current_speed
+#: model:ir.model.fields,field_description:asset_gps.field_resource_asset__gps_current_speed
+#: model:ir.model.fields,field_description:asset_gps.field_resource_asset_device__gps_current_speed
+#: model:ir.model.fields,field_description:asset_gps.field_resource_asset_equipment__gps_current_speed
+#: model:ir.model.fields,field_description:asset_gps.field_resource_asset_furniture__gps_current_speed
+#: model:ir.model.fields,field_description:asset_gps.field_resource_asset_it__gps_current_speed
+#: model:ir.model.fields,field_description:asset_gps.field_resource_asset_machinery__gps_current_speed
+#: model:ir.model.fields,field_description:asset_gps.field_resource_asset_property__gps_current_speed
+#: model:ir.model.fields,field_description:asset_gps.field_resource_asset_room__gps_current_speed
+#: model:ir.model.fields,field_description:asset_gps.field_resource_asset_telecom__gps_current_speed
+#: model:ir.model.fields,field_description:asset_gps.field_resource_asset_vehicle__gps_current_speed
+#: model:ir.model.fields,field_description:asset_gps.field_product_trace__gps_current_speed
+msgid "Speed (km/h)"
+msgstr ""
+
+#. module: asset_gps
+#: model_terms:ir.ui.view,arch_db:asset_gps.resource_asset_view_kanban_fleet_gps
+msgid "Status"
+msgstr ""
+
+#. module: asset_gps
+#: model_terms:ir.ui.view,arch_db:asset_gps.resource_asset_view_kanban_fleet_gps
+msgid "Stopped"
+msgstr ""
+
+#. module: asset_gps
+#: model:ir.model.fields,field_description:asset_gps.field_account_depreciation_board__gps_tracking_enabled
+#: model:ir.model.fields,field_description:asset_gps.field_resource_asset__gps_tracking_enabled
+#: model:ir.model.fields,field_description:asset_gps.field_resource_asset_device__gps_tracking_enabled
+#: model:ir.model.fields,field_description:asset_gps.field_resource_asset_equipment__gps_tracking_enabled
+#: model:ir.model.fields,field_description:asset_gps.field_resource_asset_furniture__gps_tracking_enabled
+#: model:ir.model.fields,field_description:asset_gps.field_resource_asset_it__gps_tracking_enabled
+#: model:ir.model.fields,field_description:asset_gps.field_resource_asset_machinery__gps_tracking_enabled
+#: model:ir.model.fields,field_description:asset_gps.field_resource_asset_property__gps_tracking_enabled
+#: model:ir.model.fields,field_description:asset_gps.field_resource_asset_room__gps_tracking_enabled
+#: model:ir.model.fields,field_description:asset_gps.field_resource_asset_telecom__gps_tracking_enabled
+#: model:ir.model.fields,field_description:asset_gps.field_resource_asset_vehicle__gps_tracking_enabled
+#: model:ir.model.fields,field_description:asset_gps.field_product_trace__gps_tracking_enabled
+msgid "Tracking Enabled"
+msgstr ""
+
+#. module: asset_gps
+#. odoo-python
+#: code:addons/asset_gps/models/product_trace.py:0
+msgid "Tracking History: %s"
+msgstr ""
+
+#. module: asset_gps
+#: model_terms:ir.ui.view,arch_db:asset_gps.resource_asset_view_kanban_fleet_gps
+msgid "View GPS tracking history"
+msgstr ""

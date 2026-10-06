@@ -1,0 +1,14 @@
+id,name,model_id/id,group_id/id,kind,operation,reach,anchor,domain
+spreadsheet_cell_thread_write_rule,Documents Spreadsheet: thread folder write groups,spreadsheet_edition.model_spreadsheet_cell_thread,base.group_user,permission,cru,,,"[('document_id.user_permission', '=', 'edit')]"
+spreadsheet_manager_document_threads,Spreadsheet document threads: manager,spreadsheet_edition.model_spreadsheet_cell_thread,document.group_documents_manager,permission,crud,all,,"[('document_id', '!=', False)]"
+spreadsheet_manager_template_threads,Spreadsheet template threads: manager,spreadsheet_edition.model_spreadsheet_cell_thread,document.group_documents_manager,permission,crud,all,,"[('template_id', '!=', False)]"
+spreadsheet_own_template_threads,Spreadsheet template threads: manage own,spreadsheet_edition.model_spreadsheet_cell_thread,document.group_documents_user,permission,cu,own,,
+spreadsheet_cell_thread_write_rule_group_system,Documents Spreadsheet: thread folder write groups,spreadsheet_edition.model_spreadsheet_cell_thread,base.group_system,permission,cru,,,"[('document_id.user_permission', '=', 'edit')]"
+access_spreadsheet_contributor,access_spreadsheet_contributor,model_spreadsheet_contributor,base.group_user,permission,cru,,,
+access_spreadsheet_template,access_spreadsheet_template,model_spreadsheet_template,document.group_documents_user,permission,cr,,,
+spreadsheet_manager_templates,Spreadsheet_template: manager,model_spreadsheet_template,document.group_documents_manager,permission,ud,,,
+spreadsheet_own_templates,Spreadsheet_template: manage own,model_spreadsheet_template,document.group_documents_user,permission,ud,own,creator,
+save_spreadsheet_template,save_spreadsheet_template,model_wizard_spreadsheet_template_create,document.group_documents_user,permission,cru,,,
+save_spreadsheet_template_own,Spreadsheet template wizard: its creator's rows only,model_wizard_spreadsheet_template_create,base.group_everyone,guard,ru,own,creator,
+spreadsheet_own_template_threads_group_documents_manager,Spreadsheet template threads: manage own,spreadsheet_edition.model_spreadsheet_cell_thread,document.group_documents_manager,permission,d,own,,
+documents_document_thread_global_rule,Documents.document thread: global,model_spreadsheet_cell_thread,base.group_everyone,guard,crud,,,"['|', ('document_id', '=', False), ('document_id.user_permission', '!=', 'none')]"

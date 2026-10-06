@@ -1,0 +1,325 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <data noupdate="1">
+        <record id="base.user_demo" model="res.users">
+            <field
+                name="group_ids"
+                eval="[Command.unlink(ref('resource_asset_vehicle.fleet_group_user')), Command.unlink(ref('resource_asset_vehicle.fleet_group_manager'))]" />
+        </record>
+        <record id="base.default_user_group" model="res.groups">
+            <field
+                name="implied_ids"
+                eval="[Command.link(ref('resource_asset_vehicle.fleet_group_manager'))]" />
+        </record>
+        <record id="vehicle_tag_junior" model="fleet.vehicle.tag">
+            <field name="name">Junior</field>
+            <field name="color">1</field>
+        </record>
+        <record id="vehicle_tag_senior" model="fleet.vehicle.tag">
+            <field name="name">Senior</field>
+            <field name="color">2</field>
+        </record>
+        <record id="vehicle_tag_leasing" model="fleet.vehicle.tag">
+            <field name="name">Employee Car</field>
+            <field name="color">3</field>
+        </record>
+        <record id="vehicle_tag_purchased" model="fleet.vehicle.tag">
+            <field name="name">Purchased</field>
+            <field name="color">4</field>
+        </record>
+        <record id="type_service_service_2" model="product.product">
+            <field name="name">Oil Change</field>
+            <field name="type">service</field>
+            <field name="categ_id" ref="product_category_vehicle_services" />
+            <field name="sale_ok" eval="False" />
+        </record>
+        <record id="type_service_service_3" model="product.product">
+            <field name="name">Tire Replacement</field>
+            <field name="type">service</field>
+            <field name="categ_id" ref="product_category_vehicle_services" />
+            <field name="sale_ok" eval="False" />
+        </record>
+        <record id="type_service_service_7" model="product.product">
+            <field name="name">Periodic Maintenance</field>
+            <field name="type">service</field>
+            <field name="categ_id" ref="product_category_vehicle_services" />
+            <field name="sale_ok" eval="False" />
+        </record>
+        <record id="model_corolla_ts" model="product.product">
+            <field name="name">Corolla TS</field>
+            <field name="type">consu</field>
+            <field name="sale_ok" eval="False" />
+            <field name="asset_kind_id" ref="resource_asset.kind_vehicle" />
+            <field name="manufacturer_id" ref="brand_toyota" />
+            <field name="seats">5</field>
+            <field name="doors">5</field>
+            <field name="vehicle_model_year">2024</field>
+            <field name="fuel_type">full_hybrid</field>
+            <field name="co2">102</field>
+            <field name="transmission">automatic</field>
+            <field name="power">90</field>
+            <field name="horsepower">122</field>
+        </record>
+        <record id="model_golf_8" model="product.product">
+            <field name="name">Golf 8</field>
+            <field name="type">consu</field>
+            <field name="sale_ok" eval="False" />
+            <field name="asset_kind_id" ref="resource_asset.kind_vehicle" />
+            <field name="manufacturer_id" ref="brand_volkswagen" />
+            <field name="seats">5</field>
+            <field name="doors">5</field>
+            <field name="vehicle_model_year">2024</field>
+            <field name="fuel_type">gasoline</field>
+            <field name="co2">117</field>
+            <field name="transmission">manual</field>
+            <field name="power">81</field>
+            <field name="horsepower">110</field>
+        </record>
+        <record id="model_micra" model="product.product">
+            <field name="name">Micra</field>
+            <field name="type">consu</field>
+            <field name="sale_ok" eval="False" />
+            <field name="asset_kind_id" ref="resource_asset.kind_vehicle" />
+            <field name="manufacturer_id" ref="brand_nissan" />
+            <field name="seats">5</field>
+            <field name="doors">5</field>
+            <field name="vehicle_model_year">2022</field>
+            <field name="fuel_type">gasoline</field>
+            <field name="co2">95</field>
+            <field name="transmission">manual</field>
+            <field name="power">89</field>
+            <field name="horsepower">121</field>
+        </record>
+        <record id="model_focus" model="product.product">
+            <field name="name">Focus</field>
+            <field name="type">consu</field>
+            <field name="sale_ok" eval="False" />
+            <field name="asset_kind_id" ref="resource_asset.kind_vehicle" />
+            <field name="manufacturer_id" ref="brand_ford" />
+            <field name="seats">5</field>
+            <field name="doors">5</field>
+            <field name="vehicle_model_year">2024</field>
+            <field name="fuel_type">diesel</field>
+            <field name="co2">134</field>
+            <field name="transmission">manual</field>
+            <field name="power">85</field>
+            <field name="horsepower">115</field>
+        </record>
+        <record id="model_clio" model="product.product">
+            <field name="name">Clio</field>
+            <field name="type">consu</field>
+            <field name="sale_ok" eval="False" />
+            <field name="asset_kind_id" ref="resource_asset.kind_vehicle" />
+            <field name="manufacturer_id" ref="brand_renault" />
+            <field name="seats">5</field>
+            <field name="doors">5</field>
+            <field name="vehicle_model_year">2023</field>
+            <field name="fuel_type">gasoline</field>
+            <field name="co2">118</field>
+            <field name="transmission">manual</field>
+            <field name="power">49</field>
+            <field name="horsepower">67</field>
+        </record>
+        <record id="driver_resource_1" model="resource.resource">
+            <field name="partner_id" ref="base.partner_demo" />
+            <field name="type">human</field>
+            <field name="company_id" eval="False" />
+        </record>
+        <record id="vehicle_1" model="resource.asset.vehicle">
+            <field name="name">Micra 1-ACK-205</field>
+            <field name="kind_id" ref="resource_asset.kind_vehicle" />
+            <field name="product_id" ref="model_micra" />
+            <field name="license_plate">1-ACK-205</field>
+            <field name="vin_sn">1HGCM82633A545454</field>
+            <field name="state">in_service</field>
+            <field
+                name="date_acquisition"
+                eval="(DateTime.now() - timedelta(days=336)).strftime('%Y-%m-%d')" />
+            <field name="operator_id" ref="driver_resource_1" />
+            <field name="tag_ids" eval="[Command.set([ref('vehicle_tag_leasing')])]" />
+        </record>
+        <record id="driver_resource_2" model="resource.resource">
+            <field name="partner_id" ref="base.res_partner_address_25" />
+            <field name="type">human</field>
+            <field name="company_id" eval="False" />
+        </record>
+        <record id="vehicle_2" model="resource.asset.vehicle">
+            <field name="name">Focus 1-SYN-404</field>
+            <field name="kind_id" ref="resource_asset.kind_vehicle" />
+            <field name="product_id" ref="model_focus" />
+            <field name="license_plate">1-SYN-404</field>
+            <field name="vin_sn">1FTFW1ET5NKE01337</field>
+            <field name="state">in_service</field>
+            <field
+                name="date_acquisition"
+                eval="(DateTime.now() - timedelta(days=400)).strftime('%Y-%m-%d')" />
+            <field name="operator_id" ref="driver_resource_2" />
+            <field
+                name="tag_ids"
+                eval="[Command.set([ref('vehicle_tag_purchased')])]" />
+        </record>
+        <record id="driver_resource_3" model="resource.resource">
+            <field name="partner_id" ref="base.res_partner_address_17" />
+            <field name="type">human</field>
+            <field name="company_id" eval="False" />
+        </record>
+        <record id="vehicle_3" model="resource.asset.vehicle">
+            <field name="name">Golf 1-BMW-001</field>
+            <field name="kind_id" ref="resource_asset.kind_vehicle" />
+            <field name="product_id" ref="model_golf_8" />
+            <field name="license_plate">1-BMW-001</field>
+            <field name="vin_sn">5YJ3E1EA8PF000666</field>
+            <field name="state">in_service</field>
+            <field
+                name="date_acquisition"
+                eval="(DateTime.now() - timedelta(days=230)).strftime('%Y-%m-%d')" />
+            <field name="operator_id" ref="driver_resource_3" />
+            <field name="tag_ids" eval="[Command.set([ref('vehicle_tag_leasing')])]" />
+        </record>
+        <record id="driver_resource_4" model="resource.resource">
+            <field name="partner_id" ref="base.res_partner_address_16" />
+            <field name="type">human</field>
+            <field name="company_id" eval="False" />
+        </record>
+        <record id="vehicle_4" model="resource.asset.vehicle">
+            <field name="name">Clio 1-SBR-465</field>
+            <field name="kind_id" ref="resource_asset.kind_vehicle" />
+            <field name="product_id" ref="model_clio" />
+            <field name="license_plate">1-SBR-465</field>
+            <field name="vin_sn">NM0GE9F76M1011235</field>
+            <field name="state">in_service</field>
+            <field
+                name="date_acquisition"
+                eval="(DateTime.now() - timedelta(days=150)).strftime('%Y-%m-%d')" />
+            <field name="operator_id" ref="driver_resource_4" />
+            <field name="tag_ids" eval="[Command.set([ref('vehicle_tag_senior')])]" />
+        </record>
+        <record id="driver_resource_5" model="resource.resource">
+            <field name="partner_id" ref="base.res_partner_address_15" />
+            <field name="type">human</field>
+            <field name="company_id" eval="False" />
+        </record>
+        <record id="vehicle_5" model="resource.asset.vehicle">
+            <field name="name">Corolla 1-SYN-405</field>
+            <field name="kind_id" ref="resource_asset.kind_vehicle" />
+            <field name="product_id" ref="model_corolla_ts" />
+            <field name="license_plate">1-SYN-405</field>
+            <field name="vin_sn">1T05075EXLH208765</field>
+            <field name="state">in_service</field>
+            <field
+                name="date_acquisition"
+                eval="(DateTime.now() - timedelta(days=90)).strftime('%Y-%m-%d')" />
+            <field name="operator_id" ref="driver_resource_5" />
+            <field name="tag_ids" eval="[Command.set([ref('vehicle_tag_junior')])]" />
+        </record>
+        <record id="odometer_meter_1" model="resource.meter">
+            <field
+                name="resource_id"
+                model="resource.asset"
+                search="[('id', '=', ref('vehicle_1'))]"
+                use="resource_id" />
+            <field name="name">Odometer</field>
+            <field name="kind">odometer</field>
+        </record>
+        <record id="log_odometer_1_1" model="resource.meter.reading">
+            <field name="meter_id" ref="odometer_meter_1" />
+            <field name="value">1200</field>
+            <field
+                name="date"
+                eval="(DateTime.now() - timedelta(days=300)).strftime('%Y-%m-%d %H:%M:%S')" />
+        </record>
+        <record id="log_odometer_1_2" model="resource.meter.reading">
+            <field name="meter_id" ref="odometer_meter_1" />
+            <field name="value">5400</field>
+            <field
+                name="date"
+                eval="(DateTime.now() - timedelta(days=200)).strftime('%Y-%m-%d %H:%M:%S')" />
+        </record>
+        <record id="log_odometer_1_3" model="resource.meter.reading">
+            <field name="meter_id" ref="odometer_meter_1" />
+            <field name="value">9800</field>
+            <field
+                name="date"
+                eval="(DateTime.now() - timedelta(days=100)).strftime('%Y-%m-%d %H:%M:%S')" />
+        </record>
+        <record id="log_odometer_1_4" model="resource.meter.reading">
+            <field name="meter_id" ref="odometer_meter_1" />
+            <field name="value">13200</field>
+            <field
+                name="date"
+                eval="(DateTime.now() - timedelta(days=10)).strftime('%Y-%m-%d %H:%M:%S')" />
+        </record>
+        <record id="odometer_meter_2" model="resource.meter">
+            <field
+                name="resource_id"
+                model="resource.asset"
+                search="[('id', '=', ref('vehicle_2'))]"
+                use="resource_id" />
+            <field name="name">Odometer</field>
+            <field name="kind">odometer</field>
+        </record>
+        <record id="log_odometer_2_1" model="resource.meter.reading">
+            <field name="meter_id" ref="odometer_meter_2" />
+            <field name="value">800</field>
+            <field
+                name="date"
+                eval="(DateTime.now() - timedelta(days=380)).strftime('%Y-%m-%d %H:%M:%S')" />
+        </record>
+        <record id="log_odometer_2_2" model="resource.meter.reading">
+            <field name="meter_id" ref="odometer_meter_2" />
+            <field name="value">7400</field>
+            <field
+                name="date"
+                eval="(DateTime.now() - timedelta(days=190)).strftime('%Y-%m-%d %H:%M:%S')" />
+        </record>
+        <record id="log_odometer_2_3" model="resource.meter.reading">
+            <field name="meter_id" ref="odometer_meter_2" />
+            <field name="value">15100</field>
+            <field
+                name="date"
+                eval="(DateTime.now() - timedelta(days=20)).strftime('%Y-%m-%d %H:%M:%S')" />
+        </record>
+        <record id="log_service_1" model="resource.asset.log">
+            <field name="asset_id" ref="vehicle_1" />
+            <field name="product_id" ref="type_service_service_7" />
+            <field name="amount">250</field>
+            <field name="vendor_id" ref="base.res_partner_2" />
+            <field name="state">done</field>
+            <field
+                name="date"
+                eval="(DateTime.now() - timedelta(days=120)).strftime('%Y-%m-%d')" />
+        </record>
+        <record id="log_service_2" model="resource.asset.log">
+            <field name="asset_id" ref="vehicle_1" />
+            <field name="product_id" ref="type_service_service_2" />
+            <field name="amount">80</field>
+            <field name="vendor_id" ref="base.res_partner_2" />
+            <field name="state">done</field>
+            <field
+                name="date"
+                eval="(DateTime.now() - timedelta(days=30)).strftime('%Y-%m-%d')" />
+        </record>
+        <record id="log_service_3" model="resource.asset.log">
+            <field name="asset_id" ref="vehicle_2" />
+            <field name="product_id" ref="type_service_service_3" />
+            <field name="amount">420</field>
+            <field name="vendor_id" ref="base.res_partner_2" />
+            <field name="state">done</field>
+            <field
+                name="date"
+                eval="(DateTime.now() - timedelta(days=60)).strftime('%Y-%m-%d')" />
+        </record>
+        <record id="log_service_4" model="resource.asset.log">
+            <field name="asset_id" ref="vehicle_3" />
+            <field name="product_id" ref="type_service_service_7" />
+            <field name="amount">190</field>
+            <field name="vendor_id" ref="base.res_partner_2" />
+            <field name="state">done</field>
+            <field
+                name="date"
+                eval="(DateTime.now() - timedelta(days=15)).strftime('%Y-%m-%d')" />
+        </record>
+    </data>
+
+</odoo>

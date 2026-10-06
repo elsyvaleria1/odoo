@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <menuitem
+        id="menu_approval_category_purchase"
+        name="Approval Types"
+        parent="purchase.menu_purchase_config"
+        action="action_approval_category_purchase"
+        sequence="50" />
+
+</odoo>

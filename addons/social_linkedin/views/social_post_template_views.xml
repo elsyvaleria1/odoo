@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <data>
+        <record id="social_post_template_view_form" model="ir.ui.view">
+            <field
+                name="name">social.post.template.view.form.inherit.social.linkedin</field>
+            <field name="model">social.post.template</field>
+            <field name="inherit_id" ref="social.social_post_template_view_form" />
+            <field name="priority">15</field>
+            <field name="arch" type="xml">
+                <xpath
+                    expr="//div[hasclass('o_social_post_preview_container')]"
+                    position="inside">
+                    <field name="display_linkedin_preview" invisible="1" />
+                    <field
+                        name="linkedin_preview"
+                        widget="social_post_preview"
+                        colspan="2"
+                        nolabel="1"
+                        invisible="not display_linkedin_preview"
+                        readonly="1"
+                        class="o_social_preview_wrapper m-0 px-4 py-4 bg-200"
+                        media_type="linkedin" />
+                </xpath>
+                <xpath expr="//notebook[@name='media_customization']" position="inside">
+                    <page
+                        name="linkedin_content"
+                        string="LinkedIn"
+                        invisible="not has_linkedin_account">
+                        <group>
+                            <group>
+                                <field
+                                    name="linkedin_message"
+                                    string="Message"
+                                    required="is_split_per_media and has_linkedin_account and not linkedin_image_ids" />
+                                <field
+                                    name="linkedin_image_ids"
+                                    string="Images"
+                                    widget="many2many_binary"
+                                    required="is_split_per_media and has_linkedin_account and not linkedin_message" />
+                            </group>
+                            <group invisible="not display_linkedin_preview">
+                                <field
+                                    name="linkedin_preview"
+                                    widget="social_post_preview"
+                                    nolabel="1"
+                                    readonly="1"
+                                    class="o_social_preview_wrapper m-0 px-4 py-4 bg-200"
+                                    media_type="linkedin_preview" />
+                            </group>
+                        </group>
+                    </page>
+                </xpath>
+            </field>
+        </record>
+    </data>
+
+</odoo>

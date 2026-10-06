@@ -1,0 +1,242 @@
+// @ts-check
+import {
+    click,
+    contains,
+    defineMailModels,
+    insertText,
+    openDiscuss,
+    start,
+    startServer,
+    triggerHotkey,
+} from "@mail/../tests/mail_test_helpers";
+import { describe, expect, test } from "@odoo/hoot";
+import { press } from "@odoo/hoot-dom";
+import { mockDate } from "@odoo/hoot-mock";
+import { inputFiles } from "@web/../tests/utils";
+import {
+    asyncStep,
+    getService,
+    mockService,
+    serverState,
+    waitForSteps,
+} from "@web/../tests/web_test_helpers";
+import { now as currentDateTime } from "@web/core/l10n/dates";
+
+describe.current.tags("desktop");
+defineMailModels();
+
+test("Messages are received cross-tab", async () => {
+    const pyEnv = await startServer();
+    const channelId = pyEnv["discuss.channel"].create({ name: "General" });
+    const env1 = await start({ asTab: true });
+    const env2 = await start({ asTab: true });
+    await openDiscuss(channelId, { target: env1 });
+    await openDiscuss(channelId, { target: env2 });
+    await contains(`${env1.selector} .o-mail-Thread:contains('Welcome to #General!')`);
+    await contains(`${env2.selector} .o-mail-Thread:contains('Welcome to #General!')`);
+    await insertText(`${env1.selector} .o-mail-Composer-input`, "Hello World!");
+    await press("Enter");
+    await contains(`${env1.selector} .o-mail-Message-content`, {
+        text: "Hello World!",
+    });
+    await contains(`${env2.selector} .o-mail-Message-content`, {
+        text: "Hello World!",
+    });
+});
+
+test.tags("focus required");
+test("Thread rename", async () => {
+    const pyEnv = await startServer();
+    const channelId = pyEnv["discuss.channel"].create({
+        create_uid: serverState.userId,
+        name: "General",
+    });
+    const env1 = await start({ asTab: true });
+    const env2 = await start({ asTab: true });
+    await openDiscuss(channelId, { target: env1 });
+    await openDiscuss(channelId, { target: env2 });
+    await insertText(
+        `${env1.selector} .o-mail-DiscussContent-threadName:enabled`,
+        "Sales",
+        {
+            replace: true,
+        },
+    );
+    triggerHotkey("Enter");
+    await contains(`${env2.selector} .o-mail-DiscussContent-threadName[title='Sales']`);
+    await contains(`${env2.selector} .o-mail-Discuss .o-mail-MessagingMenuItem`, {
+        text: "Sales",
+    });
+});
+
+test.tags("focus required");
+test("Thread description update", async () => {
+    const pyEnv = await startServer();
+    const channelId = pyEnv["discuss.channel"].create({
+        create_uid: serverState.userId,
+        name: "General",
+    });
+    const env1 = await start({ asTab: true });
+    const env2 = await start({ asTab: true });
+    await openDiscuss(channelId, { target: env1 });
+    await openDiscuss(channelId, { target: env2 });
+    await insertText(
+        `${env1.selector} .o-mail-DiscussContent-threadDescription`,
+        "The very best channel",
+        {
+            replace: true,
+        },
+    );
+    triggerHotkey("Enter");
+    await contains(
+        `${env2.selector} .o-mail-DiscussContent-threadDescription[title='The very best channel']`,
+    );
+});
+
+test.skip("Channel subscription is renewed when channel is added from invite", async () => {
+    const now = currentDateTime();
+    mockDate(
+        `${now.year}-${now.month}-${now.day} ${now.hour}:${now.minute}:${now.second}`,
+    );
+    const pyEnv = await startServer();
+    const [, channelId] = pyEnv["discuss.channel"].create([
+        { name: "R&D" },
+        { name: "Sales", channel_member_ids: [] },
+    ]);
+    const later = now.add({ seconds: 10 });
+    mockDate(
+        `${later.year}-${later.month}-${later.day} ${later.hour}:${later.minute}:${later.second}`,
+    );
+    await start();
+    mockService("bus_service", {
+        forceUpdateChannels() {
+            asyncStep("update-channels");
+        },
+    });
+    await openDiscuss();
+    await contains(".o-mail-Discuss .o-mail-MessagingMenuItem");
+    getService("orm").call("discuss.channel", "add_members", [[channelId]], {
+        partner_ids: [serverState.partnerId],
+    });
+    await contains(".o-mail-Discuss .o-mail-MessagingMenuItem", { count: 2 });
+    await waitForSteps(["update-channels"]);
+});
+
+test("Channel subscription is renewed when leaving a channel joined before the bus started", async () => {
+    const pyEnv = await startServer();
+    const channelId = pyEnv["discuss.channel"].create({ name: "R&D" });
+    await start();
+    mockService("bus_service", {
+        forceUpdateChannels() {
+            asyncStep("update-channels");
+        },
+    });
+    await openDiscuss(channelId);
+    await contains(".o-mail-DiscussContent-threadName[title='R&D']");
+    await getService("orm").call("discuss.channel", "action_unfollow", [[channelId]]);
+    await waitForSteps(["update-channels"]);
+});
+
+test("Adding attachments", async () => {
+    const pyEnv = await startServer();
+    const channelId = pyEnv["discuss.channel"].create({ name: "Hogwarts Legacy" });
+    pyEnv["mail.message"].create({
+        body: "Hello world!",
+        model: "discuss.channel",
+        res_id: channelId,
+        message_type: "comment",
+    });
+    const env1 = await start({ asTab: true });
+    const env2 = await start({ asTab: true });
+    await openDiscuss(channelId, { target: env1 });
+    await openDiscuss(channelId, { target: env2 });
+    const file = new File(["file content"], "test.txt", { type: "text/plain" });
+    await contains(`${env1.selector} .o-mail-Message:contains('Hello world!')`);
+    await contains(`${env2.selector} .o-mail-Message:contains('Hello world!')`);
+    await click(`${env1.selector} .o-mail-Message button[title='Edit']`);
+    await click(
+        `${env1.selector} .o-mail-Message .o-mail-Composer button[title='More Actions']`,
+    );
+    await click(`${env1.selector} .o_popover button[name='upload-files']`);
+    await inputFiles(
+        `${env1.selector} .o-mail-Message .o-mail-Composer .o_input_file`,
+        [file],
+    );
+    await contains(
+        `${env1.selector} .o-mail-AttachmentContainer:not(.o-isUploading):contains(test.txt) .fa-check`,
+    );
+    await click(
+        `${env1.selector} .o-mail-Message .o-mail-Composer button[data-type='save']`,
+    );
+
+    await contains(
+        `${env2.selector} .o-mail-AttachmentContainer:not(.o-isUploading):contains(test.txt)`,
+    );
+});
+
+test("Remove attachment from message", async () => {
+    const pyEnv = await startServer();
+    const channelId = pyEnv["discuss.channel"].create({ name: "General" });
+    const attachmentId = pyEnv["ir.attachment"].create({
+        name: "test.txt",
+        mimetype: "text/plain",
+    });
+    pyEnv["mail.message"].create({
+        attachment_ids: [attachmentId],
+        body: "Hello World!",
+        message_type: "comment",
+        model: "discuss.channel",
+        res_id: channelId,
+    });
+    const env1 = await start({ asTab: true });
+    const env2 = await start({ asTab: true });
+    await openDiscuss(channelId, { target: env1 });
+    await openDiscuss(channelId, { target: env2 });
+    await contains(`${env1.selector} .o-mail-AttachmentCard`, { text: "test.txt" });
+    await click(`${env2.selector} .o-mail-Attachment-unlink`);
+    await click(`${env2.selector} .modal-footer .btn`, { text: "Ok" });
+    await contains(`${env1.selector} .o-mail-AttachmentCard`, {
+        count: 0,
+        text: "test.txt",
+    });
+});
+
+test("Message (hard) delete notification", async () => {
+    const pyEnv = await startServer();
+    pyEnv["res.users"].write(serverState.userId, { notification_type: "inbox" });
+    const messageId = pyEnv["mail.message"].create({
+        body: "Needaction message",
+        model: "res.partner",
+        res_id: serverState.partnerId,
+        needaction: true,
+        starred_partner_ids: [serverState.partnerId],
+    });
+    pyEnv["mail.notification"].create({
+        mail_message_id: messageId,
+        notification_type: "inbox",
+        notification_status: "sent",
+        res_partner_id: serverState.partnerId,
+    });
+    const notificationTab =
+        ".o-mail-Discuss .o-mail-MessagingMenu-tab[data-id='notification']";
+    const bookmarkTab = ".o-mail-Discuss .o-mail-MessagingMenu-tab[data-id='bookmark']";
+    await start();
+    await openDiscuss("mail.box_inbox");
+    await contains(".o-mail-Discuss .o-mail-NotificationItem", {
+        text: "Needaction message",
+    });
+    await contains(`${notificationTab} .o-mail-MessagingMenu-tabCounter`, {
+        text: "1",
+    });
+    await contains(`${bookmarkTab} .o-mail-MessagingMenu-tabCounter`, { text: "1" });
+    const [partner] = pyEnv["res.partner"].read(serverState.partnerId);
+    pyEnv["bus.bus"]._sendone(partner, "mail.message/delete", {
+        message_ids: [messageId],
+    });
+    await contains(".o-mail-Discuss .o-mail-NotificationItem", { count: 0 });
+    await contains(`${notificationTab} .o-mail-MessagingMenu-tabCounter`, { count: 0 });
+    await contains(bookmarkTab, { count: 0 });
+    const store = getService("mail.store");
+    expect(store.needaction_counter).toBe(0);
+    expect(store.starred_counter).toBe(0);
+});

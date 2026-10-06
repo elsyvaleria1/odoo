@@ -1,0 +1,11 @@
+id,name,model_id/id,group_id/id,kind,operation,reach,anchor,predicate_id/id,predicate_args,domain
+access_account_report_system,report.formula system,model_report_formula,base.group_system,permission,crud,,,,,
+access_account_report_line_system,report.formula.line system,model_report_formula_line,base.group_system,permission,crud,,,,,
+access_account_report_expression_system,report.formula.expression system,model_report_formula_expression,base.group_system,permission,crud,,,,,
+access_account_report_column_system,report.formula.column system,model_report_formula_column,base.group_system,permission,crud,,,,,
+access_account_report_external_value_system,report.formula.external.value system,model_report_formula_external_value,base.group_system,permission,crud,,,,,
+report_formula_group_guard,report.formula: a report restricted to groups reaches only their members,model_report_formula,base.group_everyone,guard,crud,predicate,,base.access_predicate_user_has_access,"{""at"": """"}",
+report_formula_line_group_guard,report.formula.line: the lines of a report restricted to groups reach only their members,model_report_formula_line,base.group_everyone,guard,crud,predicate,,base.access_predicate_user_has_access,"{""at"": ""report_id.""}",
+report_formula_column_group_guard,report.formula.column: the columns of a report restricted to groups reach only their members,model_report_formula_column,base.group_everyone,guard,crud,predicate,,base.access_predicate_user_has_access,"{""at"": ""report_id.""}",
+report_formula_expression_group_guard,report.formula.expression: the expressions of a report restricted to groups reach only their members,model_report_formula_expression,base.group_everyone,guard,crud,predicate,,base.access_predicate_user_has_access,"{""at"": ""report_line_id.report_id.""}",
+report_formula_external_value_group_guard,report.formula.external.value: the values of a report restricted to groups reach only their members,model_report_formula_external_value,base.group_everyone,guard,crud,predicate,,base.access_predicate_user_has_access,"{""at"": ""target_report_expression_id.report_line_id.report_id.""}",

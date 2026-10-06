@@ -1,0 +1,278 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* product_expiry
+#
+#
+# Translated by:
+# Deepvision - info@deepvision.uz | +998 77-093-0007
+# Amon Olimov - amon.bars@gmail.com
+# Jonibek Yorqulov - j.yorqulov@deepvision.uz
+# Mirzohidkhon Ulugkhujaev ulugkhujayevmirzohidxon@gmail.com
+#
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-01-25 18:36+0000\n"
+"PO-Revision-Date: 2025-10-08 18:38+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: uz\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. module: product_trace_expiry
+#. odoo-python
+#: code:addons/product_trace_expiry/models/product_trace.py:0
+msgid "\t--Expire on %(date)s--"
+msgstr "--%(date)s da muddati tugaydi--"
+
+#. module: product_trace_expiry
+#. odoo-python
+#: code:addons/product_trace_expiry/models/product_trace.py:0
+msgid "\t--Expired--"
+msgstr "--Muddati tugagan--"
+
+#. module: product_trace_expiry
+#: model_terms:ir.ui.view,arch_db:product_trace_expiry.view_product_trace_form
+msgid ""
+"<span class=\"badge rounded-pill float-end text-bg-warning\" invisible=\"not use_expiration_date or not (alert_date &lt;= time.strftime('%Y-%m-%d %H:%M:%S') &lt; expiration_date)\">Expiring</span>\n"
+"                <span class=\"badge rounded-pill float-end text-bg-danger\" invisible=\"not use_expiration_date or not product_expiry_alert\">Expired</span>"
+msgstr ""
+
+#. module: product_trace_expiry
+#. odoo-python
+#: code:addons/product_trace_expiry/models/product_template.py:0
+#: model:ir.model.fields,field_description:product_trace_expiry.field_product_product__alert_time
+#: model:ir.model.fields,field_description:product_trace_expiry.field_product_template__alert_time
+#: model:ir.model.fields,field_description:product_trace_expiry.field_product_trace__alert_date
+msgid "Alert Date"
+msgstr "Ogohlantirish sanasi"
+
+#. module: product_trace_expiry
+#: model_terms:ir.ui.view,arch_db:product_trace_expiry.view_product_trace_form
+msgid "Alert from"
+msgstr "Ogohlantirish boshlanishi"
+
+#. module: product_trace_expiry
+#. odoo-python
+#: code:addons/product_trace_expiry/models/product_template.py:0
+#: model:ir.model.fields,field_description:product_trace_expiry.field_product_product__use_time
+#: model:ir.model.fields,field_description:product_trace_expiry.field_product_template__use_time
+msgid "Best Before Date"
+msgstr "Eng yaxshi foydalanish muddati"
+
+#. module: product_trace_expiry
+#: model_terms:ir.ui.view,arch_db:product_trace_expiry.view_product_trace_form
+msgid "Best before"
+msgstr "Eng yaxshi foydalanish muddati"
+
+#. module: product_trace_expiry
+#: model:ir.model.fields,field_description:product_trace_expiry.field_product_trace__use_date
+msgid "Best before Date"
+msgstr "Eng yaxshi foydalanish muddati"
+
+#. module: product_trace_expiry
+#: model:ir.model.fields,help:product_trace_expiry.field_product_trace__alert_date
+msgid ""
+"Date to determine the expired lots and serial numbers using the filter "
+"\"Expiration Alerts\"."
+msgstr ""
+"\"Muddati tugashi haqida ogohlantirishlar\" filtridan foydalangan holda "
+"muddati tugagan partiyalar va seriya raqamlarini aniqlash sanasi."
+
+#. module: product_trace_expiry
+#: model_terms:ir.ui.view,arch_db:product_trace_expiry.view_product_trace_form
+msgid "Dates"
+msgstr "Sanalar"
+
+#. module: product_trace_expiry
+#: model:ir.model.fields,field_description:product_trace_expiry.field_product_category__display_name
+#: model:ir.model.fields,field_description:product_trace_expiry.field_product_product__display_name
+#: model:ir.model.fields,field_description:product_trace_expiry.field_product_template__display_name
+#: model:ir.model.fields,field_description:product_trace_expiry.field_product_trace__display_name
+msgid "Display Name"
+msgstr "Ko‘rsatiladigan nom"
+
+#. module: product_trace_expiry
+#: model_terms:ir.ui.view,arch_db:product_trace_expiry.view_product_trace_form
+msgid "Expiration"
+msgstr "Yaroqlilik muddati"
+
+#. module: product_trace_expiry
+#. odoo-python
+#: code:addons/product_trace_expiry/models/product_template.py:0
+#: model:ir.model.fields,field_description:product_trace_expiry.field_product_product__expiration_time
+#: model:ir.model.fields,field_description:product_trace_expiry.field_product_template__expiration_time
+#: model:ir.model.fields,field_description:product_trace_expiry.field_product_trace__expiration_date
+msgid "Expiration Date"
+msgstr "Yaroqlilik muddati"
+
+#. module: product_trace_expiry
+#: model:ir.model.fields,field_description:product_trace_expiry.field_product_trace__product_expiry_reminded
+msgid "Expiry has been reminded"
+msgstr "Muddati haqida eslatma berildi"
+
+#. module: product_trace_expiry
+#: model:ir.model.fields,field_description:product_trace_expiry.field_product_category__id
+#: model:ir.model.fields,field_description:product_trace_expiry.field_product_product__id
+#: model:ir.model.fields,field_description:product_trace_expiry.field_product_template__id
+#: model:ir.model.fields,field_description:product_trace_expiry.field_product_trace__id
+msgid "ID"
+msgstr "ID"
+
+#. module: product_trace_expiry
+#: model:ir.model,name:product_trace_expiry.model_product_trace
+msgid "Lot/Serial Number"
+msgstr "Partiya/Seriya raqami"
+
+#. module: product_trace_expiry
+#: model:ir.model.fields,help:product_trace_expiry.field_product_product__expiration_time
+#: model:ir.model.fields,help:product_trace_expiry.field_product_template__expiration_time
+msgid ""
+"Number of days after the receipt of the products (from the vendor or in "
+"stock after production) after which the goods may become dangerous and must "
+"not be consumed. It will be computed on the lot/serial number."
+msgstr ""
+"Mahsulotlar qabul qilinganidan (yetkazib beruvchidan yoki ishlab "
+"chiqarilgandan so‘ng omborga joylashtirilganidan) keyin necha kun o‘tgach "
+"tovar xavfli bo‘lib qolishi va iste'mol qilinmasligi kerakligi. Bu "
+"partiya/seriya raqami asosida hisoblanadi."
+
+#. module: product_trace_expiry
+#: model:ir.model.fields,help:product_trace_expiry.field_product_product__alert_time
+#: model:ir.model.fields,help:product_trace_expiry.field_product_template__alert_time
+msgid ""
+"Number of days before the Expiration Date after which an alert should be "
+"raised on the lot/serial number. It will be computed on the lot/serial "
+"number."
+msgstr ""
+"Yaroqlilik muddati tugashidan necha kun oldin partiya/seriya raqami bo‘yicha"
+" ogohlantirish berilishi kerakligi. Bu partiya/seriya raqami asosida "
+"hisoblanadi."
+
+#. module: product_trace_expiry
+#: model:ir.model.fields,help:product_trace_expiry.field_product_product__removal_time
+#: model:ir.model.fields,help:product_trace_expiry.field_product_template__removal_time
+msgid ""
+"Number of days before the Expiration Date after which the goods should be "
+"removed from the stock and not be counted in the Fresh On Hand Stock "
+"anymore.It will be computed on the lot/serial number."
+msgstr ""
+"Yaroqlilik muddati tugashidan necha kun oldin tovarlar ombordan olib "
+"tashlanishi va yangi qo‘ldagi zaxira hisobidan chiqarilishi kerakligi. Bu "
+"partiya/seriya raqami asosida hisoblanadi."
+
+#. module: product_trace_expiry
+#: model:ir.model.fields,help:product_trace_expiry.field_product_product__use_time
+#: model:ir.model.fields,help:product_trace_expiry.field_product_template__use_time
+msgid ""
+"Number of days before the Expiration Date after which the goods starts "
+"deteriorating, without being dangerous yet. It will be computed on the "
+"lot/serial number."
+msgstr ""
+"Yaroqlilik muddati tugashidan necha kun oldin tovarlar hali xavfli bo‘lmagan"
+" holda buzilishni boshlashi. Bu partiya/seriya raqami asosida hisoblanadi."
+
+#. module: product_trace_expiry
+#: model:ir.model,name:product_trace_expiry.model_product_template
+msgid "Product"
+msgstr "Mahsulot"
+
+#. module: product_trace_expiry
+#: model:ir.model,name:product_trace_expiry.model_product_category
+msgid "Product Category"
+msgstr "Mahsulot toifasi"
+
+#. module: product_trace_expiry
+#: model:ir.model.fields,field_description:product_trace_expiry.field_product_trace__product_expiry_alert
+msgid "Product Expiry Alert"
+msgstr "Mahsulot yaroqlilik muddati ogohlantirmasi"
+
+#. module: product_trace_expiry
+#: model:ir.model,name:product_trace_expiry.model_product_product
+msgid "Product Variant"
+msgstr "Mahsulot varianti"
+
+#. module: product_trace_expiry
+#. odoo-python
+#: code:addons/product_trace_expiry/models/product_template.py:0
+#: model:ir.model.fields,field_description:product_trace_expiry.field_product_product__removal_time
+#: model:ir.model.fields,field_description:product_trace_expiry.field_product_template__removal_time
+#: model:ir.model.fields,field_description:product_trace_expiry.field_product_trace__removal_date
+#: model_terms:ir.ui.view,arch_db:product_trace_expiry.view_product_trace_form
+msgid "Removal Date"
+msgstr "Chiqarish sanasi"
+
+#. module: product_trace_expiry
+#: model:ir.model.fields,help:product_trace_expiry.field_product_trace__product_expiry_alert
+msgid "The Expiration Date has been reached."
+msgstr "Yaroqlilik muddati tugadi."
+
+#. module: product_trace_expiry
+#. odoo-python
+#: code:addons/product_trace_expiry/models/product_template.py:0
+msgid ""
+"The expiry delays of %(product)s are numbers of days and cannot be negative:"
+" %(fields)s. A negative delay puts a lot's removal date after its expiration"
+" date, which leaves expired goods reservable and blocks the transfer that "
+"would clear them."
+msgstr ""
+
+#. module: product_trace_expiry
+#: model:ir.model.fields,help:product_trace_expiry.field_product_trace__expiration_date
+msgid ""
+"This is the date on which the goods with this Serial Number may become "
+"dangerous and must not be consumed."
+msgstr ""
+"Bu sana ushbu seriya raqamli tovarlar xavfli bo‘lishi mumkin bo‘lgan va "
+"iste'mol qilinmasligi kerak bo‘lgan sanadir."
+
+#. module: product_trace_expiry
+#: model:ir.model.fields,help:product_trace_expiry.field_product_trace__removal_date
+msgid ""
+"This is the date on which the goods with this Serial Number should be "
+"removed from the stock and not be counted in the Fresh On Hand Stock "
+"anymore. This date will be used in FEFO removal strategy."
+msgstr ""
+"Bu sana ushbu seriya raqamli tovarlar ombordan olib tashlanishi va yangi "
+"qo‘ldagi zaxira hisobidan chiqarilishi kerak bo‘lgan sanadir. Bu sana FEFO "
+"chiqarish strategiyasida ishlatiladi."
+
+#. module: product_trace_expiry
+#: model:ir.model.fields,help:product_trace_expiry.field_product_trace__use_date
+msgid ""
+"This is the date on which the goods with this Serial Number start "
+"deteriorating, without being dangerous yet."
+msgstr ""
+"Bu sana ushbu seriya raqamli tovarlar hali xavfli bo‘lmasdan buzilishni "
+"boshlagan sanadir."
+
+#. module: product_trace_expiry
+#: model:ir.model.fields,field_description:product_trace_expiry.field_product_category__use_expiration_date
+#: model:ir.model.fields,field_description:product_trace_expiry.field_product_product__use_expiration_date
+#: model:ir.model.fields,field_description:product_trace_expiry.field_product_template__use_expiration_date
+#: model:ir.model.fields,field_description:product_trace_expiry.field_product_trace__use_expiration_date
+msgid "Use Expiration Date"
+msgstr "Yaroqlilik muddatini qo‘llash"
+
+#. module: product_trace_expiry
+#: model:ir.model.fields,help:product_trace_expiry.field_product_category__use_expiration_date
+msgid ""
+"When this box is ticked, products in this category default to managing "
+"product expiration, with dates on the product and on the corresponding "
+"lot/serial numbers"
+msgstr ""
+
+#. module: product_trace_expiry
+#: model:ir.model.fields,help:product_trace_expiry.field_product_product__use_expiration_date
+#: model:ir.model.fields,help:product_trace_expiry.field_product_template__use_expiration_date
+#: model:ir.model.fields,help:product_trace_expiry.field_product_trace__use_expiration_date
+msgid ""
+"When this box is ticked, you have the possibility to specify dates to manage"
+" product expiration, on the product and on the corresponding lot/serial "
+"numbers. Defaults to the product category setting."
+msgstr ""

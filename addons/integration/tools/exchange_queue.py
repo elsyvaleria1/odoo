@@ -1,0 +1,94 @@
+import logging
+from typing import Any
+
+from odoo import SUPERUSER_ID, api
+
+_logger = logging.getLogger(__name__)
+
+PENDING_KEY = "integration.exchange.values"
+
+
+def queue_exchange_values(env: api.Environment, vals: dict[str, Any]) -> None:
+    cr = env.cr
+    if PENDING_KEY not in cr.precommit.durable_data:
+        _register_flush_hooks(env)
+    cr.precommit.durable_data[PENDING_KEY].append(vals)
+
+
+def _register_flush_hooks(env: api.Environment) -> None:
+    cr = env.cr
+    pending = cr.precommit.durable_data[PENDING_KEY] = []
+    registry = env.registry
+
+    @cr.precommit.add_durable
+    def batch_create_logs():
+        logs = cr.precommit.durable_data.pop(PENDING_KEY, pending)
+        if logs:
+            env["integration.exchange"].sudo().create(
+                _without_vanished_connections(env, logs)
+            )
+            _logger.debug("Batch created %d exchange rows", len(logs))
+
+    # A caller that lets an error propagate rolls its transaction back, and the
+    # exchange that failed is the one most worth a row. `_rollback` empties
+    # `precommit.durable_data` before running this, so it keeps its own list.
+    @cr.postrollback.add
+    def keep_logs_of_rolled_back_transaction():
+        if not pending:
+            return
+        try:
+            with registry.cursor() as log_cr:
+                log_env = api.Environment(log_cr, SUPERUSER_ID, {})
+                log_env["integration.exchange"].sudo().create(
+                    _without_vanished_connections(log_env, pending)
+                )
+        except Exception:
+            _logger.exception(
+                "Could not keep %d exchange row(s) of a rolled-back transaction",
+                len(pending),
+            )
+
+
+def _without_vanished_connections(
+    env: api.Environment, logs: list[dict[str, Any]]
+) -> list[dict[str, Any]]:
+    """Unlink rows from a connection that a rollback took away.
+
+    A record's connection is created lazily in the transaction of its first
+    call. When a savepoint or the transaction around that call rolls back, the
+    connection goes with it while the call's queued row survives.
+    """
+    ids = {vals["connection_id"] for vals in logs if vals.get("connection_id")}
+    if not ids:
+        return list(logs)
+    present = set(env["integration.connection"].sudo().browse(ids).exists().ids)
+    return [
+        {**vals, "connection_id": False}
+        if vals.get("connection_id") and vals["connection_id"] not in present
+        else vals
+        for vals in logs
+    ]
+
+
+def keep_row_on_rollback(env: api.Environment, vals: dict[str, Any], admission) -> None:
+    cr = env.cr
+    registry = env.registry
+
+    @cr.postrollback.add
+    def keep_row_of_rolled_back_transaction():
+        try:
+            with registry.cursor() as log_cr:
+                log_env = api.Environment(log_cr, SUPERUSER_ID, {})
+                log_env["integration.exchange"].sudo().create(
+                    {
+                        **vals,
+                        "event_type": admission.event_type or vals.get("event_type"),
+                        "state": "failed",
+                        "error_type": "other",
+                        "error_message": admission.error or "the request rolled back",
+                    }
+                )
+        except Exception:
+            _logger.exception(
+                "Could not keep the exchange row of a rolled-back transaction"
+            )

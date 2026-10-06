@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Root menu -->
+    <menuitem
+        id="menu_surveys"
+        name="Surveys"
+        sequence="130"
+        groups="group_survey_user"
+        web_icon="survey,static/description/icon.png" />
+
+    <!-- Surveys -->
+    <menuitem
+        id="menu_survey_form"
+        name="Surveys"
+        parent="menu_surveys"
+        action="action_survey_form"
+        sequence="1" />
+
+    <!-- Participants -->
+    <menuitem
+        id="menu_survey_type_form1"
+        name="Participants"
+        parent="menu_surveys"
+        action="action_survey_user_input"
+        sequence="11" />
+
+    <!-- Questions & Answers -->
+    <menuitem
+        id="survey_menu_questions"
+        name="Questions &amp; Answers"
+        parent="menu_surveys"
+        sequence="90" />
+
+    <menuitem
+        id="menu_survey_question_form1"
+        name="Questions"
+        parent="survey_menu_questions"
+        action="action_survey_question_form"
+        sequence="2" />
+
+    <menuitem
+        id="menu_survey_label_form1"
+        name="Suggested Values"
+        parent="survey_menu_questions"
+        action="survey_question_answer_action"
+        sequence="3" />
+
+    <menuitem
+        id="menu_survey_response_line_form"
+        name="Detailed Answers"
+        parent="survey_menu_questions"
+        action="survey_user_input_line_action"
+        sequence="4" />
+
+    <!-- Configuration -->
+    <menuitem
+        id="survey_menu_configuration"
+        name="Configuration"
+        parent="menu_surveys"
+        sequence="100"
+        groups="group_survey_manager" />
+
+    <menuitem
+        id="survey_menu_tag"
+        name="Tags"
+        parent="survey_menu_configuration"
+        action="action_survey_tag"
+        sequence="10" />
+
+    <menuitem
+        id="survey_menu_category"
+        name="Categories"
+        parent="survey_menu_configuration"
+        action="action_survey_category"
+        sequence="20" />
+
+</odoo>

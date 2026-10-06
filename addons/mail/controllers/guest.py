@@ -1,0 +1,32 @@
+from odoo import http
+from odoo.http import NotFound, request
+from odoo.libs.debug_log import DebugLog
+
+from odoo.addons.mail.controllers.utils import to_record_id
+from odoo.addons.mail.tools.discuss import add_guest_to_context
+
+_debug = DebugLog(__name__)
+
+
+class GuestController(http.Controller):
+    @http.route(
+        "/mail/guest/update_name", methods=["POST"], type="jsonrpc", auth="public"
+    )
+    @add_guest_to_context
+    def mail_guest_update_name(self, guest_id: int, name: str) -> None:
+        if not isinstance(name, str):
+            raise NotFound
+        guest = request.env["mail.guest"]._get_guest_from_context()
+        guest_to_rename_sudo = (
+            guest.env["mail.guest"].browse(to_record_id(guest_id)).sudo().exists()
+        )
+        if not guest_to_rename_sudo:
+            raise NotFound
+        if guest_to_rename_sudo != guest and not request.env.user._is_admin():
+            _debug.logic(
+                "guest_rename_refused",
+                guest=guest_to_rename_sudo.id,
+                by=guest.id or None,
+            )
+            raise NotFound
+        guest_to_rename_sudo._update_name(name)

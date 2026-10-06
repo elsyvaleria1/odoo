@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <menuitem
+        id="menu_hr_job_boards"
+        name="Job Boards Posts"
+        parent="hr_recruitment.menu_crm_case_categ0_act_job"
+        action="action_view_hr_job_post"
+        sequence="45"
+        groups="hr_recruitment.group_hr_recruitment_manager" />
+
+</odoo>

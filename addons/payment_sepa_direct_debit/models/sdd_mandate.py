@@ -1,0 +1,128 @@
+from odoo import SUPERUSER_ID, api, fields, models
+
+from odoo.addons.payment.logging import get_payment_logger
+
+_logger = get_payment_logger(__name__)
+
+INT_PHONE_NUMBER_FORMAT_REGEX = r"^\+[^+]+$"
+
+
+class SddMandate(models.Model):
+    _inherit = "sdd.mandate"
+
+    is_online_payment = fields.Boolean(compute="_compute_is_online_payment")
+    payment_transaction_ids = fields.One2many(
+        comodel_name="payment.transaction",
+        inverse_name="mandate_id",
+        string="Payment Transactions",
+    )
+    payment_transaction_count = fields.Integer(
+        string="No. of Payment Transactions",
+        compute="_compute_payment_transaction_count",
+    )
+
+    def _compute_is_online_payment(self) -> None:
+        # In sudo mode to read the custom_mode field of payment.provider.
+        results = (
+            self.env["payment.transaction"]
+            .sudo()
+            ._read_group(
+                domain=[
+                    ("mandate_id", "in", self.ids),
+                    ("provider_id.custom_mode", "=", "sepa_direct_debit"),
+                ],
+                groupby=["mandate_id"],
+                aggregates=["__count"],
+            )
+        )
+        data = {mandate.id: count > 0 for mandate, count in results}
+        for mandate in self:
+            mandate.is_online_payment = data.get(mandate.id, False)
+
+    @api.depends("payment_transaction_ids")
+    def _compute_payment_transaction_count(self) -> None:
+        # In sudo mode to read the custom_mode field of payment.provider.
+        results = (
+            self.env["payment.transaction"]
+            .sudo()
+            ._read_group(
+                domain=[
+                    ("mandate_id", "in", self.ids),
+                    ("provider_id.custom_mode", "=", "sepa_direct_debit"),
+                ],
+                groupby=["mandate_id"],
+                aggregates=["__count"],
+            )
+        )
+        data = {mandate.id: count for mandate, count in results}
+        for mandate in self:
+            mandate.payment_transaction_count = data.get(mandate.id, 0)
+
+    def write(self, vals):
+        res = super().write(vals)
+        if vals.get("state") in ["closed", "revoked"]:
+            linked_tokens = self.env["payment.token"].search(
+                [("sdd_mandate_id", "in", self.ids)]
+            )
+            linked_tokens.sudo().active = (
+                False  # In sudo mode to write on payment.token.
+            )
+        return res
+
+    def _confirm(self):
+        """Confirm the customer's ownership of the SEPA Direct Debit mandate."""
+        template = self.env.ref(
+            "payment_sepa_direct_debit.mail_template_sepa_notify_validation"
+        )
+        self.write({"state": "active"})
+        template.with_user(SUPERUSER_ID).send_mail(self.id)
+
+    def action_validate_mandate(self) -> None:
+        """Override of `account_sepa_direct_debit` to create a token when validating mandates."""
+        super().action_validate_mandate()
+
+        # sudo to let accounting users validate mandates without provider access
+        sepa_provider_per_company_sudo = dict(
+            self.env["payment.provider"]
+            .sudo()
+            ._read_group(
+                [
+                    *self.env["payment.provider"]._check_company_domain(
+                        self.company_id
+                    ),
+                    ("custom_mode", "=", "sepa_direct_debit"),
+                    ("is_published", "=", True),
+                    ("state", "!=", "disabled"),
+                ],
+                groupby=["company_id"],
+                aggregates=["id:recordset"],
+            )
+        )
+        for mandate in self.filtered(lambda m: m.state == "active"):
+            provider_sudo = sepa_provider_per_company_sudo.get(mandate.company_id)
+            if provider_sudo:
+                provider_sudo[:1]._sdd_create_token_for_mandate(
+                    mandate.partner_id, mandate
+                )
+
+    def action_view_payment_transactions(self):
+        return {
+            "type": "ir.actions.act_window",
+            "name": self.env._("Payments Transactions"),
+            "res_model": "payment.transaction",
+            "view_mode": "list,form",
+            "domain": [("id", "in", self.payment_transaction_ids.ids)],
+        }
+
+    def _get_source_transaction(self):
+        """Return the source transaction that initiated the creation of this SDD mandate."""
+        self.check_singleton()
+        return self.env["payment.transaction"].search(
+            [
+                ("mandate_id", "=", self.id),
+                ("state", "=", "done"),
+                ("provider_id.custom_mode", "=", "sepa_direct_debit"),
+            ],
+            limit=1,
+            order="id ASC",
+        )

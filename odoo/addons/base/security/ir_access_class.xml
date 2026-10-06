@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="access_class_user_self" model="ir.access.class">
+        <field name="name">base.user_self</field>
+        <field
+            name="description">A user's own record: what they read of themselves that others may not.</field>
+    </record>
+
+    <record id="access_user_self_everyone" model="ir.access">
+        <field name="name">base.user_self: everyone reads their own</field>
+        <field name="group_id" ref="base.group_everyone" />
+        <field name="kind">permission</field>
+        <field name="operation">r</field>
+        <field name="class_id" ref="access_class_user_self" />
+        <field name="reach">own</field>
+    </record>
+
+    <record id="access_class_internal" model="ir.access.class">
+        <field name="name">base.internal</field>
+        <field
+            name="description">What internal users read and portal or public users do not: the chatter, activities, ratings and their counters.</field>
+    </record>
+
+    <record id="access_internal_user" model="ir.access">
+        <field name="name">base.internal: internal users</field>
+        <field name="group_id" ref="base.group_user" />
+        <field name="kind">permission</field>
+        <field name="operation">ru</field>
+        <field name="class_id" ref="access_class_internal" />
+    </record>
+
+    <record id="access_class_credential" model="ir.access.class">
+        <field name="name">secret.credential</field>
+        <field
+            name="description">Tokens, keys, passwords and secrets. A field of the class keeps its own groups too: a NO_ACCESS one stays unread by anyone but the superuser.</field>
+    </record>
+
+    <record id="access_credential_erp_manager" model="ir.access">
+        <field name="name">secret.credential: access-rights administrators</field>
+        <field name="group_id" ref="base.group_erp_manager" />
+        <field name="kind">permission</field>
+        <field name="operation">ru</field>
+        <field name="class_id" ref="access_class_credential" />
+    </record>
+
+    <record id="access_credential_system" model="ir.access">
+        <field name="name">secret.credential: system administrators</field>
+        <field name="group_id" ref="base.group_system" />
+        <field name="kind">permission</field>
+        <field name="operation">ru</field>
+        <field name="class_id" ref="access_class_credential" />
+    </record>
+
+    <record id="access_class_link_token" model="ir.access.class">
+        <field name="name">base.link_token</field>
+        <field
+            name="description">An external link's token material and its never-expires waiver: what the link machinery sets under its privilege, and system administrators.</field>
+    </record>
+
+    <record id="access_link_token_manage" model="ir.access">
+        <field name="name">base.link_token: the link machinery</field>
+        <field name="group_id" ref="base.privilege_manage_links" />
+        <field name="kind">permission</field>
+        <field name="operation">ru</field>
+        <field name="class_id" ref="access_class_link_token" />
+    </record>
+
+    <record id="access_link_token_system" model="ir.access">
+        <field name="name">base.link_token: system administrators</field>
+        <field name="group_id" ref="base.group_system" />
+        <field name="kind">permission</field>
+        <field name="operation">ru</field>
+        <field name="class_id" ref="access_class_link_token" />
+    </record>
+
+</odoo>

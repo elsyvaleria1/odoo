@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <data>
+        <menuitem
+            id="menu_social_global"
+            name="Social Marketing"
+            sequence="105"
+            groups="base.group_user"
+            web_icon="social,static/description/icon.png" />
+        <menuitem
+            id="menu_social_stream_post"
+            name="Feed"
+            parent="menu_social_global"
+            sequence="10" />
+        <menuitem
+            id="menu_social_post"
+            name="Posts"
+            parent="menu_social_global"
+            sequence="20" />
+        <menuitem
+            id="menu_social_campaign"
+            name="Campaigns"
+            parent="menu_social_global"
+            sequence="25"
+            groups="group_social_user" />
+        <menuitem
+            id="menu_social_configuration"
+            name="Configuration"
+            parent="menu_social_global"
+            sequence="30"
+            groups="group_social_manager" />
+        <menuitem
+            id="menu_social_global_settings"
+            name="Settings"
+            parent="menu_social_configuration"
+            sequence="33"
+            groups="base.group_no_one" />
+        <menuitem
+            id="menu_social_media"
+            name="Social Media"
+            parent="menu_social_configuration"
+            sequence="36"
+            groups="group_social_manager" />
+        <menuitem
+            id="menu_social_account"
+            name="Social Accounts"
+            parent="menu_social_configuration"
+            sequence="39"
+            groups="group_social_manager" />
+        <menuitem
+            id="menu_social_stream"
+            name="Social Streams"
+            parent="menu_social_configuration"
+            sequence="42"
+            groups="group_social_manager" />
+    </data>
+
+</odoo>

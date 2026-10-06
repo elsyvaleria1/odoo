@@ -1,0 +1,34 @@
+.o_cw_popover_link {
+    margin-top: 2px;
+
+    &[class*="o_calendar_color_"] {
+        --o-bg-opacity: 1;
+
+        border-radius: $border-radius;
+        border-color: var(--o-cw-color, #{o-token(--info, $info)});
+        padding: 0 map-get($spacers, 1);
+        background: RGBA(
+            var(--o-cw-color-subtle-rgb, var(--info-rgb, #{to-rgb($info)})),
+            var(--o-bg-opacity)
+        );
+        font-weight: $font-weight-normal;
+        color: var(--o-cw-color-text);
+
+        &:hover {
+            --o-bg-opacity: 0.5 !important;
+        }
+
+        &.o_event_dot {
+            --o-bg-opacity: 0;
+
+            &:before {
+                margin-right: map-get($spacers, 1);
+                font-family: "Font Awesome 7 Pro";
+                font-weight: 900;
+                font-size: $o-font-size-base-smaller;
+                color: var(--o-cw-color, #{o-token(--info, $info)});
+                content: "\f111";
+            }
+        }
+    }
+}

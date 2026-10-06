@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+
+    <record
+        id="approval_app.approval_category_data_borrow_items"
+        model="approval.category">
+        <field name="has_product">required</field>
+    </record>
+
+    <record
+        id="approval_app.approval_category_data_general_approval"
+        model="approval.category">
+        <field name="has_product">optional</field>
+    </record>
+
+</odoo>

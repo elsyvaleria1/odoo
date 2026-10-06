@@ -1,0 +1,104 @@
+from datetime import datetime
+
+from odoo import Command
+from odoo.tests import common, tagged
+
+
+@tagged("post_install", "-at_install")
+class TestGeofenceSchedule(common.TransactionCase):
+    """Which clock a geofence's schedule is read against.
+
+    The alert loop runs from a cron every five minutes, so `env.company` is
+    OdooBot's -- company 1, the unconfigured placeholder, whose partner carries
+    no timezone. Reading the window against that company fell back to UTC on
+    every run and shifted every `business_hours` fence over a UTC-6 fleet by
+    six hours, silently: alerts came at the wrong times rather than not at all.
+    Every test alongside this one uses `schedule_type = "always"`, so none of
+    them ever looked at a clock.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.fleet_company = cls.env["res.company"].create({"name": "Fenced fleet"})
+        cls.fleet_company.partner_id.tz = "America/Mexico_City"
+        cls.env.user.company_ids = [Command.link(cls.fleet_company.id)]
+        # The acting company stays the placeholder, timezone and all.
+        cls.env.company.partner_id.tz = False
+        cls.fence = cls.env["device.geo.fence"].create(
+            {
+                "name": "Scheduled yard",
+                "geofence_type": "circle",
+                "center_latitude": 19.40,
+                "center_longitude": -99.10,
+                "radius": 500.0,
+                "company_id": cls.fleet_company.id,
+                "schedule_type": "business_hours",
+            }
+        )
+
+    def test_business_hours_are_the_owners_hours(self):
+        """14:00 UTC is 08:00 in Mexico City: open. The old reading called it
+        two in the afternoon and had been open for six hours already."""
+        self.assertTrue(
+            self.fence._is_within_schedule(datetime(2026, 9, 8, 14, 0)),
+            "08:00 local on a Tuesday is inside business hours.",
+        )
+
+    def test_business_hours_are_shut_outside_them(self):
+        """02:00 UTC is 20:00 the previous evening in Mexico City."""
+        self.assertFalse(
+            self.fence._is_within_schedule(datetime(2026, 9, 8, 2, 0)),
+            "The window used to read this as 02:00 and shut on that instead.",
+        )
+
+    def test_the_weekend_is_decided_in_the_owners_timezone(self):
+        """Monday 02:00 UTC is still Sunday evening for the fleet."""
+        self.assertFalse(
+            self.fence._is_within_schedule(datetime(2026, 9, 7, 2, 0)),
+            "Sunday is not a business day, whatever the UTC date says.",
+        )
+
+    def test_always_needs_no_clock_at_all(self):
+        self.fence.schedule_type = "always"
+
+        self.assertTrue(self.fence._is_within_schedule(datetime(2026, 9, 8, 2, 0)))
+
+    def test_a_custom_window_is_read_in_the_owners_hours(self):
+        self.fence.write(
+            {
+                "schedule_type": "custom",
+                "schedule_time_from": 6.0,
+                "schedule_time_to": 7.5,
+            }
+        )
+
+        # 12:30 UTC is 06:30 local, inside; 14:00 UTC is 08:00 local, past it.
+        self.assertTrue(self.fence._is_within_schedule(datetime(2026, 9, 8, 12, 30)))
+        self.assertFalse(self.fence._is_within_schedule(datetime(2026, 9, 8, 14, 0)))
+
+    def test_a_custom_window_honours_its_weekdays(self):
+        monday = self.env.ref("device_gps_geoengine.weekday_0_monday")
+        self.fence.write(
+            {
+                "schedule_type": "custom",
+                "schedule_time_from": 6.0,
+                "schedule_time_to": 7.5,
+                "schedule_weekday_ids": [Command.set(monday.ids)],
+            }
+        )
+
+        # Both are 06:30 local, on the Monday and on the Tuesday.
+        self.assertTrue(self.fence._is_within_schedule(datetime(2026, 9, 7, 12, 30)))
+        self.assertFalse(self.fence._is_within_schedule(datetime(2026, 9, 8, 12, 30)))
+
+    def test_a_company_less_fence_falls_back_to_the_acting_company(self):
+        """An empty company is documented on the field as the multi-company
+        case, so it keeps the old behaviour rather than losing its clock."""
+        self.fence.company_id = False
+
+        self.assertEqual(
+            self.fence._schedule_local_now(datetime(2026, 9, 8, 14, 0)).hour,
+            14,
+            "No owning company and no acting timezone leaves UTC.",
+        )

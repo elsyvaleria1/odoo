@@ -1,0 +1,80 @@
+.o_wevent_event .o_wevent_sponsor {
+    position: relative;
+    display: inline-block;
+    overflow: hidden;
+}
+
+.o_wevent_event .o_ribbon {
+    font: 12px Sans-Serif;
+    color: #404040;
+    padding-top: 2px;
+    padding-bottom: 2px;
+}
+
+.o_wevent_event .ribbon_Gold {
+    background-color: #fde21b !important;
+    background-image: -webkit-gradient(
+        linear,
+        left top,
+        left bottom,
+        from(#e9ce0c),
+        to(#fde21b)
+    ) !important;
+    background-image: -webkit-linear-gradient(top, #e9ce0c, #fde21b) !important;
+    background-image: -moz-linear-gradient(top, #e9ce0c, #fde21b) !important;
+    background-image: -ms-linear-gradient(top, #e9ce0c, #fde21b) !important;
+    background-image: -o-linear-gradient(top, #e9ce0c, #fde21b) !important;
+}
+
+.o_wevent_event .ribbon_Silver {
+    background-color: #cccccc !important;
+    background-image: -webkit-gradient(
+        linear,
+        left top,
+        left bottom,
+        from(#bbbbbb),
+        to(#cccccc)
+    ) !important;
+    background-image: -webkit-linear-gradient(top, #bbbbbb, #cccccc) !important;
+    background-image: -moz-linear-gradient(top, #bbbbbb, #cccccc) !important;
+    background-image: -ms-linear-gradient(top, #bbbbbb, #cccccc) !important;
+    background-image: -o-linear-gradient(top, #bbbbbb, #cccccc) !important;
+}
+
+.o_wevent_event .ribbon_Bronze {
+    background-color: #db9141 !important;
+    background-image: -webkit-gradient(
+        linear,
+        left top,
+        left bottom,
+        from(#c2792a),
+        to(#db9141)
+    ) !important;
+    background-image: -webkit-linear-gradient(top, #c2792a, #db9141) !important;
+    background-image: -moz-linear-gradient(top, #c2792a, #db9141) !important;
+    background-image: -ms-linear-gradient(top, #c2792a, #db9141) !important;
+    background-image: -o-linear-gradient(top, #c2792a, #db9141) !important;
+}
+
+.o_wevent_event .o_wevent_sponsor_card {
+    position: relative;
+    width: 100px;
+    height: 100px;
+    border: 1px solid o-palette-token(--o-gray-200, $gray-200);
+    background-color: o-token(--o-white, $white);
+    margin: 0 -1px -1px 0;
+    cursor: pointer;
+
+    &:before {
+        content: "";
+        display: block;
+        @include o-position-absolute(0, 0, 0, 0);
+        background-color: o-token(--o-black, $black);
+        opacity: 0;
+        transition: opacity var(--o-duration-slow, 0.3s);
+    }
+
+    &:hover:before {
+        opacity: 0.1;
+    }
+}

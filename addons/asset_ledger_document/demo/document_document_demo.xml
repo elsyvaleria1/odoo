@@ -1,0 +1,337 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="document_fuel_card_civic_001" model="document.document">
+        <field name="name">Efecticard 1234567890</field>
+        <field name="folder_id" ref="asset_ledger_document.document_folder_fleet" />
+        <field
+            name="tag_ids"
+            eval="[Command.set([ref('asset_ledger_document.documents_tag_fuel_card')])]" />
+        <field name="res_model">product.trace</field>
+        <field name="res_id" ref="asset_ledger.stock_lot_civic_001" />
+    </record>
+
+    <record id="document_highway_pass_civic_001" model="document.document">
+        <field name="name">IMDM Highway Pass ABC-1234</field>
+        <field name="folder_id" ref="asset_ledger_document.document_folder_fleet" />
+        <field
+            name="tag_ids"
+            eval="[Command.set([ref('asset_ledger_document.documents_tag_highway_pass')])]" />
+        <field name="res_model">product.trace</field>
+        <field name="res_id" ref="asset_ledger.stock_lot_civic_001" />
+    </record>
+
+    <record id="document_insurance_civic_001" model="document.document">
+        <field name="name">Insurance Policy - Honda Civic ABC-1234.pdf</field>
+        <field name="folder_id" ref="asset_ledger_document.document_folder_fleet" />
+        <field
+            name="tag_ids"
+            eval="[Command.set([ref('asset_ledger_document.documents_tag_insurance_policy')])]" />
+        <field name="res_model">product.trace</field>
+        <field name="res_id" ref="asset_ledger.stock_lot_civic_001" />
+    </record>
+
+    <record id="document_plate_civic_001" model="document.document">
+        <field name="name">Vehicle Registration ABC-1234.pdf</field>
+        <field name="folder_id" ref="asset_ledger_document.document_folder_fleet" />
+        <field
+            name="tag_ids"
+            eval="[Command.set([ref('asset_ledger_document.documents_tag_plate')])]" />
+        <field name="res_model">product.trace</field>
+        <field name="res_id" ref="asset_ledger.stock_lot_civic_001" />
+    </record>
+
+    <record id="document_fuel_card_f150_001" model="document.document">
+        <field name="name">Efecticard 9876543210</field>
+        <field name="folder_id" ref="asset_ledger_document.document_folder_fleet" />
+        <field
+            name="tag_ids"
+            eval="[Command.set([ref('asset_ledger_document.documents_tag_fuel_card')])]" />
+        <field name="res_model">product.trace</field>
+        <field name="res_id" ref="asset_ledger.stock_lot_f150_001" />
+    </record>
+
+    <record id="document_highway_pass_f150_001" model="document.document">
+        <field name="name">IMDM Highway Pass XYZ-5678</field>
+        <field name="folder_id" ref="asset_ledger_document.document_folder_fleet" />
+        <field
+            name="tag_ids"
+            eval="[Command.set([ref('asset_ledger_document.documents_tag_highway_pass')])]" />
+        <field name="res_model">product.trace</field>
+        <field name="res_id" ref="asset_ledger.stock_lot_f150_001" />
+    </record>
+
+    <record id="document_insurance_f150_001" model="document.document">
+        <field name="name">Commercial Vehicle Insurance XYZ-5678.pdf</field>
+        <field name="folder_id" ref="asset_ledger_document.document_folder_fleet" />
+        <field
+            name="tag_ids"
+            eval="[Command.set([ref('asset_ledger_document.documents_tag_insurance_policy')])]" />
+        <field name="res_model">product.trace</field>
+        <field name="res_id" ref="asset_ledger.stock_lot_f150_001" />
+    </record>
+
+    <record id="document_highway_pass_model3_001" model="document.document">
+        <field name="name">IMDM Highway Pass ECO-2024</field>
+        <field name="folder_id" ref="asset_ledger_document.document_folder_fleet" />
+        <field
+            name="tag_ids"
+            eval="[Command.set([ref('asset_ledger_document.documents_tag_highway_pass')])]" />
+        <field name="res_model">product.trace</field>
+        <field name="res_id" ref="asset_ledger.stock_lot_model3_001" />
+    </record>
+
+    <record id="document_deed_main_office" model="document.document">
+        <field name="name">Property Deed - Main Office Building 2019.pdf</field>
+        <field name="folder_id" ref="asset_ledger_document.document_folder_property" />
+        <field
+            name="tag_ids"
+            eval="[Command.set([ref('asset_ledger_document.documents_tag_property_deed')])]" />
+        <field name="res_model">product.trace</field>
+        <field name="res_id" ref="stock_lot_property_main_office" />
+    </record>
+
+    <record id="document_permit_main_office" model="document.document">
+        <field name="name">Building Permit 2019-BP-00123.pdf</field>
+        <field name="folder_id" ref="asset_ledger_document.document_folder_property" />
+        <field
+            name="tag_ids"
+            eval="[Command.set([ref('asset_ledger_document.documents_tag_building_permit')])]" />
+        <field name="res_model">product.trace</field>
+        <field name="res_id" ref="stock_lot_property_main_office" />
+    </record>
+
+    <record id="document_insurance_main_office" model="document.document">
+        <field name="name">Commercial Property Insurance Policy 2024.pdf</field>
+        <field name="folder_id" ref="asset_ledger_document.document_folder_property" />
+        <field
+            name="tag_ids"
+            eval="[Command.set([ref('asset_ledger_document.documents_tag_insurance_policy')])]" />
+        <field name="res_model">product.trace</field>
+        <field name="res_id" ref="stock_lot_property_main_office" />
+    </record>
+
+    <record id="document_deed_warehouse_a" model="document.document">
+        <field name="name">Property Title - Warehouse Distribution Center A.pdf</field>
+        <field name="folder_id" ref="asset_ledger_document.document_folder_property" />
+        <field
+            name="tag_ids"
+            eval="[Command.set([ref('asset_ledger_document.documents_tag_property_deed')])]" />
+        <field name="res_model">product.trace</field>
+        <field name="res_id" ref="stock_lot_property_warehouse_a" />
+    </record>
+
+    <record id="document_permit_warehouse_expansion" model="document.document">
+        <field name="name">Building Permit - Warehouse Expansion 2023.pdf</field>
+        <field name="folder_id" ref="asset_ledger_document.document_folder_property" />
+        <field
+            name="tag_ids"
+            eval="[Command.set([ref('asset_ledger_document.documents_tag_building_permit')])]" />
+        <field name="res_model">product.trace</field>
+        <field name="res_id" ref="stock_lot_property_warehouse_a" />
+    </record>
+
+    <record id="document_lease_retail_store" model="document.document">
+        <field
+            name="name">Commercial Lease Agreement - Downtown Retail Store.pdf</field>
+        <field name="folder_id" ref="asset_ledger_document.document_folder_property" />
+        <field
+            name="tag_ids"
+            eval="[Command.set([ref('asset_ledger_document.documents_tag_lease_agreement')])]" />
+        <field name="res_model">product.trace</field>
+        <field name="res_id" ref="stock_lot_property_retail_store" />
+    </record>
+
+    <record id="document_permit_retail_renovation" model="document.document">
+        <field name="name">Renovation Permit 2024-RP-00456.pdf</field>
+        <field name="folder_id" ref="asset_ledger_document.document_folder_property" />
+        <field
+            name="tag_ids"
+            eval="[Command.set([ref('asset_ledger_document.documents_tag_building_permit')])]" />
+        <field name="res_model">product.trace</field>
+        <field name="res_id" ref="stock_lot_property_retail_store" />
+    </record>
+
+    <record id="document_warranty_forklift_001" model="document.document">
+        <field name="name">Forklift Warranty Certificate 5-Year.pdf</field>
+        <field name="folder_id" ref="asset_ledger_document.document_folder_machinery" />
+        <field
+            name="tag_ids"
+            eval="[Command.set([ref('asset_ledger_document.documents_tag_warranty')])]" />
+        <field name="res_model">product.trace</field>
+        <field name="res_id" ref="stock_lot_machinery_forklift_001" />
+    </record>
+
+    <record id="document_manual_forklift_001" model="document.document">
+        <field name="name">Forklift Operator Manual 2023.pdf</field>
+        <field name="folder_id" ref="asset_ledger_document.document_folder_machinery" />
+        <field
+            name="tag_ids"
+            eval="[Command.set([ref('asset_ledger_document.documents_tag_user_manual')])]" />
+        <field name="res_model">product.trace</field>
+        <field name="res_id" ref="stock_lot_machinery_forklift_001" />
+    </record>
+
+    <record id="document_safety_forklift_001" model="document.document">
+        <field name="name">Forklift Safety Inspection Certificate 2024.pdf</field>
+        <field name="folder_id" ref="asset_ledger_document.document_folder_machinery" />
+        <field
+            name="tag_ids"
+            eval="[Command.set([ref('asset_ledger_document.documents_tag_safety_cert')])]" />
+        <field name="res_model">product.trace</field>
+        <field name="res_id" ref="stock_lot_machinery_forklift_001" />
+    </record>
+
+    <record id="document_warranty_cnc_001" model="document.document">
+        <field name="name">CNC Machine 3-Year Extended Warranty.pdf</field>
+        <field name="folder_id" ref="asset_ledger_document.document_folder_machinery" />
+        <field
+            name="tag_ids"
+            eval="[Command.set([ref('asset_ledger_document.documents_tag_warranty')])]" />
+        <field name="res_model">product.trace</field>
+        <field name="res_id" ref="stock_lot_machinery_cnc_001" />
+    </record>
+
+    <record id="document_calibration_cnc_001" model="document.document">
+        <field name="name">CNC Calibration Certificate 2024-Q1.pdf</field>
+        <field name="folder_id" ref="asset_ledger_document.document_folder_machinery" />
+        <field
+            name="tag_ids"
+            eval="[Command.set([ref('asset_ledger_document.documents_tag_calibration')])]" />
+        <field name="res_model">product.trace</field>
+        <field name="res_id" ref="stock_lot_machinery_cnc_001" />
+    </record>
+
+    <record id="document_specs_cnc_001" model="document.document">
+        <field name="name">CNC Machine Technical Specifications Manual.pdf</field>
+        <field name="folder_id" ref="asset_ledger_document.document_folder_machinery" />
+        <field
+            name="tag_ids"
+            eval="[Command.set([ref('asset_ledger_document.documents_tag_technical_specs')])]" />
+        <field name="res_model">product.trace</field>
+        <field name="res_id" ref="stock_lot_machinery_cnc_001" />
+    </record>
+
+    <record id="document_po_laptop_001" model="document.document">
+        <field
+            name="name">Purchase Order - Dell Latitude 5440 PO-2024-001234.pdf</field>
+        <field name="folder_id" ref="asset_ledger_document.document_folder_equipment" />
+        <field
+            name="tag_ids"
+            eval="[Command.set([ref('asset_ledger_document.documents_tag_equipment_doc')])]" />
+        <field name="res_model">product.trace</field>
+        <field name="res_id" ref="stock_lot_equipment_laptop_001" />
+    </record>
+
+    <record id="document_warranty_laptop_001" model="document.document">
+        <field name="name">Dell ProSupport Plus Warranty Certificate.pdf</field>
+        <field name="folder_id" ref="asset_ledger_document.document_folder_equipment" />
+        <field
+            name="tag_ids"
+            eval="[Command.set([ref('asset_ledger_document.documents_tag_warranty')])]" />
+        <field name="res_model">product.trace</field>
+        <field name="res_id" ref="stock_lot_equipment_laptop_001" />
+    </record>
+
+    <record id="document_license_windows_laptop_001" model="document.document">
+        <field name="name">Windows 11 Pro License Key.pdf</field>
+        <field name="folder_id" ref="asset_ledger_document.document_folder_equipment" />
+        <field
+            name="tag_ids"
+            eval="[Command.set([ref('asset_ledger_document.documents_tag_software_license')])]" />
+        <field name="res_model">product.trace</field>
+        <field name="res_id" ref="stock_lot_equipment_laptop_001" />
+    </record>
+
+    <record id="document_invoice_civic" model="document.document">
+        <field name="name">Invoice - Honda Civic Purchase INV-2023-1001.pdf</field>
+        <field name="folder_id" ref="asset_ledger_document.document_folder_fleet" />
+        <field
+            name="tag_ids"
+            eval="[Command.set([ref('asset_ledger_document.documents_tag_fleet_doc')])]" />
+        <field name="res_model">product.trace</field>
+        <field name="res_id" ref="asset_ledger.stock_lot_civic_001" />
+    </record>
+
+    <record id="document_invoice_warehouse" model="document.document">
+        <field
+            name="name">Invoice - Warehouse Property Purchase INV-2020-5001.pdf</field>
+        <field name="folder_id" ref="asset_ledger_document.document_folder_property" />
+        <field
+            name="tag_ids"
+            eval="[Command.set([ref('asset_ledger_document.documents_tag_property_doc')])]" />
+        <field name="res_model">product.trace</field>
+        <field name="res_id" ref="stock_lot_property_warehouse_a" />
+    </record>
+
+    <record id="document_inspection_forklift" model="document.document">
+        <field name="name">Forklift Annual Inspection Report 2024.pdf</field>
+        <field name="folder_id" ref="asset_ledger_document.document_folder_machinery" />
+        <field
+            name="tag_ids"
+            eval="[Command.set([ref('asset_ledger_document.documents_tag_inspection_report')])]" />
+        <field name="res_model">product.trace</field>
+        <field name="res_id" ref="stock_lot_machinery_forklift_001" />
+    </record>
+
+    <record id="document_inspection_main_office" model="document.document">
+        <field name="name">Building Safety Inspection Report 2024.pdf</field>
+        <field name="folder_id" ref="asset_ledger_document.document_folder_property" />
+        <field
+            name="tag_ids"
+            eval="[Command.set([ref('asset_ledger_document.documents_tag_inspection_report')])]" />
+        <field name="res_model">product.trace</field>
+        <field name="res_id" ref="stock_lot_property_main_office" />
+    </record>
+
+    <!--
+        A document is attached to its asset, not to the serial; the asset
+        created beside each demo lot carries no xml id, so the records above
+        name the lot and are moved here.
+    -->
+    <function
+        model="document.document"
+        name="write"
+        eval="[[ref('document_fuel_card_civic_001'), ref('document_highway_pass_civic_001'), ref('document_insurance_civic_001'), ref('document_plate_civic_001'), ref('document_invoice_civic')], {'res_model': 'resource.asset', 'res_id': obj().env['product.trace'].browse(ref('asset_ledger.stock_lot_civic_001')).asset_id.id}]" />
+
+    <function
+        model="document.document"
+        name="write"
+        eval="[[ref('document_fuel_card_f150_001'), ref('document_highway_pass_f150_001'), ref('document_insurance_f150_001')], {'res_model': 'resource.asset', 'res_id': obj().env['product.trace'].browse(ref('asset_ledger.stock_lot_f150_001')).asset_id.id}]" />
+
+    <function
+        model="document.document"
+        name="write"
+        eval="[[ref('document_highway_pass_model3_001')], {'res_model': 'resource.asset', 'res_id': obj().env['product.trace'].browse(ref('asset_ledger.stock_lot_model3_001')).asset_id.id}]" />
+
+    <function
+        model="document.document"
+        name="write"
+        eval="[[ref('document_deed_main_office'), ref('document_permit_main_office'), ref('document_insurance_main_office'), ref('document_inspection_main_office')], {'res_model': 'resource.asset', 'res_id': obj().env['product.trace'].browse(ref('stock_lot_property_main_office')).asset_id.id}]" />
+
+    <function
+        model="document.document"
+        name="write"
+        eval="[[ref('document_deed_warehouse_a'), ref('document_permit_warehouse_expansion'), ref('document_invoice_warehouse')], {'res_model': 'resource.asset', 'res_id': obj().env['product.trace'].browse(ref('stock_lot_property_warehouse_a')).asset_id.id}]" />
+
+    <function
+        model="document.document"
+        name="write"
+        eval="[[ref('document_lease_retail_store'), ref('document_permit_retail_renovation')], {'res_model': 'resource.asset', 'res_id': obj().env['product.trace'].browse(ref('stock_lot_property_retail_store')).asset_id.id}]" />
+
+    <function
+        model="document.document"
+        name="write"
+        eval="[[ref('document_warranty_forklift_001'), ref('document_manual_forklift_001'), ref('document_safety_forklift_001'), ref('document_inspection_forklift')], {'res_model': 'resource.asset', 'res_id': obj().env['product.trace'].browse(ref('stock_lot_machinery_forklift_001')).asset_id.id}]" />
+
+    <function
+        model="document.document"
+        name="write"
+        eval="[[ref('document_warranty_cnc_001'), ref('document_calibration_cnc_001'), ref('document_specs_cnc_001')], {'res_model': 'resource.asset', 'res_id': obj().env['product.trace'].browse(ref('stock_lot_machinery_cnc_001')).asset_id.id}]" />
+
+    <function
+        model="document.document"
+        name="write"
+        eval="[[ref('document_po_laptop_001'), ref('document_warranty_laptop_001'), ref('document_license_windows_laptop_001')], {'res_model': 'resource.asset', 'res_id': obj().env['product.trace'].browse(ref('stock_lot_equipment_laptop_001')).asset_id.id}]" />
+
+</odoo>

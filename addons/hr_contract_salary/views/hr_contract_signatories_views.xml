@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="hr_contract_signatory_view_list" model="ir.ui.view">
+        <field name="name">hr.contract.signatory.list</field>
+        <field name="model">hr.contract.signatory</field>
+        <field name="arch" type="xml">
+            <list editable="bottom" create="false" delete="false">
+                <field
+                    name="sign_role_id"
+                    force_save="1"
+                    options="{'no_open': True}"
+                    readonly="1" />
+                <field
+                    name="signatory"
+                    force_save="1"
+                    options="{'no_open': True}"
+                    required="1" />
+                <field
+                    name="partner_id"
+                    placeholder="Name or email..."
+                    context="{'force_email': True, 'show_email': True}"
+                    options="{'no_open': True}"
+                    invisible="signatory != 'partner'"
+                    required="signatory == 'partner'" />
+                <field
+                    name="order"
+                    optional="hide"
+                    force_save="1"
+                    options="{'no_open': True}" />
+            </list>
+        </field>
+    </record>
+
+</odoo>

@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="helpdesk_sla_view_tree" model="ir.ui.view">
+        <field name="name">helpdesk.sla.list</field>
+        <field name="model">helpdesk.sla</field>
+        <field name="arch" type="xml">
+            <list
+                string="SLA Policies"
+                default_order="team_id"
+                multi_edit="1"
+                sample="1">
+                <field name="company_id" column_invisible="True" />
+                <field name="name" />
+                <field name="team_id" optional="show" readonly="1" />
+                <field name="priority" widget="priority" optional="show" />
+                <field
+                    name="tag_ids"
+                    widget="many2many_tags"
+                    optional="hide"
+                    options="{'color_field': 'color'}" />
+                <field
+                    name="partner_ids"
+                    widget="many2many_tags"
+                    optional="hide"
+                    domain="['|', ('company_id', '=', False), ('company_id', '=', company_id)]" />
+                <field
+                    name="stage_id"
+                    string="Reach Stage"
+                    optional="show"
+                    readonly="1" />
+                <field name="time" widget="float_time" optional="show" />
+                <field
+                    name="exclude_stage_ids"
+                    widget="many2many_tags"
+                    optional="hide"
+                    readonly="1" />
+            </list>
+        </field>
+    </record>
+
+    <record id="helpdesk_sla_view_kanban" model="ir.ui.view">
+        <field name="name">helpdesk.sla.kanban</field>
+        <field name="model">helpdesk.sla</field>
+        <field name="arch" type="xml">
+            <kanban default_order="team_id" sample="1">
+                <templates>
+                    <t t-name="card">
+                        <field name="name" class="fw-bolder fs-5" />
+                        <field name="team_id" />
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
+    <record id="helpdesk_sla_view_search" model="ir.ui.view">
+        <field name="name">helpdesk.sla.search</field>
+        <field name="model">helpdesk.sla</field>
+        <field name="arch" type="xml">
+            <search string="Search SLA Policies">
+                <field name="name" />
+                <field name="team_id" />
+                <filter
+                    name="archived"
+                    string="Archived"
+                    domain="[('active', '=', False)]" />
+                <group>
+                    <filter
+                        name="team"
+                        string="Helpdesk Team"
+                        context="{'group_by':'team_id'}" />
+                    <filter
+                        name="company"
+                        string="Company"
+                        context="{'group_by': 'company_id'}"
+                        groups="base.group_multi_company" />
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="helpdesk_sla_view_form" model="ir.ui.view">
+        <field name="name">helpdesk.sla.form</field>
+        <field name="model">helpdesk.sla</field>
+        <field name="arch" type="xml">
+            <form string="SLA Policy">
+                <sheet>
+                    <widget
+                        name="web_ribbon"
+                        title="Archived"
+                        invisible="active"
+                        bg_color="text-bg-danger" />
+                    <div class="oe_button_box" name="button_box">
+                        <button
+                            name="action_view_helpdesk_ticket"
+                            type="object"
+                            icon="fa-life-ring"
+                            invisible="ticket_count == 0"
+                            class="oe_stat_button">
+                            <field
+                                name="ticket_count"
+                                string="Tickets"
+                                widget="statinfo" />
+                        </button>
+                    </div>
+                    <div class="oe_title">
+                        <h1>
+                            <field
+                                name="name"
+                                placeholder="e.g. Close urgent tickets within 36 hours" />
+                        </h1>
+                    </div>
+                    <field
+                        name="description"
+                        placeholder="Description of the policy..." />
+                    <group>
+                        <group>
+                            <field name="active" invisible="1" />
+                            <field name="company_id" invisible="1" />
+                            <separator string="Criteria" colspan="2" />
+                            <div class="text-muted mb32" colspan="2">This SLA Policy will apply to tickets matching ALL of the following criteria:</div>
+                            <field
+                                name="team_id"
+                                domain="[('use_helpdesk', '=', True), ('helpdesk_use_sla', '=', True)]" />
+                            <field name="priority" widget="priority" />
+                            <label for="tag_ids" />
+                            <div class="d-flex justify-content-center">
+                                <field
+                                    name="tag_ids"
+                                    widget="many2many_tags"
+                                    options="{'color_field': 'color', 'no_create_edit': True}"
+                                    class="" />
+                                <div class="text-end text-muted col-4">(any of these tags)</div>
+                            </div>
+                            <label for="partner_ids" />
+                            <div class="d-md-flex" name="partners">
+                                <field
+                                    name="partner_ids"
+                                    widget="many2many_tags"
+                                    domain="['|', ('company_id', '=', False), ('company_id', '=', company_id)]"
+                                    options="{'edit_tags': true}" />
+                                </div>
+
+                            <separator string="Target" colspan="2" class="mt32" />
+                            <field
+                                name="stage_id"
+                                string="Reach Stage"
+                                domain="[('team_ids', '=', team_id), ('id', 'not in', exclude_stage_ids)]"
+                                context="{'default_team_ids': team_id and [(6, 0, [team_id])]}"
+                                required="1" />
+                            <label for="time" />
+                            <div class="o_row">
+                                <field name="time" widget="float_time" class="oe_inline" /><span class="o_field_widget o_readonly_modifier">Working Hours</span>
+                            </div>
+                            <field
+                                name="exclude_stage_ids"
+                                widget="many2many_tags"
+                                domain="[('id', '!=', stage_id), ('team_ids', '=', team_id)]"
+                                context="{'default_team_ids': team_id and [(6, 0, [team_id])]}"
+                                options="{'edit_tags': True}" />
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="helpdesk_sla_action_main" model="ir.actions.act_window">
+        <field name="name">SLA Policies</field>
+        <field name="res_model">helpdesk.sla</field>
+        <field name="path">sla-policies</field>
+        <field name="view_mode">list,form,kanban</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No SLA policies found. Let's create one!
+                </p><p>
+                    Make sure tickets are handled on time by using SLA Policies.<br />
+                </p>
+        </field>
+    </record>
+
+</odoo>

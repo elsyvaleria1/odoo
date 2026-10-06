@@ -1,0 +1,1 @@
+from . import wizard_pos_session_print_sale_detail

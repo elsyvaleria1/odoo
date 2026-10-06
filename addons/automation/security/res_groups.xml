@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="privilege_draw_run" model="res.groups">
+        <field name="name">Draw Workflow Run</field>
+        <field
+            name="comment">A run's diagram reads the steps the run was started from and the automation that owns them, whoever may read the run.</field>
+        <field name="is_privilege" eval="True" />
+    </record>
+
+</odoo>

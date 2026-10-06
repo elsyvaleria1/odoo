@@ -1,0 +1,70 @@
+/** @odoo-module native */
+import { registry } from "@web/core/registry";
+import { append, createElement, setAttributes } from "@web/core/utils/dom/xml";
+import { patch } from "@web/core/utils/patch";
+import { SIZES } from "@web/ui/viewport";
+import { FormCompiler } from "@web/views/form";
+
+/**
+ * @param {HTMLElement} node
+ * @param {Object} params
+ * @returns
+ */
+function compileChatter(node, params) {
+    const chatterContainerXml = createElement("Chatter");
+    setAttributes(chatterContainerXml, {
+        threadModel: params.resModel,
+        threadId: params.resId,
+        projectSharingId: params.projectSharingId,
+        isFollower: params.isFollower,
+        displayFollowButton: params.displayFollowButton,
+    });
+    const chatterContainerHookXml = createElement("div");
+    chatterContainerHookXml.classList.add(
+        "o-mail-ChatterContainer",
+        "o-mail-Form-chatter",
+    );
+    setAttributes(chatterContainerHookXml, {
+        "t-if": "!__comp__.dialogContext.inDialog",
+    });
+    append(chatterContainerHookXml, chatterContainerXml);
+    return chatterContainerHookXml;
+}
+
+registry.category("form_compilers").add("portal_chatter_compiler", {
+    selector: "chatter",
+    fn: (node) =>
+        compileChatter(node, {
+            resId: "__comp__.props.record.resId or undefined",
+            resModel: "__comp__.props.record.resModel",
+            projectSharingId: "__comp__.props.record.context.active_id_chatter",
+            isFollower: "__comp__.props.record.data.message_is_follower",
+            displayFollowButton: "__comp__.props.record.data.display_follow_button",
+        }),
+});
+
+patch(FormCompiler.prototype, {
+    compile(node, params) {
+        const res = super.compile(node, params);
+        const chatterContainerHookXml = res.querySelector(".o-mail-Form-chatter");
+        if (!chatterContainerHookXml) {
+            return res;
+        }
+        if (chatterContainerHookXml.parentNode.classList.contains("o_form_sheet")) {
+            return res;
+        }
+        const formSheetBgXml = res.querySelector(".o_form_sheet_bg");
+        const parentXml = formSheetBgXml && formSheetBgXml.parentNode;
+        if (!parentXml) {
+            return res;
+        }
+        setAttributes(chatterContainerHookXml, {
+            "t-att-class": `{
+                "overflow-x-hidden overflow-y-auto o-aside h-100": __comp__.uiService.size >= ${SIZES.XXL},
+                "px-3 py-0": __comp__.uiService.size < ${SIZES.XXL},
+            }`,
+        });
+        append(parentXml, chatterContainerHookXml);
+        return res;
+    },
+});

@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="stock_package_destination_form_view" model="ir.ui.view">
+        <field name="name">stock.package.destination.view</field>
+        <field name="model">wizard.stock.move.line.put.in.pack.mixed.destination</field>
+        <field name="arch" type="xml">
+            <form>
+                <div>
+                    You are trying to put products going to different locations into the same
+                    package
+                </div>
+                <div>
+                    <field name="move_line_ids" style="margin-top:10px;">
+                        <list>
+                            <field name="product_id" />
+                            <field name="location_dest_id" />
+                            <field name="quantity" string="quantity" />
+                            <field
+                                name="trace_id"
+                                groups="stock.group_production_lot" />
+                        </list>
+                        <kanban>
+                            <templates>
+                                <t t-name="card">
+                                    <div class="row">
+                                        <field name="product_id" class="col-6" />
+                                        <field
+                                            name="quantity"
+                                            string="quantity"
+                                            class="col-6" />
+                                    </div>
+                                    <field name="location_dest_id" />
+                                </t>
+                            </templates>
+                        </kanban>
+                    </field>
+                </div>
+                <div>
+                    <strong>Where do you want to send the products?</strong>
+                </div>
+                <div>
+                    <field name="filtered_location" invisible="1" />
+                    <field
+                        name="location_dest_id"
+                        domain="[('id', 'in', filtered_location)]"
+                        options="{'no_create': True, 'no_open': True}" />
+                </div>
+                <footer>
+                    <button
+                        name="action_put_in_pack"
+                        type="object"
+                        string="Confirm"
+                        class="btn-primary"
+                        data-hotkey="q" />
+                    <button
+                        name="cancel_button"
+                        special="cancel"
+                        string="Discard"
+                        class="btn-secondary"
+                        data-hotkey="x" />
+                </footer>
+            </form>
+        </field>
+    </record>
+
+</odoo>

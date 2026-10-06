@@ -1,0 +1,33 @@
+/** @odoo-module native */
+import { ComboConfiguratorDialog } from "@sale/js/combo_configurator_dialog/combo_configurator_dialog";
+import { patch } from "@web/core/utils/patch";
+
+patch(ComboConfiguratorDialog.prototype, {
+    async selectComboItem(comboId, comboItem) {
+        if (!comboItem.product.isQuantityAllowed(this.state.quantity)) {
+            return;
+        }
+        super.selectComboItem(...arguments);
+    },
+
+    async setQuantity(quantity) {
+        if (!this.isComboQuantityAllowed(quantity)) {
+            quantity = Math.min(
+                ...this._selectedComboItems
+                    .map((comboItem) => comboItem.product.qty_free)
+                    .filter((freeQty) => freeQty !== undefined),
+            );
+        }
+        return super.setQuantity(quantity);
+    },
+
+    /**
+     * @param {Number} quantity
+     * @return {Boolean}
+     */
+    isComboQuantityAllowed(quantity) {
+        return this._selectedComboItems.every((comboItem) =>
+            comboItem.product.isQuantityAllowed(quantity),
+        );
+    },
+});

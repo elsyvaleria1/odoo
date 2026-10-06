@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_account_asset_fleet_form" model="ir.ui.view">
+        <field name="name">account.asset.fleet.form</field>
+        <field name="model">account.depreciation.board</field>
+        <field name="inherit_id" ref="account_depreciation.view_account_asset_form" />
+        <field name="arch" type="xml">
+            <xpath
+                expr="//sheet/notebook/page[@name='related_items']//field[@name='account_id']"
+                position="after">
+                <field name="asset_id" string="Vehicle" optional="hide" />
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

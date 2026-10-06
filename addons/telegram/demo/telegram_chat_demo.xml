@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+
+    <record id="telegram_account_demo_juangarcia" model="telegram.account">
+        <field name="tg_user_id">100001</field>
+        <field name="username">juangarcia_demo</field>
+    </record>
+
+    <record id="telegram_account_demo_marialopez" model="telegram.account">
+        <field name="tg_user_id">100002</field>
+        <field name="username">marialopez_demo</field>
+    </record>
+
+    <record id="telegram_account_demo_carlosrodriguez" model="telegram.account">
+        <field name="tg_user_id">100003</field>
+        <field name="username">carlosrodriguez_demo</field>
+    </record>
+
+    <record id="telegram_account_demo_anamartinez" model="telegram.account">
+        <field name="tg_user_id">100004</field>
+        <field name="username">anamartinez_demo</field>
+    </record>
+
+    <record id="telegram_account_demo_newuser" model="telegram.account">
+        <field name="tg_user_id">100005</field>
+        <field name="username">newuser_demo</field>
+    </record>
+
+    <record id="telegram_account_demo_problemuser" model="telegram.account">
+        <field name="tg_user_id">100006</field>
+        <field name="username">problemuser_demo</field>
+    </record>
+
+    <record id="telegram_account_demo_hrcandidate" model="telegram.account">
+        <field name="tg_user_id">100007</field>
+        <field name="username">hrcandidate_demo</field>
+    </record>
+
+    <record id="telegram_binding_demo_juangarcia" model="telegram.binding">
+        <field name="account_id" ref="telegram_account_demo_juangarcia" />
+        <field name="partner_id" ref="partner_demo_customer_telegram" />
+        <field name="method">invitation</field>
+    </record>
+
+    <record id="telegram_binding_demo_marialopez" model="telegram.binding">
+        <field name="account_id" ref="telegram_account_demo_marialopez" />
+        <field name="partner_id" ref="partner_demo_supplier_telegram" />
+        <field name="method">invitation</field>
+    </record>
+
+    <record id="telegram_binding_demo_carlosrodriguez" model="telegram.binding">
+        <field name="account_id" ref="telegram_account_demo_carlosrodriguez" />
+        <field name="partner_id" ref="partner_demo_employee_telegram" />
+        <field name="method">invitation</field>
+    </record>
+
+    <record id="telegram_binding_demo_anamartinez" model="telegram.binding">
+        <field name="account_id" ref="telegram_account_demo_anamartinez" />
+        <field name="partner_id" ref="partner_demo_employee2_telegram" />
+        <field name="method">invitation</field>
+    </record>
+
+    <record id="telegram_chat_demo_customer" model="telegram.chat">
+        <field name="chat_id">100001</field>
+        <field name="chat_type">private</field>
+        <field name="account_id" ref="telegram_account_demo_juangarcia" />
+        <field name="bot_id" ref="telegram_bot_demo_main" />
+        <field name="failed_command_count">0</field>
+    </record>
+
+    <record id="telegram_chat_demo_supplier" model="telegram.chat">
+        <field name="chat_id">100002</field>
+        <field name="chat_type">private</field>
+        <field name="account_id" ref="telegram_account_demo_marialopez" />
+        <field name="bot_id" ref="telegram_bot_demo_main" />
+        <field name="failed_command_count">0</field>
+    </record>
+
+    <record id="telegram_chat_demo_employee" model="telegram.chat">
+        <field name="chat_id">100003</field>
+        <field name="chat_type">private</field>
+        <field name="account_id" ref="telegram_account_demo_carlosrodriguez" />
+        <field name="bot_id" ref="telegram_bot_demo_hr" />
+        <field name="failed_command_count">0</field>
+    </record>
+
+    <record id="telegram_chat_demo_manager" model="telegram.chat">
+        <field name="chat_id">100004</field>
+        <field name="chat_type">private</field>
+        <field name="account_id" ref="telegram_account_demo_anamartinez" />
+        <field name="bot_id" ref="telegram_bot_demo_main" />
+        <field name="failed_command_count">0</field>
+    </record>
+
+    <record id="telegram_chat_demo_unlinked" model="telegram.chat">
+        <field name="chat_id">100005</field>
+        <field name="chat_type">private</field>
+        <field name="account_id" ref="telegram_account_demo_newuser" />
+        <field name="bot_id" ref="telegram_bot_demo_main" />
+        <field name="failed_command_count">0</field>
+    </record>
+
+    <record id="telegram_chat_demo_problematic" model="telegram.chat">
+        <field name="chat_id">100006</field>
+        <field name="chat_type">private</field>
+        <field name="account_id" ref="telegram_account_demo_problemuser" />
+        <field name="bot_id" ref="telegram_bot_demo_main" />
+        <field name="failed_command_count">2</field>
+        <field name="last_error">Unknown command received</field>
+    </record>
+
+    <record id="telegram_chat_demo_hr_unlinked" model="telegram.chat">
+        <field name="chat_id">100007</field>
+        <field name="chat_type">private</field>
+        <field name="account_id" ref="telegram_account_demo_hrcandidate" />
+        <field name="bot_id" ref="telegram_bot_demo_hr" />
+        <field name="failed_command_count">0</field>
+    </record>
+
+</odoo>

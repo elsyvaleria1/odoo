@@ -1,0 +1,185 @@
+# Asset Layers — deployment-context bundling
+
+> The `mail` JS is organized into **layers by deployment context**, not by feature. The
+> same feature (e.g. a thread, a composer) ships different code depending on *where* it
+> runs: the backend webclient, a portal page, or the anonymous public discuss page. This
+> doc is the reference for that layering — mail's analogue of web's
+> `addons/web/machine_doc_v1/ESM_BUNDLING.md`.
+
+> **See also**: `__manifest__.py` (`assets` dict + `esm` dict — the source of truth),
+> `DIRECTORY_MAP.md` (which directories belong to which layer), `ARCHITECTURE.md`.
+
+## The five layers
+
+Every leaf directory under `static/src/` carries a **layer suffix** (`.../common/...`,
+`.../web/...`, etc.). The suffix decides which bundle(s) the file lands in:
+
+| Layer | Runs in | Shipped by |
+|-------|---------|------------|
+| `common/` | **everywhere** — backend, portal, and the anonymous public/livechat page | `web.assets_backend` + `mail.assets_public` (+ named sub-bundles) |
+| `web/` | backend webclient only | `web.assets_backend` |
+| `public_web/` | shared between backend and the public discuss page | `web.assets_backend` + `mail.assets_public` |
+| `web_portal/` | portal + backend | `web.assets_backend` (+ standalone `mail.assets_*_web_portal`) |
+| `public/` | anonymous public discuss page only | `mail.assets_public` |
+
+**The import rule that makes this work:** a file may import another only if the target
+ships **everywhere the importer ships** — `bundles(source) ⊆ bundles(target)`, read off
+the table above. That forbids `common/` → anything (it alone ships in all three
+contexts), `web/` ↔ `public/` (disjoint targets), and `public_web/` ↔ `web_portal/`
+(each ships somewhere the other does not). A `common/` file importing from `web/`
+resolves to `undefined` on the public page, where `web/` is absent. See CONVENTIONS.md.
+
+> A linear rank (`common` < `public_web` < `web`) is the intuitive model and is **wrong**:
+> `web` and `public` are mutually exclusive, so no ordering places them. Use the subset rule.
+
+**This is now gated, not just documented.** `tooling/architecture/js_deployment_layers.py`
+enforces it drift-zero across every addon using the convention (mail plus `im_livechat`,
+`hr_holidays`, `whatsapp`, `cloud_storage`, …), including cross-addon and relative
+imports, and — since 2026-09-02 — the template axis too: a component's `static template =
+"…"` and an XML `t-inherit="…"` are checked against the layer of the file that defines the
+`t-name`, so a `web_portal/` component can no longer be declared on a `web/` template. It runs
+in `.github/workflows/architecture.yml` and is blocking. The tree was at zero when the gate
+landed and `KNOWN_VIOLATIONS` is empty.
+
+Directories on disk carrying these suffixes: `core/{common,public_web,web_portal,web}`,
+`chatter/{web,web_portal}`, `discuss/call/{common,public,public_web,web}`,
+`discuss/core/{common,public,public_web,web}`,
+`discuss/{gif_picker,message_pin,typing,voice_message}/common`, `discuss/web`,
+`utils/{common,web}`, `views/web`, `webclient/web`.
+
+## Backend bundle composition (`web.assets_backend`)
+
+Layers load in a strict order via two glob families:
+
+```python
+("mail/static/src/model/**/*",)  # the reactive ORM, before anything using it
+# explicit core layers next…
+("mail/static/src/core/common/**/*",)
+("mail/static/src/core/public_web/**/*",)
+("mail/static/src/core/web_portal/**/*",)
+("mail/static/src/core/web/**/*",)
+# …then wildcard layer globs across every feature
+("mail/static/src/**/common/**/*",)
+("mail/static/src/**/public_web/**/*",)
+("mail/static/src/**/web_portal/**/*",)
+("mail/static/src/**/web/**/*",)
+```
+
+### The discuss remove-then-re-add
+
+Those `**/common/**` etc. wildcards also match `discuss/**`, so discuss is **stripped and
+re-added** as one deterministic block:
+
+```python
+(("remove", "mail/static/src/discuss/**/*"),)
+("mail/static/src/discuss/core/common/**/*",)
+("mail/static/src/discuss/core/public_web/**/*",)
+("mail/static/src/discuss/core/web/**/*",)
+("mail/static/src/discuss/**/common/**/*",)  # + public_web, web
+("mail/static/src/views/web/activity/**",)  # re-added after the strip — see below
+```
+
+> The trailing `views/web/activity/**` line is a **re-add, not a new layer**: those files are
+> already matched by `**/web/**` above, and the explicit repeat puts the activity view type
+> after the discuss block rather than before it.
+
+**Why (per the manifest comment):** the historical core → discuss import inversion has been
+fixed, so **JS imports no longer require this ordering**. It is kept for two remaining
+reasons:
+1. **SCSS cascade** — discuss styles must come after core styles so they override them.
+2. **Side-effect module order** — patches and registry additions that have no import edge
+   between them run in this deterministic block order.
+
+Mail no longer ships any `*.dark.scss`, and declares no dark bundle: since
+`[IMP] web,*: own dark mode, and answer both colour schemes from one stylesheet`
+the mechanism lives in `web` and one stylesheet answers both schemes. The
+`("remove", ...)` lines that stripped `*.dark.scss` from mail's layer bundles,
+and the `web.assets_web_dark` bundle itself, went with it.
+
+## Public-page bundle (`mail.assets_public`)
+
+`mail.assets_public` is a **self-contained** bundle for the anonymous discuss page — it does
+not assume the webclient is present, so it re-includes the web platform from scratch:
+`web._assets_helpers`, `web._assets_backend_helpers`, bootstrap SCSS, fontawesome7,
+`web._assets_core`, `web/static/src/core/formatters.js`, `bus/static/src/*.js` +
+`bus/static/src/services/**/*.js` + `bus/static/src/workers/*.js` (minus
+`bus_worker_script.js`), and `html_editor._assets_editor`. Then it adds mail's
+`common` + `public_web` + `public` layers plus the discuss block (mirroring the
+remove-then-re-add pattern, but with `public_web`/`public` instead of `web`/`web_portal`).
+
+## Named sub-bundles (the supported extension seam)
+
+Downstream modules (portal, im_livechat, …) embed mail layers by `("include", ...)`-ing
+these named bundles **instead of** globbing `mail/static/src/**` paths — this decouples them
+from mail's internal file layout. Their globs still decline to strip `*.dark.scss` — the
+consumer decides — even though mail itself now contributes none.
+
+| Bundle | Contains | For |
+|--------|----------|-----|
+| `mail.assets_core_common` | `model/**`, `utils/common/**`, `core/common/**` | Core store/model + common UI, minimal footprint |
+| `mail.assets_discuss_core_common` | `discuss/core/common/**` | Discuss channel core |
+| `mail.assets_discuss_call_common` | `discuss/call/common/**` | RTC/call core |
+| `mail.assets_discuss_typing_common` | `discuss/typing/common/**` | Typing indicator |
+| `mail.assets_core_web_portal` | `core/web_portal/**` | Portal core |
+| `mail.assets_chatter_web_portal` | `chatter/web_portal/**` | Portal chatter |
+| `mail.assets_public` | full standalone public-page bundle (see above) | The anonymous discuss page |
+| `mail.assets_message_email` | `web/static/lib/odoo_ui_icons/style.css` | Icon CSS embedded in email HTML |
+| `mail.assets_discuss_public_test_tours` | hoot-dom + web_tour + 6 public-page tour files (5 `tours/discuss_channel_*` + `discuss_sidebar_in_public_page_tour.js`) | Public-page browser tests |
+
+## ESM wiring (`esm` manifest key)
+
+Two bundles are esbuild-compiled as native ESM, and two libraries are declared:
+
+```python
+"esm": {
+    "external_libs": {
+        "@odoo/sfu": "/mail/static/lib/odoo_sfu/odoo_sfu.js",
+        "lamejs": "/mail/static/lib/lame/lame.esm.js",
+    },
+    "bundles": ["mail.assets_public", "mail.assets_discuss_public_test_tours"],
+    "secondary_import_map_includes": {
+        "mail.assets_public": ["mail.assets_discuss_public_test_tours"],
+    },
+}
+```
+
+- **`external_libs`** — the SFU client is a library: `call_transport.js` does
+  `import("@odoo/sfu")`, the page's import map resolves it to the vendored file, and it is
+  fetched once, on the first call. It used to be a `dynamic_children` bundle reached through
+  `@mail/../lib/...`, a specifier the page's child stubs cannot alias, so the page inlined the
+  230 KB library and the bundle shipped it again.
+- **`lamejs`** — the MP3 encoder, reached only through the facade `@mail/lib/lamejs`
+  (`makeLazyLib`), fetched when a user first records a voice message. A load failure
+  rejects `loadLamejs()`, and the recorder notifies "Voice recording is not available."
+- **`secondary_import_map_includes`** — `mail.assets_discuss_public_test_tours` loads as a
+  separate `<script type="module">` **after** `mail.assets_public`, piggybacking on the
+  parent's import map so its native imports (hoot-dom, `@web/core/templates`) resolve. The
+  manifest comment notes: without ESM compilation this bundle's legacy-loader bridge would
+  resolve native modules to `undefined` at pre-boot, breaking every discuss public-page
+  browser test.
+
+## Vendored libraries (`static/lib/`)
+
+| Library | Version | For | Loaded via |
+|---------|---------|-----|-----------|
+| `idb-keyval/idb-keyval.js` | 3.2.0 | IndexedDB key/value store (client store persistence) | `web.assets_backend` (eager) |
+| `lame/lame.esm.js` | 1.2.1 (lamejs) | MP3 encoder for voice-message recording, exported as an ES module | `esm.external_libs` `lamejs`, through `@mail/lib/lamejs` (lazy) |
+| `odoo_sfu/odoo_sfu.js` | 1.3.3 | Odoo SFU (Selective Forwarding Unit) WebRTC client | `esm.external_libs` `@odoo/sfu`, `import()` on the first call (lazy) |
+| `selfie_segmentation/selfie_segmentation.js` | 0.1.1632777926 (MediaPipe build id) | MediaPipe selfie segmentation — call background blur | `loadJS` on the first blur (lazy), classic by design |
+
+> `selfie_segmentation.js` has no ES module build, so it stays a classic script that defines
+> `window.SelfieSegmentation` — a documented exception to INV-ESM-1. It is in **no** bundle:
+> `LocalMediaController.applyBlurEffect` awaits `selfieSegmentationLoader.load()` (`loadJS`,
+> cached per URL and evicted on failure) before `new BlurManager`, and a failed load lands in
+> the callers' existing notify-and-disable path. `locateFile` pins the CDN to the vendored
+> build `0.1.1632777926`, so the loader, its wasm and its model come from one build.
+
+## Frontend & other bundles
+
+- `web.assets_frontend` — only `mail/static/src/utils/common/format.js` (mail's date/format
+  helpers reused by non-backend frontend pages).
+- `web.assets_unit_tests` — `mail/static/tests/**/*` (minus `tours/**`). The worker's helpers,
+  `mail/static/src/service_worker_utils.js`, are in `web.assets_backend` (the web client
+  encodes push keys with them), which reaches HOOT through the backend bundle; the worker itself
+  is served as raw text, not bundled.
+- `web.assets_tests` — `mail/static/tests/tours/**/*` (browser tours).

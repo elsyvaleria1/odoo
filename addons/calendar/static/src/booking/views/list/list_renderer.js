@@ -1,0 +1,54 @@
+/** @odoo-module native */
+import { AppointmentTypeActionHelper } from "@calendar/booking/components/appointment_type_action_helper/appointment_type_action_helper";
+import { onWillStart } from "@odoo/owl";
+import { useDebugMode } from "@web/core/debug/debug_context";
+import { _t } from "@web/core/translation";
+import { user } from "@web/core/user";
+import { useService } from "@web/core/utils/hooks";
+import { ListRenderer } from "@web/views/list";
+
+export class AppointmentBookingListRenderer extends ListRenderer {
+    static template = "calendar.booking.AppointmentBookingListRenderer";
+
+    setup() {
+        super.setup();
+        this.debug = useDebugMode();
+        this.ui = useService("ui");
+        this.action = useService("action");
+
+        onWillStart(async () => {
+            this.isAppointmentManager = await user.hasGroup(
+                "calendar.group_appointment_manager",
+            );
+            // Using this context key is a stable workaround, to be improved in master
+            this.isResourceView =
+                this.props.list.context.appointment_default_assign_user_attendees ===
+                false;
+        });
+    }
+
+    async onClickAddLeave() {
+        this.action.doAction({
+            name: _t("Add Closing Day(s)"),
+            type: "ir.actions.act_window",
+            res_model: "wizard.resource.schedule.exception.create",
+            view_mode: "form",
+            views: [[false, "form"]],
+            target: "new",
+            context: {},
+        });
+    }
+}
+
+export class AppointmentTypeListRenderer extends ListRenderer {
+    static template = "calendar.booking.AppointmentTypeListRenderer";
+    static components = {
+        ...ListRenderer.components,
+        AppointmentTypeActionHelper,
+    };
+
+    setup() {
+        super.setup();
+        this.debug = useDebugMode();
+    }
+}

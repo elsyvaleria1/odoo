@@ -1,0 +1,39 @@
+// @ts-check
+
+import { after } from "@odoo/hoot";
+import {
+    loadLanguages,
+    translatedTerms,
+    translatedTermsGlobal,
+    translationLoaded,
+} from "@web/core/translation";
+
+import { serverState } from "./mock_server_state.hoot.js";
+import { patchWithCleanup } from "./patch_test_helpers.js";
+
+/** @param {Record<string, string>} languages */
+export function installLanguages(languages) {
+    serverState.multiLang = true;
+    patchWithCleanup(loadLanguages, {
+        installedLanguages: Object.entries(languages),
+    });
+}
+
+export function allowTranslations() {
+    translatedTerms[translationLoaded] = true;
+    after(() => {
+        translatedTerms[translationLoaded] = true;
+    });
+}
+
+/** @param {Record<string, Record<string, string>>} [terms] */
+export function patchTranslations(terms = {}) {
+    allowTranslations();
+    for (const addonName in terms) {
+        if (!(addonName in translatedTerms)) {
+            patchWithCleanup(translatedTerms, { [addonName]: {} });
+        }
+        patchWithCleanup(translatedTerms[addonName], { ...terms[addonName] });
+        patchWithCleanup(translatedTermsGlobal, { ...terms[addonName] });
+    }
+}

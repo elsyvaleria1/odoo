@@ -1,0 +1,339 @@
+$blue: #007bff !default;
+$pink: #e83e8c !default;
+$green: #28a745 !default;
+$cyan: #17a2b8 !default;
+$gray-900: #212529 !default;
+
+$white: #fff !default;
+$black: #000 !default;
+
+$light: o-color("o-color-3");
+$dark: o-color("o-color-5");
+
+$min-contrast-ratio: $o-frontend-min-contrast-ratio !default;
+
+$variable-prefix: "" !default;
+
+$enable-negative-margins: true !default;
+
+$enable-cssgrid: true !default;
+
+$color-contrast-dark: o-color("900") !default;
+$color-contrast-light: o-color("white") !default;
+
+$spacer: 1rem !default;
+$spacers: (
+    0: 0,
+    1: $spacer * 0.25,
+    2: $spacer * 0.5,
+    3: $spacer,
+    4: $spacer * 1.5,
+    5: $spacer * 3,
+) !default;
+
+$body-bg: o-color("o-cc1-bg") !default;
+$body-color: o-color("o-cc1-text") or color-contrast($body-bg) !default;
+
+$body-tertiary-bg: mix(color-contrast($body-bg), $body-bg, 10%) !default;
+
+$-link-color: o-color("o-cc1-link");
+$-link-color: if($-link-color, $-link-color, o-color("primary"));
+$link-color: auto-contrast($-link-color, $body-bg, "o-cc1-link") !default;
+$link-hover-color: auto-contrast(
+    darken($link-color, 15%),
+    $body-bg,
+    "o-cc1-link"
+) !default;
+$link-decoration: if(
+    o-website-value("link-underline") == "always",
+    underline,
+    none
+) !default;
+$link-hover-decoration: if(
+    o-website-value("link-underline") != "never",
+    underline,
+    none
+) !default;
+
+$primary-text-emphasis: if(
+    not has-enough-contrast(o-color("primary"), $body-bg),
+    increase-contrast(o-color("primary"), $body-bg),
+    null
+) !default;
+
+$grid-gutter-width: 30px !default;
+
+$border-color: var(--o-border-color) !default;
+
+$component-active-bg: o-color("o-cc1-btn-primary") !default;
+$component-active-color: color-contrast(
+    $component-active-bg or o-color("primary")
+) !default;
+
+$font-family-sans-serif: $o-theme-font !default;
+
+$font-size-base: o-website-value("font-size-base") !default;
+$paragraph-margin-top: o-website-value("paragraph-margin-top") !default;
+$paragraph-margin-bottom: o-website-value("paragraph-margin-bottom") !default;
+
+$h1-font-size: o-website-value("h1-font-size") or $font-size-base *
+    $o-theme-h1-font-size-multiplier !default;
+$h2-font-size: o-website-value("h2-font-size") or $font-size-base *
+    $o-theme-h2-font-size-multiplier !default;
+$h3-font-size: o-website-value("h3-font-size") or $font-size-base *
+    $o-theme-h3-font-size-multiplier !default;
+$h4-font-size: o-website-value("h4-font-size") or $font-size-base *
+    $o-theme-h4-font-size-multiplier !default;
+$h5-font-size: o-website-value("h5-font-size") or $font-size-base *
+    $o-theme-h5-font-size-multiplier !default;
+$h6-font-size: o-website-value("h6-font-size") or $font-size-base *
+    $o-theme-h6-font-size-multiplier !default;
+
+$display-font-sizes: (
+    1: o-website-value("display-1-font-size") or 5rem,
+    2: o-website-value("display-2-font-size") or 4.5rem,
+    3: o-website-value("display-3-font-size") or 4rem,
+    4: o-website-value("display-4-font-size") or 3.5rem,
+
+    5: o-website-value("display-5-font-size") or 3rem,
+    6: o-website-value("display-6-font-size") or 2.5rem,
+) !default;
+
+$headings-font-family: $o-theme-headings-font !default;
+$h2-font-family: $o-theme-h2-font !default;
+$h3-font-family: $o-theme-h3-font !default;
+$h4-font-family: $o-theme-h4-font !default;
+$h5-font-family: $o-theme-h5-font !default;
+$h6-font-family: $o-theme-h6-font !default;
+$display-1-font-family: $o-theme-display-1-font !default;
+$display-2-font-family: $o-theme-display-2-font !default;
+$display-3-font-family: $o-theme-display-3-font !default;
+$display-4-font-family: $o-theme-display-4-font !default;
+$headings-line-height: o-website-value("headings-line-height") !default;
+$display-line-height: var(--headings-line-height) !default;
+$h2-line-height: o-website-value("h2-line-height") or $headings-line-height !default;
+$h3-line-height: o-website-value("h3-line-height") or $headings-line-height !default;
+$h4-line-height: o-website-value("h4-line-height") or $headings-line-height !default;
+$h5-line-height: o-website-value("h5-line-height") or $headings-line-height !default;
+$h6-line-height: o-website-value("h6-line-height") or $headings-line-height !default;
+$display-1-line-height: o-website-value("display-1-line-height") or
+    $headings-line-height !default;
+$display-2-line-height: o-website-value("display-2-line-height") or
+    $headings-line-height !default;
+$display-3-line-height: o-website-value("display-3-line-height") or
+    $headings-line-height !default;
+$display-4-line-height: o-website-value("display-4-line-height") or
+    $headings-line-height !default;
+$headings-margin-top: o-website-value("headings-margin-top") or 0 !default;
+$h2-margin-top: o-website-value("h2-margin-top") or $headings-margin-top !default;
+$h3-margin-top: o-website-value("h3-margin-top") or $headings-margin-top !default;
+$h4-margin-top: o-website-value("h4-margin-top") or $headings-margin-top !default;
+$h5-margin-top: o-website-value("h5-margin-top") or $headings-margin-top !default;
+$h6-margin-top: o-website-value("h6-margin-top") or $headings-margin-top !default;
+$display-1-margin-top: o-website-value("display-1-margin-top") or $headings-margin-top !default;
+$display-2-margin-top: o-website-value("display-2-margin-top") or $headings-margin-top !default;
+$display-3-margin-top: o-website-value("display-3-margin-top") or $headings-margin-top !default;
+$display-4-margin-top: o-website-value("display-4-margin-top") or $headings-margin-top !default;
+$headings-margin-bottom: o-website-value("headings-margin-bottom") !default;
+$h2-margin-bottom: o-website-value("h2-margin-bottom") or $headings-margin-bottom !default;
+$h3-margin-bottom: o-website-value("h3-margin-bottom") or $headings-margin-bottom !default;
+$h4-margin-bottom: o-website-value("h4-margin-bottom") or $headings-margin-bottom !default;
+$h5-margin-bottom: o-website-value("h5-margin-bottom") or $headings-margin-bottom !default;
+$h6-margin-bottom: o-website-value("h6-margin-bottom") or $headings-margin-bottom !default;
+$display-1-margin-bottom: o-website-value("display-1-margin-bottom") or
+    $headings-margin-bottom !default;
+$display-2-margin-bottom: o-website-value("display-2-margin-bottom") or
+    $headings-margin-bottom !default;
+$display-3-margin-bottom: o-website-value("display-3-margin-bottom") or
+    $headings-margin-bottom !default;
+$display-4-margin-bottom: o-website-value("display-4-margin-bottom") or
+    $headings-margin-bottom !default;
+
+$headings-color: o-color("o-cc1-headings") !default;
+
+$lead-font-size: $font-size-base * $o-lead-ratio !default;
+$font-weight-bold: 600 !default;
+
+$text-muted: mute-color($body-color) !default;
+
+$table-striped-bg-factor: 0.01 !default;
+$table-cell-padding-x: 0.75rem !default;
+$table-cell-padding-y: 0.75rem !default;
+$table-cell-padding-x-sm: 0.3rem !default;
+$table-cell-padding-y-sm: 0.3rem !default;
+$table-border-color: $border-color !default;
+$table-group-separator-color: $table-border-color !default;
+
+$btn-padding-y: o-website-value("btn-padding-y") !default;
+$btn-padding-x: o-website-value("btn-padding-x") !default;
+$btn-font-size: o-website-value("btn-font-size") !default;
+
+$btn-padding-y-sm: o-website-value("btn-padding-y-sm") !default;
+$btn-padding-x-sm: o-website-value("btn-padding-x-sm") !default;
+$btn-font-size-sm: o-website-value("btn-font-size-sm") !default;
+
+$btn-padding-y-lg: o-website-value("btn-padding-y-lg") !default;
+$btn-padding-x-lg: o-website-value("btn-padding-x-lg") !default;
+$btn-font-size-lg: o-website-value("btn-font-size-lg") !default;
+
+$btn-border-width: o-website-value("btn-border-width") !default;
+
+$btn-border-radius: o-website-value("btn-border-radius") !default;
+$btn-border-radius-lg: o-website-value("btn-border-radius-lg") !default;
+$btn-border-radius-sm: o-website-value("btn-border-radius-sm") !default;
+
+$input-padding-y: o-website-value("input-padding-y") !default;
+$input-padding-x: o-website-value("input-padding-x") !default;
+$input-font-size: o-website-value("input-font-size") !default;
+
+$input-padding-y-sm: o-website-value("input-padding-y-sm") !default;
+$input-padding-x-sm: o-website-value("input-padding-x-sm") !default;
+$input-font-size-sm: o-website-value("input-font-size-sm") !default;
+
+$input-padding-y-lg: o-website-value("input-padding-y-lg") !default;
+$input-padding-x-lg: o-website-value("input-padding-x-lg") !default;
+$input-font-size-lg: o-website-value("input-font-size-lg") !default;
+
+$input-border-width: o-website-value("input-border-width") !default;
+
+$input-border-radius: o-website-value("input-border-radius") !default;
+$input-border-radius-lg: o-website-value("input-border-radius-lg") !default;
+$input-border-radius-sm: o-website-value("input-border-radius-sm") !default;
+
+$input-bg: o-color("input") or $body-bg !default;
+$input-border-color: $border-color !default;
+$input-color: color-contrast($input-bg) !default;
+$input-placeholder-color: mix($input-bg, $input-color) !default;
+
+$input-disabled-bg: mix($input-color, $input-bg, 10%) !default;
+
+$form-check-input-border: ($input-border-width or 1px) solid $input-border-color !default;
+$form-check-input-border-radius: if(
+    $input-border-radius != null,
+    min($input-border-radius, 0.25rem),
+    null
+) !default;
+$form-range-track-bg: $input-disabled-bg !default;
+
+$dropdown-border-color: $border-color !default;
+
+$breadcrumb-padding-y: 0.75rem !default;
+$breadcrumb-padding-x: 1rem !default;
+
+$navbar-padding-y: if(
+    index(("fill", "pills", "outline"), o-website-value("header-links-style")),
+    calc($spacer / 2 * 1.25),
+    null
+) !default;
+$navbar-nav-link-padding-x: if(
+    index(("outline", "block"), o-website-value("header-links-style")),
+    0.5rem * 3,
+    null
+) !default;
+$navbar-nav-link-padding-x: if(
+    o-website-value("header-links-style") == "border-bottom",
+    0.5rem * 2,
+    null
+) !default;
+
+$jumbotron-bg: transparent !default;
+
+$blockquote-margin-y: 0 !default;
+
+$o-btn-flat-defaults: () !default;
+$o-btn-outline-defaults: () !default;
+$o-btn-outline-border-width-defaults: () !default;
+@each $color in ("primary", "secondary") {
+    @if o-website-value("btn-#{$color}-flat") {
+        $o-btn-flat-defaults: append($o-btn-flat-defaults, $color);
+    } @else if o-website-value("btn-#{$color}-outline") {
+        $o-btn-outline-defaults: append($o-btn-outline-defaults, $color);
+        $o-btn-outline-border-width-defaults: map-merge(
+            $o-btn-outline-border-width-defaults,
+            (
+                $color:
+                    var(
+                        --btn-#{$color}-outline-border-width,
+                        #{o-website-value("btn-#{$color}-outline-border-width")}
+                    ),
+            )
+        );
+    }
+}
+
+$o-navbar-nav-pills-link-padding-x: if(
+    o-website-value("header-links-style") == "pills",
+    1rem * 1.5,
+    null
+) !default;
+$o-navbar-nav-pills-link-border-radius: if(
+    o-website-value("header-links-style") == "pills",
+    10rem,
+    null
+) !default;
+
+$border-radius-sm: 0.3rem !default;
+$border-radius: 0.4rem !default;
+$border-radius-lg: 0.6rem !default;
+$border-radius-pill: 50rem !default;
+
+$accordion-color: inherit !default;
+$accordion-bg: inherit !default;
+$accordion-padding-x: 1.5rem !default;
+$accordion-border-width: 1px !default;
+$accordion-border-color: $border-color !default;
+$accordion-button-active-bg: $light !default;
+$accordion-button-active-color: color-contrast($light) !default;
+$accordion-button-focus-box-shadow: none !default;
+$accordion-icon-color: $body-color !default;
+$accordion-icon-active-color: $accordion-button-active-color !default;
+
+$popover-bg: $body-bg !default;
+$popover-border-color: $border-color !default;
+$popover-arrow-color: $body-bg !default;
+$popover-arrow-outer-color: $border-color !default;
+
+$badge-border-radius: $border-radius-pill !default;
+
+$box-shadow: 0px 4px 16px rgba($black, 0.12) !default;
+$box-shadow-sm: 0px 1px 3px rgba($black, 0.1) !default;
+$box-shadow-lg: 0px 12px 32px rgba($black, 0.175) !default;
+
+$card-border-color: $border-color !default;
+
+$hr-border-color: $border-color !default;
+$hr-opacity: 1 !default;
+
+$pagination-border-radius: $border-radius-pill !default;
+$pagination-margin-start: map-get($map: $spacers, $key: 1) !default;
+$pagination-border-color: transparent !default;
+$pagination-bg: $body-bg !default;
+$pagination-color: color-contrast($pagination-bg) !default;
+$pagination-transition: none !default;
+
+$pagination-focus-bg: $light !default;
+$pagination-focus-color: color-contrast($light) !default;
+$pagination-focus-box-shadow: 0 0 0 1px $pagination-focus-bg !default;
+
+$pagination-hover-bg: $light !default;
+$pagination-hover-color: color-contrast($light) !default;
+$pagination-hover-border-color: $light !default;
+
+$pagination-disabled-color: rgba(color-contrast($pagination-bg), 0.5) !default;
+$pagination-disabled-border-color: transparent !default;
+$pagination-disabled-bg: $pagination-bg !default;
+
+$pagination-border-radius-lg: $pagination-border-radius !default;
+$pagination-border-radius-sm: $pagination-border-radius !default;
+
+$carousel-control-width: 10% !default;
+
+$offcanvas-horizontal-width: $o-offcanvas-horizontal-width !default;
+
+$--enable-no-overflow-of-text-columns: false !default;
+
+.carousel-instant {
+    .carousel-item {
+        transition-duration: 200ms !important;
+    }
+}

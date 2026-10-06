@@ -1,0 +1,35 @@
+/** @odoo-module native */
+import { subTaskDeleteConfirmationMessage } from "@project/views/project_task_form/project_task_form_controller";
+import { useDialogContext } from "@web/core/dialog_context_hooks";
+import { useService } from "@web/core/utils/hooks";
+import { ListController } from "@web/views/list";
+
+import { ProjectTaskTemplateDropdown } from "../components/project_task_template_dropdown.js";
+
+export class ProjectTaskListController extends ListController {
+    static template = "project.ProjectTaskListView";
+    static components = {
+        ...ListController.components,
+        ProjectTaskTemplateDropdown,
+    };
+
+    setup() {
+        super.setup();
+        this.dialogContext = useDialogContext();
+        this.ui = useService("ui");
+    }
+
+    get deleteConfirmationDialogProps() {
+        const deleteConfirmationDialogProps = super.deleteConfirmationDialogProps;
+        const hasSubtasks =
+            this.model.root.isDomainSelected ||
+            this.model.root.selection.some((task) => task.data.subtask_count > 0);
+        if (!hasSubtasks) {
+            return deleteConfirmationDialogProps;
+        }
+        return {
+            ...deleteConfirmationDialogProps,
+            body: subTaskDeleteConfirmationMessage,
+        };
+    }
+}

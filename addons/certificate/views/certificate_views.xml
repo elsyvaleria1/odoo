@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="certificate_certificate_view_form" model="ir.ui.view">
+        <field name="name">certificate.certificate.form</field>
+        <field name="model">certificate.certificate</field>
+        <field name="arch" type="xml">
+            <form string="certificate form">
+                <sheet>
+                    <div
+                        class="alert alert-warning"
+                        role="alert"
+                        invisible="not loading_error">
+                        <field name="loading_error" />
+                    </div>
+                    <group id="certificate_input">
+                        <field name="name" placeholder="e.g. New Certificate" />
+                        <field
+                            name="company_id"
+                            groups="base.group_multi_company"
+                            readonly="1" />
+                        <field name="content" widget="binary" />
+                        <field name="pkcs12_password" password="True" />
+                        <field
+                            name="subject_common_name"
+                            invisible="not pem_certificate" />
+                        <field
+                            name="private_key_id"
+                            options="{'no_quick_create': True}"
+                            invisible="not pem_certificate" />
+                        <field
+                            name="public_key_id"
+                            options="{'no_quick_create': True}"
+                            invisible="not pem_certificate" />
+                        <field name="scope" widget="radio" invisible="1"/> <!-- Should be overriden by modules adding options to this selection field -->
+                    </group>
+                    <group id="certificate_data">
+                        <label for="date_start" string="Validity" />
+                        <div>
+                            <field name="date_start" widget="remaining_days" class="oe_inline" interval="year" /> - <field name="date_end" widget="remaining_days" class="oe_inline" />
+                        </div>
+                        <field name="serial_number" />
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="certificate_certificate_view_list" model="ir.ui.view">
+        <field name="name">certificate.certificate.list</field>
+        <field name="model">certificate.certificate</field>
+        <field name="arch" type="xml">
+            <list string="certificate list">
+                <field name="name" string="Certificate" />
+                <field name="subject_common_name" string="Subject Name" />
+                <field name="is_valid" string="Validity" />
+                <field
+                    name="company_id"
+                    optional="hide"
+                    groups="base.group_multi_company"
+                    readonly="1" />
+            </list>
+        </field>
+    </record>
+
+    <record id="certificate_certificate_view_search" model="ir.ui.view">
+        <field name="name">certificate.certificate.search</field>
+        <field name="model">certificate.certificate</field>
+        <field name="arch" type="xml">
+            <search string="certificate search">
+                <field name="name" />
+                <field name="scope" />
+                <separator />
+                <filter
+                    name="scope_general"
+                    string="General"
+                    help="General certificates"
+                    domain="[('scope','=','general')]" />
+                <separator />
+                <filter
+                    name="valid"
+                    string="Valid"
+                    help="Valid certificates"
+                    domain="[('is_valid','=',True)]" />
+                <filter
+                    name="not_valid"
+                    string="Invalid"
+                    help="Not valid certificates"
+                    domain="[('is_valid','=',False)]" />
+                <separator />
+                <filter
+                    name="archived"
+                    string="Archived"
+                    help="Archived certificates"
+                    domain="[('active','=',False)]" />
+            </search>
+        </field>
+    </record>
+
+</odoo>

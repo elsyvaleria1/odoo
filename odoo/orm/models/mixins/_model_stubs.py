@@ -1,0 +1,349 @@
+import typing
+
+if typing.TYPE_CHECKING:
+    from collections.abc import (
+        Callable,
+        Collection,
+        Iterable,
+        Iterator,
+        Mapping,
+        Reversible,
+    )
+    from typing import Self
+
+    from odoo.libs.collections import OrderedSet, frozendict
+    from odoo.libs.sql import SQL
+    from odoo.tools import Query
+
+    from ..._protocols import ResCompanyProtocol
+    from ..._typing import BaseModel, DomainType, IdType, ModelLike, ValuesType
+    from ...domain import Domain
+    from ...fields.base import Field
+    from ...runtime import Environment, Registry
+    from ..anchors import Anchor
+    from ..table_objects import TableObject
+    from ..verbs import Verb
+    from ._hooks import OnchangeMethod, OndeleteMethod
+
+    type VerbTransitions = Mapping[str, tuple[tuple[str, Verb], ...]]
+
+
+class _ModelStubs:
+    if typing.TYPE_CHECKING:
+        __slots__ = ("_ids", "_prefetch_ids", "env")
+
+        env: Environment
+        _ids: tuple[typing.Any, ...]
+        _prefetch_ids: typing.Any
+    else:
+        __slots__ = ()
+
+    if typing.TYPE_CHECKING:
+        pool: Registry
+        _fields: Mapping[str, Field[typing.Any]]
+        _name: str
+        _table: str
+        _transient: bool
+        id: int
+
+        @property
+        def ids(self) -> list[int]: ...
+
+        display_name: str | typing.Literal[False]
+        _log_access: bool
+        _active_name: str | None
+        _parent_name: str
+        _parent_store: bool
+
+        @property
+        def _ondelete_methods(self) -> list[OndeleteMethod]: ...
+
+        def _as_query(self, ordered: bool = True) -> Query: ...
+
+        _inherits: dict[str, str]
+        _inherits_children: set[str]
+        _description: str | None
+        _abstract: bool
+        _auto: bool
+        _order: str
+        _rec_name: str | None
+        _rec_names_search: list[str] | None
+        _name_create_on_import: bool
+        _display_name_column: str | tuple[str, ...] | None
+        _display_name_column_guard: str | None
+        _display_name_context_keys: tuple[str, ...]
+        _display_name_search_default: bool
+        _display_name_search_exact: tuple[str, ...]
+        _inherits_sudo_fields: tuple[str, ...]
+        _inherits_rules: bool
+        _access_anchors: frozendict[str, str | Anchor]
+        _access_residual_class: str | None
+        _access_label_field: str | None
+        _access_audit: bool
+        _table_objects: dict[str, TableObject]
+        _table_inheritance_root: str
+        _check_company_auto: bool
+
+        def _is_table_inheritance_root(self) -> bool: ...
+        def _get_root_model_name(self) -> str: ...
+        def _flush_table_inheritance_siblings(
+            self,
+            fnames: Collection[str] | None,
+            ids: typing.Sequence[IdType] | None = None,
+        ) -> None: ...
+
+        def browse(self, ids: int | typing.Iterable[IdType] = ()) -> Self: ...
+        def new(
+            self,
+            values: ValuesType | None = None,
+            origin: Self | None = None,
+            ref: str | None = None,
+        ) -> Self: ...
+        def check_singleton(self) -> Self: ...
+        def exists(self) -> Self: ...
+        def sudo(self, flag: bool = True) -> Self: ...
+        def with_env(self, env: Environment) -> Self: ...
+        def filtered(self, func: str | Callable[..., typing.Any] | Domain) -> Self: ...
+        def sorted(
+            self,
+            key: str | Callable[[Self], typing.Any] | None = None,
+            reverse: bool = False,
+        ) -> Self: ...
+        def _flush_if_dirty(self, fields: Collection[Field[typing.Any]]) -> None: ...
+        def __iter__(self) -> Iterator[Self]: ...
+        def __len__(self) -> int: ...
+        @typing.overload
+        def __getitem__(self, key: int | slice) -> Self: ...
+        @typing.overload
+        def __getitem__(self, key: str) -> typing.Any: ...
+        def __getitem__(self, key: int | slice | str) -> Self | typing.Any: ...
+
+        def with_context(
+            self, ctx: dict[str, typing.Any] | None = None, /, **overrides: typing.Any
+        ) -> Self: ...
+        def with_user(self, user: typing.Any) -> Self: ...
+        def with_privilege(self, *names: str, reason: str | None = None) -> Self: ...
+        def with_acting_partner(self, partner: typing.Any) -> Self: ...
+        def with_company(
+            self, company: BaseModel | ResCompanyProtocol | int | None
+        ) -> Self: ...
+        def with_prefetch(
+            self, prefetch_ids: Reversible[IdType] | None = None
+        ) -> Self: ...
+        def union(self, *args: Self) -> Self: ...
+        def __sub__(self, other: typing.Any) -> Self: ...
+        def __contains__(self, item: object) -> bool: ...
+        def __int__(self) -> int: ...
+        def __setitem__(self, key: str, value: typing.Any) -> None: ...
+
+        mapped: typing.Any
+        grouped: typing.Any
+
+        def fields_get(
+            self, *args: typing.Any, **kwargs: typing.Any
+        ) -> dict[str, ValuesType]: ...
+        def _get_field_descriptions_static(
+            self,
+            attributes: tuple[str, ...] | None,
+            field_names: tuple[str, ...] | None,
+        ) -> typing.Mapping[
+            str, tuple[typing.Mapping[str, typing.Any], tuple[str, ...]]
+        ]: ...
+        def invalidate_model(
+            self, fnames: typing.Any = None, flush: bool = True
+        ) -> None: ...
+        def _invalidate_cache(
+            self,
+            fnames: Collection[str] | None = None,
+            ids: typing.Sequence[IdType] | None = None,
+            flush: bool = True,
+        ) -> None: ...
+        def _evict_x2many_scopes_reading_through(
+            self, fnames: Collection[str] | None
+        ) -> None: ...
+        def _check_verb_transitions(
+            self, vals: dict[str, typing.Any], transitions: VerbTransitions
+        ) -> list[tuple[str, tuple[int, ...]]]: ...
+        def _land_verb_transitions(
+            self, moves: list[tuple[str, tuple[int, ...]]]
+        ) -> None: ...
+        def _anchors_before_write(
+            self, vals: dict[str, typing.Any]
+        ) -> dict[str, dict[int, typing.Any]] | None: ...
+        def _check_anchor_moves(
+            self, before: dict[str, dict[int, typing.Any]]
+        ) -> None: ...
+        def _check_verb_creations(self, transitions: VerbTransitions) -> None: ...
+        def _access_inputs_written(
+            self, fnames: Collection[str] | None, *, created: bool = False
+        ) -> None: ...
+        def _access_inputs_forgotten(self, fnames: Collection[str] | None) -> None: ...
+        def _note_readable(self) -> None: ...
+        def update_field_translations(
+            self,
+            field_name: str,
+            translations: dict[str, str | typing.Literal[False] | dict[str, str]],
+            source_lang: str = "",
+        ) -> bool: ...
+
+        def _read_format(
+            self, *args: typing.Any, **kwargs: typing.Any
+        ) -> list[ValuesType]: ...
+        def _fetch_query(self, query: typing.Any, fields: typing.Any) -> Self: ...
+        def _is_an_ordinary_table(self) -> bool: ...
+
+        _write_multi: typing.Any
+
+        def _update_cache(self, values: typing.Any, validate: bool = True) -> None: ...
+        def concat(self, *args: Self) -> Self: ...
+
+        def check_access(self, operation: str) -> None: ...
+        def _check_access(
+            self, operation: str
+        ) -> tuple[Self, Callable[[], Exception]] | None: ...
+        def _search(
+            self,
+            domain: DomainType,
+            offset: int = 0,
+            limit: int | None = None,
+            order: str | None = None,
+            *,
+            active_test: bool = True,
+            bypass_access: bool = False,
+        ) -> Query: ...
+        def _field_to_sql(
+            self, alias: str, field_expr: str, query: Query | None = None
+        ) -> SQL: ...
+
+        def create(self, vals_list: ValuesType | list[ValuesType]) -> Self: ...
+        def write(self, vals: ValuesType) -> typing.Literal[True]: ...
+        def fetch(self, field_names: Collection[str] | None = None) -> None: ...
+        def flush_model(self, fnames: Collection[str] | None = None) -> None: ...
+        def filtered_domain(self, domain: DomainType) -> Self: ...
+        def _check_fields(
+            self, field_names: Iterable[str], excluded_names: Iterable[str] = ()
+        ) -> None: ...
+        @property
+        def _constrained_field_names(self) -> frozenset[str]: ...
+        @property
+        def _constrained_projection_names(self) -> frozenset[str]: ...
+        @property
+        def _required_attachment_names(self) -> frozenset[str]: ...
+        def _aggregates_through_records(
+            self, field: Field[typing.Any], func: str
+        ) -> bool: ...
+        def _read_group_check_temporal_granularity(
+            self, granularity: str, is_date: bool, groupby_spec: str
+        ) -> None: ...
+        def get_property_definition(self, full_name: str) -> dict[str, typing.Any]: ...
+        def _can_groupby_spec_duplicate_rows(
+            self, model: ModelLike, spec: str
+        ) -> bool: ...
+        def _has_field_access(
+            self, field: Field[typing.Any], operation: typing.Literal["read", "write"]
+        ) -> bool: ...
+        def _get_fields_default_read(self) -> list[str]: ...
+        def _check_fields_write_access(
+            self, field_names: typing.Iterable[str]
+        ) -> None: ...
+
+        def _check_field_access(
+            self, field: Field[typing.Any], operation: typing.Literal["read", "write"]
+        ) -> None: ...
+        def _field_access_domain(
+            self, field: Field[typing.Any], operation: typing.Literal["read", "write"]
+        ) -> Domain | None: ...
+        def _filtered_field_access(
+            self,
+            field: Field[typing.Any],
+            operation: typing.Literal["read", "write"] = "read",
+        ) -> Self: ...
+        def _check_field_access_records(
+            self, field: Field[typing.Any], operation: typing.Literal["read", "write"]
+        ) -> None: ...
+        def _field_masked_ids(self, field: Field[typing.Any]) -> set[IdType] | None: ...
+        def _field_empty_value(self, field: Field[typing.Any]) -> typing.Any: ...
+        def _check_fields_write_records(
+            self, field_names: typing.Iterable[str]
+        ) -> None: ...
+        def _check_company(self, fnames: Collection[str] | None = None) -> None: ...
+        def modified(
+            self,
+            fnames: Collection[str],
+            create: bool = False,
+            before: bool = False,
+        ) -> None: ...
+        def _modified_before(self, fnames: Collection[str]) -> None: ...
+        def _modified_trigger_loop(
+            self,
+            fnames: Collection[str],
+            create: bool,
+            scheduler: typing.Any,
+            to_validate: dict[Field[typing.Any], OrderedSet[int]] | None = None,
+        ) -> None: ...
+        def _recompute_recordset(
+            self, fnames: Collection[str] | None = None
+        ) -> None: ...
+        def _compute_field_value(
+            self, field: Field[typing.Any], validate: bool = True
+        ) -> None: ...
+
+        def _check_computed(self, field: Field[typing.Any]) -> None: ...
+        def _check_fields_if_they_exist(self, fnames: list[str]) -> None: ...
+
+        def _order_to_sql(
+            self,
+            order: str,
+            query: typing.Any,
+            alias: str | None = None,
+            reverse: bool = False,
+        ) -> typing.Any: ...
+
+        def _traverse_related_sql(
+            self, alias: str, field: Field[typing.Any], query: typing.Any
+        ) -> tuple[ModelLike, Field[typing.Any], str]: ...
+
+        def _sql_error_to_message(self, exc: typing.Any) -> str: ...
+
+        def _remove_stale_properties(self) -> None: ...
+
+        def search(
+            self,
+            domain: typing.Any,
+            offset: int = 0,
+            limit: int | None = None,
+            order: str | None = None,
+        ) -> Self: ...
+        def invalidate_recordset(
+            self, fnames: Collection[str] | None = None, flush: bool = True
+        ) -> None: ...
+        def flush_recordset(self, fnames: Collection[str] | None = None) -> None: ...
+        def _has_rows_in_table(self) -> bool: ...
+        def _init_column(
+            self, column_name: str, *, new_column: bool = False
+        ) -> None: ...
+        @classmethod
+        def is_transient(cls) -> bool: ...
+        def _get_base_lang(self) -> str: ...
+        def _get_fields_to_fetch(
+            self,
+            field_names: Collection[str] | None = None,
+            ignore_when_in_cache: bool = False,
+        ) -> list[Field[typing.Any]]: ...
+        @classmethod
+        def _spawn(
+            cls,
+            env: Environment,
+            ids: tuple[IdType, ...],
+            prefetch_ids: Reversible[IdType],
+        ) -> Self: ...
+        def _narrow(self, ids: Iterable[IdType]) -> Self: ...
+
+        @property
+        def _origin(self) -> Self: ...
+        @property
+        def _has_origin(self) -> bool: ...
+        @property
+        def _table_sql(self) -> SQL: ...
+        @property
+        def _onchange_methods(self) -> dict[str, list[OnchangeMethod]]: ...

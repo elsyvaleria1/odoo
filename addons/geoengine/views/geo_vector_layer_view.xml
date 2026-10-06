@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="geo_vector_view_list" model="ir.ui.view">
+        <field name="name">geoengine.vector.layer.list</field>
+        <field name="model">geoengine.vector.layer</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name" />
+                <field name="geo_repr" />
+                <field name="render_engine" />
+                <field name="classification" />
+                <field name="geo_field_id" />
+                <field name="attribute_field_id" />
+                <field name="active_on_startup" />
+                <field name="sequence" />
+            </list>
+        </field>
+    </record>
+
+    <record id="geo_vector_view_form" model="ir.ui.view">
+        <field name="name">geoengine.vector.layer.form</field>
+        <field name="model">geoengine.vector.layer</field>
+        <field name="arch" type="xml">
+            <form string="Vector">
+                <sheet>
+                    <group string="General" col="4">
+                        <field name="name" />
+                        <field name="view_id" />
+                        <field name="geo_field_id" />
+                        <field
+                            name="attribute_field_id"
+                            invisible="geo_repr == 'colored_field'"
+                            required="geo_repr in ['proportion', 'colored']" />
+                        <field
+                            name="color_field_id"
+                            invisible="geo_repr != 'colored_field'"
+                            required="geo_repr == 'colored_field'" />
+                        <field name="active_on_startup" />
+                        <field name="display_polygon_labels" />
+                        <field name="sequence" />
+                        <field name="readonly" />
+                        <field name="layer_opacity" />
+                    </group>
+                    <group name="related_model" string="Related Model" col="4">
+                        <field name="model_id" />
+                        <field name="model_view_id" />
+                        <field name="model_name" invisible="1" />
+                        <field
+                            name="model_domain"
+                            widget="domain"
+                            colspan="4"
+                            options="{'model': 'model_name'}" />
+                    </group>
+                    <group string="Representation" col="4" colspan="4">
+                        <field name="geo_repr" />
+                        <field
+                            name="render_engine"
+                            invisible="geo_repr in ['heatmap', 'cluster']" />
+                        <field
+                            name="webgl_threshold"
+                            invisible="render_engine not in ['inherit', 'auto'] or geo_repr in ['heatmap', 'cluster']" />
+                        <field name="min_size" invisible="geo_repr != 'proportion'" />
+                        <field name="max_size" invisible="geo_repr != 'proportion'" />
+                    </group>
+                    <group
+                        string="Heatmap"
+                        col="4"
+                        colspan="4"
+                        invisible="geo_repr != 'heatmap'">
+                        <field name="heatmap_radius" />
+                        <field name="heatmap_blur" />
+                        <field name="heatmap_weight_field_id" />
+                    </group>
+                    <group
+                        string="Clustering"
+                        col="4"
+                        colspan="4"
+                        invisible="geo_repr != 'cluster'">
+                        <field name="cluster_distance" />
+                        <field name="cluster_min_distance" />
+                    </group>
+                    <group
+                        string="Classification"
+                        colspan="4"
+                        invisible="geo_repr in ['basic', 'colored_field', 'heatmap', 'cluster']">
+                        <field
+                            name="classification"
+                            invisible="geo_repr in ['basic', 'colored_field', 'heatmap', 'cluster']"
+                            required="geo_repr in ['proportion', 'colored']" />
+                    </group>
+                    <group
+                        string="Colors"
+                        col="4"
+                        colspan="4"
+                        invisible="geo_repr in ['colored_field', 'heatmap', 'cluster']">
+                        <field name="begin_color" widget="color" />
+                        <group
+                            colspan="4"
+                            invisible="geo_repr in ['basic', 'proportion']">
+                            <field
+                                name="end_color"
+                                widget="color"
+                                invisible="classification in ['unique', False]"
+                                required="classification in ['interval', 'quantile']" />
+                            <field
+                                name="nb_class"
+                                invisible="classification in ['unique', False]"
+                                required="classification in ['interval', 'quantile']" />
+                            <field
+                                name="nb_class_recommended"
+                                string="Max Safe Classes (based on data)"
+                                invisible="classification in ['unique', False]"
+                                readonly="1" />
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="geo_vector_geoengine_view_form" model="ir.ui.view">
+        <field name="name">geoengine.vector.layer.geoengine.form</field>
+        <field name="model">geoengine.vector.layer</field>
+        <field name="inherit_id" ref="geo_vector_view_form" />
+        <field name="mode">primary</field>
+        <field name="arch" type="xml">
+            <field name="view_id" position="replace" />
+            <field name="active_on_startup" position="replace" />
+            <field name="sequence" position="attributes">
+                <attribute name="readonly">1</attribute>
+            </field>
+            <group name="related_model" position="replace" />
+        </field>
+    </record>
+
+    <record id="geo_vector_geoengine_view_action" model="ir.actions.act_window">
+        <field name="name">Vector Layer</field>
+        <field name="res_model">geoengine.vector.layer</field>
+        <field name="view_id" ref="geo_vector_geoengine_view_form" />
+        <field name="target">new</field>
+        <field name="type">ir.actions.act_window</field>
+    </record>
+
+    <record id="geo_vector_layer_list_action" model="ir.actions.act_window">
+        <field name="name">Vector Layer</field>
+        <field name="res_model">geoengine.vector.layer</field>
+        <field name="view_id" ref="geo_vector_view_list" />
+        <field name="type">ir.actions.act_window</field>
+    </record>
+
+</odoo>

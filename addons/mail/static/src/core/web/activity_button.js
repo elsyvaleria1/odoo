@@ -1,0 +1,113 @@
+// @ts-check
+/** @odoo-module native */
+import { ActivityListPopover } from "@mail/core/web/activity_list_popover";
+import { Component, t, useProps } from "@odoo/owl";
+import { makeLogger } from "@web/core/debug/debug_logger";
+import { _t } from "@web/core/translation";
+import { elementRef } from "@web/core/utils/element_ref";
+import { useViewModel } from "@web/model/model";
+import { usePopover } from "@web/ui/popover";
+
+const log = makeLogger("mail.activity");
+export class ActivityButton extends Component {
+    static props = { record: t.object() };
+    static template = "mail.ActivityButton";
+    props = useProps(this.constructor.props);
+
+    setup() {
+        super.setup();
+        this.model = useViewModel();
+        this.popover = usePopover(ActivityListPopover, { position: "bottom-start" });
+        this.buttonRef = elementRef();
+        this.defaultActivityStateClass = "text-muted";
+        this.defaultActivityDecorationClass = "fa-regular fa-clock btn-link text-dark";
+    }
+
+    get buttonClass() {
+        const classes = [];
+        switch (this.props.record.data.activity_state) {
+            case "overdue":
+                classes.push("text-danger");
+                break;
+            case "today":
+                classes.push("text-warning");
+                break;
+            case "planned":
+                classes.push("text-success");
+                break;
+            default:
+                if (this.defaultActivityStateClass) {
+                    classes.push(this.defaultActivityStateClass);
+                }
+                break;
+        }
+        switch (this.props.record.data.activity_exception_decoration) {
+            case "warning":
+                classes.push("text-warning");
+                classes.push(this.props.record.data.activity_exception_icon);
+                break;
+            case "danger":
+                classes.push("text-danger");
+                classes.push(this.props.record.data.activity_exception_icon);
+                break;
+            default: {
+                const { activity_ids, activity_type_icon } = this.props.record.data;
+                if (activity_ids.records.length) {
+                    classes.push(activity_type_icon || "fa-tasks");
+                    break;
+                }
+                classes.push(this.defaultActivityDecorationClass);
+                break;
+            }
+        }
+        return classes.join(" ");
+    }
+
+    get title() {
+        if (this.props.record.data.activity_exception_decoration) {
+            return _t("Warning");
+        }
+        if (this.props.record.data.activity_summary) {
+            return this.props.record.data.activity_summary;
+        }
+        if (this.props.record.data.activity_type_id) {
+            return this.props.record.data.activity_type_id.display_name;
+        }
+        return _t("Show activities");
+    }
+
+    async onClick() {
+        if (this.popover.isOpen) {
+            this.popover.close();
+        } else {
+            const resId = this.props.record.resId;
+            const selectedRecords = this.model?.root?.selection ?? [];
+            const selectedIds = selectedRecords.map((r) => r.resId);
+            const resIds =
+                selectedIds.includes(resId) && selectedIds.length > 1
+                    ? selectedIds
+                    : undefined;
+            log.logic("open activity popover", () => ({
+                resModel: this.props.record.resModel,
+                resId,
+                resIds: resIds?.length,
+                activities: this.props.record.data.activity_ids.currentIds.length,
+            }));
+            this.popover.open(this.buttonRef.el, {
+                activityIds: this.props.record.data.activity_ids.currentIds,
+                /** @param {import("models").Thread} thread */
+                onActivityChanged: (thread) => {
+                    const recordToLoad = resIds ? selectedRecords : [this.props.record];
+                    recordToLoad.forEach((r) => r.load());
+                    this.onActivityChanged();
+                    this.popover.close();
+                },
+                resId,
+                resIds,
+                resModel: this.props.record.resModel,
+            });
+        }
+    }
+
+    onActivityChanged() {}
+}

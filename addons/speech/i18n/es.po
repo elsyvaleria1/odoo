@@ -1,0 +1,27 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* speech
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Language: es\n"
+"Plural-Forms: \n"
+
+#. module: speech
+#: model:ir.actions.act_window,name:speech.speech_vocabulary_action
+#: model:ir.model,name:speech.model_speech_vocabulary
+#: model:ir.ui.menu,name:speech.speech_vocabulary_menu
+msgid "Speech Vocabulary"
+msgstr "Vocabulario de voz"
+
+#. module: speech
+#: model_terms:ir.ui.view,arch_db:speech.ir_attachment_view_form_speech
+msgid "Transcribe"
+msgstr "Transcribir"

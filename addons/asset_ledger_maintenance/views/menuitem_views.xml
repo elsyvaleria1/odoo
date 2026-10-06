@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <menuitem
+        id="menu_maintenance_dashboard"
+        name="Teams Dashboard"
+        parent="maintenance.menu_maintenance_title"
+        action="action_maintenance_team_dashboard"
+        sequence="1" />
+
+    <menuitem
+        id="menu_maintenance_assets"
+        name="Assets"
+        parent="maintenance.menu_maintenance_title"
+        sequence="20" />
+
+    <menuitem
+        id="menu_maintenance_equipments"
+        name="Equipments"
+        parent="menu_maintenance_assets"
+        action="action_equipment_assets"
+        sequence="10" />
+
+    <menuitem
+        id="menu_maintenance_machines"
+        name="Machines"
+        parent="menu_maintenance_assets"
+        action="action_machinery_assets"
+        sequence="20" />
+
+    <menuitem
+        id="menu_maintenance_properties"
+        name="Properties"
+        parent="menu_maintenance_assets"
+        action="action_property_assets"
+        sequence="30" />
+
+    <menuitem
+        id="menu_maintenance_vehicles"
+        name="Vehicles"
+        parent="menu_maintenance_assets"
+        action="action_vehicle_assets"
+        sequence="40" />
+
+    <menuitem
+        id="menu_maintenance_configuration"
+        name="Configuration"
+        parent="maintenance.menu_maintenance_title"
+        sequence="90" />
+
+    <menuitem
+        id="menu_maintenance_settings"
+        name="Settings"
+        parent="menu_maintenance_configuration"
+        action="action_maintenance_config_settings"
+        sequence="10" />
+
+    <menuitem
+        id="menu_maintenance_teams"
+        name="Maintenance Teams"
+        parent="menu_maintenance_configuration"
+        action="action_maintenance_team_config"
+        sequence="20" />
+
+    <menuitem
+        id="menu_maintenance_plan_templates"
+        name="Plan Templates"
+        parent="menu_maintenance_configuration"
+        action="action_maintenance_plan_template"
+        sequence="30" />
+
+    <menuitem
+        id="menu_assets_maintenance"
+        name="Maintenance"
+        parent="asset_ledger.menu_general_assets_root"
+        sequence="150" />
+
+    <menuitem
+        id="menu_assets_maintenance_plans"
+        name="Maintenance Plans"
+        parent="menu_assets_maintenance"
+        action="action_maintenance_plan_assets"
+        sequence="10" />
+
+    <menuitem
+        id="menu_assets_maintenance_orders"
+        name="Maintenance Orders"
+        parent="menu_assets_maintenance"
+        action="action_maintenance_order_assets"
+        sequence="20" />
+
+    <menuitem
+        id="menu_fleet_maintenance"
+        name="Vehicle Maintenance"
+        parent="asset_ledger.menu_general_assets_root"
+        sequence="155"
+        groups="asset_ledger.group_enable_fleet_assets" />
+
+    <menuitem
+        id="menu_fleet_maintenance_plans"
+        name="Maintenance Plans"
+        parent="menu_fleet_maintenance"
+        action="action_maintenance_plan_vehicle"
+        sequence="10" />
+
+    <menuitem
+        id="menu_fleet_maintenance_orders"
+        name="Maintenance Orders"
+        parent="menu_fleet_maintenance"
+        action="action_maintenance_order_vehicle"
+        sequence="20" />
+
+    <menuitem
+        id="menu_equipment_maintenance"
+        name="Equipment Maintenance"
+        parent="asset_ledger.menu_general_assets_root"
+        sequence="160" />
+
+    <menuitem
+        id="menu_equipment_maintenance_plans"
+        name="Maintenance Plans"
+        parent="menu_equipment_maintenance"
+        action="action_maintenance_plan_equipment"
+        sequence="10" />
+
+    <menuitem
+        id="menu_equipment_maintenance_orders"
+        name="Maintenance Orders"
+        parent="menu_equipment_maintenance"
+        action="action_maintenance_order_equipment"
+        sequence="20" />
+
+</odoo>

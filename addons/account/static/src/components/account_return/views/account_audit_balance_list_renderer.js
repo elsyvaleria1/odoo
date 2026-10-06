@@ -1,0 +1,61 @@
+/** @odoo-module native */
+import { AccountReportChatter } from "@account/components/mail/chatter";
+import { useDebugMode } from "@web/core/debug/debug_context";
+import { elementRef } from "@web/core/utils/element_ref";
+import { useService } from "@web/core/utils/hooks";
+import { useLayoutEffect } from "@web/core/utils/layout_effect";
+import { ListRenderer } from "@web/views/list";
+
+import { useAuditBalanceListChatterService } from "./account_audit_balance_list_chatter_service.js";
+
+export class AccountAuditBalanceListRenderer extends ListRenderer {
+    static template = "account.account_audit_balance_list_renderer";
+
+    static components = {
+        ...ListRenderer.components,
+        AccountReportChatter,
+    };
+
+    setup() {
+        super.setup();
+        this.debug = useDebugMode();
+        this.ui = useService("ui");
+        this.chatterService = useAuditBalanceListChatterService();
+
+        this.chatterRef = elementRef();
+
+        useLayoutEffect(
+            () => {
+                if (this.props.list.editedRecord) {
+                    this.chatterService.openChatter(
+                        this.props.list.editedRecord.evalContext.id,
+                    );
+                } else {
+                    this.chatterService.closeChatter();
+                }
+            },
+            () => [this.props.list.editedRecord],
+        );
+    }
+
+    onGlobalClick(event) {
+        if (this.chatterRef.el.contains(event.target)) {
+            // ignore clicks inside the chatter as we dont want it to close when clicking inside it
+            return;
+        }
+        super.onGlobalClick(event);
+    }
+
+    getCellClass(column, record) {
+        const classNames = super.getCellClass(column, record);
+        if (
+            (column.name === "audit_balance" &&
+                record.data.audit_balance_show_warning) ||
+            (column.name === "audit_previous_balance" &&
+                record.data.audit_previous_balance_show_warning)
+        ) {
+            return `${classNames} table-warning`;
+        }
+        return classNames;
+    }
+}

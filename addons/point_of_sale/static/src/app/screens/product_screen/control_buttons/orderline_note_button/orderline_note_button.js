@@ -1,0 +1,179 @@
+/** @odoo-module native */
+import { Component, t, useProps } from "@odoo/owl";
+import { TextInputPopup } from "@point_of_sale/app/components/popups/text_input_popup/text_input_popup";
+import { usePos } from "@point_of_sale/app/hooks/pos_hook";
+import { parseNoteEntries } from "@point_of_sale/app/models/utils/note_entries";
+import { makeAwaitable } from "@point_of_sale/app/utils/make_awaitable_dialog";
+import { makeLogger } from "@web/core/debug/debug_logger";
+import { _t } from "@web/core/translation";
+import { useService } from "@web/core/utils/hooks";
+const log = makeLogger("pos.screen.product.notes");
+export class NoteButton extends Component {
+    static template = "point_of_sale.NoteButton";
+    static props = {
+        icon: t.string().optional(),
+        label: t.string(),
+        class: t.string().optional(),
+    };
+    props = useProps(this.constructor.props);
+
+    setup() {
+        this.pos = usePos();
+        this.dialog = useService("dialog");
+    }
+
+    async onClick() {
+        const selectedOrderline = this.pos.getOrder().getSelectedOrderline();
+        const selectedNote = this.currentNote || "";
+        const payload = await this.openTextInput(selectedNote);
+        log.logic("onClick", () => ({
+            type: this.type,
+            order: this.pos.getOrder()?.uuid,
+            line: selectedOrderline?.uuid,
+            cancelled: payload === undefined,
+            changed: payload !== undefined && payload !== selectedNote,
+        }));
+        if (payload === undefined) {
+            return { confirmed: false, inputNote: undefined };
+        }
+        if (selectedOrderline) {
+            this.setChanges(selectedOrderline, payload);
+        } else {
+            this.pos.getOrder().setGeneralCustomerNote(payload);
+        }
+        return { confirmed: typeof payload === "string", inputNote: payload };
+    }
+
+    async setChanges(selectedOrderline, payload) {
+        let quantity_with_note = 0;
+        const changes = this.pos.getOrderChanges();
+        for (const key in changes.orderlines) {
+            if (changes.orderlines[key].uuid === selectedOrderline.uuid) {
+                quantity_with_note = changes.orderlines[key].quantity;
+                break;
+            }
+        }
+        const saved_quantity = selectedOrderline.qty - quantity_with_note;
+        log.logic("setChanges", () => ({
+            type: this.type,
+            line: selectedOrderline.uuid,
+            qty: selectedOrderline.qty,
+            quantityWithNote: quantity_with_note,
+            savedQuantity: saved_quantity,
+            splitLine: saved_quantity > 0 && quantity_with_note > 0,
+        }));
+        if (saved_quantity > 0 && quantity_with_note > 0) {
+            const noteField = this.type === "internal" ? "note" : "customer_note";
+            await this.pos.addLineToCurrentOrder({
+                product_tmpl_id: selectedOrderline.product_id.product_tmpl_id,
+                qty: quantity_with_note,
+                [noteField]: payload,
+            });
+            selectedOrderline.qty = saved_quantity;
+            for (const line of selectedOrderline.combo_line_ids) {
+                line.setQuantity(line.uiState.oldQty);
+            }
+        } else {
+            this.setOrderlineNote(payload);
+        }
+    }
+
+    async openTextInput(selectedNote) {
+        const selectedLine = this.pos.getOrder().getSelectedOrderline();
+        let buttons = [];
+        if (this.type === "internal" || !selectedLine) {
+            buttons = this.pos.models["pos.note"].readAll().map((note) => ({
+                label: note.name,
+                class: note.color ? `o_colorlist_item_color_${note.color}` : "",
+            }));
+        }
+
+        const titlePrefix = selectedLine
+            ? selectedLine.product_id.name + _t(": Add ")
+            : _t("Add a ");
+        return await makeAwaitable(this.dialog, TextInputPopup, {
+            title: titlePrefix + this.props.label,
+            buttons,
+            rows: 4,
+            startingValue: selectedNote,
+        });
+    }
+
+    get orderNote() {
+        const order = this.pos.getOrder();
+        return this.type === "internal"
+            ? order.internal_note || ""
+            : order.general_customer_note || "";
+    }
+
+    get orderlineNote() {
+        const orderline = this.pos.getOrder().getSelectedOrderline();
+        return this.type === "internal"
+            ? orderline.getNote()
+            : orderline.getCustomerNote();
+    }
+
+    get currentNote() {
+        return this.pos.getOrder().getSelectedOrderline()
+            ? this.orderlineNote
+            : this.orderNote;
+    }
+    get type() {
+        return "customer";
+    }
+    setOrderlineNote(value) {
+        return this.pos.getOrder().getSelectedOrderline().setCustomerNote(value);
+    }
+}
+export class InternalNoteButton extends NoteButton {
+    static template = "point_of_sale.NoteButton";
+
+    reframeNotes(payload) {
+        const notesArray = [];
+        for (const noteName of payload.split("\n")) {
+            if (noteName.trim()) {
+                const defaultNote = this.pos.models["pos.note"].find(
+                    (note) => note.name === noteName,
+                );
+                notesArray.push({
+                    text: noteName,
+                    colorIndex: defaultNote ? defaultNote.color : 0,
+                });
+            }
+        }
+        return JSON.stringify(notesArray);
+    }
+
+    get type() {
+        return "internal";
+    }
+
+    async onClick() {
+        const selectedOrderline = this.pos.getOrder().getSelectedOrderline();
+        const selectedNote = parseNoteEntries(this.currentNote);
+        const payload = await this.openTextInput(
+            selectedNote.map((n) => n.text).join("\n"),
+        );
+        if (payload === undefined) {
+            return {
+                confirmed: false,
+                inputNote: undefined,
+                oldNote: JSON.stringify(selectedNote),
+            };
+        }
+        const coloredNotes = payload ? this.reframeNotes(payload) : "[]";
+        if (selectedOrderline) {
+            this.setChanges(selectedOrderline, coloredNotes);
+        } else {
+            this.pos.getOrder().setInternalNote(coloredNotes);
+        }
+        return {
+            confirmed: typeof payload === "string",
+            inputNote: coloredNotes,
+            oldNote: JSON.stringify(selectedNote),
+        };
+    }
+    setOrderlineNote(value) {
+        return this.pos.getOrder().getSelectedOrderline().setNote(value);
+    }
+}

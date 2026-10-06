@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="group_allow_doc" model="res.groups">
+        <field name="name">Technical Documentation</field>
+        <field name="implied_by_ids" eval="[Command.link(ref('base.group_system'))]" />
+        <field name="user_ids" eval="[Command.link(ref('base.user_root'))]" />
+    </record>
+
+</odoo>

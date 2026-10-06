@@ -1,0 +1,17 @@
+// @ts-check
+/** @odoo-module native */
+import { Composer } from "@mail/core/common/composer";
+import { _t } from "@web/core/translation";
+import { patch } from "@web/core/utils/patch";
+patch(Composer.prototype, {
+    get placeholder() {
+        if (this.thread && !this.thread.isChannelKind && !this.props.placeholder) {
+            if (this.props.type === "message") {
+                return _t("Send a message to followers…");
+            } else {
+                return _t("Log an internal note…");
+            }
+        }
+        return super.placeholder;
+    },
+});

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="privilege_read_order_loyalty" model="res.groups">
+        <field
+            name="name">Privilege: read the loyalty of an order being confirmed</field>
+        <field name="is_privilege" eval="True" />
+    </record>
+
+</odoo>

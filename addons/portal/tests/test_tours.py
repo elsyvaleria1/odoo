@@ -1,0 +1,34 @@
+from odoo import Command
+from odoo.tests import tagged
+
+from odoo.addons.base.tests.common import HttpCaseWithUserDemo, HttpCaseWithUserPortal
+
+
+@tagged("post_install", "-at_install")
+class TestUi(HttpCaseWithUserDemo, HttpCaseWithUserPortal):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.partner_portal.write(
+            {
+                "city": "Bayonne",
+                "country_id": cls.env.ref("base.us").id,
+                "phone_ids": [
+                    Command.create({"number": "(683)-556-5104", "type": "landline"})
+                ],
+                "street": "858 Lynn Street",
+                "zip": "07002",
+                "state_id": cls.env.ref("base.state_us_5").id,
+            }
+        )
+
+    def test_01_portal_load_tour(self):
+        self.start_tour("/", "portal_load_homepage", login="portal")
+
+    def test_02_portal_load_tour_cant_edit_vat(self):
+        willis = self.user_portal
+        self.start_tour("/", "portal_load_homepage", login="portal")
+        self.assertEqual(willis._phone_get_number().number, "+1 555 666 7788")
+
+    def test_03_skip_to_content(self):
+        self.start_tour("/", "skip_to_content", login="portal")

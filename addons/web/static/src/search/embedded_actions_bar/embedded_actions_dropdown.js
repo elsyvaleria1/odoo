@@ -1,0 +1,94 @@
+// @ts-check
+/** @odoo-module native */
+
+import { Component, proxy, t, useProps } from "@odoo/owl";
+import { CheckBox } from "@web/components/checkbox/checkbox";
+import { AccordionItem } from "@web/components/dropdown/accordion_item";
+import { Dropdown } from "@web/components/dropdown/dropdown";
+import { useDropdownState } from "@web/components/dropdown/dropdown_hook";
+import { DropdownItem } from "@web/components/dropdown/dropdown_item";
+import { isActivationKey } from "@web/core/browser/hotkeys";
+import { elementRef } from "@web/core/utils/element_ref";
+import { useService } from "@web/core/utils/hooks";
+import { EmbeddedActions } from "@web/search/embedded_actions_bar/embedded_actions";
+
+/** @import { EmbeddedAction } from "@web/search/embedded_actions_bar/embedded_actions" */
+export class EmbeddedActionsDropdown extends Component {
+    static template = "web.EmbeddedActionsDropdown";
+    static components = { Dropdown, DropdownItem, AccordionItem, CheckBox };
+    static props = {
+        embeddedActions: t.instanceOf(EmbeddedActions),
+        state: t.object().optional(),
+    };
+    props = useProps(this.constructor.props);
+
+    /** @type {{el: HTMLElement | null}} */
+    newActionNameRef;
+    /** @type {import("@web/components/dropdown/dropdown_hook").DropdownState} */
+    dropdownState;
+    /** @type {{embeddedInfos: EmbeddedActions["embeddedInfos"]}} */
+    state;
+
+    setup() {
+        this.ui = useService("ui");
+        this.newActionNameRef = elementRef();
+        const ownDropdownState = useDropdownState();
+        this.dropdownState = this.props.state || ownDropdownState;
+        this.state = proxy({
+            embeddedInfos: this.props.embeddedActions.embeddedInfos,
+        });
+    }
+
+    /**
+     * @param {EmbeddedAction} action
+     * @returns {string}
+     */
+    getDropdownClass(action) {
+        const isCurrent =
+            this.state.embeddedInfos.currentEmbeddedAction?.id === action.id;
+        const isVisible = EmbeddedActions.isVisible(this.state.embeddedInfos, action);
+        return (this.ui.isSmall ? isCurrent : isVisible) ? "selected" : "";
+    }
+
+    /** @param {EmbeddedAction} action */
+    onEmbeddedActionClick(action) {
+        return this.props.embeddedActions.openAction(action);
+    }
+
+    /** @param {number|false} actionId */
+    setVisibility(actionId) {
+        return this.props.embeddedActions.toggleActionVisibility(actionId);
+    }
+
+    /** @param {EmbeddedAction} action */
+    openConfirmationDialog(action) {
+        return this.props.embeddedActions.confirmDelete(action);
+    }
+
+    /**
+     * @param {KeyboardEvent} ev
+     * @param {EmbeddedAction} action
+     */
+    onDeleteKeydown(ev, action) {
+        if (!isActivationKey(ev)) {
+            return;
+        }
+        ev.preventDefault();
+        ev.stopPropagation();
+        this.openConfirmationDialog(action);
+    }
+
+    onShareCheckboxChange() {
+        this.state.embeddedInfos.newActionIsShared =
+            !this.state.embeddedInfos.newActionIsShared;
+    }
+
+    /** @param {Event} ev */
+    async saveNewAction(ev) {
+        const saved = await this.props.embeddedActions.saveNewAction();
+        if (!saved) {
+            ev.stopPropagation();
+            this.newActionNameRef.el?.focus();
+        }
+    }
+}

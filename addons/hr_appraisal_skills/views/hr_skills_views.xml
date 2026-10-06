@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_hr_appraisal_form" model="ir.ui.view">
+        <field name="name">hr.appraisal.form.inherit.hr_appraisal_skills</field>
+        <field name="model">hr.appraisal</field>
+        <field name="inherit_id" ref="hr_appraisal.view_hr_appraisal_form" />
+        <field name="arch" type="xml">
+            <field name="job_id" position="after">
+                <field
+                    name="target_job_id"
+                    placeholder="Challenge your skills to a target"
+                    invisible="state == '1_new'" />
+            </field>
+            <xpath expr="//page[@name='appraisal']" position="after">
+                <page
+                    name="page_skills"
+                    string="Skills"
+                    invisible="state == '1_new' or (state == '2_pending' and uid == employee_user_id)">
+                    <div class="o_hr_skills_group o_group_skills">
+                        <field
+                            name="current_appraisal_skill_ids"
+                            widget="appraisal_skills_one2many"
+                            mode="list"
+                            nolabel="1"
+                            context="{'appraisal_state': state}"
+                            readonly="state != '2_pending' or not is_manager"
+                            class="o_appraisal_skill o_field_appraisal_skills_one2many">
+                            <list editable="bottom">
+                                <field
+                                    name="skill_type_id"
+                                    optional="hide"
+                                    options="{'no_create': True}" />
+                                <field
+                                    name="skill_id"
+                                    context="{'from_skill_dropdown': True}"
+                                    options="{'no_create': True}" />
+                                <field
+                                    name="skill_level_id"
+                                    placeholder="Unknown"
+                                    domain="[('skill_type_id', '=', skill_type_id)]"
+                                    options="{'no_create': True}" />
+                                <field
+                                    name="level_progress"
+                                    string="Current"
+                                    widget="progressbar"
+                                    width="175px" />
+                                <field
+                                    name="target_job_skill_progress"
+                                    widget="percentage"
+                                    width="100px"
+                                    invisible="not target_job_skill_progress"
+                                    decoration-danger="level_progress &lt; (target_job_skill_progress * 100)"
+                                    decoration-success="level_progress &gt;= (target_job_skill_progress * 100)" />
+                                <field name="justification" class="text-wrap" />
+                                <field
+                                    name="valid_from"
+                                    width="100px"
+                                    optional="hide"
+                                    invisible="not is_certification" />
+                                <field
+                                    name="valid_to"
+                                    placeholder="infinite"
+                                    width="100px"
+                                    optional="hide"
+                                    invisible="not is_certification" />
+                                <field
+                                    name="goals_completion_percentage"
+                                    widget="goal_progressbar"
+                                    context="{'default_employee_id': employee_id}"
+                                    invisible="not goal_ids" />
+                                <button
+                                    name="action_view_recommend_goals"
+                                    type="object"
+                                    string="Recommend Goals"
+                                    invisible="not number_of_recommended_goals"
+                                    class="oe_link" />
+                            </list>
+                        </field>
+                    </div>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="hr_skill_type_action_appraisal" model="ir.actions.act_window">
+        <field name="name">Skills Type</field>
+        <field name="res_model">hr.skill.type</field>
+        <field name="view_mode">list,form</field>
+        <field name="type">ir.actions.act_window</field>
+    </record>
+
+</odoo>

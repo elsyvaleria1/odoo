@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates>
+    <t t-name="knowledge.WysiwygArticleHelper">
+        <div t-if="this.props.isVisible" class="o_knowledge_helper pb-3">
+            <p class="text-muted">Keep writing, or choose an option below to jump right in!</p>
+            <div class="d-flex flex-column">
+                <a href="#" class="o_knowledge_load_template p-2 text-muted" data-hotkey="A" t-on-click="this.onLoadTemplateBtnClick" t-if="!this.isPortalUser">
+                    <i class="fa-solid fa-paint-brush fa-lg me-1"/> Load a Template
+                </a>
+                <a href="#" class="o_knowledge_add_item_kanban p-2 text-muted" data-hotkey="K" t-on-click="this.onBuildItemKanbanBtnClick">
+                    <i class="fa-solid fa-th-large fa-lg me-1"/> Build an Item Kanban
+                </a>
+                <a href="#" class="o_knowledge_add_item_list p-2 text-muted" data-hotkey="L" t-on-click="this.onBuildItemListBtnClick">
+                    <i class="fa-solid fa-th-list fa-lg me-1"/> Build an Item List
+                </a>
+                <a href="#" class="o_knowledge_add_item_calendar p-2 text-muted" data-hotkey="C" t-on-click="this.onBuildItemCalendarBtnClick">
+                    <i class="fa-solid fa-calendar-days fa-lg me-1"/> Build an Item Calendar
+                </a>
+            </div>
+        </div>
+    </t>
+</templates>

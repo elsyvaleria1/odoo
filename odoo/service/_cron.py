@@ -1,0 +1,543 @@
+from __future__ import annotations
+
+import contextlib
+import dataclasses
+import logging
+import random
+import selectors
+import time
+import typing
+from collections.abc import Iterable, Iterator, Sized
+
+from odoo import db
+from odoo.libs import backoff
+from odoo.libs.collections import OrderedSet
+from odoo.libs.debug_log import DebugLog
+from odoo.libs.sql import SQL
+from odoo.tools.constants import CRON_TRIGGER_CHANNEL, JOB_QUEUE_CHANNEL, STREAM_CHANNEL
+
+from ._dispatch import is_db_exposed
+from ._limits import BACKOFF_BASE_S, BACKOFF_CEILING_S
+from .db import list_dbs
+from .settings import current
+
+if typing.TYPE_CHECKING:
+    from odoo.db import BaseCursor
+
+_logger = logging.getLogger("odoo.service.server")
+_debug = DebugLog(__name__)
+
+__all__ = [
+    "CRON_LISTENER",
+    "CRON_NOTIFY_JITTER_MAX_S",
+    "CRON_POLL_INTERVAL_S",
+    "CRON_TRIGGER_CHANNEL",
+    "JOB_LISTENER",
+    "JOB_QUEUE_CHANNEL",
+    "LISTENER_KINDS",
+    "STREAM_CHANNEL",
+    "STREAM_LISTENER",
+    "CronListener",
+    "CronSchedule",
+    "ListenerKind",
+    "ReconnectBackoff",
+    "arm_cron_listen",
+    "close_cron_cursor",
+    "drain_cron_notifies",
+    "drain_swept_database",
+    "get_cron_databases",
+    "open_cron_listener",
+    "order_notified_first",
+    "sweep_database",
+    "wait_for_notifies",
+]
+
+CRON_POLL_INTERVAL_S = 60
+
+# A stream worker's pass: a lost leader is noticed, its streams reopened
+# elsewhere and a dropped connection redialled within this many seconds.
+STREAM_HEARTBEAT_S = 15
+"""How long a cron or job loop waits for a notify before sweeping anyway.
+
+Named for what it is.  As `SLEEP_INTERVAL` in `_cron` it read as a generic
+number and was borrowed by the back-off ceiling and by the threaded server's
+reload grace period, so the three could not be tuned apart.
+"""
+
+CRON_NOTIFY_JITTER_MAX_S = 0.1
+
+
+def _cron_process_jobs() -> typing.Callable[[str], object]:
+    from odoo.addons.base.models.ir_cron import IrCron
+
+    return IrCron._process_jobs
+
+
+def _job_process_jobs() -> typing.Callable[[str], object]:
+    from odoo.addons.base.models.ir_job import IrJob
+
+    return IrJob._process_jobs
+
+
+def _stream_process() -> typing.Callable[[str], object]:
+    from ._stream import process_streams
+
+    return process_streams
+
+
+@dataclasses.dataclass(frozen=True, slots=True)
+class ListenerKind:
+    """One notify-driven sweep loop, declared once for both server flavours.
+
+    A threaded server runs each kind as a thread and a prefork server runs it
+    as a worker process, and the two mechanisms have little in common -- but
+    *which* channel a kind listens on, how many of it a server runs, when its
+    PostgreSQL connection is recycled and whose `_process_jobs` it calls are
+    the same four facts either way.  They used to be stated twice, as keyword
+    arguments in `_threaded` and as class attributes in `_worker`, with
+    nothing comparing the two: a third kind, or a change to which setting
+    bounds the job connection's age, was two edits that no gate paired.
+
+    `name` is the key the rest of the process already sorts these by -- the
+    worker thread's `type`, and the argument `ServerSettings
+    .get_real_time_budget` dispatches on -- so the real-time budget is
+    derived here rather than restated.
+    """
+
+    name: str
+    channel: str
+    population_setting: str
+    max_age_setting: str
+    resolve_process_jobs: typing.Callable[[], typing.Callable[[str], object]]
+    # A kind with a heartbeat sweeps every served database each pass, at
+    # that interval, instead of the databases the cron schedule finds due.
+    heartbeat: float | None = None
+
+    def population(self, settings: typing.Any = None) -> int:
+        return int(getattr(settings or current(), self.population_setting))
+
+    def max_age(self, settings: typing.Any = None) -> int:
+        return int(getattr(settings or current(), self.max_age_setting))
+
+    def real_time_budget(self, settings: typing.Any = None) -> float:
+        return (settings or current()).get_real_time_budget(self.name)
+
+    def process_jobs(self) -> typing.Callable[[str], object]:
+        return self.resolve_process_jobs()
+
+    def due_databases(
+        self, schedule: CronSchedule, notified: Iterable[str]
+    ) -> list[str]:
+        if self.heartbeat is not None:
+            return list(schedule.reset_known_databases())
+        return schedule.get_due_databases(notified)
+
+
+CRON_LISTENER = ListenerKind(
+    name="cron",
+    channel=CRON_TRIGGER_CHANNEL,
+    population_setting="max_cron_threads",
+    max_age_setting="limit_time_worker_cron",
+    resolve_process_jobs=_cron_process_jobs,
+)
+
+JOB_LISTENER = ListenerKind(
+    name="job",
+    channel=JOB_QUEUE_CHANNEL,
+    population_setting="job_workers",
+    max_age_setting="job_max_age",
+    resolve_process_jobs=_job_process_jobs,
+)
+
+# A stream worker's sweep reconciles the held-open connections of a database
+# under its leader lock: what should be open is opened, what should not is
+# closed, what is queued is sent. The connections themselves outlive the sweep
+# in the worker process, so the kind is never recycled by default.
+STREAM_LISTENER = ListenerKind(
+    name="stream",
+    channel=STREAM_CHANNEL,
+    population_setting="stream_workers",
+    max_age_setting="limit_time_worker_stream",
+    resolve_process_jobs=_stream_process,
+    heartbeat=STREAM_HEARTBEAT_S,
+)
+
+LISTENER_KINDS: tuple[ListenerKind, ...] = (
+    CRON_LISTENER,
+    JOB_LISTENER,
+    STREAM_LISTENER,
+)
+
+
+def arm_cron_listen(
+    cr: BaseCursor,
+    logger: logging.Logger,
+    *,
+    channel: str = CRON_TRIGGER_CHANNEL,
+    disable_idle_timeout: bool = False,
+) -> bool:
+    cr.execute("SELECT pg_is_in_recovery()")
+    recovery = cr.fetchone()
+    if recovery and recovery[0]:
+        logger.warning("PG cluster in recovery mode, %s trigger not activated", channel)
+        _debug.logic("cron.listen.in_recovery", channel=channel)
+        return False
+    if disable_idle_timeout:
+        cr.execute("SET idle_session_timeout = 0")
+    cr.execute(SQL("LISTEN %s", SQL.identifier(channel)))
+    _debug.lifecycle(
+        "cron.listen_armed",
+        channel=channel,
+        idle_timeout_disabled=disable_idle_timeout,
+    )
+    return True
+
+
+def drain_cron_notifies(
+    connection: typing.Any, *, channel: str = CRON_TRIGGER_CHANNEL
+) -> OrderedSet:
+    notifies = list(connection.notifies(timeout=0))
+    payloads = OrderedSet(
+        notif.payload for notif in notifies if notif.channel == channel
+    )
+    if _debug.pipeline.enabled and notifies:
+        _debug.pipeline(
+            "cron.notifies_drained",
+            channel=channel,
+            received=len(notifies),
+            distinct=len(payloads),
+        )
+    return payloads
+
+
+def order_notified_first(notified: Iterable[str], all_dbs: Iterable[str]) -> list[str]:
+    if isinstance(notified, Iterator):
+        notified = list(notified)
+    all_list = list(all_dbs)
+    all_set = set(all_list)
+    notified_set = set(notified)
+    emitted: set[str] = set()
+    result: list[str] = []
+    for name in notified:
+        if name in all_set and name not in emitted:
+            emitted.add(name)
+            result.append(name)
+    for name in all_list:
+        if name not in notified_set and name not in emitted:
+            emitted.add(name)
+            result.append(name)
+    _debug.logic(
+        "cron.order_resolved",
+        notified=len(notified_set),
+        unknown=len(notified_set - all_set),
+        total=len(result),
+    )
+    return result
+
+
+def get_cron_databases() -> list[str]:
+    configured = current().db_name
+    if configured:
+        _debug.logic("cron.databases", source="db_name", databases=len(configured))
+        return list(configured)
+    names = list_dbs(True)
+    exposed = [name for name in names if is_db_exposed(name)]
+    _debug.logic(
+        "cron.databases",
+        source="catalog",
+        databases=len(exposed),
+        excluded=len(names) - len(exposed),
+    )
+    return exposed
+
+
+def wait_for_notifies(
+    listener: CronListener,
+    timeout: float,
+    *,
+    jitter: float = CRON_NOTIFY_JITTER_MAX_S,
+) -> bool:
+    """Wait for a notify, and break up the herd one `pg_notify` wakes.
+
+    Every process listening on the channel is woken by the same notify and
+    would otherwise reach for the same database in the same instant.  Both
+    loops carried these two lines separately, which is the shape the *other*
+    spread in this file -- the per-worker sweep interval -- was dead in for as
+    long as it existed.
+    """
+    woken = listener.wait(timeout)
+    if woken and jitter:
+        time.sleep(random.uniform(0, jitter))
+    return woken
+
+
+def sweep_database(
+    db_name: str,
+    process_jobs: typing.Callable[[str], object],
+    logger: logging.Logger,
+    *,
+    release: bool,
+) -> None:
+    """Run one database's due jobs, then let go of it if more are waiting.
+
+    `release` is "this pass has another database to get to": holding a swept
+    database's pool open while sweeping the next is how one tenant's idle
+    connections starve the others.  A job that raises is this database's
+    problem and not the sweep's, so the pass goes on to the next one.
+
+    Both flavours drive their own loop -- a thread sweeps the whole due set
+    between waits, a worker takes one database per pass so its own limits and
+    its master's watchdog get a turn -- but this step was the same in both,
+    down to two spellings of the release condition and two of the warning.
+    """
+    try:
+        with _debug.perf(
+            "cron.database_swept",
+            db=db_name,
+            kind=getattr(process_jobs, "__qualname__", None),
+        ):
+            process_jobs(db_name)
+    except Exception:
+        logger.warning("Uncaught error for database %s", db_name, exc_info=True)
+        _debug.logic("cron.database_failed", db=db_name)
+    if release:
+        drain_swept_database(db_name)
+
+
+def drain_swept_database(db_name: str) -> None:
+    _debug.lifecycle("cron.database_drained", db=db_name)
+    db.drain_db(db_name)
+
+
+def close_cron_cursor(cursor: BaseCursor) -> None:
+    with contextlib.suppress(Exception):
+        cursor.close()
+
+
+def open_cron_listener(channel: str, logger: logging.Logger) -> BaseCursor:
+    cursor = db.db_connect("postgres").cursor()
+    try:
+        arm_cron_listen(cursor, logger, channel=channel, disable_idle_timeout=True)
+        cursor.commit()
+    except BaseException:
+        _debug.logic("cron.listener.open_failed", channel=channel)
+        close_cron_cursor(cursor)
+        raise
+    _debug.lifecycle("cron.listener.cursor_opened", channel=channel)
+    return cursor
+
+
+class ReconnectBackoff:
+    def __init__(
+        self, logger: logging.Logger, *, ceiling: int = BACKOFF_CEILING_S
+    ) -> None:
+        if ceiling < BACKOFF_BASE_S:
+            raise ValueError(
+                f"ceiling ({ceiling}) is below the {BACKOFF_BASE_S}s base, "
+                f"which flattens the reconnect curve"
+            )
+        self._logger = logger
+        self._ceiling = ceiling
+        self.attempts = 0
+
+    def reset(self) -> None:
+        if _debug.lifecycle.enabled and self.attempts:
+            _debug.lifecycle("cron.backoff_reset", attempts=self.attempts)
+        self.attempts = 0
+
+    def wait_after_failure(
+        self,
+        what: str,
+        exc: BaseException,
+        sleep: typing.Callable[[float], object] | None = None,
+    ) -> None:
+        self.attempts += 1
+        delay = backoff.get_bound(self.attempts, base=BACKOFF_BASE_S, cap=self._ceiling)
+        _debug.logic(
+            "cron.backoff",
+            what=what,
+            attempt=self.attempts,
+            delay_s=delay,
+            error=type(exc).__name__,
+        )
+        self._logger.warning(
+            "%s failed (attempt %d): %s; retrying in %ds",
+            what,
+            self.attempts,
+            exc,
+            delay,
+        )
+        (sleep or time.sleep)(delay)
+
+
+class CronListener:
+    def __init__(
+        self,
+        channel: str,
+        logger: logging.Logger,
+        *,
+        extra_read_fd: int | None = None,
+    ) -> None:
+        self._channel = channel
+        self._logger = logger
+        self._extra_read_fd = extra_read_fd
+        self._cursor: BaseCursor | None = None
+        self._selector: selectors.BaseSelector | None = None
+        self._backoff = ReconnectBackoff(logger)
+
+    @property
+    def connected(self) -> bool:
+        return self._cursor is not None
+
+    @property
+    def connection_lost(self) -> bool:
+        return self._cursor is None or self._cursor.connection.closed
+
+    @property
+    def backing_off(self) -> bool:
+        return self._backoff.attempts > 0
+
+    def connect(self) -> None:
+        cursor = open_cron_listener(self._channel, self._logger)
+        selector = None
+        try:
+            selector = selectors.DefaultSelector()
+            if self._extra_read_fd is not None:
+                selector.register(self._extra_read_fd, selectors.EVENT_READ)
+            selector.register(cursor.connection, selectors.EVENT_READ)
+        except BaseException as exc:
+            _debug.logic(
+                "cron.listener.selector_failed",
+                channel=self._channel,
+                error=type(exc).__name__,
+            )
+            if selector is not None:
+                with contextlib.suppress(Exception):
+                    selector.close()
+            close_cron_cursor(cursor)
+            raise
+        self.close()
+        self._cursor = cursor
+        self._selector = selector
+        self._backoff.reset()
+        _debug.lifecycle(
+            "cron.listener.connected",
+            channel=self._channel,
+            extra_fd=self._extra_read_fd is not None,
+        )
+
+    def reconnect_after_failure(
+        self,
+        what: str,
+        sleep: typing.Callable[[float], object] | None = None,
+    ) -> bool:
+        self.close()
+        try:
+            self.connect()
+        except Exception as exc:
+            _debug.logic(
+                "cron.listener.reconnect_failed", what=what, error=type(exc).__name__
+            )
+            self._backoff.wait_after_failure(what, exc, sleep)
+            return False
+        return True
+
+    def wait(self, timeout: float) -> bool:
+        if self._selector is None:
+            return False
+        with _debug.perf(
+            "cron.listener.waited", channel=self._channel, timeout=timeout
+        ) as span:
+            ready = self._selector.select(timeout=timeout)
+            span.set(woken=bool(ready))
+        return bool(ready)
+
+    def drain(self) -> OrderedSet:
+        if self._cursor is None:
+            _debug.logic("cron.listener.drain_before_connect", channel=self._channel)
+            raise RuntimeError("CronListener.drain() before connect()")
+        return drain_cron_notifies(self._cursor.connection, channel=self._channel)
+
+    def close(self) -> None:
+        selector, self._selector = self._selector, None
+        if selector is not None:
+            with contextlib.suppress(Exception):
+                selector.close()
+        cursor, self._cursor = self._cursor, None
+        if cursor is not None:
+            close_cron_cursor(cursor)
+            _debug.lifecycle("cron.listener.closed", channel=self._channel)
+
+
+class CronSchedule:
+    def __init__(
+        self,
+        list_databases: typing.Callable[[], typing.Iterable[str]] | None = None,
+        *,
+        refresh_interval: float = CRON_POLL_INTERVAL_S,
+        clock: typing.Callable[[], float] | None = None,
+    ) -> None:
+        self._list_databases = list_databases
+        self.refresh_interval = refresh_interval
+        self._clock = clock or time.monotonic
+        self._known: OrderedSet[str] = OrderedSet()
+        self._listed_at = float("-inf")
+        self._relisted_for_unknown = False
+
+    @property
+    def known(self) -> OrderedSet[str]:
+        return self._known
+
+    def _is_stale(self) -> bool:
+        return self._clock() - self._listed_at >= self.refresh_interval
+
+    @property
+    def polling_delay(self) -> float:
+        """Bound listener sleep by the next sweep, including the first one."""
+        return max(0.0, self._listed_at + self.refresh_interval - self._clock())
+
+    def _list_known_databases(self, reason: str) -> OrderedSet[str]:
+        previous = self._known
+        # Late-bound so a patch on `get_cron_databases` scopes every sweep.
+        list_databases = self._list_databases or get_cron_databases
+        self._known = OrderedSet(list_databases())
+        _debug.logic(
+            "cron.schedule.databases_listed",
+            reason=reason,
+            databases=len(self._known),
+            added=len(set(self._known) - set(previous)),
+            removed=len(set(previous) - set(self._known)),
+        )
+        return self._known
+
+    def reset_known_databases(self) -> OrderedSet[str]:
+        self._listed_at = self._clock()
+        self._relisted_for_unknown = False
+        return self._list_known_databases("sweep")
+
+    def _admit_unknown_databases(self, notified: Iterable[str]) -> None:
+        # A database created since the last sweep notifies under a name the
+        # list has never seen; one re-read per interval admits it now rather
+        # than on the next sweep, while a storm of unknown names stays one scan.
+        if self._relisted_for_unknown or all(n in self._known for n in notified):
+            return
+        self._relisted_for_unknown = True
+        self._list_known_databases("unknown_notified")
+
+    def get_due_databases(self, notified: Iterable[str]) -> list[str]:
+        if not isinstance(notified, Sized):
+            notified = list(notified)
+        stale = self._is_stale()
+        if stale:
+            due = order_notified_first(notified, self.reset_known_databases())
+        else:
+            self._admit_unknown_databases(notified)
+            due = [name for name in notified if name in self._known]
+        _debug.pipeline(
+            "cron.schedule.due",
+            due=len(due),
+            notified=len(notified),
+            known=len(self._known),
+            swept_all=stale,
+        )
+        return due

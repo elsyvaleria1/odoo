@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="access_approval_request_mark_paid" model="ir.access">
+        <field
+            name="name">approval.request: Release Payments marks a request paid or not</field>
+        <field name="model_id" ref="approval.model_approval_request" />
+        <field name="group_id" ref="group_treasury_payment" />
+        <field name="kind">permission</field>
+        <field name="verbs">mark_paid</field>
+    </record>
+
+</odoo>

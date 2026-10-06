@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="utm_campaign_view_form" model="ir.ui.view">
+        <field name="name">utm.campaign.view.form.inherit.push_notifications</field>
+        <field name="model">utm.campaign</field>
+        <field name="inherit_id" ref="utm.utm_campaign_view_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//header" position="inside">
+                <button
+                    name="action_send_push_notification"
+                    type="object"
+                    string="Send Push"
+                    groups="social.group_social_user"
+                    class="oe_highlight order-3" />
+            </xpath>
+            <xpath expr="//div[hasclass('oe_button_box')]" position="inside">
+                <button
+                    name="action_redirect_to_push_notifications"
+                    type="object"
+                    icon="fa-bell"
+                    groups="social.group_social_user"
+                    invisible="social_push_notifications_count == 0"
+                    class="oe_stat_button order-11 border-end">
+                    <field
+                        name="social_push_notifications_count"
+                        string="Notifications"
+                        widget="statinfo" />
+                </button>
+            </xpath>
+            <xpath expr="//notebook" position="inside">
+                <page
+                    name="push_notifications"
+                    string="Push Notifications"
+                    groups="social.group_social_user"
+                    invisible="social_push_notifications_count == 0"
+                    class="order-3">
+                    <field
+                        name="social_push_notification_ids"
+                        widget="one2many"
+                        mode="kanban"
+                        nolabel="1"
+                        context="{'default_campaign_id': id}" />
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="utm_campaign_view_kanban" model="ir.ui.view">
+        <field name="name">utm.campaign.view.kanban.inherit.push_notifications</field>
+        <field name="model">utm.campaign</field>
+        <field name="inherit_id" ref="utm.utm_campaign_view_kanban" />
+        <field name="arch" type="xml">
+            <xpath expr="//ul[@id='o_utm_actions']">
+                <a
+                    name="action_redirect_to_push_notifications"
+                    type="object"
+                    t-attf-class="pe-2 #{record.social_push_notifications_count.raw_value === 0 ? 'text-muted' : ''}"
+                    groups="social.group_social_user">
+                    <field name="social_push_notifications_count" /> Notifications
+                </a>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

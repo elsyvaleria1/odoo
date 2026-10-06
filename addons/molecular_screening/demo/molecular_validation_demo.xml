@@ -1,0 +1,324 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+
+    <record id="campaign_pilot_demo" model="molecular.screening.campaign">
+        <field name="name">Pilot screening 2026-09-21</field>
+        <field name="date">2026-09-21</field>
+        <field name="state">selection</field>
+    </record>
+
+    <record id="target_bc1_qo_demo" model="molecular.target">
+        <field name="name">bc1_Qo</field>
+        <field name="campaign_id" ref="campaign_pilot_demo" />
+        <field name="pdb_code">1SQB</field>
+        <field name="reference_ligand">AZO</field>
+        <field name="reference_active">azoxistrobina</field>
+        <field
+            name="reference_smiles">COC=C(C(=O)OC)c1ccccc1Oc1cc(Oc2ccccc2C#N)ncn1</field>
+        <field
+            name="note">Bovine cytochrome bc1, Qo site, azoxystrobin bound (2.69 Å). Standard structural surrogate for fungal cytb.</field>
+    </record>
+
+    <record id="run_bc1_qo_demo" model="molecular.validation.run">
+        <field name="target_id" ref="target_bc1_qo_demo" />
+        <field name="ref_ligand">AZO</field>
+        <field name="engine">smina</field>
+        <field name="engine_ver">Oct 15 2019 (AutoDock Vina 1.1.2)</field>
+        <field name="scoring">vina</field>
+        <field name="exhaustiveness">32</field>
+        <field name="autobox_padding">4</field>
+        <field name="rmsd_top">2.91</field>
+        <field name="threshold">2.0</field>
+        <field name="box_center_x">70.03</field>
+        <field name="box_center_y">55.83</field>
+        <field name="box_center_z">166.59</field>
+        <field
+            name="pose_ids"
+            eval="[             Command.create({'rank': 1, 'affinity': -10.54, 'rmsd': 2.91}),             Command.create({'rank': 2, 'affinity': -10.03, 'rmsd': 2.21}),             Command.create({'rank': 3, 'affinity': -9.61, 'rmsd': 2.4}),             Command.create({'rank': 4, 'affinity': -9.32, 'rmsd': 2.18}),             Command.create({'rank': 5, 'affinity': -9.04, 'rmsd': 3.06}),             Command.create({'rank': 6, 'affinity': -8.8, 'rmsd': 2.16}),             Command.create({'rank': 7, 'affinity': -8.74, 'rmsd': 0.97}),             Command.create({'rank': 8, 'affinity': -8.71, 'rmsd': 2.48}),             Command.create({'rank': 9, 'affinity': -8.64, 'rmsd': 1.28}),         ]" />
+    </record>
+
+    <record id="target_bc1_qo_demo" model="molecular.target">
+        <field name="active_validation_id" ref="run_bc1_qo_demo" />
+    </record>
+
+    <record id="target_epsps_wt_demo" model="molecular.target">
+        <field name="name">EPSPS_wt</field>
+        <field name="campaign_id" ref="campaign_pilot_demo" />
+        <field name="pdb_code">1G6S</field>
+        <field name="reference_ligand">GPJ</field>
+        <field name="reference_active">glifosato</field>
+        <field name="reference_smiles">O=C(O)C[NH2+]CP(=O)(O)O</field>
+        <field
+            name="note">E. coli EPSP synthase with S3P + glyphosate (1.50 Å). Wild type.</field>
+    </record>
+
+    <record id="run_epsps_wt_demo" model="molecular.validation.run">
+        <field name="target_id" ref="target_epsps_wt_demo" />
+        <field name="ref_ligand">GPJ</field>
+        <field name="engine">smina</field>
+        <field name="engine_ver">Oct 15 2019 (AutoDock Vina 1.1.2)</field>
+        <field name="scoring">vina</field>
+        <field name="exhaustiveness">32</field>
+        <field name="autobox_padding">4</field>
+        <field name="rmsd_top">0.75</field>
+        <field name="threshold">2.0</field>
+        <field name="box_center_x">60.43</field>
+        <field name="box_center_y">8.76</field>
+        <field name="box_center_z">29.18</field>
+        <field
+            name="pose_ids"
+            eval="[             Command.create({'rank': 1, 'affinity': -5.83, 'rmsd': 0.75}),             Command.create({'rank': 2, 'affinity': -5.49, 'rmsd': 0.89}),             Command.create({'rank': 3, 'affinity': -5.3, 'rmsd': 0.61}),             Command.create({'rank': 4, 'affinity': -5.3, 'rmsd': 0.72}),             Command.create({'rank': 5, 'affinity': -4.83, 'rmsd': 0.81}),             Command.create({'rank': 6, 'affinity': -4.68, 'rmsd': 1.2}),             Command.create({'rank': 7, 'affinity': -4.01, 'rmsd': 0.79}),             Command.create({'rank': 8, 'affinity': -3.74, 'rmsd': 1.0}),             Command.create({'rank': 9, 'affinity': -3.49, 'rmsd': 0.94}),         ]" />
+    </record>
+
+    <record id="target_epsps_wt_demo" model="molecular.target">
+        <field name="active_validation_id" ref="run_epsps_wt_demo" />
+    </record>
+
+    <record id="target_epsps_p101s_demo" model="molecular.target">
+        <field name="name">EPSPS_P101S</field>
+        <field name="campaign_id" ref="campaign_pilot_demo" />
+        <field name="pdb_code">2QFT</field>
+        <field name="reference_ligand">GPJ</field>
+        <field name="reference_active">glifosato</field>
+        <field name="reference_smiles">O=C(O)C[NH2+]CP(=O)(O)O</field>
+        <field
+            name="note">EPSP synthase P101S mutant, glyphosate resistant (1.55 Å).</field>
+    </record>
+
+    <record id="run_epsps_p101s_demo" model="molecular.validation.run">
+        <field name="target_id" ref="target_epsps_p101s_demo" />
+        <field name="ref_ligand">GPJ</field>
+        <field name="engine">smina</field>
+        <field name="engine_ver">Oct 15 2019 (AutoDock Vina 1.1.2)</field>
+        <field name="scoring">vina</field>
+        <field name="exhaustiveness">32</field>
+        <field name="autobox_padding">4</field>
+        <field name="rmsd_top">0.76</field>
+        <field name="threshold">2.0</field>
+        <field name="box_center_x">60.29</field>
+        <field name="box_center_y">8.71</field>
+        <field name="box_center_z">29.23</field>
+        <field
+            name="pose_ids"
+            eval="[             Command.create({'rank': 1, 'affinity': -5.98, 'rmsd': 0.76}),             Command.create({'rank': 2, 'affinity': -5.68, 'rmsd': 0.55}),             Command.create({'rank': 3, 'affinity': -5.58, 'rmsd': 0.78}),             Command.create({'rank': 4, 'affinity': -5.11, 'rmsd': 0.81}),             Command.create({'rank': 5, 'affinity': -4.74, 'rmsd': 0.26}),             Command.create({'rank': 6, 'affinity': -4.05, 'rmsd': 0.98}),             Command.create({'rank': 7, 'affinity': -3.97, 'rmsd': 0.98}),             Command.create({'rank': 8, 'affinity': -3.75, 'rmsd': 0.82}),             Command.create({'rank': 9, 'affinity': -3.69, 'rmsd': 0.97}),         ]" />
+    </record>
+
+    <record id="target_epsps_p101s_demo" model="molecular.target">
+        <field name="active_validation_id" ref="run_epsps_p101s_demo" />
+    </record>
+
+    <record id="target_ahas_demo" model="molecular.target">
+        <field name="name">AHAS</field>
+        <field name="campaign_id" ref="campaign_pilot_demo" />
+        <field name="pdb_code">1YHZ</field>
+        <field name="reference_ligand">1CS</field>
+        <field name="reference_active">clorsulfuron</field>
+        <field name="reference_smiles">COc1nc(C)nc(NC(=O)NS(=O)(=O)c2ccccc2Cl)n1</field>
+        <field
+            name="note">Arabidopsis acetohydroxyacid synthase with chlorsulfuron (2.70 Å).</field>
+    </record>
+
+    <record id="run_ahas_demo" model="molecular.validation.run">
+        <field name="target_id" ref="target_ahas_demo" />
+        <field name="ref_ligand">1CS</field>
+        <field name="engine">smina</field>
+        <field name="engine_ver">Oct 15 2019 (AutoDock Vina 1.1.2)</field>
+        <field name="scoring">vina</field>
+        <field name="exhaustiveness">32</field>
+        <field name="autobox_padding">4</field>
+        <field name="rmsd_top">1.84</field>
+        <field name="threshold">2.0</field>
+        <field name="box_center_x">54.51</field>
+        <field name="box_center_y">54.82</field>
+        <field name="box_center_z">46.79</field>
+        <field
+            name="pose_ids"
+            eval="[             Command.create({'rank': 1, 'affinity': -6.21, 'rmsd': 1.84}),             Command.create({'rank': 2, 'affinity': -6.09, 'rmsd': 2.15}),             Command.create({'rank': 3, 'affinity': -6.06, 'rmsd': 1.88}),             Command.create({'rank': 4, 'affinity': -5.94, 'rmsd': 2.54}),             Command.create({'rank': 5, 'affinity': -5.87, 'rmsd': 2.35}),             Command.create({'rank': 6, 'affinity': -5.85, 'rmsd': 2.38}),             Command.create({'rank': 7, 'affinity': -5.84, 'rmsd': 2.23}),             Command.create({'rank': 8, 'affinity': -5.82, 'rmsd': 1.62}),             Command.create({'rank': 9, 'affinity': -5.75, 'rmsd': 1.98}),         ]" />
+    </record>
+
+    <record id="target_ahas_demo" model="molecular.target">
+        <field name="active_validation_id" ref="run_ahas_demo" />
+    </record>
+
+    <record id="target_nachr_achbp_demo" model="molecular.target">
+        <field name="name">nAChR_AChBP</field>
+        <field name="campaign_id" ref="campaign_pilot_demo" />
+        <field name="pdb_code">3C79</field>
+        <field name="reference_ligand">IM4</field>
+        <field name="reference_active">imidacloprid</field>
+        <field name="reference_smiles">O=[N+]([O-])N=C1NCCN1Cc1ccc(Cl)nc1</field>
+        <field
+            name="note">Aplysia AChBP with imidacloprid (2.48 Å). Surrogate for insect nAChR.</field>
+    </record>
+
+    <record id="run_nachr_achbp_demo" model="molecular.validation.run">
+        <field name="target_id" ref="target_nachr_achbp_demo" />
+        <field name="ref_ligand">IM4</field>
+        <field name="engine">smina</field>
+        <field name="engine_ver">Oct 15 2019 (AutoDock Vina 1.1.2)</field>
+        <field name="scoring">vina</field>
+        <field name="exhaustiveness">32</field>
+        <field name="autobox_padding">4</field>
+        <field name="rmsd_top">1.41</field>
+        <field name="threshold">2.0</field>
+        <field name="box_center_x">54.49</field>
+        <field name="box_center_y">-20.79</field>
+        <field name="box_center_z">-4.3</field>
+        <field
+            name="pose_ids"
+            eval="[             Command.create({'rank': 1, 'affinity': -8.03, 'rmsd': 1.41}),             Command.create({'rank': 2, 'affinity': -7.7, 'rmsd': 1.26}),             Command.create({'rank': 3, 'affinity': -7.35, 'rmsd': 0.5}),             Command.create({'rank': 4, 'affinity': -6.67, 'rmsd': 1.84}),             Command.create({'rank': 5, 'affinity': -6.4, 'rmsd': 1.21}),             Command.create({'rank': 6, 'affinity': -6.32, 'rmsd': 1.39}),             Command.create({'rank': 7, 'affinity': -6.27, 'rmsd': 0.59}),             Command.create({'rank': 8, 'affinity': -6.12, 'rmsd': 1.31}),             Command.create({'rank': 9, 'affinity': -6.0, 'rmsd': 1.44}),         ]" />
+    </record>
+
+    <record id="target_nachr_achbp_demo" model="molecular.target">
+        <field name="active_validation_id" ref="run_nachr_achbp_demo" />
+    </record>
+
+    <record id="run_sweep_bc1_qo_pad2_e32_vina_demo" model="molecular.validation.run">
+        <field name="target_id" ref="target_bc1_qo_demo" />
+        <field name="ref_ligand">AZO</field>
+        <field name="engine">smina</field>
+        <field name="engine_ver">Oct 15 2019 (AutoDock Vina 1.1.2)</field>
+        <field name="scoring">vina</field>
+        <field name="exhaustiveness">32</field>
+        <field name="autobox_padding">2</field>
+        <field name="rmsd_top">2.92</field>
+        <field name="threshold">2.0</field>
+        <field name="box_center_x">70.03</field>
+        <field name="box_center_y">55.83</field>
+        <field name="box_center_z">166.59</field>
+        <field
+            name="notes">Rescue sweep for bc1 on the original structure 1SQB. Best pose RMSD 0.96 Å at rank 9 of 9.</field>
+    </record>
+
+    <record
+        id="run_sweep_bc1_qo_pad2_e32_vinardo_demo"
+        model="molecular.validation.run">
+        <field name="target_id" ref="target_bc1_qo_demo" />
+        <field name="ref_ligand">AZO</field>
+        <field name="engine">smina</field>
+        <field name="engine_ver">Oct 15 2019 (AutoDock Vina 1.1.2)</field>
+        <field name="scoring">vinardo</field>
+        <field name="exhaustiveness">32</field>
+        <field name="autobox_padding">2</field>
+        <field name="rmsd_top">2.93</field>
+        <field name="threshold">2.0</field>
+        <field name="box_center_x">70.03</field>
+        <field name="box_center_y">55.83</field>
+        <field name="box_center_z">166.59</field>
+        <field
+            name="notes">Rescue sweep for bc1 on the original structure 1SQB. Best pose RMSD 2.18 Å at rank 3 of 9.</field>
+    </record>
+
+    <record id="run_sweep_bc1_qo_pad4_e64_vina_demo" model="molecular.validation.run">
+        <field name="target_id" ref="target_bc1_qo_demo" />
+        <field name="ref_ligand">AZO</field>
+        <field name="engine">smina</field>
+        <field name="engine_ver">Oct 15 2019 (AutoDock Vina 1.1.2)</field>
+        <field name="scoring">vina</field>
+        <field name="exhaustiveness">64</field>
+        <field name="autobox_padding">4</field>
+        <field name="rmsd_top">2.91</field>
+        <field name="threshold">2.0</field>
+        <field name="box_center_x">70.03</field>
+        <field name="box_center_y">55.83</field>
+        <field name="box_center_z">166.59</field>
+        <field
+            name="notes">Rescue sweep for bc1 on the original structure 1SQB. Best pose RMSD 0.97 Å at rank 8 of 9.</field>
+    </record>
+
+    <record
+        id="run_sweep_bc1_qo_pad4_e64_vinardo_demo"
+        model="molecular.validation.run">
+        <field name="target_id" ref="target_bc1_qo_demo" />
+        <field name="ref_ligand">AZO</field>
+        <field name="engine">smina</field>
+        <field name="engine_ver">Oct 15 2019 (AutoDock Vina 1.1.2)</field>
+        <field name="scoring">vinardo</field>
+        <field name="exhaustiveness">64</field>
+        <field name="autobox_padding">4</field>
+        <field name="rmsd_top">2.92</field>
+        <field name="threshold">2.0</field>
+        <field name="box_center_x">70.03</field>
+        <field name="box_center_y">55.83</field>
+        <field name="box_center_z">166.59</field>
+        <field
+            name="notes">Rescue sweep for bc1 on the original structure 1SQB. Best pose RMSD 2.18 Å at rank 4 of 9.</field>
+    </record>
+
+    <record
+        id="run_sweep_bc1_qo_alt_pad2_e32_vina_demo"
+        model="molecular.validation.run">
+        <field name="target_id" ref="target_bc1_qo_demo" />
+        <field name="ref_ligand">AZO</field>
+        <field name="engine">smina</field>
+        <field name="engine_ver">Oct 15 2019 (AutoDock Vina 1.1.2)</field>
+        <field name="scoring">vina</field>
+        <field name="exhaustiveness">32</field>
+        <field name="autobox_padding">2</field>
+        <field name="rmsd_top">2.2</field>
+        <field name="threshold">2.0</field>
+        <field name="box_center_x">70.03</field>
+        <field name="box_center_y">55.83</field>
+        <field name="box_center_z">166.59</field>
+        <field
+            name="notes">Rescue sweep for bc1: alternative structure 3L71 (chicken bc1 with azoxystrobin, 2.84 Å). Best pose RMSD 1.37 Å at rank 2 of 9.</field>
+    </record>
+
+    <record
+        id="run_sweep_bc1_qo_alt_pad2_e32_vinardo_demo"
+        model="molecular.validation.run">
+        <field name="target_id" ref="target_bc1_qo_demo" />
+        <field name="ref_ligand">AZO</field>
+        <field name="engine">smina</field>
+        <field name="engine_ver">Oct 15 2019 (AutoDock Vina 1.1.2)</field>
+        <field name="scoring">vinardo</field>
+        <field name="exhaustiveness">32</field>
+        <field name="autobox_padding">2</field>
+        <field name="rmsd_top">2.21</field>
+        <field name="threshold">2.0</field>
+        <field name="box_center_x">70.03</field>
+        <field name="box_center_y">55.83</field>
+        <field name="box_center_z">166.59</field>
+        <field
+            name="notes">Rescue sweep for bc1: alternative structure 3L71 (chicken bc1 with azoxystrobin, 2.84 Å). Best pose RMSD 1.41 Å at rank 3 of 9.</field>
+    </record>
+
+    <record
+        id="run_sweep_bc1_qo_alt_pad4_e64_vina_demo"
+        model="molecular.validation.run">
+        <field name="target_id" ref="target_bc1_qo_demo" />
+        <field name="ref_ligand">AZO</field>
+        <field name="engine">smina</field>
+        <field name="engine_ver">Oct 15 2019 (AutoDock Vina 1.1.2)</field>
+        <field name="scoring">vina</field>
+        <field name="exhaustiveness">64</field>
+        <field name="autobox_padding">4</field>
+        <field name="rmsd_top">2.2</field>
+        <field name="threshold">2.0</field>
+        <field name="box_center_x">70.03</field>
+        <field name="box_center_y">55.83</field>
+        <field name="box_center_z">166.59</field>
+        <field
+            name="notes">Rescue sweep for bc1: alternative structure 3L71 (chicken bc1 with azoxystrobin, 2.84 Å). Best pose RMSD 0.78 Å at rank 3 of 9.</field>
+    </record>
+
+    <record
+        id="run_sweep_bc1_qo_alt_pad4_e64_vinardo_demo"
+        model="molecular.validation.run">
+        <field name="target_id" ref="target_bc1_qo_demo" />
+        <field name="ref_ligand">AZO</field>
+        <field name="engine">smina</field>
+        <field name="engine_ver">Oct 15 2019 (AutoDock Vina 1.1.2)</field>
+        <field name="scoring">vinardo</field>
+        <field name="exhaustiveness">64</field>
+        <field name="autobox_padding">4</field>
+        <field name="rmsd_top">2.22</field>
+        <field name="threshold">2.0</field>
+        <field name="box_center_x">70.03</field>
+        <field name="box_center_y">55.83</field>
+        <field name="box_center_z">166.59</field>
+        <field
+            name="notes">Rescue sweep for bc1: alternative structure 3L71 (chicken bc1 with azoxystrobin, 2.84 Å). Best pose RMSD 0.75 Å at rank 4 of 9.</field>
+    </record>
+
+</odoo>

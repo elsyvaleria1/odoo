@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="phone_call_view_form_lead_button" model="ir.ui.view">
+        <field name="name">phone.call.form.lead.button</field>
+        <field name="model">phone.call</field>
+        <field name="inherit_id" ref="phone_call.phone_call_view_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//div[hasclass('oe_button_box')]" position="inside">
+                <button
+                    name="voip_action_view_opportunity"
+                    type="object"
+                    icon="fa-star"
+                    context="{'default_partner_id': partner_id, 'default_type': 'opportunity'}"
+                    groups="sale.group_sale_salesman"
+                    class="oe_stat_button o_res_partner_tip_opp">
+                    <field name="opportunity_count" string="Leads" widget="statinfo" />
+                </button>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

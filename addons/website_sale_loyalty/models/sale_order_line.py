@@ -1,0 +1,36 @@
+from collections import defaultdict
+
+from odoo import models
+
+
+class SaleOrderLine(models.Model):
+    _inherit = "sale.order.line"
+
+    def _get_line_header(self):
+        if self.is_reward_line:
+            return self.name
+        return super()._get_line_header()
+
+    def _show_in_cart(self):
+        return self.reward_id.reward_type != "discount" and super()._show_in_cart()
+
+    def _is_reorder_allowed(self) -> bool:
+        return bool(not self.reward_id and super()._is_reorder_allowed())
+
+    def unlink(self):
+        if self.env.context.get("website_sale_loyalty_delete", False):
+            disabled_rewards_per_order = defaultdict(lambda: self.env["loyalty.reward"])
+            for line in self:
+                if line.reward_id:
+                    disabled_rewards_per_order[line.order_id] |= line.reward_id
+            for order, rewards in disabled_rewards_per_order.items():
+                order.disabled_auto_rewards += rewards
+        return super().unlink()
+
+    def _is_strikethrough_price_shown(self) -> bool:
+        return super()._is_strikethrough_price_shown() and not self.is_reward_line
+
+    def _is_sellable(self) -> bool:
+        return super()._is_sellable() and (
+            not self.is_reward_line or self.reward_id.reward_type == "product"
+        )

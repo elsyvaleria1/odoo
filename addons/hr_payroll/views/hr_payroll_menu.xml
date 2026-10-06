@@ -1,0 +1,228 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="hr_work_entry_enterprise.menu_hr_payroll_root" model="ir.ui.menu">
+        <field
+            name="group_ids"
+            eval="[Command.link(ref('hr_payroll.group_hr_payroll_user'))]" />
+    </record>
+
+    <!-- [XBO] Remove me in master -->
+    <record id="action_view_employees" model="ir.actions.act_url">
+        <field name="name">Employees</field>
+        <field name="url">/odoo/payroll/employees</field>
+        <field name="target">self</field>
+    </record>
+
+    <menuitem
+        id="menu_hr_payroll_dashboard_root"
+        name="Dashboard"
+        parent="hr_work_entry_enterprise.menu_hr_payroll_root"
+        action="hr_payroll_dashboard_open"
+        sequence="40"
+        groups="hr_payroll.group_hr_payroll_user" />
+
+    <menuitem
+        id="menu_hr_payroll_employees"
+        name="Employees"
+        parent="hr_work_entry_enterprise.menu_hr_payroll_root"
+        sequence="50"
+        groups="hr_payroll.group_hr_payroll_user" />
+
+    <!--
+        Officers hold 1,1,1,1 on hr.work.entry, so open the section that already
+        carries the action instead of declaring a second, action-less menu of the
+        same name, which the web client never renders. `link`, not `set`: HR
+        managers keep it too. The action stays on the child menu, because
+        `hr_payroll_holidays` hangs "Time Offs" off this root as well and the
+        navbar turns any section with children into a dropdown whose own action
+        is unreachable.
+    -->
+    <record
+        id="hr_work_entry_enterprise.menu_hr_payroll_work_entries_root"
+        model="ir.ui.menu">
+        <field
+            name="group_ids"
+            eval="[Command.link(ref('hr_payroll.group_hr_payroll_user'))]" />
+    </record>
+
+    <menuitem
+        id="menu_hr_payroll_payslips"
+        name="Payslips"
+        parent="hr_work_entry_enterprise.menu_hr_payroll_root"
+        sequence="70"
+        groups="hr_payroll.group_hr_payroll_user" />
+
+    <menuitem
+        id="menu_hr_payroll_report"
+        name="Reporting"
+        parent="hr_work_entry_enterprise.menu_hr_payroll_root"
+        sequence="80"
+        groups="hr_payroll.group_hr_payroll_user" />
+
+    <!-- **** Employees **** -->
+    <menuitem
+        id="hr_menu_employees"
+        name="Employees"
+        parent="menu_hr_payroll_employees"
+        action="hr.open_view_employee_list_my"
+        sequence="10"
+        groups="hr_payroll.group_hr_payroll_user" />
+
+    <menuitem
+        id="hr_menu_versions"
+        name="Employee Records"
+        parent="menu_hr_payroll_employees"
+        action="hr.action_hr_version"
+        sequence="20"
+        groups="base.group_no_one" />
+
+    <menuitem
+        id="hr_menu_salary_attachments"
+        name="Salary Adjustments"
+        parent="menu_hr_payroll_employees"
+        action="hr_payroll.hr_salary_attachment_action"
+        sequence="30"
+        groups="hr_payroll.group_hr_payroll_user" />
+
+    <!-- **** Payslips **** -->
+    <menuitem
+        id="menu_hr_payroll_employee_payslips"
+        name="Payslips"
+        parent="menu_hr_payroll_payslips"
+        action="action_view_hr_payslip_month_form"
+        sequence="60"
+        groups="hr_payroll.group_hr_payroll_user" />
+
+    <menuitem
+        id="menu_hr_payslip_run"
+        name="Pay Runs"
+        parent="menu_hr_payroll_payslips"
+        action="action_hr_payslip_run"
+        sequence="80" />
+
+    <!-- **** Reporting **** -->
+    <menuitem
+        id="menu_hr_work_entry_report"
+        name="Work Entries Analysis"
+        parent="menu_hr_payroll_report"
+        action="hr_work_entry_report_action"
+        sequence="2" />
+
+    <menuitem
+        id="menu_hr_payroll_headcount_action"
+        name="Headcount"
+        parent="menu_hr_payroll_report"
+        action="hr_payroll_headcount_action"
+        sequence="11" />
+
+    <menuitem
+        id="menu_hr_payslip_line_action_report"
+        name="Payslip Lines"
+        parent="menu_hr_payroll_report"
+        action="hr_payslip_line_action_report"
+        sequence="12" />
+
+    <menuitem
+        id="menu_hr_payslip_work_days_action_report"
+        name="Payslip Work Days Lines"
+        parent="menu_hr_payroll_report"
+        action="hr_payslip_work_days_action_report"
+        sequence="13" />
+
+    <menuitem
+        id="menu_hr_payslip_input_action_report"
+        name="Payslip Other Inputs"
+        parent="menu_hr_payroll_report"
+        action="hr_payslip_input_action_report"
+        sequence="14" />
+
+    <!-- **** Configuration **** -->
+    <record
+        id="hr_work_entry_enterprise.menu_hr_payroll_configuration"
+        model="ir.ui.menu">
+        <field
+            name="group_ids"
+            eval="[Command.set([ref('hr_payroll.group_hr_payroll_manager')])]" />
+    </record>
+
+    <menuitem
+        id="menu_hr_payroll_global_settings"
+        name="Settings"
+        parent="hr_work_entry_enterprise.menu_hr_payroll_configuration"
+        action="action_hr_payroll_configuration"
+        sequence="0"
+        groups="base.group_system" />
+
+    <!-- Salary Configuration -->
+    <menuitem
+        id="menu_hr_salary_configuration"
+        name="Salary"
+        parent="hr_work_entry_enterprise.menu_hr_payroll_configuration"
+        sequence="80" />
+
+    <menuitem
+        id="menu_action_hr_salary_rule_form"
+        name="Rules"
+        parent="menu_hr_salary_configuration"
+        action="action_salary_rule_form"
+        sequence="30" />
+
+    <menuitem
+        id="menu_hr_salary_rule_section"
+        name="Salary Input Sections"
+        parent="menu_hr_salary_configuration"
+        action="action_hr_salary_rule_section"
+        sequence="32"
+        groups="base.group_no_one" />
+
+    <menuitem
+        id="menu_action_hr_salary_rule_parameter"
+        name="Rule Parameters"
+        parent="menu_hr_salary_configuration"
+        action="hr_rule_parameter_action"
+        sequence="35" />
+
+    <menuitem
+        id="menu_hr_salary_rule_category"
+        name="Rule Categories"
+        parent="menu_hr_salary_configuration"
+        action="action_hr_salary_rule_category"
+        sequence="37" />
+
+    <menuitem
+        id="menu_hr_payroll_structure_view"
+        name="Structures"
+        parent="menu_hr_salary_configuration"
+        action="action_view_hr_payroll_structure_list_form"
+        sequence="20" />
+
+    <menuitem
+        id="menu_hr_payroll_structure_type"
+        name="Structure Types"
+        parent="menu_hr_salary_configuration"
+        action="action_hr_payroll_structure_type"
+        sequence="10" />
+
+    <menuitem
+        id="menu_hr_payslip_entry_type_view"
+        name="Salary Input Types"
+        parent="menu_hr_salary_configuration"
+        action="action_view_hr_payslip_input_type"
+        sequence="40" />
+
+    <!-- Dashboard Configuration -->
+    <menuitem
+        id="menu_hr_payroll_dashboard_configuration"
+        name="Dashboard"
+        parent="hr_work_entry_enterprise.menu_hr_payroll_configuration"
+        sequence="110" />
+
+    <menuitem
+        id="menu_hr_payroll_dashboard_warning"
+        name="Warnings"
+        parent="menu_hr_payroll_dashboard_configuration"
+        action="action_hr_payroll_dashboard_warning"
+        sequence="10" />
+
+</odoo>

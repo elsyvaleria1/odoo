@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_stock_picking_form_inherit_credit" model="ir.ui.view">
+        <field name="name">stock.picking.form.credit</field>
+        <field name="model">stock.picking</field>
+        <field name="inherit_id" ref="stock.view_stock_picking_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//sheet" position="before">
+                <field name="credit_verdict_outcome" invisible="1" />
+                <div
+                    class="alert alert-danger"
+                    role="alert"
+                    invisible="credit_verdict_outcome != 'block'"
+                    groups="account_credit.group_credit_readonly">
+                    <strong>Credit blocked.</strong>
+                    <field name="credit_verdict_message" nolabel="1" />
+                </div>
+                <div
+                    class="alert alert-warning"
+                    role="alert"
+                    invisible="credit_verdict_outcome not in ('approve', 'warn')"
+                    groups="account_credit.group_credit_readonly">
+                    <strong>Credit warning.</strong>
+                    <field name="credit_verdict_message" nolabel="1" />
+                </div>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

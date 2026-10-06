@@ -1,0 +1,100 @@
+import { describe, expect, test } from "@odoo/hoot";
+import { RPCError } from "@web/core/network";
+
+import { definePosModels } from "../data/generate_model_definitions.js";
+import { getFilledOrder, setupPosEnv } from "../utils.js";
+
+definePosModels();
+
+describe("data_service", () => {
+    test("localDeleteCascade", async () => {
+        const store = await setupPosEnv();
+        const data = store.data;
+        const order = await getFilledOrder(store);
+
+        expect(store.models["pos.order"].length).toBe(1);
+        expect(store.models["pos.order.line"].length).toBe(2);
+        data.localDeleteCascade(order);
+        expect(store.models["pos.order"].length).toBe(0);
+        expect(store.models["pos.order.line"].length).toBe(0);
+    });
+
+    test("missingRecursive keeps its input when offline", async () => {
+        const store = await setupPosEnv();
+        const data = store.data;
+        data.network.offline = true;
+
+        const rows = {
+            "pos.order": [{ id: "aaa-uuid", uuid: "aaa-uuid", lines: [] }],
+            "pos.order.line": [{ id: "bbb-uuid", uuid: "bbb-uuid" }],
+        };
+        const result = await data.missingRecursive(rows);
+        expect(result["pos.order"]).toHaveLength(1);
+        expect(result["pos.order.line"]).toHaveLength(1);
+        expect(result["pos.order"][0].uuid).toBe("aaa-uuid");
+    });
+
+    test("loadConnectedData tolerates an undefined model payload", async () => {
+        const store = await setupPosEnv();
+        const results = store.models.loadConnectedData(
+            { "pos.order.line": undefined },
+            [],
+        );
+        expect(results["pos.order.line"] ?? []).toHaveLength(0);
+    });
+
+    test("a client-side fault keeps the queued entry, bounded by MAX_SYNC_ATTEMPTS", async () => {
+        const store = await setupPosEnv();
+        const data = store.data;
+        data.network.unsyncData = [];
+        data.network.deadSyncData = [];
+
+        let calls = 0;
+        data.execute = async () => {
+            calls++;
+            throw new TypeError("client-side fault");
+        };
+        data.network.unsyncData.push({
+            args: [{ type: "write", model: "pos.order", ids: [1], values: {} }],
+            date: "2025-01-01 00:00:00",
+            try: 1,
+            uuid: "fault-1",
+        });
+
+        for (let i = 0; i < 10; i++) {
+            await data.syncData().catch(() => {});
+            if (!data.network.unsyncData.length) {
+                break;
+            }
+        }
+
+        expect(data.network.unsyncData).toHaveLength(0);
+        expect(data.network.deadSyncData).toHaveLength(1);
+        expect(calls).toBe(5);
+    });
+
+    test("a server rejection dead-letters immediately", async () => {
+        const store = await setupPosEnv();
+        const data = store.data;
+        data.network.unsyncData = [];
+        data.network.deadSyncData = [];
+
+        let calls = 0;
+        data.execute = async () => {
+            calls++;
+            throw new RPCError("server said no");
+        };
+        data.network.unsyncData.push({
+            args: [{ type: "write", model: "pos.order", ids: [1], values: {} }],
+            date: "2025-01-01 00:00:00",
+            try: 1,
+            uuid: "rejected-1",
+        });
+
+        await data.syncData().catch(() => {});
+
+        expect(calls).toBe(1);
+        expect(data.network.unsyncData).toHaveLength(0);
+        expect(data.network.deadSyncData).toHaveLength(1);
+    });
+});

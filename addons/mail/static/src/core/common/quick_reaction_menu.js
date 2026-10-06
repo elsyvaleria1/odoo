@@ -1,0 +1,199 @@
+// @ts-check
+/** @odoo-module native */
+import { useMailContext } from "@mail/utils/common/mail_context";
+import { Component, proxy, t, useProps } from "@odoo/owl";
+import { Dropdown, useDropdownState } from "@web/components/dropdown";
+import { loadEmoji, useEmojiPicker } from "@web/components/emoji_picker";
+import { makeLogger } from "@web/core/debug/debug_logger";
+import { elementRef } from "@web/core/utils/element_ref";
+import { useMountedListener, useService } from "@web/core/utils/hooks";
+
+const log = makeLogger("mail.message.reaction");
+/**
+ * @typedef {Object} Props
+ * @property {Object} action
+ * @property {Object} [classNames]
+ * @property {import("models").Message} message
+ * @property {boolean} [messageActive]
+ * @extends {Component<Props, import("@web/env").OdooEnv>}
+ */
+export class QuickReactionMenu extends Component {
+    static template = "mail.QuickReactionMenu";
+    static props = {
+        action: t.object(),
+        classNames: t.object().optional(),
+        message: t.object(),
+        messageActive: t.boolean().optional(),
+    };
+    static components = { Dropdown };
+    static DEFAULT_EMOJIS = ["👍", "❤️", "🤣", "😯", "😅", "🙏"];
+    props = useProps(this.constructor.props);
+
+    setup() {
+        this.mailContext = useMailContext();
+        this.toggle = elementRef();
+        this.store = useService("mail.store");
+        this.ui = useService("ui");
+        this.picker = useEmojiPicker(
+            null,
+            {
+                onSelect: this.toggleReaction.bind(this),
+                class: "overflow-hidden rounded-2",
+            },
+            {
+                position: "bottom-middle",
+                class: "o-mail-QuickReactionMenu-pickerPopover",
+            },
+        );
+        this.dropdown = proxy(
+            useDropdownState({
+                onClose: () => {
+                    const currentThread = this.mailContext.getCurrentThread?.();
+                    if (
+                        !currentThread ||
+                        currentThread.notEq(this.props.message.thread)
+                    ) {
+                        return;
+                    }
+                    if (currentThread.messageInEdition) {
+                        currentThread.messageInEdition.composer.autofocus++;
+                    } else {
+                        currentThread.composer.autofocus++;
+                    }
+                },
+            }),
+        );
+        this.frequentEmojiService = useService("web.frequent.emoji");
+        useMountedListener(
+            window,
+            "keydown",
+            /** @param {KeyboardEvent} ev */ async (ev) => {
+                if (
+                    !this.dropdown.isOpen ||
+                    this.picker.isOpen ||
+                    !this.toggle.el?.contains(/** @type {Node} */ (ev.target)) ||
+                    ["Shift", "Control", "Meta", "Alt"].includes(ev.key)
+                ) {
+                    return;
+                }
+                this.togglePicker(ev.key);
+            },
+        );
+    }
+
+    /** @param {string} [initialSearchTerm] */
+    togglePicker(initialSearchTerm) {
+        log.logic("togglePicker", () => ({
+            messageId: this.props.message.id,
+            wasOpen: this.picker.isOpen,
+            initialSearchTerm,
+        }));
+        if (this.picker.isOpen) {
+            this.picker.close();
+        } else {
+            this.picker.open(this.toggle, { initialSearchTerm });
+        }
+    }
+
+    /**
+     * @param {string} emoji
+     * @returns {string}
+     */
+    getEmojiShortcode(emoji) {
+        return (
+            this.store.emojiLoader.loaded?.emojiValueToShortcodes?.[emoji]?.[0] ?? "?"
+        );
+    }
+
+    onClick() {
+        if (!this.store.emojiLoader.loaded) {
+            log.logic("onClick triggers emoji load");
+            loadEmoji();
+        }
+        if (this.ui.isSmall) {
+            this.props.action.onSelected();
+        } else {
+            this.picker.close();
+            if (this.dropdown.isOpen) {
+                this.dropdown.close();
+            } else {
+                this.dropdown.open();
+            }
+        }
+    }
+
+    /** @param {string} emoji */
+    toggleReaction(emoji) {
+        const reaction = this.props.message.reactions.find(
+            (r) =>
+                r.content === emoji && this.props.message.effectiveSelf.in(r.personas),
+        );
+        log.logic("toggleReaction", () => ({
+            messageId: this.props.message.id,
+            emoji,
+            remove: Boolean(reaction),
+        }));
+        if (reaction) {
+            reaction.remove();
+        } else {
+            this.props.message.react(emoji);
+            this.frequentEmojiService.incrementEmojiUsage(emoji);
+        }
+        this.dropdown.close();
+        this.picker.close();
+    }
+
+    get attClass() {
+        const invisible =
+            typeof this.props.messageActive === "boolean" &&
+            !this.props.messageActive &&
+            !this.dropdown.isOpen &&
+            !this.picker.isOpen;
+        return {
+            ...this.props.classNames,
+            "o-open": this.dropdown.isOpen,
+            invisible,
+            visible: !invisible,
+        };
+    }
+
+    /**
+     * @param {string} emoji
+     * @returns {boolean}
+     */
+    reactedBySelf(emoji) {
+        return this.props.message.reactions.some(
+            (r) =>
+                r.content === emoji && this.props.message.effectiveSelf.in(r.personas),
+        );
+    }
+
+    get mostFrequentEmojis() {
+        const numberOfEmojis = 6;
+        const mostFrequent = this.frequentEmojiService.getMostFrequent(numberOfEmojis);
+        return mostFrequent.concat(
+            QuickReactionMenu.DEFAULT_EMOJIS.filter(
+                (emoji) => !mostFrequent.includes(emoji),
+            ).slice(0, Math.max(0, numberOfEmojis - mostFrequent.length)),
+        );
+    }
+
+    get navigationOptions() {
+        return {
+            /** @param {import("@web/core/navigation/navigation").Navigator} navigator */
+            onUpdated: (navigator) => {
+                if (!navigator.activeItem) {
+                    navigator.items[0]?.setActive();
+                }
+            },
+            hotkeys: {
+                /** @param {import("@web/core/navigation/navigation").Navigator} navigator */
+                arrowright: (navigator) => navigator.next(),
+                /** @param {import("@web/core/navigation/navigation").Navigator} navigator */
+                arrowleft: (navigator) => navigator.previous(),
+                arrowdown: null,
+                arrowup: null,
+            },
+        };
+    }
+}

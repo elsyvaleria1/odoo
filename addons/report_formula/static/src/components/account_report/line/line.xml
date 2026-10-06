@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<templates>
+    <t t-name="report_formula.AccountReportLine">
+        <t t-call="{{ this.reportContext.template('AccountReportLine') }}"/>
+    </t>
+
+    <t t-name="report_formula.AccountReportLineCustomizable">
+        <!-- Adds an empty row above line with level 0 to add some spacing (it is the easiest and cleanest way) -->
+        <t t-if="this.props.line.level === 0">
+            <tr class="empty">
+                <td/>
+                <t t-foreach="this.props.line.columns" t-as="cell" t-key="cell_index">
+                    <td/>
+                </t>
+                <t t-if="this.controller.needsColumnPercentComparison">
+                    <td/>
+                </t>
+                <t t-if="this.controller.hasDebugColumn">
+                    <td/>
+                </t>
+            </tr>
+        </t>
+
+        <tr
+            data-id="line"
+            t-att-class="this.lineClasses"
+        >
+            <!-- Name column -->
+            <t t-component="this.reportContext.component('AccountReportLineName')" t-props="{ lineIndex: this.props.lineIndex, line: this.props.line }"/>
+
+            <!-- Value columns -->
+            <t data-id="line_column" t-foreach="this.props.line.columns" t-as="cell" t-key="cell_index">
+                <!-- Condition for budget column only, should be changed in the future when we'll remove popover for editable cell -->
+                <t t-if="cell.column_group_key?.includes('compute_budget')">
+                    <AccountReportLineCellEditable t-props="{ line: this.props.line, cell: cell, cellIndex: cell_index }"/>
+                </t>
+                <t t-else="">
+                    <t t-component="this.reportContext.component('AccountReportLineCell')" t-props="{ line: this.props.line, cell: cell, cellIndex: cell_index }"/>
+                </t>
+            </t>
+
+            <!-- Growth comparison column -->
+            <t t-if="this.controller.needsColumnPercentComparison || this.controller.needsAnalyticCoverageColumn">
+                <t t-if="this.controller.lineHasGrowthComparisonData(this.props.lineIndex) and !(this.controller.filters.show_totals and this.props.line.unfolded)">
+                    <td t-att-class="this.growthComparisonClasses">
+                        <t t-out="this.props.line.column_percent_comparison_data.name"/>
+                    </td>
+                </t>
+                <t t-else="">
+                    <td/>
+                </t>
+            </t>
+
+            <!-- Debug column -->
+            <t t-if="this.controller.hasDebugColumn">
+                <td class="text-center">
+                    <t t-if="this.props.line.code">
+                        <t t-out="this.props.line.code"/>
+                    </t>
+
+                    <t t-if="this.controller.lineHasDebugData(this.props.lineIndex)">
+                        <button class="btn btn_debug" t-on-click="(ev) => this.showDebugPopover(ev)">
+                            <i class="fa-solid fa-info-circle"/>
+                        </button>
+                    </t>
+                </td>
+            </t>
+
+            <t t-if="this.controller.options.show_horizontal_group_total">
+                <td t-att-class="this.HorizontalGroupTotalClasses">
+                    <t t-out="this.props.line.horizontal_group_total_data?.name"/>
+                </td>
+            </t>
+        </tr>
+    </t>
+</templates>

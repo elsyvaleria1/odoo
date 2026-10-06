@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <menuitem
+        id="menu_telegram_payment_report_log"
+        name="Pay Approval Bot Reports"
+        parent="account_telegram.menu_telegram_bot_reports"
+        action="action_telegram_payment_report_log"
+        sequence="20"
+        groups="base.group_system" />
+
+</odoo>

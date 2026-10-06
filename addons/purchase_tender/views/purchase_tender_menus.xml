@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <menuitem
+        id="menu_purchase_tender"
+        name="Calls for Tenders"
+        parent="purchase.menu_procurement_management"
+        action="purchase_tender_action"
+        sequence="12" />
+
+</odoo>

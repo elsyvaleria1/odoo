@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<templates xml:space="preserve">
+
+<t t-name="mail.MessagingMenuItem">
+    <t t-set="itemProps" t-value="this.notificationItemProps"/>
+    <div t-if="itemProps" class="o-mail-MessagingMenuItem position-relative" t-ref="this.rootRef" t-on-contextmenu="this.onContextMenu">
+        <NotificationItem t-props="itemProps">
+            <t t-set-slot="name">
+                <t name="itemName"><t t-out="this.itemName"/></t>
+                <t name="itemNameAfter"/>
+            </t>
+            <t t-set-slot="body">
+                <span class="o-mail-MessagingMenuItem-body" t-out="this.itemPreviewText"/>
+            </t>
+            <t t-set-slot="icon"><t name="itemIcon"/></t>
+            <t t-set-slot="body-icon">
+                <t t-if="this.message?.thread" t-call="mail.message_preview_prefix" message="this.message" thread="this.message.thread"/>
+                <t name="itemBodyIcon"/>
+            </t>
+        </NotificationItem>
+        <t name="itemAfter"/>
+        <div t-if="this.hasActions" class="o-mail-MessagingMenuItem-actions position-absolute top-0 end-0 mt-1 me-1" t-att-class="{ 'o-open': this.actionsDropdown.isOpen, 'd-none': this.isMobileOS and !this.actionsDropdown.isOpen }">
+            <IsolatedDropdown state="this.actionsDropdown" position="'right-start'" menuClass="'o-discuss-dropdownMenu border-secondary my-0 min-w-0 mx-1 ' + this.store.discussDropdownMenuClass(this)">
+                <button class="btn btn-light rounded-circle d-flex o-p-0_5 align-items-center justify-content-center border" t-att-title="this.actionsTitle">
+                    <i role="img" class="oi oi-fw oi-lg oi-ellipsis-h"/>
+                </button>
+                <t t-set-slot="content">
+                    <t name="itemActions">
+                        <ActionList actions="this.messageActionLists" dropdown="true" thread="this.message?.thread"/>
+                    </t>
+                </t>
+            </IsolatedDropdown>
+        </div>
+    </div>
+</t>
+
+</templates>

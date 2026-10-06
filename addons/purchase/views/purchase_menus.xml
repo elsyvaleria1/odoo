@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <menuitem
+        id="menu_purchase_root"
+        name="Purchase"
+        sequence="137"
+        groups="group_purchase_manager,group_purchase_user,group_purchase_readonly"
+        web_icon="purchase,static/description/icon.png"
+        web_keywords="vendor, supplier, purchase order, request for quotation, rfq, procurement, reordering" />
+
+    <menuitem
+        id="menu_procurement_management"
+        name="Orders"
+        parent="menu_purchase_root"
+        sequence="1" />
+
+    <menuitem
+        id="menu_procurement_management_supplier_name"
+        name="Vendors"
+        parent="menu_procurement_management"
+        action="account.res_partner_action_supplier"
+        sequence="15" />
+
+    <menuitem
+        id="menu_purchase_config"
+        name="Configuration"
+        parent="menu_purchase_root"
+        sequence="100"
+        groups="group_purchase_manager" />
+
+    <menuitem
+        id="menu_purchase_general_settings"
+        name="Settings"
+        parent="menu_purchase_config"
+        action="action_purchase_configuration"
+        sequence="0"
+        groups="base.group_system" />
+
+    <menuitem
+        id="menu_product_pricelist_action2_purchase"
+        parent="menu_purchase_config"
+        action="product.action_product_supplierinfo"
+        sequence="1" />
+
+    <menuitem
+        id="srm_tag_menu"
+        name="Tags"
+        parent="menu_purchase_config"
+        action="srm_tag_action"
+        sequence="20" />
+
+    <menuitem
+        id="purchase_order_template_menu"
+        name="RFQ Templates"
+        parent="menu_purchase_config"
+        action="purchase_order_template_action"
+        sequence="15"
+        groups="group_purchase_order_template" />
+
+    <menuitem
+        id="menu_loss_reason_purchase"
+        name="Loss Reasons"
+        parent="menu_purchase_config"
+        action="action_loss_reason_purchase"
+        sequence="25" />
+
+    <menuitem
+        id="menu_product_in_config_purchase"
+        name="Products"
+        parent="menu_purchase_config"
+        sequence="30" />
+
+    <record id="menu_product_in_config_purchase" model="ir.ui.menu">
+        <field name="group_ids" eval="False" />
+    </record>
+
+    <menuitem
+        id="menu_product_attribute_action"
+        name="Attributes"
+        parent="menu_product_in_config_purchase"
+        action="product.action_product_attribute"
+        sequence="1"
+        groups="product.group_product_variant" />
+
+    <menuitem
+        id="menu_product_category_config_purchase"
+        parent="menu_product_in_config_purchase"
+        action="product.action_product_category"
+        sequence="3" />
+
+    <menuitem
+        id="menu_purchase_uom_form_action"
+        name="Units &amp; Packagings"
+        parent="menu_product_in_config_purchase"
+        action="uom.action_uom_uom"
+        sequence="10"
+        groups="uom.group_uom" />
+
+    <menuitem
+        id="menu_purchase_products"
+        name="Products"
+        parent="menu_purchase_root"
+        sequence="5" />
+
+    <menuitem
+        id="menu_procurement_partner_contact_form"
+        name="Products"
+        parent="menu_purchase_products"
+        action="product_normal_action_puchased"
+        sequence="20" />
+
+    <menuitem
+        id="menu_purchase_product_variant"
+        name="Product Variants"
+        parent="menu_purchase_products"
+        action="product_product_action"
+        sequence="21"
+        groups="product.group_product_variant" />
+
+    <menuitem
+        id="menu_purchase_rfq"
+        parent="menu_procurement_management"
+        action="action_purchase_order"
+        sequence="0" />
+
+    <menuitem
+        id="menu_purchase_form_action"
+        parent="menu_procurement_management"
+        action="action_purchase_order_2"
+        sequence="6" />
+
+    <menuitem
+        id="menu_purchase_reporting"
+        name="Reporting"
+        parent="menu_purchase_root"
+        sequence="99"
+        groups="purchase.group_purchase_manager,purchase.group_purchase_readonly" />
+
+    <menuitem
+        id="menu_purchase_report"
+        name="Purchase"
+        parent="menu_purchase_reporting"
+        action="action_purchase_report_all"
+        sequence="99"
+        groups="purchase.group_purchase_manager,purchase.group_purchase_readonly" />
+
+</odoo>

@@ -1,0 +1,57 @@
+/** @odoo-module native */
+import { Component, onWillStart, proxy, t, useProps } from "@odoo/owl";
+import { rpc } from "@web/core/network";
+import { provideEventBus, useBus } from "@web/core/utils/hooks";
+import comparisonUtils from "@website_sale_comparison/js/website_sale_comparison_utils";
+
+import { ProductRow } from "../product_row/product_row.js";
+
+export class ProductComparisonBottomBar extends Component {
+    static template = "website_sale_comparison.ProductComparisonBottomBar";
+    static components = { ProductRow };
+    static props = { bus: t.object() };
+    props = useProps(this.constructor.props);
+
+    setup() {
+        super.setup();
+        this.state = proxy({ products: new Map() });
+        useBus(this.props.bus, comparisonUtils.COMPARISON_EVENT, () =>
+            this._loadProducts(),
+        );
+        provideEventBus(this.props.bus);
+        onWillStart(this._loadProducts);
+    }
+
+    async _loadProducts() {
+        const productIds = comparisonUtils.getComparisonProductIds();
+        if (!productIds.length) {
+            this.state.products.clear();
+            return;
+        }
+        const productData = await rpc("/shop/compare/get_product_data", {
+            product_ids: productIds,
+        });
+
+        this.state.products.clear();
+        productData.forEach((product) => this.state.products.set(product.id, product));
+    }
+
+    /**
+     * @return {string}
+     */
+    get comparisonUrl() {
+        const productIds = Array.from(this.state.products.keys());
+        return `/shop/compare?products=${encodeURIComponent(productIds.join(","))}`;
+    }
+
+    /**
+     * @return {number}
+     */
+    get productCount() {
+        return this.state.products.size;
+    }
+
+    clearAllProducts() {
+        comparisonUtils.clearComparisonProducts(this.props.bus);
+    }
+}

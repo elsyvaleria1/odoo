@@ -1,0 +1,190 @@
+// @ts-check
+/** @odoo-module native */
+
+import { Component, proxy, t, useProps } from "@odoo/owl";
+import { Dropdown } from "@web/components/dropdown/dropdown";
+import { DropdownItem } from "@web/components/dropdown/dropdown_item";
+import { _t } from "@web/core/translation";
+import { elementRef } from "@web/core/utils/element_ref";
+import { useService } from "@web/core/utils/hooks";
+import { useDebounced } from "@web/core/utils/timing";
+import { usePopover } from "@web/ui/popover/popover_hook";
+import { utils } from "@web/ui/viewport";
+import { useGroupManagement } from "@web/views/multi_record_group";
+import { GroupConfigMenu } from "@web/views/view_components/group_config_menu";
+
+import { ColumnProgress } from "./column_progress.js";
+
+class KanbanHeaderTooltip extends Component {
+    static template = "web.KanbanGroupTooltip";
+    static props = { tooltip: t.array(), close: t.function() };
+    props = useProps(this.constructor.props);
+}
+
+export class KanbanHeader extends Component {
+    static template = "web.KanbanHeader";
+    static components = {
+        ColumnProgress,
+        Dropdown,
+        DropdownItem,
+        GroupConfigMenu,
+    };
+    static props = {
+        activeActions: t.object(),
+        canQuickCreate: t.boolean().optional(false),
+        deleteGroup: t.function(),
+        dialogClose: t.array(),
+        group: t.object(),
+        list: t.object(),
+        quickCreateState: t.object(),
+        scrollTop: t.function(),
+        tooltipInfo: t.object(),
+        progressBarState: t.any().optional(),
+    };
+    props = useProps(this.constructor.props);
+
+    /** @type {import("services").ServiceFactories["orm"]} */
+    orm;
+    /** @type {ReturnType<typeof usePopover>} */
+    popover;
+
+    setup() {
+        this.ui = useService("ui");
+        this.progressBarState = this.props.progressBarState
+            ? proxy(this.props.progressBarState)
+            : undefined;
+        this.dialog = useService("dialog");
+        this.orm = useService("orm");
+        this.rootRef = elementRef();
+        this.popover = usePopover(KanbanHeaderTooltip);
+        this.titleHovered = false;
+        this.onTitleMouseEnter = useDebounced(this.onTitleMouseEnter.bind(this), 400);
+        this.groupOps = useGroupManagement({
+            getList: () => this.props.list,
+            getMenuActiveActions: () => this.props.activeActions,
+            getDialogClose: () => this.props.dialogClose,
+            getExtraConfigItems: () => this.extraConfigItems,
+            deleteGroup: (group) => this.props.deleteGroup(group),
+        });
+    }
+
+    /** @param {MouseEvent} ev */
+    async onTitleMouseEnter(ev) {
+        if (!this.hasTooltip) {
+            return;
+        }
+        this.titleHovered = true;
+        let tooltip;
+        try {
+            tooltip = await this.loadTooltip();
+        } catch {
+            return;
+        }
+        // the pointer may have left while the tooltip was loading
+        if (tooltip.length && this.titleHovered) {
+            this.popover.open(/** @type {HTMLElement} */ (ev.target), { tooltip });
+        }
+    }
+
+    onTitleMouseLeave() {
+        this.titleHovered = false;
+        /** @type {any} */ (this.onTitleMouseEnter).cancel();
+        this.popover.close();
+    }
+
+    /** @returns {Array<[string, Object]>} */
+    get extraConfigItems() {
+        return [
+            [
+                "toggle_group",
+                {
+                    label: _t("Fold"),
+                    method: () => this.group.toggle(),
+                    isVisible: () => !utils.isSmall(),
+                    class: () => ({
+                        o_kanban_toggle_fold: true,
+                        disabled: this.props.list.model.useSampleModel,
+                    }),
+                    icon: "fa-compress",
+                },
+            ],
+        ];
+    }
+
+    /** @returns {Object} */
+    get configMenuProps() {
+        return /** @type {any} */ (this.groupOps).getGroupConfigMenuProps(
+            this.props.group,
+        );
+    }
+
+    /** @returns {Object | undefined} */
+    get progressBar() {
+        return this.progressBarState?.getGroupInfo(this.group);
+    }
+
+    get group() {
+        return this.props.group;
+    }
+
+    /** @returns {{ title: string, value: number }} */
+    get groupAggregate() {
+        const group = this.props.group;
+        const progressBarState = this.progressBarState;
+        const { sumField } = progressBarState.progressAttributes;
+        return progressBarState.getAggregateValue(group, sumField);
+    }
+
+    /** @returns {boolean} */
+    get hasTooltip() {
+        const { name, type } = this.group.groupByField;
+        return (
+            type === "many2one" && this.group.value && name in this.props.tooltipInfo
+        );
+    }
+
+    /** @returns {Promise<Array<{ title: string, value: any }>>} */
+    loadTooltip = () => {
+        this._tooltipProm ||= this._fetchTooltip().catch((error) => {
+            this._tooltipProm = null;
+            throw error;
+        });
+        return this._tooltipProm;
+    };
+
+    async _fetchTooltip() {
+        const { name, relation: resModel } = this.group.groupByField;
+        const tooltipInfo = this.props.tooltipInfo[name];
+        const fieldNames = Object.keys(tooltipInfo);
+        const [values] = await this.orm.silent.read(
+            resModel,
+            [this.group.value],
+            ["display_name", ...fieldNames],
+        );
+
+        return fieldNames
+            .filter((fieldName) => values[fieldName])
+            .map((fieldName) => ({
+                title: tooltipInfo[fieldName],
+                value: values[fieldName],
+            }));
+    }
+
+    quickCreate() {
+        this.props.quickCreateState.groupId = this.group.id;
+    }
+
+    toggleGroup() {
+        return this.group.toggle();
+    }
+
+    canQuickCreate() {
+        return this.props.canQuickCreate;
+    }
+
+    /** @param {*} value */
+    async onBarClicked(value) {
+        await this.progressBarState.selectBar(this.props.group.id, value);
+        this.props.scrollTop();
+    }
+}

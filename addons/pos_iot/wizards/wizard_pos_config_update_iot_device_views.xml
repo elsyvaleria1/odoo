@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_auto_config_pos_iot" model="ir.ui.view">
+        <field name="name">Automated Setup</field>
+        <field name="model">wizard.pos.config.update.iot.device</field>
+        <field name="arch" type="xml">
+            <form string="Automated Setup">
+                <group class="col-md-8">
+                    <field
+                        name="pos_config_ids"
+                        placeholder="None"
+                        widget="many2many_tags" />
+                </group>
+
+                <footer>
+                    <button
+                        name="action_autoconfigure"
+                        type="object"
+                        string="Continue"
+                        class="btn btn-primary"
+                        data-hotkey="s" />
+                    <button
+                        special="cancel"
+                        string="Discard"
+                        class="btn btn-secondary"
+                        data-hotkey="x" />
+                </footer>
+            </form>
+        </field>
+    </record>
+
+</odoo>

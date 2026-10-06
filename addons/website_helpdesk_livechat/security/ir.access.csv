@@ -1,0 +1,3 @@
+id,name,model_id/id,group_id/id,kind,operation,reach,anchor,domain
+ir_rule_discuss_channel_hepldesk,discuss.channel: helpdesk users can read ticket's origin channel,mail.model_discuss_channel,helpdesk.group_helpdesk_user,permission,r,all,,"[('has_helpdesk_ticket', '=', True)]"
+ir_rule_discuss_channel_member_helpdesk,discuss.channel.member: helpdesk users can read/create members on ticket's origin channel,mail.model_discuss_channel_member,helpdesk.group_helpdesk_user,permission,cr,all,,"[('channel_id.has_helpdesk_ticket', '=', True)]"

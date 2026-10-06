@@ -1,0 +1,6 @@
+.o_field_many2one_avatar_resource
+    .o_avatar.o_avatar_many2x_autocomplete
+    > i.o_resource_icon {
+    height: var(--Avatar-size, #{$o-avatar-size});
+    width: var(--Avatar-size, #{$o-avatar-size});
+}

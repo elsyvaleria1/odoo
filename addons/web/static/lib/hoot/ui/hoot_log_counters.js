@@ -1,0 +1,36 @@
+/** @odoo-module */
+
+import { Component, t, useProps, xml } from "@odoo/owl";
+
+/**
+ * @typedef {{
+ *  logs: { error: number, warn: number };
+ * }} HootLogCountersProps
+ */
+
+/** @extends {Component<HootLogCountersProps, import("../hoot").Environment>} */
+export class HootLogCounters extends Component {
+    static components = {};
+    static props = { logs: t.object({ error: t.number(), warn: t.number() }) };
+    props = useProps(this.constructor.props);
+    static template = xml`
+        <t t-if="this.props.logs.error">
+            <span
+                class="flex items-center gap-1 text-rose"
+                t-attf-title="{{ this.props.logs.error }} error log(s) (check the console)"
+            >
+                <i class="fa-solid fa-times-circle" />
+                <strong t-out="this.props.logs.error" />
+            </span>
+        </t>
+        <t t-if="this.props.logs.warn">
+            <span
+                class="flex items-center gap-1 text-amber"
+                t-attf-title="{{ this.props.logs.warn }} warning log(s) (check the console)"
+            >
+                <i class="fa-solid fa-exclamation-triangle" />
+                <strong t-out="this.props.logs.warn" />
+            </span>
+        </t>
+    `;
+}

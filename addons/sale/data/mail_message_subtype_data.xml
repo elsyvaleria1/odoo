@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <data noupdate="1">
+        <record id="mt_order_sent" model="mail.message.subtype">
+            <field name="name">Quotation sent</field>
+            <field name="description">Quotation sent</field>
+            <field name="res_model">sale.order</field>
+            <field name="default" eval="False" />
+        </record>
+        <record id="mt_order_confirmed" model="mail.message.subtype">
+            <field name="name">Sales Order Confirmed</field>
+            <field name="description">Quotation confirmed</field>
+            <field name="res_model">sale.order</field>
+            <field name="default" eval="False" />
+        </record>
+        <record id="mt_order_viewed" model="mail.message.subtype">
+            <field name="name">Quotation Viewed</field>
+            <field name="res_model">sale.order</field>
+            <field name="default" eval="True" />
+            <field name="internal" eval="True" />
+        </record>
+    </data>
+
+</odoo>

@@ -1,0 +1,471 @@
+from odoo import api, fields, models
+from odoo.tools import SQL, Query, frozendict, get_lang
+
+from odoo.addons.im_livechat.tools.misc import prepare_livechat_history_action
+
+
+class Im_LivechatReportChannel(models.Model):
+    _name = "im_livechat.report.channel"
+    _description = "Livechat Support Channel Report"
+    _order = "start_date, livechat_channel_id, channel_id"
+    _auto = False
+    _depends = frozendict(
+        {
+            "chatbot.message": ["discuss_channel_id", "user_raw_script_answer_id"],
+            "chatbot.script.answer": ["name"],
+            "discuss.call.history": ["channel_id", "end_dt", "start_dt"],
+            "discuss.channel": [
+                "channel_type",
+                "country_id",
+                "create_date",
+                "livechat_channel_id",
+                "livechat_end_dt",
+                "livechat_failure",
+                "livechat_is_escalated",
+                "livechat_operator_id",
+                "name",
+                "rating_last_value",
+                "uuid",
+            ],
+            "im_livechat.channel.member.history": [
+                "channel_id",
+                "chatbot_script_id",
+                "guest_id",
+                "livechat_member_type",
+                "partner_id",
+                "agent_expertise_ids",
+            ],
+            "im_livechat.expertise": ["name"],
+            "mail.message": [
+                "author_guest_id",
+                "author_id",
+                "create_date",
+                "model",
+                "res_id",
+            ],
+        }
+    )
+
+    uuid = fields.Char(
+        string="UUID",
+        readonly=True,
+    )
+    channel_id = fields.Many2one(
+        comodel_name="discuss.channel",
+        string="Conversation",
+        readonly=True,
+    )
+    channel_name = fields.Char(readonly=True)
+    livechat_channel_id = fields.Many2one(
+        comodel_name="im_livechat.channel",
+        string="Channel",
+        readonly=True,
+    )
+    start_date = fields.Datetime(
+        string="Start Date of session",
+        readonly=True,
+    )
+    start_hour = fields.Char(
+        string="Start Hour of session",
+        readonly=True,
+    )
+    start_date_minutes = fields.Char(
+        string="Start Date of session, truncated to minutes",
+        readonly=True,
+    )
+    day_number = fields.Selection(
+        selection=[
+            ("0", "Sunday"),
+            ("1", "Monday"),
+            ("2", "Tuesday"),
+            ("3", "Wednesday"),
+            ("4", "Thursday"),
+            ("5", "Friday"),
+            ("6", "Saturday"),
+        ],
+        string="Day of the Week",
+        readonly=True,
+    )
+    time_to_answer = fields.Float(
+        string="Response Time",
+        digits=(16, 6),
+        readonly=True,
+        aggregator="avg",
+        help="Average time in hours to give the first answer to the visitor",
+    )
+    start_date_hour = fields.Char(
+        string="Hour of start Date of session",
+        readonly=True,
+    )
+    duration = fields.Float(
+        string="Duration (min)",
+        digits=(16, 2),
+        readonly=True,
+        aggregator="avg",
+        help="Duration of the conversation (in minutes)",
+    )
+    nbr_message = fields.Integer(
+        string="Messages per Session",
+        readonly=True,
+        aggregator="avg",
+        help="Number of message in the conversation",
+    )
+    country_id = fields.Many2one(
+        comodel_name="res.country",
+        string="Country of the visitor",
+        readonly=True,
+    )
+    lang_id = fields.Many2one(
+        comodel_name="res.lang",
+        related="channel_id.livechat_lang_id",
+        string="Language",
+        readonly=True,
+    )
+    rating = fields.Integer(
+        readonly=True,
+        aggregator="avg",
+    )
+    rating_text = fields.Char(
+        string="Satisfaction Rate",
+        readonly=True,
+    )
+    partner_id = fields.Many2one(
+        comodel_name="res.partner",
+        string="Agent",
+        readonly=True,
+    )
+    handled_by_bot = fields.Integer(
+        string="Handled by Bot",
+        readonly=True,
+        aggregator="sum",
+    )
+    handled_by_agent = fields.Integer(
+        string="Handled by Agent",
+        readonly=True,
+        aggregator="sum",
+    )
+    visitor_partner_id = fields.Many2one(
+        comodel_name="res.partner",
+        string="Customer",
+        readonly=True,
+    )
+    call_duration_hour = fields.Float(
+        string="Call Duration",
+        digits=(16, 2),
+        readonly=True,
+        aggregator="avg",
+    )
+    has_call = fields.Float(
+        string="Whether the session had a call",
+        readonly=True,
+    )
+    number_of_calls = fields.Float(
+        related="has_call",
+        string="# of Sessions with calls",
+        readonly=True,
+        aggregator="sum",
+    )
+    percentage_of_calls = fields.Float(
+        related="has_call",
+        string="Session with Calls (%)",
+        readonly=True,
+        aggregator="avg",
+    )
+    session_outcome = fields.Selection(
+        selection=[
+            ("no_answer", "Never Answered"),
+            ("no_agent", "No one Available"),
+            ("no_failure", "Success"),
+            ("escalated", "Escalated"),
+        ],
+        readonly=True,
+    )
+    chatbot_script_id = fields.Many2one(
+        comodel_name="chatbot.script",
+        string="Chatbot",
+        readonly=True,
+    )
+    chatbot_answers_path = fields.Char(
+        string="Chatbot Answers",
+        readonly=True,
+    )
+    chatbot_answers_path_str = fields.Char(
+        string="Chatbot Answers (String)",
+        readonly=True,
+    )
+    session_expertises = fields.Char(
+        string="Expertises used in this session (String)",
+        readonly=True,
+    )
+    session_expertise_ids = fields.Many2many(
+        comodel_name="im_livechat.expertise",
+        related="channel_id.livechat_expertise_ids",
+        string="Expertises used in this session",
+        readonly=True,
+    )
+    conversation_tag_ids = fields.Many2many(
+        comodel_name="im_livechat.conversation.tag",
+        related="channel_id.livechat_conversation_tag_ids",
+        string="Tags used in this conversation",
+        readonly=True,
+    )
+    agent_requesting_help_history = fields.Many2one(
+        comodel_name="im_livechat.channel.member.history",
+        related="channel_id.livechat_agent_requesting_help_history",
+        readonly=True,
+    )
+    agent_providing_help_history = fields.Many2one(
+        comodel_name="im_livechat.channel.member.history",
+        related="channel_id.livechat_agent_providing_help_history",
+        readonly=True,
+    )
+
+    @property
+    def _unknown_chatbot_answer_name(self):
+        return self.env._("Unknown")
+
+    @property
+    def _table_query(self):
+        return SQL("%s %s %s", self._select(), self._from(), self._where())
+
+    def _select(self) -> SQL:
+        return SQL(
+            """
+            SELECT
+                C.id as id,
+                C.uuid as uuid,
+                C.id as channel_id,
+                C.name as channel_name,
+                C.livechat_channel_id as livechat_channel_id,
+                C.create_date as start_date,
+                channel_member_history.visitor_partner_id AS visitor_partner_id,
+                to_char(date_trunc('hour', C.create_date), 'YYYY-MM-DD HH24:MI:SS') as start_date_hour,
+                to_char(date_trunc('hour', C.create_date), 'HH24') as start_hour,
+                to_char(date_trunc('minute', C.create_date), 'YYYY-MM-DD HH:MI:SS') AS start_date_minutes,
+                EXTRACT(dow from C.create_date)::text AS day_number,
+                EXTRACT('epoch' FROM COALESCE(C.livechat_end_dt, NOW() AT TIME ZONE 'utc') - C.create_date)/60 AS duration,
+                CASE
+                    WHEN C.livechat_end_dt IS NOT NULL
+                         AND channel_member_history.has_agent
+                         AND message_vals.first_agent_message_dt > C.livechat_end_dt THEN NULL
+                    WHEN C.livechat_end_dt IS NOT NULL
+                         AND NOT channel_member_history.has_agent
+                         AND message_vals.first_agent_message_dt_legacy > C.livechat_end_dt THEN NULL
+                    WHEN channel_member_history.has_agent AND channel_member_history.has_bot THEN
+                        EXTRACT('epoch' FROM message_vals.first_agent_message_dt - message_vals.last_bot_message_dt)
+                    WHEN channel_member_history.has_agent THEN
+                        EXTRACT('epoch' FROM message_vals.first_agent_message_dt - c.create_date)
+                    ELSE
+                        EXTRACT('epoch' FROM message_vals.first_agent_message_dt_legacy - c.create_date)
+                END/3600 AS time_to_answer,
+                message_vals.message_count as nbr_message,
+                CASE
+                    WHEN C.livechat_is_escalated THEN 'escalated'
+                    ELSE C.livechat_failure
+                END AS session_outcome,
+                C.country_id,
+                NULLIF(C.rating_last_value, 0) AS rating,
+                CASE
+                    WHEN C.rating_last_value = 1 THEN 'Unhappy'
+                    WHEN C.rating_last_value = 5 THEN 'Happy'
+                    WHEN C.rating_last_value = 3 THEN 'Neutral'
+                    ELSE null
+                END as rating_text,
+                C.livechat_operator_id as partner_id,
+                CASE WHEN channel_member_history.has_agent THEN 1 ELSE 0 END as handled_by_agent,
+                CASE WHEN channel_member_history.has_bot and not channel_member_history.has_agent THEN 1 ELSE 0 END as handled_by_bot,
+                CASE WHEN channel_member_history.chatbot_script_id IS NOT NULL AND NOT channel_member_history.has_agent THEN channel_member_history.chatbot_script_id ELSE NULL END AS chatbot_script_id,
+                CASE WHEN call_history_data.call_duration_hour IS NOT NULL THEN 1 ELSE 0 END AS has_call,
+                call_history_data.call_duration_hour,
+                chatbot_answer_history.chatbot_answers_path,
+                chatbot_answer_history.chatbot_answers_path_str,
+                expertise_history.expertises session_expertises
+            """,
+        )
+
+    def _from(self) -> SQL:
+        return SQL(
+            """
+            FROM discuss_channel C
+       LEFT JOIN LATERAL (
+                SELECT BOOL_OR(livechat_member_type = 'agent') AS has_agent,
+                       BOOL_OR(livechat_member_type = 'bot') AS has_bot,
+                       MIN(CASE WHEN livechat_member_type = 'visitor' THEN partner_id END) AS visitor_partner_id,
+                       MIN(chatbot_script_id) AS chatbot_script_id
+                  FROM im_livechat_channel_member_history
+                 WHERE channel_id = C.id
+        ) AS channel_member_history ON TRUE
+       LEFT JOIN LATERAL
+            (
+                SELECT SUM(
+                           CASE
+                               WHEN discuss_call_history.end_dt IS NOT NULL
+                               THEN EXTRACT(EPOCH FROM discuss_call_history.end_dt - discuss_call_history.start_dt) / 3600
+                           END
+                       ) AS call_duration_hour
+                  FROM discuss_call_history
+                 WHERE discuss_call_history.channel_id = C.id
+            ) AS call_history_data ON TRUE
+        LEFT JOIN LATERAL
+            (
+                SELECT STRING_AGG(chatbot_message.user_raw_script_answer_id::TEXT, ' - ' ORDER BY chatbot_message.id) AS chatbot_answers_path,
+                       STRING_AGG(
+                           COALESCE(
+                               chatbot_script_answer.name->>%s,
+                               chatbot_script_answer.name->>'en_US',
+                               fallback.value,
+                               %s
+                           ),
+                           ' - ' ORDER BY chatbot_message.id
+                        ) AS chatbot_answers_path_str
+                  FROM chatbot_message
+             LEFT JOIN chatbot_script_answer
+                    ON chatbot_message.user_raw_script_answer_id = chatbot_script_answer.id
+             LEFT JOIN LATERAL
+                  (
+                      SELECT value
+                      FROM jsonb_each_text(chatbot_script_answer.name)
+                      LIMIT 1
+                  ) AS fallback ON TRUE
+                WHERE chatbot_message.user_raw_script_answer_id IS NOT NULL
+                  AND chatbot_message.discuss_channel_id = C.id
+            ) AS chatbot_answer_history ON TRUE
+        LEFT JOIN LATERAL
+            (
+                SELECT STRING_AGG(
+                            COALESCE(
+                                im_livechat_expertise.name->>%s,
+                                im_livechat_expertise.name->>'en_US',
+                                fallback.value
+                            ),
+                            ' - ' ORDER BY im_livechat_expertise.id
+                       ) AS expertises
+                  FROM im_livechat_channel_member_history_im_livechat_expertise_rel REL
+                  JOIN im_livechat_expertise
+                    ON im_livechat_expertise.id = REL.im_livechat_expertise_id
+                  JOIN im_livechat_channel_member_history
+                    ON im_livechat_channel_member_history.id = REL.im_livechat_channel_member_history_id
+                  JOIN LATERAL
+                    (
+                        SELECT value
+                          FROM jsonb_each_text(im_livechat_expertise.name)
+                         LIMIT 1
+                    ) AS fallback ON TRUE
+                 WHERE im_livechat_channel_member_history.channel_id = C.id
+            ) AS expertise_history ON TRUE
+        LEFT JOIN LATERAL
+            (
+                SELECT COUNT(DISTINCT M.id) AS message_count,
+                       MIN(CASE WHEN H.livechat_member_type = 'agent' THEN M.create_date END) AS first_agent_message_dt,
+                       MAX(CASE WHEN H.livechat_member_type = 'bot' THEN M.create_date END) AS last_bot_message_dt,
+                       MIN(CASE WHEN M.author_id = C.livechat_operator_id THEN M.create_date END) AS first_agent_message_dt_legacy
+                  FROM mail_message M
+             LEFT JOIN im_livechat_channel_member_history H on H.channel_id = M.res_id AND (M.author_id = H.partner_id OR M.author_guest_id = H.guest_id)
+                 WHERE M.res_id = C.id and M.model = 'discuss.channel'
+            ) AS message_vals ON TRUE
+            """,
+            self.env.lang or "en_US",
+            self._unknown_chatbot_answer_name,
+            self.env.lang or "en_US",
+        )
+
+    def _where(self) -> SQL:
+        return SQL("WHERE C.channel_type = 'livechat'")
+
+    @api.model
+    def formatted_read_group(
+        self,
+        domain,
+        groupby=(),
+        aggregates=(),
+        having=(),
+        offset=0,
+        limit=None,
+        order=None,
+    ):
+        result = super().formatted_read_group(
+            domain,
+            groupby,
+            aggregates,
+            having=having,
+            offset=offset,
+            limit=limit,
+            order=order,
+        )
+        answer_ids = {
+            int(answer_id.strip())
+            for entry in result
+            if entry.get("chatbot_answers_path")
+            for answer_id in entry["chatbot_answers_path"].split("-")
+        }
+        answer_name_by_id = {
+            answer.id: answer.name
+            for answer in self.env["chatbot.script.answer"].search_fetch(
+                [("id", "in", answer_ids)],
+                ["name"],
+            )
+        }
+        for entry in result:
+            if not (path := entry.get("chatbot_answers_path")):
+                continue
+            id_list = [int(answer_id.strip()) for answer_id in path.split("-")]
+            entry["chatbot_answers_path"] = " - ".join(
+                answer_name_by_id.get(answer_id, self._unknown_chatbot_answer_name)
+                for answer_id in id_list
+            )
+        return result
+
+    def _read_group_orderby(
+        self, order: str, groupby_terms: dict[str, SQL], query: Query
+    ) -> SQL:
+        if "day_number" not in groupby_terms:
+            return super()._read_group_orderby(order, groupby_terms, query)
+        if not order:
+            order = ",".join(groupby_terms)
+        order_parts = [part.strip() for part in order.split(",")]
+        day_number_part = next(
+            (part for part in order_parts if part.startswith("day_number")), None
+        )
+        other_parts = [
+            part for part in order_parts if not part.startswith("day_number")
+        ]
+        other_groupby_terms = {
+            k: v for k, v in groupby_terms.items() if k != "day_number"
+        }
+        other_order = ",".join(other_parts) if other_parts else None
+        other_orderby = None
+        if other_order or other_groupby_terms:
+            other_orderby = super()._read_group_orderby(
+                other_order, other_groupby_terms, query
+            )
+            groupby_terms.update(other_groupby_terms)
+        if not day_number_part:
+            return other_orderby
+        parts = [p.upper() for p in day_number_part.split()]
+        direction = next((p for p in parts if p in ("ASC", "DESC")), "ASC")
+        nulls_parts = [p for p in parts if p in ("NULLS", "FIRST", "LAST")]
+        sql_direction = SQL("ASC") if direction == "ASC" else SQL("DESC")
+        if "NULLS" in nulls_parts and "FIRST" in nulls_parts:
+            sql_nulls = SQL("NULLS FIRST")
+        elif "NULLS" in nulls_parts and "LAST" in nulls_parts:
+            sql_nulls = SQL("NULLS LAST")
+        else:
+            sql_nulls = SQL()
+        first_week_day = int(get_lang(self.env).week_start)
+        day_number_orderby = SQL(
+            "mod(7 - %s + (%s)::int, 7) %s %s",
+            first_week_day,
+            groupby_terms["day_number"],
+            sql_direction,
+            sql_nulls,
+        )
+        return (
+            SQL(", ").join([day_number_orderby, other_orderby])
+            if other_orderby
+            else day_number_orderby
+        )
+
+    @api.model
+    def action_view_discuss_channels(self, domain=()):
+        discuss_channels = self.search_fetch(domain, ["channel_id"]).channel_id
+        return prepare_livechat_history_action(self.env, discuss_channels)

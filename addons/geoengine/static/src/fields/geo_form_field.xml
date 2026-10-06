@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<templates xml:space="preserve">
+
+    <t t-name="geoengine.GeoFormField">
+        <span
+            class="o_field_geo text-muted text-truncate d-inline-block"
+            t-out="this.displayValue"
+        />
+    </t>
+
+</templates>

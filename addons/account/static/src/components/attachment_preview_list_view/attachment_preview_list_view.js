@@ -1,0 +1,117 @@
+/** @odoo-module native */
+import { provideChildAccountContext } from "@account/components/account_context";
+import { proxy, t } from "@odoo/owl";
+import { useDialogContext } from "@web/core/dialog_context_hooks";
+import { registry } from "@web/core/registry";
+import { useService } from "@web/core/utils/hooks";
+import { useSearchModel } from "@web/search/search_model";
+import { SIZES } from "@web/ui/viewport";
+import { ListController, ListRenderer, listView } from "@web/views/list";
+
+import { AccountAttachmentView } from "./account_attachment_view.js";
+
+export class AttachmentPreviewListController extends ListController {
+    static template = "account.AttachmentPreviewListView";
+    static components = {
+        ...ListController.components,
+        AccountAttachmentView,
+    };
+
+    get className() {
+        return [super.className, "o_move_line_list_view"].filter(Boolean).join(" ");
+    }
+    setup() {
+        super.setup();
+        this.dialogContext = useDialogContext();
+        this.searchModel = useSearchModel();
+        /** @type {import("@mail/core/common/store_service").Store} */
+        this.store = useService("mail.store");
+        this.ui = useService("ui");
+        this.mailPopoutService = useService("mail.popout");
+        this.attachmentPreviewState = proxy({
+            displayAttachment:
+                localStorage.getItem(this.previewerStorageKey) !== "false",
+            selectedRecord: false,
+            thread: null,
+        });
+        this.popout = proxy({ active: false });
+
+        provideChildAccountContext({
+            setPopout: this.setPopout.bind(this),
+        });
+    }
+
+    get previewEnabled() {
+        return (
+            !this.searchModel.context.disable_preview &&
+            (this.ui.size >= SIZES.XXL || this.mailPopoutService.externalWindow)
+        );
+    }
+
+    togglePreview() {
+        this.attachmentPreviewState.displayAttachment =
+            !this.attachmentPreviewState.displayAttachment;
+        localStorage.setItem(
+            this.previewerStorageKey,
+            this.attachmentPreviewState.displayAttachment,
+        );
+    }
+
+    setPopout(value) {
+        if (this.attachmentPreviewState.thread?.attachmentsInWebClientView.length) {
+            this.popout.active = value;
+        }
+    }
+
+    async setThread(lineData, attachmentField, modelField) {
+        const attachments = lineData?.data[attachmentField]?.records || [];
+        if (!lineData || !attachments.length) {
+            this.attachmentPreviewState.thread = null;
+            return;
+        }
+        const thread = this.store.Thread.insert({
+            attachments: attachments.map((attachment) => ({
+                id: attachment.resId,
+                mimetype: attachment.data.mimetype,
+            })),
+            id: lineData.data[modelField].id,
+            model: lineData.fields[modelField].relation,
+        });
+        if (
+            !thread.message_main_attachment_id &&
+            thread.attachmentsInWebClientView.length > 0
+        ) {
+            thread.update({
+                message_main_attachment_id: thread.attachmentsInWebClientView[0],
+            });
+        }
+        this.attachmentPreviewState.thread = thread;
+    }
+}
+
+export class AttachmentPreviewListRenderer extends ListRenderer {
+    static props = { ...ListRenderer.props, setSelectedRecord: t.any() };
+    async onCellClicked(record, column, ev) {
+        this.props.setSelectedRecord(record);
+        await super.onCellClicked(record, column, ev);
+    }
+
+    findFocusFutureCell(cell, cellIsInGroupRow, direction) {
+        const futureCell = super.findFocusFutureCell(cell, cellIsInGroupRow, direction);
+        if (futureCell) {
+            const dataPointId = futureCell.closest("tr").dataset.id;
+            const record = this.props.list.records.filter(
+                (x) => x.id === dataPointId,
+            )[0];
+            this.props.setSelectedRecord(record);
+        }
+        return futureCell;
+    }
+}
+export const AccountAttachmentListView = {
+    ...listView,
+    Renderer: AttachmentPreviewListRenderer,
+    Controller: AttachmentPreviewListController,
+};
+
+registry.category("views").add("account_attachment_list", AccountAttachmentListView);

@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <menuitem
+        id="website_slides_menu_root"
+        name="eLearning"
+        action="slide_channel_action_overview"
+        sequence="120"
+        groups="website_slides.group_website_slides_officer"
+        web_icon="website_slides,static/description/icon.png" />
+
+    <menuitem
+        id="website_slides_menu_courses"
+        name="Courses"
+        parent="website_slides_menu_root"
+        sequence="1" />
+
+    <menuitem
+        id="website_slides_menu_report"
+        name="Reporting"
+        parent="website_slides_menu_root"
+        sequence="9"
+        groups="website_slides.group_website_slides_manager" />
+
+    <menuitem
+        id="website_slides_menu_configuration"
+        name="Configuration"
+        parent="website_slides_menu_root"
+        sequence="99" />
+
+    <menuitem
+        id="website_slides_menu_courses_courses"
+        name="Courses"
+        parent="website_slides_menu_courses"
+        action="slide_channel_action_overview"
+        sequence="1" />
+
+    <menuitem
+        id="website_slides_menu_courses_content"
+        name="Contents"
+        parent="website_slides_menu_courses"
+        action="slide_slide_action"
+        sequence="2" />
+
+    <menuitem
+        id="website_slides_menu_report_courses"
+        name="Courses"
+        parent="website_slides_menu_report"
+        action="slide_channel_action_report"
+        sequence="1" />
+
+    <menuitem
+        id="website_slides_menu_report_contents"
+        name="Contents"
+        parent="website_slides_menu_report"
+        action="slide_slide_action_report"
+        sequence="2" />
+
+    <menuitem
+        id="website_slides_menu_report_attendees"
+        name="Attendees"
+        parent="website_slides_menu_report"
+        action="slide_channel_partner_action_report"
+        sequence="5" />
+
+    <menuitem
+        id="website_slides_menu_report_reviews"
+        name="Reviews"
+        parent="website_slides_menu_report"
+        action="rating_rating_action_slide_channel"
+        sequence="10" />
+
+    <record id="slide_quiz_question_action_report" model="ir.actions.act_window">
+        <field name="name">Quiz Questions</field>
+        <field name="res_model">survey.question</field>
+        <field name="view_mode">list,form</field>
+        <field
+            name="domain">[('survey_id.slide_ids', '!=', False), ('is_page', '=', False)]</field>
+        <field name="context">{'search_default_group_by_survey': 1}</field>
+    </record>
+
+    <menuitem
+        id="website_slides_menu_report_quizzes"
+        name="Quizzes"
+        parent="website_slides_menu_report"
+        action="slide_quiz_question_action_report"
+        sequence="15" />
+
+    <menuitem
+        id="website_slides_menu_config_settings"
+        name="Settings"
+        parent="website_slides_menu_configuration"
+        action="website_slides_action_settings"
+        sequence="1"
+        groups="base.group_system" />
+
+    <menuitem
+        id="website_slides_menu_config_course_groups"
+        name="Course Groups"
+        parent="website_slides_menu_configuration"
+        action="slide_channel_tag_group_action"
+        sequence="2" />
+
+    <menuitem
+        id="website_slides_menu_config_content_tags"
+        name="Content Tags"
+        parent="website_slides_menu_configuration"
+        action="action_slide_tag"
+        sequence="3" />
+
+    <menuitem
+        id="menu_slide_channel_pages"
+        name="Courses"
+        parent="website.menu_content"
+        action="action_slide_channel_pages_list"
+        sequence="50" />
+
+</odoo>

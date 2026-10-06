@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="mrp_workorder.ControlPanelButtons">
+    <div class="o_work_centers_container d-flex align-items-center flex-grow-1 h-100 overflow-x-auto" t-ref="this.workcentersContainer">
+        <div t-if="!this.ui.isSmall" class="o_work_centers d-flex gap-1" t-ref="this.workcenters">
+            <t t-foreach="this.workcenterButtons" t-as="workcenter" t-key="workcenter[0]">
+                <t t-set="id" t-value="workcenter[0]"/>
+                <t t-set="name" t-value="workcenter[1].name"/>
+                <t t-set="count" t-value="workcenter[1].count"/>
+                <t t-if="this.isInline(workcenter_index)">
+                    <button class="o_work_center_btn btn btn-light text-nowrap d-flex align-items-center p-2"
+                            t-att-data-workcenter-id="id"
+                            t-att-class="this.props.activeWorkcenter.toString() === id ? 'active dropdown-item_active_noarrow' : ''"
+                            t-on-click="() => this.props.selectWorkcenter(id)">
+                        <t t-out="name"/>
+                        <span class="o_tabular_nums badge position-static rounded ms-2 lh-1 px-2" t-out="count"
+                              t-attf-class="o_tag o_tag_color_{{id > 0 ? id % 11 : 'default text-bg-300'}}"/>
+                    </button>
+                    <div t-if="id === '-1'" class="vr my-2"/>
+                </t>
+            </t>
+            <div class="d-flex gap-1" t-ref="this.trailingControls">
+                <Dropdown t-if="this.state.overflowFrom !== null" position="'bottom-end'">
+                    <button class="o_work_center_dropdown_toggle dropdown-toggle btn btn-light">
+                        <i class="fa-solid fa-plus" role="img"/>
+                    </button>
+                    <t t-set-slot="content">
+                        <t t-foreach="this.workcenterButtons" t-as="workcenter" t-key="workcenter[0]">
+                            <DropdownItem t-if="!this.isInline(workcenter_index)"
+                                          class="'justify-content-between py-2'"
+                                          onSelected="() => this.props.selectWorkcenter(workcenter[0])">
+                                <t t-out="workcenter[1].name"/>
+                                <span class="o_tabular_nums badge position-static rounded ms-2 lh-1 px-2" t-out="workcenter[1].count"
+                                      t-attf-class="o_tag o_tag_color_{{workcenter[0] > 0 ? workcenter[0] % 11 : 'default text-bg-300'}}"/>
+                            </DropdownItem>
+                        </t>
+                        <DropdownItem class="'o_work_center_add py-2'"
+                                      onSelected="() => this.props.toggleWorkcenter()">
+                            Add Workcenter
+                        </DropdownItem>
+                    </t>
+                </Dropdown>
+                <button t-else="" class="btn btn-secondary"
+                        t-on-click="() => this.props.toggleWorkcenter()">Add</button>
+            </div>
+        </div>
+        <div t-else="" class="dropdown position-static h-100 min-w-0">
+            <Dropdown>
+                <button class="o_work_center_dropdown_toggle_mobile d-flex align-items-center btn btn-secondary py-2 w-100 h-100">
+                    <t t-foreach="this.workcenterButtons" t-as="workcenter" t-key="workcenter[0]">
+                        <t t-set="id" t-value="workcenter[0]"/>
+                        <t t-if="id === this.props.activeWorkcenter.toString()">
+                            <span class="text-truncate" t-out="workcenter[1].name"/>
+                            <span class="o_tabular_nums badge position-static rounded ms-1 me-2 lh-1 px-2 overflow-visible"
+                                  t-out="workcenter[1].count"
+                                  t-attf-class="o_tag o_tag_color_{{id > 0 ? id % 11 : 'default text-bg-300'}}"/>
+                        </t>
+                    </t>
+                    <i class="oi oi-chevron-down ms-auto small" role="img"/>
+                </button>
+                <t t-set-slot="content">
+                    <t t-foreach="this.workcenterButtons" t-as="workcenter" t-key="workcenter[0]">
+                        <t t-set="id" t-value="workcenter[0]"/>
+                        <t t-set="name" t-value="workcenter[1].name"/>
+                        <t t-set="count" t-value="workcenter[1].count"/>
+                        <DropdownItem t-if="!(this.props.activeWorkcenter.toString() === id)"
+                                      class="'d-flex justify-content-between'"
+                                      onSelected="() => this.props.selectWorkcenter(id)">
+                            <t t-out="name"/>
+                            <span class="o_tabular_nums badge position-static rounded ms-2 lh-1 px-2" t-out="count"
+                                t-attf-class="o_tag o_tag_color_{{id > 0 ? id % 11 : 'default text-bg-300'}}"/>
+                        </DropdownItem>
+                    </t>
+                    <DropdownItem class="'o_work_center_add'"
+                                  onSelected="() => this.props.toggleWorkcenter()">
+                        Add Workcenter
+                    </DropdownItem>
+                </t>
+            </Dropdown>
+        </div>
+    </div>
+    </t>
+</templates>

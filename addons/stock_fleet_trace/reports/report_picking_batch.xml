@@ -1,0 +1,377 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- The fuel and the frozen load travel on the trip sheet beside the odometer. -->
+    <template
+        id="report_picking_batch_trace"
+        inherit_id="stock_fleet.report_picking_batch_inherit">
+        <!-- The layout's table styles are off here: space the columns by hand. -->
+        <xpath expr="//table[hasclass('o_trip_dispatch')]" position="attributes">
+            <attribute name="style">width: auto; margin-top: 0.5rem; border-collapse: separate; border-spacing: 14px 3px; margin-left: -14px;</attribute>
+        </xpath>
+        <xpath expr="//table[hasclass('o_trip_dispatch')]/thead/tr" position="inside">
+            <th>Fuel <span t-field="o.fuel_unit" /></th>
+        </xpath>
+        <xpath
+            expr="//table[hasclass('o_trip_dispatch')]/tbody/tr[1]"
+            position="inside">
+            <td>
+                <span t-if="o.fuel_departure" t-field="o.fuel_departure" />
+                <span
+                    t-else=""
+                    style="display: inline-block; min-width: 22mm; border-bottom: 1px dotted #000;" />
+            </td>
+        </xpath>
+        <xpath
+            expr="//table[hasclass('o_trip_dispatch')]/tbody/tr[2]"
+            position="inside">
+            <td>
+                <span t-if="o.fuel_return" t-field="o.fuel_return" />
+                <span
+                    t-else=""
+                    style="display: inline-block; min-width: 22mm; border-bottom: 1px dotted #000;" />
+            </td>
+        </xpath>
+        <xpath expr="//table[hasclass('o_trip_dispatch')]" position="after">
+            <div t-if="o.weight_departure" style="margin-top: 0.25rem;">
+                <strong>Load at departure:</strong>
+                <span t-field="o.weight_departure" />
+                <t t-out="o.weight_uom_name" />
+            </div>
+        </xpath>
+    </template>
+
+    <!--
+        Every delivery the trip carried with its weight, so the weights at
+        departure add up to the trip's and a delivery brought back is checked
+        against its own weight; after a breakdown, the rescue trip that took
+        the rest of the load (driver, vehicle, deliveries and goods).
+    -->
+    <template
+        id="report_picking_batch_trace_weights"
+        inherit_id="stock_fleet.report_picking_batch_inherit">
+        <xpath expr="(//table[hasclass('table-borderless')])[1]" position="after">
+            <t t-if="o.has_trip_trace and o.date_loaded">
+                <t t-set="trip_stops" t-value="o._trip_report_stops()" />
+                <t t-set="weight_uom" t-value="o.weight_uom_name" />
+                <h5 style="margin-top: 0.5rem;">
+                    <span>Weight by delivery</span>
+                    <small>(<t t-out="weight_uom" />)</small>
+                </h5>
+                <table class="table table-sm o_trip_weights">
+                    <thead>
+                        <tr>
+                            <th>Delivery</th>
+                            <th>Customer</th>
+                            <th>Result</th>
+                            <th class="text-end">Weight at Departure</th>
+                            <th class="text-end">Delivered</th>
+                            <th class="text-end">Written Off</th>
+                            <th class="text-end">Handed Over</th>
+                            <th class="text-end">Returned</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr t-foreach="trip_stops" t-as="stop">
+                            <td><span t-out="stop['picking'].name or ''" /></td>
+                            <td><span t-out="stop['picking'].partner_id.name or ''" /></td>
+                            <td><span t-out="stop['outcome']" /></td>
+                            <td class="text-end"><span t-out="stop['departure']" t-options="{'widget': 'float', 'precision': 2}" /></td>
+                            <td class="text-end"><span t-out="stop['delivered']" t-options="{'widget': 'float', 'precision': 2}" /></td>
+                            <td class="text-end"><span t-out="stop['written_off']" t-options="{'widget': 'float', 'precision': 2}" /></td>
+                            <td class="text-end"><span t-out="stop['handed_over']" t-options="{'widget': 'float', 'precision': 2}" /></td>
+                            <td class="text-end"><span t-out="stop['back']" t-options="{'widget': 'float', 'precision': 2}" /></td>
+                        </tr>
+                        <tr>
+                            <td colspan="3"><strong>Total</strong></td>
+                            <td class="text-end">
+                                <strong
+                                    t-out="sum(s['departure'] for s in trip_stops)"
+                                    t-options="{'widget': 'float', 'precision': 2}" />
+                            </td>
+                            <td class="text-end">
+                                <strong
+                                    t-out="sum(s['delivered'] for s in trip_stops)"
+                                    t-options="{'widget': 'float', 'precision': 2}" />
+                            </td>
+                            <td class="text-end">
+                                <strong
+                                    t-out="sum(s['written_off'] for s in trip_stops)"
+                                    t-options="{'widget': 'float', 'precision': 2}" />
+                            </td>
+                            <td class="text-end">
+                                <strong
+                                    t-out="sum(s['handed_over'] for s in trip_stops)"
+                                    t-options="{'widget': 'float', 'precision': 2}" />
+                            </td>
+                            <td class="text-end">
+                                <strong
+                                    t-out="sum(s['back'] for s in trip_stops)"
+                                    t-options="{'widget': 'float', 'precision': 2}" />
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+                <p
+                    t-if="not o._trip_report_weights_match(trip_stops)"
+                    class="o_trip_weights_mismatch">
+                    <strong>The deliveries' weights do not add up to the trip's weight at departure: check the trip.</strong>
+                </p>
+            </t>
+            <div t-if="o.handover_from_batch_id" style="margin-top: 0.5rem;">
+                <strong>Takes over the load of trip</strong>
+                <span t-field="o.handover_from_batch_id.name" />
+                (<span t-field="o.handover_from_batch_id.vehicle_id" />,
+                <span t-field="o.handover_from_batch_id.operator_id" />)
+            </div>
+            <div
+                t-foreach="o.trip_handover_to_ids"
+                t-as="rescue"
+                class="o_trip_rescue"
+                style="margin-top: 0.75rem; border-top: 1px solid #000; padding-top: 0.5rem;">
+                <h5>Rescue trip <span t-field="rescue.name" /></h5>
+                <div><strong>Vehicle:</strong> <span t-field="rescue.vehicle_id" /></div>
+                <div><strong>Operator:</strong> <span t-field="rescue.operator_id" /></div>
+                <div><strong>Supervisor:</strong> <span t-field="rescue.supervisor_id" /></div>
+                <div t-if="rescue.date_departure">
+                    <strong>Departure:</strong> <span t-field="rescue.date_departure" />
+                </div>
+                <t t-set="breakdown" t-value="o._trip_report_breakdown(rescue)" />
+                <div t-if="breakdown">
+                    <strong>Breakdown reported:</strong>
+                    <span t-field="breakdown.date" />
+                </div>
+                <div t-if="breakdown and rescue.date_departure">
+                    <strong>Response time:</strong>
+                    <t
+                        t-set="response_minutes"
+                        t-value="int((rescue.date_departure - breakdown.date).total_seconds() // 60)" />
+                    <span t-out="'%d:%02d' % divmod(max(response_minutes, 0), 60)" /> h
+                </div>
+                <div t-if="breakdown">
+                    <strong>Reason:</strong>
+                    <span t-out="breakdown.description" />
+                </div>
+                <div t-if="rescue.weight_departure">
+                    <strong>Weight taken over:</strong>
+                    <span
+                        t-out="rescue.weight_departure"
+                        t-options="{'widget': 'float', 'precision': 2}" />
+                    <t t-out="o.weight_uom_name" />
+                </div>
+                <table class="table table-sm o_trip_rescue_lines">
+                    <thead>
+                        <tr>
+                            <th>Delivery</th>
+                            <th>Customer</th>
+                            <th>Product</th>
+                            <th>Lot</th>
+                            <th class="text-end">Quantity</th>
+                            <th>Result</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <t
+                            t-set="rescue_outcomes"
+                            t-value="o._trip_report_rescue_outcomes(rescue)" />
+                        <tr
+                            t-foreach="o._trip_report_handover_lines(rescue)"
+                            t-as="line">
+                            <td><span t-out="line['picking'].name or ''" /></td>
+                            <td><span t-out="line['picking'].partner_id.name or ''" /></td>
+                            <td><span t-out="line['product'].display_name" /></td>
+                            <td><span t-out="line['lot'].name or ''" /></td>
+                            <td class="text-end">
+                                <span
+                                    t-out="line['quantity']"
+                                    t-options="{'widget': 'float', 'precision': 2}" />
+                                <span t-out="line['uom'].name" />
+                            </td>
+                            <td><span t-out="rescue_outcomes.get(line['picking'], '')" /></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <t t-if="o.has_trip_trace and o.date_loaded">
+                <t t-set="write_offs" t-value="o._trip_report_write_offs()" />
+                <div
+                    t-if="write_offs"
+                    class="o_trip_write_offs"
+                    style="margin-top: 0.75rem;">
+                    <h5>Written off by incidents</h5>
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Incident</th>
+                                <th>Delivery</th>
+                                <th>Product</th>
+                                <th>Lot</th>
+                                <th class="text-end">Quantity</th>
+                                <th class="text-end">Weight</th>
+                                <th>Scrap</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr t-foreach="write_offs" t-as="row">
+                                <td>
+                                    <span t-out="row['incident'].name" />
+                                    <div class="text-muted small">
+                                        <span t-out="row['kind']" /> ·
+                                        <span t-field="row['incident'].date" />
+                                    </div>
+                                </td>
+                                <td><span t-out="row['picking'].name or ''" /></td>
+                                <td><span t-out="row['product'].display_name" /></td>
+                                <td><span t-out="row['lot'].name or ''" /></td>
+                                <td class="text-end">
+                                    <span
+                                        t-out="row['quantity']"
+                                        t-options="{'widget': 'float', 'precision': 2}" />
+                                    <span t-out="row['uom'].name" />
+                                </td>
+                                <td class="text-end"><span t-out="row['weight']" t-options="{'widget': 'float', 'precision': 2}" /></td>
+                                <td>
+                                    <span t-out="row['scrap'].name or ''" />
+                                    <div t-if="row['scrap']" class="text-muted small">
+                                        <span
+                                            t-out="row['scrap'].scrap_location_id.display_name" />
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <t t-set="movements" t-value="o._trip_report_movements()" />
+                <div
+                    t-if="movements"
+                    class="o_trip_movements"
+                    style="margin-top: 0.75rem;">
+                    <h5>Stock moves of the trip</h5>
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Reference</th>
+                                <th>Kind</th>
+                                <th>From</th>
+                                <th>To</th>
+                                <th>Status</th>
+                                <th>Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr t-foreach="movements" t-as="move">
+                                <td><span t-out="move['reference']" /></td>
+                                <td><span t-out="move['kind']" /></td>
+                                <td><span t-out="move['source']" /></td>
+                                <td><span t-out="move['destination']" /></td>
+                                <td><span t-out="move['state']" /></td>
+                                <td>
+                                    <span
+                                        t-if="move['date']"
+                                        t-out="move['date']"
+                                        t-options="{'widget': 'datetime'}" />
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <p t-if="o.date_return">
+                        <strong>Still on the vehicle:</strong>
+                        <span
+                            t-out="o.weight_on_board"
+                            t-options="{'widget': 'float', 'precision': 2}" />
+                        <t t-out="o.weight_uom_name" />
+                    </p>
+                </div>
+            </t>
+        </xpath>
+    </template>
+
+    <!-- The goods list of the sheet always says the unit of each quantity. -->
+    <template
+        id="report_picking_batch_trace_units"
+        inherit_id="stock_picking_batch.report_picking_batch">
+        <xpath
+            expr="//span[@t-field='move_operation.product_uom_id']"
+            position="attributes">
+            <attribute name="groups" />
+        </xpath>
+    </template>
+
+    <!--
+        Under the signature, who received: the name the driver captured, or a
+        blank line to fill in by hand; never the customer's name, which the slip
+        already shows. A trip delivery without a phone signature gets the lines
+        to sign on paper. The operator of a trip delivery is the trip's driver.
+    -->
+    <template
+        id="report_delivery_document_trace"
+        inherit_id="stock.report_delivery_document">
+        <xpath expr="//div[@name='div_operator']" position="attributes">
+            <attribute name="t-if">o.batch_id.operator_id or o.user_id</attribute>
+        </xpath>
+        <xpath
+            expr="//div[@name='div_operator']/p[@t-field='o.user_id']"
+            position="replace">
+            <p t-if="o.batch_id.operator_id" t-field="o.batch_id.operator_id" />
+            <p t-else="" t-field="o.user_id">Mitchel Admin</p>
+        </xpath>
+        <xpath
+            expr="//div[@name='signature']//div[p[@t-field='o.partner_id.name']]"
+            position="attributes">
+            <attribute name="t-if" />
+        </xpath>
+        <xpath
+            expr="//div[@name='signature']//p[@t-field='o.partner_id.name']"
+            position="replace">
+            <p>
+                <strong>Received By:</strong>
+                <t t-if="o.trip_receiver_name" t-out="o.trip_receiver_name" />
+                <t t-else="">______________________</t>
+            </p>
+        </xpath>
+        <xpath expr="//div[@name='signature']" position="after">
+            <div
+                t-if="not o.signature and o.batch_id.has_trip_trace"
+                class="row mt-5"
+                name="trip_paper_signature">
+                <div class="col-5">
+                    <strong>Received By:</strong>
+                    <t t-if="o.trip_receiver_name" t-out="o.trip_receiver_name" />
+                    <t t-else="">______________________</t>
+                </div>
+                <div class="col-5 ms-auto">
+                    <strong>Signature:</strong> ______________________
+                </div>
+            </div>
+        </xpath>
+    </template>
+
+    <!-- Weights stay stored at the company's six decimals; the slip prints two. -->
+    <template
+        id="report_delivery_document_trace_weight"
+        inherit_id="stock_delivery.report_delivery_document2">
+        <xpath expr="//span[@t-field='o.shipping_weight']" position="attributes">
+            <attribute name="t-options">{'precision': 2}</attribute>
+        </xpath>
+    </template>
+
+    <template
+        id="report_delivery_package_trace_weight"
+        inherit_id="stock_delivery.stock_report_delivery_package_section_line_inherit_delivery">
+        <xpath expr="//span[@t-field='package.shipping_weight']" position="attributes">
+            <attribute name="t-options">{'precision': 2}</attribute>
+        </xpath>
+        <xpath expr="//span[@t-field='package.weight']" position="attributes">
+            <attribute name="t-options">{'precision': 2}</attribute>
+        </xpath>
+    </template>
+
+    <template
+        id="report_delivery_bulk_trace_weight"
+        inherit_id="stock_delivery.delivery_stock_report_delivery_no_package_section_line">
+        <xpath expr="//span[@t-field='o.weight_bulk']" position="attributes">
+            <attribute name="t-options">{'precision': 2}</attribute>
+        </xpath>
+    </template>
+
+</odoo>

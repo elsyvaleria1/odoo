@@ -1,0 +1,103 @@
+// @ts-check
+import {
+    applyCounterAbsolute,
+    applyCounterDelta,
+    snapshotCounter,
+} from "@mail/utils/common/counters";
+import { describe, expect, test } from "@odoo/hoot";
+
+describe.current.tags("desktop");
+
+function makeTarget(counter = 0, busId = 0) {
+    return { counter, counter_bus_id: busId };
+}
+
+test("applyCounterAbsolute applies a newer snapshot and advances the bus id", () => {
+    const target = makeTarget(3, 10);
+    expect(applyCounterAbsolute(target, "counter", 7, 11)).toBe(true);
+    expect(target.counter).toBe(7);
+    expect(target.counter_bus_id).toBe(11);
+});
+
+test("applyCounterAbsolute ignores an older bus id and re-applies an equal one", () => {
+    const target = makeTarget(3, 10);
+    expect(applyCounterAbsolute(target, "counter", 99, 9)).toBe(false);
+    expect(target.counter).toBe(3);
+    expect(target.counter_bus_id).toBe(10);
+    expect(applyCounterAbsolute(target, "counter", 4, 10)).toBe(true);
+    expect(target.counter).toBe(4);
+    expect(target.counter_bus_id).toBe(10);
+});
+
+test("applyCounterAbsolute replays the deltas notified after its bus id", () => {
+    const target = makeTarget(3, 10);
+    applyCounterDelta(target, "counter", 1, { busId: 12 });
+    applyCounterDelta(target, "counter", 2, { busId: 14 });
+    expect(target.counter).toBe(6);
+    expect(applyCounterAbsolute(target, "counter", 5, 13)).toBe(true);
+    expect(target.counter).toBe(7);
+    expect(target.counter_bus_id).toBe(13);
+    expect(applyCounterAbsolute(target, "counter", 0, 12)).toBe(false);
+    expect(target.counter).toBe(7);
+    applyCounterDelta(target, "counter", 1, { busId: 15 });
+    expect(applyCounterAbsolute(target, "counter", 10, 14)).toBe(true);
+    expect(target.counter).toBe(11);
+    expect(target.counter_bus_id).toBe(14);
+});
+
+test("applyCounterAbsolute does not replay deltas across a bus id written elsewhere", () => {
+    const target = makeTarget(3, 10);
+    applyCounterDelta(target, "counter", 1, { busId: 12 });
+    Object.assign(target, { counter: 9, counter_bus_id: 20 });
+    expect(applyCounterAbsolute(target, "counter", 1, 15)).toBe(false);
+    expect(target.counter).toBe(9);
+    expect(applyCounterAbsolute(target, "counter", 2, 21)).toBe(true);
+    expect(target.counter).toBe(2);
+});
+
+test("applyCounterDelta clamps at the floor and returns the applied delta", () => {
+    const target = makeTarget(1);
+    expect(applyCounterDelta(target, "counter", -3)).toBe(-1);
+    expect(target.counter).toBe(0);
+    expect(applyCounterDelta(target, "counter", -1)).toBe(0);
+    expect(target.counter).toBe(0);
+    expect(applyCounterDelta(target, "counter", 2)).toBe(2);
+    expect(target.counter).toBe(2);
+    expect(applyCounterDelta(target, "counter", -5, { floor: 1 })).toBe(-1);
+    expect(target.counter).toBe(1);
+});
+
+test("applyCounterDelta with a bus id is fenced and never advances the bus id", () => {
+    const target = makeTarget(3, 10);
+    expect(applyCounterDelta(target, "counter", 1, { busId: 10 })).toBe(0);
+    expect(applyCounterDelta(target, "counter", 1, { busId: 9 })).toBe(0);
+    expect(target.counter).toBe(3);
+    expect(applyCounterDelta(target, "counter", 1, { busId: 11 })).toBe(1);
+    expect(target.counter).toBe(4);
+    expect(target.counter_bus_id).toBe(10);
+});
+
+test("snapshotCounter restores value and delta while the bus id is unchanged", () => {
+    const target = makeTarget(5, 10);
+    const snapshot = snapshotCounter(target, "counter");
+    target.counter = 0;
+    snapshot.restore();
+    expect(target.counter).toBe(5);
+    target.counter = 0;
+    snapshot.restoreDelta(2);
+    expect(target.counter).toBe(2);
+    snapshot.restoreDelta(-4);
+    expect(target.counter).toBe(0);
+});
+
+test("snapshotCounter skips restores after a newer absolute snapshot landed", () => {
+    const target = makeTarget(5, 10);
+    const snapshot = snapshotCounter(target, "counter");
+    target.counter = 0;
+    applyCounterAbsolute(target, "counter", 8, 11);
+    snapshot.restore();
+    expect(target.counter).toBe(8);
+    snapshot.restoreDelta(1);
+    expect(target.counter).toBe(8);
+    expect(target.counter_bus_id).toBe(11);
+});

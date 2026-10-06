@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <menuitem
+        id="res_partner_attribute_menu"
+        name="Contact Attributes"
+        parent="partner.res_partner_menu_config"
+        action="res_partner_attribute_action"
+        sequence="20"
+        groups="partner_scoring.group_partner_scoring_manager" />
+
+    <menuitem
+        id="partner_tier_menu"
+        name="Commercial Tiers"
+        parent="partner.res_partner_menu_config"
+        action="partner_tier_action"
+        sequence="30"
+        groups="partner_scoring.group_partner_scoring_manager" />
+
+    <menuitem
+        id="scorecard_partner_menu"
+        name="Customer Scorecard"
+        parent="partner.res_partner_menu_config"
+        action="scorecard_partner_action"
+        sequence="40"
+        groups="partner_scoring.group_partner_scoring_manager" />
+
+</odoo>

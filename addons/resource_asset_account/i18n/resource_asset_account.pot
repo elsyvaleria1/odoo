@@ -1,0 +1,274 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* resource_asset_account
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-09-27 05:12+0000\n"
+"PO-Revision-Date: 2026-09-27 05:12+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: resource_asset_account
+#. odoo-python
+#: code:addons/resource_asset_account/models/account_move.py:0
+msgid ""
+"%(bill)s cannot be posted: it charges flagged parts (%(parts)s). An asset "
+"manager reviews and clears them first."
+msgstr ""
+
+#. module: resource_asset_account
+#. odoo-python
+#: code:addons/resource_asset_account/models/account_move.py:0
+msgid ""
+"%(bill)s charges flagged parts: an asset manager clears them before it is "
+"paid."
+msgstr ""
+
+#. module: resource_asset_account
+#: model:ir.model.fields,field_description:resource_asset_account.field_resource_asset_log__account_move_line_id
+msgid "Accounting Entry"
+msgstr ""
+
+#. module: resource_asset_account
+#: model:ir.model,name:resource_asset_account.model_account_analytic_distribution_model
+msgid "Analytic Distribution Model"
+msgstr ""
+
+#. module: resource_asset_account
+#: model:ir.model.fields,field_description:resource_asset_account.field_account_analytic_distribution_model__asset_id
+#: model:ir.model.fields,field_description:resource_asset_account.field_account_analytic_line__asset_id
+#: model:ir.model.fields,field_description:resource_asset_account.field_account_move_line__asset_id
+#: model_terms:ir.ui.view,arch_db:resource_asset_account.view_account_analytic_line_filter
+msgid "Asset"
+msgstr ""
+
+#. module: resource_asset_account
+#: model:ir.model.fields,field_description:resource_asset_account.field_account_account__asset_log_type
+msgid "Asset Log Type"
+msgstr ""
+
+#. module: resource_asset_account
+#: model:ir.model.fields,field_description:resource_asset_account.field_account_move_line__asset_part_ids
+msgid "Asset Parts"
+msgstr ""
+
+#. module: resource_asset_account
+#: model:ir.model.fields,help:resource_asset_account.field_account_analytic_line__asset_id
+msgid ""
+"Asset associated with this analytic entry, inherited from the accounting "
+"move line"
+msgstr ""
+
+#. module: resource_asset_account
+#: model:ir.model.fields,help:resource_asset_account.field_account_analytic_distribution_model__asset_id
+msgid ""
+"Asset for which this analytic distribution will be automatically applied. "
+"When this asset is selected on an invoice line or sales order, the defined "
+"analytic distribution will be used automatically"
+msgstr ""
+
+#. module: resource_asset_account
+#: model:ir.model.fields,help:resource_asset_account.field_account_move_line__asset_id
+msgid ""
+"Asset to which this expense or revenue is allocated. Used for tracking costs"
+" per vehicle, equipment, or property"
+msgstr ""
+
+#. module: resource_asset_account
+#: model:ir.model.fields,field_description:resource_asset_account.field_resource_asset_part__account_move_line_id
+msgid "Bill Line"
+msgstr ""
+
+#. module: resource_asset_account
+#: model:ir.model.fields,field_description:resource_asset_account.field_resource_asset_log__account_move_state
+msgid "Bill State"
+msgstr ""
+
+#. module: resource_asset_account
+#: model:ir.model.fields,field_description:resource_asset_account.field_account_depreciation_board__account_move_ids
+#: model:ir.model.fields,field_description:resource_asset_account.field_resource_asset__account_move_ids
+#: model:ir.model.fields,field_description:resource_asset_account.field_resource_asset_device__account_move_ids
+#: model:ir.model.fields,field_description:resource_asset_account.field_resource_asset_equipment__account_move_ids
+#: model:ir.model.fields,field_description:resource_asset_account.field_resource_asset_furniture__account_move_ids
+#: model:ir.model.fields,field_description:resource_asset_account.field_resource_asset_it__account_move_ids
+#: model:ir.model.fields,field_description:resource_asset_account.field_resource_asset_machinery__account_move_ids
+#: model:ir.model.fields,field_description:resource_asset_account.field_resource_asset_property__account_move_ids
+#: model:ir.model.fields,field_description:resource_asset_account.field_resource_asset_telecom__account_move_ids
+#: model:ir.model.fields,field_description:resource_asset_account.field_resource_asset_vehicle__account_move_ids
+#: model_terms:ir.ui.view,arch_db:resource_asset_account.resource_asset_view_form_bills
+msgid "Bills"
+msgstr ""
+
+#. module: resource_asset_account
+#: model:ir.model.fields,field_description:resource_asset_account.field_account_depreciation_board__count_bill
+#: model:ir.model.fields,field_description:resource_asset_account.field_resource_asset__count_bill
+#: model:ir.model.fields,field_description:resource_asset_account.field_resource_asset_device__count_bill
+#: model:ir.model.fields,field_description:resource_asset_account.field_resource_asset_equipment__count_bill
+#: model:ir.model.fields,field_description:resource_asset_account.field_resource_asset_furniture__count_bill
+#: model:ir.model.fields,field_description:resource_asset_account.field_resource_asset_it__count_bill
+#: model:ir.model.fields,field_description:resource_asset_account.field_resource_asset_machinery__count_bill
+#: model:ir.model.fields,field_description:resource_asset_account.field_resource_asset_property__count_bill
+#: model:ir.model.fields,field_description:resource_asset_account.field_resource_asset_telecom__count_bill
+#: model:ir.model.fields,field_description:resource_asset_account.field_resource_asset_vehicle__count_bill
+msgid "Bills Count"
+msgstr ""
+
+#. module: resource_asset_account
+#: model:ir.model,name:resource_asset_account.model_wizard_account_move_line_transfer
+msgid "Create Automatic Entries"
+msgstr ""
+
+#. module: resource_asset_account
+#: model:ir.model.fields,help:resource_asset_account.field_resource_asset_log__account_move_state
+msgid "Current state of the related vendor bill (draft, posted, cancelled)"
+msgstr ""
+
+#. module: resource_asset_account
+#: model:ir.model.fields,field_description:resource_asset_account.field_account_analytic_distribution_model__display_name
+#: model:ir.model.fields,field_description:resource_asset_account.field_wizard_account_move_line_transfer__display_name
+msgid "Display Name"
+msgstr ""
+
+#. module: resource_asset_account
+#: model:ir.model.fields,field_description:resource_asset_account.field_account_bank_statement_line__asset_part_flagged_count
+#: model:ir.model.fields,field_description:resource_asset_account.field_account_move__asset_part_flagged_count
+#: model_terms:ir.ui.view,arch_db:resource_asset_account.view_move_form
+msgid "Flagged Parts"
+msgstr ""
+
+#. module: resource_asset_account
+#: model:ir.model.fields,field_description:resource_asset_account.field_account_bank_statement_line__asset_part_hold
+#: model:ir.model.fields,field_description:resource_asset_account.field_account_move__asset_part_hold
+msgid "Held for Flagged Parts"
+msgstr ""
+
+#. module: resource_asset_account
+#: model:ir.model.fields,field_description:resource_asset_account.field_account_analytic_distribution_model__id
+#: model:ir.model.fields,field_description:resource_asset_account.field_wizard_account_move_line_transfer__id
+msgid "ID"
+msgstr ""
+
+#. module: resource_asset_account
+#: model:ir.model.fields,help:resource_asset_account.field_account_account__asset_log_type
+msgid ""
+"Kind of asset spend booked to this account. Used whenever the bill line's "
+"product category types nothing — including an account-only line with no "
+"product at all, which is where it matters most: without it the asset log "
+"lands in no bucket."
+msgstr ""
+
+#. module: resource_asset_account
+#: model:ir.model.fields,help:resource_asset_account.field_resource_asset_log__account_move_line_id
+msgid ""
+"Link to the vendor bill line that created this log entry. When set, the "
+"amount and asset are synchronized from the bill"
+msgstr ""
+
+#. module: resource_asset_account
+#: model:ir.model.fields,field_description:resource_asset_account.field_account_move_line__need_asset
+msgid "Need Asset"
+msgstr ""
+
+#. module: resource_asset_account
+#: model:ir.model.fields,help:resource_asset_account.field_account_depreciation_board__count_bill
+#: model:ir.model.fields,help:resource_asset_account.field_resource_asset__count_bill
+#: model:ir.model.fields,help:resource_asset_account.field_resource_asset_device__count_bill
+#: model:ir.model.fields,help:resource_asset_account.field_resource_asset_equipment__count_bill
+#: model:ir.model.fields,help:resource_asset_account.field_resource_asset_furniture__count_bill
+#: model:ir.model.fields,help:resource_asset_account.field_resource_asset_it__count_bill
+#: model:ir.model.fields,help:resource_asset_account.field_resource_asset_machinery__count_bill
+#: model:ir.model.fields,help:resource_asset_account.field_resource_asset_property__count_bill
+#: model:ir.model.fields,help:resource_asset_account.field_resource_asset_telecom__count_bill
+#: model:ir.model.fields,help:resource_asset_account.field_resource_asset_vehicle__count_bill
+msgid "Number of vendor bills referencing this asset"
+msgstr ""
+
+#. module: resource_asset_account
+#: model:ir.model.constraint,message:resource_asset_account.constraint_resource_asset_log_account_move_line_id_uniq
+msgid "Only one asset log can be linked to a given accounting line."
+msgstr ""
+
+#. module: resource_asset_account
+#. odoo-python
+#: code:addons/resource_asset_account/models/account_move.py:0
+msgid "Payment blocked: this bill charges flagged parts (%(parts)s)."
+msgstr ""
+
+#. module: resource_asset_account
+#: model:ir.model.fields,help:resource_asset_account.field_account_bank_statement_line__asset_part_hold
+#: model:ir.model.fields,help:resource_asset_account.field_account_move__asset_part_hold
+msgid "Payment is blocked because a part this bill charges was flagged."
+msgstr ""
+
+#. module: resource_asset_account
+#. odoo-python
+#: code:addons/resource_asset_account/models/account_move.py:0
+msgid "Payment released: its flagged parts were cleared."
+msgstr ""
+
+#. module: resource_asset_account
+#: model:ir.model.fields,help:resource_asset_account.field_account_move_line__asset_log_ids
+msgid "Service log entries automatically created from this accounting line"
+msgstr ""
+
+#. module: resource_asset_account
+#: model:ir.model.fields,help:resource_asset_account.field_account_move_line__asset_part_ids
+msgid "The installed parts this bill line charges."
+msgstr ""
+
+#. module: resource_asset_account
+#: model:ir.model.fields,help:resource_asset_account.field_resource_asset_part__account_move_line_id
+msgid ""
+"The vendor bill line that charges this part. A flagged part holds its bill."
+msgstr ""
+
+#. module: resource_asset_account
+#: model_terms:ir.ui.view,arch_db:resource_asset_account.view_move_form
+msgid ""
+"This bill charges parts flagged as a repeated or unreturned replacement. It "
+"cannot be posted or paid until an asset manager clears them."
+msgstr ""
+
+#. module: resource_asset_account
+#. odoo-python
+#: code:addons/resource_asset_account/models/resource_asset_log.py:0
+#: model:ir.model.fields.selection,name:resource_asset_account.selection__resource_asset_log__source__bill
+msgid "Vendor Bill"
+msgstr ""
+
+#. module: resource_asset_account
+#: model:ir.model.fields,help:resource_asset_account.field_account_depreciation_board__account_move_ids
+#: model:ir.model.fields,help:resource_asset_account.field_resource_asset__account_move_ids
+#: model:ir.model.fields,help:resource_asset_account.field_resource_asset_device__account_move_ids
+#: model:ir.model.fields,help:resource_asset_account.field_resource_asset_equipment__account_move_ids
+#: model:ir.model.fields,help:resource_asset_account.field_resource_asset_furniture__account_move_ids
+#: model:ir.model.fields,help:resource_asset_account.field_resource_asset_it__account_move_ids
+#: model:ir.model.fields,help:resource_asset_account.field_resource_asset_machinery__account_move_ids
+#: model:ir.model.fields,help:resource_asset_account.field_resource_asset_property__account_move_ids
+#: model:ir.model.fields,help:resource_asset_account.field_resource_asset_telecom__account_move_ids
+#: model:ir.model.fields,help:resource_asset_account.field_resource_asset_vehicle__account_move_ids
+msgid "Vendor bills containing line items related to this asset"
+msgstr ""
+
+#. module: resource_asset_account
+#. odoo-python
+#: code:addons/resource_asset_account/models/resource_asset_log.py:0
+msgid ""
+"You cannot delete log services records because one or more of them were "
+"created from a bill. Delete the bill line instead."
+msgstr ""
+
+#. module: resource_asset_account
+#. odoo-python
+#: code:addons/resource_asset_account/models/resource_asset_log.py:0
+msgid ""
+"You cannot modify the amount of services linked to an accounting entry. "
+"Please modify the related vendor bill instead."
+msgstr ""

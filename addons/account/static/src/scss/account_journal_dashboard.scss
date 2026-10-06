@@ -1,0 +1,59 @@
+.o_account_kanban .o_kanban_renderer {
+    --KanbanRecord-padding-v: #{$o-kanban-dashboard-vpadding};
+    --KanbanRecord-padding-h: #{$o-kanban-dashboard-hpadding};
+
+    .o_kanban_record {
+        &:not(.o_kanban_ghost) {
+            min-height: 150px;
+        }
+
+        @include media-breakpoint-up(sm) {
+            button.oe_kanban_action {
+                margin-bottom: 5px;
+            }
+        }
+
+        .o_dashboard_graph {
+            margin-bottom: calc($o-horizontal-padding / -2);
+        }
+
+        .o_field_widget.o_field_kanban_vat_activity {
+            display: block;
+        }
+
+        .container-fluid {
+            flex: 1 0 auto;
+            display: flex;
+            flex-flow: column nowrap;
+        }
+    }
+
+    &.o_kanban_ungrouped {
+        @include media-breakpoint-down(lg) {
+            --KanbanRecord-width: 100vw;
+        }
+        @include media-breakpoint-up(lg) {
+            --KanbanRecord-width: 47vw;
+        }
+        &:has(> .o_kanban_record:nth-child(12)) {
+            @include media-breakpoint-up(xxl) {
+                --KanbanRecord-width: 31vw;
+            }
+        }
+    }
+
+    .o_kanban_group {
+        &:not(.o_column_folded) {
+            --KanbanGroup-width: 500px;
+        }
+    }
+}
+
+.o_dashboard_graph {
+    position: relative;
+    margin: 16px -16px;
+
+    canvas {
+        height: 150px;
+    }
+}

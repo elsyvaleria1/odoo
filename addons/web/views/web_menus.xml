@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <menuitem
+        id="menu_config"
+        name="General Settings"
+        parent="base.menu_administration"
+        action="action_general_configuration"
+        sequence="0"
+        groups="base.group_system" />
+
+    <menuitem
+        id="menu_technical_observability"
+        name="Observability"
+        parent="base.menu_custom"
+        sequence="27"
+        groups="base.group_system">
+        <menuitem
+            id="menu_web_js_error"
+            name="JS Errors"
+            action="action_web_js_error"
+            sequence="20" />
+        <menuitem
+            id="menu_web_cwv_metric"
+            name="Core Web Vitals"
+            action="action_web_cwv_metric"
+            sequence="30" />
+    </menuitem>
+
+</odoo>

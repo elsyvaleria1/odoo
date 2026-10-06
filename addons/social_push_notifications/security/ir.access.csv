@@ -1,0 +1,4 @@
+id,name,model_id/id,group_id/id,kind,operation,domain
+access_website_visitor_social_user,website.visitor.social.user,website.model_website_visitor,social.group_social_user,permission,r,
+access_website_visitor_push_subscription_social_user,website.visitor.push.subscription.social.user,model_website_visitor_push_subscription,social.group_social_user,permission,r,
+access_website_track_social_user,website.track.social.user,website.model_website_track,social.group_social_user,permission,r,

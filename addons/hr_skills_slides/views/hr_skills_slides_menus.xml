@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <menuitem
+        id="menu_learnings_training_attendances_elearning"
+        name="eLearning"
+        parent="hr_skills.menu_learnings_training_attendances_courses"
+        action="slide_channel_training_elearning_action"
+        sequence="97" />
+
+</odoo>

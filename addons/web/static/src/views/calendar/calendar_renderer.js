@@ -1,0 +1,74 @@
+// @ts-check
+/** @odoo-module native */
+
+import { Component, t, useProps } from "@odoo/owl";
+import { ActionSwiper } from "@web/components/action_swiper/action_swiper";
+import { makeLogger } from "@web/core/debug/debug_logger";
+import { useLifecycleLog } from "@web/core/debug/logger_hooks";
+import { useService } from "@web/core/utils/hooks";
+import { useReactiveModel } from "@web/model/model";
+
+import { CalendarCommonRenderer } from "./calendar_common/calendar_common_renderer.js";
+import { CalendarYearRenderer } from "./calendar_year/calendar_year_renderer.js";
+const log = makeLogger("web.view.calendar");
+
+export class CalendarRenderer extends Component {
+    static template = "web.CalendarRenderer";
+    static components = {
+        day: CalendarCommonRenderer,
+        week: CalendarCommonRenderer,
+        month: CalendarCommonRenderer,
+        year: CalendarYearRenderer,
+        ActionSwiper,
+    };
+    static props = {
+        model: t.object(),
+        isWeekendVisible: t.boolean(),
+        createRecord: t.function(),
+        editRecord: t.function(),
+        deleteRecord: t.function(),
+        setDate: t.function(),
+        callbackRecorder: t.object(),
+        onSquareSelection: t.function(),
+        cleanSquareSelection: t.function(),
+    };
+    props = useProps(this.constructor.props);
+    setup() {
+        this.ui = useService("ui");
+        this.model = useReactiveModel(this.props.model);
+        useLifecycleLog(log);
+    }
+
+    get concreteRenderer() {
+        return /** @type {any} */ (this.constructor).components[this.model.scale];
+    }
+    get concreteRendererProps() {
+        if (this.model.scale === "year") {
+            return {
+                model: this.model,
+                isWeekendVisible: this.props.isWeekendVisible,
+                createRecord: this.props.createRecord,
+                editRecord: this.props.editRecord,
+                deleteRecord: this.props.deleteRecord,
+            };
+        }
+        return this.props;
+    }
+    get calendarKey() {
+        return this.model.scale;
+    }
+    get actionSwiperProps() {
+        return {
+            onLeftSwipe: this.ui.isTouch
+                ? { action: () => this.props.setDate("next") }
+                : undefined,
+            onRightSwipe: this.ui.isTouch
+                ? { action: () => this.props.setDate("previous") }
+                : undefined,
+            animationOnMove: false,
+            animationType: "forwards",
+            swipeDistanceRatio: 6,
+            swipeInvalid: () => Boolean(document.querySelector(".o_event.fc-mirror")),
+        };
+    }
+}

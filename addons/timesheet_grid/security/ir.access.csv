@@ -1,0 +1,5 @@
+id,name,model_id/id,group_id/id,kind,operation,domain
+timesheet_line_rule_user_update-unlink_group_project_manager,account.analytic.line.timesheet.user.update-unlink,analytic.model_account_analytic_line,project.group_project_manager,permission,ud,"[ ('user_id', '=', user.id), ('validated', '=', False), ('project_id', '!=', False), '|', ('project_id.user_has_access', '=', True), ('message_partner_ids', 'in', [user.partner_id.id]) ]"
+timesheet_line_rule_user_update-unlink,account.analytic.line.timesheet.user.update-unlink,analytic.model_account_analytic_line,hr_timesheet.group_hr_timesheet_user,permission,ud,"[ ('user_id', '=', user.id), ('validated', '=', False), ('project_id', '!=', False), '|', ('project_id.user_has_access', '=', True), ('message_partner_ids', 'in', [user.partner_id.id]) ]"
+access_hr_timesheet_merge_wizard,access_hr_timesheet_merge_wizard,model_wizard_account_analytic_line_merge,hr_timesheet.group_hr_timesheet_user,permission,crud,
+access_hr_timesheet_stop_timer_confirmation_wizard,access_hr_timesheet_stop_timer_confirmation_wizard,model_hr_timesheet_stop_timer_confirmation_wizard,hr_timesheet.group_hr_timesheet_user,permission,cru,

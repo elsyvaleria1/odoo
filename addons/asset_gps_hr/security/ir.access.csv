@@ -1,0 +1,2 @@
+id,name,model_id/id,group_id/id,kind,operation,reach,anchor,domain
+access_asset_trip_report_user,asset.trip.report.user,model_asset_trip_report,device_gps.group_device_gps_user,permission,r,company,,

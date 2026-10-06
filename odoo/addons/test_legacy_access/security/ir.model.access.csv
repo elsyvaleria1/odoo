@@ -1,0 +1,6 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_note_employee,note employee,model_test_legacy_access_note,base.group_user,1,0,0,0
+access_note_user,note user,model_test_legacy_access_note,group_note_user,1,1,1,0
+access_note_manager,note manager,model_test_legacy_access_note,group_note_manager,1,1,1,1
+access_note_auditor,note auditor,model_test_legacy_access_note,group_note_auditor,1,0,0,0
+access_note_reader,note reader,model_test_legacy_access_note,group_note_reader,1,0,0,0

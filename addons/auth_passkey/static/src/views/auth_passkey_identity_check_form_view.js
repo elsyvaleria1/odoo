@@ -1,0 +1,38 @@
+/** @odoo-module native */
+import { rpc } from "@web/core/network";
+import { registry } from "@web/core/registry";
+import { FormController, formView } from "@web/views/form";
+
+import { passkeyLib } from "../passkey_lib.js";
+
+export class PassKeyIdentityCheckFormController extends FormController {
+    /**
+     * @override
+     */
+    async beforeExecuteActionButton(clickParams) {
+        if (
+            clickParams.name === "run_check" &&
+            this.model.root.data.auth_method === "webauthn"
+        ) {
+            const serverOptions = await rpc("/auth/passkey/start-auth");
+            const auth = await passkeyLib
+                .startAuthentication(serverOptions)
+                .catch((e) => console.error(e));
+            // In case the user cancelled the passkey browser check, just interrupt.
+            if (!auth) {
+                return false;
+            }
+            this.model.root.update({ password: JSON.stringify(auth) });
+        }
+        return super.beforeExecuteActionButton(...arguments);
+    }
+}
+
+export const PassKeyIdentityCheckFormView = {
+    ...formView,
+    Controller: PassKeyIdentityCheckFormController,
+};
+
+registry
+    .category("views")
+    .add("auth_passkey_identity_check_view_form", PassKeyIdentityCheckFormView);

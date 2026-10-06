@@ -1,0 +1,1049 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* document_compliance
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-09-27 05:12+0000\n"
+"PO-Revision-Date: 2026-09-27 05:12+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: document_compliance
+#: model_terms:document.type,instructions:document_compliance.demo_doc_type_vehicle_registration
+msgid "<strong>Renewal Process:</strong>"
+msgstr ""
+
+#. module: document_compliance
+#: model:document.document,name:document_compliance.demo_doc_supplier_001_iso
+msgid "ABC Manufacturing - ISO 9001 Certificate"
+msgstr ""
+
+#. module: document_compliance
+#: model:ir.model.fields,help:document_compliance.field_document_type__notification_partner_ids
+msgid ""
+"Additional contacts to notify about expiration (in addition to document "
+"owner)"
+msgstr ""
+
+#. module: document_compliance
+#: model:document.type,description:document_compliance.demo_doc_type_business_license
+msgid "Annual business operating license from local authorities."
+msgstr ""
+
+#. module: document_compliance
+#: model:document.type,description:document_compliance.demo_doc_type_tax_certificate
+msgid "Annual tax compliance certificate from tax authorities."
+msgstr ""
+
+#. module: document_compliance
+#: model:document.type,description:document_compliance.demo_doc_type_vehicle_registration
+msgid ""
+"Annual vehicle registration documents required by law for all company "
+"vehicles."
+msgstr ""
+
+#. module: document_compliance
+#: model:ir.model.fields,field_description:document_compliance.field_document_type__applies_to
+msgid "Applies To"
+msgstr ""
+
+#. module: document_compliance
+#: model_terms:ir.ui.view,arch_db:document_compliance.view_document_compliance_report_search
+msgid "Below 50% Compliance"
+msgstr ""
+
+#. module: document_compliance
+#: model_terms:ir.ui.view,arch_db:document_compliance.view_document_compliance_report_search
+msgid "Below 80% Compliance"
+msgstr ""
+
+#. module: document_compliance
+#: model:document.type,name:document_compliance.demo_doc_type_business_license
+msgid "Business Operating License"
+msgstr ""
+
+#. module: document_compliance
+#: model:document.document,name:document_compliance.demo_doc_business_license
+msgid "Business Operating License 2024"
+msgstr ""
+
+#. module: document_compliance
+#: model:document.document,name:document_compliance.demo_doc_vehicle_003_reg
+msgid "Car CAR-003 - Registration 2024"
+msgstr ""
+
+#. module: document_compliance
+#: model:document.type,description:document_compliance.demo_doc_type_forklift_license
+msgid "Certified forklift operator license for warehouse personnel."
+msgstr ""
+
+#. module: document_compliance
+#: model:ir.model.fields,help:document_compliance.field_document_document__document_type_requires_original
+#: model:ir.model.fields,help:document_compliance.field_document_type__requires_original
+msgid ""
+"Check if the physical original document must be kept on file (not just "
+"digital copy)"
+msgstr ""
+
+#. module: document_compliance
+#: model:ir.model.fields,help:document_compliance.field_document_type__is_mandatory
+msgid ""
+"Check if this document type is required for legal/regulatory compliance"
+msgstr ""
+
+#. module: document_compliance
+#: model:ir.model.fields,help:document_compliance.field_document_type__notification_days
+msgid ""
+"Comma-separated list of days before expiration to send notifications (e.g., "
+"'30,7,1' sends alerts 30, 7, and 1 days before expiration). The widest value"
+" configured on any type is how far ahead the notification cron looks, so "
+"each one must be between 1 and 730 days"
+msgstr ""
+
+#. module: document_compliance
+#: model:document.type,description:document_compliance.demo_doc_type_lease_agreement
+msgid "Commercial property lease agreement."
+msgstr ""
+
+#. module: document_compliance
+#: model:ir.model.fields,field_description:document_compliance.field_document_compliance_report__company_id
+msgid "Company"
+msgstr ""
+
+#. module: document_compliance
+#: model:ir.model.fields,help:document_compliance.field_document_compliance_report__company_id
+msgid "Company this report entry belongs to"
+msgstr ""
+
+#. module: document_compliance
+#: model_terms:ir.ui.view,arch_db:document_compliance.view_document_type_form_compliance
+msgid "Compliance"
+msgstr ""
+
+#. module: document_compliance
+#: model:ir.model.fields,field_description:document_compliance.field_document_compliance_report__compliance_percentage
+msgid "Compliance %"
+msgstr ""
+
+#. module: document_compliance
+#: model_terms:ir.ui.view,arch_db:document_compliance.view_document_compliance_report_pivot
+msgid "Compliance Analysis"
+msgstr ""
+
+#. module: document_compliance
+#: model:ir.ui.menu,name:document_compliance.menu_document_compliance_dashboard
+msgid "Compliance Dashboard"
+msgstr ""
+
+#. module: document_compliance
+#: model:ir.actions.server,name:document_compliance.ir_cron_refresh_compliance_report_ir_actions_server
+msgid "Compliance Dashboard: refresh"
+msgstr ""
+
+#. module: document_compliance
+#: model_terms:ir.ui.view,arch_db:document_compliance.documents_view_form_compliance
+msgid "Compliance Document"
+msgstr ""
+
+#. module: document_compliance
+#: model_terms:ir.ui.view,arch_db:document_compliance.view_document_type_list_compliance
+msgid "Compliance Req."
+msgstr ""
+
+#. module: document_compliance
+#. odoo-javascript
+#: code:addons/document_compliance/static/src/components/document_details_panel/document_details_panel_patch.xml:0
+#: model:ir.model.fields,field_description:document_compliance.field_document_document__compliance_state
+msgid "Compliance State"
+msgstr ""
+
+#. module: document_compliance
+#: model:ir.model.fields,field_description:document_compliance.field_document_compliance_report__compliance_state
+#: model_terms:ir.ui.view,arch_db:document_compliance.document_view_search
+#: model_terms:ir.ui.view,arch_db:document_compliance.view_document_compliance_report_search
+msgid "Compliance Status"
+msgstr ""
+
+#. module: document_compliance
+#: model:ir.model.fields.selection,name:document_compliance.selection__document_compliance_report__compliance_state__compliant
+#: model:ir.model.fields.selection,name:document_compliance.selection__document_document__compliance_state__compliant
+#: model_terms:ir.ui.view,arch_db:document_compliance.view_document_compliance_report_search
+msgid "Compliant"
+msgstr ""
+
+#. module: document_compliance
+#: model:ir.model.fields,help:document_compliance.field_document_compliance_report__compliance_state
+msgid ""
+"Compliant (has all mandatory types with valid docs), Partial (has some), "
+"Non-Compliant (missing required types or all expired)"
+msgstr ""
+
+#. module: document_compliance
+#: model:document.type,description:document_compliance.demo_doc_type_vehicle_insurance
+msgid "Comprehensive vehicle insurance coverage for company fleet."
+msgstr ""
+
+#. module: document_compliance
+#: model_terms:document.type,instructions:document_compliance.demo_doc_type_vehicle_registration
+msgid "Contact DMV 45 days before expiration"
+msgstr ""
+
+#. module: document_compliance
+#: model_terms:document.type,instructions:document_compliance.demo_doc_type_vehicle_insurance
+msgid ""
+"Contact insurance broker at least 60 days before expiration to review "
+"coverage and rates."
+msgstr ""
+
+#. module: document_compliance
+#: model:ir.model.fields,help:document_compliance.field_document_compliance_report__entity_id
+msgid "Database ID of the entity record"
+msgstr ""
+
+#. module: document_compliance
+#. odoo-javascript
+#: code:addons/document_compliance/static/src/components/document_details_panel/document_details_panel_patch.xml:0
+msgid "Date Expiration"
+msgstr ""
+
+#. module: document_compliance
+#. odoo-javascript
+#: code:addons/document_compliance/static/src/components/document_details_panel/document_details_panel_patch.xml:0
+msgid "Date Issued"
+msgstr ""
+
+#. module: document_compliance
+#: model:ir.model.fields,field_description:document_compliance.field_document_document__date_verification
+msgid "Date Verification"
+msgstr ""
+
+#. module: document_compliance
+#: model:ir.model.fields,help:document_compliance.field_document_document__date_verification
+msgid "Date when this document was last reviewed and verified for accuracy"
+msgstr ""
+
+#. module: document_compliance
+#: model:ir.model.fields,field_description:document_compliance.field_document_compliance_report__display_name
+#: model:ir.model.fields,field_description:document_compliance.field_document_type__display_name
+msgid "Display Name"
+msgstr ""
+
+#. module: document_compliance
+#: model_terms:ir.ui.view,arch_db:document_compliance.documents_view_form_compliance
+msgid "Document"
+msgstr ""
+
+#. module: document_compliance
+#. odoo-python
+#: code:addons/document_compliance/models/document_document.py:0
+msgid "Document %(name)s has been verified."
+msgstr ""
+
+#. module: document_compliance
+#: model:ir.model,name:document_compliance.model_document_compliance_report
+msgid "Document Compliance Report"
+msgstr ""
+
+#. module: document_compliance
+#: model:ir.actions.server,name:document_compliance.ir_cron_document_expiration_notifications_ir_actions_server
+msgid "Document Expiration Notifications"
+msgstr ""
+
+#. module: document_compliance
+#. odoo-javascript
+#: code:addons/document_compliance/static/src/components/document_details_panel/document_details_panel_patch.xml:0
+#: model:ir.model,name:document_compliance.model_document_type
+msgid "Document Type"
+msgstr ""
+
+#. module: document_compliance
+#: model:ir.model.fields,field_description:document_compliance.field_document_compliance_report__total_present
+msgid "Document Types Covered"
+msgstr ""
+
+#. module: document_compliance
+#. odoo-python
+#: code:addons/document_compliance/models/document_document.py:0
+msgid "Document Verified"
+msgstr ""
+
+#. module: document_compliance
+#. odoo-python
+#: code:addons/document_compliance/models/document_document.py:0
+msgid "Document expired"
+msgstr ""
+
+#. module: document_compliance
+#. odoo-python
+#: code:addons/document_compliance/models/document_document.py:0
+msgid "Document expires today"
+msgstr ""
+
+#. module: document_compliance
+#. odoo-python
+#: code:addons/document_compliance/models/document_document.py:0
+msgid "Document expiring in %(days)s days"
+msgstr ""
+
+#. module: document_compliance
+#: model_terms:ir.actions.act_window,help:document_compliance.action_document_compliance_dashboard
+msgid ""
+"Each entity shows its compliance status based on mandatory document types configured\n"
+"                in the system."
+msgstr ""
+
+#. module: document_compliance
+#: model:document.type,description:document_compliance.demo_doc_type_employment_contract
+msgid "Employee contract with terms of employment."
+msgstr ""
+
+#. module: document_compliance
+#: model_terms:document.type,instructions:document_compliance.demo_doc_type_safety_training
+msgid ""
+"Employees must attend 4-hour safety refresher course. Contact HR to "
+"schedule."
+msgstr ""
+
+#. module: document_compliance
+#: model:document.type,name:document_compliance.demo_doc_type_employment_contract
+msgid "Employment Contract"
+msgstr ""
+
+#. module: document_compliance
+#: model_terms:ir.ui.view,arch_db:document_compliance.view_document_compliance_report_list
+#: model_terms:ir.ui.view,arch_db:document_compliance.view_document_compliance_report_search
+msgid "Entity"
+msgstr ""
+
+#. module: document_compliance
+#: model:ir.actions.act_window,name:document_compliance.action_document_compliance_dashboard
+#: model_terms:ir.actions.act_window,help:document_compliance.action_document_compliance_dashboard
+#: model_terms:ir.ui.view,arch_db:document_compliance.view_document_compliance_report_list
+msgid "Entity Compliance Dashboard"
+msgstr ""
+
+#. module: document_compliance
+#: model_terms:ir.ui.view,arch_db:document_compliance.view_document_compliance_report_graph
+msgid "Entity Compliance Overview"
+msgstr ""
+
+#. module: document_compliance
+#: model_terms:ir.ui.view,arch_db:document_compliance.view_document_compliance_report_search
+msgid "Entity Compliance Search"
+msgstr ""
+
+#. module: document_compliance
+#: model:ir.model.fields,field_description:document_compliance.field_document_compliance_report__entity_id
+msgid "Entity ID"
+msgstr ""
+
+#. module: document_compliance
+#: model:ir.model.fields,field_description:document_compliance.field_document_compliance_report__entity_name
+msgid "Entity Name"
+msgstr ""
+
+#. module: document_compliance
+#: model:ir.model.fields,field_description:document_compliance.field_document_compliance_report__entity_type
+#: model_terms:ir.ui.view,arch_db:document_compliance.view_document_compliance_report_search
+msgid "Entity Type"
+msgstr ""
+
+#. module: document_compliance
+#. odoo-javascript
+#: code:addons/document_compliance/static/src/components/document_details_panel/document_details_panel_patch.xml:0
+msgid "Expiration State"
+msgstr ""
+
+#. module: document_compliance
+#: model:ir.model.fields,field_description:document_compliance.field_document_compliance_report__total_expired
+msgid "Expired Document Types"
+msgstr ""
+
+#. module: document_compliance
+#: model_terms:ir.ui.view,arch_db:document_compliance.view_document_compliance_report_list
+msgid "Expired Types"
+msgstr ""
+
+#. module: document_compliance
+#: model_terms:ir.ui.view,arch_db:document_compliance.view_document_compliance_report_list
+msgid "Expiring Soon"
+msgstr ""
+
+#. module: document_compliance
+#: model:ir.model.fields,field_description:document_compliance.field_document_compliance_report__total_expiring
+msgid "Expiring Soon Types"
+msgstr ""
+
+#. module: document_compliance
+#: model:document.type,name:document_compliance.demo_doc_type_lease_agreement
+msgid "Facility Lease Agreement"
+msgstr ""
+
+#. module: document_compliance
+#: model:document.type,name:document_compliance.demo_doc_type_first_aid
+msgid "First Aid Certification"
+msgstr ""
+
+#. module: document_compliance
+#: model:document.type,name:document_compliance.demo_doc_type_forklift_license
+msgid "Forklift Operator License"
+msgstr ""
+
+#. module: document_compliance
+#: model:document.type,description:document_compliance.demo_doc_type_supplier_insurance
+msgid "General liability insurance certificate for approved suppliers."
+msgstr ""
+
+#. module: document_compliance
+#: model:document.document,name:document_compliance.demo_doc_supplier_004_insurance
+msgid "Global Parts Ltd - Liability Insurance EXPIRED"
+msgstr ""
+
+#. module: document_compliance
+#: model:ir.model.fields,help:document_compliance.field_document_type__instructions
+msgid ""
+"HTML formatted instructions for obtaining, completing, or renewing documents"
+" of this type"
+msgstr ""
+
+#. module: document_compliance
+#: model_terms:ir.ui.view,arch_db:document_compliance.view_document_compliance_report_search
+msgid "Has Expired Types"
+msgstr ""
+
+#. module: document_compliance
+#: model_terms:ir.ui.view,arch_db:document_compliance.view_document_compliance_report_search
+msgid "Has Expiring Types"
+msgstr ""
+
+#. module: document_compliance
+#: model_terms:ir.ui.view,arch_db:document_compliance.view_document_compliance_report_search
+msgid "Has Missing Types"
+msgstr ""
+
+#. module: document_compliance
+#: model:ir.model.fields,field_description:document_compliance.field_document_compliance_report__id
+#: model:ir.model.fields,field_description:document_compliance.field_document_type__id
+msgid "ID"
+msgstr ""
+
+#. module: document_compliance
+#: model:document.type,name:document_compliance.demo_doc_type_iso9001
+msgid "ISO 9001 Certification"
+msgstr ""
+
+#. module: document_compliance
+#: model:document.type,description:document_compliance.demo_doc_type_iso9001
+msgid "ISO 9001 Quality Management System certification for suppliers."
+msgstr ""
+
+#. module: document_compliance
+#: model_terms:ir.ui.view,arch_db:document_compliance.documents_view_form_compliance
+msgid "Identification"
+msgstr ""
+
+#. module: document_compliance
+#: model:ir.model.fields,field_description:document_compliance.field_document_type__instructions
+#: model_terms:ir.ui.view,arch_db:document_compliance.view_document_type_form_compliance
+msgid "Instructions"
+msgstr ""
+
+#. module: document_compliance
+#. odoo-python
+#: code:addons/document_compliance/models/document_type.py:0
+msgid ""
+"Invalid notification days '%(value)s'. Use comma-separated, distinct "
+"integers between 1 and %(maximum)s (e.g., 30,7,1). The widest value "
+"configured on any document type is how far ahead the notification cron "
+"selects documents, so an unbounded one scans the whole table."
+msgstr ""
+
+#. module: document_compliance
+#: model:ir.model.fields,field_description:document_compliance.field_document_compliance_report__is_compliant
+msgid "Is Fully Compliant"
+msgstr ""
+
+#. module: document_compliance
+#: model:ir.model.fields,field_description:document_compliance.field_document_document__is_mandatory
+#: model:ir.model.fields,field_description:document_compliance.field_document_type__is_mandatory
+msgid "Is Mandatory"
+msgstr ""
+
+#. module: document_compliance
+#. odoo-javascript
+#: code:addons/document_compliance/static/src/components/document_details_panel/document_details_panel_patch.xml:0
+msgid "Issuer"
+msgstr ""
+
+#. module: document_compliance
+#: model:document.document,name:document_compliance.demo_doc_employee_001_forklift
+msgid "John Smith - Forklift Operator License"
+msgstr ""
+
+#. module: document_compliance
+#: model:document.document,name:document_compliance.demo_doc_employee_001_safety
+msgid "John Smith - Safety Training Certificate"
+msgstr ""
+
+#. module: document_compliance
+#: model:ir.model.fields,field_description:document_compliance.field_document_compliance_report__last_verification
+msgid "Last Verification Date"
+msgstr ""
+
+#. module: document_compliance
+#. odoo-javascript
+#: code:addons/document_compliance/static/src/components/document_details_panel/document_details_panel_patch.xml:0
+msgid "Legal Number"
+msgstr ""
+
+#. module: document_compliance
+#: model_terms:ir.ui.view,arch_db:document_compliance.document_view_search
+#: model_terms:ir.ui.view,arch_db:document_compliance.view_document_type_search_compliance
+msgid "Mandatory"
+msgstr ""
+
+#. module: document_compliance
+#: model_terms:ir.ui.view,arch_db:document_compliance.document_view_search
+msgid "Mandatory Documents"
+msgstr ""
+
+#. module: document_compliance
+#: model:document.type,description:document_compliance.demo_doc_type_safety_training
+msgid ""
+"Mandatory workplace safety training for all warehouse and production "
+"employees."
+msgstr ""
+
+#. module: document_compliance
+#: model:document.document,name:document_compliance.demo_doc_employee_002_contract
+msgid "Maria Garcia - Employment Contract"
+msgstr ""
+
+#. module: document_compliance
+#: model:document.document,name:document_compliance.demo_doc_employee_005_safety
+msgid "Michael Brown - Safety Training EXPIRED"
+msgstr ""
+
+#. module: document_compliance
+#: model:ir.model.fields,field_description:document_compliance.field_document_compliance_report__total_missing
+msgid "Missing Document Types"
+msgstr ""
+
+#. module: document_compliance
+#: model_terms:ir.ui.view,arch_db:document_compliance.view_document_compliance_report_list
+msgid "Missing Types"
+msgstr ""
+
+#. module: document_compliance
+#: model:ir.model.fields,help:document_compliance.field_document_compliance_report__entity_type
+msgid "Model name of the entity (res.partner, hr.employee, etc.)"
+msgstr ""
+
+#. module: document_compliance
+#: model_terms:ir.actions.act_window,help:document_compliance.action_document_compliance_dashboard
+msgid "Monitor document compliance for all entities in your organization."
+msgstr ""
+
+#. module: document_compliance
+#: model:ir.model.fields,help:document_compliance.field_document_compliance_report__entity_name
+msgid "Name of the entity (partner name, employee name, vehicle plate, etc.)"
+msgstr ""
+
+#. module: document_compliance
+#: model:ir.model.fields,field_description:document_compliance.field_document_compliance_report__earliest_expiry
+msgid "Next Expiry Date"
+msgstr ""
+
+#. module: document_compliance
+#. odoo-javascript
+#: code:addons/document_compliance/static/src/components/document_details_panel/document_details_panel_patch.xml:0
+msgid "No document type"
+msgstr ""
+
+#. module: document_compliance
+#. odoo-javascript
+#: code:addons/document_compliance/static/src/components/document_details_panel/document_details_panel_patch.xml:0
+msgid "No issuer"
+msgstr ""
+
+#. module: document_compliance
+#: model:ir.model.fields.selection,name:document_compliance.selection__document_compliance_report__compliance_state__non_compliant
+#: model:ir.model.fields.selection,name:document_compliance.selection__document_document__compliance_state__non_compliant
+#: model_terms:ir.ui.view,arch_db:document_compliance.document_view_search
+#: model_terms:ir.ui.view,arch_db:document_compliance.view_document_compliance_report_search
+msgid "Non-Compliant"
+msgstr ""
+
+#. module: document_compliance
+#: model:ir.model.fields.selection,name:document_compliance.selection__document_document__compliance_state__na
+msgid "Not Applicable"
+msgstr ""
+
+#. module: document_compliance
+#: model_terms:ir.ui.view,arch_db:document_compliance.document_view_search
+msgid "Not Verified"
+msgstr ""
+
+#. module: document_compliance
+#: model:ir.model.fields,help:document_compliance.field_document_document__verification_notes
+msgid "Notes and observations from document verification process"
+msgstr ""
+
+#. module: document_compliance
+#: model:ir.model.fields,field_description:document_compliance.field_document_type__notification_days
+msgid "Notification Days"
+msgstr ""
+
+#. module: document_compliance
+#: model:ir.model.fields,field_description:document_compliance.field_document_document__notification_last_days
+msgid "Notification Last Days"
+msgstr ""
+
+#. module: document_compliance
+#: model:ir.model.fields,field_description:document_compliance.field_document_type__notification_partner_ids
+msgid "Notification Partner"
+msgstr ""
+
+#. module: document_compliance
+#: model:ir.model.fields,field_description:document_compliance.field_document_document__notification_sent_expired
+msgid "Notification Sent Expired"
+msgstr ""
+
+#. module: document_compliance
+#: model_terms:ir.ui.view,arch_db:document_compliance.view_document_type_form_compliance
+msgid "Notifications"
+msgstr ""
+
+#. module: document_compliance
+#: model:ir.model.fields,help:document_compliance.field_document_compliance_report__total_present
+msgid ""
+"Number of mandatory document types this entity has at least one document for"
+" (including expired)"
+msgstr ""
+
+#. module: document_compliance
+#: model:ir.model.fields,help:document_compliance.field_document_compliance_report__total_missing
+msgid ""
+"Number of mandatory document types this entity has no assessable document "
+"for -- either no document at all, or none carrying an expiration date its "
+"type requires"
+msgstr ""
+
+#. module: document_compliance
+#: model:ir.model.fields,help:document_compliance.field_document_compliance_report__total_valid
+msgid ""
+"Number of mandatory document types this entity satisfies: it holds at least "
+"one document that is valid, or one whose type does not expire"
+msgstr ""
+
+#. module: document_compliance
+#: model:ir.model.fields,help:document_compliance.field_document_compliance_report__total_expiring
+msgid ""
+"Number of mandatory document types whose best document expires within 30 "
+"days"
+msgstr ""
+
+#. module: document_compliance
+#: model:ir.model.fields,help:document_compliance.field_document_compliance_report__total_expired
+msgid "Number of mandatory document types whose documents are all expired"
+msgstr ""
+
+#. module: document_compliance
+#: model_terms:ir.ui.view,arch_db:document_compliance.documents_view_form_compliance
+msgid "Observations from the verification"
+msgstr ""
+
+#. module: document_compliance
+#: model_terms:ir.ui.view,arch_db:document_compliance.view_document_type_list_compliance
+msgid "Orig. Required"
+msgstr ""
+
+#. module: document_compliance
+#: model:ir.model.fields.selection,name:document_compliance.selection__document_compliance_report__compliance_state__partial
+#: model_terms:ir.ui.view,arch_db:document_compliance.view_document_compliance_report_search
+msgid "Partial Compliance"
+msgstr ""
+
+#. module: document_compliance
+#: model:document.document,name:document_compliance.demo_doc_p5_veh_insp
+msgid "Partner 5 - Vehicle Inspection (Valid)"
+msgstr ""
+
+#. module: document_compliance
+#: model:document.document,name:document_compliance.demo_doc_p5_veh_ins
+msgid "Partner 5 - Vehicle Insurance (Valid)"
+msgstr ""
+
+#. module: document_compliance
+#: model:document.document,name:document_compliance.demo_doc_p5_veh_reg
+msgid "Partner 5 - Vehicle Registration (Valid)"
+msgstr ""
+
+#. module: document_compliance
+#: model:document.document,name:document_compliance.demo_doc_p7_reg_valid
+msgid "Partner 7 - New Registration (VALID)"
+msgstr ""
+
+#. module: document_compliance
+#: model:document.document,name:document_compliance.demo_doc_p7_reg_expired
+msgid "Partner 7 - Old Registration (EXPIRED)"
+msgstr ""
+
+#. module: document_compliance
+#: model:document.document,name:document_compliance.demo_doc_p8_contract
+msgid "Partner 8 - Employment Contract (Expiring in 10 days)"
+msgstr ""
+
+#. module: document_compliance
+#: model:document.document,name:document_compliance.demo_doc_p8_forklift
+msgid "Partner 8 - Forklift License (Expiring in 25 days)"
+msgstr ""
+
+#. module: document_compliance
+#: model:document.document,name:document_compliance.demo_doc_p8_safety
+msgid "Partner 8 - Safety Training (Expiring in 15 days)"
+msgstr ""
+
+#. module: document_compliance
+#: model:document.document,name:document_compliance.demo_doc_p9_iso_expired
+msgid "Partner 9 - ISO 9001 (EXPIRED)"
+msgstr ""
+
+#. module: document_compliance
+#: model:document.document,name:document_compliance.demo_doc_p9_ins_expired
+msgid "Partner 9 - Liability Insurance (EXPIRED)"
+msgstr ""
+
+#. module: document_compliance
+#: model:document.document,name:document_compliance.demo_doc_p9_safety_expired
+msgid "Partner 9 - Product Safety (EXPIRED)"
+msgstr ""
+
+#. module: document_compliance
+#: model_terms:document.type,instructions:document_compliance.demo_doc_type_vehicle_registration
+msgid "Pay renewal fee"
+msgstr ""
+
+#. module: document_compliance
+#: model:ir.model.fields,help:document_compliance.field_document_compliance_report__compliance_percentage
+msgid ""
+"Percentage of mandatory document types with valid documents (total_valid / "
+"total_required * 100)"
+msgstr ""
+
+#. module: document_compliance
+#: model:document.type,name:document_compliance.demo_doc_type_product_safety
+msgid "Product Safety Certificate"
+msgstr ""
+
+#. module: document_compliance
+#: model:document.type,description:document_compliance.demo_doc_type_product_safety
+msgid "Product safety certification and compliance documentation."
+msgstr ""
+
+#. module: document_compliance
+#: model:document.document,name:document_compliance.demo_doc_supplier_005_safety
+msgid "Quality Components - Product Safety EXPIRED"
+msgstr ""
+
+#. module: document_compliance
+#: model:document.type,description:document_compliance.demo_doc_type_first_aid
+msgid "Red Cross first aid and CPR certification (optional but recommended)."
+msgstr ""
+
+#. module: document_compliance
+#. odoo-javascript
+#: code:addons/document_compliance/static/src/components/document_details_panel/document_details_panel_patch.xml:0
+#: model_terms:ir.ui.view,arch_db:document_compliance.documents_view_form_compliance
+msgid "Renew"
+msgstr ""
+
+#. module: document_compliance
+#: model_terms:ir.ui.view,arch_db:document_compliance.documents_view_form_compliance
+msgid "Renewal"
+msgstr ""
+
+#. module: document_compliance
+#: model_terms:ir.ui.view,arch_db:document_compliance.documents_view_list
+msgid "Required"
+msgstr ""
+
+#. module: document_compliance
+#: model:ir.model.fields,field_description:document_compliance.field_document_compliance_report__total_required
+msgid "Required Document Types"
+msgstr ""
+
+#. module: document_compliance
+#: model_terms:ir.ui.view,arch_db:document_compliance.view_document_compliance_report_list
+msgid "Required Types"
+msgstr ""
+
+#. module: document_compliance
+#: model:ir.model.fields,field_description:document_compliance.field_document_type__requires_original
+msgid "Requires Original"
+msgstr ""
+
+#. module: document_compliance
+#: model:document.document,name:document_compliance.demo_doc_employee_003_safety
+msgid "Robert Lee - Safety Training Certificate"
+msgstr ""
+
+#. module: document_compliance
+#: model:document.document,name:document_compliance.demo_doc_renewal_current
+msgid "Safety Certificate - Current (2024)"
+msgstr ""
+
+#. module: document_compliance
+#: model:document.document,name:document_compliance.demo_doc_renewal_first
+msgid "Safety Certificate - First Renewal (2023)"
+msgstr ""
+
+#. module: document_compliance
+#: model:document.document,name:document_compliance.demo_doc_renewal_original
+msgid "Safety Certificate - Original (2022)"
+msgstr ""
+
+#. module: document_compliance
+#: model:document.document,name:document_compliance.demo_doc_renewal_second
+msgid "Safety Certificate - Second Renewal (2023-2024)"
+msgstr ""
+
+#. module: document_compliance
+#: model:document.type,name:document_compliance.demo_doc_type_safety_training
+msgid "Safety Training Certificate"
+msgstr ""
+
+#. module: document_compliance
+#: model:document.document,name:document_compliance.demo_doc_employee_004_firstaid
+msgid "Sarah Johnson - First Aid Certification"
+msgstr ""
+
+#. module: document_compliance
+#: model:document.type,description:document_compliance.demo_doc_type_vehicle_inspection
+msgid "Semi-annual safety inspection certificate for commercial vehicles."
+msgstr ""
+
+#. module: document_compliance
+#: model:ir.model.fields,help:document_compliance.field_document_document__notification_last_days
+msgid ""
+"Smallest notification threshold, in days before expiration, already notified"
+" for this document (0 when none has been sent yet). Any threshold configured"
+" on the document type works, not only 30, 7 and 1"
+msgstr ""
+
+#. module: document_compliance
+#: model_terms:document.type,instructions:document_compliance.demo_doc_type_vehicle_registration
+msgid "Submit vehicle inspection certificate"
+msgstr ""
+
+#. module: document_compliance
+#: model:document.type,name:document_compliance.demo_doc_type_supplier_insurance
+msgid "Supplier Liability Insurance"
+msgstr ""
+
+#. module: document_compliance
+#: model:document.type,name:document_compliance.demo_doc_type_tax_certificate
+msgid "Tax Compliance Certificate"
+msgstr ""
+
+#. module: document_compliance
+#: model:document.document,name:document_compliance.demo_doc_tax_certificate
+msgid "Tax Compliance Certificate 2024"
+msgstr ""
+
+#. module: document_compliance
+#: model:document.document,name:document_compliance.demo_doc_supplier_003_insurance
+msgid "Tech Solutions Inc - Liability Insurance"
+msgstr ""
+
+#. module: document_compliance
+#: model:ir.model.fields,help:document_compliance.field_document_compliance_report__earliest_expiry
+msgid ""
+"The earliest expiration date across this entity's documents for the "
+"mandatory types it is held to, whether or not they are still valid"
+msgstr ""
+
+#. module: document_compliance
+#: model:ir.model.fields,help:document_compliance.field_document_compliance_report__last_verification
+msgid ""
+"The most recent verification date across this entity's documents for the "
+"mandatory types it is held to"
+msgstr ""
+
+#. module: document_compliance
+#: model_terms:ir.actions.act_window,help:document_compliance.action_document_compliance_dashboard
+msgid ""
+"This dashboard is precomputed and refreshed every 30 minutes, so a document filed\n"
+"                or edited in the last few minutes may not be reflected yet."
+msgstr ""
+
+#. module: document_compliance
+#: model_terms:ir.actions.act_window,help:document_compliance.action_document_compliance_dashboard
+msgid ""
+"This dashboard tracks which partners, employees, vehicles, and other entities\n"
+"                are missing required documents or have expired/expiring documents."
+msgstr ""
+
+#. module: document_compliance
+#: model:ir.model.fields,help:document_compliance.field_document_compliance_report__total_required
+msgid "Total number of mandatory document types for this entity"
+msgstr ""
+
+#. module: document_compliance
+#: model:ir.model.fields,help:document_compliance.field_document_document__notification_sent_expired
+msgid "Tracks if notification was sent when document reached expiration date"
+msgstr ""
+
+#. module: document_compliance
+#: model:document.document,name:document_compliance.demo_doc_vehicle_001_ins
+msgid "Truck TRK-001 - Insurance Policy"
+msgstr ""
+
+#. module: document_compliance
+#: model:document.document,name:document_compliance.demo_doc_vehicle_001_reg
+msgid "Truck TRK-001 - Registration 2024"
+msgstr ""
+
+#. module: document_compliance
+#: model:document.document,name:document_compliance.demo_doc_vehicle_004_ins
+msgid "Truck TRK-004 - Insurance Policy EXPIRED"
+msgstr ""
+
+#. module: document_compliance
+#: model:ir.model.fields,help:document_compliance.field_document_compliance_report__is_compliant
+msgid "True if entity has valid documents for ALL mandatory document types"
+msgstr ""
+
+#. module: document_compliance
+#: model:ir.model.fields,field_description:document_compliance.field_document_document__document_type_requires_original
+msgid "Type Requires Original"
+msgstr ""
+
+#. module: document_compliance
+#: model_terms:document.type,instructions:document_compliance.demo_doc_type_vehicle_registration
+msgid "Upload new registration document"
+msgstr ""
+
+#. module: document_compliance
+#: model:ir.model.fields,help:document_compliance.field_document_document__verified_by_user_id
+msgid "User who last verified this document"
+msgstr ""
+
+#. module: document_compliance
+#: model:ir.model.fields,field_description:document_compliance.field_document_compliance_report__total_valid
+msgid "Valid Document Types"
+msgstr ""
+
+#. module: document_compliance
+#: model_terms:ir.ui.view,arch_db:document_compliance.view_document_compliance_report_list
+msgid "Valid Types"
+msgstr ""
+
+#. module: document_compliance
+#: model_terms:ir.ui.view,arch_db:document_compliance.documents_view_form_compliance
+msgid "Validity"
+msgstr ""
+
+#. module: document_compliance
+#: model:document.document,name:document_compliance.demo_doc_vehicle_002_insp
+msgid "Van VAN-002 - Safety Inspection"
+msgstr ""
+
+#. module: document_compliance
+#: model:document.document,name:document_compliance.demo_doc_vehicle_005_insp
+msgid "Van VAN-005 - Safety Inspection EXPIRED"
+msgstr ""
+
+#. module: document_compliance
+#: model:document.type,name:document_compliance.demo_doc_type_vehicle_insurance
+msgid "Vehicle Insurance Policy"
+msgstr ""
+
+#. module: document_compliance
+#: model:document.type,name:document_compliance.demo_doc_type_vehicle_registration
+msgid "Vehicle Registration"
+msgstr ""
+
+#. module: document_compliance
+#: model:document.type,name:document_compliance.demo_doc_type_vehicle_inspection
+msgid "Vehicle Safety Inspection"
+msgstr ""
+
+#. module: document_compliance
+#: model_terms:ir.ui.view,arch_db:document_compliance.documents_view_form_compliance
+msgid "Verification"
+msgstr ""
+
+#. module: document_compliance
+#: model:ir.model.fields,field_description:document_compliance.field_document_document__verification_notes
+msgid "Verification Notes"
+msgstr ""
+
+#. module: document_compliance
+#. odoo-javascript
+#: code:addons/document_compliance/static/src/components/document_details_panel/document_details_panel_patch.xml:0
+#: model_terms:ir.ui.view,arch_db:document_compliance.document_view_search
+msgid "Verified"
+msgstr ""
+
+#. module: document_compliance
+#: model:ir.model.fields,field_description:document_compliance.field_document_document__verified_by_user_id
+msgid "Verified By User"
+msgstr ""
+
+#. module: document_compliance
+#. odoo-javascript
+#: code:addons/document_compliance/static/src/components/document_details_panel/document_details_panel_patch.xml:0
+#: model_terms:ir.ui.view,arch_db:document_compliance.documents_view_form_compliance
+msgid "Verify"
+msgstr ""
+
+#. module: document_compliance
+#: model_terms:ir.ui.view,arch_db:document_compliance.view_document_compliance_report_list
+msgid "View Documents"
+msgstr ""
+
+#. module: document_compliance
+#: model_terms:ir.ui.view,arch_db:document_compliance.view_document_compliance_report_list
+msgid "View Entity"
+msgstr ""
+
+#. module: document_compliance
+#: model:document.document,name:document_compliance.demo_doc_lease_agreement
+msgid "Warehouse Facility Lease Agreement"
+msgstr ""
+
+#. module: document_compliance
+#: model:ir.model.fields,help:document_compliance.field_document_document__compliance_state
+msgid ""
+"Whether the document satisfies its type: Compliant (the type does not "
+"expire, or the document is not expired), Non-Compliant (expired, or missing "
+"its expiration date), Not Applicable (no document type)"
+msgstr ""
+
+#. module: document_compliance
+#: model:ir.model.fields,help:document_compliance.field_document_document__is_mandatory
+msgid ""
+"Whether this document type is required for compliance (inherited from "
+"document type)"
+msgstr ""
+
+#. module: document_compliance
+#: model:ir.model.fields,help:document_compliance.field_document_type__applies_to
+msgid ""
+"Which kind of record this document type is required of. A vehicle "
+"registration applies to vehicles, not to suppliers: the compliance report "
+"only holds an entity to the mandatory types that apply to it"
+msgstr ""
+
+#. module: document_compliance
+#: model:document.document,name:document_compliance.demo_doc_supplier_002_safety
+msgid "XYZ Supplies - Product Safety Certificate"
+msgstr ""

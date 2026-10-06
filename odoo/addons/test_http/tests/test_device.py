@@ -1,0 +1,957 @@
+import time
+from datetime import datetime
+from unittest.mock import patch
+
+import requests
+from freezegun import freeze_time
+
+import odoo
+from odoo import Command
+from odoo.exceptions import AccessError
+from odoo.http import STORED_SESSION_BYTES
+from odoo.libs.debug_log import DebugLog
+from odoo.libs.json import dumps as json_dumps
+from odoo.service import security
+from odoo.tests.utils import HOST, get_db_name
+
+from .test_common import TestHttpBase
+from odoo.addons.base.models.auth_user_client import CLIENT_KEY_COOKIE
+from odoo.addons.test_http.utils import (
+    TEST_IP,
+    USER_AGENT_android_chrome,
+    USER_AGENT_linux_chrome,
+    USER_AGENT_linux_firefox,
+)
+
+_debug = DebugLog(__name__)
+
+
+class TestDevice(TestHttpBase):
+    def setUp(self):
+        super().setUp()
+
+        self.Device = self.env["auth.user.client"]
+        self.DeviceLog = self.env["auth.user.client.address"]
+        self.Device.with_context(active_test=False).search([]).unlink()
+        self.browser_keys = {}
+
+        self.user_admin = self.env.ref("base.user_admin")
+        self.user_internal = self.env["res.users"].create(
+            {
+                "login": "internal",
+                "password": "internal",
+                "name": "Internal",
+                "email": "internal@example.com",
+                "group_ids": [Command.set([self.env.ref("base.group_user").id])],
+            }
+        )
+
+    def authenticate(self, login, password):
+        with patch.object(type(self.cr), "now", return_value=datetime(2024, 1, 1, 8)):
+            return super().authenticate(
+                login, password, session_extra={"_trace_disable": False}
+            )
+
+    def hit(self, time, endpoint, headers=None, ip=None):
+        if ip:
+            headers = headers or {}
+            headers = {
+                **headers,
+                "Host": "",
+                "X-Forwarded-For": ip,
+                "X-Forwarded-Host": "odoo.com",
+                "X-Forwarded-Proto": "http",
+            }
+        # one cookie jar plays every browser: each user agent keeps its own
+        # browser key, as separate browsers would
+        agent = (headers or {}).get("User-Agent", "")
+        jar = self.opener.cookies
+        jar.set(CLIENT_KEY_COOKIE, None)
+        if agent in self.browser_keys:
+            jar.set(CLIENT_KEY_COOKIE, self.browser_keys[agent], domain=HOST)
+        with (
+            freeze_time(time),
+            odoo.tools.config.patch(proxy_mode=bool(ip)),
+        ):
+            response = self.url_open(url=endpoint, headers=headers)
+        if issued := jar.get(CLIENT_KEY_COOKIE):
+            self.browser_keys[agent] = issued
+        return response
+
+    def info_trace(self, trace):
+        return {
+            "elapsed_time": trace["last_activity"] - trace["first_activity"],
+            "platform": trace["platform"],
+            "browser": trace["browser"],
+            "ip_address": trace["ip_address"],
+        }
+
+    def get_devices_logs(self, user=None):
+        self.env.invalidate_all()
+        domain = [("user_id", "=", user.id)] if user else []
+        devices = self.Device.search(domain)
+        return devices, devices.address_ids
+
+    def test_detection_device_readonly(self):
+        session = self.authenticate(self.user_admin.login, self.user_admin.login)
+        self.hit("2024-01-01 08:00:00", "/test_http/greeting-public")
+
+        devices, logs = self.get_devices_logs(self.user_admin)
+        self.assertEqual(len(devices), 1)
+        self.assertEqual(len(logs), 1)
+        session = odoo.http.root.session_store.get(session.sid)
+        self.assertEqual(len(session["_trace"]), 1)
+
+    def test_detection_device_no_readonly(self):
+        session = self.authenticate(self.user_admin.login, self.user_admin.login)
+        self.hit("2024-01-01 08:00:00", "/test_http/greeting-public?readonly=0")
+
+        devices, logs = self.get_devices_logs(self.user_admin)
+        self.assertEqual(len(devices), 1)
+        self.assertEqual(len(logs), 1)
+        session = odoo.http.root.session_store.get(session.sid)
+        self.assertEqual(len(session["_trace"]), 1)
+
+    def test_detection_user_public(self):
+        self.authenticate(None, None)
+        self.hit("2024-01-01 08:00:00", "/test_http/greeting-public?readonly=0")
+
+        devices, logs = self.get_devices_logs()
+        self.assertEqual(len(devices), 0)
+        self.assertEqual(len(logs), 0)
+
+    def test_detection_device_readonly_then_no_readonly(self):
+        session = self.authenticate(self.user_admin.login, self.user_admin.login)
+        self.hit("2024-01-01 08:00:00", "/test_http/greeting-public")
+
+        devices, logs = self.get_devices_logs(self.user_admin)
+        self.assertEqual(len(devices), 1)
+        self.assertEqual(len(logs), 1)
+        session = odoo.http.root.session_store.get(session.sid)
+        self.assertEqual(len(session["_trace"]), 1)
+
+        self.hit("2024-01-01 08:00:00", "/test_http/greeting-public?readonly=0")
+
+        devices, logs = self.get_devices_logs(self.user_admin)
+        self.assertEqual(len(devices), 1)
+        self.assertEqual(len(logs), 1)
+        session = odoo.http.root.session_store.get(session.sid)
+        self.assertEqual(len(session["_trace"]), 1)
+
+    def test_detection_device_according_to_time(self):
+        session = self.authenticate(self.user_admin.login, self.user_admin.login)
+        self.hit("2024-01-01 08:00:00", "/test_http/greeting-public?readonly=0")
+
+        devices, logs = self.get_devices_logs(self.user_admin)
+        self.assertEqual(len(devices), 1)
+        self.assertEqual(len(logs), 1)
+        session = odoo.http.root.session_store.get(session.sid)
+        self.assertEqual(len(session["_trace"]), 1)
+        self.assertEqual(self.info_trace(session["_trace"][0])["elapsed_time"], 0)
+
+        self.hit("2024-01-01 08:30:00", "/test_http/greeting-public?readonly=0")
+
+        devices, logs = self.get_devices_logs(self.user_admin)
+        self.assertEqual(len(devices), 1)
+        self.assertEqual(len(logs), 1)
+        session = odoo.http.root.session_store.get(session.sid)
+        self.assertEqual(len(session["_trace"]), 1)
+        self.assertEqual(self.info_trace(session["_trace"][0])["elapsed_time"], 0)
+
+        self.hit("2024-01-01 09:00:00", "/test_http/greeting-public?readonly=0")
+
+        devices, logs = self.get_devices_logs(self.user_admin)
+        self.assertEqual(len(devices), 1)
+        self.assertEqual(len(logs), 1)
+        self.assertEqual(logs.last_activity, datetime(2024, 1, 1, 9, 0))
+        session = odoo.http.root.session_store.get(session.sid)
+        self.assertEqual(len(session["_trace"]), 1)
+        self.assertEqual(self.info_trace(session["_trace"][0])["elapsed_time"], 3600)
+
+        self.hit("2024-01-01 10:00:00", "/test_http/greeting-public?readonly=0")
+
+        devices, logs = self.get_devices_logs(self.user_admin)
+        self.assertEqual(len(devices), 1)
+        self.assertEqual(len(logs), 1)
+        self.assertEqual(logs.first_activity, datetime(2024, 1, 1, 8, 0))
+        self.assertEqual(logs.last_activity, datetime(2024, 1, 1, 10, 0))
+        self.assertEqual(devices.last_activity, datetime(2024, 1, 1, 10, 0))
+        session = odoo.http.root.session_store.get(session.sid)
+        self.assertEqual(len(session["_trace"]), 1)
+        self.assertEqual(self.info_trace(session["_trace"][0])["elapsed_time"], 7200)
+
+    def test_detection_device_according_to_useragent(self):
+        session = self.authenticate(self.user_admin.login, self.user_admin.login)
+
+        self.hit(
+            "2024-01-01 08:00:00",
+            "/test_http/greeting-public?readonly=0",
+            headers={"User-Agent": USER_AGENT_linux_chrome},
+        )
+
+        devices, logs = self.get_devices_logs(self.user_admin)
+        self.assertEqual(len(devices), 1)
+        self.assertEqual(len(logs), 1)
+        session = odoo.http.root.session_store.get(session.sid)
+        self.assertEqual(len(session["_trace"]), 1)
+        self.assertEqual(self.info_trace(session["_trace"][0])["platform"], "linux")
+        self.assertEqual(self.info_trace(session["_trace"][0])["browser"], "chrome")
+
+        self.hit(
+            "2024-01-01 08:00:00",
+            "/test_http/greeting-public?readonly=0",
+            headers={"User-Agent": USER_AGENT_linux_firefox},
+        )
+
+        devices, logs = self.get_devices_logs(self.user_admin)
+        self.assertEqual(len(devices), 1)
+        self.assertEqual(len(logs), 1)
+        session = odoo.http.root.session_store.get(session.sid)
+        self.assertEqual(devices.id, session["auth_client_id"])
+        self.assertEqual(len(session["_trace"]), 2)
+        self.assertEqual(self.info_trace(session["_trace"][1])["platform"], "linux")
+        self.assertEqual(self.info_trace(session["_trace"][1])["browser"], "firefox")
+
+    def test_detection_device_according_to_ipaddress(self):
+        session = self.authenticate(self.user_admin.login, self.user_admin.login)
+        self.hit("2024-01-01 08:00:00", "/test_http/greeting-public?readonly=0")
+
+        devices, logs = self.get_devices_logs(self.user_admin)
+        self.assertEqual(len(devices), 1)
+        self.assertEqual(len(logs), 1)
+        session = odoo.http.root.session_store.get(session.sid)
+        self.assertEqual(len(session["_trace"]), 1)
+
+        self.hit(
+            "2024-01-01 08:00:01",
+            "/test_http/greeting-public?readonly=0",
+            ip=TEST_IP,
+        )
+
+        devices, logs = self.get_devices_logs(self.user_admin)
+        self.assertEqual(len(devices), 1)
+        self.assertEqual(len(logs), 2)
+        session = odoo.http.root.session_store.get(session.sid)
+        self.assertEqual(len(session["_trace"]), 2)
+        self.assertNotEqual(
+            self.info_trace(session["_trace"][0])["ip_address"], TEST_IP
+        )
+        self.assertEqual(self.info_trace(session["_trace"][1])["ip_address"], TEST_IP)
+
+        localized_device = devices.filtered(lambda device: device.ip_address == TEST_IP)
+        self.assertEqual(localized_device.country, "France")
+
+    def test_detection_usurpation_sid(self):
+        session = self.authenticate(self.user_internal.login, self.user_internal.login)
+        self.hit("2024-01-01 08:00:00", "/test_http/greeting-user?readonly=0")
+
+        self.hit(
+            "2024-01-01 08:00:00",
+            "/test_http/greeting-user?readonly=0",
+            headers={"session_id": session.sid},
+            ip=TEST_IP,
+        )
+        devices, logs = self.get_devices_logs(self.user_internal)
+        self.assertEqual(len(devices), 1)
+        self.assertEqual(len(logs), 2)
+        self.assertEqual(len(self.user_internal.auth_client_ids), 1)
+
+    def test_detection_devices_according_to_time_useragent(self):
+        self.authenticate(self.user_admin.login, self.user_admin.login)
+        self.hit(
+            "2024-01-01 08:00:00",
+            "/test_http/greeting-public?readonly=0",
+            headers={"User-Agent": USER_AGENT_linux_chrome},
+        )
+        self.assertEqual(len(self.user_admin.auth_client_ids), 1)
+
+        self.hit(
+            "2024-01-01 09:00:00",
+            "/test_http/greeting-public?readonly=0",
+            headers={"User-Agent": USER_AGENT_linux_chrome},
+        )
+        self.assertEqual(len(self.user_admin.auth_client_ids), 1)
+
+        self.hit(
+            "2024-01-01 08:00:00",
+            "/test_http/greeting-public?readonly=0",
+            headers={"User-Agent": USER_AGENT_linux_firefox},
+        )
+        self.assertEqual(len(self.user_admin.auth_client_ids), 1)
+
+        self.hit(
+            "2024-01-01 09:00:00",
+            "/test_http/greeting-public?readonly=0",
+            headers={"User-Agent": USER_AGENT_linux_firefox},
+        )
+        self.assertEqual(len(self.user_admin.auth_client_ids), 1)
+
+    def test_detection_devices_according_to_user_or_admin(self):
+        self.authenticate(self.user_admin.login, self.user_admin.login)
+        self.hit("2024-01-01 08:00:00", "/test_http/greeting-public?readonly=0")
+        self.hit("2024-01-01 09:00:00", "/test_http/greeting-public?readonly=0")
+        self.authenticate(self.user_internal.login, self.user_internal.login)
+        self.hit("2024-01-01 08:00:00", "/test_http/greeting-public?readonly=0")
+        self.hit("2024-01-01 09:00:00", "/test_http/greeting-public?readonly=0")
+
+        devices, logs = self.get_devices_logs()
+        self.assertEqual(len(devices), 2)
+        self.assertEqual(len(logs), 2)
+        self.assertEqual(len(self.user_admin.auth_client_ids), 1)
+        self.assertEqual(len(self.user_internal.auth_client_ids), 1)
+
+        devices_from_admin = self.Device.with_user(self.user_admin).search([])
+        devices_from_internal = self.Device.with_user(self.user_internal).search([])
+        self.assertEqual(len(devices_from_admin), 2)
+        self.assertEqual(len(devices_from_internal), 1)
+
+    def test_differentiate_computer_and_mobile(self):
+        self.authenticate(self.user_admin.login, self.user_admin.login)
+        self.hit(
+            "2024-01-01 08:00:00",
+            "/test_http/greeting-public?readonly=0",
+            headers={"User-Agent": USER_AGENT_linux_chrome},
+        )
+        self.authenticate(self.user_admin.login, self.user_admin.login)
+        self.hit(
+            "2024-01-01 08:00:00",
+            "/test_http/greeting-public?readonly=0",
+            headers={"User-Agent": USER_AGENT_android_chrome},
+        )
+
+        devices, logs = self.get_devices_logs(self.user_admin)
+        self.assertEqual(len(devices), 2)
+        self.assertEqual(len(logs), 2)
+
+        laptop_device = devices.filtered(
+            lambda device: device.platform_type == "computer"
+        )
+        mobile_device = devices.filtered(
+            lambda device: device.platform_type == "mobile"
+        )
+        self.assertEqual(len(laptop_device), 1)
+        self.assertEqual(len(mobile_device), 1)
+
+    def test_retrieve_linked_ip_addresses(self):
+        self.authenticate(self.user_admin.login, self.user_admin.login)
+        self.hit(
+            "2024-01-01 08:00:00",
+            "/test_http/greeting-public?readonly=0",
+            ip="193.0.3.43",
+        )
+        self.hit(
+            "2024-01-01 08:00:00",
+            "/test_http/greeting-public?readonly=0",
+            ip="192.0.2.42",
+        )
+        self.hit(
+            "2024-01-01 08:00:00",
+            "/test_http/greeting-public?readonly=0",
+            ip="191.0.1.41",
+        )
+
+        devices, _ = self.get_devices_logs(self.user_admin)
+        self.assertEqual(len(devices), 1)
+        self.assertEqual(
+            sorted(devices.address_ids.mapped("ip_address")),
+            ["191.0.1.41", "192.0.2.42", "193.0.3.43"],
+        )
+
+    def test_retrieve_linked_ip_addresses_according_to_devices(self):
+        self.authenticate(self.user_admin.login, self.user_admin.login)
+        self.hit(
+            "2024-01-01 08:00:00",
+            "/test_http/greeting-public?readonly=0",
+            headers={"User-Agent": USER_AGENT_linux_chrome},
+            ip="193.0.3.43",
+        )
+        self.hit(
+            "2024-01-01 08:00:00",
+            "/test_http/greeting-public?readonly=0",
+            headers={"User-Agent": USER_AGENT_linux_chrome},
+            ip="192.0.2.42",
+        )
+        self.authenticate(self.user_admin.login, self.user_admin.login)
+        self.hit(
+            "2024-01-01 08:00:00",
+            "/test_http/greeting-public?readonly=0",
+            headers={"User-Agent": USER_AGENT_linux_firefox},
+            ip="191.0.1.41",
+        )
+
+        devices, _ = self.get_devices_logs(self.user_admin)
+        self.assertEqual(len(devices), 2)
+        device_chrome = devices.filtered(lambda device: device.browser == "chrome")
+        device_firefox = devices.filtered(lambda device: device.browser == "firefox")
+        self.assertEqual(
+            sorted(device_chrome.address_ids.mapped("ip_address")),
+            ["192.0.2.42", "193.0.3.43"],
+        )
+        self.assertEqual(
+            device_firefox.address_ids.mapped("ip_address"), ["191.0.1.41"]
+        )
+
+    def test_detection_no_trace_mechanism(self):
+        session = self.authenticate(self.user_admin.login, self.user_admin.login)
+        session["_trace_disable"] = True
+        odoo.http.root.session_store.save(session)
+        res = self.hit("2024-01-01 08:00:00", "/test_http/greeting-public?readonly=0")
+        self.assertEqual(res.status_code, 200)
+        devices, logs = self.get_devices_logs(self.user_admin)
+        self.assertEqual(len(devices), 1)
+        self.assertEqual(len(logs), 0)
+
+    def test_detection_device_default_order(self):
+        self.authenticate(self.user_admin.login, self.user_admin.login)
+        self.hit(
+            "2024-01-01 08:00:00",
+            "/test_http/greeting-public?readonly=0",
+            headers={"User-Agent": USER_AGENT_linux_chrome},
+        )
+        self.authenticate(self.user_admin.login, self.user_admin.login)
+        self.hit(
+            "2024-01-01 10:00:00",
+            "/test_http/greeting-public?readonly=0",
+            headers={"User-Agent": USER_AGENT_linux_firefox},
+        )
+        self.authenticate(self.user_admin.login, self.user_admin.login)
+        self.hit(
+            "2024-01-01 09:00:00",
+            "/test_http/greeting-public?readonly=0",
+            headers={"User-Agent": USER_AGENT_android_chrome},
+        )
+        devices, _ = self.get_devices_logs(self.user_admin)
+        self.assertEqual(
+            list(
+                zip(devices.mapped("platform"), devices.mapped("browser"), strict=False)
+            ),
+            [("linux", "firefox"), ("android", "chrome"), ("linux", "chrome")],
+            "By default, devices should be found from the most recent to the least recent (according to their last activity).",
+        )
+
+    def test_deletion_device(self):
+        self.authenticate(self.user_internal.login, self.user_internal.login)
+        res = self.hit("2024-01-01 08:00:00", "/test_http/greeting-user?readonly=0")
+        self.assertNotIn("/web/login", res.url)
+
+        user_internal_device = self.user_internal.auth_client_ids
+        self.assertEqual(len(user_internal_device), 1)
+        self.assertTrue(user_internal_device.active)
+
+        user_internal_device._revoke()
+
+        res = self.hit("2024-01-01 08:00:01", "/test_http/greeting-user?readonly=0")
+        self.assertIn("/web/login", res.url)
+
+    def test_the_binding_is_checked_on_the_request_s_own_cursor(self):
+        self.authenticate(self.user_internal.login, self.user_internal.login)
+        self.hit("2024-01-01 08:00:00", "/test_http/greeting-user?readonly=0")
+        acquire = self.registry.cursor
+        primary_opened = []
+
+        def cursor(*args, **kwargs):
+            if kwargs.get("primary"):
+                primary_opened.append(kwargs)
+            return acquire(*args, **kwargs)
+
+        with patch.object(self.registry, "cursor", cursor):
+            for readonly in ("1", "0"):
+                res = self.hit(
+                    "2024-01-01 08:00:01",
+                    f"/test_http/greeting-user?readonly={readonly}",
+                )
+                self.assertNotIn("/web/login", res.url)
+            self.user_internal.auth_client_ids._revoke()
+            res = self.hit("2024-01-01 08:00:02", "/test_http/greeting-user")
+            self.assertIn("/web/login", res.url)
+        self.assertEqual(primary_opened, [], "no second cursor for the binding")
+
+    def test_deletion_invalidate_sid(self):
+        session = self.authenticate(self.user_internal.login, self.user_internal.login)
+        self.hit("2024-01-01 08:00:00", "/test_http/greeting-user?readonly=0")
+
+        self.user_internal.auth_client_ids._revoke()
+
+        res = self.hit(
+            "2024-01-01 08:00:00",
+            "/test_http/greeting-user?readonly=0",
+            headers={"session_id": session.sid},
+        )
+        self.assertIn("/web/login", res.url)
+
+    def test_deletion_specific_device(self):
+        self.authenticate(self.user_admin.login, self.user_admin.login)
+        self.hit(
+            "2024-01-01 08:00:00",
+            "/test_http/greeting-user?readonly=0",
+            headers={"User-Agent": USER_AGENT_linux_chrome},
+        )
+        self.hit(
+            "2024-01-01 09:00:00",
+            "/test_http/greeting-user?readonly=0",
+            headers={"User-Agent": USER_AGENT_linux_chrome},
+        )
+        self.authenticate(self.user_admin.login, self.user_admin.login)
+        self.hit(
+            "2024-01-01 08:00:00",
+            "/test_http/greeting-user?readonly=0",
+            headers={"User-Agent": USER_AGENT_linux_chrome},
+        )
+        self.hit(
+            "2024-01-01 09:00:00",
+            "/test_http/greeting-user?readonly=0",
+            headers={"User-Agent": USER_AGENT_linux_chrome},
+        )
+        self.hit(
+            "2024-01-01 08:00:00",
+            "/test_http/greeting-user?readonly=0",
+            headers={"User-Agent": USER_AGENT_linux_firefox},
+        )
+
+        devices, logs = self.get_devices_logs(self.user_admin)
+        self.assertEqual(len(devices), 2, "user-agent changes cannot rebind a session")
+        self.assertEqual(len(logs), 2)
+
+        self.user_admin.auth_client_ids.filtered(
+            lambda device: "firefox" in device.browser
+        )._revoke()
+
+        res = self.hit(
+            "2024-01-01 08:00:30",
+            "/test_http/greeting-user?readonly=0",
+            headers={"User-Agent": USER_AGENT_linux_firefox},
+        )
+        self.assertIn("/web/login", res.url)
+
+    def test_revoke_foreign_device_denied_for_non_system(self):
+        self.authenticate(self.user_admin.login, self.user_admin.login)
+        self.hit("2024-01-01 08:00:00", "/test_http/greeting-user?readonly=0")
+        admin_device = self.user_admin.auth_client_ids
+        self.assertEqual(len(admin_device), 1)
+
+        foreign_device = admin_device.sudo().with_user(self.user_internal)
+        with self.assertRaises(AccessError):
+            foreign_device._revoke()
+        self.assertTrue(admin_device.active)
+
+    def test_revoke_foreign_device_allowed_for_system(self):
+        self.authenticate(self.user_internal.login, self.user_internal.login)
+        self.hit("2024-01-01 08:00:00", "/test_http/greeting-user?readonly=0")
+        internal_device = self.user_internal.auth_client_ids
+        self.assertEqual(len(internal_device), 1)
+        self.assertTrue(internal_device.active)
+
+        internal_device.with_user(self.user_admin)._revoke()
+        self.assertFalse(internal_device.active)
+
+    def _create_device_log_for_user(self, session, count):
+        for _ in range(count):
+            identifier = odoo.http.root.session_store.generate_key()[
+                :STORED_SESSION_BYTES
+            ]
+            device = self.Device.create(
+                {
+                    "recognition_key_hash": f"key_{identifier}",
+                    "user_id": session.uid,
+                    "first_activity": datetime.now(),
+                    "last_activity": datetime.now(),
+                    "session_ids": [
+                        Command.create(
+                            {
+                                "session_identifier": identifier,
+                                "first_activity": datetime.now(),
+                                "last_activity": datetime.now(),
+                            }
+                        )
+                    ],
+                }
+            )
+            self.DeviceLog.create(
+                {
+                    "client_id": device.id,
+                    "first_activity": datetime.now(),
+                    "last_activity": datetime.now(),
+                }
+            )
+
+    def test_filesystem_reflexion(self):
+        session = self.authenticate(self.user_admin.login, self.user_admin.login)
+        with freeze_time("2025-01-01 08:00:00"):
+            self._create_device_log_for_user(session, 10)
+
+        devices, logs = self.get_devices_logs(self.user_admin)
+        self.assertEqual(len(devices), 11)
+        self.assertEqual(len(logs), 10)
+        self.assertEqual(len(self.user_admin.auth_client_ids), 11)
+
+        session = self.authenticate(self.user_internal.login, self.user_internal.login)
+        with freeze_time("2025-01-01 08:00:00"):
+            self._create_device_log_for_user(session, 10)
+
+        devices, logs = self.get_devices_logs(self.user_internal)
+        self.assertEqual(len(devices), 11)
+        self.assertEqual(len(logs), 10)
+        self.assertEqual(len(self.user_internal.auth_client_ids), 11)
+
+        with (
+            freeze_time("2025-02-01 08:00:00"),
+            patch.object(self.cr, "commit", lambda: ...),
+        ):
+            self.env["auth.user.client.session"].sudo()._update_revoked()
+        self.env.invalidate_all()
+
+        devices, _ = self.get_devices_logs(self.user_admin)
+        self.assertEqual(len(devices), 0)
+        self.assertEqual(len(self.user_admin.auth_client_ids), 0)
+
+        devices, _ = self.get_devices_logs(self.user_internal)
+        self.assertEqual(
+            len(devices), 1, "the current bound session survives the sweep"
+        )
+        self.assertEqual(len(self.user_internal.auth_client_ids), 1)
+
+    def test_specific_public_user_write(self):
+        session = self.authenticate(None, None)
+        self.hit("2024-01-01 08:00:00", "/test_http/greeting-public?readonly=0")
+
+        self.assertFalse(session["_trace"])
+
+    def test_first_activity_survives_an_ip_change(self):
+        self.authenticate(self.user_admin.login, self.user_admin.login)
+        self.hit(
+            "2024-01-01 08:00:00",
+            "/test_http/greeting-public?readonly=0",
+            ip="193.0.3.43",
+        )
+        self.hit(
+            "2024-01-01 12:00:00",
+            "/test_http/greeting-public?readonly=0",
+            ip="192.0.2.42",
+        )
+        devices, logs = self.get_devices_logs(self.user_admin)
+        self.assertEqual(len(logs), 2)
+        self.assertEqual(len(devices), 1)
+        self.assertEqual(devices.ip_address, "192.0.2.42")
+        self.assertEqual(devices.first_activity, datetime(2024, 1, 1, 8, 0))
+        self.assertEqual(devices.last_activity, datetime(2024, 1, 1, 12, 0))
+
+    def _sweep_real_store(self):
+        with patch.object(
+            type(self.env["ir.cron"]), "_commit_progress", lambda *a, **k: float("inf")
+        ):
+            self.env["auth.user.client.session"].sudo()._update_revoked()
+        self.env.invalidate_all()
+
+    def test_sweep_keeps_a_live_session(self):
+        session = self.authenticate(self.user_admin.login, self.user_admin.login)
+        self.hit("2024-01-01 08:00:00", "/test_http/greeting-public?readonly=0")
+        self._sweep_real_store()
+        devices, _logs = self.get_devices_logs(self.user_admin)
+        self.assertEqual(len(devices), 1)
+        self.assertTrue(devices.active)
+        self.assertTrue(odoo.http.root.session_store.get(session.sid).uid)
+
+    def test_sweep_archives_a_dead_session(self):
+        session = self.authenticate(self.user_admin.login, self.user_admin.login)
+        self.hit("2024-01-01 08:00:00", "/test_http/greeting-public?readonly=0")
+        self.hit(
+            "2024-01-01 08:00:01", "/test_http/greeting-public?readonly=0", ip=TEST_IP
+        )
+        devices, logs = self.get_devices_logs(self.user_admin)
+        self.assertEqual((len(devices), len(logs)), (1, 2))
+        odoo.http.root.session_store.delete(session)
+        self._sweep_real_store()
+        self.assertFalse(devices.active)
+        self.assertEqual(
+            len(devices.address_ids), 2, "the history outlives the session"
+        )
+        self.assertFalse(self.user_admin.auth_client_ids)
+
+    def _call_kw(self, model, method, ids):
+        payload = {
+            "jsonrpc": "2.0",
+            "method": "call",
+            "params": {"model": model, "method": method, "args": [ids], "kwargs": {}},
+        }
+        return self.url_open(
+            f"/web/dataset/call_kw/{model}/{method}",
+            data=json_dumps(payload),
+            headers={"Content-Type": "application/json"},
+        ).json()
+
+    def test_bulk_logout_rpc_cannot_target_another_user(self):
+        session = self.authenticate(self.user_internal.login, self.user_internal.login)
+        session["identity-check-last"] = time.time()
+        odoo.http.root.session_store.save(session)
+        epoch = self.user_admin.session_epoch
+        response = self._call_kw(
+            "res.users", "action_revoke_all_devices", self.user_admin.ids
+        )
+        self.assertEqual(
+            response["error"]["data"]["name"], "odoo.exceptions.AccessError"
+        )
+        self.user_admin.invalidate_recordset(["session_epoch"])
+        self.assertEqual(self.user_admin.session_epoch, epoch)
+
+    def test_revoking_the_current_device_reloads(self):
+        session = self.authenticate(self.user_admin.login, self.user_admin.login)
+        session["identity-check-last"] = time.time()
+        odoo.http.root.session_store.save(session)
+        self.url_open("/test_http/greeting-user?readonly=0")
+        device = self.user_admin.auth_client_ids
+        self.assertEqual(len(device), 1)
+
+        response = self._call_kw("auth.user.client", "revoke", device.ids)
+
+        self.assertEqual(
+            response.get("result"), {"type": "ir.actions.client", "tag": "reload"}
+        )
+        self.assertIn("/web/login", self.url_open("/test_http/greeting-user").url)
+
+    def test_device_log_lines_carry_no_session_identifier(self):
+        session = self.authenticate(self.user_admin.login, self.user_admin.login)
+        with self.assertLogs(
+            "odoo.addons.base.models.auth_user_client", "INFO"
+        ) as logs:
+            self.hit("2024-01-01 08:00:00", "/test_http/greeting-user?readonly=0")
+            self.user_admin.auth_client_ids._revoke()
+        self.assertEqual(len(logs.output), 1)
+        identifier = session.sid[:STORED_SESSION_BYTES]
+        self.assertFalse([line for line in logs.output if identifier in line])
+
+    def test_logout_archives_the_device_at_once(self):
+        self.authenticate(self.user_internal.login, self.user_internal.login)
+        self.url_open("/test_http/greeting-user?readonly=0")
+        device = self.user_internal.auth_client_ids
+        self.assertEqual(len(device), 1)
+
+        self.url_open("/web/session/logout")
+
+        self.env.invalidate_all()
+        self.assertFalse(device.active)
+        self.assertFalse(self.user_internal.auth_client_ids)
+        self.assertEqual(len(device.address_ids), 1, "the history outlives the session")
+
+    def test_logout_leaves_the_other_sessions_devices(self):
+        other = self.authenticate(self.user_internal.login, self.user_internal.login)
+        self.url_open("/test_http/greeting-user?readonly=0")
+        self.authenticate(self.user_internal.login, self.user_internal.login)
+        self.url_open("/test_http/greeting-user?readonly=0")
+        self.assertEqual(len(self.user_internal.auth_client_ids), 2)
+
+        self.url_open("/web/session/logout")
+
+        self.env.invalidate_all()
+        self.assertEqual(
+            self.user_internal.auth_client_ids.session_ids.session_identifier,
+            other.sid[:STORED_SESSION_BYTES],
+        )
+
+    def _session_without_device(self, user, *, traced=False):
+        session = odoo.http.root.session_store.new()
+        session.update(
+            odoo.http.prepare_default_session(),
+            db=get_db_name(),
+            _trace_disable=not traced,
+        )
+        session.uid = user.id
+        session.login = user.login
+        session.session_token = security.get_session_token(session, self.env)
+        if traced:
+            self.Device._bind_session(session)
+        odoo.http.root.session_store.save(session)
+        return session
+
+    def _greets(self, sid, user_agent=None):
+        with self.allow_requests():
+            cookies = self.opener.cookies.copy()
+            cookies.set("session_id", None)
+            cookies.set("session_id", sid, domain=HOST)
+            response = requests.get(
+                f"{self.base_url()}/test_http/greeting-user",
+                cookies=cookies,
+                headers={"User-Agent": user_agent or self.opener.headers["User-Agent"]},
+                timeout=10,
+            )
+        greeted = response.text == "Tek'ma'te"
+        _debug.logic(
+            "test.device.greets",
+            sid=sid[:8],
+            status=response.status_code,
+            url=response.url,
+            greeted=greeted,
+            cookies=sorted(cookies.keys()),
+        )
+        return greeted
+
+    def test_revoke_all_ends_a_session_that_has_no_device(self):
+        victim = self.authenticate(self.user_internal.login, self.user_internal.login)
+        victim["identity-check-last"] = time.time()
+        odoo.http.root.session_store.save(victim)
+        self.url_open("/test_http/greeting-user?readonly=0")
+        unlisted = self._session_without_device(self.user_internal)
+        self.assertFalse(self._greets(unlisted.sid))
+        self.env.invalidate_all()
+        self.assertEqual(
+            len(self.user_internal.auth_client_ids), 1, "only the victim's"
+        )
+
+        response = self._call_kw(
+            "res.users", "action_revoke_all_devices", self.user_internal.ids
+        )
+
+        self.assertEqual(
+            response.get("result"), {"type": "ir.actions.client", "tag": "reload"}
+        )
+        self.assertFalse(self._greets(unlisted.sid))
+        victim_now = self.opener.cookies["session_id"]
+        self.assertNotEqual(victim_now, victim.sid, "the current session got a new id")
+        self.assertTrue(self._greets(victim_now))
+
+    def test_login_records_the_device_of_the_session_it_keeps(self):
+        self.authenticate(None, None)
+        payload = {
+            "jsonrpc": "2.0",
+            "method": "call",
+            "params": {
+                "db": get_db_name(),
+                "login": self.user_internal.login,
+                "password": self.user_internal.login,
+            },
+        }
+        response = self.url_open(
+            "/web/session/authenticate",
+            data=json_dumps(payload),
+            headers={"Content-Type": "application/json"},
+        )
+        self.assertNotIn("error", response.json())
+        sid = self.opener.cookies["session_id"]
+
+        self.env.invalidate_all()
+        device = self.user_internal.auth_client_ids
+        self.assertEqual(len(device), 1)
+        self.assertEqual(
+            device.session_ids.session_identifier, sid[:STORED_SESSION_BYTES]
+        )
+        self.assertNotIn("/web/login", self.url_open("/test_http/greeting-user").url)
+
+    def test_revoke_all_ends_sibling_association_on_the_current_client(self):
+        current = self.authenticate(self.user_internal.login, self.user_internal.login)
+        current["identity-check-last"] = time.time()
+        odoo.http.root.session_store.save(current)
+        client = self.Device.browse(current["auth_client_id"])
+        sibling = self._session_without_device(self.user_internal)
+        sibling.update(
+            auth_client_id=client.id,
+            auth_client_generation=client.session_generation,
+            auth_user_epoch=self.user_internal.session_epoch,
+        )
+        association = self.env["auth.user.client.session"].create(
+            {
+                "client_id": client.id,
+                "session_identifier": sibling.sid[:STORED_SESSION_BYTES],
+            }
+        )
+        odoo.http.root.session_store.save(sibling)
+        self.assertTrue(self._greets(sibling.sid))
+        response = self._call_kw(
+            "res.users", "action_revoke_all_devices", self.user_internal.ids
+        )
+        self.assertNotIn("error", response)
+        self.env.invalidate_all()
+        self.assertFalse(association.active)
+        self.assertEqual(association.end_reason, "revoked")
+        self.assertFalse(self._greets(sibling.sid))
+        retained = self.opener.cookies["session_id"]
+        self.assertTrue(self._greets(retained))
+        self.assertEqual(
+            client.session_ids.session_identifier, retained[:STORED_SESSION_BYTES]
+        )
+
+    def test_revoke_all_ends_a_stolen_copy_of_the_current_session(self):
+        victim = self.authenticate(self.user_internal.login, self.user_internal.login)
+        victim["identity-check-last"] = time.time()
+        odoo.http.root.session_store.save(victim)
+        self.url_open("/test_http/greeting-user?readonly=0")
+        stolen = victim.sid
+        self.assertTrue(self._greets(stolen, USER_AGENT_android_chrome))
+
+        self._call_kw("res.users", "action_revoke_all_devices", self.user_internal.ids)
+
+        self.assertFalse(self._greets(stolen, USER_AGENT_android_chrome))
+        rotated = self.opener.cookies["session_id"]
+        self.assertNotEqual(rotated, stolen)
+        self.assertTrue(self._greets(rotated))
+        self.env.invalidate_all()
+        devices = self.Device.with_context(active_test=False).search(
+            [("user_id", "=", self.user_internal.id)]
+        )
+        _debug.logic(
+            "test.device.state",
+            devices=[
+                (
+                    device.id,
+                    device.platform,
+                    device.browser,
+                    device.active,
+                    device.with_context(active_test=False).session_ids.mapped(
+                        lambda session: (session.session_identifier[:8], session.active)
+                    ),
+                )
+                for device in devices
+            ],
+        )
+        kept = devices.filtered("active")
+        self.assertEqual(len(kept), 1, "the thief's device is archived")
+        self.assertEqual(
+            kept.session_ids.filtered("active").session_identifier,
+            rotated[:STORED_SESSION_BYTES],
+            "the kept device follows its session to the new id",
+        )
+
+    def test_one_browser_logging_in_twice_is_one_device(self):
+        payload = {
+            "jsonrpc": "2.0",
+            "method": "call",
+            "params": {
+                "db": get_db_name(),
+                "login": self.user_internal.login,
+                "password": self.user_internal.login,
+            },
+        }
+        self.authenticate(None, None)
+        for _login in range(2):
+            self.url_open(
+                "/web/session/authenticate",
+                data=json_dumps(payload),
+                headers={"Content-Type": "application/json"},
+            )
+            self.url_open("/web/session/logout")
+
+        self.env.invalidate_all()
+        device = self.Device.with_context(active_test=False).search(
+            [("user_id", "=", self.user_internal.id)]
+        )
+        self.assertEqual(len(device), 1)
+        self.assertEqual(len(device.with_context(active_test=False).session_ids), 2)
+        self.assertTrue(self.opener.cookies.get(CLIENT_KEY_COOKIE))
+
+    def test_archiving_a_device_revokes_it(self):
+        session = self.authenticate(self.user_internal.login, self.user_internal.login)
+        session["identity-check-last"] = time.time()
+        odoo.http.root.session_store.save(session)
+        self.url_open("/test_http/greeting-user?readonly=0")
+        other = self._session_without_device(self.user_internal, traced=True)
+        self.assertTrue(self._greets(other.sid, USER_AGENT_android_chrome))
+        self.env.invalidate_all()
+        foreign = self.user_internal.auth_client_ids.filtered(
+            lambda device: device.browser == "chrome"
+        )
+        self.assertEqual(len(foreign), 1)
+
+        self._call_kw("auth.user.client", "action_archive", foreign.ids)
+
+        self.env.invalidate_all()
+        self.assertFalse(foreign.active)
+        self.assertFalse(self._greets(other.sid, USER_AGENT_android_chrome))
+        self.assertTrue(self._greets(self.opener.cookies["session_id"]))

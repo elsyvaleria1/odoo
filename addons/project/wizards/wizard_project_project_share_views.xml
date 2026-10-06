@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="project_share_wizard_view_form" model="ir.ui.view">
+        <field name="name">project.share.wizard.view.form</field>
+        <field name="model">wizard.project.project.share</field>
+        <field name="arch" type="xml">
+            <form string="Share Project">
+                <field name="res_model" invisible="1" />
+                <field name="res_id" invisible="1" />
+                <group>
+                    <field name="share_link" widget="CopyClipboardChar" />
+                </group>
+                <field name="collaborator_ids">
+                    <list string="Collaborators" editable="bottom">
+                        <field
+                            name="partner_id"
+                            domain="[('id', 'not in', parent.existing_partner_ids), ('partner_share', '=', True)]"
+                            context="{'show_email': True}"
+                            options="{'no_create': True, 'no_open': True}" />
+                        <field name="access_mode" />
+                        <field name="send_invitation" />
+                    </list>
+                </field>
+                <p class="text-muted">Choose the access mode of each collaborator:</p>
+                <ul class="text-muted">
+                    <li>View: read the tasks and write in their chatter.</li>
+                    <li>Edit: also create and update tasks.</li>
+                    <li>Advanced Edit: also move tasks between steps and change their priority.</li>
+                </ul>
+                <footer>
+                    <button
+                        name="action_share_record"
+                        type="object"
+                        string="Share Project"
+                        invisible="not collaborator_ids"
+                        class="btn-primary"
+                        data-hotkey="q" />
+                    <button
+                        special="save"
+                        string="Save"
+                        invisible="collaborator_ids"
+                        class="btn-primary"
+                        data-hotkey="q" />
+                    <button
+                        special="cancel"
+                        string="Discard"
+                        class="btn-secondary"
+                        data-hotkey="x" />
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="project_share_wizard_confirm_form" model="ir.ui.view">
+        <field name="name">project.share.wizard.view.form</field>
+        <field name="model">wizard.project.project.share</field>
+        <field name="arch" type="xml">
+            <form string="Confirmation">
+                <p>People invited to collaborate on the project will have portal access rights.</p>
+                <p>They can edit shared project tasks and view specific documents in read mode on your website. This includes leads/opportunities, quotations/sales orders, purchase orders, invoices and bills, timesheets, and tickets.</p>
+                <p>You have full control and can revoke portal access anytime. Are you ready to proceed?</p>
+                <footer>
+                    <button
+                        name="action_send_mail"
+                        type="object"
+                        string="Grant Portal Access"
+                        class="btn-primary"
+                        data-hotkey="q" />
+                    <button
+                        special="cancel"
+                        string="Discard"
+                        class="btn-secondary"
+                        data-hotkey="x" />
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="project_share_wizard_action" model="ir.actions.act_window">
+        <field name="name">Share Project</field>
+        <field name="res_model">wizard.project.project.share</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+
+</odoo>

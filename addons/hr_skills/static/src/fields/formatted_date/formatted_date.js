@@ -1,0 +1,90 @@
+/** @odoo-module native */
+import { Component, t, useProps } from "@odoo/owl";
+import { toLocaleString } from "@web/core/l10n/dates";
+import { evaluateBooleanExpr } from "@web/core/py_js/py";
+import { registry } from "@web/core/registry";
+import { _t } from "@web/core/translation";
+import { standardFieldProps } from "@web/fields/standard_field_props";
+
+export class FormattedDate extends Component {
+    static template = "hr_skills.FormattedDate";
+    static props = {
+        ...standardFieldProps,
+        dayFormat: t.string(),
+        monthFormat: t.string(),
+        yearFormat: t.string(),
+        color: t.object(),
+    };
+    props = useProps(this.constructor.props);
+
+    get value() {
+        return this.props.record.data[this.props.name];
+    }
+
+    get formattedValue() {
+        return toLocaleString(this.value, {
+            day: this.props.dayFormat,
+            month: this.props.monthFormat,
+            year: this.props.yearFormat,
+        });
+    }
+
+    get placeholder() {
+        return _t("Indefinite");
+    }
+
+    get colorClass() {
+        for (const colorName of Object.keys(this.props.color)) {
+            if (
+                evaluateBooleanExpr(
+                    `${this.props.color[colorName]}`,
+                    this.props.record.evalContextWithVirtualIds,
+                )
+            ) {
+                return "text-" + colorName;
+            }
+        }
+        return "";
+    }
+}
+
+export const formattedDate = {
+    component: FormattedDate,
+    supportedOptions: [
+        {
+            label: _t("Day Format"),
+            name: "day_format",
+            type: "string",
+            default: "numeric",
+        },
+        {
+            label: _t("Month Format"),
+            name: "month_format",
+            type: "string",
+            default: "numeric",
+        },
+        {
+            label: _t("Year Format"),
+            name: "year_format",
+            type: "string",
+            default: "numeric",
+        },
+        {
+            label: _t("Color"),
+            name: "color",
+            type: "string",
+            default: {},
+        },
+    ],
+    supportedTypes: ["date"],
+    extractProps({ options }) {
+        return {
+            dayFormat: options.day_format || "numeric",
+            monthFormat: options.month_format || "numeric",
+            yearFormat: options.year_format || "numeric",
+            color: options.color || {},
+        };
+    },
+};
+
+registry.category("fields").add("formatted_date", formattedDate);

@@ -1,0 +1,896 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="0">
+
+    <record id="automation_cash_exchange_simple" model="automation.rule">
+        <field name="name">Cash exchange simple a terceros</field>
+        <field name="model_id" ref="automation.model_automation_runtime_line" />
+        <field name="trigger">on_hand</field>
+        <field name="active" eval="True" />
+    </record>
+
+    <record id="action_cash_exch_simple_invoice" model="ir.actions.server">
+        <field name="name">Create Customer Invoice</field>
+        <field name="model_id" ref="automation.model_automation_runtime_line" />
+        <field name="state">code</field>
+        <field
+            name="code"># TODO: Update template reference based on actual template for cash exchange
+# Using template_8 as placeholder (Customer invoice)
+template = env.ref('automation_account.template_customer_invoice_generic', raise_if_not_found=False)
+if not template:
+    raise UserError("Cash exchange customer invoice template not found. Please configure the correct template.")
+
+move = action.create_move_from_template(record, template)
+record.write({'created_record_ref': f'account.move,{move.id}'})
+action.mark_action_done_and_continue(record)</field>
+        <field name="automation_rule_id" ref="automation_cash_exchange_simple" />
+        <field name="sequence" eval="10" />
+    </record>
+
+    <record id="action_cash_exch_simple_reconcile" model="ir.actions.server">
+        <field name="name">Reconcile Payment</field>
+        <field name="model_id" ref="automation.model_automation_runtime_line" />
+        <field name="state">code</field>
+        <field
+            name="code"># Only reconcile if bank statement line exists
+if record.runtime_id.st_line_id:
+    action.reconcile_statement_with_latest_move(record)
+else:
+    # Skip reconciliation if no bank statement
+    pass
+
+action.mark_action_done_and_continue(record)</field>
+        <field name="automation_rule_id" ref="automation_cash_exchange_simple" />
+        <field name="sequence" eval="11" />
+    </record>
+
+    <record id="action_cash_exch_simple_bill" model="ir.actions.server">
+        <field name="name">Create Vendor Bill</field>
+        <field name="model_id" ref="automation.model_automation_runtime_line" />
+        <field name="state">code</field>
+        <field
+            name="code"># TODO: Configure actual vendor bill template
+# Using template_4 as placeholder
+template = env.ref('automation_account.template_vendor_bill', raise_if_not_found=False)
+if not template:
+    raise UserError("Cash exchange vendor bill template not found. Please configure the correct template.")
+
+# Use same date as previous document
+move = action.create_move_from_template(
+    record,
+    template,
+    {'use_latest_document_date': True}
+)
+record.write({'created_record_ref': f'account.move,{move.id}'})
+action.mark_action_done_and_continue(record)</field>
+        <field name="automation_rule_id" ref="automation_cash_exchange_simple" />
+        <field name="sequence" eval="12" />
+    </record>
+
+    <record id="action_cash_exch_simple_payment" model="ir.actions.server">
+        <field name="name">Pay Vendor Bill</field>
+        <field name="model_id" ref="automation.model_automation_runtime_line" />
+        <field name="state">code</field>
+        <field
+            name="code">payment = action.create_payment_from_latest_move(record)
+record.write({'created_record_ref': f'account.payment,{payment.id}'})
+action.mark_action_done_and_continue(record)</field>
+        <field name="automation_rule_id" ref="automation_cash_exchange_simple" />
+        <field name="sequence" eval="13" />
+    </record>
+
+    <record id="automation_cash_exchange_collection" model="automation.rule">
+        <field name="name">Cash exchange simple + collection</field>
+        <field name="model_id" ref="automation.model_automation_runtime_line" />
+        <field name="trigger">on_hand</field>
+        <field name="active" eval="True" />
+    </record>
+
+    <record id="action_cash_exch_coll_invoice" model="ir.actions.server">
+        <field name="name">Create Customer Invoice</field>
+        <field name="model_id" ref="automation.model_automation_runtime_line" />
+        <field name="state">code</field>
+        <field
+            name="code">template = env.ref('automation_account.template_customer_invoice_generic', raise_if_not_found=False)
+if not template:
+    raise UserError("Template not found")
+move = action.create_move_from_template(record, template)
+record.write({'created_record_ref': f'account.move,{move.id}'})
+action.mark_action_done_and_continue(record)</field>
+        <field name="automation_rule_id" ref="automation_cash_exchange_collection" />
+        <field name="sequence" eval="10" />
+    </record>
+
+    <record id="action_cash_exch_coll_reconcile" model="ir.actions.server">
+        <field name="name">Reconcile Payment</field>
+        <field name="model_id" ref="automation.model_automation_runtime_line" />
+        <field name="state">code</field>
+        <field
+            name="code">if record.runtime_id.st_line_id:
+    action.reconcile_statement_with_latest_move(record)
+action.mark_action_done_and_continue(record)</field>
+        <field name="automation_rule_id" ref="automation_cash_exchange_collection" />
+        <field name="sequence" eval="11" />
+    </record>
+
+    <record id="action_cash_exch_coll_bill" model="ir.actions.server">
+        <field name="name">Create Vendor Bill</field>
+        <field name="model_id" ref="automation.model_automation_runtime_line" />
+        <field name="state">code</field>
+        <field
+            name="code">template = env.ref('automation_account.template_vendor_bill', raise_if_not_found=False)
+if not template:
+    raise UserError("Template not found")
+move = action.create_move_from_template(record, template, {'use_latest_document_date': True})
+record.write({'created_record_ref': f'account.move,{move.id}'})
+action.mark_action_done_and_continue(record)</field>
+        <field name="automation_rule_id" ref="automation_cash_exchange_collection" />
+        <field name="sequence" eval="12" />
+    </record>
+
+    <record id="action_cash_exch_coll_payment" model="ir.actions.server">
+        <field name="name">Pay Vendor Bill</field>
+        <field name="model_id" ref="automation.model_automation_runtime_line" />
+        <field name="state">code</field>
+        <field
+            name="code">payment = action.create_payment_from_latest_move(record)
+record.write({'created_record_ref': f'account.payment,{payment.id}'})
+action.mark_action_done_and_continue(record)</field>
+        <field name="automation_rule_id" ref="automation_cash_exchange_collection" />
+        <field name="sequence" eval="13" />
+    </record>
+
+    <record id="automation_cash_exchange_multicompany" model="automation.rule">
+        <field name="name">Cash exchange from multi company</field>
+        <field name="model_id" ref="automation.model_automation_runtime_line" />
+        <field name="trigger">on_hand</field>
+        <field name="active" eval="True" />
+    </record>
+
+    <record id="action_cash_exch_multi_invoice" model="ir.actions.server">
+        <field name="name">Create Customer Invoice</field>
+        <field name="model_id" ref="automation.model_automation_runtime_line" />
+        <field name="state">code</field>
+        <field
+            name="code">template = env.ref('automation_account.template_customer_invoice_generic', raise_if_not_found=False)
+if not template:
+    raise UserError("Template not found")
+move = action.create_move_from_template(record, template)
+record.write({'created_record_ref': f'account.move,{move.id}'})
+action.mark_action_done_and_continue(record)</field>
+        <field name="automation_rule_id" ref="automation_cash_exchange_multicompany" />
+        <field name="sequence" eval="10" />
+    </record>
+
+    <record id="action_cash_exch_multi_reconcile" model="ir.actions.server">
+        <field name="name">Reconcile Payment</field>
+        <field name="model_id" ref="automation.model_automation_runtime_line" />
+        <field name="state">code</field>
+        <field
+            name="code">if record.runtime_id.st_line_id:
+    action.reconcile_statement_with_latest_move(record)
+action.mark_action_done_and_continue(record)</field>
+        <field name="automation_rule_id" ref="automation_cash_exchange_multicompany" />
+        <field name="sequence" eval="11" />
+    </record>
+
+    <record id="action_cash_exch_multi_bill" model="ir.actions.server">
+        <field name="name">Create Vendor Bill (Multi-company)</field>
+        <field name="model_id" ref="automation.model_automation_runtime_line" />
+        <field name="state">code</field>
+        <field
+            name="code"># Created in the company that holds the transaction when the run names two
+template = env.ref('automation_account.template_vendor_bill', raise_if_not_found=False)
+if not template:
+    raise UserError("Template not found")
+
+context_vals = {'use_latest_document_date': True}
+
+move = action.create_move_from_template(record, template, context_vals)
+record.write({'created_record_ref': f'account.move,{move.id}'})
+action.mark_action_done_and_continue(record)</field>
+        <field name="automation_rule_id" ref="automation_cash_exchange_multicompany" />
+        <field name="sequence" eval="12" />
+    </record>
+
+    <record id="action_cash_exch_multi_payment" model="ir.actions.server">
+        <field name="name">Pay Vendor Bill</field>
+        <field name="model_id" ref="automation.model_automation_runtime_line" />
+        <field name="state">code</field>
+        <field
+            name="code">payment = action.create_payment_from_latest_move(record)
+record.write({'created_record_ref': f'account.payment,{payment.id}'})
+action.mark_action_done_and_continue(record)</field>
+        <field name="automation_rule_id" ref="automation_cash_exchange_multicompany" />
+        <field name="sequence" eval="13" />
+    </record>
+
+    <record id="automation_cash_exchange_coll_multi" model="automation.rule">
+        <field name="name">Cash exchange + collection from multi company</field>
+        <field name="model_id" ref="automation.model_automation_runtime_line" />
+        <field name="trigger">on_hand</field>
+        <field name="active" eval="True" />
+    </record>
+
+    <record id="action_cash_exch_coll_multi_invoice" model="ir.actions.server">
+        <field name="name">Create Customer Invoice</field>
+        <field name="model_id" ref="automation.model_automation_runtime_line" />
+        <field name="state">code</field>
+        <field
+            name="code">template = env.ref('automation_account.template_customer_invoice_generic', raise_if_not_found=False)
+if not template:
+    raise UserError("Template not found")
+move = action.create_move_from_template(record, template)
+record.write({'created_record_ref': f'account.move,{move.id}'})
+action.mark_action_done_and_continue(record)</field>
+        <field name="automation_rule_id" ref="automation_cash_exchange_coll_multi" />
+        <field name="sequence" eval="10" />
+    </record>
+
+    <record id="action_cash_exch_coll_multi_reconcile" model="ir.actions.server">
+        <field name="name">Reconcile Payment</field>
+        <field name="model_id" ref="automation.model_automation_runtime_line" />
+        <field name="state">code</field>
+        <field
+            name="code">if record.runtime_id.st_line_id:
+    action.reconcile_statement_with_latest_move(record)
+action.mark_action_done_and_continue(record)</field>
+        <field name="automation_rule_id" ref="automation_cash_exchange_coll_multi" />
+        <field name="sequence" eval="11" />
+    </record>
+
+    <record id="action_cash_exch_coll_multi_bill" model="ir.actions.server">
+        <field name="name">Create Vendor Bill (Multi-company)</field>
+        <field name="model_id" ref="automation.model_automation_runtime_line" />
+        <field name="state">code</field>
+        <field
+            name="code">template = env.ref('automation_account.template_vendor_bill', raise_if_not_found=False)
+if not template:
+    raise UserError("Template not found")
+
+context_vals = {'use_latest_document_date': True}
+
+move = action.create_move_from_template(record, template, context_vals)
+record.write({'created_record_ref': f'account.move,{move.id}'})
+action.mark_action_done_and_continue(record)</field>
+        <field name="automation_rule_id" ref="automation_cash_exchange_coll_multi" />
+        <field name="sequence" eval="12" />
+    </record>
+
+    <record id="action_cash_exch_coll_multi_payment" model="ir.actions.server">
+        <field name="name">Pay Vendor Bill</field>
+        <field name="model_id" ref="automation.model_automation_runtime_line" />
+        <field name="state">code</field>
+        <field
+            name="code">payment = action.create_payment_from_latest_move(record)
+record.write({'created_record_ref': f'account.payment,{payment.id}'})
+action.mark_action_done_and_continue(record)</field>
+        <field name="automation_rule_id" ref="automation_cash_exchange_coll_multi" />
+        <field name="sequence" eval="13" />
+    </record>
+
+    <record id="automation_customer_discount_fx" model="automation.rule">
+        <field name="name">Customer discount due to collection in FX</field>
+        <field name="model_id" ref="automation.model_automation_runtime_line" />
+        <field name="trigger">on_hand</field>
+    </record>
+
+    <record id="action_cust_discount_fx_bsl" model="ir.actions.server">
+        <field name="name">BSL</field>
+        <field name="model_id" ref="automation.model_automation_runtime_line" />
+        <field name="state">code</field>
+        <field
+            name="code"># Information action - just mark as done
+# Bank statement line is already set in runtime.st_line_id
+action.mark_action_done_and_continue(record)</field>
+        <field name="automation_rule_id" ref="automation_customer_discount_fx" />
+        <field name="sequence" eval="10" />
+    </record>
+
+    <record id="action_cust_discount_fx_invoice" model="ir.actions.server">
+        <field name="name">Factura</field>
+        <field name="model_id" ref="automation.model_automation_runtime_line" />
+        <field name="state">code</field>
+        <field
+            name="code"># Get template
+template = env.ref('automation_account.template_customer_invoice_fx', raise_if_not_found=False)
+if not template:
+    raise UserError("Template 'DEMO - Customer Invoice FX' not found")
+
+# Issued to the run's third party if the template asks for it
+move = action.create_move_from_template(record, template)
+
+# Store reference
+record.write({'created_record_ref': f'account.move,{move.id}'})
+
+# Mark done and continue
+action.mark_action_done_and_continue(record)</field>
+        <field name="automation_rule_id" ref="automation_customer_discount_fx" />
+        <field name="sequence" eval="11" />
+    </record>
+
+    <record id="action_cust_discount_fx_reconcile" model="ir.actions.server">
+        <field name="name">Conciliacion</field>
+        <field name="model_id" ref="automation.model_automation_runtime_line" />
+        <field name="state">code</field>
+        <field
+            name="code"># Reconcile bank statement with invoice
+action.reconcile_statement_with_latest_move(record)
+
+# Mark done and continue
+action.mark_action_done_and_continue(record)</field>
+        <field name="automation_rule_id" ref="automation_customer_discount_fx" />
+        <field name="sequence" eval="12" />
+    </record>
+
+    <record id="action_cust_discount_fx_credit_note" model="ir.actions.server">
+        <field name="name">Nota de credito</field>
+        <field name="model_id" ref="automation.model_automation_runtime_line" />
+        <field name="state">code</field>
+        <field
+            name="code"># Get template
+template = env.ref('automation_account.template_customer_credit_note', raise_if_not_found=False)
+if not template:
+    raise UserError("Template 'DEMO - Customer Credit Note' not found")
+
+# Create credit note in multicompany context
+move = action.create_move_from_template(record, template)
+
+# Store reference
+record.write({'created_record_ref': f'account.move,{move.id}'})
+
+# Mark done (workflow complete)
+action.mark_action_done_and_continue(record)</field>
+        <field name="automation_rule_id" ref="automation_customer_discount_fx" />
+        <field name="sequence" eval="13" />
+    </record>
+
+    <record id="automation_collection_in_kind" model="automation.rule">
+        <field name="name">Collection in kind</field>
+        <field name="model_id" ref="automation.model_automation_runtime_line" />
+        <field name="trigger">on_hand</field>
+        <field name="active" eval="True" />
+    </record>
+
+    <record id="action_coll_kind_vendor_bill" model="ir.actions.server">
+        <field name="name">Create Vendor Bill</field>
+        <field name="model_id" ref="automation.model_automation_runtime_line" />
+        <field name="state">code</field>
+        <field
+            name="code"># Using template_4: Discount due debt collection in kind - Vendor bill
+template = env.ref('automation_account.template_vendor_bill', raise_if_not_found=False)
+if not template:
+    raise UserError("Collection in kind - Vendor bill template not found")
+
+move = action.create_move_from_template(record, template)
+record.write({'created_record_ref': f'account.move,{move.id}'})
+action.mark_action_done_and_continue(record)</field>
+        <field name="automation_rule_id" ref="automation_collection_in_kind" />
+        <field name="sequence" eval="10" />
+    </record>
+
+    <record id="action_coll_kind_entry" model="ir.actions.server">
+        <field name="name">Create Journal Entry</field>
+        <field name="model_id" ref="automation.model_automation_runtime_line" />
+        <field name="state">code</field>
+        <field
+            name="code"># Using template_5: Discount due debt collection in kind - Entry
+template = env.ref('automation_account.template_journal_entry', raise_if_not_found=False)
+if not template:
+    raise UserError("Collection in kind - Entry template not found")
+
+move = action.create_move_from_template(
+    record,
+    template,
+    {'use_latest_document_date': True}
+)
+record.write({'created_record_ref': f'account.move,{move.id}'})
+action.mark_action_done_and_continue(record)</field>
+        <field name="automation_rule_id" ref="automation_collection_in_kind" />
+        <field name="sequence" eval="11" />
+    </record>
+
+    <record id="action_coll_kind_refund" model="ir.actions.server">
+        <field name="name">Create Customer Refund</field>
+        <field name="model_id" ref="automation.model_automation_runtime_line" />
+        <field name="state">code</field>
+        <field
+            name="code"># Using template_6: Discount due debt collection in kind - Customer refund
+template = env.ref('automation_account.template_customer_refund_kind', raise_if_not_found=False)
+if not template:
+    raise UserError("Collection in kind - Customer refund template not found")
+
+move = action.create_move_from_template(
+    record,
+    template,
+    {'use_latest_document_date': True}
+)
+record.write({'created_record_ref': f'account.move,{move.id}'})
+action.mark_action_done_and_continue(record)</field>
+        <field name="automation_rule_id" ref="automation_collection_in_kind" />
+        <field name="sequence" eval="12" />
+    </record>
+
+    <record id="automation_cash_to_bank" model="automation.rule">
+        <field name="name">Own cash to own bank</field>
+        <field name="model_id" ref="automation.model_automation_runtime_line" />
+        <field name="trigger">on_hand</field>
+        <field name="active" eval="True" />
+    </record>
+
+    <record id="action_cash_bank_bsl" model="ir.actions.server">
+        <field name="name">Bank Statement Line</field>
+        <field name="model_id" ref="automation.model_automation_runtime_line" />
+        <field name="state">code</field>
+        <field
+            name="code"># Information action - bank statement line already set
+action.mark_action_done_and_continue(record)</field>
+        <field name="automation_rule_id" ref="automation_cash_to_bank" />
+        <field name="sequence" eval="10" />
+    </record>
+
+    <record id="action_cash_bank_entry" model="ir.actions.server">
+        <field name="name">Create Internal Transfer Entry</field>
+        <field name="model_id" ref="automation.model_automation_runtime_line" />
+        <field name="state">code</field>
+        <field
+            name="code"># TODO: Configure template for internal cash to bank transfer
+# Using template_5 as placeholder (journal entry)
+template = env.ref('automation_account.template_journal_entry', raise_if_not_found=False)
+if not template:
+    raise UserError("Cash to bank transfer template not found. Please configure the correct template.")
+
+move = action.create_move_from_template(record, template)
+record.write({'created_record_ref': f'account.move,{move.id}'})
+action.mark_action_done_and_continue(record)</field>
+        <field name="automation_rule_id" ref="automation_cash_to_bank" />
+        <field name="sequence" eval="11" />
+    </record>
+
+    <record id="automation_cash_to_multicompany_bank" model="automation.rule">
+        <field name="name">Own cash to multi company bank</field>
+        <field name="model_id" ref="automation.model_automation_runtime_line" />
+        <field name="trigger">on_hand</field>
+        <field name="active" eval="True" />
+    </record>
+
+    <record id="action_cash_multi_bank_entry_source" model="ir.actions.server">
+        <field name="name">Create Entry (Source Company)</field>
+        <field name="model_id" ref="automation.model_automation_runtime_line" />
+        <field name="state">code</field>
+        <field
+            name="code"># TODO: Configure template for source company cash withdrawal
+template = env.ref('automation_account.template_journal_entry', raise_if_not_found=False)
+if not template:
+    raise UserError("Template not found")
+
+move = action.create_move_from_template(record, template)
+record.write({'created_record_ref': f'account.move,{move.id}'})
+action.mark_action_done_and_continue(record)</field>
+        <field name="automation_rule_id" ref="automation_cash_to_multicompany_bank" />
+        <field name="sequence" eval="10" />
+    </record>
+
+    <record id="action_cash_multi_bank_entry_target" model="ir.actions.server">
+        <field name="name">Create Entry (Target Company)</field>
+        <field name="model_id" ref="automation.model_automation_runtime_line" />
+        <field name="state">code</field>
+        <field
+            name="code"># TODO: Configure template for target company bank deposit
+template = env.ref('automation_account.template_journal_entry', raise_if_not_found=False)
+if not template:
+    raise UserError("Template not found")
+
+# Created in the company that holds the transaction when the run names two
+context_vals = {'use_latest_document_date': True}
+
+move = action.create_move_from_template(record, template, context_vals)
+record.write({'created_record_ref': f'account.move,{move.id}'})
+action.mark_action_done_and_continue(record)</field>
+        <field name="automation_rule_id" ref="automation_cash_to_multicompany_bank" />
+        <field name="sequence" eval="11" />
+    </record>
+
+    <record id="automation_undeductible_expense" model="automation.rule">
+        <field name="name">Do un-deductible expense bill</field>
+        <field name="model_id" ref="automation.model_automation_runtime_line" />
+        <field name="trigger">on_hand</field>
+        <field name="active" eval="True" />
+    </record>
+
+    <record id="action_undeduc_bsl" model="ir.actions.server">
+        <field name="name">Bank Statement Line</field>
+        <field name="model_id" ref="automation.model_automation_runtime_line" />
+        <field name="state">code</field>
+        <field name="code">action.mark_action_done_and_continue(record)</field>
+        <field name="automation_rule_id" ref="automation_undeductible_expense" />
+        <field name="sequence" eval="10" />
+    </record>
+
+    <record id="action_undeduc_bill" model="ir.actions.server">
+        <field name="name">Create Un-deductible Expense Bill</field>
+        <field name="model_id" ref="automation.model_automation_runtime_line" />
+        <field name="state">code</field>
+        <field
+            name="code"># TODO: Configure template for un-deductible expense bill
+# Using template_4 as placeholder
+template = env.ref('automation_account.template_vendor_bill', raise_if_not_found=False)
+if not template:
+    raise UserError("Un-deductible expense bill template not found. Please configure the correct template.")
+
+move = action.create_move_from_template(record, template)
+record.write({'created_record_ref': f'account.move,{move.id}'})
+action.mark_action_done_and_continue(record)</field>
+        <field name="automation_rule_id" ref="automation_undeductible_expense" />
+        <field name="sequence" eval="11" />
+    </record>
+
+    <record id="action_undeduc_reconcile" model="ir.actions.server">
+        <field name="name">Reconcile with Bank Statement</field>
+        <field name="model_id" ref="automation.model_automation_runtime_line" />
+        <field name="state">code</field>
+        <field
+            name="code"># Reconcile the expense bill with the bank statement
+if record.runtime_id.st_line_id:
+    action.reconcile_statement_with_latest_move(record)
+
+action.mark_action_done_and_continue(record)</field>
+        <field name="automation_rule_id" ref="automation_undeductible_expense" />
+        <field name="sequence" eval="12" />
+    </record>
+
+    <record id="automation_customer_discount_fx_agroquimicos" model="automation.rule">
+        <field
+            name="name">Customer discount due to collection in FX (Agroquimicos)</field>
+        <field name="model_id" ref="automation.model_automation_runtime_line" />
+        <field name="trigger">on_hand</field>
+    </record>
+
+    <record id="action_cust_discount_agro_bsl" model="ir.actions.server">
+        <field name="name">BSL</field>
+        <field name="model_id" ref="automation.model_automation_runtime_line" />
+        <field name="state">code</field>
+        <field name="code">action.mark_action_done_and_continue(record)</field>
+        <field
+            name="automation_rule_id"
+            ref="automation_customer_discount_fx_agroquimicos" />
+        <field name="sequence" eval="10" />
+    </record>
+
+    <record id="action_cust_discount_agro_invoice" model="ir.actions.server">
+        <field name="name">Factura</field>
+        <field name="model_id" ref="automation.model_automation_runtime_line" />
+        <field name="state">code</field>
+        <field
+            name="code"># Get template for Agroquimicos
+template = env.ref('automation_account.template_customer_invoice_fx_agro', raise_if_not_found=False)
+if not template:
+    raise UserError("Template 'DEMO - Customer Invoice FX (Agroquimicos)' not found")
+
+# Create invoice
+move = action.create_move_from_template(record, template)
+
+# Store reference
+record.write({'created_record_ref': f'account.move,{move.id}'})
+
+# Mark done and continue
+action.mark_action_done_and_continue(record)</field>
+        <field
+            name="automation_rule_id"
+            ref="automation_customer_discount_fx_agroquimicos" />
+        <field name="sequence" eval="11" />
+    </record>
+
+    <record id="action_cust_discount_agro_reconcile" model="ir.actions.server">
+        <field name="name">Conciliacion</field>
+        <field name="model_id" ref="automation.model_automation_runtime_line" />
+        <field name="state">code</field>
+        <field
+            name="code">action.reconcile_statement_with_latest_move(record)
+action.mark_action_done_and_continue(record)</field>
+        <field
+            name="automation_rule_id"
+            ref="automation_customer_discount_fx_agroquimicos" />
+        <field name="sequence" eval="12" />
+    </record>
+
+    <record id="action_cust_discount_agro_credit_note" model="ir.actions.server">
+        <field name="name">Nota de credito</field>
+        <field name="model_id" ref="automation.model_automation_runtime_line" />
+        <field name="state">code</field>
+        <field
+            name="code"># Get template
+template = env.ref('automation_account.template_customer_credit_note', raise_if_not_found=False)
+if not template:
+    raise UserError("Template 'DEMO - Customer Credit Note' not found")
+
+# Issued to the run's partner
+move = action.create_move_from_template(record, template)
+
+# Store reference
+record.write({'created_record_ref': f'account.move,{move.id}'})
+
+# Mark done
+action.mark_action_done_and_continue(record)</field>
+        <field
+            name="automation_rule_id"
+            ref="automation_customer_discount_fx_agroquimicos" />
+        <field name="sequence" eval="13" />
+    </record>
+
+    <record id="automation_customer_discount_fx_papas" model="automation.rule">
+        <field name="name">Customer discount due to collection in FX (papas)</field>
+        <field name="model_id" ref="automation.model_automation_runtime_line" />
+        <field name="trigger">on_hand</field>
+    </record>
+
+    <record id="action_cust_discount_papas_bsl" model="ir.actions.server">
+        <field name="name">BSL</field>
+        <field name="model_id" ref="automation.model_automation_runtime_line" />
+        <field name="state">code</field>
+        <field name="code">action.mark_action_done_and_continue(record)</field>
+        <field name="automation_rule_id" ref="automation_customer_discount_fx_papas" />
+        <field name="sequence" eval="10" />
+    </record>
+
+    <record id="action_cust_discount_papas_invoice" model="ir.actions.server">
+        <field name="name">Factura</field>
+        <field name="model_id" ref="automation.model_automation_runtime_line" />
+        <field name="state">code</field>
+        <field
+            name="code">template = env.ref('automation_account.template_customer_invoice_fx', raise_if_not_found=False)
+if not template:
+    raise UserError("Template 'DEMO - Customer Invoice FX' not found")
+move = action.create_move_from_template(record, template)
+record.write({'created_record_ref': f'account.move,{move.id}'})
+action.mark_action_done_and_continue(record)</field>
+        <field name="automation_rule_id" ref="automation_customer_discount_fx_papas" />
+        <field name="sequence" eval="11" />
+    </record>
+
+    <record id="action_cust_discount_papas_reconcile" model="ir.actions.server">
+        <field name="name">Conciliacion</field>
+        <field name="model_id" ref="automation.model_automation_runtime_line" />
+        <field name="state">code</field>
+        <field
+            name="code">action.reconcile_statement_with_latest_move(record)
+action.mark_action_done_and_continue(record)</field>
+        <field name="automation_rule_id" ref="automation_customer_discount_fx_papas" />
+        <field name="sequence" eval="12" />
+    </record>
+
+    <record id="action_cust_discount_papas_credit_note" model="ir.actions.server">
+        <field name="name">Nota de credito</field>
+        <field name="model_id" ref="automation.model_automation_runtime_line" />
+        <field name="state">code</field>
+        <field
+            name="code">template = env.ref('automation_account.template_customer_credit_note', raise_if_not_found=False)
+if not template:
+    raise UserError("Template 'DEMO - Customer Credit Note' not found")
+move = action.create_move_from_template(record, template)
+record.write({'created_record_ref': f'account.move,{move.id}'})
+action.mark_action_done_and_continue(record)</field>
+        <field name="automation_rule_id" ref="automation_customer_discount_fx_papas" />
+        <field name="sequence" eval="13" />
+    </record>
+
+    <record id="automation_customer_discount_fx_agroquimico" model="automation.rule">
+        <field
+            name="name">Customer discount due to collection in FX (Agroquimico)</field>
+        <field name="model_id" ref="automation.model_automation_runtime_line" />
+        <field name="trigger">on_hand</field>
+    </record>
+
+    <record id="action_cust_discount_agroquimico_bsl" model="ir.actions.server">
+        <field name="name">BSL</field>
+        <field name="model_id" ref="automation.model_automation_runtime_line" />
+        <field name="state">code</field>
+        <field name="code">action.mark_action_done_and_continue(record)</field>
+        <field
+            name="automation_rule_id"
+            ref="automation_customer_discount_fx_agroquimico" />
+        <field name="sequence" eval="10" />
+    </record>
+
+    <record id="action_cust_discount_agroquimico_invoice" model="ir.actions.server">
+        <field name="name">Factura</field>
+        <field name="model_id" ref="automation.model_automation_runtime_line" />
+        <field name="state">code</field>
+        <field
+            name="code">template = env.ref('automation_account.template_customer_invoice_fx_agro', raise_if_not_found=False)
+if not template:
+    raise UserError("Template 'DEMO - Customer Invoice FX (Agroquimicos)' not found")
+move = action.create_move_from_template(record, template)
+record.write({'created_record_ref': f'account.move,{move.id}'})
+action.mark_action_done_and_continue(record)</field>
+        <field
+            name="automation_rule_id"
+            ref="automation_customer_discount_fx_agroquimico" />
+        <field name="sequence" eval="11" />
+    </record>
+
+    <record id="action_cust_discount_agroquimico_reconcile" model="ir.actions.server">
+        <field name="name">Conciliacion</field>
+        <field name="model_id" ref="automation.model_automation_runtime_line" />
+        <field name="state">code</field>
+        <field
+            name="code">action.reconcile_statement_with_latest_move(record)
+action.mark_action_done_and_continue(record)</field>
+        <field
+            name="automation_rule_id"
+            ref="automation_customer_discount_fx_agroquimico" />
+        <field name="sequence" eval="12" />
+    </record>
+
+    <record id="action_cust_discount_agroquimico_credit_note" model="ir.actions.server">
+        <field name="name">Nota de credito</field>
+        <field name="model_id" ref="automation.model_automation_runtime_line" />
+        <field name="state">code</field>
+        <field
+            name="code">template = env.ref('automation_account.template_customer_credit_note', raise_if_not_found=False)
+if not template:
+    raise UserError("Template 'DEMO - Customer Credit Note' not found")
+move = action.create_move_from_template(record, template)
+record.write({'created_record_ref': f'account.move,{move.id}'})
+action.mark_action_done_and_continue(record)</field>
+        <field
+            name="automation_rule_id"
+            ref="automation_customer_discount_fx_agroquimico" />
+        <field name="sequence" eval="13" />
+    </record>
+
+    <!-- DAG edges: one per step that waits on another -->
+    <record id="edge_action_cash_exch_simple_reconcile" model="workflow.edge">
+        <field name="source_node_id" ref="action_cash_exch_simple_invoice" />
+        <field name="target_node_id" ref="action_cash_exch_simple_reconcile" />
+    </record>
+
+    <record id="edge_action_cash_exch_simple_bill" model="workflow.edge">
+        <field name="source_node_id" ref="action_cash_exch_simple_reconcile" />
+        <field name="target_node_id" ref="action_cash_exch_simple_bill" />
+    </record>
+
+    <record id="edge_action_cash_exch_simple_payment" model="workflow.edge">
+        <field name="source_node_id" ref="action_cash_exch_simple_bill" />
+        <field name="target_node_id" ref="action_cash_exch_simple_payment" />
+    </record>
+
+    <record id="edge_action_cash_exch_coll_reconcile" model="workflow.edge">
+        <field name="source_node_id" ref="action_cash_exch_coll_invoice" />
+        <field name="target_node_id" ref="action_cash_exch_coll_reconcile" />
+    </record>
+
+    <record id="edge_action_cash_exch_coll_bill" model="workflow.edge">
+        <field name="source_node_id" ref="action_cash_exch_coll_reconcile" />
+        <field name="target_node_id" ref="action_cash_exch_coll_bill" />
+    </record>
+
+    <record id="edge_action_cash_exch_coll_payment" model="workflow.edge">
+        <field name="source_node_id" ref="action_cash_exch_coll_bill" />
+        <field name="target_node_id" ref="action_cash_exch_coll_payment" />
+    </record>
+
+    <record id="edge_action_cash_exch_multi_reconcile" model="workflow.edge">
+        <field name="source_node_id" ref="action_cash_exch_multi_invoice" />
+        <field name="target_node_id" ref="action_cash_exch_multi_reconcile" />
+    </record>
+
+    <record id="edge_action_cash_exch_multi_bill" model="workflow.edge">
+        <field name="source_node_id" ref="action_cash_exch_multi_reconcile" />
+        <field name="target_node_id" ref="action_cash_exch_multi_bill" />
+    </record>
+
+    <record id="edge_action_cash_exch_multi_payment" model="workflow.edge">
+        <field name="source_node_id" ref="action_cash_exch_multi_bill" />
+        <field name="target_node_id" ref="action_cash_exch_multi_payment" />
+    </record>
+
+    <record id="edge_action_cash_exch_coll_multi_reconcile" model="workflow.edge">
+        <field name="source_node_id" ref="action_cash_exch_coll_multi_invoice" />
+        <field name="target_node_id" ref="action_cash_exch_coll_multi_reconcile" />
+    </record>
+
+    <record id="edge_action_cash_exch_coll_multi_bill" model="workflow.edge">
+        <field name="source_node_id" ref="action_cash_exch_coll_multi_reconcile" />
+        <field name="target_node_id" ref="action_cash_exch_coll_multi_bill" />
+    </record>
+
+    <record id="edge_action_cash_exch_coll_multi_payment" model="workflow.edge">
+        <field name="source_node_id" ref="action_cash_exch_coll_multi_bill" />
+        <field name="target_node_id" ref="action_cash_exch_coll_multi_payment" />
+    </record>
+
+    <record id="edge_action_cust_discount_fx_invoice" model="workflow.edge">
+        <field name="source_node_id" ref="action_cust_discount_fx_bsl" />
+        <field name="target_node_id" ref="action_cust_discount_fx_invoice" />
+    </record>
+
+    <record id="edge_action_cust_discount_fx_reconcile" model="workflow.edge">
+        <field name="source_node_id" ref="action_cust_discount_fx_invoice" />
+        <field name="target_node_id" ref="action_cust_discount_fx_reconcile" />
+    </record>
+
+    <record id="edge_action_cust_discount_fx_credit_note" model="workflow.edge">
+        <field name="source_node_id" ref="action_cust_discount_fx_reconcile" />
+        <field name="target_node_id" ref="action_cust_discount_fx_credit_note" />
+    </record>
+
+    <record id="edge_action_coll_kind_entry" model="workflow.edge">
+        <field name="source_node_id" ref="action_coll_kind_vendor_bill" />
+        <field name="target_node_id" ref="action_coll_kind_entry" />
+    </record>
+
+    <record id="edge_action_coll_kind_refund" model="workflow.edge">
+        <field name="source_node_id" ref="action_coll_kind_entry" />
+        <field name="target_node_id" ref="action_coll_kind_refund" />
+    </record>
+
+    <record id="edge_action_cash_bank_entry" model="workflow.edge">
+        <field name="source_node_id" ref="action_cash_bank_bsl" />
+        <field name="target_node_id" ref="action_cash_bank_entry" />
+    </record>
+
+    <record id="edge_action_cash_multi_bank_entry_target" model="workflow.edge">
+        <field name="source_node_id" ref="action_cash_multi_bank_entry_source" />
+        <field name="target_node_id" ref="action_cash_multi_bank_entry_target" />
+    </record>
+
+    <record id="edge_action_undeduc_bill" model="workflow.edge">
+        <field name="source_node_id" ref="action_undeduc_bsl" />
+        <field name="target_node_id" ref="action_undeduc_bill" />
+    </record>
+
+    <record id="edge_action_undeduc_reconcile" model="workflow.edge">
+        <field name="source_node_id" ref="action_undeduc_bill" />
+        <field name="target_node_id" ref="action_undeduc_reconcile" />
+    </record>
+
+    <record id="edge_action_cust_discount_agro_invoice" model="workflow.edge">
+        <field name="source_node_id" ref="action_cust_discount_agro_bsl" />
+        <field name="target_node_id" ref="action_cust_discount_agro_invoice" />
+    </record>
+
+    <record id="edge_action_cust_discount_agro_reconcile" model="workflow.edge">
+        <field name="source_node_id" ref="action_cust_discount_agro_invoice" />
+        <field name="target_node_id" ref="action_cust_discount_agro_reconcile" />
+    </record>
+
+    <record id="edge_action_cust_discount_agro_credit_note" model="workflow.edge">
+        <field name="source_node_id" ref="action_cust_discount_agro_reconcile" />
+        <field name="target_node_id" ref="action_cust_discount_agro_credit_note" />
+    </record>
+
+    <record id="edge_action_cust_discount_papas_invoice" model="workflow.edge">
+        <field name="source_node_id" ref="action_cust_discount_papas_bsl" />
+        <field name="target_node_id" ref="action_cust_discount_papas_invoice" />
+    </record>
+
+    <record id="edge_action_cust_discount_papas_reconcile" model="workflow.edge">
+        <field name="source_node_id" ref="action_cust_discount_papas_invoice" />
+        <field name="target_node_id" ref="action_cust_discount_papas_reconcile" />
+    </record>
+
+    <record id="edge_action_cust_discount_papas_credit_note" model="workflow.edge">
+        <field name="source_node_id" ref="action_cust_discount_papas_reconcile" />
+        <field name="target_node_id" ref="action_cust_discount_papas_credit_note" />
+    </record>
+
+    <record id="edge_action_cust_discount_agroquimico_invoice" model="workflow.edge">
+        <field name="source_node_id" ref="action_cust_discount_agroquimico_bsl" />
+        <field name="target_node_id" ref="action_cust_discount_agroquimico_invoice" />
+    </record>
+
+    <record id="edge_action_cust_discount_agroquimico_reconcile" model="workflow.edge">
+        <field name="source_node_id" ref="action_cust_discount_agroquimico_invoice" />
+        <field name="target_node_id" ref="action_cust_discount_agroquimico_reconcile" />
+    </record>
+
+    <record
+        id="edge_action_cust_discount_agroquimico_credit_note"
+        model="workflow.edge">
+        <field name="source_node_id" ref="action_cust_discount_agroquimico_reconcile" />
+        <field
+            name="target_node_id"
+            ref="action_cust_discount_agroquimico_credit_note" />
+    </record>
+
+</odoo>

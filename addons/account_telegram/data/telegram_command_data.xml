@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!--
+        The ids keep the commands' former names, /estadocuenta and /ecmanager,
+        so an upgrade renames the records the bots already carry.
+    -->
+    <record id="command_estadocuenta" model="telegram.command">
+        <field name="name">/estadoctapropio</field>
+    </record>
+
+    <record id="command_estadocuentaperiodo" model="telegram.command">
+        <field name="name">/estadocuentaperiodo</field>
+    </record>
+
+    <record id="command_ecmanager" model="telegram.command">
+        <field name="name">/edocliente</field>
+    </record>
+
+</odoo>

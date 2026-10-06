@@ -1,0 +1,394 @@
+from datetime import date
+
+from odoo import api, fields, models
+from odoo.exceptions import UserError, ValidationError
+from odoo.fields import Command, Domain
+from odoo.libs.debug_log import DebugLog
+from odoo.tools import frozendict
+from odoo.tools.misc import format_datetime
+
+from odoo.addons.account.models.account_config import SOFT_LOCK_DATE_FIELDS
+
+_debug = DebugLog(__name__)
+
+
+class AccountLock_Exception(models.Model):
+    _name = "account.lock_exception"
+    _description = "Account Lock Exception"
+    _access_anchors = frozendict(
+        {
+            "company": models.Anchor("company_id", hierarchy="parent_of"),
+        }
+    )
+
+    active = fields.Boolean(default=True)
+    state = fields.Selection(
+        selection=[
+            ("active", "Active"),
+            ("revoked", "Revoked"),
+            ("expired", "Expired"),
+        ],
+        compute="_compute_state",
+        search="_search_state",
+    )
+    company_id = fields.Many2one(
+        comodel_name="res.company",
+        default=lambda self: self.env.company,
+        readonly=True,
+        required=True,
+    )
+    user_id = fields.Many2one(
+        comodel_name="res.users",
+        default=lambda self: self.env.user,
+    )
+    reason = fields.Char()
+    end_datetime = fields.Datetime(string="End Date")
+
+    lock_date_field = fields.Selection(
+        selection=[
+            ("fiscalyear_lock_date", "Global Lock Date"),
+            ("tax_lock_date", "Tax Return Lock Date"),
+            ("sale_lock_date", "Sales Lock Date"),
+            ("purchase_lock_date", "Purchase Lock Date"),
+        ],
+        required=True,
+        help="Technical field identifying the changed lock date",
+    )
+    lock_date = fields.Date(
+        string="Changed Lock Date",
+        help="Technical field giving the date the lock date was changed to.",
+    )
+    company_lock_date = fields.Date(
+        string="Original Lock Date",
+        copy=False,
+        help="Technical field giving the date the company lock date at the time the exception was created.",
+    )
+
+    fiscalyear_lock_date = fields.Date(
+        string="Global Lock Date",
+        compute="_compute_lock_dates",
+        search="_search_fiscalyear_lock_date",
+        help="The date the Global Lock Date is set to by this exception. If the lock date is not changed it is set to the maximal date.",
+    )
+    tax_lock_date = fields.Date(
+        string="Tax Return Lock Date",
+        compute="_compute_lock_dates",
+        search="_search_tax_lock_date",
+        help="The date the Tax Lock Date is set to by this exception. If the lock date is not changed it is set to the maximal date.",
+    )
+    sale_lock_date = fields.Date(
+        string="Sales Lock Date",
+        compute="_compute_lock_dates",
+        search="_search_sale_lock_date",
+        help="The date the Sale Lock Date is set to by this exception. If the lock date is not changed it is set to the maximal date.",
+    )
+    purchase_lock_date = fields.Date(
+        compute="_compute_lock_dates",
+        search="_search_purchase_lock_date",
+        help="The date the Purchase Lock Date is set to by this exception. If the lock date is not changed it is set to the maximal date.",
+    )
+
+    _company_id_end_datetime_idx = models.Index(
+        "(company_id, user_id, end_datetime) WHERE active IS TRUE"
+    )
+
+    def _compute_display_name(self):
+        for record in self:
+            record.display_name = self.env._("Lock Date Exception %s", record.id)
+
+    @api.depends("active", "end_datetime")
+    def _compute_state(self):
+        for record in self:
+            if not record.active:
+                record.state = "revoked"
+            elif record.end_datetime and record.end_datetime < self.env.cr.now():
+                record.state = "expired"
+            else:
+                record.state = "active"
+
+    @api.depends("lock_date_field", "lock_date")
+    def _compute_lock_dates(self) -> None:
+        for exception in self:
+            for field in SOFT_LOCK_DATE_FIELDS:
+                if field == exception.lock_date_field:
+                    exception[field] = exception.lock_date
+                else:
+                    exception[field] = date.max
+
+    @_debug.perf.timed
+    def _search_state(self, operator, value):
+        if operator != "in":
+            return NotImplemented
+
+        domain = Domain.FALSE
+        if "revoked" in value:
+            domain |= Domain("active", "=", False)
+        if "expired" in value:
+            domain |= Domain("active", "=", True) & Domain(
+                "end_datetime", "<", self.env.cr.now()
+            )
+        if "active" in value:
+            domain |= Domain("active", "=", True) & (
+                Domain("end_datetime", "=", False)
+                | Domain("end_datetime", ">=", self.env.cr.now())
+            )
+        _debug.logic("state_search_domain_built", states=value, domain=domain)
+        return domain
+
+    @_debug.perf.timed
+    def _search_lock_date(self, field, operator, value):
+        if operator not in ["<", "<="] or not value:
+            return NotImplemented
+        return [
+            "&",
+            ("lock_date_field", "=", field),
+            "|",
+            ("lock_date", "=", False),
+            ("lock_date", operator, value),
+        ]
+
+    @_debug.perf.timed
+    def _search_fiscalyear_lock_date(self, operator, value):
+        return self._search_lock_date("fiscalyear_lock_date", operator, value)
+
+    @_debug.perf.timed
+    def _search_tax_lock_date(self, operator, value):
+        return self._search_lock_date("tax_lock_date", operator, value)
+
+    @_debug.perf.timed
+    def _search_sale_lock_date(self, operator, value):
+        return self._search_lock_date("sale_lock_date", operator, value)
+
+    @_debug.perf.timed
+    def _search_purchase_lock_date(self, operator, value):
+        return self._search_lock_date("purchase_lock_date", operator, value)
+
+    def _invalidate_affected_user_lock_dates(self) -> None:
+        affected_lock_date_fields = {exception.lock_date_field for exception in self}
+        self.env["account.config"].invalidate_model(
+            fnames=[f"user_{field}" for field in list(affected_lock_date_fields)],
+        )
+
+    @api.model_create_multi
+    @_debug.perf.timed
+    def create(self, vals_list):
+        if _debug.lifecycle.enabled:
+            _debug.lifecycle(
+                "create",
+                model=self._name,
+                count=len(vals_list),
+                fields=sorted({key for vals in vals_list for key in vals}),
+            )
+        for vals in vals_list:
+            if "lock_date" not in vals or "lock_date_field" not in vals:
+                changed_fields = [
+                    field for field in SOFT_LOCK_DATE_FIELDS if field in vals
+                ]
+                if len(changed_fields) != 1:
+                    raise ValidationError(
+                        self.env._(
+                            "A single exception must change exactly one lock date field."
+                        )
+                    )
+                field = changed_fields[0]
+                _debug.logic("lock_date_field_deduced", field=field)
+                vals["lock_date_field"] = field
+                vals["lock_date"] = vals.pop(field)
+            company = self.env["res.company"].browse(
+                vals.get("company_id", self.env.company.id)
+            )
+            _debug.logic(
+                "company_lock_date_source",
+                company=company,
+                field=vals.get("lock_date_field"),
+                from_company="company_lock_date" not in vals,
+            )
+            if "company_lock_date" not in vals:
+                vals["company_lock_date"] = company.account_config_id[
+                    vals["lock_date_field"]
+                ]
+
+        exceptions = super().create(vals_list)
+        if _debug.lifecycle.enabled:
+            _debug.lifecycle(
+                "lock_exceptions",
+                exceptions=exceptions,
+                keys=[
+                    (e.company_id.id, e.lock_date_field, e.lock_date, e.user_id.id)
+                    for e in exceptions
+                ],
+            )
+
+        for exception in exceptions:
+            company = exception.company_id
+
+            field = exception.lock_date_field
+            value = exception.lock_date
+            field_info = exception.fields_get([field])[field]
+            tracking_values = self.env["mail.tracking.value"]._prepare_tracking_values(
+                company.account_config_id[field],
+                value,
+                field,
+                field_info,
+                exception,
+            )
+            tracking_value_ids = [Command.create(tracking_values)]
+
+            end_datetime_string = (
+                self.env._(
+                    " valid until %s", format_datetime(self.env, exception.end_datetime)
+                )
+                if exception.end_datetime
+                else ""
+            )
+            reason_string = (
+                self.env._(" for '%s'", exception.reason) if exception.reason else ""
+            )
+            _debug.logic(
+                "lock_exception_scope",
+                exception=exception,
+                company=company,
+                field=field,
+                everyone=not exception.user_id,
+                has_end=bool(exception.end_datetime),
+            )
+            company_chatter_message = self.env._(
+                "%(exception)s for %(user)s%(end_datetime_string)s%(reason)s.",
+                exception=exception._get_html_link(title=self.env._("Exception")),
+                user=exception.user_id.display_name
+                if exception.user_id
+                else self.env._("everyone"),
+                end_datetime_string=end_datetime_string,
+                reason=reason_string,
+            )
+            company.sudo().message_post(
+                body=company_chatter_message,
+                tracking_value_ids=tracking_value_ids,
+            )
+
+        _debug.pipeline("lock_exceptions_announced", exceptions=exceptions)
+        exceptions._invalidate_affected_user_lock_dates()
+        return exceptions
+
+    @_debug.perf.timed
+    def copy(self, default=None):
+        _debug.lifecycle("copy", records=self)
+        raise UserError(self.env._("You cannot duplicate a Lock Date Exception."))
+
+    def _recreate(self):
+        if not self:
+            return self.env["account.lock_exception"]
+        vals_list = self.with_context(active_test=False).copy_data()
+        new_records = self.create(vals_list)
+        _debug.pipeline("_recreate_lock", exceptions=self, new_records=new_records)
+        self.sudo().action_revoke()
+        return new_records
+
+    @_debug.perf.timed
+    def action_revoke(self):
+        _debug.lifecycle("action_revoke", records=self)
+        if (
+            not self.env.user.has_group("account.group_account_manager")
+            and not self.env.su
+        ):
+            _debug.logic("revoke_denied", exceptions=self, reason="not_account_manager")
+            raise UserError(
+                self.env._(
+                    "You cannot revoke Lock Date Exceptions. Ask someone with the 'Adviser' role."
+                )
+            )
+        for record in self:
+            if record.state == "active":
+                record_sudo = record.sudo()
+                record_sudo.active = False
+                record_sudo.end_datetime = fields.Datetime.now()
+                record._invalidate_affected_user_lock_dates()
+
+    @api.model
+    def _get_domain_active_exceptions(self, company, soft_lock_date_fields):
+        return (
+            Domain.OR(
+                Domain(field, "<", company.account_config_id[field])
+                for field in soft_lock_date_fields
+                if company.account_config_id[field]
+            )
+            & Domain("company_id", "=", company.id)
+            & Domain("state", "=", "active")
+        )
+
+    @_debug.perf.timed
+    def _get_domain_audit_trail_during_exception(self) -> list:
+        self.check_singleton()
+
+        common_message_domain = [
+            ("date", ">=", self.create_date),
+        ]
+        if self.user_id:
+            common_message_domain.append(("create_uid", "=", self.user_id.id))
+        if self.end_datetime:
+            common_message_domain.append(("date", "<=", self.end_datetime))
+
+        min_date = self.lock_date
+        max_date = self.company_lock_date
+        _debug.logic(
+            "audit_trail_bounds",
+            exception=self,
+            user_scoped=bool(self.user_id),
+            ended=bool(self.end_datetime),
+            min_date=min_date,
+            max_date=max_date,
+        )
+        move_date_domain = []
+        tracking_old_datetime_domain = []
+        tracking_new_datetime_domain = []
+        if min_date:
+            move_date_domain.append([("date", ">=", min_date)])
+            tracking_old_datetime_domain.append(
+                [("tracking_value_ids.old_value_datetime", ">=", min_date)]
+            )
+            tracking_new_datetime_domain.append(
+                [("tracking_value_ids.new_value_datetime", ">=", min_date)]
+            )
+        if max_date:
+            move_date_domain.append([("date", "<=", max_date)])
+            tracking_old_datetime_domain.append(
+                [("tracking_value_ids.old_value_datetime", "<=", max_date)]
+            )
+            tracking_new_datetime_domain.append(
+                [("tracking_value_ids.new_value_datetime", "<=", max_date)]
+            )
+
+        return [
+            ("company_id", "child_of", self.company_id.id),
+            ("audit_trail_message_ids", "any", common_message_domain),
+            "|",
+            (
+                "audit_trail_message_ids",
+                "any",
+                [
+                    (
+                        "tracking_value_ids.field_id",
+                        "=",
+                        self.env["ir.model.fields"]._get("account.move", "date").id,
+                    ),
+                    "|",
+                    *Domain.AND(tracking_old_datetime_domain),
+                    *Domain.AND(tracking_new_datetime_domain),
+                ],
+            ),
+            *Domain.AND(move_date_domain),
+        ]
+
+    @_debug.perf.timed
+    def action_show_audit_trail_during_exception(self) -> dict:
+        _debug.lifecycle("action_show_audit_trail_during_exception", records=self)
+        self.check_singleton()
+        return {
+            "name": self.env._("Journal Items"),
+            "type": "ir.actions.act_window",
+            "res_model": "account.move.line",
+            "view_mode": "list,form",
+            "domain": [
+                ("move_id", "any", self._get_domain_audit_trail_during_exception())
+            ],
+        }

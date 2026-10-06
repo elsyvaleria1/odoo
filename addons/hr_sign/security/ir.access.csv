@@ -1,0 +1,2 @@
+id,name,model_id/id,group_id/id,kind,operation,domain
+access_hr_contract_sign_document_wizard,access.hr.contract.sign.document.wizard,model_wizard_hr_employee_send_sign_request,base.group_user,permission,cru,

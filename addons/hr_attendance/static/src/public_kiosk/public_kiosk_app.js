@@ -1,0 +1,252 @@
+/** @odoo-module native */
+import { CardLayout } from "@hr_attendance/components/card_layout/card_layout";
+import { KioskGreetings } from "@hr_attendance/components/greetings/greetings";
+import { KioskBarcodeScanner } from "@hr_attendance/components/kiosk_barcode/kiosk_barcode";
+import { KioskManualSelection } from "@hr_attendance/components/manual_selection/manual_selection";
+import { NewEmployeeDialog } from "@hr_attendance/components/new_employee_dialog/new_employee_dialog";
+import { KioskPinCode } from "@hr_attendance/components/pin_code/pin_code";
+import { App, Component, proxy, t, useProps, whenReady } from "@odoo/owl";
+import { browser } from "@web/core/browser/browser";
+import { isIosApp } from "@web/core/browser/feature_detection";
+import { ConnectionLostError, rpc } from "@web/core/network";
+import { _t } from "@web/core/translation";
+import { useBus, useService } from "@web/core/utils/hooks";
+import { url } from "@web/core/utils/urls";
+import { makeAppConfig, makeEnv, startServices } from "@web/env";
+import { session } from "@web/session";
+import { MainComponentsContainer } from "@web/ui/main_components_container";
+import { DocumentationLink } from "@web/views/widgets";
+
+class kioskAttendanceApp extends Component {
+    static template = "hr_attendance.public_kiosk_app";
+    static props = {
+        token: t.string(),
+        companyId: t.number(),
+        companyName: t.string(),
+        departments: t.array(),
+        kioskMode: t.string(),
+        barcodeSource: t.string(),
+        fromTrialMode: t.boolean(),
+        deviceTrackingEnabled: t.boolean(),
+    };
+    static components = {
+        KioskBarcodeScanner,
+        CardLayout,
+        KioskManualSelection,
+        KioskGreetings,
+        KioskPinCode,
+        MainComponentsContainer,
+        DocumentationLink,
+    };
+    props = useProps(this.constructor.props);
+
+    setup() {
+        this.dialogService = useService("dialog");
+        this.barcode = useService("barcode");
+        this.notification = useService("notification");
+        this.ui = useService("ui");
+        this.companyImageUrl = url("/web/binary/company_logo", {
+            company: this.props.companyId,
+        });
+        this.state = proxy({
+            active_display: "settings",
+            // The kiosk's own mode, not the one it was served with: the
+            // settings screen changes it. It was written back onto `props`,
+            // which is not reactive, so the screen only caught up because the
+            // same handler happened to write `active_display` as well.
+            kioskMode: this.props.kioskMode,
+            displayDemoMessage:
+                browser.localStorage.getItem("hr_attendance.ShowDemoMessage") !==
+                "false",
+        });
+        this.lockScanner = false;
+        if (this.props.kioskMode === "settings" || this.props.fromTrialMode) {
+            this.manualKioskMode = false;
+            useBus(this.barcode.bus, "barcode_scanned", (ev) =>
+                this.onBarcodeScanned(ev.detail.barcode),
+            );
+        } else if (this.props.kioskMode !== "manual") {
+            useBus(this.barcode.bus, "barcode_scanned", (ev) =>
+                this.onBarcodeScanned(ev.detail.barcode),
+            );
+            this.state.active_display = "main";
+            this.manualKioskMode = false;
+        } else {
+            this.manualKioskMode = true;
+            this.state.active_display = "manual";
+        }
+    }
+
+    switchDisplay(screen) {
+        const displays = ["main", "greet", "manual", "pin", "settings"];
+        if (displays.includes(screen)) {
+            this.state.active_display = screen;
+        } else {
+            this.state.active_display = "main";
+        }
+    }
+
+    newSetUp() {
+        this.dialogService.add(NewEmployeeDialog, { token: this.props.token });
+    }
+
+    async setSetting(mode) {
+        const result = await rpc("/hr_attendance/set_settings", {
+            token: this.props.token,
+            mode: mode,
+        });
+        if (result?.status !== "success") {
+            this.displayNotification(
+                result?.message ?? _t("Could not save the kiosk mode."),
+            );
+            return;
+        }
+        this.state.kioskMode = mode;
+        this.manualKioskMode = mode === "manual";
+        this.state.active_display = this.manualKioskMode ? "manual" : "main";
+    }
+
+    async kioskConfirm(employeeId) {
+        const employee = await rpc("attendance_employee_data", {
+            token: this.props.token,
+            employee_id: employeeId,
+        });
+        if (employee && employee.employee_name) {
+            if (employee.use_pin) {
+                this.employeeData = employee;
+                this.switchDisplay("pin");
+            } else {
+                await this.onManualSelection(employeeId, false);
+            }
+        }
+    }
+
+    kioskReturn() {
+        if (this.state.active_display === "settings") {
+            history.back();
+        } else if (
+            (["manual", "barcode"].includes(this.state.kioskMode) ||
+                (this.state.kioskMode === "barcode_manual" &&
+                    this.state.active_display === "main")) &&
+            this.props.fromTrialMode
+        ) {
+            this.switchDisplay("settings");
+        } else if (this.state.kioskMode === "manual") {
+            this.switchDisplay("manual");
+        } else {
+            this.switchDisplay("main");
+        }
+    }
+
+    displayNotification(text) {
+        this.notification.add(text, { type: "danger" });
+    }
+
+    async makeRpcWithGeolocation(route, params) {
+        if (!this.props.deviceTrackingEnabled || !navigator.geolocation || isIosApp()) {
+            return rpc(route, { ...params });
+        }
+
+        return new Promise((resolve) => {
+            navigator.geolocation.getCurrentPosition(
+                async ({ coords: { latitude, longitude } }) => {
+                    const result = await rpc(route, {
+                        ...params,
+                        latitude,
+                        longitude,
+                    });
+                    resolve(result);
+                },
+                async () => {
+                    const result = await rpc(route, {
+                        ...params,
+                    });
+                    resolve(result);
+                },
+                { enableHighAccuracy: true },
+            );
+        });
+    }
+
+    async onManualSelection(employeeId, enteredPin) {
+        const result = await this.makeRpcWithGeolocation("manual_selection", {
+            token: this.props.token,
+            employee_id: employeeId,
+            pin_code: enteredPin,
+        });
+        if (result && result.attendance) {
+            this.employeeData = result;
+            this.switchDisplay("greet");
+            return true;
+        } else {
+            if (enteredPin) {
+                this.displayNotification(_t("Wrong Pin"));
+            }
+            return false;
+        }
+    }
+
+    async onBarcodeScanned(barcode) {
+        if (this.lockScanner || this.state.active_display !== "main") {
+            return;
+        }
+        this.lockScanner = true;
+        this.ui.block();
+
+        let result;
+        try {
+            result = await rpc("attendance_barcode_scanned", {
+                barcode: barcode,
+                token: this.props.token,
+            });
+
+            if (result && result.employee_name) {
+                this.employeeData = result;
+                this.switchDisplay("greet");
+            } else {
+                this.displayNotification(
+                    _t("No employee corresponding to Badge ID '%(barcode)s.'", {
+                        barcode,
+                    }),
+                );
+            }
+        } catch (error) {
+            if (error instanceof ConnectionLostError) {
+                this.displayNotification(_t("Connection lost. Please try again."));
+            } else {
+                this.displayNotification(error.data.message);
+            }
+        } finally {
+            this.lockScanner = false;
+            this.ui.unblock();
+        }
+    }
+
+    removeDemoMessage() {
+        this.state.displayDemoMessage = false;
+        browser.localStorage.setItem("hr_attendance.ShowDemoMessage", "false");
+        return;
+    }
+}
+
+export async function createPublicKioskAttendance(document, kiosk_backend_info) {
+    await whenReady();
+    const env = makeEnv();
+    await startServices(env);
+    session.server_version_info = kiosk_backend_info.server_version_info;
+    const app = new App(makeAppConfig(env, { name: "kiosk" }));
+    const root = app.createRoot(kioskAttendanceApp, {
+        props: {
+            token: kiosk_backend_info.token,
+            companyId: kiosk_backend_info.company_id,
+            companyName: kiosk_backend_info.company_name,
+            departments: kiosk_backend_info.departments,
+            kioskMode: kiosk_backend_info.kiosk_mode,
+            barcodeSource: kiosk_backend_info.barcode_source,
+            fromTrialMode: kiosk_backend_info.from_trial_mode,
+            deviceTrackingEnabled: kiosk_backend_info.device_tracking_enabled,
+        },
+    });
+    return root.mount(document.body);
+}
+export default { kioskAttendanceApp, createPublicKioskAttendance };

@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_blog_blog_list" model="ir.ui.view">
+        <field name="name">blog.blog.list</field>
+        <field name="model">blog.blog</field>
+        <field name="arch" type="xml">
+            <list string="Blogs">
+                <field name="sequence" widget="handle" />
+                <field name="name" />
+                <field name="blog_post_count" />
+                <field name="website_id" groups="website.group_multi_website" />
+                <field name="active" column_invisible="True" />
+            </list>
+        </field>
+    </record>
+
+    <record id="view_blog_blog_form" model="ir.ui.view">
+        <field name="name">blog.blog.form</field>
+        <field name="model">blog.blog</field>
+        <field name="arch" type="xml">
+            <form string="Blog">
+                <sheet>
+                    <widget
+                        name="web_ribbon"
+                        title="Archived"
+                        invisible="active"
+                        bg_color="text-bg-danger" />
+                    <group>
+                        <field name="active" invisible="1" />
+                        <field name="name" />
+                        <field name="subtitle" />
+                        <field
+                            name="website_id"
+                            options="{'no_create': True}"
+                            groups="website.group_multi_website" />
+                    </group>
+                </sheet>
+                <chatter />
+            </form>
+        </field>
+    </record>
+
+    <record id="blog_blog_view_search" model="ir.ui.view">
+        <field name="name">blog.blog.search</field>
+        <field name="model">blog.blog</field>
+        <field name="arch" type="xml">
+            <search string="Blog">
+                <field name="name" />
+                <filter
+                    name="inactive"
+                    string="Archived"
+                    domain="[('active','=',False)]" />
+            </search>
+        </field>
+    </record>
+
+    <record id="action_blog_blog" model="ir.actions.act_window">
+        <field name="name">Blogs</field>
+        <field name="res_model">blog.blog</field>
+        <field name="path">blogs</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <record id="blog_tag_tree" model="ir.ui.view">
+        <field name="name">blog_tag.list</field>
+        <field name="model">blog.tag</field>
+        <field name="arch" type="xml">
+            <list string="Tag List">
+                <field name="name" />
+                <field name="category_id" />
+                <field name="color" widget="color_picker" />
+                <field name="post_ids" />
+            </list>
+        </field>
+    </record>
+
+    <record id="blog_tag_form" model="ir.ui.view">
+        <field name="name">blog_tag_form</field>
+        <field name="model">blog.tag</field>
+        <field name="arch" type="xml">
+            <form string="Tag Form">
+                <sheet>
+                    <group>
+                        <field name="name" />
+                        <field name="category_id" />
+                        <field name="color" widget="color_picker" />
+                    </group>
+                    <label for="post_ids" string="Used in: " />
+                    <field name="post_ids" />
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_tags" model="ir.actions.act_window">
+        <field name="name">Blog Tags</field>
+        <field name="res_model">blog.tag</field>
+        <field name="path">blog-tags</field>
+        <field name="view_mode">list,form</field>
+        <field name="view_id" ref="blog_tag_tree" />
+    </record>
+
+    <record id="blog_tag_category_form" model="ir.ui.view">
+        <field name="name">blog_tag_category_form</field>
+        <field name="model">blog.tag.category</field>
+        <field name="arch" type="xml">
+            <form string="Tag Category Form">
+                <sheet>
+                    <group>
+                        <field name="name" />
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="blog_tag_category_tree" model="ir.ui.view">
+        <field name="name">blog_tag_category.list</field>
+        <field name="model">blog.tag.category</field>
+        <field name="arch" type="xml">
+            <list string="Tag Categories">
+                <field name="name" />
+            </list>
+        </field>
+    </record>
+
+    <record id="action_tag_category" model="ir.actions.act_window">
+        <field name="name">Tag Category</field>
+        <field name="res_model">blog.tag.category</field>
+        <field name="path">blog-tag-categories</field>
+        <field name="view_mode">list,form</field>
+        <field name="view_id" ref="blog_tag_category_tree" />
+    </record>
+
+</odoo>

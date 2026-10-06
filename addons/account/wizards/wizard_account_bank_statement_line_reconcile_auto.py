@@ -1,0 +1,86 @@
+from odoo import fields, models
+from odoo.libs.debug_log import DebugLog
+
+_debug = DebugLog(__name__)
+
+
+class WizardAccountBankStatementLineReconcileAuto(models.TransientModel):
+    _name = "wizard.account.bank.statement.line.reconcile.auto"
+    _description = "Run auto-reconciliation on bank statement lines"
+    _check_company_auto = True
+
+    company_id = fields.Many2one(
+        comodel_name="res.company",
+        default=lambda self: self.env.company,
+        readonly=True,
+        required=True,
+    )
+    journal_id = fields.Many2one(
+        comodel_name="account.journal",
+        required=True,
+        domain="[('type', 'in', ('bank', 'cash', 'credit'))]",
+        check_company=True,
+    )
+    from_date = fields.Date(
+        string="From",
+        default=lambda self: fields.Date.subtract(
+            fields.Date.context_today(self), months=1
+        ),
+        required=True,
+    )
+    to_date = fields.Date(
+        string="To",
+        default=fields.Date.context_today,
+        required=True,
+    )
+
+    def action_auto_reconcile(self) -> dict:
+        self.check_singleton()
+        st_lines = self.env["account.bank.statement.line"].search(
+            [
+                ("journal_id", "=", self.journal_id.id),
+                ("date", ">=", self.from_date),
+                ("date", "<=", self.to_date),
+                ("is_reconciled", "=", False),
+                ("state", "!=", "cancel"),
+            ]
+        )
+        try:
+            with self.env.cr.savepoint():
+                st_lines._try_auto_reconcile_statement_lines(
+                    company_id=self.company_id.id
+                )
+            given_up = 0
+        except Exception:
+            given_up = st_lines._auto_reconcile_isolating_failures(
+                company_id=self.company_id.id, retire=False
+            )
+        _debug.logic(
+            "auto_reconcile_wizard_ran",
+            journal=self.journal_id,
+            st_lines=st_lines,
+            given_up=given_up,
+        )
+        if given_up:
+            notification_type = "warning"
+            message = self.env._(
+                "Automatic reconciliation finished on %(count)s transactions; "
+                "%(failed)s of them could not be processed.",
+                count=len(st_lines),
+                failed=given_up,
+            )
+        else:
+            notification_type = "success"
+            message = self.env._(
+                "Automatic reconciliation finished on %(count)s transactions.",
+                count=len(st_lines),
+            )
+        return {
+            "type": "ir.actions.client",
+            "tag": "display_notification",
+            "params": {
+                "type": notification_type,
+                "message": message,
+                "next": {"type": "ir.actions.act_window_close"},
+            },
+        }

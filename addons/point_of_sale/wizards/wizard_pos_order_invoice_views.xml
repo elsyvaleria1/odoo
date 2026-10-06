@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="point_of_sale.view_pos_make_invoice" model="ir.ui.view">
+        <field name="name">Create Invoice(s)</field>
+        <field name="model">wizard.pos.order.invoice</field>
+        <field name="arch" type="xml">
+            <form>
+                <group>
+                    <field name="order_count" />
+                    <field name="consolidated_billing" invisible="order_count == 1" />
+                </group>
+                <footer>
+                    <button
+                        name="action_create_invoices"
+                        type="object"
+                        string="Create"
+                        class="btn-primary"
+                        data-hotkey="q" />
+                    <button
+                        special="cancel"
+                        string="Cancel"
+                        class="btn-secondary"
+                        data-hotkey="x" />
+                </footer>
+            </form>
+        </field>
+    </record>
+
+</odoo>

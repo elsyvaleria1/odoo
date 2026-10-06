@@ -1,0 +1,93 @@
+// @ts-check
+/** @odoo-module native */
+
+import { Component, t, useProps } from "@odoo/owl";
+import { SignatureDialog } from "@web/components/signature/signature_dialog";
+import { getSignatureDefaultName } from "@web/components/signature/signature_name";
+import { registry } from "@web/core/registry";
+import { exprToBoolean } from "@web/core/utils/format/strings";
+import { useService, useServices } from "@web/core/utils/hooks";
+import { standardWidgetProps } from "@web/views/widgets/standard_widget_props";
+
+export class SignatureWidget extends Component {
+    static template = "web.SignatureWidget";
+    static props = {
+        ...standardWidgetProps,
+        fullName: t.string().optional(),
+        highlight: t.boolean().optional(),
+        string: t.string(),
+        signatureField: t.string().optional(),
+    };
+    props = useProps(this.constructor.props);
+
+    /** @type {import("services").ServiceFactories["dialog"]} */
+    dialogService;
+    /** @type {import("services").ServiceFactories["orm"]} */
+    orm;
+
+    setup() {
+        this.appServices = useServices();
+        this.dialogService = useService("dialog");
+        this.orm = useService("orm");
+    }
+
+    onClickSignature() {
+        const nameAndSignatureProps = {
+            mode: "draw",
+            displaySignatureRatio: 3,
+            signatureType: "signature",
+            noInputName: true,
+        };
+        const defaultName = getSignatureDefaultName(
+            this.props.record,
+            this.props.fullName,
+        );
+
+        const dialogProps = {
+            defaultName,
+            nameAndSignatureProps,
+            uploadSignature: (/** @type {{ signatureImage: string }} */ data) =>
+                this.uploadSignature(data),
+        };
+        this.dialogService.add(SignatureDialog, dialogProps);
+    }
+
+    /** @param {{ signatureImage: string }} param0 */
+    async uploadSignature({ signatureImage }) {
+        const file = signatureImage.split(",")[1];
+        const record = this.props.record;
+        const { model, resModel, resId } = record;
+        const signatureField = this.props.signatureField;
+        if (!resId) {
+            await record.update({ [signatureField]: file });
+            await record.save();
+            return;
+        }
+
+        if (!(await record.save())) {
+            return;
+        }
+
+        const orm = this.appServices.orm;
+
+        await orm.write(resModel, [resId], { [signatureField]: file });
+        await record.load();
+        model.notify();
+    }
+}
+
+/** @type {import("registries").ViewWidgetsRegistryItemShape} */
+const signatureWidget = {
+    component: SignatureWidget,
+    extractProps: ({ attrs }) => {
+        const { full_name: fullName, highlight, signature_field, string } = attrs;
+        return {
+            fullName,
+            highlight: exprToBoolean(highlight),
+            string,
+            signatureField: signature_field || "signature",
+        };
+    },
+};
+
+registry.category("view_widgets").add("signature", signatureWidget);

@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="privilege_visit_deliveries" model="res.groups">
+        <field
+            name="name">Privilege: a visit ties to itself, and settles, the deliveries its employee carries</field>
+        <field name="is_privilege" eval="True" />
+    </record>
+
+    <record id="access_stock_picking_visit_deliveries" model="ir.access">
+        <field
+            name="name">stock.picking: a visit ties and reads the outgoing deliveries it carries</field>
+        <field name="model_id" ref="stock.model_stock_picking" />
+        <field name="group_id" ref="privilege_visit_deliveries" />
+        <field name="kind">permission</field>
+        <field name="operation">ru</field>
+        <field name="domain">[('picking_type_code', '=', 'outgoing')]</field>
+    </record>
+
+    <record id="access_stock_picking_batch_visit_deliveries" model="ir.access">
+        <field
+            name="name">stock.picking.batch: a visit reads the trips its deliveries travel on</field>
+        <field name="model_id" ref="stock.model_stock_picking_batch" />
+        <field name="group_id" ref="privilege_visit_deliveries" />
+        <field name="kind">permission</field>
+        <field name="operation">r</field>
+        <field name="domain">[('trip_state', '!=', False)]</field>
+    </record>
+
+    <record id="access_planning_slot_visit_deliveries" model="ir.access">
+        <field
+            name="name">planning.slot: a delivery that came back is noted on its visit</field>
+        <field name="model_id" ref="planning.model_planning_slot" />
+        <field name="group_id" ref="privilege_visit_deliveries" />
+        <field name="kind">permission</field>
+        <field name="operation">ru</field>
+        <field name="domain">[('partner_id', '!=', False)]</field>
+    </record>
+
+</odoo>

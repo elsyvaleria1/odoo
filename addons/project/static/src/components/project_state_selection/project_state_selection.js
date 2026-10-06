@@ -1,0 +1,36 @@
+/** @odoo-module native */
+import { formatSelection } from "@web/core/formatters";
+import { registry } from "@web/core/registry";
+import {
+    StateSelectionField,
+    stateSelectionField,
+} from "@web/fields/selection/state_selection/state_selection_field";
+
+import { STATUS_COLOR_PREFIX, STATUS_COLORS } from "../../utils/project_utils.js";
+
+export class ProjectStateSelectionField extends StateSelectionField {
+    setup() {
+        super.setup();
+        this.colorPrefix = STATUS_COLOR_PREFIX;
+        this.colors = STATUS_COLORS;
+    }
+
+    /** @override */
+    get options() {
+        return super.options.filter((o) => o[0] !== "to_define");
+    }
+
+    /** @override */
+    get label() {
+        return formatSelection(this.currentValue, {
+            selection: this.props.record.fields[this.props.name].selection,
+        });
+    }
+}
+
+export const projectStateSelectionField = {
+    ...stateSelectionField,
+    component: ProjectStateSelectionField,
+};
+
+registry.category("fields").add("project_state_selection", projectStateSelectionField);

@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <menuitem
+        id="whatsapp_menu_main"
+        name="WhatsApp"
+        sequence="260"
+        web_icon="whatsapp,static/description/icon.png" />
+
+    <menuitem
+        id="whatsapp_message_menu"
+        name="Messages"
+        parent="whatsapp_menu_main"
+        action="whatsapp_message_action"
+        sequence="1"
+        groups="whatsapp.group_whatsapp_admin" />
+
+    <menuitem
+        id="whatsapp_configuration_menu"
+        name="Configuration"
+        parent="whatsapp_menu_main"
+        groups="whatsapp.group_whatsapp_admin" />
+
+    <menuitem
+        id="whatsapp_account_menu"
+        name="WhatsApp Business Accounts"
+        parent="whatsapp_configuration_menu"
+        action="whatsapp_account_action" />
+
+    <menuitem
+        id="whatsapp_template_menu"
+        name="Templates"
+        parent="whatsapp_menu_main"
+        action="whatsapp_template_action"
+        sequence="0"
+        groups="whatsapp.group_whatsapp_admin" />
+
+</odoo>

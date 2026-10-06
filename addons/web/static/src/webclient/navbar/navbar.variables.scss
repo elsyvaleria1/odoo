@@ -1,0 +1,64 @@
+$o-navbar-height: 44px !default;
+$o-navbar-height-compact: 40px !default;
+$o-navbar-height-condensed: 36px !default;
+$o-navbar-entry-height: 32px !default;
+$o-navbar-padding-v: ($o-navbar-height - $o-navbar-entry-height) * 0.5 !default;
+$o-navbar-font-size: $o-font-size-base !default;
+
+$o-navbar-background: #f8f8fc !default;
+
+$o-navbar-entry-margin-h: 1px !default;
+$o-navbar-entry-padding-h: 0.63em !default;
+$o-navbar-entry-border-radius: $o-hover-radius !default;
+$o-navbar-entry-color: $o-main-text-color !default;
+$o-navbar-entry-color--hover: $o-black !default;
+$o-navbar-entry-font-size: 1em !default;
+$o-navbar-entry-bg--hover: o-token(--o-fill-4, map-get($o-fills, 4)) !default;
+
+$o-navbar-entry-color--active: unset !default;
+$o-navbar-entry-bg--active: o-token(--o-fill-3, map-get($o-fills, 3)) !default;
+
+$o-navbar-brand-font-size: 1.2em !default;
+$o-navbar-brand-color: $o-main-text-color !default;
+
+$o-navbar-badge-size: 0.7em !default;
+$o-navbar-badge-padding: 6px !default;
+$o-navbar-badge-bg: $o-danger !default;
+$o-navbar-badge-color: $o-white !default;
+$o-navbar-badge-text-shadow: none !default;
+
+%-main-navbar-entry-base {
+    position: relative;
+    display: flex;
+    align-items: center;
+    width: auto;
+    height: $o-navbar-entry-height;
+    border-radius: $o-navbar-entry-border-radius;
+    user-select: none;
+    background-color: transparent;
+    font-size: $o-navbar-entry-font-size;
+    transition:
+        background-color $o-duration-normal $o-easing-emphasized,
+        color $o-duration-normal $o-easing-emphasized;
+
+    @include o-hover-text-color(
+        var(
+            --NavBar-entry-color,
+            var(--o-navbar-entry-color, #{$o-navbar-entry-color})
+        ),
+        var(
+            --NavBar-entry-color--hover,
+            var(--o-navbar-entry-color--hover, #{$o-navbar-entry-color--hover})
+        )
+    );
+}
+
+%-main-navbar-entry-spacing {
+    margin: 0;
+    margin-left: var(--NavBar-entry-margin-left, #{$o-navbar-entry-margin-h});
+    margin-right: var(--NavBar-entry-margin-right, #{$o-navbar-entry-margin-h});
+    padding: 0;
+    padding-left: var(--NavBar-entry-padding-left, #{$o-navbar-entry-padding-h});
+    padding-right: var(--NavBar-entry-padding-right, #{$o-navbar-entry-padding-h});
+    line-height: $o-navbar-entry-height;
+}

@@ -1,0 +1,90 @@
+<templates>
+
+    <t t-name="web_map_studio.MapEditorSidebar">
+        <InteractiveEditorSidebar>
+            <t t-set-slot="view">
+                <Property
+                    name="'res_partner'"
+                    type="'selection'"
+                    value="this.modelParams.resPartnerField"
+                    childProps="{ choices: this.contactFieldChoices, required: false }"
+                    onChange.bind="this.onViewAttributeChanged"
+                >
+                    Contact Field
+                </Property>
+
+                <Property
+                    name="'hide_name'"
+                    type="'boolean'"
+                    value="this.modelParams.hideName"
+                    onChange.bind="this.onViewAttributeChanged"
+                >
+                    Hide Name
+                </Property>
+
+                <Property
+                    name="'hide_address'"
+                    type="'boolean'"
+                    value="this.modelParams.hideAddress"
+                    onChange.bind="this.onViewAttributeChanged"
+                >
+                    Hide Address
+                </Property>
+
+                <div class="o_map_popup_fields">
+                    <label for="additional_fields" class="mb-1">Additional Fields</label>
+                    <div class="o_field_widget o_field_many2many_tags" name="additional_fields">
+                        <MultiRecordSelector t-props="this.multiRecordSelectorProps" />
+                    </div>
+                </div>
+
+                <Property
+                    name="'routing'"
+                    type="'boolean'"
+                    value="this.modelParams.routing"
+                    onChange.bind="this.onViewAttributeChanged"
+                >
+                    Enable Routing
+                </Property>
+
+                <Property
+                    t-if="this.modelParams.routing === true"
+                    name="'default_order'"
+                    type="'selection'"
+                    value="this.modelParams.defaultOrder?.[0]?.name"
+                    childProps="{ choices: this.defaultOrderChoices, required: false }"
+                    onChange.bind="this.onViewAttributeChanged"
+                >
+                    Sort by
+                </Property>
+
+                <Property
+                    t-if="this.modelParams.defaultOrder
+                        and this.modelParams.fields[this.modelParams.defaultOrder[0].name].type === 'integer'
+                        and !this.modelParams.fields[this.modelParams.defaultOrder[0].name].readonly"
+                    name="'allow_resequence'"
+                    type="'boolean'"
+                    value="this.modelParams.allowResequence"
+                    onChange.bind="this.onViewAttributeChanged"
+                >
+                    Allow Resequencing
+                </Property>
+
+                <Property
+                    name="'default_group_by'"
+                    type="'selection'"
+                    value="this.viewEditorModel.studioViewProps.defaultGroupBy"
+                    onChange.bind="this.editDefaultGroupBy"
+                    childProps="{ choices: this.defaultGroupbyChoices, required: false, multiSelect: true }"
+                >
+                    Default Group By
+                </Property>
+
+                <SidebarViewToolbox onMore="this.props.openViewInForm"
+                    canEditXml="!this.viewEditorModel.isEditingSubview"
+                    openDefaultValues="this.props.openDefaultValues" />
+            </t>
+        </InteractiveEditorSidebar>
+    </t>
+
+</templates>

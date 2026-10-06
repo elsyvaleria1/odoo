@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <menuitem
+        id="website_appointment_type_menu"
+        parent="website.menu_website_global_configuration"
+        action="calendar.appointment_type_action"
+        sequence="25" />
+
+    <menuitem
+        id="menu_appointment_pages"
+        name="Appointments"
+        parent="website.menu_content"
+        action="action_appointment_pages_list"
+        sequence="60" />
+
+</odoo>

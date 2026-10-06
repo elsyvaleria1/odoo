@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<templates xml:space="preserve">
+
+<t t-name="mail.Discuss">
+    <div class="o-mail-Discuss d-flex h-100 flex-grow-1" t-att-class="{ 'flex-column align-items-center': this.ui.isSmall, 'border-top border-secondary': !this.ui.isSmall }" t-att-data-active="this.store.discuss.isActive" t-ref="this.root">
+        <t t-if="!this.ui.isSmall and this.props.hasSidebar">
+            <div t-if="this.store.discuss.isSidebarCollapsed" class="o-mail-Discuss-sidebar o-collapsed d-flex flex-column h-100 d-print-none border-end flex-shrink-0">
+                <MessagingMenu t-if="this.store.discuss.hasRestoredThread" state="this.store.discuss.sidebarState" collapsed="true" onToggleCollapsed="this.toggleSidebar"/>
+            </div>
+            <ResizablePanel t-else="" class="'o-mail-Discuss-sidebar d-flex flex-column h-100 d-print-none border-end'" handleSide="'end'" initialWidth="this.store.discuss.sidebarWidth" minWidth="this.sidebarMinWidth" onResize="(width) => this.store.discuss.sidebarWidth = width">
+                <MessagingMenu t-if="this.store.discuss.hasRestoredThread" state="this.store.discuss.sidebarState" onToggleCollapsed="this.toggleSidebar"/>
+            </ResizablePanel>
+        </t>
+        <DiscussContent t-if="!this.ui.isSmall" thread="this.props.thread"/>
+        <MessagingMenu t-else="" state="this.store.discuss.sidebarState"/>
+    </div>
+</t>
+
+</templates>

@@ -1,0 +1,1 @@
+from . import mixin_hr_manager_department_report

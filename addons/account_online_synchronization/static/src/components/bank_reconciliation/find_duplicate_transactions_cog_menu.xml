@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<templates id="template" xml:space="preserve">
+    <t t-name="account_online_synchronization.FindDuplicateTransactions">
+        <CogMenuItem class="'o_find_duplicate_transactions_menu'" icon="'fa-regular fa-copy'" description.translate="Find Duplicate Transactions…" onSelected.bind="this.openFindDuplicateTransactionsWizard"/>
+    </t>
+</templates>

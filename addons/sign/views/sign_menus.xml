@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Menus -->
+    <menuitem
+        id="menu_document"
+        name="Sign"
+        sequence="180"
+        web_icon="sign,static/description/icon.png" />
+
+    <menuitem
+        id="sign_request_menu"
+        name="Documents"
+        parent="menu_document"
+        sequence="10" />
+
+    <menuitem
+        id="sign_template_menu"
+        name="Templates"
+        parent="menu_document"
+        action="sign_template_action"
+        sequence="20" />
+
+    <menuitem id="sign_reports" name="Reports" parent="menu_document" sequence="99" />
+
+    <menuitem
+        id="menu_sign_configuration"
+        name="Configuration"
+        parent="menu_document"
+        sequence="100" />
+
+    <!-- Menus -->
+    <menuitem
+        id="sign.sign_item_settings_menu"
+        name="Settings"
+        parent="sign.menu_sign_configuration"
+        action="sign_settings_action"
+        groups="sign.group_sign_manager" />
+
+    <menuitem
+        id="sign.sign_item_type_menu"
+        name="Fields"
+        parent="sign.menu_sign_configuration"
+        action="sign_item_type_action"
+        sequence="20" />
+
+    <menuitem
+        id="sign.sign_template_tag_menu"
+        name="Tags"
+        parent="sign.menu_sign_configuration"
+        action="sign_template_tag_action"
+        sequence="30"
+        groups="sign.group_sign_manager" />
+
+    <menuitem
+        id="sign_report_green_savings"
+        name="Green Savings"
+        parent="sign_reports"
+        action="sign.sign_report_green_savings_action" />
+
+    <menuitem
+        id="sign_request_my_documents"
+        name="My Documents"
+        parent="sign_request_menu"
+        action="sign_request_action"
+        sequence="10" />
+
+    <menuitem
+        id="sign_request_documents"
+        name="All Documents"
+        parent="sign_request_menu"
+        action="sign_all_request_action"
+        sequence="20" />
+
+</odoo>

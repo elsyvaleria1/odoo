@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <menuitem
+        id="menu_hr_appraisal_surveys"
+        name="Skills"
+        parent="hr_appraisal.menu_hr_appraisal_configuration"
+        action="hr_skill_type_action_appraisal"
+        sequence="6"
+        groups="hr_appraisal.group_hr_appraisal_user" />
+
+    <menuitem
+        id="menu_appraisal_skills_report"
+        name="Skills Evolution"
+        parent="hr_appraisal.menu_hr_appraisal_report"
+        action="hr_appraisal_skill_report_action"
+        sequence="3" />
+
+</odoo>

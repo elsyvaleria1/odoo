@@ -1,0 +1,2 @@
+id,name,model_id/id,group_id/id,kind,operation,domain
+voip_call_hr_access_rule,phone.call: employee managers and department managers can read their subordinates' records,phone_call.model_phone_call,hr.group_hr_user,permission,r,"[(""user_id.employee_id"", ""any"", [ ""|"", (""parent_id"", ""child_of"", user.employee_id.id), (""department_id.manager_id.user_id"", ""="", user.id), ])]"

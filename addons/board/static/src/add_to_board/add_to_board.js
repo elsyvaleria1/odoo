@@ -1,0 +1,111 @@
+/** @odoo-module native */
+import { Component, proxy, useProps } from "@odoo/owl";
+import { Dropdown } from "@web/components/dropdown";
+import { rpc } from "@web/core/network";
+import { registry } from "@web/core/registry";
+import { _t } from "@web/core/translation";
+import { elementRef } from "@web/core/utils/element_ref";
+import { useAutofocus, useService } from "@web/core/utils/hooks";
+import { useViewConfig } from "@web/core/view_config_hooks";
+import { COG_GROUP, isActWindowView } from "@web/search/cog_menu/cog_menu_group";
+import { useSearchModel } from "@web/search/search_model";
+
+const cogMenuRegistry = registry.category("cogMenu");
+
+/**
+ * 'Add to board' menu
+ *
+ * Component consisiting of a toggle button, a text input and an 'Add' button.
+ * The first button is simply used to toggle the component and will determine
+ * whether the other elements should be rendered.
+ * The input will be given the name (or title) of the view that will be added.
+ * Finally, the last button will send the name as well as some of the action
+ * properties to the server to add the current view (and its context) to the
+ * user's dashboard.
+ * This component is only available in actions of type 'ir.actions.act_window'.
+ * @extends Component
+ */
+export class AddToBoard extends Component {
+    static template = "board.AddToBoard";
+    static components = { Dropdown };
+    static props = {};
+    props = useProps(this.constructor.props);
+
+    setup() {
+        this.config = useViewConfig();
+        this.searchModel = useSearchModel();
+        this.notification = useService("notification");
+        this.state = proxy({ name: this.config.getDisplayName() });
+
+        this.autofocusRef = elementRef();
+        useAutofocus({ ref: this.autofocusRef });
+    }
+
+    //---------------------------------------------------------------------
+    // Protected
+    //---------------------------------------------------------------------
+
+    async addToBoard() {
+        const { domain, globalContext } = this.searchModel;
+        const { context, groupBys, orderBy } = this.searchModel.getPreFavoriteValues();
+        const contextToSave = {
+            ...Object.fromEntries(
+                Object.entries(globalContext).filter(
+                    (entry) => !entry[0].startsWith("search_default_"),
+                ),
+            ),
+            ...context,
+            orderedBy: orderBy,
+            group_by: groupBys,
+            dashboard_merge_domains_contexts: false,
+        };
+
+        const result = await rpc("/board/add_to_dashboard", {
+            action_id: this.config.actionId || false,
+            context_to_save: contextToSave,
+            domain,
+            name: this.state.name,
+            view_mode: this.config.viewType,
+        });
+
+        if (result) {
+            this.notification.add(
+                _t("Please refresh your browser for the changes to take effect."),
+                {
+                    title: _t("“%s” added to dashboard", this.state.name),
+                    type: "warning",
+                },
+            );
+            this.state.name = this.config.getDisplayName();
+        } else {
+            this.notification.add(_t("Could not add filter to dashboard"), {
+                type: "danger",
+            });
+        }
+    }
+
+    //---------------------------------------------------------------------
+    // Handlers
+    //---------------------------------------------------------------------
+
+    /**
+     * @param {KeyboardEvent} ev
+     */
+    onInputKeydown(ev) {
+        if (ev.key === "Enter") {
+            ev.preventDefault();
+            this.addToBoard();
+        }
+    }
+}
+
+export const addToBoardItem = {
+    Component: AddToBoard,
+    groupNumber: COG_GROUP.INTEGRATE,
+    isDisplayed: (env) =>
+        isActWindowView(env) &&
+        Boolean(env.config.actionId) &&
+        env.config.viewType !== "form",
+};
+
+cogMenuRegistry.add("add-to-board", addToBoardItem, { sequence: 10 });

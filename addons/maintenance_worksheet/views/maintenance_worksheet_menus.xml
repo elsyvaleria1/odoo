@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- settings menu -->
+    <menuitem
+        id="menu_maintenance_configuration_worksheet_templates"
+        name="Worksheet Templates"
+        parent="maintenance.menu_maintenance_configuration"
+        action="maintenance_worksheet_action_settings"
+        sequence="30"
+        groups="maintenance.group_equipment_manager" />
+
+</odoo>

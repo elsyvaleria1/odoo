@@ -1,0 +1,47 @@
+/** @odoo-module native */
+import { Component, useProps } from "@odoo/owl";
+import { registry } from "@web/core/registry";
+import { useService } from "@web/core/utils/hooks";
+import { standardWidgetProps } from "@web/views/widgets";
+
+class AccountOnboardingWidget extends Component {
+    static template = "account.Onboarding";
+    static props = { ...standardWidgetProps };
+    props = useProps(this.constructor.props);
+    setup() {
+        this.action = useService("action");
+        this.orm = useService("orm");
+    }
+
+    get recordOnboardingSteps() {
+        const raw = this.props.record.data.kanban_dashboard;
+        if (!raw) {
+            return undefined;
+        }
+        try {
+            return JSON.parse(raw).onboarding?.steps;
+        } catch {
+            return undefined;
+        }
+    }
+
+    async onboardingLinkClicked(step) {
+        const action = await this.orm.call(
+            "onboarding.onboarding.step",
+            step.action,
+            [],
+            {
+                context: {
+                    journal_id: this.props.record.resId,
+                },
+            },
+        );
+        this.action.doAction(action);
+    }
+}
+
+export const accountOnboarding = {
+    component: AccountOnboardingWidget,
+};
+
+registry.category("view_widgets").add("account_onboarding", accountOnboarding);

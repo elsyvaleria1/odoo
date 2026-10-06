@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="sign_import_from_documents_view_form" model="ir.ui.view">
+        <field name="name">sign.import.documents.view.form</field>
+        <field name="model">wizard.sign.template.import.document</field>
+        <field name="arch" type="xml">
+            <form string="Select a Document to Import and Sign">
+                <group>
+                    <field
+                        name="selected_document"
+                        string="Select a Document"
+                        widget="many2one"
+                        domain="[('mimetype', '=', 'application/pdf')]"
+                        options="{'no_create': True, 'no_create_edit': True}" />
+                </group>
+                <footer>
+                    <button
+                        name="action_import_and_create"
+                        type="object"
+                        string="Import and Sign"
+                        class="btn-primary" />
+                    <button special="cancel" string="Cancel" class="btn-secondary" />
+                </footer>
+            </form>
+        </field>
+    </record>
+
+</odoo>

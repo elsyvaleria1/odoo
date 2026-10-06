@@ -1,0 +1,78 @@
+/** @odoo-module native */
+import { Component, t, useProps } from "@odoo/owl";
+import { OrderDisplay } from "@point_of_sale/app/components/order_display/order_display";
+import { Orderline } from "@point_of_sale/app/components/orderline/orderline";
+import { ReceiptHeader } from "@point_of_sale/app/screens/receipt_screen/receipt/receipt_header/receipt_header";
+import { generateQRCodeDataUrl } from "@point_of_sale/utils";
+import { formatCurrency } from "@web/core/currency";
+import { makeLogger } from "@web/core/debug/debug_logger";
+import { useLifecycleLog } from "@web/core/debug/logger_hooks";
+import { _t } from "@web/core/translation";
+const log = makeLogger("pos.screen.receipt.ticket");
+export class OrderReceipt extends Component {
+    static template = "point_of_sale.OrderReceipt";
+    static components = {
+        Orderline,
+        OrderDisplay,
+        ReceiptHeader,
+    };
+    static props = { order: t.object(), basic_receipt: t.boolean().optional(false) };
+    props = useProps(this.constructor.props);
+
+    setup() {
+        useLifecycleLog(log);
+        log.lifecycle("receipt", () => ({
+            order: this.props.order?.uuid,
+            basic: this.props.basic_receipt,
+            lines: this.props.order?.lines?.length,
+            payments: this.props.order?.payment_ids?.length,
+        }));
+    }
+
+    get header() {
+        return {
+            company: this.order.company,
+            cashier: _t("Served by %s", this.order?.getCashierName()),
+            header: this.order.config.receipt_header,
+        };
+    }
+
+    get order() {
+        return this.props.order;
+    }
+
+    get qrCode() {
+        const baseUrl = this.order.config._base_url;
+        const url = `${baseUrl}/pos/ticket/validate?access_token=${this.order.receipt_token}`;
+        const endQr = log.perf("qrCode");
+        const dataUrl = generateQRCodeDataUrl(url);
+        endQr({ order: this.order.uuid, bytes: dataUrl?.length });
+        return dataUrl;
+    }
+
+    get paymentLines() {
+        return this.order.payment_ids.filter((p) => !p.is_change);
+    }
+
+    formatCurrency(amount) {
+        return formatCurrency(amount, this.order.currency.id);
+    }
+
+    doesAnyOrderlineHaveTaxLabel() {
+        return this.order.lines?.some((line) => line.taxGroupLabels);
+    }
+
+    getPortalURL() {
+        return `${this.order.config._base_url}/pos/ticket`;
+    }
+
+    get vatText() {
+        if (this.order.company.country_id?.vat_label) {
+            return _t("%(vatLabel)s: %(vatId)s", {
+                vatLabel: this.order.company.country_id.vat_label,
+                vatId: this.order.company.vat,
+            });
+        }
+        return _t("Tax ID: %(vatId)s", { vatId: this.order.company.vat });
+    }
+}

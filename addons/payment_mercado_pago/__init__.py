@@ -1,0 +1,14 @@
+from . import controllers
+from . import models
+
+from odoo.addons import (
+    payment,
+)  # Prevent circular import error with payment (res.country).
+
+
+def post_init_hook(env) -> None:
+    payment.setup_provider(env, "mercado_pago")
+
+
+def uninstall_hook(env):
+    payment.reset_payment_provider(env, "mercado_pago")

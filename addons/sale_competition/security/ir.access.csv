@@ -1,0 +1,5 @@
+id,name,model_id/id,group_id/id,kind,operation,reach,anchor,domain
+competitor_offer_rule_sale_salesman,Competitor offers to customers: salespeople maintain them,trade_competition.model_competitor_offer,sale.group_sale_salesman,permission,crud,,,"[('direction', '=', 'sale')]"
+competitor_offer_rule_sale_readonly,Competitor offers to customers: read-only sales users read them,trade_competition.model_competitor_offer,sale.group_sale_readonly,permission,r,,,"[('direction', '=', 'sale')]"
+competitor_offer_line_rule_sale_salesman,Competitor offer lines to customers: salespeople maintain them,trade_competition.model_competitor_offer_line,sale.group_sale_salesman,permission,crud,,,"[('direction', '=', 'sale')]"
+competitor_offer_line_rule_sale_readonly,Competitor offer lines to customers: read-only sales users read them,trade_competition.model_competitor_offer_line,sale.group_sale_readonly,permission,r,,,"[('direction', '=', 'sale')]"

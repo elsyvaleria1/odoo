@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <menuitem
+        id="menu_access_devices"
+        name="ISAPI Devices"
+        parent="device.menu_device_devices"
+        action="action_access_device_dashboard"
+        sequence="110" />
+
+    <menuitem
+        id="menu_access_configuration"
+        name="ISAPI Configurations"
+        parent="device.menu_device_profileuration"
+        action="action_access_device"
+        sequence="300" />
+
+</odoo>

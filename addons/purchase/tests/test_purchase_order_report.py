@@ -1,0 +1,331 @@
+from datetime import datetime, timedelta
+
+from odoo.fields import Command
+from odoo.tests import Form, tagged
+
+from odoo.addons.account.tests.common import AccountTestInvoicingCommon
+
+
+@tagged("post_install", "-at_install")
+class TestPurchaseOrderReport(AccountTestInvoicingCommon):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.other_currency = cls.setup_other_currency("EUR")
+
+    def test_00_purchase_order_report(self):
+        uom_dozen = self.env.ref("uom.product_uom_dozen")
+
+        po = self.env["purchase.order"].create(
+            {
+                "partner_id": self.partner_a.id,
+                "currency_id": self.other_currency.id,
+                "line_ids": [
+                    (
+                        0,
+                        0,
+                        {
+                            "name": self.product_a.name,
+                            "product_id": self.product_a.id,
+                            "product_qty": 1.0,
+                            "product_uom_id": uom_dozen.id,
+                            "price_unit": 100.0,
+                            "date_commitment": datetime.today(),
+                            "tax_ids": False,
+                        },
+                    ),
+                    (
+                        0,
+                        0,
+                        {
+                            "name": self.product_b.name,
+                            "product_id": self.product_b.id,
+                            "product_qty": 1.0,
+                            "product_uom_id": uom_dozen.id,
+                            "price_unit": 200.0,
+                            "date_commitment": datetime.today(),
+                            "tax_ids": False,
+                        },
+                    ),
+                ],
+            }
+        )
+        po.action_confirm()
+        po.flush_model()
+
+        f = Form(self.env["account.move"].with_context(default_move_type="in_invoice"))
+        f.invoice_date = f.date
+        f.partner_id = po.partner_id
+        f.purchase_vendor_bill_id = self.env["purchase.bill.match"].browse(-po.id)
+        invoice = f.save()
+        invoice.action_post()
+        po.flush_model()
+
+        res_product1 = self.env["purchase.report"].search(
+            [
+                ("order_reference", "=", f"purchase.order,{po.id}"),
+                ("product_id", "=", self.product_a.id),
+                ("company_id", "=", self.company_data["company"].id),
+            ]
+        )
+
+        self.assertEqual(
+            res_product1.product_uom_qty, 12.0, "UoM conversion is not working"
+        )
+        self.assertAlmostEqual(
+            res_product1.price_total,
+            50.0,
+            places=1,
+            msg="Currency conversion is not working",
+        )
+
+        res_product2 = self.env["purchase.report"].search(
+            [
+                ("order_reference", "=", f"purchase.order,{po.id}"),
+                ("product_id", "=", self.product_b.id),
+                ("company_id", "=", self.company_data["company"].id),
+            ]
+        )
+
+        self.assertEqual(
+            res_product2.product_uom_qty,
+            1.0,
+            "No conversion needed since product_b is already a dozen",
+        )
+        self.assertAlmostEqual(
+            res_product2.price_total,
+            100.0,
+            places=1,
+            msg="Currency conversion is not working",
+        )
+
+    def test_01_delay_and_delay_pass(self):
+        po_form = Form(self.env["purchase.order"])
+        po_form.partner_id = self.partner_a
+        po_form.date_order = datetime.now() + timedelta(days=10)
+        with po_form.line_ids.new() as line:
+            line.product_id = self.product_a
+        with po_form.line_ids.new() as line:
+            line.product_id = self.product_b
+        po_form.date_commitment = datetime.now() + timedelta(days=15)
+        po = po_form.save()
+
+        po.action_confirm()
+
+        po.flush_model()
+        report = self.env["purchase.report"].formatted_read_group(
+            [("order_reference", "=", f"purchase.order,{po.id}")],
+            ["order_reference"],
+            ["delay:avg", "delay_pass:avg"],
+        )
+        self.assertEqual(
+            round(report[0]["delay:avg"]),
+            -10,
+            msg="The PO has been confirmed 10 days in advance",
+        )
+        self.assertEqual(
+            round(report[0]["delay_pass:avg"]),
+            5,
+            msg="There are 5 days between the order date and the planned date",
+        )
+
+    def test_02_po_report_note_section_filter(self):
+        po = self.env["purchase.order"].create(
+            {
+                "partner_id": self.partner_a.id,
+                "currency_id": self.other_currency.id,
+                "line_ids": [
+                    (
+                        0,
+                        0,
+                        {
+                            "name": "This is a note",
+                            "display_type": "line_note",
+                        },
+                    ),
+                    (
+                        0,
+                        0,
+                        {
+                            "name": "This is a section",
+                            "display_type": "line_section",
+                        },
+                    ),
+                    (
+                        0,
+                        0,
+                        {
+                            "product_id": self.product_a.id,
+                            "product_qty": 1,
+                        },
+                    ),
+                ],
+            }
+        )
+        po.action_confirm()
+
+        result_po = self.env["purchase.report"].search(
+            [("order_reference", "=", f"purchase.order,{po.id}")]
+        )
+        self.assertEqual(
+            len(result_po), 1, "The report should include only the product line"
+        )
+
+    def test_po_report_currency(self):
+        po = self.env["purchase.order"].create(
+            {
+                "partner_id": self.partner_a.id,
+                "currency_id": self.other_currency.id,
+                "line_ids": [
+                    (
+                        0,
+                        0,
+                        {
+                            "product_id": self.product_a.id,
+                            "product_qty": 10.0,
+                            "price_unit": 50.0,
+                        },
+                    ),
+                ],
+            }
+        )
+        currency_eur_id = self.env.ref("base.EUR")
+        currency_eur_id.active = True
+        po_2 = self.env["purchase.order"].create(
+            {
+                "partner_id": self.partner_a.id,
+                "currency_id": currency_eur_id.id,
+                "line_ids": [
+                    (
+                        0,
+                        0,
+                        {
+                            "product_id": self.product_a.id,
+                            "product_qty": 10.0,
+                            "price_unit": 50.0,
+                        },
+                    ),
+                ],
+            }
+        )
+        po.flush_model()
+        po_2.flush_model()
+        report = self.env["purchase.report"].search(
+            [("product_id", "=", self.product_a.id)]
+        )
+        self.assertEqual(report.currency_id, self.env.company.currency_id)
+
+    def test_avg_price_calculation(self):
+        po = self.env["purchase.order"].create(
+            {
+                "partner_id": self.partner_a.id,
+                "line_ids": [
+                    (
+                        0,
+                        0,
+                        {
+                            "product_id": self.product_a.id,
+                            "product_qty": 10.0,
+                            "price_unit": 50.0,
+                        },
+                    ),
+                    (
+                        0,
+                        0,
+                        {
+                            "product_id": self.product_a.id,
+                            "product_qty": 1.0,
+                            "price_unit": 10.0,
+                        },
+                    ),
+                ],
+            }
+        )
+        po.action_confirm()
+        po.flush_model()
+        report = self.env["purchase.report"].formatted_read_group(
+            [("product_id", "=", self.product_a.id)],
+            ["product_id"],
+            ["product_uom_qty:sum", "price_average:avg"],
+        )
+        self.assertEqual(report[0]["product_uom_qty:sum"], 11)
+        self.assertEqual(round(report[0]["price_average:avg"], 2), 46.36)
+
+    def test_purchase_report_multi_uom(self):
+        uom_units = self.env.ref("uom.product_uom_unit")
+        uom_dozens = self.env.ref("uom.product_uom_dozen")
+        uom_pairs = self.env["uom.uom"].create(
+            {
+                "name": "Pairs",
+                "relative_factor": 2,
+                "relative_uom_id": uom_units.id,
+            }
+        )
+
+        product_01, product_02 = self.env["product.product"].create(
+            [
+                {
+                    "name": name,
+                    "type": "consu",
+                    "volume": 10,
+                    "weight": 10,
+                    "standard_price": 200,
+                    "uom_id": uom_pairs.id,
+                    "bill_policy": "ordered",
+                }
+                for name in ["SuperProduct 01", "SuperProduct 02"]
+            ]
+        )
+
+        po = self.env["purchase.order"].create(
+            [
+                {
+                    "partner_id": self.partner_a.id,
+                    "line_ids": [
+                        Command.create(
+                            {
+                                "product_id": product_01.id,
+                                "product_qty": 2.0,
+                                "product_uom_id": uom_pairs.id,
+                                "price_unit": 200.0,
+                            }
+                        ),
+                        Command.create(
+                            {
+                                "product_id": product_02.id,
+                                "product_qty": 1.0,
+                                "product_uom_id": uom_dozens.id,
+                                "price_unit": 2400.0,
+                            }
+                        ),
+                    ],
+                }
+            ]
+        )
+        po.action_confirm()
+
+        self.env["uom.uom"].flush_model()
+        self.env["purchase.order.line"].flush_model()
+        report = self.env["purchase.report"].search(
+            [("product_id", "in", [product_01.id, product_02.id])],
+            order="product_id.id",
+        )
+        self.assertRecordValues(
+            report,
+            [
+                {
+                    "product_id": product_01.id,
+                    "volume": 20.0,
+                    "weight": 20.0,
+                    "price_average": 200.0,
+                    "qty_to_invoice": 2.0,
+                },
+                {
+                    "product_id": product_02.id,
+                    "volume": 60.0,
+                    "weight": 60.0,
+                    "price_average": 400.0,
+                    "qty_to_invoice": 6.0,
+                },
+            ],
+        )

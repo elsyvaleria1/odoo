@@ -1,0 +1,227 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="competitor_offer_view_form" model="ir.ui.view">
+        <field name="name">competitor.offer.form</field>
+        <field name="model">competitor.offer</field>
+        <field name="arch" type="xml">
+            <form string="Competitor Offer">
+                <sheet>
+                    <widget
+                        name="web_ribbon"
+                        title="Won"
+                        invisible="not is_winner"
+                        bg_color="text-bg-danger" />
+                    <widget
+                        name="web_ribbon"
+                        title="Archived"
+                        invisible="active"
+                        bg_color="text-bg-secondary" />
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name" readonly="1" />
+                        </h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field
+                                name="competitor_id"
+                                context="{'default_is_competitor': True}" />
+                            <field name="partner_id" />
+                            <field name="direction" />
+                            <field name="is_winner" />
+                            <field name="active" invisible="1" />
+                        </group>
+                        <group>
+                            <field name="date" />
+                            <field name="date_valid" />
+                            <field name="source" />
+                            <field name="confidence" />
+                        </group>
+                    </group>
+                    <group>
+                        <group>
+                            <field
+                                name="currency_id"
+                                groups="base.group_multi_currency" />
+                            <field name="payment_term_id" />
+                            <field name="incoterm_id" />
+                            <field name="credit_days" />
+                            <field name="freight_per_unit" />
+                        </group>
+                        <group>
+                            <field name="user_id" />
+                            <field
+                                name="company_id"
+                                groups="base.group_multi_company" />
+                            <field name="amount_total" />
+                        </group>
+                    </group>
+                    <notebook>
+                        <page name="lines" string="Offered">
+                            <field name="line_ids">
+                                <list editable="bottom">
+                                    <field name="sequence" widget="handle" />
+                                    <field name="product_id" />
+                                    <field name="competitor_product" optional="show" />
+                                    <field name="equivalence" optional="show" />
+                                    <field name="product_qty" />
+                                    <field
+                                        name="product_uom_id"
+                                        groups="uom.group_uom" />
+                                    <field name="price_unit" />
+                                    <field name="discount" optional="hide" />
+                                    <field name="price_subtotal" />
+                                    <field name="price_comparable" optional="show" />
+                                    <field name="currency_id" column_invisible="1" />
+                                </list>
+                            </field>
+                        </page>
+                        <page name="note" string="Notes">
+                            <field name="note" />
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter />
+            </form>
+        </field>
+    </record>
+
+    <record id="competitor_offer_view_list" model="ir.ui.view">
+        <field name="name">competitor.offer.list</field>
+        <field name="model">competitor.offer</field>
+        <field name="arch" type="xml">
+            <list string="Competitor Offers" sample="1">
+                <field name="date" />
+                <field name="competitor_id" />
+                <field name="partner_id" />
+                <field name="direction" optional="hide" />
+                <field name="source" optional="show" />
+                <field name="confidence" optional="show" />
+                <field name="date_valid" optional="hide" />
+                <field name="amount_total" sum="Total" />
+                <field name="currency_id" column_invisible="1" />
+                <field name="is_winner" optional="show" />
+                <field
+                    name="company_id"
+                    optional="hide"
+                    groups="base.group_multi_company" />
+            </list>
+        </field>
+    </record>
+
+    <record id="competitor_offer_view_search" model="ir.ui.view">
+        <field name="name">competitor.offer.search</field>
+        <field name="model">competitor.offer</field>
+        <field name="arch" type="xml">
+            <search string="Competitor Offers">
+                <field name="competitor_id" />
+                <field name="partner_id" />
+                <field
+                    name="line_ids"
+                    string="Product"
+                    filter_domain="[('line_ids.product_id', 'ilike', self)]" />
+                <filter
+                    name="won"
+                    string="Won the Deal"
+                    domain="[('is_winner', '=', True)]" />
+                <filter
+                    name="confirmed"
+                    string="Confirmed"
+                    domain="[('confidence', '=', 'confirmed')]" />
+                <separator />
+                <filter name="date" string="Seen On" date="date" />
+                <filter
+                    name="inactive"
+                    string="Archived"
+                    domain="[('active', '=', False)]" />
+                <group>
+                    <filter
+                        name="group_competitor"
+                        string="Competitor"
+                        context="{'group_by': 'competitor_id'}" />
+                    <filter
+                        name="group_partner"
+                        string="Offered To"
+                        context="{'group_by': 'partner_id'}" />
+                    <filter
+                        name="group_source"
+                        string="Source"
+                        context="{'group_by': 'source'}" />
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="competitor_offer_line_view_list" model="ir.ui.view">
+        <field name="name">competitor.offer.line.list</field>
+        <field name="model">competitor.offer.line</field>
+        <field name="arch" type="xml">
+            <list string="Market Prices" default_order="date desc" create="0">
+                <field name="date" />
+                <field name="product_id" />
+                <field name="competitor_product" optional="show" />
+                <field name="equivalence" optional="hide" />
+                <field name="competitor_id" />
+                <field name="partner_id" />
+                <field name="product_qty" optional="hide" />
+                <field name="price_unit" optional="hide" />
+                <field name="currency_id" column_invisible="1" />
+                <field name="price_comparable" />
+            </list>
+        </field>
+    </record>
+
+    <record id="competitor_offer_line_view_search" model="ir.ui.view">
+        <field name="name">competitor.offer.line.search</field>
+        <field name="model">competitor.offer.line</field>
+        <field name="arch" type="xml">
+            <search string="Market Prices">
+                <field name="product_id" />
+                <field name="competitor_id" />
+                <field name="partner_id" />
+                <field name="product_category_id" />
+                <filter name="date" string="Seen On" date="date" />
+                <group>
+                    <filter
+                        name="group_product"
+                        string="Product"
+                        context="{'group_by': 'product_id'}" />
+                    <filter
+                        name="group_competitor"
+                        string="Competitor"
+                        context="{'group_by': 'competitor_id'}" />
+                    <filter
+                        name="group_month"
+                        string="Month"
+                        context="{'group_by': 'date:month'}" />
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="competitor_offer_line_view_pivot" model="ir.ui.view">
+        <field name="name">competitor.offer.line.pivot</field>
+        <field name="model">competitor.offer.line</field>
+        <field name="arch" type="xml">
+            <pivot string="Market Prices" sample="1">
+                <field name="product_id" type="row" />
+                <field name="date" type="col" interval="month" />
+                <field name="price_comparable" type="measure" />
+            </pivot>
+        </field>
+    </record>
+
+    <record id="competitor_offer_line_view_graph" model="ir.ui.view">
+        <field name="name">competitor.offer.line.graph</field>
+        <field name="model">competitor.offer.line</field>
+        <field name="arch" type="xml">
+            <graph type="line" string="Market Prices" sample="1">
+                <field name="date" interval="month" />
+                <field name="competitor_id" />
+                <field name="price_comparable" type="measure" />
+            </graph>
+        </field>
+    </record>
+
+</odoo>

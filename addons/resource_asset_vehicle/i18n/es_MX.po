@@ -1,0 +1,35 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* resource_asset_vehicle
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-09-29 00:00+0000\n"
+"PO-Revision-Date: 2026-09-29 00:00+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: es_MX\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: resource_asset_vehicle
+#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_view_form
+msgid "Vehicle Manager"
+msgstr "Responsable del vehículo"
+
+#. module: resource_asset_vehicle
+#: model:ir.ui.menu,name:resource_asset_vehicle.fleet_models_configuration
+msgid "Vehicle Models"
+msgstr "Modelos de vehículos"
+
+#. module: resource_asset_vehicle
+#: model:ir.actions.act_window,name:resource_asset_vehicle.fleet_vehicle_action
+#: model:ir.ui.menu,name:resource_asset_vehicle.fleet_vehicle_menu
+#: model:ir.ui.menu,name:resource_asset_vehicle.fleet_vehicles
+#: model:res.groups.privilege,name:resource_asset_vehicle.res_groups_privilege_fleet
+msgid "Vehicles"
+msgstr "Vehículos"

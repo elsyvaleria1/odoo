@@ -1,0 +1,4 @@
+id,name,model_id/id,group_id/id,kind,operation,domain
+access_hr_recruitment_post_job_wizard,wizard.hr.job.create.post,model_wizard_hr_job_create_post,hr_recruitment.group_hr_recruitment_user,permission,cru,
+access_hr_recruitment_job_post,hr.recruitment.job.post,model_hr_job_post,hr_recruitment.group_hr_recruitment_user,permission,rud,
+access_hr_recruitment_platform,hr.recruitment.platform,model_hr_recruitment_platform,hr_recruitment.group_hr_recruitment_user,permission,r,

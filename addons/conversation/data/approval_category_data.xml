@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+
+    <record id="approval_category_tool_responsible" model="approval.category">
+        <field name="name">Conversation actions: the person in charge</field>
+        <field name="sequence_code">CONVACTRESP</field>
+        <field name="company_id" eval="False" />
+        <field name="approval_minimum">1</field>
+        <field name="activity_target">document</field>
+    </record>
+
+    <record id="approval_category_tool_responsible_step" model="approval.category.step">
+        <field name="category_id" ref="approval_category_tool_responsible" />
+        <field name="activity_type_id" ref="mail.mail_activity_data_todo" />
+        <field name="name">Person in charge, or a leader</field>
+        <field name="sequence">10</field>
+        <field name="minimum">1</field>
+        <field name="subject_model_id" ref="ai_tool_approval.model_ai_tool_call" />
+        <field name="subject_user_path">assignee_id</field>
+        <field name="group_id" ref="conversation.group_leader" />
+    </record>
+
+    <record id="approval_category_tool_leader" model="approval.category">
+        <field name="name">Conversation actions: a leader</field>
+        <field name="sequence_code">CONVACTLEAD</field>
+        <field name="company_id" eval="False" />
+        <field name="approval_minimum">1</field>
+        <field name="activity_target">document</field>
+    </record>
+
+    <record id="approval_category_tool_leader_step" model="approval.category.step">
+        <field name="category_id" ref="approval_category_tool_leader" />
+        <field name="activity_type_id" ref="mail.mail_activity_data_todo" />
+        <field name="name">Leaders</field>
+        <field name="sequence">10</field>
+        <field name="minimum">1</field>
+        <field name="group_id" ref="conversation.group_leader" />
+    </record>
+
+    <record id="approval_category_tool_manager" model="approval.category">
+        <field name="name">Conversation actions: a manager</field>
+        <field name="sequence_code">CONVACTMGR</field>
+        <field name="company_id" eval="False" />
+        <field name="approval_minimum">1</field>
+        <field name="activity_target">document</field>
+    </record>
+
+    <record id="approval_category_tool_manager_step" model="approval.category.step">
+        <field name="category_id" ref="approval_category_tool_manager" />
+        <field name="activity_type_id" ref="mail.mail_activity_data_todo" />
+        <field name="name">Managers</field>
+        <field name="sequence">10</field>
+        <field name="minimum">1</field>
+        <field name="group_id" ref="conversation.group_manager" />
+    </record>
+
+</odoo>

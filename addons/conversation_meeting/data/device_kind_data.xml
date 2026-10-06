@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="device_category_meeting_room" model="device.kind">
+        <field name="name">Meeting Room</field>
+        <field name="code">meeting_room</field>
+        <field
+            name="description">Laptop or box that records the meeting room and uploads the audio to a conversation</field>
+        <field name="link_mode">push</field>
+    </record>
+
+</odoo>

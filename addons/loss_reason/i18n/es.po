@@ -1,0 +1,160 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* loss_reason
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-09-26 20:24+0000\n"
+"PO-Revision-Date: 2026-09-26 20:24+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: es\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: nplurals=3; plural=(n == 1) ? 0 : ((n != 0 && n % 1000000 == 0) ? 1 : 2);\n"
+
+#. module: loss_reason
+#: model:ir.model.fields,field_description:loss_reason.field_loss_reason__active
+msgid "Active"
+msgstr "Activo"
+
+#. module: loss_reason
+#: model_terms:ir.ui.view,arch_db:loss_reason.loss_reason_view_form
+#: model_terms:ir.ui.view,arch_db:loss_reason.loss_reason_view_search
+msgid "Archived"
+msgstr "Archivado"
+
+#. module: loss_reason
+#: model:loss.reason,name:loss_reason.loss_reason_budget
+msgid "Budget"
+msgstr "Presupuesto"
+
+#. module: loss_reason
+#: model:ir.model.fields,field_description:loss_reason.field_loss_reason__company_id
+msgid "Company"
+msgstr "Empresa"
+
+#. module: loss_reason
+#: model:ir.model.fields,field_description:loss_reason.field_loss_reason__create_uid
+msgid "Created by"
+msgstr "Creado por"
+
+#. module: loss_reason
+#: model:ir.model.fields,field_description:loss_reason.field_loss_reason__create_date
+msgid "Created on"
+msgstr "Creado el"
+
+#. module: loss_reason
+#: model:loss.reason,name:loss_reason.loss_reason_delivery
+msgid "Delivery date"
+msgstr "Fecha de entrega"
+
+#. module: loss_reason
+#: model:ir.model.fields,field_description:loss_reason.field_loss_reason__display_name
+msgid "Display Name"
+msgstr "Nombre para mostrar"
+
+#. module: loss_reason
+#: model:ir.model.fields,field_description:loss_reason.field_loss_reason__id
+msgid "ID"
+msgstr "ID"
+
+#. module: loss_reason
+#: model:ir.model.fields,field_description:loss_reason.field_loss_reason__write_uid
+msgid "Last Updated by"
+msgstr "Última actualización por"
+
+#. module: loss_reason
+#: model:ir.model.fields,field_description:loss_reason.field_loss_reason__write_date
+msgid "Last Updated on"
+msgstr "Última actualización el"
+
+#. module: loss_reason
+#: model:ir.model.fields,help:loss_reason.field_loss_reason__scope
+msgid "Leave empty to offer the reason everywhere a document can be lost."
+msgstr ""
+"Déjelo vacío para ofrecer el motivo en todo documento que pueda perderse."
+
+#. module: loss_reason
+#: model:ir.model.fields,help:loss_reason.field_loss_reason__company_id
+msgid "Leave empty to share the reason between companies."
+msgstr "Déjelo vacío para compartir el motivo entre empresas."
+
+#. module: loss_reason
+#: model_terms:ir.ui.view,arch_db:loss_reason.loss_reason_view_form
+msgid "Loss Reason"
+msgstr "Motivo de pérdida"
+
+#. module: loss_reason
+#: model_terms:ir.ui.view,arch_db:loss_reason.loss_reason_view_list
+#: model_terms:ir.ui.view,arch_db:loss_reason.loss_reason_view_search
+msgid "Loss Reasons"
+msgstr "Motivos de pérdida"
+
+#. module: loss_reason
+#: model:loss.reason,name:loss_reason.loss_reason_no_decision
+msgid "No decision"
+msgstr "Sin decisión"
+
+#. module: loss_reason
+#: model:loss.reason,name:loss_reason.loss_reason_payment_terms
+msgid "Payment terms"
+msgstr "Condiciones de pago"
+
+#. module: loss_reason
+#: model:loss.reason,name:loss_reason.loss_reason_price
+msgid "Price"
+msgstr "Precio"
+
+#. module: loss_reason
+#: model:ir.model.fields.selection,name:loss_reason.selection__loss_reason__scope__purchase
+msgid "Purchases"
+msgstr "Compras"
+
+#. module: loss_reason
+#: model:loss.reason,name:loss_reason.loss_reason_quality
+msgid "Quality or specification"
+msgstr "Calidad o especificación"
+
+#. module: loss_reason
+#: model:ir.model.fields,field_description:loss_reason.field_loss_reason__name
+msgid "Reason"
+msgstr "Motivo"
+
+#. module: loss_reason
+#: model:loss.reason,name:loss_reason.loss_reason_relationship
+msgid "Relationship"
+msgstr "Relación comercial"
+
+#. module: loss_reason
+#: model:ir.model.fields.selection,name:loss_reason.selection__loss_reason__scope__sale
+msgid "Sales"
+msgstr "Ventas"
+
+#. module: loss_reason
+#: model:ir.model.fields,field_description:loss_reason.field_loss_reason__scope
+msgid "Scope"
+msgstr "Ámbito"
+
+#. module: loss_reason
+#: model:ir.model.fields,field_description:loss_reason.field_loss_reason__sequence
+msgid "Sequence"
+msgstr "Secuencia"
+
+#. module: loss_reason
+#: model:ir.model.fields.selection,name:loss_reason.selection__loss_reason__scope__task
+msgid "Tasks"
+msgstr "Tareas"
+
+#. module: loss_reason
+#: model:ir.model,name:loss_reason.model_loss_reason
+msgid "Why a deal did not go ahead"
+msgstr "Por qué un negocio no se concretó"
+
+#. module: loss_reason
+#: model_terms:ir.ui.view,arch_db:loss_reason.loss_reason_view_form
+msgid "e.g. Too expensive"
+msgstr "p. ej., Demasiado caro"

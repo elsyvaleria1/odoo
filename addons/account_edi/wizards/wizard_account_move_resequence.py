@@ -1,0 +1,26 @@
+from odoo import models
+from odoo.exceptions import UserError
+
+
+class WizardAccountMoveResequence(models.TransientModel):
+    _inherit = "wizard.account.move.resequence"
+
+    def _frozen_edi_documents(self):
+        """Get EDI documents that can't change.
+
+        Their moves are restricted and cannot be resequenced.
+        """
+        return self.move_ids.edi_document_ids.filtered(
+            lambda d: d.edi_format_id._is_web_service_required() and d.state == "sent"
+        )
+
+    def resequence(self):
+        edi_sent_moves = self._frozen_edi_documents()
+        if edi_sent_moves:
+            raise UserError(
+                self.env._(
+                    "The following documents have already been sent and cannot be resequenced: %s"
+                )
+                % ", ".join(set(edi_sent_moves.move_id.mapped("name")))
+            )
+        return super().resequence()

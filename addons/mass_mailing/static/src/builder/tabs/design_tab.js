@@ -1,0 +1,21 @@
+/** @odoo-module native */
+import { useBuilderContext } from "@html_builder/core/builder_context";
+import { OptionsContainer } from "@html_builder/sidebar/option_container";
+import { provideBuilderOptionsContext } from "@html_builder/utils/utils";
+import { Component, proxy, t, useProps } from "@odoo/owl";
+
+export class DesignTab extends Component {
+    static template = "mass_mailing.DesignTab";
+    static components = { OptionsContainer };
+    static props = { colorPresetToShow: t.any().optional() };
+    props = useProps(this.constructor.props);
+
+    setup() {
+        provideBuilderOptionsContext(() => [this.builderContext.editor.document.body]);
+        this.builderContext = useBuilderContext();
+        this.state = proxy({
+            fontsData: {},
+        });
+        this.optionsContainers = this.builderContext.editor.resources["design_options"];
+    }
+}

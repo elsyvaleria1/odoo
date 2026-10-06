@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<templates id="template" xml:space="preserve">
+    <t t-name="account_online_synchronization.FetchMissingTransactions">
+        <CogMenuItem class="'o_fetch_missing_transactions_menu'" icon="'fa-solid fa-magnifying-glass-plus'" description.translate="Find Missing Transactions…" onSelected.bind="this.openFetchMissingTransactionsWizard"/>
+    </t>
+</templates>

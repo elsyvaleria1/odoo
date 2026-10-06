@@ -1,0 +1,1 @@
+from . import wizard_crm_lead_create_rental_quotation

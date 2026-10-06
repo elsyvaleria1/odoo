@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="crm_lost_reason_view_form" model="ir.ui.view">
+        <field name="name">loss.reason.form.crm</field>
+        <field name="model">loss.reason</field>
+        <field name="inherit_id" ref="loss_reason.loss_reason_view_form" />
+        <field name="arch" type="xml">
+            <div name="button_box" position="inside">
+                <button
+                    name="action_lost_leads"
+                    type="object"
+                    icon="fa-star"
+                    invisible="scope not in (False, 'sale')"
+                    class="oe_stat_button">
+                    <div class="o_stat_info">
+                        <field name="leads_count" class="o_stat_value" />
+                        <span class="o_stat_text"> Leads</span>
+                    </div>
+                </button>
+            </div>
+        </field>
+    </record>
+
+    <record id="crm_lost_reason_action" model="ir.actions.act_window">
+        <field name="name">Lost Reasons</field>
+        <field name="res_model">loss.reason</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('scope', 'in', [False, 'sale'])]</field>
+        <field name="context">{'default_scope': 'sale'}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Create a Lost Reason
+            </p><p>
+                Use Lost Reasons to report on why opportunities are lost (e.g."Undercut by competitors").
+            </p>
+        </field>
+    </record>
+
+</odoo>

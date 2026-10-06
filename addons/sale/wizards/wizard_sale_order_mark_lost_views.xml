@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="sale_order_loss_view_form" model="ir.ui.view">
+        <field name="name">sale.order.loss.form</field>
+        <field name="model">wizard.sale.order.mark.lost</field>
+        <field name="arch" type="xml">
+            <form string="Mark as Lost">
+                <field name="order_ids" invisible="1" />
+                <group>
+                    <field name="outcome" widget="radio" />
+                    <field name="loss_reason_id" options="{'no_create': True}" />
+                    <field
+                        name="loss_note"
+                        placeholder="What happened? Who won, at what price, on what terms…" />
+                </group>
+                <footer>
+                    <button
+                        name="action_close"
+                        type="object"
+                        string="Mark as Lost"
+                        class="btn-primary" />
+                    <button special="cancel" string="Discard" />
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_sale_order_loss" model="ir.actions.act_window">
+        <field name="name">Mark as Lost…</field>
+        <field name="res_model">wizard.sale.order.mark.lost</field>
+        <field name="view_mode">form</field>
+        <field name="view_id" ref="sale_order_loss_view_form" />
+        <field name="target">new</field>
+        <field name="binding_model_id" ref="model_sale_order" />
+        <field name="binding_view_types">list,kanban</field>
+    </record>
+
+</odoo>

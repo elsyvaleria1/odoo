@@ -1,0 +1,339 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="stock_picking_batch_form_trace" model="ir.ui.view">
+        <field name="name">stock.picking.batch.form.trace</field>
+        <field name="model">stock.picking.batch</field>
+        <field name="inherit_id" ref="stock_fleet.stock_picking_batch_form_trip" />
+        <field name="arch" type="xml">
+            <xpath expr="//button[@name='action_depart']" position="before">
+                <button
+                    name="action_trip_load"
+                    type="object"
+                    string="Load"
+                    invisible="date_loaded or not has_trip_trace or state in ('done', 'cancel')" />
+                <button
+                    name="action_trip_unload"
+                    type="object"
+                    string="Unload"
+                    invisible="not date_loaded or date_departure" />
+                <button
+                    name="action_trip_open_load_stock"
+                    type="object"
+                    string="Load Stock to Sell"
+                    groups="stock.group_stock_user"
+                    invisible="not has_trip_trace or date_departure or state in ('done', 'cancel')" />
+            </xpath>
+            <xpath expr="//header" position="inside">
+                <button
+                    name="action_trip_open_driver_screen"
+                    type="object"
+                    string="Driver Screen"
+                    icon="fa-mobile"
+                    invisible="not has_trip_trace" />
+                <button
+                    name="action_trip_release_phone_head"
+                    type="object"
+                    string="Release Phone"
+                    confirm="The trip will stop waiting for the events this phone still holds. Continue?"
+                    invisible="not trip_offline_phone_head or date_return" />
+                <field name="trip_offline_phone_head" invisible="1" />
+                <button
+                    name="action_trip_open_scan"
+                    type="object"
+                    string="Scan"
+                    icon="fa-barcode"
+                    invisible="not date_loaded or balance_state in ('balanced', 'difference')" />
+                <button
+                    name="action_trip_new_incident"
+                    type="object"
+                    string="Report Incident"
+                    invisible="not date_departure or date_return" />
+                <button
+                    name="action_trip_open_handover"
+                    type="object"
+                    string="Hand Load Over"
+                    groups="stock.group_stock_user"
+                    invisible="not date_departure or date_return" />
+                <button
+                    name="action_trip_open_unload"
+                    type="object"
+                    string="Unloading"
+                    invisible="not unload_picking_id" />
+                <button
+                    name="action_trip_verify_log"
+                    type="object"
+                    string="Verify Log"
+                    invisible="not trip_checkpoint_ids" />
+            </xpath>
+            <!-- stock_fleet's "Weight" is what the deliveries still on the trip
+                weigh against the vehicle's capacity: it drops when goods are
+                rejected, written off, not delivered or handed over, so it is
+                named apart from the weight at departure. -->
+            <xpath expr="//label[@for='used_weight_percentage']" position="attributes">
+                <attribute name="string">Weight of the Deliveries</attribute>
+            </xpath>
+            <field name="odometer_departure" position="attributes">
+                <attribute name="readonly">date_departure</attribute>
+            </field>
+            <field name="date_departure" position="before">
+                <field name="date_loaded" invisible="not date_loaded" />
+                <field name="weight_departure" invisible="not date_loaded" />
+                <field
+                    name="weight_on_board"
+                    invisible="not date_loaded or balance_state" />
+                <field name="has_trip_trace" invisible="1" />
+                <field
+                    name="fuel_unit"
+                    invisible="not has_trip_trace"
+                    readonly="date_departure" />
+                <field
+                    name="fuel_departure"
+                    invisible="not has_trip_trace"
+                    readonly="date_departure" />
+            </field>
+            <field name="date_return" position="after">
+                <field
+                    name="fuel_return"
+                    invisible="not has_trip_trace"
+                    readonly="date_return" />
+                <field
+                    name="balance_state"
+                    widget="badge"
+                    invisible="not balance_state"
+                    decoration-danger="balance_state == 'difference'"
+                    decoration-info="balance_state == 'pending'"
+                    decoration-success="balance_state == 'balanced'" />
+                <field name="unload_picking_id" invisible="not unload_picking_id" />
+                <field
+                    name="handover_from_batch_id"
+                    invisible="not handover_from_batch_id" />
+            </field>
+            <xpath expr="//notebook" position="inside">
+                <page
+                    name="trip_checkpoints"
+                    string="Checkpoints"
+                    invisible="not trip_checkpoint_ids">
+                    <field name="trip_checkpoint_ids" readonly="1">
+                        <list create="0" delete="0">
+                            <field name="sequence" />
+                            <field name="date" />
+                            <field name="event_type" />
+                            <field name="picking_id" optional="show" />
+                            <field name="product_id" optional="show" />
+                            <field name="trace_id" optional="hide" />
+                            <field name="quantity" optional="show" />
+                            <field name="reason_id" optional="show" />
+                            <field name="odometer" optional="hide" />
+                            <field name="fuel_level" optional="hide" />
+                            <field name="weight_on_board" optional="show" />
+                            <field name="method" optional="hide" />
+                            <field name="verified" optional="hide" />
+                            <field name="user_id" optional="show" />
+                            <field name="note" optional="hide" />
+                        </list>
+                    </field>
+                </page>
+                <page name="trip_scans" string="Scans" invisible="not trip_scan_ids">
+                    <field name="trip_scan_ids" readonly="1">
+                        <list create="0" delete="0">
+                            <field name="date" />
+                            <field name="kind" />
+                            <field name="code" />
+                            <field name="picking_id" />
+                            <field name="product_id" />
+                            <field name="trace_id" />
+                            <field name="quantity" />
+                            <field name="user_id" />
+                        </list>
+                    </field>
+                </page>
+                <page
+                    name="trip_incidents"
+                    string="Incidents"
+                    invisible="not trip_incident_ids">
+                    <field name="trip_incident_ids" readonly="1">
+                        <list create="0" delete="0">
+                            <field name="name" />
+                            <field name="date" />
+                            <field name="incident_type" />
+                            <field name="description" />
+                            <field
+                                name="state"
+                                widget="badge"
+                                decoration-success="state == 'approved'"
+                                decoration-warning="state == 'reported'" />
+                        </list>
+                    </field>
+                </page>
+                <page
+                    name="trip_balance"
+                    string="Balance"
+                    invisible="not trip_balance_ids and not date_return">
+                    <button
+                        name="action_trip_compute_balance"
+                        type="object"
+                        string="Recompute"
+                        class="btn-link" />
+                    <field name="trip_balance_ids" readonly="1">
+                        <list
+                            create="0"
+                            delete="0"
+                            decoration-danger="qty_difference &lt; 0"
+                            decoration-warning="qty_difference &gt; 0">
+                            <!-- What explains a difference fits the screen: the
+                                columns that close it come first, narrow. -->
+                            <field name="product_id" width="160px" />
+                            <field name="trace_id" width="100px" />
+                            <field name="qty_loaded" sum="Total" />
+                            <field name="qty_received" optional="hide" sum="Total" />
+                            <field name="qty_delivered" sum="Total" />
+                            <field name="qty_written_off" sum="Total" />
+                            <field name="qty_handed_over" optional="show" sum="Total" />
+                            <field name="qty_returned" sum="Total" />
+                            <field name="qty_difference" sum="Total" />
+                            <field name="qty_expected" optional="hide" sum="Total" />
+                            <field name="uom_id" groups="uom.group_uom" />
+                        </list>
+                    </field>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="stock_picking_batch_form_driver_trace" model="ir.ui.view">
+        <field name="name">stock.picking.batch.form.driver.trace</field>
+        <field name="model">stock.picking.batch</field>
+        <field name="inherit_id" ref="stock_fleet.stock_picking_batch_form_driver" />
+        <field name="arch" type="xml">
+            <xpath expr="//header/button[@name='action_return']" position="before">
+                <button
+                    name="action_trip_open_scan"
+                    type="object"
+                    string="Scan"
+                    icon="fa-barcode"
+                    invisible="not date_loaded or date_return"
+                    class="btn-primary" />
+                <button
+                    name="action_trip_new_incident"
+                    type="object"
+                    string="Report Incident"
+                    invisible="not date_departure or date_return" />
+                <button
+                    name="action_trip_open_driver_screen"
+                    type="object"
+                    string="Driver Screen"
+                    icon="fa-mobile"
+                    invisible="not has_trip_trace or date_return" />
+            </xpath>
+            <xpath expr="//header/field[@name='trip_state']" position="attributes">
+                <attribute name="statusbar_visible">planned,loaded,in_transit,returned,closed</attribute>
+            </xpath>
+            <xpath expr="//header" position="after">
+                <div
+                    class="alert alert-info mb-0"
+                    role="status"
+                    invisible="trip_state != 'planned' or not has_trip_trace">
+                    The warehouse has not loaded this trip yet: wait until the goods are on the vehicle.
+                </div>
+            </xpath>
+            <xpath expr="//div[field[@name='odometer_return']]" position="after">
+                <field name="has_trip_trace" invisible="1" />
+                <field
+                    name="fuel_return"
+                    invisible="not has_trip_trace"
+                    readonly="date_return" />
+            </xpath>
+            <xpath
+                expr="//field[@name='picking_ids']/list/field[@name='partner_id']"
+                position="after">
+                <field name="trip_arrival_date" optional="show" />
+                <field name="trip_delivery_result" optional="show" />
+                <field name="trip_receiver_name" optional="show" />
+                <field name="signature" column_invisible="1" />
+            </xpath>
+            <xpath
+                expr="//field[@name='picking_ids']/list/button[@name='action_deliver']"
+                position="before">
+                <button
+                    name="action_trip_view_signature"
+                    type="object"
+                    string="View Signature"
+                    icon="fa-pencil-square-o"
+                    invisible="not signature and not trip_receiver_name" />
+                <button
+                    name="action_trip_arrived"
+                    type="object"
+                    string="Arrived"
+                    icon="fa-map-marker"
+                    invisible="state != 'assigned' or not parent.date_departure or trip_arrival_date"
+                    class="btn-outline-primary" />
+                <button
+                    name="action_trip_stop_result"
+                    type="object"
+                    string="Partial"
+                    icon="fa-balance-scale"
+                    invisible="state != 'assigned' or not parent.date_departure"
+                    class="btn-outline-warning" />
+            </xpath>
+        </field>
+    </record>
+
+    <record id="stock_picking_batch_tree_trace" model="ir.ui.view">
+        <field name="name">stock.picking.batch.list.trace</field>
+        <field name="model">stock.picking.batch</field>
+        <field name="inherit_id" ref="stock_fleet.stock_picking_batch_tree_trip" />
+        <field name="arch" type="xml">
+            <field name="date_return" position="after">
+                <field name="weight_departure" optional="hide" />
+                <field name="balance_state" widget="badge" optional="show" />
+            </field>
+        </field>
+    </record>
+
+    <record id="stock_picking_batch_filter_trace" model="ir.ui.view">
+        <field name="name">stock.picking.batch.filter.trace</field>
+        <field name="model">stock.picking.batch</field>
+        <field name="inherit_id" ref="stock_fleet.stock_picking_batch_filter_trip" />
+        <field name="arch" type="xml">
+            <xpath expr="//filter[@name='trip_in_transit']" position="after">
+                <filter
+                    name="trip_with_difference"
+                    string="Does Not Balance"
+                    domain="[('balance_state', '=', 'difference')]" />
+                <filter
+                    name="trip_returned"
+                    string="Unloading Pending"
+                    domain="[('trip_state', '=', 'returned')]" />
+            </xpath>
+        </field>
+    </record>
+
+    <!-- A loaded trip, and one back waiting for its unloading, are still the driver's. -->
+    <record id="stock_fleet.action_my_trips" model="ir.actions.act_window">
+        <field
+            name="domain">[('operator_id.user_id', '=', uid), ('trip_state', 'in', ('planned', 'loaded', 'in_transit', 'returned'))]</field>
+    </record>
+
+    <!-- What each delivery weighs to ship, with the list's total (stock_fleet's column). -->
+    <record id="stock_picking_view_batch_tree_trace" model="ir.ui.view">
+        <field name="name">stock.picking.batch.tree.trace</field>
+        <field name="model">stock.picking</field>
+        <field
+            name="inherit_id"
+            ref="stock_picking_batch.stock_picking_view_batch_tree_ref" />
+        <field name="arch" type="xml">
+            <xpath
+                expr="//field[@name='shipping_volume']/preceding-sibling::field[1][@name='shipping_weight']"
+                position="attributes">
+                <attribute name="optional">show</attribute>
+            </xpath>
+            <xpath expr="//list" position="inside">
+                <!-- No column_invisible on parent: the same list opens on its own
+                    in the "add transfers" dialog, where there is no parent. -->
+                <field name="trip_delivery_result" optional="show" />
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

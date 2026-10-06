@@ -1,0 +1,496 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# * stock
+#
+# Translators:
+# Martin Trigaux, 2022
+# Олеся Шевчук, 2023
+# Alina Lisnenko <alina.lisnenko@erp.co.ua>, 2023
+# "Tiffany Chang (tic)" <tic@odoo.com>, 2025.
+# Weblate <noreply-mt-weblate@weblate.org>, 2025.
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 16.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-02-06 18:35+0000\n"
+"PO-Revision-Date: 2025-11-08 21:57+0000\n"
+"Last-Translator: Weblate <noreply-mt-weblate@weblate.org>\n"
+"Language-Team: Ukrainian <https://translate.odoo.com/projects/odoo-19/stock/uk/>\n"
+"Language: uk\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: nplurals=4; plural=(n % 1 == 0 && n % 10 == 1 && n % 100 != 11 ? 0 : n % 1 == 0 && n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 12 || n % 100 > 14) ? 1 : n % 1 == 0 && (n % 10 ==0 || (n % 10 >=5 && n % 10 <=9) || (n % 100 >=11 && n % 100 <=14 )) ? 2: 3);\n"
+"X-Generator: Weblate 5.12.2\n"
+
+#. module: product_trace
+#: model:ir.model.fields,help:product_trace.field_product_product__serial_prefix_format
+#: model:ir.model.fields,help:product_trace.field_product_template__serial_prefix_format
+msgid ""
+"\n"
+"            If multiple products share the same prefix, they will share the same sequence, otherwise the sequence will be dedicated to the product.\n"
+"\n"
+"            * Legend (for prefix):\n"
+"            - Current Year with Century: %(year)s\n"
+"            - Current Year without Century: %(y)s\n"
+"            - Month: %(month)s\n"
+"            - Day: %(day)s\n"
+"            - Day of the Year: %(doy)s\n"
+"            - Week of the Year: %(woy)s\n"
+"            - Day of the Week (0:Monday): %(weekday)s\n"
+"            - Hour 00->24: %(h24)s\n"
+"            - Hour 00->12: %(h12)s\n"
+"            - Minute: %(min)s\n"
+"            - Second: %(sec)s\n"
+"        "
+msgstr ""
+
+#. module: product_trace
+#. odoo-python
+#: code:addons/product_trace/models/product_trace.py:0
+msgid " - Product: %(product)s, Lot/Serial Number: %(lot)s"
+msgstr ""
+
+#. module: product_trace
+#. odoo-python
+#: code:addons/product_trace/models/product_trace.py:0
+msgid "(copy of) %s"
+msgstr "(копія) %s"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__message_needaction
+msgid "Action Needed"
+msgstr "Необхідна дія"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__active
+msgid "Active"
+msgstr "Активно"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__activity_ids
+msgid "Activities"
+msgstr "Дії"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__activity_exception_decoration
+msgid "Activity Exception Decoration"
+msgstr "Оформлення виключення дії"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__activity_state
+msgid "Activity State"
+msgstr "Стан дії"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__activity_type_icon
+msgid "Activity Type Icon"
+msgstr "Іконка типу дії"
+
+#. module: product_trace
+#: model_terms:ir.ui.view,arch_db:product_trace.view_product_trace_form
+msgid "Add an internal note"
+msgstr ""
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__message_attachment_count
+msgid "Attachment Count"
+msgstr "Підрахунок прикріплення"
+
+#. module: product_trace
+#: model:ir.model.fields.selection,name:product_trace.selection__product_template__tracking__lot
+msgid "By Lots"
+msgstr "За партіями"
+
+#. module: product_trace
+#: model:ir.model.fields.selection,name:product_trace.selection__product_template__tracking__none
+msgid "By Quantity"
+msgstr "За кількістю"
+
+#. module: product_trace
+#: model:ir.model.fields.selection,name:product_trace.selection__product_template__tracking__serial
+msgid "By Unique Serial Number"
+msgstr "За унікальним серійним номером"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__company_id
+#: model_terms:ir.ui.view,arch_db:product_trace.view_product_trace_search
+msgid "Company"
+msgstr "Компанія"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__create_uid
+msgid "Created by"
+msgstr "Створив"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__create_date
+msgid "Created on"
+msgstr "Створено"
+
+#. module: product_trace
+#: model_terms:ir.ui.view,arch_db:product_trace.view_product_trace_search
+msgid "Creation Date"
+msgstr "Дата створення"
+
+#. module: product_trace
+#: model_terms:ir.ui.view,arch_db:product_trace.view_product_trace_search
+msgid "Creation date"
+msgstr "Дата створення"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_product__serial_prefix_format
+#: model:ir.model.fields,field_description:product_trace.field_product_template__serial_prefix_format
+msgid "Custom Lot/Serial"
+msgstr ""
+
+#. module: product_trace
+#: model:ir.model.fields,help:product_trace.field_product_trace__product_uom_id
+msgid "Default unit of measure used for all stock operations."
+msgstr ""
+"Стандартна одиниця вимірювання, що використовується для всіх складських "
+"операцій."
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__note
+#: model_terms:ir.ui.view,arch_db:product_trace.view_product_trace_form
+msgid "Description"
+msgstr "Опис"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__display_complete
+msgid "Display Complete"
+msgstr "Відобразити завершене"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_product__display_name
+#: model:ir.model.fields,field_description:product_trace.field_product_template__display_name
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__display_name
+msgid "Display Name"
+msgstr "Назва для відображення"
+
+#. module: product_trace
+#: model:ir.model.fields,help:product_trace.field_product_product__tracking
+#: model:ir.model.fields,help:product_trace.field_product_template__tracking
+msgid "Ensure the traceability of a storable product in your warehouse."
+msgstr "Забезпечення відстеження товару, що зберігається, на вашому складі."
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__message_follower_ids
+msgid "Followers"
+msgstr "Підписники"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__message_partner_ids
+msgid "Followers (Partners)"
+msgstr "Підписники (Партнери)"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__has_message
+msgid "Has Message"
+msgstr "Є повідомлення"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_product__id
+#: model:ir.model.fields,field_description:product_trace.field_product_template__id
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__id
+msgid "ID"
+msgstr "ID"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__activity_exception_icon
+msgid "Icon"
+msgstr "Значок"
+
+#. module: product_trace
+#: model:ir.model.fields,help:product_trace.field_product_trace__activity_exception_icon
+msgid "Icon to indicate an exception activity."
+msgstr "Іконка для визначення виключення дії."
+
+#. module: product_trace
+#: model:ir.model.fields,help:product_trace.field_product_trace__message_needaction
+msgid "If checked, new messages require your attention."
+msgstr "Якщо позначено, то нові повідомлення будуть потребувати вашої уваги."
+
+#. module: product_trace
+#: model:ir.model.fields,help:product_trace.field_product_trace__message_has_error
+msgid "If checked, some messages have a delivery error."
+msgstr "Якщо позначено, деякі повідомлення мають помилку доставки."
+
+#. module: product_trace
+#: model_terms:ir.ui.view,arch_db:product_trace.view_product_trace_form
+msgid "Information"
+msgstr "Інформація"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__ref
+msgid "Internal Reference"
+msgstr "Внутрішні посилання"
+
+#. module: product_trace
+#: model:ir.model.fields,help:product_trace.field_product_trace__ref
+msgid ""
+"Internal reference number in case it differs from the manufacturer's "
+"lot/serial number"
+msgstr ""
+"Внутрішній номер, якщо він відрізняється від партії/серійного номера "
+"виробника"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__message_is_follower
+msgid "Is Follower"
+msgstr "Стежить"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__write_uid
+msgid "Last Updated by"
+msgstr "Востаннє оновив"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__write_date
+msgid "Last Updated on"
+msgstr "Останнє оновлення"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_product__lot_properties_definition
+msgid "Lot Properties"
+msgstr "Властивості партії"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_product__lot_name_format
+#: model:ir.model.fields,field_description:product_trace.field_product_template__lot_name_format
+msgid "Lot/Serial Name Format"
+msgstr ""
+
+#. module: product_trace
+#: model:ir.model,name:product_trace.model_product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__name
+#: model_terms:ir.ui.view,arch_db:product_trace.view_product_trace_search
+msgid "Lot/Serial Number"
+msgstr "Партія/серійний номер"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_product__trace_ids
+msgid "Lot/Serial Numbers"
+msgstr "Партія/Серійний номер"
+
+#. module: product_trace
+#: model_terms:ir.ui.view,arch_db:product_trace.view_product_trace_form
+#: model_terms:ir.ui.view,arch_db:product_trace.view_product_trace_list
+msgid "Lots/Serial Numbers"
+msgstr "Партії/серійні номери"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__message_has_error
+msgid "Message Delivery error"
+msgstr "Помилка доставлення повідомлення"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__message_ids
+msgid "Messages"
+msgstr "Повідомлення"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__my_activity_date_deadline
+msgid "My Activity Deadline"
+msgstr "Дедлайн моєї дії"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__activity_date_deadline
+msgid "Next Activity Deadline"
+msgstr "Дедлайн наступної дії"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__activity_summary
+msgid "Next Activity Summary"
+msgstr "Підсумок наступної дії"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__activity_type_id
+msgid "Next Activity Type"
+msgstr "Тип наступної дії"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_product__next_serial
+#: model:ir.model.fields,field_description:product_trace.field_product_template__next_serial
+msgid "Next Serial"
+msgstr ""
+
+#. module: product_trace
+#. odoo-python
+#: code:addons/product_trace/models/product_trace.py:0
+msgid ""
+"No sequence can name a lot for %(product)s. Set a Serial/Lot Numbers "
+"Sequence on the product, or restore the default one."
+msgstr ""
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__message_needaction_counter
+msgid "Number of Actions"
+msgstr "Кількість дій"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__message_has_error_counter
+msgid "Number of errors"
+msgstr "Кількість помилок"
+
+#. module: product_trace
+#: model:ir.model.fields,help:product_trace.field_product_trace__message_needaction_counter
+msgid "Number of messages requiring action"
+msgstr "Кількість повідомлень, які вимагають дії"
+
+#. module: product_trace
+#: model:ir.model.fields,help:product_trace.field_product_trace__message_has_error_counter
+msgid "Number of messages with delivery error"
+msgstr "Кількість повідомлень з помилковою дставкою"
+
+#. module: product_trace
+#: model_terms:ir.ui.view,arch_db:product_trace.view_product_trace_form
+msgid "Other Info"
+msgstr ""
+
+#. module: product_trace
+#: model:ir.model,name:product_trace.model_product_template
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__product_id
+#: model_terms:ir.ui.view,arch_db:product_trace.view_product_trace_search
+msgid "Product"
+msgstr "Товар"
+
+#. module: product_trace
+#: model_terms:ir.ui.view,arch_db:product_trace.view_product_trace_search
+msgid "Product Lots Filter"
+msgstr "Фільтр партій"
+
+#. module: product_trace
+#: model:ir.model,name:product_trace.model_product_product
+msgid "Product Variant"
+msgstr "Варіант товару"
+
+#. module: product_trace
+#: model_terms:ir.ui.view,arch_db:product_trace.view_product_trace_form
+msgid ""
+"Product this lot/serial number contains. You cannot change it anymore if it "
+"has already been moved."
+msgstr ""
+"Товар містить цю партію/серійний номер. Ви більше не можете змінити його, "
+"якщо вона вже переміщена."
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__lot_properties
+#: model_terms:ir.ui.view,arch_db:product_trace.view_product_trace_search
+msgid "Properties"
+msgstr "Властивості"
+
+#. module: product_trace
+#: model_terms:ir.ui.view,arch_db:product_trace.view_product_trace_form
+msgid "Reference"
+msgstr "Референс"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__activity_user_id
+msgid "Responsible User"
+msgstr "Відповідальний користувач"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_product__lot_sequence_id
+#: model:ir.model.fields,field_description:product_trace.field_product_template__lot_sequence_id
+msgid "Serial/Lot Numbers Sequence"
+msgstr ""
+
+#. module: product_trace
+#: model:ir.model.fields,help:product_trace.field_product_product__lot_name_format
+#: model:ir.model.fields,help:product_trace.field_product_template__lot_name_format
+msgid ""
+"Shape this product's lot/serial names take, in the same placeholder form as a sequence prefix (%(year)s, %(month)s, %(day)s, ...) plus the mandatory %(ref)s: the manufacturer's lot number, or the next number of the lot sequence when there is none.\n"
+"Set it when the name has to carry information — a manufacturing date, a supplier's own lot number — rather than just be unique. Left empty, names are drawn from the sequence as usual."
+msgstr ""
+
+#. module: product_trace
+#: model:ir.model.fields,help:product_trace.field_product_trace__activity_state
+msgid ""
+"Status based on activities\n"
+"Overdue: Due date is already passed\n"
+"Today: Activity date is today\n"
+"Planned: Future activities."
+msgstr ""
+"Етап заснований на діях\n"
+"Протерміновано: термін виконання вже минув\n"
+"Сьогодні: дата дії сьогодні\n"
+"Заплановано: майбутні дії."
+
+#. module: product_trace
+#: model:ir.model.fields,help:product_trace.field_product_product__lot_sequence_id
+#: model:ir.model.fields,help:product_trace.field_product_template__lot_sequence_id
+msgid ""
+"Technical Field: The Ir.Sequence record that is used to generate serial/lot "
+"numbers for this product"
+msgstr ""
+
+#. module: product_trace
+#. odoo-python
+#: code:addons/product_trace/models/product_template.py:0
+msgid ""
+"The Lot/Serial Name Format of %(product)s must contain %%(ref)s: it is what "
+"keeps the names apart, the manufacturer's lot number or, without one, the "
+"next number of the lot sequence."
+msgstr ""
+
+#. module: product_trace
+#. odoo-python
+#: code:addons/product_trace/models/product_trace.py:0
+msgid ""
+"The Lot/Serial Name Format on %(product)s cannot be used: %(error)s.\n"
+"Expected placeholders are %(placeholders)s."
+msgstr ""
+
+#. module: product_trace
+#. odoo-python
+#: code:addons/product_trace/models/product_trace.py:0
+msgid ""
+"The combination of lot/serial number and product must be unique within a company including when no company is defined.\n"
+"The following combinations contain duplicates:\n"
+"%(error_lines)s"
+msgstr ""
+
+#. module: product_trace
+#: model:ir.model.constraint,message:product_trace.constraint_product_trace_name_product_company_uniq
+msgid ""
+"The combination of lot/serial number and product must be unique within a "
+"company."
+msgstr ""
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_product__tracking
+#: model:ir.model.fields,field_description:product_trace.field_product_template__tracking
+msgid "Tracking"
+msgstr "Відстеження"
+
+#. module: product_trace
+#: model:ir.model.fields,help:product_trace.field_product_trace__activity_exception_decoration
+msgid "Type of the exception activity on record."
+msgstr "Тип дії виключення на записі."
+
+#. module: product_trace
+#: model:ir.model.fields,help:product_trace.field_product_trace__name
+msgid "Unique Lot/Serial Number"
+msgstr "Унікальна партія/Серійний номер"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__product_uom_id
+msgid "Unit"
+msgstr "Одиниці"
+
+#. module: product_trace
+#: model_terms:ir.ui.view,arch_db:product_trace.view_product_trace_form
+msgid "Visible to all"
+msgstr ""
+
+#. module: product_trace
+#: model_terms:ir.ui.view,arch_db:product_trace.view_product_trace_form
+msgid "Visible to all coompanies"
+msgstr ""
+
+#. module: product_trace
+#: model_terms:ir.ui.view,arch_db:product_trace.view_product_trace_form
+msgid "e.g. LOT/0001/20121"
+msgstr "напр. LOT/0001/20121"

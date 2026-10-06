@@ -1,0 +1,190 @@
+/** @odoo-module native */
+import { Component, onMounted, onWillDestroy, proxy, useProps } from "@odoo/owl";
+import { usePos } from "@point_of_sale/app/hooks/pos_hook";
+import { now, serializeDateTime } from "@web/core/l10n/dates";
+import { _t } from "@web/core/translation";
+import { elementRef } from "@web/core/utils/element_ref";
+import { useBus, useService } from "@web/core/utils/hooks";
+import { useLayoutEffect } from "@web/core/utils/layout_effect";
+import { ConfirmationDialog } from "@web/ui/dialog";
+
+import { downloadPosLogs } from "../pretty_console_log.js";
+
+export class DebugWidget extends Component {
+    static template = "point_of_sale.DebugWidget";
+    static props = {};
+    props = useProps(this.constructor.props);
+
+    setup() {
+        this.pos = usePos();
+        this.barcodeReader = useService("barcode_reader");
+        this.hardwareProxy = useService("hardware_proxy");
+        this.notification = useService("notification");
+        this.numberBuffer = useService("number_buffer");
+        this.dialog = useService("dialog");
+        this.importOrderInput = elementRef();
+        this.state = proxy({
+            isOpen: false,
+            barcodeInput: "",
+            weightInput: "",
+            buffer: this.numberBuffer.get(),
+            device_identifier: this.pos.device.data.device_identifier,
+            next_number: this.pos.device.data.next_number,
+            unsynced_number_stack: JSON.stringify(
+                this.pos.device?.data?.unsynced_number_stack || [],
+            ),
+        });
+
+        useBus(this.numberBuffer, "buffer-update", this._onBufferUpdate.bind(this));
+        onMounted(() => {
+            if (!this.importOrderInput || !this.importOrderInput.el) {
+                return;
+            }
+
+            this.importOrderInput.el.addEventListener(
+                "click",
+                this.handleFileOrderImport,
+            );
+        });
+        onWillDestroy(() => {
+            if (this.importOrderInput?.el) {
+                this.importOrderInput.el.removeEventListener(
+                    "click",
+                    this.handleFileOrderImport,
+                );
+            }
+        });
+
+        useLayoutEffect(
+            (isOpen) => {
+                if (!isOpen) {
+                    return;
+                }
+
+                const interval = setInterval(() => {
+                    this.state.next_number = this.pos.device?.data?.next_number;
+                    this.state.unsynced_number_stack = JSON.stringify(
+                        this.pos.device?.data?.unsynced_number_stack || [],
+                    );
+                }, 500);
+
+                return () => clearInterval(interval);
+            },
+            () => [this.state.isOpen],
+        );
+    }
+    get isDisabled() {
+        return this.pos.cashierIsMinimal;
+    }
+    disableDebugMode() {
+        const url = new URL(window.location.href);
+        url.searchParams.delete("debug");
+        window.history.replaceState({}, document.title, url);
+        window.location.reload();
+    }
+    handleFileOrderImport() {
+        document.getElementById("import-order-input").click();
+    }
+    toggleWidget() {
+        this.state.isOpen = !this.state.isOpen;
+    }
+    async barcodeScan() {
+        if (!this.barcodeReader) {
+            return;
+        }
+        await this.barcodeReader.scan(this.state.barcodeInput);
+    }
+    async barcodeScanEAN() {
+        if (!this.barcodeReader) {
+            return;
+        }
+        const ean = this.barcodeReader.parser.normalizeEan(
+            this.state.barcodeInput || "0",
+        );
+        this.state.barcodeInput = ean;
+        await this.barcodeReader.scan(ean);
+    }
+    _createBlob(contents) {
+        if (typeof contents !== "string") {
+            contents = JSON.stringify(contents, null, 2);
+        }
+        return new Blob([contents]);
+    }
+    removeOrders({ paid = true } = {}) {
+        this.dialog.add(ConfirmationDialog, {
+            title: _t("Delete Orders?"),
+            body: paid
+                ? _t(
+                      "This operation will destroy all paid orders in the browser. You will lose all the data. This operation cannot be undone.",
+                  )
+                : _t(
+                      "This operation will destroy all unpaid orders in the browser. You will lose all the data. This operation cannot be undone.",
+                  ),
+            confirm: () => {
+                for (const entry of this.pos.data.network.unsyncData) {
+                    this.pos.data._unpersistQueueEntry(entry.uuid);
+                }
+                this.pos.data.network.unsyncData = [];
+                const orders = this.pos.models["pos.order"].filter(
+                    (order) => order.finalized === paid,
+                );
+
+                for (const order of orders) {
+                    this.pos.data.localDeleteCascade(order, !paid);
+                }
+
+                if (!this.pos.getOrder()) {
+                    return this.pos.addNewOrder();
+                }
+            },
+        });
+    }
+
+    deleteAllIndexedDB() {
+        if (!window.indexedDB || !window.indexedDB.databases) {
+            console.warn("IndexedDB is not supported in this browser.");
+            return;
+        }
+
+        window.indexedDB.databases().then((r) => {
+            for (let i = 0; i < r.length; i++) {
+                window.indexedDB.deleteDatabase(r[i].name);
+            }
+        });
+    }
+
+    async exportData() {
+        const data = await this.pos.data.syncLocalDataInIndexedDB();
+        const blob = this._createBlob(data);
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        const fileName = `pos_data${serializeDateTime(now()).replace(/:|\s/gi, "-")}.json`;
+        a.href = url;
+        a.download = fileName;
+        a.click();
+    }
+    async importData(event) {
+        const file = event.target.files[0];
+        if (file) {
+            try {
+                const jsonData = JSON.parse(await file.text());
+                await this.pos.data.getLocalDataFromIndexedDB(jsonData);
+            } catch (error) {
+                console.warn("An error occured during import", error);
+            }
+        }
+    }
+
+    refreshDisplay() {
+        this.hardwareProxy.message("display_refresh", {});
+    }
+    async downloadLogs() {
+        await downloadPosLogs();
+    }
+    _onBufferUpdate({ detail: value }) {
+        this.state.buffer = value;
+    }
+    get bufferRepr() {
+        return `"${this.state.buffer}"`;
+    }
+}

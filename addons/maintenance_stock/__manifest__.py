@@ -1,0 +1,25 @@
+{
+    "name": "Maintenance Stock Transfers",
+    "version": "1.1",
+    "oldest_upgradable_version": "1.1",
+    "category": "Hidden",
+    "summary": "Transfer assets and parts for maintenance orders",
+    "description": "Adds maintenance and return operation types, links transfers to maintenance orders and provides a wizard to send selected lots between locations.",
+    "author": "AgroMarin",
+    "license": "LGPL-3",
+    "depends": [
+        "maintenance",
+        "resource_asset_stock",
+    ],
+    "data": [
+        "security/ir.access.csv",
+        "views/stock_warehouse_views.xml",
+        "views/stock_picking_views.xml",
+        "views/resource_asset_part_views.xml",
+        "views/maintenance_order_views.xml",
+        "views/maintenance_order_transfer_views.xml",
+        "wizards/wizard_maintenance_order_create_transfer_views.xml",
+    ],
+    "auto_install": True,
+    "post_init_hook": "_create_warehouse_data",
+}

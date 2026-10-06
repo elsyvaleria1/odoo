@@ -1,0 +1,8 @@
+id,name,model_id/id,group_id/id,kind,operation,reach,anchor,domain
+access_lazada_shop,access.lazada.shop,model_lazada_shop,sale.group_sale_manager,permission,crud,,,
+access_lazada_shop_create_wizard,access.lazada.shop.create.wizard,model_wizard_lazada_shop_create,sale.group_sale_manager,permission,crud,,,
+access_lazada_item,access.lazada.item,model_lazada_item,sale.group_sale_manager,permission,crud,,,
+access_lazada_order_item,access.lazada.order.item,model_lazada_order_item,sale.group_sale_manager,permission,cud,,,
+access_lazada_order_item_salesman,access.lazada.order.item.salesman,model_lazada_order_item,sale.group_sale_salesman,permission,r,,,
+access_lazada_order_item_stock_user,access.lazada.order.item.stock_user,model_lazada_order_item,stock.group_stock_user,permission,r,,,
+lazada_shop_comp_rule,Lazada Shop multi-company,model_lazada_shop,base.group_everyone,guard,crud,company,,

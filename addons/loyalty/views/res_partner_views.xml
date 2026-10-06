@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="res_partner_form" model="ir.ui.view">
+        <field name="name">res.partner.view.buttons</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_form" />
+        <field name="priority" eval="11" />
+        <field name="arch" type="xml">
+            <xpath expr="//div[@name='anchor_buttons_loyalty']" position="before">
+                <button
+                    name="action_view_loyalty_cards"
+                    type="object"
+                    icon="fa-money"
+                    groups="base.group_system"
+                    invisible="loyalty_card_count == 0"
+                    class="oe_stat_button">
+                    <field
+                        name="loyalty_card_count"
+                        string="Loyalty Cards"
+                        widget="statinfo" />
+                </button>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

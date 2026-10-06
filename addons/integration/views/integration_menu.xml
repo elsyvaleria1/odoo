@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <menuitem
+        id="menu_integration_root"
+        name="API Transport"
+        parent="credential.menu_integrations_root"
+        sequence="20" />
+
+    <menuitem
+        id="menu_integration_exchanges"
+        name="Event Logs"
+        parent="menu_integration_root"
+        action="action_integration_exchange"
+        sequence="10" />
+
+    <menuitem
+        id="menu_integration_services"
+        name="Services"
+        parent="menu_integration_root"
+        sequence="20" />
+
+    <menuitem
+        id="menu_integration_service_list"
+        name="API Services"
+        parent="menu_integration_services"
+        action="action_integration_service"
+        sequence="10" />
+
+    <menuitem
+        id="menu_integration_stream_list"
+        name="Streams"
+        parent="menu_integration_services"
+        action="action_integration_stream"
+        sequence="30" />
+
+    <menuitem
+        id="menu_integration_stream_outbox"
+        name="Stream Outbox"
+        parent="menu_integration_services"
+        action="action_integration_stream_outbox"
+        sequence="31"
+        groups="group_api_transport_manager" />
+
+    <menuitem
+        id="menu_integration_config"
+        name="Configuration"
+        parent="menu_integration_root"
+        sequence="90"
+        groups="group_api_transport_manager" />
+
+    <menuitem
+        id="menu_integration_response_cache"
+        name="Response Cache"
+        parent="menu_integration_config"
+        action="action_integration_response_cache"
+        sequence="10" />
+
+    <menuitem
+        id="menu_api_credential_list"
+        name="Credentials"
+        parent="menu_integration_config"
+        action="action_api_credential"
+        sequence="20" />
+
+    <menuitem
+        id="menu_integration_receiver"
+        name="Receivers"
+        parent="menu_integration_config"
+        action="action_integration_receiver"
+        sequence="16" />
+
+    <menuitem
+        id="menu_integration_connection"
+        name="Connections"
+        parent="menu_integration_config"
+        action="action_integration_connection"
+        sequence="15" />
+
+    <menuitem
+        id="menu_integration_security"
+        name="Security &amp; Audit"
+        parent="menu_integration_root"
+        sequence="80"
+        groups="group_api_transport_manager" />
+
+    <menuitem
+        id="menu_api_credential_access_log"
+        name="Access Logs"
+        parent="menu_integration_security"
+        action="action_api_credential_access_log"
+        sequence="10" />
+
+    <menuitem
+        id="menu_api_credential_security_report"
+        name="Security Report"
+        parent="menu_integration_security"
+        action="action_api_credential_security_report"
+        sequence="20" />
+
+    <record id="action_integration_exchange_refused" model="ir.actions.act_window">
+        <field name="name">Refused Calls</field>
+        <field name="res_model">integration.exchange</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_integration_exchange_search" />
+        <field name="domain">[('state', '=', 'refused')]</field>
+        <field name="context">{'search_default_filter_today': 1}</field>
+    </record>
+
+    <menuitem
+        id="menu_inbound_access_logs"
+        name="Refused Calls"
+        parent="credential.menu_credential_root"
+        action="action_integration_exchange_refused"
+        sequence="35"
+        groups="credential.group_credential_admin" />
+
+</odoo>

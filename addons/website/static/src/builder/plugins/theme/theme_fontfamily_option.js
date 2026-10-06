@@ -1,0 +1,52 @@
+/** @odoo-module native */
+import { useBuilderContext } from "@html_builder/core/builder_context";
+import { BuilderButton } from "@html_builder/core/building_blocks/builder_button";
+import { BuilderFontFamilyPicker } from "@html_builder/core/building_blocks/builder_fontfamilypicker";
+import { BaseOptionComponent, useDomState } from "@html_builder/core/utils";
+import { getCSSVariableValue } from "@html_editor/utils/formatting";
+import { t } from "@odoo/owl";
+import { makeLogger } from "@web/core/debug/debug_logger";
+import { useLifecycleLog } from "@web/core/debug/logger_hooks";
+
+const log = makeLogger("website.builder.option.theme_fontfamily");
+
+export class ThemeFontFamilyOption extends BaseOptionComponent {
+    static template = "html_builder.ThemeFontFamilyOption";
+    static props = {
+        cssVariable: t.string(),
+        buttonIcon: t.string(),
+        buttonTitle: t.string(),
+    };
+    static components = {
+        BuilderFontFamilyPicker,
+        BuilderButton,
+    };
+
+    setup() {
+        super.setup();
+        this.builderContext = useBuilderContext();
+        useLifecycleLog(log);
+        const htmlStyle =
+            this.builderContext.editor.document.defaultView.getComputedStyle(
+                this.builderContext.getEditingElement(),
+            );
+        log.logic("setup isFontSpecified source", () => ({
+            cssVariable: this.props.cssVariable,
+            headings: this.props.cssVariable === "headings-font",
+        }));
+        if (this.props.cssVariable === "headings-font") {
+            this.state = useDomState(() => ({
+                isFontSpecified:
+                    getCSSVariableValue("headings-font", htmlStyle) !==
+                    getCSSVariableValue("default-headings-font", htmlStyle),
+            }));
+        } else {
+            this.state = useDomState(() => ({
+                isFontSpecified: !!getCSSVariableValue(
+                    "set-" + this.props.cssVariable,
+                    htmlStyle,
+                ),
+            }));
+        }
+    }
+}

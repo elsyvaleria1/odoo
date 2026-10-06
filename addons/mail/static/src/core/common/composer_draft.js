@@ -1,0 +1,177 @@
+// @ts-check
+/** @odoo-module native */
+import { Component, onMounted, t, useListener, useProps } from "@odoo/owl";
+import { browser } from "@web/core/browser/browser";
+import { makeLogger } from "@web/core/debug/debug_logger";
+import { isHtmlEmpty, isMarkup } from "@web/core/utils/dom/html";
+import { useLayoutEffect } from "@web/core/utils/layout_effect";
+import { useDebounced } from "@web/core/utils/timing";
+import { usePopover } from "@web/ui/popover";
+
+const log = makeLogger("mail.composer.draft");
+
+/**
+ * @typedef {Object} ComposerDraft
+ * @property {string|import("@odoo/owl").Markup|["markup", string]} composerHtml
+ * @property {boolean} emailAddSignature
+ * @property {number | string} [replyToMessageId]
+ * @property {boolean} [fromFullComposer=false]
+ */
+/**
+ * @param {Pick<import("models").Composer, "localId">} composer
+ * @param {Omit<ComposerDraft, "composerHtml"> & {composerHtml: string | import("@odoo/owl").Markup}} draft
+ */
+export function saveComposerDraft(
+    composer,
+    { composerHtml, emailAddSignature, replyToMessageId, fromFullComposer = false },
+) {
+    log.logic("saveComposerDraft", () => ({
+        composer: composer.localId,
+        empty: isHtmlEmpty(composerHtml),
+        replyToMessageId,
+        fromFullComposer,
+    }));
+    if (isHtmlEmpty(composerHtml)) {
+        browser.localStorage.removeItem(composer.localId);
+    } else {
+        browser.localStorage.setItem(
+            composer.localId,
+            JSON.stringify({
+                emailAddSignature,
+                replyToMessageId,
+                composerHtml: isMarkup(composerHtml)
+                    ? ["markup", composerHtml]
+                    : composerHtml,
+                fromFullComposer,
+            }),
+        );
+    }
+}
+
+/**
+ * @param {Pick<import("models").Composer, "localId" | "composerHtml" | "emailAddSignature" | "restoredFromFullComposer"> & {
+ * thread?: {isChannelKind: boolean}, replyToMessage?: {id: number | string},
+ * store: {"mail.message": {insert(id: number): {id: number | string}}}
+ * }} composer
+ */
+export function restoreComposerDraft(composer) {
+    let config;
+    try {
+        config = JSON.parse(browser.localStorage.getItem(composer.localId));
+    } catch {
+        log.logic("restoreComposerDraft discards unparsable draft", () => ({
+            composer: composer.localId,
+        }));
+        browser.localStorage.removeItem(composer.localId);
+    }
+    if (!config) {
+        return;
+    }
+    log.logic("restoreComposerDraft", () => ({
+        composer: composer.localId,
+        empty: isHtmlEmpty(config.composerHtml),
+        replyToMessageId: config.replyToMessageId,
+        fromFullComposer: config.fromFullComposer,
+    }));
+    if (!isHtmlEmpty(config.composerHtml)) {
+        if (composer.thread && !composer.thread.isChannelKind) {
+            composer.restoredFromFullComposer = config.fromFullComposer;
+        }
+        composer.emailAddSignature = config.emailAddSignature;
+        composer.composerHtml = config.composerHtml;
+    }
+    if (Number.isInteger(config.replyToMessageId)) {
+        composer.replyToMessage = composer.store["mail.message"].insert(
+            config.replyToMessageId,
+        );
+    }
+}
+
+/** @param {Pick<import("models").Composer, "localId">} composer */
+export function clearComposerDraft(composer) {
+    browser.localStorage.removeItem(composer.localId);
+}
+
+export class FullComposerRecoveryPopover extends Component {
+    static props = {
+        composer: t.any(),
+        onClickFullRecover: t.any(),
+        onClickTextRecover: t.any(),
+        close: t.any().optional(),
+    };
+    static template = "mail.FullComposerRecoveryPopover";
+    props = useProps(this.constructor.props);
+
+    onClickFullRecover() {
+        this.props.onClickFullRecover();
+        this.props.close();
+    }
+
+    onClickTextRecover() {
+        this.props.onClickTextRecover();
+        this.props.close();
+    }
+}
+
+export function useComposerDraft(comp) {
+    const saveContentDebounced = useDebounced(() => comp.saveContent(), 5000, {
+        execBeforeUnmount: true,
+    });
+    useListener(window, "beforeunload", () => comp.saveContent());
+    useLayoutEffect(
+        () => {
+            saveContentDebounced();
+        },
+        () => [comp.props.composer.composerText, comp.ref.el],
+    );
+    onMounted(() => {
+        if (!comp.props.composer.composerText) {
+            comp.restoreContent();
+        }
+    });
+    const recoveryPopover = usePopover(FullComposerRecoveryPopover, {
+        closeOnClickAway: false,
+        closeOnEscape: false,
+        position: "top-end",
+        class: "dropdown-menu bg-view overflow-visible o-rounded-bubble mx-1",
+    });
+    useLayoutEffect(
+        /**
+         * @param {boolean} isFullComposerOpen
+         * @param {boolean} restoredFromFullComposer
+         * @param {HTMLElement|null} fullComposerButtonEl
+         */
+        (isFullComposerOpen, restoredFromFullComposer, fullComposerButtonEl) => {
+            if (
+                isFullComposerOpen ||
+                !restoredFromFullComposer ||
+                !fullComposerButtonEl
+            ) {
+                recoveryPopover.close();
+                return;
+            }
+            if (recoveryPopover.isOpen) {
+                return;
+            }
+            log.lifecycle("recovery popover open", () => ({
+                composer: comp.props.composer.localId,
+            }));
+            recoveryPopover.open(fullComposerButtonEl, {
+                composer: comp.props.composer,
+                onClickFullRecover: () => {
+                    comp.onClickFullComposer();
+                    comp.props.composer.restoredFromFullComposer = false;
+                },
+                onClickTextRecover: () => {
+                    comp.props.composer.restoredFromFullComposer = false;
+                },
+            });
+        },
+        () => [
+            comp.fullComposer.isOpen,
+            comp.props.composer.restoredFromFullComposer,
+            comp.root.el?.querySelector("button[name='open-full-composer']"),
+        ],
+    );
+    return { recoveryPopover, saveContentDebounced };
+}

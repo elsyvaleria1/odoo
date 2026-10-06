@@ -1,0 +1,5 @@
+id,name,model_id/id,group_id/id,kind,operation,reach,anchor,domain
+phone_call_rule_own,Phone call: users read the calls they are responsible for,model_phone_call,base.group_user,permission,r,own,,
+phone_call_rule_unanswered,Phone call: users read the calls to their company's numbers that nobody answered,model_phone_call,base.group_user,permission,r,,,"[('channel', '=', 'pbx'), ('user_id', '=', False)]"
+phone_call_rule_system,Phone call: administrators manage every call,model_phone_call,base.group_system,permission,crud,,,
+phone_call_rule_company,Phone call: company-scoped,model_phone_call,base.group_everyone,guard,crud,company,,

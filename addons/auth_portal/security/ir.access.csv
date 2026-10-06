@@ -1,0 +1,2 @@
+id,name,model_id/id,group_id/id,kind,operation,domain
+access_auth_totp_wizard_portal,wizard.res.users.enable.totp portal access rules,auth_totp.model_wizard_res_users_enable_totp,base.group_portal,permission,crud,

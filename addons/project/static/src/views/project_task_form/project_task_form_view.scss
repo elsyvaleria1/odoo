@@ -1,0 +1,13 @@
+.o_form_project_tasks .o_form_renderer {
+    .note-editable {
+        border: 0;
+    }
+
+    .o_wysiwyg_resizer {
+        border: 0;
+    }
+
+    .o_form_project_recurrence_message *:last-child {
+        margin-bottom: 0;
+    }
+}

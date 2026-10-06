@@ -1,0 +1,173 @@
+// @ts-check
+/** @odoo-module native */
+
+import { makeContext } from "@web/core/context";
+import { rpc } from "@web/core/network/rpc";
+import { evaluateExpr } from "@web/core/py_js/py";
+import { registry } from "@web/core/registry";
+import { user } from "@web/core/user";
+import { isHtmlEmpty } from "@web/core/utils/dom/html";
+
+import { withMarkupHelp } from "./action_help.js";
+
+const actionRegistry = registry.category("actions");
+
+/** @import { Action, ActionDescription, ActionManager, ActionRequest, Context, Controller } from "./action_service.js" */
+
+/**
+ * @param {string | number} key
+ * @returns {[string, import("registries").ActionsRegistryItemShape] | []}
+ */
+export function resolveClientAction(key) {
+    const registryKey = String(key);
+    if (actionRegistry.contains(registryKey)) {
+        return [registryKey, actionRegistry.get(registryKey)];
+    }
+    return actionRegistry.getEntries().find((entry) => entry[1].path === key) ?? [];
+}
+
+/**
+ * @typedef {{
+ *   offerViews: (request: any, result: any) => void,
+ *   mobile: boolean,
+ *   debug: boolean,
+ * }} ViewsPreload
+ */
+
+/**
+ * @param {ActionRequest} actionRequest
+ * @param {Context} [context]
+ * @param {ViewsPreload} [viewsPreload] when given, an action not in the cache
+ *   is loaded with the views its first view asks for, in the same request
+ * @returns {Promise<Action>}
+ */
+export async function loadAction(actionRequest, context = {}, viewsPreload) {
+    if (typeof actionRequest === "string" && actionRegistry.contains(actionRequest)) {
+        return {
+            target: "current",
+            tag: actionRequest,
+            type: "ir.actions.client",
+        };
+    }
+
+    if (typeof actionRequest === "string" || typeof actionRequest === "number") {
+        const ctx = makeContext([user.context, context]);
+        delete ctx.params;
+        const params = { action_id: actionRequest, context: ctx };
+        // a cached action is only revalidated: asking for its views again would
+        // send them beside the view service's own revalidation
+        const fetch =
+            viewsPreload &&
+            (async (/** @type {boolean | undefined} */ held) => {
+                if (held) {
+                    return rpc("/web/action/load", params, { retry: 1 });
+                }
+                let loaded;
+                try {
+                    loaded = await rpc(
+                        "/web/action/load",
+                        {
+                            ...params,
+                            view_context: context,
+                            view_options: {
+                                mobile: viewsPreload.mobile,
+                                debug: viewsPreload.debug,
+                            },
+                        },
+                        { retry: 1 },
+                    );
+                } catch {
+                    // the plain call, whose failure is the one to report
+                    return rpc("/web/action/load", params, { retry: 1 });
+                }
+                if (
+                    !loaded ||
+                    typeof loaded !== "object" ||
+                    !("views_request" in loaded)
+                ) {
+                    return loaded;
+                }
+                viewsPreload.offerViews(loaded.views_request, loaded.views);
+                return loaded.action;
+            });
+        const action = await rpc("/web/action/load", params, {
+            cache: { type: "disk", ...(fetch && { fetch }) },
+            retry: 1,
+        });
+        return { ...withMarkupHelp(action) };
+    }
+
+    return /** @type {Action} */ (actionRequest);
+}
+
+/**
+ * @param {Partial<Controller> & Record<string, any>} params
+ * @param {ActionManager} am
+ * @returns {Controller & Record<string, any>}
+ */
+export function makeController(params, am) {
+    return /** @type {Controller & Record<string, any>} */ ({
+        ...params,
+        jsId: `controller_${am.nextId()}`,
+        isMounted: false,
+    });
+}
+
+/**
+ * @param {Action} action
+ * @param {Context} context
+ * @param {ActionManager} am
+ * @returns {Action}
+ */
+export function preprocessAction(action, context, am) {
+    action = { ...action };
+    try {
+        delete action._originalAction;
+        action._originalAction = JSON.stringify(action);
+    } catch {}
+    action.context = makeContext([context, action.context], user.context);
+    const domain = action.domain || [];
+    action.domain =
+        typeof domain === "string"
+            ? evaluateExpr(domain, { ...user.context, ...action.context })
+            : domain;
+    if (action.help && isHtmlEmpty(action.help)) {
+        delete action.help;
+    }
+    action.jsId = `action_${am.nextId()}`;
+    if (
+        action.type === "ir.actions.act_window" ||
+        action.type === "ir.actions.client"
+    ) {
+        action.target = action.target || "current";
+    }
+    if (action.type === "ir.actions.act_window") {
+        action.views = /** @type {any[][]} */ (action.views).map(
+            (v) => /** @type {[number | false, string]} */ ([v[0], v[1]]),
+        );
+        action.controllers = {};
+        if (action.views.every((v) => ["form", "search"].includes(v[1]))) {
+            action.views = action.views.filter((v) => v[1] === "form");
+        } else {
+            const searchViewId = action.search_view_id
+                ? action.search_view_id[0]
+                : false;
+            const [declaredSearch] = action.views.filter((v) => v[1] === "search");
+            if (!declaredSearch) {
+                action.views.push([searchViewId, "search"]);
+            } else {
+                if (action.search_view_id) {
+                    declaredSearch[0] = searchViewId;
+                }
+                action.views = action.views.filter(
+                    (v) => v[1] !== "search" || v === declaredSearch,
+                );
+            }
+        }
+        if (action.context && "no_breadcrumbs" in action.context) {
+            action._noBreadcrumbs = action.context.no_breadcrumbs;
+            delete action.context.no_breadcrumbs;
+        }
+    }
+    return action;
+}

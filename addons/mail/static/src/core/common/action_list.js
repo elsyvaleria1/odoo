@@ -1,0 +1,133 @@
+// @ts-check
+/** @odoo-module native */
+import { discussComponentRegistry } from "@mail/core/common/discuss_component_registry";
+import { attClassObjectToString } from "@mail/utils/common/format";
+import { useMailContext } from "@mail/utils/common/mail_context";
+import { Component, onWillUnmount, t, useProps } from "@odoo/owl";
+import { Dropdown, DropdownItem } from "@web/components/dropdown";
+import { useService } from "@web/core/utils/hooks";
+const actionListProps = {
+    inline: t.any().optional(),
+    dropdown: t.any().optional(),
+    fw: t.any().optional(),
+    hasBtnBg: t.any().optional(),
+    odooControlPanelSwitchStyle: t.any().optional(),
+    thread: t.any().optional(),
+};
+
+class Action extends Component {
+    static props = {
+        action: t.any(),
+        group: t.any().optional(),
+        isFirstInGroup: t.any().optional(),
+        isLastInGroup: t.any().optional(),
+        style: t.any().optional(),
+        ...actionListProps,
+        fw: actionListProps.fw.optional(true),
+    };
+    static components = { Action, DropdownItem };
+    static template = "mail.Action";
+    props = useProps(this.constructor.props);
+
+    get ActionList() {
+        return ActionList;
+    }
+
+    get Dropdown() {
+        if (this.mailContext.inDiscussCallView?.isPip) {
+            return discussComponentRegistry.get("CallDropdown", Dropdown);
+        }
+        return Dropdown;
+    }
+
+    setup() {
+        super.setup();
+        this.mailContext = useMailContext();
+        this.store = useService("mail.store");
+        this.ui = useService("ui");
+        this.attClassObjectToString = attClassObjectToString;
+        if (this.props.action.definition?.isMoreAction) {
+            onWillUnmount(() => {
+                this.props.action.dropdownState.close();
+            });
+        }
+    }
+
+    get action() {
+        return this.props.action;
+    }
+
+    get hasBtnBg() {
+        return (
+            this.props.odooControlPanelSwitchStyle ||
+            this.props.hasBtnBg ||
+            this.props.action.hasBtnBg
+        );
+    }
+
+    /**
+     * @param {import("@mail/core/common/action").Action} action
+     * @param {Event} ev
+     */
+    onSelected(action, ev) {
+        action.onSelected?.(ev);
+        this.mailContext.inCallDropdown?.close();
+    }
+}
+
+export class ActionList extends Component {
+    static components = { Action };
+    static props = {
+        actions: t.any(),
+        groupClass: t.any().optional(),
+        ...actionListProps,
+    };
+    static template = "mail.ActionList";
+    props = useProps(this.constructor.props);
+
+    /**
+     * @param {import("@mail/core/common/action").Action} action
+     * @param {import("@mail/core/common/action").Action[]} group
+     * @param {Object} [position]
+     * @param {number} [position.index]
+     * @param {boolean} [position.isFirstInGroup]
+     * @param {boolean} [position.isLastInGroup]
+     * @returns {Object}
+     */
+    getActionProps(action, group, { index, isFirstInGroup, isLastInGroup } = {}) {
+        return {
+            action,
+            group,
+            isFirstInGroup,
+            isLastInGroup,
+            ...Object.fromEntries(
+                Object.keys(actionListProps).map((propName) => [
+                    propName,
+                    this.props[propName],
+                ]),
+            ),
+            style: `z-index: ${group.length - index}`,
+        };
+    }
+
+    setup() {
+        super.setup();
+        this.store = useService("mail.store");
+        this.ui = useService("ui");
+        this.actionListProps = actionListProps;
+    }
+
+    get groups() {
+        let groups;
+        if (this.props.actions.find((i) => Array.isArray(i))) {
+            groups = this.props.actions;
+        } else {
+            groups = [this.props.actions];
+        }
+        return groups.filter((group) => group.length);
+    }
+
+    get hasBtnBg() {
+        return this.props.odooControlPanelSwitchStyle || this.props.hasBtnBg;
+    }
+}

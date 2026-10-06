@@ -1,0 +1,23 @@
+.o-mail-DiscussContent-headerActions button {
+    @media (hover: none) {
+        .fa-phone,
+        .fa-video-camera {
+            color: o-token(--success, $success) !important;
+        }
+    }
+    @media (hover: hover) {
+        &:hover {
+            &:has(.fa-phone),
+            &:has(.fa-video-camera) {
+                background-color: o-palette-token(--o-gray-100, $gray-100) !important;
+                outline: 1px solid o-token-alpha(--success, $success, 0.25);
+            }
+            // the icons by their own class: `button:has(…) i` had every DOM
+            // change of every screen restyle every `<i>` of the page
+            .fa-phone,
+            .fa-video-camera {
+                color: o-token-lighten(--success, $success, 5%) !important;
+            }
+        }
+    }
+}

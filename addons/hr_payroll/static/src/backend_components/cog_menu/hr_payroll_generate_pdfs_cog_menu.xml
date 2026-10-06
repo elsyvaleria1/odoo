@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="hr_payroll.GeneratePdfsCogMenu">
+        <span t-on-mouseenter="this.highlightDraftRecords" t-on-mouseleave="this.unhighlightDraftRecords">
+            <CogMenuItem icon="'fa-solid fa-file-pdf'" description.translate="Generate PDFs" onSelected.bind="this.generatePdfs"/>
+        </span>
+    </t>
+</templates>

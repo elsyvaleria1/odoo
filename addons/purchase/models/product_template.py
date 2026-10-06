@@ -1,0 +1,86 @@
+from odoo import api, fields, models
+
+
+class ProductTemplate(models.Model):
+    _inherit = "product.template"
+    _check_company_auto = True
+
+    bill_policy = fields.Selection(
+        selection=[
+            ("ordered", "On ordered quantities"),
+            ("transferred", "On received quantities"),
+        ],
+        string="Control Policy",
+        compute="_compute_bill_policy",
+        precompute=True,
+        store=True,
+        readonly=False,
+        help="On ordered quantities: Control bills based on ordered quantities.\n"
+        "On received quantities: Control bills based on received quantities.",
+    )
+    purchase_line_warn_msg = fields.Text(string="Message for Purchase Order Line")
+    purchased_product_qty = fields.Float(
+        string="Purchased",
+        digits="Product Unit",
+        compute="_compute_purchased_product_qty",
+    )
+
+    @api.depends("product_variant_ids.purchased_product_qty", "uom_id")
+    def _compute_purchased_product_qty(self) -> None:
+        for template in self.with_context(active_test=False):
+            template.purchased_product_qty = template.uom_id.round(
+                sum(
+                    p.purchased_product_qty
+                    for p in template.with_context(
+                        active_test=False
+                    ).product_variant_ids
+                ),
+            )
+
+    @api.depends("type")
+    def _compute_bill_policy(self) -> None:
+        default_bill_policy = (
+            self.env["product.template"]
+            .default_get(["bill_policy"])
+            .get("bill_policy", "transferred")
+        )
+        for product in self:
+            if product.type == "service":
+                product.bill_policy = "ordered"
+            else:
+                product.bill_policy = default_bill_policy
+
+    def action_view_po(self):
+        action = self.env["ir.actions.actions"]._get_action_dict_by_xml_id(
+            "purchase.action_purchase_history"
+        )
+        action["domain"] = [
+            "&",
+            ("state", "=", "done"),
+            (
+                "product_id",
+                "in",
+                self.with_context(active_test=False).product_variant_ids.ids,
+            ),
+        ]
+        action["display_name"] = self.env._(
+            "Purchase History for %s", self.display_name
+        )
+        return action
+
+    def _get_backend_root_menu_ids(self):
+        return super()._get_backend_root_menu_ids() + [
+            self.env.ref("purchase.menu_purchase_root").id
+        ]
+
+    @api.model
+    def get_import_templates(self):
+        res = super().get_import_templates()
+        if self.env.context.get("purchase_product_template"):
+            return [
+                {
+                    "label": self.env._("Import Template for Products"),
+                    "template": "/purchase/static/xls/product_purchase.xls",
+                },
+            ]
+        return res

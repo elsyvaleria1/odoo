@@ -1,0 +1,30 @@
+.o_snippet_preview_wrap {
+    [data-snippet="s_floating_blocks"] {
+        height: 750px;
+
+        overflow: hidden;
+
+        .s_floating_blocks_block {
+            opacity: 1;
+
+            &:nth-child(1) {
+                transition: all var(--o-duration-slow, 0.3s);
+                margin: 3% 0 -20%;
+                transform-origin: center top;
+                transform: scale(0.98);
+            }
+
+            .s_parallax_bg {
+                background-position: top !important;
+                transform: none !important;
+                inset: 0 !important;
+            }
+        }
+    }
+    &:is(:hover, :focus-visible)
+        [data-snippet="s_floating_blocks"]
+        .s_floating_blocks_block:nth-child(1) {
+        margin: 3% 0 -30%;
+        transform: scale(0.95);
+    }
+}

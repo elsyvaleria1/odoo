@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_hr_payslip_form_inherit_payroll_planning" model="ir.ui.view">
+        <field name="name">hr.payslip.form.inherit.payroll.planning</field>
+        <field name="model">hr.payslip</field>
+        <field name="inherit_id" ref="hr_payroll.view_hr_payslip_form" />
+        <field name="arch" type="xml">
+            <div class="oe_button_box" position="inside">
+                <button
+                    name="action_view_planning_slots"
+                    id="open_slots"
+                    type="object"
+                    icon="fa-tasks"
+                    groups="planning.group_planning_manager"
+                    invisible="planning_slot_count == 0"
+                    class="oe_stat_button">
+                    <field
+                        name="planning_slot_count"
+                        string="Planning"
+                        widget="statinfo" />
+                </button>
+            </div>
+        </field>
+    </record>
+
+</odoo>

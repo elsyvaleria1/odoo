@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_approval_request_form_inherit_telegram" model="ir.ui.view">
+        <field name="name">approval.request.form.inherit.telegram</field>
+        <field name="model">approval.request</field>
+        <field name="inherit_id" ref="approval.view_approval_request_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//notebook" position="inside">
+                <page
+                    name="telegram_details"
+                    string="Telegram Details"
+                    groups="base.group_no_one">
+                    <group string="Telegram Data">
+                        <group>
+                            <field
+                                name="telegram_data_formatted"
+                                nolabel="1"
+                                readonly="1" />
+                        </group>
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

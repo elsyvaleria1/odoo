@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_automation_form_workflow_dag" model="ir.ui.view">
+        <field name="name">automation.rule.form.workflow.dag</field>
+        <field name="model">automation.rule</field>
+        <field name="inherit_id" ref="automation.view_automation_form" />
+        <field name="arch" type="xml">
+
+            <xpath expr="//div[hasclass('oe_title')]" position="after">
+                <group invisible="trigger != 'on_hand'">
+                    <div class="alert alert-info" role="alert">
+                        <h5><i class="fa-regular fa-hand" /> Manual Trigger</h5>
+                        <p class="mb-1">This automation runs only when manually triggered.</p>
+                        <ul class="mb-0">
+                            <li>Select the records on the target model, then run this rule from the
+                                list view's <strong>Actions</strong> menu</li>
+                            <li>Or call <code>action_manual_trigger()</code> with
+                                <code>active_model</code> and <code>active_ids</code> in the context</li>
+                        </ul>
+                        <p class="mb-0 mt-2">
+                            <em>Tip: connect the steps on the <strong>Workflow</strong> tab to
+                                order them, and to branch on success, on error or on an expression.
+                                A manual run records every step, with its outcome, under
+                                Automation Runtimes.</em>
+                        </p>
+                    </div>
+                </group>
+            </xpath>
+
+            <xpath expr="//page[@name='actions']" position="after">
+                <page name="workflow" string="Workflow">
+                    <group>
+                        <field name="create_runtime_instance" />
+                        <field name="run_mode" />
+                        <field name="step_error_policy" />
+                    </group>
+                    <widget name="automation_workflow_canvas" />
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

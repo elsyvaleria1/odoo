@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_picking_type_form_delivery_proof" model="ir.ui.view">
+        <field name="name">stock.picking.type.form.delivery.proof</field>
+        <field name="model">stock.picking.type</field>
+        <field name="inherit_id" ref="stock.view_stock_picking_type_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='auto_batch']" position="before">
+                <field name="delivery_proof_required" invisible="code != 'outgoing'" />
+                <field
+                    name="delivery_paper_days"
+                    invisible="code != 'outgoing' or not delivery_proof_required" />
+                <field
+                    name="delivery_proof_since"
+                    invisible="code != 'outgoing' or not delivery_proof_required" />
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_picking_form_delivery_proof" model="ir.ui.view">
+        <field name="name">stock.picking.form.delivery.proof</field>
+        <field name="model">stock.picking</field>
+        <field name="inherit_id" ref="stock.view_stock_picking_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//notebook/page[@name='extra']" position="before">
+                <page
+                    name="delivery_proof"
+                    string="Signed Slip"
+                    invisible="not delivery_proof_required and not delivery_proof">
+                    <field name="delivery_proof_required" invisible="1" />
+                    <group>
+                        <group>
+                            <field
+                                name="delivery_proof"
+                                widget="image"
+                                options="{'size': [0, 360]}" />
+                        </group>
+                        <group>
+                            <field
+                                name="delivery_proof_ok"
+                                groups="stock_fleet.group_delivery_proof_reviewer" />
+                            <field
+                                name="delivery_proof_ok"
+                                groups="!stock_fleet.group_delivery_proof_reviewer"
+                                readonly="1" />
+                            <field
+                                name="delivery_proof_uid"
+                                invisible="not delivery_proof_uid" />
+                            <field
+                                name="delivery_proof_date"
+                                invisible="not delivery_proof_date" />
+                            <field
+                                name="delivery_paper_received"
+                                groups="stock_fleet.group_delivery_proof_reviewer" />
+                            <field
+                                name="delivery_paper_received"
+                                groups="!stock_fleet.group_delivery_proof_reviewer"
+                                readonly="1" />
+                            <field
+                                name="delivery_paper_received_uid"
+                                invisible="not delivery_paper_received" />
+                            <field
+                                name="delivery_paper_received_date"
+                                invisible="not delivery_paper_received" />
+                        </group>
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_picking_list_delivery_proof" model="ir.ui.view">
+        <field name="name">stock.picking.list.delivery.proof</field>
+        <field name="model">stock.picking</field>
+        <field name="priority">90</field>
+        <field name="arch" type="xml">
+            <list string="Signed Delivery Slips" create="0">
+                <header>
+                    <button
+                        name="action_receive_delivery_paper"
+                        type="object"
+                        string="Received on Paper"
+                        groups="stock_fleet.group_delivery_proof_reviewer" />
+                </header>
+                <field name="name" />
+                <field name="partner_id" />
+                <field name="date_done" string="Validated on" />
+                <field name="delivery_proof_uid" />
+                <field name="delivery_proof_ok" />
+                <field name="delivery_paper_received" />
+                <field name="delivery_paper_received_uid" optional="show" />
+                <field name="delivery_paper_received_date" optional="hide" />
+                <field name="picking_type_id" optional="hide" />
+                <field name="company_id" column_invisible="True" />
+            </list>
+        </field>
+    </record>
+
+    <record id="view_picking_search_delivery_proof" model="ir.ui.view">
+        <field name="name">stock.picking.search.delivery.proof</field>
+        <field name="model">stock.picking</field>
+        <field name="inherit_id" ref="stock.view_stock_picking_search_internal" />
+        <field name="arch" type="xml">
+            <xpath expr="//filter[@name='backorder']" position="after">
+                <separator />
+                <filter
+                    name="delivery_paper_pending"
+                    string="Signed Slip to Receive"
+                    domain="[('state', '=', 'done'), ('delivery_proof_due', '=', True), ('delivery_paper_received', '=', False)]" />
+                <filter
+                    name="delivery_proof_rejected"
+                    string="Signed Slip Photo Missing or Rejected"
+                    domain="[('state', '=', 'done'), ('delivery_proof_due', '=', True), ('delivery_proof_ok', '=', False)]" />
+            </xpath>
+        </field>
+    </record>
+
+    <record id="action_picking_delivery_proof" model="ir.actions.act_window">
+        <field name="name">Signed Delivery Slips</field>
+        <field name="res_model">stock.picking</field>
+        <field name="view_mode">list,form</field>
+        <field name="view_id" ref="view_picking_list_delivery_proof" />
+        <field name="search_view_id" ref="stock.view_stock_picking_search_internal" />
+        <field
+            name="domain">[('state', '=', 'done'), ('delivery_proof_due', '=', True)]</field>
+        <field name="context">{'search_default_delivery_paper_pending': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">No signed delivery slip to receive</p>
+            <p>
+                Deliveries of the operation types that require the signed slip land
+                here once validated, until a reviewer ticks the paper as received.
+            </p>
+        </field>
+    </record>
+
+</odoo>

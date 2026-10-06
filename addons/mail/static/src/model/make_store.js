@@ -1,0 +1,347 @@
+// @ts-check
+/** @odoo-module native */
+import { markRaw, proxy, toRaw } from "@odoo/owl";
+import { makeLogger } from "@web/core/debug/debug_logger";
+
+import {
+    ATTR_SYM,
+    fieldsOf,
+    isFieldDefinition,
+    isRelation,
+    MANY_SYM,
+    modelRegistry,
+    STORE_SYM,
+} from "./misc.js";
+import { ModelInternal } from "./model_internal.js";
+import { Record } from "./record.js";
+import { RecordInternal } from "./record_internal.js";
+import { Store } from "./store.js";
+import { StoreInternal } from "./store_internal.js";
+
+const log = makeLogger("mail.model");
+
+/**
+ * @param {import("@web/env").OdooEnv} env
+ * @returns {{current: import("models").Store}}
+ */
+function createProvisionalStore(env) {
+    const store = /** @type {import("models").Store} */ (new Store());
+    store.env = env;
+    store.Model = Store;
+    store._ = markRaw(new StoreInternal());
+    store._raw = store;
+    store._proxyInternal = store;
+    store._proxy = store;
+    store.recordByLocalId = proxy(new Map());
+    Record.store = store;
+    return { current: store };
+}
+/**
+ * @param {Record} record
+ * @param {typeof Record} Model
+ * @param {string | symbol} name
+ * @param {Record} receiver
+ */
+function recordProxyGet(record, Model, name, receiver) {
+    const recordFullProxy = record._.downgradeProxy(record, receiver);
+    const kind = Model._.fields.get(name);
+    if (record._.gettingField || kind === undefined) {
+        let res = Reflect.get(record, name, receiver);
+        if (typeof res === "function") {
+            res = res.bind(recordFullProxy);
+        }
+        return res;
+    }
+    if (kind !== ATTR_SYM) {
+        record._.gettingField++;
+        let recordList;
+        try {
+            recordList = fieldsOf(recordFullProxy)[name];
+        } finally {
+            record._.gettingField--;
+        }
+        const recordListFullProxy = recordList._proxy;
+        if (kind === MANY_SYM) {
+            return recordListFullProxy;
+        }
+        return recordListFullProxy[0];
+    }
+    return fieldsOf(record)[name];
+}
+/**
+ * @param {Record} record
+ * @param {typeof Record} Model
+ * @param {{current: import("models").Store}} storeRef
+ * @param {string | symbol} name
+ */
+function recordProxyDeleteProperty(record, Model, storeRef, name) {
+    return storeRef.current.MAKE_UPDATE(function recordDeleteProperty() {
+        if (isRelation(Model, name)) {
+            const recordList = fieldsOf(record)[name];
+            recordList.clear();
+            return true;
+        }
+        return Reflect.deleteProperty(record, name);
+    });
+}
+/**
+ * @param {Record} record
+ * @param {{current: import("models").Store}} storeRef
+ * @param {string | symbol} name
+ * @param {any} val
+ * @param {Record} receiver
+ * @returns {boolean}
+ */
+function recordProxySet(record, storeRef, name, val, receiver) {
+    if (record._.updatingAttrs.has(name)) {
+        fieldsOf(record)[name] = val;
+        return true;
+    }
+    return storeRef.current.MAKE_UPDATE(function recordSet() {
+        const reactiveSet = receiver !== record._proxyInternal;
+        if (reactiveSet) {
+            record._.proxyUsed.set(name, true);
+        }
+        try {
+            storeRef.current._.updateFields(record, {
+                [name]: val,
+            });
+        } finally {
+            if (reactiveSet) {
+                record._.proxyUsed.delete(name);
+            }
+        }
+        return true;
+    });
+}
+/**
+ * @template {Record} R
+ * @param {R} record
+ * @param {typeof Record} Model
+ * @param {{current: import("models").Store}} storeRef
+ * @returns {R}
+ */
+function makeRecordProxy(record, Model, storeRef) {
+    return new Proxy(record, {
+        get: (record, name, recordFullProxy) =>
+            recordProxyGet(record, Model, name, recordFullProxy),
+        deleteProperty: (record, name) =>
+            recordProxyDeleteProperty(record, Model, storeRef, name),
+        set: (record, name, val, receiver) =>
+            recordProxySet(record, storeRef, name, val, receiver),
+    });
+}
+/**
+ * @param {typeof Record} OgClass
+ * @param {typeof Record} Model
+ * @param {{current: import("models").Store}} storeRef
+ * @returns {typeof Record}
+ */
+function makeRecordClass(OgClass, Model, storeRef) {
+    return {
+        [OgClass.getName()]: class extends OgClass {
+            constructor() {
+                super();
+                this.setup();
+                /** @type {this} */
+                const record = this;
+                Object.assign(record, { _raw: record, Model });
+                record._ = markRaw(
+                    fieldsOf(record)[STORE_SYM]
+                        ? new StoreInternal()
+                        : new RecordInternal(),
+                );
+                const recordProxyInternal = /** @type {typeof record} */ (
+                    makeRecordProxy(record, Model, storeRef)
+                );
+                Object.assign(record, { _proxyInternal: recordProxyInternal });
+                const recordProxy = /** @type {this} */ (proxy(recordProxyInternal));
+                Object.assign(record, { _proxy: recordProxy });
+                if (fieldsOf(record)[STORE_SYM]) {
+                    /** @type {import("models").Store} */ (
+                        /** @type {unknown} */ (record)
+                    ).recordByLocalId = storeRef.current.recordByLocalId;
+                    record._ = markRaw(toRaw(storeRef.current._));
+                    storeRef.current = /** @type {import("models").Store} */ (
+                        /** @type {unknown} */ (record)
+                    );
+                    Record.store = storeRef.current;
+                }
+                for (const name of Model._.fields.keys()) {
+                    record._.prepareField(record, name, recordProxy);
+                }
+                return recordProxy;
+            }
+        },
+    }[OgClass.getName()];
+}
+/**
+ * @param {{_: import("./model_internal").ModelInternal, id: import("./misc").IdExpression}} Model
+ * @param {typeof Record} OgClass
+ */
+function collectModelFields(Model, OgClass) {
+    const obj = new OgClass();
+    obj.setup();
+    for (const [name, val] of Object.entries(obj)) {
+        if (isFieldDefinition(val)) {
+            Model._.prepareField(name, val);
+        }
+    }
+    /** @param {import("./misc").IdExpression} expr */
+    (function collectIdFields(expr) {
+        if (typeof expr === "string") {
+            Model._.idFields.add(expr);
+        } else if (Array.isArray(expr)) {
+            for (const part of expr) {
+                if (typeof part !== "symbol") {
+                    collectIdFields(part);
+                }
+            }
+        }
+    })(Model.id);
+}
+/**
+ * A registered model extending a registered model that declares a _discriminator is its
+ * subtype: one identity map, and the discriminator value picks the class of each record.
+ * Without a discriminator, the two models only share code.
+ * @param {Object<string, typeof Record>} Models
+ */
+function linkSubtypes(Models) {
+    const modelByClass = new Map(
+        Object.values(Models).map((Model) => [Object.getPrototypeOf(Model), Model]),
+    );
+    for (const Model of Object.values(Models)) {
+        const parent = modelByClass.get(
+            Object.getPrototypeOf(Object.getPrototypeOf(Model)),
+        );
+        const discriminator = parent?._discriminator;
+        if (!discriminator) {
+            continue;
+        }
+        if (!parent._.idFields.has(discriminator)) {
+            throw new Error(
+                `Model ${parent.getName()} declares _discriminator "${discriminator}", which is not one of its id fields`,
+            );
+        }
+        Model._.parent = parent;
+    }
+    for (const Model of Object.values(Models)) {
+        for (let ancestor = Model._.parent; ancestor; ancestor = ancestor._.parent) {
+            ancestor._.subtypes.set(Model.getName(), Model);
+        }
+    }
+}
+/** @param {Object<string, typeof Record>} Models */
+function linkInverseRelations(Models) {
+    for (const Model of Object.values(Models)) {
+        for (const name of Model._.fields.keys()) {
+            if (!isRelation(Model, name) || Model._.parent?._.fields.has(name)) {
+                continue;
+            }
+            const targetModel = Model._.fieldsTargetModel.get(name);
+            const inverse = Model._.fieldsInverse.get(name);
+            if (targetModel && !Models[targetModel]) {
+                throw new Error(`No target model ${targetModel} exists`);
+            }
+            if (inverse) {
+                if (targetModel === undefined) {
+                    throw new Error(
+                        `Field ${Model.getName()}.${name} declares inverse "${inverse}" without a target model`,
+                    );
+                }
+                const OtherModel = Models[targetModel];
+                if (!isRelation(OtherModel, inverse)) {
+                    throw new Error(
+                        `Field ${Model.getName()}.${name} declares inverse "${inverse}", but ${OtherModel.getName()} has no fields.One()/fields.Many() named "${inverse}"`,
+                    );
+                }
+                const rel2TargetModel = OtherModel._.fieldsTargetModel.get(inverse);
+                const rel2Inverse = OtherModel._.fieldsInverse.get(inverse);
+                if (rel2TargetModel && rel2TargetModel !== Model.getName()) {
+                    throw new Error(
+                        `Fields ${Models[
+                            targetModel
+                        ].getName()}.${inverse} has wrong targetModel. Expected: "${Model.getName()}" Actual: "${rel2TargetModel}"`,
+                    );
+                }
+                if (rel2Inverse && rel2Inverse !== name) {
+                    throw new Error(
+                        `Fields ${Models[
+                            targetModel
+                        ].getName()}.${inverse} has wrong inverse. Expected: "${name}" Actual: "${rel2Inverse}"`,
+                    );
+                }
+                for (const Owner of [OtherModel, ...OtherModel._.subtypes.values()]) {
+                    Owner._.fieldsTargetModel.set(inverse, Model.getName());
+                    Owner._.fieldsInverse.set(inverse, name);
+                }
+            }
+        }
+    }
+}
+/**
+ * @param {Object<string, typeof Record>} Models
+ * @param {{current: import("models").Store}} storeRef
+ */
+function attachStoreToModels(Models, storeRef) {
+    for (const Model of Object.values(Models)) {
+        Model._rawStore = storeRef.current;
+        Model.store = storeRef.current._proxy;
+    }
+}
+/**
+ * @param {{current: import("models").Store}} storeRef
+ * @param {Object<string, typeof Record>} Models
+ */
+function bootstrapStoreRecord(storeRef, Models) {
+    const temporaryStore = storeRef.current;
+    temporaryStore.MAKE_UPDATE(function storeBootstrap() {
+        storeRef.current = toRaw(storeRef.current.Store.insert())._raw;
+        for (const Model of Object.values(Models)) {
+            Model._rawStore = storeRef.current;
+            Model.store = storeRef.current._proxy;
+            fieldsOf(storeRef.current._proxy)[Model.getName()] = Model;
+        }
+        Object.assign(storeRef.current, { Models });
+    });
+}
+/**
+ * @param {import("@web/env").OdooEnv} env
+ * @param {Object} [options]
+ * @param {import("@web/core/registry").Registry<typeof Record>} [options.localRegistry]
+ * @returns {import("models").Store}
+ */
+export function makeStore(env, { localRegistry } = {}) {
+    const endMakeStore = log.perf("makeStore");
+    log.lifecycle("makeStore", () => ({ localRegistry: Boolean(localRegistry) }));
+    const storeRef = createProvisionalStore(env);
+    /** @type {Object<string, typeof Record>} */
+    const Models = {};
+    const chosenModelRegistry = localRegistry ?? modelRegistry;
+    for (const [, _OgClass] of chosenModelRegistry.getEntries()) {
+        /** @type {typeof Record} */
+        const OgClass = _OgClass;
+        if (fieldsOf(storeRef.current)[OgClass.getName()]) {
+            throw new Error(
+                `There must be no duplicated Model Names (duplicate found: ${OgClass.getName()})`,
+            );
+        }
+        /** @type {typeof Record} */
+        const Model = Object.create(OgClass);
+        Model._ = markRaw(new ModelInternal());
+        Object.assign(Model, {
+            Class: makeRecordClass(OgClass, Model, storeRef),
+            records: proxy({}),
+        });
+        Models[Model.getName()] = Model;
+        fieldsOf(storeRef.current)[Model.getName()] = Model;
+        collectModelFields(Model, OgClass);
+    }
+    linkSubtypes(Models);
+    linkInverseRelations(Models);
+    attachStoreToModels(Models, storeRef);
+    bootstrapStoreRecord(storeRef, Models);
+    log.lifecycle("storeReady", () => ({ models: Object.keys(Models).length }));
+    endMakeStore({ models: Object.keys(Models).length });
+    return storeRef.current._proxy;
+}

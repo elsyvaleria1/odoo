@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="helpdesk.helpdesk_team3" model="team.team">
+        <field name="helpdesk_use_credit_notes" eval="True" />
+    </record>
+
+</odoo>

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <menuitem
+        id="menu_sale_tender"
+        name="Sale Tenders"
+        parent="sale.sale_order_menu"
+        action="sale_tender_action"
+        sequence="30"
+        groups="sale.group_sale_salesman,sale.group_sale_readonly" />
+
+</odoo>

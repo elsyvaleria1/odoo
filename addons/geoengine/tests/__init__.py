@@ -1,0 +1,16 @@
+from . import (
+    common,
+    test_coordinate_transform,
+    test_geo_domain,
+    test_geo_fields,
+    test_geo_io,
+    test_geo_ttype_contract,
+    test_get_layers_contract,
+    test_ir_ui_view,
+    test_make_valid,
+    test_no_dead_js,
+    test_pot_covers_every_literal,
+    test_ol_inventory_contract,
+    test_setup_wizard_access,
+    test_spatial_aggregate,
+)

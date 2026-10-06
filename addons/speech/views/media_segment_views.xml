@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="media_segment_view_list_transcription" model="ir.ui.view">
+        <field name="name">media.segment.view.list.transcription</field>
+        <field name="model">media.segment</field>
+        <field name="inherit_id" ref="media.media_segment_view_list" />
+        <field name="arch" type="xml">
+            <field name="duration_ms" position="after">
+                <field name="transcript_state" />
+            </field>
+        </field>
+    </record>
+
+    <record id="media_segment_view_form_transcription" model="ir.ui.view">
+        <field name="name">media.segment.view.form.transcription</field>
+        <field name="model">media.segment</field>
+        <field name="inherit_id" ref="media.media_segment_view_form" />
+        <field name="arch" type="xml">
+            <field name="duration_ms" position="after">
+                <field name="transcript_state" />
+            </field>
+        </field>
+    </record>
+
+</odoo>

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- A person's email, not a notification: no header, footer or buttons -->
+    <template id="mail_inbox_layout">
+        <html>
+            <body>
+                <div t-out="message.body" />
+            </body>
+        </html>
+    </template>
+
+</odoo>

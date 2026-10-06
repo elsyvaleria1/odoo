@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_task_partner_info_form" model="ir.ui.view">
+        <field name="name">res.partner.task.buttons</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_form" />
+        <field name="priority" eval="8" />
+        <field name="arch" type="xml">
+            <xpath expr="//div[@name='anchor_buttons_projects']" position="before">
+                <button
+                    name="action_view_tasks"
+                    type="object"
+                    icon="fa-tasks"
+                    groups="project.group_project_user"
+                    class="oe_stat_button">
+                    <field name="task_count" string="Tasks" widget="statinfo" />
+                </button>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

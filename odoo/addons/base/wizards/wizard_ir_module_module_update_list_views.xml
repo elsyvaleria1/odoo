@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_base_module_update" model="ir.ui.view">
+        <field name="name">Module Update</field>
+        <field name="model">wizard.ir.module.module.update.list</field>
+        <field name="arch" type="xml">
+            <form string="Update Module List">
+                <separator string="Module Update Result" invisible="state != 'done'" />
+                <group invisible="state != 'init'">
+                    <span class="o_form_label" colspan="2">Click on Update below to start the
+                        process...</span>
+                </group>
+                <group invisible="state != 'done'">
+                    <field name="updated" />
+                    <field name="added" />
+                </group>
+                <footer>
+                    <div invisible="state != 'init'" class="d-flex gap-1">
+                        <button
+                            name="update_module"
+                            type="object"
+                            string="Update"
+                            class="btn-primary"
+                            data-hotkey="q" />
+                        <button
+                            special="cancel"
+                            string="Cancel"
+                            class="btn-secondary"
+                            data-hotkey="x" />
+                    </div>
+                    <div invisible="state != 'done'" class="d-flex gap-1">
+                        <button
+                            name="action_module_open"
+                            type="object"
+                            string="Open Apps"
+                            class="btn-primary"
+                            data-hotkey="q" />
+                        <button
+                            special="cancel"
+                            string="Close"
+                            class="btn-secondary"
+                            data-hotkey="x" />
+                    </div>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_view_base_module_update" model="ir.actions.act_window">
+        <field name="name">Module Update</field>
+        <field name="res_model">wizard.ir.module.module.update.list</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+
+</odoo>

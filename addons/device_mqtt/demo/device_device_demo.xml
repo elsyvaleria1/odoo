@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="demo_device_temp_sensor_01" model="device.device">
+        <field name="name">Warehouse Temperature Sensor</field>
+        <field name="identifier">TEMP-WH-001</field>
+        <field name="config_id" ref="demo_config_mqtt_standard" />
+        <field
+            name="device_category_id"
+            ref="device.device_category_temperature_sensor" />
+        <field name="comm_protocol">mqtt</field>
+        <field name="endpoint">mqtt.example.com</field>
+        <field name="port">1883</field>
+        <field name="mqtt_client_id">warehouse_temp_01</field>
+        <field name="mqtt_subscribe_topics">warehouse/zone1/temperature</field>
+        <field name="mqtt_publish_topic">warehouse/zone1/commands</field>
+        <field name="connection_state">disconnected</field>
+        <field name="location">Warehouse - Zone 1</field>
+        <field name="serial_number">SN-TMP-2024-001</field>
+        <field name="firmware_version">1.2.3</field>
+        <field name="hardware_version">v2.1</field>
+        <field name="auto_reconnect_override">on</field>
+        <field name="is_demo" eval="True" />
+        <field
+            name="description">Primary temperature sensor for warehouse zone 1 environmental monitoring (SensorTech Inc. TMP-100)</field>
+    </record>
+
+    <record id="demo_device_temp_humidity_01" model="device.device">
+        <field name="name">Office Climate Sensor</field>
+        <field name="identifier">TH-OFF-001</field>
+        <field name="config_id" ref="demo_config_mqtt_standard" />
+        <field name="device_category_id" ref="device.device_category_temp_humidity" />
+        <field name="comm_protocol">mqtt</field>
+        <field name="endpoint">mqtt.example.com</field>
+        <field name="port">1883</field>
+        <field name="mqtt_client_id">office_climate_01</field>
+        <field
+            name="mqtt_subscribe_topics">office/floor2/climate
+office/floor2/connection_state</field>
+        <field name="connection_state">disconnected</field>
+        <field name="location">Office Building - Floor 2</field>
+        <field name="serial_number">SN-TH-2024-042</field>
+        <field name="firmware_version">2.0.1</field>
+        <field name="auto_reconnect_override">on</field>
+        <field name="is_demo" eval="True" />
+        <field
+            name="description">Combined temperature and humidity monitoring for office HVAC control (ClimateControl Ltd. CC-TH-200)</field>
+    </record>
+
+    <record id="demo_device_smart_switch_01" model="device.device">
+        <field name="name">Production Line Switch</field>
+        <field name="identifier">SW-PL-001</field>
+        <field name="config_id" ref="demo_config_mqtt_auth" />
+        <field name="device_category_id" ref="device.device_category_smart_switch" />
+        <field name="comm_protocol">mqtt</field>
+        <field name="endpoint">mqtt.example.com</field>
+        <field name="port">1883</field>
+        <field name="mqtt_client_id">prod_switch_01</field>
+        <field name="mqtt_subscribe_topics">production/line1/switch/state</field>
+        <field name="mqtt_publish_topic">production/line1/switch/command</field>
+        <field name="connection_state">disconnected</field>
+        <field name="location">Factory - Production Line 1</field>
+        <field name="serial_number">SN-SW-2024-123</field>
+        <field name="firmware_version">3.1.0</field>
+        <field name="auto_reconnect_override">on</field>
+        <field name="is_demo" eval="True" />
+        <field
+            name="description">High-capacity smart switch controlling production line equipment (SmartHome Pro SH-SW-50A)</field>
+    </record>
+
+    <record id="demo_device_gps_tracker_01" model="device.device">
+        <field name="name">Fleet Vehicle GPS - Truck 01</field>
+        <field name="identifier">GPS-TRK-001</field>
+        <field name="config_id" ref="demo_config_mqtt_standard" />
+        <field name="device_category_id" ref="device.device_category_gps" />
+        <field name="comm_protocol">mqtt</field>
+        <field name="endpoint">mqtt.example.com</field>
+        <field name="port">1883</field>
+        <field name="mqtt_client_id">fleet_gps_truck_01</field>
+        <field
+            name="mqtt_subscribe_topics">fleet/truck01/location
+fleet/truck01/connection_state</field>
+        <field name="connection_state">disconnected</field>
+        <field name="location">Mobile - Delivery Fleet</field>
+        <field name="serial_number">SN-GPS-2024-234</field>
+        <field name="firmware_version">2.3.1</field>
+        <field name="auto_reconnect_override">on</field>
+        <field name="is_demo" eval="True" />
+        <field
+            name="description">Real-time GPS tracking for delivery fleet vehicle #01 (TrackIT Systems GPS-PRO-5000)</field>
+    </record>
+
+</odoo>

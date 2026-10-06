@@ -1,0 +1,182 @@
+/** @odoo-module native */
+import { registry } from "@web/core/registry";
+import { Popover } from "@web/libs/bootstrap";
+import { Interaction } from "@web/public/interaction";
+
+export class WebsiteEventTrack extends Interaction {
+    static selector = ".o_wevent_event";
+
+    dynamicContent = {
+        _window: {
+            "t-on-scroll": () => this.updateAgendaScroll(),
+            "t-on-resize": () => this.updateAgendaScroll(),
+        },
+        "#event_track_search": {
+            "t-on-input.prevent.withTarget": (ev, currentTargetEl) => {
+                this.searchText = currentTargetEl.value.toLowerCase();
+            },
+        },
+        ".o_we_online_agenda": { "t-on-scroll.withTarget": this.onAgendaScroll },
+        ".o_we_agenda_card_filter_badges .o_badge_clickable": {
+            "t-on-click.withTarget": this.onTagBadgeClick,
+        },
+        ".event_track": {
+            "t-att-class": (el) => ({
+                invisible: !el.textContent.toLowerCase().includes(this.searchText),
+            }),
+        },
+        "#search_summary": { "t-att-class": () => ({ invisible: !this.searchText }) },
+        "#search_number": {
+            "t-out": () =>
+                this.tracks.filter(
+                    (element) => !element.classList.contains("invisible"),
+                ).length,
+        },
+        ".o_we_agenda_horizontal_scroller_container": {
+            "t-on-scroll": this.alignAgendaScroll,
+            "t-att-class": () => ({
+                "d-none": !(
+                    this.visibleAgenda &&
+                    this.visibleAgenda.classList.contains(
+                        "o_we_online_agenda_has_scroll",
+                    )
+                ),
+            }),
+        },
+        ".o_we_agenda_horizontal_scroller": {
+            "t-att-style": () => ({ width: this.computeScrollerWidth() }),
+        },
+    };
+
+    setup() {
+        this.el.querySelectorAll("[data-bs-toggle='popover']").forEach((el) => {
+            const bsPopover = Popover.getOrCreateInstance(el);
+            this.registerCleanup(() => bsPopover.dispose());
+        });
+
+        this.searchText = "";
+        this.agendaScroller = this.el.querySelector(
+            ".o_we_agenda_horizontal_scroller_container",
+        );
+        this.agendaScrollerElement = this.agendaScroller?.querySelector(
+            ".o_we_agenda_horizontal_scroller",
+        );
+        this.agendas = Array.from(this.el.querySelectorAll(".o_we_online_agenda"));
+        this.tracks = Array.from(this.el.querySelectorAll(".event_track"));
+
+        if (this.agendas.length > 0) {
+            this.checkAgendasOverflow(this.agendas);
+        }
+
+        if (this.agendaScroller) {
+            this.updateAgendaScroll = this.debounced(this.updateAgendaScroll, 50);
+            this.updateAgendaScroll();
+        }
+    }
+
+    alignAgendaScroll() {
+        if (this.visibleAgenda && this.agendaScroller) {
+            this.visibleAgenda.scrollLeft = this.agendaScroller.scrollLeft;
+        }
+    }
+
+    updateAgendaScroll() {
+        if (!this.agendaScroller) {
+            return;
+        }
+
+        this.visibleAgenda = this.agendas.toReversed().find((el) => {
+            const rect = el.getBoundingClientRect();
+            const containerOffset = {
+                top: rect.top + window.scrollY + 30,
+                bottom: rect.bottom + window.scrollY,
+            };
+            const windowOffset = {
+                top: window.scrollY,
+                bottom: window.scrollY + window.innerHeight,
+            };
+
+            return (
+                containerOffset.top < windowOffset.bottom &&
+                !(containerOffset.bottom < windowOffset.bottom)
+            );
+        });
+        if (this.visibleAgenda) {
+            requestAnimationFrame(() => {
+                this.agendaScroller.scrollLeft = this.visibleAgenda.scrollLeft;
+            });
+        }
+    }
+
+    /**
+     * @param {Object} agendas
+     */
+    checkAgendasOverflow(agendas) {
+        agendas.forEach((agendaEl) => {
+            const hasScroll =
+                agendaEl.querySelector("table").clientWidth > agendaEl.clientWidth;
+
+            agendaEl.classList.toggle("o_we_online_agenda_has_scroll", hasScroll);
+            agendaEl.classList.toggle(
+                "o_we_online_agenda_has_content_hidden",
+                hasScroll,
+            );
+        });
+    }
+
+    /**
+     * @param {Event} event
+     * @param {Object} currentTargetEl
+     */
+    onAgendaScroll(event, currentTargetEl) {
+        const tableEl = currentTargetEl.querySelector("table");
+        const gutter = 4;
+        const gap = tableEl.clientWidth - currentTargetEl.clientWidth - gutter;
+
+        currentTargetEl.classList.add("o_we_online_agenda_is_scrolling");
+        currentTargetEl.classList.toggle(
+            "o_we_online_agenda_has_content_hidden",
+            gap > Math.ceil(currentTargetEl.scrollLeft),
+        );
+
+        requestAnimationFrame(() => {
+            setTimeout(() => {
+                currentTargetEl.classList.remove("o_we_online_agenda_is_scrolling");
+            }, 200);
+        });
+
+        if (this.agendaScroller && this.visibleAgenda) {
+            this.agendaScroller.scrollLeft = this.visibleAgenda.scrollLeft;
+        }
+    }
+
+    /**
+     * @param {MouseEvent} ev
+     * @param {HTMLElement} badgeEl
+     */
+    onTagBadgeClick(ev, badgeEl) {
+        const searchEl = /** @type {HTMLInputElement | null} */ (
+            this.el.querySelector("#event_track_search")
+        );
+        if (!searchEl) {
+            return;
+        }
+        searchEl.value = searchEl.value === badgeEl.title ? "" : badgeEl.title;
+        searchEl.dispatchEvent(new Event("input", { bubbles: true }));
+    }
+
+    computeScrollerWidth() {
+        if (
+            this.visibleAgenda &&
+            this.visibleAgenda.classList.contains("o_we_online_agenda_has_scroll")
+        ) {
+            const verticalScrollbarWidth =
+                window.innerWidth - document.documentElement.clientWidth;
+            return this.visibleAgenda.scrollWidth + verticalScrollbarWidth + "px";
+        }
+    }
+}
+
+registry
+    .category("public.interactions")
+    .add("website_event_track.website_event_track", WebsiteEventTrack);

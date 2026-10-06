@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_device_client_visit_list_asset" model="ir.ui.view">
+        <field name="name">device.client.visit.list.asset</field>
+        <field name="model">device.client.visit</field>
+        <field
+            name="inherit_id"
+            ref="device_gps_geoengine.view_device_client_visit_list" />
+        <field name="arch" type="xml">
+            <field name="partner_id" position="after">
+                <field name="operator_id" optional="show" />
+                <field name="asset_id" optional="show" />
+            </field>
+            <field name="duration_hours" position="after">
+                <field name="trip_speed_max" string="Trip Max Speed" optional="show" />
+                <field name="trip_speed_min" string="Trip Min Speed" optional="show" />
+                <field name="trip_speed_avg" string="Trip Avg Speed" optional="hide" />
+            </field>
+        </field>
+    </record>
+
+    <record id="view_device_client_visit_search_asset" model="ir.ui.view">
+        <field name="name">device.client.visit.search.asset</field>
+        <field name="model">device.client.visit</field>
+        <field
+            name="inherit_id"
+            ref="device_gps_geoengine.view_device_client_visit_search" />
+        <field name="arch" type="xml">
+            <filter name="group_partner" position="after">
+                <filter
+                    name="group_operator"
+                    string="Operator"
+                    context="{'group_by': 'operator_id'}" />
+                <filter
+                    name="group_asset"
+                    string="Vehicle"
+                    context="{'group_by': 'asset_id'}" />
+            </filter>
+        </field>
+    </record>
+
+</odoo>

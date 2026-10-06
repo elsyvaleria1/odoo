@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <data noupdate="1">
+        <record id="base.group_user" model="res.groups">
+            <field
+                name="implied_ids"
+                eval="[Command.link(ref('sale.group_discount_per_so_line'))]" />
+        </record>
+    </data>
+
+</odoo>

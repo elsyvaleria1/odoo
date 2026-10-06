@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="privilege_invoice_cash_sale" model="res.groups">
+        <field
+            name="name">Privilege: a collector invoices the cash sale they are collecting</field>
+        <field
+            name="comment">A collector who holds no accounting right collects a confirmed cash sale on the spot: the order's invoice is created, dated the day the customer paid and posted in the collector's name, so the customer leaves with an issued invoice and a receipt. Nothing else of accounting is theirs.</field>
+        <field name="is_privilege" eval="True" />
+    </record>
+
+    <record id="privilege_hand_over_cash_sale" model="res.groups">
+        <field
+            name="name">Privilege: a collector hands over the goods of the cash sale they collect</field>
+        <field
+            name="comment">When the customer takes the goods at once, the salesperson who collects it records the quantities of the cash sale's outgoing transfers, from where its goods are at hand, and validates them. Nothing else of inventory is theirs.</field>
+        <field name="is_privilege" eval="True" />
+    </record>
+
+</odoo>

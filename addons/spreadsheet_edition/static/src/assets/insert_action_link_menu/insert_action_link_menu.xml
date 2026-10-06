@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="spreadsheet_edition.InsertActionSpreadsheet">
+        <CogMenuItem class="'o_insert_action_spreadsheet_menu'" icon="'fa-solid fa-link'" description.translate="Link Menu in Spreadsheet…" onSelected.bind="this.linkInSpreadsheet" closingMode="'none'"/>
+    </t>
+
+</templates>

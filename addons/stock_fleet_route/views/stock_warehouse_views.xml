@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="stock_warehouse_view_form_route" model="ir.ui.view">
+        <field name="name">stock.warehouse.form.route</field>
+        <field name="model">stock.warehouse</field>
+        <field
+            name="inherit_id"
+            ref="stock_fleet_trace.stock_warehouse_view_form_trace" />
+        <field name="arch" type="xml">
+            <group name="trip_rules" position="inside">
+                <field name="route_service_minutes" />
+            </group>
+        </field>
+    </record>
+
+</odoo>

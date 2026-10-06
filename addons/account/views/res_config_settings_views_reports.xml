@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="res_config_settings_view_form_reports" model="ir.ui.view">
+        <field name="name">res.config.settings.view.form.inherit.account.reports</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="account.res_config_settings_view_form" />
+        <field name="arch" type="xml">
+            <setting position="after" id="default_taxes">
+                <setting
+                    id="account_return_periodicity"
+                    string="Tax Return Periodicity"
+                    help="How often tax returns have to be made"
+                    groups="account.group_account_user"
+                    company_dependent="1"
+                    documentation="/applications/finance/accounting/reporting/declarations/tax_returns.html">
+                    <div class="content-group">
+                        <div class="row mt16">
+                            <label
+                                for="account_return_periodicity"
+                                string="Periodicity"
+                                class="col-lg-3 o_light_label" />
+                            <field name="account_return_periodicity" />
+                        </div>
+                        <div class="row">
+                            <label
+                                for="account_return_reminder_day"
+                                string="Deadline"
+                                class="col-lg-3 o_light_label" />
+                            <div class="col-lg-auto content-group">
+                                <field name="account_return_reminder_day" class="text-center oe_inline" /> days after period
+                            </div>
+                        </div>
+                        <div class="row">
+                            <label
+                                for="account_tax_return_journal_id"
+                                string="Journal"
+                                class="col-lg-3 o_light_label" />
+                            <field
+                                name="account_tax_return_journal_id"
+                                required="has_chart_of_accounts" />
+                        </div>
+                        <div class="mt8">
+                            <button
+                                name="open_tax_group_list"
+                                type="object"
+                                string="Configure your tax accounts"
+                                icon="oi-arrow-right"
+                                class="btn-link" />
+                        </div>
+                    </div>
+                </setting>
+            </setting>
+
+            <block position="inside" id="account_reports_settings">
+                <setting
+                    title="This allows you to choose the position of totals in your financial reports."
+                    help="When ticked, totals and subtotals appear below the sections of the report"
+                    company_dependent="1">
+                    <field name="totals_below_sections" />
+                </setting>
+                <setting>
+                    <button
+                        name="%(account.action_check_hash_integrity)d"
+                        id="action_hash_integrity"
+                        type="action"
+                        string="Download the Data Inalterability Check Report"
+                        class="oe_link" />
+                </setting>
+            </block>
+        </field>
+    </record>
+
+</odoo>

@@ -1,0 +1,1006 @@
+/** @import { OdooEnv } from "@web/env" */
+// @ts-check
+import { addBusMessageHandler, busModels } from "@bus/../tests/bus_test_helpers";
+import { CHAT_HUB_KEY } from "@mail/core/common/chat_hub_model";
+import { UPDATE_EVENT } from "@mail/discuss/call/common/peer_to_peer";
+import { Network, Rtc } from "@mail/discuss/call/common/rtc_service";
+import { closeStream } from "@mail/utils/common/misc";
+import { after, before, expect, getFixture, registerDebugInfo, test } from "@odoo/hoot";
+import { hover as hootHover, queryFirst, resize } from "@odoo/hoot-dom";
+import { animationFrame, Deferred, microTick } from "@odoo/hoot-mock";
+import { Component, onMounted, onPatched, onWillDestroy, status } from "@odoo/owl";
+import {
+    asyncStep,
+    authenticate,
+    defineModels,
+    defineParams,
+    getMockEnv,
+    getService,
+    makeMockEnv,
+    makeMockServer,
+    MockServer,
+    mountWithCleanup,
+    onRpc,
+    parseViewProps,
+    patchWithCleanup,
+    restoreRegistry,
+    serverState,
+    waitForSteps,
+    webModels,
+} from "@web/../tests/web_test_helpers";
+import { loadEmoji } from "@web/components/emoji_picker";
+import { browser } from "@web/core/browser/browser";
+import { registry } from "@web/core/registry";
+import { useServiceProtectMethodHandling } from "@web/core/utils/hooks";
+import { session } from "@web/session";
+import { MEDIAS_BREAKPOINTS, utils as uiUtils } from "@web/ui/viewport";
+import { WebClient } from "@web/webclient/webclient";
+
+import { click, contains, TIMEOUT } from "./mail_test_helpers_contains.js";
+import {
+    authenticateGuest,
+    DISCUSS_ACTION_ID,
+    mailDataHelpers,
+    registerMailMockRoutes,
+} from "./mock_server/mail_mock_server.js";
+import { Base } from "./mock_server/mock_models/base.js";
+import { DiscussChannel } from "./mock_server/mock_models/discuss_channel.js";
+import { DiscussChannelMember } from "./mock_server/mock_models/discuss_channel_member.js";
+import { DiscussChannelRtcSession } from "./mock_server/mock_models/discuss_channel_rtc_session.js";
+import { DiscussGifFavorite } from "./mock_server/mock_models/discuss_gif_favorite.js";
+import { DiscussVoiceMetadata } from "./mock_server/mock_models/discuss_voice_metadata.js";
+import { IrAttachment } from "./mock_server/mock_models/ir_attachment.js";
+import { IrWebSocket } from "./mock_server/mock_models/ir_websocket.js";
+import { M2xAvatarUser } from "./mock_server/mock_models/m2x_avatar_user.js";
+import { MailActivity } from "./mock_server/mock_models/mail_activity.js";
+import { MailActivitySchedule } from "./mock_server/mock_models/mail_activity_schedule.js";
+import { MailActivityType } from "./mock_server/mock_models/mail_activity_type.js";
+import { MailCannedResponse } from "./mock_server/mock_models/mail_canned_response.js";
+import { MailComposeMessage } from "./mock_server/mock_models/mail_composer_message.js";
+import { MailFollowers } from "./mock_server/mock_models/mail_followers.js";
+import { MailGuest } from "./mock_server/mock_models/mail_guest.js";
+import { MailLinkPreview } from "./mock_server/mock_models/mail_link_preview.js";
+import { MailMessage } from "./mock_server/mock_models/mail_message.js";
+import { MailMessageLinkPreview } from "./mock_server/mock_models/mail_message_link_preview.js";
+import { MailMessageReaction } from "./mock_server/mock_models/mail_message_reaction.js";
+import { MailMessageSubtype } from "./mock_server/mock_models/mail_message_subtype.js";
+import { MailNotification } from "./mock_server/mock_models/mail_notification.js";
+import { MailPushDevice } from "./mock_server/mock_models/mail_push_device.js";
+import { MailScheduledMessage } from "./mock_server/mock_models/mail_scheduled_message.js";
+import { MailTemplate } from "./mock_server/mock_models/mail_template.js";
+import { MailThread } from "./mock_server/mock_models/mail_thread.js";
+import { MailTrackingValue } from "./mock_server/mock_models/mail_tracking_value.js";
+import { ResCountry } from "./mock_server/mock_models/res_country.js";
+import { ResFake } from "./mock_server/mock_models/res_fake.js";
+import { ResLang } from "./mock_server/mock_models/res_lang.js";
+import { ResPartner } from "./mock_server/mock_models/res_partner.js";
+import { ResRole } from "./mock_server/mock_models/res_role.js";
+import { ResUsers } from "./mock_server/mock_models/res_users.js";
+import { ResUsersSettings } from "./mock_server/mock_models/res_users_settings.js";
+import { ResUsersSettingsVolumes } from "./mock_server/mock_models/res_users_settings_volumes.js";
+
+export * from "./mail_test_helpers_contains.js";
+export { SIZES } from "@web/ui/viewport";
+
+before(prepareRegistriesWithCleanup);
+export const registryNamesToCloneWithCleanup = [];
+registryNamesToCloneWithCleanup.push("mock_server_callbacks", "discuss.model");
+
+useServiceProtectMethodHandling.fn = useServiceProtectMethodHandling.mocked;
+
+addBusMessageHandler("mail.record/insert", (_env, _id, payload) => {
+    const recordsByModelName = Object.entries(payload);
+    for (const [modelName, records] of recordsByModelName) {
+        for (const record of Array.isArray(records) ? records : [records]) {
+            registerDebugInfo(`insert > "${modelName}"`, record);
+        }
+    }
+});
+
+export function defineMailModels() {
+    registerMailMockRoutes();
+    defineParams({}, { mode: "replace" });
+    return defineModels(mailModels);
+}
+
+export function getChannelCommandsForThread(threadId) {
+    const store = getService("mail.store");
+    const suggestionService = getService("mail.suggestion");
+    const thread = store.Thread.get({ model: "discuss.channel", id: threadId });
+    return suggestionService.getChannelCommands(thread);
+}
+
+export const mailModels = {
+    ...webModels,
+    ...busModels,
+    Base,
+    DiscussChannel,
+    DiscussChannelMember,
+    DiscussChannelRtcSession,
+    DiscussGifFavorite,
+    DiscussVoiceMetadata,
+    IrAttachment,
+    IrWebSocket,
+    M2xAvatarUser,
+    MailActivity,
+    MailActivitySchedule,
+    MailActivityType,
+    MailComposeMessage,
+    MailCannedResponse,
+    MailFollowers,
+    MailGuest,
+    MailLinkPreview,
+    MailMessage,
+    MailMessageLinkPreview,
+    MailMessageReaction,
+    MailMessageSubtype,
+    MailNotification,
+    MailPushDevice,
+    MailScheduledMessage,
+    MailTemplate,
+    MailThread,
+    MailTrackingValue,
+    ResCountry,
+    ResFake,
+    ResLang,
+    ResPartner,
+    ResRole,
+    ResUsers,
+    ResUsersSettings,
+    ResUsersSettingsVolumes,
+};
+
+/**
+ * @param {Function|string} route
+ * @param {Function} [callback]
+ */
+export function onRpcBefore(route, callback) {
+    if (typeof route === "string") {
+        const handler = registry.category("mail.mock_rpc").get(route);
+        patchWithCleanup(handler, { before: callback });
+    } else {
+        const onRpcBeforeGlobal = registry
+            .category("mail.on_rpc_before_global")
+            .get("global");
+        patchWithCleanup(onRpcBeforeGlobal, { cb: route });
+    }
+}
+
+/**
+ * @param {string} route
+ * @param {Function} callback
+ */
+export function onRpcAfter(route, callback) {
+    const handler = registry.category("mail.mock_rpc").get(route);
+    patchWithCleanup(handler, { after: callback });
+}
+
+let archs = {};
+export function registerArchs(newArchs) {
+    archs = newArchs;
+    after(() => (archs = {}));
+}
+
+/** @param {Parameters<typeof test>} args */
+export function onlineTest(...args) {
+    if (navigator.onLine) {
+        return test(...args);
+    } else {
+        return test.skip(...args);
+    }
+}
+
+/** @param {string} tabId */
+export function discussTabActiveId(tabId) {
+    return `discuss.tab_${tabId}`;
+}
+
+/**
+ * @param {string | number} [activeId]
+ * @param {{target?: import("@web/env").OdooEnv}} [options]
+ */
+export async function openDiscuss(activeId, { target } = {}) {
+    const actionService = target?.services.action ?? getService("action");
+    await actionService.doAction({
+        context: { active_id: activeId },
+        id: DISCUSS_ACTION_ID,
+        tag: "mail.action_discuss",
+        type: "ir.actions.client",
+    });
+    if (typeof activeId === "string" && activeId.startsWith("discuss.tab_")) {
+        const tabId = activeId.slice("discuss.tab_".length);
+        const root = target?.selector ? `${target.selector} ` : "";
+        await contains(
+            `${root}.o-mail-Discuss .o-mail-MessagingMenu-tab[data-id='${tabId}'].active`,
+        );
+    }
+}
+
+export async function openFormView(resModel, resId, params) {
+    return openView({
+        res_model: resModel,
+        res_id: resId,
+        views: [[false, "form"]],
+        ...params,
+    });
+}
+
+export async function openKanbanView(resModel, params) {
+    return openView({
+        res_model: resModel,
+        views: [[false, "kanban"]],
+        ...params,
+    });
+}
+
+export async function openListView(resModel, params) {
+    return openView({
+        res_model: resModel,
+        views: [[false, "list"]],
+        ...params,
+    });
+}
+
+/**
+ * @param {Object} options
+ * @param {string} options.res_model
+ * @param {Array<[number | false | string, import("@web/views/view").ViewType]>} options.views
+ * @param {Object} [options.context]
+ * @param {number | false} [options.res_id]
+ * @param {import("@web/core/domain").DomainRepr} [options.domain]
+ * @param {string} [options.arch]
+ */
+export async function openView({
+    context,
+    res_model,
+    res_id,
+    views,
+    domain,
+    ...params
+}) {
+    const [[viewRef, type]] = views;
+    const viewId = typeof viewRef === "string" ? false : viewRef;
+    const action = {
+        context,
+        domain,
+        res_model,
+        res_id,
+        views: [[viewId, type]],
+        type: "ir.actions.act_window",
+    };
+    const options = parseViewProps({
+        type,
+        resModel: res_model,
+        resId: res_id || undefined,
+        arch:
+            params?.arch || archs[viewRef || res_model + `,false,` + type] || undefined,
+        viewId,
+        ...params,
+    });
+    await getService("action").doAction(action, { props: options });
+}
+
+let tabs = [];
+after(() => (tabs = []));
+/**
+ * @param {HTMLElement} rootTarget
+ * @param {HTMLElement} tabTarget
+ */
+async function addSwitchTabDropdownItem(rootTarget, tabTarget) {
+    tabs.push(tabTarget);
+    const zIndexMainTab = 100000;
+    let dropdownDiv = rootTarget.querySelector(".o-mail-multi-tab-dropdown");
+    const onClickDropdownItem = (e) => {
+        const dropdownToggle = dropdownDiv.querySelector(".dropdown-toggle");
+        dropdownToggle.innerText = `Switch Tab (${e.target.innerText})`;
+        tabs.forEach((tab) => (tab.style.zIndex = String(-zIndexMainTab)));
+        if (e.target.innerText !== "Hoot") {
+            tabTarget.style.zIndex = String(zIndexMainTab);
+        }
+    };
+    if (!dropdownDiv) {
+        tabTarget.style.zIndex = String(zIndexMainTab);
+        dropdownDiv = document.createElement("div");
+        dropdownDiv.style.zIndex = String(zIndexMainTab + 1);
+        dropdownDiv.style.top = "10%";
+        dropdownDiv.style.right = "5%";
+        dropdownDiv.style.position = "absolute";
+        dropdownDiv.classList.add("dropdown");
+        dropdownDiv.classList.add("o-mail-multi-tab-dropdown");
+        dropdownDiv.innerHTML = `
+            <button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                Switch Tab (${tabs.length})
+            </button>
+            <ul class="dropdown-menu">
+                <li><a class="dropdown-item">Hoot</a></li>
+            </ul>
+        `;
+        dropdownDiv.querySelector("a").onclick = onClickDropdownItem;
+        rootTarget.appendChild(dropdownDiv);
+    }
+    const tabIndex = tabs.length;
+    const li = document.createElement("li");
+    const a = document.createElement("a");
+    li.appendChild(a);
+    a.classList.add("dropdown-item");
+    a.innerText = `Tab ${tabIndex}`;
+    a.onclick = onClickDropdownItem;
+    dropdownDiv.querySelector(".dropdown-menu").appendChild(li);
+}
+
+let discussAsTabId = 0;
+
+/**
+ * @param {Object} [options]
+ * @param {false | {id: number, _name: "mail.guest"} | {id: number, _name?: "res.users", login: string, password: string}} [options.authenticateAs]
+ * @param {boolean} [options.asTab]
+ * @param {typeof Component} [options.root]
+ * @param {Partial<import("@web/env").OdooEnv>} [options.env]
+ */
+export async function start(options) {
+    patchWithCleanup(Rtc.prototype, {
+        start() {
+            super.start();
+            after(() => this.clear());
+        },
+    });
+    if (!MockServer.current) {
+        await startServer();
+    }
+    let target = getFixture();
+    const pyEnv = MockServer.env;
+    if (options?.authenticateAs !== undefined) {
+        if (options.authenticateAs === false) {
+            const guestId = pyEnv["mail.guest"].create({});
+            authenticateGuest(pyEnv["mail.guest"].read(guestId)[0]);
+        } else if (options.authenticateAs._name === "mail.guest") {
+            authenticateGuest(options.authenticateAs);
+        } else {
+            authenticate(options.authenticateAs.login, options.authenticateAs.password);
+        }
+    } else if ("res.users" in pyEnv) {
+        if (!pyEnv.cookie.get("dgid")) {
+            const adminUser = pyEnv["res.users"].search_read([
+                ["id", "=", serverState.userId],
+            ])[0];
+            authenticate(adminUser.login, adminUser.password);
+        }
+    }
+    if ("res.users" in pyEnv) {
+        /** @type {import("mock_models").ResUsers} */
+        const ResUsers = pyEnv["res.users"];
+        const store = new mailDataHelpers.Store();
+        ResUsers._init_store_data(store);
+        patchWithCleanup(session, {
+            storeData: store.get_result(),
+        });
+        registerDebugInfo("session.storeData", session.storeData);
+    }
+    let env;
+    if (options?.asTab) {
+        discussAsTabId++;
+        restoreRegistry(registry);
+        const rootTarget = target;
+        target = document.createElement("div");
+        target.classList.add("o-mail-Discuss-asTabContainer");
+        target.dataset.asTabId = String(discussAsTabId);
+        rootTarget.appendChild(target);
+        addSwitchTabDropdownItem(rootTarget, target);
+        const selector = `.o-mail-Discuss-asTabContainer[data-as-tab-id="${target.dataset.asTabId}"]`;
+        env = await makeMockEnv({ discussAsTabId, selector }, { makeNew: true });
+    } else {
+        env = getMockEnv() || (await makeMockEnv({}));
+    }
+    env.testEnv = true;
+    await mountWithCleanup(options?.root ?? WebClient, { env, target });
+    await loadEmoji();
+    // One frame for the mounted client to settle: hotkey listeners, the chat
+    // hub and the store's first fetch all land after mount. Until loadEmoji()
+    // learned to answer from its cache this wait was hidden inside its dynamic
+    // import, and a palette opened on the very next line found no listener.
+    await animationFrame();
+    return Object.assign(env, { ...options?.env, target });
+}
+
+export async function startServer() {
+    const { env: pyEnv } = await makeMockServer();
+    pyEnv["res.users"].write([serverState.userId], {
+        group_ids: pyEnv["res.groups"]
+            .search_read([["id", "=", serverState.groupId]])
+            .map(({ id }) => id),
+    });
+    return pyEnv;
+}
+
+/**
+ * @param {number} size
+ * @returns {number}
+ */
+function getWidthFromSize(size) {
+    const { minWidth, maxWidth } = MEDIAS_BREAKPOINTS[size];
+    return minWidth ? minWidth : maxWidth;
+}
+
+/**
+ * @param {number} width
+ * @returns {number}
+ */
+function getSizeFromWidth(width) {
+    return MEDIAS_BREAKPOINTS.findIndex(({ minWidth, maxWidth }) => {
+        if (!maxWidth) {
+            return width >= minWidth;
+        }
+        if (!minWidth) {
+            return width <= maxWidth;
+        }
+        return width >= minWidth && width <= maxWidth;
+    });
+}
+
+/**
+ * @param {Object} params
+ * @param {number|undefined} [params.size]
+ * @param {number|undefined} [params.width]
+ * @param {number|undefined} [params.height]
+ */
+export async function patchUiSize({ height, size, width }) {
+    if ((!size && !width) || (size && width)) {
+        throw new Error(
+            "Either size or width must be given to the patchUiSize function",
+        );
+    }
+    size = size === undefined ? getSizeFromWidth(width) : size;
+    width = width || getWidthFromSize(size);
+
+    patchWithCleanup(uiUtils, {
+        getSize() {
+            return size;
+        },
+    });
+
+    await resize({ width, height });
+}
+
+function createAudioStream() {
+    const ctx = new window.AudioContext();
+    const dest = ctx.createMediaStreamDestination();
+    after(() => {
+        closeStream(dest.stream);
+        ctx.close().catch(() => {});
+    });
+    return dest.stream;
+}
+
+export function createVideoStream() {
+    const canvas = document.createElement("canvas");
+    canvas.width = 1;
+    canvas.height = 1;
+    const stream = canvas.captureStream();
+    after(() => closeStream(stream));
+    return stream;
+}
+
+export function mockGetMedia() {
+    const streams = [];
+    patchWithCleanup(browser.navigator.permissions, {
+        async query() {
+            return Object.assign(new EventTarget(), {
+                state: /** @type {const} */ ("granted"),
+                name: /** @type {PermissionName} */ ("microphone"),
+                onchange: null,
+            });
+        },
+    });
+    patchWithCleanup(browser.navigator.mediaDevices, {
+        async getUserMedia(constraints) {
+            if (constraints.audio) {
+                const audioStream = createAudioStream();
+                streams.push(audioStream);
+                return audioStream;
+            } else {
+                const videoStream = createVideoStream();
+                streams.push(videoStream);
+                return videoStream;
+            }
+        },
+        getDisplayMedia: async () => {
+            const videoStream = createVideoStream();
+            streams.push(videoStream);
+            return videoStream;
+        },
+    });
+    return streams;
+}
+
+/**
+ * @typedef {Object} MockRemote
+ * @property {number} sessionId
+ * @property {(state: string) => Promise<void>} updateConnectionState
+ * @property {(type: import("@mail/discuss/call/common/rtc_service").streamType, track: MediaStreamTrack) => Promise<void>} updateUpload
+ * @property {(info: Parameters<import("@mail/discuss/call/common/rtc_service").Rtc["_applySessionInfo"]>[1]) => Promise<void>} updateInfo
+ */
+/**
+ * @typedef {Object} MockNetwork
+ * @property {(channelMemberId: number) => MockRemote} makeMockRemote
+ */
+/**
+ * @param {Object} param0
+ * @param {Partial<OdooEnv>} param0.env
+ * @param {number} param0.channelId
+ * @returns {Promise<MockNetwork>}
+ */
+export async function makeMockRtcNetwork({ env, channelId }) {
+    const mockNetwork = new EventTarget();
+    const pyEnv = MockServer.current.env;
+    const rtc = env.services["discuss.rtc"];
+    const dispatchUpdate = (payload) => {
+        mockNetwork.dispatchEvent(new CustomEvent("update", { detail: payload }));
+    };
+    const rtcServiceIsListening = new Deferred();
+    patchWithCleanup(Network.prototype, {
+        addEventListener(name, f) {
+            if (name === "update") {
+                rtcServiceIsListening.resolve();
+                rtc.network.p2p.disconnect();
+            }
+            mockNetwork.addEventListener(name, /** @type {EventListener} */ (f));
+            after(() =>
+                mockNetwork.removeEventListener(name, /** @type {EventListener} */ (f)),
+            );
+        },
+    });
+
+    return {
+        makeMockRemote(channelMemberId) {
+            const sessionId = pyEnv["discuss.channel.rtc.session"].create({
+                channel_member_id: channelMemberId,
+                channel_id: channelId,
+            });
+            return {
+                sessionId,
+                async updateConnectionState(state) {
+                    await rtcServiceIsListening;
+                    dispatchUpdate({
+                        name: UPDATE_EVENT.CONNECTION_CHANGE,
+                        payload: {
+                            id: sessionId,
+                            state,
+                        },
+                    });
+                },
+                async updateInfo(info) {
+                    await rtcServiceIsListening;
+                    dispatchUpdate({
+                        name: UPDATE_EVENT.INFO_CHANGE,
+                        payload: { [sessionId]: info },
+                    });
+                },
+                async updateUpload(type, track) {
+                    await rtcServiceIsListening;
+                    dispatchUpdate({
+                        name: UPDATE_EVENT.TRACK,
+                        payload: {
+                            sessionId,
+                            type,
+                            track,
+                            active: Boolean(track),
+                        },
+                    });
+                },
+            };
+        },
+    };
+}
+
+/**
+ * @param {"default" | "denied" | "granted"} permission
+ * @param {"default" | "denied" | "granted"} [requestPermissionResult]
+ */
+export function patchBrowserNotification(
+    permission = "default",
+    requestPermissionResult,
+) {
+    if (!browser.Notification || !browser.navigator.permissions) {
+        return;
+    }
+    const notificationQueries = [];
+    patchWithCleanup(browser.navigator.permissions, {
+        async query({ name }) {
+            const result = await super.query(...arguments);
+            if (name === "notifications") {
+                Object.defineProperty(result, "state", {
+                    get: () => (permission === "default" ? "prompt" : permission),
+                });
+                notificationQueries.push(result);
+            }
+            return result;
+        },
+    });
+    patchWithCleanup(browser.Notification, {
+        permission,
+        isPatched: true,
+        requestPermission() {
+            if (!requestPermissionResult) {
+                return super.requestPermission(...arguments);
+            }
+            this.permission = requestPermissionResult;
+            for (const query of notificationQueries) {
+                query.permission = requestPermissionResult;
+                query.dispatchEvent(new Event("change"));
+            }
+            return requestPermissionResult;
+        },
+    });
+}
+
+function cloneRegistryWithCleanup(registry) {
+    prepareRegistry(registry, { keepContent: true });
+}
+
+function prepareRegistry(registry, { keepContent = false } = {}) {
+    const _addEventListener = registry.addEventListener.bind(registry);
+    const _removeEventListener = registry.removeEventListener.bind(registry);
+    const patch = {
+        content: keepContent ? { ...registry.content } : {},
+        elements: null,
+        entries: null,
+        subRegistries: {},
+        addEventListener(type, callback) {
+            _addEventListener(type, callback);
+            after(() => {
+                _removeEventListener(type, callback);
+            });
+        },
+    };
+    patchWithCleanup(registry, patch);
+}
+
+export function prepareRegistriesWithCleanup() {
+    registryNamesToCloneWithCleanup.forEach((registryName) =>
+        cloneRegistryWithCleanup(registry.category(registryName)),
+    );
+}
+
+const observeRenderResults = new Map();
+let nextObserveRenderResults = 0;
+export function prepareObserveRenders() {
+    patchWithCleanup(Component.prototype, {
+        setup(...args) {
+            const cb = () => {
+                for (const result of observeRenderResults.values()) {
+                    if (!result.has(this.constructor)) {
+                        result.set(this.constructor, 0);
+                    }
+                    result.set(this.constructor, result.get(this.constructor) + 1);
+                }
+            };
+            onMounted(cb);
+            onPatched(cb);
+            onWillDestroy(() => {
+                for (const result of observeRenderResults.values()) {
+                    if (result.has(this.constructor) && status(this) === "cancelled") {
+                        result.set(this.constructor, result.get(this.constructor) - 1);
+                    }
+                }
+            });
+            return super.setup(...args);
+        },
+    });
+    after(() => observeRenderResults.clear());
+}
+
+/** @returns {() => Map<Function, number>} */
+export function observeRenders() {
+    const id = nextObserveRenderResults++;
+    observeRenderResults.set(id, new Map());
+    return () => {
+        const result = observeRenderResults.get(id);
+        observeRenderResults.delete(id);
+        return result;
+    };
+}
+
+/**
+ * @param {string} childSelector
+ * @param {string} parentSelector
+ */
+export async function isInViewportOf(childSelector, parentSelector) {
+    await contains(parentSelector);
+    await contains(childSelector);
+    const inViewportDeferred = new Deferred();
+    const failTimeout = setTimeout(() => check({ crashOnFail: true }), TIMEOUT);
+    const check = ({ crashOnFail = false } = {}) => {
+        const parent = queryFirst(parentSelector);
+        const child = queryFirst(childSelector);
+        let alreadyInViewport = false;
+        if (parent && child) {
+            const childRect = child.getBoundingClientRect();
+            const parentRect = parent.getBoundingClientRect();
+            alreadyInViewport =
+                childRect.top <= parentRect.top
+                    ? parentRect.top - childRect.top <= childRect.height
+                    : childRect.bottom - parentRect.bottom <= childRect.height;
+        }
+        if (alreadyInViewport) {
+            clearTimeout(failTimeout);
+            expect(true).toBe(true, {
+                message: `Element ${childSelector} found in viewport of ${parentSelector}`,
+            });
+            inViewportDeferred.resolve();
+        } else if (crashOnFail) {
+            const failMsg = `Element ${childSelector} not found in viewport of ${parentSelector}`;
+            expect(false).toBe(true, { message: failMsg });
+            inViewportDeferred.reject(new Error(failMsg));
+        } else {
+            parent.addEventListener("scrollend", () => check(), { once: true });
+        }
+    };
+    check();
+    return inViewportDeferred;
+}
+
+/**
+ * Opens the systray messaging menu, then the tab `tabId` when given.
+ *
+ * @param {string} [tabId]
+ */
+export async function openMessagingMenu(tabId) {
+    if (!queryFirst(".o-mail-MessagingMenuInDropdown")) {
+        await click(".o_menu_systray i[aria-label='Messages']");
+    }
+    if (tabId) {
+        const selector = `.o-mail-MessagingMenuInDropdown .o-mail-MessagingMenu-tab[data-id='${tabId}']`;
+        await click(selector);
+        await contains(`${selector}.active`);
+    }
+}
+
+export async function hover(selector) {
+    await contains(selector);
+    await hootHover(selector);
+}
+
+function toChatHubData(opened, folded) {
+    return JSON.stringify({
+        opened: opened.map((data) => convertChatHubParam(data)),
+        folded: folded.map((data) => convertChatHubParam(data)),
+    });
+}
+
+function convertChatHubParam(param) {
+    return typeof param === "number" ? { id: param, model: "discuss.channel" } : param;
+}
+
+export function setupChatHub({ opened = [], folded = [] } = {}) {
+    browser.localStorage.setItem(CHAT_HUB_KEY, toChatHubData(opened, folded));
+}
+
+export function assertChatHub({ opened = [], folded = [] }) {
+    expect(browser.localStorage.getItem(CHAT_HUB_KEY)).toEqual(
+        toChatHubData(opened, folded),
+    );
+}
+
+export const STORE_FETCH_ROUTES = ["/mail/action", "/mail/data"];
+
+/**
+ * @param {string|string[]} [nameOrNames=[]]
+ * @param {Object} [options={}]
+ * @param {function} [options.onRpc]
+ * @param {string[]} [options.logParams=[]]
+ */
+export function listenStoreFetch(
+    nameOrNames = [],
+    { logParams = [], onRpc: onRpcOverride } = {},
+) {
+    async function registerStep(request, name, params) {
+        const res = await onRpcOverride?.(request);
+        if (logParams.includes(name)) {
+            asyncStep(`store fetch: ${name} - ${JSON.stringify(params)}`);
+        } else {
+            asyncStep(`store fetch: ${name}`);
+        }
+        return res;
+    }
+    async function registerSteps(request, fetchParams) {
+        const namesToRegister =
+            typeof nameOrNames === "string" ? [nameOrNames] : nameOrNames;
+        let res;
+        for (const fetchParam of fetchParams) {
+            const name = typeof fetchParam === "string" ? fetchParam : fetchParam[0];
+            const params = typeof fetchParam === "string" ? undefined : fetchParam[1];
+            if (namesToRegister.length > 0) {
+                if (
+                    namesToRegister.some((namesToRegister) => namesToRegister === name)
+                ) {
+                    res = await registerStep(request, name, params);
+                }
+            } else {
+                res = await registerStep(request, name, params);
+            }
+        }
+        return res;
+    }
+    onRpc("/mail/action", async (request) => {
+        const { params } = await request.json();
+        return registerSteps(request, params.fetch_params);
+    });
+    onRpc("/mail/data", async (request) => {
+        const { params } = await request.json();
+        return registerSteps(request, params.fetch_params);
+    });
+}
+
+/**
+ * @param {string|Array<string|[string, Object]>} nameOrNames
+ * @param {Object} [options={}]
+ * @param {boolean} [options.ignoreOrder=false]
+ * @param {string[]} [options.stepsAfter=[]]
+ * @param {string[]} [options.stepsBefore=[]]
+ */
+export async function waitStoreFetch(
+    nameOrNames = [],
+    { ignoreOrder = false, stepsAfter = [], stepsBefore = [] } = {},
+) {
+    await waitForSteps(
+        [
+            ...stepsBefore,
+            ...(typeof nameOrNames === "string" ? [nameOrNames] : nameOrNames).map(
+                (nameOrNameAndParams) => {
+                    if (typeof nameOrNameAndParams === "string") {
+                        return `store fetch: ${nameOrNameAndParams}`;
+                    }
+                    return `store fetch: ${nameOrNameAndParams[0]} - ${JSON.stringify(
+                        nameOrNameAndParams[1],
+                    )}`;
+                },
+            ),
+            ...stepsAfter,
+        ],
+        { ignoreOrder },
+    );
+    await microTick();
+}
+
+export function userContext() {
+    return {
+        lang: "en",
+        tz: "taht",
+        uid: serverState.userId,
+        allowed_company_ids: [1],
+    };
+}
+
+/**
+ * @typedef VoiceMessagePatchResources
+ * @property {{process(allInputs: Float32Array[][]): boolean}} audioProcessor
+ */
+/** @returns {VoiceMessagePatchResources} */
+export function patchVoiceMessageAudio() {
+    const res = { audioProcessor: undefined };
+    const {
+        AnalyserNode,
+        AudioBufferSourceNode,
+        AudioContext,
+        AudioWorkletNode,
+        GainNode,
+        MediaStreamAudioSourceNode,
+    } = browser;
+    const audioMocks = {
+        AnalyserNode: class {
+            connect() {}
+            disconnect() {}
+        },
+        AudioBufferSourceNode: class {
+            buffer;
+            constructor() {}
+            connect() {}
+            disconnect() {}
+            start() {}
+            stop() {}
+        },
+        AudioContext: class {
+            audioWorklet;
+            currentTime;
+            destination;
+            sampleRate;
+            state;
+            constructor() {
+                this.audioWorklet = {
+                    addModule(url) {},
+                };
+            }
+            async close() {}
+            createAnalyser() {
+                return new audioMocks.AnalyserNode();
+            }
+            createBufferSource() {
+                return new audioMocks.AudioBufferSourceNode();
+            }
+            createGain() {
+                return new audioMocks.GainNode();
+            }
+            createMediaStreamSource(microphone) {
+                return new audioMocks.MediaStreamAudioSourceNode();
+            }
+            /**
+             * @param {Parameters<AudioContext["decodeAudioData"]>} args
+             * @returns {Promise<AudioBuffer>}
+             */
+            decodeAudioData(...args) {
+                return new AudioContext().decodeAudioData(...args);
+            }
+        },
+        AudioWorkletNode: class {
+            port;
+            constructor(audioContext, processorName) {
+                this.port = {
+                    onmessage(e) {},
+                    postMessage(data) {
+                        this.onmessage({ data, timeStamp: new Date().getTime() });
+                    },
+                };
+                res.audioProcessor = this;
+            }
+            connect() {
+                this.port.postMessage();
+            }
+            disconnect() {}
+            process(allInputs) {
+                const inputs = allInputs[0][0];
+                this.port.postMessage(inputs);
+                return true;
+            }
+        },
+        GainNode: class {
+            connect() {}
+            close() {}
+            disconnect() {}
+        },
+        MediaStreamAudioSourceNode: class {
+            connect(processor) {}
+            disconnect() {}
+        },
+    };
+    Object.assign(browser, audioMocks);
+    after(() => {
+        Object.assign(browser, {
+            AnalyserNode,
+            AudioBufferSourceNode,
+            AudioContext,
+            AudioWorkletNode,
+            GainNode,
+            MediaStreamAudioSourceNode,
+        });
+    });
+    return res;
+}
+
+export function mockPermissionsPrompt() {
+    patchWithCleanup(browser.navigator.permissions, {
+        async query() {
+            return Object.assign(new EventTarget(), {
+                state: /** @type {const} */ ("prompt"),
+                name: /** @type {PermissionName} */ ("microphone"),
+                onchange: null,
+            });
+        },
+    });
+}
+
+/**
+ * @param {string} conversationName
+ * @param {number} count
+ */
+export async function assertChatBubbleAndWindowImStatus(conversationName, count) {
+    await contains(`.o-mail-ChatBubble[name=${conversationName}]`);
+    expect(`.o-mail-ChatBubble[name=${conversationName}] .o-mail-ImStatus`).toHaveCount(
+        count,
+    );
+    await click(`.o-mail-ChatBubble[name=${conversationName}]`);
+    await contains(`.o-mail-ChatWindow-header:has(:text(${conversationName}))`);
+    expect(
+        `.o-mail-ChatWindow-header:has(:text(${conversationName})) .o-mail-ImStatus`,
+    ).toHaveCount(count);
+    await click(`.o-mail-ChatWindow-header:has(:text(${conversationName}))`);
+}

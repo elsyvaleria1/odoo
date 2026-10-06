@@ -1,0 +1,705 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* trade_account
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-10-02 03:27+0000\n"
+"PO-Revision-Date: 2026-10-02 03:27+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: trade_account
+#. odoo-python
+#: code:addons/trade_account/wizards/mixin_order_advance_payment.py:0
+msgid "%s has been created"
+msgstr ""
+
+#. module: trade_account
+#: model:ir.model.fields,help:trade_account.field_mixin_order_invoice__locked
+msgid "A locked document cannot be modified."
+msgstr ""
+
+#. module: trade_account
+#: model:ir.model.fields,help:trade_account.field_mixin_order_advance_payment__advance_payment_method
+msgid ""
+"A standard invoice is issued with all the order lines ready for "
+"invoicing,according to their invoicing policy (based on ordered or delivered"
+" quantity)."
+msgstr ""
+
+#. module: trade_account
+#: model:ir.model.fields,field_description:trade_account.field_mixin_order_line_match__account_move_id
+msgid "Account Move"
+msgstr ""
+
+#. module: trade_account
+#. odoo-python
+#: code:addons/trade_account/models/mixin_order_line_match.py:0
+msgid "Add to Order"
+msgstr ""
+
+#. module: trade_account
+#: model:ir.model.fields,field_description:trade_account.field_mixin_order_invoice__amount_taxexc_invoiced
+msgid "Already Invoiced (Tax Excl.)"
+msgstr ""
+
+#. module: trade_account
+#: model:ir.model.fields,field_description:trade_account.field_mixin_order_invoice__amount_taxinc_invoiced
+msgid "Already Invoiced (Tax Incl.)"
+msgstr ""
+
+#. module: trade_account
+#: model:ir.model.fields,field_description:trade_account.field_mixin_order_advance_payment__amount_taxinc_invoiced
+msgid "Already invoiced"
+msgstr ""
+
+#. module: trade_account
+#: model:ir.model.fields,field_description:trade_account.field_mixin_order_line_match__aml_id
+msgid "Aml"
+msgstr ""
+
+#. module: trade_account
+#: model:ir.model.fields,field_description:trade_account.field_mixin_order_document_match__amount
+#: model:ir.model.fields,field_description:trade_account.field_mixin_order_line_invoice__amount_to_invoice_at_date
+msgid "Amount"
+msgstr ""
+
+#. module: trade_account
+#: model:ir.model.fields,field_description:trade_account.field_mixin_order_line_invoice__amount_taxinc_to_invoice
+msgid "Amount To Invoice"
+msgstr ""
+
+#. module: trade_account
+#: model:ir.model.fields,field_description:trade_account.field_mixin_order_line_invoice__amount_taxinc_invoiced_draft
+msgid "Amount in Draft Invoices"
+msgstr ""
+
+#. module: trade_account
+#. odoo-python
+#: code:addons/trade_account/models/mixin_order_invoice.py:0
+msgid ""
+"Cannot cancel an order whose invoices are posted and not fully refunded:\n"
+"\n"
+"%(details)s\n"
+"\n"
+"Refund them in full, cancel them or reset them to draft first."
+msgstr ""
+
+#. module: trade_account
+#. odoo-python
+#: code:addons/trade_account/models/mixin_order_line_invoice.py:0
+msgid ""
+"Cannot invoice “%(line)s”: its already-invoiced quantity is recorded in "
+"%(source)s, which cannot be converted into %(target)s. Align the units of "
+"measure on the order line and its invoice lines, then try again."
+msgstr ""
+
+#. module: trade_account
+#. odoo-python
+#: code:addons/trade_account/models/mixin_order_line_invoice.py:0
+msgid ""
+"Cannot invoice “%(line)s”: its transferred (delivered/received) quantity relies on a unit of measure conversion that is not possible, so the line cannot be sized for invoicing. Align the units of measure on the order line and its transfers, then try again.\n"
+"\n"
+"%(detail)s"
+msgstr ""
+
+#. module: trade_account
+#: model:ir.model.fields,field_description:trade_account.field_mixin_order_advance_payment__company_id
+#: model:ir.model.fields,field_description:trade_account.field_mixin_order_document_match__company_id
+#: model:ir.model.fields,field_description:trade_account.field_mixin_order_line_match__company_id
+msgid "Company"
+msgstr ""
+
+#. module: trade_account
+#: model:ir.model.fields,field_description:trade_account.field_mixin_order_advance_payment__consolidated_billing
+msgid "Consolidated Billing"
+msgstr ""
+
+#. module: trade_account
+#: model:ir.model.fields,field_description:trade_account.field_mixin_order_advance_payment__advance_payment_method
+msgid "Create Invoice"
+msgstr ""
+
+#. module: trade_account
+#: model:ir.model.fields,help:trade_account.field_mixin_order_advance_payment__consolidated_billing
+msgid ""
+"Create one invoice for all orders related to same partner, same invoicing "
+"address and same delivery address."
+msgstr ""
+
+#. module: trade_account
+#: model:ir.model.fields,field_description:trade_account.field_mixin_order_advance_payment__currency_id
+#: model:ir.model.fields,field_description:trade_account.field_mixin_order_document_match__currency_id
+#: model:ir.model.fields,field_description:trade_account.field_mixin_order_invoice__currency_id
+#: model:ir.model.fields,field_description:trade_account.field_mixin_order_line_invoice__currency_id
+#: model:ir.model.fields,field_description:trade_account.field_mixin_order_line_match__currency_id
+msgid "Currency"
+msgstr ""
+
+#. module: trade_account
+#: model:ir.model.fields,field_description:trade_account.field_mixin_order_document_match__date
+msgid "Date"
+msgstr ""
+
+#. module: trade_account
+#: model:ir.model.fields,field_description:trade_account.field_mixin_order_advance_payment__deduct_down_payments
+msgid "Deduct down payments"
+msgstr ""
+
+#. module: trade_account
+#: model:ir.model.fields,help:trade_account.field_mixin_order_line_match__product_uom_id
+msgid "Default unit of measure used for all stock operations."
+msgstr ""
+
+#. module: trade_account
+#: model:ir.model.fields,field_description:trade_account.field_mixin_order_advance_payment__display_draft_invoice_warning
+msgid "Display Draft Invoice Warning"
+msgstr ""
+
+#. module: trade_account
+#: model:ir.model.fields,field_description:trade_account.field_account_move__display_name
+#: model:ir.model.fields,field_description:trade_account.field_account_move_line__display_name
+#: model:ir.model.fields,field_description:trade_account.field_mixin_order_advance_payment__display_name
+#: model:ir.model.fields,field_description:trade_account.field_mixin_order_document_import__display_name
+#: model:ir.model.fields,field_description:trade_account.field_mixin_order_document_match__display_name
+#: model:ir.model.fields,field_description:trade_account.field_mixin_order_invoice__display_name
+#: model:ir.model.fields,field_description:trade_account.field_mixin_order_line_invoice__display_name
+#: model:ir.model.fields,field_description:trade_account.field_mixin_order_line_match__display_name
+msgid "Display Name"
+msgstr ""
+
+#. module: trade_account
+#. odoo-python
+#: code:addons/trade_account/models/mixin_order_line_invoice.py:0
+#: code:addons/trade_account/wizards/mixin_order_advance_payment.py:0
+#: model:ir.model.fields,field_description:trade_account.field_mixin_order_advance_payment__amount
+msgid "Down Payment"
+msgstr ""
+
+#. module: trade_account
+#. odoo-python
+#: code:addons/trade_account/models/mixin_order_line_invoice.py:0
+msgid "Down Payment (Cancelled)"
+msgstr ""
+
+#. module: trade_account
+#. odoo-python
+#: code:addons/trade_account/models/mixin_order_line_invoice.py:0
+msgid "Down Payment (ref: %(reference)s on %(date)s)"
+msgstr ""
+
+#. module: trade_account
+#: model:ir.model.fields,field_description:trade_account.field_mixin_order_advance_payment__fixed_amount
+msgid "Down Payment Amount (Fixed)"
+msgstr ""
+
+#. module: trade_account
+#. odoo-python
+#: code:addons/trade_account/models/mixin_order_line_invoice.py:0
+msgid "Down Payment: %(date)s (Draft)"
+msgstr ""
+
+#. module: trade_account
+#. odoo-python
+#: code:addons/trade_account/models/mixin_order_invoice.py:0
+#: code:addons/trade_account/models/mixin_order_line_invoice.py:0
+msgid "Down Payments"
+msgstr ""
+
+#. module: trade_account
+#: model:ir.model.fields.selection,name:trade_account.selection__mixin_order_advance_payment__advance_payment_method__fixed
+#: model:ir.model.fields.selection,name:trade_account.selection__wizard_sale_order_invoice__advance_payment_method__fixed
+msgid "Down payment (fixed amount)"
+msgstr ""
+
+#. module: trade_account
+#: model:ir.model.fields.selection,name:trade_account.selection__mixin_order_advance_payment__advance_payment_method__percentage
+#: model:ir.model.fields.selection,name:trade_account.selection__wizard_sale_order_invoice__advance_payment_method__percentage
+msgid "Down payment (percentage)"
+msgstr ""
+
+#. module: trade_account
+#. odoo-python
+#: code:addons/trade_account/wizards/mixin_order_advance_payment.py:0
+msgid "Down payment invoice"
+msgstr ""
+
+#. module: trade_account
+#. odoo-python
+#: code:addons/trade_account/wizards/mixin_order_advance_payment.py:0
+msgid "Down payment of %s%%"
+msgstr ""
+
+#. module: trade_account
+#. odoo-python
+#: code:addons/trade_account/wizards/mixin_order_advance_payment.py:0
+msgid "Draft Invoices"
+msgstr ""
+
+#. module: trade_account
+#: model:ir.model.fields,field_description:trade_account.field_mixin_order_invoice__force_fully_invoiced
+msgid "Force Fully Invoiced"
+msgstr ""
+
+#. module: trade_account
+#: model:ir.model.fields.selection,name:trade_account.selection__mixin_order_invoice__invoice_state__done
+#: model:ir.model.fields.selection,name:trade_account.selection__mixin_order_line_invoice__invoice_state__done
+#: model:ir.model.fields.selection,name:trade_account.selection__purchase_order__invoice_state__done
+#: model:ir.model.fields.selection,name:trade_account.selection__purchase_order_line__invoice_state__done
+#: model:ir.model.fields.selection,name:trade_account.selection__sale_order__invoice_state__done
+#: model:ir.model.fields.selection,name:trade_account.selection__sale_order_line__invoice_state__done
+#: model:ir.model.fields.selection,name:trade_account.selection__test_trade_order__invoice_state__done
+#: model:ir.model.fields.selection,name:trade_account.selection__test_trade_order_line__invoice_state__done
+msgid "Fully invoiced"
+msgstr ""
+
+#. module: trade_account
+#. odoo-python
+#: code:addons/trade_account/models/mixin_order_document_import.py:0
+msgid "Generated Orders"
+msgstr ""
+
+#. module: trade_account
+#: model:ir.model.fields,field_description:trade_account.field_mixin_order_advance_payment__has_down_payments
+msgid "Has down payments"
+msgstr ""
+
+#. module: trade_account
+#: model:ir.model.fields,field_description:trade_account.field_account_move__id
+#: model:ir.model.fields,field_description:trade_account.field_account_move_line__id
+#: model:ir.model.fields,field_description:trade_account.field_mixin_order_advance_payment__id
+#: model:ir.model.fields,field_description:trade_account.field_mixin_order_document_import__id
+#: model:ir.model.fields,field_description:trade_account.field_mixin_order_document_match__id
+#: model:ir.model.fields,field_description:trade_account.field_mixin_order_invoice__id
+#: model:ir.model.fields,field_description:trade_account.field_mixin_order_line_invoice__id
+#: model:ir.model.fields,field_description:trade_account.field_mixin_order_line_match__id
+msgid "ID"
+msgstr ""
+
+#. module: trade_account
+#: model:ir.model.fields,help:trade_account.field_mixin_order_invoice__journal_id
+msgid ""
+"If set, the order will invoice in this journal; otherwise the journal with "
+"the lowest sequence is used."
+msgstr ""
+
+#. module: trade_account
+#: model:ir.model.fields,field_description:trade_account.field_mixin_order_invoice__amount_taxexc_invoiced_draft
+msgid "In Draft Invoices (Tax Excl.)"
+msgstr ""
+
+#. module: trade_account
+#: model:ir.model.fields,field_description:trade_account.field_mixin_order_invoice__amount_taxinc_invoiced_draft
+msgid "In Draft Invoices (Tax Incl.)"
+msgstr ""
+
+#. module: trade_account
+#: model:ir.model.fields,field_description:trade_account.field_mixin_order_document_match__move_id
+msgid "Invoice"
+msgstr ""
+
+#. module: trade_account
+#: model:ir.model.fields,field_description:trade_account.field_mixin_order_invoice__invoice_count
+msgid "Invoice Count"
+msgstr ""
+
+#. module: trade_account
+#: model:ir.model.fields,field_description:trade_account.field_mixin_order_line_invoice__invoice_line_ids
+msgid "Invoice Lines"
+msgstr ""
+
+#. module: trade_account
+#: model:ir.model.fields,field_description:trade_account.field_mixin_order_invoice__invoice_state
+#: model:ir.model.fields,field_description:trade_account.field_mixin_order_line_invoice__invoice_state
+msgid "Invoice Status"
+msgstr ""
+
+#. module: trade_account
+#: model:ir.model.fields.selection,name:trade_account.selection__mixin_order_invoice__invoice_state__draft
+#: model:ir.model.fields.selection,name:trade_account.selection__mixin_order_line_invoice__invoice_state__draft
+#: model:ir.model.fields.selection,name:trade_account.selection__purchase_order__invoice_state__draft
+#: model:ir.model.fields.selection,name:trade_account.selection__purchase_order_line__invoice_state__draft
+#: model:ir.model.fields.selection,name:trade_account.selection__sale_order__invoice_state__draft
+#: model:ir.model.fields.selection,name:trade_account.selection__sale_order_line__invoice_state__draft
+#: model:ir.model.fields.selection,name:trade_account.selection__test_trade_order__invoice_state__draft
+#: model:ir.model.fields.selection,name:trade_account.selection__test_trade_order_line__invoice_state__draft
+msgid "Invoice in draft"
+msgstr ""
+
+#. module: trade_account
+#. odoo-python
+#: code:addons/trade_account/models/mixin_order_line_match.py:0
+msgid "Invoice lines can only be added to one order."
+msgstr ""
+
+#. module: trade_account
+#: model:ir.model.fields,field_description:trade_account.field_mixin_order_line_invoice__qty_invoiced_at_date
+msgid "Invoiced"
+msgstr ""
+
+#. module: trade_account
+#: model:ir.model.fields,field_description:trade_account.field_mixin_order_line_invoice__amount_taxinc_invoiced
+msgid "Invoiced Amount"
+msgstr ""
+
+#. module: trade_account
+#: model:ir.model.fields,field_description:trade_account.field_mixin_order_line_match__invoiced_amount_taxexc
+msgid "Invoiced Amount Taxexc"
+msgstr ""
+
+#. module: trade_account
+#: model:ir.model.fields,field_description:trade_account.field_mixin_order_line_invoice__qty_invoiced
+msgid "Invoiced Quantity"
+msgstr ""
+
+#. module: trade_account
+#: model:ir.model.fields,field_description:trade_account.field_mixin_order_invoice__invoice_ids
+msgid "Invoices"
+msgstr ""
+
+#. module: trade_account
+#: model:ir.model.fields,field_description:trade_account.field_account_move_line__is_downpayment
+msgid "Is Downpayment"
+msgstr ""
+
+#. module: trade_account
+#: model:ir.model.fields,field_description:trade_account.field_mixin_order_invoice__journal_id
+msgid "Journal"
+msgstr ""
+
+#. module: trade_account
+#: model:ir.model,name:trade_account.model_account_move
+msgid "Journal Entry"
+msgstr ""
+
+#. module: trade_account
+#: model:ir.model,name:trade_account.model_account_move_line
+msgid "Journal Item"
+msgstr ""
+
+#. module: trade_account
+#: model:ir.model.fields,field_description:trade_account.field_mixin_order_line_match__line_amount_taxexc
+msgid "Line Amount Taxexc"
+msgstr ""
+
+#. module: trade_account
+#: model:ir.model.fields,field_description:trade_account.field_mixin_order_line_match__line_qty
+msgid "Line Qty"
+msgstr ""
+
+#. module: trade_account
+#: model:ir.model.fields,field_description:trade_account.field_mixin_order_line_match__line_uom_id
+msgid "Line Uom"
+msgstr ""
+
+#. module: trade_account
+#: model:ir.model.fields,field_description:trade_account.field_mixin_order_invoice__locked
+msgid "Locked"
+msgstr ""
+
+#. module: trade_account
+#. odoo-python
+#: code:addons/trade_account/models/account_move.py:0
+msgid ""
+"More than one %(orders)s has this document as its origin. Please review."
+msgstr ""
+
+#. module: trade_account
+#. odoo-python
+#: code:addons/trade_account/models/mixin_order_document_import.py:0
+msgid "No attachment was provided."
+msgstr ""
+
+#. module: trade_account
+#: model:ir.model.fields.selection,name:trade_account.selection__mixin_order_invoice__invoice_state__no
+#: model:ir.model.fields.selection,name:trade_account.selection__mixin_order_line_invoice__invoice_state__no
+#: model:ir.model.fields.selection,name:trade_account.selection__purchase_order__invoice_state__no
+#: model:ir.model.fields.selection,name:trade_account.selection__purchase_order_line__invoice_state__no
+#: model:ir.model.fields.selection,name:trade_account.selection__sale_order__invoice_state__no
+#: model:ir.model.fields.selection,name:trade_account.selection__sale_order_line__invoice_state__no
+#: model:ir.model.fields.selection,name:trade_account.selection__test_trade_order__invoice_state__no
+#: model:ir.model.fields.selection,name:trade_account.selection__test_trade_order_line__invoice_state__no
+msgid "Nothing to invoice"
+msgstr ""
+
+#. module: trade_account
+#: model:ir.model.fields,help:trade_account.field_mixin_order_advance_payment__amount_taxinc_invoiced
+msgid "Only confirmed down payments are considered."
+msgstr ""
+
+#. module: trade_account
+#: model:ir.model.fields,field_description:trade_account.field_mixin_order_document_match__order_id
+#: model:ir.model.fields,field_description:trade_account.field_mixin_order_line_match__order_id
+msgid "Order"
+msgstr ""
+
+#. module: trade_account
+#: model:ir.model,name:trade_account.model_mixin_order_document_import
+msgid "Order Creation From Uploaded Documents"
+msgstr ""
+
+#. module: trade_account
+#: model:ir.model,name:trade_account.model_mixin_order_invoice
+msgid "Order Invoice Integration"
+msgstr ""
+
+#. module: trade_account
+#: model:ir.model,name:trade_account.model_mixin_order_advance_payment
+msgid "Order Invoicing Wizard"
+msgstr ""
+
+#. module: trade_account
+#: model:ir.model.fields,field_description:trade_account.field_mixin_order_line_match__order_line_id
+msgid "Order Line"
+msgstr ""
+
+#. module: trade_account
+#: model:ir.model,name:trade_account.model_mixin_order_line_match
+msgid "Order Line & Invoice Line Matching"
+msgstr ""
+
+#. module: trade_account
+#: model:ir.model,name:trade_account.model_mixin_order_line_invoice
+msgid "Order Line Invoice Integration"
+msgstr ""
+
+#. module: trade_account
+#: model:ir.model.fields,field_description:trade_account.field_mixin_order_line_match__ordered_amount_taxexc
+msgid "Ordered Amount Taxexc"
+msgstr ""
+
+#. module: trade_account
+#: model:ir.model,name:trade_account.model_mixin_order_document_match
+msgid "Orders & Invoices Union"
+msgstr ""
+
+#. module: trade_account
+#: model:ir.model.fields.selection,name:trade_account.selection__mixin_order_invoice__invoice_state__over_done
+#: model:ir.model.fields.selection,name:trade_account.selection__mixin_order_line_invoice__invoice_state__over_done
+#: model:ir.model.fields.selection,name:trade_account.selection__purchase_order__invoice_state__over_done
+#: model:ir.model.fields.selection,name:trade_account.selection__purchase_order_line__invoice_state__over_done
+#: model:ir.model.fields.selection,name:trade_account.selection__sale_order__invoice_state__over_done
+#: model:ir.model.fields.selection,name:trade_account.selection__sale_order_line__invoice_state__over_done
+#: model:ir.model.fields.selection,name:trade_account.selection__test_trade_order__invoice_state__over_done
+#: model:ir.model.fields.selection,name:trade_account.selection__test_trade_order_line__invoice_state__over_done
+msgid "Over-invoiced"
+msgstr ""
+
+#. module: trade_account
+#: model:ir.model.fields.selection,name:trade_account.selection__mixin_order_invoice__invoice_state__partial
+#: model:ir.model.fields.selection,name:trade_account.selection__mixin_order_line_invoice__invoice_state__partial
+#: model:ir.model.fields.selection,name:trade_account.selection__purchase_order__invoice_state__partial
+#: model:ir.model.fields.selection,name:trade_account.selection__purchase_order_line__invoice_state__partial
+#: model:ir.model.fields.selection,name:trade_account.selection__sale_order__invoice_state__partial
+#: model:ir.model.fields.selection,name:trade_account.selection__sale_order_line__invoice_state__partial
+#: model:ir.model.fields.selection,name:trade_account.selection__test_trade_order__invoice_state__partial
+#: model:ir.model.fields.selection,name:trade_account.selection__test_trade_order_line__invoice_state__partial
+msgid "Partially invoiced"
+msgstr ""
+
+#. module: trade_account
+#: model:ir.model.fields,field_description:trade_account.field_mixin_order_document_match__partner_id
+#: model:ir.model.fields,field_description:trade_account.field_mixin_order_line_match__partner_id
+msgid "Partner"
+msgstr ""
+
+#. module: trade_account
+#: model:ir.model.fields,field_description:trade_account.field_mixin_order_invoice__partner_credit_warning
+msgid "Partner Credit Warning"
+msgstr ""
+
+#. module: trade_account
+#. odoo-python
+#: code:addons/trade_account/models/mixin_order_line_match.py:0
+msgid "Please select invoice lines with the same partner."
+msgstr ""
+
+#. module: trade_account
+#: model:ir.model.fields,field_description:trade_account.field_mixin_order_line_match__product_id
+msgid "Product"
+msgstr ""
+
+#. module: trade_account
+#: model:ir.model.fields,field_description:trade_account.field_mixin_order_line_match__product_uom_price
+msgid "Product Uom Price"
+msgstr ""
+
+#. module: trade_account
+#: model:ir.model.fields,field_description:trade_account.field_mixin_order_line_match__product_uom_qty
+msgid "Product Uom Qty"
+msgstr ""
+
+#. module: trade_account
+#: model:ir.model.fields,field_description:trade_account.field_mixin_order_line_match__qty_invoiced
+msgid "Qty Invoiced"
+msgstr ""
+
+#. module: trade_account
+#: model:ir.model.fields,field_description:trade_account.field_mixin_order_line_match__qty_to_invoice
+msgid "Qty to invoice"
+msgstr ""
+
+#. module: trade_account
+#: model:ir.model.fields,field_description:trade_account.field_mixin_order_line_invoice__qty_to_invoice
+msgid "Quantity To Invoice"
+msgstr ""
+
+#. module: trade_account
+#: model:ir.model.fields,field_description:trade_account.field_mixin_order_line_invoice__qty_invoiced_draft
+msgid "Quantity in Draft Invoices"
+msgstr ""
+
+#. module: trade_account
+#: model:ir.model.fields,help:trade_account.field_mixin_order_line_invoice__qty_to_invoice
+msgid "Quantity no invoice claims yet, posted or draft."
+msgstr ""
+
+#. module: trade_account
+#: model:ir.model.fields,help:trade_account.field_mixin_order_line_invoice__qty_invoiced_draft
+msgid "Quantity on invoices that are not posted yet."
+msgstr ""
+
+#. module: trade_account
+#: model:ir.model.fields,help:trade_account.field_mixin_order_line_invoice__qty_invoiced
+msgid "Quantity on posted invoices, credit notes deducted."
+msgstr ""
+
+#. module: trade_account
+#: model:ir.model.fields,field_description:trade_account.field_mixin_order_document_match__name
+#: model:ir.model.fields,field_description:trade_account.field_mixin_order_line_match__reference
+msgid "Reference"
+msgstr ""
+
+#. module: trade_account
+#: model:ir.model.fields.selection,name:trade_account.selection__mixin_order_advance_payment__advance_payment_method__delivered
+#: model:ir.model.fields.selection,name:trade_account.selection__wizard_sale_order_invoice__advance_payment_method__delivered
+msgid "Regular invoice"
+msgstr ""
+
+#. module: trade_account
+#: model:ir.model.fields,help:trade_account.field_mixin_order_invoice__force_fully_invoiced
+msgid "Report this order as fully invoiced regardless of its lines."
+msgstr ""
+
+#. module: trade_account
+#: model:ir.model.fields,field_description:trade_account.field_mixin_order_document_match__user_id
+#: model:ir.model.fields,field_description:trade_account.field_mixin_order_line_match__user_id
+msgid "Salesperson"
+msgstr ""
+
+#. module: trade_account
+#. odoo-python
+#: code:addons/trade_account/models/mixin_order_line_match.py:0
+msgid "Select invoice lines to add to an order"
+msgstr ""
+
+#. module: trade_account
+#. odoo-python
+#: code:addons/trade_account/models/account_move.py:0
+msgid "Some move lines do not have a product set. Please review."
+msgstr ""
+
+#. module: trade_account
+#: model:ir.model.fields,field_description:trade_account.field_mixin_order_document_match__reference
+msgid "Source"
+msgstr ""
+
+#. module: trade_account
+#: model:ir.model.fields,field_description:trade_account.field_mixin_order_line_match__state
+msgid "State"
+msgstr ""
+
+#. module: trade_account
+#: model:ir.model.fields,help:trade_account.field_mixin_order_advance_payment__fixed_amount
+msgid "The fixed amount to be invoiced in advance."
+msgstr ""
+
+#. module: trade_account
+#: model:ir.model.fields,help:trade_account.field_mixin_order_advance_payment__amount
+msgid "The percentage of amount to be invoiced in advance."
+msgstr ""
+
+#. module: trade_account
+#. odoo-python
+#: code:addons/trade_account/wizards/mixin_order_advance_payment.py:0
+msgid "The percentage of the down payment cannot exceed 100%."
+msgstr ""
+
+#. module: trade_account
+#. odoo-python
+#: code:addons/trade_account/wizards/mixin_order_advance_payment.py:0
+msgid "The value of the down payment amount must be positive."
+msgstr ""
+
+#. module: trade_account
+#. odoo-python
+#: code:addons/trade_account/models/mixin_order_invoice.py:0
+msgid "There is nothing to invoice for this order."
+msgstr ""
+
+#. module: trade_account
+#: model:ir.model.fields,field_description:trade_account.field_mixin_order_invoice__amount_taxexc_to_invoice
+msgid "To Invoice (Tax Excl.)"
+msgstr ""
+
+#. module: trade_account
+#: model:ir.model.fields,field_description:trade_account.field_mixin_order_invoice__amount_taxinc_to_invoice
+msgid "To Invoice (Tax Incl.)"
+msgstr ""
+
+#. module: trade_account
+#: model:ir.model.fields.selection,name:trade_account.selection__mixin_order_invoice__invoice_state__to_do
+#: model:ir.model.fields.selection,name:trade_account.selection__mixin_order_line_invoice__invoice_state__to_do
+#: model:ir.model.fields.selection,name:trade_account.selection__purchase_order__invoice_state__to_do
+#: model:ir.model.fields.selection,name:trade_account.selection__purchase_order_line__invoice_state__to_do
+#: model:ir.model.fields.selection,name:trade_account.selection__sale_order__invoice_state__to_do
+#: model:ir.model.fields.selection,name:trade_account.selection__sale_order_line__invoice_state__to_do
+#: model:ir.model.fields.selection,name:trade_account.selection__test_trade_order__invoice_state__to_do
+#: model:ir.model.fields.selection,name:trade_account.selection__test_trade_order_line__invoice_state__to_do
+msgid "To invoice"
+msgstr ""
+
+#. module: trade_account
+#: model:ir.model.fields,field_description:trade_account.field_mixin_order_line_match__product_uom_id
+msgid "Unit"
+msgstr ""
+
+#. module: trade_account
+#: model:ir.model.fields,field_description:trade_account.field_mixin_order_line_invoice__amount_taxexc_to_invoice
+msgid "Untaxed Amount To Invoice"
+msgstr ""
+
+#. module: trade_account
+#: model:ir.model.fields,field_description:trade_account.field_mixin_order_line_invoice__amount_taxexc_invoiced_draft
+msgid "Untaxed Amount in Draft Invoices"
+msgstr ""
+
+#. module: trade_account
+#: model:ir.model.fields,field_description:trade_account.field_mixin_order_line_invoice__amount_taxexc_invoiced
+msgid "Untaxed Invoiced Amount"
+msgstr ""
+
+#. module: trade_account
+#: model:ir.model.fields,help:trade_account.field_mixin_order_invoice__amount_taxexc_to_invoice
+#: model:ir.model.fields,help:trade_account.field_mixin_order_invoice__amount_taxinc_to_invoice
+msgid "What no invoice claims yet, posted or draft."
+msgstr ""
+
+#. module: trade_account
+#. odoo-python
+#: code:addons/trade_account/models/mixin_order_line_match.py:0
+msgid "You must select at least one order line to match or create invoice."
+msgstr ""
+
+#. module: trade_account
+#. odoo-python
+#: code:addons/trade_account/models/mixin_order_invoice.py:0
+msgid "• %(order)s: %(invoices)s"
+msgstr ""

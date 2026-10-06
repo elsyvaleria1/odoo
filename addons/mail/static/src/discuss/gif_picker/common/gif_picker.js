@@ -1,0 +1,369 @@
+// @ts-check
+/** @odoo-module native */
+import { Gif } from "@mail/core/common/gif";
+import { useOnBottomScrolled } from "@mail/utils/common/hooks";
+import { makeSequential } from "@mail/utils/common/misc";
+import { Component, onWillStart, proxy, useProps } from "@odoo/owl";
+import { PICKER_PROPS, usePicker } from "@web/components/emoji_picker";
+import { makeLogger } from "@web/core/debug/debug_logger";
+import { rpc } from "@web/core/network";
+import { user } from "@web/core/user";
+import { elementRef } from "@web/core/utils/element_ref";
+import { useAutofocus, useService } from "@web/core/utils/hooks";
+import { useLayoutEffect } from "@web/core/utils/layout_effect";
+import { useDebounced } from "@web/core/utils/timing";
+
+const log = makeLogger("mail.gif_picker");
+/**
+ * @param {Parameters<typeof usePicker> extends [unknown, ...infer Args] ? Args : never} args
+ * @returns {ReturnType<typeof usePicker>}
+ */
+export function useGifPicker(...args) {
+    return usePicker(GifPicker, ...args);
+}
+/**
+ * @typedef {Object} TenorCategory
+ * @property {string} searchterm
+ * @property {string} path
+ * @property {string} image
+ * @property {string} name
+ */
+/**
+ * @typedef {Object} TenorMediaFormat
+ * @property {string} url
+ * @property {number} duration
+ * @property {string} preview
+ * @property {number[]} dims
+ * @property {number} size
+ */
+/**
+ * @typedef {Object} TenorGif
+ * @property {string} id
+ * @property {string} title
+ * @property {number} created
+ * @property {string} content_description
+ * @property {string} itemurl
+ * @property {string} url
+ * @property {string[]} tags
+ * @property {string[]} flags
+ * @property {boolean} hasaudio
+ * @property {{ tinygif: TenorMediaFormat }} media_formats
+ */
+/**
+ * @typedef {Object} Props
+ * @property {function} onSelect
+ * @property {string} [className]
+ * @property {function} [close]
+ * @property {Object} [state]
+ * @property {Object} [PICKERS]
+ * @extends {Component<Props, import("@web/env").OdooEnv>}
+ */
+
+export class GifPicker extends Component {
+    static template = "discuss.GifPicker";
+    static props = PICKER_PROPS;
+    static components = { Gif };
+    props = useProps(this.constructor.props);
+
+    setup() {
+        super.setup();
+        this.store = useService("mail.store");
+        this.sequential = makeSequential();
+        this.autofocusRef = elementRef();
+        this.inputRef = useAutofocus({ ref: this.autofocusRef });
+        this.scrollerRef = elementRef();
+        useOnBottomScrolled(
+            this.scrollerRef,
+            () => {
+                if (!this.state.showCategories) {
+                    if (!this.showFavorite) {
+                        this.search();
+                    } else {
+                        this.loadFavoritesDebounced();
+                    }
+                }
+            },
+            300,
+        );
+        this.next = "";
+        this.showFavorite = false;
+        this.offset = 0;
+        this.favoritesAllLoaded = false;
+        this._loadingFavorites = false;
+        this.state = proxy({
+            favorites: {
+                /** @type {TenorGif[]} */
+                gifs: [],
+            },
+            searchTerm: "",
+            showCategories: true,
+            /** @type {TenorCategory[]} */
+            categories: [],
+            loadingGif: false,
+            loadingError: false,
+            evenGif: {
+                /** @type {Map<string, TenorGif>} */
+                gifs: new Map(),
+                columnSize: 0,
+            },
+            oddGif: {
+                /** @type {Map<string, TenorGif>} */
+                gifs: new Map(),
+                columnSize: 0,
+            },
+            focused: false,
+        });
+        this.loadFavoritesDebounced = useDebounced(this.loadFavorites.bind(this), 200);
+        onWillStart(() => {
+            this.loadCategories();
+        });
+        if (this.store.self_partner) {
+            onWillStart(() => {
+                this.loadFavorites();
+            });
+        }
+        useLayoutEffect(
+            () => {
+                if (this.props.state?.picker !== this.props.PICKERS?.GIF) {
+                    return;
+                }
+                this.clear();
+                this.search();
+                if (this.searchTerm) {
+                    this.closeCategories();
+                } else {
+                    this.openCategories();
+                }
+            },
+            () => [this.searchTerm, this.props.state?.picker],
+        );
+    }
+
+    get style() {
+        return "";
+    }
+
+    get searchTerm() {
+        return this.props.state ? this.props.state.searchTerm : this.state.searchTerm;
+    }
+
+    /** @param {string} value */
+    set searchTerm(value) {
+        if (this.props.state) {
+            this.props.state.searchTerm = value;
+        } else {
+            this.state.searchTerm = value;
+        }
+    }
+
+    async loadCategories() {
+        if (!this.store.hasGifPickerFeature) {
+            return;
+        }
+        try {
+            let { language, region } = new Intl.Locale(user.lang);
+            if (!region && language === "sr") {
+                region = "RS";
+            }
+            const endLoad = log.perf("loadCategories");
+            const { tags } = await rpc(
+                "/discuss/gif/categories",
+                {
+                    country: region,
+                    locale: `${language}_${region}`,
+                },
+                { silent: true },
+            );
+            endLoad({ locale: `${language}_${region}`, tags: tags?.length });
+            if (tags) {
+                this.state.categories = tags;
+            }
+        } catch {
+            log.logic("loadCategories failed");
+            this.state.loadingError = true;
+        }
+    }
+
+    openCategories() {
+        this.showFavorite = false;
+        this.state.showCategories = true;
+        this.searchTerm = "";
+        this.clear();
+    }
+
+    closeCategories() {
+        this.state.showCategories = false;
+    }
+
+    async search() {
+        if (!this.searchTerm) {
+            return;
+        }
+        try {
+            let { language, region } = new Intl.Locale(user.lang);
+            if (!region && language === "sr") {
+                region = "RS";
+            }
+            const term = this.searchTerm;
+            const res = await this.sequential(async () => {
+                const params = {
+                    country: region,
+                    locale: `${language}_${region}`,
+                    search_term: this.searchTerm,
+                };
+                if (this.next) {
+                    params.position = this.next;
+                }
+                this.state.loadingGif = true;
+                try {
+                    return await rpc("/discuss/gif/search", params, {
+                        silent: true,
+                    });
+                } finally {
+                    this.state.loadingGif = false;
+                }
+            });
+            if (res && term === this.searchTerm) {
+                const { next, results } = res;
+                log.pipeline("search results", () => ({
+                    term,
+                    results: results.length,
+                    hasNext: Boolean(next),
+                }));
+                this.next = next;
+                for (const gif of results) {
+                    this.pushGif(gif);
+                }
+                this.state.loadingError = false;
+            } else if (res) {
+                log.logic("search results dropped: term changed", () => ({
+                    term,
+                    current: this.searchTerm,
+                }));
+            }
+        } catch {
+            log.logic("search failed", () => ({ term: this.searchTerm }));
+            this.state.loadingError = true;
+        }
+    }
+
+    /** @param {TenorGif} gif */
+    pushGif(gif) {
+        if (this.state.evenGif.columnSize <= this.state.oddGif.columnSize) {
+            this.state.evenGif.gifs.set(gif.id, gif);
+            this.state.evenGif.columnSize += gif.media_formats.tinygif.dims[1];
+        } else {
+            this.state.oddGif.gifs.set(gif.id, gif);
+            this.state.oddGif.columnSize += gif.media_formats.tinygif.dims[1];
+        }
+    }
+
+    /** @param {TenorGif} gif */
+    onClickGif(gif) {
+        log.logic("onClickGif", () => ({ gifId: gif.id }));
+        this.props.onSelect(gif, true);
+        this.props.close?.();
+    }
+
+    clear() {
+        this.state.evenGif.gifs.clear();
+        this.state.evenGif.columnSize = 0;
+        this.state.oddGif.gifs.clear();
+        this.state.oddGif.columnSize = 0;
+        this.next = "";
+    }
+
+    /** @param {TenorCategory} category */
+    async onClickCategory(category) {
+        this.clear();
+        this.searchTerm = category.searchterm;
+        this.inputRef.el?.focus();
+        this.closeCategories();
+    }
+
+    /** @param {TenorGif} gif */
+    async onClickFavorite(gif) {
+        log.logic("onClickFavorite", () => ({
+            gifId: gif.id,
+            add: !this.isFavorite(gif),
+        }));
+        if (!this.isFavorite(gif)) {
+            this.state.favorites.gifs.push(gif);
+            await rpc(
+                "/discuss/gif/add_favorite",
+                { tenor_gif_id: gif.id },
+                { silent: true },
+            );
+        } else {
+            const index = this.state.favorites.gifs.findIndex(
+                ({ id }) => id === gif.id,
+            );
+            if (index >= 0) {
+                this.state.favorites.gifs.splice(index, 1);
+            }
+            await rpc(
+                "/discuss/gif/remove_favorite",
+                { tenor_gif_id: gif.id },
+                { silent: true },
+            );
+        }
+        if (this.showFavorite) {
+            this.clear();
+            for (const favorite of this.state.favorites.gifs) {
+                this.pushGif(favorite);
+            }
+        }
+    }
+
+    async loadFavorites() {
+        if (
+            !this.store.hasGifPickerFeature ||
+            this.favoritesAllLoaded ||
+            this._loadingFavorites
+        ) {
+            return;
+        }
+        this._loadingFavorites = true;
+        this.state.loadingGif = true;
+        try {
+            const endLoad = log.perf("loadFavorites");
+            const [results, hasMore] = await rpc(
+                "/discuss/gif/favorites",
+                { offset: this.offset },
+                { silent: true },
+            );
+            endLoad({ offset: this.offset, results: results.length, hasMore });
+            this.offset += results.length;
+            this.state.favorites.gifs.push(...results);
+            if (this.showFavorite) {
+                for (const gif of results) {
+                    this.pushGif(gif);
+                }
+            }
+            if (!hasMore) {
+                this.favoritesAllLoaded = true;
+            }
+        } catch {
+            this.state.loadingError = true;
+        } finally {
+            this._loadingFavorites = false;
+            this.state.loadingGif = false;
+        }
+    }
+
+    /** @param {TenorGif} gif */
+    isFavorite(gif) {
+        return this.state.favorites.gifs
+            .map((favorite) => favorite.id)
+            .includes(gif.id);
+    }
+
+    onClickFavoritesCategory() {
+        this.clear();
+        this.showFavorite = true;
+        for (const gif of this.state.favorites.gifs) {
+            this.pushGif(gif);
+        }
+        this.closeCategories();
+    }
+}

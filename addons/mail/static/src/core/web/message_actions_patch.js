@@ -1,0 +1,118 @@
+// @ts-check
+/** @odoo-module native */
+import { registerMessageAction } from "@mail/core/common/message_actions";
+import { getNonEditableMentions, parseEmail } from "@mail/utils/common/format";
+import { appContextOf } from "@web/core/app_context";
+import { formatValue } from "@web/core/l10n/dates";
+import { rpc } from "@web/core/network";
+import { _t } from "@web/core/translation";
+import { renderToMarkup } from "@web/core/utils/render";
+
+/** @typedef {import("@mail/core/common/message_actions").ActionParams} ActionParams */
+/**
+ * @param {string} title
+ * @param {Object} context
+ * @param {import("@odoo/owl").Component} component
+ */
+export function messageActionOpenFullComposer(title, context, component) {
+    const message = component.props.message;
+    const thread = component.props.thread;
+    const action = {
+        name: title,
+        type: "ir.actions.act_window",
+        res_model: "wizard.mail.message.send",
+        view_mode: "form",
+        views: [[false, "form"]],
+        target: "new",
+        context: {
+            ...context,
+            default_model: thread.model,
+            default_res_ids: [thread.id],
+            default_subject: message.subject || message.default_subject,
+            default_subtype_xmlid: "mail.mt_comment",
+        },
+    };
+    appContextOf(component).services.action.doAction(action, {
+        onClose: () => thread.fetchNewMessages(),
+    });
+}
+
+registerMessageAction("reply-all", {
+    /** @param {ActionParams} params */
+    condition: ({ message, thread }) => message.canReplyAll(thread),
+    icon: "fa-solid fa-reply",
+    name: _t("Reply All"),
+    /** @param {ActionParams} params */
+    onSelected: async ({ message, owner, thread }) => {
+        const recipients = await rpc("/mail/thread/recipients", {
+            thread_model: thread.model,
+            thread_id: thread.id,
+            message_id: message.id,
+        });
+        const recipientIds = recipients.map((r) => r.partner_id);
+        const emailFrom = message.author_id?.email || message.email_from;
+        const [name, email] = emailFrom ? parseEmail(emailFrom) : ["", ""];
+        const datetime = _t("%(date)s at %(time)s", {
+            date: formatValue(message.datetime, "ccc, MMM d, yyyy"),
+            time: formatValue(message.datetime, "hh:mm a"),
+        });
+        const body = renderToMarkup("mail.Message.bodyInReply", {
+            body: getNonEditableMentions(message.body),
+            date: datetime,
+            email,
+            message,
+            name: name || email,
+            signature: thread.store.selfUser?.getSignatureBlock(),
+        });
+        const context = {
+            default_body: body,
+            default_composition_mode: "comment",
+            default_composition_comment_option: "reply_all",
+            default_email_add_signature: false,
+            default_partner_ids: recipientIds,
+        };
+        messageActionOpenFullComposer(_t("Reply All"), context, owner);
+    },
+    sequence: 71,
+});
+registerMessageAction("forward", {
+    /** @param {ActionParams} params */
+    condition: ({ message, thread }) => message.canForward(thread),
+    icon: "fa-solid fa-share",
+    name: _t("Forward"),
+    /** @param {ActionParams} params */
+    onSelected: async ({ message, owner, store, thread }) => {
+        const emailFrom = message.author_id?.email || message.email_from;
+        const [name, email] = emailFrom ? parseEmail(emailFrom) : ["", ""];
+        const datetime = _t("%(date)s at %(time)s", {
+            date: formatValue(message.datetime, "ccc, MMM d, yyyy"),
+            time: formatValue(message.datetime, "hh:mm a"),
+        });
+        const body = renderToMarkup("mail.Message.bodyInForward", {
+            body: getNonEditableMentions(message.body),
+            date: datetime,
+            email,
+            message,
+            name: name || email,
+            signature: thread.store.selfUser?.getSignatureBlock(),
+        });
+        const attachmentIds = message.attachment_ids.map((a) => a.id);
+        const newAttachmentIds = await store.env.services.orm.call(
+            "ir.attachment",
+            "copy",
+            [attachmentIds],
+            {
+                default: { res_model: "wizard.mail.message.send", res_id: 0 },
+            },
+        );
+        const context = {
+            default_attachment_ids: newAttachmentIds,
+            default_body: body,
+            default_composition_mode: "comment",
+            default_composition_comment_option: "forward",
+            default_email_add_signature: false,
+        };
+        messageActionOpenFullComposer(_t("Forward Message"), context, owner);
+    },
+    sequence: 72,
+});

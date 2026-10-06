@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_report_crm_partner_assign_filter" model="ir.ui.view">
+        <field name="name">crm.partner.report.assign.select</field>
+        <field name="model">crm.partner.report.assign</field>
+        <field name="arch" type="xml">
+            <search string="Partner assigned Analysis">
+                <field name="user_id" />
+                <field name="grade_id" />
+                <field name="activation" />
+                <filter name="filter_date_partnership" date="date_partnership" />
+                <filter name="filter_date_review" date="date_review" />
+                <group>
+                    <filter
+                        name="user"
+                        string="Salesperson"
+                        context="{'group_by':'user_id'}" />
+                    <filter
+                        name="partner"
+                        string="Partner"
+                        context="{'group_by':'partner_id'}" />
+                    <separator />
+                    <filter
+                        name="group_date_partnership"
+                        string="Date Partnership"
+                        context="{'group_by':'date_partnership'}" />
+                    <filter
+                        name="group_date_review"
+                        string="Date Review"
+                        context="{'group_by':'date_review'}" />
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="view_report_crm_partner_assign_graph" model="ir.ui.view">
+        <field name="name">crm.partner.assign.report.graph</field>
+        <field name="model">crm.partner.report.assign</field>
+        <field name="arch" type="xml">
+            <graph
+                string="Opportunities Assignment Analysis"
+                sample="1"
+                disable_linking="1">
+                <field name="grade_id" />
+                <field name="nbr_opportunities" type="measure" />
+                <field name="turnover" type="measure" />
+            </graph>
+        </field>
+    </record>
+
+    <record id="action_report_crm_partner_assign" model="ir.actions.act_window">
+        <field name="name">Partnership Analysis</field>
+        <field name="res_model">crm.partner.report.assign</field>
+        <field name="view_mode">graph</field>
+        <field name="domain">[('grade_id', '!=', False)]</field>
+        <field name="context">{'group_by':[]}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No data yet!
+            </p>
+        </field>
+    </record>
+
+</odoo>

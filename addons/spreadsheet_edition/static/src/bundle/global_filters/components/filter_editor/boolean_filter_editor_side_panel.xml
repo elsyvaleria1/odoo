@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<templates>
+    <div t-name="spreadsheet_edition.BooleanFilterEditorSidePanel" class="o_spreadsheet_filter_editor_side_panel">
+        <Section title.translate="Label">
+            <TextInput
+                placeholder="this.store.labelPlaceholder"
+                class="'o_global_filter_label' + (this.store.missingLabelError ? ' o_field_invalid' : '')"
+                value="this.store.filter.label"
+                onChange.bind="this.setLabel"
+                autofocus="true"
+            />
+        </Section>
+        <t t-if="this.store.isValid">
+            <Section title.translate="Default value">
+                <select class="o_input w-25 pe-3 me-3 text-truncate" t-on-change="this.updateBooleanDefaultValue">
+                    <t t-foreach="['', 'set', 'not set']" t-as="operator" t-key="operator">
+                        <option class="text-black" t-att-value="operator" t-att-selected="this.store.filter.defaultValue?.operator === operator" t-out="this.getOperatorLabel(operator)" />
+                    </t>
+                </select>
+            </Section>
+            <t t-if="this.store.shouldDisplayFieldMatching">
+                <SidePanelCollapsible isInitiallyCollapsed="!this.store.isNew" title.translate="Field matching">
+                    <t t-set-slot="content">
+                        <Section class="'pt-0'">
+                            <FilterEditorFieldMatching
+                                fieldMatchings="this.store.fieldsMatching"
+                                selectField.bind="this.store.updateFieldMatching"
+                                filterModelFieldSelectorField="this.store.filterModelFieldSelectorField"
+                            />
+                        </Section>
+                    </t>
+                </SidePanelCollapsible>
+            </t>
+        </t>
+        <Section t-else="1">
+            <ValidationMessages messages="[this.invalidModel]" msgType="'error'"/>
+        </Section>
+        <GlobalFilterFooter t-props="this.footerProps"/>
+    </div>
+</templates>

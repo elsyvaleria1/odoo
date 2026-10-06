@@ -1,0 +1,82 @@
+// oxfmt options and scope for this checkout. ../l10n carries a copy of the
+// options; ../agromarin keeps its own style (bracketSpacing false,
+// trailingComma "es5").
+{
+    "$schema": "./node_modules/oxfmt/configuration_schema.json",
+    "tabWidth": 4,
+    "semi": true,
+    "singleQuote": false,
+    "printWidth": 88,
+    "endOfLine": "lf",
+    "trailingComma": "all",
+    "quoteProps": "as-needed",
+    "arrowParens": "always",
+    "bracketSpacing": true,
+    "objectWrap": "preserve",
+    "sortPackageJson": false,
+    "ignorePatterns": [
+        // Asset-pipeline test fixtures. These are deliberately odd *inputs* to
+        // the SCSS/CSS compiler, so normalising them defeats their purpose:
+        // test_error.scss is invalid on purpose (`.rule1 ()){`) to exercise the
+        // compile-error path, and test_split_marker.scss carries a
+        // `/*! <hex> */` loud comment of the exact shape that once broke
+        // rx_css_split. Scoped to the fixture roots, NOT to static/**: the
+        // module's static/tests is ordinary hand-written code.
+        "odoo/addons/test_assetsbundle/static/src/**",
+        "odoo/addons/test_assetsbundle/static/invalid_src/**",
+
+        // Vendored third-party libraries (not our code), by convention under
+        // <module>/static/lib and nowhere else. Written as `/**/*` (files)
+        // rather than `/**` (files AND the directory): a pattern that ignores
+        // the directory prunes the walk, and the negation below can then
+        // re-include nothing.
+        "**/static/lib/**/*",
+        // hoot is first-party despite living under web/static/lib (historical).
+        // The directory itself has to be un-ignored too: gitignore semantics
+        // refuse to resurrect a file whose parent directory is excluded.
+        "!addons/web/static/lib/hoot",
+        "!addons/web/static/lib/hoot/**",
+        // Vendored oxlint plugin (simple-import-sort, MIT); see oxlint.config.mjs.
+        "tooling/oxlint/simple_import_sort/**",
+        // Vendored bundle that predates the convention.
+        "addons/spreadsheet/static/src/o_spreadsheet/o_spreadsheet.js",
+        // Vendored from the "content-disposition" npm package outside
+        // static/lib; it carries a file-level `/* eslint-disable */`.
+        "addons/web/static/src/core/network/content_disposition.js",
+        // First-party, with a mid-file `/* eslint-disable */` (line 33) that
+        // keeps its property lists hand-formatted one entry per line.
+        "addons/mass_mailing/static/src/builder/plugins/customize_mailing_variables.js",
+
+        // Legacy code (only top-level adapters are linted)
+        "addons/web/static/src/legacy/**",
+        "!addons/web/static/src/legacy/*.js",
+        "addons/web_studio/static/src/legacy/**",
+        "!addons/web_studio/static/src/legacy/*.js",
+        "addons/web_cohort/static/src/legacy/**",
+        "addons/web_gantt/static/src/legacy/**",
+        "addons/web_map/static/src/legacy/**",
+        "addons/base_import/static/src/legacy/**",
+
+        // Legacy tests
+        "addons/web/static/tests/**/legacy/*",
+        "addons/web_studio/static/tests/**/legacy/*",
+        "addons/web_cohort/static/tests/legacy/**",
+        "addons/web_gantt/static/tests/legacy/**",
+        "addons/web_map/static/tests/legacy/**",
+
+        // Hand-formatted HTML-fixture test with inline `/* eslint-disable */`
+        // blocks placed mid-expression; the fixtures are deliberately
+        // hand-aligned.
+        "**/html_editor/static/tests/columnize.test.js",
+
+        // Generated Store-serialization contract. The body between the braces
+        // must stay strict JSON: mail/tests/test_mock_server_contract.py parses
+        // it with json.loads, and "as-needed" quote props and trailing commas
+        // turn it into valid JS but invalid JSON. The file's own header says DO
+        // NOT EDIT BY HAND; this makes the formatter honour it too. Mirrored in
+        // oxlint.config.mjs.
+        "addons/mail/static/tests/mock_server/contract/store_shapes.js",
+        // Generated and frozen (its header says so).
+        "addons/web/static/tests/views/view_ir_fixture.js"
+    ]
+}

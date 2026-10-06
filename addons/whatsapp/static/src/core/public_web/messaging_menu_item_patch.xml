@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates>
+    <t t-inherit="mail.MessagingMenuItem" t-inherit-mode="extension">
+        <xpath expr="//t[@name='itemIcon']" position="inside">
+            <ThreadIcon t-if="this.channel?.channel_type === 'whatsapp'" className="'o-mail-whatsapp-threadIcon rounded-circle align-items-center bg-white bg-opacity-100 position-absolute top-100 start-100 translate-middle mt-n1 ms-n1'" thread="this.channel"/>
+        </xpath>
+    </t>
+</templates>

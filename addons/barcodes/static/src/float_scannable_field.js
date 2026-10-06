@@ -1,0 +1,19 @@
+/** @odoo-module native */
+import { registry } from "@web/core/registry";
+import { FloatField, floatField } from "@web/fields/basic/float/float_field";
+
+export class FloatScannableField extends FloatField {
+    static template = "barcodes.FloatScannableField";
+    onBarcodeScanned() {
+        // The scanner writes straight into the input without the keystrokes
+        // the field listens for, so the notification is re-raised by hand.
+        this.inputRef.el?.dispatchEvent(new InputEvent("input", { bubbles: true }));
+    }
+}
+
+export const floatScannableField = {
+    ...floatField,
+    component: FloatScannableField,
+};
+
+registry.category("fields").add("field_float_scannable", floatScannableField);

@@ -1,0 +1,4 @@
+id,name,model_id/id,group_id/id,kind,operation,domain
+access_quality_check_mrp_readonly,quality.check.mrp.readonly,quality.model_quality_check,mrp.group_mrp_readonly,permission,r,
+access_quality_point_mrp_readonly,quality.point.mrp.readonly,quality.model_quality_point,mrp.group_mrp_readonly,permission,r,
+access_quality_alert_mrp_readonly,quality.alert.mrp.readonly,quality.model_quality_alert,mrp.group_mrp_readonly,permission,r,

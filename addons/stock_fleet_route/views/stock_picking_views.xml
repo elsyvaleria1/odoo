@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="stock_picking_view_form_route" model="ir.ui.view">
+        <field name="name">stock.picking.form.route</field>
+        <field name="model">stock.picking</field>
+        <field
+            name="inherit_id"
+            ref="stock_fleet_trace.stock_picking_view_form_trace" />
+        <field name="arch" type="xml">
+            <xpath expr="//group[@name='trip_trace']" position="attributes">
+                <attribute name="invisible">not trip_delivery_result and not trip_arrival_date and not trip_support_batch_id and not trip_eta</attribute>
+            </xpath>
+            <field name="trip_arrival_date" position="before">
+                <field name="trip_eta" />
+            </field>
+        </field>
+    </record>
+
+</odoo>

@@ -1,0 +1,32 @@
+.o_website_dialog {
+    label {
+        font-weight: $font-weight-bold;
+    }
+    ul.oe_menu_editor {
+        // the row's cells by name, not `> *`: a universal subject behind a
+        // `:has()` has the browser restyle whole subtrees on every DOM change,
+        // on every screen that loads this stylesheet
+        &:not(:has(li.o_dragged)) .input-group:hover {
+            > .input-group-text,
+            > .form-control {
+                background-color: $table-hover-bg !important;
+            }
+        }
+        li.o_dragged {
+            opacity: 1 !important;
+            box-shadow: 5px 5px 5px -5px rgba(0, 0, 0, 0.2);
+        }
+        .o_nested_sortable_placeholder_realsize {
+            outline: 1px dashed o-palette-token(--o-gray-400, $o-gray-400);
+            @include border-radius($input-border-radius);
+        }
+    }
+    .o_page_not_found {
+        input {
+            padding-right: 23px;
+        }
+        :is(#{$o-icon-selector}) {
+            font-size: 1rem;
+        }
+    }
+}

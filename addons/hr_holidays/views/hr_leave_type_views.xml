@@ -1,0 +1,279 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_holidays_status_filter" model="ir.ui.view">
+        <field name="name">hr.leave.type.filter</field>
+        <field name="model">hr.leave.type</field>
+        <field name="arch" type="xml">
+            <search string="Search Time Off Type">
+                <field name="name" string="Time Off Types" />
+                <field name="create_calendar_meeting" />
+                <separator />
+                <filter
+                    name="inactive"
+                    string="Archived"
+                    domain="[('active','=',False)]" />
+                <filter
+                    name="country"
+                    string="Country"
+                    context="{'group_by': 'country_id'}" />
+            </search>
+        </field>
+    </record>
+
+    <record id="edit_holiday_status_form" model="ir.ui.view">
+        <field name="name">hr.leave.type.form</field>
+        <field name="model">hr.leave.type</field>
+        <field name="arch" type="xml">
+            <form string="Time Off Type">
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button
+                            name="action_see_days_allocated"
+                            type="object"
+                            help="Count of allocations for this time off type (approved or waiting for approbation) with a validity period starting this year."
+                            icon="fa-calendar"
+                            invisible="not requires_allocation or not id"
+                            class="oe_stat_button">
+                            <div class="o_stat_info">
+                                <field name="allocation_count" class="o_stat_value" />
+                                <span class="o_stat_text">Allocations</span>
+                            </div>
+                        </button>
+                        <button
+                            name="action_see_group_leaves"
+                            type="object"
+                            help="Count of time off requests for this time off type (approved or waiting for approbation) with a start date in the current year."
+                            icon="fa-calendar"
+                            invisible="not id"
+                            class="oe_stat_button">
+                            <div class="o_stat_info">
+                                <field name="group_days_leave" class="o_stat_value" />
+                                <span class="o_stat_text">Time Off</span>
+                            </div>
+                        </button>
+                        <button
+                            name="action_see_accrual_plans"
+                            type="object"
+                            help="Count of plans linked to this time off type."
+                            icon="fa-calendar"
+                            invisible="not id or accrual_count == 0"
+                            class="oe_stat_button">
+                            <div class="o_stat_info">
+                                <field name="accrual_count" class="o_stat_value" />
+                                <span class="o_stat_text">Accruals</span>
+                            </div>
+                        </button>
+                    </div>
+                    <widget
+                        name="web_ribbon"
+                        title="Archived"
+                        invisible="active"
+                        bg_color="text-bg-danger" />
+                    <label for="name">Time off type</label>
+                    <div class="oe_title">
+                        <field
+                            name="name"
+                            placeholder="e.g. Yearly Vacation"
+                            class="h1" />
+                    </div>
+                    <group>
+                        <group>
+                            <field
+                                name="request_unit"
+                                widget="radio"
+                                options="{'horizontal': True}" />
+                            <field name="time_type_id" string="Count as" required="1" />
+                            <field name="time_type_is_work" invisible="1" />
+                            <field
+                                name="responsible_ids"
+                                placeholder="Nobody to notify"
+                                widget="many2many_tags"
+                                invisible="leave_validation_type in ['no_validation', 'manager'] and (not requires_allocation or allocation_validation_type not in ['hr', 'both'])" />
+                            <field name="notify_time_off_officers" />
+                        </group>
+                        <group>
+                            <field
+                                name="company_id"
+                                placeholder="Visible to all"
+                                groups="base.group_multi_company"
+                                readonly="is_used" />
+                            <field
+                                name="country_id"
+                                groups="base.group_multi_company"
+                                readonly="company_id or is_used" />
+                            <field name="country_id" invisible="1" />
+                        </group>
+                    </group>
+                    <group>
+                        <group
+                            name="leave_validation"
+                            id="time_off_requests"
+                            string="Time Off Requests">
+                            <field name="active" invisible="1" />
+                            <field
+                                name="leave_validation_type"
+                                string="Approval"
+                                widget="radio" />
+                        </group>
+                        <group
+                            name="allocation_validation"
+                            id="allocation_requests"
+                            string="Allocation Requests">
+                            <field name="requires_allocation" />
+                            <field
+                                name="employee_requests"
+                                invisible="not requires_allocation" />
+                            <field
+                                name="allocation_validation_type"
+                                string="Approval"
+                                widget="radio"
+                                invisible="not requires_allocation" />
+                        </group>
+                    </group>
+                    <group style="justify-content: unset;">
+                        <group
+                            name="configuration"
+                            id="configuration"
+                            string="Configuration">
+                            <div
+                                class="o_cell o_wrap_label text-break text-900 d-flex flex-row"
+                                colspan="2">
+                                <div class="d-flex flex-column gap-2">
+                                    <label
+                                        for="include_public_holidays_in_duration"
+                                        class="me-4" />
+                                    <label for="hide_on_dashboard" class="me-4" />
+                                    <label
+                                        for="support_document"
+                                        string="Require Supporting Document"
+                                        class="me-4" />
+                                    <label
+                                        for="eligible_for_accrual_rate"
+                                        class="me-4" />
+                                    <label
+                                        for="allow_request_on_top"
+                                        invisible="not time_type_is_work"
+                                        class="me-4" />
+                                    <label for="create_calendar_meeting" class="me-4" />
+                                </div>
+                                <div class="d-flex flex-column gap-1">
+                                    <field
+                                        name="include_public_holidays_in_duration"
+                                        class="mb-2" />
+                                    <field name="hide_on_dashboard" class="mb-2" />
+                                    <field name="support_document" />
+                                    <field
+                                        name="eligible_for_accrual_rate"
+                                        readonly="time_type_is_work" />
+                                    <field
+                                        name="allow_request_on_top"
+                                        invisible="not time_type_is_work" />
+                                    <field name="create_calendar_meeting" />
+                                </div>
+                            </div>
+                        </group>
+                        <group>
+                            <group
+                                name="negative_cap"
+                                id="negative_cap"
+                                string="Negative Cap"
+                                colspan="2"
+                                invisible="not requires_allocation">
+                                <div
+                                    class="o_row o_cell o_wrap_label text-break text-900"
+                                    colspan="2">
+                                    <label
+                                        for="allows_negative"
+                                        readonly="0"
+                                        class="me-4" />
+                                    <field name="allows_negative" />
+                                    <div invisible="not allows_negative">
+                                        <span class="mx-2">up to</span>
+                                        <field
+                                            name="max_allowed_negative"
+                                            class="oe_inline" />
+                                        <span class="mx-2" invisible="request_unit == 'hour'">days</span>
+                                        <span class="mx-2" invisible="request_unit != 'hour'">hours</span>
+                                    </div>
+                                </div>
+                            </group>
+                        </group>
+                    </group>
+                    <group
+                        name="visual"
+                        id="visual"
+                        string="Display Option"
+                        class="mw-100 col-lg-12">
+                        <field name="color" widget="color_picker" />
+                        <field
+                            name="icon_id"
+                            widget="hr_holidays_radio_image"
+                            options="{'horizontal': true}"
+                            class="o_time_off_icon_types d-flex flex-wrap" />
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="hr_holiday_status_view_kanban" model="ir.ui.view">
+        <field name="name">hr.leave.type.kanban</field>
+        <field name="model">hr.leave.type</field>
+        <field name="arch" type="xml">
+            <kanban class="o_kanban_mobile">
+                <templates>
+                    <t t-name="card">
+                        <field name="name" class="fw-bold" />
+                        <div>
+                            Max Time Off: <field name="max_leaves" />
+                            <span class="float-end">Time Off Taken: <field name="leaves_taken" /></span>
+                        </div>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
+    <record id="view_holiday_status_normal_tree" model="ir.ui.view">
+        <field name="name">hr.leave.type.normal.list</field>
+        <field name="model">hr.leave.type</field>
+        <field name="arch" type="xml">
+            <list string="Time Off Type" multi_edit="1">
+                <field name="sequence" widget="handle" />
+                <field name="display_name" />
+                <field name="request_unit" optional="hide" />
+                <field
+                    name="leave_validation_type"
+                    string="Time Off Approval"
+                    optional="hide" />
+                <field
+                    name="responsible_ids"
+                    widget="many2many_tags"
+                    optional="hide"
+                    invisible="leave_validation_type in ['no_validation', 'manager'] and (not requires_allocation or allocation_validation_type != 'hr')" />
+                <field name="requires_allocation" optional="hide" />
+                <field name="allocation_validation_type" string="Allocation Approval" />
+                <field name="employee_requests" optional="hide" />
+                <field name="color" widget="color_picker" optional="hide" />
+                <field
+                    name="company_id"
+                    optional="show"
+                    groups="base.group_multi_company"
+                    readonly="is_used" />
+                <field
+                    name="country_id"
+                    optional="show"
+                    groups="base.group_multi_company"
+                    readonly="company_id or is_used" />
+            </list>
+        </field>
+    </record>
+
+    <record id="open_view_holiday_status" model="ir.actions.act_window">
+        <field name="name">Time Off Types</field>
+        <field name="res_model">hr.leave.type</field>
+        <field name="view_mode">list,kanban,form</field>
+    </record>
+
+</odoo>

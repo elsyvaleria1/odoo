@@ -1,0 +1,1291 @@
+import datetime
+
+from freezegun import freeze_time
+
+from odoo import Command, fields
+from odoo.tests.common import users
+
+from odoo.addons.mail.tests.common import MailCase
+from odoo.addons.survey.tests import common
+
+
+class TestSurveyInternals(common.TestSurveyCommon, MailCase):
+    @users("survey_manager")
+    def test_allowed_triggering_question_ids(self):
+        survey_1, survey_2 = self.env["survey.survey"].create(
+            [{"title": "Test Survey 1"}, {"title": "Test Survey 2"}]
+        )
+        self.env["survey.question"].create(
+            [
+                {
+                    "survey_id": survey_id,
+                    "title": f"Question {question_idx}",
+                    "question_type": "simple_choice",
+                    "suggested_answer_ids": [
+                        Command.create(
+                            {
+                                "value": f"Answer {answer_idx}",
+                            }
+                        )
+                        for answer_idx in range(2)
+                    ],
+                }
+                for question_idx in range(3)
+                for survey_id in (survey_1 | survey_2).ids
+            ]
+        )
+        survey_1_q_1, survey_1_q_2, _ = survey_1.question_ids
+        survey_2_q_1, survey_2_q_2, _ = survey_2.question_ids
+
+        with self.subTest("Editing existing questions"):
+            self.assertFalse(
+                bool(
+                    survey_1_q_2.allowed_triggering_question_ids
+                    & survey_2_q_2.allowed_triggering_question_ids
+                )
+            )
+            self.assertEqual(survey_1_q_2.allowed_triggering_question_ids, survey_1_q_1)
+            self.assertEqual(survey_2_q_2.allowed_triggering_question_ids, survey_2_q_1)
+
+        survey_1_new_question = self.env["survey.question"].new({"survey_id": survey_1})
+        survey_2_new_question = self.env["survey.question"].new({"survey_id": survey_2})
+
+        with self.subTest("New questions"):
+            self.assertFalse(
+                bool(
+                    survey_1_new_question.allowed_triggering_question_ids
+                    & survey_2_new_question.allowed_triggering_question_ids
+                )
+            )
+            self.assertEqual(
+                survey_1_new_question.allowed_triggering_question_ids.ids,
+                survey_1.question_ids.ids,
+            )
+            self.assertEqual(
+                survey_2_new_question.allowed_triggering_question_ids.ids,
+                survey_2.question_ids.ids,
+            )
+
+    def test_answer_attempts_count(self):
+        test_survey = self.env["survey.survey"].create(
+            {
+                "title": "Test Survey",
+                "is_attempts_limited": True,
+                "attempts_limit": 4,
+            }
+        )
+
+        all_attempts = self.env["survey.user_input"]
+        for _i in range(4):
+            all_attempts |= self._add_answer(
+                test_survey, self.survey_user.partner_id, state="done"
+            )
+
+        attempts_results = all_attempts.read(["attempts_number", "attempts_count"])
+        first_attempt = attempts_results[0]
+        second_attempt = attempts_results[1]
+        third_attempt = attempts_results[2]
+        fourth_attempt = attempts_results[3]
+
+        self.assertEqual(first_attempt["attempts_number"], 1)
+        self.assertEqual(first_attempt["attempts_count"], 4)
+
+        self.assertEqual(second_attempt["attempts_number"], 2)
+        self.assertEqual(second_attempt["attempts_count"], 4)
+
+        self.assertEqual(third_attempt["attempts_number"], 3)
+        self.assertEqual(third_attempt["attempts_count"], 4)
+
+        self.assertEqual(fourth_attempt["attempts_number"], 4)
+        self.assertEqual(fourth_attempt["attempts_count"], 4)
+
+    @freeze_time("2020-02-15 18:00")
+    @users("survey_manager")
+    def test_answer_display_name(self):
+        questions = self._create_one_question_per_type()
+        user_input = self._add_answer(self.survey, self.survey_user.partner_id)
+
+        for question in questions:
+            if question.question_type == "char_box":
+                question_answer = self._add_answer_line(
+                    question, user_input, "Char box answer"
+                )
+                self.assertEqual(question_answer.display_name, "Char box answer")
+            elif question.question_type == "text_box":
+                question_answer = self._add_answer_line(
+                    question, user_input, "Text box answer"
+                )
+                self.assertEqual(question_answer.display_name, "Text box answer")
+            elif question.question_type == "numerical_box":
+                question_answer = self._add_answer_line(question, user_input, 7)
+                self.assertEqual(question_answer.display_name, "7.0")
+            elif question.question_type == "date":
+                question_answer = self._add_answer_line(
+                    question, user_input, fields.Datetime.now()
+                )
+                self.assertEqual(question_answer.display_name, "2020-02-15")
+            elif question.question_type == "datetime":
+                question_answer = self._add_answer_line(
+                    question, user_input, fields.Datetime.now()
+                )
+                self.assertEqual(question_answer.display_name, "2020-02-15 19:00:00")
+            elif question.question_type == "simple_choice":
+                question_answer = self._add_answer_line(
+                    question, user_input, question.suggested_answer_ids[0].id
+                )
+                self.assertEqual(question_answer.display_name, "SChoice0")
+            elif question.question_type == "multiple_choice":
+                question_answer_1 = self._add_answer_line(
+                    question, user_input, question.suggested_answer_ids[0].id
+                )
+                self.assertEqual(question_answer_1.display_name, "MChoice0")
+                question_answer_2 = self._add_answer_line(
+                    question, user_input, question.suggested_answer_ids[1].id
+                )
+                self.assertEqual(question_answer_2.display_name, "MChoice1")
+            elif question.question_type == "matrix":
+                question_answer_1 = self._add_answer_line(
+                    question,
+                    user_input,
+                    question.suggested_answer_ids[0].id,
+                    answer_value_row=question.matrix_row_ids[0].id,
+                )
+                self.assertEqual(question_answer_1.display_name, "Column0: Row0")
+                question_answer_2 = self._add_answer_line(
+                    question,
+                    user_input,
+                    question.suggested_answer_ids[0].id,
+                    answer_value_row=question.matrix_row_ids[1].id,
+                )
+                self.assertEqual(question_answer_2.display_name, "Column0: Row1")
+            elif question.question_type == "scale":
+                question_answer = self._add_answer_line(question, user_input, "3")
+                self.assertEqual(question_answer.display_name, "3")
+
+    @users("survey_manager")
+    def test_answer_validation_mandatory(self):
+        for question in self._create_one_question_per_type():
+            if question.question_type in ("statement", "calculated"):
+                self.assertDictEqual(question._check_answer(""), {})
+                continue
+            self.assertDictEqual(question._check_answer(""), {question.id: "TestError"})
+
+    @users("survey_manager")
+    def test_answer_validation_date(self):
+        question = self._add_question(
+            self.page_0,
+            "Q0",
+            "date",
+            validation_required=True,
+            validation_min_date="2015-03-20",
+            validation_max_date="2015-03-25",
+            validation_error_msg="ValidationError",
+        )
+
+        self.assertEqual(
+            question._check_answer("Is Alfred an answer?"),
+            {question.id: self.env._("This is not a date")},
+        )
+
+        self.assertEqual(
+            question._check_answer("2015-03-19"), {question.id: "ValidationError"}
+        )
+
+        self.assertEqual(
+            question._check_answer("2015-03-26"), {question.id: "ValidationError"}
+        )
+
+        self.assertEqual(question._check_answer("2015-03-25"), {})
+
+    @users("survey_manager")
+    def test_answer_validation_numerical(self):
+        question = self._add_question(
+            self.page_0,
+            "Q0",
+            "numerical_box",
+            validation_required=True,
+            validation_min_float_value=2.2,
+            validation_max_float_value=3.3,
+            validation_error_msg="ValidationError",
+        )
+
+        self.assertEqual(
+            question._check_answer("Is Alfred an answer?"),
+            {question.id: self.env._("This is not a number")},
+        )
+
+        self.assertEqual(
+            question._check_answer("2.0"), {question.id: "ValidationError"}
+        )
+
+        self.assertEqual(
+            question._check_answer("4.0"), {question.id: "ValidationError"}
+        )
+
+        self.assertEqual(question._check_answer("2.9"), {})
+
+    @users("survey_manager")
+    def test_answer_validation_char_box_email(self):
+        question = self._add_question(
+            self.page_0, "Q0", "char_box", validation_email=True
+        )
+
+        self.assertEqual(
+            question._check_answer("not an email"),
+            {question.id: self.env._("This answer must be an email address")},
+        )
+
+        self.assertEqual(question._check_answer("email@example.com"), {})
+
+    @users("survey_manager")
+    def test_answer_validation_char_box_length(self):
+        question = self._add_question(
+            self.page_0,
+            "Q0",
+            "char_box",
+            validation_required=True,
+            validation_length_min=2,
+            validation_length_max=8,
+            validation_error_msg="ValidationError",
+        )
+
+        self.assertEqual(question._check_answer("l"), {question.id: "ValidationError"})
+
+        self.assertEqual(
+            question._check_answer("waytoomuchlonganswer"),
+            {question.id: "ValidationError"},
+        )
+
+        self.assertEqual(question._check_answer("valid"), {})
+
+    @users("survey_manager")
+    def test_simple_choice_validation_multiple_answers(self):
+        question = self._add_question(
+            self.page_0,
+            "Simple Choice Constraint Test",
+            "simple_choice",
+            constr_mandatory=True,
+            comments_allowed=True,
+            comment_count_as_answer=True,
+            labels=[{"value": "Choice X"}, {"value": "Choice Y"}],
+        )
+        answer_choice_x_id = question.suggested_answer_ids[0].id
+        answer_choice_y_id = question.suggested_answer_ids[1].id
+
+        scenarios = [
+            (
+                "Two selected choices should not be allowed",
+                [answer_choice_x_id, answer_choice_y_id],
+                None,
+                True,
+            ),
+            (
+                "One choice and one comment that counts as an answer",
+                answer_choice_x_id,
+                "This is my comment, which is also an answer.",
+                True,
+            ),
+            (
+                "A single valid answer should pass validation",
+                answer_choice_x_id,
+                None,
+                False,
+            ),
+            (
+                "A single valid comment should pass validation",
+                "",
+                "This is my comment, which is also an answer.",
+                False,
+            ),
+        ]
+
+        for case_description, answers, comment, is_multiple_answers in scenarios:
+            with self.subTest(answers=answers, comment=comment):
+                self.assertEqual(
+                    question._check_answer(answers, comment),
+                    {question.id: "For this question, you can only select one answer."}
+                    if is_multiple_answers
+                    else {},
+                    case_description,
+                )
+
+    @users("survey_manager")
+    def test_answer_validation_comment(self):
+        question_ok = self._add_question(
+            self.page_0,
+            "Q_OK",
+            "multiple_choice",
+            constr_mandatory=True,
+            validation_error_msg="ValidationError",
+            comments_allowed=True,
+            comment_count_as_answer=True,
+            labels=[{"value": "Choice A"}, {"value": "Choice B"}],
+        )
+
+        self.assertEqual(
+            question_ok._check_answer(
+                answer="", comment="This comment is a valid answer."
+            ),
+            {},
+        )
+
+        question_fail = self._add_question(
+            self.page_0,
+            "Q_FAIL",
+            "multiple_choice",
+            constr_mandatory=True,
+            validation_error_msg="ValidationError",
+            comments_allowed=True,
+            comment_count_as_answer=False,
+            labels=[{"value": "Choice A"}, {"value": "Choice B"}],
+        )
+
+        self.assertEqual(
+            question_fail._check_answer(
+                answer="", comment="This comment is not enough."
+            ),
+            {question_fail.id: "TestError"},
+        )
+
+    def test_partial_scores_simple_choice(self):
+        partial_scores_survey = self.env["survey.survey"].create(
+            {
+                "title": "How much do you know about words?",
+                "scoring_type": "scoring_with_answers",
+                "scoring_success_min": 90.0,
+            }
+        )
+        [a_01, a_02, a_03] = self.env["survey.question.answer"].create(
+            [
+                {"value": "A thing full of letters.", "answer_score": 1.0},
+                {
+                    "value": "A unit of language, [...], carrying a meaning.",
+                    "answer_score": 4.0,
+                    "is_correct": True,
+                },
+                {"value": "42", "answer_score": -4.0},
+            ]
+        )
+        q_01 = self.env["survey.question"].create(
+            {
+                "survey_id": partial_scores_survey.id,
+                "title": "What is a word?",
+                "sequence": 1,
+                "question_type": "simple_choice",
+                "suggested_answer_ids": [(6, 0, (a_01 | a_02 | a_03).ids)],
+            }
+        )
+
+        user_input = self.env["survey.user_input"].create(
+            {"survey_id": partial_scores_survey.id}
+        )
+        self.env["survey.user_input.line"].create(
+            {
+                "user_input_id": user_input.id,
+                "question_id": q_01.id,
+                "answer_type": "suggestion",
+                "suggested_answer_id": a_02.id,
+            }
+        )
+
+        self.assertEqual(user_input.scoring_percentage, 100)
+        self.assertTrue(user_input.scoring_success)
+
+    @users("survey_manager")
+    def test_numerical_box_zero_answer_scoring(self):
+        survey = self.env["survey.survey"].create(
+            {
+                "title": "Math Quiz",
+                "scoring_type": "scoring_with_answers",
+                "scoring_success_min": 80.0,
+            }
+        )
+        question = self.env["survey.question"].create(
+            {
+                "survey_id": survey.id,
+                "title": "What is 5 - 5?",
+                "sequence": 1,
+                "question_type": "numerical_box",
+                "answer_numerical_box": 0.0,
+                "answer_score": 10.0,
+            }
+        )
+        user_input = self.env["survey.user_input"].create(
+            {
+                "survey_id": survey.id,
+            }
+        )
+
+        answer_line = self.env["survey.user_input.line"].create(
+            {
+                "user_input_id": user_input.id,
+                "question_id": question.id,
+                "answer_type": "numerical_box",
+                "value_numerical_box": 0.0,
+            }
+        )
+        self.assertTrue(
+            answer_line.answer_is_correct,
+            "Zero should be recognized as the correct answer",
+        )
+        self.assertEqual(answer_line.answer_score, 10.0)
+        self.assertEqual(user_input.scoring_percentage, 100)
+
+        user_input_2 = self.env["survey.user_input"].create(
+            {
+                "survey_id": survey.id,
+            }
+        )
+        answer_line_2 = self.env["survey.user_input.line"].create(
+            {
+                "user_input_id": user_input_2.id,
+                "question_id": question.id,
+                "answer_type": "numerical_box",
+                "value_numerical_box": 42.0,
+            }
+        )
+        self.assertFalse(answer_line_2.answer_is_correct)
+        self.assertEqual(answer_line_2.answer_score, 0)
+
+    def test_session_code_generation(self):
+        surveys = self.env["survey.survey"].create(
+            [{"title": f"Survey {i}"} for i in range(30)]
+        )
+        survey_codes = surveys.mapped("session_code")
+        self.assertEqual(len(survey_codes), 30)
+        surveys_by_code = surveys.grouped("session_code")
+        for code in survey_codes:
+            self.assertTrue(bool(code))
+            self.assertEqual(
+                len(surveys_by_code.get(code, ())),
+                1,
+                f"Each code should be unique, found multiple occurrences of: {code}",
+            )
+
+    def test_simple_choice_question_answer_result(self):
+        test_survey = self.env["survey.survey"].create(
+            {
+                "title": "Test This Survey",
+                "scoring_type": "scoring_with_answers",
+                "scoring_success_min": 80.0,
+            }
+        )
+        [a_01, a_02, a_03, a_04] = self.env["survey.question.answer"].create(
+            [
+                {"value": "In Europe", "answer_score": 0.0, "is_correct": False},
+                {"value": "In Asia", "answer_score": 5.0, "is_correct": True},
+                {"value": "In South Asia", "answer_score": 10.0, "is_correct": True},
+                {"value": "On Globe", "answer_score": 5.0, "is_correct": False},
+            ]
+        )
+        q_01 = self.env["survey.question"].create(
+            {
+                "survey_id": test_survey.id,
+                "title": "Where is india?",
+                "sequence": 1,
+                "question_type": "simple_choice",
+                "suggested_answer_ids": [(6, 0, (a_01 | a_02 | a_03 | a_04).ids)],
+            }
+        )
+
+        user_input = self.env["survey.user_input"].create({"survey_id": test_survey.id})
+        user_input_line = self.env["survey.user_input.line"].create(
+            {
+                "user_input_id": user_input.id,
+                "question_id": q_01.id,
+                "answer_type": "suggestion",
+                "suggested_answer_id": a_01.id,
+            }
+        )
+
+        def assert_answer_status(expected_answer_status, questions_statistics):
+            for status, count in [
+                (total["text"], total["count"])
+                for total in questions_statistics["totals"]
+            ]:
+                self.assertEqual(count, 1 if status == expected_answer_status else 0)
+
+        statistics = user_input._prepare_answer_statistics()[user_input]
+        assert_answer_status("Incorrect", statistics)
+
+        user_input_line.suggested_answer_id = a_02.id
+        statistics = user_input._prepare_answer_statistics()[user_input]
+        assert_answer_status("Correct", statistics)
+
+        user_input_line.suggested_answer_id = a_03.id
+        statistics = user_input._prepare_answer_statistics()[user_input]
+        assert_answer_status("Correct", statistics)
+
+        user_input_line.suggested_answer_id = a_04.id
+        statistics = user_input._prepare_answer_statistics()[user_input]
+        assert_answer_status("Partially", statistics)
+
+    @users("survey_manager")
+    def test_skipped_values(self):
+        questions = self._create_one_question_per_type()
+        survey_user = self.survey._create_answer(user=self.survey_user)
+
+        for question in questions:
+            if question.question_type in ("statement", "calculated"):
+                continue
+            answer = "" if question.question_type in ["char_box", "text_box"] else None
+            survey_user._save_lines(question, answer)
+
+        for question in questions:
+            if question.question_type in ("statement", "calculated"):
+                continue
+            self._assert_skipped_question(question, survey_user)
+
+    @users("survey_manager")
+    def test_multiple_choice_comment_not_skipped(self):
+        survey_user = self.survey._create_answer(user=self.survey_user)
+        question = self._add_question(
+            self.page_0,
+            "MCQ with Comment",
+            "multiple_choice",
+            comments_allowed=True,
+            comment_count_as_answer=True,
+            labels=[{"value": "Choice A"}, {"value": "Choice B"}],
+        )
+
+        survey_user._save_lines(question, answer=[], comment="This is only a comment")
+
+        answer_line = self.env["survey.user_input.line"].search(
+            [("user_input_id", "=", survey_user.id), ("question_id", "=", question.id)]
+        )
+
+        self.assertEqual(len(answer_line), 1)
+        self.assertFalse(answer_line.skipped)
+        self.assertEqual(answer_line.answer_type, "char_box")
+        self.assertEqual(answer_line.value_char_box, "This is only a comment")
+
+    @users("survey_manager")
+    def test_copy_conditional_question_settings(self):
+        def get_question_by_title(survey, title):
+            return survey.question_ids.filtered(lambda q: q.title == title)[0]
+
+        q_is_vegetarian_text = "Are you vegetarian?"
+        q_is_vegetarian = self._add_question(
+            self.page_0,
+            q_is_vegetarian_text,
+            "multiple_choice",
+            survey_id=self.survey.id,
+            sequence=100,
+            labels=[{"value": "Yes"}, {"value": "No"}, {"value": "Sometimes"}],
+        )
+        q_food_vegetarian_text = "Choose your green meal"
+        self._add_question(
+            self.page_0,
+            q_food_vegetarian_text,
+            "multiple_choice",
+            sequence=101,
+            triggering_answer_ids=[
+                q_is_vegetarian.suggested_answer_ids[0].id,
+                q_is_vegetarian.suggested_answer_ids[2].id,
+            ],
+            survey_id=self.survey.id,
+            labels=[{"value": "Vegetarian pizza"}, {"value": "Vegetarian burger"}],
+        )
+        q_food_not_vegetarian_text = "Choose your meal in case we serve meet/fish"
+        self._add_question(
+            self.page_0,
+            q_food_not_vegetarian_text,
+            "multiple_choice",
+            sequence=102,
+            triggering_answer_ids=q_is_vegetarian.suggested_answer_ids[1].ids,
+            survey_id=self.survey.id,
+            labels=[{"value": "Steak with french fries"}, {"value": "Fish"}],
+        )
+
+        survey_clone = self.survey.copy()
+
+        q_is_vegetarian_cloned = get_question_by_title(
+            survey_clone, q_is_vegetarian_text
+        )
+        q_food_vegetarian_cloned = get_question_by_title(
+            survey_clone, q_food_vegetarian_text
+        )
+        q_food_not_vegetarian_cloned = get_question_by_title(
+            survey_clone, q_food_not_vegetarian_text
+        )
+
+        self.assertFalse(bool(q_is_vegetarian_cloned.triggering_answer_ids))
+
+        self.assertTrue(bool(q_food_vegetarian_cloned))
+        self.assertEqual(
+            q_food_vegetarian_cloned.triggering_answer_ids.ids,
+            [
+                q_is_vegetarian_cloned.suggested_answer_ids[0].id,
+                q_is_vegetarian_cloned.suggested_answer_ids[2].id,
+            ],
+        )
+        self.assertNotEqual(
+            q_food_vegetarian_cloned.triggering_answer_ids.ids,
+            [
+                q_is_vegetarian.suggested_answer_ids[0].id,
+                q_is_vegetarian.suggested_answer_ids[2].id,
+            ],
+        )
+
+        self.assertTrue(bool(q_food_not_vegetarian_cloned.triggering_answer_ids))
+        self.assertEqual(
+            q_food_not_vegetarian_cloned.triggering_answer_ids.ids,
+            q_is_vegetarian_cloned.suggested_answer_ids[1].ids,
+        )
+        self.assertNotEqual(
+            q_food_not_vegetarian_cloned.triggering_answer_ids.ids,
+            q_is_vegetarian.suggested_answer_ids[1].ids,
+        )
+
+    @users("survey_manager")
+    def test_copy_conditional_question_with_sequence_changed(self):
+        def get_question_by_title(survey, title):
+            return survey.question_ids.filtered(lambda q: q.title == title)[0]
+
+        q_1 = self._add_question(
+            self.page_0,
+            "Q1",
+            "multiple_choice",
+            survey_id=self.survey.id,
+            sequence=200,
+            labels=[{"value": "Yes"}, {"value": "No"}],
+        )
+        q_2 = self._add_question(
+            self.page_0,
+            "Q2",
+            "multiple_choice",
+            survey_id=self.survey.id,
+            sequence=300,
+            labels=[{"value": "Yes"}, {"value": "No"}],
+        )
+
+        q_2.write({"sequence": 100})
+
+        q_1.write(
+            {"triggering_answer_ids": [Command.set([q_2.suggested_answer_ids[0].id])]}
+        )
+
+        (q_1 | q_2).invalidate_recordset()
+
+        cloned_survey = self.survey.copy()
+
+        self.assertEqual(
+            get_question_by_title(cloned_survey, "Q1").sequence, q_1.sequence
+        )
+        self.assertEqual(
+            get_question_by_title(cloned_survey, "Q2").sequence, q_2.sequence
+        )
+
+        self.assertEqual(
+            get_question_by_title(cloned_survey, "Q1").triggering_answer_ids[0].value,
+            q_1.triggering_answer_ids[0].value,
+        )
+        self.assertFalse(
+            bool(get_question_by_title(cloned_survey, "Q2").triggering_answer_ids)
+        )
+
+    @users("survey_manager")
+    def test_matrix_rows_display_name(self):
+        cases = [
+            (
+                "Question 1",
+                "Row A is short, so what?",
+                "Row A is short, so what?",
+            ),
+            (
+                "Question 2",
+                "Row B is a very long question, but it is shown by itself so there shouldn't be any change",
+                "Row B is a very long question, but it is shown by itself so there shouldn't be any change",
+            ),
+        ]
+
+        for question_title, row_value, exp_display_name in cases:
+            question = self.env["survey.question"].create(
+                {
+                    "title": question_title,
+                    "matrix_row_ids": [Command.create({"value": row_value})],
+                }
+            )
+
+            with self.subTest(question=question_title, row=row_value):
+                self.assertEqual(
+                    question.matrix_row_ids[0].display_name, exp_display_name
+                )
+
+    @users("survey_manager")
+    def test_suggested_answer_display_name(self):
+        cases = [
+            ("Question 1", "Answer A is short", "Question 1 : Answer A is short", {}),
+            (
+                "Question 2",
+                "Answer B is a very long answer, so it should itself be shortened or we would go too far",
+                "Question 2 : Answer B is a very long answer, so it should itself be shortened or we...",
+                {},
+            ),
+            (
+                "Question 3 is a very long question, so what can we do?",
+                "Answer A is short",
+                "Question 3 is a very long question, so what can we do? : Answer A is short",
+                {},
+            ),
+            (
+                "Question 4 is a very long question, so what can we do?",
+                "Answer B is a bit too long for Q4 now",
+                "Question 4 is a very long question, so what can... : Answer B is a bit too long for Q4 now",
+                {},
+            ),
+            (
+                "Question 5 is a very long question, so what can we do?",
+                "Answer C is so long that both the question and the answer will be shortened",
+                "Question 5 is a very long... : Answer C is so long that both the question and the...",
+                {},
+            ),
+            (
+                "Question 6",
+                "Answer A is short, so what?",
+                "Answer A is short, so what?",
+                {"question_type": "matrix"},
+            ),
+            (
+                "Question 7",
+                "Answer B is a very long answer, but it is shown by itself so there shouldn't be any change",
+                "Answer B is a very long answer, but it is shown by itself so there shouldn't be any change",
+                {"question_type": "matrix"},
+            ),
+        ]
+
+        for question_title, answer_value, exp_display_name, other_values in cases:
+            question = self.env["survey.question"].create(
+                {
+                    "title": question_title,
+                    "suggested_answer_ids": [Command.create({"value": answer_value})],
+                    **other_values,
+                }
+            )
+
+            with self.subTest(question=question_title, answer=answer_value):
+                self.assertEqual(
+                    question.suggested_answer_ids[0].display_name, exp_display_name
+                )
+
+    @users("survey_manager")
+    def test_unlink_triggers(self):
+        q_is_vegetarian_text = "Are you vegetarian?"
+        q_is_vegetarian = self._add_question(
+            self.page_0,
+            q_is_vegetarian_text,
+            "simple_choice",
+            survey_id=self.survey.id,
+            sequence=100,
+            labels=[{"value": "Yes"}, {"value": "No"}, {"value": "It depends"}],
+            constr_mandatory=True,
+        )
+
+        q_is_kinda_vegetarian_text = "Would you prefer a veggie meal if possible?"
+        q_is_kinda_vegetarian = self._add_question(
+            self.page_0,
+            q_is_kinda_vegetarian_text,
+            "simple_choice",
+            survey_id=self.survey.id,
+            sequence=101,
+            labels=[{"value": "Yes"}, {"value": "No"}],
+            constr_mandatory=True,
+            triggering_answer_ids=[
+                Command.link(q_is_vegetarian.suggested_answer_ids[1].id),
+            ],
+        )
+
+        q_food_vegetarian_text = "Choose your green meal"
+        veggie_question = self._add_question(
+            self.page_0,
+            q_food_vegetarian_text,
+            "simple_choice",
+            survey_id=self.survey.id,
+            sequence=102,
+            labels=[{"value": "Vegetarian pizza"}, {"value": "Vegetarian burger"}],
+            constr_mandatory=True,
+            triggering_answer_ids=[
+                Command.link(q_is_vegetarian.suggested_answer_ids[0].id),
+                Command.link(q_is_kinda_vegetarian.suggested_answer_ids[0].id),
+            ],
+        )
+
+        q_food_not_vegetarian_text = "Choose your meal"
+        not_veggie_question = self._add_question(
+            self.page_0,
+            q_food_not_vegetarian_text,
+            "simple_choice",
+            survey_id=self.survey.id,
+            sequence=103,
+            labels=[{"value": "Steak with french fries"}, {"value": "Fish"}],
+            constr_mandatory=True,
+            triggering_answer_ids=[
+                Command.link(q_is_vegetarian.suggested_answer_ids[1].id),
+                Command.link(q_is_kinda_vegetarian.suggested_answer_ids[1].id),
+            ],
+        )
+
+        q_is_kinda_vegetarian.unlink()
+
+        self.assertTrue(bool(veggie_question.triggering_answer_ids))
+
+        q_is_vegetarian.suggested_answer_ids[0].unlink()
+
+        self.assertFalse(bool(veggie_question.triggering_answer_ids))
+
+        self.assertEqual(
+            not_veggie_question.triggering_answer_ids[0].id,
+            q_is_vegetarian.suggested_answer_ids[0].id,
+        )
+
+        q_is_vegetarian.unlink()
+
+        self.assertFalse(bool(not_veggie_question.triggering_answer_ids))
+
+    def test_get_correct_answers(self):
+        questions = self._create_one_question_per_type_with_scoring()
+        qtype_mapping = {q.question_type: q for q in questions}
+        expected_correct_answer = {
+            qtype_mapping["numerical_box"].id: 5,
+            qtype_mapping["date"].id: "10/16/2023",
+            qtype_mapping["datetime"].id: "11/17/2023 08:00:00 AM",
+            qtype_mapping["simple_choice"].id: qtype_mapping["simple_choice"]
+            .suggested_answer_ids.filtered_domain([("value", "=", "SChoice0")])
+            .ids,
+            qtype_mapping["dropdown"].id: qtype_mapping["dropdown"]
+            .suggested_answer_ids.filtered_domain([("value", "=", "SChoice0")])
+            .ids,
+            qtype_mapping["multiple_choice"].id: qtype_mapping["multiple_choice"]
+            .suggested_answer_ids.filtered_domain(
+                [("value", "in", ["MChoice0", "MChoice1"])]
+            )
+            .ids,
+        }
+        self.assertEqual(questions._get_correct_answers(), expected_correct_answer)
+
+    def test_get_pages_and_questions_to_show(self):
+        my_survey = self.env["survey.survey"].create(
+            {
+                "title": "my_survey",
+                "questions_layout": "page_per_question",
+                "questions_selection": "all",
+                "access_mode": "public",
+            }
+        )
+        [
+            page_without_description,
+            simple_choice_1,
+            simple_choice_2,
+            _page_with_description,
+            multiple_choice_1,
+            text_box_2,
+            multiple_choice_2,
+        ] = self.env["survey.question"].create(
+            [
+                {
+                    "title": "no desc",
+                    "survey_id": my_survey.id,
+                    "sequence": 1,
+                    "question_type": False,
+                    "is_page": True,
+                    "description": False,
+                },
+                {
+                    "title": "simple choice with invalid trigger",
+                    "survey_id": my_survey.id,
+                    "sequence": 2,
+                    "is_page": False,
+                    "question_type": "simple_choice",
+                    "suggested_answer_ids": [(0, 0, {"value": "a"})],
+                },
+                {
+                    "title": "simple_choice with chained invalid trigger",
+                    "survey_id": my_survey.id,
+                    "sequence": 3,
+                    "is_page": False,
+                    "question_type": "simple_choice",
+                    "suggested_answer_ids": [(0, 0, {"value": "a"})],
+                },
+                {
+                    "title": "with desc",
+                    "survey_id": my_survey.id,
+                    "sequence": 4,
+                    "is_page": True,
+                    "question_type": False,
+                    "description": "This page has a description",
+                },
+                {
+                    "title": "multiple choice not conditional",
+                    "survey_id": my_survey.id,
+                    "sequence": 5,
+                    "is_page": False,
+                    "question_type": "multiple_choice",
+                    "suggested_answer_ids": [(0, 0, {"value": "a"})],
+                },
+                {
+                    "title": "text_box with valid trigger",
+                    "survey_id": my_survey.id,
+                    "sequence": 6,
+                    "is_page": False,
+                    "question_type": "text_box",
+                },
+                {
+                    "title": "valid multiple_choice",
+                    "survey_id": my_survey.id,
+                    "sequence": 7,
+                    "is_page": False,
+                    "question_type": "multiple_choice",
+                    "suggested_answer_ids": [(0, 0, {"value": "a"})],
+                },
+            ]
+        )
+        simple_choice_1.write(
+            {"triggering_answer_ids": multiple_choice_1.suggested_answer_ids}
+        )
+        simple_choice_2.write(
+            {"triggering_answer_ids": multiple_choice_1.suggested_answer_ids}
+        )
+        text_box_2.write(
+            {
+                "triggering_answer_ids": (
+                    multiple_choice_1 | multiple_choice_2
+                ).suggested_answer_ids
+            }
+        )
+        invalid_records = page_without_description + simple_choice_1 + simple_choice_2
+        question_and_page_ids = my_survey.question_and_page_ids
+        returned_questions_and_pages = my_survey._get_pages_and_questions_to_show()
+
+        self.assertEqual(
+            question_and_page_ids - invalid_records, returned_questions_and_pages
+        )
+
+    def test_survey_session_leaderboard(self):
+        start_time = datetime.datetime(2023, 7, 7, 12, 0, 0)
+        test_survey = self.env["survey.survey"].create(
+            {
+                "title": "Test This Survey",
+                "scoring_type": "scoring_with_answers",
+                "session_question_start_time": start_time,
+                "session_start_time": start_time,
+                "session_state": "in_progress",
+                "question_and_page_ids": [
+                    Command.create(
+                        {
+                            "question_type": "simple_choice",
+                            "suggested_answer_ids": [
+                                Command.create(
+                                    {
+                                        "value": "In Asia",
+                                        "answer_score": 0.125,
+                                        "is_correct": True,
+                                    }
+                                ),
+                                Command.create(
+                                    {
+                                        "value": "In Europe",
+                                        "answer_score": 0.0,
+                                        "is_correct": False,
+                                    }
+                                ),
+                            ],
+                            "title": "Where is india?",
+                        }
+                    ),
+                ],
+            }
+        )
+        question_1 = test_survey.question_and_page_ids[0]
+        answer_correct = question_1.suggested_answer_ids[0]
+        user_input = self.env["survey.user_input"].create(
+            {"survey_id": test_survey.id, "is_session_answer": True}
+        )
+        user_input_line = self.env["survey.user_input.line"].create(
+            {
+                "user_input_id": user_input.id,
+                "question_id": question_1.id,
+                "answer_type": "suggestion",
+                "suggested_answer_id": answer_correct.id,
+            }
+        )
+        self.assertEqual(user_input_line.answer_score, 0.125)
+        self.env["ir.qweb"]._render(
+            "survey.user_input_session_leaderboard",
+            {"animate": True, "leaderboard": test_survey._prepare_leaderboard_values()},
+        )
+
+    def test_notify_subscribers(self):
+        survey_2 = self.survey.copy()
+        survey_participation_subtype = self.env.ref(
+            "survey.mt_survey_survey_user_input_completed"
+        )
+        user_input_participation_subtype = self.env.ref(
+            "survey.mt_survey_user_input_completed"
+        )
+        self.survey.message_subscribe(
+            partner_ids=self.survey_user.partner_id.ids,
+            subtype_ids=survey_participation_subtype.ids,
+        )
+        user_inputs = self.env["survey.user_input"].create(
+            [{"survey_id": survey.id} for survey in (self.survey, survey_2)]
+        )
+        with self.mock_mail_app():
+            user_inputs._mark_done()
+        self.assertEqual(len(self._new_msgs), 1)
+        self.assertMessageFields(
+            self._new_msgs,
+            {
+                "model": "survey.user_input",
+                "subtype_id": user_input_participation_subtype,
+                "res_id": user_inputs[0].id,
+                "notified_partner_ids": self.survey_user.partner_id,
+            },
+        )
+
+    def test_survey_session_speed_reward_config_propagation(self):
+        test_survey = self.env["survey.survey"].create(
+            {
+                "title": "Test This Survey",
+                "scoring_type": "scoring_with_answers",
+                "question_and_page_ids": [
+                    Command.create(
+                        {
+                            "is_time_customized": True,
+                            "is_time_limited": True,
+                            "time_limit": 30,
+                            "title": "Question A",
+                        }
+                    ),
+                    Command.create(
+                        {
+                            "is_time_customized": True,
+                            "is_time_limited": True,
+                            "time_limit": 40,
+                            "title": "Question B",
+                        }
+                    ),
+                    Command.create(
+                        {
+                            "time_limit": 11,
+                            "title": "Question C",
+                        }
+                    ),
+                ],
+            }
+        )
+        self.assertFalse(test_survey.session_speed_rating)
+
+        test_survey.write(
+            {"session_speed_rating": True, "session_speed_rating_time_limit": 30}
+        )
+        self.assertEqual(test_survey.session_speed_rating_time_limit, 30)
+        self.assertSetEqual(
+            {*test_survey.question_ids.mapped("is_time_limited")}, {True}
+        )
+        self.assertListEqual(
+            test_survey.question_ids.mapped("time_limit"), [30, 40, 30]
+        )
+        self.assertListEqual(
+            test_survey.question_ids.mapped("is_time_customized"), [False, True, False]
+        )
+
+        test_survey.session_speed_rating_time_limit = 40
+        self.assertSetEqual({*test_survey.question_ids.mapped("time_limit")}, {40})
+        self.assertSetEqual(
+            {*test_survey.question_ids.mapped("is_time_customized")}, {False}
+        )
+
+        test_survey.question_ids[:2].write(
+            {
+                "is_time_limited": False,
+                "is_time_customized": True,
+            }
+        )
+        self.assertListEqual(
+            test_survey.question_ids.mapped("is_time_limited"), [False, False, True]
+        )
+        self.assertListEqual(
+            test_survey.question_ids.mapped("is_time_customized"), [True, True, False]
+        )
+
+        test_survey.session_speed_rating_time_limit = 20
+        self.assertListEqual(
+            test_survey.question_ids.mapped("is_time_limited"), [False, False, True]
+        )
+        self.assertListEqual(
+            test_survey.question_ids.mapped("is_time_customized"), [True, True, False]
+        )
+        self.assertEqual(test_survey.question_ids[2].time_limit, 20)
+
+        test_survey.session_speed_rating = False
+        self.assertSetEqual(
+            {*test_survey.question_ids.mapped("is_time_limited")}, {False}
+        )
+        self.assertSetEqual(
+            {*test_survey.question_ids.mapped("is_time_customized")}, {False}
+        )
+
+        test_survey.write(
+            {"session_speed_rating": True, "session_speed_rating_time_limit": 30}
+        )
+        self.assertSetEqual(
+            {*test_survey.question_ids.mapped("is_time_limited")}, {True}
+        )
+        self.assertSetEqual({*test_survey.question_ids.mapped("time_limit")}, {30})
+        self.assertSetEqual(
+            {*test_survey.question_ids.mapped("is_time_customized")}, {False}
+        )
+
+    def test_survey_session_speed_reward_default_applied(self):
+        test_survey = self.env["survey.survey"].create(
+            {
+                "title": "Test This Survey",
+                "scoring_type": "scoring_with_answers",
+                "session_speed_rating": True,
+                "session_speed_rating_time_limit": 60,
+            }
+        )
+        question_1, question_2, question_3, question_4 = self.env[
+            "survey.question"
+        ].create(
+            [
+                {
+                    "is_time_limited": True,
+                    "question_type": "numerical_box",
+                    "survey_id": test_survey.id,
+                    "time_limit": 60,
+                    "title": "Question 1",
+                },
+                {
+                    "survey_id": test_survey.id,
+                    "question_type": "numerical_box",
+                    "title": "Question 2",
+                },
+                {
+                    "is_time_customized": True,
+                    "is_time_limited": False,
+                    "question_type": "numerical_box",
+                    "survey_id": test_survey.id,
+                    "title": "Question 3",
+                },
+                {
+                    "is_time_customized": True,
+                    "is_time_limited": True,
+                    "question_type": "numerical_box",
+                    "survey_id": test_survey.id,
+                    "time_limit": 30,
+                    "title": "Question 4",
+                },
+            ]
+        )
+        self.assertTrue(question_1.is_time_limited)
+        self.assertEqual(question_1.time_limit, 60)
+        self.assertFalse(question_1.is_time_customized)
+
+        self.assertFalse(question_2.is_time_limited)
+        self.assertFalse(question_2.time_limit)
+        self.assertTrue(question_2.is_time_customized)
+
+        self.assertFalse(question_3.is_time_limited)
+        self.assertTrue(question_3.is_time_customized)
+        self.assertFalse(question_2.time_limit)
+
+        self.assertTrue(question_4.is_time_limited)
+        self.assertEqual(question_4.time_limit, 30)
+        self.assertTrue(question_4.is_time_customized)
+
+    def test_survey_time_limits_results(self):
+        test_survey = self.env["survey.survey"].create(
+            {
+                "title": "Test This Survey",
+                "scoring_type": "scoring_with_answers",
+                "scoring_success_min": 80.0,
+                "session_speed_rating": True,
+                "session_speed_rating_time_limit": 30,
+            }
+        )
+        q_01 = self.env["survey.question"].create(
+            [
+                {
+                    "is_time_customized": True,
+                    "is_time_limited": True,
+                    "question_type": "simple_choice",
+                    "suggested_answer_ids": [
+                        Command.create(
+                            {
+                                "value": "In Asia",
+                                "answer_score": 5.0,
+                                "is_correct": True,
+                            }
+                        ),
+                        Command.create(
+                            {
+                                "value": "In Europe",
+                                "answer_score": 0.0,
+                                "is_correct": False,
+                            }
+                        ),
+                    ],
+                    "survey_id": test_survey.id,
+                    "time_limit": 60,
+                    "title": "Where is india?",
+                }
+            ]
+        )
+        test_survey.session_question_id = q_01
+
+        answer_correct, answer_incorrect = q_01.suggested_answer_ids
+        user_input = self.env["survey.user_input"].create(
+            {"survey_id": test_survey.id, "is_session_answer": True}
+        )
+        for (seconds_since_start, answer), expected_score in zip(
+            [
+                (61, answer_correct),
+                (61, answer_incorrect),
+                (31, answer_correct),
+                (31, answer_incorrect),
+                (2, answer_correct),
+                (2, answer_incorrect),
+            ],
+            [
+                2.5,
+                0.0,
+                3.75,
+                0.0,
+                5.0,
+                0.0,
+            ],
+            strict=False,
+        ):
+            with self.subTest(
+                elapsed=seconds_since_start, is_correct=answer.is_correct
+            ):
+                test_survey.session_question_start_time = self.env.cr.now() - (
+                    datetime.timedelta(seconds=seconds_since_start)
+                )
+                user_input_line = self.env["survey.user_input.line"].create(
+                    {
+                        "user_input_id": user_input.id,
+                        "question_id": q_01.id,
+                        "answer_type": "suggestion",
+                        "suggested_answer_id": answer.id,
+                    }
+                )
+                self.assertEqual(user_input_line.answer_score, expected_score)
+
+    @users("survey_manager")
+    def test_value_label_past_26_answers_stays_distinct(self):
+        question = self.env["survey.question"].create(
+            {
+                "survey_id": self.env["survey.survey"].create({"title": "S"}).id,
+                "title": "Image choices",
+                "question_type": "simple_choice",
+                "suggested_answer_ids": [Command.create({}) for _ in range(28)],
+            }
+        )
+        labels = question.suggested_answer_ids.mapped("value_label")
+        self.assertEqual(len(labels), len(set(labels)), "every label must be unique")
+        self.assertNotIn("", labels, "no answer should get an empty label")
+        self.assertEqual(labels[25], "Z")
+        self.assertEqual(labels[26], "AA")
+        self.assertEqual(labels[27], "AB")

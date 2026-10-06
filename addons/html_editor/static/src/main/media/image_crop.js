@@ -1,0 +1,335 @@
+/** @odoo-module native */
+import {
+    activateCropper,
+    cropperDataFieldsWithAspectRatio,
+    loadImage,
+    loadImageInfo,
+} from "@html_editor/utils/image_processing";
+import {
+    Component,
+    markup,
+    onMounted,
+    onWillDestroy,
+    status,
+    t,
+    useListener,
+    useProps,
+} from "@odoo/owl";
+import { _t } from "@web/core/translation";
+import { closestScrollableY, scrollTo } from "@web/core/utils/dom/scrolling";
+import { elementRef } from "@web/core/utils/element_ref";
+import { useMountedListener, useService } from "@web/core/utils/hooks";
+
+import { IMAGE_SHAPES } from "./image_plugin.js";
+
+export const cropperAspectRatios = {
+    "0/0": { label: _t("Flexible"), value: 0 },
+    "16/9": { label: "16:9", value: 16 / 9 },
+    "4/3": { label: "4:3", value: 4 / 3 },
+    "1/1": { label: "1:1", value: 1 },
+    "2/3": { label: "2:3", value: 2 / 3 },
+};
+
+export class ImageCrop extends Component {
+    static template = "html_editor.ImageCrop";
+    static props = {
+        document: t.customValidator(t.any(), (p) => p.nodeType === Node.DOCUMENT_NODE),
+        media: t.any().optional(),
+        onClose: t.function().optional(),
+        onSave: t.function().optional(),
+    };
+    props = useProps(this.constructor.props);
+
+    setup() {
+        this.aspectRatios = cropperAspectRatios;
+        this.notification = useService("notification");
+        this.media = this.props.media;
+        this.document = this.props.document;
+
+        this.elRef = elementRef();
+        this.cropperWrapper = elementRef();
+        this.imageRef = elementRef();
+        this.applyButtonRef = elementRef();
+        this.discardButtonRef = elementRef();
+        this.isCropperActive = false;
+
+        useMountedListener(
+            this.document,
+            "mousedown",
+            this.onDocumentMousedown.bind(this),
+            {
+                capture: true,
+            },
+        );
+        useMountedListener(
+            this.document,
+            "keydown",
+            this.onDocumentKeydown.bind(this),
+            {
+                capture: true,
+            },
+        );
+        useMountedListener(document, "keydown", this.onDocumentKeydown.bind(this), {
+            capture: true,
+        });
+        useListener(
+            this.document,
+            "selectionchange",
+            () => {
+                if (!this.props.media.isConnected) {
+                    this.closeCropper();
+                }
+            },
+            { capture: true },
+        );
+
+        onMounted(() => {
+            this.hasModifiedImageClass = this.media.classList.contains(
+                "o_modified_image_to_save",
+            );
+            if (this.hasModifiedImageClass) {
+                this.media.classList.remove("o_modified_image_to_save");
+            }
+            this.show();
+        });
+        onWillDestroy(this.closeCropper);
+    }
+
+    closeCropper() {
+        if (!this.isCropperActive && !this.forceClose) {
+            return;
+        }
+        this.isCropperActive = false;
+        this.forceClose = false;
+        this.cropper?.destroy?.();
+        this.media.setAttribute("src", this.initialSrc);
+        if (
+            this.hasModifiedImageClass &&
+            !this.media.classList.contains("o_modified_image_to_save")
+        ) {
+            this.media.classList.add("o_modified_image_to_save");
+        }
+        this.props?.onClose?.();
+    }
+
+    async reset() {
+        if (this.cropper) {
+            this.cropper.reset();
+            if (this.aspectRatio !== "0/0") {
+                this.aspectRatio = "0/0";
+                this.cropper.setAspectRatio(
+                    cropperAspectRatios[this.aspectRatio].value,
+                );
+            }
+            await this.save();
+        }
+    }
+
+    async show() {
+        if (this.isCropperActive) {
+            return;
+        }
+        const src = this.media.getAttribute("src");
+        const data = { ...this.media.dataset };
+        this.initialSrc = src;
+        this.aspectRatio = data.aspectRatio || "0/0";
+
+        Object.assign(this.media.dataset, await loadImageInfo(this.media));
+        const isIllustration = /^\/(?:html|web)_editor\/shape\/illustration\//.test(
+            this.media.dataset.originalSrc,
+        );
+        this.uncroppable = false;
+        if (this.media.dataset.originalSrc && !isIllustration) {
+            this.originalSrc = this.media.dataset.originalSrc;
+            this.originalId = this.media.dataset.originalId;
+        } else {
+            this.uncroppable = true;
+        }
+
+        if (this.uncroppable) {
+            this.notification.add(
+                markup(
+                    _t(
+                        "This type of image is not supported for cropping.<br/>If you want to crop it, please first download it from the original source and upload it in Odoo.",
+                    ),
+                ),
+                {
+                    title: _t("This image is an external image"),
+                    type: "warning",
+                },
+            );
+            this.forceClose = true;
+            return this.closeCropper();
+        }
+
+        await this.scrollToInvisibleImage();
+        await loadImage(this.originalSrc, this.media);
+        if (status(this) !== "mounted") {
+            return;
+        }
+        const cropperImage = this.imageRef.el;
+        [cropperImage.style.width, cropperImage.style.height] = [
+            this.media.width + "px",
+            this.media.height + "px",
+        ];
+
+        const sel = this.document.getSelection();
+        sel && sel.removeAllRanges();
+
+        let offset;
+        if (!this.media.getClientRects().length) {
+            offset = { top: 0, left: 0 };
+        } else {
+            const rect = this.media.getBoundingClientRect();
+            offset = {
+                top: rect.top,
+                left: rect.left,
+            };
+        }
+
+        offset.left += parseInt(this.media.style.paddingLeft || 0);
+        offset.top += parseInt(this.media.style.paddingRight || 0);
+        const frameElement = this.media.ownerDocument.defaultView.frameElement;
+        if (frameElement) {
+            const frameRect = frameElement.getBoundingClientRect();
+            offset.left += frameRect.left;
+            offset.top += frameRect.top;
+        }
+
+        this.cropperWrapper.el.style.left = `${offset.left}px`;
+        this.cropperWrapper.el.style.top = `${offset.top}px`;
+
+        await loadImage(this.originalSrc, cropperImage);
+        if (status(this) !== "mounted") {
+            return;
+        }
+
+        this.cropper = await activateCropper(
+            cropperImage,
+            cropperAspectRatios[this.aspectRatio]?.value || 0,
+            this.media.dataset,
+            {
+                onReady: (cropper) => {
+                    const cropperMove = cropper.face;
+                    for (const shape of IMAGE_SHAPES) {
+                        cropperMove.classList.toggle(
+                            shape,
+                            this.media.classList.contains(shape),
+                        );
+                    }
+                },
+            },
+        );
+        this.isCropperActive = true;
+        this.applyButtonRef.el?.focus({ preventScroll: true });
+    }
+    /**
+     * @private
+     */
+    async save() {
+        const cropperData = this.getCropperData(this.cropper);
+        this.props.onSave?.({
+            aspectRatio: this.aspectRatio,
+            ...cropperData,
+        });
+        this.closeCropper();
+    }
+    /**
+     * @private
+     */
+    resetCropBox() {
+        this.cropper.clear();
+        this.cropper.crop();
+    }
+    /**
+     * @private
+     */
+    async scrollToInvisibleImage() {
+        const rect = this.media.getBoundingClientRect();
+        const viewportTop = this.document.documentElement.scrollTop || 0;
+        const viewportBottom = viewportTop + window.innerHeight;
+        const scrollable = closestScrollableY(this.media);
+
+        if (rect.top < viewportTop || viewportBottom - rect.bottom < 100) {
+            await scrollTo(this.media, {
+                behavior: "smooth",
+                ...(scrollable && { scrollable }),
+            });
+        }
+    }
+
+    onZoom(scale) {
+        this.cropper.zoom(scale);
+    }
+
+    onReset() {
+        this.cropper.reset();
+    }
+
+    onRotate(degree) {
+        this.cropper.rotate(degree);
+    }
+
+    onFlip(scaleDirection) {
+        const amount = this.cropper.getData()[scaleDirection] * -1;
+        this.cropper[scaleDirection](amount);
+    }
+
+    setAspectRatio(ratio) {
+        this.cropper.reset();
+        this.aspectRatio = ratio;
+        this.cropper.setAspectRatio(cropperAspectRatios[this.aspectRatio].value);
+    }
+
+    /**
+     * @private
+     * @param {MouseEvent} ev
+     */
+    onDocumentMousedown(ev) {
+        if (
+            this.elRef.el &&
+            this.props.document.body.contains(ev.target) &&
+            (this.elRef.el === ev.target || !this.elRef.el.contains(ev.target))
+        ) {
+            return this.closeCropper();
+        }
+    }
+    /**
+     * @private
+     * @param {KeyboardEvent} ev
+     */
+    onDocumentKeydown(ev) {
+        if (!this.isCropperActive) {
+            return;
+        }
+        if (ev.key === "Enter") {
+            ev.preventDefault();
+            ev.stopImmediatePropagation();
+            if (ev.target === this.discardButtonRef.el) {
+                return this.closeCropper();
+            }
+            return this.save();
+        } else if (["Backspace", "Escape"].includes(ev.key)) {
+            ev.preventDefault();
+            ev.stopImmediatePropagation();
+            return this.closeCropper();
+        }
+    }
+    /**
+     * @param {Cropper} cropper
+     */
+    getCropperData(cropper) {
+        return Object.fromEntries(
+            cropperDataFieldsWithAspectRatio
+                .map((field) => [field, cropper.getData()[field]])
+                .filter(([, value]) => value),
+        );
+    }
+    /**
+     * @private
+     */
+    async onCropZoom() {
+        await new Promise((res) => setTimeout(res, 0));
+        this.resetCropBox();
+    }
+}

@@ -1,0 +1,327 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_stock_location_search" model="ir.ui.view">
+        <field name="name">stock.location.search</field>
+        <field name="model">stock.location</field>
+        <field name="arch" type="xml">
+            <search string="Stock Locations">
+                <field name="complete_name" string="Stock Locations" />
+                <filter
+                    name="in_location"
+                    string="Internal"
+                    help="Internal Locations"
+                    domain="[('usage', '=', 'internal')]" />
+                <filter
+                    name="customer"
+                    string="Customer"
+                    help="Customer Locations"
+                    domain="[('usage', '=', 'customer')]" />
+                <filter
+                    name="inventory"
+                    string="Inventory Loss"
+                    help="Inventory Loss Locations"
+                    domain="[('usage', '=', 'inventory')]" />
+                <filter
+                    name="prod_inv_location"
+                    string="Production"
+                    help="Production Locations"
+                    domain="[('usage', '=', 'production')]" />
+                <filter
+                    name="supplier"
+                    string="Vendor"
+                    help="Vendor Locations"
+                    domain="[('usage', '=', 'supplier')]" />
+                <filter
+                    name="view"
+                    string="Virtual"
+                    help="Virtual Locations"
+                    domain="[('usage', '=', 'view')]" />
+                <separator />
+                <filter
+                    name="empty_location"
+                    string="Empty Locations"
+                    domain="[('is_empty', '=', True)]" />
+                <field name="location_id" string="Parent Location" />
+                <field name="usage" string="Location Type" />
+                <field name="warehouse_id" string="Warehouse" />
+                <separator />
+                <filter
+                    name="blocked"
+                    string="Blocked Locations"
+                    domain="[('effective_block_type', '!=', 'none')]" />
+                <filter
+                    name="soft_blocked"
+                    string="Soft Blocked"
+                    domain="[('effective_block_type', 'in', ['soft_in', 'soft_out', 'soft_both'])]" />
+                <filter
+                    name="hard_blocked"
+                    string="Hard Blocked"
+                    domain="[('effective_block_type', '=', 'hard')]" />
+                <filter
+                    name="blocked_own"
+                    string="Blocked Here (not inherited)"
+                    domain="[('block_type', '!=', 'none')]" />
+                <separator />
+                <filter
+                    name="inactive"
+                    string="Archived"
+                    domain="[('active','=',False)]" />
+                <group>
+                    <filter
+                        name="warehouse"
+                        string="Warehouse"
+                        context="{'group_by': 'warehouse_id'}" />
+                    <filter
+                        name="usage"
+                        string="Location Type"
+                        context="{'group_by': 'usage'}" />
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="view_stock_location_list_2" model="ir.ui.view">
+        <field name="name">stock.location.list</field>
+        <field name="model">stock.location</field>
+        <field name="priority" eval="2" />
+        <field name="arch" type="xml">
+            <list
+                string="Stock Location"
+                multi_edit="1"
+                decoration-info="usage=='view'">
+                <field name="company_id" column_invisible="True" />
+                <field name="active" column_invisible="True" />
+                <field name="complete_name" string="Location" />
+                <field name="usage" />
+                <field
+                    name="effective_block_type"
+                    widget="badge"
+                    optional="show"
+                    decoration-danger="effective_block_type == 'hard'"
+                    decoration-warning="effective_block_type in ('soft_in', 'soft_out', 'soft_both')" />
+                <field
+                    name="block_type"
+                    string="Blocked Here"
+                    widget="badge"
+                    optional="hide"
+                    decoration-danger="block_type == 'hard'"
+                    decoration-warning="block_type in ('soft_in', 'soft_out', 'soft_both')" />
+                <field
+                    name="is_empty"
+                    optional="hide"
+                    invisible="usage not in ['internal', 'transit']" />
+                <field
+                    name="storage_category_id"
+                    groups="stock.group_stock_multi_locations"
+                    readonly="usage != 'internal'" />
+                <field name="company_id" groups="base.group_multi_company" />
+            </list>
+        </field>
+    </record>
+
+    <record id="view_stock_location_list_2_editable" model="ir.ui.view">
+        <field name="name">stock.location.list2.editable</field>
+        <field name="model">stock.location</field>
+        <field name="inherit_id" ref="stock.view_stock_location_list_2" />
+        <field name="arch" type="xml">
+            <xpath expr="//list" position="attributes">
+                <attribute name="create">false</attribute>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="act_product_location_open" model="ir.actions.act_window">
+        <field name="name">Products</field>
+        <field name="res_model">product.product</field>
+        <field name="search_view_id" ref="stock.stock_product_search_form_view" />
+        <field
+            name="context">{
+            'location': active_id, 'search_default_real_stock_available': 1,
+            'search_default_real_stock_negative': 1,
+            'create': False}</field>
+    </record>
+
+    <record id="view_stock_location_form" model="ir.ui.view">
+        <field name="name">stock.location.form</field>
+        <field name="model">stock.location</field>
+        <field name="arch" type="xml">
+            <form string="Stock Location">
+                <field name="company_id" invisible="1" />
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button
+                            name="%(action_view_stock_putaway_rule_3)d"
+                            type="action"
+                            string="Putaway Rules"
+                            icon="fa-random"
+                            context="{'default_company_id': company_id}"
+                            groups="stock.group_stock_multi_locations"
+                            class="oe_stat_button" />
+                        <button
+                            name="stock.act_product_location_open"
+                            type="action"
+                            string="Products"
+                            icon="fa-th-list"
+                            class="oe_stat_button" />
+                    </div>
+                    <widget
+                        name="web_ribbon"
+                        title="Archived"
+                        invisible="active"
+                        bg_color="text-bg-danger" />
+                    <div class="oe_location_header">
+                        <div>
+                            <label for="name" />
+                            <h1>
+                                <field name="name" placeholder="e.g. Shelf 1" />
+                            </h1>
+                            <label for="location_id" />
+                            <h2>
+                                <field
+                                    name="location_id"
+                                    placeholder="e.g. Aisle 1"
+                                    options="{'no_create': True}" />
+                            </h2>
+                        </div>
+                    </div>
+
+                    <group>
+                        <group name="additional_info" string="Additional Information">
+                            <field name="active" invisible="1" />
+                            <field name="usage" />
+                            <field
+                                name="block_type"
+                                widget="radio"
+                                invisible="usage != 'internal'" />
+                            <field
+                                name="block_reason"
+                                placeholder="Explain why this location is blocked..."
+                                invisible="block_type == 'none' or usage != 'internal'"
+                                required="block_type != 'none' and usage == 'internal'" />
+                            <field
+                                name="effective_block_type"
+                                invisible="effective_block_type == block_type" />
+                            <field
+                                name="storage_category_id"
+                                groups="stock.group_stock_multi_locations"
+                                invisible="usage != 'internal'" />
+                            <field
+                                name="company_id"
+                                placeholder="Visible to all"
+                                options="{'no_create': True}"
+                                groups="base.group_multi_company" />
+                            <field
+                                name="replenish_location"
+                                invisible="usage != 'internal'" />
+                        </group>
+                        <group
+                            string="Cyclic Counting"
+                            invisible="usage not in ('internal', 'transit') or not company_id">
+                            <label
+                                for="cyclic_inventory_frequency"
+                                string="Inventory Frequency" />
+                            <div class="o_row">
+                                <field
+                                    name="cyclic_inventory_frequency"
+                                    class="oe_inline" />
+                                <span>days</span>
+                            </div>
+                            <field name="last_inventory_date" />
+                            <field name="next_inventory_date" invisible="not active" />
+                        </group>
+                        <group
+                            string="Logistics"
+                            invisible="usage not in ('view', 'internal', 'transit') or (usage == 'transit' and not company_id)">
+                            <field
+                                name="removal_strategy_id"
+                                widget="radio"
+                                options="{'no_create': True}" />
+                            <group
+                                name="blocking_info"
+                                string="Blocking Information"
+                                colspan="2"
+                                invisible="effective_block_type == 'none'">
+                                <group>
+                                    <field name="blocked_date" readonly="1" />
+                                    <field name="blocked_by_user_id" readonly="1" />
+                                </group>
+                                <group>
+                                    <field
+                                        name="reserved_qty_when_blocked"
+                                        readonly="1" />
+                                    <button
+                                        name="action_unreserve_stock"
+                                        type="object"
+                                        string="Unreserve All Stock"
+                                        confirm="This will unreserve all stock in this location and its children. Are you sure?"
+                                        groups="stock.group_override_hard_block"
+                                        invisible="effective_block_type != 'hard'"
+                                        class="oe_highlight" />
+                                </group>
+                            </group>
+                        </group>
+                    </group>
+                </sheet>
+                <chatter />
+            </form>
+        </field>
+    </record>
+
+    <record id="view_stock_location_form_editable" model="ir.ui.view">
+        <field name="name">stock.location.form.editable</field>
+        <field name="model">stock.location</field>
+        <field name="inherit_id" ref="stock.view_stock_location_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//form" position="attributes">
+                <attribute name="create">false</attribute>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="action_stock_storage_category_locations" model="ir.actions.act_window">
+        <field name="name">Locations</field>
+        <field name="res_model">stock.location</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('storage_category_id', '=', active_id)]</field>
+    </record>
+
+    <record id="action_location_form" model="ir.actions.act_window">
+        <field name="name">Locations</field>
+        <field name="res_model">stock.location</field>
+        <field name="view_mode">list,form</field>
+        <field name="view_id" ref="view_stock_location_list_2" />
+        <field name="search_view_id" ref="view_stock_location_search" />
+        <field name="context">{'search_default_in_location':1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Add a new location
+            </p>
+            <p>
+                Define your locations to reflect your warehouse structure and
+                organization. Odoo is able to manage physical locations
+                (warehouses, shelves, bin, etc), partner locations (customers,
+                vendors) and virtual locations which are the counterpart of
+                the stock operations like the manufacturing orders
+                consumptions, inventories, etc.
+            </p>
+            <p>
+                Every stock operation in Odoo moves the products from one
+                location to another one. For instance, if you receive products
+                from a vendor, Odoo will move products from the Vendor
+                location to the Stock location. Each report can be performed on
+                physical, partner or virtual locations.
+            </p>
+        </field>
+    </record>
+
+    <record id="action_prod_inv_location_form" model="ir.actions.act_window">
+        <field name="name">Locations</field>
+        <field name="res_model">stock.location</field>
+        <field name="view_mode">list,form</field>
+        <field name="view_id" ref="view_stock_location_list_2" />
+        <field name="search_view_id" ref="view_stock_location_search" />
+        <field name="context">{'search_default_prod_inv_location': 1}</field>
+    </record>
+
+</odoo>

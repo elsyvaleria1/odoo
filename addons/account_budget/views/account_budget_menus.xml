@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <menuitem
+        id="menu_act_budget_analytic_view"
+        name="Analytic Budget"
+        parent="account.menu_account_transactions"
+        action="act_budget_analytic_view"
+        sequence="55"
+        groups="account.group_account_manager" />
+
+    <menuitem
+        id="budget_report_menu"
+        name="Budget Report"
+        parent="account.menu_account_reports_management"
+        action="budget_report_action"
+        sequence="17"
+        groups="account.group_account_readonly" />
+
+</odoo>

@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_stock_quant_list" model="ir.ui.view">
+        <field name="name">stock.quant.list.inherit.expiry_date</field>
+        <field name="model">stock.quant</field>
+        <field name="inherit_id" ref="stock.view_stock_quant_list" />
+        <field name="arch" type="xml">
+            <xpath expr="//list" position="attributes">
+                <attribute name="decoration-danger">
+                    (removal_date and removal_date &lt; current_date) or quantity &lt; 0
+                </attribute>
+            </xpath>
+            <xpath expr="//field[@name='quantity']" position="after">
+                <field name="removal_date" />
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_stock_quant_list_editable" model="ir.ui.view">
+        <field name="name">stock.quant.list.editable.inherit.expiry_date</field>
+        <field name="model">stock.quant</field>
+        <field name="inherit_id" ref="stock.view_stock_quant_list_editable" />
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='trace_id']" position="after">
+                <field name="use_expiration_date" column_invisible="True" />
+                <field
+                    name="expiration_date"
+                    column_invisible="not context.get('show_removal_date')"
+                    decoration-bf="expiration_date &lt; (context_today() + datetime.timedelta(days=1)).strftime('%Y-%m-%d')"
+                    decoration-danger="expiration_date &lt; (context_today() + datetime.timedelta(days=1)).strftime('%Y-%m-%d')" />
+                <field
+                    name="removal_date"
+                    column_invisible="not context.get('show_removal_date')"
+                    decoration-bf="removal_date &lt; (context_today() + datetime.timedelta(days=1)).strftime('%Y-%m-%d')"
+                    decoration-danger="removal_date &lt; (context_today() + datetime.timedelta(days=1)).strftime('%Y-%m-%d')" />
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_stock_quant_list_inventory_editable" model="ir.ui.view">
+        <field
+            name="name">stock.quant.inventory.list.editable.inherit.expiry_date</field>
+        <field name="model">stock.quant</field>
+        <field name="inherit_id" ref="stock.view_stock_quant_list_inventory_editable" />
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='trace_id']" position="after">
+                <field name="use_expiration_date" column_invisible="True" />
+                <field
+                    name="expiration_date"
+                    groups="stock.group_production_lot"
+                    column_invisible="not context.get('show_removal_date')"
+                    decoration-bf="expiration_date &lt; (context_today() + datetime.timedelta(days=1)).strftime('%Y-%m-%d')"
+                    decoration-danger="expiration_date &lt; (context_today() + datetime.timedelta(days=1)).strftime('%Y-%m-%d')" />
+                <field
+                    name="removal_date"
+                    groups="stock.group_production_lot"
+                    column_invisible="not context.get('show_removal_date')"
+                    decoration-bf="removal_date &lt; (context_today() + datetime.timedelta(days=1)).strftime('%Y-%m-%d')"
+                    decoration-danger="removal_date &lt; (context_today() + datetime.timedelta(days=1)).strftime('%Y-%m-%d')" />
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_stock_quant_search_inherit_product_expiry" model="ir.ui.view">
+        <field name="name">stock.quant.search.inherit</field>
+        <field name="model">stock.quant</field>
+        <field name="inherit_id" ref="stock.view_stock_quant_search" />
+        <field name="arch" type="xml">
+            <xpath expr="//filter[@name='negative']" position="after">
+                <separator />
+                <filter
+                    name="expired_lots"
+                    string="Expired Lots"
+                    domain="[('expiration_date', '&lt;', 'today')]" />
+                <filter
+                    name="alert_lots"
+                    string="Alert Lots"
+                    domain="[('trace_id.alert_date', '&lt;=', 'today')]" />
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

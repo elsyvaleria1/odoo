@@ -1,0 +1,320 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="conversation_conversation_view_list" model="ir.ui.view">
+        <field name="name">conversation.conversation.view.list</field>
+        <field name="model">conversation.conversation</field>
+        <field name="arch" type="xml">
+            <list string="Conversations">
+                <field name="start" />
+                <field name="name" />
+                <field name="kind" />
+                <field name="partner_id" />
+                <field name="user_id" widget="many2one_avatar_user" />
+                <field name="duration_s" optional="show" />
+                <field name="outcome" optional="show" />
+                <field name="proposed_tool_call_count" optional="hide" />
+                <field
+                    name="state"
+                    widget="badge"
+                    decoration-danger="state == 'error'"
+                    decoration-info="state in ('pending', 'transcribing', 'analyzing')"
+                    decoration-success="state in ('transcribed', 'analyzed')" />
+            </list>
+        </field>
+    </record>
+
+    <record id="conversation_conversation_view_form" model="ir.ui.view">
+        <field name="name">conversation.conversation.view.form</field>
+        <field name="model">conversation.conversation</field>
+        <field name="arch" type="xml">
+            <form string="Conversation">
+                <header>
+                    <button
+                        name="action_transcribe"
+                        type="object"
+                        string="Transcribe"
+                        invisible="state not in ('pending', 'error') or not has_media"
+                        class="btn-primary" />
+                    <button
+                        name="action_analyse_speech"
+                        type="object"
+                        string="Analyze"
+                        invisible="state not in ('transcribed', 'analyzed', 'error')"
+                        class="btn-secondary" />
+                    <field
+                        name="state"
+                        widget="statusbar"
+                        statusbar_visible="no_audio,pending,transcribing,transcribed,analyzed" />
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name" placeholder="e.g. Call with Víctor Velázquez" /></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="kind" />
+                            <field name="source" />
+                            <field name="partner_id" />
+                            <field name="user_id" widget="many2one_avatar_user" />
+                            <field
+                                name="company_id"
+                                groups="base.group_multi_company" />
+                        </group>
+                        <group>
+                            <field name="start" />
+                            <field name="duration_s" />
+                            <field name="language" />
+                            <field name="hub_task_id" invisible="kind == 'call'" />
+                            <field
+                                name="recording_upload"
+                                filename="recording_upload_name" />
+                            <field name="recording_upload_name" invisible="1" />
+                        </group>
+                    </group>
+                    <div
+                        class="alert alert-warning"
+                        role="alert"
+                        invisible="not extract_error">
+                        <field name="extract_error" />
+                    </div>
+                    <field name="has_media" invisible="1" />
+                    <field
+                        name="segment_ids"
+                        widget="transcript_timeline"
+                        invisible="not has_media" />
+                    <notebook>
+                        <page
+                            name="summary"
+                            string="Summary"
+                            invisible="not analysis_summary">
+                            <group>
+                                <group>
+                                    <field name="outcome" />
+                                    <field
+                                        name="analysis_confidence"
+                                        widget="percentage" />
+                                </group>
+                                <group>
+                                    <field name="is_internal" />
+                                    <field name="proposed_tool_call_count" />
+                                    <field name="applied_tool_call_count" />
+                                </group>
+                            </group>
+                            <field name="analysis_summary" />
+                            <separator
+                                string="Topics"
+                                invisible="not analysis_topics" />
+                            <field
+                                name="analysis_topics"
+                                invisible="not analysis_topics" />
+                            <separator string="Commitments" />
+                            <field name="commitment_ids">
+                                <list editable="bottom" create="0">
+                                    <field name="name" />
+                                    <field name="speaker_id" />
+                                    <field name="due_date" />
+                                    <field name="done" widget="boolean_toggle" />
+                                </list>
+                            </field>
+                        </page>
+                        <page
+                            name="actions"
+                            string="Proposed actions"
+                            invisible="not tool_call_ids">
+                            <field name="tool_call_ids" readonly="1">
+                                <list
+                                    decoration-danger="state == 'failed'"
+                                    decoration-info="state == 'proposed'"
+                                    decoration-muted="state == 'rejected'"
+                                    decoration-success="state == 'applied'">
+                                    <field name="name" />
+                                    <field
+                                        name="assignee_id"
+                                        widget="many2one_avatar_user" />
+                                    <field
+                                        name="confidence"
+                                        widget="percentage"
+                                        optional="show" />
+                                    <field name="approval_state" optional="show" />
+                                    <field name="state" widget="badge" />
+                                </list>
+                            </field>
+                        </page>
+                        <page
+                            name="moments"
+                            string="Questions and moments"
+                            invisible="not question_ids and not moment_ids and not recommendation_ids">
+                            <separator string="Questions" />
+                            <field name="question_ids" readonly="1">
+                                <list>
+                                    <field name="name" />
+                                    <field name="speaker_id" />
+                                    <field name="answered" />
+                                    <field name="answer" />
+                                </list>
+                            </field>
+                            <separator string="Key moments" />
+                            <field name="moment_ids" readonly="1">
+                                <list>
+                                    <field name="at_s" />
+                                    <field name="kind" />
+                                    <field name="speaker_id" />
+                                    <field name="name" />
+                                </list>
+                            </field>
+                            <separator string="Recommendations" />
+                            <field name="recommendation_ids" readonly="1">
+                                <list>
+                                    <field name="kind" />
+                                    <field name="for_whom" />
+                                    <field name="text" />
+                                </list>
+                            </field>
+                        </page>
+                        <page name="people" string="People">
+                            <field name="attendee_ids" widget="many2many_tags" />
+                            <field name="timeline_speaker_ids">
+                                <list editable="bottom" create="0" delete="0">
+                                    <field name="label" readonly="1" />
+                                    <field name="name" />
+                                    <field name="partner_id" />
+                                    <field name="talk_time_s" readonly="1" />
+                                    <field name="turns" readonly="1" />
+                                    <field
+                                        name="sentiment"
+                                        groups="conversation.group_leader"
+                                        readonly="1" />
+                                    <field
+                                        name="engagement"
+                                        groups="conversation.group_leader"
+                                        readonly="1" />
+                                    <field
+                                        name="interruptions"
+                                        optional="hide"
+                                        groups="conversation.group_leader"
+                                        readonly="1" />
+                                    <field
+                                        name="questions_asked"
+                                        optional="hide"
+                                        groups="conversation.group_leader"
+                                        readonly="1" />
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter />
+            </form>
+        </field>
+    </record>
+
+    <record id="conversation_conversation_view_search" model="ir.ui.view">
+        <field name="name">conversation.conversation.view.search</field>
+        <field name="model">conversation.conversation</field>
+        <field name="arch" type="xml">
+            <search string="Conversations">
+                <field name="name" />
+                <field name="partner_id" />
+                <field name="user_id" />
+                <filter name="mine" string="Mine" domain="[('user_id', '=', uid)]" />
+                <separator />
+                <filter name="calls" string="Calls" domain="[('kind', '=', 'call')]" />
+                <filter
+                    name="meetings"
+                    string="Meetings"
+                    domain="[('kind', '=', 'meeting')]" />
+                <filter
+                    name="visits"
+                    string="Field visits"
+                    domain="[('kind', '=', 'visit')]" />
+                <separator />
+                <filter
+                    name="with_errors"
+                    string="With errors"
+                    domain="[('state', '=', 'error')]" />
+                <group>
+                    <filter
+                        name="group_kind"
+                        string="Kind"
+                        context="{'group_by': 'kind'}" />
+                    <filter
+                        name="group_user"
+                        string="Responsible"
+                        context="{'group_by': 'user_id'}" />
+                    <filter
+                        name="group_outcome"
+                        string="Outcome"
+                        context="{'group_by': 'outcome'}" />
+                    <filter
+                        name="group_state"
+                        string="Status"
+                        context="{'group_by': 'state'}" />
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="conversation_conversation_view_pivot" model="ir.ui.view">
+        <field name="name">conversation.conversation.view.pivot</field>
+        <field name="model">conversation.conversation</field>
+        <field name="arch" type="xml">
+            <pivot string="Conversations" sample="1">
+                <field name="user_id" type="row" />
+                <field name="outcome" type="col" />
+            </pivot>
+        </field>
+    </record>
+
+    <record id="conversation_conversation_view_graph" model="ir.ui.view">
+        <field name="name">conversation.conversation.view.graph</field>
+        <field name="model">conversation.conversation</field>
+        <field name="arch" type="xml">
+            <graph type="bar" string="Conversations" sample="1">
+                <field name="start" interval="month" />
+                <field name="kind" />
+            </graph>
+        </field>
+    </record>
+
+    <record id="action_conversation_conversation" model="ir.actions.act_window">
+        <field name="name">Conversations</field>
+        <field name="res_model">conversation.conversation</field>
+        <field name="view_mode">list,form,pivot,graph</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Record or upload a conversation</p>
+            <p>A call, a meeting or a field visit: its recording is transcribed, its voices named, and it is read for what was committed to, asked and decided.</p>
+        </field>
+    </record>
+
+    <record id="action_conversation_reporting" model="ir.actions.act_window">
+        <field name="name">Conversation analysis</field>
+        <field name="res_model">conversation.conversation</field>
+        <field name="view_mode">pivot,graph,list,form</field>
+    </record>
+
+    <record id="action_conversation_my_tool_calls" model="ir.actions.act_window">
+        <field name="name">My actions</field>
+        <field name="res_model">ai.tool.call</field>
+        <field name="view_mode">list,form</field>
+        <field
+            name="domain">[('res_model', '=', 'conversation.conversation'), ('assignee_id', '=', uid)]</field>
+        <field name="context">{'search_default_proposed': 1}</field>
+    </record>
+
+    <record id="action_conversation_tool_calls" model="ir.actions.act_window">
+        <field name="name">All proposed actions</field>
+        <field name="res_model">ai.tool.call</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('res_model', '=', 'conversation.conversation')]</field>
+    </record>
+
+    <record id="action_conversation_talk_time" model="ir.actions.act_window">
+        <field name="name">Talk time</field>
+        <field name="res_model">speech.speaker</field>
+        <field name="view_mode">list</field>
+        <field
+            name="domain">[('attachment_id.res_model', '=', 'conversation.conversation')]</field>
+    </record>
+
+</odoo>

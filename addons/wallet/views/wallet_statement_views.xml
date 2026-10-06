@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_wallet_statement_form" model="ir.ui.view">
+        <field name="name">wallet.statement.form</field>
+        <field name="model">wallet.statement</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name" /></h1>
+                    </div>
+                    <group name="main">
+                        <group name="left_col">
+                            <field name="account_id" />
+                            <field name="date_start" />
+                            <field name="date_end" />
+                        </group>
+                        <group name="right_col">
+                            <field name="currency_id" invisible="1" />
+                            <field name="amount_total" widget="monetary" />
+                            <field name="count_transaction" />
+                            <field name="attachment_id" />
+                        </group>
+                    </group>
+                    <notebook>
+                        <page name="transactions" string="Transactions">
+                            <field name="transaction_ids">
+                                <list>
+                                    <field name="date_transaction" />
+                                    <field name="card_id" />
+                                    <field name="place" />
+                                    <field name="amount" widget="monetary" />
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_wallet_statement_list" model="ir.ui.view">
+        <field name="name">wallet.statement.list</field>
+        <field name="model">wallet.statement</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name" />
+                <field name="account_id" />
+                <field name="date_start" />
+                <field name="date_end" />
+                <field name="count_transaction" />
+                <field name="amount_total" widget="monetary" sum="Total" />
+                <field name="currency_id" column_invisible="True" />
+            </list>
+        </field>
+    </record>
+
+    <record id="action_wallet_statement" model="ir.actions.act_window">
+        <field name="name">Statements</field>
+        <field name="res_model">wallet.statement</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+</odoo>

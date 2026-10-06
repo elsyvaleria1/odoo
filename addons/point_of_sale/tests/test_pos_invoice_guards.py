@@ -1,0 +1,243 @@
+import odoo
+from odoo.exceptions import UserError, ValidationError
+
+from odoo.addons.point_of_sale.tests.common import TestPoSCommon
+
+
+@odoo.tests.tagged("post_install", "-at_install")
+class TestPosInvoiceGuards(TestPoSCommon):
+    def setUp(self):
+        super().setUp()
+        self.config = self.basic_config
+        self.product = self.create_product("Guarded", self.categ_basic, 100.0, 50.0)
+
+    def _make_order(self, state):
+        order = self.env["pos.order"].create(
+            {
+                "session_id": self.pos_session.id,
+                "company_id": self.env.company.id,
+                "partner_id": self.customer.id,
+                "amount_tax": 0.0,
+                "amount_total": 100.0,
+                "amount_paid": 0.0,
+                "amount_return": 0.0,
+                "lines": [
+                    (
+                        0,
+                        0,
+                        {
+                            "product_id": self.product.id,
+                            "qty": 1.0,
+                            "price_unit": 100.0,
+                            "price_subtotal": 100.0,
+                            "price_subtotal_incl": 100.0,
+                        },
+                    )
+                ],
+            }
+        )
+        order.state = state
+        return order
+
+    def test_cancelled_order_cannot_be_invoiced(self):
+        self._start_pos_session(self.cash_pm1, 0)
+        order = self._make_order("cancel")
+        with self.assertRaises(UserError):
+            order.action_pos_order_invoice()
+        self.assertFalse(
+            order.account_move,
+            "A cancelled order must not produce an invoice: it is excluded from the"
+            " session closing entry, so the revenue would never be reversed.",
+        )
+        self.assertEqual(order.state, "cancel", "state must not be promoted to done")
+
+    def test_unpaid_draft_order_cannot_be_invoiced(self):
+        self._start_pos_session(self.cash_pm1, 0)
+        order = self._make_order("draft")
+        self.assertFalse(order.payment_ids)
+        with self.assertRaises(UserError):
+            order.action_pos_order_invoice()
+        self.assertFalse(
+            order.account_move,
+            "Invoicing an unpaid order leaves a receivable nothing will ever settle.",
+        )
+
+    def test_paid_order_is_still_invoicable(self):
+        self._start_pos_session(self.cash_pm1, 0)
+        order = self._make_order("paid")
+        order.action_pos_order_invoice()
+        self.assertTrue(order.account_move, "a paid order must remain invoicable")
+        self.assertEqual(order.state, "done")
+
+    def test_reversal_move_balances_in_foreign_currency(self):
+        config = self.other_currency_config
+        self.config = config
+        self._start_pos_session(self.cash_pm2, 0)
+        order = self.env["pos.order"].create(
+            {
+                "session_id": self.pos_session.id,
+                "company_id": self.env.company.id,
+                "partner_id": self.customer.id,
+                "amount_tax": 0.0,
+                "amount_total": 100.0,
+                "amount_paid": 100.0,
+                "amount_return": 20.0,
+                "lines": [
+                    (
+                        0,
+                        0,
+                        {
+                            "product_id": self.product.id,
+                            "qty": 1.0,
+                            "price_unit": 100.0,
+                            "price_subtotal": 100.0,
+                            "price_subtotal_incl": 100.0,
+                        },
+                    )
+                ],
+            }
+        )
+        for amount in (120.0, -20.0):
+            self.env["pos.payment"].create(
+                {
+                    "pos_order_id": order.id,
+                    "amount": amount,
+                    "payment_method_id": self.cash_pm2.id,
+                    "payment_date": order.date_order,
+                }
+            )
+        order.state = "paid"
+
+        per_nature = order._prepare_aml_values_list_per_nature()
+        payment_terms = per_nature["payment_terms"]
+        self.assertEqual(
+            len(payment_terms), 1, "the two payments should aggregate onto one line"
+        )
+        total_balance = sum(
+            vals.get("balance", 0.0)
+            for vals_list in per_nature.values()
+            for vals in vals_list
+        )
+        self.assertAlmostEqual(
+            total_balance,
+            0.0,
+            places=2,
+            msg="reversal move is unbalanced -- amount_currency/balance were swapped"
+            " in the aggregation branch",
+        )
+        converter = self.pos_session._convert_amount_to_company_currency
+        self.assertAlmostEqual(
+            payment_terms[0]["amount_currency"],
+            100.0,
+            places=2,
+            msg="amount_currency must hold the order-currency total",
+        )
+        self.assertAlmostEqual(
+            payment_terms[0]["balance"],
+            converter(100.0, order.date_order, False),
+            places=2,
+            msg="balance must hold the company-currency total",
+        )
+
+    def test_printer_is_not_readable_across_companies(self):
+        other_company = self.env["res.company"].create({"name": "Audit Other Co"})
+        self.env["pos.printer"].create(
+            {
+                "name": "Foreign printer",
+                "printer_type": "epson_epos",
+                "epson_printer_ip": "10.9.9.9",
+                "company_id": other_company.id,
+            }
+        )
+        pos_user = self.env["res.users"].create(
+            {
+                "name": "Audit POS user",
+                "login": "audit_pos_user_r7",
+                "company_id": self.env.company.id,
+                "company_ids": [(6, 0, self.env.company.ids)],
+                "group_ids": [(4, self.env.ref("point_of_sale.group_pos_user").id)],
+            }
+        )
+        visible = self.env["pos.printer"].with_user(pos_user).search([])
+        foreign = visible.sudo().filtered(lambda p: p.company_id != self.env.company)
+        self.assertFalse(
+            foreign,
+            "pos.printer leaks another company's proxy/printer IP addresses to any"
+            " POS user when the multi-company guard is missing",
+        )
+
+    def test_posted_payments_cannot_be_changed_or_removed(self):
+        self._start_pos_session(self.cash_pm1, 0)
+        order = self._make_order("draft")
+        order.add_payment(
+            {
+                "pos_order_id": order.id,
+                "amount": 100,
+                "payment_method_id": self.cash_pm1.id,
+            }
+        )
+        order.action_pos_order_paid()
+        order.action_pos_order_invoice()
+        self.assertEqual(order.account_move.state, "posted")
+        self.assertEqual(order.account_move.amount_residual, 0)
+        payment = order.payment_ids
+        cashier = self.env["res.users"].create(
+            {
+                "name": "Payment integrity cashier",
+                "login": "payment_integrity_cashier",
+                "company_id": self.env.company.id,
+                "company_ids": [(6, 0, self.env.company.ids)],
+                "group_ids": [
+                    (
+                        6,
+                        0,
+                        [
+                            self.env.ref("base.group_user").id,
+                            self.env.ref("point_of_sale.group_pos_user").id,
+                        ],
+                    )
+                ],
+            }
+        )
+        payment = payment.with_user(cashier)
+        self.assertFalse(payment.env.su)
+        other_order = self._make_order("draft")
+        for values in (
+            {"amount": 99},
+            {"pos_order_id": other_order.id},
+            {"payment_method_id": self.cash_pm1.id},
+            {"is_change": True},
+            {"payment_date": order.date_order},
+            {"uuid": "replaced"},
+        ):
+            with (
+                self.subTest(values=values),
+                self.assertRaises(ValidationError),
+                self.env.cr.savepoint(),
+            ):
+                payment.write(values)
+        with self.assertRaises(ValidationError), self.env.cr.savepoint():
+            payment.unlink()
+        with self.assertRaises(ValidationError), self.env.cr.savepoint():
+            payment.copy({"pos_order_id": order.id})
+        self.assertTrue(payment.exists())
+        self.assertEqual(sum(order.payment_ids.mapped("amount")), 100)
+        self.assertEqual(order.account_move.amount_residual, 0)
+        payment.write({"payment_ref_no": "terminal confirmation"})
+        self.assertEqual(payment.payment_ref_no, "terminal confirmation")
+
+    def test_draft_payments_remain_editable(self):
+        self._start_pos_session(self.cash_pm1, 0)
+        order = self._make_order("draft")
+        order.add_payment(
+            {
+                "pos_order_id": order.id,
+                "amount": 100,
+                "payment_method_id": self.cash_pm1.id,
+            }
+        )
+        payment = order.payment_ids
+        payment.amount = 90
+        self.assertEqual(payment.amount, 90)
+        payment.unlink()
+        self.assertFalse(order.payment_ids)

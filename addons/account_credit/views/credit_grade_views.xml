@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_credit_grade_form" model="ir.ui.view">
+        <field name="name">credit.grade.form</field>
+        <field name="model">credit.grade</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button
+                            name="action_view_profiles"
+                            type="object"
+                            icon="fa-users"
+                            class="oe_stat_button">
+                            <field
+                                name="profile_count"
+                                string="Profiles"
+                                widget="statinfo" />
+                        </button>
+                    </div>
+                    <widget
+                        name="web_ribbon"
+                        title="Archived"
+                        invisible="active"
+                        bg_color="text-bg-danger" />
+                    <div class="oe_title">
+                        <h1><field name="name" placeholder="Grade name" /></h1>
+                    </div>
+                    <group>
+                        <group name="identity">
+                            <field name="code" />
+                            <field name="kind" />
+                            <field name="sequence" />
+                            <field name="regulatory_code" />
+                            <field name="color" widget="color_picker" />
+                            <field name="active" invisible="1" />
+                        </group>
+                        <group name="parameters">
+                            <label for="min_value" string="Score range" />
+                            <div class="o_row">
+                                <field name="min_value" />
+                                <span>to</span>
+                                <field name="max_value" />
+                            </div>
+                            <field name="expected_loss_rate" />
+                            <field name="limit_pct_annual_purchases" />
+                            <field name="max_payment_term_days" />
+                            <field name="review_interval_months" />
+                        </group>
+                    </group>
+                    <field
+                        name="description"
+                        placeholder="Who belongs in this grade..." />
+                    <notebook>
+                        <page name="rules" string="Required Documents">
+                            <field name="rule_ids">
+                                <list editable="bottom">
+                                    <field name="name" />
+                                    <field name="document_type_id" />
+                                    <field name="is_guarantor" />
+                                    <field name="min_quantity" />
+                                    <field name="max_quantity" />
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_credit_grade_list" model="ir.ui.view">
+        <field name="name">credit.grade.list</field>
+        <field name="model">credit.grade</field>
+        <field name="arch" type="xml">
+            <list default_order="sequence, id">
+                <field name="sequence" widget="handle" />
+                <field name="name" />
+                <field name="code" />
+                <field name="kind" />
+                <field name="min_value" />
+                <field name="max_value" />
+                <field name="expected_loss_rate" />
+                <field name="limit_pct_annual_purchases" />
+                <field name="max_payment_term_days" />
+                <field name="review_interval_months" />
+                <field name="regulatory_code" optional="show" />
+                <field name="profile_count" />
+                <field name="active" invisible="1" />
+            </list>
+        </field>
+    </record>
+
+    <record id="action_credit_grade" model="ir.actions.act_window">
+        <field name="name">Credit Grades</field>
+        <field name="res_model">credit.grade</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Define the grades customers are rated in
+            </p>
+        </field>
+    </record>
+
+</odoo>

@@ -1,0 +1,1010 @@
+import functools
+import random
+import re
+from collections import defaultdict
+from datetime import timedelta
+from urllib.parse import urlparse
+
+from odoo import Command, api, fields, models
+from odoo.exceptions import AccessError, ValidationError
+from odoo.fields import Domain
+from odoo.libs.debug_log import DebugLog
+from odoo.tools import SQL
+
+from odoo.addons.bus.websocket import WebsocketConnectionHandler
+from odoo.addons.mail.tools.discuss import Store
+
+_debug = DebugLog(__name__)
+
+BUFFER_TIME = 120
+
+
+class Im_LivechatChannel(models.Model):
+    _name = "im_livechat.channel"
+    _inherit = ["mixin.rating.parent"]
+    _description = "Livechat Channel"
+    _rating_satisfaction_days = 14
+
+    def _default_user_ids(self):
+        return [Command.set([self.env.uid])]
+
+    def _default_button_text(self) -> str:
+        return self.env._("Need help? Chat with us.")
+
+    def _default_default_message(self) -> str:
+        return self.env._("How may I help you?")
+
+    name = fields.Char(
+        string="Channel Name",
+        required=True,
+    )
+    button_text = fields.Char(
+        string="Text of the Button",
+        translate=True,
+        default=lambda self: self._default_button_text(),
+    )
+    default_message = fields.Char(
+        string="Welcome Message",
+        translate=True,
+        default=lambda self: self._default_default_message(),
+        help="This is an automated 'welcome' message that your visitor will see when they initiate a new conversation.",
+    )
+    header_background_color = fields.Char(
+        default="#875A7B",
+        help="Default background color of the channel header once open",
+    )
+    title_color = fields.Char(
+        default="#FFFFFF",
+        help="Default title color of the channel once open",
+    )
+    button_background_color = fields.Char(
+        default="#875A7B",
+        help="Default background color of the Livechat button",
+    )
+    button_text_color = fields.Char(
+        default="#FFFFFF",
+        help="Default text color of the Livechat button",
+    )
+    max_sessions_mode = fields.Selection(
+        selection=[("unlimited", "Unlimited"), ("limited", "Limited")],
+        string="Sessions per Operator",
+        default="unlimited",
+        help="If limited, operators will only handle the selected number of sessions at a time.",
+    )
+    max_sessions = fields.Integer(
+        string="Maximum Sessions",
+        default=10,
+        help="Maximum number of concurrent sessions per operator.",
+    )
+    block_assignment_during_call = fields.Boolean(
+        string="No Chats During Call",
+        help="While on a call, agents will not receive new conversations.",
+    )
+    review_link = fields.Char(
+        help="Visitors who leave a positive review will be redirected to this optional link."
+    )
+
+    web_page = fields.Char(
+        compute="_compute_web_page_link",
+        store=False,
+        readonly=True,
+        help="URL to a static page where you client can discuss with the operator of the channel.",
+    )
+    are_you_inside = fields.Boolean(
+        string="Are you inside the matrix?",
+        compute="_compute_are_you_inside",
+        store=False,
+        readonly=True,
+    )
+    available_operator_ids = fields.Many2many(
+        comodel_name="res.users",
+        compute="_compute_available_operator_ids",
+    )
+    script_external = fields.Html(
+        string="Script (external)",
+        sanitize=False,
+        compute="_compute_script_external",
+        store=False,
+        readonly=True,
+    )
+    nbr_channel = fields.Integer(
+        string="Number of conversation",
+        compute="_compute_nbr_channel",
+        store=False,
+        readonly=True,
+    )
+
+    user_ids = fields.Many2many(
+        comodel_name="res.users",
+        relation="im_livechat_channel_im_user",
+        column1="channel_id",
+        column2="user_id",
+        string="Agents",
+        default=lambda self: self._default_user_ids(),
+    )
+    channel_ids = fields.One2many(
+        comodel_name="discuss.channel",
+        inverse_name="livechat_channel_id",
+        string="Sessions",
+    )
+    chatbot_script_count = fields.Integer(
+        string="Number of Chatbot",
+        compute="_compute_chatbot_script_count",
+    )
+    rule_ids = fields.One2many(
+        comodel_name="im_livechat.channel.rule",
+        inverse_name="channel_id",
+        string="Rules",
+    )
+    ongoing_session_count = fields.Integer(
+        string="Number of Ongoing Sessions",
+        compute="_compute_ongoing_sessions_count",
+    )
+    remaining_session_capacity = fields.Integer(
+        compute="_compute_remaining_session_capacity"
+    )
+
+    _max_sessions_mode_greater_than_zero = models.Constraint(
+        "CHECK(max_sessions > 0)",
+        "Concurrent session number should be greater than zero.",
+    )
+
+    def web_read(self, specification: dict[str, dict]) -> list[dict]:
+        user_context = specification.get("user_ids", {}).get("context", {})
+        if len(self) == 1 and user_context.pop("add_livechat_channel_ctx", None):
+            user_context["im_livechat_channel_id"] = self.id
+        return super().web_read(specification)
+
+    def _compute_are_you_inside(self) -> None:
+        for channel in self:
+            channel.are_you_inside = self.env.user in channel.user_ids
+
+    @api.depends("channel_ids.livechat_end_dt")
+    def _compute_ongoing_sessions_count(self) -> None:
+        count_by_channel = defaultdict(int)
+        for (
+            key,
+            count,
+        ) in self._get_ongoing_session_count_by_agent_livechat_channel().items():
+            count_by_channel[key[1]] += count
+        for channel in self:
+            channel.ongoing_session_count = count_by_channel.get(channel, 0)
+
+    @api.depends(
+        "block_assignment_during_call",
+        "max_sessions",
+        "user_ids.livechat_is_in_call",
+        "user_ids.livechat_ongoing_session_count",
+    )
+    def _compute_remaining_session_capacity(self) -> None:
+        count = self._get_ongoing_session_count_by_agent_livechat_channel()
+        for channel in self:
+            users = channel.user_ids
+            if channel.block_assignment_during_call:
+                users = users.filtered(lambda u: not u.livechat_is_in_call)
+            total_capacity = channel.max_sessions * len(users)
+            capacity = total_capacity - sum(
+                count.get((user.partner_id, channel), 0) for user in users
+            )
+            channel.remaining_session_capacity = max(capacity, 0)
+
+    @api.depends(
+        "user_ids.channel_ids.last_interest_dt",
+        "user_ids.channel_ids.livechat_end_dt",
+        "user_ids.channel_ids.livechat_channel_id",
+        "user_ids.channel_ids.livechat_operator_id",
+        "user_ids.channel_member_ids",
+        "user_ids.im_status",
+        "user_ids.is_in_call",
+        "user_ids.partner_id",
+    )
+    def _compute_available_operator_ids(self) -> None:
+        operators_by_livechat_channel = (
+            self._get_available_operators_by_livechat_channel()
+        )
+        for livechat_channel in self:
+            livechat_channel.available_operator_ids = operators_by_livechat_channel[
+                livechat_channel
+            ]
+
+    @api.constrains("review_link")
+    def _check_review_link(self) -> None:
+        for record in self.filtered("review_link"):
+            url = urlparse(record.review_link)
+            if url.scheme not in ("http", "https") or not url.netloc:
+                raise ValidationError(
+                    self.env._(
+                        "Invalid URL '%s'. The Review Link must start with 'http://' or 'https://'."
+                    )
+                    % record.review_link
+                )
+
+    def _get_available_operators_by_livechat_channel(self, users=None):
+        counts = {}
+        if livechat_channels := self.filtered(
+            lambda c: c.max_sessions_mode == "limited"
+        ):
+            counts = (
+                livechat_channels._get_ongoing_session_count_by_agent_livechat_channel(
+                    users, filter_online=True
+                )
+            )
+
+        candidates = users if users is not None else self.user_ids
+        online = self._online_users(candidates)
+        in_call = self._users_in_call(online)
+
+        def is_available(user, channel) -> bool:
+            return (
+                user in online
+                and (
+                    channel.max_sessions_mode == "unlimited"
+                    or counts.get((user.partner_id, channel), 0) < channel.max_sessions
+                )
+                and (not channel.block_assignment_during_call or user not in in_call)
+            )
+
+        operators_by_livechat_channel = {}
+        for livechat_channel in self:
+            possible_users = users if users is not None else livechat_channel.user_ids
+            operators_by_livechat_channel[livechat_channel] = possible_users.filtered(
+                functools.partial(is_available, channel=livechat_channel)
+            )
+        return operators_by_livechat_channel
+
+    def _online_users(self, users):
+        return (
+            self._reading_availability(self.env["mail.presence"])
+            .search([("user_id", "in", users.ids), ("status", "=", "online")])
+            .user_id.with_env(users.env)
+        )
+
+    def _users_in_call(self, users):
+        calling = (
+            self._reading_availability(self.env["discuss.channel.rtc.session"])
+            .search([("partner_id", "in", users.partner_id.ids)])
+            .partner_id
+        )
+        return users.filtered(lambda user: user.partner_id in calling)
+
+    @staticmethod
+    def _reading_availability(records):
+        # whoever asks which operators can take a visitor -- a live chat user's
+        # channel list, a visitor's session -- reads their presence and calls,
+        # which their own rights reach for themselves only
+        return records.with_privilege(
+            "im_livechat.privilege_open_session",
+            reason="an operator's availability is read from their presence",
+        )
+
+    def _get_ongoing_session_count_by_agent_livechat_channel(
+        self, users=None, filter_online=False
+    ) -> dict:
+        user_domain = Domain(False)
+        online = (
+            self._online_users(users if users is not None else self.user_ids)
+            if filter_online
+            else None
+        )
+        for channel in self:
+            active_users = users if users is not None else channel.user_ids
+            if online is not None:
+                active_users &= online
+            user_domain |= Domain(
+                [
+                    ("partner_id", "in", active_users.partner_id.ids),
+                    ("channel_id.livechat_channel_id", "in", channel.ids),
+                ]
+            )
+        counts = self.env["discuss.channel.member"]._read_group(
+            Domain("channel_id.livechat_end_dt", "=", False)
+            & Domain("channel_id.last_interest_dt", ">=", "-15M")
+            & (
+                Domain(
+                    "channel_id.create_date",
+                    ">",
+                    fields.Datetime.now() - timedelta(seconds=BUFFER_TIME),
+                )
+                | Domain(
+                    "channel_id.livechat_channel_member_history_ids",
+                    "any",
+                    [
+                        ("livechat_member_type", "=", "visitor"),
+                        ("message_count", ">", 0),
+                    ],
+                )
+            )
+            & user_domain,
+            groupby=["partner_id", "channel_id.livechat_channel_id"],
+            aggregates=["__count"],
+        )
+        return {(partner, channel): count for (partner, channel, count) in counts}
+
+    @api.depends("rule_ids.chatbot_script_id")
+    def _compute_chatbot_script_count(self) -> None:
+        data = self.env["im_livechat.channel.rule"]._read_group(
+            [("channel_id", "in", self.ids)],
+            ["channel_id"],
+            ["chatbot_script_id:count_distinct"],
+        )
+        mapped_data = {channel.id: count_distinct for channel, count_distinct in data}
+        for channel in self:
+            channel.chatbot_script_count = mapped_data.get(channel.id, 0)
+
+    def _compute_script_external(self) -> None:
+        values = {
+            "dbname": self.env.cr.dbname,
+        }
+        for record in self:
+            values["channel_id"] = record.id
+            values["url"] = record.get_base_url()
+            record.script_external = (
+                self.env["ir.qweb"]._render(
+                    "im_livechat.external_loader", values, script_nonce=False
+                )
+                if record.id
+                else False
+            )
+
+    def _compute_web_page_link(self) -> None:
+        for record in self:
+            record.web_page = (
+                "%s/im_livechat/support/%i" % (record.get_base_url(), record.id)
+                if record.id
+                else False
+            )
+
+    @api.depends("channel_ids")
+    def _compute_nbr_channel(self) -> None:
+        data = self.env["discuss.channel"]._read_group(
+            [
+                ("livechat_channel_id", "in", self.ids),
+            ],
+            ["livechat_channel_id"],
+            ["__count"],
+        )
+        channel_count = {livechat_channel.id: count for livechat_channel, count in data}
+        for record in self:
+            record.nbr_channel = channel_count.get(record.id, 0)
+
+    def action_join(self):
+        self.check_singleton()
+        if not self.env.user.has_group("im_livechat.im_livechat_group_user"):
+            raise AccessError(
+                self.env._("Only Live Chat operators can join Live Chat channels")
+            )
+        self.sudo().user_ids = [Command.link(self.env.user.id)]
+        Store(bus_channel=self.env.user).add(
+            self, ["are_you_inside", "name"]
+        ).bus_send()
+
+    def action_quit(self) -> None:
+        self.check_singleton()
+        self.sudo().user_ids = [Command.unlink(self.env.user.id)]
+        Store(bus_channel=self.env.user).add(
+            self.sudo(), ["are_you_inside", "name"]
+        ).bus_send()
+
+    def action_view_rating(self):
+        self.check_singleton()
+        action = self.env["ir.actions.act_window"]._get_action_dict_by_xml_id(
+            "im_livechat.discuss_channel_action_from_livechat_channel"
+        )
+        action["context"] = {
+            "search_default_parent_res_name": self.name,
+            "search_default_fiter_session_rated": "1",
+        }
+        return action
+
+    def action_view_chatbot_scripts(self):
+        action = self.env["ir.actions.act_window"]._get_action_dict_by_xml_id(
+            "im_livechat.chatbot_script_action"
+        )
+        chatbot_script_ids = (
+            self.env["im_livechat.channel.rule"]
+            .search([("channel_id", "in", self.ids)])
+            .mapped("chatbot_script_id")
+        )
+        if len(chatbot_script_ids) == 1:
+            action["res_id"] = chatbot_script_ids.id
+            action["view_mode"] = "form"
+            action["views"] = [(False, "form")]
+        else:
+            action["domain"] = [("id", "in", chatbot_script_ids.ids)]
+        return action
+
+    def _open_session(
+        self,
+        /,
+        *,
+        visitor_partner=None,
+        visitor_guest=None,
+        country=None,
+        lang=None,
+        previous_operator=None,
+        chatbot_script=None,
+        forced_agent=None,
+        allow_waiting=False,
+        operator_info=None,
+        operator_criteria=None,
+        extra_vals=None,
+    ):
+        """Open a live chat session for a visitor, whatever it came from: a
+        web page (the controller resolves the guest, country and language from
+        the request) or a server-side origin such as a messaging bridge.
+
+        `forced_agent` routes to that user whether available or not.
+        `allow_waiting`, when nobody is available, still opens the session --
+        a message that already arrived cannot be turned away as a page visit
+        can -- with the least busy of the channel's operators, looking for
+        help. `operator_criteria` carries what an extension selects operators
+        by beyond these, as the web route's parameters do. Returns an empty
+        recordset when no operator could be found.
+
+        The caller holds `im_livechat.privilege_open_session`, as the web
+        route does: the operator is picked and the session created on its
+        rows, never as the superuser.
+        """
+        self.check_singleton()
+        waiting = False
+        if operator_info is None:
+            criteria = {
+                "previous_operator_id": previous_operator.id
+                if previous_operator
+                else None,
+                "chatbot_script_id": chatbot_script.id if chatbot_script else None,
+                "country_id": country.id if country else None,
+                "lang": lang.code if lang else None,
+                **(operator_criteria or {}),
+            }
+            operator_info = self._get_operator_info(
+                users=forced_agent.with_env(self.env) if forced_agent else None,
+                **criteria,
+            )
+            if not operator_info["operator_partner"] and allow_waiting:
+                operator_info = self._get_operator_info(users=self.user_ids, **criteria)
+                waiting = bool(operator_info["operator_partner"])
+        if not operator_info["operator_partner"]:
+            return self.env["discuss.channel"]
+        vals = self._prepare_livechat_discuss_channel_vals(
+            visitor_partner=visitor_partner,
+            visitor_guest=visitor_guest,
+            **operator_info,
+        )
+        vals.update(extra_vals or {})
+        vals.update(
+            {
+                "country_id": country.id if country else False,
+                "livechat_lang_id": lang.id if lang else False,
+            }
+        )
+        channel = (
+            self.env["discuss.channel"]
+            .with_context(
+                lang=self.env["chatbot.script"]._get_chatbot_language(),
+                discuss_channel_creator_joins=False,
+            )
+            .create(vals)
+        )
+        script = operator_info["chatbot_script"]
+        is_chatbot_script = operator_info["operator_model"] == "chatbot.script"
+        if is_chatbot_script:
+            script._post_welcome_steps(
+                channel.with_privilege(
+                    "mail.privilege_post_as_author",
+                    reason="a session's chatbot greets the visitor it opens for",
+                )
+            )
+        if waiting:
+            channel.livechat_status = "need_help"
+        if (
+            not is_chatbot_script
+            or script.operator_partner_id != channel.livechat_operator_id
+        ):
+            channel._broadcast([channel.livechat_operator_id.id])
+        return channel
+
+    def _prepare_livechat_discuss_channel_vals(
+        self,
+        /,
+        *,
+        chatbot_script=None,
+        agent=None,
+        operator_partner,
+        operator_model,
+        visitor_partner=None,
+        visitor_guest=None,
+        **kwargs,
+    ):
+        """The values of a new session. The visitor is whom the caller names:
+        a request's guest or logged-in user, or a partner a bridge brings --
+        never inferred from the environment, which for a server-side origin
+        is a service user."""
+        now = fields.Datetime.now()
+        last_interest_dt = now - timedelta(seconds=1)
+        members_to_add = [
+            Command.create(
+                self._prepare_agent_member_vals(
+                    last_interest_dt=last_interest_dt,
+                    now=now,
+                    chatbot_script=chatbot_script,
+                    operator_partner=operator_partner,
+                    operator_model=operator_model,
+                    **kwargs,
+                )
+            )
+        ]
+        if visitor_guest:
+            members_to_add.append(
+                Command.create(
+                    {"livechat_member_type": "visitor", "guest_id": visitor_guest.id}
+                )
+            )
+        if visitor_partner and visitor_partner != operator_partner:
+            members_to_add.append(
+                Command.create(
+                    {
+                        "livechat_member_type": "visitor",
+                        "partner_id": visitor_partner.id,
+                    }
+                )
+            )
+
+        channel_name = self._get_channel_name(
+            visitor_partner=visitor_partner,
+            guest=visitor_guest,
+            agent=agent,
+            chatbot_script=chatbot_script,
+            operator_model=operator_model,
+            **kwargs,
+        )
+        is_chatbot_script = operator_model == "chatbot.script"
+        is_agent = operator_model == "res.users"
+        return {
+            "channel_member_ids": members_to_add,
+            "last_interest_dt": last_interest_dt,
+            "livechat_operator_id": operator_partner.id,
+            "livechat_channel_id": self.id,
+            "livechat_failure": "no_answer" if is_agent else "no_failure",
+            "livechat_status": "in_progress",
+            "chatbot_current_step_id": chatbot_script._get_welcome_steps()[-1].id
+            if is_chatbot_script
+            else False,
+            "channel_type": "livechat",
+            "name": channel_name,
+        }
+
+    def _prepare_agent_member_vals(
+        self,
+        /,
+        *,
+        last_interest_dt,
+        now,
+        chatbot_script,
+        operator_partner,
+        operator_model,
+        **kwargs,
+    ):
+        return {
+            "chatbot_script_id": chatbot_script.id
+            if operator_model == "chatbot.script"
+            else False,
+            "last_interest_dt": last_interest_dt,
+            "livechat_member_type": "agent" if operator_model == "res.users" else "bot",
+            "partner_id": operator_partner.id,
+            "unpin_dt": now,
+        }
+
+    def _get_channel_name(
+        self,
+        /,
+        *,
+        visitor_partner=None,
+        guest=None,
+        agent,
+        chatbot_script,
+        operator_model,
+        **kwargs,
+    ):
+        if operator_model == "chatbot.script":
+            return chatbot_script.title
+        if visitor_partner:
+            visitor_name = visitor_partner.display_name
+        elif guest:
+            visitor_name = guest.name
+        else:
+            visitor_name = self.env._("Visitor")
+        return " ".join([visitor_name, agent.livechat_username or agent.name])
+
+    def _get_operator_info(
+        self,
+        /,
+        *,
+        lang,
+        country_id,
+        previous_operator_id=None,
+        chatbot_script_id=None,
+        users=None,
+        **kwargs,
+    ):
+        agent = self.env["res.users"]
+        chatbot_script = self.env["chatbot.script"]
+        operator_partner = self.env["res.partner"]
+        operator_model = ""
+
+        if (
+            chatbot_script_id
+            and chatbot_script_id in self.rule_ids.chatbot_script_id.ids
+        ):
+            chatbot_script = (
+                self.env["chatbot.script"]
+                .sudo()
+                .with_context(lang=self.env["chatbot.script"]._get_chatbot_language())
+                .search([("id", "=", chatbot_script_id)])
+            )
+            if chatbot_script.script_step_ids:
+                operator_partner = chatbot_script.operator_partner_id
+                operator_model = "chatbot.script"
+            else:
+                _debug.logic(
+                    "chatbot_skipped",
+                    livechat_channel=self.id,
+                    script=chatbot_script_id,
+                    reason="inactive" if not chatbot_script else "no_steps",
+                )
+                chatbot_script = self.env["chatbot.script"]
+
+        if not operator_model:
+            agent = self._get_operator(
+                previous_operator_id=previous_operator_id,
+                lang=lang,
+                country_id=country_id,
+                users=users,
+            )
+            operator_partner = agent.partner_id
+            operator_model = "res.users"
+
+        return {
+            "agent": agent,
+            "chatbot_script": chatbot_script,
+            "operator_partner": operator_partner,
+            "operator_model": operator_model,
+        }
+
+    def _get_less_active_operator(self, operator_statuses, operators):
+        if not operators:
+            return False
+
+        operator_statuses = [
+            s
+            for s in operator_statuses
+            if s["partner_id"] in set(operators.partner_id.ids)
+        ]
+
+        active_op_partner_ids = {s["partner_id"] for s in operator_statuses}
+        candidates = operators.filtered(
+            lambda o: o.partner_id.id not in active_op_partner_ids
+        )
+        if candidates:
+            return random.choice(candidates)
+
+        best_status = operator_statuses[0]
+        best_status_op_partner_ids = {
+            s["partner_id"]
+            for s in operator_statuses
+            if (s["count"], s["in_call"])
+            == (best_status["count"], best_status["in_call"])
+        }
+        candidates = operators.filtered(
+            lambda o: o.partner_id.id in best_status_op_partner_ids
+        )
+        return random.choice(candidates)
+
+    def _get_operator(
+        self,
+        previous_operator_id=None,
+        lang=None,
+        country_id=None,
+        expertises=None,
+        users=None,
+    ):
+        operator = self._select_operator(
+            previous_operator_id=previous_operator_id,
+            lang=lang,
+            country_id=country_id,
+            expertises=expertises,
+            users=users,
+        )
+        if operator and self.max_sessions_mode == "limited":
+            self._claim_operator_capacity(operator)
+        return operator
+
+    def _claim_operator_capacity(self, operator) -> None:
+        # the capacity count ran on this transaction's REPEATABLE READ snapshot;
+        # writing a new version of the operator's row makes a concurrent
+        # assignment of the same operator fail with a serialization error and
+        # retry on a fresh snapshot that counts this session, instead of both
+        # passing max_sessions
+        self.env.cr.execute(
+            SQL("UPDATE res_users SET id = id WHERE id = %s", operator.id)
+        )
+        _debug.logic(
+            "operator_capacity_claimed",
+            livechat_channel=self.id,
+            operator=operator.id,
+        )
+
+    def _select_operator(
+        self,
+        previous_operator_id=None,
+        lang=None,
+        country_id=None,
+        expertises=None,
+        users=None,
+    ):
+        self.check_singleton()
+        self.env["discuss.channel.rtc.session"].sudo()._gc_inactive_sessions()
+        users = users if users is not None else self.available_operator_ids
+        if not users:
+            return self.env["res.users"]
+        if expertises is None:
+            expertises = self.env["im_livechat.expertise"]
+        self.env.cr.execute(
+            """
+                WITH operator_rtc_session AS (
+                    SELECT COUNT(DISTINCT s.id) as nbr, member.partner_id as partner_id
+                      FROM discuss_channel_rtc_session s
+                      JOIN discuss_channel_member member ON (member.id = s.channel_member_id)
+                  GROUP BY member.partner_id
+                )
+               SELECT COUNT(DISTINCT h.channel_id), COALESCE(rtc.nbr, 0) > 0 as in_call, h.partner_id
+                 FROM im_livechat_channel_member_history h
+                 JOIN discuss_channel c ON h.channel_id = c.id
+      LEFT OUTER JOIN operator_rtc_session rtc ON rtc.partner_id = h.partner_id
+                WHERE c.livechat_end_dt IS NULL
+                  AND c.last_interest_dt > ((now() at time zone 'UTC') - interval '30 minutes')
+                  AND h.partner_id = ANY(%s)
+             GROUP BY h.partner_id, rtc.nbr
+             ORDER BY COUNT(DISTINCT h.channel_id) < 2 OR rtc.nbr IS NULL DESC,
+                      COUNT(DISTINCT h.channel_id) ASC,
+                      rtc.nbr IS NULL DESC
+            """,
+            (list(users.partner_id.ids),),
+        )
+        operator_statuses = self.env.cr.dictfetchall()
+        if previous_operator_id in users.partner_id.ids:
+            previous_operator_status = next(
+                (
+                    status
+                    for status in operator_statuses
+                    if status["partner_id"] == previous_operator_id
+                ),
+                None,
+            )
+            if (
+                not previous_operator_status
+                or previous_operator_status["count"] < 2
+                or not previous_operator_status["in_call"]
+            ):
+                return next(
+                    available_user
+                    for available_user in users
+                    if available_user.partner_id.id == previous_operator_id
+                )
+
+        agents_failing_buffer = {
+            group[0]
+            for group in self.env["im_livechat.channel.member.history"]._read_group(
+                [
+                    ("livechat_member_type", "=", "agent"),
+                    ("partner_id", "in", users.partner_id.ids),
+                    ("channel_id.livechat_end_dt", "=", False),
+                    (
+                        "create_date",
+                        ">",
+                        fields.Datetime.now() - timedelta(seconds=BUFFER_TIME),
+                    ),
+                ],
+                groupby=["partner_id"],
+            )
+        }
+
+        def same_language(operator):
+            return (
+                operator.partner_id.lang == lang
+                or lang in operator.livechat_lang_ids.mapped("code")
+            )
+
+        def all_expertises(operator):
+            return operator.livechat_expertise_ids >= expertises
+
+        def one_expertise(operator):
+            return operator.livechat_expertise_ids & expertises
+
+        def same_country(operator):
+            return operator.partner_id.country_id.id == country_id
+
+        preferences_list = [
+            [same_language, all_expertises],
+            [same_language, one_expertise],
+            [same_language],
+            [same_country, all_expertises],
+            [same_country, one_expertise],
+            [same_country],
+            [all_expertises],
+            [one_expertise],
+        ]
+        for preferences in preferences_list:
+            operators = users
+            for preference in preferences:
+                operators = operators.filtered(preference)
+            if operators:
+                if agents_respecting_buffer := operators.filtered(
+                    lambda op: op.partner_id not in agents_failing_buffer
+                ):
+                    operators = agents_respecting_buffer
+                return self._get_less_active_operator(operator_statuses, operators)
+        return self._get_less_active_operator(operator_statuses, users)
+
+    def _get_channel_infos(self) -> dict:
+        self.check_singleton()
+
+        return {
+            "header_background_color": self.header_background_color,
+            "button_background_color": self.button_background_color,
+            "title_color": self.title_color,
+            "button_text_color": self.button_text_color,
+            "button_text": self.button_text,
+            "default_message": self.default_message,
+            "channel_name": self.name,
+            "channel_id": self.id,
+            "review_link": self.review_link,
+        }
+
+    def get_livechat_info(self, username=None):
+        self.check_singleton()
+
+        if self._is_livechat_available():
+            return self._get_livechat_loader_info(username)
+        return {
+            "available": False,
+            "server_url": self.get_base_url(),
+            "websocket_worker_version": WebsocketConnectionHandler._VERSION,
+        }
+
+    def _get_livechat_loader_info(self, username=None) -> dict:
+        # "available" only lets the client boot: it asks the channel's
+        # availability itself (init_livechat), so the info holds for a page
+        # served from a cache long after the operators came or went
+        self.check_singleton()
+
+        if username is None:
+            username = self.env._("Visitor")
+        return {
+            "available": True,
+            "server_url": self.get_base_url(),
+            "websocket_worker_version": WebsocketConnectionHandler._VERSION,
+            "options": {**self._get_channel_infos(), "default_username": username},
+        }
+
+    def _is_livechat_available(self) -> bool:
+        return bool(self.chatbot_script_count or len(self.available_operator_ids) > 0)
+
+
+class Im_LivechatChannelRule(models.Model):
+    _name = "im_livechat.channel.rule"
+    _description = "Livechat Channel Rules"
+    _order = "sequence asc"
+
+    regex_url = fields.Char(
+        string="URL Regex",
+        help="Regular expression specifying the web pages this rule will be applied on.",
+    )
+    action = fields.Selection(
+        selection=[
+            ("display_button", "Show"),
+            ("display_button_and_text", "Show with notification"),
+            ("auto_popup", "Open automatically"),
+            ("hide_button", "Hide"),
+        ],
+        string="Live Chat Button",
+        default="display_button",
+        required=True,
+        help="* 'Show' displays the chat button on the pages.\n"
+        "* 'Show with notification' is 'Show' in addition to a floating text just next to the button.\n"
+        "* 'Open automatically' displays the button and automatically opens the conversation pane.\n"
+        "* 'Hide' hides the chat button on the pages.\n",
+    )
+    auto_popup_timer = fields.Integer(
+        string="Time to Open",
+        default=0,
+        help="Delay (in seconds) to automatically open the conversation window. Note: the selected action must be 'Open automatically' otherwise this parameter will not be taken into account.",
+    )
+    chatbot_script_id = fields.Many2one(
+        comodel_name="chatbot.script",
+        string="Chatbot",
+    )
+    chatbot_enabled_condition = fields.Selection(
+        selection=[
+            ("always", "Always"),
+            ("only_if_no_operator", "Only when no operator is available"),
+            ("only_if_operator", "Only when an operator is available"),
+        ],
+        string="Enable ChatBot",
+        default="always",
+        required=True,
+    )
+    channel_id = fields.Many2one(
+        comodel_name="im_livechat.channel",
+        index="btree_not_null",
+        help="The channel of the rule",
+    )
+    country_ids = fields.Many2many(
+        comodel_name="res.country",
+        relation="im_livechat_channel_country_rel",
+        column1="channel_id",
+        column2="country_id",
+        string="Countries",
+        help="The rule will only be applied for these countries. Example: if you select 'Belgium' and 'United States' and that you set the action to 'Hide', the chat button will be hidden on the specified URL from the visitors located in these 2 countries. This feature requires GeoIP installed on your server.",
+    )
+    sequence = fields.Integer(
+        string="Matching order",
+        default=10,
+        help="Given the order to find a matching rule. If 2 rules are matching for the given url/country, the one with the lowest sequence will be chosen.",
+    )
+
+    @api.constrains("regex_url")
+    def _check_regex_url(self) -> None:
+        for rule in self.filtered("regex_url"):
+            try:
+                re.compile(rule.regex_url)
+            except re.error as error:
+                raise ValidationError(
+                    self.env._(
+                        "Invalid URL regular expression '%(regex)s': %(error)s",
+                        regex=rule.regex_url,
+                        error=error,
+                    )
+                ) from error
+
+    def match_rule(self, channel_id, url, country_id=False):
+        def _match(rules):
+            for rule in rules:
+                if not re.search(rule.regex_url or "", url or ""):
+                    continue
+                if rule.chatbot_script_id and (
+                    not rule.chatbot_script_id.active
+                    or not rule.chatbot_script_id.script_step_ids
+                ):
+                    continue
+                if (
+                    rule.chatbot_enabled_condition == "only_if_operator"
+                    and not rule.channel_id.available_operator_ids
+                ) or (
+                    rule.chatbot_enabled_condition == "only_if_no_operator"
+                    and rule.channel_id.available_operator_ids
+                ):
+                    continue
+                return rule
+            return self.env["im_livechat.channel.rule"]
+
+        if country_id:
+            domain = [
+                ("country_ids", "in", [country_id]),
+                ("channel_id", "=", channel_id),
+            ]
+            rule = _match(self.search(domain))
+            if rule:
+                return rule
+        domain = [("country_ids", "=", False), ("channel_id", "=", channel_id)]
+        return _match(self.search(domain))
+
+    def _is_bot_configured(self) -> bool:
+        return bool(self.chatbot_script_id)
+
+    def _to_store_defaults(self, target):
+        return [
+            "action",
+            "auto_popup_timer",
+            Store.One("chatbot_script_id"),
+        ]

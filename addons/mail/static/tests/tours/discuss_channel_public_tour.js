@@ -1,0 +1,222 @@
+// @ts-check
+import { observe } from "@odoo/owl";
+import { click, inputFiles } from "@web/../tests/utils";
+import { appContextOf } from "@web/core/app_context";
+import { registry } from "@web/core/registry";
+import { getOrigin } from "@web/core/utils/urls";
+
+const messageSelector = ".o-mail-Message:has(.o-mail-Message-body:contains('cheese'))";
+const editedMessageSelector =
+    ".o-mail-Message:has(.o-mail-Message-body:contains('vegetables'))";
+
+registry.category("web_tour.tours").add("discuss_channel_public_tour.js", {
+    steps: () => [
+        {
+            trigger: ".o-mail-Discuss",
+        },
+        {
+            trigger: ".o-mail-Thread",
+            run() {
+                if (!window.location.pathname.startsWith("/discuss/channel")) {
+                    console.error("Channel secret token is still present in URL.");
+                }
+                document.body.classList.add("o_discuss_channel_public_modules_loaded");
+                if (
+                    !document.title.includes(
+                        /** @type {HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement} */ (
+                            document.querySelector(".o-mail-DiscussContent-threadName")
+                        )?.value,
+                    )
+                ) {
+                    console.error(
+                        `Tab title should match conversation name. Got "${
+                            document.title
+                        }" instead of "${
+                            /** @type {HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement} */ (
+                                document.querySelector(
+                                    ".o-mail-DiscussContent-threadName",
+                                )
+                            )?.value
+                        }".`,
+                    );
+                }
+            },
+        },
+        {
+            trigger: ".o_discuss_channel_public_modules_loaded",
+        },
+        {
+            trigger: ".o-mail-Composer-input",
+            run: "edit cheese",
+        },
+        { trigger: ".o-mail-Composer button[title='More Actions']", run: "click" },
+        { trigger: ".o-discuss-dropdownMenu" },
+        {
+            trigger: ".dropdown-item:contains('Attach Files')",
+            async run() {
+                const text = new File(["hello, world"], "text.txt", {
+                    type: "text/plain",
+                });
+                await inputFiles(".o-mail-Composer .o_input_file", [text]);
+            },
+        },
+        {
+            trigger:
+                ".o-mail-AttachmentContainer:not(.o-isUploading):contains(text.txt)",
+        },
+        {
+            trigger: ".dropdown-item:contains('Attach Files')",
+            async run() {
+                await inputFiles(".o-mail-Composer .o_input_file", [
+                    new File(
+                        [
+                            await (
+                                await fetch(
+                                    "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIW2P4v5ThPwAG7wKklwQ/bwAAAABJRU5ErkJggg==",
+                                )
+                            ).blob(),
+                        ],
+                        "image.png",
+                        { type: "image/png" },
+                    ),
+                ]);
+            },
+        },
+        {
+            trigger:
+                '.o-mail-AttachmentContainer:not(.o-isUploading)[title="image.png"]',
+            async run({ waitFor }) {
+                /** @type {import("models").Store} */
+                const store = appContextOf(odoo.__WOWL_DEBUG__.root).services[
+                    "mail.store"
+                ];
+                if (store.self_guest) {
+                    const src = this.anchor.querySelector("img").src;
+                    const attachment = store["ir.attachment"].get(
+                        (src.match("/web/image/([0-9]+)") || []).at(-1),
+                    );
+                    if (!attachment) {
+                        throw new Error(`Attachment was not found from src: ${src}`);
+                    }
+                    if (!attachment.raw_access_token) {
+                        /** @type {Promise<void>} */
+                        const accessTokenReady = new Promise((resolve) => {
+                            const proxy = observe(attachment, () => {
+                                if (attachment.raw_access_token) {
+                                    resolve();
+                                } else {
+                                    void proxy.raw_access_token;
+                                }
+                            });
+                            void proxy.raw_access_token;
+                        });
+                        await accessTokenReady;
+                    }
+                    await waitFor(
+                        `.o-mail-AttachmentContainer[title="image.png"] img[src="${getOrigin()}/web/image/${
+                            attachment.id
+                        }?access_token=${attachment.raw_access_token}&filename=image.png&unique=${
+                            attachment.checksum
+                        }"]`,
+                    );
+                }
+            },
+        },
+        { trigger: ".o-mail-Composer-input", run: "click" },
+        { trigger: "body:not(:has(.o-discuss-dropdownMenu))" },
+        { trigger: ".o-mail-Composer button[title='Send']:enabled", run: "click" },
+        {
+            trigger: `${messageSelector}[data-persistent]`,
+        },
+        {
+            trigger: `${messageSelector} .o-mail-AttachmentContainer:contains("text.txt")`,
+        },
+        {
+            trigger: messageSelector,
+            run: `hover && click ${messageSelector} [title='Add a Reaction']`,
+        },
+        {
+            trigger: ".o-mail-QuickReactionMenu",
+            run: () => click("[title='Toggle Emoji Picker']"),
+        },
+        {
+            trigger: ".o-EmojiPicker .o-Emoji:contains('🙂')",
+            run: "click",
+        },
+        {
+            trigger: `${messageSelector} .o-mail-MessageReaction:contains('🙂')`,
+            run: "click",
+        },
+        {
+            trigger: `${messageSelector}:not(:has(.o-mail-MessageReaction:contains('🙂')))`,
+        },
+        {
+            trigger: `${messageSelector}`,
+            run: `hover && click ${messageSelector} [title='Expand']`,
+        },
+        {
+            trigger: `.o-mail-Message-moreMenu [title='Edit'], ${messageSelector} [title='Edit']`,
+            run: "click",
+        },
+        {
+            trigger: ".o-mail-Message .o-mail-Composer-input",
+            run: "edit vegetables",
+        },
+        {
+            trigger: ".o-mail-Message .o-mail-Composer button[title='More Actions']",
+            run: "click",
+        },
+        {
+            trigger: ".dropdown-item:contains('Attach Files')",
+            async run() {
+                const extratxt = new File(["hello 2"], "extra.txt", {
+                    type: "text/plain",
+                });
+                await inputFiles(".o-mail-Message .o_input_file", [extratxt]);
+            },
+        },
+        {
+            trigger:
+                ".o-mail-Message .o-mail-Composer .o-mail-AttachmentContainer:not(.o-isUploading):contains(extra.txt)",
+        },
+        {
+            trigger: ".o-mail-Message button:contains(save)",
+            run: "click",
+        },
+        {
+            trigger: editedMessageSelector,
+        },
+        {
+            trigger: `${editedMessageSelector} .o-mail-AttachmentContainer:contains("text.txt")`,
+        },
+        {
+            trigger: `${editedMessageSelector} .o-mail-AttachmentContainer:contains("extra.txt")`,
+        },
+        {
+            trigger: `${editedMessageSelector} .o-mail-AttachmentContainer:contains("extra.txt") .o-mail-Attachment-unlink`,
+            run: "click",
+        },
+        {
+            trigger: ".modal:contains(Confirmation) .btn:contains(Ok)",
+            run: "click",
+        },
+        {
+            trigger: `${editedMessageSelector}:not(:has(.o-mail-AttachmentContainer:contains("extra.txt")))`,
+        },
+        {
+            trigger: "button[title='Search Messages']",
+            run: "click",
+        },
+        {
+            trigger: ".o_searchview_input",
+            run: "edit text.txt",
+        },
+        {
+            trigger: "button[aria-label='Search button']",
+            run: "click",
+        },
+        {
+            trigger: `.o-mail-SearchMessagesPanel ${editedMessageSelector} .o-mail-AttachmentContainer:contains("text.txt")`,
+        },
+    ],
+});

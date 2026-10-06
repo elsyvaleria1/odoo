@@ -1,0 +1,42 @@
+{
+    "name": "Amazon Connector",
+    "version": "19.0.2.0.2",
+    "oldest_upgradable_version": "19.0.2.0.2",
+    "category": "Sales/Sales",
+    "sequence": 320,
+    "summary": "Import Amazon orders and synchronize supported shipment and offer information",
+    "description": "Adds Amazon accounts, marketplaces and product offers with order-import and shipment-synchronization workflows. Supports the implemented Amazon-fulfilled and merchant-fulfilled order handling. Requires authorized seller accounts, product mappings and appropriate stock and delivery configuration.",
+    "author": "Odoo S.A.",
+    "license": "OEEL-1",
+    "depends": [
+        "sale",
+        "sale_team",
+        "stock_delivery",
+        "credential",
+    ],
+    "external_dependencies": {
+        "python": [
+            "defusedxml",
+        ],
+        "apt": {
+            "defusedxml": "python3-defusedxml",
+        },
+    },
+    "data": [
+        "security/ir.access.csv",
+        "data/amazon_data.xml",
+        "data/amazon_cron.xml",
+        "data/mail_template_data.xml",
+        "views/amazon_account_views.xml",
+        "views/amazon_marketplace_views.xml",
+        "views/amazon_offer_views.xml",
+        "views/amazon_templates.xml",
+        "views/product_views.xml",
+        "views/res_config_settings_views.xml",
+        "views/sale_order_views.xml",
+        "views/stock_picking_views.xml",
+        "views/menus.xml",
+        "wizards/wizard_amazon_account_sync_order_views.xml",
+    ],
+    "application": True,
+}

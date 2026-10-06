@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <menuitem
+        id="sale_planning_menu_schedule_by_sale_order"
+        name="By Sales Order"
+        parent="planning.planning_menu_schedule"
+        action="sale_planning_action_schedule_by_sale_order"
+        sequence="40"
+        groups="planning.group_planning_user" />
+
+</odoo>

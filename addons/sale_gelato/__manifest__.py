@@ -1,0 +1,27 @@
+{
+    "name": "Gelato Print-on-Demand Orders",
+    "version": "1.2",
+    "oldest_upgradable_version": "1.1",
+    "category": "Sales/Sales",
+    "summary": "Send configured print-product orders to Gelato",
+    "description": "Synchronizes product template information and print files, requests shipping rates and submits supported sales orders to Gelato. Requires API credentials and configured Gelato products and shipping services.",
+    "author": "Odoo S.A.",
+    "license": "LGPL-3",
+    "depends": [
+        "credential",
+        "document",
+        "integration",
+        "sale",
+        "delivery",
+    ],
+    "data": [
+        "data/product_data.xml",
+        "data/delivery_carrier_data.xml",
+        "data/mail_template_data.xml",
+        "views/delivery_carrier_views.xml",
+        "views/product_document_views.xml",
+        "views/product_product_views.xml",
+        "views/product_template_views.xml",
+        "wizards/res_config_settings_views.xml",
+    ],
+}

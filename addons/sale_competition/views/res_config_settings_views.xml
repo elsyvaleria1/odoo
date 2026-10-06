@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="res_config_settings_view_form_sale_competition" model="ir.ui.view">
+        <field name="name">res.config.settings.view.form.sale.competition</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="sale.res_config_settings_view_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//app[@name='sale']" position="inside">
+                <block name="sale_competition_container" title="Competition">
+                    <setting
+                        id="sale_competition_pricing"
+                        help="How quotations are measured against competitor offers">
+                        <div class="content-group">
+                            <div class="row mt8">
+                                <label
+                                    for="sale_competition_min_margin"
+                                    class="col-lg-4 o_light_label" />
+                                <field name="sale_competition_min_margin" />
+                            </div>
+                            <div class="row">
+                                <label
+                                    for="sale_competition_undercut"
+                                    class="col-lg-4 o_light_label" />
+                                <field name="sale_competition_undercut" />
+                            </div>
+                            <div class="row">
+                                <label
+                                    for="sale_competition_leader_gap"
+                                    class="col-lg-4 o_light_label" />
+                                <field name="sale_competition_leader_gap" />
+                            </div>
+                        </div>
+                    </setting>
+                    <setting
+                        id="sale_competition_adjustments"
+                        help="Compare offers on what they cost the customer, not only on their price">
+                        <field name="competition_freight_adjusted" />
+                        <div class="content-group">
+                            <div class="row mt8">
+                                <label
+                                    for="competition_financing_rate"
+                                    class="col-lg-4 o_light_label" />
+                                <field name="competition_financing_rate" />
+                            </div>
+                        </div>
+                    </setting>
+                </block>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

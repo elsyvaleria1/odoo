@@ -1,0 +1,109 @@
+from odoo import api, fields, models
+from odoo.libs.debug_log import DebugLog
+
+_debug = DebugLog(__name__)
+
+
+class WizardReportConfigUpdateLayout(models.TransientModel):
+    _inherit = "wizard.report.config.update.layout"
+
+    from_invoice = fields.Boolean()
+    qr_code = fields.Boolean(
+        related="company_id.account_config_id.qr_code",
+        readonly=False,
+    )
+    vat = fields.Char(
+        related="company_id.vat",
+        readonly=False,
+    )
+    account_number = fields.Char(
+        compute="_compute_account_number",
+        inverse="_inverse_account_number",
+    )
+
+    @_debug.perf.timed
+    def action_save_layout(self):
+        _debug.lifecycle("action_save_layout", records=self)
+        res = super().action_save_layout()
+        if step := self.env.ref(
+            "account.onboarding_onboarding_step_base_document_layout",
+            raise_if_not_found=False,
+        ):
+            for company_id in self.company_id:
+                step.with_company(company_id).action_set_just_done()
+            if res.get("context"):
+                res["context"]["dialog_size"] = "large"
+        return res
+
+    def _get_preview_template(self):
+        if self.env.context.get(
+            "active_model"
+        ) == "account.move" and self.env.context.get("active_id"):
+            return "account.report_invoice_wizard_iframe"
+        return super()._get_preview_template()
+
+    def _get_render_information(self, styles):
+        res = super()._get_render_information(styles)
+
+        if self.env.context.get("active_model") == "account.move" and (
+            active_id := self.env.context.get("active_id")
+        ):
+            res["o"] = self.env["account.move"].browse(active_id)
+
+        if self._get_preview_template() in [
+            "web.report_invoice_wizard_preview",
+            "account.report_invoice_wizard_iframe",
+        ]:
+            res.update(
+                {
+                    "qr_code": self.qr_code,
+                    "account_number": self.account_number,
+                }
+            )
+
+        _debug.logic(
+            "layout_render_information",
+            records=self,
+            with_invoice="o" in res,
+            with_payment_info="account_number" in res,
+        )
+        return res
+
+    @api.depends("partner_id", "account_number")
+    def _compute_account_number(self) -> None:
+        for record in self:
+            if record.partner_id.bank_account_ids:
+                record.account_number = (
+                    record.partner_id.bank_account_ids[0].acc_number or ""
+                )
+            else:
+                record.account_number = ""
+
+    @api.depends("qr_code", "account_number")
+    def _compute_preview(self) -> None:
+        super()._compute_preview()
+
+    @_debug.perf.timed
+    def _inverse_account_number(self) -> None:
+        for record in self:
+            if record.partner_id.bank_account_ids and record.account_number:
+                bank = record.partner_id.bank_account_ids[0]
+                if bank.acc_number != record.account_number:
+                    _debug.logic(
+                        "layout_bank_account_renumbered",
+                        partner=record.partner_id,
+                        bank=bank,
+                    )
+                    bank.allow_out_payment = False
+                    bank.acc_number = record.account_number
+                    bank.allow_out_payment = True
+            elif record.account_number:
+                _debug.logic("layout_bank_account_created", partner=record.partner_id)
+                record.partner_id.bank_account_ids += self.env[
+                    "res.partner.bank.account"
+                ]._get_or_create_bank_account(
+                    account_number=record.account_number,
+                    partner=record.partner_id,
+                    allow_company_account_creation=True,
+                    company=record.company_id,
+                )

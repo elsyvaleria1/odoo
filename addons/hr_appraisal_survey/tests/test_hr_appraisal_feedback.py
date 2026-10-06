@@ -1,0 +1,100 @@
+from datetime import date
+
+from dateutil.relativedelta import relativedelta
+
+from odoo.tests.common import TransactionCase, tagged
+
+
+@tagged("-at_install", "post_install")
+class TestHrAppraisalFeedback(TransactionCase):
+    def setUp(self):
+        super().setUp()
+
+        group = self.env.ref("hr_appraisal.group_hr_appraisal_user").id
+        self.user = self.env["res.users"].create(
+            {
+                "name": "Test",
+                "login": "test",
+                "email": "test@example.com",
+                "group_ids": [(6, 0, [group])],
+                "notification_type": "email",
+            }
+        )
+
+        self.user_employee = self.env["hr.employee"].create(
+            {"name": "Me Myself and I", "user_id": self.user.id}
+        )
+        self.test_employee = self.env["hr.employee"].create({"name": "John Smith"})
+        self.manager = self.env["hr.employee"].create({"name": "Mr. Manager"})
+
+        self.appraisal = self.env["hr.appraisal"].create(
+            {
+                "employee_id": self.test_employee.id,
+                "manager_ids": [self.manager.id],
+                "state": "2_pending",
+            }
+        )
+
+        self.appraisal_survey = self.env["survey.survey"].create(
+            {
+                "title": "appraisal feedback",
+                "questions_layout": "one_page",
+                "questions_selection": "all",
+                "access_mode": "public",
+                "survey_type": "appraisal",
+            }
+        )
+
+    def test_appraisal_feedback_deadline(self):
+        feedback = self.env["wizard.hr.appraisal.send.feedback.survey"].create(
+            {
+                "appraisal_id": self.appraisal.id,
+                "employee_ids": [self.user_employee.id],
+                "deadline": date.today(),
+                "survey_template_id": self.appraisal_survey.id,
+            }
+        )
+        feedback.action_send()
+        feedback["deadline"] = date.today() + relativedelta(months=1)
+        feedback.action_send()
+
+        survey_input = self.env["survey.user_input"].search(
+            [("appraisal_id", "=", self.appraisal.id)]
+        )
+        self.assertEqual(feedback["deadline"], survey_input["deadline"].date())
+
+        # by the way, check that completed_survey_count is computed correctly
+        survey_input._mark_done()
+        self.assertEqual(self.appraisal.completed_survey_count, 1)
+
+    def test_appraisal_feedback_survives_a_stale_work_contact(self):
+        """An employee whose partner_id still points at a different, emailless
+        partner (a legacy row hr's converge_party_rows reports and leaves, and
+        that the ORM no longer accepts, hence the SQL) must still get a
+        reachable answer/mail, using their user's partner instead."""
+        stale = self.env["res.partner"].create({"name": "Stale Work Contact"})
+        self.env.cr.execute(
+            "UPDATE hr_employee SET partner_id = %s WHERE id = %s",
+            [stale.id, self.user_employee.id],
+        )
+        self.user_employee.invalidate_recordset(["partner_id"])
+        self.assertFalse(self.user_employee.partner_id.email)
+        self.assertTrue(self.user_employee.user_id.partner_id.email)
+
+        feedback = self.env["wizard.hr.appraisal.send.feedback.survey"].create(
+            {
+                "appraisal_id": self.appraisal.id,
+                "employee_ids": [self.user_employee.id],
+                "deadline": date.today() + relativedelta(months=1),
+                "survey_template_id": self.appraisal_survey.id,
+            }
+        )
+        feedback.action_send()
+
+        survey_input = self.env["survey.user_input"].search(
+            [("appraisal_id", "=", self.appraisal.id)]
+        )
+        self.assertEqual(
+            survey_input.email, self.user_employee.user_id.partner_id.email
+        )
+        self.assertEqual(survey_input.partner_id, self.user_employee.user_id.partner_id)

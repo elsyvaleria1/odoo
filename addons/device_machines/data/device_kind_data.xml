@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+
+    <record id="category_counter_plc" model="device.kind">
+        <field name="code">counter_plc</field>
+        <field name="name">Counter PLC</field>
+        <field name="comm_protocol">mqtt</field>
+        <field
+            name="description">PLC publishing a cumulative production counter via MQTT (e.g. Etiquetadora, Llenadora).</field>
+        <field name="link_mode">stream</field>
+    </record>
+
+</odoo>

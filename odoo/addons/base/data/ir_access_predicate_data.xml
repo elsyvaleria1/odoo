@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="access_predicate_user_has_access" model="ir.access.predicate">
+        <field name="name">base.user_has_access</field>
+        <field name="description">the record says you have access to it</field>
+        <field name="template">[(args.at + 'user_has_access', '=', True)]</field>
+    </record>
+
+    <record id="access_predicate_is_member" model="ir.access.predicate">
+        <field name="name">base.is_member</field>
+        <field name="description">you are a member of it</field>
+        <field name="template">[(args.at + 'is_member', '=', True)]</field>
+    </record>
+
+    <record id="access_predicate_graph_role" model="ir.access.predicate">
+        <field name="name">base.graph_role</field>
+        <field
+            name="description">a grant on it or on a folder above it gives you the role</field>
+        <field name="template">[(args.at + 'access_role', 'in', args.roles)]</field>
+    </record>
+
+    <record id="access_predicate_conditional_reach" model="ir.access.predicate">
+        <field name="name">base.conditional_reach</field>
+        <field
+            name="description">one of your accesses that says whose or which records reaches it</field>
+        <field name="method">_access_predicate_conditional_reach</field>
+    </record>
+
+    <record id="access_predicate_graph_reach" model="ir.access.predicate">
+        <field name="name">base.graph_reach</field>
+        <field
+            name="description">a grant on it or on the records above it gives you that role or a higher one</field>
+        <field name="method">_access_predicate_graph_reach</field>
+    </record>
+
+</odoo>

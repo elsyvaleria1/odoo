@@ -1,0 +1,362 @@
+/** @odoo-module native */
+import { setElementContent } from "@web/core/utils/dom/html";
+
+import { MAIN_PLUGINS } from "./plugin_sets.js";
+import {
+    createBaseContainer,
+    SUPPORTED_BASE_CONTAINER_NAMES,
+} from "./utils/base_container.js";
+import { fillShrunkPhrasingParent, removeClass } from "./utils/dom.js";
+import { isEmpty } from "./utils/dom_info.js";
+import { resourceSequenceSymbol, withSequence } from "./utils/resource.js";
+import { fixInvalidHTML, initElementForEdition } from "./utils/sanitize.js";
+
+/** @typedef {import("plugins").EditorResources} EditorResources */
+/** @typedef {import("plugins").GlobalResources} GlobalResources */
+/** @typedef {keyof GlobalResources} GlobalResourcesId */
+/**
+ * @typedef {import("plugins").SharedMethods} SharedMethods
+ * @typedef {import("plugins").PluginConstructor} PluginConstructor
+ */
+
+/**
+ * @typedef { Object } CollaborationConfig
+ * @property { string } collaboration.peerId
+ * @property { Object } collaboration.busService
+ * @property { Object } collaboration.collaborationChannel
+ * @property { String } collaboration.collaborationChannel.collaborationModelName
+ * @property { String } collaboration.collaborationChannel.collaborationFieldName
+ * @property { Number } collaboration.collaborationChannel.collaborationResId
+ * @property { 'start' | 'focus' } [collaboration.collaborativeTrigger]
+ * @typedef { Object } EditorConfig
+ * @property { string } [content]
+ * @property { boolean } [allowInlineAtRoot]
+ * @property { string[] } [baseContainers]
+ * @property { PluginConstructor[] } [Plugins]
+ * @property { string[] } [classList]
+ * @property { Object } [localOverlayContainers]
+ * @property { Object } [embeddedComponentInfo]
+ * @property { Object } [resources]
+ * @property { string } [direction="ltr"]
+ * @property { Function } [onChange]
+ * @property { Function } [onEditorReady]
+ * @property { boolean } [dropImageAsAttachment]
+ * @property { CollaborationConfig } [collaboration]
+ * @property { Function } getRecordInfo
+ * @typedef { Object } EditorContext
+ * @property { Document } document
+ * @property { HTMLElement } editable
+ * @property { SharedMethods } dependencies
+ * @property { import("./editor").EditorConfig } config
+ * @property { import("services").ServiceFactories } services
+ * @property { Editor['getResource'] } getResource
+ * @property { Editor['dispatchTo'] } dispatchTo
+ * @property { Editor['delegateTo'] } delegateTo
+ * @property { Editor['checkPredicates'] } checkPredicates
+ */
+
+/**
+ * @typedef {((arg: {root: EditorContext["editable"]}) => void)[]} clean_for_save_handlers
+ * @typedef {(() => void)[]} start_edition_handlers
+ */
+
+/**
+ * @typedef {((root: EditorContext["editable"] | HTMLElement, stepType?: "original"|"undo"|"redo"|"restore") => void)[]} normalize_handlers
+ */
+
+/**
+ * @param {PluginConstructor[]} plugins
+ * @returns {PluginConstructor[]}
+ */
+function sortPlugins(plugins) {
+    const initialPlugins = new Set(plugins);
+    const inResult = new Set();
+    const result = [];
+    let P;
+
+    function findPlugin() {
+        for (const P of initialPlugins) {
+            if (P.dependencies.every((dep) => inResult.has(dep))) {
+                initialPlugins.delete(P);
+                return P;
+            }
+        }
+    }
+    while ((P = findPlugin())) {
+        inResult.add(P.id);
+        result.push(P);
+    }
+    if (initialPlugins.size) {
+        const messages = [];
+        for (const P of initialPlugins) {
+            messages.push(
+                `"${P.id}" is missing (${P.dependencies
+                    .filter((d) => !inResult.has(d))
+                    .join(", ")})`,
+            );
+        }
+        throw new Error(`Missing dependencies:  ${messages.join(", ")}`);
+    }
+    return result;
+}
+
+export class Editor {
+    /**
+     * @param { EditorConfig } config
+     */
+    constructor(config, services) {
+        this.isReady = false;
+        this.isDestroyed = false;
+        this.config = config;
+        this.services = services;
+        /** @type { EditorResources } */
+        this.resources = null;
+        this.plugins = [];
+        /** @type { HTMLElement } */
+        this.editable = null;
+        /** @type { Document } */
+        this.document = null;
+        /** @ts-ignore  @type { SharedMethods } **/
+        this.shared = {};
+    }
+
+    attachTo(editable) {
+        if (this.isDestroyed || this.editable) {
+            throw new Error("Cannot re-attach an editor");
+        }
+        this.editable = editable;
+        this.document = editable.ownerDocument;
+        this.preparePlugins();
+        if ("content" in this.config) {
+            setElementContent(editable, fixInvalidHTML(this.config.content));
+            if (isEmpty(editable)) {
+                const baseContainer = createBaseContainer(
+                    this.config.baseContainers[0],
+                    this.document,
+                );
+                fillShrunkPhrasingParent(baseContainer);
+                editable.replaceChildren(baseContainer);
+            }
+        }
+        editable.setAttribute("contenteditable", true);
+        editable.setAttribute("translate", "no");
+        initElementForEdition(editable, {
+            allowInlineAtRoot: !!this.config.allowInlineAtRoot,
+        });
+        editable.classList.add("odoo-editor-editable");
+        if (this.config.classList) {
+            editable.classList.add(...this.config.classList);
+        }
+        if (this.config.height) {
+            editable.style.height = this.config.height;
+        }
+        if (
+            !this.config.baseContainers.every((name) =>
+                SUPPORTED_BASE_CONTAINER_NAMES.includes(name),
+            )
+        ) {
+            throw new Error(
+                `Invalid baseContainers: ${this.config.baseContainers.join(
+                    ", ",
+                )}. Supported: ${SUPPORTED_BASE_CONTAINER_NAMES.join(", ")}`,
+            );
+        }
+        this.startPlugins();
+        this.isReady = true;
+        this.config.onEditorReady?.();
+    }
+
+    preparePlugins() {
+        const Plugins = sortPlugins(this.config.Plugins || MAIN_PLUGINS);
+        this.config = Object.assign(
+            {},
+            ...Plugins.map((P) => P.defaultConfig),
+            this.config,
+        );
+        this.pluginsMap = new Map();
+        for (const P of Plugins) {
+            if (P.id === "") {
+                throw new Error(`Missing plugin id (class ${P.name})`);
+            }
+            if (this.pluginsMap.has(P.id)) {
+                const existing = this.pluginsMap.get(P.id);
+                if (existing === P || existing.name === P.name) {
+                    continue;
+                }
+                throw new Error(
+                    `Duplicate plugin id: ${P.id} (${existing.name} vs ${P.name})`,
+                );
+            }
+            this.pluginsMap.set(P.id, P);
+            const plugin = new P(this.getEditorContext(P.dependencies));
+            plugin.__editor = this;
+            this.plugins.push(plugin);
+            const exports = {};
+            for (const h of P.shared) {
+                if (!(h in plugin)) {
+                    throw new Error(
+                        `Missing helper implementation: ${h} in plugin ${P.id}`,
+                    );
+                }
+                exports[h] = plugin[h].bind(plugin);
+            }
+            this.shared[P.id] = exports;
+        }
+        const resources = this.createResources();
+        for (const plugin of this.plugins) {
+            plugin._resources = resources;
+        }
+        this.resources = resources;
+    }
+
+    startPlugins() {
+        for (const plugin of this.plugins) {
+            plugin.setup();
+        }
+        this.resources["normalize_handlers"].forEach((cb) => cb(this.editable));
+        this.resources["start_edition_handlers"].forEach((cb) => cb());
+    }
+
+    getDependencies(dependencies) {
+        const deps = {};
+        for (const depName of dependencies) {
+            if (!(depName in this.shared)) {
+                throw new Error(`Missing dependency: ${depName}`);
+            }
+            deps[depName] = this.shared[depName];
+        }
+        return deps;
+    }
+
+    createResources() {
+        const resources = {};
+
+        function registerResources(obj) {
+            for (const key in obj) {
+                if (!(key in resources)) {
+                    resources[key] = [];
+                }
+                resources[key].push(obj[key]);
+            }
+        }
+        if (this.config.resources) {
+            registerResources(this.config.resources);
+        }
+        for (const plugin of this.plugins) {
+            if (plugin.resources) {
+                registerResources(plugin.resources);
+            }
+        }
+
+        for (const key in resources) {
+            const resource = resources[key]
+                .flat()
+                .map((r) => {
+                    const isObjectWithSequence =
+                        typeof r === "object" &&
+                        r !== null &&
+                        resourceSequenceSymbol in r;
+                    return isObjectWithSequence ? r : withSequence(10, r);
+                })
+                .sort((a, b) => a[resourceSequenceSymbol] - b[resourceSequenceSymbol])
+                .map((r) => r.object);
+
+            resources[key] = resource;
+            Object.freeze(resources[key]);
+        }
+
+        return Object.freeze(resources);
+    }
+
+    /**
+     * @return { EditorContext }
+     */
+    getEditorContext(dependencies = []) {
+        return {
+            document: this.document,
+            editable: this.editable,
+            dependencies: this.getDependencies(dependencies),
+            config: this.config,
+            services: this.services,
+            getResource: this.getResource.bind(this),
+            dispatchTo: this.dispatchTo.bind(this),
+            delegateTo: this.delegateTo.bind(this),
+            checkPredicates: this.checkPredicates.bind(this),
+        };
+    }
+
+    /**
+     * @template {GlobalResourcesId} R
+     * @param {R} resourceId
+     * @returns {GlobalResources[R]}
+     */
+    getResource(resourceId) {
+        return this.resources[resourceId] || [];
+    }
+
+    /**
+     * @template {GlobalResourcesId} R
+     * @param {R} resourceId
+     * @param {Parameters<GlobalResources[R][0]>} args
+     */
+    dispatchTo(resourceId, ...args) {
+        this.getResource(resourceId).forEach((handler) => handler(...args));
+    }
+    /**
+     * @template {GlobalResourcesId} R
+     * @param {R} resourceId
+     * @param {Parameters<GlobalResources[R][0]>} args
+     * @returns {boolean}
+     */
+    delegateTo(resourceId, ...args) {
+        return this.getResource(resourceId).some((fn) => fn(...args));
+    }
+
+    /**
+     * @param {string} resourceId
+     * @param {...any} args
+     * @returns {boolean | undefined}
+     */
+    checkPredicates(resourceId, ...args) {
+        const results = this.getResource(resourceId)
+            .map((predicate) => predicate(...args))
+            .filter((result) => result !== undefined);
+        return results.length ? results.every(Boolean) : undefined;
+    }
+
+    getContent() {
+        return this.getElContent().innerHTML;
+    }
+
+    getElContent() {
+        const el = this.editable.cloneNode(true);
+        this.resources["clean_for_save_handlers"].forEach((cb) => cb({ root: el }));
+        return el;
+    }
+
+    destroy(willBeRemoved) {
+        const errors = [];
+        if (this.editable) {
+            let plugin;
+            while ((plugin = this.plugins.pop())) {
+                try {
+                    plugin.destroy();
+                } catch (error) {
+                    errors.push(error);
+                }
+            }
+            this.shared = {};
+            if (!willBeRemoved) {
+                this.editable.removeAttribute("contenteditable");
+                removeClass(this.editable, "odoo-editor-editable");
+            }
+            this.editable = null;
+        }
+        this.isDestroyed = true;
+        if (errors.length) {
+            throw errors.length === 1
+                ? errors[0]
+                : new AggregateError(errors, "Errors while destroying plugins");
+        }
+    }
+}

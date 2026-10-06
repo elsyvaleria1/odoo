@@ -1,0 +1,34 @@
+/** @odoo-module native */
+import { Component, proxy, t, useProps } from "@odoo/owl";
+import { usePos } from "@point_of_sale/app/hooks/pos_hook";
+import { registry } from "@web/core/registry";
+import { Dialog } from "@web/ui/dialog";
+export class TourSelectorPopup extends Component {
+    static components = { Dialog };
+    static template = "point_of_sale.TourSelectorPopup";
+    static props = { close: t.any(), getPayload: t.any() };
+    props = useProps(this.constructor.props);
+
+    setup() {
+        this.pos = usePos();
+        this.state = proxy({
+            selectedTours: new Set(),
+        });
+    }
+
+    get tours() {
+        const tourNames = Object.keys(registry.subRegistries["web_tour.tours"].content);
+        return tourNames.filter((name) => name.includes("PoSFakeTour"));
+    }
+
+    onCheck(ev) {
+        return ev.target.checked
+            ? this.state.selectedTours.add(ev.target.id)
+            : this.state.selectedTours.delete(ev.target.id);
+    }
+
+    confirm() {
+        this.props.getPayload([...this.state.selectedTours]);
+        this.props.close();
+    }
+}

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="hr.HrPresenceStatusPill">
+        <div t-att-class="this.classNames" t-att-aria-label="this.label" t-att-title="this.label">
+            <t t-tag="this.props.tag" role="img" class="me-1 fa" t-att-class="this.icon"/>
+            <t t-out="this.label"/>
+        </div>
+    </t>
+
+</templates>

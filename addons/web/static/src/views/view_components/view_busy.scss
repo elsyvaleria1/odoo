@@ -1,0 +1,30 @@
+.o_view_busy {
+    display: none;
+}
+
+.o_content {
+    transition: opacity $o-duration-fast $o-easing-standard;
+
+    // a reload keeps what it is replacing on screen and fades it, so the
+    // results are never swapped for a placeholder that a late answer removes
+    &.o_view_stale {
+        opacity: $o-opacity-disabled;
+        transition-duration: $o-duration-normal;
+    }
+
+    // the view painted before its first data: there is nothing to keep
+    &.o_view_loading {
+        position: relative;
+
+        > .o_view_busy {
+            display: block;
+            position: absolute;
+            inset: 0;
+            z-index: 2;
+            overflow: hidden;
+            padding-top: var(--o-cp-height, 0px);
+            background-color: var(--o-bg-view);
+            @include o-placeholder-onset();
+        }
+    }
+}

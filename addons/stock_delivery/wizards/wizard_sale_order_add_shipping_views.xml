@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="choose_delivery_carrier_view_form" model="ir.ui.view">
+        <field name="name">choose.delivery.carrier.form</field>
+        <field name="model">wizard.sale.order.add.shipping</field>
+        <field name="inherit_id" ref="delivery.choose_delivery_carrier_view_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//div[@name='carried_weight']" position="attributes">
+                <attribute name="groups" />
+            </xpath>
+            <xpath expr="//label[@name='carried_weight_label']" position="attributes">
+                <attribute name="groups" />
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

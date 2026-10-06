@@ -1,0 +1,92 @@
+.o-mail-MessagingMenu-container {
+    background-color: var(
+        --mail-MessagingMenu-bg,
+        o-token(--o-bg-view, $o-view-background-color)
+    );
+}
+
+.o-mail-MessagingMenuInDropdown .o-mail-MessagingMenu-container:not(.o-small) {
+    width: 540px;
+    min-height: 320px;
+    max-height: Min(calc(#{$o-dropdown-max-height} - 5px), 630px);
+}
+
+.o-mail-MessagingMenu-list {
+    --list-group-border-color: #{var(
+            --mail-MessagingMenu-listBorderColor,
+            #{o-token-alpha(--o-gray-200, $gray-200, 0.5)}
+        )};
+}
+
+.o-mail-MessagingMenu-filter {
+    --btn-border-color: #{o-token(--border-color, $border-color)};
+
+    &.o-active {
+        --btn-bg: #{o-token(--o-bg-active, $o-component-active-bg)};
+        --btn-color: #{o-token(--o-action, $o-enterprise-action-color)};
+    }
+}
+
+.o-mail-MessagingMenu-tabCounter {
+    left: 50%;
+    transform: translate(50%, 25%) !important;
+}
+
+.o_popover:has(.o-mail-MessagingMenu) {
+    --popover-border-color: #{o-token(--secondary, $secondary)};
+}
+
+.o-mail-MessagingMenu-navbar:not(.flex-row) .o-mail-MessagingMenu-tab {
+    width: $spacer * 4.5;
+}
+
+.o-mail-MessagingMenu-tab {
+    &:hover .o-mail-MessagingMenu-tabIcon {
+        background: o-palette-token(--o-gray-200, $gray-200);
+    }
+
+    &.active {
+        --btn-active-color: #{o-token(--o-action, $o-enterprise-action-color)};
+
+        .o-mail-MessagingMenu-tabIcon {
+            background: o-token(--o-bg-active, $o-component-active-bg);
+            color: o-token(--o-action, $o-enterprise-action-color);
+        }
+    }
+
+    &:focus-visible {
+        outline: $border-width solid o-token(--o-action, $o-enterprise-action-color) !important;
+    }
+
+    .o-mail-MessagingMenu-tabIcon {
+        width: $spacer * 3;
+    }
+}
+
+@include media-only(screen) {
+    :root[data-color-scheme="dark"] {
+        .o-mail-MessagingMenu-container {
+            --mail-MessagingMenu-bg: #{mix($o-dark-gray-100, $o-dark-gray-200, 65%)};
+            --mail-MessagingMenu-listBorderColor: #{rgba($o-dark-gray-300, 0.25)};
+        }
+    }
+}
+
+.o-mail-MessagingMenuItem-actions {
+    display: none;
+
+    &.o-open {
+        display: flex;
+    }
+}
+
+.o-mail-MessagingMenuItem:hover,
+.o-mail-MessagingMenuItem:has(.o-mail-MessagingMenuItem-actions.o-open) {
+    .o-mail-MessagingMenuItem-actions:not(.d-none) {
+        display: flex;
+    }
+
+    .o-mail-NotificationItem-date {
+        visibility: hidden;
+    }
+}

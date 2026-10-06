@@ -1,0 +1,218 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <data>
+        <record id="view_mrp_product_template_form_inherited" model="ir.ui.view">
+            <field name="name">product.form.mrp.inherited</field>
+            <field name="model">product.template</field>
+            <field name="inherit_id" ref="stock.view_template_property_form" />
+            <field name="arch" type="xml">
+                <xpath expr="//field[@name='product_variant_count']" position="after">
+                    <field name="is_kit" invisible="1" />
+                </xpath>
+            </field>
+        </record>
+        <record id="mrp_view_product_template_search" model="ir.ui.view">
+            <field name="name">mrp.product.template.search</field>
+            <field name="model">product.template</field>
+            <field name="inherit_id" ref="product.view_product_template_search" />
+            <field name="mode">primary</field>
+            <field name="arch" type="xml">
+                <filter name="combo" position="after">
+                    <separator />
+                    <filter
+                        name="manufactured_products"
+                        string="Manufactured Products"
+                        domain="[('bom_ids', '!=', False)]" />
+                    <filter
+                        name="components"
+                        string="BoM Components"
+                        domain="[('bom_line_ids', '!=', False)]" />
+                </filter>
+            </field>
+        </record>
+        <record id="mrp_product_product_search_view" model="ir.ui.view">
+            <field name="name">mrp.product.product.search</field>
+            <field name="model">product.product</field>
+            <field name="inherit_id" ref="product.view_product_product_search" />
+            <field name="mode">primary</field>
+            <field name="arch" type="xml">
+                <filter name="combo" position="after">
+                    <separator />
+                    <filter
+                        name="manufactured_products"
+                        string="Manufactured Products"
+                        domain="[('bom_ids', '!=', False)]" />
+                    <filter
+                        name="components"
+                        string="BoM Components"
+                        domain="[('bom_line_ids', '!=', False)]" />
+                </filter>
+            </field>
+        </record>
+        <record id="product_template_action" model="ir.actions.act_window">
+            <field name="name">Products</field>
+            <field name="res_model">product.template</field>
+            <field name="path">manufacturing-products</field>
+            <field name="view_mode">kanban,list,form</field>
+            <field name="search_view_id" ref="mrp_view_product_template_search" />
+            <field
+                name="context">{"search_default_goods": 1, 'default_is_storable': True}</field>
+            <field name="help" type="html">
+                <p class="o_view_nocontent_smiling_face">
+                    No product found. Let's create one!
+                </p><p>
+                    Define the components and finished products you wish to use in
+                    bill of materials and manufacturing orders.
+                </p>
+            </field>
+        </record>
+        <record id="product_view_search_catalog" model="ir.ui.view">
+            <field name="name">product.view.search.catalog.inherit.mrp</field>
+            <field name="model">product.product</field>
+            <field
+                name="inherit_id"
+                ref="product.view_product_product_search_catalog" />
+            <field name="arch" type="xml">
+                <filter name="goods" position="after">
+                    <filter
+                        name="products_in_bom"
+                        string="In the BoM"
+                        domain="[('product_catalog_product_is_in_bom', '=', True)]"
+                        invisible="context.get('active_model') != 'mrp.bom.line'" />
+                    <filter
+                        name="products_in_mo"
+                        string="In the MO"
+                        domain="[('product_catalog_product_is_in_mo', '=', True)]"
+                        invisible="context.get('active_model') != 'stock.move' or                                        context.get('product_catalog_order_model') != 'mrp.production'" />
+                </filter>
+                <filter name="services" position="attributes">
+                    <attribute name="invisible">context.get('product_catalog_order_model') == 'mrp.production'</attribute>
+                </filter>
+            </field>
+        </record>
+        <record id="mrp_product_variant_action" model="ir.actions.act_window">
+            <field name="name">Product Variants</field>
+            <field name="res_model">product.product</field>
+            <field name="view_mode">kanban,list,form</field>
+            <field name="search_view_id" ref="mrp_product_product_search_view" />
+        </record>
+        <record id="product_template_form_view_bom_button" model="ir.ui.view">
+            <field name="name">product.template.procurement</field>
+            <field name="model">product.template</field>
+            <field
+                name="inherit_id"
+                ref="stock.product_template_form_view_procurement_button" />
+            <field name="arch" type="xml">
+                <span id="button_documents_before" position="before">
+                    <button
+                        name="%(template_open_bom)d"
+                        type="action"
+                        icon="fa-flask"
+                        groups="mrp.group_mrp_readonly"
+                        invisible="type != 'consu'"
+                        class="oe_stat_button">
+                        <field
+                            name="bom_count"
+                            string="Bill of Materials"
+                            widget="statinfo" />
+                    </button>
+                </span>
+                <span id="button_documents_after" position="after">
+                    <button
+                        name="action_used_in_bom"
+                        type="object"
+                        icon="fa-level-up"
+                        groups="mrp.group_mrp_readonly"
+                        invisible="type != 'consu' or used_in_bom_count == 0"
+                        class="oe_stat_button">
+                        <field
+                            name="used_in_bom_count"
+                            string="Used In"
+                            widget="statinfo" />
+                    </button>
+                    <button
+                        name="action_view_mos"
+                        type="object"
+                        help="Manufactured in the last 365 days"
+                        icon="fa-list-alt"
+                        groups="mrp.group_mrp_readonly"
+                        invisible="type != 'consu' or bom_count == 0 or mrp_product_qty == 0"
+                        class="oe_stat_button">
+                        <div class="o_field_widget o_stat_info">
+                            <span class="o_stat_value d-flex gap-1">
+                                <field
+                                    name="mrp_product_qty"
+                                    widget="statinfo"
+                                    nolabel="1"
+                                    class="mr4" />
+                                <field name="uom_name" groups="uom.group_uom" />
+                            </span>
+                            <span class="o_stat_text">Manufactured</span>
+                        </div>
+                    </button>
+                </span>
+            </field>
+        </record>
+        <record id="product_product_form_view_bom_button" model="ir.ui.view">
+            <field name="name">product.product.procurement</field>
+            <field name="model">product.product</field>
+            <field name="inherit_id" ref="stock.product_form_view_procurement_button" />
+            <field name="arch" type="xml">
+                <xpath
+                    expr="//div[@name='button_box']/t[@groups='stock.group_stock_user']"
+                    position="after">
+                    <button
+                        name="action_view_bom"
+                        type="object"
+                        icon="fa-flask"
+                        groups="mrp.group_mrp_readonly"
+                        invisible="type != 'consu'"
+                        class="oe_stat_button">
+                        <field
+                            name="bom_count"
+                            string="Bill of Materials"
+                            widget="statinfo" />
+                    </button>
+                    <button
+                        name="action_used_in_bom"
+                        type="object"
+                        icon="fa-level-up"
+                        groups="mrp.group_mrp_readonly"
+                        invisible="type != 'consu' or used_in_bom_count == 0"
+                        class="oe_stat_button">
+                        <field
+                            name="used_in_bom_count"
+                            string="Used In"
+                            widget="statinfo" />
+                    </button>
+                    <button
+                        name="action_view_mos"
+                        type="object"
+                        help="Manufactured in the last 365 days"
+                        icon="fa-list-alt"
+                        groups="mrp.group_mrp_readonly"
+                        invisible="type != 'consu' or bom_count == 0 or mrp_product_qty == 0"
+                        class="oe_stat_button">
+                        <div class="o_field_widget o_stat_info">
+                            <span class="o_stat_value d-flex gap-1">
+                                <field
+                                    name="mrp_product_qty"
+                                    widget="statinfo"
+                                    nolabel="1"
+                                    class="mr4" />
+                                <field name="uom_name" groups="uom.group_uom" />
+                            </span>
+                            <span class="o_stat_text">Manufactured</span>
+                        </div>
+                    </button>
+                </xpath>
+            </field>
+        </record>
+        <record id="stock.action_product_stock_view" model="ir.actions.act_window">
+            <field
+                name="domain">[('is_storable', '=', True), ('is_kit','=', False)]</field>
+        </record>
+    </data>
+
+</odoo>

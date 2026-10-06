@@ -1,0 +1,2 @@
+id,name,model_id/id,group_id/id,kind,operation,domain
+access_add_iot_box,access.add.iot.box,model_wizard_pos_payment_method_update_six_terminal,base.group_system,permission,cru,

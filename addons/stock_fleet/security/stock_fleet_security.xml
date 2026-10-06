@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="res_groups_privilege_trips" model="res.groups.privilege">
+        <field name="name">Trips</field>
+        <field name="category_id" ref="base.module_category_supply_chain" />
+    </record>
+
+    <record id="group_trip_driver" model="res.groups">
+        <field name="name">Driver</field>
+        <field name="privilege_id" ref="res_groups_privilege_trips" />
+        <field
+            name="comment">Drivers: see their own trips, mark each delivery and register the return.</field>
+        <field
+            name="implied_ids"
+            eval="[Command.link(ref('stock.group_stock_user'))]" />
+    </record>
+
+    <record id="res_groups_privilege_delivery_proof" model="res.groups.privilege">
+        <field name="name">Delivery Proof</field>
+        <field name="category_id" ref="base.module_category_supply_chain" />
+    </record>
+
+    <record id="group_delivery_proof_reviewer" model="res.groups">
+        <field name="name">Reviewer</field>
+        <field name="privilege_id" ref="res_groups_privilege_delivery_proof" />
+        <field
+            name="comment">Reviewers: reject the photo of a signed delivery slip that does not show it, and tick the slips received on paper.</field>
+        <field
+            name="implied_ids"
+            eval="[Command.link(ref('stock.group_stock_user'))]" />
+    </record>
+
+    <!--
+        Without a privilege: it is granted user by user, and the inventory
+        administrators do not get it with their level.
+    -->
+    <record id="group_trip_correction" model="res.groups">
+        <field name="name">Trip corrections</field>
+        <field
+            name="comment">Take pending transfers off a trip that has already left, when they should not have travelled on it.</field>
+        <field
+            name="implied_ids"
+            eval="[Command.link(ref('stock.group_stock_user'))]" />
+    </record>
+
+</odoo>

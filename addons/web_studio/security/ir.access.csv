@@ -1,0 +1,4 @@
+id,name,model_id/id,group_id/id,kind,operation,domain
+access_studio_export_model,Studio Export Model,model_studio_export_model,base.group_system,permission,crud,
+access_studio_export_wizard,Studio Export Wizard,model_wizard_ir_module_module_export_customization,base.group_system,permission,crud,
+access_studio_export_wizard_data,Studio Export Wizard Data,model_wizard_ir_module_module_export_customization_line,base.group_system,permission,crud,

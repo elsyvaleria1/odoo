@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <menuitem
+        id="molecular_screening_menu_root"
+        name="Molecular Screening"
+        sequence="200"
+        groups="group_molecular_screening_user"
+        web_icon="molecular_screening,static/description/icon.png" />
+
+    <menuitem
+        id="molecular_screening_campaign_menu"
+        parent="molecular_screening_menu_root"
+        action="molecular_screening_campaign_action"
+        sequence="10" />
+
+    <menuitem
+        id="molecular_compound_menu"
+        parent="molecular_screening_menu_root"
+        action="molecular_compound_action"
+        sequence="20" />
+
+    <menuitem
+        id="molecular_sketch_menu"
+        parent="molecular_screening_menu_root"
+        action="molecular_sketch_action"
+        sequence="25" />
+
+    <menuitem
+        id="molecular_target_menu"
+        parent="molecular_screening_menu_root"
+        action="molecular_target_action"
+        sequence="30" />
+
+    <menuitem
+        id="molecular_docking_menu"
+        name="Docking"
+        parent="molecular_screening_menu_root"
+        sequence="40" />
+
+    <menuitem
+        id="molecular_docking_job_menu"
+        parent="molecular_docking_menu"
+        action="molecular_docking_job_action"
+        sequence="10" />
+
+    <menuitem
+        id="molecular_docking_result_menu"
+        parent="molecular_docking_menu"
+        action="molecular_docking_result_action"
+        sequence="20" />
+
+    <menuitem
+        id="molecular_validation_run_menu"
+        parent="molecular_docking_menu"
+        action="molecular_validation_run_action"
+        sequence="30" />
+
+    <menuitem
+        id="molecular_screening_config_menu"
+        name="Configuration"
+        parent="molecular_screening_menu_root"
+        sequence="90"
+        groups="group_molecular_screening_manager" />
+
+    <menuitem
+        id="molecular_structure_menu"
+        parent="molecular_screening_config_menu"
+        action="molecular_structure_action"
+        sequence="10" />
+
+    <menuitem
+        id="molecular_compound_tag_menu"
+        parent="molecular_screening_config_menu"
+        action="molecular_compound_tag_action"
+        sequence="20" />
+
+</odoo>

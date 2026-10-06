@@ -1,0 +1,4 @@
+id,name,model_id/id,group_id/id,kind,operation,domain
+access_stock_picking_to_batch,access.stock.picking.to.batch,model_wizard_stock_picking_add_to_batch,stock.group_stock_user,permission,cru,
+access_stock_add_to_wave,access.stock.picking.to.wave,model_wizard_stock_move_line_add_to_wave,stock.group_stock_user,permission,cru,
+privilege_detach_cancelled_picking_batch,Privilege: read the batch of a cancelled transfer,stock.model_stock_picking_batch,privilege_detach_cancelled_picking,permission,r,

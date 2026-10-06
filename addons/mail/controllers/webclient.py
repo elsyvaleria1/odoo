@@ -1,0 +1,250 @@
+import logging
+from collections import defaultdict
+from typing import Any
+
+from odoo import http
+from odoo.db.errors import PG_RECOVERABLE_EXCEPTIONS, is_stale_cached_plan
+from odoo.exceptions import (
+    AccessDenied,
+    AccessError,
+    ConcurrencyError,
+    MissingError,
+    UserError,
+)
+from odoo.http import HTTPException, NotFound, SessionExpiredException, request
+from odoo.libs.debug_log import DebugLog
+
+from odoo.addons.mail.controllers.thread import ThreadController
+from odoo.addons.mail.controllers.utils import to_record_id
+from odoo.addons.mail.tools.discuss import Store, add_guest_to_context
+
+_logger = logging.getLogger(__name__)
+_debug = DebugLog(__name__)
+
+PROPAGATED_BATCH_ERRORS = (
+    HTTPException,
+    SessionExpiredException,
+    AccessError,
+    AccessDenied,
+)
+
+RETRYABLE_BATCH_ERRORS = (*PG_RECOVERABLE_EXCEPTIONS, ConcurrencyError)
+
+
+class WebclientController(ThreadController):
+    @http.route("/mail/action", methods=["POST"], type="jsonrpc", auth="public")
+    @add_guest_to_context
+    def mail_action(
+        self, fetch_params: list[str | list], context: dict | None = None
+    ) -> dict:
+        return self._process_request(fetch_params, context=context)
+
+    @http.route(
+        "/mail/data", methods=["POST"], type="jsonrpc", auth="public", readonly=True
+    )
+    @add_guest_to_context
+    def mail_data(
+        self, fetch_params: list[str | list], context: dict | None = None
+    ) -> dict:
+        return self._process_request(fetch_params, context=context)
+
+    @classmethod
+    def _process_request(
+        cls, fetch_params: list[str | list], context: dict | None
+    ) -> dict:
+        cls._update_context_from_client(context)
+        store = Store()
+        with _debug.perf(
+            "fetch_answered",
+            cr=request.env.cr,
+            params=len(fetch_params) if isinstance(fetch_params, (list, tuple)) else 0,
+            readonly=request.env.cr.readonly,
+        ):
+            cls._process_request_loop(store, fetch_params)
+        return store.get_result()
+
+    @classmethod
+    def _process_request_loop(
+        cls, store: Store, fetch_params: list[str | list]
+    ) -> None:
+        if isinstance(fetch_params, str) or not isinstance(fetch_params, (list, tuple)):
+            raise NotFound
+        for fetch_param in fetch_params:
+            parsed = cls._parse_fetch_param(fetch_param)
+            if parsed is None:
+                _debug.logic("fetch_param_malformed", type=type(fetch_param).__name__)
+                _logger.info(
+                    "Discarding a malformed fetch param: %s", repr(fetch_param)[:200]
+                )
+                continue
+            name, params, data_id = parsed
+            store.data_id = data_id
+            with _debug.perf("fetch_param", cr=request.env.cr, name=name):
+                cls._process_one_request(store, name, params)
+        store.data_id = None
+
+    @staticmethod
+    def _parse_fetch_param(fetch_param: Any) -> tuple[str, Any, Any] | None:
+        if isinstance(fetch_param, str):
+            return fetch_param, None, None
+        if not isinstance(fetch_param, (list, tuple)) or not 1 <= len(fetch_param) <= 3:
+            return None
+        name, params, data_id = (list(fetch_param) + [None, None])[:3]
+        if not isinstance(name, str):
+            return None
+        return name, params, data_id
+
+    @staticmethod
+    def _is_thread_fetch_params(params: Any) -> bool:
+        return (
+            isinstance(params, dict)
+            and isinstance(params.get("thread_model"), str)
+            and "thread_id" in params
+            and isinstance(params.get("request_list"), list)
+            and isinstance(params.get("access_params", {}), dict)
+        )
+
+    @classmethod
+    def _dispatch_one_request(cls, store: Store, name: str, params: Any) -> None:
+        cls._process_request_for_all(store, name, params)
+        if not request.env.user._is_public():
+            cls._process_request_for_logged_in_user(store, name, params)
+        if request.env.user._is_internal():
+            cls._process_request_for_internal_user(store, name, params)
+
+    @classmethod
+    def _process_one_request(cls, store: Store, name: str, params: Any) -> None:
+        try:
+            with request.env.cr.savepoint():
+                cls._dispatch_one_request(store, name, params)
+        except PROPAGATED_BATCH_ERRORS:
+            raise
+        except RETRYABLE_BATCH_ERRORS:
+            _debug.logic("fetch_retried", name=name)
+            raise
+        except MissingError:
+            _debug.logic("fetch_absorbed", name=name, error="MissingError")
+            _logger.info(
+                "Discarding fetch param %r: a record it needed no longer exists.",
+                name,
+            )
+        except UserError:
+            raise
+        except Exception as error:
+            if is_stale_cached_plan(error):
+                raise
+            _debug.logic("fetch_absorbed", name=name, error=type(error).__name__)
+            _logger.exception(
+                "Discarding fetch param %r: it failed while the rest of the batch "
+                "is answered normally.",
+                name,
+            )
+
+    @classmethod
+    def _process_request_for_all(cls, store: Store, name: str, params: Any) -> None:
+        if name == "init_messaging":
+            if not request.env.user._is_public():
+                user = request.env.user.sudo(False)
+                user._init_messaging(store)
+        if name == "mixin.mail.thread":
+            cls._add_thread_fetch_param(store, params)
+
+    @classmethod
+    def _add_thread_fetch_param(cls, store: Store, params: Any) -> None:
+        if not cls._is_thread_fetch_params(params):
+            _logger.info(
+                "Discarding a thread fetch param with malformed params: %s",
+                repr(params)[:200],
+            )
+            return
+        try:
+            thread = cls._get_thread_with_access(
+                params["thread_model"],
+                params["thread_id"],
+                mode="read",
+                **params.get("access_params", {}),
+            )
+        except NotFound:
+            _logger.info(
+                "Discarding a thread fetch param naming an unusable model: %r",
+                params["thread_model"],
+            )
+            return
+        if not thread:
+            store.add(
+                thread.browse(to_record_id(params["thread_id"])),
+                {"hasReadAccess": False, "hasWriteAccess": False},
+                as_thread=True,
+            )
+        else:
+            store.add(thread, request_list=params["request_list"], as_thread=True)
+
+    @classmethod
+    def _process_request_for_logged_in_user(
+        cls, store: Store, name: str, params: Any
+    ) -> None:
+        if name == "failures":
+            domain = [
+                ("author_id", "=", request.env.user.partner_id.id),
+                ("notification_status", "in", ("bounce", "exception")),
+                ("mail_message_id.message_type", "!=", "user_notification"),
+                ("mail_message_id.model", "!=", False),
+                ("mail_message_id.res_id", "!=", 0),
+            ]
+            notifications = (
+                request.env["mail.notification"].sudo().search(domain, limit=100)
+            )
+            found = defaultdict(list)
+            for message in notifications.mail_message_id:
+                found[message.model].append(message.res_id)
+            existing = {
+                model: set(request.env[model].browse(ids).exists().ids)
+                for model, ids in found.items()
+                if model in request.env
+            }
+            valid = notifications.filtered(
+                lambda n: (
+                    n.mail_message_id.res_id
+                    in existing.get(n.mail_message_id.model, ())
+                )
+            )
+            lost = notifications - valid
+            if lost and not request.env.cr.readonly:
+                lost.sudo().unlink()
+            valid.mail_message_id._message_notifications_to_store(store)
+
+    @classmethod
+    def _process_request_for_internal_user(
+        cls, store: Store, name: str, params: Any
+    ) -> None:
+        if name == "systray_get_activities":
+            bus_last_id = request.env["bus.bus"].sudo()._bus_last_id()
+            groups = request.env["res.users"]._get_activity_groups()
+            store.add_global_values(
+                activityCounter=sum(group.get("due_count", 0) for group in groups),
+                activityCounter_bus_id=bus_last_id,
+                activityGroups=groups,
+            )
+        if name == "mail.canned.response":
+            domain = [
+                "|",
+                ("create_uid", "=", request.env.user.id),
+                ("group_ids", "in", request.env.user.all_group_ids.ids),
+            ]
+            store.add(request.env["mail.canned.response"].search(domain))
+        if name == "avatar_card":
+            if not isinstance(params, dict):
+                return
+            record_id, model = params.get("id"), params.get("model")
+            if not record_id or model not in ("res.users", "res.partner"):
+                return
+            context = {
+                "active_test": False,
+                "allowed_company_ids": request.env.user._get_company_ids(),
+            }
+            record = (
+                request.env[model]
+                .with_context(**context)
+                .search([("id", "=", record_id)])
+            )
+            store.add(record, record._get_fields_store_avatar_card(store.target))

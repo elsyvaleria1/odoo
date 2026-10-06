@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <data>
+        <record
+            id="hr_timesheet_stop_timer_confirmation_wizard_view_form"
+            model="ir.ui.view">
+            <field name="name">hr.timesheet.stop.timer.confirmation.wizard.form</field>
+            <field name="model">hr.timesheet.stop.timer.confirmation.wizard</field>
+            <field name="arch" type="xml">
+                <form>
+                    <!-- Used to compute timesheet_name field -->
+                    <field name="timesheet_id" invisible="1" />
+                    <group>
+                        <field
+                            name="time_spent"
+                            widget="float_time"
+                            class="oe_inline" />
+                    </group>
+                    <field
+                        name="timesheet_name"
+                        placeholder="Describe your activity..."
+                        widget="text" />
+                    <footer>
+                        <button
+                            name="action_save_timesheet"
+                            type="object"
+                            string="Log Time"
+                            class="btn btn-primary"
+                            data-hotkey="q" />
+                        <button
+                            special="cancel"
+                            string="Resume Timer"
+                            class="btn btn-secondary"
+                            data-hotkey="x" />
+                        <button
+                            name="action_delete_timesheet"
+                            type="object"
+                            title="Delete"
+                            class="btn btn-secondary py-2 fa-regular fa-trash-can"
+                            data-hotkey="w" />
+                    </footer>
+                </form>
+            </field>
+        </record>
+    </data>
+
+</odoo>

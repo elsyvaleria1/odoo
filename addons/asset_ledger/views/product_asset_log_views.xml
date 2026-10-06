@@ -1,0 +1,361 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_search_product_asset_log" model="ir.ui.view">
+        <field name="name">resource.asset.log.search</field>
+        <field name="model">resource.asset.log</field>
+        <field name="arch" type="xml">
+            <search string="Asset Logs">
+                <field name="asset_id" />
+                <field name="product_id" />
+                <field name="vendor_id" />
+                <field name="log_type" />
+                <field name="source" />
+                <separator />
+                <filter
+                    name="filter_log_type_fuel"
+                    string="Fuel"
+                    domain="[('log_type', '=', 'fuel')]" />
+                <filter
+                    name="filter_log_type_highway"
+                    string="Highway"
+                    domain="[('log_type', '=', 'highway')]" />
+                <filter
+                    name="filter_log_type_service"
+                    string="Service"
+                    domain="[('log_type', '=', 'service')]" />
+                <filter
+                    name="filter_log_type_operator"
+                    string="Operator Assignment"
+                    domain="[('log_type', '=', 'operator')]" />
+                <filter
+                    name="filter_unclassified"
+                    string="Unclassified"
+                    domain="[('product_id', '=', False)]" />
+                <separator />
+                <filter
+                    name="inactive"
+                    string="Archived"
+                    domain="[('active', '=', False)]" />
+                <filter
+                    name="state_new"
+                    string="New"
+                    domain="[('state', '=', 'new')]" />
+                <filter
+                    name="state_running"
+                    string="Running"
+                    domain="[('state', '=', 'running')]" />
+                <filter
+                    name="state_done"
+                    string="Done"
+                    domain="[('state', '=', 'done')]" />
+                <group>
+                    <filter
+                        name="groupby_log_type"
+                        string="Log Type"
+                        context="{'group_by': 'log_type'}" />
+                    <filter
+                        name="groupby_asset_id"
+                        string="Asset"
+                        context="{'group_by': 'asset_id'}" />
+                    <filter
+                        name="groupby_product_id"
+                        string="Service"
+                        context="{'group_by': 'product_id'}" />
+                    <filter
+                        name="groupby_product_category_id"
+                        string="Category"
+                        context="{'group_by': 'product_category_id'}" />
+                    <filter
+                        name="groupby_vendor_id"
+                        string="Vendor"
+                        context="{'group_by': 'vendor_id'}" />
+                    <filter
+                        name="groupby_date"
+                        string="Date"
+                        context="{'group_by': 'date'}" />
+                    <filter
+                        name="groupby_source"
+                        string="Source"
+                        context="{'group_by': 'source'}" />
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="view_list_product_asset_log" model="ir.ui.view">
+        <field name="name">resource.asset.log.list</field>
+        <field name="model">resource.asset.log</field>
+        <field name="arch" type="xml">
+            <list string="Asset Logs" multi_edit="1" expand="1">
+                <field name="company_id" column_invisible="True" />
+                <field name="currency_id" column_invisible="True" />
+                <field name="date" readonly="1" />
+                <field
+                    name="log_type"
+                    widget="badge"
+                    decoration-danger="log_type == 'service'"
+                    decoration-info="log_type == 'fuel'"
+                    decoration-success="log_type == 'highway'" />
+                <field name="asset_id" optional="show" readonly="1" />
+                <field name="vendor_id" optional="show" />
+                <field name="product_category_id" optional="show" />
+                <field name="product_id" optional="show" />
+                <field name="qty_fuel" optional="hide" />
+                <field name="efficiency" optional="hide" />
+                <field name="efficiency_uom_name" optional="hide" />
+                <field name="amount" widget="monetary" optional="show" sum="Total" />
+                <field name="odometer" optional="show" />
+                <!-- readonly on purpose: the list is `multi_edit`, and a row
+                    says `manual` because nothing else wrote it. Letting a user
+                    retype that is what would destroy the provenance axis. -->
+                <field name="source" optional="hide" readonly="1" />
+                <field name="date_start" optional="hide" />
+                <field name="date_end" optional="hide" />
+                <field name="days_left" optional="hide" />
+                <field
+                    name="state"
+                    widget="badge"
+                    readonly="1"
+                    decoration-info="state == 'running'"
+                    decoration-muted="state == 'cancelled'"
+                    decoration-success="state == 'done'"
+                    decoration-warning="state == 'new'" />
+            </list>
+        </field>
+    </record>
+
+    <record id="view_kanban_product_asset_log" model="ir.ui.view">
+        <field name="name">resource.asset.log.kanban</field>
+        <field name="model">resource.asset.log</field>
+        <field name="arch" type="xml">
+            <kanban default_group_by="state">
+                <field name="asset_id" />
+                <field name="currency_id" />
+                <field name="product_category_id" />
+                <progressbar
+                    field="activity_state"
+                    colors="{&quot;planned&quot;: &quot;success&quot;, &quot;today&quot;: &quot;warning&quot;, &quot;overdue&quot;: &quot;danger&quot;}" />
+                <templates>
+                    <t t-name="card">
+                        <div class="flex-row">
+                            <div class="col-12 pe-2 text-truncate">
+                                <field
+                                    name="asset_id"
+                                    invisible="not asset_id"
+                                    class="fw-bolder" />
+                                <field
+                                    name="product_id"
+                                    invisible="asset_id"
+                                    class="fw-bolder" />
+                                <span
+                                    t-attf-class="float-end badge #{['new', 'running'].indexOf(record.state.raw_value) &gt; -1 ? 'text-bg-secondary' : ['cancelled'].indexOf(record.state.raw_value) &gt; -1 ? 'text-bg-danger' : 'text-bg-success'}">
+                                    <field name="state" />
+                                </span>
+                                <div class="text-truncate">
+                                    <em>
+                                        <field
+                                            name="product_id"
+                                            invisible="not asset_id" />
+                                        <field
+                                            name="product_category_id"
+                                            invisible="asset_id" />
+                                    </em>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="text-truncate">
+                            <field
+                                name="product_category_id"
+                                invisible="not asset_id" />
+                            <field name="vendor_id" />
+                            <field name="date" class="float-end" />
+                        </div>
+                        <footer class="pt-0">
+                            <field
+                                name="amount"
+                                widget="monetary"
+                                options="{'currency_field': 'currency_id'}" />
+                            <field
+                                name="activity_ids"
+                                widget="kanban_activity"
+                                class="ms-auto" />
+                        </footer>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
+    <record id="view_graph_product_asset_log" model="ir.ui.view">
+        <field name="name">resource.asset.log.graph</field>
+        <field name="model">resource.asset.log</field>
+        <field name="arch" type="xml">
+            <graph string="Service Costs Per Month" sample="1">
+                <field name="date" interval="month" />
+                <field name="asset_id" />
+                <field name="amount" type="measure" />
+            </graph>
+        </field>
+    </record>
+
+    <record id="view_pivot_product_asset_log" model="ir.ui.view">
+        <field name="name">resource.asset.log.pivot</field>
+        <field name="model">resource.asset.log</field>
+        <field name="arch" type="xml">
+            <pivot>
+                <field name="currency_id" invisible="1" />
+                <field name="product_category_id" type="col" />
+                <field name="asset_id" type="row" />
+                <field name="vendor_id" type="row" />
+                <field name="amount" type="measure" />
+            </pivot>
+        </field>
+    </record>
+
+    <record id="view_form_product_asset_log" model="ir.ui.view">
+        <field name="name">resource.asset.log.form</field>
+        <field name="model">resource.asset.log</field>
+        <field name="arch" type="xml">
+            <form string="Asset Log">
+                <field name="active" invisible="1" />
+                <field name="company_id" invisible="1" />
+                <field name="currency_id" invisible="1" />
+                <header>
+                    <button
+                        name="action_set_done"
+                        type="object"
+                        string="Mark as Done"
+                        invisible="state in ('done', 'cancelled')"
+                        class="btn-primary" />
+                    <button
+                        name="action_set_new"
+                        type="object"
+                        string="Reset to New"
+                        invisible="state != 'cancelled'"
+                        class="btn-primary" />
+                    <button
+                        name="action_set_cancelled"
+                        type="object"
+                        string="Cancel"
+                        invisible="state in ('done', 'cancelled')"
+                        class="btn-secondary" />
+                    <!-- New is the only target STATE_TRANSITIONS accepts from
+                        cancelled, so every statusbar click on a cancelled log
+                        raises. A readonly statusbar is not clickable, which
+                        leaves the "Reset to New" button as the way out. -->
+                    <field
+                        name="state"
+                        widget="statusbar"
+                        options="{'clickable': '1'}"
+                        readonly="state == 'cancelled'" />
+                </header>
+                <sheet>
+                    <field name="log_type" invisible="1" />
+                    <widget
+                        name="web_ribbon"
+                        title="Archived"
+                        invisible="active"
+                        bg_color="text-bg-danger" />
+                    <group>
+                        <group string="Service Details">
+                            <field name="asset_id" />
+                            <field
+                                name="product_id"
+                                domain="[('categ_id.log_type', '!=', False)]" />
+                            <field name="product_category_id" />
+                            <field name="date" />
+                            <field name="source" readonly="1" />
+                        </group>
+                        <group string="Vendor &amp; Cost">
+                            <field name="vendor_id" />
+                            <field name="inv_ref" />
+                            <field name="amount" widget="monetary" />
+                        </group>
+                    </group>
+                    <group>
+                        <group
+                            name="service_details"
+                            string="Service Details"
+                            invisible="log_type not in ('fuel', 'service')">
+                            <label for="odometer" />
+                            <div class="o_row">
+                                <field name="odometer" class="w-25" />
+                                <field name="odometer_uom_name" />
+                            </div>
+                            <label for="qty_fuel" invisible="log_type != 'fuel'" />
+                            <div class="o_row" invisible="log_type != 'fuel'">
+                                <field name="qty_fuel" class="w-25" />
+                                <span class="ms-2">L</span>
+                            </div>
+                            <label for="efficiency" invisible="log_type != 'fuel'" />
+                            <div class="o_row" invisible="log_type != 'fuel'">
+                                <field name="efficiency" class="w-25" />
+                                <field name="efficiency_uom_name" />
+                            </div>
+                        </group>
+                        <group name="date_details" string="Dates">
+                            <field name="date_start" />
+                            <field name="date_end" />
+                            <field name="days_left" invisible="not date_end" />
+                        </group>
+                    </group>
+                    <separator string="Notes" />
+                    <field
+                        name="notes"
+                        placeholder="Write here any additional information related to this service or contract." />
+                </sheet>
+                <chatter />
+            </form>
+        </field>
+    </record>
+
+    <record id="view_activity_product_asset_log" model="ir.ui.view">
+        <field name="name">resource.asset.log.activity</field>
+        <field name="model">resource.asset.log</field>
+        <field name="arch" type="xml">
+            <activity string="Asset Services">
+                <templates>
+                    <div t-name="activity-box">
+                        <div>
+                            <field
+                                name="asset_id"
+                                invisible="not asset_id"
+                                class="o_text_block" />
+                            <field
+                                name="product_id"
+                                invisible="asset_id"
+                                class="o_text_block" />
+                            <field name="product_category_id" class="text-muted" />
+                        </div>
+                    </div>
+                </templates>
+            </activity>
+        </field>
+    </record>
+
+    <record id="action_product_asset_log" model="ir.actions.act_window">
+        <field name="name">Asset Logs</field>
+        <field name="res_model">resource.asset.log</field>
+        <field name="view_mode">list,kanban,form,graph,pivot,activity</field>
+        <field name="context">{'search_default_groupby_product_category_id': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Create a new log entry
+            </p>
+            <p>
+                Track services, maintenance, and contracts.
+                Log entries can include: fuel, maintenance, repairs, insurance, and more.
+            </p>
+        </field>
+    </record>
+
+    <record id="action_property_service_logs" model="ir.actions.act_window">
+        <field name="name">Property Service Logs</field>
+        <field name="res_model">resource.asset.log</field>
+        <field name="view_mode">list,kanban,form,graph,pivot,activity</field>
+        <field name="domain">[('asset_id.kind_code', '=', 'property')]</field>
+        <field name="context">{'search_default_groupby_asset_id': 1}</field>
+    </record>
+
+</odoo>

@@ -1,0 +1,4 @@
+id,name,model_id/id,group_id/id,kind,operation,reach,anchor,domain
+telegram_mirror_rule_manager,Telegram Mirror: System users manage all,model_telegram_mirror,base.group_system,permission,crud,,,
+wizard_telegram_group_link_rule_user,Telegram Group Link: Users connect groups,model_wizard_telegram_group_link,base.group_user,permission,crud,,,
+telegram_mirror_privilege_operate,Telegram Mirror: the bot keeps the mirrors of the groups it serves,model_telegram_mirror,telegram.privilege_operate_bot,permission,crud,,,

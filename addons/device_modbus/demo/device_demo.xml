@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="demo_config_modbus_tcp" model="device.profile">
+        <field name="name">Modbus TCP Configuration</field>
+        <field
+            name="description">Configuration for industrial Modbus TCP devices (PLCs)</field>
+        <field name="protocol">modbus_tcp</field>
+        <field name="http_timeout">10</field>
+        <field name="modbus_unit_id">1</field>
+        <field name="modbus_register_type">holding</field>
+        <field name="auth_type">none</field>
+        <field name="alert_on_disconnect" eval="True" />
+        <field name="disconnect_timeout">60</field>
+        <field name="data_retention_days">365</field>
+    </record>
+
+    <record id="demo_device_plc_01" model="device.device">
+        <field name="name">Production Line PLC</field>
+        <field name="identifier">PLC-PROD-001</field>
+        <field name="config_id" ref="demo_config_modbus_tcp" />
+        <field name="device_category_id" ref="device.device_category_industrial_plc" />
+        <field name="comm_protocol">modbus_tcp</field>
+        <field name="endpoint">192.168.1.100</field>
+        <field name="port">502</field>
+        <field name="modbus_register_start">0</field>
+        <field name="modbus_register_count">20</field>
+        <field name="connection_state">disconnected</field>
+        <field name="location">Factory - Line 1 Control Room</field>
+        <field name="serial_number">SN-PLC-2024-456</field>
+        <field name="firmware_version">V4.5.0</field>
+        <field name="auto_reconnect_override">on</field>
+        <field name="is_demo" eval="True" />
+        <field
+            name="description">Main PLC controlling production line automation and safety systems (Siemens Industrial S7-1200)</field>
+    </record>
+
+</odoo>

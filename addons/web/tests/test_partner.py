@@ -1,0 +1,186 @@
+import io
+import logging
+import zipfile
+from base64 import b64decode
+
+import vobject
+
+from odoo.exceptions import AccessError
+from odoo.fields import Command
+from odoo.tests.common import HttpCase, tagged
+from odoo.tools import mute_logger
+
+from odoo.addons.base.tests.common import TransactionCaseWithUserPortal
+
+_logger = logging.getLogger(__name__)
+
+
+@tagged("web_unit", "web_partner")
+class TestPartnerPrivate(TransactionCaseWithUserPortal):
+    def test_access_onchange(self):
+        partner = self.partner_portal.with_user(self.user_portal)
+        self.assertEqual(partner.has_access("read"), True)
+        self.assertEqual(partner.has_access("write"), False)
+
+        with self.assertRaises(AccessError):
+            partner.onchange({}, ["name"], {"name": {}})
+
+
+@tagged("-at_install", "post_install", "web_http", "web_partner")
+class TestPartnerVCard(HttpCase):
+    def setUp(self):
+        super().setUp()
+
+        self.partners = self.env["res.partner"].create(
+            [
+                {
+                    "name": "John Doe",
+                    "email": "john.doe@test.example.com",
+                    "phone_ids": [Command.create({"number": "+1 202 555 0122"})],
+                    "function": "Painter",
+                    "street": "Cookieville Minimum-Security Orphanarium",
+                    "city": "New York",
+                    "country_id": self.env.ref("base.us").id,
+                    "zip": "97648",
+                    "website": "https://test.exemple.com",
+                },
+                {
+                    "name": "shut",
+                    "email": "shut@test.example.com",
+                    "phone_ids": [Command.create({"number": "+1 202 555 0123"})],
+                    "function": "Developer",
+                    "street": "Donutville Maximum-Security Orphanarium",
+                    "city": "Washington DC",
+                    "country_id": self.env.ref("base.us").id,
+                    "zip": "97649",
+                    "website": "https://test.example.com",
+                    "child_ids": [Command.create({"type": "other"})],
+                },
+            ]
+        )
+        self.authenticate("admin", "admin")
+
+    def check_vcard_contents(self, vcard, partner):
+        self.assertEqual(
+            vcard.contents["n"][0].value.family,
+            partner.name,
+            "Vcard should have the same name",
+        )
+        self.assertEqual(
+            vcard.contents["adr"][0].value.street,
+            partner.street,
+            "Vcard should have the same street",
+        )
+        self.assertEqual(
+            vcard.contents["adr"][0].value.city,
+            partner.city,
+            "Vcard should have the same city",
+        )
+        self.assertEqual(
+            vcard.contents["adr"][0].value.code,
+            partner.zip,
+            "Vcard should have the same zip",
+        )
+        self.assertEqual(
+            vcard.contents["adr"][0].value.country,
+            self.env.ref("base.us").name,
+            "Vcard should have the same country",
+        )
+        self.assertEqual(
+            vcard.contents["email"][0].value,
+            partner.email,
+            "Vcard should have the same email",
+        )
+        self.assertEqual(
+            vcard.contents["url"][0].value,
+            partner.website,
+            "Vcard should have the same website",
+        )
+        self.assertEqual(
+            vcard.contents["tel"][0].params["TYPE"],
+            ["cell"],
+            "Vcard should have the same phone",
+        )
+        self.assertEqual(
+            vcard.contents["tel"][0].value,
+            partner.phone_ids.number,
+            "Vcard should have the same phone",
+        )
+        self.assertEqual(
+            vcard.contents["title"][0].value,
+            partner.function,
+            "Vcard should have the same function",
+        )
+        self.assertEqual(
+            len(vcard.contents["photo"][0].value),
+            len(b64decode(partner.avatar_512)),
+            "Vcard should have the same photo",
+        )
+
+    def test_fetch_single_partner_vcard(self):
+        res = self.url_open("/web_enterprise/partner/%d/vcard" % self.partners[0].id)
+        vcard = vobject.readOne(res.text)
+        self.check_vcard_contents(vcard, self.partners[0])
+
+    def test_fetch_multiple_partners_vcard(self):
+        res = self.url_open(
+            "/web/partner/vcard?partner_ids=%s,%s"
+            % (self.partners[0].id, self.partners[1].id)
+        )
+        with io.BytesIO(res.content) as buffer:
+            with zipfile.ZipFile(buffer, "r") as zipf:
+                vcf_file_list = zipf.namelist()
+                for i, vcf_file in enumerate(vcf_file_list):
+                    vcard_content = zipf.read(vcf_file).decode()
+                    self.check_vcard_contents(
+                        vobject.readOne(vcard_content), self.partners[i]
+                    )
+
+    def test_multi_vcard_entry_names_sanitized_and_unique(self):
+        dupes = self.env["res.partner"].create(
+            [
+                {"name": "../../../evil"},
+                {"name": "../../../evil"},
+                {"name": "Same Name"},
+                {"name": "Same Name"},
+            ]
+        )
+        res = self.url_open(
+            "/web/partner/vcard?partner_ids=%s" % ",".join(map(str, dupes.ids))
+        )
+        with io.BytesIO(res.content) as buffer:
+            with zipfile.ZipFile(buffer, "r") as zipf:
+                names = zipf.namelist()
+        self.assertEqual(len(names), 4)
+        self.assertEqual(len(set(names)), 4, "entry names must be unique")
+        for name in names:
+            self.assertNotIn("..", name)
+            self.assertNotIn("/", name)
+            self.assertNotIn("\\", name)
+
+    def test_check_partner_access_for_user(self):
+        self.env["res.users"].create(
+            {
+                "group_ids": [Command.set([self.env.ref("base.group_public").id])],
+                "name": "Test User",
+                "login": "testuser",
+                "password": "testuser",
+            }
+        )
+        self.authenticate("testuser", "testuser")
+        with mute_logger("odoo.http"):
+            res = self.url_open(
+                "/web/partner/vcard?partner_ids=%s,%s"
+                % (self.partners[0].id, self.partners[1].id)
+            )
+        self.assertEqual(res.status_code, 403)
+
+    def test_fetch_single_partner_vcard_without_name(self):
+        partner = self.partners[1].child_ids[0]
+        res = self.url_open("/web/partner/vcard?partner_ids=%s" % partner.id)
+        vcard = vobject.readOne(res.text)
+        self.assertEqual(
+            vcard.contents["n"][0].value.family,
+            partner.complete_name,
+            "Vcard will have the complete name when it dosen't have name",
+        )

@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="wizard_stock_trip_scan_view_form" model="ir.ui.view">
+        <field name="name">wizard.stock.trip.scan.form</field>
+        <field name="model">wizard.stock.trip.scan</field>
+        <field name="arch" type="xml">
+            <form string="Scan">
+                <field name="batch_id" invisible="1" />
+                <div class="alert alert-info" role="status" invisible="not message">
+                    <field name="message" />
+                </div>
+                <p class="text-muted">
+                    At the warehouse scan the trip sheet. At each customer scan the
+                    delivery slip, then every lot you hand over.
+                </p>
+                <group>
+                    <field name="code" placeholder="Scan here" default_focus="1" />
+                    <field name="picking_id" options="{'no_create': True}" />
+                    <field name="summary" invisible="not picking_id" />
+                </group>
+                <footer>
+                    <button
+                        name="action_scan"
+                        type="object"
+                        string="Record Scan"
+                        class="btn-primary"
+                        data-hotkey="q" />
+                    <button special="cancel" string="Done" data-hotkey="x" />
+                </footer>
+            </form>
+        </field>
+    </record>
+
+</odoo>

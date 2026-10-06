@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="website_slides_forum_channel_inherit_view_form" model="ir.ui.view">
+        <field name="name">website.slides_forum.view.form.inherit.slide.channel</field>
+        <field name="model">slide.channel</field>
+        <field name="inherit_id" ref="website_slides.view_slide_channel_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//button[@name='action_view_ratings']" position="after">
+                <button
+                    name="action_redirect_to_forum"
+                    type="object"
+                    icon="fa-comment"
+                    invisible="not forum_id"
+                    class="oe_stat_button">
+                    <field
+                        name="forum_total_posts"
+                        string="Forum Posts"
+                        widget="statinfo" />
+                </button>
+            </xpath>
+            <xpath expr="//field[@name='allow_comment']" position="after">
+                <field
+                    name="forum_id"
+                    string="Forum"
+                    domain="[('slide_channel_id', 'in', [id, False])]" />
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

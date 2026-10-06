@@ -1,0 +1,54 @@
+.o_field_skills_one2many,
+.o_field_resume_one2many {
+    .o_progress {
+        background: o-palette-token(--o-gray-300, $gray-300);
+        border: 0;
+        height: 5px;
+    }
+
+    .o_progressbar_value {
+        font-size: $font-size-sm;
+        font-weight: bold;
+    }
+}
+
+table.o_skill_table {
+    .o_hr_skills_dialog_form {
+        .o_progressbar {
+            display: flex;
+            align-items: center;
+
+            .o_progressbar_value input {
+                width: auto;
+            }
+        }
+    }
+
+    table-layout: fixed;
+}
+
+.skills_header {
+    padding-inline: var(--ListRenderer-table-padding-x);
+}
+
+.o_skill_table thead {
+    visibility: collapse;
+}
+
+.o_skill_table:not(.o_group_resume .o_skill_table) > thead {
+    border-width: 1px;
+}
+
+.o_employee_skills .skills_header {
+    padding-block: 0 !important;
+}
+
+.o_employee_skills .o_list_renderer {
+    margin-top: 0 !important;
+}
+.skills_helper {
+    display: flex;
+    flex-direction: column;
+    width: fit-content;
+    padding-inline: var(--ListRenderer-table-padding-x);
+}

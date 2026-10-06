@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="demo_config_dav_sync" model="device.profile">
+        <field name="name">DAV Sync Configuration</field>
+        <field name="description">Example configuration for DAV sync clients</field>
+        <field name="protocol">https</field>
+        <field name="dav_enabled" eval="True" />
+        <field name="dav_addressbook_enabled" eval="True" />
+        <field name="dav_calendar_enabled" eval="True" />
+        <field name="dav_sync_window_days">90</field>
+        <field name="dav_max_items_per_sync">1000</field>
+    </record>
+
+</odoo>

@@ -1,0 +1,88 @@
+/** @odoo-module native */
+import { Component, onWillStart, useProps } from "@odoo/owl";
+import { registry } from "@web/core/registry";
+import { useService } from "@web/core/utils/hooks";
+import { useSearchModel } from "@web/search/search_model";
+
+import { DocumentFileUploader } from "../document_file_uploader/document_file_uploader.js";
+import { defaultMoveTypeForJournal } from "../document_file_uploader/journal_defaults.js";
+
+export class BillGuide extends Component {
+    static template = "account.BillGuide";
+    static components = {
+        DocumentFileUploader,
+    };
+    static props = null;
+    props = useProps(this.constructor.props);
+
+    setup() {
+        this.searchModel = useSearchModel();
+        this.orm = useService("orm");
+        this.action = useService("action");
+        this.context = null;
+        this.alias = null;
+        this.showSampleAction = false;
+        onWillStart(this.onWillStart);
+    }
+
+    async onWillStart() {
+        const rec = this.props.record;
+        const ctx = this.searchModel.context;
+        if (rec) {
+            this.context = {
+                default_journal_id: rec.resId,
+                default_move_type: defaultMoveTypeForJournal(rec.data.type),
+                active_model: rec.resModel,
+                active_ids: [rec.resId],
+            };
+            this.alias = rec.data.alias_email || false;
+        } else if (!ctx?.default_journal_id && ctx?.active_id) {
+            this.context = {
+                default_journal_id: ctx.active_id,
+            };
+        }
+        this.showSampleAction =
+            this.dashboardSampleAction(rec) ??
+            (await this.orm.call("account.journal", "is_sample_action_available"));
+    }
+
+    /**
+     * @param {any} rec
+     * @returns {boolean | undefined}
+     */
+    dashboardSampleAction(rec) {
+        const raw = rec?.data.kanban_dashboard;
+        if (!raw) {
+            return undefined;
+        }
+        try {
+            return JSON.parse(raw).sample_action_available;
+        } catch {
+            return undefined;
+        }
+    }
+
+    handleButtonClick(action, model = "account.journal") {
+        this.action.doActionButton({
+            resModel: model,
+            name: action,
+            context: this.context || this.searchModel.context,
+            type: "object",
+        });
+    }
+
+    openVendorBill() {
+        return this.action.doAction({
+            type: "ir.actions.act_window",
+            res_model: "account.move",
+            views: [[false, "form"]],
+            context: this.context || this.searchModel.context,
+        });
+    }
+}
+
+export const billGuide = {
+    component: BillGuide,
+};
+
+registry.category("view_widgets").add("bill_upload_guide", billGuide);

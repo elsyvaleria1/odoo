@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="privilege_print_own_statement" model="res.groups">
+        <field
+            name="name">Privilege: a Telegram contact prints their own account statement</field>
+        <field
+            name="comment">Held by a statement request from Telegram: the partner ledger's configuration, and the posted receivable entries of the contacts a Telegram account was ever bound to. The handler hands it the sender's own contact only; the sender needs no accounting right.</field>
+        <field name="is_privilege" eval="True" />
+    </record>
+
+</odoo>

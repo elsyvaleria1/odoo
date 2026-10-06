@@ -1,0 +1,75 @@
+/** @odoo-module native */
+import { ancestors } from "@html_editor/utils/dom_traversal";
+import { couldBeScrollableX, couldBeScrollableY } from "@web/core/utils/dom/scrolling";
+import { debounce, throttleForAnimation } from "@web/core/utils/timing";
+
+import { Plugin } from "../plugin.js";
+
+/**
+ * @typedef {(() => void)[]} layout_geometry_change_handlers
+ */
+export class PositionPlugin extends Plugin {
+    static id = "position";
+    /** @type {import("plugins").EditorResources} */
+    resources = {
+        // `layoutGeometryChange` is reassigned to a throttled wrapper in
+        // `setup()`, which runs after these class fields are initialized —
+        // wrapping the call instead of pre-binding here ensures each handler
+        // resolves `this.layoutGeometryChange` at call time, always getting
+        // the throttled version.
+        external_history_step_handlers: (...args) => this.layoutGeometryChange(...args),
+        history_reset_from_steps_handlers: (...args) =>
+            this.layoutGeometryChange(...args),
+        step_added_handlers: (...args) => this.layoutGeometryChange(...args),
+        before_filter_mutation_record_handlers:
+            this.handlePotentialLayoutGeometryChange.bind(this),
+    };
+
+    setup() {
+        this.layoutGeometryChange = throttleForAnimation(
+            this.layoutGeometryChange.bind(this),
+        );
+        this.debouncedLayoutGeometryChange = debounce(
+            this.layoutGeometryChange.bind(this),
+            "animationFrame",
+        );
+        this.resizeObserver = new ResizeObserver(this.layoutGeometryChange);
+        this.resizeObserver.observe(this.document.body);
+        this.resizeObserver.observe(this.editable);
+        this.addDomListener(window, "resize", this.layoutGeometryChange);
+        if (this.window !== window) {
+            this.addDomListener(this.window, "resize", this.layoutGeometryChange);
+        }
+        const scrollableElements = [
+            this.editable,
+            ...ancestors(this.editable).filter(
+                (node) => couldBeScrollableX(node) || couldBeScrollableY(node),
+            ),
+        ];
+        for (const scrollableElement of scrollableElements) {
+            this.addDomListener(scrollableElement, "scroll", () => {
+                this.layoutGeometryChange();
+            });
+            this.resizeObserver.observe(scrollableElement);
+        }
+    }
+
+    handlePotentialLayoutGeometryChange(records) {
+        for (const record of records) {
+            if (
+                record.type === "classList" ||
+                (record.type === "attributes" && record.attributeName === "style")
+            ) {
+                this.debouncedLayoutGeometryChange();
+                return;
+            }
+        }
+    }
+    destroy() {
+        this.resizeObserver.disconnect();
+        super.destroy();
+    }
+    layoutGeometryChange() {
+        this.dispatchTo("layout_geometry_change_handlers");
+    }
+}

@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_telegram_message_search" model="ir.ui.view">
+        <field name="name">telegram.message.search</field>
+        <field name="model">telegram.message</field>
+        <field name="arch" type="xml">
+            <search string="Search Messages">
+                <field name="text" string="Message Text" />
+                <field name="command" />
+                <field name="chat_id" />
+                <field name="bot_id" />
+                <filter
+                    name="filter_outbound"
+                    string="Outbound"
+                    domain="[('message_type', '=', 'outbound')]" />
+                <filter
+                    name="filter_inbound"
+                    string="Inbound"
+                    domain="[('message_type', '=', 'inbound')]" />
+                <separator />
+                <filter
+                    name="filter_error"
+                    string="Failed"
+                    domain="[('state', '=', 'error')]" />
+                <filter
+                    name="filter_commands"
+                    string="Commands"
+                    domain="[('command', '!=', False)]" />
+                <separator />
+                <filter
+                    name="filter_has_media"
+                    string="Has Media"
+                    domain="[('media_type', '!=', 'text')]" />
+                <filter
+                    name="filter_photos"
+                    string="Photos"
+                    domain="[('media_type', '=', 'photo')]" />
+                <filter
+                    name="filter_videos"
+                    string="Videos"
+                    domain="[('media_type', '=', 'video')]" />
+                <filter
+                    name="filter_audio"
+                    string="Audio"
+                    domain="[('media_type', '=', 'audio')]" />
+                <filter
+                    name="filter_voice"
+                    string="Voice"
+                    domain="[('media_type', '=', 'voice')]" />
+                <filter
+                    name="filter_documents"
+                    string="Documents"
+                    domain="[('media_type', '=', 'document')]" />
+                <group>
+                    <filter
+                        name="group_by_bot"
+                        string="Bot"
+                        context="{'group_by': 'bot_id'}" />
+                    <filter
+                        name="group_by_chat"
+                        string="Chat"
+                        context="{'group_by': 'chat_id'}" />
+                    <filter
+                        name="group_by_type"
+                        string="Type"
+                        context="{'group_by': 'message_type'}" />
+                    <filter
+                        name="group_by_media_type"
+                        string="Media Type"
+                        context="{'group_by': 'media_type'}" />
+                    <filter
+                        name="group_by_state"
+                        string="Status"
+                        context="{'group_by': 'state'}" />
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="view_telegram_message_list" model="ir.ui.view">
+        <field name="name">telegram.message.list</field>
+        <field name="model">telegram.message</field>
+        <field name="arch" type="xml">
+            <list string="Telegram Messages">
+                <field name="create_date" string="Date" />
+                <field
+                    name="message_type"
+                    widget="badge"
+                    decoration-info="message_type == 'inbound'"
+                    decoration-success="message_type == 'outbound'" />
+                <field
+                    name="media_type"
+                    widget="badge"
+                    optional="show"
+                    decoration-info="media_type in ['photo', 'video']"
+                    decoration-muted="media_type == 'text'"
+                    decoration-success="media_type in ['audio', 'voice']"
+                    decoration-warning="media_type == 'document'" />
+                <field
+                    name="state"
+                    widget="badge"
+                    decoration-danger="state == 'error'"
+                    decoration-success="state == 'sent' or state == 'received'"
+                    decoration-warning="state == 'outgoing'" />
+                <field name="chat_id" />
+                <field name="bot_id" />
+                <field name="text" string="Message Preview" />
+                <field name="command" optional="hide" />
+            </list>
+        </field>
+    </record>
+
+    <record id="view_telegram_message_form" model="ir.ui.view">
+        <field name="name">telegram.message.form</field>
+        <field name="model">telegram.message</field>
+        <field name="arch" type="xml">
+            <form string="Telegram Message">
+                <header>
+                    <field
+                        name="state"
+                        widget="statusbar"
+                        statusbar_visible="outgoing,sent,received" />
+                </header>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="bot_id" />
+                            <field name="chat_id" />
+                            <field name="message_type" />
+                            <field name="media_type" />
+                        </group>
+                        <group>
+                            <field name="msg_uid" />
+                            <field name="command" />
+                        </group>
+                    </group>
+                    <group string="Message Content">
+                        <field name="text" nolabel="1" />
+                    </group>
+                    <group string="Media Details" invisible="media_type == 'text'">
+                        <field name="caption" widget="text" />
+                    </group>
+                    <group string="Error Details" invisible="state != 'error'">
+                        <field name="error_message" nolabel="1" />
+                    </group>
+                    <group>
+                        <field name="create_date" />
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_telegram_message" model="ir.actions.act_window">
+        <field name="name">Messages</field>
+        <field name="res_model">telegram.message</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{'search_default_filter_outbound': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No messages yet
+            </p>
+            <p>
+                Messages will appear here once the bot starts sending and receiving messages.
+            </p>
+        </field>
+    </record>
+
+</odoo>

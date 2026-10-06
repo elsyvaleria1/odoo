@@ -1,0 +1,179 @@
+/** @odoo-module native */
+import { Component, t, useProps } from "@odoo/owl";
+import { SelectionPopup } from "@point_of_sale/app/components/popups/selection_popup/selection_popup";
+import { usePos } from "@point_of_sale/app/hooks/pos_hook";
+import {
+    InternalNoteButton,
+    NoteButton,
+} from "@point_of_sale/app/screens/product_screen/control_buttons/orderline_note_button/orderline_note_button";
+import { SelectPartnerButton } from "@point_of_sale/app/screens/product_screen/control_buttons/select_partner_button/select_partner_button";
+import { makeAwaitable } from "@point_of_sale/app/utils/make_awaitable_dialog";
+import { makeLogger } from "@web/core/debug/debug_logger";
+import { useLifecycleLog } from "@web/core/debug/logger_hooks";
+import { _t } from "@web/core/translation";
+import { useService } from "@web/core/utils/hooks";
+import { Dialog } from "@web/ui/dialog";
+const log = makeLogger("pos.screen.product.controls");
+export class ControlButtons extends Component {
+    static template = "point_of_sale.ControlButtons";
+    static components = {
+        NoteButton,
+        SelectPartnerButton,
+        InternalNoteButton,
+    };
+    static props = {
+        showRemainingButtons: t.boolean().optional(false),
+        onClickMore: t.function().optional(),
+        close: t.function().optional(),
+    };
+    props = useProps(this.constructor.props);
+    setup() {
+        useLifecycleLog(log);
+        this.pos = usePos();
+        this.ui = useService("ui");
+        this.dialog = useService("dialog");
+        this.notification = useService("notification");
+    }
+    get partner() {
+        return this.pos.getOrder()?.getPartner();
+    }
+    get currentOrder() {
+        return this.pos.getOrder();
+    }
+    async clickFiscalPosition() {
+        const currentFiscalPosition = this.currentOrder.fiscal_position_id;
+        const fiscalPosList = [
+            {
+                id: -1,
+                label: this.pos.config.module_pos_restaurant
+                    ? _t("Dine in")
+                    : _t("Original Tax"),
+                isSelected: false,
+                item: "none",
+            },
+        ];
+        for (const fiscalPos of this.pos.config.fiscal_position_ids) {
+            fiscalPosList.push({
+                id: fiscalPos.id,
+                label: fiscalPos.name,
+                isSelected: currentFiscalPosition
+                    ? fiscalPos.id === currentFiscalPosition.id
+                    : false,
+                item: fiscalPos,
+            });
+        }
+
+        const selectedFiscalPosition = await makeAwaitable(
+            this.dialog,
+            SelectionPopup,
+            {
+                list: fiscalPosList,
+                title: _t("Choose the tax you want to apply"),
+            },
+        );
+
+        log.logic("clickFiscalPosition", () => ({
+            order: this.currentOrder.uuid,
+            from: currentFiscalPosition?.id,
+            to: selectedFiscalPosition === "none" ? null : selectedFiscalPosition?.id,
+            cancelled: !selectedFiscalPosition,
+        }));
+        if (!selectedFiscalPosition) {
+            return;
+        }
+
+        if (selectedFiscalPosition === "none") {
+            this.currentOrder.fiscal_position_id = false;
+            return;
+        }
+
+        this.currentOrder.fiscal_position_id = selectedFiscalPosition
+            ? selectedFiscalPosition
+            : false;
+    }
+    /**
+     * @returns {Array}
+     */
+    getPricelistList() {
+        const selectionList = this.pos.config.availablePricelists.map((pricelist) => ({
+            id: pricelist.id,
+            label: pricelist.name,
+            isSelected:
+                this.currentOrder.pricelist_id &&
+                pricelist.id === this.currentOrder.pricelist_id.id,
+            item: pricelist,
+        }));
+
+        if (!this.pos.config.pricelist_id) {
+            selectionList.push({
+                id: null,
+                label: _t("Default Price"),
+                isSelected: !this.currentOrder.pricelist_id,
+                item: null,
+            });
+        }
+        return selectionList;
+    }
+    async clickPricelist() {
+        const selectionList = this.getPricelistList();
+        const payload = await makeAwaitable(this.dialog, SelectionPopup, {
+            title: _t("Select the pricelist"),
+            list: selectionList,
+        });
+        log.logic("clickPricelist", () => ({
+            order: this.currentOrder?.uuid,
+            from: this.currentOrder?.pricelist_id?.id,
+            to: payload?.id,
+            cancelled: !payload,
+        }));
+
+        if (payload) {
+            this.pos.selectPricelist(payload);
+        }
+    }
+
+    clickRefund() {
+        const order = this.pos.getOrder();
+        const partner = order.getPartner();
+        const searchDetails = partner
+            ? { fieldName: "PARTNER", searchTerm: partner.name }
+            : {};
+        log.pipeline("clickRefund", () => ({
+            order: order.uuid,
+            partner: partner?.id,
+        }));
+        this.pos.navigate("TicketScreen", {
+            stateOverride: {
+                filter: "SYNCED",
+                search: searchDetails,
+                destinationOrder: order,
+            },
+        });
+    }
+
+    get buttonClass() {
+        return this.props.showRemainingButtons
+            ? this.ui.isSmall
+                ? "btn bg-100 btn-md py-2 text-start"
+                : "btn btn-secondary btn-lg py-5"
+            : "btn btn-secondary btn-lg lh-lg";
+    }
+
+    displayProductInfoBtn() {
+        const selectedOrderLine = this.currentOrder?.getSelectedOrderline();
+        return (
+            selectedOrderLine &&
+            selectedOrderLine.product_id.product_tmpl_id &&
+            !this.pos
+                .getExcludedProductIds()
+                .includes(selectedOrderLine.product_id.product_tmpl_id.id)
+        );
+    }
+}
+
+export class ControlButtonsPopup extends Component {
+    static components = { Dialog, ControlButtons };
+    static template = "point_of_sale.ControlButtonsPopup";
+    static props = { close: t.function() };
+    props = useProps(this.constructor.props);
+}

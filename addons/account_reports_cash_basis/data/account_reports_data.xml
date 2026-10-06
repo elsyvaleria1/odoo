@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="account.profit_and_loss" model="report.formula">
+        <field name="filter_cash_basis" eval="True" />
+    </record>
+
+    <record id="account.balance_sheet" model="report.formula">
+        <field name="filter_cash_basis" eval="True" />
+    </record>
+
+    <record id="account.executive_summary" model="report.formula">
+        <field name="filter_cash_basis" eval="True" />
+    </record>
+
+    <record id="account.general_ledger_report" model="report.formula">
+        <field name="filter_cash_basis" eval="True" />
+    </record>
+
+    <record id="account.trial_balance_report" model="report.formula">
+        <field name="filter_cash_basis" eval="True" />
+    </record>
+
+</odoo>

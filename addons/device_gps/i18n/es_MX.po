@@ -1,0 +1,339 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* device_gps
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Language: es_MX\n"
+"Plural-Forms: \n"
+
+#. module: device_gps
+#: model_terms:ir.actions.act_window,help:device_gps.action_device_data_log_gps_report
+msgid "<strong>Vehicle Overview</strong>"
+msgstr "<strong>Resumen de vehículos</strong>"
+
+#. module: device_gps
+#: model:ir.ui.menu,name:device_gps.menu_device_data_log_gps_report_activity
+msgid "Activity"
+msgstr "Actividad"
+
+#. module: device_gps
+#: model:ir.ui.menu,name:device_gps.menu_device_gps_analysis_daily
+msgid "Daily Reports"
+msgstr "Reportes diarios"
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_data_log_gps_report__date
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_search
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_search
+msgid "Date"
+msgstr "Fecha"
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_search
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_search_activity
+msgid "Day of Week"
+msgstr "Día de la semana"
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_data_log_gps__device_id
+#: model:ir.model.fields,field_description:device_gps.field_device_data_log_gps_report__device_id
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_search
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_search_activity
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_search_by_vehicle
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_search
+msgid "Device"
+msgstr "Dispositivo"
+
+#. module: device_gps
+#: model:ir.ui.menu,name:device_gps.menu_device_data_log_gps_report_distance
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_device_kanban_gps_dashboard
+msgid "Distance"
+msgstr "Distancia"
+
+#. module: device_gps
+#: model:ir.ui.menu,name:device_gps.menu_device_data_log_gps_report_fuel
+#: model:ir.ui.menu,name:device_gps.menu_device_gps_analysis_fuel
+msgid "Fuel"
+msgstr "Combustible"
+
+#. module: device_gps
+#: model:ir.ui.menu,name:device_gps.menu_device_gps_analysis
+msgid "GPS Analysis"
+msgstr "Análisis de GPS"
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_device_search
+msgid "GPS Config"
+msgstr "Configuración de GPS"
+
+#. module: device_gps
+#: model:ir.actions.act_window,name:device_gps.action_device_gps_config
+#: model:ir.ui.menu,name:device_gps.menu_device_gps_config
+msgid "GPS Configurations"
+msgstr "Configuraciones de GPS"
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_profile_search_inherit_gps
+msgid "GPS Protocol"
+msgstr "Protocolo de GPS"
+
+#. module: device_gps
+#: model:ir.ui.menu,name:device_gps.menu_device_gps_raw_data
+msgid "GPS Raw Data"
+msgstr "Datos sin procesar de GPS"
+
+#. module: device_gps
+#: model:ir.ui.menu,name:device_gps.menu_device_gps_trackers
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_device_search
+msgid "GPS Trackers"
+msgstr "Rastreadores GPS"
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_device_form
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_device_kanban_gps_dashboard
+msgid "Get Position"
+msgstr "Obtener posición"
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_search
+msgid "High Speed (> 80 km/h)"
+msgstr "Velocidad alta (> 80 km/h)"
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_search
+msgid "Hour"
+msgstr "Hora"
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_search
+msgid "Ignition Off"
+msgstr "Ignición apagada"
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_list
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_search
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_device_search
+msgid "Ignition On"
+msgstr "Ignición encendida"
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_search
+msgid "Invalid Odometer"
+msgstr "Odómetro inválido"
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_search
+msgid "Last 15 Days"
+msgstr "Últimos 15 días"
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_search
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_search
+msgid "Last 30 Days"
+msgstr "Últimos 30 días"
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_search
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_search_activity
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_search_by_vehicle
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_search
+msgid "Last 7 Days"
+msgstr "Últimos 7 días"
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_search
+msgid "Last Month"
+msgstr "Mes pasado"
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_search
+msgid "Low Accuracy"
+msgstr "Baja precisión"
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_data_log_gps_report__month
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_search
+msgid "Month"
+msgstr "Mes"
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_data_log_gps__movement
+#: model:ir.model.fields,field_description:device_gps.field_device_device__gps_movement_state
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_search
+msgid "Movement"
+msgstr "Movimiento"
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_device_search
+msgid "Movement Status"
+msgstr "Estado de movimiento"
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.report_gps_tracking
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_search
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_device_kanban_gps_dashboard
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_device_list
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_device_search
+msgid "Moving"
+msgstr "En movimiento"
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_data_log_gps__source
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_search
+msgid "Source"
+msgstr "Origen"
+
+#. module: device_gps
+#: model:ir.actions.act_window,name:device_gps.action_device_data_log_gps_report_speed
+#: model:ir.ui.menu,name:device_gps.menu_device_data_log_gps_report_speed
+msgid "Speed & Safety"
+msgstr "Velocidad y seguridad"
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_search
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_search_by_vehicle
+msgid "Speed Alert"
+msgstr "Alerta de velocidad"
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_search
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_search_by_vehicle
+msgid "Speed Critical"
+msgstr "Velocidad crítica"
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_search
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_search_by_vehicle
+msgid "Speed Warning"
+msgstr "Advertencia de velocidad"
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_device_form
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_device_kanban_gps_dashboard
+msgid "Start Tracking"
+msgstr "Iniciar rastreo"
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_device_form
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_device_kanban_gps_dashboard
+msgid "Stop Tracking"
+msgstr "Detener rastreo"
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.report_gps_tracking
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_search
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_device_kanban_gps_dashboard
+msgid "Stopped"
+msgstr "Detenido"
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_search
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_search_activity
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_search_by_vehicle
+msgid "This Month"
+msgstr "Este mes"
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_search
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_search_activity
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_search_by_vehicle
+msgid "This Week"
+msgstr "Esta semana"
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_search
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_search_activity
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_search_by_vehicle
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_search
+msgid "Today"
+msgstr "Hoy"
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_device_search
+msgid "Tracking Enabled"
+msgstr "Rastreo habilitado"
+
+#. module: device_gps
+#: model:ir.ui.menu,name:device_gps.menu_device_gps_tracking_logs
+msgid "Tracking Logs"
+msgstr "Registros de rastreo"
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_device_search
+msgid "Tracking Status"
+msgstr "Estado de rastreo"
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_search
+msgid "Valid Odometer"
+msgstr "Odómetro válido"
+
+#. module: device_gps
+#: model:ir.actions.act_window,name:device_gps.action_device_data_log_gps_report
+#: model:ir.ui.menu,name:device_gps.menu_device_data_log_gps_report_main
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_pivot
+msgid "GPS Overview"
+msgstr "Resumen de GPS"
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_data_log_gps_report__week
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_search
+msgid "Week"
+msgstr "Semana"
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_search
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_search_activity
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_search_by_vehicle
+msgid "With Distance Data"
+msgstr "Con datos de distancia"
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_search
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_search_by_vehicle
+msgid "With Fuel Data"
+msgstr "Con datos de combustible"
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_search
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_search_activity
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_search_by_vehicle
+msgid "With Movement"
+msgstr "Con movimiento"
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_search
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_search_activity
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_search_by_vehicle
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_search
+msgid "Yesterday"
+msgstr "Ayer"
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_search_activity
+msgid "★ This Month by Day of Week"
+msgstr "★ Este mes por día de la semana"
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_search_by_vehicle
+msgid "★ This Week by Vehicle"
+msgstr "★ Esta semana por vehículo"
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_search_activity
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_search_by_vehicle
+msgid "★ Today by Vehicle"
+msgstr "★ Hoy por vehículo"
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_search_by_vehicle
+msgid "★ Yesterday by Vehicle"
+msgstr "★ Ayer por vehículo"

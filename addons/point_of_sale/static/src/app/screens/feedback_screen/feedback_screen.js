@@ -1,0 +1,128 @@
+/** @odoo-module native */
+import { Component, onMounted, onWillUnmount, proxy, t, useProps } from "@odoo/owl";
+import { PriceFormatter } from "@point_of_sale/app/components/price_formatter/price_formatter";
+import { usePos } from "@point_of_sale/app/hooks/pos_hook";
+import { makeLogger } from "@web/core/debug/debug_logger";
+import { useLifecycleLog } from "@web/core/debug/logger_hooks";
+import { registry } from "@web/core/registry";
+import { _t } from "@web/core/translation";
+import { elementRef } from "@web/core/utils/element_ref";
+import { useService } from "@web/core/utils/hooks";
+import { useLayoutEffect } from "@web/core/utils/layout_effect";
+const log = makeLogger("pos.screen.feedback");
+export class FeedbackScreen extends Component {
+    static template = "point_of_sale.FeedbackScreen";
+    static storeOnOrder = false;
+    static components = { PriceFormatter };
+    static props = { orderUuid: t.string(), waitFor: t.object().optional() };
+    props = useProps(this.constructor.props);
+
+    setup() {
+        useLifecycleLog(log);
+        super.setup();
+        this.utils = useService("contextual_utils_service");
+        this.pos = usePos();
+        this.notification = useService("notification");
+        this.containerRef = elementRef();
+        this.amountRef = elementRef();
+        this.state = proxy({
+            loading: true,
+        });
+
+        onMounted(() => {
+            this.scaleText();
+        });
+
+        useLayoutEffect(
+            () => {
+                const waiter = async () => {
+                    let result;
+                    const endWait = log.perf("waitFor background validation");
+                    try {
+                        if (this.props.waitFor) {
+                            result = await this.props.waitFor;
+                        }
+                    } finally {
+                        this.state.loading = false;
+                        endWait({
+                            order: this.props.orderUuid,
+                            waited: Boolean(this.props.waitFor),
+                            ok: result?.ok,
+                        });
+                    }
+                    if (result && result.ok === false) {
+                        log.logic(
+                            "waitFor: validation failed, back to payment",
+                            () => ({
+                                order: this.props.orderUuid,
+                                error: result.error?.message,
+                            }),
+                        );
+                        this.notification.add(
+                            _t("The order could not be validated. Please try again."),
+                            { type: "danger" },
+                        );
+                        this.pos.navigate("PaymentScreen", {
+                            orderUuid: this.props.orderUuid,
+                        });
+                        return;
+                    }
+                    this.timeout = setTimeout(() => {
+                        this.goNext();
+                    }, 5000);
+                };
+
+                waiter();
+            },
+            () => [],
+        );
+
+        onWillUnmount(() => {
+            clearTimeout(this.timeout);
+        });
+    }
+
+    scaleText() {
+        const containerWidth = this.containerRef.el.offsetWidth * 0.8;
+        const textWidth = this.amountRef.el.scrollWidth;
+
+        const scale = Math.min(1, containerWidth / textWidth);
+        this.amountRef.el.style.transform = `scale(${scale})`;
+    }
+
+    get currentOrder() {
+        return this.pos.models["pos.order"].getBy("uuid", this.props.orderUuid);
+    }
+
+    onClick() {
+        log.logic("onClick", () => ({
+            order: this.props.orderUuid,
+            loading: this.state.loading,
+        }));
+        if (this.state.loading) {
+            this.notification.add(
+                _t(
+                    "A request is still being processed in the background. Please wait.",
+                ),
+                {
+                    type: "warning",
+                },
+            );
+            return;
+        }
+        clearTimeout(this.timeout);
+        this.goNext();
+    }
+
+    goNext() {
+        log.pipeline("goNext", () => ({ order: this.props.orderUuid }));
+        this.pos.orderDone(this.currentOrder);
+    }
+}
+
+registry.category("pos_pages").add("FeedbackScreen", {
+    name: "FeedbackScreen",
+    component: FeedbackScreen,
+    route: `/pos/ui/${odoo.pos_config_id}/resume/{string:orderUuid}`,
+    params: {},
+});

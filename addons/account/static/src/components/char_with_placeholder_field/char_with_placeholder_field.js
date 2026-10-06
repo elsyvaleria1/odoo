@@ -1,0 +1,22 @@
+/** @odoo-module native */
+import "@mail/views/web/fields/onchange_on_keydown";
+
+import { registry } from "@web/core/registry";
+import { CharField, charField } from "@web/fields/basic/char/char_field";
+
+export class CharWithPlaceholderField extends CharField {
+    static template = "account.CharWithPlaceholderField";
+
+    get formattedValue() {
+        return super.formattedValue || this.props.placeholder;
+    }
+}
+
+export const charWithPlaceholderField = {
+    ...charField,
+    component: CharWithPlaceholderField,
+};
+
+registry
+    .category("fields")
+    .add("char_with_placeholder_field", charWithPlaceholderField);

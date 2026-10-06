@@ -1,0 +1,4 @@
+id,name,model_id/id,group_id/id,kind,operation,domain
+access_pos_store_timing_manager,pos.store.timing.manager,model_pos_store_timing,point_of_sale.group_pos_manager,permission,cud,
+access_pos_store_timing_user,pos.store.timing.user,model_pos_store_timing,point_of_sale.group_pos_user,permission,r,
+privilege_read_urban_piper_configs_config,pos.config: the urban piper product sync reads the configurations linked to a product,point_of_sale.model_pos_config,privilege_read_urban_piper_configs,permission,r,

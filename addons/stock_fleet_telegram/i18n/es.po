@@ -1,0 +1,159 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* stock_fleet_telegram
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: es\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: stock_fleet_telegram
+#. odoo-python
+#: code:addons/stock_fleet_telegram/models/telegram_handler.py:0
+msgid "%(command)s - Send the photo of a delivery slip the customer signed."
+msgstr "%(command)s - Envía la foto de una remisión firmada por el cliente."
+
+#. module: stock_fleet_telegram
+#. odoo-python
+#: code:addons/stock_fleet_telegram/models/telegram_handler.py:0
+msgid "%(picking)s for %(customer)s. %(action)s"
+msgstr "%(picking)s para %(customer)s. %(action)s"
+
+#. module: stock_fleet_telegram
+#. odoo-python
+#: code:addons/stock_fleet_telegram/models/telegram_handler.py:0
+msgid "%(picking)s: signed slip filed."
+msgstr "%(picking)s: remisión firmada registrada."
+
+#. module: stock_fleet_telegram
+#. odoo-python
+#: code:addons/stock_fleet_telegram/models/telegram_handler.py:0
+msgid "%(picking)s: signed slip filed. Hand the paper in by %(due)s."
+msgstr ""
+"%(picking)s: remisión firmada registrada. Entrega el papel a más tardar el "
+"%(due)s."
+
+#. module: stock_fleet_telegram
+#. odoo-python
+#: code:addons/stock_fleet_telegram/models/telegram_handler.py:0
+msgid "Cancel"
+msgstr "Cancelar"
+
+#. module: stock_fleet_telegram
+#. odoo-python
+#: code:addons/stock_fleet_telegram/models/telegram_handler.py:0
+msgid "Cancelled; nothing was filed."
+msgstr "Cancelado; no se registró nada."
+
+#. module: stock_fleet_telegram
+#. odoo-python
+#: code:addons/stock_fleet_telegram/models/telegram_handler.py:0
+msgid "Confirm"
+msgstr "Confirmar"
+
+#. module: stock_fleet_telegram
+#. odoo-python
+#: code:addons/stock_fleet_telegram/models/telegram_handler.py:0
+msgid "Deliveries"
+msgstr "Entregas"
+
+#. module: stock_fleet_telegram
+#: model:ir.model.fields,field_description:stock_fleet_telegram.field_telegram_handler_stock_fleet__display_name
+msgid "Display Name"
+msgstr "Nombre para mostrar"
+
+#. module: stock_fleet_telegram
+#. odoo-python
+#: code:addons/stock_fleet_telegram/models/telegram_handler.py:0
+msgid "I could not read which delivery this is. Which one?"
+msgstr "No pude leer de qué entrega se trata. ¿Cuál es?"
+
+#. module: stock_fleet_telegram
+#: model:ir.model.fields,field_description:stock_fleet_telegram.field_telegram_handler_stock_fleet__id
+msgid "ID"
+msgstr "ID"
+
+#. module: stock_fleet_telegram
+#. odoo-python
+#: code:addons/stock_fleet_telegram/models/telegram_handler.py:0
+msgid "It is marked delivered and the photo filed as its signed slip."
+msgstr ""
+"Se marca como entregada y la foto se registra como su remisión firmada."
+
+#. module: stock_fleet_telegram
+#. odoo-python
+#: code:addons/stock_fleet_telegram/models/telegram_handler.py:0
+msgid "No delivery of yours is waiting for its slip."
+msgstr "Ninguna entrega tuya espera su remisión."
+
+#. module: stock_fleet_telegram
+#. odoo-python
+#: code:addons/stock_fleet_telegram/models/telegram_handler.py:0
+msgid "Only whoever delivers sends signed slips here."
+msgstr "Sólo quien entrega envía aquí remisiones firmadas."
+
+#. module: stock_fleet_telegram
+#. odoo-python
+#: code:addons/stock_fleet_telegram/models/telegram_handler.py:0
+msgid "Send it as a photo, please."
+msgstr "Envíala como foto, por favor."
+
+#. module: stock_fleet_telegram
+#. odoo-python
+#: code:addons/stock_fleet_telegram/models/telegram_handler.py:0
+msgid ""
+"Send the photo of the delivery slip the customer signed, with its QR code in view.\n"
+"\n"
+"/cancelar stops at any time."
+msgstr ""
+"Envía la foto de la remisión que firmó el cliente, con su código QR a la vista.\n"
+"\n"
+"/cancelar detiene el proceso en cualquier momento."
+
+#. module: stock_fleet_telegram
+#: model:ir.model,name:stock_fleet_telegram.model_telegram_handler_stock_fleet
+msgid "Telegram: Trips"
+msgstr "Telegram: viajes"
+
+#. module: stock_fleet_telegram
+#. odoo-python
+#: code:addons/stock_fleet_telegram/models/telegram_handler.py:0
+msgid "That button is no longer valid."
+msgstr "Ese botón ya no es válido."
+
+#. module: stock_fleet_telegram
+#. odoo-python
+#: code:addons/stock_fleet_telegram/models/telegram_handler.py:0
+msgid "That delivery is no longer waiting for its slip."
+msgstr "Esa entrega ya no espera su remisión."
+
+#. module: stock_fleet_telegram
+#. odoo-python
+#: code:addons/stock_fleet_telegram/models/telegram_handler.py:0
+msgid "The photo did not arrive; send it again."
+msgstr "La foto no llegó; envíala de nuevo."
+
+#. module: stock_fleet_telegram
+#. odoo-python
+#: code:addons/stock_fleet_telegram/models/telegram_handler.py:0
+msgid "The photo is filed as its signed slip."
+msgstr "La foto se registra como su remisión firmada."
+
+#. module: stock_fleet_telegram
+#. odoo-python
+#: code:addons/stock_fleet_telegram/models/telegram_handler.py:0
+msgid "The slip was not filed: %(reason)s"
+msgstr "La remisión no se registró: %(reason)s"
+
+#. module: stock_fleet_telegram
+#. odoo-python
+#: code:addons/stock_fleet_telegram/models/telegram_handler.py:0
+msgid "a signed delivery slip"
+msgstr "una remisión firmada"

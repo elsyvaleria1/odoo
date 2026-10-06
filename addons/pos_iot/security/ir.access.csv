@@ -1,0 +1,2 @@
+id,name,model_id/id,group_id/id,kind,operation,domain
+access_auto_config_pos_iot,pos.iot.auto.config.pos.iot,model_wizard_pos_config_update_iot_device,iot.group_iot_admin,permission,cru,

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <menuitem
+        id="menu_asset_trip_report"
+        name="Vehicle Loans"
+        parent="device_gps.menu_device_gps_analysis_daily"
+        action="action_asset_trip_report"
+        sequence="70" />
+
+</odoo>

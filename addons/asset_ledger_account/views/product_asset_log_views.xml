@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_form_product_asset_log" model="ir.ui.view">
+        <field name="name">resource.asset.log.form.inherit.account_product_asset</field>
+        <field name="model">resource.asset.log</field>
+        <field name="inherit_id" ref="asset_ledger.view_form_product_asset_log" />
+        <field name="priority" eval="1" />
+        <field name="arch" type="xml">
+            <xpath expr="//sheet" position="inside">
+                <div class="oe_button_box" name="button_box">
+                    <button
+                        name="action_view_account_move"
+                        type="object"
+                        icon="fa-pencil-square-o"
+                        invisible="not account_move_line_id"
+                        class="oe_stat_button">
+                        <div class="o_field_widget o_stat_info">
+                            <span class="o_stat_text text-success" invisible="account_move_state != 'posted'" title="Service's Bill">Service's Bill</span>
+                            <span class="o_stat_text text-warning" invisible="account_move_state == 'posted'" title="Service's Bill">Service's Bill</span>
+                        </div>
+                    </button>
+                </div>
+            </xpath>
+            <xpath expr="//field[@name='amount']" position="attributes">
+                <attribute name="readonly">account_move_line_id</attribute>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

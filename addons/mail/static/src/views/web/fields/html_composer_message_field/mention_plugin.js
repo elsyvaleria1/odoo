@@ -1,0 +1,56 @@
+// @ts-check
+/** @odoo-module native */
+import { Plugin } from "@html_editor/plugin";
+import { makeMentionFromOption } from "@mail/core/common/suggestion_hook";
+import { MentionList } from "@mail/core/web/mention_list";
+export class MentionPlugin extends Plugin {
+    static id = "mention";
+    static dependencies = ["overlay", "dom", "history", "input", "selection"];
+
+    resources = {
+        beforeinput_handlers: this.onBeforeInput.bind(this),
+        selectors_for_feff_providers: () =>
+            "a.o_mail_redirect, a.o_channel_redirect, a.o-discuss-mention",
+    };
+
+    setup() {
+        this.mentionList = this.dependencies.overlay.createOverlay(MentionList, {
+            hasAutofocus: true,
+            className: "popover o-mail-MentionPlugin-overlay",
+        });
+    }
+
+    /**
+     * @param {Event} ev
+     * @param {Object} option
+     */
+    onSelect(ev, option) {
+        this.dependencies.selection.focusEditable();
+        const mentionBlock = makeMentionFromOption(option, {
+            thread: this.config.thread,
+        });
+        if (!mentionBlock) {
+            return;
+        }
+        this.historySavePointRestore();
+        this.dependencies.dom.insert(mentionBlock);
+        this.dependencies.history.addStep();
+    }
+
+    /** @param {InputEvent} ev */
+    onBeforeInput(ev) {
+        if (ev.data === "@" || ev.data === "#") {
+            this.historySavePointRestore = this.dependencies.history.makeSavePoint();
+            this.mentionList.open({
+                props: {
+                    onSelect: this.onSelect.bind(this),
+                    thread: this.config.thread,
+                    type: ev.data === "@" ? "Partner" : "Thread",
+                    close: () => {
+                        this.mentionList.close();
+                    },
+                },
+            });
+        }
+    }
+}

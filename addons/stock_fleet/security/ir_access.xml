@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="access_stock_picking_delivery_proof_review" model="ir.access">
+        <field
+            name="name">stock.picking: a delivery proof reviewer rejects or accepts the photo and receives the paper</field>
+        <field name="model_id" ref="stock.model_stock_picking" />
+        <field name="group_id" ref="group_delivery_proof_reviewer" />
+        <field name="kind">permission</field>
+        <field
+            name="verbs">reject_delivery_proof,accept_delivery_proof,receive_delivery_paper,return_delivery_paper</field>
+    </record>
+
+</odoo>

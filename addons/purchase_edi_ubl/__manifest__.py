@@ -1,0 +1,18 @@
+{
+    "name": "UBL Purchase Orders",
+    "version": "1.0",
+    "category": "Supply Chain/Purchase",
+    "summary": "Import and export purchase orders using UBL order documents",
+    "description": """
+Allows to export and import formats: UBL Bis 3.
+When generating the PDF on the order, the PDF will be embedded inside the xml for all UBL formats. This allows the
+receiver to retrieve the PDF with only the xml file.
+    """,
+    "author": "Odoo S.A.",
+    "license": "LGPL-3",
+    "depends": [
+        "purchase",
+        "trade_edi_ubl",
+    ],
+    "auto_install": True,
+}

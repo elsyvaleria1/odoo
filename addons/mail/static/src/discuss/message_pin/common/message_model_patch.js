@@ -1,0 +1,90 @@
+// @ts-check
+/** @odoo-module native */
+import { MessageConfirmDialog } from "@mail/core/common/message_confirm_dialog";
+import { Message } from "@mail/core/common/message_model";
+import { fields } from "@mail/core/common/record";
+import { makeLogger } from "@web/core/debug/debug_logger";
+import { _t } from "@web/core/translation";
+import { Deferred } from "@web/core/utils/concurrency";
+import { patch } from "@web/core/utils/patch";
+
+const log = makeLogger("mail.message.pin");
+/** @type {Partial<import("models").Message> & ThisType<import("models").Message>} */
+const modelPatch = {
+    setup() {
+        super.setup();
+        this.pinned_at = fields.Datetime();
+    },
+    /** @returns {Deferred<boolean>} */
+    pin() {
+        if (this.pinned_at) {
+            return this.unpin();
+        }
+        /** @type {Deferred<boolean>} */
+        const def = new Deferred();
+        this.store.env.services.dialog.add(
+            MessageConfirmDialog,
+            {
+                confirmText: _t("Yeah, pin it!"),
+                message: this,
+                prompt: _t(
+                    "You sure want this message pinned to %(conversation)s forever and ever?",
+                    {
+                        conversation: this.thread.prefix + this.thread.displayName,
+                    },
+                ),
+                size: "md",
+                title: _t("Pin It"),
+                onConfirm: () => {
+                    log.logic("pin confirmed", () => ({
+                        messageId: this.id,
+                        thread: this.thread.localId,
+                    }));
+                    def.resolve(true);
+                    this.store.env.services.orm.call(
+                        "discuss.channel",
+                        "set_message_pin",
+                        [this.thread.id],
+                        { message_id: this.id, pinned: true },
+                    );
+                },
+            },
+            { onClose: () => def.resolve(false) },
+        );
+        return def;
+    },
+    /** @returns {Deferred<boolean>} */
+    unpin() {
+        /** @type {Deferred<boolean>} */
+        const def = new Deferred();
+        this.store.env.services.dialog.add(
+            MessageConfirmDialog,
+            {
+                confirmColor: "btn-danger",
+                confirmText: _t("Yes, remove it please"),
+                message: this,
+                prompt: _t(
+                    "Well, nothing lasts forever, but are you sure you want to unpin this message?",
+                ),
+                size: "md",
+                title: _t("Unpin Message"),
+                onConfirm: () => {
+                    log.logic("unpin confirmed", () => ({
+                        messageId: this.id,
+                        thread: this.thread.localId,
+                    }));
+                    def.resolve(true);
+                    this.store.env.services.orm.call(
+                        "discuss.channel",
+                        "set_message_pin",
+                        [this.thread.id],
+                        { message_id: this.id, pinned: false },
+                    );
+                },
+            },
+            { onClose: () => def.resolve(false) },
+        );
+        return def;
+    },
+};
+patch(Message.prototype, modelPatch);

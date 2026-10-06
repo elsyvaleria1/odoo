@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<templates>
+    <t t-name="knowledge.InsertEmbeddedViewMenu">
+        <Dropdown>
+            <button class="o_cog_submenu_toggler o_knowledge_insert_view_menu opacity-trigger-hover">
+                <span class="o_cog_menu_item_icon me-1" aria-hidden="true"><t t-call="Knowledge.KnowledgeIcon"/></span>Knowledge
+            </button>
+            <t t-set-slot="content">
+                <CogMenuItem icon="'oi oi-view'" description.translate="Insert View in Article…" onSelected.bind="this.onInsertEmbeddedViewInArticle" closingMode="'none'"/>
+                <CogMenuItem icon="'fa-solid fa-link'" description.translate="Insert Link in Article…" onSelected.bind="this.onInsertViewLinkInArticle" closingMode="'none'"/>
+            </t>
+        </Dropdown>
+    </t>
+</templates>

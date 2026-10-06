@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="activity_feed_list_action" model="ir.actions.act_window">
+        <field name="name">Activity Feed</field>
+        <field name="res_model">gamification.activity</field>
+        <field name="view_mode">list</field>
+        <field name="context">{'search_default_last_30d': 1}</field>
+    </record>
+
+    <record id="activity_feed_list_view" model="ir.ui.view">
+        <field name="name">gamification.activity.list</field>
+        <field name="model">gamification.activity</field>
+        <field name="arch" type="xml">
+            <list string="Activity Feed" create="0" edit="0">
+                <field name="activity_date" widget="datetime" />
+                <field
+                    name="activity_type"
+                    widget="badge"
+                    decoration-danger="activity_type == 'streak_milestone'"
+                    decoration-info="activity_type == 'kudos'"
+                    decoration-primary="activity_type in ('challenge_completed', 'quest_completed')"
+                    decoration-success="activity_type in ('achievement', 'level_up', 'skill_unlocked')"
+                    decoration-warning="activity_type == 'badge'" />
+                <field name="user_id" widget="many2one_avatar_user" />
+                <field
+                    name="target_user_id"
+                    widget="many2one_avatar_user"
+                    optional="show" />
+                <field name="summary" />
+                <field name="karma_gained" optional="show" />
+            </list>
+        </field>
+    </record>
+
+    <record id="activity_feed_search_view" model="ir.ui.view">
+        <field name="name">gamification.activity.search</field>
+        <field name="model">gamification.activity</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="user_id" />
+                <field name="activity_type" />
+                <filter
+                    name="last_7d"
+                    string="Last 7 Days"
+                    domain="[('activity_date', '&gt;=', (context_today() - datetime.timedelta(days=7)).strftime('%%Y-%%m-%%d'))]" />
+                <filter
+                    name="last_30d"
+                    string="Last 30 Days"
+                    domain="[('activity_date', '&gt;=', (context_today() - datetime.timedelta(days=30)).strftime('%%Y-%%m-%%d'))]" />
+                <separator />
+                <filter
+                    name="badges"
+                    string="Badges"
+                    domain="[('activity_type', '=', 'badge')]" />
+                <filter
+                    name="kudos"
+                    string="Kudos"
+                    domain="[('activity_type', '=', 'kudos')]" />
+                <filter
+                    name="achievements"
+                    string="Achievements"
+                    domain="[('activity_type', '=', 'achievement')]" />
+                <filter
+                    name="level_ups"
+                    string="Level Ups"
+                    domain="[('activity_type', '=', 'level_up')]" />
+                <filter
+                    name="quests"
+                    string="Quests"
+                    domain="[('activity_type', '=', 'quest_completed')]" />
+                <filter
+                    name="skills"
+                    string="Skills"
+                    domain="[('activity_type', '=', 'skill_unlocked')]" />
+                <group>
+                    <filter
+                        name="group_type"
+                        string="Type"
+                        context="{'group_by': 'activity_type'}" />
+                    <filter
+                        name="group_user"
+                        string="User"
+                        context="{'group_by': 'user_id'}" />
+                    <filter
+                        name="group_day"
+                        string="Day"
+                        context="{'group_by': 'activity_date:day'}" />
+                </group>
+            </search>
+        </field>
+    </record>
+
+</odoo>

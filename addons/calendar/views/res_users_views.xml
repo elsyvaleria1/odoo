@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <data>
+        <!-- Update Preferences form !-->
+        <record id="res_users_form_view_calendar_default_privacy" model="ir.ui.view">
+            <field name="name">res.users.preferences.form.inherit</field>
+            <field name="model">res.users</field>
+            <field name="inherit_id" ref="base.view_users_form_simple_modif" />
+            <field name="arch" type="xml">
+                <xpath expr="//field[@name='tz']" position="after">
+                    <field
+                        name="calendar_default_privacy"
+                        string="Privacy"
+                        invisible="share"
+                        readonly="0" />
+                </xpath>
+            </field>
+        </record>
+        <!-- Update User form !-->
+        <record id="res_users_form_view" model="ir.ui.view">
+            <field name="name">res.users.form.calendar</field>
+            <field name="model">res.users</field>
+            <field name="inherit_id" ref="base.view_users_form" />
+            <field name="arch" type="xml">
+                <xpath expr="//field[@name='tz']" position="after">
+                    <!-- write() raises for anyone but the record's own user,
+                        admin included (see res_users.py:write), so this is
+                        readonly here except when this admin form happens to
+                        show the viewer's own record; the field must never be
+                        editable only to fail silently looking on save. -->
+                    <field
+                        name="calendar_default_privacy"
+                        string="Privacy"
+                        invisible="share"
+                        readonly="id != uid" />
+                </xpath>
+            </field>
+        </record>
+    </data>
+
+</odoo>

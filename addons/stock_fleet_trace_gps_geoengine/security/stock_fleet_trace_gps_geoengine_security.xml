@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="privilege_trip_track" model="res.groups">
+        <field name="name">Privilege: a trip draws the GPS track of its vehicle</field>
+        <field name="is_privilege" eval="True" />
+    </record>
+
+    <record id="access_trip_view_gps_track_stock_user" model="ir.access">
+        <field
+            name="name">Stock users view the GPS tracks of their readable trips</field>
+        <field name="model_id" ref="stock.model_stock_picking_batch" />
+        <field name="group_id" ref="stock.group_stock_user" />
+        <field name="kind">permission</field>
+        <field name="verbs">view_gps_track</field>
+    </record>
+
+</odoo>

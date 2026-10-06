@@ -1,0 +1,306 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="purchase_order_form_inherit_tender" model="ir.ui.view">
+        <field name="name">purchase.order.form.inherit.tender</field>
+        <field name="model">purchase.order</field>
+        <field name="inherit_id" ref="purchase.view_purchase_order_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//page[@name='other_information']" position="after">
+                <page name="alternative_pos" string="Tender">
+                    <group>
+                        <field
+                            name="tender_id"
+                            invisible="not tender_id"
+                            readonly="1" />
+                    </group>
+                    <group>
+                        <div class="d-flex gap-5">
+                            <button
+                                name="action_invite_counterparties"
+                                type="object"
+                                string="Invite Vendors"
+                                help="Create a call for tender by adding alternative requests for quotation to different vendors.                                 Make your choice by selecting the best combination of lead time, OTD and/or total amount.                                 By comparing product lines you can also decide to order some products from one vendor and others from another vendor."
+                                icon="fa-copy"
+                                class="btn-link d-block" />
+                            <button
+                                name="action_compare_alternative_lines"
+                                type="object"
+                                string="Compare Product Lines"
+                                icon="fa-bar-chart"
+                                invisible="not alternative_po_ids"
+                                class="btn-link d-block" />
+                        </div>
+                    </group>
+                    <field
+                        name="alternative_po_ids"
+                        widget="many2many_alt_pos"
+                        context="{'quotation_only': True}"
+                        readonly="not id">
+                        <list
+                            string="Alternative Purchase Order"
+                            default_order="date_commitment, id"
+                            decoration-muted="state in ['done', 'cancel']">
+                            <control>
+                                <create string="Link to Existing RfQ" />
+                            </control>
+                            <field name="currency_id" column_invisible="1" />
+                            <field
+                                name="partner_id"
+                                readonly="state in ['done', 'cancel']" />
+                            <field name="name" string="Reference" />
+                            <field name="date_commitment" />
+                            <field name="amount_total" widget="monetary" />
+                            <field name="state" />
+                        </list>
+                    </field>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="purchase_order_line_compare_tree" model="ir.ui.view">
+        <field name="name">purchase.order.line.compare.list</field>
+        <field name="model">purchase.order.line</field>
+        <field name="priority">1000</field>
+        <field name="arch" type="xml">
+            <list
+                string="Purchase Order Lines"
+                create="0"
+                edit="0"
+                delete="0"
+                decoration-muted="state in ['done', 'cancel']"
+                expand="1"
+                js_class="purchase_order_line_compare">
+                <header>
+                    <button
+                        name="action_award_line"
+                        type="object"
+                        string="Award Selected"
+                        class="o_clear_qty_buttons" />
+                    <button
+                        name="action_clear_award"
+                        type="object"
+                        string="Clear Award"
+                        class="o_clear_qty_buttons" />
+                </header>
+                <field name="product_id" readonly="1" />
+                <field name="partner_id" string="Vendor" />
+                <field name="order_id" string="Reference" readonly="1" />
+                <field name="state" />
+                <field name="name" readonly="1" />
+                <field name="date_commitment" readonly="1" />
+                <field name="product_qty" />
+                <field name="qty_awarded" readonly="state != 'draft'" />
+                <field
+                    name="product_uom_id"
+                    widget="many2one_uom"
+                    groups="uom.group_uom" />
+                <field name="price_unit" widget="monetary" />
+                <field name="price_subtotal" string="Total" />
+                <field name="currency_id" column_invisible="True" />
+                <field name="price_total_cc" string="Company Total" widget="monetary" />
+                <field name="company_currency_id" column_invisible="True" />
+                <button
+                    name="action_award_line"
+                    type="object"
+                    string="Award"
+                    icon="fa-bullseye"
+                    invisible="product_qty &lt;= 0.0 or state != 'draft'"
+                    class="o_clear_qty_buttons" />
+                <button
+                    name="action_clear_award"
+                    type="object"
+                    string="Clear"
+                    icon="fa-times"
+                    invisible="qty_awarded &lt;= 0.0 or state != 'draft'"
+                    class="o_clear_qty_buttons" />
+            </list>
+        </field>
+    </record>
+
+    <record id="purchase_tender_view_form" model="ir.ui.view">
+        <field name="name">purchase.tender.form</field>
+        <field name="model">purchase.tender</field>
+        <field name="arch" type="xml">
+            <form string="Call for Tenders">
+                <header>
+                    <button
+                        name="action_award"
+                        type="object"
+                        string="Award"
+                        invisible="state != 'open'"
+                        class="btn-primary" />
+                    <button
+                        name="action_invite"
+                        type="object"
+                        string="Invite Vendors"
+                        invisible="state != 'open'" />
+                    <button
+                        name="action_compare"
+                        type="object"
+                        string="Compare Offers"
+                        invisible="state != 'open' or not order_ids" />
+                    <button
+                        name="action_reopen"
+                        type="object"
+                        string="Reopen"
+                        invisible="state != 'cancel'" />
+                    <button
+                        name="action_cancel"
+                        type="object"
+                        string="Cancel"
+                        invisible="state != 'open'" />
+                    <field
+                        name="state"
+                        widget="statusbar"
+                        statusbar_visible="open,awarded" />
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button
+                            name="action_view_offers"
+                            type="object"
+                            icon="fa-list-alt"
+                            class="oe_stat_button">
+                            <field
+                                name="order_count"
+                                string="Offers"
+                                widget="statinfo" />
+                        </button>
+                    </div>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name" />
+                        </h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="user_id" domain="[('share', '=', False)]" />
+                            <field
+                                name="date_deadline"
+                                decoration-danger="is_overdue" />
+                            <field name="is_overdue" invisible="1" />
+                        </group>
+                        <group>
+                            <field
+                                name="company_id"
+                                options="{'no_create': True}"
+                                groups="base.group_multi_company" />
+                        </group>
+                    </group>
+                    <notebook>
+                        <page name="needs" string="Needs">
+                            <field name="line_ids" readonly="state != 'open'">
+                                <list editable="bottom">
+                                    <field name="sequence" widget="handle" />
+                                    <field name="product_id" />
+                                    <field name="description" optional="show" />
+                                    <field name="product_qty" />
+                                    <field
+                                        name="product_uom_id"
+                                        groups="uom.group_uom" />
+                                    <field name="date_needed" optional="show" />
+                                    <field name="offer_count" optional="show" />
+                                    <field name="qty_awarded" />
+                                    <field
+                                        name="qty_to_award"
+                                        decoration-danger="qty_to_award &lt; 0"
+                                        decoration-warning="qty_to_award &gt; 0" />
+                                </list>
+                            </field>
+                        </page>
+                        <page name="offers" string="Offers">
+                            <field name="order_ids" readonly="state != 'open'">
+                                <list
+                                    default_order="amount_total"
+                                    create="0"
+                                    decoration-muted="state == 'cancel'">
+                                    <field name="currency_id" column_invisible="1" />
+                                    <field name="partner_id" />
+                                    <field name="name" string="Reference" />
+                                    <field name="date_commitment" />
+                                    <field name="amount_total" widget="monetary" />
+                                    <field
+                                        name="state"
+                                        widget="badge"
+                                        decoration-success="state == 'done'" />
+                                    <field
+                                        name="outcome"
+                                        widget="badge"
+                                        decoration-danger="outcome in ('lost', 'rejected')"
+                                        decoration-success="outcome == 'won'" />
+                                </list>
+                            </field>
+                        </page>
+                        <page name="description" string="Description">
+                            <field name="description" class="oe-bordered-editor" />
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter />
+            </form>
+        </field>
+    </record>
+
+    <record id="purchase_tender_view_list" model="ir.ui.view">
+        <field name="name">purchase.tender.list</field>
+        <field name="model">purchase.tender</field>
+        <field name="arch" type="xml">
+            <list string="Calls for Tenders" sample="1">
+                <field name="name" decoration-bf="1" />
+                <field name="user_id" widget="many2one_avatar_user" optional="show" />
+                <field name="date_deadline" optional="show" />
+                <field name="order_count" string="Offers" optional="show" />
+                <field
+                    name="company_id"
+                    optional="show"
+                    groups="base.group_multi_company" />
+                <field
+                    name="state"
+                    widget="badge"
+                    decoration-info="state == 'open'"
+                    decoration-success="state == 'awarded'" />
+            </list>
+        </field>
+    </record>
+
+    <record id="purchase_tender_view_search" model="ir.ui.view">
+        <field name="name">purchase.tender.search</field>
+        <field name="model">purchase.tender</field>
+        <field name="arch" type="xml">
+            <search string="Calls for Tenders">
+                <field name="name" />
+                <field name="user_id" />
+                <filter
+                    name="my_tenders"
+                    string="My Tenders"
+                    domain="[('user_id', '=', uid)]" />
+                <separator />
+                <filter name="open" string="Open" domain="[('state', '=', 'open')]" />
+                <filter
+                    name="awarded"
+                    string="Awarded"
+                    domain="[('state', '=', 'awarded')]" />
+            </search>
+        </field>
+    </record>
+
+    <record id="purchase_tender_action" model="ir.actions.act_window">
+        <field name="name">Calls for Tenders</field>
+        <field name="res_model">purchase.tender</field>
+        <field name="path">purchase-tenders</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{'search_default_open': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No call for tenders yet
+            </p><p>
+                From a request for quotation, invite other vendors to offer for the
+                same products; compare their offers line by line and award the best,
+                in full or split between vendors.
+            </p>
+        </field>
+    </record>
+
+</odoo>

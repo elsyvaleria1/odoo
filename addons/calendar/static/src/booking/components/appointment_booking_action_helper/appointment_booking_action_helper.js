@@ -1,0 +1,28 @@
+/** @odoo-module native */
+import { Component, t, useProps } from "@odoo/owl";
+import { useService } from "@web/core/utils/hooks";
+
+export class AppointmentBookingActionHelper extends Component {
+    static template = "calendar.booking.AppointmentBookingActionHelper";
+    static props = { context: t.any(), onNewClicked: t.any() };
+    props = useProps(this.constructor.props);
+    setup() {
+        this.action = useService("action");
+    }
+
+    async openShareDialog() {
+        this.action.doAction({
+            name: "Create a Share Link",
+            type: "ir.actions.act_window",
+            res_model: "appointment.invite",
+            views: [[false, "form"]],
+            target: "new",
+            context: {
+                default_appointment_type_ids: [
+                    this.props.context.default_appointment_type_id,
+                ],
+                dialog_size: "medium",
+            },
+        });
+    }
+}

@@ -1,0 +1,196 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* stock_fleet_trace_gps_geoengine
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-09-29 22:49+0000\n"
+"PO-Revision-Date: 2026-09-29 22:49+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: es_MX\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: stock_fleet_trace_gps_geoengine
+#: model:ir.model.fields.selection,name:stock_fleet_trace_gps_geoengine.selection__wizard_stock_trip_track_point__kind__arrival
+msgid "Arrival"
+msgstr "Llegada"
+
+#. module: stock_fleet_trace_gps_geoengine
+#: model:ir.model.fields,field_description:stock_fleet_trace_gps_geoengine.field_wizard_stock_trip_track_point__color
+msgid "Color"
+msgstr "Color"
+
+#. module: stock_fleet_trace_gps_geoengine
+#: model:ir.model.fields,field_description:stock_fleet_trace_gps_geoengine.field_wizard_stock_trip_track_point__create_uid
+msgid "Created by"
+msgstr "Creado por"
+
+#. module: stock_fleet_trace_gps_geoengine
+#: model:ir.model.fields,field_description:stock_fleet_trace_gps_geoengine.field_wizard_stock_trip_track_point__create_date
+msgid "Created on"
+msgstr "Creado el"
+
+#. module: stock_fleet_trace_gps_geoengine
+#: model:ir.model.fields,field_description:stock_fleet_trace_gps_geoengine.field_wizard_stock_trip_track_point__date
+msgid "Date"
+msgstr "Fecha"
+
+#. module: stock_fleet_trace_gps_geoengine
+#: model:ir.model.fields.selection,name:stock_fleet_trace_gps_geoengine.selection__wizard_stock_trip_track_point__kind__delivery
+msgid "Delivery"
+msgstr "Entrega"
+
+#. module: stock_fleet_trace_gps_geoengine
+#: model:ir.model.fields.selection,name:stock_fleet_trace_gps_geoengine.selection__wizard_stock_trip_track_point__kind__departure
+msgid "Departure"
+msgstr "Salida"
+
+#. module: stock_fleet_trace_gps_geoengine
+#: model:ir.model.fields,field_description:stock_fleet_trace_gps_geoengine.field_wizard_stock_trip_track_point__display_name
+msgid "Display Name"
+msgstr "Nombre para mostrar"
+
+#. module: stock_fleet_trace_gps_geoengine
+#: model:ir.model.fields.selection,name:stock_fleet_trace_gps_geoengine.selection__wizard_stock_trip_track_point__kind__alert
+msgid "GPS alert"
+msgstr "Alerta GPS"
+
+#. module: stock_fleet_trace_gps_geoengine
+#. odoo-python
+#: code:addons/stock_fleet_trace_gps_geoengine/models/stock_picking_batch.py:0
+msgid "GPS track of trip %s"
+msgstr "Recorrido GPS del viaje %s"
+
+#. module: stock_fleet_trace_gps_geoengine
+#: model:ir.model.fields,field_description:stock_fleet_trace_gps_geoengine.field_wizard_stock_trip_track_point__id
+msgid "ID"
+msgstr "ID"
+
+#. module: stock_fleet_trace_gps_geoengine
+#: model:ir.model.fields.selection,name:stock_fleet_trace_gps_geoengine.selection__wizard_stock_trip_track_point__kind__incident
+msgid "Incident"
+msgstr "Incidencia"
+
+#. module: stock_fleet_trace_gps_geoengine
+#: model:ir.model.fields,field_description:stock_fleet_trace_gps_geoengine.field_wizard_stock_trip_track_point__kind
+msgid "Kind"
+msgstr "Tipo"
+
+#. module: stock_fleet_trace_gps_geoengine
+#: model:ir.model.fields,field_description:stock_fleet_trace_gps_geoengine.field_wizard_stock_trip_track_point__label
+msgid "Label"
+msgstr "Etiqueta"
+
+#. module: stock_fleet_trace_gps_geoengine
+#: model:ir.model.fields,field_description:stock_fleet_trace_gps_geoengine.field_wizard_stock_trip_track_point__write_uid
+msgid "Last Updated by"
+msgstr "Última actualización por"
+
+#. module: stock_fleet_trace_gps_geoengine
+#: model:ir.model.fields,field_description:stock_fleet_trace_gps_geoengine.field_wizard_stock_trip_track_point__write_date
+msgid "Last Updated on"
+msgstr "Última actualización el"
+
+#. module: stock_fleet_trace_gps_geoengine
+#: model:ir.model.fields,field_description:stock_fleet_trace_gps_geoengine.field_wizard_stock_trip_track_point__name
+msgid "Name"
+msgstr "Nombre"
+
+#. module: stock_fleet_trace_gps_geoengine
+#: model:ir.model.fields.selection,name:stock_fleet_trace_gps_geoengine.selection__wizard_stock_trip_track_point__kind__not_delivered
+msgid "Not delivered"
+msgstr "No entregado"
+
+#. module: stock_fleet_trace_gps_geoengine
+#: model:ir.model.fields,field_description:stock_fleet_trace_gps_geoengine.field_wizard_stock_trip_track_point__the_point
+msgid "Place"
+msgstr "Lugar"
+
+#. module: stock_fleet_trace_gps_geoengine
+#: model:ir.model.fields.selection,name:stock_fleet_trace_gps_geoengine.selection__wizard_stock_trip_track_point__kind__stop
+msgid "Planned stop"
+msgstr "Parada planeada"
+
+#. module: stock_fleet_trace_gps_geoengine
+#: model:res.groups,name:stock_fleet_trace_gps_geoengine.privilege_trip_track
+msgid "Privilege: a trip draws the GPS track of its vehicle"
+msgstr "Privilegio: un viaje dibuja el recorrido GPS de su vehículo"
+
+#. module: stock_fleet_trace_gps_geoengine
+#: model:ir.model.fields.selection,name:stock_fleet_trace_gps_geoengine.selection__wizard_stock_trip_track_point__kind__return
+msgid "Return"
+msgstr "Regreso"
+
+#. module: stock_fleet_trace_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace_gps_geoengine.report_picking_batch_route_map
+msgid "Route"
+msgstr "Ruta"
+
+#. module: stock_fleet_trace_gps_geoengine
+#: model:ir.model.fields,help:stock_fleet_trace_gps_geoengine.field_wizard_stock_trip_track_point__label
+msgid ""
+"The kind and time as the popup shows them, in the user's language and time "
+"zone."
+msgstr "El tipo y la hora como los muestra la ventana emergente, en el idioma y la zona horaria del usuario."
+
+#. module: stock_fleet_trace_gps_geoengine
+#: model:ir.model.fields,help:stock_fleet_trace_gps_geoengine.field_wizard_stock_trip_track_point__trail_result_id
+msgid ""
+"The trail drawn with these points: the map shows the points of the trails it"
+" displays."
+msgstr "El recorrido dibujado con estos puntos: el mapa muestra los puntos de los recorridos que despliega."
+
+#. module: stock_fleet_trace_gps_geoengine
+#: model:ir.model.fields,field_description:stock_fleet_trace_gps_geoengine.field_wizard_stock_trip_track_point__trail_result_id
+msgid "Trail"
+msgstr "Recorrido"
+
+#. module: stock_fleet_trace_gps_geoengine
+#: model:ir.model.fields,field_description:stock_fleet_trace_gps_geoengine.field_wizard_stock_trip_track_point__batch_id
+msgid "Trip"
+msgstr "Viaje"
+
+#. module: stock_fleet_trace_gps_geoengine
+#. odoo-python
+#: code:addons/stock_fleet_trace_gps_geoengine/models/stock_picking_batch.py:0
+msgid "Trip %(trip)s has no GPS track to draw: %(reason)s"
+msgstr "El viaje %(trip)s no tiene recorrido GPS que dibujar: %(reason)s"
+
+#. module: stock_fleet_trace_gps_geoengine
+#. odoo-python
+#: code:addons/stock_fleet_trace_gps_geoengine/models/stock_picking_batch.py:0
+msgid "Trip %s"
+msgstr "Viaje %s"
+
+#. module: stock_fleet_trace_gps_geoengine
+#. odoo-python
+#: code:addons/stock_fleet_trace_gps_geoengine/models/stock_picking_batch.py:0
+msgid "Trip %s has not departed: it has no track yet."
+msgstr "El viaje %s no ha salido: aún no tiene recorrido."
+
+#. module: stock_fleet_trace_gps_geoengine
+#: model:ir.model,name:stock_fleet_trace_gps_geoengine.model_wizard_stock_trip_track_point
+msgid "Trip Track Point"
+msgstr "Punto del recorrido del viaje"
+
+#. module: stock_fleet_trace_gps_geoengine
+#: model:geoengine.vector.layer,name:stock_fleet_trace_gps_geoengine.vector_layer_trip_track_points
+msgid "Trip stops, incidents and alerts"
+msgstr "Paradas, incidencias y alertas del viaje"
+
+#. module: stock_fleet_trace_gps_geoengine
+#. odoo-python
+#: code:addons/stock_fleet_trace_gps_geoengine/models/stock_picking_batch.py:0
+msgid "Vehicle %s has no GPS device."
+msgstr "El vehículo %s no tiene dispositivo GPS."
+
+#. module: stock_fleet_trace_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:stock_fleet_trace_gps_geoengine.stock_picking_batch_form_trace_gps_track
+msgid "View GPS Track"
+msgstr "Ver recorrido GPS"

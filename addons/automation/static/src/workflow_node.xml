@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<templates xml:space="preserve">
+
+    <t t-name="automation.WorkflowNode">
+        <div class="o_workflow_canvas_step d-flex flex-column h-100"
+            t-att-class="this.classNames"
+            t-att-title="this.step.name">
+            <header class="o_workflow_canvas_step_header text-truncate fw-semibold px-2 py-1">
+                <t t-out="this.step.label"/>
+            </header>
+            <div class="o_workflow_canvas_step_body flex-grow-1 px-2 py-1 small">
+                <div t-if="this.typeLabel" class="text-muted text-capitalize">
+                    <t t-out="this.typeLabel"/>
+                </div>
+                <div t-if="this.detail" class="o_workflow_canvas_step_detail text-truncate"
+                    t-att-title="this.detail">
+                    <t t-out="this.detail"/>
+                </div>
+                <span t-if="this.stateLabel" class="o_workflow_canvas_step_state badge">
+                    <t t-out="this.stateLabel"/>
+                </span>
+                <div t-if="this.step.created_record"
+                    class="o_workflow_canvas_step_record text-truncate"
+                    t-att-title="this.step.created_record">
+                    <i class="fa fa-file-text-o me-1"/><t t-out="this.step.created_record"/>
+                </div>
+                <div t-if="this.step.output_summary"
+                    class="o_workflow_canvas_step_output text-truncate"
+                    t-att-title="this.step.output_summary">
+                    <i class="fa fa-check-square-o me-1"/><t t-out="this.step.output_summary"/>
+                </div>
+                <div t-if="this.step.error_message"
+                    class="o_workflow_canvas_step_error"
+                    t-att-title="this.step.error_message">
+                    <t t-out="this.step.error_message"/>
+                </div>
+            </div>
+        </div>
+    </t>
+
+</templates>

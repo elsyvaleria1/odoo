@@ -1,0 +1,35 @@
+{
+    "name": "Delivery Trips - Routes and ETAs",
+    "version": "19.0.1.1.1",
+    "oldest_upgradable_version": "19.0.1.1.0",
+    "category": "Supply Chain/Inventory",
+    "summary": "Order a trip's stops with TomTom traffic, keep live arrival times and tell the sellers when the goods leave or run late",
+    "description": "Suggests the order of a delivery trip's stops from TomTom's routing with live traffic, and stores the estimated arrival at each customer, with a service time per stop. Opens the route in Google Maps for the driver. When the trip departs, each seller gets a Telegram message with a WhatsApp link to tell the customer the estimated arrival. While the trip is on the road the arrival times are refreshed from the vehicle's GPS, and a delay above a threshold is reported to the supervisor, the driver and the seller. The scan wizard can read codes with the phone camera, and the trip sheet and delivery slip print a QR code. Requires a TomTom API key held as a credential of the outbound endpoint TomTom Routing (one per company, or one without a company for all of them), warehouse and customer coordinates, and linked Telegram chats.",
+    "author": "AgroMarin",
+    "website": "https://www.agromarin.mx",
+    "license": "OPL-1",
+    "depends": [
+        "stock_fleet_trace",
+        "sale_stock",
+        "integration",
+        "telegram",
+        "asset_gps",
+    ],
+    "data": [
+        "security/stock_fleet_route_security.xml",
+        "security/ir.access.csv",
+        "data/api_service_data.xml",
+        "data/ir_cron_data.xml",
+        "views/stock_picking_batch_views.xml",
+        "views/stock_picking_views.xml",
+        "views/stock_warehouse_views.xml",
+        "views/wizard_stock_trip_scan_views.xml",
+        "reports/report_picking_batch.xml",
+        "reports/report_deliveryslip.xml",
+    ],
+    "assets": {
+        "web.assets_backend": [
+            "stock_fleet_route/static/src/**/*",
+        ],
+    },
+}

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+
+    <record id="ir_cron_automatic_checkout_attendances" model="ir.cron">
+        <field name="name">Auto Checkout Attendances</field>
+        <field name="model_id" ref="model_hr_attendance" />
+        <field name="state">code</field>
+        <field name="code">model._cron_auto_checkout_at_day_end()</field>
+        <field name="user_id" ref="base.user_root" />
+        <field name="repeat_interval" eval="1" />
+        <field name="repeat_unit">day</field>
+        <field name="nextcall">2020-01-01 06:00:00</field>
+    </record>
+
+</odoo>

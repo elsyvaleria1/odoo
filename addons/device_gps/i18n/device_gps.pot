@@ -1,0 +1,3290 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* device_gps
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-09-27 05:12+0000\n"
+"PO-Revision-Date: 2026-09-27 05:12+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: device_gps
+#: model_terms:ir.actions.act_window,help:device_gps.action_device_data_log_gps_report
+msgid "<strong>Vehicle Overview</strong>"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.actions.act_window,name:device_gps.action_device_data_log_gps_report
+#: model:ir.ui.menu,name:device_gps.menu_device_data_log_gps_report_main
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_pivot
+msgid "GPS Overview"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.actions.act_window,help:device_gps.action_device_data_log_gps_report_activity
+msgid "\"How much is each vehicle actually being used?\""
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.actions.act_window,help:device_gps.action_device_data_log_gps_report_activity
+msgid "\"Which days of the week are busiest?\""
+msgstr ""
+
+#. module: device_gps
+#. odoo-python
+#: code:addons/device_gps/models/device_device.py:0
+msgid "%(count)s days ago"
+msgstr ""
+
+#. module: device_gps
+#. odoo-python
+#: code:addons/device_gps/models/device_device.py:0
+msgid "%(count)s hours ago"
+msgstr ""
+
+#. module: device_gps
+#. odoo-python
+#: code:addons/device_gps/models/device_device.py:0
+msgid "%(count)s min ago"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.report_gps_tracking
+msgid "(Low!)"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.actions.act_window,help:device_gps.action_device_data_log_gps_report_fuel
+msgid ""
+"<br>\n"
+"                <strong>\n"
+"                Note:</strong> Requires devices that report fuel consumption in liters. Devices\n"
+"                reporting only fuel percentage require tank capacity configuration."
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.actions.act_window,help:device_gps.action_device_data_log_gps_report_activity
+msgid ""
+"<br>\n"
+"                <strong>\n"
+"                Tip:</strong> Change filter to \"This Month\" and group by \"Day of Week\" to see which\n"
+"                days have the most fleet activity."
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.actions.act_window,help:device_gps.action_device_data_log_gps_report_activity
+#: model_terms:ir.actions.act_window,help:device_gps.action_device_data_log_gps_report_speed
+msgid ""
+"<br>\n"
+"                <strong>\n"
+"                Value:</strong>"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.actions.act_window,help:device_gps.action_device_data_log_gps_report_distance
+msgid ""
+"<br>\n"
+"                <strong>Data\n"
+"                Source:</strong> Uses odometer when available, GPS otherwise. Check \"Dist. Source\"\n"
+"                column in list view for details."
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.actions.act_window,help:device_gps.action_device_data_log_gps_report
+msgid ""
+"<br>\n"
+"                <strong>Note:</strong>\n"
+"                Data updates as GPS points are received. Use \"Yesterday\" filter for complete day\n"
+"                comparison."
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_device_kanban_gps_dashboard
+msgid ""
+"<i class=\"fa-regular fa-clock\"/>\n"
+"                                    <span class=\"ms-1\">Last update: </span>"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_device_kanban_gps_dashboard
+msgid ""
+"<i class=\"fa-solid fa-battery-empty fa-2x text-danger\" title=\"Battery "
+"Empty\"/>"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_device_kanban_gps_dashboard
+msgid ""
+"<i class=\"fa-solid fa-battery-full fa-2x text-success\" title=\"Battery "
+"Full\"/>"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_device_kanban_gps_dashboard
+msgid ""
+"<i class=\"fa-solid fa-battery-half fa-2x text-warning\" title=\"Battery "
+"Half\"/>"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_device_kanban_gps_dashboard
+msgid "<i class=\"fa-solid fa-car fa-2x text-muted\" title=\"Stopped\"/>"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_device_kanban_gps_dashboard
+msgid "<i class=\"fa-solid fa-car fa-2x text-primary\" title=\"Moving\"/>"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_device_kanban_gps_dashboard
+msgid "<i class=\"fa-solid fa-database\" title=\"Total Logs\"/>"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_device_kanban_gps_dashboard
+msgid ""
+"<i class=\"fa-solid fa-gauge-high fa-2x text-info\" title=\"Speed "
+"Indicator\"/>"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_device_kanban_gps_dashboard
+msgid ""
+"<i class=\"fa-solid fa-id-card\"/>\n"
+"                                    <span>IMEI: </span>"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_device_kanban_gps_dashboard
+msgid "<i class=\"fa-solid fa-power-off fa-2x text-muted\" title=\"Ignition Off\"/>"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_device_kanban_gps_dashboard
+msgid "<i class=\"fa-solid fa-power-off fa-2x text-success\" title=\"Ignition On\"/>"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_device_kanban_gps_dashboard
+msgid "<i class=\"fa-solid fa-satellite\" title=\"Satellites\"/>"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_profile_form_inherit_gps
+msgid "<span class=\"ms-2 text-muted\">km/h</span>"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_profile_form_inherit_gps
+msgid "<span class=\"mx-1\">/</span>"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_device_kanban_gps_dashboard
+msgid "<span class=\"text-muted small\"> V</span>"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_device_kanban_gps_dashboard
+msgid "<span class=\"text-muted small\"> km/h</span>"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_device_kanban_gps_dashboard
+msgid "<span class=\"text-muted small\"> km</span>"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_device_kanban_gps_dashboard
+msgid "<span>Actions</span>"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_device_kanban_gps_dashboard
+msgid "<span>View</span>"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.actions.act_window,help:device_gps.action_device_data_log_gps_report_activity
+msgid ""
+"<strong>\n"
+"                Shows:</strong>"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.report_gps_tracking
+msgid "<strong>Battery</strong>"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.report_gps_tracking
+msgid "<strong>Config Profile</strong>"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.actions.act_window,help:device_gps.action_device_data_log_gps_report_distance
+msgid "<strong>Distance Analysis</strong>"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.actions.act_window,help:device_gps.action_device_data_log_gps_report_activity
+msgid "<strong>Distance:</strong> Total kilometers traveled"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.actions.act_window,help:device_gps.action_device_data_log_gps_report_activity
+msgid "<strong>Driving Hours:</strong> Time with engine ON and vehicle moving"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.actions.act_window,help:device_gps.action_device_data_log_gps_report_fuel
+msgid "<strong>Fuel Consumption Analysis</strong>"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.report_gps_tracking
+msgid "<strong>IMEI</strong>"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.report_gps_tracking
+msgid "<strong>Ignition</strong>"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.report_gps_tracking
+msgid "<strong>Last Update</strong>"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.actions.act_window,help:device_gps.action_device_data_log_gps_report_speed
+msgid "<strong>Max Speed:</strong> Highest speed recorded per vehicle/day"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.actions.act_window,help:device_gps.action_device_data_log_gps_report_activity
+msgid ""
+"<strong>Moving GPS Points:</strong> GPS readings where vehicle was in motion"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.report_gps_tracking
+msgid "<strong>Position</strong>"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.actions.act_window,help:device_gps.action_device_data_log_gps_report_speed
+msgid "<strong>Speed &amp; Safety Analysis</strong>"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.report_gps_tracking
+msgid "<strong>Speed</strong>"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.report_gps_tracking
+msgid "<strong>Tracking</strong>"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.report_gps_tracking
+msgid "<strong>Type</strong>"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.actions.act_window,help:device_gps.action_device_data_log_gps_report_activity
+msgid "<strong>Vehicle Activity Analysis</strong>"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.actions.act_window,help:device_gps.action_device_data_log_gps_report_speed
+msgid ""
+"<strong>⚠ Warning:</strong> Level 1 - Minor speeding (default: 80 km/h)"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.actions.act_window,help:device_gps.action_device_data_log_gps_report_speed
+msgid ""
+"<strong>⚡ Alert:</strong> Level 2 - Moderate speeding (default: 100 km/h)"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.actions.act_window,help:device_gps.action_device_data_log_gps_report_speed
+msgid ""
+"<strong>🔴 Critical:</strong> Level 3 - Severe speeding (default: 120 km/h)"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_data_log_gps__accuracy
+msgid "Accuracy"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_data_log_gps__active_gsm_operator
+msgid "Active Gsm Operator"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.ui.menu,name:device_gps.menu_device_data_log_gps_report_activity
+msgid "Activity"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_device_device__odometer_initial_offset
+msgid ""
+"Add this value to corrected odometer (for pre-existing odometer values)"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_profile_form_inherit_gps
+msgid "Alert"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_device_profile__alert_battery
+msgid "Alert on low battery"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_device_profile__alert_overspeeding
+msgid "Alert when device exceeds speed limit"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_device_profile__alert_idle
+msgid "Alert when device is idle for too long"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_data_log_gps__altitude
+#: model:ir.model.fields,field_description:device_gps.field_device_device__log_gps_last_altitude
+msgid "Altitude"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_device_data_log_gps__altitude
+msgid "Altitude in meters above sea level"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_device_data_log_gps_report__speed_wheel_discrepancy_avg
+msgid "Average difference between GPS speed and wheel speed"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_list
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_device_kanban_gps_dashboard
+msgid "Avg Speed"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_device_kanban_gps_dashboard
+msgid "Battery"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_data_log_gps__battery_current
+msgid "Battery Current"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_data_log_gps__battery_level
+msgid "Battery Level"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_profile__battery_threshold
+msgid "Battery Threshold (%)"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_data_log_gps__battery_voltage
+msgid "Battery Voltage"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_data_log_gps_report__battery_voltage_avg
+msgid "Battery Voltage Avg"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_data_log_gps_report__battery_voltage_count
+msgid "Battery Voltage Count"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_data_log_gps_report__battery_voltage_min
+msgid "Battery Voltage Min"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_data_log_gps_report__battery_voltage_sum
+msgid "Battery Voltage Sum"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_device_data_log_gps__battery_level
+msgid ""
+"Battery charge level as a percentage (0-100), for devices with an internal "
+"battery (phones, trackers reporting Teltonika AVL 113). Distinct from "
+"battery_voltage."
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_device_device__gps_battery_level
+msgid "Battery level (voltage or percentage depending on device)"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_device_profile__battery_threshold
+msgid "Battery level threshold for alerts"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_device_data_log_gps_report__distance_best
+msgid "Best available distance (odometer if available, else GPS)"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields.selection,name:device_gps.selection__device_profile__fuel_source__both
+msgid "Both Available"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields.selection,name:device_gps.selection__device_profile__odometer_source__both
+msgid "Both Available (prefer GPS)"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields.selection,name:device_gps.selection__device_profile__speed_source__both
+msgid "Both GPS and CAN Wheel Speed"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields.selection,name:device_gps.selection__device_profile__odometer_source__can
+msgid "CAN Bus (field 16)"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields.selection,name:device_gps.selection__device_profile__speed_source__can
+msgid "CAN Bus Wheel Speed Only (field 81)"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields.selection,name:device_gps.selection__device_profile__fuel_level_l_unit__centiliters
+msgid "Centiliters (÷100)"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_data_log_gps__central_lock
+msgid "Central Lock"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_data_log_gps_report__coasting_hours
+msgid "Coasting Hours"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_data_log_gps_report__coasting_pct
+msgid "Coasting Pct"
+msgstr ""
+
+#. module: device_gps
+#: model:device.device,description:device_gps.demo_gps_device_reefer_01
+msgid ""
+"Cold chain refrigerated truck with GPS and temperature monitoring (Teltonika"
+" FMB920)"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_data_log_gps__company_id
+#: model:ir.model.fields,field_description:device_gps.field_device_data_log_gps_report__company_id
+msgid "Company"
+msgstr ""
+
+#. module: device_gps
+#: model:device.device,name:device_gps.demo_gps_device_company_car_01
+msgid "Company Car - CAR-A15"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_device_data_log_gps__company_id
+msgid "Company that owns this channel (for multi-tenancy isolation)"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.actions.act_window,help:device_gps.action_device_data_log_gps_report_distance
+msgid ""
+"Compare kilometers traveled by each vehicle today. <br><br>\n"
+"                <strong>Key Question:</strong>\n"
+"                \"Which vehicles traveled the most today?\" <br><br>\n"
+"                <strong>Value:</strong>"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.actions.act_window,help:device_gps.action_device_data_log_gps_report_distance
+msgid "Compare vehicle usage across fleet"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields.selection,name:device_gps.selection__device_profile__gps_protocol__concox
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_profile_search_inherit_gps
+msgid "Concox"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.res_config_settings_view_form
+msgid "Configure GPS positioning accuracy requirements"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.res_config_settings_view_form
+msgid "Configure acceptable coordinate ranges"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.res_config_settings_view_form
+msgid "Configure duplicate point detection"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.res_config_settings_view_form
+msgid "Configure time-based validation parameters"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.res_config_settings_view_form
+msgid "Configure vehicle-related validation limits"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_data_log_gps__control_state_flags
+msgid "Control State Flags"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.res_config_settings_view_form
+msgid "Coordinate Validation"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.res_config_settings_view_form
+msgid "Coordinate tolerance for duplicate detection"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_res_config_settings__duplicate_coordinate_tolerance
+msgid "Coordinate tolerance for duplicate detection (degrees)"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_device_data_log_gps__real_odometer
+msgid "Corrected odometer reading based on device configuration"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_profile_form_inherit_gps
+msgid "Correction factor to apply to raw odometer values (e.g., 1.05 = +5%)"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_device_data_log_gps_report__quality_ok_sum
+msgid ""
+"Count of GPS readings with acceptable quality (HDOP <= 5, satellites >= 5)"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_device_data_log_gps_report__movement_count
+msgid "Count of readings where vehicle was moving"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_device_data_log_gps_report__ignition_on_count
+msgid "Count of readings with ignition on"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_device_data_log_gps_report__speed_count
+msgid "Count of speed readings (for weighted average)"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.actions.act_window,help:device_gps.action_device_gps_config
+msgid "Create a GPS device configuration profile"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.actions.act_window,help:device_gps.action_device_device_gps
+msgid "Create your first GPS Tracker"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_data_log_gps__create_uid
+msgid "Created by"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_data_log_gps__create_date
+msgid "Created on"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_profile_form_inherit_gps
+msgid "Critical"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_device_form
+msgid "Current Speed"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.report_gps_tracking
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_device_form
+msgid "Current Status"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_device_device__gps_ignition_state
+msgid "Current vehicle ignition state"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_device_device__gps_movement_state
+msgid "Current vehicle movement state"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.ui.menu,name:device_gps.menu_device_gps_analysis_daily
+msgid "Daily Reports"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_data_log_gps__data_type
+msgid "Data Type"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_data_log_gps_report__date
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_search
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_search
+msgid "Date"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_data_log_gps_report__day_of_week
+msgid "Day Of Week"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_search
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_search_activity
+msgid "Day of Week"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields.selection,name:device_gps.selection__device_profile__fuel_level_l_unit__deciliters
+msgid "Deciliters (÷10)"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.res_config_settings_view_form
+msgid "Define valid latitude and longitude bounds"
+msgstr ""
+
+#. module: device_gps
+#: model:device.device,name:device_gps.demo_gps_device_delivery_van_01
+msgid "Delivery Van - VAN-001"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.actions.act_window,help:device_gps.action_device_data_log_gps_report_fuel
+msgid "Detect anomalies (potential fuel theft)"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_data_log_gps__device_id
+#: model:ir.model.fields,field_description:device_gps.field_device_data_log_gps_report__device_id
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_search
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_search_activity
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_search_by_vehicle
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_search
+msgid "Device"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_form
+msgid "Device & Time"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_profile_form_inherit_gps
+msgid "Device Capabilities"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_device_kanban_gps_dashboard
+msgid "Device Details"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.report_gps_tracking
+msgid "Device Information"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_device_profile__reports_engine_rpm
+msgid "Device reports engine RPM (field 85 from CAN bus)."
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_device_profile__reports_engine_temp
+msgid "Device reports engine temperature (field 115 from CAN bus)."
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_device_profile__reports_engine_hours
+msgid "Device reports engine total hours (field 102 from CAN bus)."
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_device_profile__fuel_reports_percentage
+msgid ""
+"Device reports fuel_level (field 89) as percentage (0-100). If False, "
+"fuel_level is treated as liters."
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_device_profile__reports_ignition
+msgid ""
+"Device reports ignition state (field 239). Indicates whether vehicle "
+"ignition is on/off."
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_device_profile__reports_odometer
+msgid "Device reports odometer field (vs total_odometer)"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_device_data_log_gps__device_id
+msgid ""
+"Device that generated this data point. Deliberately not index=True: "
+"_device_timestamp_idx below leads with this column, so a btree on it alone "
+"answers nothing the composite does not, and this is the append-heavy table "
+"in the family."
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_device_data_log_gps__heading
+msgid "Direction in degrees (0-360)"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.report_gps_tracking
+msgid "Disabled"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.actions.act_window,help:device_gps.action_device_data_log_gps_report_activity
+msgid "Discover weekly patterns (use \"Day of Week\" grouping)"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_data_log_gps__display_name
+#: model:ir.model.fields,field_description:device_gps.field_device_data_log_gps_report__display_name
+#: model:ir.model.fields,field_description:device_gps.field_device_device__display_name
+#: model:ir.model.fields,field_description:device_gps.field_device_gps_data_processor__display_name
+#: model:ir.model.fields,field_description:device_gps.field_device_gps_data_validator__display_name
+#: model:ir.model.fields,field_description:device_gps.field_device_profile__display_name
+msgid "Display Name"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_list
+msgid "Dist. Source"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.ui.menu,name:device_gps.menu_device_data_log_gps_report_distance
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_device_kanban_gps_dashboard
+msgid "Distance"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_graph_activity
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_graph_distance
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_list
+msgid "Distance (km)"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.actions.act_window,name:device_gps.action_device_data_log_gps_report_distance
+msgid "Distance Analysis"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_data_log_gps_report__distance_best
+msgid "Distance Best"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_data_log_gps_report__distance_gps
+msgid "Distance Gps"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_data_log_gps_report__distance_odo
+msgid "Distance Odo"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_data_log_gps_report__distance_source
+msgid "Distance Source"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_graph_distance
+msgid "Distance by Vehicle"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_device_data_log_gps_report__distance_gps
+msgid "Distance calculated from GPS coordinates using Haversine formula"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_device_data_log_gps_report__distance_odo
+msgid "Distance derived from odometer delta (MAX - MIN). 0 if < 2 readings."
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_profile_form_inherit_gps
+msgid "Distance threshold in meters to detect motion"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_list
+msgid "Driving %"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_list
+msgid "Driving (hrs)"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_data_log_gps_report__driving_hours
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_graph_activity
+msgid "Driving Hours"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_data_log_gps_report__driving_pct
+msgid "Driving Pct"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_res_config_settings__duplicate_coordinate_tolerance
+msgid "Duplicate Coordinate Tolerance"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.res_config_settings_view_form
+msgid "Duplicate Detection"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_res_config_settings__duplicate_time_window_seconds
+msgid "Duplicate Time Window Seconds"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_list
+msgid "Efficiency (km/L)"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_profile__alert_battery
+msgid "Enable Battery Alert"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_device_profile__gps_tracking_enabled
+msgid ""
+"Enable GPS tracking by default for devices using this config. Can be "
+"overridden at device level."
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_profile__alert_idle
+msgid "Enable Idle Alert"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_profile__alert_overspeeding
+msgid "Enable Overspeeding Alert"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_device_device__gps_tracking_enabled
+msgid ""
+"Enable continuous GPS tracking. Defaults to config setting but can be "
+"overridden."
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.report_gps_tracking
+msgid "Enabled"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_data_log_gps__engine_hours
+msgid "Engine Hours"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_data_log_gps_report__engine_hours_total
+msgid "Engine Hours Total"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_data_log_gps_report__engine_rpm_max
+msgid "Engine Rpm Max"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_data_log_gps__engine_speed_rpm
+msgid "Engine Speed Rpm"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_data_log_gps_report__engine_temp_avg
+msgid "Engine Temp Avg"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_data_log_gps_report__engine_temp_count
+msgid "Engine Temp Count"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_data_log_gps_report__engine_temp_max
+msgid "Engine Temp Max"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_data_log_gps_report__engine_temp_sum
+msgid "Engine Temp Sum"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_data_log_gps__engine_temperature
+msgid "Engine Temperature"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_data_log_gps__engine_total_hours
+msgid "Engine Total Hours"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_device_data_log_gps__engine_speed_rpm
+msgid "Engine revolutions per minute"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_device_data_log_gps__engine_temperature
+msgid "Engine temperature in Celsius"
+msgstr ""
+
+#. module: device_gps
+#. odoo-python
+#: code:addons/device_gps/models/device_device.py:0
+msgid "Error requesting position: %s"
+msgstr ""
+
+#. module: device_gps
+#. odoo-python
+#: code:addons/device_gps/models/device_device.py:0
+msgid "Error starting tracking: %s"
+msgstr ""
+
+#. module: device_gps
+#. odoo-python
+#: code:addons/device_gps/models/device_device.py:0
+msgid "Error stopping tracking: %s"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_data_log_gps__event_id
+msgid "Event"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_form
+msgid "Event Information"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_data_log_gps__event_type
+msgid "Event Type"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_device_data_log_gps__priority
+msgid "Event priority"
+msgstr ""
+
+#. module: device_gps
+#: model:device.device,description:device_gps.demo_gps_device_company_car_01
+msgid ""
+"Executive company car with GPS tracking and driver behavior monitoring "
+"(Meitrack T355G)"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_data_log_gps__external_voltage
+msgid "External Voltage"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_data_log_gps_report__external_voltage_min
+msgid "External Voltage Min"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_device_data_log_gps__external_voltage
+msgid "External power supply voltage"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_device_data_log_gps__ignition_anomaly
+msgid ""
+"Flag indicating suspicious ignition pattern (ON without movement for "
+"extended periods)"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_device_data_log_gps__odometer_valid
+msgid ""
+"Flag to mark odometer reading as valid. Set to False for erroneous data."
+msgstr ""
+
+#. module: device_gps
+#: model:device.device,name:device_gps.demo_gps_device_fleet_truck_01
+msgid "Fleet Truck - TRK-042"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.actions.act_window,help:device_gps.action_device_data_log_gps_report
+msgid "Fleet utilization percentage"
+msgstr ""
+
+#. module: device_gps
+#: model:device.device,name:device_gps.demo_gps_device_forklift_01
+msgid "Forklift - FLT-WH-05"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields.selection,name:device_gps.selection__device_data_log_gps_report__day_of_week__5
+msgid "Friday"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.ui.menu,name:device_gps.menu_device_data_log_gps_report_fuel
+#: model:ir.ui.menu,name:device_gps.menu_device_gps_analysis_fuel
+msgid "Fuel"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_list
+msgid "Fuel (L)"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_profile_form_inherit_gps
+msgid "Fuel Capabilities"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_data_log_gps__fuel_consumed
+msgid "Fuel Consumed"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_graph_fuel
+msgid "Fuel Consumed (L)"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_data_log_gps_report__fuel_consumed_total
+msgid "Fuel Consumed Total"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_graph_fuel
+msgid "Fuel Consumed by Vehicle"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.actions.act_window,name:device_gps.action_device_data_log_gps_report_fuel
+#: model:ir.model.fields,field_description:device_gps.field_device_data_log_gps_report__fuel_consumption
+msgid "Fuel Consumption"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_device__fuel_consumption_threshold
+msgid "Fuel Consumption Threshold"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_data_log_gps_report__fuel_efficiency
+msgid "Fuel Efficiency"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_data_log_gps__fuel_level
+#: model:ir.model.fields,field_description:device_gps.field_device_device__log_gps_last_fuel_level
+msgid "Fuel Level"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_device_form
+msgid "Fuel Level (%)"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_device_form
+msgid "Fuel Level (L)"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_data_log_gps_report__fuel_level_avg
+msgid "Fuel Level Avg"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_data_log_gps_report__fuel_level_count
+msgid "Fuel Level Count"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_data_log_gps__fuel_level_l
+#: model:ir.model.fields,field_description:device_gps.field_device_device__log_gps_last_fuel_level_l
+msgid "Fuel Level L"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_profile__fuel_level_l_unit
+msgid "Fuel Level L Unit"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_data_log_gps_report__fuel_level_sum
+msgid "Fuel Level Sum"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_device__fuel_refill_threshold
+msgid "Fuel Refill Threshold"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_data_log_gps__fuel_refilled
+msgid "Fuel Refilled"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_data_log_gps_report__fuel_refilled_total
+msgid "Fuel Refilled Total"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_profile_form_inherit_gps
+msgid "Fuel Reporting"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_profile__fuel_reports_percentage
+msgid "Fuel Reports Percentage"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_profile__fuel_source
+msgid "Fuel Source"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_device__fuel_tank_capacity
+msgid "Fuel Tank Capacity"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_data_log_gps__fuel_theft_suspected
+msgid "Fuel Theft Suspected"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_device__fuel_theft_threshold
+msgid "Fuel Theft Threshold"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_device_data_log_gps__fuel_refilled
+msgid ""
+"Fuel added during refueling event (computed from positive delta above "
+"threshold)"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.actions.act_window,help:device_gps.action_device_data_log_gps_report
+msgid "Fuel consumed and efficiency (km/L)"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_device_data_log_gps__fuel_consumed
+msgid ""
+"Fuel consumed in liters (computed from delta if not reported by device)"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_device_data_log_gps__fuel_level
+msgid "Fuel level percentage"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.res_config_settings_view_form
+msgid "Fuel level validation parameters"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields.selection,name:device_gps.selection__device_data_log_gps_report__distance_source__gps
+msgid "GPS"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_profile_form_inherit_gps
+msgid "GPS Alerts"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.ui.menu,name:device_gps.menu_device_gps_analysis
+msgid "GPS Analysis"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields.selection,name:device_gps.selection__device_profile__odometer_source__gps
+msgid "GPS Calculated (field 87)"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_device_search
+msgid "GPS Config"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.actions.act_window,name:device_gps.action_device_gps_config
+#: model:ir.ui.menu,name:device_gps.menu_device_gps_config
+msgid "GPS Configurations"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_list
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_search
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_search_activity
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_search_by_vehicle
+msgid "GPS Daily Report"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model,name:device_gps.model_device_gps_data_processor
+msgid "GPS Data Processing Orchestrator"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model,name:device_gps.model_device_gps_data_validator
+msgid "GPS Data Validation Service"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_profile__gps_protocol
+msgid "GPS Device Protocol"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.actions.act_window,name:device_gps.action_device_device_gps
+msgid "GPS Devices"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_device_data_log_gps__latitude
+msgid "GPS Latitude coordinate"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_device_kanban_gps_dashboard
+msgid "GPS Logs"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_device_data_log_gps__longitude
+msgid "GPS Longitude coordinate"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_list
+msgid "GPS Points"
+msgstr ""
+
+#. module: device_gps
+#. odoo-python
+#: code:addons/device_gps/models/device_device.py:0
+msgid "GPS Position"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.res_config_settings_view_form
+msgid "GPS Positioning Accuracy"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_profile_search_inherit_gps
+msgid "GPS Protocol"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_form
+msgid "GPS Quality"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_list
+msgid "GPS Quality %"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.ui.menu,name:device_gps.menu_device_gps_raw_data
+msgid "GPS Raw Data"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields.selection,name:device_gps.selection__device_profile__speed_source__gps
+msgid "GPS Speed Only"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.ui.menu,name:device_gps.menu_device_gps_trackers
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_device_search
+msgid "GPS Trackers"
+msgstr ""
+
+#. module: device_gps
+#. odoo-python
+#: code:addons/device_gps/models/device_device.py:0
+#: model_terms:ir.ui.view,arch_db:device_gps.res_config_settings_view_form
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_device_form
+msgid "GPS Tracking"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_profile__gps_tracking_enabled
+msgid "GPS Tracking Enabled by Default"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_form
+msgid "GPS Tracking Point"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.actions.act_window,name:device_gps.action_device_data_log_gps
+msgid "GPS Tracking Points"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.actions.report,name:device_gps.action_report_gps_tracking
+#: model_terms:ir.ui.view,arch_db:device_gps.report_gps_tracking
+msgid "GPS Tracking Report"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_profile_form_inherit_gps
+msgid "GPS Update Settings"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_device_data_log_gps__accuracy
+msgid "GPS accuracy in meters"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.actions.act_window,help:device_gps.action_device_gps_config
+msgid ""
+"GPS configuration profiles extend standard device configurations\n"
+"                with GPS-specific settings like motion detection, speed alerts,\n"
+"                vehicle calibration, and tracking behavior."
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_device_profile__gps_protocol
+msgid ""
+"GPS device-specific protocol (Teltonika, Queclink, etc.). This works "
+"alongside the base communication protocol (MQTT, HTTP, etc.)"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.actions.act_window,help:device_gps.action_device_device_gps
+msgid "GPS devices extend remote IoT devices with tracking capabilities."
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_device_device__log_gps_count
+msgid "GPS points received in the last 24 hours."
+msgstr ""
+
+#. module: device_gps
+#. odoo-python
+#: code:addons/device_gps/models/device_gps_data_processor.py:0
+msgid ""
+"GPS protocol %(protocol)s has no field mapping. Implemented protocols: "
+"%(known)s."
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.actions.act_window,help:device_gps.action_device_data_log_gps
+msgid ""
+"GPS tracking points are automatically recorded when GPS devices\n"
+"                send position updates. You can view historical tracking data,\n"
+"                analyze routes, and monitor vehicle movements."
+msgstr ""
+
+#. module: device_gps
+#. odoo-python
+#: code:addons/device_gps/models/device_device.py:0
+msgid "GPS tracking started"
+msgstr ""
+
+#. module: device_gps
+#. odoo-python
+#: code:addons/device_gps/models/device_device.py:0
+msgid "GPS tracking stopped"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_list
+msgid "GPS/Wheel Δ"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.actions.server,name:device_gps.ir_cron_gps_cleanup_old_points_ir_actions_server
+msgid "GPS: Clean Old Tracking Points"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.actions.server,name:device_gps.ir_cron_gps_refresh_daily_report_ir_actions_server
+msgid "GPS: Refresh Daily Report"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.actions.server,name:device_gps.ir_cron_gps_refresh_pointers_ir_actions_server
+msgid "GPS: Refresh Device Last-Seen Pointers"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_device_data_log_gps__gsm_signal
+msgid "GSM signal strength"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.report_gps_tracking
+msgid "Generated:"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields.selection,name:device_gps.selection__device_profile__gps_protocol__generic
+msgid "Generic GPS"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_device_form
+msgid "Geofencing"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_device_form
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_device_kanban_gps_dashboard
+msgid "Get Position"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_data_log_gps__gnss_hdop
+msgid "Gnss Hdop"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_data_log_gps__gnss_pdop
+msgid "Gnss Pdop"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_data_log_gps__gnss_status
+msgid "Gnss Status"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_device__gps_battery_level
+msgid "Gps Battery Level"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_device__gps_tracking_enabled
+msgid "Gps Tracking Enabled"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_data_log_gps__gsm_signal
+msgid "Gsm Signal"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_data_log_gps__hdop
+msgid "Hdop"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_data_log_gps__heading
+msgid "Heading"
+msgstr ""
+
+#. module: device_gps
+#: model:device.device,description:device_gps.demo_gps_device_fleet_truck_01
+msgid ""
+"Heavy-duty fleet truck for inter-city cargo transport with full telemetry "
+"(Queclink GV75)"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_search
+msgid "High Speed (> 80 km/h)"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_device_device__log_gps_ids
+msgid "Historical GPS tracking points"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_device_data_log_gps__hdop
+msgid "Horizontal Dilution of Precision"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_search
+msgid "Hour"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_data_log_gps__id
+#: model:ir.model.fields,field_description:device_gps.field_device_data_log_gps_report__id
+#: model:ir.model.fields,field_description:device_gps.field_device_device__id
+#: model:ir.model.fields,field_description:device_gps.field_device_gps_data_processor__id
+#: model:ir.model.fields,field_description:device_gps.field_device_gps_data_validator__id
+#: model:ir.model.fields,field_description:device_gps.field_device_profile__id
+msgid "ID"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_device_form
+msgid "IMEI number for GPS devices"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_device_data_log_gps_report__week
+msgid "ISO week number (YYYY-WNN)"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_data_log_gps__iccid1
+msgid "Iccid1"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.actions.act_window,help:device_gps.action_device_data_log_gps_report_speed
+msgid "Identify drivers needing safety coaching"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.actions.act_window,help:device_gps.action_device_data_log_gps_report_fuel
+msgid "Identify fuel-hungry vehicles"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.actions.act_window,help:device_gps.action_device_data_log_gps_report_distance
+msgid "Identify high-mileage vehicles for maintenance"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.actions.act_window,help:device_gps.action_device_data_log_gps_report_activity
+msgid "Identify underutilized vehicles"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_profile__idle_threshold
+msgid "Idle Threshold (minutes)"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_list
+msgid "Idling %"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_list
+msgid "Idling (hrs)"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_data_log_gps_report__idling_hours
+msgid "Idling Hours"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_data_log_gps_report__idling_pct
+msgid "Idling Pct"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_profile_form_inherit_gps
+msgid "If enabled, fuel level is reported as percentage; otherwise as liters"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_data_log_gps__ignition
+#: model:ir.model.fields,field_description:device_gps.field_device_device__gps_ignition_state
+#: model_terms:ir.ui.view,arch_db:device_gps.report_gps_tracking
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_device_kanban_gps_dashboard
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_device_list
+msgid "Ignition"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_profile_form_inherit_gps
+msgid "Ignition & Engine"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_data_log_gps__ignition_anomaly
+msgid "Ignition Anomaly"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_search
+msgid "Ignition Off"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_list
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_search
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_device_search
+msgid "Ignition On"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_data_log_gps_report__ignition_on_count
+msgid "Ignition On Count"
+msgstr ""
+
+#. module: device_gps
+#: model:device.device,description:device_gps.demo_gps_device_forklift_01
+msgid ""
+"Indoor/outdoor forklift asset tracker with battery-optimized GPS (Concox "
+"AT4)"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_profile_form_inherit_gps
+msgid "Interval in seconds for stationary updates"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_search
+msgid "Invalid Odometer"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model,name:device_gps.model_device_data_log_gps
+msgid "IoT GPS Tracking log"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model,name:device_gps.model_device_device
+msgid "IoT Remote Device"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_device__is_gps_device
+msgid "Is Gps Device"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_data_log_gps__isf_check_engine_indicator
+msgid "Isf Check Engine Indicator"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_device_device__kanban_dashboard
+msgid "JSON data for kanban dashboard display"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_device__kanban_color
+msgid "Kanban Color"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_device__kanban_dashboard
+msgid "Kanban Dashboard"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_device_data_log_gps_report__fuel_efficiency
+msgid ""
+"Kilometers per liter - higher is better. Aggregates correctly via "
+"_read_group_select."
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_search
+msgid "Last 15 Days"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_device_kanban_gps_dashboard
+msgid "Last 24 Hours"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_search
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_search
+msgid "Last 30 Days"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_search
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_search_activity
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_search_by_vehicle
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_search
+msgid "Last 7 Days"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_device__log_gps_last_latitude
+msgid "Last GPS Latitude"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_device__log_gps_last_longitude
+msgid "Last GPS Longitude"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_search
+msgid "Last Month"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_device_form
+msgid "Last Position"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_data_log_gps__write_uid
+msgid "Last Updated by"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_data_log_gps__write_date
+msgid "Last Updated on"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_data_log_gps__latitude
+msgid "Latitude"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_device_profile__speed_limit_warning
+msgid "Level 1: Minor speeding threshold. Triggers warning status."
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_device_data_log_gps_report__speed_over_warning_events
+msgid ""
+"Level 1: Readings exceeding warning threshold (config default: 80 km/h)"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_device_profile__speed_limit_alert
+msgid "Level 2: Moderate speeding threshold. Requires attention."
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_device_data_log_gps_report__speed_over_alert_events
+msgid "Level 2: Readings exceeding alert threshold (config default: 100 km/h)"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_device_data_log_gps_report__speed_over_critical_events
+msgid ""
+"Level 3: Readings exceeding critical threshold (config default: 120 km/h)"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_device_profile__speed_limit_critical
+msgid "Level 3: Severe speeding threshold. Safety concern."
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields.selection,name:device_gps.selection__device_profile__fuel_level_l_unit__liters
+msgid "Liters"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_device_data_log_gps_report__fuel_consumption
+msgid ""
+"Liters per 100 km - lower is better. Aggregates correctly via "
+"_read_group_select."
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_data_log_gps_report__log_count
+msgid "Log Count"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_device__log_gps_ids
+msgid "Log Gps"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_device__log_gps_count
+msgid "Log Gps Count"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_device__log_gps_last_id
+msgid "Log Gps Last"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_data_log_gps__longitude
+msgid "Longitude"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_search
+msgid "Low Accuracy"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.actions.act_window,help:device_gps.action_device_data_log_gps_report_speed
+msgid "Lower insurance premiums"
+msgstr ""
+
+#. module: device_gps
+#: model:res.groups,comment:device_gps.group_device_gps_manager
+msgid "Manager can configure GPS devices and manage tracking data"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.res_config_settings_view_form
+msgid "Max Engine Hours"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_res_config_settings__max_engine_speed_rpm
+msgid "Max Engine Speed Rpm"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_res_config_settings__max_engine_total_hours
+msgid "Max Engine Total Hours"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.res_config_settings_view_form
+msgid "Max Fuel Level (%)"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_res_config_settings__max_fuel_level_percentage
+msgid "Max Fuel Level Percentage"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_res_config_settings__max_hdop
+msgid "Max Hdop"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_res_config_settings__max_latitude
+#: model_terms:ir.ui.view,arch_db:device_gps.res_config_settings_view_form
+msgid "Max Latitude"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_res_config_settings__max_longitude
+#: model_terms:ir.ui.view,arch_db:device_gps.res_config_settings_view_form
+msgid "Max Longitude"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_res_config_settings__max_realistic_speed
+msgid "Max Realistic Speed"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_list
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_device_kanban_gps_dashboard
+msgid "Max Speed"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_graph_speed
+msgid "Max Speed (km/h)"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_list
+msgid "Max Temp (°C)"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_res_config_settings__max_time_future_minutes
+msgid "Max Time Future Minutes"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_res_config_settings__max_time_past_hours
+msgid "Max Time Past Hours"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_res_config_settings__max_hdop
+#: model_terms:ir.ui.view,arch_db:device_gps.res_config_settings_view_form
+msgid "Maximum Horizontal Dilution of Precision allowed (lower is better)"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_res_config_settings__max_latitude
+msgid "Maximum allowed latitude value (degrees)"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_res_config_settings__max_longitude
+msgid "Maximum allowed longitude value (degrees)"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.res_config_settings_view_form
+msgid "Maximum allowed time gap between current time and GPS timestamp"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_res_config_settings__max_time_future_minutes
+msgid "Maximum allowed time gap for timestamps in the future"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_res_config_settings__max_time_past_hours
+msgid "Maximum allowed time gap for timestamps in the past"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_device_data_log_gps_report__engine_rpm_max
+msgid "Maximum engine RPM (aggressive driving indicator)"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_res_config_settings__max_fuel_level_percentage
+msgid "Maximum fuel level percentage allowed"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_res_config_settings__max_engine_speed_rpm
+msgid "Maximum reasonable engine RPM for validation"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_res_config_settings__max_engine_total_hours
+msgid "Maximum reasonable engine hours for validation"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_res_config_settings__max_realistic_speed
+msgid "Maximum reasonable speed for ground vehicles (GPS-based)"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.res_config_settings_view_form
+msgid "Maximum reasonable speed for ground vehicles (km/h)"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields.selection,name:device_gps.selection__device_profile__gps_protocol__meitrack
+msgid "Meitrack"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_list
+msgid "Min Battery (V)"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_res_config_settings__min_latitude
+#: model_terms:ir.ui.view,arch_db:device_gps.res_config_settings_view_form
+msgid "Min Latitude"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_res_config_settings__min_longitude
+#: model_terms:ir.ui.view,arch_db:device_gps.res_config_settings_view_form
+msgid "Min Longitude"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_res_config_settings__min_satellites
+msgid "Min Satellites"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_res_config_settings__min_latitude
+msgid "Minimum allowed latitude value (degrees)"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_res_config_settings__min_longitude
+msgid "Minimum allowed longitude value (degrees)"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_device_profile__motion_threshold_distance
+msgid "Minimum distance to consider device as moving"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_device_data_log_gps_report__external_voltage_min
+msgid "Minimum external power supply voltage (detects power issues)"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_device_device__fuel_consumption_threshold
+msgid ""
+"Minimum fuel decrease (in liters) to be counted as consumption. Filters "
+"sensor noise, sloshing, and temperature-based volume changes."
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_device_device__fuel_refill_threshold
+msgid ""
+"Minimum fuel increase (in liters) to be considered a refueling event. "
+"Smaller increases are ignored as sensor noise."
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_res_config_settings__min_satellites
+#: model_terms:ir.ui.view,arch_db:device_gps.res_config_settings_view_form
+msgid "Minimum number of satellites required for accurate GPS positioning"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_device_profile__motion_threshold_speed
+msgid "Minimum speed to consider device as moving"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_device_device__fuel_theft_threshold
+msgid ""
+"Minimum sudden fuel drop (in liters) to be flagged as a potential theft "
+"event. Should be significantly higher than fuel_consumption_threshold to "
+"avoid false positives."
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields.selection,name:device_gps.selection__device_data_log_gps_report__day_of_week__1
+msgid "Monday"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.actions.act_window,help:device_gps.action_device_data_log_gps_report_speed
+msgid ""
+"Monitor speeding events across your fleet with configurable 3-level thresholds. <br><br>\n"
+"                <strong>Key\n"
+"                Question:</strong> \"Are drivers exceeding speed limits?\" <br><br>\n"
+"                <strong>Shows (configurable per device profile):</strong>"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_data_log_gps_report__month
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_search
+msgid "Month"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_device_data_log_gps_report__month
+msgid "Month (YYYY-MM)"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_device_device__log_gps_last_latitude
+msgid "Most recent GPS latitude from tracking point"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_device_device__log_gps_last_longitude
+msgid "Most recent GPS longitude from tracking point"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_device_device__log_gps_last_altitude
+msgid "Most recent altitude from tracking point"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_device_device__log_gps_last_fuel_level_l
+msgid ""
+"Most recent fuel level in liters from tracking point (CAN bus field 84)"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_device_device__log_gps_last_fuel_level
+msgid "Most recent fuel level percentage from tracking point (field 89)"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_device_device__log_gps_last_satellites
+msgid "Most recent satellite count from tracking point"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_device_device__log_gps_last_speed
+msgid "Most recent speed from tracking point"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_form
+msgid "Motion"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_profile_form_inherit_gps
+msgid "Motion Detection"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_profile__motion_threshold_distance
+msgid "Motion Threshold Distance (m)"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_profile__motion_threshold_speed
+msgid "Motion Threshold Speed (km/h)"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_data_log_gps__movement
+#: model:ir.model.fields,field_description:device_gps.field_device_device__gps_movement_state
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_search
+msgid "Movement"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_data_log_gps_report__movement_count
+msgid "Movement Count"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_device_search
+msgid "Movement Status"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.report_gps_tracking
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_search
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_device_kanban_gps_dashboard
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_device_list
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_device_search
+msgid "Moving"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_graph_activity
+msgid "Moving GPS Points"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_list
+msgid "Moving Points"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.actions.act_window,help:device_gps.action_device_data_log_gps_report
+msgid "No GPS data available"
+msgstr ""
+
+#. module: device_gps
+#. odoo-python
+#: code:addons/device_gps/models/device_device.py:0
+msgid "No GPS data available for %s"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.actions.act_window,help:device_gps.action_device_data_log_gps_report_activity
+msgid "No activity data available"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.actions.act_window,help:device_gps.action_device_data_log_gps_report_distance
+msgid "No distance data available"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.actions.act_window,help:device_gps.action_device_data_log_gps_report_fuel
+msgid "No fuel data available"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.actions.act_window,help:device_gps.action_device_data_log_gps_report_speed
+msgid "No speed data available"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.actions.act_window,help:device_gps.action_device_data_log_gps
+msgid "No tracking points recorded yet"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields.selection,name:device_gps.selection__device_profile__fuel_source__none
+#: model:ir.model.fields.selection,name:device_gps.selection__device_profile__odometer_source__none
+#: model:ir.model.fields.selection,name:device_gps.selection__device_profile__speed_source__none
+msgid "Not Available"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_device_data_log_gps__satellites
+msgid "Number of GPS satellites in view"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_device_data_log_gps_report__log_count
+msgid "Number of GPS tracking points"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.report_gps_tracking
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_device_kanban_gps_dashboard
+msgid "OFF"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.report_gps_tracking
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_device_kanban_gps_dashboard
+msgid "ON"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_data_log_gps__odometer
+#: model:ir.model.fields.selection,name:device_gps.selection__device_data_log_gps_report__distance_source__odo
+msgid "Odometer"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_profile_form_inherit_gps
+msgid "Odometer Calibration"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_profile_form_inherit_gps
+msgid "Odometer Capabilities"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_form
+msgid "Odometer Data"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_data_log_gps_report__odometer_end
+msgid "Odometer End"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_device__odometer_initial_offset
+msgid "Odometer Initial Offset"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_profile__odometer_source
+msgid "Odometer Source"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_data_log_gps_report__odometer_start
+msgid "Odometer Start"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_data_log_gps__odometer_valid
+msgid "Odometer Valid"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_device_data_log_gps__odometer
+msgid "Odometer reading in kilometers"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_device_form
+msgid "Offset to add to calculated odometer (for pre-existing values)"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.actions.act_window,help:device_gps.action_device_data_log_gps_report_activity
+msgid "Optimize fleet allocation"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_device_data_log_gps__raw_payload
+msgid ""
+"Original raw data received from the device, kept for debugging. Discarded "
+"after 'device.raw_payload_retention_days' if that is set; the parsed columns"
+" are unaffected."
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_list
+msgid "Parked (hrs)"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_data_log_gps_report__parked_hours
+msgid "Parked Hours"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_data_log_gps_report__parked_pct
+msgid "Parked Pct"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_data_log_gps__parking_brake_state
+msgid "Parking Brake State"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_data_log_gps__pdop
+msgid "Pdop"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields.selection,name:device_gps.selection__device_profile__fuel_source__percentage
+msgid "Percentage (field 89)"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_device_data_log_gps_report__utilization_pct
+msgid ""
+"Percentage of GPS readings showing vehicle movement. Aggregates correctly "
+"across any time period."
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_device_data_log_gps_report__quality_pct
+msgid "Percentage of GPS readings with good quality"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_device_data_log_gps_report__coasting_pct
+msgid ""
+"Percentage of tracked time spent coasting. Aggregates correctly via "
+"_read_group_select."
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_device_data_log_gps_report__driving_pct
+msgid ""
+"Percentage of tracked time spent driving. Aggregates correctly via "
+"_read_group_select."
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_device_data_log_gps_report__idling_pct
+msgid ""
+"Percentage of tracked time spent idling. Aggregates correctly via "
+"_read_group_select."
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_device_data_log_gps_report__parked_pct
+msgid ""
+"Percentage of tracked time spent parked. Aggregates correctly via "
+"_read_group_select."
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.report_gps_tracking
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_form
+msgid "Position"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_device_data_log_gps__pdop
+msgid "Position Dilution of Precision"
+msgstr ""
+
+#. module: device_gps
+#. odoo-python
+#: code:addons/device_gps/models/device_device.py:0
+msgid "Position request sent to %s"
+msgstr ""
+
+#. module: device_gps
+#: model:device.device,description:device_gps.demo_gps_device_delivery_van_01
+msgid ""
+"Primary delivery van for Mexico City central zone with real-time GPS "
+"tracking (Teltonika FMB920)"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_data_log_gps__priority
+msgid "Priority"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_data_log_gps_report__quality_ok_sum
+msgid "Quality Ok Sum"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_data_log_gps_report__quality_pct
+msgid "Quality Pct"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields.selection,name:device_gps.selection__device_profile__gps_protocol__queclink
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_profile_search_inherit_gps
+msgid "Queclink"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_data_log_gps__raw_payload
+msgid "Raw Payload"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_data_log_gps__real_odometer
+msgid "Real Odometer"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.actions.act_window,help:device_gps.action_device_data_log_gps_report
+msgid ""
+"Real-time summary of your fleet's daily performance. <br><br>\n"
+"                <strong>Key\n"
+"                Question:</strong> \"How is my fleet performing today?\" <br><br>\n"
+"                <strong>Shows:</strong>"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.report_gps_tracking
+msgid "Recent Tracking Points"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.actions.act_window,help:device_gps.action_device_data_log_gps_report_speed
+msgid "Reduce accident risk"
+msgstr ""
+
+#. module: device_gps
+#: model:device.device,name:device_gps.demo_gps_device_reefer_01
+msgid "Refrigerated Truck - REEFER-12"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model,name:device_gps.model_device_profile
+msgid "Remote Device Configuration"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model,name:device_gps.model_device_data_log_gps_report
+msgid "Remote GPS Data Log Report"
+msgstr ""
+
+#. module: device_gps
+#: model:res.groups,name:device_gps.group_device_gps_manager
+msgid "Remote GPS Manager"
+msgstr ""
+
+#. module: device_gps
+#: model:res.groups,name:device_gps.group_device_gps_user
+msgid "Remote GPS User"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_profile__reports_engine_hours
+msgid "Reports Engine Hours"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_profile__reports_engine_rpm
+msgid "Reports Engine RPM"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_profile__reports_engine_temp
+msgid "Reports Engine Temperature"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_profile__reports_ignition
+msgid "Reports Ignition"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_profile__reports_odometer
+msgid "Reports Odometer"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_data_log_gps__satellites
+#: model:ir.model.fields,field_description:device_gps.field_device_device__log_gps_last_satellites
+#: model_terms:ir.ui.view,arch_db:device_gps.report_gps_tracking
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_device_kanban_gps_dashboard
+msgid "Satellites"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields.selection,name:device_gps.selection__device_data_log_gps_report__day_of_week__6
+msgid "Saturday"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.actions.act_window,help:device_gps.action_device_data_log_gps_report_activity
+msgid ""
+"See how active each vehicle was based on GPS movement data. <br><br>\n"
+"                <strong>Key\n"
+"                Questions:</strong>"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.actions.act_window,name:device_gps.action_gps_tracking_configuration
+msgid "Settings"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_data_log_gps__sleep_mode
+msgid "Sleep Mode"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_data_log_gps__source
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_search
+msgid "Source"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_device_data_log_gps__source
+msgid "Source of this log"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_data_log_gps__speed
+#: model:ir.model.fields,field_description:device_gps.field_device_device__log_gps_last_speed
+#: model_terms:ir.ui.view,arch_db:device_gps.report_gps_tracking
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_device_kanban_gps_dashboard
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_device_list
+msgid "Speed"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.actions.act_window,name:device_gps.action_device_data_log_gps_report_speed
+#: model:ir.ui.menu,name:device_gps.menu_device_data_log_gps_report_speed
+msgid "Speed & Safety"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_search
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_search_by_vehicle
+msgid "Speed Alert"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_profile__speed_limit_alert
+msgid "Speed Alert (km/h)"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_data_log_gps_report__speed_avg
+msgid "Speed Avg"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_profile_form_inherit_gps
+msgid "Speed Capabilities"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_data_log_gps_report__speed_count
+msgid "Speed Count"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_search
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_search_by_vehicle
+msgid "Speed Critical"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_profile__speed_limit_critical
+msgid "Speed Critical (km/h)"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_data_log_gps_report__speed_max
+msgid "Speed Max"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_data_log_gps_report__speed_min
+msgid "Speed Min"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_data_log_gps_report__speed_over_alert_events
+msgid "Speed Over Alert Events"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_data_log_gps_report__speed_over_critical_events
+msgid "Speed Over Critical Events"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_data_log_gps_report__speed_over_warning_events
+msgid "Speed Over Warning Events"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_profile__speed_source
+msgid "Speed Source"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_data_log_gps_report__speed_sum
+msgid "Speed Sum"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_profile_form_inherit_gps
+msgid "Speed Thresholds"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_graph_speed
+msgid "Speed Violations by Vehicle"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_search
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_search_by_vehicle
+msgid "Speed Warning"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_profile__speed_limit_warning
+msgid "Speed Warning (km/h)"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_data_log_gps_report__speed_wheel_diff_count
+msgid "Speed Wheel Diff Count"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_data_log_gps_report__speed_wheel_diff_sum
+msgid "Speed Wheel Diff Sum"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_data_log_gps_report__speed_wheel_discrepancy_avg
+msgid "Speed Wheel Discrepancy Avg"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_device_data_log_gps__speed
+msgid "Speed in kilometers per hour"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_profile_form_inherit_gps
+msgid "Speed threshold in km/h to detect motion"
+msgstr ""
+
+#. module: device_gps
+#. odoo-python
+#: code:addons/device_gps/models/device_profile.py:0
+msgid ""
+"Speed thresholds must be in ascending order: warning ≤ alert ≤ critical."
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.actions.act_window,help:device_gps.action_device_data_log_gps_report
+msgid "Speed violations and safety events"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.actions.act_window,help:device_gps.action_device_data_log_gps_report_distance
+msgid "Spot underutilized vehicles"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_device_form
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_device_kanban_gps_dashboard
+msgid "Start Tracking"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_profile__stationary_interval
+msgid "Stationary Interval (seconds)"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_device_kanban_gps_dashboard
+msgid "Status"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_device_form
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_device_kanban_gps_dashboard
+msgid "Stop Tracking"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.report_gps_tracking
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_search
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_device_kanban_gps_dashboard
+msgid "Stopped"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_device_data_log_gps_report__speed_wheel_diff_sum
+msgid "Sum of absolute differences between GPS speed and wheel speed"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_device_data_log_gps_report__speed_sum
+msgid "Sum of all speed readings (for weighted average)"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields.selection,name:device_gps.selection__device_data_log_gps_report__day_of_week__0
+msgid "Sunday"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_device_form
+msgid "Tank capacity in liters (for percentage calculations)"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields.selection,name:device_gps.selection__device_profile__gps_protocol__teltonika
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_profile_search_inherit_gps
+msgid "Teltonika"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.res_config_settings_view_form
+msgid "Temporal Validation"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_device_data_log_gps__fuel_theft_suspected
+msgid ""
+"The drop that produced fuel_consumed exceeded the device's theft threshold. "
+"Separate from fuel_consumed, which records every drop above the noise floor,"
+" so a suspicious loss is still counted as fuel that left the tank."
+msgstr ""
+
+#. module: device_gps
+#. odoo-python
+#: code:addons/device_gps/models/device_device.py:0
+msgid ""
+"These devices still have GPS tracking history and cannot be deleted: %(devices)s.\n"
+"\n"
+"Archive them instead: the history is kept and the device stops being offered."
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_search
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_search_activity
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_search_by_vehicle
+msgid "This Month"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_search
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_search_activity
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_search_by_vehicle
+msgid "This Week"
+msgstr ""
+
+#. module: device_gps
+#. odoo-python
+#: code:addons/device_gps/models/device_device.py:0
+msgid "This action is only available for GPS devices."
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_device_data_log_gps__control_state_flags
+msgid "This is an hexadecimal flag to check vehicle state"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields.selection,name:device_gps.selection__device_data_log_gps_report__day_of_week__4
+msgid "Thursday"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_device_profile__idle_threshold
+msgid "Time before idle alert is triggered"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_res_config_settings__duplicate_time_window_seconds
+#: model_terms:ir.ui.view,arch_db:device_gps.res_config_settings_view_form
+msgid "Time window for duplicate point detection"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_device_data_log_gps_report__parked_hours
+msgid "Time with engine OFF and vehicle not moving"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_device_data_log_gps_report__coasting_hours
+msgid ""
+"Time with engine OFF but vehicle moving (towing, rolling, or sensor error)"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_device_data_log_gps_report__driving_hours
+msgid "Time with engine ON and vehicle moving"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_device_data_log_gps_report__idling_hours
+msgid "Time with engine ON but vehicle not moving (fuel waste indicator)"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_data_log_gps__timestamp
+#: model_terms:ir.ui.view,arch_db:device_gps.report_gps_tracking
+msgid "Timestamp"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_search
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_search_activity
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_search_by_vehicle
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_search
+msgid "Today"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_list
+msgid "Total"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_device_kanban_gps_dashboard
+msgid "Total Logs"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_data_log_gps__total_odometer
+msgid "Total Odometer"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.actions.act_window,help:device_gps.action_device_data_log_gps_report
+msgid "Total active hours per vehicle"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_device_data_log_gps__engine_hours
+msgid "Total engine running hours"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_device_data_log_gps_report__engine_hours_total
+msgid "Total engine running time for the day"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_device_data_log_gps_report__fuel_refilled_total
+msgid "Total fuel added during refueling events"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_device_data_log_gps_report__fuel_consumed_total
+msgid "Total fuel consumed"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_device_device__fuel_tank_capacity
+msgid "Total fuel tank capacity in liters (for percentage calculations)"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.actions.act_window,help:device_gps.action_device_data_log_gps_report
+msgid "Total kilometers traveled per vehicle"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_device_data_log_gps__total_odometer
+msgid "Total odometer reading in kilometers"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_device_data_log_gps_report__tracked_hours
+msgid "Total time tracked (sum of all states)"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.actions.act_window,help:device_gps.action_device_data_log_gps_report_fuel
+msgid "Track fuel costs per vehicle"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.actions.act_window,help:device_gps.action_device_data_log_gps_report_fuel
+msgid ""
+"Track total liters of fuel consumed by each vehicle. <br><br>\n"
+"                <strong>Key\n"
+"                Question:</strong> \"How many liters were consumed?\" <br><br>\n"
+"                <strong>Value:</strong>"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_list
+msgid "Tracked (hrs)"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_data_log_gps_report__tracked_hours
+msgid "Tracked Hours"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_device_form
+msgid "Tracking Configuration"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_device_search
+msgid "Tracking Enabled"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.ui.menu,name:device_gps.menu_device_gps_tracking_logs
+msgid "Tracking Logs"
+msgstr ""
+
+#. module: device_gps
+#. odoo-python
+#: code:addons/device_gps/models/device_device.py:0
+msgid "Tracking Points"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_device_form
+msgid "Tracking Points (24h)"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_device_search
+msgid "Tracking Status"
+msgstr ""
+
+#. module: device_gps
+#. odoo-python
+#: code:addons/device_gps/models/device_device.py:0
+msgid "Tracking started for %s"
+msgstr ""
+
+#. module: device_gps
+#. odoo-python
+#: code:addons/device_gps/models/device_device.py:0
+msgid "Tracking stopped for %s"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields.selection,name:device_gps.selection__device_data_log_gps_report__day_of_week__2
+msgid "Tuesday"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_device_data_log_gps__data_type
+msgid "Type of data stored in this record"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_device_data_log_gps__event_type
+msgid "Type of event that triggered this log"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_device_profile__fuel_level_l_unit
+msgid ""
+"Unit for fuel_level_l field (CAN bus field 84). Teltonika CAN bus typically "
+"reports in deciliters."
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_profile_form_inherit_gps
+msgid "Unit for volume-based fuel reporting (CAN bus field 84)"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_device_profile__stationary_interval
+msgid "Update interval when device is stationary (saves battery/data)"
+msgstr ""
+
+#. module: device_gps
+#: model:res.groups,comment:device_gps.group_device_gps_user
+msgid "User can view GPS tracking data and device positions"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_data_log_gps_report__utilization_pct
+msgid "Utilization Pct"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_search
+msgid "Valid Odometer"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.actions.act_window,name:device_gps.action_device_data_log_gps_report_activity
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_graph_activity
+msgid "Vehicle Activity"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_device_form
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_profile_form_inherit_gps
+msgid "Vehicle Calibration"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.res_config_settings_view_form
+msgid "Vehicle Parameters"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_device_form
+msgid "Vehicle Status"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_form
+msgid "Vehicle Telemetry"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_device_data_log_gps__battery_voltage
+msgid "Vehicle battery voltage"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_device_data_log_gps__ignition
+msgid "Vehicle ignition state"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_device_data_log_gps__movement
+msgid "Vehicle is moving"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields.selection,name:device_gps.selection__device_profile__fuel_source__volume
+msgid "Volume/Liters (field 84)"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_profile_form_inherit_gps
+msgid "Warning"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields.selection,name:device_gps.selection__device_data_log_gps_report__day_of_week__3
+msgid "Wednesday"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_data_log_gps_report__week
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_search
+msgid "Week"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_device_data_log_gps_report__speed_avg
+msgid "Weighted average speed"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_data_log_gps__wheel_speed
+msgid "Wheel Speed"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_data_log_gps_report__wheel_speed_avg
+msgid "Wheel Speed Avg"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_data_log_gps_report__wheel_speed_count
+msgid "Wheel Speed Count"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,field_description:device_gps.field_device_data_log_gps_report__wheel_speed_sum
+msgid "Wheel Speed Sum"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_device_data_log_gps__timestamp
+msgid ""
+"When the data was recorded (device time or receipt time) Note that this may "
+"differ from the record creation time."
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_device_profile__fuel_source
+msgid ""
+"Which fuel data source the device reports:\n"
+"- Percentage: Teltonika field 89 (0-100%%)\n"
+"- Volume: Teltonika field 84 (in configured units)\n"
+"- Both: Device reports both percentage and volume"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_device_data_log_gps_report__distance_source
+msgid "Which method was used for distance_best"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_device_profile__odometer_source
+msgid ""
+"Which odometer source the device reports:\n"
+"- GPS Calculated: Teltonika field 87 (odometer in meters)\n"
+"- CAN Bus: Teltonika field 16 (total_odometer from vehicle)\n"
+"- Both: Device reports both sources"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_device_profile__speed_source
+msgid ""
+"Which speed data source the device reports:\n"
+"- GPS: Standard GPS-calculated speed\n"
+"- CAN: Teltonika field 81 (wheel speed from vehicle)\n"
+"- Both: Device reports both sources"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_search
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_search_activity
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_search_by_vehicle
+msgid "With Distance Data"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_search
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_search_by_vehicle
+msgid "With Fuel Data"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_search
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_search_activity
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_search_by_vehicle
+msgid "With Movement"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_search
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_search_activity
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_search_by_vehicle
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_search
+msgid "Yesterday"
+msgstr ""
+
+#. module: device_gps
+#: model:ir.model.fields,help:device_gps.field_device_device__kanban_color
+msgid "kanban_color for kanban card highlighting"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.report_gps_tracking
+msgid "km/h"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_search_activity
+msgid "★ This Month by Day of Week"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_search_by_vehicle
+msgid "★ This Week by Vehicle"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_search_activity
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_search_by_vehicle
+msgid "★ Today by Vehicle"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_search_by_vehicle
+msgid "★ Yesterday by Vehicle"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_graph_speed
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_list
+msgid "⚠ Warning"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_graph_speed
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_list
+msgid "⚡ Alert"
+msgstr ""
+
+#. module: device_gps
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_graph_speed
+#: model_terms:ir.ui.view,arch_db:device_gps.view_device_data_log_gps_report_list
+msgid "🔴 Critical"
+msgstr ""

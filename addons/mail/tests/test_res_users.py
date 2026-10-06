@@ -1,0 +1,1090 @@
+from datetime import datetime, timedelta
+from unittest.mock import MagicMock, patch
+
+from freezegun import freeze_time
+from psycopg import IntegrityError
+
+from odoo import Command
+from odoo.exceptions import AccessError, UserError
+from odoo.http.geoip import GeoIP
+from odoo.libs.json import dumps as json_dumps
+from odoo.tests import RecordCapturer, tagged, users
+from odoo.tools import mute_logger
+
+from odoo.addons.base.models.res_users import ResUsersPatchedInTest
+from odoo.addons.base.tests.common import HttpCaseWithUserDemo
+from odoo.addons.mail.tests.common import MailCommon, MockEmail, mail_new_test_user
+
+
+@tagged("-at_install", "post_install", "mail_tools", "res_users")
+class TestNotifySecurityUpdate(MailCommon):
+    @users("employee")
+    def test_security_update_email(self):
+        with self.mock_mail_gateway():
+            self.env.user.write({"email": "new@example.com"})
+
+        self.assertSentEmail(
+            '"YourTestCompany" <your.company@example.com>',
+            ["e.e@example.com"],
+            subject="Security Update: Email Changed",
+        )
+
+    @users("employee")
+    def test_security_update_login(self):
+        with self.mock_mail_gateway():
+            self.env.user.write({"login": "newlogin"})
+
+        self.assertSentEmail(
+            '"YourTestCompany" <your.company@example.com>',
+            [self.env.user.email_formatted],
+            subject="Security Update: Login Changed",
+        )
+
+    def test_security_update_email_alerts_each_user_at_its_own_address(self):
+        users = self.env["res.users"].create(
+            [
+                {
+                    "login": "batch_email_%d" % idx,
+                    "name": "Batch %d" % idx,
+                    "email": "batch.%d@example.com" % idx,
+                }
+                for idx in range(3)
+            ]
+        )
+        previous_emails = users.mapped("email")
+        with self.mock_mail_gateway():
+            users.write({"email": "shared.new@example.com"})
+
+        alerts = self._new_mails.filtered(
+            lambda mail: mail.subject == "Security Update: Email Changed"
+        )
+        self.assertEqual(len(alerts), 3, "one alert per user, not one per pair")
+        self.assertEqual(sorted(alerts.mapped("email_to")), sorted(previous_emails))
+        for alert, previous_email in zip(
+            alerts.sorted("email_to"), sorted(previous_emails), strict=True
+        ):
+            self.assertIn(
+                previous_email,
+                alert.body_html,
+                "the body must name the address the alert is sent to",
+            )
+
+    def test_security_update_email_cleared(self):
+        user = mail_new_test_user(
+            self.env,
+            login="email_cleared",
+            name="Email Cleared",
+            email="cleared@example.com",
+        )
+        with self.mock_mail_gateway():
+            user.write({"email": False})
+
+        self.assertSentEmail(
+            '"YourTestCompany" <your.company@example.com>',
+            ["cleared@example.com"],
+            subject="Security Update: Email Changed",
+        )
+
+    def test_security_update_silent_while_the_account_is_deleted(self):
+        portal_user = mail_new_test_user(
+            self.env,
+            login="self_deleting",
+            name="Self Deleting",
+            email="self.deleting@example.com",
+            groups="base.group_portal",
+        )
+        with self.mock_mail_gateway():
+            portal_user._deactivate_portal_user()
+
+        self.assertFalse(portal_user.active)
+        self.assertFalse(
+            self._new_mails.filtered(
+                lambda mail: (mail.subject or "").startswith("Security Update")
+            ),
+            "no security alert is raised by the account-deletion rewrite",
+        )
+
+    def test_security_update_leaves_after_the_transaction_commits(self):
+        user = mail_new_test_user(
+            self.env, login="deferred_alert", name="Deferred", email="def@test.com"
+        )
+        MailMail = type(self.env["mail.mail"])
+        with (
+            patch.object(
+                MailMail, "send_after_commit", autospec=True
+            ) as send_after_commit,
+            patch.object(MailMail, "send", autospec=True) as send_now,
+        ):
+            mails = user._notify_security_setting_update("Subject", "content")
+
+        self.assertTrue(send_after_commit.called, "the send waits for the commit")
+        self.assertFalse(send_now.called, "and never runs inside the transaction")
+        self.assertTrue(mails.exists(), "the caller gets records that still exist")
+
+    def test_security_update_prepare_values_reads_the_geoip_api(self):
+        class _Record:
+            class city:
+                name = "Springfield"
+
+            class country:
+                name = "United States"
+                iso_code = "US"
+
+            class continent:
+                name = None
+                code = None
+
+            subdivisions = [type("_Sub", (), {"name": "Illinois", "iso_code": "IL"})]
+
+        geoip = GeoIP("8.8.8.8", None)
+        record = _Record()
+        vars(geoip)["_city_record"] = record
+        vars(geoip)["_country_record"] = record
+        fake_request = MagicMock(geoip=geoip)
+        fake_request.httprequest.remote_addr = "8.8.8.8"
+        fake_request.httprequest.user_agent.browser = "firefox"
+        fake_request.httprequest.user_agent.platform = "linux"
+
+        with patch("odoo.addons.mail.models.res_users.request", fake_request):
+            values = self.env.user._notify_security_setting_update_prepare_values(
+                "content"
+            )
+        self.assertEqual(
+            values["location_address"], "Near Springfield, Illinois, United States"
+        )
+        self.assertEqual(values["ip_address"], "8.8.8.8")
+        self.assertEqual(values["browser"], "Firefox")
+        self.assertEqual(values["useros"], "Linux")
+
+        with (
+            patch("odoo.addons.mail.models.res_users.request", fake_request),
+            self.mock_mail_gateway(),
+        ):
+            self.env.user._notify_security_setting_update("Subject", "content")
+        body = self._new_mails[-1].body_html
+        self.assertIn("Springfield, Illinois, United States", body)
+        self.assertIn("8.8.8.8", body)
+
+    @users("employee")
+    def test_security_update_password(self):
+        with self.mock_mail_gateway():
+            self.env.user.write({"password": "newpassword"})
+
+        self.assertSentEmail(
+            '"YourTestCompany" <your.company@example.com>',
+            [self.env.user.email_formatted],
+            subject="Security Update: Password Changed",
+        )
+
+
+@tagged("-at_install", "post_install", "mail_tools", "res_users")
+class TestUser(MailCommon):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.portal_user = cls._create_portal_user()
+
+    @mute_logger("odoo.db")
+    def test_notification_type_constraint(self):
+        with self.assertRaises(
+            IntegrityError, msg="Portal user can not receive notification in Odoo"
+        ):
+            mail_new_test_user(
+                self.env,
+                login="user_test_constraint_2",
+                name="Test User 2",
+                email="user_test_constraint_2@test.example.com",
+                notification_type="inbox",
+                groups="base.group_portal",
+            )
+
+    def test_notification_type_convert_internal_inbox_to_portal(self):
+        user = mail_new_test_user(
+            self.env,
+            login="user_test_constraint_3",
+            name="Test User 3",
+            email="user_test_constraint_3@test.example.com",
+            notification_type="inbox",
+            groups="base.group_user",
+        )
+
+        self.assertEqual(user.notification_type, "inbox")
+        self.assertIn(
+            self.env.ref("mail.group_mail_notification_type_inbox"), user.group_ids
+        )
+
+        user.write(
+            {
+                "group_ids": [
+                    (3, self.env.ref("base.group_user").id),
+                    (4, self.env.ref("base.group_portal").id),
+                ]
+            }
+        )
+        self.assertEqual(user.notification_type, "email")
+        self.assertNotIn(
+            self.env.ref("mail.group_mail_notification_type_inbox"), user.group_ids
+        )
+
+        admin = mail_new_test_user(
+            self.env,
+            login="user_test_constraint_4",
+            name="Test User 4",
+            email="user_test_constraint_3@test.example.com",
+            notification_type="inbox",
+            groups="base.group_erp_manager",
+        )
+        admin.write(
+            {
+                "notification_type": "email",
+                "group_ids": [
+                    (3, self.env.ref("base.group_user").id),
+                    (3, self.env.ref("base.group_erp_manager").id),
+                    (4, self.env.ref("base.group_portal").id),
+                ],
+            }
+        )
+        self.assertFalse(admin._is_admin())
+        self.assertTrue(admin._is_portal())
+        self.assertEqual(admin.notification_type, "email")
+        self.assertNotIn(
+            self.env.ref("mail.group_mail_notification_type_inbox"), admin.group_ids
+        )
+
+    @freeze_time("2025-06-18 08:45:12")
+    def test_has_out_of_office_configured_tracks_the_only_field_that_enables_it(self):
+        Users = self.env["res.users"]
+        self.env["res.users"].search([("out_of_office_from", "!=", False)]).write(
+            {"out_of_office_from": False}
+        )
+        self.assertFalse(
+            Users._has_out_of_office_configured(),
+            "no user has an out-of-office window configured",
+        )
+        self.user_employee.write({"out_of_office_from": "2020-01-01 00:00:00"})
+        self.assertTrue(
+            Users._has_out_of_office_configured(),
+            "write() must invalidate the cached flag, or the feature goes silent",
+        )
+        self.user_employee.write({"out_of_office_from": False})
+        self.assertFalse(
+            Users._has_out_of_office_configured(),
+            "clearing it must invalidate the flag too",
+        )
+        created = mail_new_test_user(
+            self.env,
+            login="ooo_at_create",
+            name="Out Of Office At Create",
+            out_of_office_from="2020-01-01 00:00:00",
+        )
+        self.assertTrue(
+            Users._has_out_of_office_configured(),
+            "create() must invalidate the cached flag as well",
+        )
+        created.write({"out_of_office_from": False})
+        self.assertFalse(Users._has_out_of_office_configured())
+
+    def test_out_of_office(self):
+        test_user = self.user_employee.with_user(self.user_employee)
+        portal_user = self.portal_user
+        now = datetime(2025, 6, 8, 8, 45, 12)
+        for ooo_from, ooo_to, exp_ooo in [
+            (False, False, False),
+            (now - timedelta(hours=1), False, True),
+            (False, now + timedelta(hours=1), False),
+            (now - timedelta(hours=1), now + timedelta(hours=1), True),
+            (now, now, True),
+            (now - timedelta(hours=4), now - timedelta(hours=2), False),
+            (now + timedelta(hours=2), now + timedelta(hours=4), False),
+            (now + timedelta(hours=2), False, False),
+        ]:
+            with self.subTest(ooo_from=ooo_from, ooo_to=ooo_to):
+                with self.mock_datetime_and_now(now):
+                    test_user.write(
+                        {
+                            "out_of_office_from": ooo_from,
+                            "out_of_office_to": ooo_to,
+                        }
+                    )
+                    self.assertEqual(test_user.is_out_of_office, exp_ooo)
+
+                    portal_user.write(
+                        {
+                            "out_of_office_from": ooo_from,
+                            "out_of_office_to": ooo_to,
+                        }
+                    )
+                    self.assertFalse(
+                        portal_user.is_out_of_office, "Portal users are never OOO"
+                    )
+
+    def test_has_external_mail_server_reads_a_boolean(self):
+        user = self.env.user
+        icp = self.env["ir.config_parameter"].sudo()
+        for stored, expected in (("False", False), ("True", True)):
+            with self.subTest(stored=stored):
+                icp.set_param("base_setup.default_external_email_server", stored)
+                user.invalidate_recordset(["has_external_mail_server"])
+                self.assertEqual(user.has_external_mail_server, expected)
+        icp.search([("key", "=", "base_setup.default_external_email_server")]).unlink()
+        user.invalidate_recordset(["has_external_mail_server"])
+        self.assertFalse(
+            user.has_external_mail_server, "unset means no external mail server"
+        )
+
+    def test_outgoing_mail_server_matches_the_normalized_address(self):
+        user = mail_new_test_user(
+            self.env,
+            login="mixed_case_email",
+            name="Mixed Case",
+            email="Mixed.Case@Example.COM",
+        )
+        server = (
+            self.env["ir.mail_server"]
+            .sudo()
+            .create(
+                {
+                    "name": "Mixed Case personal server",
+                    "smtp_host": "smtp.example.com",
+                    "smtp_user": user.email_normalized,
+                    "from_filter": user.email_normalized,
+                    "owner_user_id": user.id,
+                }
+            )
+        )
+        user.invalidate_recordset(["outgoing_mail_server_id"])
+        self.assertEqual(user.outgoing_mail_server_id, server)
+
+        self.env["res.users"]._gc_personal_mail_servers()
+        self.assertTrue(server.exists(), "the autovacuum must not reap a live server")
+
+    def test_outgoing_mail_server_reads_from_filter_like_the_sender_does(self):
+        user = mail_new_test_user(
+            self.env,
+            login="from_filter_shapes",
+            name="From Filter",
+            email="From.Filter@Example.COM",
+        )
+        address = user.email_normalized
+        server = (
+            self.env["ir.mail_server"]
+            .sudo()
+            .create(
+                {
+                    "name": "From filter shapes",
+                    "smtp_host": "smtp.example.com",
+                    "smtp_user": address,
+                    "from_filter": address,
+                    "owner_user_id": user.id,
+                }
+            )
+        )
+        for from_filter, expected in (
+            (address, True),
+            (address.upper(), True),
+            ("  %s  " % address, True),
+            ("%s, other@example.com" % address, True),
+            ("someone.else@example.com", False),
+            (address.split("@")[1], False),
+        ):
+            with self.subTest(from_filter=from_filter):
+                server.from_filter = from_filter
+                user.invalidate_recordset(["outgoing_mail_server_id"])
+                self.assertEqual(bool(user.outgoing_mail_server_id), expected)
+                if expected:
+                    self.assertTrue(
+                        self.env["ir.mail_server"]._match_from_filter(
+                            address, from_filter
+                        ),
+                        "the sender accepts it, so the compute must too",
+                    )
+
+    def test_outgoing_mail_server_ignores_another_users_server(self):
+        user = mail_new_test_user(
+            self.env, login="no_server", name="No Server", email="no.server@test.com"
+        )
+        other = mail_new_test_user(
+            self.env, login="has_server", name="Has Server", email="has@test.com"
+        )
+        self.env["ir.mail_server"].sudo().create(
+            {
+                "name": "Other personal server",
+                "smtp_host": "smtp.example.com",
+                "smtp_user": other.email_normalized,
+                "from_filter": other.email_normalized,
+                "owner_user_id": other.id,
+            }
+        )
+        (user + other).invalidate_recordset(["outgoing_mail_server_id"])
+        self.assertFalse(user.outgoing_mail_server_id)
+        self.assertEqual(user.outgoing_mail_server_type, "default")
+        self.assertTrue(other.outgoing_mail_server_id)
+
+    def test_personal_mail_server_survives_its_own_setup(self):
+        user = mail_new_test_user(
+            self.env, login="pending_oauth", name="Pending", email="pending@test.com"
+        )
+        pending = (
+            self.env["ir.mail_server"]
+            .sudo()
+            .create(
+                {
+                    "active": False,
+                    "name": "Pending setup",
+                    "smtp_host": "smtp.example.com",
+                    "smtp_user": user.email_normalized,
+                    "from_filter": user.email_normalized,
+                    "owner_user_id": user.id,
+                }
+            )
+        )
+        self.env["res.users"]._gc_personal_mail_servers()
+        self.assertTrue(pending.exists(), "a setup in flight is not garbage")
+
+        grace = self.env["ir.mail_server"]._get_personal_mail_server_grace()
+        self.env.cr.execute(
+            "UPDATE ir_mail_server SET create_date = %s WHERE id = %s",
+            [self.env.cr.now() - timedelta(minutes=grace + 1), pending.id],
+        )
+        pending.invalidate_recordset(["create_date"])
+        self.env["res.users"]._gc_personal_mail_servers()
+        self.assertFalse(pending.exists(), "an abandoned setup is collected")
+
+    def test_personal_mail_server_is_collected_when_unused(self):
+        user = mail_new_test_user(
+            self.env, login="stale_server", name="Stale", email="stale@test.com"
+        )
+        server = (
+            self.env["ir.mail_server"]
+            .sudo()
+            .create(
+                {
+                    "name": "Stale server",
+                    "smtp_host": "smtp.example.com",
+                    "smtp_user": user.email_normalized,
+                    "from_filter": user.email_normalized,
+                    "owner_user_id": user.id,
+                }
+            )
+        )
+        self.env["res.users"]._gc_personal_mail_servers()
+        self.assertTrue(server.exists())
+
+        user.write({"email": "moved.on@test.com"})
+        self.env["res.users"]._gc_personal_mail_servers()
+        self.assertFalse(
+            server.exists(), "the owner's address moved on; the server has not"
+        )
+
+    def test_out_of_office_flag_is_cleared_when_its_last_user_goes(self):
+        Users = self.env["res.users"]
+        Users.search([("out_of_office_from", "!=", False)]).write(
+            {"out_of_office_from": False}
+        )
+        user = mail_new_test_user(
+            self.env,
+            login="ooo_unlinked",
+            name="OOO Unlinked",
+            email="ooo.unlinked@test.com",
+            out_of_office_from="2020-01-01 00:00:00",
+        )
+        self.assertTrue(Users._has_out_of_office_configured())
+        user.unlink()
+        self.assertFalse(
+            Users._has_out_of_office_configured(),
+            "unlink must invalidate the flag like create and write do",
+        )
+
+    def test_im_status_without_a_presence(self):
+        user = mail_new_test_user(
+            self.env, login="no_presence", name="No Presence", email="np@test.com"
+        )
+        self.assertFalse(user.presence_ids)
+        self.assertEqual(user.im_status, "offline")
+        self.assertEqual(user.partner_id.im_status, "offline")
+
+    def test_im_status_is_resolved_the_same_way_for_user_and_partner(self):
+        user = mail_new_test_user(
+            self.env, login="with_presence", name="Presence", email="wp@test.com"
+        )
+        presence = self.env["mail.presence"].create({"user_id": user.id})
+        for status, manual, expected in (
+            ("online", False, "online"),
+            ("online", "busy", "busy"),
+            ("away", False, "away"),
+            ("offline", "busy", "offline"),
+        ):
+            with self.subTest(status=status, manual=manual):
+                presence.status = status
+                user.manual_im_status = manual
+                user.invalidate_recordset(["im_status"])
+                user.partner_id.invalidate_recordset(["im_status"])
+                self.assertEqual(user.im_status, expected)
+                self.assertEqual(user.partner_id.im_status, expected)
+
+    def test_partner_presence_folds_its_users_by_priority(self):
+        partner = self.env["res.partner"].create({"name": "Shared Persona"})
+        user_a, user_b = self.env["res.users"].create(
+            [
+                {"partner_id": partner.id, "login": "fold_a"},
+                {"partner_id": partner.id, "login": "fold_b"},
+            ]
+        )
+        presence_a, presence_b = self.env["mail.presence"].create(
+            [{"user_id": user_a.id}, {"user_id": user_b.id}]
+        )
+        for status_a, manual_a, status_b, manual_b, expected in (
+            ("offline", False, "offline", False, "offline"),
+            ("away", False, "offline", False, "away"),
+            ("away", False, "online", False, "online"),
+            ("online", "busy", "offline", False, "busy"),
+            ("online", "busy", "away", False, "away"),
+            ("online", "busy", "online", False, "online"),
+        ):
+            with self.subTest(a=(status_a, manual_a), b=(status_b, manual_b)):
+                presence_a.status = status_a
+                presence_b.status = status_b
+                user_a.manual_im_status = manual_a
+                user_b.manual_im_status = manual_b
+                partner.invalidate_recordset(["im_status"])
+                self.assertEqual(partner.im_status, expected)
+
+    def test_deactivating_a_user_removes_their_activities(self):
+        for archive in (
+            lambda user: user.write({"active": False}),
+            lambda user: user.action_archive(),
+        ):
+            with self.subTest(archive=archive):
+                user = mail_new_test_user(
+                    self.env,
+                    login="to_archive_%s" % id(archive),
+                    name="To Archive",
+                    email="to.archive@test.com",
+                )
+                activity = self.env["mail.activity"].create(
+                    {
+                        "activity_type_id": self.env.ref(
+                            "mail.mail_activity_data_todo"
+                        ).id,
+                        "res_id": self.partner_admin.id,
+                        "res_model_id": self.env["ir.model"]._get_id("res.partner"),
+                        "user_id": user.id,
+                    }
+                )
+                archive(user)
+                self.assertFalse(user.active)
+                self.assertFalse(
+                    activity.exists(),
+                    "an archived user keeps no assigned activity",
+                )
+
+    def test_notification_type_follows_an_implied_inbox_group(self):
+        inbox_group = self.env.ref("mail.group_mail_notification_type_inbox")
+        implying_group = self.env["res.groups"].create(
+            {"name": "Implies Inbox", "implied_ids": [Command.set(inbox_group.ids)]}
+        )
+        user = mail_new_test_user(
+            self.env, login="implied_inbox", name="Implied", groups="base.group_user"
+        )
+        self.assertEqual(user.notification_type, "email")
+
+        user.write({"group_ids": [Command.link(implying_group.id)]})
+        self.assertIn(inbox_group, user.all_group_ids)
+        self.assertNotIn(inbox_group, user.group_ids, "held only by implication")
+        self.assertEqual(user.notification_type, "inbox")
+
+        user.write({"group_ids": [Command.unlink(implying_group.id)]})
+        self.assertNotIn(inbox_group, user.all_group_ids)
+        self.assertEqual(user.notification_type, "email")
+
+    def test_notification_type_is_computed_from_a_pre_flush_group_write(self):
+        inbox_group = self.env.ref("mail.group_mail_notification_type_inbox")
+        user = mail_new_test_user(
+            self.env, login="direct_inbox", name="Direct", groups="base.group_user"
+        )
+        user.write({"group_ids": [Command.link(inbox_group.id)]})
+        self.assertEqual(user.notification_type, "inbox")
+        self.assertIn(inbox_group, user.group_ids, "the grant must survive")
+
+    def test_portal_user_loses_the_inbox_group_outside_the_compute(self):
+        user = mail_new_test_user(
+            self.env,
+            login="demoted_inbox",
+            name="Demoted",
+            notification_type="inbox",
+            groups="base.group_user",
+        )
+        inbox_group = self.env.ref("mail.group_mail_notification_type_inbox")
+        self.assertIn(inbox_group, user.group_ids)
+
+        user.write(
+            {
+                "group_ids": [
+                    Command.unlink(self.env.ref("base.group_user").id),
+                    Command.link(self.env.ref("base.group_portal").id),
+                ]
+            }
+        )
+        self.assertTrue(user.share)
+        self.assertEqual(user.notification_type, "email")
+        self.assertNotIn(inbox_group, user.group_ids)
+
+    def test_activity_systray_says_when_it_truncates(self):
+        self.env["ir.config_parameter"].sudo().set_param(
+            "mail.activity.systray.limit", "1"
+        )
+        partners = self.env["res.partner"].create(
+            [{"name": "Systray %d" % index} for index in range(2)]
+        )
+        self.env["mail.activity"].create(
+            [
+                {
+                    "activity_type_id": self.env.ref("mail.mail_activity_data_todo").id,
+                    "res_id": partner.id,
+                    "res_model_id": self.env["ir.model"]._get_id("res.partner"),
+                    "user_id": self.env.user.id,
+                }
+                for partner in partners
+            ]
+        )
+        with self.assertLogs(
+            "odoo.addons.mail.models.res_users", level="WARNING"
+        ) as capture:
+            groups = self.env["res.users"]._get_activity_groups()
+        self.assertIn("undercounts", capture.output[0])
+        self.assertEqual(sum(group["due_count"] for group in groups), 1)
+
+    def test_web_create_users(self):
+        src = [
+            "POILUCHETTE@test.example.com",
+            '"Jean Poilvache" <POILVACHE@test.example.com>',
+        ]
+        with self.mock_mail_gateway(), RecordCapturer(self.env["res.users"]) as capture:
+            self.env["res.users"].web_create_users(src)
+
+        exp_emails = ["poiluchette@test.example.com", "poilvache@test.example.com"]
+        for user_email in exp_emails:
+            self.assertSentEmail(
+                self.env.company.partner_id.email_formatted,
+                [user_email],
+                email_from=self.env.company.partner_id.email_formatted,
+            )
+
+        self.assertEqual(len(capture.records), 2, "Should create one user / entry")
+        self.assertEqual(
+            sorted(capture.records.mapped("name")),
+            sorted(("poiluchette@test.example.com", "Jean Poilvache")),
+        )
+        self.assertEqual(sorted(capture.records.mapped("email")), sorted(exp_emails))
+
+
+@tagged("-at_install", "post_install", "res_users")
+class TestUserTours(HttpCaseWithUserDemo):
+    def test_user_modify_own_profile(self):
+        if "hr.employee" in self.env and not self.user_demo.employee_id:
+            self.env["hr.employee"].create(
+                {
+                    "name": "Marc Demo",
+                    "user_id": self.user_demo.id,
+                }
+            )
+            self.user_demo.group_ids += self.env.ref("hr.group_hr_user")
+        self.user_demo.tz = "Europe/Brussels"
+        self.user_demo.notification_type = "email"
+
+        with patch.object(
+            ResUsersPatchedInTest, "action_save_preferences", lambda self: True
+        ):
+            self.start_tour(
+                "/odoo",
+                "mail/static/tests/tours/user_modify_own_profile_tour.js",
+                login="demo",
+            )
+        self.assertEqual(self.user_demo.notification_type, "inbox")
+
+
+@tagged("post_install", "-at_install")
+class TestUserSettings(MailCommon):
+    def test_create_portal_user(self):
+        portal_group = self.env.ref("base.group_portal")
+        user = self.env.user.create(
+            {
+                "name": "A portal user",
+                "login": "portal_test",
+                "group_ids": [(6, 0, [portal_group.id])],
+            }
+        )
+        self.assertFalse(
+            user.res_users_settings_ids,
+            "Portal users should not have settings by default",
+        )
+
+    def test_create_internal_user(self):
+        user = self.env.user.create(
+            {
+                "name": "A internal user",
+                "login": "test_user",
+            }
+        )
+        self.assertTrue(
+            user.res_users_settings_ids,
+            "Internal users should have settings by default",
+        )
+
+    def _portal_in_a_call_channel(self):
+        portal = self._create_portal_user()
+        guest = self.env["mail.guest"].create({"name": "Call Guest"})
+        channel = self.env["discuss.channel"].create(
+            {"name": "Call", "channel_type": "group"}
+        )
+        channel._add_members(
+            partners=portal.partner_id | self.user_employee.partner_id,
+            guests=guest,
+            post_joined_message=False,
+        )
+        settings = self.env["res.users.settings"]._get_or_create_for_user(portal)
+        return portal, guest, settings.with_user(portal)
+
+    def test_a_portal_user_keeps_a_volume_for_a_fellow_member(self):
+        _portal, guest, settings = self._portal_in_a_call_channel()
+        settings.set_volume_setting(self.user_employee.partner_id.id, 0.3)
+        settings.set_volume_setting(None, 0.6, guest_id=guest.id)
+        settings.invalidate_recordset()
+        self.env.invalidate_all()
+        volumes = settings._format_settings(["volume_settings_ids"])["volumes"]
+        self.assertEqual(
+            sorted(
+                (volume["partner_id"] or volume["guest_id"])["id"]
+                for volume in volumes[0][1]
+            ),
+            sorted([self.user_employee.partner_id.id, guest.id]),
+        )
+
+    def test_a_volume_is_refused_for_someone_sharing_no_channel(self):
+        _portal, _guest, settings = self._portal_in_a_call_channel()
+        stranger = self.env["res.partner"].create({"name": "Stranger"})
+        employee_settings = self.env["res.users.settings"]._get_or_create_for_user(
+            self.user_employee
+        )
+        with self.assertRaises(AccessError):
+            employee_settings.with_user(self.user_employee).set_volume_setting(
+                stranger.id, 0.3
+            )
+        with self.assertRaises(AccessError):
+            settings.set_volume_setting(stranger.id, 0.3)
+        lone_guest = self.env["mail.guest"].create({"name": "Lone Guest"})
+        with self.assertRaises(AccessError):
+            settings.set_volume_setting(None, 0.3, guest_id=lone_guest.id)
+
+    def test_a_volume_names_a_contact_or_a_guest_not_both(self):
+        _portal, guest, settings = self._portal_in_a_call_channel()
+        with self.assertRaises(UserError):
+            settings.set_volume_setting(
+                self.user_employee.partner_id.id, 0.3, guest_id=guest.id
+            )
+        with self.assertRaises(UserError):
+            settings.set_volume_setting(None, 0.3)
+
+    @users("employee")
+    def test_a_setting_restricted_to_a_group_is_not_formatted_for_others(self):
+        Settings = self.env["res.users.settings"]
+        field = Settings._fields["channel_notifications"]
+        with patch.object(field, "groups", "base.group_system"):
+            mine = Settings._get_or_create_for_user(self.user_employee)
+            self.assertNotIn("channel_notifications", mine._res_users_settings_format())
+            admins = Settings.sudo()._get_or_create_for_user(self.user_admin)
+            self.assertIn("channel_notifications", admins._res_users_settings_format())
+
+    @users("employee")
+    def test_find_or_create_for_user_should_create_record_if_not_existing(self):
+        self.user_employee.res_users_settings_ids.unlink()
+        settings = self.user_employee.res_users_settings_ids
+        self.assertFalse(settings, "no records should exist")
+
+        self.env["res.users.settings"]._get_or_create_for_user(self.user_employee)
+        settings = self.user_employee.res_users_settings_ids
+        self.assertTrue(
+            settings,
+            "a record should be created after _get_or_create_for_user is called",
+        )
+
+    @users("employee")
+    def test_find_or_create_for_user_should_return_correct_res_users_settings(self):
+        self.user_employee.res_users_settings_ids.unlink()
+        settings = self.env["res.users.settings"].create(
+            {
+                "user_id": self.user_employee.id,
+            }
+        )
+        result = self.env["res.users.settings"]._get_or_create_for_user(
+            self.user_employee
+        )
+        self.assertEqual(
+            result, settings, "Correct mail user settings should be returned"
+        )
+
+    @users("employee")
+    def test_set_res_users_settings_should_send_notification_on_bus(self):
+        settings = self.user_employee.res_users_settings_id
+        settings.use_push_to_talk = False
+
+        with self.assertBus(
+            [(self.cr.dbname, "res.partner", self.partner_employee.id)],
+            [
+                {
+                    "type": "res.users.settings",
+                    "payload": {
+                        "id": settings.id,
+                        "use_push_to_talk": True,
+                    },
+                }
+            ],
+        ):
+            settings.set_res_users_settings({"use_push_to_talk": True})
+
+    @users("employee")
+    def test_set_res_users_settings_should_set_settings_properly(self):
+        settings = self.user_employee.res_users_settings_id
+        settings.set_res_users_settings({"use_push_to_talk": True})
+        self.assertEqual(
+            settings.use_push_to_talk,
+            True,
+            "the setting should be updated",
+        )
+
+
+class TestNewDeviceAlert(MockEmail, HttpCaseWithUserDemo):
+    _BROWSER = (
+        "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
+        "(KHTML, like Gecko) Chrome/130.0 Safari/537.36"
+    )
+
+    def _sign_in(
+        self,
+        user_agent=_BROWSER,
+        *,
+        new_browser=False,
+        login="demo",
+        subject="New Sign-in to your Account",
+    ):
+        if new_browser:
+            self.authenticate(None, None, session_extra={"_trace_disable": False})
+        payload = {
+            "jsonrpc": "2.0",
+            "method": "call",
+            "params": {"db": self.env.cr.dbname, "login": login, "password": login},
+        }
+        with self.mock_mail_gateway():
+            response = self.url_open(
+                "/web/session/authenticate",
+                data=json_dumps(payload),
+                headers={"Content-Type": "application/json", "User-Agent": user_agent},
+            )
+        self.assertNotIn("error", response.json())
+        return [mail for mail in self._new_mails if mail.subject == subject]
+
+    def test_a_new_browser_alerts_a_known_one_does_not(self):
+        self.assertFalse(self._sign_in(new_browser=True), "a first device is expected")
+        self.assertFalse(self._sign_in(), "the same browser again")
+        alerts = self._sign_in(new_browser=True)
+        self.assertEqual(len(alerts), 1)
+        self.assertIn("Linux Chrome", alerts[0].body_html)
+
+    def test_a_portal_user_signs_in_and_is_alerted_too(self):
+        portal = mail_new_test_user(
+            self.env, "rdev_portal", groups="base.group_portal", password="rdev_portal"
+        )
+        self.assertFalse(self._sign_in(new_browser=True, login=portal.login))
+        alerts = self._sign_in(new_browser=True, login=portal.login)
+        self.assertEqual(len(alerts), 1)
+
+    def test_the_alert_speaks_the_owners_language(self):
+        self.env["res.lang"]._activate_lang("es_MX")
+        self.env["ir.module.module"]._load_module_terms(["mail"], ["es_MX"])
+        self.user_demo.lang = "es_MX"
+        self._sign_in(new_browser=True)
+        alerts = self._sign_in(
+            new_browser=True, subject="Nuevo inicio de sesión en su cuenta"
+        )
+        self.assertEqual(len(alerts), 1, "the owner reads it, whoever signed in")
+        self.assertIn("inició sesión en su cuenta", alerts[0].body_html)
+
+    def test_a_script_signing_in_is_not_a_browser(self):
+        self._sign_in(new_browser=True)
+        self.assertFalse(self._sign_in("python-requests/2.32", new_browser=True))
+
+
+class TestNewDeviceAlertPolicy(MailCommon):
+    def _device(self, key):
+        return (
+            self.env["auth.user.client"]
+            .sudo()
+            .create(
+                {
+                    "user_id": self.user_employee.id,
+                    "recognition_key_hash": key,
+                    "platform": "linux",
+                    "browser": "chrome",
+                }
+            )
+        )
+
+    def _alerts(self, device):
+        with self.mock_mail_gateway():
+            device._notify_new_client()
+        return [
+            mail
+            for mail in self._new_mails
+            if mail.subject == "New Sign-in to your Account"
+        ]
+
+    def test_a_user_with_2fa_is_alerted_by_it_instead(self):
+        self._device("rdev_first")
+        second = self._device("rdev_second")
+        self.assertEqual(len(self._alerts(second)), 1)
+        with patch.object(
+            ResUsersPatchedInTest, "_get_mfa_type", lambda self: "totp_mail"
+        ):
+            self.assertFalse(self._alerts(second))
+
+    def test_a_first_device_is_not_news(self):
+        self.assertFalse(self._alerts(self._device("rdev_only")))
+
+
+@tagged("-at_install", "post_install", "res_users")
+class TestOutOfOfficeCacheClearing(MailCommon):
+    def _cache_clears(self):
+        clears = []
+        registry_class = type(self.env.registry)
+        clear_cache = registry_class.clear_cache
+
+        def spy(registry, *cache_names):
+            clears.append(cache_names)
+            return clear_cache(registry, *cache_names)
+
+        return clears, patch.object(registry_class, "clear_cache", spy)
+
+    def _clear_every_window(self):
+        self.env["res.users"].with_context(active_test=False).search(
+            [("out_of_office_from", "!=", False)]
+        ).write({"out_of_office_from": False})
+
+    def test_only_a_configured_state_flip_clears_the_mail_cache(self):
+        Users = self.env["res.users"]
+        self._clear_every_window()
+        first, second = self.user_employee, self.user_admin
+        bystander = mail_new_test_user(self.env, login="ooo_bystander", name="Nobody")
+        first.write({"out_of_office_from": "2020-01-01 00:00:00"})
+        self.assertTrue(Users._has_out_of_office_configured())
+        clears, spying = self._cache_clears()
+        with spying:
+            first.write({"out_of_office_from": "2021-01-01 00:00:00"})
+            second.write({"out_of_office_from": "2021-06-01 00:00:00"})
+            bystander.write({"out_of_office_from": False})
+            first.write({"out_of_office_from": False})
+        self.assertEqual(
+            clears,
+            [],
+            "moving or adding a window while one is configured flips nothing",
+        )
+        self.assertTrue(Users._has_out_of_office_configured())
+        with spying:
+            second.write({"out_of_office_from": False})
+        self.assertEqual(
+            clears, [("mail",)], "clearing the last window flips the state"
+        )
+        self.assertFalse(Users._has_out_of_office_configured())
+
+    def test_a_flip_never_clears_the_stable_cache(self):
+        self._clear_every_window()
+        clears, spying = self._cache_clears()
+        with spying:
+            self.user_employee.write({"out_of_office_from": "2020-01-01 00:00:00"})
+            self.user_employee.write({"out_of_office_from": False})
+        self.assertEqual(
+            clears,
+            [("mail",), ("mail",)],
+            "the flag lives in the mail cache: a stable clear would drop every "
+            "worker's default, xmlid and template caches with it",
+        )
+
+    def test_a_portal_user_cannot_set_their_own_out_of_office(self):
+        portal = self._create_portal_user()
+        with self.assertRaises(AccessError):
+            portal.with_user(portal).write(
+                {"out_of_office_from": "2020-01-01 00:00:00"}
+            )
+        with self.assertRaises(AccessError):
+            portal.with_user(portal).write({"out_of_office_message": "<p>Away</p>"})
+        self.user_employee.with_user(self.user_employee).write(
+            {
+                "out_of_office_from": "2020-01-01 00:00:00",
+                "out_of_office_message": "<p>Away</p>",
+            }
+        )
+        self.assertTrue(self.user_employee.out_of_office_from)
+
+    def test_an_archived_user_does_not_hold_the_flag(self):
+        Users = self.env["res.users"]
+        self._clear_every_window()
+        user = mail_new_test_user(
+            self.env,
+            login="ooo_archived",
+            name="OOO Archived",
+            out_of_office_from="2020-01-01 00:00:00",
+        )
+        self.assertTrue(Users._has_out_of_office_configured())
+        user.action_archive()
+        self.assertFalse(
+            Users._has_out_of_office_configured(),
+            "an archived user receives nothing to auto-reply to",
+        )
+        user.action_unarchive()
+        self.assertTrue(Users._has_out_of_office_configured())
+
+
+@tagged("-at_install", "post_install", "mail_tools")
+class TestMailParameterSync(MailCommon):
+    def test_set_param_syncs_and_normalizes_once(self):
+        ICP = self.env["ir.config_parameter"].sudo()
+        IrConfigParameter = type(ICP)
+        AliasDomain = type(self.env["mail.alias.domain"])
+        syncs, normalizations = [], []
+        sync = IrConfigParameter._sync_template_editor_group
+        normalize = AliasDomain._normalize_allowed_domains
+
+        def sync_spy(records, restrict):
+            syncs.append(restrict)
+            return sync(records, restrict)
+
+        def normalize_spy(records, value):
+            normalizations.append(value)
+            return normalize(records, value)
+
+        ICP.search(
+            [
+                (
+                    "key",
+                    "in",
+                    [
+                        "mail.restrict.template.rendering",
+                        "mail.catchall.domain.allowed",
+                    ],
+                )
+            ]
+        ).unlink()
+        with (
+            patch.object(IrConfigParameter, "_sync_template_editor_group", sync_spy),
+            patch.object(AliasDomain, "_normalize_allowed_domains", normalize_spy),
+        ):
+            ICP.set_param("mail.restrict.template.rendering", True)
+            ICP.set_param("mail.catchall.domain.allowed", "Example.COM, other.org")
+        self.assertEqual(syncs, [True])
+        self.assertEqual(normalizations, ["Example.COM, other.org"])
+        self.assertEqual(
+            ICP.get_param("mail.catchall.domain.allowed"), "example.com,other.org"
+        )
+        self.assertNotIn(
+            self.env.ref("mail.group_mail_template_editor"),
+            self.env.ref("base.group_user").implied_ids,
+        )

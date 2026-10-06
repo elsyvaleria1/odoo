@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="mrp_workorder_view_form_plc" model="ir.ui.view">
+        <field name="name">mrp.workorder.form.plc</field>
+        <field name="model">mrp.workorder</field>
+        <field name="inherit_id" ref="mrp.mrp_production_workorder_form_view_inherit" />
+        <field name="arch" type="xml">
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <button
+                    name="action_view_plc_runs"
+                    type="object"
+                    icon="fa-tachometer"
+                    invisible="plc_run_count == 0"
+                    class="oe_stat_button">
+                    <div class="o_field_widget o_stat_info">
+                        <span class="o_stat_value"><field name="plc_bottle_count" /></span>
+                        <span class="o_stat_text">Bottles Counted</span>
+                    </div>
+                </button>
+            </xpath>
+            <field name="qty_produced" position="after">
+                <field name="plc_run_count" invisible="1" />
+                <field name="plc_bottle_count" string="PLC Count" readonly="1" />
+                <field
+                    name="plc_qty_variance"
+                    string="Qty Variance (manual - PLC)"
+                    readonly="1" />
+            </field>
+        </field>
+    </record>
+
+    <record id="workcenter_line_kanban_plc" model="ir.ui.view">
+        <field name="name">mrp.workorder.kanban.plc</field>
+        <field name="model">mrp.workorder</field>
+        <field name="inherit_id" ref="mrp.workcenter_line_kanban" />
+        <field name="arch" type="xml">
+            <xpath expr="//kanban/field[@name='date_start']" position="after">
+                <field name="plc_run_count" />
+            </xpath>
+            <xpath expr="//footer" position="inside">
+                <button
+                    name="action_view_plc_runs"
+                    type="object"
+                    icon="fa-tachometer"
+                    class="btn btn-sm btn-outline-primary ms-auto"
+                    t-if="record.plc_run_count.raw_value &gt; 0">
+                    Bottles Counted
+                </button>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

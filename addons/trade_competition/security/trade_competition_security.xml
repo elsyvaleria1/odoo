@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="privilege_count_competitor_offers" model="res.groups">
+        <field
+            name="name">Privilege: count the competitor offers seen on a partner</field>
+        <field name="is_privilege" eval="True" />
+    </record>
+
+</odoo>

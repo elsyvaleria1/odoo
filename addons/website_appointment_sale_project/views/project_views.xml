@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_task_appointment_from_project" model="ir.ui.view">
+        <field name="name">view.task.appointment.from.fsm</field>
+        <field name="model">project.task</field>
+        <field name="inherit_id" ref="project.view_task_form2" />
+        <field name="arch" type="xml">
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <button
+                    name="action_view_appointment"
+                    type="object"
+                    icon="fa-calendar"
+                    invisible="not calendar_event_id or not allow_billable or has_template_ancestor or has_project_template"
+                    class="oe_stat_button">
+                    <div class="o_stat_info">
+                        <span class="o_stat_text">Appointment</span>
+                    </div>
+                </button>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

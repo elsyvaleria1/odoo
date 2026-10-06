@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <menuitem
+        id="menu_telegram_mirrors"
+        name="Mirrored Groups"
+        parent="telegram.menu_telegram_root"
+        action="action_telegram_mirror"
+        sequence="27"
+        groups="base.group_system" />
+
+    <menuitem
+        id="menu_telegram_group_link"
+        name="Connect a Telegram Group"
+        parent="mail.menu_mail_root"
+        action="action_wizard_telegram_group_link"
+        sequence="90" />
+
+</odoo>

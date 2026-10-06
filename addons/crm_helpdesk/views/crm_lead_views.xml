@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- inherit view of Lead Form : adding the "convert to ticket" button -->
+    <record id="crm_lead_view_form" model="ir.ui.view">
+        <field name="name">crm.lead.form</field>
+        <field name="model">crm.lead</field>
+        <field name="inherit_id" ref="crm.crm_lead_view_form" />
+        <field name="arch" type="xml">
+            <xpath expr="/form/header/button[last()]" position="after">
+                <button
+                    name="%(crm_lead_convert2ticket_action)d"
+                    type="action"
+                    string="Convert to Ticket"
+                    invisible="context.get('show_create_ticket', False) or not active or type == 'opportunity'"
+                    class="oe_stat_button" />
+            </xpath>
+        </field>
+    </record>
+
+    <record id="helpdesk_ticket_view_form_inherited" model="ir.ui.view">
+        <field name="name">helpdesk.ticket.form.inherited</field>
+        <field name="model">helpdesk.ticket</field>
+        <field name="inherit_id" ref="helpdesk.helpdesk_ticket_view_form" />
+        <field name="priority">100</field>
+        <field name="arch" type="xml">
+            <xpath expr="header" position="inside">
+                <button
+                    name="action_convert_ticket_to_lead_or_opportunity"
+                    type="object"
+                    string="Convert to Lead"
+                    groups="crm.group_use_lead"
+                    invisible="not active"
+                    class="btn btn-secondary"
+                    data-hotkey="q" />
+                <button
+                    name="action_convert_ticket_to_lead_or_opportunity"
+                    type="object"
+                    string="Convert to Opportunity"
+                    groups="!crm.group_use_lead"
+                    invisible="not active"
+                    class="btn btn-secondary"
+                    data-hotkey="q" />
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

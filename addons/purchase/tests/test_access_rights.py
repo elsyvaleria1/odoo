@@ -1,0 +1,263 @@
+from odoo import Command
+from odoo.exceptions import AccessError
+from odoo.tests import Form, tagged
+
+from odoo.addons.account.tests.common import AccountTestInvoicingCommon
+
+
+@tagged("post_install", "-at_install")
+class TestPurchaseInvoice(AccountTestInvoicingCommon):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+
+        group_purchase_user = cls.env.ref("purchase.group_purchase_user")
+        group_employee = cls.env.ref("base.group_user")
+        group_partner_manager = cls.env.ref("base.group_partner_manager")
+
+        cls.purchase_user = (
+            cls.env["res.users"]
+            .with_context(no_reset_password=True)
+            .create(
+                {
+                    "name": "Purchase user",
+                    "login": "purchaseUser",
+                    "email": "pu@odoo.com",
+                    "group_ids": [
+                        (
+                            6,
+                            0,
+                            [
+                                group_purchase_user.id,
+                                group_employee.id,
+                                group_partner_manager.id,
+                            ],
+                        )
+                    ],
+                }
+            )
+        )
+
+        cls.vendor = cls.env["res.partner"].create(
+            {
+                "name": "Supplier",
+                "email": "supplier.serv@supercompany.com",
+            }
+        )
+
+        cls.account_expense_product = cls.env["account.account"].create(
+            {
+                "code": "EXPENSE.PROD111",
+                "name": "Expense - Test Account",
+                "account_type": "expense",
+            }
+        )
+        cls.product_category = cls.env["product.category"].create(
+            {
+                "name": "Product Category with Expense account",
+                "property_account_expense_categ_id": cls.account_expense_product.id,
+            }
+        )
+        cls.product = cls.env["product.product"].create(
+            {
+                "name": "Product",
+                "standard_price": 200.0,
+                "list_price": 180.0,
+                "type": "service",
+            }
+        )
+
+    def test_create_purchase_order(self):
+        purchase_order_form = Form(
+            self.env["purchase.order"].with_user(self.purchase_user)
+        )
+        purchase_order_form.partner_id = self.vendor
+        with purchase_order_form.line_ids.new() as line:
+            line.name = self.product.name
+            line.product_id = self.product
+            line.product_qty = 4
+            line.price_unit = 5
+
+        purchase_order = purchase_order_form.save()
+        purchase_order.action_confirm()
+
+        purchase_order.line_ids.qty_transferred = 4
+        purchase_order.create_invoice()
+        invoice = purchase_order.invoice_ids
+        with self.assertRaises(AccessError):
+            invoice.action_post()
+
+    def test_a_purchase_user_records_the_vendor_as_seller_and_nothing_more(self):
+        order = Form(self.env["purchase.order"].with_user(self.purchase_user))
+        order.partner_id = self.vendor
+        with order.line_ids.new() as line:
+            line.product_id = self.product
+            line.product_qty = 1
+            line.price_unit = 7
+        order.save().action_confirm()
+        self.assertEqual(self.product.seller_ids.partner_id, self.vendor)
+
+        Supplierinfo = self.env["product.supplierinfo"].with_user(self.purchase_user)
+        values = {
+            "partner_id": self.vendor.id,
+            "product_tmpl_id": self.product.product_tmpl_id.id,
+        }
+        with self.assertRaises(AccessError):
+            Supplierinfo.create(values)
+        recorded = Supplierinfo.with_privilege(
+            "purchase.privilege_record_vendor_price"
+        ).create(values)
+        with self.assertRaises(AccessError):
+            recorded.with_privilege("purchase.privilege_record_vendor_price").price = 1
+
+    def test_read_purchase_order(self):
+        self.purchase_user.write(
+            {
+                "group_ids": [
+                    (4, self.env.ref("account.group_account_readonly").id),
+                    (4, self.env.ref("purchase.group_purchase_user_all").id),
+                ]
+            }
+        )
+        purchase_user_2 = self.purchase_user.sudo().copy(
+            {
+                "name": "Purchase user 2",
+                "login": "purchaseUser2",
+                "email": "pu2@odoo.com",
+            }
+        )
+
+        purchase_order_form = Form(
+            self.env["purchase.order"].with_user(purchase_user_2)
+        )
+        purchase_order_form.partner_id = self.vendor
+        with purchase_order_form.line_ids.new() as line:
+            line.name = self.product.name
+            line.product_id = self.product
+            line.product_qty = 4
+            line.price_unit = 5
+
+        purchase_order_user2 = purchase_order_form.save()
+        purchase_order_user2.action_confirm()
+
+        purchase_order_user2.line_ids.qty_transferred = 4
+        purchase_order_user2.create_invoice()
+        vendor_bill_user2 = purchase_order_user2.invoice_ids
+
+        purchase_order_user1 = Form(purchase_order_user2.with_user(self.purchase_user))
+        purchase_order_user1 = purchase_order_user1.save()
+        vendor_bill_user1 = Form(vendor_bill_user2.with_user(self.purchase_user))
+        vendor_bill_user1 = vendor_bill_user1.save()
+
+        self.assertEqual(purchase_order_user1.partner_id, self.vendor)
+        self.assertEqual(
+            purchase_order_user1.amount_total, purchase_order_user2.amount_total
+        )
+        self.assertEqual(vendor_bill_user1.partner_id, self.vendor)
+        self.assertEqual(vendor_bill_user1.amount_total, vendor_bill_user2.amount_total)
+
+    def test_create_product_purchase_user(self):
+        uom = self.env.ref("uom.product_uom_gram")
+        self.purchase_user.group_ids += self.env.ref("product.group_product_manager")
+        product = (
+            self.env["product.template"]
+            .with_user(self.purchase_user)
+            .create(
+                {
+                    "name": "Test Product UOM Default",
+                    "type": "consu",
+                    "uom_id": uom.id,
+                }
+            )
+        )
+        self.assertTrue(
+            product,
+            "The default purchase UOM should be in the same category as the sale UOM.",
+        )
+
+    def test_prepare_purchase_order_line_from_branch_company(self):
+        self.env.company.child_ids = [
+            Command.create(
+                {
+                    "name": "Test Branch",
+                    "child_ids": [Command.create({"name": "Nested Branch"})],
+                }
+            )
+        ]
+        nested_branch = self.env.company.child_ids.child_ids
+        self.purchase_user.write(
+            {
+                "company_ids": [Command.set(nested_branch.ids)],
+                "company_id": nested_branch.id,
+            }
+        )
+
+        PurchaseOrder = self.env["purchase.order"].with_user(self.purchase_user)
+        order = PurchaseOrder.create({"partner_id": self.vendor.id})
+        nested_branch = nested_branch.with_env(PurchaseOrder.env)
+        product = self.product.with_env(PurchaseOrder.env)
+        vendor = self.vendor.with_env(PurchaseOrder.env)
+
+        self.env.invalidate_all()
+        po_line_vals = PurchaseOrder.line_ids._prepare_purchase_order_line(
+            product,
+            1,
+            product.uom_id,
+            nested_branch,
+            vendor,
+            order,
+        )
+        self.assertTrue(PurchaseOrder.line_ids.create(po_line_vals))
+
+    def _locked_order(self):
+        order = self.env["purchase.order"].create(
+            {
+                "partner_id": self.vendor.id,
+                "user_id": False,
+                "line_ids": [
+                    Command.create(
+                        {
+                            "product_id": self.product_a.id,
+                            "product_qty": 1.0,
+                            "price_unit": 10.0,
+                        }
+                    )
+                ],
+            }
+        )
+        order.action_confirm()
+        order.locked = True
+        return order
+
+    def test_unlocking_an_order_is_the_unlock_group_s_verb(self):
+        order = self._locked_order().with_user(self.purchase_user)
+        self.assertTrue(order.has_access("write"))
+        self.assertFalse(order.has_access("unlock"))
+        with self.assertRaises(AccessError):
+            order.action_unlock()
+        self.purchase_user.group_ids |= self.env.ref("purchase.group_order_unlock")
+        self.assertTrue(order.has_access("unlock"))
+        order.action_unlock()
+        self.assertFalse(order.locked)
+
+    def test_a_buyer_who_writes_a_bill_does_not_post_it(self):
+        bill = (
+            self.env["account.move"]
+            .create(
+                {
+                    "move_type": "in_invoice",
+                    "partner_id": self.vendor.id,
+                    "invoice_user_id": self.purchase_user.id,
+                    "invoice_date": "2026-09-01",
+                    "invoice_line_ids": [
+                        Command.create({"name": "Bill line", "price_unit": 10.0})
+                    ],
+                }
+            )
+            .with_user(self.purchase_user)
+        )
+        self.assertTrue(bill.has_access("write"))
+        self.assertFalse(bill.has_access("post"))
+        with self.assertRaises(AccessError):
+            bill.action_post()
+        self.assertEqual(bill.state, "draft")

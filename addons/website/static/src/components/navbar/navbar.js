@@ -1,0 +1,113 @@
+/** @odoo-module native */
+import { useAppContext } from "@web/core/app_context";
+import { useDebugMode } from "@web/core/debug/debug_context";
+import { makeLogger } from "@web/core/debug/debug_logger";
+import { registry, useRegistry } from "@web/core/registry";
+import { useBus, useService } from "@web/core/utils/hooks";
+import { useLayoutEffect } from "@web/core/utils/layout_effect";
+import { patch } from "@web/core/utils/patch";
+import { useRender } from "@web/core/utils/render_hooks";
+import { NavBar } from "@web/webclient/navbar/navbar";
+import { UserMenu } from "@web/webclient/user_menu/user_menu";
+
+const websiteSystrayRegistry = registry.category("website_systray");
+
+const log = makeLogger("website.component.navbar");
+websiteSystrayRegistry.add("UserMenu", { Component: UserMenu }, { sequence: 14 });
+
+patch(NavBar.prototype, {
+    setup() {
+        super.setup();
+        this.render = useRender();
+        this.appContext = useAppContext();
+        this.debug = useDebugMode();
+        this.websiteService = useService("website");
+        this.websiteCustomMenus = useService("website_custom_menus");
+
+        this.websiteSystrayEntries = useRegistry(websiteSystrayRegistry);
+
+        if (this.debug && !websiteSystrayRegistry.contains("web.debug_mode_menu")) {
+            log.logic("NavBar register debug menu in website systray");
+            websiteSystrayRegistry.add(
+                "web.debug_mode_menu",
+                registry.category("systray").get("web.debug_mode_menu"),
+                { sequence: 100 },
+            );
+        }
+        let adaptCounter = 0;
+        const renderAndAdapt = () => {
+            log.pipeline("NavBar CONTENT-UPDATED render+adapt", { adaptCounter });
+            this.render(true);
+            adaptCounter++;
+        };
+        useLayoutEffect(
+            (adaptCounter) => {
+                if (adaptCounter > 0) {
+                    log.logic("NavBar adapt after content update", { adaptCounter });
+                    this.adapt();
+                }
+            },
+            () => [adaptCounter],
+        );
+
+        useBus(websiteSystrayRegistry, "CONTENT-UPDATED", renderAndAdapt);
+    },
+
+    get shouldDisplayWebsiteSystray() {
+        return (
+            this.websiteService.currentWebsite && this.websiteService.isRestrictedEditor
+        );
+    },
+
+    set shouldDisplayWebsiteSystray(_) {},
+
+    /**
+     * @override
+     */
+    get systrayItems() {
+        if (this.websiteService.currentWebsite) {
+            const websiteItems = this.websiteSystrayEntries.entries
+                .map(([key, value], index) => ({ key, ...value, index }))
+                .filter((item) =>
+                    "isDisplayed" in item ? item.isDisplayed(this.appContext) : true,
+                )
+                .reverse();
+            if (
+                !websiteItems.every((item) =>
+                    ["burger_menu", "web.debug_mode_menu"].includes(item.key),
+                )
+            ) {
+                return websiteItems;
+            }
+        }
+        return super.systrayItems;
+    },
+
+    /**
+     * @override
+     */
+    get currentAppSections() {
+        const currentAppSections = super.currentAppSections;
+        if (
+            this.currentApp &&
+            this.currentApp.xmlid === "website.menu_website_configuration"
+        ) {
+            return this.websiteCustomMenus
+                .addCustomMenus(currentAppSections)
+                .filter((section) => section.childrenTree.length);
+        }
+        return currentAppSections;
+    },
+
+    /**
+     * @override
+     */
+    async onNavBarDropdownItemSelection(menu) {
+        const websiteMenu = this.websiteCustomMenus.get(menu.xmlid);
+        if (websiteMenu) {
+            log.logic("NavBar open website custom menu", () => ({ xmlid: menu.xmlid }));
+            return this.websiteCustomMenus.open(menu);
+        }
+        return super.onNavBarDropdownItemSelection(menu);
+    },
+});

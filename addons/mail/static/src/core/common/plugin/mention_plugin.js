@@ -1,0 +1,168 @@
+// @ts-check
+/** @odoo-module native */
+import { Plugin } from "@html_editor/plugin";
+import { closestElement } from "@html_editor/utils/dom_traversal";
+import { handleValidChannelMention } from "@mail/core/common/message_post";
+import { generateThreadMentionElement } from "@mail/utils/common/format";
+import { makeLogger } from "@web/core/debug/debug_logger";
+
+const log = makeLogger("mail.composer.mention_plugin");
+
+export class MentionPlugin extends Plugin {
+    static id = "mention";
+    static dependencies = ["baseContainer", "selection", "history"];
+    resources = {
+        /**
+         * @param {Node} node
+         * @returns {boolean|undefined}
+         */
+        is_node_editable_predicates: (node) => {
+            for (const { selector } of this.MENTION_SELECTORS) {
+                if (closestElement(node, selector)) {
+                    return true;
+                }
+            }
+        },
+        select_all_overrides: this.selectAll.bind(this),
+        selectionchange_handlers: this.updateMentionLinks.bind(this),
+        selectors_for_feff_providers: () =>
+            this.MENTION_SELECTORS.map(({ selector }) => selector).join(", "),
+    };
+
+    setup() {
+        super.setup();
+        /** @type {import("models").Store} */
+        this.store = this.services["mail.store"];
+        log.lifecycle("setup");
+    }
+
+    /**
+     * @param {Object} selection
+     * @param {Node} selection.anchorNode
+     * @param {number} selection.anchorOffset
+     * @param {Node} selection.focusNode
+     * @param {number} selection.focusOffset
+     */
+    selectAll({ anchorNode, anchorOffset, focusNode, focusOffset }) {
+        const SELECTOR = this.MENTION_SELECTORS.map(({ selector }) => selector).join(
+            ", ",
+        );
+        if (closestElement(anchorNode, SELECTOR)) {
+            const startMention = closestElement(anchorNode, SELECTOR);
+            anchorNode = startMention.parentNode;
+            anchorOffset = Array.prototype.indexOf.call(
+                anchorNode.childNodes,
+                startMention,
+            );
+        }
+        if (closestElement(focusNode, SELECTOR)) {
+            const endMention = closestElement(focusNode, SELECTOR);
+            focusNode = endMention.parentNode;
+            focusOffset =
+                Array.prototype.indexOf.call(focusNode.childNodes, endMention) + 1;
+        }
+        this.dependencies.selection.setSelection({
+            anchorNode,
+            anchorOffset,
+            focusNode,
+            focusOffset,
+        });
+    }
+
+    get MENTION_SELECTORS() {
+        return [
+            {
+                selector: "a.o_channel_redirect",
+                /** @param {HTMLAnchorElement} el */
+                checker: (el) => this.isValidChannelMentionElement(el),
+                /** @param {HTMLAnchorElement[]} channelLinks */
+                validMentionsHandler: (channelLinks) => {
+                    handleValidChannelMention(channelLinks);
+                    this.dependencies.history.addStep();
+                },
+            },
+            {
+                selector: "a.o_mail_redirect",
+                /** @param {HTMLAnchorElement} el */
+                checker: (el) => true,
+            },
+            {
+                selector: "a.o-discuss-mention",
+                /** @param {HTMLAnchorElement} el */
+                checker: (el) => true,
+            },
+        ];
+    }
+
+    /** @param {Event} ev */
+    async updateMentionLinks(ev) {
+        for (const { selector, checker, validMentionsHandler } of this
+            .MENTION_SELECTORS) {
+            const mentionLinks =
+                Array.from(
+                    /** @type {NodeListOf<HTMLAnchorElement>} */ (
+                        this.editable.querySelectorAll(selector)
+                    ),
+                ) || [];
+            const validMentionLinks = (
+                await Promise.all(
+                    mentionLinks.map(async (el) => ({
+                        el,
+                        isValid: await checker(el),
+                    })),
+                )
+            )
+                .filter(({ isValid }) => isValid)
+                .map(({ el }) => el);
+            if (mentionLinks.length) {
+                log.pipeline("updateMentionLinks", () => ({
+                    selector,
+                    links: mentionLinks.length,
+                    valid: validMentionLinks.length,
+                }));
+            }
+            this.wrapValidMentionLinks(validMentionLinks);
+            validMentionsHandler?.(validMentionLinks);
+        }
+    }
+
+    /** @param {HTMLAnchorElement[]} validMentionLinks */
+    wrapValidMentionLinks(validMentionLinks) {
+        for (const el of validMentionLinks) {
+            if (el.parentElement === this.editable) {
+                log.logic("wrap bare mention link in base container", () => ({
+                    href: el.getAttribute("href"),
+                }));
+                const baseContainer =
+                    this.dependencies.baseContainer.createBaseContainer();
+                baseContainer.appendChild(el.cloneNode(true));
+                this.editable.replaceChild(baseContainer, el);
+                this.dependencies.history.addStep();
+            }
+        }
+    }
+
+    /**
+     * @param {HTMLAnchorElement} el
+     * @returns {Promise<boolean>}
+     */
+    async isValidChannelMentionElement(el) {
+        if (el.dataset.oeModel !== "discuss.channel") {
+            return false;
+        }
+        const channel = await this.store.Thread.getOrFetch({
+            model: "discuss.channel",
+            id: Number(el.dataset.oeId),
+        });
+        if (!channel) {
+            return false;
+        }
+        const validChannelMention = generateThreadMentionElement(channel);
+        return (
+            validChannelMention.getAttribute("href") === el.getAttribute("href") &&
+            [...validChannelMention.classList].every((cls) =>
+                el.classList.contains(cls),
+            )
+        );
+    }
+}

@@ -1,0 +1,16 @@
+/** @odoo-module native */
+import { useService } from "@web/core/utils/hooks";
+import { FormController } from "@web/views/form";
+
+export class LivechatSessionFormController extends FormController {
+    setup() {
+        super.setup();
+        this.store = useService("mail.store");
+    }
+    get thread() {
+        return this.store["discuss.channel"].get(this.model.root.resId);
+    }
+    displayName() {
+        return this.thread?.displayName || super.displayName();
+    }
+}

@@ -1,0 +1,7 @@
+id,name,model_id/id,group_id/id,kind,operation,reach,anchor,domain
+sdd_mandate_portal_rule,SDD Mandate portal-user creation,model_sdd_mandate,base.group_portal,permission,cr,own,partner,"[('state', '=', 'draft')]"
+access_sdd_mandate,sdd.mandate,model_sdd_mandate,account.group_account_invoice,permission,r,,,
+access_sdd_mandate_account_basic,sdd.mandate.account.basic,model_sdd_mandate,account.group_account_basic,permission,cud,,,
+access_sdd_mandate_send_account_basic,sdd.mandate.send.account.basic,model_wizard_sdd_mandate_send,account.group_account_basic,permission,crud,,,
+sdd_mandate_comp_rule,SDD Mandate multi-company,model_sdd_mandate,base.group_everyone,guard,crud,company,,
+privilege_count_sdd_mandates_mandate,sdd.mandate: the count on a partner,model_sdd_mandate,privilege_count_sdd_mandates,permission,r,,,

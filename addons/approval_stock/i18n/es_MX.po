@@ -1,0 +1,1169 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* approval_stock
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-09-23 01:40+0000\n"
+"PO-Revision-Date: 2026-09-23 01:40+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: approval_stock
+#. odoo-python
+#: code:addons/approval_stock/models/stock_inventory_adjustment.py:0
+msgid "%(name)s was applied to the stock and cannot be deleted."
+msgstr ""
+
+#. module: approval_stock
+#. odoo-python
+#: code:addons/approval_stock/models/approval_request.py:0
+msgid ""
+"%(name)s was applied to the stock: its approval can no longer be withdrawn "
+"or reset."
+msgstr ""
+
+#. module: approval_stock
+#. odoo-python
+#: code:addons/approval_stock/models/stock_inventory_adjustment.py:0
+msgid ""
+"%(product)s in %(location)s: %(requested)s on hand when requested, "
+"%(current)s now"
+msgstr ""
+
+#. module: approval_stock
+#. odoo-python
+#: code:addons/approval_stock/models/stock_picking.py:0
+msgid ""
+"%(product)s moves more than the %(allowed)s approved on %(name)s. Ask for "
+"approval again."
+msgstr ""
+
+#. module: approval_stock
+#. odoo-python
+#: code:addons/approval_stock/models/stock_inventory_adjustment.py:0
+msgid "%(products)s already wait in %(adjustments)s."
+msgstr ""
+
+#. module: approval_stock
+#. odoo-python
+#: code:addons/approval_stock/models/stock_picking.py:0
+msgid "%(sent)s stock transfer(s) sent for approval; %(validated)s validated."
+msgstr ""
+
+#. module: approval_stock
+#. odoo-python
+#: code:addons/approval_stock/models/stock_picking.py:0
+msgid ""
+"%(sent)s stock transfer(s) sent for approval; %(validated)s validated; "
+"%(blocked)s could not be sent."
+msgstr ""
+
+#. module: approval_stock
+#: model:ir.model.fields,field_description:approval_stock.field_stock_inventory_adjustment__message_needaction
+msgid "Action Needed"
+msgstr ""
+
+#. module: approval_stock
+#: model:ir.model.fields,field_description:approval_stock.field_stock_inventory_adjustment_line__adjustment_id
+msgid "Adjustment"
+msgstr ""
+
+#. module: approval_stock
+#: model:ir.actions.act_window,name:approval_stock.action_stock_inventory_adjustment
+#: model:ir.ui.menu,name:approval_stock.menu_stock_inventory_adjustment
+msgid "Adjustment Approvals"
+msgstr "Aprobaciones de ajuste"
+
+#. module: approval_stock
+#. odoo-python
+#: code:addons/approval_stock/models/stock_inventory_adjustment.py:0
+msgid "An inventory adjustment covers the quants of one company."
+msgstr ""
+
+#. module: approval_stock
+#: model:ir.model.fields.selection,name:approval_stock.selection__stock_inventory_adjustment__state__applied
+#: model_terms:ir.ui.view,arch_db:approval_stock.view_stock_inventory_adjustment_search
+msgid "Applied"
+msgstr "Aplicado"
+
+#. module: approval_stock
+#. odoo-python
+#: code:addons/approval_stock/models/stock_inventory_adjustment.py:0
+msgid "Applied to the stock: %(count)s counted quant(s)."
+msgstr ""
+
+#. module: approval_stock
+#: model_terms:ir.ui.view,arch_db:approval_stock.view_stock_inventory_adjustment_form
+#: model_terms:ir.ui.view,arch_db:approval_stock.view_stock_picking_form_inherit_approval
+msgid "Approval"
+msgstr "Aprobación"
+
+#. module: approval_stock
+#: model:ir.model,name:approval_stock.model_approval_category
+msgid "Approval Category"
+msgstr "Categoría de aprobación"
+
+#. module: approval_stock
+#: model:ir.model.fields,field_description:approval_stock.field_stock_inventory_adjustment__date_approval_granted
+#: model:ir.model.fields,field_description:approval_stock.field_stock_picking__date_approval_granted
+msgid "Approval Granted Date"
+msgstr ""
+
+#. module: approval_stock
+#: model_terms:ir.ui.view,arch_db:approval_stock.view_stock_picking_form_inherit_approval
+msgid "Approval Info"
+msgstr ""
+
+#. module: approval_stock
+#: model:ir.model.fields,field_description:approval_stock.field_stock_inventory_adjustment__approval_progress
+#: model:ir.model.fields,field_description:approval_stock.field_stock_picking__approval_progress
+msgid "Approval Progress"
+msgstr ""
+
+#. module: approval_stock
+#: model:ir.model,name:approval_stock.model_approval_request
+#: model:ir.model.fields,field_description:approval_stock.field_resource_asset_log__approval_request_id
+#: model:ir.model.fields,field_description:approval_stock.field_stock_inventory_adjustment__approval_request_id
+#: model:ir.model.fields,field_description:approval_stock.field_stock_picking__approval_request_id
+#: model:ir.model.fields.selection,name:approval_stock.selection__resource_asset_log__source__approval
+msgid "Approval Request"
+msgstr "Solicitud de aprobación"
+
+#. module: approval_stock
+#: model:ir.model.fields,field_description:approval_stock.field_stock_move__approval_request_line_id
+msgid "Approval Request Line"
+msgstr ""
+
+#. module: approval_stock
+#: model:ir.model.fields,field_description:approval_stock.field_stock_inventory_adjustment__date_approval_requested
+#: model:ir.model.fields,field_description:approval_stock.field_stock_picking__date_approval_requested
+msgid "Approval Requested Date"
+msgstr ""
+
+#. module: approval_stock
+#: model:ir.model.fields,field_description:approval_stock.field_stock_inventory_adjustment__approval_required
+#: model:ir.model.fields,field_description:approval_stock.field_stock_picking__approval_required
+msgid "Approval Required"
+msgstr ""
+
+#. module: approval_stock
+#: model:ir.model.fields,field_description:approval_stock.field_stock_inventory_adjustment__approval_state
+#: model:ir.model.fields,field_description:approval_stock.field_stock_picking__approval_state
+msgid "Approval Status"
+msgstr ""
+
+#. module: approval_stock
+#: model:ir.model.fields,field_description:approval_stock.field_approval_category__approval_type
+msgid "Approval Type"
+msgstr "Tipo de aprobación"
+
+#. module: approval_stock
+#: model:ir.model.fields,help:approval_stock.field_stock_move__approval_request_line_id
+msgid "Approval request line this move was created from (creation flow)."
+msgstr ""
+
+#. module: approval_stock
+#. odoo-python
+#: code:addons/approval_stock/models/stock_picking.py:0
+msgid "Approval request refused. Transfer can be modified."
+msgstr ""
+
+#. module: approval_stock
+#: model:ir.model.fields,help:approval_stock.field_resource_asset_log__approval_request_id
+msgid "Approval request this log entry was booked from."
+msgstr ""
+
+#. module: approval_stock
+#. odoo-python
+#: code:addons/approval_stock/models/stock_inventory_adjustment.py:0
+msgid "Approval was granted, but the count could not be applied: %(error)s"
+msgstr ""
+
+#. module: approval_stock
+#: model_terms:ir.ui.view,arch_db:approval_stock.res_config_settings_view_form_inherit_stock_approval
+msgid "Approvals → Configuration → Approval Types"
+msgstr ""
+
+#. module: approval_stock
+#. odoo-python
+#: code:addons/approval_stock/models/stock_picking.py:0
+msgid "Approved by"
+msgstr ""
+
+#. module: approval_stock
+#: model:ir.model.fields,field_description:approval_stock.field_stock_inventory_adjustment__approval_user_ids
+#: model:ir.model.fields,field_description:approval_stock.field_stock_picking__approval_user_ids
+msgid "Approvers"
+msgstr ""
+
+#. module: approval_stock
+#: model:ir.model.fields,field_description:approval_stock.field_approval_request__asset_id
+msgid "Asset"
+msgstr ""
+
+#. module: approval_stock
+#: model:ir.model,name:approval_stock.model_resource_asset_log
+#: model:ir.model.fields,field_description:approval_stock.field_approval_request__asset_log_ids
+msgid "Asset Log"
+msgstr ""
+
+#. module: approval_stock
+#. odoo-python
+#: code:addons/approval_stock/models/approval_request.py:0
+msgid "Asset Logs for %s"
+msgstr ""
+
+#. module: approval_stock
+#: model:ir.model.fields,help:approval_stock.field_approval_request__asset_log_ids
+msgid "Asset logs booked from this approval request"
+msgstr ""
+
+#. module: approval_stock
+#. odoo-python
+#: code:addons/approval_stock/models/approval_request.py:0
+msgid ""
+"Asset logs can only be created from an APPROVED request. Request '%(name)s' "
+"is in state '%(state)s'."
+msgstr ""
+
+#. module: approval_stock
+#: model:ir.model.fields,field_description:approval_stock.field_stock_inventory_adjustment__message_attachment_count
+msgid "Attachment Count"
+msgstr ""
+
+#. module: approval_stock
+#: model:ir.model.fields,field_description:approval_stock.field_res_company__stock_auto_validate_on_approval
+#: model:ir.model.fields,field_description:approval_stock.field_res_config_settings__stock_auto_validate_on_approval
+msgid "Auto-Validate on Approval"
+msgstr ""
+
+#. module: approval_stock
+#: model:ir.model.fields,help:approval_stock.field_res_company__stock_auto_validate_on_approval
+#: model:ir.model.fields,help:approval_stock.field_res_config_settings__stock_auto_validate_on_approval
+msgid "Automatically validate stock transfer when all approvals are granted"
+msgstr ""
+
+#. module: approval_stock
+#: model_terms:ir.ui.view,arch_db:approval_stock.res_config_settings_view_form_inherit_stock_approval
+msgid "Automatically validate transfers when all approvals are granted"
+msgstr ""
+
+#. module: approval_stock
+#: model:ir.model.fields.selection,name:approval_stock.selection__approval_category__stock_approval_mode__location
+msgid "Based on Locations"
+msgstr ""
+
+#. module: approval_stock
+#: model:ir.model.fields.selection,name:approval_stock.selection__approval_category__stock_approval_mode__picking_type
+msgid "Based on Operation Type"
+msgstr ""
+
+#. module: approval_stock
+#: model:ir.model.fields.selection,name:approval_stock.selection__approval_category__stock_approval_mode__product
+msgid "Based on Product Category"
+msgstr ""
+
+#. module: approval_stock
+#: model:ir.model.fields,field_description:approval_stock.field_stock_inventory_adjustment__can_request_approval
+#: model:ir.model.fields,field_description:approval_stock.field_stock_picking__can_request_approval
+msgid "Can Request Approval"
+msgstr ""
+
+#. module: approval_stock
+#: model:ir.model.fields.selection,name:approval_stock.selection__stock_inventory_adjustment__state__cancelled
+msgid "Cancelled"
+msgstr ""
+
+#. module: approval_stock
+#: model:ir.model.fields,help:approval_stock.field_approval_category__approval_type
+msgid ""
+"Category of approval for filtering and grouping purposes (e.g., 'purchase', "
+"'expense', 'vacation'). Used to organize and filter approval requests."
+msgstr ""
+
+#. module: approval_stock
+#: model:ir.model.fields.selection,name:approval_stock.selection__approval_category__stock_approval_mode__combined
+msgid "Combined Rules"
+msgstr ""
+
+#. module: approval_stock
+#: model:ir.model,name:approval_stock.model_res_company
+msgid "Companies"
+msgstr "Empresas"
+
+#. module: approval_stock
+#: model:ir.model.fields,field_description:approval_stock.field_stock_inventory_adjustment__company_id
+#: model:ir.model.fields,field_description:approval_stock.field_stock_inventory_adjustment_line__company_id
+msgid "Company"
+msgstr ""
+
+#. module: approval_stock
+#: model:ir.model,name:approval_stock.model_res_config_settings
+msgid "Config Settings"
+msgstr "Ajustes de configuración"
+
+#. module: approval_stock
+#: model_terms:ir.ui.view,arch_db:approval_stock.res_config_settings_view_form_inherit_stock_approval
+msgid "Configure which transfers need approval at:"
+msgstr ""
+
+#. module: approval_stock
+#: model:ir.model.fields,field_description:approval_stock.field_approval_request__count_stock_picking
+msgid "Count Stock Picking"
+msgstr ""
+
+#. module: approval_stock
+#. odoo-python
+#: code:addons/approval_stock/models/stock_inventory_adjustment.py:0
+#: model:ir.model.fields,field_description:approval_stock.field_stock_inventory_adjustment_line__quantity_counted
+msgid "Counted"
+msgstr ""
+
+#. module: approval_stock
+#: model:ir.model.fields,field_description:approval_stock.field_stock_inventory_adjustment__user_id
+msgid "Counted By"
+msgstr ""
+
+#. module: approval_stock
+#: model:ir.model.fields,field_description:approval_stock.field_stock_inventory_adjustment__line_ids
+msgid "Counted Quants"
+msgstr ""
+
+#. module: approval_stock
+#: model:ir.model.fields,field_description:approval_stock.field_stock_inventory_adjustment__date_counted
+msgid "Counting Date"
+msgstr ""
+
+#. module: approval_stock
+#: model:ir.model.fields.selection,name:approval_stock.selection__approval_category__approval_type__asset_log
+#: model_terms:ir.ui.view,arch_db:approval_stock.view_approval_request_form_inherit_stock
+msgid "Create Asset Log"
+msgstr "Crear registro de activo"
+
+#. module: approval_stock
+#: model_terms:ir.ui.view,arch_db:approval_stock.view_approval_request_form_inherit_stock
+msgid "Create Stock Transfers"
+msgstr "Crear traslados de existencias"
+
+#. module: approval_stock
+#: model:ir.model.fields,field_description:approval_stock.field_stock_inventory_adjustment__create_uid
+#: model:ir.model.fields,field_description:approval_stock.field_stock_inventory_adjustment_line__create_uid
+msgid "Created by"
+msgstr ""
+
+#. module: approval_stock
+#. odoo-python
+#: code:addons/approval_stock/models/approval_request.py:0
+msgid "Created from approval request: %(request)s"
+msgstr ""
+
+#. module: approval_stock
+#: model:ir.model.fields,field_description:approval_stock.field_stock_inventory_adjustment__create_date
+#: model:ir.model.fields,field_description:approval_stock.field_stock_inventory_adjustment_line__create_date
+msgid "Created on"
+msgstr ""
+
+#. module: approval_stock
+#: model:ir.model.fields,help:approval_stock.field_stock_inventory_adjustment__approval_state
+#: model:ir.model.fields,help:approval_stock.field_stock_picking__approval_state
+msgid ""
+"Current approval status:\n"
+"        • new: Approval created but not submitted\n"
+"        • pending: Waiting for approvers\n"
+"        • approved: All required approvals obtained\n"
+"        • refused: Approval was refused (terminal)\n"
+"        • cancelled: Approval was retracted or expired (terminal)"
+msgstr ""
+
+#. module: approval_stock
+#: model:ir.model.fields,help:approval_stock.field_approval_request__odometer
+msgid "Current odometer reading of the vehicle"
+msgstr ""
+
+#. module: approval_stock
+#: model:ir.model.fields,field_description:approval_stock.field_stock_inventory_adjustment__date_applied
+msgid "Date Applied"
+msgstr ""
+
+#. module: approval_stock
+#: model:ir.model.fields,help:approval_stock.field_stock_inventory_adjustment__date_approval_requested
+#: model:ir.model.fields,help:approval_stock.field_stock_picking__date_approval_requested
+msgid "Date and time when approval was requested for this document"
+msgstr ""
+
+#. module: approval_stock
+#: model:ir.model.fields,help:approval_stock.field_stock_inventory_adjustment__date_approval_granted
+#: model:ir.model.fields,help:approval_stock.field_stock_picking__date_approval_granted
+msgid "Date and time when final approval was granted"
+msgstr ""
+
+#. module: approval_stock
+#: model:ir.model.fields,help:approval_stock.field_stock_inventory_adjustment__date_counted
+msgid "Date the stock moves of this adjustment are dated at once applied."
+msgstr ""
+
+#. module: approval_stock
+#: model:ir.model.fields,help:approval_stock.field_stock_inventory_adjustment_line__product_uom_id
+msgid "Default unit of measure used for all stock operations."
+msgstr ""
+
+#. module: approval_stock
+#: model:ir.model.fields,help:approval_stock.field_approval_request_line__location_dest_id
+msgid "Destination location for stock move"
+msgstr ""
+
+#. module: approval_stock
+#: model:ir.model.fields,field_description:approval_stock.field_stock_inventory_adjustment_line__quantity_difference
+msgid "Difference"
+msgstr ""
+
+#. module: approval_stock
+#: model:ir.model.fields,field_description:approval_stock.field_approval_category__display_name
+#: model:ir.model.fields,field_description:approval_stock.field_approval_request__display_name
+#: model:ir.model.fields,field_description:approval_stock.field_approval_request_line__display_name
+#: model:ir.model.fields,field_description:approval_stock.field_product_category__display_name
+#: model:ir.model.fields,field_description:approval_stock.field_res_company__display_name
+#: model:ir.model.fields,field_description:approval_stock.field_res_config_settings__display_name
+#: model:ir.model.fields,field_description:approval_stock.field_resource_asset_log__display_name
+#: model:ir.model.fields,field_description:approval_stock.field_stock_inventory_adjustment__display_name
+#: model:ir.model.fields,field_description:approval_stock.field_stock_inventory_adjustment_line__display_name
+#: model:ir.model.fields,field_description:approval_stock.field_stock_location__display_name
+#: model:ir.model.fields,field_description:approval_stock.field_stock_move__display_name
+#: model:ir.model.fields,field_description:approval_stock.field_stock_picking__display_name
+msgid "Display Name"
+msgstr "Nombre a mostrar"
+
+#. module: approval_stock
+#: model:ir.model.fields.selection,name:approval_stock.selection__stock_inventory_adjustment__state__draft
+#: model_terms:ir.ui.view,arch_db:approval_stock.view_stock_inventory_adjustment_search
+msgid "Draft"
+msgstr "Borrador"
+
+#. module: approval_stock
+#: model:ir.model.fields,field_description:approval_stock.field_stock_inventory_adjustment__message_follower_ids
+msgid "Followers"
+msgstr ""
+
+#. module: approval_stock
+#: model:ir.model.fields,field_description:approval_stock.field_stock_inventory_adjustment__message_partner_ids
+msgid "Followers (Partners)"
+msgstr ""
+
+#. module: approval_stock
+#. odoo-python
+#: code:addons/approval_stock/models/stock_picking.py:0
+msgid "From"
+msgstr ""
+
+#. module: approval_stock
+#: model:ir.model.fields,field_description:approval_stock.field_stock_inventory_adjustment__has_message
+msgid "Has Message"
+msgstr ""
+
+#. module: approval_stock
+#: model:ir.model.fields,field_description:approval_stock.field_approval_category__id
+#: model:ir.model.fields,field_description:approval_stock.field_approval_request__id
+#: model:ir.model.fields,field_description:approval_stock.field_approval_request_line__id
+#: model:ir.model.fields,field_description:approval_stock.field_product_category__id
+#: model:ir.model.fields,field_description:approval_stock.field_res_company__id
+#: model:ir.model.fields,field_description:approval_stock.field_res_config_settings__id
+#: model:ir.model.fields,field_description:approval_stock.field_resource_asset_log__id
+#: model:ir.model.fields,field_description:approval_stock.field_stock_inventory_adjustment__id
+#: model:ir.model.fields,field_description:approval_stock.field_stock_inventory_adjustment_line__id
+#: model:ir.model.fields,field_description:approval_stock.field_stock_location__id
+#: model:ir.model.fields,field_description:approval_stock.field_stock_move__id
+#: model:ir.model.fields,field_description:approval_stock.field_stock_picking__id
+msgid "ID"
+msgstr ""
+
+#. module: approval_stock
+#: model:ir.model.fields,help:approval_stock.field_stock_inventory_adjustment__message_needaction
+msgid "If checked, new messages require your attention."
+msgstr ""
+
+#. module: approval_stock
+#: model:ir.model.fields,help:approval_stock.field_stock_inventory_adjustment__message_has_error
+#: model:ir.model.fields,help:approval_stock.field_stock_inventory_adjustment__message_has_sms_error
+msgid "If checked, some messages have a delivery error."
+msgstr ""
+
+#. module: approval_stock
+#: model:ir.model.fields,help:approval_stock.field_product_category__stock_approval_required
+msgid ""
+"If checked, stock transfers of products in this category will require "
+"approval"
+msgstr ""
+
+#. module: approval_stock
+#: model:ir.model.fields,help:approval_stock.field_stock_location__stock_approval_required
+msgid "If checked, transfers from or to this location will require approval"
+msgstr ""
+
+#. module: approval_stock
+#: model:ir.model.fields,help:approval_stock.field_approval_category__picking_type_ids
+msgid "If set, this category applies only to these operation types"
+msgstr ""
+
+#. module: approval_stock
+#: model:ir.model.fields,help:approval_stock.field_approval_category__stock_product_categ_ids
+msgid ""
+"If set, this category applies when transfer contains these product "
+"categories"
+msgstr ""
+
+#. module: approval_stock
+#: model:ir.model.fields,help:approval_stock.field_approval_category__location_ids
+msgid ""
+"If set, this category applies when transfer involves these locations (source"
+" or destination)"
+msgstr ""
+
+#. module: approval_stock
+#: model_terms:ir.ui.view,arch_db:approval_stock.view_approval_category_form_inherit_stock
+msgid "Inventory"
+msgstr ""
+
+#. module: approval_stock
+#: model:ir.model,name:approval_stock.model_stock_inventory_adjustment
+#: model:ir.model.fields.selection,name:approval_stock.selection__approval_category__approval_type__stock_inventory
+msgid "Inventory Adjustment"
+msgstr ""
+
+#. module: approval_stock
+#: model:ir.model,name:approval_stock.model_stock_inventory_adjustment_line
+msgid "Inventory Adjustment Line"
+msgstr ""
+
+#. module: approval_stock
+#: model:ir.model,name:approval_stock.model_stock_location
+msgid "Inventory Locations"
+msgstr "Ubicaciones de inventario"
+
+#. module: approval_stock
+#: model:ir.model.fields,field_description:approval_stock.field_stock_inventory_adjustment__reason
+msgid "Inventory Reason"
+msgstr ""
+
+#. module: approval_stock
+#: model:ir.model.fields,field_description:approval_stock.field_stock_inventory_adjustment__message_is_follower
+msgid "Is Follower"
+msgstr ""
+
+#. module: approval_stock
+#: model:ir.model.fields,field_description:approval_stock.field_stock_inventory_adjustment__write_uid
+#: model:ir.model.fields,field_description:approval_stock.field_stock_inventory_adjustment_line__write_uid
+msgid "Last Updated by"
+msgstr ""
+
+#. module: approval_stock
+#: model:ir.model.fields,field_description:approval_stock.field_stock_inventory_adjustment__write_date
+#: model:ir.model.fields,field_description:approval_stock.field_stock_inventory_adjustment_line__write_date
+msgid "Last Updated on"
+msgstr ""
+
+#. module: approval_stock
+#: model:ir.model.fields,help:approval_stock.field_stock_inventory_adjustment__approval_request_id
+#: model:ir.model.fields,help:approval_stock.field_stock_picking__approval_request_id
+msgid ""
+"Link to the approval request for this document. Automatically created when "
+"approval is requested."
+msgstr ""
+
+#. module: approval_stock
+#: model:ir.model.fields,help:approval_stock.field_approval_request_line__stock_move_id
+msgid "Link to the stock move created from this approval line"
+msgstr ""
+
+#. module: approval_stock
+#. odoo-python
+#: code:addons/approval_stock/models/stock_inventory_adjustment.py:0
+#: model:ir.model.fields,field_description:approval_stock.field_approval_category__location_ids
+#: model:ir.model.fields,field_description:approval_stock.field_approval_request_line__location_id
+#: model:ir.model.fields,field_description:approval_stock.field_stock_inventory_adjustment_line__location_id
+msgid "Location"
+msgstr ""
+
+#. module: approval_stock
+#: model:ir.model.fields,field_description:approval_stock.field_approval_request_line__location_dest_id
+msgid "Location Dest"
+msgstr ""
+
+#. module: approval_stock
+#: model:ir.model.fields,field_description:approval_stock.field_stock_inventory_adjustment_line__trace_id
+msgid "Lot"
+msgstr ""
+
+#. module: approval_stock
+#: model:ir.model.fields,field_description:approval_stock.field_stock_inventory_adjustment__message_has_error
+msgid "Message Delivery error"
+msgstr ""
+
+#. module: approval_stock
+#: model:ir.model.fields,field_description:approval_stock.field_stock_inventory_adjustment__message_ids
+msgid "Messages"
+msgstr ""
+
+#. module: approval_stock
+#. odoo-python
+#: code:addons/approval_stock/models/approval_request.py:0
+msgid "No vehicle selected for this approval."
+msgstr ""
+
+#. module: approval_stock
+#: model:ir.model.fields.selection,name:approval_stock.selection__approval_category__has_asset__no
+#: model:ir.model.fields.selection,name:approval_stock.selection__approval_category__has_odometer__no
+msgid "None"
+msgstr ""
+
+#. module: approval_stock
+#. odoo-python
+#: code:addons/approval_stock/models/stock_inventory_adjustment.py:0
+msgid ""
+"Not applied: these quantities moved after the count was sent for approval. "
+"Every count stays on its quant for a recount."
+msgstr ""
+
+#. module: approval_stock
+#. odoo-python
+#: code:addons/approval_stock/models/stock_picking.py:0
+msgid "Not specified"
+msgstr ""
+
+#. module: approval_stock
+#: model:ir.model.fields,field_description:approval_stock.field_stock_inventory_adjustment__message_needaction_counter
+msgid "Number of Actions"
+msgstr ""
+
+#. module: approval_stock
+#. odoo-python
+#: code:addons/approval_stock/models/stock_picking.py:0
+msgid "Number of Products"
+msgstr ""
+
+#. module: approval_stock
+#: model:ir.model.fields,field_description:approval_stock.field_stock_inventory_adjustment__message_has_error_counter
+msgid "Number of errors"
+msgstr ""
+
+#. module: approval_stock
+#: model:ir.model.fields,help:approval_stock.field_stock_inventory_adjustment__message_needaction_counter
+msgid "Number of messages requiring action"
+msgstr ""
+
+#. module: approval_stock
+#: model:ir.model.fields,help:approval_stock.field_stock_inventory_adjustment__message_has_error_counter
+msgid "Number of messages with delivery error"
+msgstr ""
+
+#. module: approval_stock
+#: model:ir.model.fields,field_description:approval_stock.field_approval_category__has_odometer
+#: model:ir.model.fields,field_description:approval_stock.field_approval_request__odometer
+#: model_terms:ir.ui.view,arch_db:approval_stock.view_approval_request_tree_inherit_stock
+msgid "Odometer"
+msgstr ""
+
+#. module: approval_stock
+#: model:ir.model.fields,field_description:approval_stock.field_approval_request__has_odometer
+msgid "Odometer Requirement"
+msgstr ""
+
+#. module: approval_stock
+#. odoo-python
+#: code:addons/approval_stock/models/stock_inventory_adjustment.py:0
+msgid "On Hand"
+msgstr ""
+
+#. module: approval_stock
+#: model:ir.model.fields,field_description:approval_stock.field_stock_inventory_adjustment_line__quantity_on_hand
+msgid "On Hand When Requested"
+msgstr ""
+
+#. module: approval_stock
+#. odoo-python
+#: code:addons/approval_stock/models/stock_inventory_adjustment.py:0
+msgid ""
+"Only a draft inventory adjustment whose approval was granted can be applied:"
+" %(name)s is not one."
+msgstr ""
+
+#. module: approval_stock
+#. odoo-python
+#: code:addons/approval_stock/models/stock_picking.py:0
+msgid "Operation"
+msgstr ""
+
+#. module: approval_stock
+#: model:ir.model.fields.selection,name:approval_stock.selection__approval_category__has_asset__optional
+#: model:ir.model.fields.selection,name:approval_stock.selection__approval_category__has_odometer__optional
+msgid "Optional"
+msgstr ""
+
+#. module: approval_stock
+#: model:ir.model.fields,field_description:approval_stock.field_stock_inventory_adjustment_line__owner_id
+msgid "Owner"
+msgstr ""
+
+#. module: approval_stock
+#: model:ir.model.fields,field_description:approval_stock.field_stock_inventory_adjustment_line__package_id
+msgid "Package"
+msgstr ""
+
+#. module: approval_stock
+#. odoo-python
+#: code:addons/approval_stock/models/stock_picking.py:0
+msgid "Partner"
+msgstr ""
+
+#. module: approval_stock
+#: model:ir.model.fields,field_description:approval_stock.field_stock_inventory_adjustment__pending_approver_ids
+#: model:ir.model.fields,field_description:approval_stock.field_stock_picking__pending_approver_ids
+msgid "Pending Approvers"
+msgstr ""
+
+#. module: approval_stock
+#: model:ir.model.fields,help:approval_stock.field_stock_inventory_adjustment__approval_progress
+#: model:ir.model.fields,help:approval_stock.field_stock_picking__approval_progress
+msgid "Percentage of approvals completed (approved / total approvers)"
+msgstr ""
+
+#. module: approval_stock
+#. odoo-python
+#: code:addons/approval_stock/models/stock_inventory_adjustment.py:0
+msgid "Physical Inventory"
+msgstr ""
+
+#. module: approval_stock
+#: model:ir.model.fields,field_description:approval_stock.field_approval_request__picking_ids
+msgid "Picking"
+msgstr ""
+
+#. module: approval_stock
+#: model:ir.model.fields,field_description:approval_stock.field_approval_category__picking_type_ids
+#: model:ir.model.fields,field_description:approval_stock.field_approval_request_line__picking_type_id
+msgid "Picking Type"
+msgstr ""
+
+#. module: approval_stock
+#. odoo-python
+#: code:addons/approval_stock/models/approval_request.py:0
+msgid "Please select a vehicle before creating the asset log."
+msgstr ""
+
+#. module: approval_stock
+#: model:ir.model.fields,field_description:approval_stock.field_stock_inventory_adjustment__website_message_ids
+msgid "Portal Messages"
+msgstr ""
+
+#. module: approval_stock
+#: model:ir.model.fields,help:approval_stock.field_stock_inventory_adjustment__website_message_ids
+msgid "Portal communication history for this record."
+msgstr ""
+
+#. module: approval_stock
+#. odoo-python
+#: code:addons/approval_stock/models/stock_inventory_adjustment.py:0
+#: model:ir.model.fields,field_description:approval_stock.field_stock_inventory_adjustment_line__product_id
+#: model_terms:ir.ui.view,arch_db:approval_stock.view_stock_inventory_adjustment_search
+msgid "Product"
+msgstr ""
+
+#. module: approval_stock
+#: model:ir.model,name:approval_stock.model_product_category
+msgid "Product Category"
+msgstr "Categoría del producto"
+
+#. module: approval_stock
+#. odoo-python
+#: code:addons/approval_stock/models/stock_picking.py:0
+msgid "Products"
+msgstr ""
+
+#. module: approval_stock
+#. odoo-python
+#: code:addons/approval_stock/models/stock_picking.py:0
+msgid "Qty"
+msgstr ""
+
+#. module: approval_stock
+#: model:ir.model.fields,field_description:approval_stock.field_stock_inventory_adjustment_line__quant_id
+msgid "Quant"
+msgstr ""
+
+#. module: approval_stock
+#: model:ir.model.fields,field_description:approval_stock.field_stock_inventory_adjustment__name
+msgid "Reference"
+msgstr ""
+
+#. module: approval_stock
+#. odoo-python
+#: code:addons/approval_stock/models/stock_picking.py:0
+msgid "Rejected by"
+msgstr ""
+
+#. module: approval_stock
+#: model_terms:ir.ui.view,arch_db:approval_stock.view_stock_inventory_adjustment_form
+#: model_terms:ir.ui.view,arch_db:approval_stock.view_stock_picking_form_inherit_approval
+msgid "Request Approval"
+msgstr "Solicitar aprobación"
+
+#. module: approval_stock
+#: model:ir.model,name:approval_stock.model_approval_request_line
+msgid "Request Line"
+msgstr "Línea de solicitud"
+
+#. module: approval_stock
+#: model:ir.model.fields,field_description:approval_stock.field_product_category__stock_approval_required
+msgid "Require Approval for Stock Transfers"
+msgstr ""
+
+#. module: approval_stock
+#: model:ir.model.fields,field_description:approval_stock.field_stock_location__stock_approval_required
+msgid "Require Approval for Transfers"
+msgstr ""
+
+#. module: approval_stock
+#: model_terms:ir.ui.view,arch_db:approval_stock.view_approval_category_form_inherit_stock
+msgid "Require approval by"
+msgstr ""
+
+#. module: approval_stock
+#: model:ir.model.fields.selection,name:approval_stock.selection__approval_category__has_asset__required
+#: model:ir.model.fields.selection,name:approval_stock.selection__approval_category__has_odometer__required
+msgid "Required"
+msgstr ""
+
+#. module: approval_stock
+#: model:ir.model.fields,field_description:approval_stock.field_stock_inventory_adjustment__message_has_sms_error
+msgid "SMS Delivery error"
+msgstr ""
+
+#. module: approval_stock
+#. odoo-python
+#: code:addons/approval_stock/models/stock_picking.py:0
+msgid "Scheduled Date"
+msgstr ""
+
+#. module: approval_stock
+#: model:ir.model.fields,field_description:approval_stock.field_resource_asset_log__source
+msgid "Source"
+msgstr ""
+
+#. module: approval_stock
+#: model:ir.model.fields,help:approval_stock.field_approval_request_line__location_id
+msgid "Source location for stock move"
+msgstr ""
+
+#. module: approval_stock
+#: model:ir.model.fields,help:approval_stock.field_approval_category__has_asset
+msgid "Specify if an asset must be selected for this type of approval."
+msgstr ""
+
+#. module: approval_stock
+#: model:ir.model.fields,help:approval_stock.field_approval_category__has_odometer
+msgid ""
+"Specify if an odometer reading must be provided for this type of approval."
+msgstr ""
+
+#. module: approval_stock
+#: model:ir.model.fields,field_description:approval_stock.field_stock_inventory_adjustment__state
+msgid "State"
+msgstr ""
+
+#. module: approval_stock
+#: model_terms:ir.ui.view,arch_db:approval_stock.view_stock_inventory_adjustment_search
+msgid "Status"
+msgstr "Estado"
+
+#. module: approval_stock
+#: model:ir.model.fields,field_description:approval_stock.field_approval_category__stock_approval_mode
+msgid "Stock Approval Mode"
+msgstr ""
+
+#. module: approval_stock
+#: model:ir.model,name:approval_stock.model_stock_move
+#: model:ir.model.fields,field_description:approval_stock.field_approval_request_line__stock_move_id
+msgid "Stock Move"
+msgstr "Movimiento de stock"
+
+#. module: approval_stock
+#: model:ir.model.fields.selection,name:approval_stock.selection__approval_category__target_model__stock_picking
+msgid "Stock Picking"
+msgstr ""
+
+#. module: approval_stock
+#. odoo-python
+#: code:addons/approval_stock/models/approval_request.py:0
+msgid "Stock Pickings"
+msgstr ""
+
+#. module: approval_stock
+#: model:ir.model.fields,field_description:approval_stock.field_approval_category__stock_product_categ_ids
+msgid "Stock Product Categ"
+msgstr ""
+
+#. module: approval_stock
+#. odoo-python
+#: code:addons/approval_stock/models/stock_picking.py:0
+#: model:ir.model.fields.selection,name:approval_stock.selection__approval_category__approval_type__stock
+msgid "Stock Transfer"
+msgstr ""
+
+#. module: approval_stock
+#: model_terms:ir.ui.view,arch_db:approval_stock.res_config_settings_view_form_inherit_stock_approval
+msgid "Stock Transfer Approvals"
+msgstr ""
+
+#. module: approval_stock
+#. odoo-python
+#: code:addons/approval_stock/models/stock_picking.py:0
+#: model:mail.message.subtype,name:approval_stock.mt_stock_approved
+msgid "Stock Transfer Approved"
+msgstr ""
+
+#. module: approval_stock
+#: model:mail.message.subtype,name:approval_stock.mt_stock_refused
+msgid "Stock Transfer Refused"
+msgstr ""
+
+#. module: approval_stock
+#. odoo-python
+#: code:addons/approval_stock/models/stock_picking.py:0
+msgid "Stock Transfer Rejected"
+msgstr ""
+
+#. module: approval_stock
+#: model_terms:ir.ui.view,arch_db:approval_stock.view_approval_request_form_inherit_stock
+msgid "Stock Transfers"
+msgstr "Traslados de existencias"
+
+#. module: approval_stock
+#: model:ir.model.fields,help:approval_stock.field_approval_request_line__stock_picking_id
+msgid "Stock picking that contains the move created from this approval"
+msgstr ""
+
+#. module: approval_stock
+#. odoo-python
+#: code:addons/approval_stock/models/approval_request.py:0
+msgid "Stock pickings created:"
+msgstr ""
+
+#. module: approval_stock
+#: model:mail.message.subtype,description:approval_stock.mt_stock_approved
+msgid "Stock transfer has been approved"
+msgstr ""
+
+#. module: approval_stock
+#: model:mail.message.subtype,description:approval_stock.mt_stock_refused
+msgid "Stock transfer has been refused"
+msgstr ""
+
+#. module: approval_stock
+#: model:ir.model.fields,field_description:approval_stock.field_approval_category__target_model
+msgid "Target Model"
+msgstr ""
+
+#. module: approval_stock
+#: model:ir.model.fields,help:approval_stock.field_approval_category__target_model
+msgid ""
+"Technical name of the model to create when this approval is granted. Leave "
+"empty if the approval is for an existing record (e.g., approving a purchase "
+"order). Set to model name (e.g., 'purchase.order') if approval should create"
+" a new record."
+msgstr ""
+
+#. module: approval_stock
+#. odoo-python
+#: code:addons/approval_stock/models/stock_inventory_adjustment.py:0
+msgid ""
+"The counted lines of %(name)s cannot change while its approval is pending or"
+" once it is applied or cancelled."
+msgstr ""
+
+#. module: approval_stock
+#. odoo-python
+#: code:addons/approval_stock/models/approval_request.py:0
+msgid "The odometer reading cannot be negative."
+msgstr ""
+
+#. module: approval_stock
+#: model:ir.model.fields,help:approval_stock.field_approval_request__asset_id
+msgid "The vehicle associated with this approval request"
+msgstr ""
+
+#. module: approval_stock
+#. odoo-python
+#: code:addons/approval_stock/models/stock_inventory_adjustment.py:0
+msgid "There is no counted quantity to adjust."
+msgstr ""
+
+#. module: approval_stock
+#. odoo-python
+#: code:addons/approval_stock/models/approval_request_line.py:0
+msgid ""
+"These lines are missing a source or destination location. Please set locations on all of them before creating stock transfers:\n"
+"\n"
+"%(lines)s"
+msgstr ""
+
+#. module: approval_stock
+#. odoo-python
+#: code:addons/approval_stock/models/approval_request_line.py:0
+msgid ""
+"These lines are missing an operation type. Please set one on all of them before creating stock transfers:\n"
+"\n"
+"%(lines)s"
+msgstr ""
+
+#. module: approval_stock
+#. odoo-python
+#: code:addons/approval_stock/models/approval_request.py:0
+msgid ""
+"This approval category is configured to create stock pickings but does not "
+"have product lines enabled. Please contact your administrator."
+msgstr ""
+
+#. module: approval_stock
+#. odoo-python
+#: code:addons/approval_stock/models/stock_picking.py:0
+msgid ""
+"This stock transfer was created from an approval request (%s). It does not "
+"need a separate approval."
+msgstr ""
+
+#. module: approval_stock
+#. odoo-python
+#: code:addons/approval_stock/models/stock_picking.py:0
+msgid "To"
+msgstr ""
+
+#. module: approval_stock
+#: model:ir.model,name:approval_stock.model_stock_picking
+#: model:ir.model.fields,field_description:approval_stock.field_approval_request_line__stock_picking_id
+msgid "Transfer"
+msgstr "Transferir"
+
+#. module: approval_stock
+#: model:ir.model.fields,help:approval_stock.field_approval_request__picking_ids
+msgid "Transfers linked to this request through the approval mixin"
+msgstr ""
+
+#. module: approval_stock
+#: model:ir.model.fields,help:approval_stock.field_approval_request_line__picking_type_id
+msgid "Type of stock operation (Receipt, Delivery, Internal Transfer)"
+msgstr ""
+
+#. module: approval_stock
+#: model:ir.model.fields,field_description:approval_stock.field_stock_inventory_adjustment_line__product_uom_id
+msgid "Unit"
+msgstr ""
+
+#. module: approval_stock
+#: model:ir.model.fields,help:approval_stock.field_stock_inventory_adjustment__approval_user_ids
+#: model:ir.model.fields,help:approval_stock.field_stock_picking__approval_user_ids
+msgid "Users who need to approve this document"
+msgstr ""
+
+#. module: approval_stock
+#: model:ir.model.fields,help:approval_stock.field_stock_inventory_adjustment__pending_approver_ids
+#: model:ir.model.fields,help:approval_stock.field_stock_picking__pending_approver_ids
+msgid "Users who still need to approve this document"
+msgstr ""
+
+#. module: approval_stock
+#: model:ir.model.fields,field_description:approval_stock.field_approval_category__has_asset
+msgid "Vehicle"
+msgstr ""
+
+#. module: approval_stock
+#: model_terms:ir.ui.view,arch_db:approval_stock.view_approval_request_form_inherit_stock
+msgid "Vehicle Logs"
+msgstr "Registros de vehículos"
+
+#. module: approval_stock
+#: model:ir.model.fields,field_description:approval_stock.field_approval_request__has_asset
+msgid "Vehicle Requirement"
+msgstr ""
+
+#. module: approval_stock
+#: model_terms:ir.ui.view,arch_db:approval_stock.view_stock_inventory_adjustment_search
+msgid "Waiting Approval"
+msgstr "En espera de aprobación"
+
+#. module: approval_stock
+#: model:ir.model.fields,help:approval_stock.field_approval_category__stock_approval_mode
+msgid "What triggers this approval category to be used for stock operations"
+msgstr ""
+
+#. module: approval_stock
+#: model:ir.model.fields,help:approval_stock.field_stock_inventory_adjustment__can_request_approval
+#: model:ir.model.fields,help:approval_stock.field_stock_picking__can_request_approval
+msgid "Whether approval can be requested (all required fields filled)"
+msgstr ""
+
+#. module: approval_stock
+#: model:ir.model.fields,help:approval_stock.field_approval_request__has_odometer
+msgid "Whether this approval category requires odometer reading"
+msgstr ""
+
+#. module: approval_stock
+#: model:ir.model.fields,help:approval_stock.field_approval_request__has_asset
+msgid "Whether this approval category requires vehicle information"
+msgstr ""
+
+#. module: approval_stock
+#: model:ir.model.fields,help:approval_stock.field_stock_inventory_adjustment__approval_required
+#: model:ir.model.fields,help:approval_stock.field_stock_picking__approval_required
+msgid "Whether this document requires approval based on current rules"
+msgstr ""
+
+#. module: approval_stock
+#: model:ir.model.fields,help:approval_stock.field_resource_asset_log__source
+msgid ""
+"Which producer wrote this row. Every asset cost and every odometer reading "
+"in the system is a log line, so the ledger has one provenance axis. Each "
+"producing module adds its own value through selection_add, so a value exists"
+" here only where something writes it."
+msgstr ""
+
+#. module: approval_stock
+#. odoo-python
+#: code:addons/approval_stock/models/approval_request.py:0
+msgid "You cannot confirm an empty stock request. Please add product lines."
+msgstr ""
+
+#. module: approval_stock
+#. odoo-python
+#: code:addons/approval_stock/models/approval_request.py:0
+msgid "You cannot create an asset log without selecting a vehicle."
+msgstr ""
+
+#. module: approval_stock
+#. odoo-python
+#: code:addons/approval_stock/models/stock_inventory_adjustment.py:0
+msgid "and %(count)s more line(s)"
+msgstr ""
+
+#. module: approval_stock
+#. odoo-python
+#: code:addons/approval_stock/models/approval_request.py:0
+msgid "stock picking"
+msgstr ""
+
+#. module: approval_stock
+#. odoo-python
+#: code:addons/approval_stock/models/approval_request_line.py:0
+msgid "• line %(line_id)s (product: %(product)s)"
+msgstr ""
+
+#. module: approval_stock
+#. odoo-python
+#: code:addons/approval_stock/models/stock_picking.py:0
+msgid "⚠️ Could not auto-validate transfer: %(error)s"
+msgstr ""

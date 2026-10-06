@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+
+    <record id="ir_cron_gps_cleanup_old_points" model="ir.cron">
+        <field name="name">GPS: Clean Old Tracking Points</field>
+        <field name="model_id" ref="model_device_data_log_gps" />
+        <field name="state">code</field>
+        <field name="code">model._gc_gps_data_logs()</field>
+        <field name="repeat_interval" eval="1" />
+        <field name="repeat_unit">day</field>
+        <field name="priority" eval="5" />
+        <field name="active" eval="True" />
+    </record>
+
+    <record id="ir_cron_gps_refresh_daily_report" model="ir.cron">
+        <field name="name">GPS: Refresh Daily Report</field>
+        <field name="model_id" ref="model_device_data_log_gps_report" />
+        <field name="state">code</field>
+        <field name="code">model.refresh()</field>
+        <field name="repeat_interval" eval="1" />
+        <field name="repeat_unit">hour</field>
+        <field name="priority" eval="10" />
+        <field name="active" eval="True" />
+    </record>
+
+    <!--
+        Publishes the last-seen pointer the webhook deliberately no longer
+        writes inline; see _cron_refresh_gps_pointers. Runs often because the
+        pointer feeds a "last update" display, and cheaply because the query
+        is bounded to a 1h lookback (7.7ms measured). Keep the interval well
+        below that lookback.
+    -->
+    <record id="ir_cron_gps_refresh_pointers" model="ir.cron">
+        <field name="name">GPS: Refresh Device Last-Seen Pointers</field>
+        <field name="model_id" ref="device.model_device_device" />
+        <field name="state">code</field>
+        <field name="code">model._cron_refresh_gps_pointers()</field>
+        <field name="repeat_interval" eval="2" />
+        <field name="repeat_unit">minute</field>
+        <field name="priority" eval="3" />
+        <field name="active" eval="True" />
+    </record>
+
+</odoo>

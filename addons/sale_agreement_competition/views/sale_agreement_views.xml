@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="sale_agreement_form_competition" model="ir.ui.view">
+        <field name="name">sale.agreement.form.competition</field>
+        <field name="model">sale.agreement</field>
+        <field name="inherit_id" ref="sale_agreement.sale_agreement_view_form" />
+        <field name="arch" type="xml">
+            <xpath
+                expr="//field[@name='line_ids']/list/field[@name='price_unit']"
+                position="after">
+                <field name="market_price" optional="show" />
+                <field
+                    name="price_gap"
+                    optional="show"
+                    decoration-warning="price_gap &gt; 1" />
+                <field name="market_scope" optional="hide" />
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

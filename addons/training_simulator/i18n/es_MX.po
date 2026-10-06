@@ -1,0 +1,524 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* training_simulator
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-09-30 21:00+0000\n"
+"PO-Revision-Date: 2026-09-30 21:00+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: training_simulator
+#: model:ir.model.constraint,message:training_simulator.constraint_training_simulator_code_unique
+msgid "A simulator code is unique."
+msgstr "El código de un simulador es único."
+
+#. module: training_simulator
+#: model:ir.model.fields,field_description:training_simulator.field_training_simulator__active
+msgid "Active"
+msgstr "Activo"
+
+#. module: training_simulator
+#. odoo-javascript
+#: code:addons/training_simulator/static/src/dashboard/training_dashboard.xml:0
+msgid "All"
+msgstr "Todas"
+
+#. module: training_simulator
+#. odoo-javascript
+#: code:addons/training_simulator/static/src/dashboard/training_dashboard.xml:0
+msgid "All scenarios completed"
+msgstr "Completaste todos los escenarios"
+
+#. module: training_simulator
+#: model:ir.model.fields,field_description:training_simulator.field_training_simulator__area
+#: model:ir.model.fields,field_description:training_simulator.field_training_simulator_session__area
+#: model_terms:ir.ui.view,arch_db:training_simulator.training_simulator_session_view_search
+msgid "Area"
+msgstr "Área"
+
+#. module: training_simulator
+#. odoo-javascript
+#: code:addons/training_simulator/static/src/dashboard/training_dashboard.xml:0
+msgid "Areas"
+msgstr "Áreas"
+
+#. module: training_simulator
+#: model:ir.model.fields,field_description:training_simulator.field_training_simulator__code
+msgid "Code"
+msgstr "Código"
+
+#. module: training_simulator
+#. odoo-javascript
+#: code:addons/training_simulator/static/src/dashboard/training_dashboard.xml:0
+msgid "Coming soon"
+msgstr "Próximamente"
+
+#. module: training_simulator
+#: model:ir.model.fields,help:training_simulator.field_training_simulator__flow_steps
+msgid "Comma-separated steps the game walks through, shown on the card."
+msgstr "Pasos del juego separados por comas; se muestran en la tarjeta."
+
+#. module: training_simulator
+#: model:ir.model.fields,field_description:training_simulator.field_training_simulator_session__passed
+msgid "Completed without mistakes"
+msgstr "Completado sin errores"
+
+#. module: training_simulator
+#: model:res.groups,comment:training_simulator.group_training_instructor
+msgid "Configures the simulators and sees everyone's sessions."
+msgstr "Configura los simuladores y ve las partidas de todos."
+
+#. module: training_simulator
+#. odoo-javascript
+#: code:addons/training_simulator/static/src/dashboard/training_dashboard.xml:0
+msgid "Continue"
+msgstr "Continuar"
+
+#. module: training_simulator
+#: model:ir.model.fields,field_description:training_simulator.field_training_simulator__create_uid
+#: model:ir.model.fields,field_description:training_simulator.field_training_simulator_session__create_uid
+msgid "Created by"
+msgstr "Creado por"
+
+#. module: training_simulator
+#: model:ir.model.fields,field_description:training_simulator.field_training_simulator__create_date
+#: model:ir.model.fields,field_description:training_simulator.field_training_simulator_session__create_date
+msgid "Created on"
+msgstr "Creado el"
+
+#. module: training_simulator
+#: model_terms:ir.ui.view,arch_db:training_simulator.training_simulator_session_view_form
+msgid "Data used"
+msgstr "Datos usados"
+
+#. module: training_simulator
+#: model:ir.model.fields,field_description:training_simulator.field_training_simulator_session__date_end
+msgid "Date End"
+msgstr "Fin"
+
+#. module: training_simulator
+#: model:ir.model.fields,field_description:training_simulator.field_training_simulator_session__date_start
+msgid "Date Start"
+msgstr "Inicio"
+
+#. module: training_simulator
+#: model:ir.model.fields,field_description:training_simulator.field_training_simulator__description
+msgid "Description"
+msgstr "Descripción"
+
+#. module: training_simulator
+#: model:ir.model.fields,field_description:training_simulator.field_training_simulator__display_name
+#: model:ir.model.fields,field_description:training_simulator.field_training_simulator_session__display_name
+msgid "Display Name"
+msgstr "Nombre para mostrar"
+
+#. module: training_simulator
+#: model:ir.model.fields,field_description:training_simulator.field_training_simulator_session__duration
+msgid "Duration"
+msgstr "Duración"
+
+#. module: training_simulator
+#: model:ir.model.fields,help:training_simulator.field_training_simulator__icon
+msgid "Emoji shown on the simulator card."
+msgstr "Emoji de la tarjeta del simulador."
+
+#. module: training_simulator
+#: model:ir.model.fields,field_description:training_simulator.field_training_simulator_session__error_count
+msgid "Error Count"
+msgstr "Errores"
+
+#. module: training_simulator
+#: model:ir.model.fields,help:training_simulator.field_training_simulator_session__result
+msgid "Everything the game sent back when it finished."
+msgstr "Todo lo que el juego envió al terminar."
+
+#. module: training_simulator
+#: model:ir.model.fields.selection,name:training_simulator.selection__training_simulator_session__state__done
+msgid "Finished"
+msgstr "Terminada"
+
+#. module: training_simulator
+#: model:ir.model.fields,field_description:training_simulator.field_training_simulator__flow_steps
+msgid "Flow steps"
+msgstr "Pasos del flujo"
+
+#. module: training_simulator
+#: model_terms:ir.ui.view,arch_db:training_simulator.training_simulator_view_form
+msgid "Game"
+msgstr "Juego"
+
+#. module: training_simulator
+#. odoo-javascript
+#: code:addons/training_simulator/static/src/dashboard/training_dashboard.xml:0
+msgid "Hello,"
+msgstr "Hola,"
+
+#. module: training_simulator
+#: model:ir.model.fields,help:training_simulator.field_training_simulator_session__mode
+msgid "How it was played, e.g. automatic or by hand."
+msgstr "Cómo se jugó, por ejemplo automático o a mano."
+
+#. module: training_simulator
+#: model:ir.model.fields,field_description:training_simulator.field_training_simulator__id
+#: model:ir.model.fields,field_description:training_simulator.field_training_simulator_session__id
+msgid "ID"
+msgstr "ID"
+
+#. module: training_simulator
+#: model:ir.model.fields,field_description:training_simulator.field_training_simulator__icon
+msgid "Icon"
+msgstr "Ícono"
+
+#. module: training_simulator
+#: model:res.groups,name:training_simulator.group_training_instructor
+msgid "Instructor"
+msgstr "Instructor"
+
+#. module: training_simulator
+#: model:ir.model.fields,field_description:training_simulator.field_training_simulator__write_uid
+#: model:ir.model.fields,field_description:training_simulator.field_training_simulator_session__write_uid
+msgid "Last Updated by"
+msgstr "Última actualización por"
+
+#. module: training_simulator
+#: model:ir.model.fields,field_description:training_simulator.field_training_simulator__write_date
+#: model:ir.model.fields,field_description:training_simulator.field_training_simulator_session__write_date
+msgid "Last Updated on"
+msgstr "Última actualización el"
+
+#. module: training_simulator
+#: model:ir.model.fields.selection,name:training_simulator.selection__training_simulator__area__logistics
+msgid "Logistics"
+msgstr "Logística"
+
+#. module: training_simulator
+#: model_terms:ir.ui.view,arch_db:training_simulator.training_simulator_session_view_form
+#: model_terms:ir.ui.view,arch_db:training_simulator.training_simulator_session_view_list
+msgid "Minutes"
+msgstr "Minutos"
+
+#. module: training_simulator
+#: model:ir.model.fields,help:training_simulator.field_training_simulator_session__duration
+msgid "Minutes played."
+msgstr "Minutos jugados."
+
+#. module: training_simulator
+#: model:ir.model.fields,help:training_simulator.field_training_simulator_session__error_count
+msgid "Mistakes the game counted, e.g. rejected scans."
+msgstr "Errores que contó el juego, por ejemplo escaneos rechazados."
+
+#. module: training_simulator
+#: model:ir.model.fields,field_description:training_simulator.field_training_simulator_session__mode
+msgid "Mode"
+msgstr "Modo"
+
+#. module: training_simulator
+#: model_terms:ir.ui.view,arch_db:training_simulator.training_simulator_session_view_search
+msgid "My sessions"
+msgstr "Mis partidas"
+
+#. module: training_simulator
+#: model:ir.model.fields,field_description:training_simulator.field_training_simulator__name
+msgid "Name"
+msgstr "Nombre"
+
+#. module: training_simulator
+#: model:ir.model.fields,help:training_simulator.field_training_simulator__tagline
+msgid "One line on the card that says what the player gets out of it."
+msgstr "Una línea en la tarjeta que dice qué gana quien juega."
+
+#. module: training_simulator
+#. odoo-python
+#: code:addons/training_simulator/models/training_simulator_session.py:0
+msgid "Only the player can finish a running session."
+msgstr "Solo quien juega puede terminar una partida en curso."
+
+#. module: training_simulator
+#: model:ir.model.fields.selection,name:training_simulator.selection__training_simulator__area__other
+msgid "Other"
+msgstr "Otra"
+
+#. module: training_simulator
+#: model:ir.model.fields,help:training_simulator.field_training_simulator__play_route
+msgid "Page of the game; it receives the session in the 'session' parameter."
+msgstr "Página del juego; recibe la partida en el parámetro 'session'."
+
+#. module: training_simulator
+#: model_terms:ir.ui.view,arch_db:training_simulator.training_simulator_session_view_search
+msgid "Passed"
+msgstr "Aprobada"
+
+#. module: training_simulator
+#: model_terms:ir.ui.view,arch_db:training_simulator.training_simulator_view_form
+#: model_terms:ir.ui.view,arch_db:training_simulator.training_simulator_view_kanban
+msgid "Play"
+msgstr "Jugar"
+
+#. module: training_simulator
+#: model:ir.model.fields,field_description:training_simulator.field_training_simulator__play_route
+msgid "Play Route"
+msgstr "Página del juego"
+
+#. module: training_simulator
+#. odoo-javascript
+#: code:addons/training_simulator/static/src/dashboard/training_dashboard.xml:0
+msgid "Play again"
+msgstr "Jugar de nuevo"
+
+#. module: training_simulator
+#: model:res.groups,name:training_simulator.group_training_player
+#: model_terms:ir.ui.view,arch_db:training_simulator.training_simulator_session_view_search
+msgid "Player"
+msgstr "Jugador"
+
+#. module: training_simulator
+#: model:ir.model.fields.selection,name:training_simulator.selection__training_simulator_session__state__running
+msgid "Playing"
+msgstr "Jugando"
+
+#. module: training_simulator
+#: model:res.groups,comment:training_simulator.group_training_player
+msgid "Plays the simulators and sees their own sessions."
+msgstr "Juega los simuladores y ve sus propias partidas."
+
+#. module: training_simulator
+#: model:ir.model.fields.selection,name:training_simulator.selection__training_simulator__area__production
+msgid "Production"
+msgstr "Producción"
+
+#. module: training_simulator
+#: model:ir.model.fields.selection,name:training_simulator.selection__training_simulator__area__quality
+msgid "Quality"
+msgstr "Calidad"
+
+#. module: training_simulator
+#. odoo-javascript
+#: code:addons/training_simulator/static/src/dashboard/training_dashboard.xml:0
+msgid "Ready for your first trip"
+msgstr "Listo para tu primer viaje"
+
+#. module: training_simulator
+#: model:ir.model.fields,help:training_simulator.field_training_simulator_session__snapshot
+msgid "Real data read when the session started."
+msgstr "Datos reales leídos al iniciar la partida."
+
+#. module: training_simulator
+#: model:ir.model.fields,field_description:training_simulator.field_training_simulator_session__result
+msgid "Result"
+msgstr "Resultado"
+
+#. module: training_simulator
+#. odoo-javascript
+#: code:addons/training_simulator/static/src/dashboard/training_dashboard.xml:0
+msgid "Safe practice space: nothing you do changes real inventory or orders."
+msgstr "Espacio de práctica seguro: nada de lo que hagas cambia el inventario ni los pedidos reales."
+
+#. module: training_simulator
+#: model:ir.model.fields.selection,name:training_simulator.selection__training_simulator__area__sales
+msgid "Sales"
+msgstr "Ventas"
+
+#. module: training_simulator
+#: model:ir.model.fields,field_description:training_simulator.field_training_simulator_session__scenario
+msgid "Scenario"
+msgstr "Escenario"
+
+#. module: training_simulator
+#: model:ir.model.fields,field_description:training_simulator.field_training_simulator__scenario_count
+msgid "Scenario Count"
+msgstr "Escenarios"
+
+#. module: training_simulator
+#: model:ir.model.fields,help:training_simulator.field_training_simulator__scenario_count
+msgid "Scenarios a player can pass; the progress counts them."
+msgstr "Escenarios que se pueden aprobar; el avance los cuenta."
+
+#. module: training_simulator
+#. odoo-javascript
+#: code:addons/training_simulator/static/src/dashboard/training_dashboard.xml:0
+msgid "Search simulators"
+msgstr "Buscar simuladores"
+
+#. module: training_simulator
+#: model:ir.model.fields,field_description:training_simulator.field_training_simulator__sequence
+msgid "Sequence"
+msgstr "Secuencia"
+
+#. module: training_simulator
+#: model:ir.model.fields,field_description:training_simulator.field_training_simulator__session_ids
+msgid "Session"
+msgstr "Partida"
+
+#. module: training_simulator
+#: model:ir.model.fields,field_description:training_simulator.field_training_simulator__session_count
+msgid "Session Count"
+msgstr "Partidas"
+
+#. module: training_simulator
+#: model:ir.actions.act_window,name:training_simulator.action_training_simulator_session
+#: model:ir.ui.menu,name:training_simulator.menu_training_simulator_session
+#: model_terms:ir.ui.view,arch_db:training_simulator.training_simulator_view_form
+msgid "Sessions"
+msgstr "Partidas"
+
+#. module: training_simulator
+#. odoo-javascript
+#: code:addons/training_simulator/static/src/dashboard/training_dashboard.xml:0
+msgid "Settings"
+msgstr "Configuración"
+
+#. module: training_simulator
+#: model:ir.model.fields,field_description:training_simulator.field_training_simulator_session__simulator_id
+#: model_terms:ir.ui.view,arch_db:training_simulator.training_simulator_session_view_search
+msgid "Simulator"
+msgstr "Simulador"
+
+#. module: training_simulator
+#: model:ir.actions.act_window,name:training_simulator.action_training_simulator
+#: model:ir.ui.menu,name:training_simulator.menu_training_simulator
+msgid "Simulators"
+msgstr "Simuladores"
+
+#. module: training_simulator
+#. odoo-javascript
+#: code:addons/training_simulator/static/src/dashboard/training_dashboard.xml:0
+msgid "Simulators for this area are on the way."
+msgstr "Los simuladores de esta área vienen en camino."
+
+#. module: training_simulator
+#: model:ir.model.fields,field_description:training_simulator.field_training_simulator_session__snapshot
+msgid "Snapshot"
+msgstr "Foto de datos"
+
+#. module: training_simulator
+#. odoo-javascript
+#: code:addons/training_simulator/static/src/dashboard/training_dashboard.xml:0
+msgid "Start"
+msgstr "Empezar"
+
+#. module: training_simulator
+#: model:ir.model.fields,field_description:training_simulator.field_training_simulator_session__state
+msgid "State"
+msgstr "Estado"
+
+#. module: training_simulator
+#: model:ir.model.fields,field_description:training_simulator.field_training_simulator_session__summary
+#: model_terms:ir.ui.view,arch_db:training_simulator.training_simulator_session_view_form
+msgid "Summary"
+msgstr "Resumen"
+
+#. module: training_simulator
+#: model:ir.model.fields,field_description:training_simulator.field_training_simulator__tagline
+msgid "Tagline"
+msgstr "Frase"
+
+#. module: training_simulator
+#: model:ir.model.fields,help:training_simulator.field_training_simulator__code
+msgid ""
+"Technical key of the simulator; the module that implements it reads it."
+msgstr "Clave técnica del simulador; la lee el módulo que lo implementa."
+
+#. module: training_simulator
+#: model:ir.model.fields,help:training_simulator.field_training_simulator_session__passed
+msgid "The player went through the whole flow as it is done in operation."
+msgstr "Quien jugó hizo el flujo completo como se hace en la operación."
+
+#. module: training_simulator
+#. odoo-javascript
+#: code:addons/training_simulator/static/src/dashboard/training_dashboard.xml:0
+#: model:ir.actions.client,name:training_simulator.action_training_dashboard
+#: model:ir.ui.menu,name:training_simulator.menu_training_root
+msgid "Training"
+msgstr "Capacitación"
+
+#. module: training_simulator
+#: model:ir.ui.menu,name:training_simulator.menu_training_dashboard
+msgid "Training Center"
+msgstr "Centro de capacitación"
+
+#. module: training_simulator
+#: model:ir.model,name:training_simulator.model_training_simulator
+msgid "Training Simulator"
+msgstr "Simulador de capacitación"
+
+#. module: training_simulator
+#: model:ir.model,name:training_simulator.model_training_simulator_session
+msgid "Training Simulator Session"
+msgstr "Partida de simulador"
+
+#. module: training_simulator
+#: model:res.groups.privilege,name:training_simulator.res_groups_privilege_training
+msgid "Training Simulators"
+msgstr "Simuladores de capacitación"
+
+#. module: training_simulator
+#: model:ir.model.fields,field_description:training_simulator.field_training_simulator_session__user_id
+msgid "User"
+msgstr "Usuario"
+
+#. module: training_simulator
+#: model:ir.model.fields,field_description:training_simulator.field_training_simulator_session__variant
+msgid "Variant"
+msgstr "Variante"
+
+#. module: training_simulator
+#. odoo-javascript
+#: code:addons/training_simulator/static/src/dashboard/training_dashboard.xml:0
+msgid "View my sessions"
+msgstr "Ver mis partidas"
+
+#. module: training_simulator
+#: model:ir.model.fields,help:training_simulator.field_training_simulator_session__summary
+msgid "What the game reports at the end, for the instructor."
+msgstr "Lo que el juego reporta al final, para el instructor."
+
+#. module: training_simulator
+#: model_terms:ir.ui.view,arch_db:training_simulator.training_simulator_view_form
+msgid "What the player learns"
+msgstr "Qué aprende quien juega"
+
+#. module: training_simulator
+#: model:ir.model.fields,help:training_simulator.field_training_simulator_session__variant
+msgid "What the scenario was played on, e.g. the route of a trip."
+msgstr "Sobre qué se jugó el escenario, por ejemplo la ruta de un viaje."
+
+#. module: training_simulator
+#: model_terms:ir.ui.view,arch_db:training_simulator.training_simulator_view_form
+msgid "e.g. Run a real delivery trip from start to finish, without any risk."
+msgstr "p. ej. Haz un viaje de reparto real de principio a fin, sin ningún riesgo."
+
+#. module: training_simulator
+#: model_terms:ir.ui.view,arch_db:training_simulator.training_simulator_view_form
+msgid "e.g. Sale order, Picking, Delivery"
+msgstr "p. ej. Orden de venta, Surtido, Entrega"
+
+#. module: training_simulator
+#. odoo-javascript
+#: code:addons/training_simulator/static/src/dashboard/training_dashboard.xml:0
+msgid "of"
+msgstr "de"
+
+#. module: training_simulator
+#. odoo-javascript
+#: code:addons/training_simulator/static/src/dashboard/training_dashboard.xml:0
+msgid "scenarios done"
+msgstr "escenarios hechos"
+
+#. module: training_simulator
+#. odoo-javascript
+#: code:addons/training_simulator/static/src/dashboard/training_dashboard.xml:0
+msgid "scenarios practised"
+msgstr "escenarios practicados"
+
+#. module: training_simulator
+#: model_terms:ir.ui.view,arch_db:training_simulator.training_simulator_view_kanban
+msgid "sessions"
+msgstr "partidas"

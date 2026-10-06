@@ -1,0 +1,3 @@
+id,name,model_id/id,group_id/id,kind,operation,reach,anchor,domain
+sale_tender_team_rule,sale.tender: team documents,sale_tender.model_sale_tender,sale.group_sale_salesman_team,permission,crud,team,,
+sale_tender_line_team_rule,sale.tender.line: team documents,sale_tender.model_sale_tender_line,sale.group_sale_salesman_team,permission,crud,team,,

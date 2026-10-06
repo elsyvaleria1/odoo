@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<templates>
+    <t t-name="account_online_synchronization.ConnectedUntil">
+        <div t-on-mouseenter="this.onMouseEnter" t-on-mouseleave="this.onMouseLeave" t-att-class="this.cssClasses">
+            <t t-if="this.state.displayReconnectButton">
+                <button class="btn btn-danger" t-on-click="this.extendConnection">
+                    Reconnect Bank
+                </button>
+            </t>
+            <t t-else="">
+                <t t-if="!this.state.isHovered">
+                    <i class="fa-solid fa-triangle-exclamation" t-if="this.isConnectionExpiredIn(3)"/>
+                    Connected until <t t-out="this.connectedUntilLabel"/>
+                </t>
+                <t t-elif="this.state.isHovered">
+                    <a class="oe_inline oe_kanban_action" href="#" t-on-click="this.extendConnection">
+                        Extend Connection
+                    </a>
+                </t>
+            </t>
+        </div>
+    </t>
+</templates>

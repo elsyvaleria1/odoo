@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="asset_ledger.stock_lot_civic_001" model="product.trace">
+        <field name="operator_id" ref="hr_employee_driver_john_smith" />
+        <field name="asset_manager_id" ref="hr_employee_manager_david_brown" />
+    </record>
+
+    <record id="asset_ledger.stock_lot_f150_001" model="product.trace">
+        <field name="operator_id" ref="hr_employee_driver_maria_garcia" />
+        <field name="asset_manager_id" ref="hr_employee_manager_david_brown" />
+    </record>
+
+    <record id="asset_ledger.stock_lot_model3_001" model="product.trace">
+        <field name="operator_id" ref="hr_employee_driver_robert_johnson" />
+        <field name="asset_manager_id" ref="hr_employee_manager_jennifer_davis" />
+    </record>
+
+    <record id="asset_ledger.stock_lot_transit_001" model="product.trace">
+        <field name="operator_id" ref="hr_employee_driver_lisa_chen" />
+        <field name="asset_manager_id" ref="hr_employee_manager_david_brown" />
+    </record>
+
+    <record id="asset_ledger.stock_lot_camry_001" model="product.trace">
+        <field name="operator_id" ref="hr_employee_driver_carlos_rodriguez" />
+        <field name="future_operator_id" ref="hr_employee_driver_sarah_williams" />
+        <field name="asset_manager_id" ref="hr_employee_manager_jennifer_davis" />
+    </record>
+
+    <record id="asset_ledger.stock_lot_delivery_van_001" model="product.trace">
+        <field name="operator_id" ref="hr_employee_driver_sarah_williams" />
+        <field name="asset_manager_id" ref="hr_employee_manager_david_brown" />
+    </record>
+
+    <record id="asset_ledger.stock_lot_suv_001" model="product.trace">
+        <field name="asset_manager_id" ref="hr_employee_manager_jennifer_davis" />
+    </record>
+
+    <record id="asset_ledger.stock_lot_tractor_001" model="product.trace">
+        <field name="operator_id" ref="hr_employee_operator_mike_anderson" />
+        <field name="asset_manager_id" ref="hr_employee_manager_patricia_wilson" />
+    </record>
+
+    <record id="asset_ledger.stock_lot_forklift_001" model="product.trace">
+        <field name="operator_id" ref="hr_employee_operator_tom_martinez" />
+        <field name="asset_manager_id" ref="hr_employee_manager_patricia_wilson" />
+    </record>
+
+    <record id="asset_ledger.stock_lot_excavator_001" model="product.trace">
+        <field name="operator_id" ref="hr_employee_operator_mike_anderson" />
+        <field name="asset_manager_id" ref="hr_employee_manager_patricia_wilson" />
+    </record>
+
+    <record id="asset_ledger.stock_lot_skid_steer_001" model="product.trace">
+        <field name="operator_id" ref="hr_employee_operator_tom_martinez" />
+        <field name="asset_manager_id" ref="hr_employee_manager_patricia_wilson" />
+    </record>
+
+    <record id="asset_ledger.stock_lot_generator_001" model="product.trace">
+        <field name="asset_manager_id" ref="hr_employee_manager_patricia_wilson" />
+    </record>
+
+    <record id="asset_ledger.stock_lot_compressor_001" model="product.trace">
+        <field name="asset_manager_id" ref="hr_employee_manager_patricia_wilson" />
+    </record>
+
+    <record id="asset_ledger.stock_lot_welder_001" model="product.trace">
+        <field name="asset_manager_id" ref="hr_employee_manager_patricia_wilson" />
+    </record>
+
+</odoo>

@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="molecular_screening_campaign_view_form" model="ir.ui.view">
+        <field name="name">molecular.screening.campaign.form</field>
+        <field name="model">molecular.screening.campaign</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button
+                        name="%(molecular_sketch_action)d"
+                        type="action"
+                        string="Draw a Molecule"
+                        context="{'default_campaign_id': id}" />
+                    <button
+                        name="action_prepare_docking_jobs"
+                        type="object"
+                        string="Prepare Docking Jobs" />
+                    <field
+                        name="state"
+                        widget="statusbar"
+                        options="{'clickable': '1'}" />
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button
+                            name="action_open_targets"
+                            type="object"
+                            icon="fa-bullseye"
+                            class="oe_stat_button">
+                            <div class="o_stat_info">
+                                <span class="o_stat_value"><field name="target_passed_count" /> / <field name="target_count" /></span>
+                                <span class="o_stat_text">Targets passed</span>
+                            </div>
+                        </button>
+                        <button
+                            name="action_open_compounds"
+                            type="object"
+                            icon="fa-flask"
+                            class="oe_stat_button">
+                            <div class="o_stat_info">
+                                <span class="o_stat_value"><field name="candidate_count" /> / <field name="compound_count" /></span>
+                                <span class="o_stat_text">Candidates</span>
+                            </div>
+                        </button>
+                        <button
+                            name="action_open_jobs"
+                            type="object"
+                            icon="fa-tasks"
+                            class="oe_stat_button">
+                            <field
+                                name="job_count"
+                                string="Docking jobs"
+                                widget="statinfo" />
+                        </button>
+                    </div>
+                    <div class="oe_title">
+                        <h1><field name="name" placeholder="e.g. Pilot screening" /></h1>
+                    </div>
+                    <group>
+                        <group name="campaign_info">
+                            <field name="date" />
+                            <field
+                                name="company_id"
+                                groups="base.group_multi_company" />
+                            <field name="user_id" />
+                        </group>
+                    </group>
+                    <notebook>
+                        <page name="targets" string="Targets">
+                            <field name="target_ids" readonly="1">
+                                <list>
+                                    <field name="name" />
+                                    <field name="pdb_code" />
+                                    <field name="reference_active" />
+                                    <field name="rmsd_top" />
+                                    <field name="validation_run_count" string="Runs" />
+                                    <field
+                                        name="validation_state"
+                                        widget="badge"
+                                        decoration-danger="validation_state == 'fail'"
+                                        decoration-success="validation_state == 'pass'" />
+                                </list>
+                            </field>
+                        </page>
+                        <page name="roles" string="Compound Roles">
+                            <field name="role_ids">
+                                <list editable="bottom">
+                                    <field name="compound_id" />
+                                    <field name="role" widget="badge" />
+                                    <field name="note" />
+                                </list>
+                            </field>
+                        </page>
+                        <page name="jobs" string="Docking Jobs">
+                            <field name="job_ids" readonly="1">
+                                <list>
+                                    <field name="target_id" />
+                                    <field
+                                        name="status"
+                                        widget="badge"
+                                        decoration-danger="status == 'error'"
+                                        decoration-success="status == 'ok'"
+                                        decoration-warning="status == 'blocked'" />
+                                    <field name="pairs_done" />
+                                    <field name="pairs_expected" />
+                                    <field name="error_msg" optional="hide" />
+                                </list>
+                            </field>
+                        </page>
+                        <page name="notes" string="Notes">
+                            <field name="note" />
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter />
+            </form>
+        </field>
+    </record>
+
+    <record id="molecular_screening_campaign_view_list" model="ir.ui.view">
+        <field name="name">molecular.screening.campaign.list</field>
+        <field name="model">molecular.screening.campaign</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name" />
+                <field name="date" />
+                <field name="user_id" />
+                <field name="target_count" string="Targets" />
+                <field name="candidate_count" string="Candidates" />
+                <field name="job_count" string="Jobs" />
+                <field name="state" widget="badge" />
+            </list>
+        </field>
+    </record>
+
+    <record id="molecular_screening_campaign_action" model="ir.actions.act_window">
+        <field name="name">Campaigns</field>
+        <field name="res_model">molecular.screening.campaign</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+</odoo>

@@ -1,0 +1,85 @@
+/** @odoo-module native */
+import { onMounted, t } from "@odoo/owl";
+import { registry } from "@web/core/registry";
+import { _t } from "@web/core/translation";
+import { RadioField, radioField } from "@web/fields/selection/radio/radio_field";
+
+export class BooleanRadio extends RadioField {
+    static props = {
+        ...RadioField.props,
+        yes_label_element_id: t.string(),
+        no_label_element_id: t.string(),
+    };
+    setup() {
+        super.setup(...arguments);
+        onMounted(this.moveElement);
+    }
+
+    moveElement() {
+        const setLabel = (value, sourceId) => {
+            const input = document.getElementById(`${this.id}_${value}`);
+            const source = sourceId && document.getElementById(sourceId);
+            const label = input?.labels?.[0];
+            if (label && source) {
+                label.textContent = source.innerText;
+            }
+        };
+        setLabel("true", this.props.yes_label_element_id);
+        setLabel("false", this.props.no_label_element_id);
+    }
+
+    get items() {
+        if (this.type === "boolean") {
+            return [
+                ["true", ""],
+                ["false", ""],
+            ];
+        }
+        return super.items;
+    }
+
+    get value() {
+        if (this.type === "boolean") {
+            return this.props.record.data[this.props.name].toString();
+        }
+        return super.value;
+    }
+
+    /** @param {any} value */
+    onChange(value) {
+        if (this.type === "boolean") {
+            this.props.record.update({ [this.props.name]: value[0] === "true" });
+        }
+        super.onChange();
+    }
+}
+
+export const booleanRadio = {
+    ...radioField,
+    component: BooleanRadio,
+    displayName: _t("Boolean display as radio field with translatable labels"),
+    supportedOptions: [
+        {
+            label: _t("True association"),
+            name: "yes_label_element_id",
+            type: "string",
+            help: _t("Link an element with the boolean True value."),
+        },
+        {
+            label: _t("False association"),
+            name: "no_label_element_id",
+            type: "string",
+            help: _t("Link an element with the boolean False value."),
+        },
+    ],
+    supportedTypes: ["boolean"],
+    extractProps({ options }, dynamicInfo) {
+        return {
+            readonly: dynamicInfo.readonly,
+            yes_label_element_id: options.yes_label_element_id,
+            no_label_element_id: options.no_label_element_id,
+        };
+    },
+};
+
+registry.category("fields").add("boolean_radio", booleanRadio);

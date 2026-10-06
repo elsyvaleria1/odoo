@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="access_account_collection_remittance_collector_verbs" model="ir.access">
+        <field
+            name="name">account.collection.remittance: a collector submits, reopens and cancels their own open remittance</field>
+        <field name="model_id" ref="model_account_collection_remittance" />
+        <field name="group_id" ref="group_collection_collector" />
+        <field name="kind">permission</field>
+        <field name="domain">[('state', '!=', 'done')]</field>
+        <field name="reach">own</field>
+        <field name="verbs">submit,reopen,cancel</field>
+    </record>
+
+    <record id="access_account_collection_remittance_invoice_verbs" model="ir.access">
+        <field
+            name="name">account.collection.remittance: invoicing users validate what was handed in, or send it back before</field>
+        <field name="model_id" ref="model_account_collection_remittance" />
+        <field name="group_id" ref="account.group_account_invoice" />
+        <field name="kind">permission</field>
+        <field name="domain">[('state', '!=', 'done')]</field>
+        <field name="reach">all</field>
+        <field name="verbs">submit,reopen,validate,cancel</field>
+    </record>
+
+    <record id="access_account_collection_remittance_manager_verbs" model="ir.access">
+        <field
+            name="name">account.collection.remittance: accounting managers reopen a handed-in remittance, reversing its entry</field>
+        <field name="model_id" ref="model_account_collection_remittance" />
+        <field name="group_id" ref="account.group_account_manager" />
+        <field name="kind">permission</field>
+        <field name="reach">all</field>
+        <field name="verbs">reopen</field>
+    </record>
+
+    <record id="privilege_register_collection_post" model="ir.access">
+        <field
+            name="name">account.move: a collector's collection posts its entry in the custody journal</field>
+        <field name="model_id" ref="account.model_account_move" />
+        <field name="group_id" ref="privilege_register_collection" />
+        <field name="kind">permission</field>
+        <field
+            name="domain">[('journal_id.is_collection_custody', '=', True), ('move_type', '=', 'entry')]</field>
+        <field name="verbs">post</field>
+    </record>
+
+</odoo>

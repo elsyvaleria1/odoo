@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<templates id="template" xml:space="preserve">
+    <t t-name="ai_document.DocumentsCogMenuItemAiAutoSort">
+        <CogMenuItem icon="'fa-solid fa-wand-magic-sparkles'" description.translate="Auto-Sort…" onSelected.bind="this.onSelected">
+            <i t-if="this.folder?.ai_sort_prompt" class="fa-solid fa-check ps-1" aria-label="Enabled"/>
+        </CogMenuItem>
+    </t>
+</templates>

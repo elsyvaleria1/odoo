@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_hr_referral_onboarding_form" model="ir.ui.view">
+        <field name="name">hr.referral.onboarding.form</field>
+        <field name="model">hr.referral.onboarding</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                        <group name="main_details">
+                            <field name="text" />
+                            <field name="sequence" groups="base.group_no_one" />
+                            <field
+                                name="company_id"
+                                placeholder="Visible to all"
+                                options="{'no_create': True}"
+                                groups="base.group_multi_company" />
+                        </group>
+                        <group>
+                            <field
+                                name="image"
+                                widget="image"
+                                colspan="2"
+                                nolabel="1"
+                                class="o_onboarding_form_img bg-dark" />
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_hr_referral_onboarding_tree" model="ir.ui.view">
+        <field name="name">hr.referral.onboarding.list</field>
+        <field name="model">hr.referral.onboarding</field>
+        <field name="arch" type="xml">
+            <list>
+                <header>
+                    <button
+                        name="action_relaunch_onboarding"
+                        type="object"
+                        string="Restart Onboarding"
+                        confirm="This will make the onboarding process visible to all users who have previously completed it. Do you want to proceed?"
+                        display="always"
+                        cancel-label="Discard"
+                        confirm-label="Confirm" />
+                </header>
+                <field name="sequence" widget="handle" />
+                <field name="text" />
+                <field
+                    name="image"
+                    widget="image"
+                    optional="show"
+                    class="o_onboarding_list_img bg-dark" />
+                <field
+                    name="company_id"
+                    optional="hide"
+                    groups="base.group_multi_company" />
+            </list>
+        </field>
+    </record>
+
+    <record
+        id="action_hr_referral_onboarding_configuration"
+        model="ir.actions.act_window">
+        <field name="name">Onboarding</field>
+        <field name="res_model">hr.referral.onboarding</field>
+        <field name="view_mode">list,form</field>
+        <field
+            name="group_ids"
+            eval="[Command.link(ref('hr_referral.group_hr_referral_manager'))]" />
+    </record>
+
+</odoo>

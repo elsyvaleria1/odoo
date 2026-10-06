@@ -1,0 +1,60 @@
+from odoo import api, models
+from odoo.exceptions import AccessDenied
+
+
+class ResUsers(models.Model):
+    _inherit = "res.users"
+
+    def _login(self, credential, user_agent_env):
+        try:
+            return super()._login(credential, user_agent_env=user_agent_env)
+        except AccessDenied:
+            login = credential["login"]
+            self.env.cr.execute(
+                "SELECT id FROM res_users WHERE lower(login)=%s", (login,)
+            )
+            res = self.env.cr.fetchone()
+            if res:
+                raise
+
+            Ldap = self.env["res.company.ldap"].sudo()
+            for conf in Ldap._get_ldap_dicts():
+                entry = Ldap._authenticate(conf, login, credential["password"])
+                if entry:
+                    return {
+                        "uid": Ldap._get_or_create_user(conf, login, entry),
+                        "auth_method": "ldap",
+                        "mfa": "default",
+                    }
+            raise
+
+    def _check_credentials(self, credential, env):
+        try:
+            return super()._check_credentials(credential, env)
+        except AccessDenied:
+            if not (credential["type"] == "password" and credential.get("password")):
+                raise
+            passwd_allowed = env["interactive"] or not self._is_rpc_api_key_only()
+            if passwd_allowed and self.active:
+                Ldap = self.env["res.company.ldap"]
+                for conf in Ldap._get_ldap_dicts():
+                    if Ldap._authenticate(conf, self.login, credential["password"]):
+                        return {
+                            "uid": self.id,
+                            "auth_method": "ldap",
+                            "mfa": "default",
+                        }
+            raise
+
+    @api.model
+    def change_password(self, old_passwd, new_passwd):
+        if new_passwd:
+            Ldap = self.env["res.company.ldap"]
+            for conf in Ldap._get_ldap_dicts():
+                changed = Ldap._change_password(
+                    conf, self.env.user.login, old_passwd, new_passwd
+                )
+                if changed:
+                    self.env.user._clear_password()
+                    return True
+        return super().change_password(old_passwd, new_passwd)

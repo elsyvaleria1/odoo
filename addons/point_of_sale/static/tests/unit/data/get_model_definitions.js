@@ -1,0 +1,54 @@
+import { DataServiceOptions } from "@point_of_sale/app/models/data_service_options";
+import { createRelatedModels } from "@point_of_sale/app/models/related_models";
+import { MockServer } from "@web/../tests/web_test_helpers";
+import { registry } from "@web/core/registry";
+
+export const getModelDefinitions = () => {
+    const session = MockServer.current._models["pos.session"];
+    const params = session.load_data_params();
+    return Object.entries(params).reduce((acc, [modelName, params]) => {
+        acc[modelName] = params.relations;
+        return acc;
+    }, {});
+};
+
+let generatedModels = null;
+let generatedModelsKey = null;
+
+export const getRelatedModelsInstance = (useModelClass = true) => {
+    const cacheKey = { server: MockServer.current, useModelClass };
+    if (
+        generatedModels &&
+        generatedModelsKey &&
+        generatedModelsKey.server === cacheKey.server &&
+        generatedModelsKey.useModelClass === cacheKey.useModelClass
+    ) {
+        return generatedModels;
+    }
+
+    const options = new DataServiceOptions();
+    const relations = getModelDefinitions();
+    const modelClasses = {};
+
+    if (useModelClass) {
+        for (const posModel of registry.category("pos_available_models").getAll()) {
+            const pythonModel = posModel.pythonModel;
+            const extraFields = posModel.extraFields || {};
+
+            modelClasses[pythonModel] = posModel;
+            relations[pythonModel] = {
+                ...relations[pythonModel],
+                ...extraFields,
+            };
+        }
+    }
+
+    const models = createRelatedModels(
+        relations,
+        useModelClass ? modelClasses : {},
+        options,
+    );
+    generatedModels = models.models;
+    generatedModelsKey = cacheKey;
+    return models.models;
+};

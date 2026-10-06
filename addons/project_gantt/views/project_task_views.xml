@@ -1,0 +1,219 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="project_task_view_form_in_gantt" model="ir.ui.view">
+        <field name="name">project.task.view.form.gantt</field>
+        <field name="model">project.task</field>
+        <field name="inherit_id" ref="project.view_task_form2" />
+        <field name="mode">primary</field>
+        <field name="arch" type="xml">
+            <xpath expr="//sheet" position="after">
+                <footer>
+                    <button
+                        special="save"
+                        string="Save"
+                        class="btn btn-primary"
+                        close="1"
+                        data-hotkey="q" />
+                    <button
+                        name="action_unschedule_task"
+                        type="object"
+                        string="Unschedule"
+                        invisible="not id"
+                        class="btn btn-secondary"
+                        close="1"
+                        data-hotkey="u" />
+                    <button
+                        special="cancel"
+                        string="Discard"
+                        class="btn btn-secondary"
+                        close="1"
+                        data-hotkey="x" />
+                </footer>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="project_task_view_kanban_in_gantt" model="ir.ui.view">
+        <field name="name">project.task.kanban.in.gantt</field>
+        <field name="model">project.task</field>
+        <field name="inherit_id" ref="project.view_task_kanban" />
+        <field name="mode">primary</field>
+        <field name="arch" type="xml">
+            <xpath
+                expr="//t[@t-if='record.project_id.raw_value and record.subtask_count.raw_value']"
+                position="attributes">
+                <attribute name="invisible">1</attribute>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Adding manager gantt view to Project -->
+    <record id="project_task_view_gantt" model="ir.ui.view">
+        <field name="name">project.task.view.gantt</field>
+        <field name="model">project.task</field>
+        <field name="priority">10</field>
+        <field name="group_ids" eval="[Command.link(ref('base.group_user'))]" />
+        <field name="arch" type="xml">
+            <gantt
+                string="Planning"
+                default_group_by="user_ids"
+                color="project_id"
+                date_start="date_start"
+                date_stop="date_end"
+                decoration-danger="planning_overlap"
+                default_scale="month"
+                dependency_field="predecessor_ids"
+                dependency_inverted_field="successor_ids"
+                display_unavailability="1"
+                form_view_id="%(project_task_view_form_in_gantt)d"
+                js_class="task_gantt"
+                kanban_view_id="%(project_task_view_kanban_in_gantt)d"
+                pill_label="True"
+                precision="{'day': 'hour:quarter', 'week': 'day:half', 'month': 'day:half'}"
+                progress_bar="user_ids"
+                scales="day,week,month,quarter,year"
+                total_row="True">
+                <templates>
+                    <div t-name="gantt-popover">
+                        <footer replace="0">
+                            <button
+                                name="action_unschedule_task"
+                                type="object"
+                                string="Unschedule"
+                                class="btn btn-sm btn-secondary" />
+                        </footer>
+                    </div>
+                </templates>
+            </gantt>
+        </field>
+    </record>
+
+    <record id="view_task_gantt_inherit_all_task" model="ir.ui.view">
+        <field name="name">project.task.all.gantt</field>
+        <field name="model">project.task</field>
+        <field name="inherit_id" ref="project_task_view_gantt" />
+        <field name="mode">primary</field>
+        <field name="group_ids" eval="[Command.link(ref('base.group_user'))]" />
+        <field name="arch" type="xml">
+            <xpath expr="//gantt" position="attributes">
+                <attribute name="color">project_id</attribute>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_task_gantt_inherit_my_task" model="ir.ui.view">
+        <field name="name">project.task.my.gantt</field>
+        <field name="model">project.task</field>
+        <field name="inherit_id" ref="project_task_view_gantt" />
+        <field name="mode">primary</field>
+        <field name="group_ids" eval="[Command.link(ref('base.group_user'))]" />
+        <field name="arch" type="xml">
+            <gantt position="attributes">
+                <attribute name="default_group_by">project_id</attribute>
+            </gantt>
+        </field>
+    </record>
+
+    <record id="project_task_gantt_view_project_milestone" model="ir.ui.view">
+        <field name="name">project.task.my.gantt.inherit.project.milestone</field>
+        <field name="model">project.task</field>
+        <field name="inherit_id" ref="view_task_gantt_inherit_my_task" />
+        <field name="mode">primary</field>
+        <field name="group_ids" eval="[Command.link(ref('base.group_user'))]" />
+        <field name="arch" type="xml">
+            <xpath expr="//gantt" position="attributes">
+                <attribute name="default_group_by">milestone_id</attribute>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="project_task_dependency_view_gantt" model="ir.ui.view">
+        <field name="name">project.task.dependency.view.gantt</field>
+        <field name="model">project.task</field>
+        <field name="inherit_id" ref="project_gantt.project_task_view_gantt" />
+        <field name="mode">primary</field>
+        <field name="group_ids" eval="[Command.link(ref('base.group_user'))]" />
+        <field name="arch" type="xml">
+            <xpath expr="//gantt" position="attributes">
+                <attribute name="color">step_color</attribute>
+                <attribute name="display_mode">sparse</attribute>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="open_view_my_task_list_gantt" model="ir.actions.act_window.view">
+        <field name="sequence" eval="30" />
+        <field name="view_mode">gantt</field>
+        <field name="view_id" ref="view_task_gantt_inherit_my_task" />
+        <field name="act_window_id" ref="project.action_view_my_task" />
+    </record>
+
+    <record id="open_view_all_task_list_gantt" model="ir.actions.act_window.view">
+        <field name="sequence" eval="40" />
+        <field name="view_mode">gantt</field>
+        <field name="view_id" ref="view_task_gantt_inherit_all_task" />
+        <field name="act_window_id" ref="project.action_view_all_task" />
+    </record>
+
+    <record id="project_all_task_gantt_action_view" model="ir.actions.act_window.view">
+        <field name="sequence" eval="30" />
+        <field name="view_mode">gantt</field>
+        <field name="view_id" ref="project_gantt.project_task_dependency_view_gantt" />
+        <field
+            name="act_window_id"
+            ref="project.act_project_project_2_project_task_all" />
+    </record>
+
+    <record
+        id="action_view_task_from_milestone_gantt_view"
+        model="ir.actions.act_window.view">
+        <field name="sequence" eval="20" />
+        <field name="view_mode">gantt</field>
+        <field name="act_window_id" ref="project.action_view_task_from_milestone" />
+    </record>
+
+    <!-- Views for 'Tasks' stat button via Contact form -->
+    <record id="project_task_view_form_in_gantt_res_partner" model="ir.ui.view">
+        <field name="name">project.task.view.form.gantt.res.partner</field>
+        <field name="model">project.task</field>
+        <field name="inherit_id" ref="project_task_view_form_in_gantt" />
+        <field name="mode">primary</field>
+        <field name="arch" type="xml">
+            <xpath expr="//group//field[@name='project_id']" position="attributes">
+                <attribute name="required">1</attribute>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="project_task_view_gantt_res_partner" model="ir.ui.view">
+        <field name="name">project.task.view.gantt.res.partner</field>
+        <field name="model">project.task</field>
+        <field name="inherit_id" ref="view_task_gantt_inherit_all_task" />
+        <field name="mode">primary</field>
+        <field name="group_ids" eval="[Command.link(ref('base.group_user'))]" />
+        <field name="arch" type="xml">
+            <xpath expr="//gantt" position="attributes">
+                <attribute name="form_view_id">%(project_gantt.project_task_view_form_in_gantt_res_partner)d</attribute>
+            </xpath>
+        </field>
+    </record>
+
+    <record
+        id="project_task_action_from_partner_gantt_view"
+        model="ir.actions.act_window.view">
+        <field name="view_mode">gantt</field>
+        <field name="view_id" ref="project_task_view_gantt_res_partner" />
+        <field name="act_window_id" ref="project.project_task_action_from_partner" />
+    </record>
+
+    <record
+        id="project_milestone_action_view_tasks_gantt"
+        model="ir.actions.act_window.view">
+        <field name="sequence" eval="50" />
+        <field name="view_mode">gantt</field>
+        <field name="view_id" ref="project_task_gantt_view_project_milestone" />
+        <field name="act_window_id" ref="project.project_milestone_action_view_tasks" />
+    </record>
+
+</odoo>

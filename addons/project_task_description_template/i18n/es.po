@@ -1,0 +1,246 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* project_task_description_template
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-08-31 03:26+0000\n"
+"PO-Revision-Date: 2026-08-31 03:26+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: es\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: nplurals=2; plural=n != 1;\n"
+
+#. module: project_task_description_template
+#: model:ir.model.constraint,message:project_task_description_template.constraint_project_task_description_template_name_src_uniq
+msgid "A template with this name already exists for this company."
+msgstr "Ya existe una plantilla con este nombre para esta compañía."
+
+#. module: project_task_description_template
+#: model:ir.model.fields,field_description:project_task_description_template.field_project_task_description_template__active
+msgid "Active"
+msgstr "Activo"
+
+#. module: project_task_description_template
+#: model_terms:ir.ui.view,arch_db:project_task_description_template.project_task_description_template_view_form
+msgid "All projects if empty"
+msgstr "Todos los proyectos si está vacío"
+
+#. module: project_task_description_template
+#: model_terms:ir.ui.view,arch_db:project_task_description_template.project_task_view_form
+msgid "Apply Template"
+msgstr "Aplicar plantilla"
+
+#. module: project_task_description_template
+#: model_terms:ir.ui.view,arch_db:project_task_description_template.project_task_description_template_view_form
+#: model_terms:ir.ui.view,arch_db:project_task_description_template.project_task_description_template_view_search
+msgid "Archived"
+msgstr "Archivado"
+
+#. module: project_task_description_template
+#: model_terms:ir.actions.act_window,help:project_task_description_template.project_task_description_template_action
+msgid "Click to create a new description template."
+msgstr "Haz click para crear una nueva plantilla de descripción."
+
+#. module: project_task_description_template
+#: model:ir.model.fields,field_description:project_task_description_template.field_project_task_description_template__company_id
+#: model_terms:ir.ui.view,arch_db:project_task_description_template.project_task_description_template_view_search
+msgid "Company"
+msgstr "Compañía"
+
+#. module: project_task_description_template
+#: model:ir.model.fields,field_description:project_task_description_template.field_project_task_description_template__create_uid
+msgid "Created by"
+msgstr "Creado por"
+
+#. module: project_task_description_template
+#: model:ir.model.fields,field_description:project_task_description_template.field_project_task_description_template__create_date
+msgid "Created on"
+msgstr "Creado en"
+
+#. module: project_task_description_template
+#: model:ir.model.fields,field_description:project_task_description_template.field_project_task_description_template__description
+#: model_terms:ir.ui.view,arch_db:project_task_description_template.project_task_description_template_view_form
+msgid "Description"
+msgstr "Descripción"
+
+#. module: project_task_description_template
+#: model:ir.model.fields,field_description:project_task_description_template.field_project_task__description_template_id
+msgid "Description Template"
+msgstr "Plantilla de descripción"
+
+#. module: project_task_description_template
+#: model:ir.model.fields,field_description:project_task_description_template.field_project_task__display_name
+#: model:ir.model.fields,field_description:project_task_description_template.field_project_task_description_template__display_name
+msgid "Display Name"
+msgstr "Nombre para mostrar"
+
+#. module: project_task_description_template
+#: model:ir.model.fields,field_description:project_task_description_template.field_project_task__id
+#: model:ir.model.fields,field_description:project_task_description_template.field_project_task_description_template__id
+msgid "ID"
+msgstr ""
+
+#. module: project_task_description_template
+#: model:ir.model.fields,field_description:project_task_description_template.field_project_task_description_template__write_uid
+msgid "Last Updated by"
+msgstr "Última actualización por"
+
+#. module: project_task_description_template
+#: model:ir.model.fields,field_description:project_task_description_template.field_project_task_description_template__write_date
+msgid "Last Updated on"
+msgstr "Última actualización el"
+
+#. module: project_task_description_template
+#: model:ir.model.fields,help:project_task_description_template.field_project_task_description_template__project_ids
+msgid "Leave empty to make this template available for all projects"
+msgstr ""
+"Dejar vacío para que esta plantilla esté disponible en todos los proyectos"
+
+#. module: project_task_description_template
+#: model:ir.model.fields,field_description:project_task_description_template.field_project_task_description_template__name
+msgid "Name"
+msgstr "Nombre"
+
+#. module: project_task_description_template
+#: model:ir.model.fields,help:project_task_description_template.field_project_task_description_template__sequence
+msgid "Order of templates in selection lists"
+msgstr "Orden de las plantillas en las listas de selección"
+
+#. module: project_task_description_template
+#: model:ir.model,name:project_task_description_template.model_project_task_description_template
+msgid "Project Task Description Template"
+msgstr "Plantilla de descripción de tareas"
+
+#. module: project_task_description_template
+#: model:ir.model.fields,field_description:project_task_description_template.field_project_task_description_template__project_ids
+#: model_terms:ir.ui.view,arch_db:project_task_description_template.project_task_description_template_view_search
+msgid "Projects"
+msgstr "Proyectos"
+
+#. module: project_task_description_template
+#: model_terms:ir.ui.view,arch_db:project_task_description_template.project_task_view_form
+msgid "Replace current description with template content"
+msgstr "Reemplazar la descripción actual con el contenido de la plantilla"
+
+#. module: project_task_description_template
+#: model:ir.model.fields,field_description:project_task_description_template.field_project_task_description_template__sequence
+msgid "Sequence"
+msgstr "Secuencia"
+
+#. module: project_task_description_template
+#: model:ir.model.fields,field_description:project_task_description_template.field_project_task__show_apply_template
+msgid "Show Apply Template Button"
+msgstr "Mostrar el botón Aplicar plantilla"
+
+#. module: project_task_description_template
+#: model:ir.model,name:project_task_description_template.model_project_task
+msgid "Task"
+msgstr "Tarea"
+
+#. module: project_task_description_template
+#: model:ir.actions.act_window,name:project_task_description_template.project_task_description_template_action
+msgid "Task Description Template"
+msgstr "Plantilla de descripción de tarea"
+
+#. module: project_task_description_template
+#: model:ir.ui.menu,name:project_task_description_template.project_task_description_template_menu
+msgid "Task Description Templates"
+msgstr "Plantillas de descripción de tareas"
+
+#. module: project_task_description_template
+#. odoo-python
+#: code:addons/project_task_description_template/models/project_task.py:0
+msgid "Template removed"
+msgstr "Plantilla eliminada"
+
+#. module: project_task_description_template
+#: model:ir.model.fields,help:project_task_description_template.field_project_task__description_template_id
+msgid ""
+"Templates of other companies are not offered here. A task with no company is"
+" offered only company-less templates, while the server accepts any template "
+"on it: such a task belongs to a shared project and is deliberately not tied "
+"to one company's templates."
+msgstr ""
+"Aquí no se ofrecen plantillas de otras compañías. A una tarea sin compañía "
+"solo se le ofrecen plantillas sin compañía, aunque el servidor acepta "
+"cualquier plantilla en ella: esa tarea pertenece a un proyecto compartido y "
+"deliberadamente no está atada a las plantillas de una sola compañía."
+
+#. module: project_task_description_template
+#. odoo-python
+#: code:addons/project_task_description_template/models/project_task.py:0
+msgid "The template %(template)s belongs to company %(company)s."
+msgstr "La plantilla %(template)s pertenece a la compañía %(company)s."
+
+#. module: project_task_description_template
+#. odoo-python
+#: code:addons/project_task_description_template/models/project_task.py:0
+msgid ""
+"The template %(template)s is not available for the project %(project)s, so "
+"it was removed. The current description was left unchanged."
+msgstr ""
+"La plantilla %(template)s no está disponible para el proyecto %(project)s, "
+"por lo que se eliminó. La descripción actual no se modificó."
+
+#. module: project_task_description_template
+#. odoo-python
+#: code:addons/project_task_description_template/models/project_task.py:0
+msgid ""
+"The template %(template)s is not available for the project %(project)s."
+msgstr ""
+"La plantilla %(template)s no está disponible para el proyecto %(project)s."
+
+#. module: project_task_description_template
+#. odoo-python
+#: code:addons/project_task_description_template/models/project_task_description_template.py:0
+msgid ""
+"The template %(template)s is still used by %(tasks)s, which this change "
+"would leave invalid."
+msgstr ""
+"La plantilla %(template)s sigue en uso en %(tasks)s, y este cambio dejaría "
+"esas tareas inválidas."
+
+#. module: project_task_description_template
+#: model_terms:ir.ui.view,arch_db:project_task_description_template.project_task_view_form
+msgid ""
+"This will replace the current description with the template content. "
+"Continue?"
+msgstr ""
+"Esto reemplazará la descripción actual con el contenido de la plantilla. "
+"¿Continuar?"
+
+#. module: project_task_description_template
+#: model:ir.model.fields,help:project_task_description_template.field_project_task__show_apply_template
+msgid "True when applying the selected template would change the description"
+msgstr ""
+"Verdadero cuando aplicar la plantilla seleccionada cambiaría la descripción"
+
+#. module: project_task_description_template
+#: model:ir.model.fields,help:project_task_description_template.field_project_task__display_name
+msgid ""
+"Use these keywords in the title to set new tasks:\n"
+"\n"
+"            #tags Set tags on the task\n"
+"            @user Assign the task to a user\n"
+"            ! Set the task a medium priority\n"
+"            !! Set the task a high priority\n"
+"            !!! Set the task a urgent priority\n"
+"\n"
+"            Make sure to use the right format and order e.g. Improve the configuration screen #feature #v16 @Mitchell !"
+msgstr ""
+"Utiliza estas palabras clave en el título para establecer nuevas tareas:\n"
+"\n"
+"        30 h Asignar 30 horas a la tarea\n"
+"        #etiquetas Asignar etiquetas a la tarea\n"
+"        @usuario Asignar la tarea a un usuario\n"
+"        ! Asignar prioridad media a la tarea\n"
+"        !! Asignar prioridad alta a la tarea\n"
+"        !!! Asignar prioridad urgente a la tarea\n"
+"\n"
+"        Asegúrate de utilizar el formato y el orden correcto, por ejemplo: ¡Mejorar la pantalla de configuración 5 h #función #v16 @Mitchell!"

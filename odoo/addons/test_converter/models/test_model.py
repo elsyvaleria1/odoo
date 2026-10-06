@@ -1,0 +1,26 @@
+from odoo import fields, models
+
+
+class Test_ConverterTest_Model(models.Model):
+    _name = "test_converter.test_model"
+    _description = "Test Converter Model"
+
+    char = fields.Char()
+    integer = fields.Integer()
+    float = fields.Float()
+    numeric = fields.Float(digits=(16, 2))
+    many2one = fields.Many2one("test_converter.test_model.sub")
+    date = fields.Date()
+    datetime = fields.Datetime()
+    selection_str = fields.Selection(
+        [
+            ("A", "Qu'il n'est pas arrivé à Toronto"),
+            ("B", "Qu'il était supposé arriver à Toronto"),
+            ("C", "Qu'est-ce qu'il fout ce maudit pancake, tabernacle ?"),
+            ("D", "La réponse D"),
+        ],
+        string="Lorsqu'un pancake prend l'avion à destination de Toronto et "
+        "qu'il fait une escale technique à St Claude, on dit:",
+    )
+    html = fields.Html()
+    text = fields.Text()

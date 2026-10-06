@@ -1,0 +1,77 @@
+// @ts-check
+/** @odoo-module native */
+
+import { Component, useProps } from "@odoo/owl";
+import { elementRef } from "@web/core/utils/element_ref";
+import { useActiveViewController } from "@web/views/active_view";
+import { getActionMenuItems, useControllerServices } from "@web/views/view_utils";
+
+export class ViewController extends Component {
+    props = useProps(this.constructor.props);
+
+    /** @type {any} */
+    actionService;
+    /** @type {any} */
+    dialogService;
+    /** @type {any} */
+    notification;
+    /** @type {any} */
+    orm;
+    /** @type {any} */
+    _uiHooks;
+    /** @type {any} */
+    archInfo;
+    /** @type {import("@odoo/owl").Ref<HTMLElement>} */
+    rootRef;
+
+    setupControllerServices() {
+        const { action, dialog, notification, orm, uiHooks } = useControllerServices();
+        this.actionService = action;
+        this.dialogService = dialog;
+        this.notification = notification;
+        this.orm = orm;
+        this._uiHooks = uiHooks;
+
+        this.archInfo = this.props.archInfo;
+        this.rootRef = elementRef();
+        useActiveViewController(this);
+    }
+
+    setupModel() {}
+
+    setupArch() {}
+
+    setupInteractions() {}
+
+    /** @returns {{ action: Object[], print: Object[] }} */
+    get actionMenuItems() {
+        return getActionMenuItems(
+            this.getStaticActionMenuItems(),
+            this.props.info.actionMenus,
+        );
+    }
+
+    /** @returns {Record<string, Object>} */
+    getStaticActionMenuItems() {
+        return {};
+    }
+
+    /** @returns {Object} */
+    get archiveDialogProps() {
+        return {};
+    }
+
+    /** @returns {Object} */
+    get deleteConfirmationDialogProps() {
+        return {};
+    }
+
+    /**
+     * @param {any} clickParams
+     * @returns {Promise<boolean | void>}
+     */
+    async beforeExecuteActionButton(clickParams) {}
+
+    /** @param {any} clickParams */
+    async afterExecuteActionButton(clickParams) {}
+}

@@ -1,0 +1,58 @@
+/** @odoo-module native */
+import {
+    Many2ManyTaxTagsField,
+    many2ManyTaxTagsField,
+} from "@account/components/many2x_tax_tags/many2x_tax_tags";
+import { registry } from "@web/core/registry";
+import { useRecordObserver } from "@web/fields/hooks/record_observer";
+
+export class AutosaveMany2ManyTaxTagsField extends Many2ManyTaxTagsField {
+    setup() {
+        super.setup();
+
+        this.lastBalance = this.props.record.data.balance;
+        this.lastAccount = this.props.record.data.account_id;
+        this.lastPartner = this.props.record.data.partner_id;
+
+        useRecordObserver(this.onRecordChange.bind(this));
+    }
+
+    async update(recordlist) {
+        await super.update(recordlist);
+        await this._saveOnUpdate();
+    }
+
+    async removeTag(id) {
+        await super.removeTag(id);
+        await this._saveOnUpdate();
+    }
+
+    onRecordChange(record) {
+        const line = record.data;
+        if (line.tax_ids.records.length > 0) {
+            if (
+                line.balance !== this.lastBalance ||
+                line.account_id?.id !== this.lastAccount?.id ||
+                line.partner_id?.id !== this.lastPartner?.id
+            ) {
+                this.lastBalance = line.balance;
+                this.lastAccount = line.account_id;
+                this.lastPartner = line.partner_id;
+                return record.model.root.save();
+            }
+        }
+    }
+
+    async _saveOnUpdate() {
+        await this.props.record.model.root.save();
+    }
+}
+
+export const autosaveMany2ManyTaxTagsField = {
+    ...many2ManyTaxTagsField,
+    component: AutosaveMany2ManyTaxTagsField,
+};
+
+registry
+    .category("fields")
+    .add("autosave_many2many_tax_tags", autosaveMany2ManyTaxTagsField);

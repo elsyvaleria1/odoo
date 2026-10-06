@@ -1,0 +1,114 @@
+{
+    "name": "Forum",
+    "version": "1.5",
+    "oldest_upgradable_version": "1.5",
+    "category": "Website/Website",
+    "sequence": 265,
+    "summary": "Publish discussions and questions with voting and moderation",
+    "description": "Provides forums, posts, answers, tags, votes and moderation actions. Includes website pages and configurable privacy and karma rules. Posting and moderation permissions depend on the forum configuration and user access.",
+    "author": "Odoo S.A.",
+    "website": "https://www.odoo.com/app/forum",
+    "license": "LGPL-3",
+    "depends": [
+        "auth_signup",
+        "website_mail",
+        "website_profile",
+    ],
+    "data": [
+        "data/ir_config_parameter_data.xml",
+        "data/forum_forum_template_faq.xml",
+        "data/forum_forum_data.xml",
+        "data/forum_post_reason_data.xml",
+        "data/ir_actions_data.xml",
+        "data/mail_message_subtype_data.xml",
+        "data/mail_templates.xml",
+        "data/website_menu_data.xml",
+        "data/website_forum_tour.xml",
+        "views/forum_post_views.xml",
+        "views/forum_post_reason_views.xml",
+        "views/forum_tag_views.xml",
+        "views/forum_forum_views.xml",
+        "views/gamification_karma_tracking_views.xml",
+        "views/forum_menus.xml",
+        "views/base_contact_templates.xml",
+        "views/forum_forum_templates.xml",
+        "views/forum_forum_templates_forum_all.xml",
+        "views/forum_forum_templates_layout.xml",
+        "views/forum_forum_templates_moderation.xml",
+        "views/forum_forum_templates_post.xml",
+        "views/forum_forum_templates_tools.xml",
+        "views/forum_templates_mail.xml",
+        "views/website_profile_templates.xml",
+        "security/ir.access.csv",
+        "data/gamification_badge_data_question.xml",
+        "data/gamification_badge_data_answer.xml",
+        "data/gamification_badge_data_participation.xml",
+        "data/gamification_badge_data_moderation.xml",
+    ],
+    "demo": [
+        "demo/forum_tag_demo.xml",
+        "demo/forum_post_demo.xml",
+    ],
+    "assets": {
+        "website.assets_editor": [
+            "website_forum/static/src/js/systray_items/*.js",
+        ],
+        "web.assets_tests": [
+            "website_forum/static/tests/**/*",
+            (
+                "remove",
+                "website_forum/static/tests/interactions/**/*",
+            ),
+        ],
+        "web.assets_backend": [
+            "website_forum/static/src/js/tours/website_forum.js",
+        ],
+        "web.assets_frontend": [
+            "website_forum/static/src/interactions/**/*",
+            "website_forum/static/src/js/tours/website_forum.js",
+            "website_forum/static/src/scss/website_forum.scss",
+            "website_forum/static/src/xml/public_templates.xml",
+            "website_forum/static/src/xml/website_forum_tags_wrapper.xml",
+            "website_forum/static/src/components/**/*",
+            (
+                "remove",
+                "website_forum/static/src/components/website_forum_wysiwyg/**/*",
+            ),
+        ],
+        "website_forum.assets_forum_editor": [
+            (
+                "include",
+                "html_editor._assets_editor",
+            ),
+            "website_forum/static/src/components/website_forum_wysiwyg/**/*",
+            "website_forum/static/src/plugins/**/*",
+        ],
+        "web.assets_unit_tests": [
+            "website_forum/static/tests/interactions/**/*",
+        ],
+        "web.assets_unit_tests_setup": [
+            "website_forum/static/src/interactions/website_forum_share.js",
+            "website_forum/static/src/interactions/website_forum_spam.js",
+            "website_forum/static/src/interactions/website_forum.js",
+            "website_forum/static/src/components/**/*",
+            "website_forum/static/src/plugins/**/*",
+            "website_forum/static/src/xml/public_templates.xml",
+        ],
+        "website.website_builder_assets": [
+            "website_forum/static/src/website_builder/**/*",
+        ],
+        "web.assets_frontend_minimal": [
+            "website_forum/static/src/interactions/loader_loading.js",
+        ],
+    },
+    "esm": {
+        "bundles": [
+            "website_forum.assets_forum_editor",
+        ],
+        "dynamic_children": {
+            "web.assets_frontend": [
+                "website_forum.assets_forum_editor",
+            ],
+        },
+    },
+}

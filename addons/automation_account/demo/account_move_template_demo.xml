@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="template_customer_invoice_fx_agro" model="account.move.template">
+        <field name="name">DEMO - Customer Invoice FX (Agroquimicos)</field>
+        <field name="journal_code">DINV</field>
+        <field name="move_type">out_invoice</field>
+    </record>
+
+    <record
+        id="template_customer_invoice_fx_agro_line1"
+        model="account.move.template.line">
+        <field name="template_id" ref="template_customer_invoice_fx_agro" />
+        <field name="name">Invoice Item</field>
+        <field name="account_code">400000</field>
+        <field name="sequence" eval="10" />
+        <field name="price_unit">100.00</field>
+    </record>
+
+    <record id="template_customer_invoice_fx" model="account.move.template">
+        <field name="name">DEMO - Customer Invoice FX</field>
+        <field name="journal_code">DINV</field>
+        <field name="move_type">out_invoice</field>
+    </record>
+
+    <record id="template_customer_invoice_fx_line1" model="account.move.template.line">
+        <field name="template_id" ref="template_customer_invoice_fx" />
+        <field name="name">Invoice Item</field>
+        <field name="account_code">400000</field>
+        <field name="sequence" eval="10" />
+        <field name="price_unit">100.00</field>
+    </record>
+
+    <record id="template_customer_credit_note" model="account.move.template">
+        <field name="name">DEMO - Customer Credit Note</field>
+        <field name="journal_code">DREF</field>
+        <field name="move_type">out_refund</field>
+    </record>
+
+    <record id="template_customer_credit_note_line1" model="account.move.template.line">
+        <field name="template_id" ref="template_customer_credit_note" />
+        <field name="name">Refund Item</field>
+        <field name="account_code">400000</field>
+        <field name="sequence" eval="10" />
+        <field name="price_unit">100.00</field>
+    </record>
+
+    <record id="template_vendor_bill" model="account.move.template">
+        <field name="name">DEMO - Vendor Bill</field>
+        <field name="journal_code">DBIL</field>
+        <field name="move_type">in_invoice</field>
+    </record>
+
+    <record id="template_vendor_bill_line1" model="account.move.template.line">
+        <field name="template_id" ref="template_vendor_bill" />
+        <field name="name">Expense Item</field>
+        <field name="account_code">500000</field>
+        <field name="sequence" eval="10" />
+        <field name="price_unit">100.00</field>
+    </record>
+
+    <record id="template_journal_entry" model="account.move.template">
+        <field name="name">DEMO - Journal Entry</field>
+        <field name="journal_code">DMIS</field>
+        <field name="move_type">entry</field>
+    </record>
+
+    <record id="template_journal_entry_line1" model="account.move.template.line">
+        <field name="template_id" ref="template_journal_entry" />
+        <field name="name">Debit Entry</field>
+        <field name="account_code">400000</field>
+        <field name="sequence" eval="10" />
+        <field name="balance">100.00</field>
+    </record>
+
+    <record id="template_journal_entry_line2" model="account.move.template.line">
+        <field name="template_id" ref="template_journal_entry" />
+        <field name="name">Credit Entry</field>
+        <field name="account_code">500000</field>
+        <field name="sequence" eval="20" />
+        <field name="balance">-100.00</field>
+    </record>
+
+    <record id="template_customer_refund_kind" model="account.move.template">
+        <field name="name">DEMO - Customer Refund (Collection in Kind)</field>
+        <field name="journal_code">DREF</field>
+        <field name="move_type">out_refund</field>
+    </record>
+
+    <record id="template_customer_refund_kind_line1" model="account.move.template.line">
+        <field name="template_id" ref="template_customer_refund_kind" />
+        <field name="name">Refund Item</field>
+        <field name="account_code">400000</field>
+        <field name="sequence" eval="10" />
+        <field name="price_unit">100.00</field>
+    </record>
+
+    <record id="template_customer_invoice_generic" model="account.move.template">
+        <field name="name">DEMO - Customer Invoice</field>
+        <field name="journal_code">DINV</field>
+        <field name="move_type">out_invoice</field>
+    </record>
+
+    <record
+        id="template_customer_invoice_generic_line1"
+        model="account.move.template.line">
+        <field name="template_id" ref="template_customer_invoice_generic" />
+        <field name="name">Invoice Item</field>
+        <field name="account_code">400000</field>
+        <field name="sequence" eval="10" />
+        <field name="price_unit">100.00</field>
+    </record>
+
+</odoo>

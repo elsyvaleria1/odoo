@@ -1,0 +1,517 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# * stock
+#
+# Translators:
+# Somchart Jabsung <jabsung.s@gmail.com>, 2022
+# Krisa C, 2022
+# Khwunchai Jaengsawang <khwunchai.j@ku.th>, 2022
+# Martin Trigaux, 2022
+# Pornvibool Tippayawat <pornvibool.t@gmail.com>, 2022
+# Seksan Poltree <seksan.poltree@gmail.com>, 2022
+# Odoo Thaidev <odoothaidev@gmail.com>, 2022
+# Wichanon Jamwutthipreecha, 2022
+# Amin Cheloh <amincheloh@gmail.com>, 2022
+# "Tiffany Chang (tic)" <tic@odoo.com>, 2025.
+# Weblate <noreply-mt-weblate@weblate.org>, 2025.
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 16.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-02-06 18:35+0000\n"
+"PO-Revision-Date: 2025-11-08 19:03+0000\n"
+"Last-Translator: Weblate <noreply-mt-weblate@weblate.org>\n"
+"Language-Team: Thai <https://translate.odoo.com/projects/odoo-19/stock/th/>\n"
+"Language: th\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"X-Generator: Weblate 5.12.2\n"
+
+#. module: product_trace
+#: model:ir.model.fields,help:product_trace.field_product_product__serial_prefix_format
+#: model:ir.model.fields,help:product_trace.field_product_template__serial_prefix_format
+msgid ""
+"\n"
+"            If multiple products share the same prefix, they will share the same sequence, otherwise the sequence will be dedicated to the product.\n"
+"\n"
+"            * Legend (for prefix):\n"
+"            - Current Year with Century: %(year)s\n"
+"            - Current Year without Century: %(y)s\n"
+"            - Month: %(month)s\n"
+"            - Day: %(day)s\n"
+"            - Day of the Year: %(doy)s\n"
+"            - Week of the Year: %(woy)s\n"
+"            - Day of the Week (0:Monday): %(weekday)s\n"
+"            - Hour 00->24: %(h24)s\n"
+"            - Hour 00->12: %(h12)s\n"
+"            - Minute: %(min)s\n"
+"            - Second: %(sec)s\n"
+"        "
+msgstr ""
+"\n"
+"            หากสินค้าหลายรายการมีคำนำหน้ารหัส (prefix) เหมือนกัน สินค้าเหล่านั้นจะใช้ลำดับหมายเลขเดียวกัน แต่ถ้าสินค้าระบุคำนำหน้าแตกต่างกัน แต่ละสินค้าจะมีลำดับหมายเลขเฉพาะของตัวเอง\n"
+"\n"
+"* คำอธิบาย (สำหรับคำนำหน้า):\n"
+"- ปีปัจจุบันที่มีศตวรรษ: %(year)s\n"
+"- ปีปัจจุบันที่ไม่มีศตวรรษ: %(y)s\n"
+"- เดือน: %(month)s\n"
+"- วัน: %(day)s\n"
+"- วันของปี: %(doy)s\n"
+"- สัปดาห์ของปี: %(woy)s\n"
+"- วันในสัปดาห์ (0:วันจันทร์): %(weekday)s\n"
+"- ชั่วโมง 00->24: %(h24)s\n"
+"- ชั่วโมง 00->12: %(h12)s\n"
+"- นาที: %(min)s\n"
+"- วินาที: %(sec)s\n"
+"        "
+
+#. module: product_trace
+#. odoo-python
+#: code:addons/product_trace/models/product_trace.py:0
+msgid " - Product: %(product)s, Lot/Serial Number: %(lot)s"
+msgstr " - สินค้า: %(product)s, ล็อต/หมายเลขซีเรียล: %(lot)s"
+
+#. module: product_trace
+#. odoo-python
+#: code:addons/product_trace/models/product_trace.py:0
+msgid "(copy of) %s"
+msgstr "(สำเนาของ) %s"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__message_needaction
+msgid "Action Needed"
+msgstr "จำเป็นต้องดำเนินการ"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__active
+msgid "Active"
+msgstr "เปิดใช้งาน"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__activity_ids
+msgid "Activities"
+msgstr "กิจกรรม"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__activity_exception_decoration
+msgid "Activity Exception Decoration"
+msgstr "การตกแต่งข้อยกเว้นกิจกรรม"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__activity_state
+msgid "Activity State"
+msgstr "สถานะกิจกรรม"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__activity_type_icon
+msgid "Activity Type Icon"
+msgstr "ไอคอนประเภทกิจกรรม"
+
+#. module: product_trace
+#: model_terms:ir.ui.view,arch_db:product_trace.view_product_trace_form
+msgid "Add an internal note"
+msgstr ""
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__message_attachment_count
+msgid "Attachment Count"
+msgstr "จำนวนสิ่งที่แนบมา"
+
+#. module: product_trace
+#: model:ir.model.fields.selection,name:product_trace.selection__product_template__tracking__lot
+msgid "By Lots"
+msgstr "โดยล็อต"
+
+#. module: product_trace
+#: model:ir.model.fields.selection,name:product_trace.selection__product_template__tracking__none
+msgid "By Quantity"
+msgstr "ตามปริมาณ"
+
+#. module: product_trace
+#: model:ir.model.fields.selection,name:product_trace.selection__product_template__tracking__serial
+msgid "By Unique Serial Number"
+msgstr "โดยเลขซีเรียลเฉพาะ"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__company_id
+#: model_terms:ir.ui.view,arch_db:product_trace.view_product_trace_search
+msgid "Company"
+msgstr "บริษัท"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__create_uid
+msgid "Created by"
+msgstr "สร้างโดย"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__create_date
+msgid "Created on"
+msgstr "สร้างเมื่อ"
+
+#. module: product_trace
+#: model_terms:ir.ui.view,arch_db:product_trace.view_product_trace_search
+msgid "Creation Date"
+msgstr "วันที่สร้าง"
+
+#. module: product_trace
+#: model_terms:ir.ui.view,arch_db:product_trace.view_product_trace_search
+msgid "Creation date"
+msgstr "วันที่ถูกสร้าง"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_product__serial_prefix_format
+#: model:ir.model.fields,field_description:product_trace.field_product_template__serial_prefix_format
+msgid "Custom Lot/Serial"
+msgstr ""
+
+#. module: product_trace
+#: model:ir.model.fields,help:product_trace.field_product_trace__product_uom_id
+msgid "Default unit of measure used for all stock operations."
+msgstr "หน่วยวัดเริ่มต้นที่ใช้สำหรับการปฏิบัติการสต็อกทั้งหมด"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__note
+#: model_terms:ir.ui.view,arch_db:product_trace.view_product_trace_form
+msgid "Description"
+msgstr "คำอธิบาย"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__display_complete
+msgid "Display Complete"
+msgstr "แสดงเสร็จสมบูรณ์"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_product__display_name
+#: model:ir.model.fields,field_description:product_trace.field_product_template__display_name
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__display_name
+msgid "Display Name"
+msgstr "แสดงชื่อ"
+
+#. module: product_trace
+#: model:ir.model.fields,help:product_trace.field_product_product__tracking
+#: model:ir.model.fields,help:product_trace.field_product_template__tracking
+msgid "Ensure the traceability of a storable product in your warehouse."
+msgstr "แน่ใจว่ามีการตรวจสอบย้อนกลับของสินค้าที่จัดเก็บได้ในคลังสินค้าของคุณ"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__message_follower_ids
+msgid "Followers"
+msgstr "ผู้ติดตาม"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__message_partner_ids
+msgid "Followers (Partners)"
+msgstr "ผู้ติดตาม (พาร์ทเนอร์)"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__has_message
+msgid "Has Message"
+msgstr "มีข้อความ"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_product__id
+#: model:ir.model.fields,field_description:product_trace.field_product_template__id
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__id
+msgid "ID"
+msgstr "ไอดี"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__activity_exception_icon
+msgid "Icon"
+msgstr "ไอคอน"
+
+#. module: product_trace
+#: model:ir.model.fields,help:product_trace.field_product_trace__activity_exception_icon
+msgid "Icon to indicate an exception activity."
+msgstr "ไอคอนเพื่อระบุการยกเว้นกิจกรรม"
+
+#. module: product_trace
+#: model:ir.model.fields,help:product_trace.field_product_trace__message_needaction
+msgid "If checked, new messages require your attention."
+msgstr "ถ้าเลือก ข้อความใหม่จะต้องการความสนใจจากคุณ"
+
+#. module: product_trace
+#: model:ir.model.fields,help:product_trace.field_product_trace__message_has_error
+msgid "If checked, some messages have a delivery error."
+msgstr "ถ้าเลือก ข้อความบางข้อความมีข้อผิดพลาดในการส่ง"
+
+#. module: product_trace
+#: model_terms:ir.ui.view,arch_db:product_trace.view_product_trace_form
+msgid "Information"
+msgstr "ข้อมูล"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__ref
+msgid "Internal Reference"
+msgstr "อ้างอิงภายใน"
+
+#. module: product_trace
+#: model:ir.model.fields,help:product_trace.field_product_trace__ref
+msgid ""
+"Internal reference number in case it differs from the manufacturer's "
+"lot/serial number"
+msgstr "หมายเลขอ้างอิงภายใน ในกรณีที่แตกต่างจากล็อต/หมายเลขซีเรียลของผู้ผลิต"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__message_is_follower
+msgid "Is Follower"
+msgstr "เป็นผู้ติดตาม"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__write_uid
+msgid "Last Updated by"
+msgstr "อัปเดตครั้งล่าสุดโดย"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__write_date
+msgid "Last Updated on"
+msgstr "อัปเดตครั้งล่าสุดเมื่อ"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_product__lot_properties_definition
+msgid "Lot Properties"
+msgstr "คุณสมบัติล็อต"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_product__lot_name_format
+#: model:ir.model.fields,field_description:product_trace.field_product_template__lot_name_format
+msgid "Lot/Serial Name Format"
+msgstr ""
+
+#. module: product_trace
+#: model:ir.model,name:product_trace.model_product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__name
+#: model_terms:ir.ui.view,arch_db:product_trace.view_product_trace_search
+msgid "Lot/Serial Number"
+msgstr "ล็อต/หมายเลขซีเรียล"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_product__trace_ids
+msgid "Lot/Serial Numbers"
+msgstr ""
+
+#. module: product_trace
+#: model_terms:ir.ui.view,arch_db:product_trace.view_product_trace_form
+#: model_terms:ir.ui.view,arch_db:product_trace.view_product_trace_list
+msgid "Lots/Serial Numbers"
+msgstr "ล็อต/หมายเลขซีเรียล"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__message_has_error
+msgid "Message Delivery error"
+msgstr "เกิดข้อผิดพลาดในการส่งข้อความ"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__message_ids
+msgid "Messages"
+msgstr "ข้อความ"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__my_activity_date_deadline
+msgid "My Activity Deadline"
+msgstr "วันครบกำหนดกิจกรรมของฉัน"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__activity_date_deadline
+msgid "Next Activity Deadline"
+msgstr "วันครบกำหนดกิจกรรมถัดไป"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__activity_summary
+msgid "Next Activity Summary"
+msgstr "สรุปกิจกรรมถัดไป"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__activity_type_id
+msgid "Next Activity Type"
+msgstr "ประเภทกิจกรรมถัดไป"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_product__next_serial
+#: model:ir.model.fields,field_description:product_trace.field_product_template__next_serial
+msgid "Next Serial"
+msgstr ""
+
+#. module: product_trace
+#. odoo-python
+#: code:addons/product_trace/models/product_trace.py:0
+msgid ""
+"No sequence can name a lot for %(product)s. Set a Serial/Lot Numbers "
+"Sequence on the product, or restore the default one."
+msgstr ""
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__message_needaction_counter
+msgid "Number of Actions"
+msgstr "จํานวนการดําเนินการ"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__message_has_error_counter
+msgid "Number of errors"
+msgstr "จํานวนข้อผิดพลาด"
+
+#. module: product_trace
+#: model:ir.model.fields,help:product_trace.field_product_trace__message_needaction_counter
+msgid "Number of messages requiring action"
+msgstr "จำนวนข้อความที่ต้องดำเนินการ"
+
+#. module: product_trace
+#: model:ir.model.fields,help:product_trace.field_product_trace__message_has_error_counter
+msgid "Number of messages with delivery error"
+msgstr "จํานวนข้อความที่มีข้อผิดพลาดในการส่ง"
+
+#. module: product_trace
+#: model_terms:ir.ui.view,arch_db:product_trace.view_product_trace_form
+msgid "Other Info"
+msgstr ""
+
+#. module: product_trace
+#: model:ir.model,name:product_trace.model_product_template
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__product_id
+#: model_terms:ir.ui.view,arch_db:product_trace.view_product_trace_search
+msgid "Product"
+msgstr "สินค้า"
+
+#. module: product_trace
+#: model_terms:ir.ui.view,arch_db:product_trace.view_product_trace_search
+msgid "Product Lots Filter"
+msgstr "ตัวกรองล็อตสินค้า"
+
+#. module: product_trace
+#: model:ir.model,name:product_trace.model_product_product
+msgid "Product Variant"
+msgstr "ตัวแปรสินค้า"
+
+#. module: product_trace
+#: model_terms:ir.ui.view,arch_db:product_trace.view_product_trace_form
+msgid ""
+"Product this lot/serial number contains. You cannot change it anymore if it "
+"has already been moved."
+msgstr ""
+"สินค้าล็อต/หมายเลขซีเรียลนี้ประกอบด้วย "
+"คุณไม่สามารถเปลี่ยนแปลงได้อีกต่อไปหากมันถูกย้ายไปแล้ว"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__lot_properties
+#: model_terms:ir.ui.view,arch_db:product_trace.view_product_trace_search
+msgid "Properties"
+msgstr "คุณสมบัติ"
+
+#. module: product_trace
+#: model_terms:ir.ui.view,arch_db:product_trace.view_product_trace_form
+msgid "Reference"
+msgstr "การอ้างอิง"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__activity_user_id
+msgid "Responsible User"
+msgstr "ผู้ใช้ที่รับผิดชอบ"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_product__lot_sequence_id
+#: model:ir.model.fields,field_description:product_trace.field_product_template__lot_sequence_id
+msgid "Serial/Lot Numbers Sequence"
+msgstr ""
+
+#. module: product_trace
+#: model:ir.model.fields,help:product_trace.field_product_product__lot_name_format
+#: model:ir.model.fields,help:product_trace.field_product_template__lot_name_format
+msgid ""
+"Shape this product's lot/serial names take, in the same placeholder form as a sequence prefix (%(year)s, %(month)s, %(day)s, ...) plus the mandatory %(ref)s: the manufacturer's lot number, or the next number of the lot sequence when there is none.\n"
+"Set it when the name has to carry information — a manufacturing date, a supplier's own lot number — rather than just be unique. Left empty, names are drawn from the sequence as usual."
+msgstr ""
+
+#. module: product_trace
+#: model:ir.model.fields,help:product_trace.field_product_trace__activity_state
+msgid ""
+"Status based on activities\n"
+"Overdue: Due date is already passed\n"
+"Today: Activity date is today\n"
+"Planned: Future activities."
+msgstr ""
+"สถานะตามกิจกรรม\n"
+"เกินกำหนด: วันที่ครบกำหนดผ่านไปแล้ว\n"
+"วันนี้: วันที่จัดกิจกรรมคือวันนี้\n"
+"วางแผน: กิจกรรมในอนาคต"
+
+#. module: product_trace
+#: model:ir.model.fields,help:product_trace.field_product_product__lot_sequence_id
+#: model:ir.model.fields,help:product_trace.field_product_template__lot_sequence_id
+msgid ""
+"Technical Field: The Ir.Sequence record that is used to generate serial/lot "
+"numbers for this product"
+msgstr ""
+
+#. module: product_trace
+#. odoo-python
+#: code:addons/product_trace/models/product_template.py:0
+msgid ""
+"The Lot/Serial Name Format of %(product)s must contain %%(ref)s: it is what "
+"keeps the names apart, the manufacturer's lot number or, without one, the "
+"next number of the lot sequence."
+msgstr ""
+
+#. module: product_trace
+#. odoo-python
+#: code:addons/product_trace/models/product_trace.py:0
+msgid ""
+"The Lot/Serial Name Format on %(product)s cannot be used: %(error)s.\n"
+"Expected placeholders are %(placeholders)s."
+msgstr ""
+
+#. module: product_trace
+#. odoo-python
+#: code:addons/product_trace/models/product_trace.py:0
+msgid ""
+"The combination of lot/serial number and product must be unique within a company including when no company is defined.\n"
+"The following combinations contain duplicates:\n"
+"%(error_lines)s"
+msgstr ""
+"การรวมกันของหมายเลขล็อต/หมายเลขซีเรียลและผลิตภัณฑ์จะต้องไม่ซ้ำกันภายในบริษัท รวมถึงเมื่อไม่มีการกำหนดบริษัท\n"
+"ชุดค่าผสมต่อไปนี้มีรายการที่ซ้ำกัน:\n"
+"%(error_lines)s"
+
+#. module: product_trace
+#: model:ir.model.constraint,message:product_trace.constraint_product_trace_name_product_company_uniq
+msgid ""
+"The combination of lot/serial number and product must be unique within a "
+"company."
+msgstr ""
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_product__tracking
+#: model:ir.model.fields,field_description:product_trace.field_product_template__tracking
+msgid "Tracking"
+msgstr "การติดตาม"
+
+#. module: product_trace
+#: model:ir.model.fields,help:product_trace.field_product_trace__activity_exception_decoration
+msgid "Type of the exception activity on record."
+msgstr "ประเภทกิจกรรมข้อยกเว้นบนบันทึก"
+
+#. module: product_trace
+#: model:ir.model.fields,help:product_trace.field_product_trace__name
+msgid "Unique Lot/Serial Number"
+msgstr "ล็อต/หมายเลขซีเรียล ที่ไม่ซ้ำกัน"
+
+#. module: product_trace
+#: model:ir.model.fields,field_description:product_trace.field_product_trace__product_uom_id
+msgid "Unit"
+msgstr "หน่วย"
+
+#. module: product_trace
+#: model_terms:ir.ui.view,arch_db:product_trace.view_product_trace_form
+msgid "Visible to all"
+msgstr "มองเห็นได้ทุกคน"
+
+#. module: product_trace
+#: model_terms:ir.ui.view,arch_db:product_trace.view_product_trace_form
+msgid "Visible to all coompanies"
+msgstr ""
+
+#. module: product_trace
+#: model_terms:ir.ui.view,arch_db:product_trace.view_product_trace_form
+msgid "e.g. LOT/0001/20121"
+msgstr "เช่น LOT/0001/20121"

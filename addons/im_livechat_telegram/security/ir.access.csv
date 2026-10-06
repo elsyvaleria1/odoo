@@ -1,0 +1,7 @@
+id,name,model_id/id,group_id/id,kind,operation,domain
+discuss_channel_privilege_serve_customers,Discussion Channel: a Telegram customer's live chat session is read and kept,mail.model_discuss_channel,privilege_serve_customers,permission,ru,"[('channel_type', '=', 'livechat'), ('telegram_chat_id', '!=', False)]"
+mail_message_privilege_serve_customers,Message: a comment is posted and edited in a session the privilege reaches,mail.model_mail_message,privilege_serve_customers,permission,cu,"[('model', '=', 'discuss.channel'), ('message_type', '=', 'comment')]"
+member_history_privilege_serve_customers,Live Chat Member History: a Telegram session reads who answered it,im_livechat.model_im_livechat_channel_member_history,privilege_serve_customers,permission,r,"[('channel_id.telegram_chat_id', '!=', False)]"
+chatbot_message_privilege_serve_customers,Chatbot Message: a Telegram session records its customer's answer to the chatbot,im_livechat.model_chatbot_message,privilege_serve_customers,permission,ru,"[('discuss_channel_id.telegram_chat_id', '!=', False)]"
+chatbot_script_step_privilege_serve_customers,Chatbot Step: a Telegram session reads its chatbot's questions,im_livechat.model_chatbot_script_step,privilege_serve_customers,permission,r,
+chatbot_script_answer_privilege_serve_customers,Chatbot Answer: a Telegram session reads the answers its chatbot offers,im_livechat.model_chatbot_script_answer,privilege_serve_customers,permission,r,

@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="tool_create_bom" model="ir.actions.server">
+        <field name="name">Conversation: create bill of materials</field>
+        <field name="model_id" ref="conversation.model_conversation_conversation" />
+        <field name="state">code</field>
+        <field
+            name="code">template = tools.find("product.template", product_name, archived=True)
+if not template:
+    raise UserError("No existe el producto '%s'; créalo primero." % product_name)
+lines, missing = [], []
+for component in tools.lines(components):
+    product = tools.find("product.product", component["name"], archived=True)
+    if product:
+        lines.append((0, 0, {"product_id": product.id, "product_qty": component["quantity"]}))
+    else:
+        missing.append(component["name"])
+if missing:
+    raise UserError("Componentes que no existen en el catálogo: %s" % ", ".join(missing))
+bom = env["mrp.bom"].create({
+    "product_tmpl_id": template.id,
+    "product_qty": quantity or 1.0,
+    "bom_line_ids": lines,
+})
+ai["result"] = {"model": "mrp.bom", "id": bom.id}</field>
+        <field
+            name="ai_approval_category_id"
+            ref="conversation.approval_category_tool_manager" />
+        <field
+            name="ai_tool_description">Crear la lista de materiales de un producto con sus componentes y cantidades. Si un componente no existe en el catálogo la acción falla y dice cuáles faltan: nunca se crea una lista incompleta.</field>
+        <field
+            name="ai_tool_schema">{
+    "type": "object",
+    "properties": {
+        "product_name": {"type": "string"},
+        "quantity": {"type": "number", "description": "Cantidad del producto que produce la lista"},
+        "components": {
+            "type": "array",
+            "items": {"type": "string"},
+            "description": "Un componente por línea con el formato 'producto | cantidad', p. ej. 'Glifosato 480 | 12.5'"
+        }
+    },
+    "required": ["product_name", "components"]
+}</field>
+        <field name="conversation_enabled" eval="True" />
+        <field
+            name="conversation_examples">"la fórmula lleva", "se fabrica con", "por cada 100 litros van"</field>
+        <field name="conversation_key">create_bom</field>
+        <field name="use_in_ai" eval="True" />
+    </record>
+
+    <record id="tool_create_manufacturing_order" model="ir.actions.server">
+        <field name="name">Conversation: create draft manufacturing order</field>
+        <field name="model_id" ref="conversation.model_conversation_conversation" />
+        <field name="state">code</field>
+        <field
+            name="code">product = tools.find("product.product", product_name)
+if not product:
+    raise UserError("No existe el producto '%s'." % product_name)
+bom = env["mrp.bom"]._get_bom_by_product(product).get(product)
+vals = {"product_id": product.id, "product_qty": quantity, "product_uom_id": product.uom_id.id, "origin": record._tool_origin()}
+if bom:
+    vals["bom_id"] = bom.id
+if date_start:
+    vals["date_start"] = tools.datetime(date_start, default_time="09:00", tz=record.user_id.tz or "America/Mexico_City")
+production = env["mrp.production"].create(vals)
+if note:
+    record._tool_note(production, note)
+ai["result"] = {"model": "mrp.production", "id": production.id}</field>
+        <field
+            name="ai_approval_category_id"
+            ref="conversation.approval_category_tool_manager" />
+        <field
+            name="ai_tool_description">Crear una orden de fabricación (formulación) en borrador para un producto existente con la cantidad dicha, usando su lista de materiales. Producción la confirma.</field>
+        <field
+            name="ai_tool_schema">{
+    "type": "object",
+    "properties": {
+        "product_name": {"type": "string"},
+        "quantity": {"type": "number"},
+        "date_start": {"type": "string", "description": "YYYY-MM-DD, vacío si no se dijo"},
+        "note": {"type": "string"}
+    },
+    "required": ["product_name", "quantity"]
+}</field>
+        <field name="conversation_enabled" eval="True" />
+        <field
+            name="conversation_examples">"hay que producir 500 litros de", "programa una formulación de", acuerdos con Producción</field>
+        <field name="conversation_key">create_manufacturing_order</field>
+        <field name="use_in_ai" eval="True" />
+    </record>
+
+</odoo>

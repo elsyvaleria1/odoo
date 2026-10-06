@@ -1,0 +1,8 @@
+id,name,model_id/id,group_id/id,kind,operation,reach,anchor,domain
+access_device_gps_speed_event_user,device.gps.speed.event.user,model_device_gps_speed_event,device_gps.group_device_gps_user,permission,r,,,
+access_device_gps_speed_day_user,device.gps.speed.day.user,model_device_gps_speed_day,device_gps.group_device_gps_user,permission,r,,,
+access_device_gps_speed_alert_user,device.gps.speed.alert.user,model_device_gps_speed_alert,device_gps.group_device_gps_user,permission,r,,,
+access_device_gps_speed_alert_manager,device.gps.speed.alert.manager,model_device_gps_speed_alert,device_gps.group_device_gps_manager,permission,cud,,,
+device_gps_stop_company_rule,Vehicle Stops: company rule,model_device_gps_stop,device_gps.group_device_gps_user,permission,r,company,,
+access_device_gps_place_user,device.gps.place.user,model_device_gps_place,device_gps.group_device_gps_user,permission,r,,,
+access_wizard_device_gps_stop_refresh_manager,wizard.device.gps.stop.refresh.manager,model_wizard_device_gps_stop_refresh,device_gps.group_device_gps_manager,permission,crud,,,

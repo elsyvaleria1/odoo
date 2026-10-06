@@ -1,0 +1,43 @@
+/** @odoo-module native */
+import { TableOfContentManager } from "@html_editor/others/embedded_components/core/table_of_content/table_of_content_manager";
+import { Component, onWillStart, proxy, t, useProps } from "@odoo/owl";
+
+export class EmbeddedTableOfContentComponent extends Component {
+    static template = "html_editor.EmbeddedTableOfContent";
+    static props = {
+        manager: t.instanceOf(TableOfContentManager),
+        readonly: t.boolean().optional(),
+    };
+    props = useProps(this.constructor.props);
+
+    setup() {
+        this.state = proxy({ toc: this.props.manager.structure, folded: false });
+        onWillStart(async () => {
+            await this.props.manager.batchedUpdateStructure();
+        });
+    }
+
+    displayTocHint() {
+        return this.state.toc.headings.length < 2 && !this.props.readonly;
+    }
+
+    /**
+     * @param {Object} heading
+     */
+    onTocLinkClick(heading) {
+        this.props.manager.scrollIntoView(heading);
+    }
+}
+
+export const tableOfContentEmbedding = {
+    name: "tableOfContent",
+    Component: EmbeddedTableOfContentComponent,
+};
+
+export const readonlyTableOfContentEmbedding = {
+    name: "tableOfContent",
+    Component: EmbeddedTableOfContentComponent,
+    getProps: (host) => ({
+        readonly: true,
+    }),
+};

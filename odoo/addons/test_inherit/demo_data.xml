@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <data>
+        <record id="mother_a" model="test.inherit.mother">
+            <field name="name">Mother A</field>
+            <field name="state">a</field>
+        </record>
+    </data>
+
+</odoo>

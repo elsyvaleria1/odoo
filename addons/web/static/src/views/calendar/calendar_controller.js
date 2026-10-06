@@ -1,0 +1,482 @@
+// @ts-check
+/** @odoo-module native */
+
+import { Component, proxy, t, useProps } from "@odoo/owl";
+import { CallbackRecorder, useSetupAction } from "@web/core/action_hook";
+import { useAction } from "@web/core/action_port";
+import { browser } from "@web/core/browser/browser";
+import { makeLogger } from "@web/core/debug/debug_logger";
+import { ModelEvent } from "@web/core/events";
+import {
+    formatValue,
+    getLocalYearAndWeek,
+    now,
+    parseISO,
+    toISO,
+    toISODate,
+} from "@web/core/l10n/dates";
+import { _t } from "@web/core/translation";
+import { useBus, useOwnedDialogs, useService } from "@web/core/utils/hooks";
+import { useModel } from "@web/model/model";
+import { ConfirmationDialog } from "@web/ui/dialog/confirmation_dialog";
+import { CalendarSidePanel } from "@web/views/calendar/calendar_side_panel/calendar_side_panel";
+import { standardViewProps } from "@web/views/standard_view_props";
+import { MultiSelectionButtons } from "@web/views/view_components/multi_selection_buttons";
+import { useViewChassis, ViewLayout } from "@web/views/view_components/view_layout";
+import { ViewScaleSelector } from "@web/views/view_components/view_scale_selector";
+import { FormViewDialog } from "@web/views/view_dialogs/form_view_dialog";
+import { deleteConfirmationProps } from "@web/views/view_hook";
+
+import { CalendarMobileFilterPanel } from "./mobile_filter_panel/calendar_mobile_filter_panel.js";
+import { CalendarQuickCreate } from "./quick_create/calendar_quick_create.js";
+
+export const SCALE_LABELS = {
+    day: _t("Day"),
+    week: _t("Week"),
+    month: _t("Month"),
+    year: _t("Year"),
+};
+
+function useUniqueDialog() {
+    const displayDialog = useOwnedDialogs();
+    let close = null;
+    return (...args) => {
+        if (close) {
+            close();
+        }
+        close = displayDialog(...args);
+    };
+}
+
+const log = makeLogger("web.view.calendar");
+
+export class CalendarController extends Component {
+    static components = {
+        MobileFilterPanel: CalendarMobileFilterPanel,
+        QuickCreate: CalendarQuickCreate,
+        QuickCreateFormView: FormViewDialog,
+        ViewLayout,
+        ViewScaleSelector,
+        CalendarSidePanel,
+        MultiSelectionButtons,
+    };
+    static template = "web.CalendarController";
+    static props = {
+        ...standardViewProps,
+        Model: t.function(),
+        Renderer: t.function(),
+        archInfo: t.object(),
+        buttonTemplate: t.string(),
+        itemCalendarProps: t.object().optional(),
+    };
+    props = useProps(this.constructor.props);
+
+    /** @type {any} */
+    action;
+    /** @type {any} */
+    displayDialog;
+    /** @type {any} */
+    model;
+    /** @type {any} */
+    state;
+    /** @type {any} */
+    _baseRendererProps;
+    /** @type {any} */
+    multiSelectionButtonsReactive;
+    /** @type {any} */
+    callbackRecorder;
+
+    setup() {
+        this.ui = useService("ui");
+        this.action = useAction();
+        this.orm = useService("orm");
+        this.displayDialog = useUniqueDialog();
+
+        /** @type {any} */
+        this.model = proxy(
+            // Not the sample-data hook: calendar_view.rng admits no `sample`
+            // attribute and CalendarModel overrides no hasData(), so sample mode
+            // could never activate and the hook only ever warned about it.
+            useModel(this.props.Model, this.modelParams),
+        );
+
+        useSetupAction({
+            getLocalState: () => this.model.exportedState,
+        });
+
+        const storedWeekendVisible = browser.localStorage.getItem(
+            "calendar.isWeekendVisible",
+        );
+        const sessionShowSidebar =
+            browser.sessionStorage.getItem("calendar.showSideBar");
+        this.state = proxy({
+            isWeekendVisible: storedWeekendVisible !== "false",
+            showSideBar: !this.ui.isSmall && sessionShowSidebar !== "false",
+        });
+
+        this.chassis = useViewChassis(this);
+        this.rootRef = this.chassis.rootRef;
+
+        this._baseRendererProps = {
+            createRecord: this.createRecord.bind(this),
+            deleteRecord: this.deleteRecord.bind(this),
+            editRecord: this.editRecord.bind(this),
+            setDate: this.setDate.bind(this),
+        };
+
+        this.prepareSelectionFeature();
+    }
+
+    get modelParams() {
+        return {
+            ...this.props.archInfo,
+            resModel: this.props.resModel,
+            domain: this.props.domain,
+            fields: this.props.fields,
+            date: this.props.state?.date,
+        };
+    }
+
+    get date() {
+        return this.model.meta.date || now();
+    }
+
+    get today() {
+        return formatValue(now(), "d");
+    }
+
+    get currentYear() {
+        return formatValue(this.date, "y");
+    }
+
+    get dayHeader() {
+        return `${formatValue(this.date, "d")} ${formatValue(this.date, "MMMM")} ${this.date.year}`;
+    }
+
+    get weekHeader() {
+        const { rangeStart, rangeEnd } = this.model;
+        if (rangeStart.year !== rangeEnd.year) {
+            return `${formatValue(rangeStart, "MMMM")} ${rangeStart.year} - ${formatValue(
+                rangeEnd,
+                "MMMM",
+            )} ${rangeEnd.year}`;
+        } else if (rangeStart.month !== rangeEnd.month) {
+            return `${formatValue(rangeStart, "MMMM")} - ${formatValue(rangeEnd, "MMMM")} ${
+                rangeStart.year
+            }`;
+        }
+        return `${formatValue(rangeStart, "MMMM")} ${rangeStart.year}`;
+    }
+
+    get currentMonth() {
+        return `${formatValue(this.date, "MMMM")} ${this.date.year}`;
+    }
+
+    get currentWeek() {
+        return getLocalYearAndWeek(this.model.rangeStart).week;
+    }
+
+    get rendererProps() {
+        return {
+            ...this._baseRendererProps,
+            model: this.model,
+            isWeekendVisible: this.model.scale === "day" || this.state.isWeekendVisible,
+        };
+    }
+
+    get mobileFilterPanelProps() {
+        return {
+            model: this.model,
+            sideBarShown: this.state.showSideBar,
+            toggleSideBar: () => {
+                this.state.showSideBar = !this.state.showSideBar;
+            },
+        };
+    }
+
+    get sidePanelProps() {
+        return { model: this.model };
+    }
+
+    toggleSideBar() {
+        this.state.showSideBar = !this.state.showSideBar;
+        browser.sessionStorage.setItem(
+            "calendar.showSideBar",
+            String(this.state.showSideBar),
+        );
+    }
+
+    get showCalendar() {
+        return !this.ui.isSmall || !this.state.showSideBar;
+    }
+
+    get hasSideBar() {
+        return this.model.showDatePicker || this.model.filterSections.length > 0;
+    }
+
+    get showSideBar() {
+        return this.state.showSideBar;
+    }
+
+    get className() {
+        return this.props.className;
+    }
+
+    get chassisProps() {
+        return { ...this.chassis.props, className: this.className };
+    }
+
+    get editRecordDefaultDisplayText() {
+        return _t("New Event");
+    }
+
+    prepareMultiSelectionButtonsReactive() {
+        return proxy({
+            onCancel: this.cleanSquareSelection.bind(this),
+            onAdd: (multiCreateData) => {
+                this.onMultiCreate(multiCreateData, this.selectedCells);
+                this.cleanSquareSelection();
+            },
+            onDelete: () => {
+                this.onMultiDelete(this.selectedCells);
+                this.cleanSquareSelection();
+            },
+            nbSelected: 0,
+            multiCreateView: this.model.meta.multiCreateView || "",
+            resModel: this.model.meta.resModel,
+            multiCreateValues: this.props.state?.multiCreateValues,
+            showMultiCreateTimeRange: this.model.showMultiCreateTimeRange,
+            visible: false,
+            context: this.props.context,
+        });
+    }
+
+    prepareSelectionFeature() {
+        this.selectedCells = null;
+        this.multiSelectionButtonsReactive =
+            this.prepareMultiSelectionButtonsReactive();
+        this.callbackRecorder = new CallbackRecorder();
+        this._baseRendererProps.callbackRecorder = this.callbackRecorder;
+        this._baseRendererProps.onSquareSelection =
+            this.updateMultiSelection.bind(this);
+        this._baseRendererProps.cleanSquareSelection =
+            this.cleanSquareSelection.bind(this);
+
+        useBus(this.model.bus, ModelEvent.UPDATE, this.cleanSquareSelection.bind(this));
+    }
+
+    updateMultiSelection(selectedCells) {
+        if (selectedCells.length) {
+            this.selectedCells = selectedCells;
+            this.multiSelectionButtonsReactive.visible = true;
+            this.multiSelectionButtonsReactive.nbSelected = this.getSelectedRecordIds(
+                this.selectedCells,
+            ).length;
+        } else {
+            this.selectedCells = null;
+            this.multiSelectionButtonsReactive.visible = false;
+            this.multiSelectionButtonsReactive.nbSelected = 0;
+        }
+    }
+
+    cleanSquareSelection() {
+        this.selectedCells = null;
+        this.multiSelectionButtonsReactive.visible = false;
+        this.callbackRecorder.callbacks.forEach((fn) => fn());
+    }
+
+    getQuickCreateProps(record) {
+        return {
+            record,
+            model: this.model,
+            editRecord: this.editRecordInCreation.bind(this),
+            title: this.props.context.default_name,
+        };
+    }
+
+    getQuickCreateFormViewProps(record) {
+        const rawRecord = this.model.buildRawRecord(record);
+        const context = this.model.makeContextDefaults(rawRecord);
+        return {
+            resModel: this.model.resModel,
+            viewId: this.model.quickCreateFormViewId,
+            title: _t("New Event"),
+            context,
+        };
+    }
+
+    /**
+     * @param {Object} record
+     * @returns {Promise|undefined}
+     */
+    createRecord(record) {
+        log.logic("createRecord", () => ({
+            canCreate: this.model.canCreate,
+            quickCreate: this.model.hasQuickCreate,
+            start: record.start ? toISO(record.start) : undefined,
+        }));
+        if (!this.model.canCreate) {
+            return;
+        }
+        if (this.model.hasQuickCreate) {
+            if (this.model.quickCreateFormViewId) {
+                return new Promise((resolve) => {
+                    this.displayDialog(
+                        /** @type {any} */ (this.constructor).components
+                            .QuickCreateFormView,
+                        this.getQuickCreateFormViewProps(record),
+                        {
+                            onClose: () => resolve(undefined),
+                        },
+                    );
+                });
+            }
+
+            return new Promise((resolve) => {
+                this.displayDialog(
+                    /** @type {any} */ (this.constructor).components.QuickCreate,
+                    this.getQuickCreateProps(record),
+                    {
+                        onClose: () => resolve(undefined),
+                    },
+                );
+            });
+        } else {
+            return this.editRecordInCreation(record);
+        }
+    }
+    /**
+     * @param {Object} record
+     * @param {Object} [context={}]
+     */
+    async editRecord(record, context = {}) {
+        log.logic("editRecord", () => ({
+            id: record.id,
+            dialog: this.model.hasEditDialog,
+        }));
+        if (this.model.hasEditDialog) {
+            return new Promise((resolve) => {
+                this.displayDialog(
+                    FormViewDialog,
+                    {
+                        resModel: this.model.resModel,
+                        resId: record.id || false,
+                        context,
+                        title: record.id
+                            ? _t("Open: %s", record.title)
+                            : this.editRecordDefaultDisplayText,
+                        viewId: this.model.formViewId,
+                        onRecordSaved: () => this.model.load(),
+                    },
+                    { onClose: () => resolve(undefined) },
+                );
+            });
+        } else {
+            const action = {
+                type: "ir.actions.act_window",
+                res_model: this.model.resModel,
+                views: [[this.model.formViewId || false, "form"]],
+                target: "current",
+                context,
+            };
+            if (record.id) {
+                action.res_id = record.id;
+            }
+            this.action.doAction(action);
+        }
+    }
+    editRecordInCreation(record) {
+        const rawRecord = this.model.buildRawRecord(record);
+        const context = this.model.makeContextDefaults(rawRecord);
+        return this.editRecord(record, context);
+    }
+
+    deleteConfirmationDialogProps(record) {
+        return deleteConfirmationProps(() => this.model.unlinkRecord(record.id));
+    }
+
+    deleteRecord(record) {
+        log.logic("deleteRecord", () => ({ id: record.id }));
+        this.displayDialog(
+            ConfirmationDialog,
+            this.deleteConfirmationDialogProps(record),
+        );
+    }
+
+    getDates(selectedCells) {
+        const dates = [];
+        for (const element of selectedCells) {
+            const date = parseISO(element.dataset.date);
+            if (date) {
+                dates.push(date);
+            }
+        }
+        return dates;
+    }
+
+    onMultiCreate(multiCreateData, selectedCells) {
+        const dates = this.getDates(selectedCells);
+        return this.model.multiCreateRecords(multiCreateData, dates);
+    }
+
+    getSelectedRecordIds(selectedCells) {
+        const ids = new Set();
+        for (const element of selectedCells) {
+            for (const event of [...element.querySelectorAll(".fc-event")]) {
+                ids.add(Number.parseInt(event.dataset.eventId, 10));
+            }
+        }
+        return [...ids];
+    }
+
+    onMultiDelete(selectedCells) {
+        const ids = this.getSelectedRecordIds(selectedCells);
+        return this.model.unlinkRecords(ids);
+    }
+
+    /** @param {"next"|"previous"|"today"} move */
+    async setDate(move) {
+        log.logic("setDate", () => ({
+            move,
+            scale: this.model.scale,
+            date: this.model.date ? toISODate(this.model.date) : undefined,
+        }));
+        let date = null;
+        let scrollToCurrentHour = false;
+        switch (move) {
+            case "next":
+                date = this.model.date.add({ [`${this.model.scale}s`]: 1 });
+                break;
+            case "previous":
+                date = this.model.date.subtract({ [`${this.model.scale}s`]: 1 });
+                break;
+            case "today":
+                date = now().startOfDay();
+                scrollToCurrentHour =
+                    date.epochMilliseconds === this.date.startOfDay().epochMilliseconds;
+                break;
+        }
+        await this.model.load({ date });
+        if (scrollToCurrentHour) {
+            this.model.bus.trigger(ModelEvent.SCROLL_TO_CURRENT_HOUR, false);
+        }
+    }
+
+    get scales() {
+        return Object.fromEntries(
+            this.model.scales.map((s) => [s, { description: SCALE_LABELS[s] }]),
+        );
+    }
+
+    async setScale(scale) {
+        await this.model.load({ scale });
+    }
+
+    toggleWeekendVisibility() {
+        this.state.isWeekendVisible = !this.state.isWeekendVisible;
+        browser.localStorage.setItem(
+            "calendar.isWeekendVisible",
+            String(this.state.isWeekendVisible),
+        );
+    }
+}

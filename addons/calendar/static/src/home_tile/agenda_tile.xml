@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="calendar.AgendaTile">
+        <div class="o_agenda_tile d-flex flex-column gap-1">
+            <ul t-if="this.events.length" class="list-unstyled mb-0">
+                <li t-foreach="this.events" t-as="event" t-key="event.id">
+                    <HomeTileRecordLink resModel="'calendar.event'" resId="event.id" className="'d-flex gap-2 o_agenda_tile_event'">
+                        <span class="o_agenda_tile_time text-muted flex-shrink-0">
+                            <t t-if="event.allday">All day</t>
+                            <t t-else="" t-out="this.timeOf(event)"/>
+                        </span>
+                        <span class="d-flex flex-column text-truncate">
+                            <span class="text-truncate" t-out="event.name"/>
+                            <small t-if="event.location" class="text-muted text-truncate" t-out="event.location"/>
+                        </span>
+                    </HomeTileRecordLink>
+                </li>
+            </ul>
+            <p t-else="" class="text-muted small mb-0">Nothing else is planned for today.</p>
+            <button t-if="this.hasMore" type="button" class="btn btn-link p-0 text-start small o_agenda_tile_more" t-on-click="() => this.openCalendar()">Open the calendar</button>
+        </div>
+    </t>
+
+</templates>

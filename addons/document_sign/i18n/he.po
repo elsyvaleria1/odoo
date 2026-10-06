@@ -1,0 +1,248 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# * documents_sign
+#
+# Translators:
+# Martin Trigaux, 2022
+# NoaFarkash, 2022
+# ZVI BLONDER <ZVIBLONDER@gmail.com>, 2022
+# Lilach Gilliam <lilach.gilliam@gmail.com>, 2022
+# or balmas <or@laylinetech.com>, 2025.
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server saas~14.4+e\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-01-30 18:46+0000\n"
+"PO-Revision-Date: 2025-10-20 14:42+0000\n"
+"Last-Translator: or balmas <or@laylinetech.com>\n"
+"Language-Team: Hebrew <https://translate.odoo.com/projects/odoo-19/"
+"document_sign/he/>\n"
+"Language: he\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: nplurals=4; plural=(n == 1) ? 0 : ((n == 2) ? 1 : ((n > 10 && "
+"n % 10 == 0) ? 2 : 3));\n"
+"X-Generator: Weblate 5.12.2\n"
+
+#. module: document_sign
+#: model_terms:ir.ui.view,arch_db:document_sign.sign_import_from_documents_view_form
+msgid "Cancel"
+msgstr "בטל"
+
+#. module: document_sign
+#: model:ir.model.fields,field_description:document_sign.field_wizard_sign_template_import_document__create_uid
+msgid "Created by"
+msgstr "נוצר על-ידי"
+
+#. module: document_sign
+#: model:ir.model.fields,field_description:document_sign.field_wizard_sign_template_import_document__create_date
+msgid "Created on"
+msgstr "נוצר ב-"
+
+#. module: document_sign
+#: model:ir.model.fields,field_description:document_sign.field_document_document__display_name
+#: model:ir.model.fields,field_description:document_sign.field_sign_document__display_name
+#: model:ir.model.fields,field_description:document_sign.field_wizard_sign_template_import_document__display_name
+#: model:ir.model.fields,field_description:document_sign.field_sign_request__display_name
+#: model:ir.model.fields,field_description:document_sign.field_sign_request_item__display_name
+#: model:ir.model.fields,field_description:document_sign.field_sign_template__display_name
+msgid "Display Name"
+msgstr "שם לתצוגה"
+
+#. module: document_sign
+#: model:ir.model,name:document_sign.model_document_document
+msgid "Document"
+msgstr "מסמך"
+
+#. module: document_sign
+#: model_terms:ir.ui.view,arch_db:document_sign.documents_sign_template_form_inherit
+msgid "Documents folder"
+msgstr "תיקיית מסמכים"
+
+#. module: document_sign
+#: model_terms:ir.ui.view,arch_db:document_sign.documents_sign_template_form_inherit
+msgid "Documents tags"
+msgstr "תגיות מסמכים"
+
+#. module: document_sign
+#: model:document.document,name:document_sign.documents_sign_employment
+msgid "Employment Contract.pdf"
+msgstr "חוזה עובד.PDF"
+
+#. module: document_sign
+#: model_terms:ir.ui.view,arch_db:document_sign.res_config_settings_view_form_inherit_documents_sign
+msgid "Go to Sign Document Templates"
+msgstr "מעבר לתבניות חתימה על מסמכים"
+
+#. module: document_sign
+#: model:ir.model.fields,field_description:document_sign.field_document_document__id
+#: model:ir.model.fields,field_description:document_sign.field_sign_document__id
+#: model:ir.model.fields,field_description:document_sign.field_wizard_sign_template_import_document__id
+#: model:ir.model.fields,field_description:document_sign.field_sign_request__id
+#: model:ir.model.fields,field_description:document_sign.field_sign_request_item__id
+#: model:ir.model.fields,field_description:document_sign.field_sign_template__id
+msgid "ID"
+msgstr "מזהה"
+
+#. module: document_sign
+#: model_terms:ir.ui.view,arch_db:document_sign.sign_import_from_documents_view_form
+msgid "Import and Sign"
+msgstr "ייבא וחתום"
+
+#. module: document_sign
+#. odoo-javascript
+#: code:addons/document_sign/static/src/backend_components/cog_menu/sign_import_documents_cog_menu.js:0
+#: code:addons/document_sign/static/src/backend_components/cog_menu/sign_import_documents_cog_menu.xml:0
+msgid "Import from Documents"
+msgstr "ייבוא ממסמכים"
+
+#. module: document_sign
+#. odoo-javascript
+#: code:addons/document_sign/static/src/backend_components/cog_menu/sign_import_document_cog_menu.xml:0
+msgid "Import from Documents…"
+msgstr "ייבוא ממסמכים…"
+
+#. module: document_sign
+#: model:ir.model.fields,field_description:document_sign.field_wizard_sign_template_import_document__write_uid
+msgid "Last Updated by"
+msgstr "עודכן לאחרונה על-ידי"
+
+#. module: document_sign
+#: model:ir.model.fields,field_description:document_sign.field_wizard_sign_template_import_document__write_date
+msgid "Last Updated on"
+msgstr "עדכון אחרון ב"
+
+#. module: document_sign
+#: model_terms:ir.ui.view,arch_db:document_sign.res_config_settings_view_form_inherit_documents_sign
+msgid "Link Sign Templates to directories"
+msgstr "קישור תבניות חתימה"
+
+#. module: document_sign
+#. odoo-python
+#: code:addons/document_sign/wizard/sign_import_documents.py:0
+msgid "No document selected to import and sign."
+msgstr "לא נבחר מסמך לייבוא וחתימה."
+
+#. module: document_sign
+#: model:document.document,name:document_sign.documents_sign_cla
+msgid "Odoo CLA.pdf"
+msgstr "Odoo CLA.pdf"
+
+#. module: document_sign
+#: model_terms:ir.ui.view,arch_db:document_sign.document_sign_send_request_view_form
+msgid "Select Documents"
+msgstr "בחירת מסמכים"
+
+#. module: document_sign
+#: model_terms:ir.ui.view,arch_db:document_sign.sign_import_from_documents_view_form
+msgid "Select a Document"
+msgstr "בחירת מסמך"
+
+#. module: document_sign
+#: model_terms:ir.ui.view,arch_db:document_sign.sign_import_from_documents_view_form
+msgid "Select a Document to Import and Sign"
+msgstr "בחר מסמך לייבוא וחתימה"
+
+#. module: document_sign
+#: model:ir.model.fields,field_description:document_sign.field_wizard_sign_template_import_document__selected_document
+msgid "Selected Document"
+msgstr "מסמך נבחר"
+
+#. module: document_sign
+#: model_terms:ir.ui.view,arch_db:document_sign.documents_sign_template_form_inherit
+msgid "Send signed PDFs to a folder"
+msgstr ""
+
+#. module: document_sign
+#: model:document.document,name:document_sign.document_sign_folder
+#: model:ir.actions.server,name:document_sign.ir_actions_server_create_sign_template_direct
+#: model:ir.actions.server,name:document_sign.ir_actions_server_create_sign_template_direct_code
+#: model_terms:ir.ui.view,arch_db:document_sign.res_config_settings_view_form_inherit_documents_sign
+msgid "Sign"
+msgstr "חתימות"
+
+#. module: document_sign
+#: model:ir.model,name:document_sign.model_sign_document
+msgid "Signature Document"
+msgstr "מסמך חתימה"
+
+#. module: document_sign
+#: model:ir.model,name:document_sign.model_sign_request
+msgid "Signature Request"
+msgstr "בקשת חתימה"
+
+#. module: document_sign
+#: model:ir.model,name:document_sign.model_sign_request_item
+msgid "Signature Request Item"
+msgstr "פריט בקשת חתימה"
+
+#. module: document_sign
+#: model:ir.model,name:document_sign.model_sign_template
+msgid "Signature Template"
+msgstr "תבנית חתימה"
+
+#. module: document_sign
+#: model:ir.model.fields,field_description:document_sign.field_sign_template__folder_id
+msgid "Signed Document Folder"
+msgstr "תיקיית מסמך חתום"
+
+#. module: document_sign
+#: model:ir.model.fields,field_description:document_sign.field_sign_template__documents_tag_ids
+msgid "Signed Document Tags"
+msgstr "תגיות מסמכים חתומים"
+
+#. module: document_sign
+#. odoo-python
+#: code:addons/document_sign/models/document_document.py:0
+msgid ""
+"The \"%s\" folder is required by the Sign application and cannot be deleted."
+msgstr "התיקייה \"%s\" נדרשת על ידי אפליקציית חתום ולא ניתן למחוק אותה."
+
+#. module: document_sign
+#. odoo-python
+#: code:addons/document_sign/models/document_document.py:0
+msgid "This action can only be applied on pdf document."
+msgstr "ניתן להחיל פעולה זו רק על מסמך PDF."
+
+#. module: document_sign
+#: model:ir.model,name:document_sign.model_wizard_sign_template_import_document
+msgid "Wizard to select PDF documents from the Documents app to sign"
+msgstr "אשף לבחירת מסמכי PDF מאפליקציית המסמכים לחתימה"
+
+#. module: document_sign
+#. odoo-python
+#: code:addons/document_sign/models/document_document.py:0
+msgid "You cannot archive the Sign folder (%s)."
+msgstr "לא ניתן לאחסן את תיקיית החתימה (%s)."
+
+#. module: document_sign
+#. odoo-python
+#: code:addons/document_sign/models/document_document.py:0
+msgid "You cannot set a company on the %s folder."
+msgstr "לא ניתן להגדיר חברה עבור %s התיקייה."
+
+#. module: document_sign
+#: model:document.document,name:document_sign.documents_attachment_video_studio_document
+msgid "sample-nda.pdf"
+msgstr "sample-nda.pdf"
+
+#~ msgid ""
+#~ "A set of condition and actions which will be available to all attachments "
+#~ "matching the conditions"
+#~ msgstr "תנאים ופעולות שיהיו זמינות לכל הקבצים המצורפים התואמים את התנאים"
+
+#~ msgid "Create"
+#~ msgstr "צור"
+
+#~ msgid "New templates"
+#~ msgstr "תבנית חדשה"
+
+#~ msgid "PDF to Sign"
+#~ msgstr "PDF לחתימה"
+
+#~ msgid "Signature PDF Template"
+#~ msgstr "תבנית PDF חתימה"
+
+#~ msgid "Signed Document Workspace"
+#~ msgstr "סביבת עבודה של מסמכים חתומים"

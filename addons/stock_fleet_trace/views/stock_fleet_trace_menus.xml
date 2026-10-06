@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <menuitem
+        id="menu_stock_trip_incident"
+        parent="stock.menu_delivery"
+        action="action_stock_trip_incident"
+        sequence="61"
+        groups="stock.group_stock_user" />
+
+    <menuitem
+        id="menu_stock_trip_offline_event"
+        parent="stock.menu_delivery"
+        action="action_stock_trip_offline_event"
+        sequence="61"
+        groups="stock.group_stock_user" />
+
+    <menuitem
+        id="menu_stock_trip_checkpoint"
+        parent="stock.menu_delivery"
+        action="action_stock_trip_checkpoint"
+        sequence="62"
+        groups="stock.group_stock_manager" />
+
+</odoo>

@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="product_product_property_office" model="product.product">
+        <field name="name">Commercial Office Building</field>
+        <field name="type">consu</field>
+        <field name="categ_id" ref="product_category_properties" />
+        <field name="asset_kind_id" ref="resource_asset.kind_property" />
+        <field name="is_storable" eval="True" />
+        <field name="tracking">serial</field>
+        <field
+            name="description">Multi-story commercial office building suitable for corporate headquarters</field>
+    </record>
+
+    <record id="product_product_property_warehouse" model="product.product">
+        <field name="name">Industrial Warehouse</field>
+        <field name="type">consu</field>
+        <field name="categ_id" ref="product_category_properties" />
+        <field name="asset_kind_id" ref="resource_asset.kind_property" />
+        <field name="is_storable" eval="True" />
+        <field name="tracking">serial</field>
+        <field name="description">Large-scale distribution and storage warehouse</field>
+    </record>
+
+    <record id="product_product_property_retail" model="product.product">
+        <field name="name">Retail Store Space</field>
+        <field name="type">consu</field>
+        <field name="categ_id" ref="product_category_properties" />
+        <field name="asset_kind_id" ref="resource_asset.kind_property" />
+        <field name="is_storable" eval="True" />
+        <field name="tracking">serial</field>
+        <field
+            name="description">Street-level retail space in commercial district</field>
+    </record>
+
+    <record id="product_product_machinery_forklift" model="product.product">
+        <field name="name">Toyota 8-Series Forklift</field>
+        <field name="type">consu</field>
+        <field name="categ_id" ref="product_category_machinery" />
+        <field name="asset_kind_id" ref="resource_asset.kind_machinery" />
+        <field name="is_storable" eval="True" />
+        <field name="tracking">serial</field>
+        <field name="description">Electric forklift with 2.5-ton capacity</field>
+        <field name="manufacturer_id" ref="resource_asset_vehicle.brand_toyota" />
+    </record>
+
+    <record id="product_product_machinery_cnc" model="product.product">
+        <field name="name">Haas VF-2 CNC Mill</field>
+        <field name="type">consu</field>
+        <field name="categ_id" ref="product_category_machinery" />
+        <field name="asset_kind_id" ref="resource_asset.kind_machinery" />
+        <field name="is_storable" eval="True" />
+        <field name="tracking">serial</field>
+        <field
+            name="description">3-axis vertical machining center with 30 HP vector drive spindle</field>
+        <field name="manufacturer_id" ref="manufacturer_haas" />
+    </record>
+
+    <record id="product_product_equipment_laptop" model="product.product">
+        <field name="name">Dell Latitude 5440</field>
+        <field name="type">consu</field>
+        <field name="categ_id" ref="product_category_it_equipment" />
+        <field name="asset_kind_id" ref="resource_asset.kind_equipment" />
+        <field name="is_storable" eval="True" />
+        <field name="tracking">serial</field>
+        <field
+            name="description">Business laptop - 14" FHD, Intel i7, 16GB RAM, 512GB SSD</field>
+        <field name="manufacturer_id" ref="manufacturer_dell" />
+    </record>
+
+    <record id="product_product_equipment_printer" model="product.product">
+        <field name="name">HP LaserJet Enterprise M507</field>
+        <field name="type">consu</field>
+        <field name="categ_id" ref="product_category_it_equipment" />
+        <field name="asset_kind_id" ref="resource_asset.kind_equipment" />
+        <field name="is_storable" eval="True" />
+        <field name="tracking">serial</field>
+        <field
+            name="description">Monochrome laser printer - 45 ppm, duplex printing</field>
+        <field name="manufacturer_id" ref="manufacturer_hp" />
+    </record>
+
+</odoo>

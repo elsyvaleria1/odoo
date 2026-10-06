@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="helpdesk_ticket_select_forum_wizard_view_form" model="ir.ui.view">
+        <field name="name">helpdesk.ticket.select.forum.wizard.view.form</field>
+        <field name="model">wizard.helpdesk.ticket.create.forum.post</field>
+        <field name="arch" type="xml">
+            <form string="Select Forum">
+                <field name="ticket_id" invisible="1" />
+                <sheet>
+                    <group>
+                        <field
+                            name="forum_id"
+                            options="{'no_open': True, 'no_create': True}" />
+                        <field name="title" />
+                        <field name="description" required="1" />
+                        <field name="answer_content" />
+                        <field
+                            name="tag_ids"
+                            widget="many2many_tags"
+                            context="{'default_forum_id': forum_id}" />
+                    </group>
+                </sheet>
+                <footer>
+                    <button
+                        name="action_create_view_post"
+                        type="object"
+                        string="Create and View Post"
+                        class="oe_highlight" />
+                    <button
+                        name="action_create_post"
+                        type="object"
+                        string="Create Post"
+                        class="btn-secondary" />
+                    <button special="cancel" string="Discard" class="btn-secondary" />
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record
+        id="helpdesk_ticket_select_forum_wizard_action"
+        model="ir.actions.act_window">
+        <field name="name">Share on Forum</field>
+        <field name="res_model">wizard.helpdesk.ticket.create.forum.post</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+
+</odoo>

@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="hr_expense_approve_duplicate_view_form" model="ir.ui.view">
+        <field name="model">wizard.hr.expense.decide.duplicate</field>
+        <field name="arch" type="xml">
+            <form string="Expense Validate Duplicate">
+                <p>The following approved expenses have similar employee, amount and category than some expenses of this report. Please verify this report does not contain duplicates.</p>
+                <field name="expense_ids" invisible="1" />
+                <field name="duplicate_expense_ids">
+                    <list>
+                        <field name="date" readonly="1" />
+                        <field
+                            name="employee_id"
+                            widget="many2one_avatar_employee"
+                            readonly="1" />
+                        <field name="product_id" readonly="1" />
+                        <field name="total_amount" readonly="1" />
+                        <field name="name" readonly="1" />
+                        <field
+                            name="manager_id"
+                            widget="many2one_avatar_user"
+                            readonly="1" />
+                        <field name="approval_date" readonly="1" />
+                    </list>
+                </field>
+                <footer>
+                    <button
+                        name="action_refuse"
+                        type="object"
+                        string="Refuse"
+                        invisible="not expense_ids"
+                        class="btn-primary"
+                        data-hotkey="q" />
+                    <button
+                        name="action_approve"
+                        type="object"
+                        string="Approve"
+                        invisible="not expense_ids"
+                        class="btn-secondary"
+                        data-hotkey="w" />
+                    <button
+                        special="cancel"
+                        string="Cancel"
+                        class="btn-secondary"
+                        data-hotkey="x" />
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="hr_expense_approve_duplicate_action" model="ir.actions.act_window">
+        <field name="name">Validate Duplicate Expenses</field>
+        <field name="res_model">wizard.hr.expense.decide.duplicate</field>
+        <field name="view_mode">form</field>
+        <field name="view_id" ref="hr_expense_approve_duplicate_view_form" />
+        <field name="target">new</field>
+    </record>
+
+</odoo>

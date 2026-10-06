@@ -1,0 +1,1023 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* approval_purchase
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-09-23 00:20+0000\n"
+"PO-Revision-Date: 2026-09-23 00:20+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: approval_purchase
+#: model_terms:ir.ui.view,arch_db:approval_purchase.view_approval_category_form_purchase
+msgid "0 = no limit"
+msgstr ""
+
+#. module: approval_purchase
+#: model_terms:ir.ui.view,arch_db:approval_purchase.view_product_category_form_purchase_approval
+msgid ""
+"<strong>Approval Required:</strong> This category is flagged for purchase order\n"
+"                    approval. All purchase orders containing products from this category will\n"
+"                    require approval through the configured approval workflow."
+msgstr ""
+
+#. module: approval_purchase
+#: model_terms:ir.ui.view,arch_db:approval_purchase.view_product_template_form_purchase_approval
+msgid ""
+"<strong>Approval Required:</strong> This product is flagged for purchase order\n"
+"                    approval. All purchase orders containing this product will require approval\n"
+"                    through the configured approval workflow."
+msgstr ""
+
+#. module: approval_purchase
+#: model_terms:ir.ui.view,arch_db:approval_purchase.view_partner_form_purchase_approval
+msgid ""
+"<strong>Approval Required:</strong> This vendor is flagged for purchase\n"
+"                    order approval. All purchase orders from this vendor will require approval\n"
+"                    through the configured approval workflow."
+msgstr ""
+
+#. module: approval_purchase
+#: model_terms:ir.ui.view,arch_db:approval_purchase.view_approval_category_form_purchase
+msgid ""
+"<strong>Creation Flow (Approval → PO)</strong><br/> Approval\n"
+"                                request creates purchase order when approved. Ensure \"Has Product\"\n"
+"                                is set to Required."
+msgstr ""
+
+#. module: approval_purchase
+#: model_terms:ir.ui.view,arch_db:approval_purchase.view_approval_category_form_purchase
+msgid ""
+"<strong>Mixin Flow (PO → Approval)</strong><br/> Purchase orders\n"
+"                                trigger approval automatically based on rules below."
+msgstr ""
+
+#. module: approval_purchase
+#: model:ir.model.fields,help:approval_purchase.field_purchase_order__locked
+msgid "A locked document cannot be modified."
+msgstr ""
+
+#. module: approval_purchase
+#: model_terms:ir.ui.view,arch_db:approval_purchase.view_product_category_form_purchase_approval
+msgid ""
+"Add special instructions or notes for approvers regarding products in this category...\n"
+"\n"
+"Example: 'Controlled chemicals - verify safety requirements and storage compliance before approving'"
+msgstr ""
+
+#. module: approval_purchase
+#: model_terms:ir.ui.view,arch_db:approval_purchase.view_partner_form_purchase_approval
+msgid ""
+"Add special instructions or notes for approvers regarding purchase orders from this vendor...\n"
+"\n"
+"Example: 'New vendor - verify credentials and references before approving first order'"
+msgstr ""
+
+#. module: approval_purchase
+#: model_terms:ir.ui.view,arch_db:approval_purchase.view_product_template_form_purchase_approval
+msgid ""
+"Add special instructions or notes for approvers...\n"
+"\n"
+"Example: 'Specialized equipment - verify technical requirements before approving'"
+msgstr ""
+
+#. module: approval_purchase
+#: model:ir.model.fields.selection,name:approval_purchase.selection__res_company__po_validation_level__module_approval
+msgid "Advanced Approval Workflow"
+msgstr ""
+
+#. module: approval_purchase
+#: model_terms:ir.ui.view,arch_db:approval_purchase.view_purchase_order_form_approval
+msgid "Approval"
+msgstr ""
+
+#. module: approval_purchase
+#: model:ir.model,name:approval_purchase.model_approval_category
+msgid "Approval Category"
+msgstr "Categoría de aprobación"
+
+#. module: approval_purchase
+#: model:ir.model.fields,field_description:approval_purchase.field_purchase_order__date_approval_granted
+msgid "Approval Granted Date"
+msgstr ""
+
+#. module: approval_purchase
+#: model_terms:ir.ui.view,arch_db:approval_purchase.view_purchase_order_form_approval
+msgid "Approval Information"
+msgstr ""
+
+#. module: approval_purchase
+#: model_terms:ir.ui.view,arch_db:approval_purchase.view_partner_form_purchase_approval
+#: model_terms:ir.ui.view,arch_db:approval_purchase.view_product_category_form_purchase_approval
+#: model_terms:ir.ui.view,arch_db:approval_purchase.view_product_template_form_purchase_approval
+msgid "Approval Notes"
+msgstr ""
+
+#. module: approval_purchase
+#: model:ir.model.fields,field_description:approval_purchase.field_purchase_order__approval_progress
+msgid "Approval Progress"
+msgstr ""
+
+#. module: approval_purchase
+#: model:ir.model,name:approval_purchase.model_approval_request
+#: model:ir.model.fields,field_description:approval_purchase.field_purchase_order__approval_request_id
+msgid "Approval Request"
+msgstr "Solicitud de aprobación"
+
+#. module: approval_purchase
+#: model:ir.model.fields,field_description:approval_purchase.field_purchase_order_line__approval_request_line_id
+msgid "Approval Request Line"
+msgstr ""
+
+#. module: approval_purchase
+#: model:ir.model.fields,field_description:approval_purchase.field_purchase_order__date_approval_requested
+msgid "Approval Requested Date"
+msgstr ""
+
+#. module: approval_purchase
+#: model:ir.model.fields,field_description:approval_purchase.field_purchase_order__approval_required
+#: model_terms:ir.ui.view,arch_db:approval_purchase.view_product_category_search_purchase_approval
+#: model_terms:ir.ui.view,arch_db:approval_purchase.view_product_template_search_purchase_approval
+msgid "Approval Required"
+msgstr "Requiere aprobación"
+
+#. module: approval_purchase
+#: model:ir.model.fields,field_description:approval_purchase.field_purchase_order__approval_state
+msgid "Approval Status"
+msgstr ""
+
+#. module: approval_purchase
+#: model:ir.model.fields,field_description:approval_purchase.field_approval_category__approval_type
+msgid "Approval Type"
+msgstr "Tipo de aprobación"
+
+#. module: approval_purchase
+#: model:ir.ui.menu,name:approval_purchase.menu_approval_category_purchase
+msgid "Approval Types"
+msgstr "Tipos de aprobación"
+
+#. module: approval_purchase
+#: model:approval.category,description:approval_purchase.approval_category_purchase_order
+msgid "Approval workflow for existing purchase orders"
+msgstr ""
+
+#. module: approval_purchase
+#: model:mail.message.subtype,name:approval_purchase.mt_purchase_approved
+msgid "Approved"
+msgstr ""
+
+#. module: approval_purchase
+#: model:ir.model.fields,field_description:approval_purchase.field_purchase_order__approval_user_ids
+msgid "Approvers"
+msgstr ""
+
+#. module: approval_purchase
+#: model_terms:ir.ui.view,arch_db:approval_purchase.res_config_settings_view_form_approval_purchase
+msgid "Automatically confirm purchase orders when all approvals are granted"
+msgstr ""
+
+#. module: approval_purchase
+#: model:ir.model.fields,help:approval_purchase.field_res_company__po_auto_confirm_on_approval
+#: model:ir.model.fields,help:approval_purchase.field_res_config_settings__po_auto_confirm_on_approval
+msgid ""
+"Automatically confirm purchase orders when all required approvals are "
+"granted"
+msgstr ""
+
+#. module: approval_purchase
+#: model:ir.model.fields.selection,name:approval_purchase.selection__approval_category__order_approval_mode__amount
+msgid "Based on Amount"
+msgstr ""
+
+#. module: approval_purchase
+#: model:ir.model.fields.selection,name:approval_purchase.selection__approval_category__order_approval_mode__product
+msgid "Based on Product/Category"
+msgstr ""
+
+#. module: approval_purchase
+#: model:ir.model.fields.selection,name:approval_purchase.selection__approval_category__order_approval_mode__partner
+msgid "Based on Vendor"
+msgstr ""
+
+#. module: approval_purchase
+#: model:ir.model.fields.selection,name:approval_purchase.selection__approval_category__order_approval_mode__debit
+msgid "Based on Vendor Debit"
+msgstr ""
+
+#. module: approval_purchase
+#: model:ir.model.fields,field_description:approval_purchase.field_purchase_order__can_request_approval
+msgid "Can Request Approval"
+msgstr ""
+
+#. module: approval_purchase
+#. odoo-python
+#: code:addons/approval_purchase/models/purchase_order_line.py:0
+msgid ""
+"Cannot add or remove lines while the order's approval is pending — approvers are deciding on the current values. Withdraw or refuse the approval first.\n"
+"\n"
+"Document: %(name)s"
+msgstr ""
+
+#. module: approval_purchase
+#. odoo-python
+#: code:addons/approval_purchase/models/purchase_order_line.py:0
+msgid ""
+"Cannot modify %(fields)s on a line while the order's approval is pending — approvers are deciding on the current values. Withdraw or refuse the approval first.\n"
+"\n"
+"Document: %(name)s"
+msgstr ""
+
+#. module: approval_purchase
+#: model_terms:ir.ui.view,arch_db:approval_purchase.view_product_category_search_purchase_approval
+msgid "Categories that require purchase order approval"
+msgstr ""
+
+#. module: approval_purchase
+#: model:ir.model.fields,help:approval_purchase.field_approval_category__approval_type
+msgid ""
+"Category of approval for filtering and grouping purposes (e.g., 'purchase', "
+"'expense', 'vacation'). Used to organize and filter approval requests."
+msgstr ""
+
+#. module: approval_purchase
+#: model:ir.model.fields,field_description:approval_purchase.field_approval_category__check_debit_limit
+msgid "Check Vendor Debit Limit"
+msgstr ""
+
+#. module: approval_purchase
+#: model:ir.model.fields.selection,name:approval_purchase.selection__approval_category__order_approval_mode__combined
+msgid "Combined Rules"
+msgstr ""
+
+#. module: approval_purchase
+#: model:ir.model,name:approval_purchase.model_res_company
+msgid "Companies"
+msgstr "Empresas"
+
+#. module: approval_purchase
+#: model:ir.model.fields,field_description:approval_purchase.field_res_config_settings__company_currency_id
+msgid "Company Currency"
+msgstr ""
+
+#. module: approval_purchase
+#: model:ir.model,name:approval_purchase.model_res_config_settings
+msgid "Config Settings"
+msgstr "Ajustes de configuración"
+
+#. module: approval_purchase
+#: model_terms:ir.ui.view,arch_db:approval_purchase.res_config_settings_view_form_approval_purchase
+msgid "Configure Approval Categories"
+msgstr "Configurar categorías de aprobación"
+
+#. module: approval_purchase
+#: model:ir.model,name:approval_purchase.model_res_partner
+msgid "Contact"
+msgstr "Contacto"
+
+#. module: approval_purchase
+#: model:ir.model.fields,field_description:approval_purchase.field_approval_request__count_purchase_order
+msgid "Count Purchase Order"
+msgstr ""
+
+#. module: approval_purchase
+#: model_terms:ir.ui.view,arch_db:approval_purchase.view_approval_request_form_inherit_purchase
+msgid "Create Purchase Orders"
+msgstr "Crear órdenes de compra"
+
+#. module: approval_purchase
+#: model:approval.category,description:approval_purchase.approval_category_purchase_request
+msgid "Create purchase order from approval request"
+msgstr ""
+
+#. module: approval_purchase
+#: model_terms:ir.actions.act_window,help:approval_purchase.action_approval_category_purchase
+msgid "Create your first purchase approval type"
+msgstr ""
+
+#. module: approval_purchase
+#: model:ir.model.fields,help:approval_purchase.field_purchase_order__approval_state
+msgid ""
+"Current approval status:\n"
+"        • new: Approval created but not submitted\n"
+"        • pending: Waiting for approvers\n"
+"        • approved: All required approvals obtained\n"
+"        • refused: Approval was refused (terminal)\n"
+"        • cancelled: Approval was retracted or expired (terminal)"
+msgstr ""
+
+#. module: approval_purchase
+#: model:ir.model.fields,help:approval_purchase.field_purchase_order__date_approval_requested
+msgid "Date and time when approval was requested for this document"
+msgstr ""
+
+#. module: approval_purchase
+#: model:ir.model.fields,help:approval_purchase.field_purchase_order__date_approval_granted
+msgid "Date and time when final approval was granted"
+msgstr ""
+
+#. module: approval_purchase
+#: model_terms:ir.actions.act_window,help:approval_purchase.action_approval_category_purchase
+msgid ""
+"Define approval workflows for purchase orders: <br><br>\n"
+"                <strong>Flow 1: Mixin\n"
+"                    Flow (PO → Approval)</strong><br> • Set Approval Type = \"Purchase\"<br> •\n"
+"                Leave Target Model empty<br> • Configure approval triggers (amount, vendor, etc.)<br>\n"
+"                • POs trigger approval automatically based on rules <br><br>\n"
+"                <strong>Flow 2:\n"
+"                Creation Flow (Approval → PO)</strong><br> • Set Approval Type = \"Purchase\"<br>\n"
+"                • Set Target Model = \"Purchase Order\"<br> • Set \"Has Product\" = Required<br> •\n"
+"                Approval creates PO when approved"
+msgstr ""
+
+#. module: approval_purchase
+#: model_terms:ir.ui.view,arch_db:approval_purchase.res_config_settings_view_form_approval_purchase
+msgid "Define how purchase orders should be validated and approved"
+msgstr ""
+
+#. module: approval_purchase
+#: model:ir.model.fields,help:approval_purchase.field_res_company__po_validation_level
+#: model:ir.model.fields,help:approval_purchase.field_res_config_settings__po_validation_level
+msgid ""
+"Define the validation workflow for purchase orders:\n"
+"\n"
+"        • No Validation: All orders are auto-approved (not recommended)\n"
+"        • Manager Approval Above Threshold: Orders above threshold require manager approval\n"
+"        • Advanced Approval Workflow: Use sophisticated approval categories with custom rules\n"
+"\n"
+"        Recommendation: Use 'Advanced Approval Workflow' for best control\n"
+"        "
+msgstr ""
+
+#. module: approval_purchase
+#: model:ir.model.fields,field_description:approval_purchase.field_approval_category__display_name
+#: model:ir.model.fields,field_description:approval_purchase.field_approval_request__display_name
+#: model:ir.model.fields,field_description:approval_purchase.field_approval_request_line__display_name
+#: model:ir.model.fields,field_description:approval_purchase.field_product_category__display_name
+#: model:ir.model.fields,field_description:approval_purchase.field_product_template__display_name
+#: model:ir.model.fields,field_description:approval_purchase.field_purchase_order__display_name
+#: model:ir.model.fields,field_description:approval_purchase.field_purchase_order_line__display_name
+#: model:ir.model.fields,field_description:approval_purchase.field_res_company__display_name
+#: model:ir.model.fields,field_description:approval_purchase.field_res_config_settings__display_name
+#: model:ir.model.fields,field_description:approval_purchase.field_res_partner__display_name
+msgid "Display Name"
+msgstr "Nombre a mostrar"
+
+#. module: approval_purchase
+#: model:ir.model.fields,field_description:approval_purchase.field_res_company__po_rate_limit_enabled
+#: model:ir.model.fields,field_description:approval_purchase.field_res_config_settings__po_rate_limit_enabled
+msgid "Enable Purchase Rate Limiter"
+msgstr ""
+
+#. module: approval_purchase
+#: model_terms:ir.ui.view,arch_db:approval_purchase.view_approval_category_form_purchase
+msgid "Flow"
+msgstr ""
+
+#. module: approval_purchase
+#: model_terms:ir.ui.view,arch_db:approval_purchase.res_config_settings_view_form_approval_purchase
+msgid ""
+"Fraud prevention: monitor for suspicious patterns of below-threshold orders"
+msgstr ""
+
+#. module: approval_purchase
+#: model_terms:ir.ui.view,arch_db:approval_purchase.view_approval_category_form_purchase
+msgid "Generated Document"
+msgstr ""
+
+#. module: approval_purchase
+#: model:ir.model.fields,field_description:approval_purchase.field_approval_category__id
+#: model:ir.model.fields,field_description:approval_purchase.field_approval_request__id
+#: model:ir.model.fields,field_description:approval_purchase.field_approval_request_line__id
+#: model:ir.model.fields,field_description:approval_purchase.field_product_category__id
+#: model:ir.model.fields,field_description:approval_purchase.field_product_template__id
+#: model:ir.model.fields,field_description:approval_purchase.field_purchase_order__id
+#: model:ir.model.fields,field_description:approval_purchase.field_purchase_order_line__id
+#: model:ir.model.fields,field_description:approval_purchase.field_res_company__id
+#: model:ir.model.fields,field_description:approval_purchase.field_res_config_settings__id
+#: model:ir.model.fields,field_description:approval_purchase.field_res_partner__id
+msgid "ID"
+msgstr ""
+
+#. module: approval_purchase
+#: model:ir.model.fields,help:approval_purchase.field_product_category__po_approval_required
+msgid ""
+"If checked, all purchase orders containing products from this category will "
+"require approval regardless of amount or other settings. Use this for "
+"controlled products (chemicals, equipment, etc.)."
+msgstr ""
+
+#. module: approval_purchase
+#: model:ir.model.fields,help:approval_purchase.field_product_product__po_approval_required
+#: model:ir.model.fields,help:approval_purchase.field_product_template__po_approval_required
+msgid ""
+"If checked, all purchase orders containing this product will require "
+"approval regardless of amount or other settings. Use this for controlled "
+"products (specialized equipment, regulated items, etc.)."
+msgstr ""
+
+#. module: approval_purchase
+#: model:ir.model.fields,help:approval_purchase.field_res_bank__po_approval_required
+#: model:ir.model.fields,help:approval_purchase.field_res_company__po_approval_required
+#: model:ir.model.fields,help:approval_purchase.field_res_partner__po_approval_required
+#: model:ir.model.fields,help:approval_purchase.field_res_users__po_approval_required
+msgid ""
+"If checked, all purchase orders from this vendor will require approval "
+"regardless of amount or other settings. Use this for new vendors or high-"
+"risk suppliers."
+msgstr ""
+
+#. module: approval_purchase
+#: model:ir.model.fields,help:approval_purchase.field_approval_category__check_debit_limit
+msgid ""
+"If checked, this category only applies when creating this PO would cause the"
+" vendor's payable balance to exceed the threshold. Use this to control "
+"vendor credit exposure."
+msgstr ""
+
+#. module: approval_purchase
+#: model_terms:ir.ui.view,arch_db:approval_purchase.view_approval_category_form_purchase
+msgid "Leave empty for all categories"
+msgstr ""
+
+#. module: approval_purchase
+#: model_terms:ir.ui.view,arch_db:approval_purchase.view_approval_category_form_purchase
+msgid "Leave empty for all vendors"
+msgstr ""
+
+#. module: approval_purchase
+#: model:ir.model.fields,help:approval_purchase.field_approval_request_line__product_uom_qty
+msgid ""
+"Line quantity converted to the product's reference unit of measure. It is "
+"what the vendor lookup compares against the supplierinfo minimum quantity."
+msgstr ""
+
+#. module: approval_purchase
+#: model:ir.model.fields,help:approval_purchase.field_purchase_order__approval_request_id
+msgid ""
+"Link to the approval request for this document. Automatically created when "
+"approval is requested."
+msgstr ""
+
+#. module: approval_purchase
+#: model:ir.model.fields,help:approval_purchase.field_purchase_order_line__approval_request_line_id
+msgid ""
+"Link to the approval request line that created this purchase order line"
+msgstr ""
+
+#. module: approval_purchase
+#: model:ir.model.fields,help:approval_purchase.field_approval_request_line__purchase_order_line_id
+msgid "Link to the purchase order line created from this approval line"
+msgstr ""
+
+#. module: approval_purchase
+#: model:ir.model.fields,field_description:approval_purchase.field_purchase_order__locked
+msgid "Locked"
+msgstr "Bloqueado"
+
+#. module: approval_purchase
+#: model:ir.model.fields.selection,name:approval_purchase.selection__res_company__po_validation_level__manager_amount
+msgid "Manager Approval Above Threshold"
+msgstr ""
+
+#. module: approval_purchase
+#: model:ir.model.fields,help:approval_purchase.field_approval_request_line__seller_id
+msgid ""
+"Manually select the vendor for this product. If not set, the system will "
+"automatically select a vendor during PO creation."
+msgstr ""
+
+#. module: approval_purchase
+#: model_terms:ir.ui.view,arch_db:approval_purchase.res_config_settings_view_form_approval_purchase
+msgid "Max Cumulative Amount"
+msgstr ""
+
+#. module: approval_purchase
+#: model_terms:ir.ui.view,arch_db:approval_purchase.res_config_settings_view_form_approval_purchase
+msgid "Max Orders in Window"
+msgstr ""
+
+#. module: approval_purchase
+#: model:ir.model.fields,help:approval_purchase.field_approval_category__debit_limit_threshold
+msgid ""
+"Maximum allowed payable balance for vendor, in the currency of the "
+"category's company — or, on a category shared by every company, in each "
+"order's own company currency. If vendor's total payable (including this PO) "
+"exceeds this threshold, this approval category applies."
+msgstr ""
+
+#. module: approval_purchase
+#: model:ir.model.fields,help:approval_purchase.field_res_company__po_rate_limit_amount
+#: model:ir.model.fields,help:approval_purchase.field_res_config_settings__po_rate_limit_amount
+msgid ""
+"Maximum cumulative amount of below-threshold orders within the time window "
+"before approval is required."
+msgstr ""
+
+#. module: approval_purchase
+#: model:ir.model.fields,help:approval_purchase.field_res_company__po_rate_limit_count
+#: model:ir.model.fields,help:approval_purchase.field_res_config_settings__po_rate_limit_count
+msgid ""
+"Maximum number of below-threshold orders a user can create within the time "
+"window before approval is required."
+msgstr ""
+
+#. module: approval_purchase
+#: model:ir.model.fields.selection,name:approval_purchase.selection__res_company__po_validation_level__none
+msgid "No Validation - Auto-approve All"
+msgstr ""
+
+#. module: approval_purchase
+#. odoo-python
+#: code:addons/approval_purchase/models/approval_request_line.py:0
+msgid ""
+"No vendor can supply the requested quantity of the product(s): %s.\n"
+"\n"
+"Select a vendor on the approval line, or configure one on the product whose minimum quantity the line satisfies."
+msgstr ""
+
+#. module: approval_purchase
+#. odoo-python
+#: code:addons/approval_purchase/models/approval_request.py:0
+msgid ""
+"No vendor could be resolved for the product(s): %s.\n"
+"\n"
+"Select a vendor on the approval line, or configure one on the product whose minimum quantity the line satisfies."
+msgstr ""
+
+#. module: approval_purchase
+#: model:ir.model.fields,help:approval_purchase.field_res_company__po_validation_amount
+#: model:ir.model.fields,help:approval_purchase.field_res_config_settings__po_validation_amount
+msgid ""
+"Orders with total >= this amount require approval (only for 'Manager "
+"Approval Above Threshold' level)"
+msgstr ""
+
+#. module: approval_purchase
+#: model_terms:ir.ui.view,arch_db:approval_purchase.view_partner_list_purchase_approval
+#: model_terms:ir.ui.view,arch_db:approval_purchase.view_product_category_list_purchase_approval
+#: model_terms:ir.ui.view,arch_db:approval_purchase.view_product_template_list_purchase_approval
+msgid "PO Approval"
+msgstr ""
+
+#. module: approval_purchase
+#: model:ir.model.fields,field_description:approval_purchase.field_res_company__po_rate_limit_amount
+#: model:ir.model.fields,field_description:approval_purchase.field_res_config_settings__po_rate_limit_amount
+msgid "PO Max Cumulative Amount Below Threshold"
+msgstr ""
+
+#. module: approval_purchase
+#: model:ir.model.fields,field_description:approval_purchase.field_res_company__po_rate_limit_count
+#: model:ir.model.fields,field_description:approval_purchase.field_res_config_settings__po_rate_limit_count
+msgid "PO Max Orders Below Threshold"
+msgstr ""
+
+#. module: approval_purchase
+#: model:ir.model.fields,field_description:approval_purchase.field_res_company__po_rate_limit_hours
+#: model:ir.model.fields,field_description:approval_purchase.field_res_config_settings__po_rate_limit_hours
+msgid "PO Rate Limit Time Window (Hours)"
+msgstr ""
+
+#. module: approval_purchase
+#: model:ir.model.fields,field_description:approval_purchase.field_purchase_order__pending_approver_ids
+msgid "Pending Approvers"
+msgstr ""
+
+#. module: approval_purchase
+#: model:ir.model.fields,help:approval_purchase.field_purchase_order__approval_progress
+msgid "Percentage of approvals completed (approved / total approvers)"
+msgstr ""
+
+#. module: approval_purchase
+#: model:ir.model.fields,field_description:approval_purchase.field_product_category__po_approval_notes
+#: model:ir.model.fields,field_description:approval_purchase.field_product_product__po_approval_notes
+#: model:ir.model.fields,field_description:approval_purchase.field_product_template__po_approval_notes
+#: model:ir.model.fields,field_description:approval_purchase.field_res_bank__po_approval_notes
+#: model:ir.model.fields,field_description:approval_purchase.field_res_company__po_approval_notes
+#: model:ir.model.fields,field_description:approval_purchase.field_res_partner__po_approval_notes
+#: model:ir.model.fields,field_description:approval_purchase.field_res_users__po_approval_notes
+msgid "Po Approval Notes"
+msgstr ""
+
+#. module: approval_purchase
+#: model:ir.model.fields,field_description:approval_purchase.field_product_category__po_approval_required
+#: model:ir.model.fields,field_description:approval_purchase.field_product_product__po_approval_required
+#: model:ir.model.fields,field_description:approval_purchase.field_product_template__po_approval_required
+#: model:ir.model.fields,field_description:approval_purchase.field_res_bank__po_approval_required
+#: model:ir.model.fields,field_description:approval_purchase.field_res_company__po_approval_required
+#: model:ir.model.fields,field_description:approval_purchase.field_res_partner__po_approval_required
+#: model:ir.model.fields,field_description:approval_purchase.field_res_users__po_approval_required
+msgid "Po Approval Required"
+msgstr ""
+
+#. module: approval_purchase
+#: model:ir.model,name:approval_purchase.model_product_template
+msgid "Product"
+msgstr "Producto"
+
+#. module: approval_purchase
+#: model:ir.model,name:approval_purchase.model_product_category
+msgid "Product Category"
+msgstr "Categoría del producto"
+
+#. module: approval_purchase
+#. odoo-python
+#: code:addons/approval_purchase/models/purchase_order.py:0
+msgid "Products"
+msgstr ""
+
+#. module: approval_purchase
+#: model_terms:ir.ui.view,arch_db:approval_purchase.view_product_template_search_purchase_approval
+msgid "Products that require purchase order approval"
+msgstr ""
+
+#. module: approval_purchase
+#: model:ir.model.fields.selection,name:approval_purchase.selection__approval_category__approval_type__purchase
+#: model_terms:ir.ui.view,arch_db:approval_purchase.view_approval_category_form_purchase
+msgid "Purchase"
+msgstr ""
+
+#. module: approval_purchase
+#: model_terms:ir.ui.view,arch_db:approval_purchase.view_product_category_form_purchase_approval
+#: model_terms:ir.ui.view,arch_db:approval_purchase.view_product_template_form_purchase_approval
+msgid "Purchase Approval"
+msgstr ""
+
+#. module: approval_purchase
+#. odoo-python
+#: code:addons/approval_purchase/wizards/res_config_settings.py:0
+msgid "Purchase Approval Categories"
+msgstr ""
+
+#. module: approval_purchase
+#: model:ir.model.fields,field_description:approval_purchase.field_res_company__po_validation_amount
+#: model:ir.model.fields,field_description:approval_purchase.field_res_config_settings__po_validation_amount
+msgid "Purchase Approval Threshold Amount"
+msgstr ""
+
+#. module: approval_purchase
+#: model:ir.model.fields,field_description:approval_purchase.field_approval_category__order_approval_mode
+msgid "Purchase Approval Trigger"
+msgstr ""
+
+#. module: approval_purchase
+#: model:ir.actions.act_window,name:approval_purchase.action_approval_category_purchase
+msgid "Purchase Approval Types"
+msgstr ""
+
+#. module: approval_purchase
+#: model:ir.model.fields,field_description:approval_purchase.field_res_company__po_auto_confirm_on_approval
+#: model:ir.model.fields,field_description:approval_purchase.field_res_config_settings__po_auto_confirm_on_approval
+msgid "Purchase Auto-Confirm on Approval"
+msgstr ""
+
+#. module: approval_purchase
+#: model:approval.category.step,name:approval_purchase.approval_category_purchase_order_step_approvers
+#: model:approval.category.step,name:approval_purchase.approval_category_purchase_request_step_approvers
+msgid "Purchase Managers"
+msgstr ""
+
+#. module: approval_purchase
+#. odoo-python
+#: code:addons/approval_purchase/models/purchase_order.py:0
+#: model:ir.model,name:approval_purchase.model_purchase_order
+#: model:ir.model.fields,field_description:approval_purchase.field_approval_request__purchase_order_ids
+#: model:ir.model.fields,field_description:approval_purchase.field_approval_request_line__purchase_order_id
+#: model:ir.model.fields.selection,name:approval_purchase.selection__approval_category__target_model__purchase_order
+msgid "Purchase Order"
+msgstr "Orden de compra"
+
+#. module: approval_purchase
+#: model:approval.category,name:approval_purchase.approval_category_purchase_order
+msgid "Purchase Order Approval"
+msgstr ""
+
+#. module: approval_purchase
+#: model:ir.model,name:approval_purchase.model_purchase_order_line
+#: model:ir.model.fields,field_description:approval_purchase.field_approval_request_line__purchase_order_line_id
+msgid "Purchase Order Line"
+msgstr "Línea de la orden de compra"
+
+#. module: approval_purchase
+#: model:approval.category,name:approval_purchase.approval_category_purchase_request
+msgid "Purchase Order Request"
+msgstr ""
+
+#. module: approval_purchase
+#: model:ir.model.fields,field_description:approval_purchase.field_res_company__po_validation_level
+#: model:ir.model.fields,field_description:approval_purchase.field_res_config_settings__po_validation_level
+msgid "Purchase Order Validation Level"
+msgstr ""
+
+#. module: approval_purchase
+#. odoo-python
+#: code:addons/approval_purchase/models/approval_request.py:0
+#: model_terms:ir.ui.view,arch_db:approval_purchase.view_approval_request_form_inherit_purchase
+msgid "Purchase Orders"
+msgstr "Órdenes de compra"
+
+#. module: approval_purchase
+#: model:mail.message.subtype,description:approval_purchase.mt_purchase_refused
+msgid "Purchase order approval refused"
+msgstr ""
+
+#. module: approval_purchase
+#: model:mail.message.subtype,description:approval_purchase.mt_purchase_approved
+msgid "Purchase order approved"
+msgstr ""
+
+#. module: approval_purchase
+#: model:ir.model.fields,help:approval_purchase.field_approval_request_line__purchase_order_id
+msgid "Purchase order that contains the line created from this approval"
+msgstr ""
+
+#. module: approval_purchase
+#: model:ir.model.fields,help:approval_purchase.field_approval_request__purchase_order_ids
+msgid ""
+"Purchase orders that requested this approval themselves, as opposed to the "
+"ones this request created from its lines."
+msgstr ""
+
+#. module: approval_purchase
+#. odoo-python
+#: code:addons/approval_purchase/models/purchase_order.py:0
+msgid "Purchase → Configuration → Approval Types"
+msgstr ""
+
+#. module: approval_purchase
+#. odoo-python
+#: code:addons/approval_purchase/models/purchase_order.py:0
+msgid "Qty"
+msgstr ""
+
+#. module: approval_purchase
+#: model:ir.model.fields,field_description:approval_purchase.field_approval_request_line__product_uom_qty
+msgid "Quantity in Product UoM"
+msgstr ""
+
+#. module: approval_purchase
+#. odoo-python
+#: code:addons/approval_purchase/models/approval_request.py:0
+msgid "RFQ "
+msgstr ""
+
+#. module: approval_purchase
+#. odoo-python
+#: code:addons/approval_purchase/models/approval_request.py:0
+msgid "RFQs"
+msgstr ""
+
+#. module: approval_purchase
+#: model:mail.message.subtype,name:approval_purchase.mt_purchase_refused
+msgid "Refused"
+msgstr ""
+
+#. module: approval_purchase
+#: model:ir.model,name:approval_purchase.model_approval_request_line
+msgid "Request Line"
+msgstr "Línea de solicitud"
+
+#. module: approval_purchase
+#: model_terms:ir.ui.view,arch_db:approval_purchase.view_approval_category_form_purchase
+msgid "Require approval by"
+msgstr ""
+
+#. module: approval_purchase
+#: model_terms:ir.ui.view,arch_db:approval_purchase.view_partner_form_purchase_approval
+msgid "Requires Approval"
+msgstr ""
+
+#. module: approval_purchase
+#: model_terms:ir.ui.view,arch_db:approval_purchase.view_product_category_search_purchase_approval
+#: model_terms:ir.ui.view,arch_db:approval_purchase.view_product_template_search_purchase_approval
+#: model_terms:ir.ui.view,arch_db:approval_purchase.view_res_partner_filter_purchase_approval
+msgid "Requires PO Approval"
+msgstr "Requiere aprobación de la orden de compra"
+
+#. module: approval_purchase
+#. odoo-python
+#: code:addons/approval_purchase/models/res_company.py:0
+msgid ""
+"Set '%(label)s' above zero on '%(company)s', or untick 'Enable Purchase Rate"
+" Limiter'. A zero is not read as 'never allow this': the rate limiter "
+"substitutes its own default and goes on permitting orders."
+msgstr ""
+
+#. module: approval_purchase
+#. odoo-python
+#: code:addons/approval_purchase/models/approval_category.py:0
+msgid ""
+"Set a vendor debit threshold above zero on '%(category)s', or untick 'Check "
+"Vendor Debit Limit'. A zero threshold used to leave the criterion switched "
+"on but inert."
+msgstr ""
+
+#. module: approval_purchase
+#: model:ir.model.fields,help:approval_purchase.field_product_category__po_approval_notes
+msgid ""
+"Special instructions or notes for approvers regarding purchase orders "
+"containing products from this category. Example: 'Controlled chemical - "
+"verify safety requirements'"
+msgstr ""
+
+#. module: approval_purchase
+#: model:ir.model.fields,help:approval_purchase.field_product_product__po_approval_notes
+#: model:ir.model.fields,help:approval_purchase.field_product_template__po_approval_notes
+msgid ""
+"Special instructions or notes for approvers regarding purchase orders "
+"containing this product. Example: 'Specialized equipment - verify technical "
+"requirements'"
+msgstr ""
+
+#. module: approval_purchase
+#: model:ir.model.fields,help:approval_purchase.field_res_bank__po_approval_notes
+#: model:ir.model.fields,help:approval_purchase.field_res_company__po_approval_notes
+#: model:ir.model.fields,help:approval_purchase.field_res_partner__po_approval_notes
+#: model:ir.model.fields,help:approval_purchase.field_res_users__po_approval_notes
+msgid ""
+"Special instructions or notes for approvers regarding purchase orders from "
+"this vendor. Example: 'New vendor - verify credentials before approving'"
+msgstr ""
+
+#. module: approval_purchase
+#: model:ir.model.fields,field_description:approval_purchase.field_approval_category__target_model
+msgid "Target Model"
+msgstr ""
+
+#. module: approval_purchase
+#: model:ir.model.fields,help:approval_purchase.field_approval_category__target_model
+msgid ""
+"Technical name of the model to create when this approval is granted. Leave "
+"empty if the approval is for an existing record (e.g., approving a purchase "
+"order). Set to model name (e.g., 'purchase.order') if approval should create"
+" a new record."
+msgstr ""
+
+#. module: approval_purchase
+#. odoo-python
+#: code:addons/approval_purchase/models/approval_request_line.py:0
+msgid ""
+"The selected vendor pricelist line belongs to %(seller_product)s, not to "
+"%(product)s. Pick a vendor configured on the line's own product."
+msgstr ""
+
+#. module: approval_purchase
+#. odoo-python
+#: code:addons/approval_purchase/models/approval_request.py:0
+msgid ""
+"This approval category is configured to create purchase orders but does not "
+"have product lines enabled. Please contact your administrator."
+msgstr ""
+
+#. module: approval_purchase
+#: model_terms:ir.ui.view,arch_db:approval_purchase.view_approval_category_form_purchase
+msgid ""
+"This category will only apply when creating the PO\n"
+"                                would cause the vendor's total payable balance to exceed\n"
+"                                the threshold above."
+msgstr ""
+
+#. module: approval_purchase
+#. odoo-python
+#: code:addons/approval_purchase/models/approval_request.py:0
+msgid "This is an empty purchase request. Please add product lines."
+msgstr ""
+
+#. module: approval_purchase
+#: model_terms:ir.ui.view,arch_db:approval_purchase.res_config_settings_view_form_approval_purchase
+msgid "Threshold Amount"
+msgstr ""
+
+#. module: approval_purchase
+#: model_terms:ir.ui.view,arch_db:approval_purchase.res_config_settings_view_form_approval_purchase
+msgid "Time Window (Hours)"
+msgstr ""
+
+#. module: approval_purchase
+#: model:ir.model.fields,help:approval_purchase.field_res_company__po_rate_limit_hours
+#: model:ir.model.fields,help:approval_purchase.field_res_config_settings__po_rate_limit_hours
+msgid ""
+"Time window in hours for rate limit calculations. Orders older than this are"
+" not counted."
+msgstr ""
+
+#. module: approval_purchase
+#: model_terms:ir.ui.view,arch_db:approval_purchase.view_approval_category_form_purchase
+msgid "Trigger Conditions"
+msgstr ""
+
+#. module: approval_purchase
+#: model:ir.model.fields,help:approval_purchase.field_purchase_order__approval_user_ids
+msgid "Users who need to approve this document"
+msgstr ""
+
+#. module: approval_purchase
+#: model:ir.model.fields,help:approval_purchase.field_purchase_order__pending_approver_ids
+msgid "Users who still need to approve this document"
+msgstr ""
+
+#. module: approval_purchase
+#: model_terms:ir.ui.view,arch_db:approval_purchase.res_config_settings_view_form_approval_purchase
+msgid "Validation Level"
+msgstr ""
+
+#. module: approval_purchase
+#. odoo-python
+#: code:addons/approval_purchase/models/purchase_order.py:0
+#: model:ir.model.fields,field_description:approval_purchase.field_approval_request_line__seller_id
+#: model_terms:ir.ui.view,arch_db:approval_purchase.approval_request_line_view_tree_purchase
+msgid "Vendor"
+msgstr ""
+
+#. module: approval_purchase
+#: model_terms:ir.ui.view,arch_db:approval_purchase.view_approval_category_form_purchase
+msgid "Vendor Debit Limit"
+msgstr ""
+
+#. module: approval_purchase
+#: model:ir.model.fields,field_description:approval_purchase.field_approval_category__debit_limit_threshold
+msgid "Vendor Debit Threshold"
+msgstr ""
+
+#. module: approval_purchase
+#. odoo-python
+#: code:addons/approval_purchase/models/purchase_order.py:0
+msgid "Vendor Note"
+msgstr ""
+
+#. module: approval_purchase
+#: model_terms:ir.ui.view,arch_db:approval_purchase.view_res_partner_filter_purchase_approval
+msgid "Vendors that require purchase order approval"
+msgstr ""
+
+#. module: approval_purchase
+#: model:ir.model.fields,help:approval_purchase.field_approval_category__order_approval_mode
+msgid "What triggers this approval category to be used"
+msgstr ""
+
+#. module: approval_purchase
+#: model_terms:ir.ui.view,arch_db:approval_purchase.view_product_category_form_purchase_approval
+msgid ""
+"When enabled, all purchase orders containing products\n"
+"                            from this category will require approval."
+msgstr ""
+
+#. module: approval_purchase
+#: model_terms:ir.ui.view,arch_db:approval_purchase.view_product_template_form_purchase_approval
+msgid ""
+"When enabled, all purchase orders containing this product\n"
+"                            will require approval regardless of other settings."
+msgstr ""
+
+#. module: approval_purchase
+#: model_terms:ir.ui.view,arch_db:approval_purchase.view_partner_form_purchase_approval
+msgid ""
+"When enabled, all purchase orders from this vendor\n"
+"                    will require approval regardless of amount."
+msgstr ""
+
+#. module: approval_purchase
+#: model:ir.model.fields,help:approval_purchase.field_res_company__po_rate_limit_enabled
+#: model:ir.model.fields,help:approval_purchase.field_res_config_settings__po_rate_limit_enabled
+msgid ""
+"When enabled, monitors for suspicious patterns of below-threshold orders. If"
+" limits are exceeded, approval is required even for managers."
+msgstr ""
+
+#. module: approval_purchase
+#: model:ir.model.fields,help:approval_purchase.field_purchase_order__can_request_approval
+msgid "Whether approval can be requested (all required fields filled)"
+msgstr ""
+
+#. module: approval_purchase
+#: model:ir.model.fields,help:approval_purchase.field_purchase_order__approval_required
+msgid "Whether this document requires approval based on current rules"
+msgstr ""
+
+#. module: approval_purchase
+#: model_terms:ir.ui.view,arch_db:approval_purchase.view_approval_category_form_purchase
+msgid "e.g., 1000"
+msgstr ""
+
+#. module: approval_purchase
+#. odoo-python
+#: code:addons/approval_purchase/models/approval_request.py:0
+msgid "purchase order"
+msgstr ""
+
+#. module: approval_purchase
+#: model_terms:ir.ui.view,arch_db:approval_purchase.view_approval_category_form_purchase
+msgid "to"
+msgstr ""
+
+#. module: approval_purchase
+#. odoo-python
+#: code:addons/approval_purchase/models/purchase_order.py:0
+msgid "… and %(count)s more lines"
+msgstr ""

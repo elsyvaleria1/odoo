@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="access_stock_picking_batch_view_gps_track" model="ir.access">
+        <field
+            name="name">stock.picking.batch: a stock user draws the GPS track of a trip they see</field>
+        <field name="model_id" ref="stock.model_stock_picking_batch" />
+        <field name="group_id" ref="stock.group_stock_user" />
+        <field name="kind">permission</field>
+        <field name="verbs">view_gps_track</field>
+    </record>
+
+</odoo>

@@ -1,0 +1,45 @@
+{
+    "name": "Data Cleaning and Deduplication",
+    "version": "1.5",
+    "oldest_upgradable_version": "1.5",
+    "category": "Productivity/Data Cleaning",
+    "sequence": 135,
+    "summary": "Review formatting corrections and merge candidate duplicate records",
+    "description": "Provides configurable cleaning and matching rules, candidate review, merge actions and scheduled processing. The selected models, matching thresholds and merge settings determine which records are affected.",
+    "author": "Odoo S.A.",
+    "license": "OEEL-1",
+    "depends": [
+        "data_recycle",
+        "phone_validation",
+        "mail",
+    ],
+    "data": [
+        "security/ir.access.csv",
+        "views/data_cleaning_model_views.xml",
+        "views/data_cleaning_rule_views.xml",
+        "views/data_cleaning_record_views.xml",
+        "views/data_cleaning_templates.xml",
+        "views/data_merge_rule_views.xml",
+        "views/data_merge_model_views.xml",
+        "views/data_merge_record_views.xml",
+        "reports/data_storage_views.xml",
+        "views/ir_model_views.xml",
+        "data/data_cleaning_data.xml",
+        "data/data_cleaning_cron.xml",
+        "data/ir_model_data.xml",
+        "data/mail_templates.xml",
+        "views/menu_views.xml",
+    ],
+    "assets": {
+        "web.assets_backend": [
+            "data_cleaning/static/src/views/*.js",
+            "data_cleaning/static/src/views/*.xml",
+        ],
+        "web.assets_unit_tests": [
+            "data_cleaning/static/tests/*.test.js",
+        ],
+    },
+    "auto_install": [
+        "data_recycle",
+    ],
+}

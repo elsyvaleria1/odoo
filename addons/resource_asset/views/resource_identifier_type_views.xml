@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="resource_identifier_type_view_list" model="ir.ui.view">
+        <field name="name">resource.identifier.type.list.asset</field>
+        <field name="model">resource.identifier.type</field>
+        <field name="inherit_id" ref="resource.resource_identifier_type_view_list" />
+        <field name="arch" type="xml">
+            <field name="unique_scope" position="after">
+                <field name="kind_ids" widget="many2many_tags" />
+            </field>
+        </field>
+    </record>
+
+</odoo>

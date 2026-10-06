@@ -1,0 +1,41 @@
+import { expect, test } from "@odoo/hoot";
+import { waitFor } from "@odoo/hoot-dom";
+import { Component, proxy, useProps, xml } from "@odoo/owl";
+import { CenteredIcon } from "@point_of_sale/app/components/centered_icon/centered_icon";
+import { Input } from "@point_of_sale/app/components/inputs/input/input";
+import { NumericInput } from "@point_of_sale/app/components/inputs/numeric_input/numeric_input";
+import { OdooLogo } from "@point_of_sale/app/components/odoo_logo/odoo_logo";
+import { mountWithCleanup } from "@web/../tests/web_test_helpers";
+import { registry } from "@web/core/registry";
+
+test("test that generic components can be mounted; the goal is to ensure that they don't have any unmet dependencies", async () => {
+    class TestComponent extends Component {
+        static props = {};
+        static components = {
+            OdooLogo,
+            CenteredIcon,
+            Input,
+            NumericInput,
+        };
+        static template = xml`
+            <div class="test-container">
+                <OdooLogo />
+                <CenteredIcon icon="'fa-smile'"/>
+                <Input tModel="[this.state, 'number']"/>
+                <NumericInput tModel="[this.state, 'number']" />
+            </div>
+        `;
+        props = useProps(this.constructor.props);
+        setup() {
+            this.state = proxy({ number: 1 });
+        }
+    }
+
+    registry.category("services").content = {};
+
+    await mountWithCleanup(TestComponent, {
+        noMainContainer: true,
+    });
+    await waitFor("div.test-container");
+    expect(true).toBe(true);
+});

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+
+    <!--
+        The bands are the commercial score's own distribution, not the grade
+        scale: on the production copy of 2026-09-21, with the four captured
+        commercial attributes weighted, credit customers land at the quintiles
+        13 / 22 / 41 / 53 and nobody above 80, because the captured values are
+        mostly the low rungs (240 "Low technology", 173 "Contracting"). Bands
+        on the grade scale would put half of them at zero points for what the
+        business rated them, not for what it never captured. Re-read the
+        quintiles when the catalogue changes shape (more attributes captured,
+        weights moved) and move the bounds: they are data.
+    -->
+    <record id="scorecard_dimension_commercial_score" model="scorecard.dimension">
+        <field name="scorecard_id" ref="account_credit.scorecard_credit" />
+        <field name="code">commercial_score</field>
+        <field name="name">Commercial Score</field>
+        <field name="kind">measure</field>
+        <field name="weight" eval="10.0" />
+        <field name="missing">skip</field>
+        <field name="precision" eval="2" />
+        <field name="sequence" eval="90" />
+        <field
+            name="band_ids"
+            eval="[             Command.create({'min_value': 0, 'max_value': 15, 'points': 0.0}),             Command.create({'min_value': 15, 'max_value': 25, 'points': 30.0}),             Command.create({'min_value': 25, 'max_value': 40, 'points': 60.0}),             Command.create({'min_value': 40, 'max_value': 55, 'points': 85.0}),             Command.create({'min_value': 55, 'max_value': 0, 'points': 100.0}),         ]" />
+    </record>
+
+</odoo>

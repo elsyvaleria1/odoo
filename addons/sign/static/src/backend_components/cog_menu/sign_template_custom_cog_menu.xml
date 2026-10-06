@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="sign.SignTemplateCustomCogMenu">
+        <div class="o_sign_template_cog_menu d-flex align-items-center ms-1 lh-1">
+            <Dropdown menuClass="'lh-base'">
+                <t t-call="web.CogMenuToggler"/>
+                <t t-set-slot="content">
+                    <CogMenuItem t-if="this.showEditButton" icon="'fa-solid fa-pen-to-square'" description.translate="Edit" onSelected.bind="this.props.onEditTemplate"/>
+                    <CogMenuItem t-if="!this.props.signTemplate.active &amp;&amp; !this.state.properties" icon="'fa-regular fa-floppy-disk'" description.translate="Save as Template…" onSelected.bind="this.props.onTemplateSaveClick"/>
+                    <CogMenuItem t-if="this.props.manageTemplateAccess" icon="'fa-solid fa-users'" description.translate="Access Rights…" onSelected.bind="this.onAccessRightsClick"/>
+                    <CogMenuItem icon="'fa-solid fa-sliders'" description.translate="Settings" onSelected.bind="this.onTemplatePropertiesClick"/>
+                    <CogMenuItem icon="'fa-regular fa-eye'" description.translate="Preview" onSelected.bind="this.onPreviewClick"/>
+                </t>
+            </Dropdown>
+        </div>
+    </t>
+</templates>

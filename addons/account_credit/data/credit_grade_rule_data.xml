@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+
+    <record id="rule_restricted_id" model="credit.grade.rule">
+        <field name="name">ID Document</field>
+        <field name="grade_id" ref="credit_grade_restricted" />
+        <field name="document_type_id" ref="doc_type_id_document" />
+        <field name="is_guarantor" eval="False" />
+        <field name="min_quantity">1</field>
+        <field name="max_quantity">1</field>
+    </record>
+
+    <record id="rule_restricted_id_guarantee" model="credit.grade.rule">
+        <field name="name">ID Document (guarantee)</field>
+        <field name="grade_id" ref="credit_grade_restricted" />
+        <field name="document_type_id" ref="doc_type_id_document" />
+        <field name="is_guarantor" eval="True" />
+        <field name="min_quantity">1</field>
+        <field name="max_quantity">1</field>
+    </record>
+
+    <record id="rule_restricted_contract" model="credit.grade.rule">
+        <field name="name">Contract</field>
+        <field name="grade_id" ref="credit_grade_restricted" />
+        <field name="document_type_id" ref="doc_type_contract" />
+        <field name="is_guarantor" eval="False" />
+        <field name="min_quantity">1</field>
+        <field name="max_quantity">1</field>
+    </record>
+
+    <record id="rule_restricted_promissory_note" model="credit.grade.rule">
+        <field name="name">Promissory Note</field>
+        <field name="grade_id" ref="credit_grade_restricted" />
+        <field name="document_type_id" ref="doc_type_promissory_note" />
+        <field name="is_guarantor" eval="False" />
+        <field name="min_quantity">1</field>
+        <field name="max_quantity">1</field>
+    </record>
+
+    <record id="rule_restricted_warranty" model="credit.grade.rule">
+        <field name="name">Warranty</field>
+        <field name="grade_id" ref="credit_grade_restricted" />
+        <field name="document_type_id" ref="doc_type_warranty" />
+        <field name="is_guarantor" eval="False" />
+        <field name="min_quantity">2</field>
+        <field name="max_quantity">0</field>
+    </record>
+
+    <record id="rule_reliable_id" model="credit.grade.rule">
+        <field name="name">ID Document</field>
+        <field name="grade_id" ref="credit_grade_reliable" />
+        <field name="document_type_id" ref="doc_type_id_document" />
+        <field name="is_guarantor" eval="False" />
+        <field name="min_quantity">1</field>
+        <field name="max_quantity">1</field>
+    </record>
+
+    <record id="rule_reliable_contract" model="credit.grade.rule">
+        <field name="name">Contract</field>
+        <field name="grade_id" ref="credit_grade_reliable" />
+        <field name="document_type_id" ref="doc_type_contract" />
+        <field name="is_guarantor" eval="False" />
+        <field name="min_quantity">1</field>
+        <field name="max_quantity">1</field>
+    </record>
+
+    <record id="rule_reliable_promissory_note" model="credit.grade.rule">
+        <field name="name">Promissory Note</field>
+        <field name="grade_id" ref="credit_grade_reliable" />
+        <field name="document_type_id" ref="doc_type_promissory_note" />
+        <field name="is_guarantor" eval="False" />
+        <field name="min_quantity">1</field>
+        <field name="max_quantity">1</field>
+    </record>
+
+    <record id="rule_preferred_id" model="credit.grade.rule">
+        <field name="name">ID Document</field>
+        <field name="grade_id" ref="credit_grade_preferred" />
+        <field name="document_type_id" ref="doc_type_id_document" />
+        <field name="is_guarantor" eval="False" />
+        <field name="min_quantity">1</field>
+        <field name="max_quantity">1</field>
+    </record>
+
+    <record id="rule_preferred_contract" model="credit.grade.rule">
+        <field name="name">Contract</field>
+        <field name="grade_id" ref="credit_grade_preferred" />
+        <field name="document_type_id" ref="doc_type_contract" />
+        <field name="is_guarantor" eval="False" />
+        <field name="min_quantity">1</field>
+        <field name="max_quantity">1</field>
+    </record>
+
+</odoo>

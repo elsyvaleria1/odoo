@@ -1,0 +1,1498 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* product_asset_remote_geoengine
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Language: es_MX\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: asset_gps_geoengine
+#. odoo-python
+#: code:addons/asset_gps_geoengine/models/device_gps_stop.py:0
+msgid "%(distance)s m from %(parcel)s (%(client)s)"
+msgstr "a %(distance)s m de %(parcel)s (%(client)s)"
+
+#. module: asset_gps_geoengine
+#. odoo-python
+#: code:addons/asset_gps_geoengine/models/device_gps_speed_alert.py:0
+msgid "%(who)s at %(speed)s km/h, critical limit %(limit)s"
+msgstr ""
+
+#. module: asset_gps_geoengine
+#. odoo-python
+#: code:addons/asset_gps_geoengine/models/device_gps_speed_alert.py:0
+msgid ""
+"%(who)s drove %(what)s at up to %(speed)s km/h for %(minutes)s minutes from "
+"%(start)s, over the critical limit of %(limit)s km/h. Where: %(place)s."
+msgstr ""
+
+#. module: asset_gps_geoengine
+#. odoo-python
+#: code:addons/asset_gps_geoengine/wizards/wizard_device_device_view_trail.py:0
+msgid "%d assets selected"
+msgstr ""
+
+#. module: asset_gps_geoengine
+#. odoo-python
+#: code:addons/asset_gps_geoengine/wizards/wizard_device_device_view_trail.py:0
+msgid "%d operators selected"
+msgstr ""
+
+#. module: asset_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:asset_gps_geoengine.view_device_device_geoengine_asset
+msgid "<span class=\"badge text-bg-secondary\">Parked</span>"
+msgstr "<span class=\"badge text-bg-secondary\">Estacionado</span>"
+
+#. module: asset_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:asset_gps_geoengine.view_device_device_geoengine_asset
+msgid "<span class=\"badge text-bg-success\">In Motion</span>"
+msgstr "<span class=\"badge text-bg-success\">En movimiento</span>"
+
+#. module: asset_gps_geoengine
+#: model:ir.model.constraint,message:asset_gps_geoengine.constraint_device_gps_speed_alert_device_start_uniq
+msgid "A burst is alerted once."
+msgstr ""
+
+#. module: asset_gps_geoengine
+#: model:ir.model.fields,help:asset_gps_geoengine.field_device_geo_fence__to_mark
+msgid ""
+"A vehicle stayed here more than 20 minutes and the geofence has no client. "
+"Stays set, as a signal to mark it, until it gets a client or is made "
+"internal."
+msgstr "Una unidad estuvo aquí más de 20 minutos y la geocerca no tiene cliente. Se queda marcada, como señal de que hay que marcarla, hasta que reciba un cliente o se vuelva interna."
+
+#. module: asset_gps_geoengine
+#. odoo-python
+#: code:addons/asset_gps_geoengine/models/device_gps_place.py:0
+msgid "ATM"
+msgstr "Cajero automático"
+
+#. module: asset_gps_geoengine
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_gps_speed_alert__activity_id
+msgid "Activity"
+msgstr ""
+
+#. module: asset_gps_geoengine
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_gps_place__address
+msgid "Address"
+msgstr "Dirección"
+
+#. module: asset_gps_geoengine
+#: model:ir.model.fields.selection,name:asset_gps_geoengine.selection__device_gps_speed_event__level__alert
+#: model_terms:ir.ui.view,arch_db:asset_gps_geoengine.view_device_gps_speed_event_search
+msgid "Alert"
+msgstr "Alerta"
+
+#. module: asset_gps_geoengine
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_gps_stop__arrival
+#: model_terms:ir.ui.view,arch_db:asset_gps_geoengine.device_gps_stop_view_list
+#: model_terms:ir.ui.view,arch_db:asset_gps_geoengine.report_device_gps_stop
+msgid "Arrival"
+msgstr "Llegada"
+
+#. module: asset_gps_geoengine
+#: model:ir.model.fields,help:asset_gps_geoengine.field_device_gps_stop__duration_hours
+msgid "Arrival to departure; up to the last refresh while ongoing."
+msgstr "De la llegada a la salida; hasta la última actualización mientras sigue en curso."
+
+#. module: asset_gps_geoengine
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_wizard_device_device_view_trail__asset_ids
+#: model_terms:ir.ui.view,arch_db:asset_gps_geoengine.view_gps_trail_result_search_asset
+msgid "Asset"
+msgstr ""
+
+#. module: asset_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:asset_gps_geoengine.view_resource_asset_search_gps_trail
+msgid "Asset / Operator / Device"
+msgstr ""
+
+#. module: asset_gps_geoengine
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_wizard_device_device_view_trail_result__asset_name
+msgid "Asset Name"
+msgstr ""
+
+#. module: asset_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:asset_gps_geoengine.view_resource_asset_search_gps_trail
+msgid "Asset Type"
+msgstr ""
+
+#. module: asset_gps_geoengine
+#: model:ir.model.fields,help:asset_gps_geoengine.field_device_client_visit__asset_id
+msgid "Asset this GPS device is installed on, archived or not"
+msgstr ""
+
+#. module: asset_gps_geoengine
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_wizard_device_device_view_trail_result__asset_id
+msgid "Asset/Vehicle"
+msgstr ""
+
+#. module: asset_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:asset_gps_geoengine.device_gps_stop_view_search
+msgid "At a Client"
+msgstr "Con un cliente"
+
+#. module: asset_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:asset_gps_geoengine.view_device_gps_speed_day_list
+msgid "Avg Speed"
+msgstr "Vel. promedio"
+
+#. module: asset_gps_geoengine
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_gps_speed_day__speed_avg
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_gps_speed_event__speed_avg
+msgid "Avg Speed (km/h)"
+msgstr ""
+
+#. module: asset_gps_geoengine
+#. odoo-python
+#: code:addons/asset_gps_geoengine/models/device_gps_place.py:0
+msgid "Bakery"
+msgstr "Panadería"
+
+#. module: asset_gps_geoengine
+#. odoo-python
+#: code:addons/asset_gps_geoengine/models/device_gps_place.py:0
+msgid "Bank"
+msgstr "Banco"
+
+#. module: asset_gps_geoengine
+#. odoo-python
+#: code:addons/asset_gps_geoengine/models/device_gps_place.py:0
+msgid "Bar"
+msgstr "Bar"
+
+#. module: asset_gps_geoengine
+#. odoo-python
+#: code:addons/asset_gps_geoengine/models/device_gps_place.py:0
+msgid "Butcher"
+msgstr "Carnicería"
+
+#. module: asset_gps_geoengine
+#: model:ir.model.fields.selection,name:asset_gps_geoengine.selection__wizard_device_device_view_trail__selection_mode__asset
+msgid "By Asset/Vehicle"
+msgstr ""
+
+#. module: asset_gps_geoengine
+#: model:ir.model.fields.selection,name:asset_gps_geoengine.selection__wizard_device_device_view_trail__selection_mode__operator
+msgid "By Operator/Driver"
+msgstr ""
+
+#. module: asset_gps_geoengine
+#. odoo-python
+#: code:addons/asset_gps_geoengine/models/device_gps_place.py:0
+msgid "Café"
+msgstr "Cafetería"
+
+#. module: asset_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:asset_gps_geoengine.wizard_device_gps_stop_refresh_view_form
+msgid "Cancel"
+msgstr "Cancelar"
+
+#. module: asset_gps_geoengine
+#. odoo-python
+#: code:addons/asset_gps_geoengine/models/device_gps_place.py:0
+msgid "Car Wash"
+msgstr "Autolavado"
+
+#. module: asset_gps_geoengine
+#: model:ir.model.fields,help:asset_gps_geoengine.field_wizard_device_device_view_trail__selection_mode
+msgid "Choose how to select GPS tracking sources"
+msgstr ""
+
+#. module: asset_gps_geoengine
+#. odoo-python
+#: code:addons/asset_gps_geoengine/models/device_gps_place.py:0
+msgid "Church"
+msgstr "Iglesia"
+
+#. module: asset_gps_geoengine
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_gps_stop__partner_id
+#: model_terms:ir.ui.view,arch_db:asset_gps_geoengine.device_gps_stop_view_search
+msgid "Client"
+msgstr "Cliente"
+
+#. module: asset_gps_geoengine
+#: model:ir.model.fields,help:asset_gps_geoengine.field_device_gps_stop__partner_id
+msgid "Client of the geofence the stop was on."
+msgstr "Cliente de la geocerca donde fue la parada."
+
+#. module: asset_gps_geoengine
+#. odoo-python
+#: code:addons/asset_gps_geoengine/models/device_gps_place.py:0
+msgid "Clinic"
+msgstr "Clínica"
+
+#. module: asset_gps_geoengine
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_gps_speed_alert__company_id
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_gps_speed_day__company_id
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_gps_speed_event__company_id
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_gps_stop__company_id
+msgid "Company"
+msgstr "Compañía"
+
+#. module: asset_gps_geoengine
+#. odoo-python
+#: code:addons/asset_gps_geoengine/models/device_gps_place.py:0
+msgid "Convenience Store"
+msgstr "Tienda de conveniencia"
+
+#. module: asset_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:asset_gps_geoengine.report_device_gps_stop
+msgid "Coordinates"
+msgstr "Coordenadas"
+
+#. module: asset_gps_geoengine
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_gps_place__create_uid
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_gps_speed_alert__create_uid
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_gps_stop__create_uid
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_wizard_device_gps_stop_refresh__create_uid
+msgid "Created by"
+msgstr ""
+
+#. module: asset_gps_geoengine
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_gps_place__create_date
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_gps_speed_alert__create_date
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_gps_stop__create_date
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_wizard_device_gps_stop_refresh__create_date
+msgid "Created on"
+msgstr ""
+
+#. module: asset_gps_geoengine
+#: model:ir.model.fields.selection,name:asset_gps_geoengine.selection__device_gps_speed_event__level__critical
+#: model_terms:ir.ui.view,arch_db:asset_gps_geoengine.view_device_gps_speed_event_search
+msgid "Critical"
+msgstr "Crítico"
+
+#. module: asset_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:asset_gps_geoengine.view_device_gps_speed_alert_list
+#: model_terms:ir.ui.view,arch_db:asset_gps_geoengine.view_device_gps_speed_day_list
+msgid "Critical Limit"
+msgstr "Límite crítico"
+
+#. module: asset_gps_geoengine
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_gps_speed_alert__speed_limit
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_gps_speed_day__speed_limit_critical
+msgid "Critical Limit (km/h)"
+msgstr ""
+
+#. module: asset_gps_geoengine
+#: model:ir.model,name:asset_gps_geoengine.model_device_gps_speed_alert
+msgid "Critical Speed Alert"
+msgstr ""
+
+#. module: asset_gps_geoengine
+#: model:ir.model.fields,help:asset_gps_geoengine.field_device_client_visit__operator_id
+msgid "Current operator/driver assigned to the linked asset"
+msgstr ""
+
+#. module: asset_gps_geoengine
+#: model:ir.actions.act_window,name:asset_gps_geoengine.action_device_gps_speed_day
+#: model:ir.ui.menu,name:asset_gps_geoengine.menu_device_gps_speed_day
+msgid "Daily Speed"
+msgstr "Velocidad por Día"
+
+#. module: asset_gps_geoengine
+#: model:ir.model,name:asset_gps_geoengine.model_device_gps_speed_day
+msgid "Daily Speed per Vehicle"
+msgstr ""
+
+#. module: asset_gps_geoengine
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_gps_speed_day__date
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_gps_speed_event__date
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_gps_stop__date
+#: model_terms:ir.ui.view,arch_db:asset_gps_geoengine.device_gps_stop_view_search
+#: model_terms:ir.ui.view,arch_db:asset_gps_geoengine.view_device_gps_speed_alert_search
+#: model_terms:ir.ui.view,arch_db:asset_gps_geoengine.view_device_gps_speed_day_search
+#: model_terms:ir.ui.view,arch_db:asset_gps_geoengine.view_device_gps_speed_event_search
+msgid "Date"
+msgstr "Fecha"
+
+#. module: asset_gps_geoengine
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_wizard_device_gps_stop_refresh__date_from
+msgid "Date From"
+msgstr "Desde"
+
+#. module: asset_gps_geoengine
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_wizard_device_gps_stop_refresh__date_to
+msgid "Date To"
+msgstr "Hasta"
+
+#. module: asset_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:asset_gps_geoengine.device_gps_stop_view_search
+#: model_terms:ir.ui.view,arch_db:asset_gps_geoengine.view_device_gps_speed_alert_search
+#: model_terms:ir.ui.view,arch_db:asset_gps_geoengine.view_device_gps_speed_day_search
+#: model_terms:ir.ui.view,arch_db:asset_gps_geoengine.view_device_gps_speed_event_search
+msgid "Day"
+msgstr "Día"
+
+#. module: asset_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:asset_gps_geoengine.view_hr_employee_search_gps_trail
+msgid "Department"
+msgstr ""
+
+#. module: asset_gps_geoengine
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_gps_stop__departure
+#: model_terms:ir.ui.view,arch_db:asset_gps_geoengine.device_gps_stop_view_list
+#: model_terms:ir.ui.view,arch_db:asset_gps_geoengine.report_device_gps_stop
+msgid "Departure"
+msgstr "Salida"
+
+#. module: asset_gps_geoengine
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_gps_speed_alert__device_id
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_gps_speed_day__device_id
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_gps_speed_event__device_id
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_gps_stop__device_id
+msgid "Device"
+msgstr "Dispositivo"
+
+#. module: asset_gps_geoengine
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_client_visit__display_name
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_device__display_name
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_geo_fence__display_name
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_gps_place__display_name
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_gps_speed_alert__display_name
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_gps_speed_day__display_name
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_gps_speed_event__display_name
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_gps_stop__display_name
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_report_asset_gps_geoengine_report_device_gps_stop__display_name
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_wizard_device_device_view_trail__display_name
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_wizard_device_device_view_trail_result__display_name
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_wizard_device_gps_stop_refresh__display_name
+msgid "Display Name"
+msgstr "Nombre en pantalla"
+
+#. module: asset_gps_geoengine
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_gps_speed_event__distance_km
+msgid "Distance (km)"
+msgstr ""
+
+#. module: asset_gps_geoengine
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_gps_speed_event__nearby_distance_m
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_gps_stop__nearby_distance_m
+msgid "Distance to Parcel (m)"
+msgstr "Distancia a la parcela (m)"
+
+#. module: asset_gps_geoengine
+#. odoo-python
+#: code:addons/asset_gps_geoengine/models/device_gps_place.py:0
+msgid "Doctor"
+msgstr "Consultorio"
+
+#. module: asset_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:asset_gps_geoengine.device_gps_stop_view_list
+#: model_terms:ir.ui.view,arch_db:asset_gps_geoengine.report_device_gps_stop
+msgid "Duration"
+msgstr "Duración"
+
+#. module: asset_gps_geoengine
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_gps_stop__duration_hours
+msgid "Duration (h)"
+msgstr "Duración (h)"
+
+#. module: asset_gps_geoengine
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_gps_speed_alert__duration_min
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_gps_speed_event__duration_min
+msgid "Duration (min)"
+msgstr ""
+
+#. module: asset_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:asset_gps_geoengine.device_gps_stop_view_geoengine
+msgid "Duration:"
+msgstr "Duración:"
+
+#. module: asset_gps_geoengine
+#: model_terms:ir.actions.act_window,help:asset_gps_geoengine.action_device_gps_speed_event
+msgid ""
+"Each row is one continuous stretch above the device's warning\n"
+"               limit. The ones that passed the critical limit are in red."
+msgstr ""
+"Cada fila es un tramo continuo por encima del límite de advertencia\n"
+"               del dispositivo. En rojo los que superaron el límite crítico."
+
+#. module: asset_gps_geoengine
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_device__operator_name
+msgid "Employee Name"
+msgstr ""
+
+#. module: asset_gps_geoengine
+#: model:ir.model.fields,help:asset_gps_geoengine.field_wizard_device_gps_stop_refresh__device_ids
+msgid "Empty means every GPS device."
+msgstr "Vacío significa todos los dispositivos GPS."
+
+#. module: asset_gps_geoengine
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_gps_speed_alert__end
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_gps_speed_event__end
+msgid "End"
+msgstr ""
+
+#. module: asset_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:asset_gps_geoengine.view_resource_asset_search_gps_trail
+msgid "Equipment"
+msgstr ""
+
+#. module: asset_gps_geoengine
+#: model_terms:ir.actions.act_window,help:asset_gps_geoengine.action_device_gps_speed_alert
+msgid ""
+"Every 5 minutes the stretches that passed the device's critical\n"
+"               limit are reviewed. Each one schedules an activity for the\n"
+"               operator's manager and is recorded here."
+msgstr ""
+"Cada 5 minutos se revisan los tramos que superaron el límite\n"
+"               crítico del dispositivo. Por cada uno se programa una actividad\n"
+"               al jefe del operador y queda registrado aquí."
+
+#. module: asset_gps_geoengine
+#: model_terms:ir.actions.act_window,help:asset_gps_geoengine.device_gps_stop_action
+msgid ""
+"Every place a vehicle stayed still for five minutes or more,\n"
+"               on a client's parcel or anywhere else, and every vehicle whose\n"
+"               tracker sent no position that day. Refreshed every ten\n"
+"               minutes."
+msgstr "Cada lugar donde un vehículo se detuvo cinco minutos o más, en la parcela de un cliente o en cualquier otro sitio, y cada vehículo cuyo rastreador no envió posiciones ese día. Se actualiza cada diez minutos."
+
+#. module: asset_gps_geoengine
+#: model_terms:ir.actions.act_window,help:asset_gps_geoengine.device_gps_stop_to_mark_action
+msgid ""
+"Every stay of more than 20 minutes at a geofence without a\n"
+"               client or at a place without a geofence. A row leaves this list\n"
+"               once the geofence gets a client, or a client or internal\n"
+"               geofence is drawn there."
+msgstr "Cada estancia de más de 20 minutos en una geocerca sin cliente o en un lugar sin geocerca. La fila sale de esta lista cuando la geocerca recibe un cliente, o cuando se dibuja ahí una geocerca con cliente o interna."
+
+#. module: asset_gps_geoengine
+#. odoo-python
+#: code:addons/asset_gps_geoengine/models/device_gps_place.py:0
+msgid "Farm Supply Store"
+msgstr "Tienda agropecuaria"
+
+#. module: asset_gps_geoengine
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_gps_speed_day__first_seen
+#: model_terms:ir.ui.view,arch_db:asset_gps_geoengine.view_device_gps_speed_day_list
+msgid "First Position"
+msgstr "Primera posición"
+
+#. module: asset_gps_geoengine
+#: model:ir.model.fields,help:asset_gps_geoengine.field_device_gps_stop__departure
+msgid ""
+"First moving position after the stop. Empty while the vehicle is still "
+"there."
+msgstr "Primera posición en movimiento después de la parada. Vacía mientras el vehículo sigue ahí."
+
+#. module: asset_gps_geoengine
+#. odoo-python
+#: code:addons/asset_gps_geoengine/models/device_gps_place.py:0
+msgid "Florist"
+msgstr "Florería"
+
+#. module: asset_gps_geoengine
+#. odoo-python
+#: code:addons/asset_gps_geoengine/models/device_gps_place.py:0
+msgid "Food Court"
+msgstr "Área de comida"
+
+#. module: asset_gps_geoengine
+#. odoo-python
+#: code:addons/asset_gps_geoengine/models/device_gps_place.py:0
+msgid "Food Stand"
+msgstr "Puesto de comida"
+
+#. module: asset_gps_geoengine
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_device__stay_elapsed
+msgid "For"
+msgstr "Tiempo ahí"
+
+#. module: asset_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:asset_gps_geoengine.view_resource_asset_search_gps_trail
+msgid "GPS Device"
+msgstr ""
+
+#. module: asset_gps_geoengine
+#: model:ir.model,name:asset_gps_geoengine.model_wizard_device_device_view_trail_result
+msgid "GPS Trail Result"
+msgstr ""
+
+#. module: asset_gps_geoengine
+#: model:ir.model,name:asset_gps_geoengine.model_wizard_device_device_view_trail
+msgid "GPS Trail Wizard"
+msgstr ""
+
+#. module: asset_gps_geoengine
+#: model:ir.model,name:asset_gps_geoengine.model_device_client_visit
+msgid "GPS Visit to a Client Parcel"
+msgstr ""
+
+#. module: asset_gps_geoengine
+#: model:ir.actions.server,name:asset_gps_geoengine.ir_cron_raise_critical_speed_ir_actions_server
+msgid "GPS: Alert Critical Speed"
+msgstr ""
+
+#. module: asset_gps_geoengine
+#: model:ir.actions.server,name:asset_gps_geoengine.ir_cron_refresh_gps_stops_ir_actions_server
+msgid "GPS: Refresh Vehicle Stops"
+msgstr "GPS: Actualizar paradas de vehículos"
+
+#. module: asset_gps_geoengine
+#. odoo-python
+#: code:addons/asset_gps_geoengine/models/device_gps_place.py:0
+msgid "Gas Station"
+msgstr "Gasolinera"
+
+#. module: asset_gps_geoengine
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_gps_stop__geofence_id
+#: model_terms:ir.ui.view,arch_db:asset_gps_geoengine.device_gps_stop_view_search
+msgid "Geofence"
+msgstr "Geocerca"
+
+#. module: asset_gps_geoengine
+#: model:ir.model.fields,help:asset_gps_geoengine.field_device_gps_stop__geofence_id
+msgid "Geofence the stop was on or within 50 m of."
+msgstr "Geocerca donde fue la parada, o a 50 m o menos."
+
+#. module: asset_gps_geoengine
+#: model:geoengine.vector.layer,name:asset_gps_geoengine.vector_layer_device_device_geofences_to_mark
+#: model:geoengine.vector.layer,name:asset_gps_geoengine.vector_layer_device_gps_stop_parked_geofences
+msgid "Geofences to Mark"
+msgstr "Geocercas por marcar"
+
+#. module: asset_gps_geoengine
+#: model:geoengine.raster.layer,name:asset_gps_geoengine.raster_layer_device_gps_stop_google_hybrid
+msgid "Google Hybrid"
+msgstr "Google Híbrido"
+
+#. module: asset_gps_geoengine
+#: model:ir.model.fields,help:asset_gps_geoengine.field_device_gps_stop__map_color
+msgid ""
+"Green at a client or internal geofence; orange at a place to mark; blue for "
+"a short stop anywhere else."
+msgstr "Verde en una geocerca con cliente o interna; naranja en un lugar por marcar; azul en una parada corta en cualquier otro lugar."
+
+#. module: asset_gps_geoengine
+#. odoo-python
+#: code:addons/asset_gps_geoengine/models/device_gps_place.py:0
+msgid "Greengrocer"
+msgstr "Verdulería"
+
+#. module: asset_gps_geoengine
+#. odoo-python
+#: code:addons/asset_gps_geoengine/models/device_gps_place.py:0
+msgid "Hardware Store"
+msgstr "Ferretería"
+
+#. module: asset_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:asset_gps_geoengine.view_resource_asset_search_gps_trail
+msgid "Has Operator"
+msgstr ""
+
+#. module: asset_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:asset_gps_geoengine.view_hr_employee_search_gps_trail
+msgid "Has Vehicle with GPS"
+msgstr ""
+
+#. module: asset_gps_geoengine
+#: model:ir.model.fields,help:asset_gps_geoengine.field_device_client_visit__trip_speed_max
+msgid ""
+"Highest speed on the way to this parcel: from the departure of the device's "
+"previous visit (or the first position of the day) to this arrival."
+msgstr ""
+
+#. module: asset_gps_geoengine
+#. odoo-python
+#: code:addons/asset_gps_geoengine/models/device_gps_place.py:0
+msgid "Hospital"
+msgstr "Hospital"
+
+#. module: asset_gps_geoengine
+#. odoo-python
+#: code:addons/asset_gps_geoengine/models/device_gps_place.py:0
+msgid "Hotel"
+msgstr "Hotel"
+
+#. module: asset_gps_geoengine
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_client_visit__id
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_device__id
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_geo_fence__id
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_gps_place__id
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_gps_speed_alert__id
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_gps_speed_day__id
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_gps_speed_event__id
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_gps_stop__id
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_report_asset_gps_geoengine_report_device_gps_stop__id
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_wizard_device_device_view_trail__id
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_wizard_device_device_view_trail_result__id
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_wizard_device_gps_stop_refresh__id
+msgid "ID"
+msgstr ""
+
+#. module: asset_gps_geoengine
+#: model:ir.model.fields,help:asset_gps_geoengine.field_wizard_device_gps_stop_refresh__date_to
+msgid "Inclusive."
+msgstr "Incluido."
+
+#. module: asset_gps_geoengine
+#: model:ir.model,name:asset_gps_geoengine.model_device_geo_fence
+msgid "IoT GPS Geofence"
+msgstr "Geocerca GPS"
+
+#. module: asset_gps_geoengine
+#: model:ir.model,name:asset_gps_geoengine.model_device_device
+msgid "IoT Remote Device"
+msgstr ""
+
+#. module: asset_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:asset_gps_geoengine.view_hr_employee_search_gps_trail
+msgid "Job Position"
+msgstr ""
+
+#. module: asset_gps_geoengine
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_gps_stop__kind
+msgid "Kind"
+msgstr "Tipo"
+
+#. module: asset_gps_geoengine
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_gps_place__label
+msgid "Label"
+msgstr "Etiqueta"
+
+#. module: asset_gps_geoengine
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_gps_speed_day__last_seen
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_gps_stop__last_seen
+#: model_terms:ir.ui.view,arch_db:asset_gps_geoengine.view_device_gps_speed_day_list
+msgid "Last Position"
+msgstr "Última posición"
+
+#. module: asset_gps_geoengine
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_gps_place__write_uid
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_gps_speed_alert__write_uid
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_gps_stop__write_uid
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_wizard_device_gps_stop_refresh__write_uid
+msgid "Last Updated by"
+msgstr ""
+
+#. module: asset_gps_geoengine
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_gps_place__write_date
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_gps_speed_alert__write_date
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_gps_stop__write_date
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_wizard_device_gps_stop_refresh__write_date
+msgid "Last Updated on"
+msgstr ""
+
+#. module: asset_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:asset_gps_geoengine.report_device_gps_stop
+msgid "Last position:"
+msgstr "Última posición:"
+
+#. module: asset_gps_geoengine
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_gps_place__latitude
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_gps_speed_event__latitude
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_gps_stop__latitude
+msgid "Latitude"
+msgstr "Latitud"
+
+#. module: asset_gps_geoengine
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_gps_speed_event__level
+#: model_terms:ir.ui.view,arch_db:asset_gps_geoengine.view_device_gps_speed_event_search
+msgid "Level"
+msgstr "Nivel"
+
+#. module: asset_gps_geoengine
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_wizard_device_device_view_trail_result__license_plate
+msgid "License Plate"
+msgstr ""
+
+#. module: asset_gps_geoengine
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_gps_speed_event__speed_limit
+msgid "Limit Exceeded (km/h)"
+msgstr ""
+
+#. module: asset_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:asset_gps_geoengine.view_device_device_search_gps_trail_asset
+msgid "Linked Asset"
+msgstr ""
+
+#. module: asset_gps_geoengine
+#: model:ir.model.fields,help:asset_gps_geoengine.field_device_gps_stop__date
+msgid "Local day of the arrival."
+msgstr "Día local de la llegada."
+
+#. module: asset_gps_geoengine
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_gps_place__longitude
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_gps_speed_event__longitude
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_gps_stop__longitude
+msgid "Longitude"
+msgstr "Longitud"
+
+#. module: asset_gps_geoengine
+#: model:ir.model.fields,help:asset_gps_geoengine.field_device_gps_speed_day__speed_min
+msgid ""
+"Lowest speed while moving (5 km/h or more); stops and GPS drift are not "
+"counted."
+msgstr ""
+
+#. module: asset_gps_geoengine
+#: model:ir.model.fields,help:asset_gps_geoengine.field_device_client_visit__trip_speed_min
+msgid "Lowest speed while moving on the way to this parcel."
+msgstr ""
+
+#. module: asset_gps_geoengine
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_gps_stop__map_url
+#: model_terms:ir.ui.view,arch_db:asset_gps_geoengine.device_gps_stop_view_list
+msgid "Map"
+msgstr "Mapa"
+
+#. module: asset_gps_geoengine
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_gps_stop__map_color
+msgid "Map Color"
+msgstr "Color en el mapa"
+
+#. module: asset_gps_geoengine
+#. odoo-python
+#: code:addons/asset_gps_geoengine/models/device_gps_place.py:0
+msgid "Market"
+msgstr "Mercado"
+
+#. module: asset_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:asset_gps_geoengine.view_device_gps_speed_alert_list
+#: model_terms:ir.ui.view,arch_db:asset_gps_geoengine.view_device_gps_speed_day_list
+msgid "Max Speed"
+msgstr "Vel. máxima"
+
+#. module: asset_gps_geoengine
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_gps_speed_alert__speed_max
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_gps_speed_day__speed_max
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_gps_speed_event__speed_max
+msgid "Max Speed (km/h)"
+msgstr ""
+
+#. module: asset_gps_geoengine
+#: model:ir.model.fields,help:asset_gps_geoengine.field_device_gps_speed_day__speed_avg
+msgid "Mean of the readings while moving."
+msgstr ""
+
+#. module: asset_gps_geoengine
+#. odoo-python
+#: code:addons/asset_gps_geoengine/models/device_gps_place.py:0
+msgid "Mechanic"
+msgstr "Taller mecánico"
+
+#. module: asset_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:asset_gps_geoengine.view_device_gps_speed_day_list
+msgid "Min Speed"
+msgstr "Vel. mínima"
+
+#. module: asset_gps_geoengine
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_gps_speed_day__speed_min
+msgid "Min Speed (km/h)"
+msgstr ""
+
+#. module: asset_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:asset_gps_geoengine.view_device_gps_speed_alert_list
+msgid "Minutes"
+msgstr "Minutos"
+
+#. module: asset_gps_geoengine
+#. odoo-python
+#: code:addons/asset_gps_geoengine/models/device_gps_place.py:0
+msgid "Motel"
+msgstr "Motel"
+
+#. module: asset_gps_geoengine
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_gps_speed_day__moving_positions
+msgid "Moving Positions"
+msgstr ""
+
+#. module: asset_gps_geoengine
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_gps_place__name
+msgid "Name"
+msgstr "Nombre"
+
+#. module: asset_gps_geoengine
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_gps_speed_event__nearby_partner_id
+#: model_terms:ir.ui.view,arch_db:asset_gps_geoengine.view_device_gps_speed_event_search
+msgid "Nearest Client"
+msgstr "Cliente cercano"
+
+#. module: asset_gps_geoengine
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_gps_stop__nearby_geofence_id
+msgid "Nearest Client Parcel"
+msgstr "Parcela de cliente más cercana"
+
+#. module: asset_gps_geoengine
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_gps_speed_event__nearby_geofence_id
+msgid "Nearest Parcel"
+msgstr "Parcela más cercana"
+
+#. module: asset_gps_geoengine
+#: model_terms:ir.actions.act_window,help:asset_gps_geoengine.action_device_gps_speed_day
+msgid "No GPS positions"
+msgstr "Sin posiciones GPS"
+
+#. module: asset_gps_geoengine
+#: model:ir.model.fields.selection,name:asset_gps_geoengine.selection__device_gps_stop__kind__no_signal
+#: model_terms:ir.ui.view,arch_db:asset_gps_geoengine.device_gps_stop_view_search
+msgid "No Positions"
+msgstr "Sin posiciones"
+
+#. module: asset_gps_geoengine
+#: model:ir.model.fields,help:asset_gps_geoengine.field_device_gps_stop__last_seen
+msgid "No Positions rows: the tracker's last position before that day."
+msgstr "Filas Sin posiciones: la última posición del rastreador antes de ese día."
+
+#. module: asset_gps_geoengine
+#: model:ir.model.fields,help:asset_gps_geoengine.field_device_gps_stop__kind
+msgid ""
+"No Positions: the vehicle's tracker sent nothing that day, so the vehicle is"
+" listed even though there is no stop to show."
+msgstr "Sin posiciones: el rastreador del vehículo no envió nada ese día; el vehículo se lista aunque no haya paradas que mostrar."
+
+#. module: asset_gps_geoengine
+#: model_terms:ir.actions.act_window,help:asset_gps_geoengine.action_device_gps_speed_alert
+msgid "No alerts"
+msgstr "Sin alertas"
+
+#. module: asset_gps_geoengine
+#. odoo-python
+#: code:addons/asset_gps_geoengine/wizards/wizard_device_device_view_trail.py:0
+msgid "No assets selected"
+msgstr ""
+
+#. module: asset_gps_geoengine
+#. odoo-python
+#: code:addons/asset_gps_geoengine/wizards/wizard_device_device_view_trail.py:0
+msgid "No operators selected"
+msgstr ""
+
+#. module: asset_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:asset_gps_geoengine.report_device_gps_stop
+msgid "No positions this day."
+msgstr "Sin posiciones este día."
+
+#. module: asset_gps_geoengine
+#: model_terms:ir.actions.act_window,help:asset_gps_geoengine.action_device_gps_speed_event
+msgid "No speeding events"
+msgstr "Sin excesos de velocidad"
+
+#. module: asset_gps_geoengine
+#: model_terms:ir.actions.act_window,help:asset_gps_geoengine.device_gps_stop_action
+msgid "No stops"
+msgstr "Sin paradas"
+
+#. module: asset_gps_geoengine
+#: model_terms:ir.actions.act_window,help:asset_gps_geoengine.device_gps_stop_map_action
+msgid "No vehicle parked and nothing to mark"
+msgstr "No hay unidades estacionadas ni lugares por marcar"
+
+#. module: asset_gps_geoengine
+#: model_terms:ir.actions.act_window,help:asset_gps_geoengine.device_gps_stop_to_mark_action
+msgid "Nothing to mark"
+msgstr "No hay nada por marcar"
+
+#. module: asset_gps_geoengine
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_gps_speed_alert__user_id
+#: model_terms:ir.ui.view,arch_db:asset_gps_geoengine.view_device_gps_speed_alert_list
+msgid "Notified"
+msgstr "Avisado a"
+
+#. module: asset_gps_geoengine
+#: model_terms:ir.actions.act_window,help:asset_gps_geoengine.action_device_gps_speed_day
+msgid ""
+"One row per vehicle and day with the maximum, minimum and average\n"
+"               speed of the whole route. The ones that passed the device's\n"
+"               critical limit are in red."
+msgstr ""
+"Una fila por vehículo y día con la velocidad máxima, mínima y\n"
+"               promedio de todo el recorrido. En rojo los que superaron el\n"
+"               límite crítico del dispositivo."
+
+#. module: asset_gps_geoengine
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_gps_stop__ongoing
+#: model_terms:ir.ui.view,arch_db:asset_gps_geoengine.device_gps_stop_view_search
+#: model_terms:ir.ui.view,arch_db:asset_gps_geoengine.report_device_gps_stop
+msgid "Ongoing"
+msgstr "En curso"
+
+#. module: asset_gps_geoengine
+#: model:geoengine.raster.layer,name:asset_gps_geoengine.raster_layer_device_gps_stop_osm
+msgid "OpenStreetMap"
+msgstr "OpenStreetMap"
+
+#. module: asset_gps_geoengine
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_client_visit__operator_id
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_gps_speed_alert__operator_id
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_gps_speed_day__operator_id
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_gps_speed_event__operator_id
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_gps_stop__operator_id
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_wizard_device_device_view_trail__operator_ids
+#: model_terms:ir.ui.view,arch_db:asset_gps_geoengine.device_gps_stop_view_search
+#: model_terms:ir.ui.view,arch_db:asset_gps_geoengine.view_device_client_visit_search_asset
+#: model_terms:ir.ui.view,arch_db:asset_gps_geoengine.view_device_device_search_gps_trail_asset
+#: model_terms:ir.ui.view,arch_db:asset_gps_geoengine.view_device_gps_speed_alert_search
+#: model_terms:ir.ui.view,arch_db:asset_gps_geoengine.view_device_gps_speed_day_search
+#: model_terms:ir.ui.view,arch_db:asset_gps_geoengine.view_device_gps_speed_event_search
+#: model_terms:ir.ui.view,arch_db:asset_gps_geoengine.view_gps_trail_result_search_asset
+msgid "Operator"
+msgstr "Operador"
+
+#. module: asset_gps_geoengine
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_wizard_device_device_view_trail_result__operator_name
+#: model_terms:ir.ui.view,arch_db:asset_gps_geoengine.view_hr_employee_search_gps_trail
+msgid "Operator Name"
+msgstr ""
+
+#. module: asset_gps_geoengine
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_wizard_device_device_view_trail_result__operator_id
+#: model_terms:ir.ui.view,arch_db:asset_gps_geoengine.view_resource_asset_search_gps_trail
+msgid "Operator/Driver"
+msgstr ""
+
+#. module: asset_gps_geoengine
+#: model_terms:ir.actions.act_window,help:asset_gps_geoengine.device_gps_stop_map_action
+msgid ""
+"Orange: a geofence without a client, or a place without a\n"
+"               geofence, where a vehicle stayed more than 20 minutes. It stays\n"
+"               orange until someone gives the geofence a client or draws one\n"
+"               there. Outside every geofence the point says what the place is:\n"
+"               a fonda, a gas station, a street."
+msgstr "Naranja: una geocerca sin cliente, o un lugar sin geocerca, donde una unidad estuvo más de 20 minutos. Se queda en naranja hasta que alguien le asigne cliente a la geocerca o dibuje una ahí. Fuera de las geocercas, el punto dice qué lugar es: una fonda, una gasolinera, una calle."
+
+#. module: asset_gps_geoengine
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_gps_place__osm_category
+msgid "Osm Category"
+msgstr "Categoría OSM"
+
+#. module: asset_gps_geoengine
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_gps_place__osm_type
+msgid "Osm Type"
+msgstr "Tipo OSM"
+
+#. module: asset_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:asset_gps_geoengine.device_gps_stop_view_search
+msgid "Outside Geofences"
+msgstr "Fuera de geocercas"
+
+#. module: asset_gps_geoengine
+#: model:ir.model.fields,help:asset_gps_geoengine.field_device_gps_stop__place_id
+msgid ""
+"Outside every geofence: what the place is, as OpenStreetMap names it -- a "
+"fonda, a gas station, a street."
+msgstr ""
+"Fuera de las geocercas: qué lugar es, según OpenStreetMap: una fonda, una "
+"gasolinera, una calle."
+
+#. module: asset_gps_geoengine
+#. odoo-python
+#: code:addons/asset_gps_geoengine/models/device_gps_stop.py:0
+msgid "Outside geofences"
+msgstr "Fuera de geocercas"
+
+#. module: asset_gps_geoengine
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_gps_speed_day__over_critical
+msgid "Over Critical Limit"
+msgstr ""
+
+#. module: asset_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:asset_gps_geoengine.view_device_gps_speed_day_search
+msgid "Over the Critical Limit"
+msgstr "Superó el límite crítico"
+
+#. module: asset_gps_geoengine
+#: model:ir.actions.act_window,name:asset_gps_geoengine.device_gps_stop_map_action
+#: model:ir.ui.menu,name:asset_gps_geoengine.device_gps_stop_map_menu
+msgid "Parked Vehicles and Places to Mark"
+msgstr "Unidades estacionadas y lugares por marcar"
+
+#. module: asset_gps_geoengine
+#: model:ir.model.fields,help:asset_gps_geoengine.field_device_device__stay_since
+msgid "Parked: its arrival. Moving: when it left its last stop."
+msgstr "Estacionada: su llegada. En movimiento: cuándo salió de su última parada."
+
+#. module: asset_gps_geoengine
+#. odoo-python
+#: code:addons/asset_gps_geoengine/models/device_gps_place.py:0
+msgid "Parking"
+msgstr "Estacionamiento"
+
+#. module: asset_gps_geoengine
+#. odoo-python
+#: code:addons/asset_gps_geoengine/models/device_gps_place.py:0
+msgid "Pharmacy"
+msgstr "Farmacia"
+
+#. module: asset_gps_geoengine
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_gps_speed_alert__place
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_gps_speed_event__place
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_gps_stop__place
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_gps_stop__place_id
+#: model_terms:ir.ui.view,arch_db:asset_gps_geoengine.device_gps_stop_view_search
+#: model_terms:ir.ui.view,arch_db:asset_gps_geoengine.report_device_gps_stop
+msgid "Place"
+msgstr "Lugar"
+
+#. module: asset_gps_geoengine
+#: model:ir.model,name:asset_gps_geoengine.model_device_gps_place
+msgid "Place Outside Geofences"
+msgstr "Lugar fuera de geocercas"
+
+#. module: asset_gps_geoengine
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_gps_stop__the_point
+msgid "Place on Map"
+msgstr "Punto en el mapa"
+
+#. module: asset_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:asset_gps_geoengine.view_device_device_geoengine_asset
+msgid "Place pending: stops refresh every 10 minutes."
+msgstr "Lugar pendiente: las paradas se actualizan cada 10 minutos."
+
+#. module: asset_gps_geoengine
+#: model:geoengine.vector.layer,name:asset_gps_geoengine.vector_layer_device_device_places_to_mark
+#: model:ir.actions.act_window,name:asset_gps_geoengine.device_gps_stop_to_mark_action
+#: model:ir.ui.menu,name:asset_gps_geoengine.device_gps_stop_to_mark_menu
+msgid "Places to Mark"
+msgstr "Lugares por marcar"
+
+#. module: asset_gps_geoengine
+#. odoo-python
+#: code:addons/asset_gps_geoengine/wizards/wizard_device_device_view_trail.py:0
+msgid "Please select at least one asset with a GPS device"
+msgstr ""
+
+#. module: asset_gps_geoengine
+#. odoo-python
+#: code:addons/asset_gps_geoengine/wizards/wizard_device_device_view_trail.py:0
+msgid "Please select at least one operator with an assigned vehicle"
+msgstr ""
+
+#. module: asset_gps_geoengine
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_gps_speed_day__positions
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_gps_speed_event__positions
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_gps_stop__positions
+msgid "Positions"
+msgstr "Posiciones"
+
+#. module: asset_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:asset_gps_geoengine.wizard_device_gps_stop_refresh_view_form
+msgid ""
+"Recomputes the stops of the chosen days from the stored\n"
+"                    GPS positions. Every ten minutes the scheduled action\n"
+"                    already does this for yesterday and today; use this for\n"
+"                    older days."
+msgstr "Recalcula las paradas de los días elegidos a partir de las posiciones GPS guardadas. La acción programada ya lo hace cada diez minutos para ayer y hoy; usa esto para días anteriores."
+
+#. module: asset_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:asset_gps_geoengine.wizard_device_gps_stop_refresh_view_form
+msgid "Refresh"
+msgstr "Actualizar"
+
+#. module: asset_gps_geoengine
+#: model:ir.actions.act_window,name:asset_gps_geoengine.wizard_device_gps_stop_refresh_action
+#: model:ir.ui.menu,name:asset_gps_geoengine.wizard_device_gps_stop_refresh_menu
+msgid "Refresh Stops"
+msgstr "Actualizar paradas"
+
+#. module: asset_gps_geoengine
+#: model:ir.model,name:asset_gps_geoengine.model_wizard_device_gps_stop_refresh
+msgid "Refresh Vehicle Stops from GPS Positions"
+msgstr "Actualizar paradas de vehículos desde posiciones GPS"
+
+#. module: asset_gps_geoengine
+#. odoo-python
+#: code:addons/asset_gps_geoengine/models/device_gps_place.py:0
+msgid "Restaurant"
+msgstr "Restaurante / fonda"
+
+#. module: asset_gps_geoengine
+#. odoo-python
+#: code:addons/asset_gps_geoengine/models/device_gps_place.py:0
+msgid "School"
+msgstr "Escuela"
+
+#. module: asset_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:asset_gps_geoengine.view_resource_asset_search_gps_trail
+msgid "Search Assets for GPS Trail"
+msgstr ""
+
+#. module: asset_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:asset_gps_geoengine.view_hr_employee_search_gps_trail
+msgid "Search Operators for GPS Trail"
+msgstr ""
+
+#. module: asset_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:asset_gps_geoengine.view_gps_trail_wizard_form_asset
+msgid "Search by vehicle, operator, plate, or device..."
+msgstr ""
+
+#. module: asset_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:asset_gps_geoengine.view_gps_trail_wizard_form_asset
+msgid "Search operators by name..."
+msgstr ""
+
+#. module: asset_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:asset_gps_geoengine.view_gps_trail_wizard_form_asset
+msgid "Select Assets"
+msgstr ""
+
+#. module: asset_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:asset_gps_geoengine.view_gps_trail_wizard_form_asset
+msgid "Select Operators"
+msgstr ""
+
+#. module: asset_gps_geoengine
+#: model:ir.model.fields,help:asset_gps_geoengine.field_wizard_device_device_view_trail__asset_ids
+msgid "Select assets/vehicles with GPS tracking devices"
+msgstr ""
+
+#. module: asset_gps_geoengine
+#: model:ir.model.fields,help:asset_gps_geoengine.field_wizard_device_device_view_trail__operator_ids
+msgid "Select operators/drivers to view their assigned vehicle trails"
+msgstr ""
+
+#. module: asset_gps_geoengine
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_wizard_device_device_view_trail__selection_mode
+msgid "Selection Mode"
+msgstr ""
+
+#. module: asset_gps_geoengine
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_device__stay_since
+#: model_terms:ir.ui.view,arch_db:asset_gps_geoengine.view_device_device_geoengine_asset
+msgid "Since"
+msgstr "Desde"
+
+#. module: asset_gps_geoengine
+#: model:ir.actions.act_window,name:asset_gps_geoengine.action_device_gps_speed_alert
+#: model:ir.ui.menu,name:asset_gps_geoengine.menu_device_gps_speed_alert
+msgid "Speed Alerts"
+msgstr "Alertas de Velocidad"
+
+#. module: asset_gps_geoengine
+#: model:ir.model,name:asset_gps_geoengine.model_device_gps_speed_event
+msgid "Speeding Event"
+msgstr ""
+
+#. module: asset_gps_geoengine
+#: model:ir.actions.act_window,name:asset_gps_geoengine.action_device_gps_speed_event
+#: model:ir.ui.menu,name:asset_gps_geoengine.menu_device_gps_speed_event
+msgid "Speeding Events"
+msgstr "Excesos de Velocidad"
+
+#. module: asset_gps_geoengine
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_gps_speed_alert__start
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_gps_speed_event__start
+msgid "Start"
+msgstr ""
+
+#. module: asset_gps_geoengine
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_gps_speed_event__state_id
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_gps_stop__state_id
+#: model_terms:ir.ui.view,arch_db:asset_gps_geoengine.device_gps_stop_view_search
+#: model_terms:ir.ui.view,arch_db:asset_gps_geoengine.view_device_gps_speed_event_search
+msgid "State"
+msgstr "Estado"
+
+#. module: asset_gps_geoengine
+#: model:ir.model.fields.selection,name:asset_gps_geoengine.selection__device_gps_stop__kind__stop
+msgid "Stop"
+msgstr "Parada"
+
+#. module: asset_gps_geoengine
+#: model:geoengine.vector.layer,name:asset_gps_geoengine.vector_layer_device_gps_stop
+#: model:ir.actions.act_window,name:asset_gps_geoengine.device_gps_stop_action
+#: model:ir.ui.menu,name:asset_gps_geoengine.device_gps_stop_menu
+#: model_terms:ir.ui.view,arch_db:asset_gps_geoengine.device_gps_stop_view_search
+msgid "Stops"
+msgstr "Paradas"
+
+#. module: asset_gps_geoengine
+#. odoo-python
+#: code:addons/asset_gps_geoengine/wizards/wizard_device_gps_stop_refresh.py:0
+msgid "Stops refreshed."
+msgstr "Paradas actualizadas."
+
+#. module: asset_gps_geoengine
+#. odoo-python
+#: code:addons/asset_gps_geoengine/models/device_gps_place.py:0
+msgid "Store"
+msgstr "Tienda"
+
+#. module: asset_gps_geoengine
+#: model:ir.model.fields,help:asset_gps_geoengine.field_device_gps_place__address
+msgid "Street and locality."
+msgstr "Calle y localidad."
+
+#. module: asset_gps_geoengine
+#. odoo-python
+#: code:addons/asset_gps_geoengine/models/device_gps_place.py:0
+msgid "Supermarket"
+msgstr "Supermercado"
+
+#. module: asset_gps_geoengine
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_gps_place__the_point
+msgid "The Point"
+msgstr "Punto"
+
+#. module: asset_gps_geoengine
+#: model:ir.model.fields,help:asset_gps_geoengine.field_device_gps_speed_event__speed_limit
+msgid "The highest of the device's limits that the burst went over."
+msgstr ""
+
+#. module: asset_gps_geoengine
+#: model:ir.model.fields,help:asset_gps_geoengine.field_device_gps_place__name
+msgid "The place's own name, when mapped."
+msgstr "Nombre propio del lugar, si está en el mapa."
+
+#. module: asset_gps_geoengine
+#. odoo-python
+#: code:addons/asset_gps_geoengine/wizards/wizard_device_gps_stop_refresh.py:0
+msgid "The start date must not be after the end date."
+msgstr "La fecha inicial no puede ser posterior a la final."
+
+#. module: asset_gps_geoengine
+#: model:ir.model.fields,help:asset_gps_geoengine.field_device_gps_stop__to_mark
+msgid ""
+"The vehicle stayed more than 20 minutes at a place with no client geofence "
+"and no internal one. Stays set until someone gives the geofence a client or "
+"draws one there."
+msgstr "La unidad estuvo más de 20 minutos en un lugar sin geocerca con cliente ni interna. Se queda marcado hasta que alguien le asigne cliente a la geocerca o dibuje una ahí."
+
+#. module: asset_gps_geoengine
+#: model:ir.model.fields,help:asset_gps_geoengine.field_device_gps_stop__operator_id
+msgid "The vehicle's operator when the stop was recorded."
+msgstr "El operador del vehículo cuando se registró la parada."
+
+#. module: asset_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:asset_gps_geoengine.view_device_device_geoengine_asset
+msgid "There for:"
+msgstr "Tiempo ahí:"
+
+#. module: asset_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:asset_gps_geoengine.device_gps_stop_view_search
+#: model_terms:ir.ui.view,arch_db:asset_gps_geoengine.view_device_gps_speed_day_search
+#: model_terms:ir.ui.view,arch_db:asset_gps_geoengine.view_device_gps_speed_event_search
+msgid "This Week"
+msgstr "Esta semana"
+
+#. module: asset_gps_geoengine
+#. odoo-python
+#: code:addons/asset_gps_geoengine/models/device_gps_place.py:0
+msgid "Tire Shop"
+msgstr "Llantera"
+
+#. module: asset_gps_geoengine
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_geo_fence__to_mark
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_gps_stop__to_mark
+#: model_terms:ir.ui.view,arch_db:asset_gps_geoengine.device_gps_stop_view_search
+msgid "To Mark"
+msgstr "Por marcar"
+
+#. module: asset_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:asset_gps_geoengine.device_gps_stop_view_search
+#: model_terms:ir.ui.view,arch_db:asset_gps_geoengine.view_device_gps_speed_alert_search
+#: model_terms:ir.ui.view,arch_db:asset_gps_geoengine.view_device_gps_speed_day_search
+#: model_terms:ir.ui.view,arch_db:asset_gps_geoengine.view_device_gps_speed_event_search
+msgid "Today"
+msgstr "Hoy"
+
+#. module: asset_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:asset_gps_geoengine.device_gps_stop_view_list
+#: model_terms:ir.ui.view,arch_db:asset_gps_geoengine.view_device_gps_speed_event_list
+msgid "Total"
+msgstr "Total"
+
+#. module: asset_gps_geoengine
+#. odoo-python
+#: code:addons/asset_gps_geoengine/models/device_gps_place.py:0
+msgid "Town Hall"
+msgstr "Presidencia municipal"
+
+#. module: asset_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:asset_gps_geoengine.view_device_client_visit_list_asset
+msgid "Trip Avg Speed"
+msgstr "Vel. prom. trayecto"
+
+#. module: asset_gps_geoengine
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_client_visit__trip_speed_avg
+msgid "Trip Avg Speed (km/h)"
+msgstr ""
+
+#. module: asset_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:asset_gps_geoengine.view_device_client_visit_list_asset
+msgid "Trip Max Speed"
+msgstr "Vel. máx. trayecto"
+
+#. module: asset_gps_geoengine
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_client_visit__trip_speed_max
+msgid "Trip Max Speed (km/h)"
+msgstr ""
+
+#. module: asset_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:asset_gps_geoengine.view_device_client_visit_list_asset
+msgid "Trip Min Speed"
+msgstr "Vel. mín. trayecto"
+
+#. module: asset_gps_geoengine
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_client_visit__trip_speed_min
+msgid "Trip Min Speed (km/h)"
+msgstr ""
+
+#. module: asset_gps_geoengine
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_client_visit__asset_id
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_device__asset_name
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_gps_speed_alert__asset_id
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_gps_speed_day__asset_id
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_gps_speed_event__asset_id
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_gps_stop__asset_id
+#: model_terms:ir.ui.view,arch_db:asset_gps_geoengine.device_gps_stop_view_search
+#: model_terms:ir.ui.view,arch_db:asset_gps_geoengine.view_device_client_visit_search_asset
+#: model_terms:ir.ui.view,arch_db:asset_gps_geoengine.view_device_gps_speed_day_search
+#: model_terms:ir.ui.view,arch_db:asset_gps_geoengine.view_device_gps_speed_event_search
+msgid "Vehicle"
+msgstr "Vehículo"
+
+#. module: asset_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:asset_gps_geoengine.view_resource_asset_search_gps_trail
+msgid "Vehicle Model"
+msgstr ""
+
+#. module: asset_gps_geoengine
+#: model:ir.model,name:asset_gps_geoengine.model_device_gps_stop
+msgid "Vehicle Stop"
+msgstr "Parada de vehículo"
+
+#. module: asset_gps_geoengine
+#: model:ir.actions.report,name:asset_gps_geoengine.report_device_gps_stop_action
+#: model_terms:ir.ui.view,arch_db:asset_gps_geoengine.report_device_gps_stop
+msgid "Vehicle Stops"
+msgstr "Paradas de vehículos"
+
+#. module: asset_gps_geoengine
+#: model:ir.model,name:asset_gps_geoengine.model_report_asset_gps_geoengine_report_device_gps_stop
+msgid "Vehicle Stops Report"
+msgstr "Reporte de paradas de vehículos"
+
+#. module: asset_gps_geoengine
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_wizard_device_gps_stop_refresh__device_ids
+#: model_terms:ir.ui.view,arch_db:asset_gps_geoengine.view_resource_asset_search_gps_trail
+msgid "Vehicles"
+msgstr "Vehículos"
+
+#. module: asset_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:asset_gps_geoengine.device_gps_stop_view_list
+#: model_terms:ir.ui.view,arch_db:asset_gps_geoengine.view_device_gps_speed_event_list
+msgid "View Trail"
+msgstr "Ver recorrido"
+
+#. module: asset_gps_geoengine
+#. odoo-python
+#: code:addons/asset_gps_geoengine/models/device_gps_place.py:0
+msgid "Warehouse"
+msgstr "Bodega"
+
+#. module: asset_gps_geoengine
+#: model:ir.model.fields.selection,name:asset_gps_geoengine.selection__device_gps_speed_event__level__warning
+#: model_terms:ir.ui.view,arch_db:asset_gps_geoengine.view_device_gps_speed_event_search
+msgid "Warning"
+msgstr "Advertencia"
+
+#. module: asset_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:asset_gps_geoengine.view_device_gps_speed_event_search
+msgid "Week"
+msgstr "Semana"
+
+#. module: asset_gps_geoengine
+#: model:ir.model.fields,field_description:asset_gps_geoengine.field_device_device__stay_place
+#: model_terms:ir.ui.view,arch_db:asset_gps_geoengine.view_device_gps_speed_alert_list
+msgid "Where"
+msgstr "Dónde"
+
+#. module: asset_gps_geoengine
+#: model:ir.model.fields,help:asset_gps_geoengine.field_device_device__stay_place
+msgid ""
+"Where the vehicle is parked right now: the geofence and its client, or the "
+"place outside every geofence. Empty while moving."
+msgstr ""
+"Dónde está estacionada la unidad ahora: la geocerca y su cliente, o el "
+"lugar fuera de las geocercas. Vacío mientras se mueve."
+
+#. module: asset_gps_geoengine
+#: model:ir.model.fields,help:asset_gps_geoengine.field_device_gps_speed_alert__user_id
+msgid ""
+"Who received the activity: the operator's manager, else the fallback user of"
+" the unmapped-stop notification."
+msgstr ""
+
+#. module: asset_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:asset_gps_geoengine.view_resource_asset_search_gps_trail
+msgid "With GPS Device"
+msgstr ""
+
+#. module: asset_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:asset_gps_geoengine.device_gps_stop_view_search
+msgid "Yesterday"
+msgstr "Ayer"
+
+#. module: asset_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:asset_gps_geoengine.device_gps_stop_view_geoengine
+msgid "h"
+msgstr "h"
+
+#~ msgid ""
+#~ "A vehicle is parked here right now and has been for more than 20 minutes. "
+#~ "Cleared as soon as it leaves."
+#~ msgstr ""
+#~ "Hay una unidad estacionada aquí ahora mismo desde hace más de 20 minutos. "
+#~ "Se quita en cuanto sale."
+
+#~ msgid ""
+#~ "Geofences turn orange while a vehicle has been parked on them for\n"
+#~ "               more than 20 minutes, and clear when it leaves. Outside every\n"
+#~ "               geofence the point says what the place is: a fonda, a gas\n"
+#~ "               station, a street. Red: parked there more than 20 minutes."
+#~ msgstr ""
+#~ "Las geocercas se pintan de naranja mientras una unidad lleva más de 20 "
+#~ "minutos estacionada en ellas, y se despintan cuando sale. Fuera de las "
+#~ "geocercas, el punto dice qué lugar es: una fonda, una gasolinera, una calle. "
+#~ "Rojo: estacionada ahí más de 20 minutos."
+
+#~ msgid "Geofences with a Vehicle Parked over 20 min"
+#~ msgstr "Geocercas con unidad estacionada más de 20 min"
+
+#~ msgid ""
+#~ "Green on a geofence; blue outside every geofence; red outside every geofence"
+#~ " for more than 20 minutes."
+#~ msgstr ""
+#~ "Verde en una geocerca; azul fuera de todas las geocercas; rojo fuera de "
+#~ "todas las geocercas por más de 20 minutos."
+
+#~ msgid "No vehicle parked right now"
+#~ msgstr "No hay unidades estacionadas ahora"
+
+#~ msgid "Outside Geofences over 20 min"
+#~ msgstr "Fuera de geocercas más de 20 min"
+
+#~ msgid "Parked Vehicles Map"
+#~ msgstr "Mapa de unidades estacionadas"
+
+#~ msgid "Vehicle Parked"
+#~ msgstr "Unidad estacionada"
+
+#~ msgid ""
+#~ "Green on a geofence; orange outside every geofence; red outside every "
+#~ "geofence for more than 20 minutes."
+#~ msgstr ""
+#~ "Verde en una geocerca; naranja fuera de todas las geocercas; rojo fuera de "
+#~ "todas las geocercas por más de 20 minutos."
+
+#~ msgid "No stops outside geofences"
+#~ msgstr "No hay paradas fuera de geocercas"
+
+#~ msgid ""
+#~ "Places where a vehicle stopped outside every geofence. Red: more\n"
+#~ "               than 20 minutes there, a place worth mapping as a geofence."
+#~ msgstr ""
+#~ "Lugares donde un vehículo se detuvo fuera de todas las geocercas. Rojo: más "
+#~ "de 20 minutos ahí, un lugar que vale la pena mapear como geocerca."
+
+#~ msgid "Stops outside Geofences"
+#~ msgstr "Paradas fuera de geocercas"

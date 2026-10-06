@@ -1,0 +1,192 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* approval_base_install_request
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-09-27 05:12+0000\n"
+"PO-Revision-Date: 2026-09-27 05:12+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: approval_base_install_request
+#: model:approval.category,description:approval_base_install_request.approval_category_module_activation
+msgid "A user asking the administrators to activate an application."
+msgstr ""
+
+#. module: approval_base_install_request
+#. odoo-python
+#: code:addons/approval_base_install_request/models/base_module_install_request.py:0
+msgid "Activation of \"%s\""
+msgstr ""
+
+#. module: approval_base_install_request
+#. odoo-python
+#: code:addons/approval_base_install_request/models/base_module_install_request.py:0
+msgid ""
+"Activation of %(module)s was approved. An administrator installs it from "
+"this request."
+msgstr ""
+
+#. module: approval_base_install_request
+#: model:approval.category.step,name:approval_base_install_request.approval_category_step_module_activation
+msgid "Administrator"
+msgstr ""
+
+#. module: approval_base_install_request
+#: model:ir.model.fields,field_description:approval_base_install_request.field_base_module_install_request__date_approval_granted
+msgid "Approval Granted Date"
+msgstr ""
+
+#. module: approval_base_install_request
+#: model:ir.model.fields,field_description:approval_base_install_request.field_base_module_install_request__approval_progress
+msgid "Approval Progress"
+msgstr ""
+
+#. module: approval_base_install_request
+#: model:ir.model.fields,field_description:approval_base_install_request.field_base_module_install_request__approval_request_id
+#: model_terms:ir.ui.view,arch_db:approval_base_install_request.base_module_install_request_view_form_record_approval
+msgid "Approval Request"
+msgstr ""
+
+#. module: approval_base_install_request
+#: model:ir.model.fields,field_description:approval_base_install_request.field_base_module_install_request__date_approval_requested
+msgid "Approval Requested Date"
+msgstr ""
+
+#. module: approval_base_install_request
+#: model:ir.model.fields,field_description:approval_base_install_request.field_base_module_install_request__approval_required
+msgid "Approval Required"
+msgstr ""
+
+#. module: approval_base_install_request
+#: model:ir.model.fields,field_description:approval_base_install_request.field_base_module_install_request__approval_state
+msgid "Approval Status"
+msgstr ""
+
+#. module: approval_base_install_request
+#: model:ir.model.fields,field_description:approval_base_install_request.field_base_module_install_request__approval_user_ids
+msgid "Approvers"
+msgstr ""
+
+#. module: approval_base_install_request
+#: model:ir.model.fields,field_description:approval_base_install_request.field_base_module_install_request__can_request_approval
+msgid "Can Request Approval"
+msgstr ""
+
+#. module: approval_base_install_request
+#: model:ir.model.fields,help:approval_base_install_request.field_base_module_install_request__approval_state
+msgid ""
+"Current approval status:\n"
+"        • new: Approval created but not submitted\n"
+"        • pending: Waiting for approvers\n"
+"        • approved: All required approvals obtained\n"
+"        • refused: Approval was refused (terminal)\n"
+"        • cancelled: Approval was retracted or expired (terminal)"
+msgstr ""
+
+#. module: approval_base_install_request
+#: model:ir.model.fields,help:approval_base_install_request.field_base_module_install_request__date_approval_requested
+msgid "Date and time when approval was requested for this document"
+msgstr ""
+
+#. module: approval_base_install_request
+#: model:ir.model.fields,help:approval_base_install_request.field_base_module_install_request__date_approval_granted
+msgid "Date and time when final approval was granted"
+msgstr ""
+
+#. module: approval_base_install_request
+#: model:ir.model.fields,field_description:approval_base_install_request.field_base_module_install_request__approval_pending_user_ids
+msgid "Deciding Now"
+msgstr ""
+
+#. module: approval_base_install_request
+#: model:ir.model.fields,field_description:approval_base_install_request.field_base_module_install_request__display_name
+msgid "Display Name"
+msgstr ""
+
+#. module: approval_base_install_request
+#: model:ir.model.fields,field_description:approval_base_install_request.field_base_module_install_request__id
+msgid "ID"
+msgstr ""
+
+#. module: approval_base_install_request
+#: model_terms:ir.ui.view,arch_db:approval_base_install_request.base_module_install_request_view_form_record_approval
+msgid "Install App"
+msgstr ""
+
+#. module: approval_base_install_request
+#: model:ir.model.fields,help:approval_base_install_request.field_base_module_install_request__approval_request_id
+msgid ""
+"Link to the approval request for this document. Automatically created when "
+"approval is requested."
+msgstr ""
+
+#. module: approval_base_install_request
+#: model:approval.category,name:approval_base_install_request.approval_category_module_activation
+msgid "Module Activation"
+msgstr ""
+
+#. module: approval_base_install_request
+#: model:ir.model,name:approval_base_install_request.model_base_module_install_request
+msgid "Module Activation Request"
+msgstr ""
+
+#. module: approval_base_install_request
+#: model:ir.model.fields,field_description:approval_base_install_request.field_base_module_install_request__pending_approver_ids
+msgid "Pending Approvers"
+msgstr ""
+
+#. module: approval_base_install_request
+#: model:ir.model.fields,help:approval_base_install_request.field_base_module_install_request__approval_progress
+msgid "Percentage of approvals completed (approved / total approvers)"
+msgstr ""
+
+#. module: approval_base_install_request
+#: model:ir.model.fields,help:approval_base_install_request.field_base_module_install_request__approval_chain_preview
+msgid ""
+"The approvers asking for approval would route this document to now, in the "
+"order they decide. Nothing is written to find them."
+msgstr ""
+
+#. module: approval_base_install_request
+#. odoo-python
+#: code:addons/approval_base_install_request/models/base_module_install_request.py:0
+msgid "This activation request has not been approved."
+msgstr ""
+
+#. module: approval_base_install_request
+#: model:ir.model.fields,help:approval_base_install_request.field_base_module_install_request__approval_user_ids
+msgid "Users who need to approve this document"
+msgstr ""
+
+#. module: approval_base_install_request
+#: model:ir.model.fields,help:approval_base_install_request.field_base_module_install_request__pending_approver_ids
+msgid "Users who still need to approve this document"
+msgstr ""
+
+#. module: approval_base_install_request
+#: model:ir.model.fields,help:approval_base_install_request.field_base_module_install_request__can_request_approval
+msgid "Whether approval can be requested (all required fields filled)"
+msgstr ""
+
+#. module: approval_base_install_request
+#: model:ir.model.fields,help:approval_base_install_request.field_base_module_install_request__approval_required
+msgid "Whether this document requires approval based on current rules"
+msgstr ""
+
+#. module: approval_base_install_request
+#: model:ir.model.fields,field_description:approval_base_install_request.field_base_module_install_request__approval_chain_preview
+msgid "Who Will Approve"
+msgstr ""
+
+#. module: approval_base_install_request
+#: model:ir.model.fields,help:approval_base_install_request.field_base_module_install_request__approval_pending_user_ids
+msgid "Who is deciding this document's approval request right now."
+msgstr ""

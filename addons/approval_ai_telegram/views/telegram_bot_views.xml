@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="telegram_bot_view_form_smart_approval" model="ir.ui.view">
+        <field name="name">telegram.bot.form.inherit.smart_approval</field>
+        <field name="model">telegram.bot</field>
+        <field name="inherit_id" ref="telegram.view_telegram_bot_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='command_ids']" position="after">
+                <field name="has_solicitar_command" invisible="1" />
+            </xpath>
+            <xpath expr="//notebook" position="inside">
+                <page
+                    name="smart_approval_ai"
+                    string="Smart Approval"
+                    invisible="not has_solicitar_command">
+                    <group
+                        string="AI Classification"
+                        help="Used by the /solicitar wizard to classify the request and extract fields.">
+                        <field
+                            name="smart_approval_ai_enabled"
+                            widget="boolean_toggle" />
+                        <field name="voice_notes_heard" invisible="1" />
+                        <field
+                            name="smart_approval_ai_provider_id"
+                            options="{'no_create': True}"
+                            invisible="not smart_approval_ai_enabled"
+                            required="smart_approval_ai_enabled" />
+                        <field
+                            name="smart_approval_ai_model_id"
+                            placeholder="vendor default"
+                            options="{'no_create': True}"
+                            invisible="not smart_approval_ai_enabled" />
+                    </group>
+                    <div
+                        class="alert alert-info"
+                        role="alert"
+                        invisible="smart_approval_ai_enabled">
+                        <strong>AI is off for this bot.</strong>
+                        The <code>/solicitar</code> wizard will still work but
+                        without natural-language classification — the user picks
+                        the approval category manually. Enable AI and pick a
+                        provider whose service the company is connected to under
+                        Integrations to turn it on.
+                    </div>
+                    <div
+                        class="alert alert-warning"
+                        role="alert"
+                        invisible="not smart_approval_ai_enabled or voice_notes_heard">
+                        <strong>This provider cannot transcribe voice notes.</strong>
+                        Text classification works, but a voice note sent to
+                        <code>/solicitar</code> will be refused and the user
+                        asked to type the description instead.
+                    </div>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

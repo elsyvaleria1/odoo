@@ -1,0 +1,28 @@
+/** @odoo-module native */
+import { formatPercentage } from "@web/core/formatters";
+import { registry } from "@web/core/registry";
+import { ProgressBarField, progressBarField } from "@web/fields/display/progress_bar";
+
+export class ProjectTaskProgressBarField extends ProgressBarField {
+    get currentValue() {
+        return super.currentValue * 100;
+    }
+
+    get progressBarColorClass() {
+        if (this.currentValue > this.maxValue) {
+            return super.progressBarColorClass;
+        }
+
+        return this.currentValue < 80 ? "bg-success" : "bg-warning";
+    }
+}
+
+export const projectTaskProgressBarField = {
+    ...progressBarField,
+    component: ProjectTaskProgressBarField,
+};
+
+registry
+    .category("fields")
+    .add("project_task_progressbar", projectTaskProgressBarField);
+registry.category("formatters").add("project_task_progressbar", formatPercentage);

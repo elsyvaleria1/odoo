@@ -1,0 +1,83 @@
+// @ts-check
+/** @odoo-module native */
+
+import { useLayoutEffect } from "@web/core/utils/layout_effect";
+import { useDynamicPlaceholder } from "@web/fields/dynamic_placeholder_hook";
+
+import { TrimmingInputFieldBase } from "./trimming_input_field_base.js";
+
+export class TextInputFieldBase extends TrimmingInputFieldBase {
+    /** @type {any} */
+    dynamicPlaceholder;
+
+    /**
+     * @abstract
+     * @returns {HTMLInputElement | HTMLTextAreaElement | null | undefined}
+     */
+    get inputEl() {
+        return null;
+    }
+
+    /** @param {import("@odoo/owl").Ref<HTMLInputElement | HTMLTextAreaElement>} ref */
+    setupDynamicPlaceholder(ref) {
+        if (this.props.dynamicPlaceholder) {
+            this.dynamicPlaceholder = useDynamicPlaceholder(ref);
+            const { onKeydown } = this.dynamicPlaceholder;
+            useLayoutEffect(
+                (el) => {
+                    if (!el) {
+                        return;
+                    }
+                    el.addEventListener("keydown", onKeydown);
+                    return () => el.removeEventListener("keydown", onKeydown);
+                },
+                () => [ref.el],
+            );
+            useLayoutEffect(
+                () =>
+                    this.dynamicPlaceholder.updateModel(
+                        this.props.dynamicPlaceholderModelReferenceField,
+                    ),
+                () => [
+                    this.props.dynamicPlaceholderModelReferenceField,
+                    this.props.record.data[
+                        this.props.dynamicPlaceholderModelReferenceField
+                    ],
+                    this.props.record.data.render_model,
+                    this.props.record.data.model,
+                ],
+            );
+        }
+        this.selectionStart = this.field.value?.length || 0;
+    }
+
+    /** @returns {boolean} */
+    get hasDynamicPlaceholder() {
+        return Boolean(this.props.dynamicPlaceholder) && !this.props.readonly;
+    }
+
+    onBlur() {
+        this.selectionStart = /** @type {HTMLInputElement | HTMLTextAreaElement} */ (
+            this.inputEl
+        ).selectionStart;
+    }
+
+    onDynamicPlaceholderOpen() {
+        /** @type {any} */ (this).dynamicPlaceholder.open({
+            validateCallback: this.onDynamicPlaceholderValidate.bind(this),
+            closeCallback: () => this.inputEl?.focus(),
+        });
+    }
+
+    /**
+     * @param {string} chain
+     * @param {string} [defaultValue]
+     * @param {string} [fieldType]
+     */
+    async onDynamicPlaceholderValidate(chain, defaultValue, fieldType) {
+        await this.dynamicPlaceholder.insert(chain, defaultValue, {
+            fieldType,
+            rangeIndex: /** @type {any} */ (this).selectionStart,
+        });
+    }
+}

@@ -1,0 +1,92 @@
+/** @odoo-module native */
+import { Component, t, useProps } from "@odoo/owl";
+import { useTagNavigation } from "@web/components/record_selectors";
+import { TagsList } from "@web/components/tags_list";
+import { rpc } from "@web/core/network";
+import { x2ManyCommands } from "@web/core/network";
+import { _t } from "@web/core/translation";
+import { elementRef } from "@web/core/utils/element_ref";
+import { useService } from "@web/core/utils/hooks";
+import { Many2XAutocomplete } from "@web/fields/relational/many2x_autocomplete";
+
+/**
+ * @typedef {Object} Props
+ * @property {import("models").Thread} channel
+ * @extends {Component<Props, import("@web/env").OdooEnv>}
+ */
+export class ExpertiseTagsAutocomplete extends Component {
+    static template = "im_livechat.ExpertiseTagsAutocomplete";
+    static props = { channel: t.any(), disabled: t.any().optional() };
+    static components = { TagsList, Many2XAutocomplete };
+    props = useProps(this.constructor.props);
+
+    setup() {
+        super.setup(...arguments);
+        this.orm = useService("orm");
+        this.store = useService("mail.store");
+        this.rootRef = elementRef();
+        useTagNavigation(this.rootRef, {
+            delete: (index) => {
+                const expertise = this.props.channel.livechat_expertise_ids[index];
+                if (expertise) {
+                    this.writeExpertises([x2ManyCommands.unlink(expertise.id)]);
+                }
+            },
+        });
+    }
+
+    /** @param {(ReturnType<typeof x2ManyCommands.link>|ReturnType<typeof x2ManyCommands.unlink>)[]} ormCommands */
+    writeExpertises(ormCommands) {
+        rpc("/im_livechat/conversation/write_expertises", {
+            channel_id: this.props.channel.id,
+            orm_commands: ormCommands,
+        });
+    }
+
+    /** @param {string} name */
+    createAndLinkExpertise(name) {
+        if (
+            this.props.channel.livechat_expertise_ids.some(
+                (expertise) => expertise.name === name.trim(),
+            )
+        ) {
+            return;
+        }
+        rpc("/im_livechat/conversation/create_and_link_expertise", {
+            channel_id: this.props.channel.id,
+            expertise_name: name,
+        });
+    }
+
+    /** @param {{id: number, display_name: string}} expertises */
+    addExpertises(expertises) {
+        const toAdd = expertises.filter((expertise) => !this.isSelected(expertise.id));
+        if (!toAdd.length) {
+            return;
+        }
+        this.writeExpertises(
+            toAdd.map((expertise) => x2ManyCommands.link(expertise.id)),
+        );
+    }
+
+    get placeholder() {
+        if (this.props.channel.livechat_expertise_ids.length === 0) {
+            return _t("Add expertise");
+        }
+        return "";
+    }
+
+    get tags() {
+        return this.props.channel.livechat_expertise_ids.map((expertise) => ({
+            id: expertise.id,
+            onDelete: () => this.writeExpertises([x2ManyCommands.unlink(expertise.id)]),
+            text: expertise.name,
+        }));
+    }
+
+    isSelected(expertiseId) {
+        return this.props.channel.livechat_expertise_ids.some(
+            (e) => e.id === expertiseId,
+        );
+    }
+}

@@ -1,0 +1,35 @@
+/** @odoo-module native */
+import { RPCError } from "@web/core/network";
+import { registry } from "@web/core/registry";
+import {
+    Many2ManyTagsField,
+    many2ManyTagsField,
+} from "@web/fields/relational/many2many_tags";
+import { Many2XAutocomplete } from "@web/fields/relational/many2x_autocomplete";
+
+export class Many2XBarcodeTagsAutocomplete extends Many2XAutocomplete {
+    onQuickCreateError(error, request) {
+        if (
+            error instanceof RPCError &&
+            error.exceptionName === "odoo.exceptions.ValidationError"
+        ) {
+            throw error;
+        }
+        super.onQuickCreateError(error, request);
+    }
+}
+
+export class Many2ManyBarcodeTagsField extends Many2ManyTagsField {
+    static components = {
+        ...Many2ManyTagsField.components,
+        Many2XAutocomplete: Many2XBarcodeTagsAutocomplete,
+    };
+}
+
+export const many2ManyBarcodeTagsField = {
+    ...many2ManyTagsField,
+    component: Many2ManyBarcodeTagsField,
+    additionalClasses: ["o_field_many2many_tags"],
+};
+
+registry.category("fields").add("many2many_barcode_tags", many2ManyBarcodeTagsField);

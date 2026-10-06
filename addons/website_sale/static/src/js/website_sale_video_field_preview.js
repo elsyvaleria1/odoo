@@ -1,0 +1,16 @@
+/** @odoo-module native */
+import { Component, useProps } from "@odoo/owl";
+import { registry } from "@web/core/registry";
+import { standardFieldProps } from "@web/fields/standard_field_props";
+
+export class FieldVideoPreview extends Component {
+    static template = "website_sale.FieldVideoPreview";
+    static props = { ...standardFieldProps };
+    props = useProps(this.constructor.props);
+}
+
+export const fieldVideoPreview = {
+    component: FieldVideoPreview,
+};
+
+registry.category("fields").add("video_preview", fieldVideoPreview);

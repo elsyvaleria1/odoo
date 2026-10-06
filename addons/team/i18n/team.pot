@@ -1,0 +1,725 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* team
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-09-27 05:12+0000\n"
+"PO-Revision-Date: 2026-09-27 05:12+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: team
+#. odoo-python
+#: code:addons/team/models/team_member.py:0
+msgid "%(user_names)s already in other teams (%(team_names)s)."
+msgstr ""
+
+#. module: team
+#: model_terms:ir.ui.view,arch_db:team.team_member_view_form
+msgid "<i class=\"fa-solid fa-building me-1 text-primary\" title=\"Company\"/>"
+msgstr ""
+
+#. module: team
+#: model_terms:ir.ui.view,arch_db:team.team_member_view_form
+msgid "<i class=\"fa-solid fa-envelope me-1 text-primary\" title=\"Email\"/>"
+msgstr ""
+
+#. module: team
+#: model_terms:ir.ui.view,arch_db:team.team_member_view_kanban
+#: model_terms:ir.ui.view,arch_db:team.team_view_form
+msgid ""
+"<i class=\"fa-solid fa-envelope me-1\" role=\"img\" aria-label=\"Email\" "
+"title=\"Email\"/>"
+msgstr ""
+
+#. module: team
+#: model_terms:ir.ui.view,arch_db:team.team_member_view_form
+msgid "<i class=\"fa-solid fa-phone me-1 text-primary\" title=\"Phone\"/>"
+msgstr ""
+
+#. module: team
+#: model_terms:ir.ui.view,arch_db:team.team_view_kanban_dashboard
+msgid "<span>New</span>"
+msgstr ""
+
+#. module: team
+#: model_terms:ir.ui.view,arch_db:team.team_view_kanban_dashboard
+msgid "<span>Reporting</span>"
+msgstr ""
+
+#. module: team
+#: model_terms:ir.ui.view,arch_db:team.team_view_kanban_dashboard
+msgid "<span>View</span>"
+msgstr ""
+
+#. module: team
+#: model:ir.model.fields,help:team.field_team_alias__alias_defaults
+msgid ""
+"A Python dictionary that will be evaluated to provide default values when "
+"creating new records for this alias."
+msgstr ""
+
+#. module: team
+#: model_terms:ir.actions.act_window,help:team.team_action
+msgid ""
+"A team gathers people who work together. Each application\n"
+"                    that uses it adds its own settings."
+msgstr ""
+
+#. module: team
+#: model:ir.model.constraint,message:team.constraint_team_alias_team_id_usage_uniq
+msgid "A team has one email alias per usage."
+msgstr ""
+
+#. module: team
+#: model_terms:ir.ui.view,arch_db:team.team_view_form
+msgid "About"
+msgstr ""
+
+#. module: team
+#: model:ir.model.fields,field_description:team.field_team_team__description
+msgid "About Team"
+msgstr ""
+
+#. module: team
+#: model:ir.model,name:team.model_ir_access
+msgid "Access"
+msgstr ""
+
+#. module: team
+#: model:ir.model.fields,field_description:team.field_team_member__message_needaction
+#: model:ir.model.fields,field_description:team.field_team_team__message_needaction
+msgid "Action Needed"
+msgstr ""
+
+#. module: team
+#: model_terms:ir.ui.view,arch_db:team.team_member_view_form
+#: model_terms:ir.ui.view,arch_db:team.team_view_form
+msgid "Activate \"Multi-team\""
+msgstr ""
+
+#. module: team
+#: model:ir.model.fields,field_description:team.field_team_member__active
+#: model:ir.model.fields,field_description:team.field_team_team__active
+msgid "Active"
+msgstr ""
+
+#. module: team
+#: model_terms:ir.actions.act_window,help:team.team_member_action
+msgid "Add a member to a team"
+msgstr ""
+
+#. module: team
+#: model:ir.model.fields,help:team.field_team_team__team_member_ids
+msgid "Add members to automatically assign their documents to this team."
+msgstr ""
+
+#. module: team
+#: model:res.groups,name:team.group_team_manager
+msgid "Administrator"
+msgstr ""
+
+#. module: team
+#: model:ir.model.fields,field_description:team.field_team_alias__alias_id
+msgid "Alias"
+msgstr ""
+
+#. module: team
+#: model:ir.model.fields,field_description:team.field_team_alias__alias_contact
+msgid "Alias Contact Security"
+msgstr ""
+
+#. module: team
+#: model:ir.model.fields,field_description:team.field_team_alias__alias_domain_id
+msgid "Alias Domain"
+msgstr ""
+
+#. module: team
+#: model:ir.model.fields,field_description:team.field_team_alias__alias_full_name
+msgid "Alias Email"
+msgstr ""
+
+#. module: team
+#: model:ir.model.fields,field_description:team.field_team_alias__alias_name
+msgid "Alias Name"
+msgstr ""
+
+#. module: team
+#: model:ir.model.fields,field_description:team.field_team_alias__alias_status
+msgid "Alias Status"
+msgstr ""
+
+#. module: team
+#: model:ir.model.fields,field_description:team.field_team_alias__alias_domain
+msgid "Alias domain name"
+msgstr ""
+
+#. module: team
+#: model:ir.model.fields,help:team.field_team_alias__alias_status
+msgid "Alias status assessed on the last message received."
+msgstr ""
+
+#. module: team
+#: model:ir.model.fields,field_description:team.field_team_alias__alias_model_id
+msgid "Aliased Model"
+msgstr ""
+
+#. module: team
+#. odoo-javascript
+#: code:addons/team/static/src/views/team_form/team_form.js:0
+msgid "An error occurred while activating the Multi-Team option."
+msgstr ""
+
+#. module: team
+#: model_terms:ir.ui.view,arch_db:team.team_member_view_form
+#: model_terms:ir.ui.view,arch_db:team.team_member_view_kanban
+#: model_terms:ir.ui.view,arch_db:team.team_member_view_search
+#: model_terms:ir.ui.view,arch_db:team.team_view_form
+#: model_terms:ir.ui.view,arch_db:team.team_view_search
+msgid "Archived"
+msgstr ""
+
+#. module: team
+#: model:ir.model.fields,field_description:team.field_team_member__message_attachment_count
+#: model:ir.model.fields,field_description:team.field_team_team__message_attachment_count
+msgid "Attachment Count"
+msgstr ""
+
+#. module: team
+#: model_terms:ir.ui.view,arch_db:team.team_member_view_kanban
+#: model_terms:ir.ui.view,arch_db:team.team_view_form
+msgid "Avatar"
+msgstr ""
+
+#. module: team
+#: model:ir.model.fields,field_description:team.field_team_member__can_activate_multi_membership
+#: model:ir.model.fields,field_description:team.field_team_team__can_activate_multi_membership
+msgid "Can Activate Multi Membership"
+msgstr ""
+
+#. module: team
+#: model:ir.model.fields,field_description:team.field_team_team__color
+msgid "Color Index"
+msgstr ""
+
+#. module: team
+#: model:ir.model.fields,field_description:team.field_team_member__company_id
+#: model:ir.model.fields,field_description:team.field_team_team__company_id
+#: model_terms:ir.ui.view,arch_db:team.team_view_search
+msgid "Company"
+msgstr ""
+
+#. module: team
+#: model_terms:ir.ui.view,arch_db:team.team_view_kanban_dashboard
+msgid "Configuration"
+msgstr ""
+
+#. module: team
+#: model_terms:ir.actions.act_window,help:team.team_action
+msgid "Create a team"
+msgstr ""
+
+#. module: team
+#: model:ir.model.fields,field_description:team.field_team_alias__create_uid
+#: model:ir.model.fields,field_description:team.field_team_member__create_uid
+#: model:ir.model.fields,field_description:team.field_team_team__create_uid
+msgid "Created by"
+msgstr ""
+
+#. module: team
+#: model:ir.model.fields,field_description:team.field_team_alias__create_date
+#: model:ir.model.fields,field_description:team.field_team_member__create_date
+#: model:ir.model.fields,field_description:team.field_team_team__create_date
+msgid "Created on"
+msgstr ""
+
+#. module: team
+#: model:ir.model.fields,field_description:team.field_team_alias__alias_bounced_content
+msgid "Custom Bounced Message"
+msgstr ""
+
+#. module: team
+#: model:ir.model.fields,field_description:team.field_team_alias__alias_defaults
+msgid "Default Values"
+msgstr ""
+
+#. module: team
+#: model:ir.model.fields,field_description:team.field_ir_access__display_name
+#: model:ir.model.fields,field_description:team.field_ir_config_parameter__display_name
+#: model:ir.model.fields,field_description:team.field_team_alias__display_name
+#: model:ir.model.fields,field_description:team.field_team_member__display_name
+msgid "Display Name"
+msgstr ""
+
+#. module: team
+#: model:ir.model.fields,field_description:team.field_team_member__email
+msgid "Email"
+msgstr ""
+
+#. module: team
+#: model:ir.model.fields,field_description:team.field_team_team__alias_ids
+msgid "Email Aliases"
+msgstr ""
+
+#. module: team
+#: model:ir.model.fields,help:team.field_team_alias__alias_domain
+msgid "Email domain e.g. 'example.com' in 'odoo@example.com'"
+msgstr ""
+
+#. module: team
+#: model:ir.model.fields,help:team.field_team_team__is_user_favorite
+msgid ""
+"Favorite teams to display them in the dashboard and access them easily."
+msgstr ""
+
+#. module: team
+#: model:ir.model.fields,field_description:team.field_team_member__message_follower_ids
+#: model:ir.model.fields,field_description:team.field_team_team__message_follower_ids
+msgid "Followers"
+msgstr ""
+
+#. module: team
+#: model:ir.model.fields,field_description:team.field_team_member__message_partner_ids
+#: model:ir.model.fields,field_description:team.field_team_team__message_partner_ids
+msgid "Followers (Partners)"
+msgstr ""
+
+#. module: team
+#: model:ir.model.fields,field_description:team.field_team_member__has_message
+#: model:ir.model.fields,field_description:team.field_team_team__has_message
+msgid "Has Message"
+msgstr ""
+
+#. module: team
+#: model:ir.model.fields,field_description:team.field_ir_access__id
+#: model:ir.model.fields,field_description:team.field_ir_config_parameter__id
+#: model:ir.model.fields,field_description:team.field_team_alias__id
+#: model:ir.model.fields,field_description:team.field_team_member__id
+msgid "ID"
+msgstr ""
+
+#. module: team
+#: model:ir.model.fields,help:team.field_team_alias__alias_parent_thread_id
+msgid ""
+"ID of the parent record holding the alias (example: project holding the task"
+" creation alias)"
+msgstr ""
+
+#. module: team
+#: model:ir.model.fields,help:team.field_team_team__is_membership_multi
+msgid ""
+"If True, members may belong to other teams of the same usage. Otherwise "
+"membership is limited to a single team per usage."
+msgstr ""
+
+#. module: team
+#: model:ir.model.fields,help:team.field_team_member__message_needaction
+#: model:ir.model.fields,help:team.field_team_team__message_needaction
+msgid "If checked, new messages require your attention."
+msgstr ""
+
+#. module: team
+#: model:ir.model.fields,help:team.field_team_member__message_has_error
+#: model:ir.model.fields,help:team.field_team_team__message_has_error
+msgid "If checked, some messages have a delivery error."
+msgstr ""
+
+#. module: team
+#: model:ir.model.fields,help:team.field_team_alias__alias_bounced_content
+msgid ""
+"If set, this content will automatically be sent out to unauthorized users "
+"instead of the default message."
+msgstr ""
+
+#. module: team
+#: model:ir.model.fields,help:team.field_team_team__active
+msgid ""
+"If the active field is set to false, it will allow you to hide the team "
+"without removing it."
+msgstr ""
+
+#. module: team
+#: model:ir.model.fields,field_description:team.field_team_member__image_1920
+msgid "Image"
+msgstr ""
+
+#. module: team
+#: model:ir.model.fields,field_description:team.field_team_member__image_128
+msgid "Image (128)"
+msgstr ""
+
+#. module: team
+#: model:ir.model.fields,field_description:team.field_team_member__message_is_follower
+#: model:ir.model.fields,field_description:team.field_team_team__message_is_follower
+msgid "Is Follower"
+msgstr ""
+
+#. module: team
+#: model:ir.model.fields,field_description:team.field_team_alias__write_uid
+#: model:ir.model.fields,field_description:team.field_team_member__write_uid
+#: model:ir.model.fields,field_description:team.field_team_team__write_uid
+msgid "Last Updated by"
+msgstr ""
+
+#. module: team
+#: model:ir.model.fields,field_description:team.field_team_alias__write_date
+#: model:ir.model.fields,field_description:team.field_team_member__write_date
+#: model:ir.model.fields,field_description:team.field_team_team__write_date
+msgid "Last Updated on"
+msgstr ""
+
+#. module: team
+#: model_terms:ir.actions.act_window,help:team.team_member_action
+msgid "Link users to the teams they work in."
+msgstr ""
+
+#. module: team
+#: model:ir.model.fields,field_description:team.field_team_alias__alias_incoming_local
+msgid "Local-part based incoming detection"
+msgstr ""
+
+#. module: team
+#: model:res.groups,comment:team.group_team_manager
+msgid ""
+"Manages every team, whichever applications use it, and alone may delete a "
+"team another application also uses."
+msgstr ""
+
+#. module: team
+#: model:ir.model.fields,field_description:team.field_team_member__user_id
+msgid "Member"
+msgstr ""
+
+#. module: team
+#: model:ir.model.fields,field_description:team.field_team_team__member_company_ids
+msgid "Member Company"
+msgstr ""
+
+#. module: team
+#: model:ir.model.fields,field_description:team.field_team_member__member_warning
+msgid "Member Warning"
+msgstr ""
+
+#. module: team
+#: model:ir.model.fields,field_description:team.field_team_team__member_ids
+#: model_terms:ir.ui.view,arch_db:team.team_view_form
+msgid "Members"
+msgstr ""
+
+#. module: team
+#: model:ir.model.fields,field_description:team.field_team_team__member_warning
+msgid "Membership Issue Warning"
+msgstr ""
+
+#. module: team
+#: model:ir.model.fields,field_description:team.field_team_member__message_has_error
+#: model:ir.model.fields,field_description:team.field_team_team__message_has_error
+msgid "Message Delivery error"
+msgstr ""
+
+#. module: team
+#: model:ir.model.fields,field_description:team.field_team_member__message_ids
+#: model:ir.model.fields,field_description:team.field_team_team__message_ids
+msgid "Messages"
+msgstr ""
+
+#. module: team
+#: model:ir.model.fields,field_description:team.field_team_team__is_membership_multi
+msgid "Multiple Memberships Allowed"
+msgstr ""
+
+#. module: team
+#: model_terms:ir.ui.view,arch_db:team.team_view_search
+msgid "My Teams"
+msgstr ""
+
+#. module: team
+#: model:ir.model.fields,field_description:team.field_team_member__name
+msgid "Name"
+msgstr ""
+
+#. module: team
+#: model:ir.model.fields,field_description:team.field_team_member__message_needaction_counter
+#: model:ir.model.fields,field_description:team.field_team_team__message_needaction_counter
+msgid "Number of Actions"
+msgstr ""
+
+#. module: team
+#: model:ir.model.fields,field_description:team.field_team_member__message_has_error_counter
+#: model:ir.model.fields,field_description:team.field_team_team__message_has_error_counter
+msgid "Number of errors"
+msgstr ""
+
+#. module: team
+#: model:ir.model.fields,help:team.field_team_member__message_needaction_counter
+#: model:ir.model.fields,help:team.field_team_team__message_needaction_counter
+msgid "Number of messages requiring action"
+msgstr ""
+
+#. module: team
+#: model:ir.model.fields,help:team.field_team_member__message_has_error_counter
+#: model:ir.model.fields,help:team.field_team_team__message_has_error_counter
+msgid "Number of messages with delivery error"
+msgstr ""
+
+#. module: team
+#. odoo-python
+#: code:addons/team/models/team.py:0
+msgid ""
+"Only an administrator of %(usages)s can add or remove that usage on a team."
+msgstr ""
+
+#. module: team
+#. odoo-python
+#: code:addons/team/models/team.py:0
+msgid ""
+"Only an administrator of %(usages)s can allow multiple team memberships "
+"there."
+msgstr ""
+
+#. module: team
+#: model:ir.model.fields,help:team.field_team_alias__alias_force_thread_id
+msgid ""
+"Optional ID of a thread (record) to which all incoming messages will be "
+"attached, even if they did not reply to it. If set, this will disable the "
+"creation of new records completely."
+msgstr ""
+
+#. module: team
+#: model:ir.model.fields,field_description:team.field_team_alias__alias_parent_model_id
+msgid "Parent Model"
+msgstr ""
+
+#. module: team
+#: model:ir.model.fields,field_description:team.field_team_alias__alias_parent_thread_id
+msgid "Parent Record Thread ID"
+msgstr ""
+
+#. module: team
+#: model:ir.model.fields,help:team.field_team_alias__alias_parent_model_id
+msgid ""
+"Parent model holding the alias. The model holding the alias reference is not"
+" necessarily the model given by alias_model_id (example: project "
+"(parent_model) and task (model))"
+msgstr ""
+
+#. module: team
+#: model:ir.model.fields,field_description:team.field_team_member__phone_ids
+msgid "Phone Numbers"
+msgstr ""
+
+#. module: team
+#: model:ir.model.fields,help:team.field_team_alias__alias_contact
+msgid ""
+"Policy to post a message on the document using the mailgateway.\n"
+"- everyone: everyone can post\n"
+"- partners: only authenticated partners\n"
+"- followers: only followers of the related document or members of following channels\n"
+msgstr ""
+
+#. module: team
+#: model:ir.model.fields,field_description:team.field_team_member__rating_ids
+#: model:ir.model.fields,field_description:team.field_team_team__rating_ids
+msgid "Ratings"
+msgstr ""
+
+#. module: team
+#: model:ir.model.fields,field_description:team.field_team_alias__alias_force_thread_id
+msgid "Record Thread ID"
+msgstr ""
+
+#. module: team
+#: model:ir.model.fields,field_description:team.field_team_team__sequence
+msgid "Sequence"
+msgstr ""
+
+#. module: team
+#: model:ir.model,name:team.model_ir_config_parameter
+msgid "System Parameter"
+msgstr ""
+
+#. module: team
+#: model:ir.model.fields,field_description:team.field_team_alias__team_id
+#: model:ir.model.fields,field_description:team.field_team_member__team_id
+#: model:ir.model.fields,field_description:team.field_team_team__name
+#: model_terms:ir.ui.view,arch_db:team.team_member_view_search
+#: model_terms:ir.ui.view,arch_db:team.team_view_form
+msgid "Team"
+msgstr ""
+
+#. module: team
+#. odoo-python
+#: code:addons/team/models/team.py:0
+msgid ""
+"Team \"%(team)s\" is also used in %(usage)s: only a Teams Administrator can "
+"delete it."
+msgstr ""
+
+#. module: team
+#. odoo-python
+#: code:addons/team/models/team_member.py:0
+msgid "Team '%(team)s' is archived and cannot take new members."
+msgstr ""
+
+#. module: team
+#: model_terms:ir.ui.view,arch_db:team.team_view_form
+msgid "Team Details"
+msgstr ""
+
+#. module: team
+#: model:ir.model,name:team.model_team_alias
+msgid "Team Email Alias"
+msgstr ""
+
+#. module: team
+#: model:ir.model.fields,field_description:team.field_team_team__user_id
+#: model_terms:ir.ui.view,arch_db:team.team_view_search
+msgid "Team Leader"
+msgstr ""
+
+#. module: team
+#: model:ir.model,name:team.model_team_member
+msgid "Team Member"
+msgstr ""
+
+#. module: team
+#: model:ir.actions.act_window,name:team.team_member_action
+#: model:ir.model.fields,field_description:team.field_team_team__team_member_ids
+#: model_terms:ir.ui.view,arch_db:team.team_member_view_form
+#: model_terms:ir.ui.view,arch_db:team.team_member_view_search
+#: model_terms:ir.ui.view,arch_db:team.team_member_view_tree
+msgid "Team Members"
+msgstr ""
+
+#. module: team
+#: model:ir.model.fields,field_description:team.field_team_team__team_member_all_ids
+msgid "Team Members (incl. inactive)"
+msgstr ""
+
+#. module: team
+#: model:ir.model.fields,field_description:team.field_res_users__team_member_ids
+msgid "Team Memberships"
+msgstr ""
+
+#. module: team
+#: model:ir.actions.act_window,name:team.team_action
+#: model:ir.model.fields,field_description:team.field_res_users__team_ids
+#: model:ir.ui.menu,name:team.team_menu
+#: model:res.groups.privilege,name:team.res_groups_privilege_team
+#: model_terms:ir.ui.view,arch_db:team.team_view_search
+#: model_terms:ir.ui.view,arch_db:team.team_view_tree
+msgid "Teams"
+msgstr ""
+
+#. module: team
+#: model:ir.model.fields,help:team.field_team_member__company_id
+msgid "The default company for this user."
+msgstr ""
+
+#. module: team
+#. odoo-python
+#: code:addons/team/models/team_member.py:0
+msgid ""
+"The following team members are not allowed in company '%(company)s' of the "
+"team '%(team)s': %(users)s"
+msgstr ""
+
+#. module: team
+#: model:ir.model.fields,help:team.field_team_alias__alias_model_id
+msgid ""
+"The model (Odoo Document Kind) to which this alias corresponds. Any incoming"
+" email that does not reply to an existing record will cause the creation of "
+"a new record of this model (e.g. a Project Task)"
+msgstr ""
+
+#. module: team
+#: model:ir.model.fields,help:team.field_team_alias__alias_name
+msgid ""
+"The name of the email alias, e.g. 'jobs' if you want to catch emails for "
+"<jobs@example.odoo.com>"
+msgstr ""
+
+#. module: team
+#: model:ir.model.fields,help:team.field_team_member__user_company_ids
+#: model:ir.model.fields,help:team.field_team_team__member_company_ids
+msgid "UX: Limit to team company or all if no company"
+msgstr ""
+
+#. module: team
+#. odoo-python
+#: code:addons/team/models/team.py:0
+msgid "Unknown team usage: %(usage)s"
+msgstr ""
+
+#. module: team
+#: model:ir.model.fields,field_description:team.field_team_alias__usage
+msgid "Usage"
+msgstr ""
+
+#. module: team
+#. odoo-python
+#: code:addons/team/models/team_alias.py:0
+msgid "Usage %(usage)s does not receive email."
+msgstr ""
+
+#. module: team
+#: model:ir.model.fields,field_description:team.field_team_team__usage_names
+msgid "Used In"
+msgstr ""
+
+#. module: team
+#. odoo-python
+#: code:addons/team/models/team_member.py:0
+msgid "User '%(user)s' is archived and cannot join a team."
+msgstr ""
+
+#. module: team
+#: model:ir.model.fields,field_description:team.field_team_member__user_company_ids
+msgid "User Company"
+msgstr ""
+
+#. module: team
+#: model:ir.model.fields,help:team.field_team_team__member_ids
+msgid "Users assigned to this team."
+msgstr ""
+
+#. module: team
+#: model_terms:ir.ui.view,arch_db:team.team_view_form
+msgid "Visible to all"
+msgstr ""
+
+#. module: team
+#: model_terms:ir.ui.view,arch_db:team.team_view_form
+msgid "What this team does, and how to reach it"
+msgstr ""
+
+#. module: team
+#: model_terms:ir.ui.view,arch_db:team.team_member_view_form
+#: model_terms:ir.ui.view,arch_db:team.team_view_form
+msgid "Working in multiple teams?"
+msgstr ""
+
+#. module: team
+#. odoo-python
+#: code:addons/team/models/team_member.py:0
+msgid ""
+"You are trying to create duplicate membership(s). We found that "
+"%(duplicates)s already exist(s)."
+msgstr ""
+
+#. module: team
+#: model_terms:ir.ui.view,arch_db:team.team_member_view_form
+msgid "e.g. John Doe"
+msgstr ""
+
+#. module: team
+#: model_terms:ir.ui.view,arch_db:team.team_view_form
+msgid "e.g. North America"
+msgstr ""

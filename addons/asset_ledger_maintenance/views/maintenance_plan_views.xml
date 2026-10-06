@@ -1,0 +1,222 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_maintenance_plan_list" model="ir.ui.view">
+        <field name="name">maintenance.plan.list.asset</field>
+        <field name="model">maintenance.plan</field>
+        <field name="inherit_id" ref="maintenance.maintenance_plan_view_list" />
+        <field name="arch" type="xml">
+            <list position="attributes">
+                <attribute name="decoration-danger">state == 'overdue'</attribute>
+                <attribute name="decoration-warning">state == 'today'</attribute>
+                <attribute name="decoration-info">state == 'planned'</attribute>
+            </list>
+            <field name="date_next_scheduled" position="before">
+                <field name="state" widget="badge" />
+            </field>
+            <field name="date_last_done" position="after">
+                <field name="order_count" string="Orders" optional="show" />
+            </field>
+        </field>
+    </record>
+
+    <record id="view_maintenance_plan_form" model="ir.ui.view">
+        <field name="name">maintenance.plan.form.asset</field>
+        <field name="model">maintenance.plan</field>
+        <field name="inherit_id" ref="maintenance.maintenance_plan_view_form" />
+        <field name="arch" type="xml">
+            <sheet position="before">
+                <header>
+                    <button
+                        name="action_view_open_order"
+                        type="object"
+                        string="Open Order"
+                        invisible="not active"
+                        class="btn-primary" />
+                    <field
+                        name="state"
+                        widget="statusbar"
+                        statusbar_visible="upcoming,planned,today,overdue" />
+                </header>
+            </sheet>
+            <div name="button_box" position="after">
+                <field name="has_date_conflict" invisible="1" />
+                <div
+                    class="alert alert-warning w-100 d-flex align-items-center gap-1"
+                    invisible="not has_date_conflict"
+                    role="alert">
+                    <i class="fa-solid fa-exclamation-triangle" title="Warning" />
+                    <span>Warning: This maintenance plan may cause a resource bottleneck. Other equipment is scheduled for maintenance on the same day:</span>
+                    <field name="conflicting_plan_ids" widget="many2many_tags" />
+                </div>
+            </div>
+            <field name="resource_ids" position="before">
+                <field name="template_id" />
+                <field name="kind_code" invisible="1" />
+                <field name="product_id" readonly="template_id and product_id" />
+                <field name="asset_id" />
+            </field>
+            <field name="date_last_done" position="after">
+                <label for="distance_interval" />
+                <div class="o_row">
+                    <field name="distance_interval" />
+                    <field name="odometer_uom_name" nolabel="1" />
+                </div>
+                <field name="last_maintenance_odometer" />
+                <field
+                    name="next_maintenance_odometer"
+                    readonly="distance_interval == 0" />
+                <field name="current_odometer" invisible="distance_interval == 0" />
+                <field name="distance_remaining" invisible="distance_interval == 0" />
+            </field>
+            <page name="description" position="after">
+                <page name="compliance" string="Compliance Metrics">
+                    <group>
+                        <group string="Order Statistics">
+                            <field name="maintenance_completed_count" />
+                            <field name="maintenance_cancelled_count" />
+                            <field
+                                name="maintenance_compliance_rate"
+                                widget="percentage" />
+                        </group>
+                    </group>
+                </page>
+            </page>
+        </field>
+    </record>
+
+    <record id="view_maintenance_plan_kanban" model="ir.ui.view">
+        <field name="name">maintenance.plan.kanban</field>
+        <field name="model">maintenance.plan</field>
+        <field name="arch" type="xml">
+            <kanban default_group_by="state" class="o_kanban_small_column">
+                <field name="state" />
+                <field name="active" />
+                <templates>
+                    <t t-name="card">
+                        <div class="o_kanban_record_top mb-2">
+                            <strong class="o_kanban_record_title">
+                                <field name="name" />
+                            </strong>
+                            <span t-if="!record.active.raw_value" class="badge text-bg-secondary">Archived</span>
+                        </div>
+                        <field name="asset_id" />
+                        <span
+                            t-attf-class="badge {{record.state.raw_value == 'overdue' and 'text-bg-danger' or record.state.raw_value == 'today' and 'text-bg-warning' or record.state.raw_value == 'planned' and 'text-bg-info' or 'text-bg-secondary'}}">
+                            Next: <field name="date_next_scheduled" />
+                        </span>
+                        <footer>
+                            <span class="badge text-bg-primary">
+                                <field name="order_count" /> orders
+                            </span>
+                        </footer>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
+    <record id="view_maintenance_plan_search" model="ir.ui.view">
+        <field name="name">maintenance.plan.search.asset</field>
+        <field name="model">maintenance.plan</field>
+        <field name="inherit_id" ref="maintenance.maintenance_plan_view_search" />
+        <field name="arch" type="xml">
+            <field name="resource_ids" position="after">
+                <field name="asset_id" />
+                <field name="state" />
+            </field>
+            <filter name="filter_archived" position="before">
+                <filter
+                    name="overdue"
+                    string="Overdue"
+                    domain="[('state', '=', 'overdue')]" />
+                <filter
+                    name="today"
+                    string="Today"
+                    domain="[('state', '=', 'today')]" />
+                <filter
+                    name="planned"
+                    string="Planned"
+                    domain="[('state', '=', 'planned')]" />
+                <filter
+                    name="upcoming"
+                    string="Upcoming"
+                    domain="[('state', '=', 'upcoming')]" />
+                <separator />
+            </filter>
+            <filter name="groupby_team" position="before">
+                <filter
+                    name="group_equipment"
+                    string="Asset"
+                    context="{'group_by': 'asset_id'}" />
+                <filter
+                    name="group_status"
+                    string="Status"
+                    context="{'group_by': 'state'}" />
+                <filter
+                    name="group_kind_code"
+                    string="Asset Type"
+                    context="{'group_by': 'kind_code'}" />
+            </filter>
+        </field>
+    </record>
+
+    <record id="view_maintenance_plan_calendar" model="ir.ui.view">
+        <field name="name">maintenance.plan.calendar</field>
+        <field name="model">maintenance.plan</field>
+        <field name="arch" type="xml">
+            <calendar
+                string="Maintenance Schedule"
+                color="state"
+                date_start="date_next_scheduled">
+                <field name="name" />
+                <field name="asset_id" />
+                <field name="state" />
+            </calendar>
+        </field>
+    </record>
+
+    <record id="action_maintenance_plan" model="ir.actions.act_window">
+        <field name="name">Maintenance Plans</field>
+        <field name="res_model">maintenance.plan</field>
+        <field name="view_mode">kanban,list,form,calendar</field>
+    </record>
+
+    <record id="action_maintenance_plan_equipment" model="ir.actions.act_window">
+        <field name="name">Maintenance Plans</field>
+        <field name="res_model">maintenance.plan</field>
+        <field name="view_mode">kanban,list,form,calendar</field>
+        <field name="domain">[('kind_code', '=', 'equipment')]</field>
+        <field
+            name="context"
+            eval="{'default_kind_id': ref('resource_asset.kind_equipment')}" />
+    </record>
+
+    <record id="action_maintenance_plan_machinery" model="ir.actions.act_window">
+        <field name="name">Maintenance Plans</field>
+        <field name="res_model">maintenance.plan</field>
+        <field name="view_mode">kanban,list,form,calendar</field>
+        <field name="domain">[('kind_code', '=', 'machinery')]</field>
+        <field
+            name="context"
+            eval="{'default_kind_id': ref('resource_asset.kind_machinery')}" />
+    </record>
+
+    <record id="action_maintenance_plan_vehicle" model="ir.actions.act_window">
+        <field name="name">Maintenance Plans</field>
+        <field name="res_model">maintenance.plan</field>
+        <field name="view_mode">kanban,list,form,calendar</field>
+        <field name="domain">[('kind_code', '=', 'vehicle')]</field>
+        <field
+            name="context"
+            eval="{'default_kind_id': ref('resource_asset.kind_vehicle')}" />
+    </record>
+
+    <record id="action_maintenance_plan_assets" model="ir.actions.act_window">
+        <field name="name">Maintenance Plans</field>
+        <field name="res_model">maintenance.plan</field>
+        <field name="view_mode">kanban,list,form,calendar</field>
+        <field name="domain">[('kind_code', '!=', 'product')]</field>
+    </record>
+
+</odoo>

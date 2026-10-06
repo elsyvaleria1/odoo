@@ -1,0 +1,72 @@
+/** @odoo-module native */
+
+import { getActiveHotkey } from "@web/core/browser/hotkeys";
+import { registry } from "@web/core/registry";
+import { useLayoutEffect } from "@web/core/utils/layout_effect";
+import { FloatField, floatField } from "@web/fields/basic/float/float_field";
+
+export class CountedQuantityWidgetField extends FloatField {
+    setup() {
+        super.setup();
+
+        const inputRef = (this.inputRef = this.numpadDecimalRef);
+
+        useLayoutEffect(
+            (inputEl) => {
+                if (inputEl) {
+                    const boundOnKeydown = this.onKeydown.bind(this);
+                    const boundOnBlur = this.onBlur.bind(this);
+                    inputEl.addEventListener("keydown", boundOnKeydown);
+                    inputEl.addEventListener("blur", boundOnBlur);
+                    return () => {
+                        inputEl.removeEventListener("keydown", boundOnKeydown);
+                        inputEl.removeEventListener("blur", boundOnBlur);
+                    };
+                }
+            },
+            () => [inputRef.el],
+        );
+    }
+
+    updateValue(ev) {
+        let value;
+        try {
+            value = this.parse(ev.target.value);
+        } catch {
+            return;
+        }
+        this.props.record.update({
+            [this.props.name]: value,
+            inventory_quantity_set: true,
+        });
+    }
+
+    onBlur(ev) {
+        this.updateValue(ev);
+    }
+
+    onKeydown(ev) {
+        const hotkey = getActiveHotkey(ev);
+        if (["enter", "tab", "shift+tab"].includes(hotkey)) {
+            this.updateValue(ev);
+        }
+    }
+
+    get formattedValue() {
+        if (
+            this.props.readonly &&
+            !this.props.record.data[this.props.name] &&
+            !this.props.record.data.inventory_quantity_set
+        ) {
+            return "";
+        }
+        return super.formattedValue;
+    }
+}
+
+export const countedQuantityWidgetField = {
+    ...floatField,
+    component: CountedQuantityWidgetField,
+};
+
+registry.category("fields").add("counted_quantity_widget", countedQuantityWidgetField);

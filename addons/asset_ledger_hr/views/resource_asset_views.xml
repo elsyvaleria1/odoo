@@ -1,0 +1,177 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_form_resource_asset_hr" model="ir.ui.view">
+        <field name="name">resource.asset.form.hr</field>
+        <field name="model">resource.asset</field>
+        <field name="inherit_id" ref="resource_asset.resource_asset_view_form" />
+        <field name="arch" type="xml">
+            <field name="manager_id" position="after">
+                <field name="operator_employee_id" />
+                <field name="manager_employee_id" />
+            </field>
+        </field>
+    </record>
+
+    <record id="view_list_resource_asset_hr" model="ir.ui.view">
+        <field name="name">resource.asset.list.hr</field>
+        <field name="model">resource.asset</field>
+        <field name="inherit_id" ref="resource_asset.resource_asset_view_list" />
+        <field name="arch" type="xml">
+            <field name="holder_id" position="after">
+                <field name="operator_employee_id" optional="show" />
+                <field name="manager_employee_id" optional="hide" />
+            </field>
+        </field>
+    </record>
+
+    <record id="view_search_resource_asset_hr" model="ir.ui.view">
+        <field name="name">resource.asset.search.hr</field>
+        <field name="model">resource.asset</field>
+        <field name="inherit_id" ref="resource_asset.resource_asset_view_search" />
+        <field name="arch" type="xml">
+            <field name="holder_id" position="after">
+                <field name="operator_employee_id" />
+                <field name="manager_employee_id" />
+            </field>
+        </field>
+    </record>
+
+    <record id="resource_asset_view_search_fleet_hr" model="ir.ui.view">
+        <field name="name">resource.asset.fleet.search.hr</field>
+        <field name="model">resource.asset.vehicle</field>
+        <field
+            name="inherit_id"
+            ref="resource_asset_vehicle.fleet_vehicle_view_search" />
+        <field name="arch" type="xml">
+            <field name="vin_sn" position="after">
+                <field name="operator_employee_id" />
+                <field name="manager_employee_id" />
+            </field>
+            <xpath expr="//filter[@name='service_overdue']" position="before">
+                <filter
+                    name="has_operator"
+                    string="Has Operator"
+                    domain="[('operator_employee_id', '!=', False)]" />
+                <filter
+                    name="no_operator"
+                    string="No Operator"
+                    domain="[('operator_employee_id', '=', False)]" />
+                <separator />
+            </xpath>
+        </field>
+    </record>
+
+    <record id="resource_asset_view_list_fleet_hr" model="ir.ui.view">
+        <field name="name">resource.asset.fleet.list.hr</field>
+        <field name="model">resource.asset.vehicle</field>
+        <field name="inherit_id" ref="resource_asset_vehicle.fleet_vehicle_view_tree" />
+        <field name="arch" type="xml">
+            <field name="license_plate" position="after">
+                <field name="operator_employee_id" optional="show" />
+                <field name="future_operator_employee_id" optional="show" />
+                <field name="manager_employee_id" optional="hide" />
+            </field>
+        </field>
+    </record>
+
+    <record id="resource_asset_view_list_general_hr" model="ir.ui.view">
+        <field name="name">resource.asset.general.list.hr</field>
+        <field name="model">resource.asset</field>
+        <field name="inherit_id" ref="asset_ledger.resource_asset_view_list_general" />
+        <field name="arch" type="xml">
+            <field name="name" position="after">
+                <field name="operator_employee_id" optional="show" />
+                <field name="manager_employee_id" optional="hide" />
+            </field>
+        </field>
+    </record>
+
+    <record id="resource_asset_view_kanban_fleet_hr" model="ir.ui.view">
+        <field name="name">resource.asset.fleet.kanban.hr</field>
+        <field name="model">resource.asset.vehicle</field>
+        <field name="inherit_id" ref="asset_ledger.resource_asset_view_kanban_fleet" />
+        <field name="arch" type="xml">
+            <field name="value_residual" position="after">
+                <field name="operator_employee_id" />
+                <field name="future_operator_employee_id" />
+                <field name="manager_employee_id" />
+            </field>
+            <xpath expr="//main" position="inside">
+                <div
+                    class="row mt-2"
+                    t-if="record.operator_employee_id.raw_value or record.manager_employee_id.raw_value">
+                    <div class="col-12">
+                        <div class="o_kanban_card_section">
+                            <div
+                                class="row mb-1"
+                                t-if="record.operator_employee_id.raw_value">
+                                <div class="col-12 text-muted small">
+                                    <i class="fa-solid fa-user me-1" title="Operator" />Current Operator </div>
+                                <div class="col-12 fw-bold">
+                                    <field name="operator_employee_id" />
+                                </div>
+                            </div>
+                            <div
+                                class="row mb-1"
+                                t-if="record.future_operator_employee_id.raw_value">
+                                <div class="col-12 text-muted small">
+                                    <i class="fa-regular fa-clock me-1" title="Future Operator" />Future Operator </div>
+                                <div class="col-12">
+                                    <field name="future_operator_employee_id" />
+                                </div>
+                            </div>
+                            <div
+                                class="row"
+                                t-if="record.manager_employee_id.raw_value">
+                                <div class="col-12 text-muted small">
+                                    <i class="fa-solid fa-user-tie me-1" title="Manager" />Manager </div>
+                                <div class="col-12">
+                                    <field name="manager_employee_id" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="resource_asset_view_form_hr_ledger" model="ir.ui.view">
+        <field name="name">resource.asset.form.hr.ledger</field>
+        <field name="model">resource.asset</field>
+        <field name="inherit_id" ref="asset_ledger.resource_asset_view_form_ledger" />
+        <field name="arch" type="xml">
+            <xpath expr="//header" position="inside">
+                <button
+                    name="action_accept_operator_change"
+                    type="object"
+                    string="Accept Operator Change"
+                    invisible="not future_operator_employee_id"
+                    class="btn-primary" />
+            </xpath>
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <button
+                    name="action_view_logs_assignation"
+                    type="object"
+                    title="View operator assignments"
+                    icon="fa-users"
+                    class="oe_stat_button">
+                    <field
+                        name="count_logs_assignment"
+                        string="Assignments"
+                        widget="statinfo" />
+                </button>
+            </xpath>
+            <xpath expr="//group[@name='asset_operational']" position="inside">
+                <field
+                    name="future_operator_employee_id"
+                    options="{'no_create': True, 'no_create_edit': True}" />
+                <field
+                    name="date_future_operator"
+                    invisible="not future_operator_employee_id" />
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

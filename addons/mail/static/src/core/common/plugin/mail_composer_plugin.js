@@ -1,0 +1,134 @@
+// @ts-check
+/** @odoo-module native */
+import { Plugin } from "@html_editor/plugin";
+import { baseContainerGlobalSelector } from "@html_editor/utils/base_container";
+import { isEmptyBlock } from "@html_editor/utils/dom_info";
+import { childNodes } from "@html_editor/utils/dom_traversal";
+import { withSequence } from "@html_editor/utils/resource";
+import { makeLogger } from "@web/core/debug/debug_logger";
+
+const log = makeLogger("mail.composer.plugin");
+
+const ALLOWED_TAGS = [
+    "A",
+    "B",
+    "DIV",
+    "EM",
+    "I",
+    "LI",
+    "OL",
+    "P",
+    "S",
+    "SPAN",
+    "STRONG",
+    "U",
+    "UL",
+];
+
+/** @type {Set<string>} */
+const PRESERVED_CLASSNAMES = new Set([
+    "o_mail_redirect",
+    "o_channel_redirect",
+    "o-discuss-mention",
+]);
+
+export class MailComposerPlugin extends Plugin {
+    static id = "mail_composer";
+    static dependencies = ["clipboard", "dom", "hint", "history", "input", "selection"];
+    resources = {
+        before_paste_handlers:
+            this.config.composerPluginDependencies.onBeforePaste.bind(this),
+        bypass_paste_image_files: () => true,
+        /** @param {HTMLAnchorElement} linkEl */
+        create_link_handlers: (linkEl) => (linkEl.target = "_blank"),
+        handle_paste_html_override: this.handlePasteHtmlOverride.bind(this),
+        hints: [
+            withSequence(1, {
+                selector: `.odoo-editor-editable > ${baseContainerGlobalSelector}:only-child`,
+                text: this.config.placeholder,
+            }),
+        ],
+        /**
+         * @param {{documentSelectionIsInEditable: boolean}} selectionData
+         * @param {HTMLElement} editable
+         * @returns {HTMLElement[]|undefined}
+         */
+        hint_targets_providers: (selectionData, editable) => {
+            const el = /** @type {HTMLElement} */ (editable.firstChild);
+            if (
+                !selectionData.documentSelectionIsInEditable &&
+                childNodes(editable).length === 1 &&
+                isEmptyBlock(el) &&
+                /** @type {Element} */ (el).matches(baseContainerGlobalSelector)
+            ) {
+                return [el];
+            } else {
+                return [];
+            }
+        },
+        input_handlers: this.config.composerPluginDependencies.onInput.bind(this),
+    };
+
+    setup() {
+        this.addDomListener(
+            this.editable,
+            "keydown",
+            this.config.composerPluginDependencies.onKeydown,
+        );
+        this.addDomListener(
+            this.editable,
+            "focusin",
+            this.config.composerPluginDependencies.onFocusin,
+        );
+        this.addDomListener(
+            this.editable,
+            "focusout",
+            this.config.composerPluginDependencies.onFocusout,
+        );
+    }
+
+    /**
+     * @param {DocumentFragment} sanitizedFragment
+     * @returns {boolean}
+     */
+    handlePasteHtmlOverride(sanitizedFragment) {
+        if (sanitizedFragment.childNodes.length === 0) {
+            return false;
+        }
+        /** @param {Node} node */
+        const removeStyle = (node) => {
+            if (node.nodeType === Node.ELEMENT_NODE) {
+                const tagName = node.nodeName.toUpperCase();
+                if (tagName === "BR") {
+                    return;
+                }
+                if (!ALLOWED_TAGS.includes(tagName)) {
+                    /** @type {ChildNode} */ (node).replaceWith(
+                        document.createTextNode(node.textContent),
+                    );
+                    return;
+                }
+                /** @type {Element} */ (node).removeAttribute("style");
+                if (/** @type {Element} */ (node).hasAttribute("class")) {
+                    const preservedClasses = [
+                        .../** @type {Element} */ (node).classList,
+                    ].filter((className) => PRESERVED_CLASSNAMES.has(className));
+                    if (preservedClasses.length) {
+                        /** @type {Element} */ (node).className =
+                            preservedClasses.join(" ");
+                    } else {
+                        /** @type {Element} */ (node).removeAttribute("class");
+                    }
+                }
+                [...node.childNodes].forEach(removeStyle);
+            }
+        };
+        [...sanitizedFragment.childNodes].forEach(removeStyle);
+        log.pipeline("handlePasteHtmlOverride", () => ({
+            nodes: sanitizedFragment.childNodes.length,
+        }));
+        this.dependencies.dom.insert(sanitizedFragment);
+        this.dependencies.history.addStep();
+        return true;
+    }
+}

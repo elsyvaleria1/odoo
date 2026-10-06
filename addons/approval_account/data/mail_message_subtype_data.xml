@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+
+    <record id="mt_invoice_approved" model="mail.message.subtype">
+        <field name="name">Approved</field>
+        <field name="description">Invoice/Bill approved</field>
+        <field name="res_model">account.move</field>
+        <field name="sequence" eval="20" />
+        <field name="default" eval="True" />
+        <field name="internal" eval="True" />
+    </record>
+
+    <record id="mt_invoice_refused" model="mail.message.subtype">
+        <field name="name">Refused</field>
+        <field name="description">Invoice/Bill approval refused</field>
+        <field name="res_model">account.move</field>
+        <field name="sequence" eval="30" />
+        <field name="default" eval="True" />
+        <field name="internal" eval="True" />
+    </record>
+
+</odoo>

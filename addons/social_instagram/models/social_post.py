@@ -1,0 +1,69 @@
+from odoo import api, fields, models
+from odoo.exceptions import ValidationError
+from odoo.fields import Domain
+
+
+class SocialPost(models.Model):
+    _inherit = "social.post"
+
+    instagram_image_ids = fields.Many2many(relation="instagram_image_ids_rel")
+
+    @api.depends("live_post_ids.instagram_post_id")
+    def _compute_stream_posts_count(self) -> None:
+        super()._compute_stream_posts_count()
+
+    def _check_post_access(self) -> None:
+        """See #_get_instagram_image_error() for more information."""
+        super()._check_post_access()
+
+        for post in self:
+            if "instagram" in post.media_ids.mapped("media_type"):
+                faulty_images, image_error_code = post._get_instagram_image_error()
+                if image_error_code == "missing":
+                    raise ValidationError(
+                        self.env._(
+                            "At least one image is required when posting on Instagram."
+                        )
+                    )
+                if image_error_code == "wrong_extension":
+                    raise ValidationError(
+                        self.env._(
+                            "The following images are not in the correct format (jpg/jpeg).\n\n%(images)s",
+                            images="\n".join(
+                                f"- {faulty_image}" for faulty_image in faulty_images
+                            ),
+                        ),
+                    )
+                if image_error_code == "incorrect_ratio":
+                    raise ValidationError(
+                        self.env._(
+                            "The following images do not meet the required aspect ratio (between 1.91:1 and 4:5).\n\n%(images)s",
+                            images="\n".join(
+                                f"- {faulty_image}" for faulty_image in faulty_images
+                            ),
+                        ),
+                    )
+                if image_error_code == "corrupted":
+                    raise ValidationError(
+                        self.env._(
+                            "Your image appears to be corrupted, please try loading it again."
+                        )
+                    )
+                if image_error_code == "max_limit":
+                    raise ValidationError(
+                        self.env._("You can only post up to 10 images at once.")
+                    )
+
+    def _get_domain_stream_post(self):
+        domain = super()._get_domain_stream_post()
+        instagram_post_ids = [
+            instagram_post_id
+            for instagram_post_id in self.live_post_ids.mapped("instagram_post_id")
+            if instagram_post_id
+        ]
+        if instagram_post_ids:
+            return Domain.OR(
+                [domain, [("instagram_post_id", "in", instagram_post_ids)]]
+            )
+        else:
+            return domain

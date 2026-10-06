@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <template id="collection_receipt_page" name="Collection Receipt">
+        <t t-call="portal.frontend_layout">
+            <div class="container py-5" style="max-width: 640px;">
+                <h1 class="h3 mb-1">Collection receipt</h1>
+                <p class="text-muted mb-4" t-out="payment.company_id.name" />
+                <div t-if="reported" class="alert alert-info" role="status">
+                    Thank you. We received your report and will contact you.
+                </div>
+                <table class="table">
+                    <tbody>
+                        <tr>
+                            <th scope="row">Receipt</th>
+                            <td t-out="payment.name" />
+                        </tr>
+                        <tr>
+                            <th scope="row">Customer</th>
+                            <td t-out="payment.partner_id.name" />
+                        </tr>
+                        <tr>
+                            <th scope="row">Amount</th>
+                            <td>
+                                <strong
+                                    t-out="payment.amount"
+                                    t-options="{'widget': 'monetary', 'display_currency': payment.currency_id}" />
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row">Paid on</th>
+                            <td t-out="payment.date" t-options="{'widget': 'date'}" />
+                        </tr>
+                        <tr>
+                            <th scope="row">Received by</th>
+                            <td t-out="payment.collector_id.name" />
+                        </tr>
+                        <tr t-if="payment.collection_method">
+                            <th scope="row">Paid in</th>
+                            <td>
+                                <span t-field="payment.collection_method" />
+                            </td>
+                        </tr>
+                        <tr t-if="invoices">
+                            <th scope="row">Invoices</th>
+                            <td t-out="', '.join(invoices.mapped('name'))" />
+                        </tr>
+                        <tr>
+                            <th scope="row">Status</th>
+                            <td>
+                                <span t-if="payment.is_in_custody">
+                                    Recorded, held by the collector until handed in
+                                </span>
+                                <span t-else="">Recorded and received by the company</span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+                <a
+                    t-attf-href="/collection/receipt/#{payment.id}/pdf?access_token=#{access_token}"
+                    class="btn btn-secondary mb-4">
+                    Download the receipt
+                </a>
+                <form
+                    t-if="not reported"
+                    method="POST"
+                    t-attf-action="/collection/receipt/#{payment.id}/report">
+                    <input
+                        type="hidden"
+                        name="csrf_token"
+                        t-att-value="request.csrf_token()" />
+                    <input
+                        type="hidden"
+                        name="access_token"
+                        t-att-value="access_token" />
+                    <label for="description" class="form-label">Something wrong?</label>
+                    <textarea
+                        id="description"
+                        name="description"
+                        class="form-control mb-2"
+                        rows="3"
+                        maxlength="2000"
+                        required="required"
+                        placeholder="For example: I paid a different amount" />
+                    <button type="submit" class="btn btn-primary">Report a problem</button>
+                </form>
+            </div>
+        </t>
+    </template>
+
+</odoo>

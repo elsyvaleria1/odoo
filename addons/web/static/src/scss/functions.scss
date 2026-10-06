@@ -1,0 +1,156 @@
+$-unit-references: (
+    "px": 1px,
+    "rem": 1rem,
+    "em": 1em,
+    "%": 1%,
+    "vh": 1vh,
+    "vw": 1vw,
+    "vmin": 1vmin,
+    "vmax": 1vmax,
+    "cm": 1cm,
+    "mm": 1mm,
+    "in": 1in,
+    "pt": 1pt,
+    "pc": 1pc,
+    "ex": 1ex,
+    "ch": 1ch,
+);
+
+@function o-round-color($-color) {
+    @if type-of($-color) != "color" {
+        @return $-color;
+    }
+
+    $-r: round(red($-color));
+    $-g: round(green($-color));
+    $-b: round(blue($-color));
+
+    @if alpha($-color) == 1 {
+        @return rgb($-r, $-g, $-b);
+    }
+
+    @return rgba($-r, $-g, $-b, alpha($-color));
+}
+
+@function o-strip-unit($-value) {
+    @if type-of($-value) == "number" and not unitless($-value) {
+        $-ref: map-get($-unit-references, unit($-value));
+        @if $-ref != null {
+            @return calc($-value / $-ref);
+        }
+    }
+
+    @return $-value;
+}
+
+@function o-to-rem($-px-value, $-base: 16) {
+    @each $-operand in ($-px-value, $-base) {
+        $-stripped: o-strip-unit($-operand);
+        @if type-of($-stripped) != "number" or not unitless($-stripped) {
+            @error "o-to-rem(): '#{$-operand}' is not a length; expected one of #{map-keys($-unit-references)} or a unitless number.";
+        }
+    }
+
+    @return calc(o-strip-unit($-px-value) / o-strip-unit($-base) * 1rem);
+}
+
+@property --bg-opacity {
+    syntax: "<number>";
+    inherits: false;
+    initial-value: 1;
+}
+
+@property --text-opacity {
+    syntax: "<number>";
+    inherits: false;
+    initial-value: 1;
+}
+
+@mixin o-print-color($-color, $-rule, $-css-opacity-var) {
+    @include o-print-color-rgb(to-rgb($-color), $-rule, $-css-opacity-var);
+}
+
+@mixin o-print-color-rgb($-rgb, $-rule, $-css-opacity-var) {
+    --#{$-rule}: RGBA(#{$-rgb}, var(--#{$-css-opacity-var}, 1));
+    #{$-rule}: var(--#{$-rule}) !important;
+}
+
+$o-bootstrap-follows-palette: false !default;
+
+@function o-token($-name, $-fallback) {
+    @return unquote("var(#{$-name}, #{$-fallback})");
+}
+
+@function o-palette-token($-name, $-fallback) {
+    @return if($o-bootstrap-follows-palette, o-token($-name, $-fallback), $-fallback);
+}
+
+@function o-token-alpha($-name, $-fallback, $-alpha) {
+    @return unquote(
+        "color-mix(in srgb, var(#{$-name}, #{$-fallback}) #{$-alpha * 100%}, transparent)"
+    );
+}
+
+@function o-token-mix($-name, $-fallback, $-other-name, $-other-fallback, $-weight) {
+    @return unquote(
+        "color-mix(in srgb, var(#{$-name}, #{$-fallback}) #{$-weight}, var(#{$-other-name}, #{$-other-fallback}))"
+    );
+}
+
+@function o-token-with-alpha($-name, $-fallback, $-alpha) {
+    @return unquote("rgb(from var(#{$-name}, #{$-fallback}) r g b / #{$-alpha})");
+}
+
+@function o-token-darken($-name, $-fallback, $-amount) {
+    @return unquote(
+        "hsl(from var(#{$-name}, #{$-fallback}) h s calc(l - #{o-strip-unit($-amount)}))"
+    );
+}
+
+@function o-token-link-shade($-name, $-fallback) {
+    @return unquote(
+        "hsl(from var(#{$-name}, #{$-fallback}) h s calc(l - var(--o-link-shade, #{o-strip-unit($link-shade-percentage)})))"
+    );
+}
+
+@function o-token-lighten($-name, $-fallback, $-amount) {
+    @return unquote(
+        "hsl(from var(#{$-name}, #{$-fallback}) h s calc(l + #{o-strip-unit($-amount)}))"
+    );
+}
+
+@function o-palette-token-mix(
+    $-name,
+    $-fallback,
+    $-other-name,
+    $-other-fallback,
+    $-weight
+) {
+    @return if(
+        $o-bootstrap-follows-palette,
+        o-token-mix($-name, $-fallback, $-other-name, $-other-fallback, $-weight),
+        mix($-fallback, $-other-fallback, $-weight)
+    );
+}
+
+@function o-palette-token-alpha($-name, $-fallback, $-alpha) {
+    @return if(
+        $o-bootstrap-follows-palette,
+        o-token-alpha($-name, $-fallback, $-alpha),
+        rgba($-fallback, $-alpha)
+    );
+}
+
+// Extension points a bundle may redefine before Bootstrap reads them. The
+// website's bootstrap_runtime.scss answers them with its runtime aliases: a font
+// size RFS handles, the compiled value a builder read-back publishes, and a
+// theme value read where the website is not otherwise known (the portal logo).
+@function o-rfs-font-size($-name, $-value) {
+    @return $-value;
+}
+@function o-runtime-compiled($-name, $-value) {
+    @return $-value;
+}
+@function o-runtime-value($-name, $-value) {
+    @return $-value;
+}

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<templates xml:space="preserve">
+
+<t t-name="mail.Chatter">
+ <div t-if="this.state.thread" class="o-mail-Chatter w-100 h-100 flex-grow-1 d-flex flex-column bg-inherit" t-att-class="{ 'o-chatter-disabled': this.props.threadId === false }" t-on-scroll="this.onScrollDebounced" t-ref="this.rootRef">
+ <t name="chatter-collapsed"/>
+ <t name="chatter-expanded">
+ <div class="o-mail-Chatter-top d-print-none position-sticky top-0" t-att-class="{ 'shadow-sm': this.state.isTopStickyPinned }" t-ref="this.topRef">
+ <t name="chatter-topbar"/>
+ <t name="chatter-composer">
+ <Composer t-if="this.props.composer" composer="this.state.thread.composer" mode="'extended'" onPostCallback.bind="this.onPostCallback" onCloseFullComposerCallback.bind="this.onCloseFullComposerCallback" dropzoneRef="this.rootRef" type="'message'" t-key="this.props.threadId"/>
+ </t>
+ </div>
+ <div class="o-mail-Chatter-content d-flex flex-column flex-grow-1 bg-inherit">
+ <t name="chatter-content-top"/>
+ <t name="chatter-thread">
+ <Thread thread="this.state.thread" t-key="this.state.thread.localId" order="'desc'" scrollRef="this.rootRef" jumpPresent="this.state.jumpThreadPresent"/>
+ </t>
+ </div>
+ </t>
+ </div>
+</t>
+
+</templates>

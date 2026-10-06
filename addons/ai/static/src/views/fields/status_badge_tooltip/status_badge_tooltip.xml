@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="ai.StatusBadgeTooltip">
+        <div class="d-flex align-items-center">
+            <span t-if="this.props.record.data[this.props.name]"
+                class="badge rounded-pill position-relative"
+                t-att-class="this.badgeClass"
+                t-att-data-tooltip="this.showTooltip ? this.errorDetails : ''">
+                <span t-out="this.formattedValue" />
+                <i t-if="this.showTooltip" class="fa-solid fa-exclamation-circle fa-xs ms-2"/>
+            </span>
+        </div>
+    </t>
+
+</templates>

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <menuitem
+        id="menu_hr_appraisal_surveys"
+        name="360 Feedback"
+        parent="hr_appraisal.menu_hr_appraisal_configuration"
+        action="survey_survey_action_appraisal"
+        sequence="16"
+        groups="hr_appraisal.group_hr_appraisal_manager" />
+
+</odoo>

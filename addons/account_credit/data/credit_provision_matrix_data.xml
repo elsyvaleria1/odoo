@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+
+    <record id="provision_matrix_default" model="credit.provision.matrix">
+        <field name="name">Default matrix (aging only)</field>
+        <field
+            name="line_ids"
+            eval="[             Command.create({'bucket': 'current', 'rate': 1.0}),             Command.create({'bucket': 'b1_30', 'rate': 3.0}),             Command.create({'bucket': 'b31_60', 'rate': 10.0}),             Command.create({'bucket': 'b61_90', 'rate': 25.0}),             Command.create({'bucket': 'b91_180', 'rate': 50.0}),             Command.create({'bucket': 'b180_plus', 'rate': 100.0}),         ]" />
+    </record>
+
+</odoo>

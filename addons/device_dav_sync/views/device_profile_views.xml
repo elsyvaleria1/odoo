@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_device_profile_form_dav" model="ir.ui.view">
+        <field name="name">device.profile.form.dav</field>
+        <field name="model">device.profile</field>
+        <field name="inherit_id" ref="device.view_device_profile_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//notebook" position="inside">
+                <page name="dav_settings" string="DAV Sync Settings">
+                    <group>
+                        <group>
+                            <field name="dav_enabled" />
+                            <field
+                                name="dav_addressbook_enabled"
+                                invisible="not dav_enabled" />
+                            <field
+                                name="dav_calendar_enabled"
+                                invisible="not dav_enabled" />
+                        </group>
+                        <group>
+                            <field name="dav_base_url" readonly="1" />
+                            <field
+                                name="dav_sync_window_days"
+                                invisible="not dav_enabled" />
+                            <field
+                                name="dav_max_items_per_sync"
+                                invisible="not dav_enabled" />
+                        </group>
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

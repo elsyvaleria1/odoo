@@ -1,0 +1,11 @@
+<templates xml:space="preserve">
+    <t t-name="document.DocumentsListActionWidget">
+        <div t-if="this.config.viewArch?.getAttribute('js_class') === 'documents_list'" class="o_documents_list_actions">
+            <i t-foreach="this.visibleActions" t-as="item" t-key="item.id"
+                t-attf-class="{{item.icon}} fa-fw me-2"
+                t-att-title="item.label"
+                t-att-data-action="item.id"
+                t-on-click="() => this.run(item.action)"/>
+        </div>
+    </t>
+</templates>

@@ -1,0 +1,24 @@
+// @ts-check
+/** @odoo-module native */
+import { ACTION_TAGS } from "@mail/core/common/action";
+import { registerThreadAction } from "@mail/core/common/thread_actions";
+import { _t } from "@web/core/translation";
+
+/** @typedef {import("@mail/core/common/thread_actions").ActionParams} ActionParams */
+registerThreadAction("leave", {
+    /** @param {ActionParams} params */
+    condition: ({ owner, thread }) =>
+        (thread?.canLeave || thread?.canUnpin) && !owner.isDiscussContent,
+    icon: "fa-solid fa-right-from-bracket",
+    /** @param {ActionParams} params */
+    name: ({ thread }) =>
+        thread.canLeave ? _t("Leave Channel") : _t("Unpin Conversation"),
+    /** @param {ActionParams} params */
+    open: ({ thread }) => {
+        const channel = thread.canLeave ? thread.channel : undefined;
+        return channel ? channel.leaveChannel() : thread.unpin();
+    },
+    sequence: 10,
+    sequenceGroup: 40,
+    tags: ACTION_TAGS.DANGER,
+});

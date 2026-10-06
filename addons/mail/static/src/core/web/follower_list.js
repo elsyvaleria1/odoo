@@ -1,0 +1,96 @@
+// @ts-check
+/** @odoo-module native */
+import { Follower } from "@mail/core/web/follower";
+import { FollowerSubtypeDialog } from "@mail/core/web/follower_subtype_dialog";
+import { useVisible } from "@mail/utils/common/hooks";
+import { Component, t, useProps } from "@odoo/owl";
+import { DropdownItem } from "@web/components/dropdown";
+import { makeLogger } from "@web/core/debug/debug_logger";
+import { _t } from "@web/core/translation";
+import { elementRef } from "@web/core/utils/element_ref";
+import { useService } from "@web/core/utils/hooks";
+
+const log = makeLogger("mail.follower");
+/**
+ * @typedef {Object} Props
+ * @property {import("@web/components/dropdown").DropdownState} dropdown
+ * @property {function} [onAddFollowers]
+ * @property {function} [onFollowerChanged]
+ * @property {import("models").Thread} thread
+ * @extends {Component<Props, import("@web/env").OdooEnv>}
+ */
+
+export class FollowerList extends Component {
+    static template = "mail.FollowerList";
+    static components = { DropdownItem, Follower };
+    static props = {
+        onAddFollowers: t.any().optional(),
+        onFollowerChanged: t.any().optional(),
+        thread: t.any(),
+        dropdown: t.any(),
+    };
+    props = useProps(this.constructor.props);
+
+    setup() {
+        super.setup();
+        this.dialog = useService("dialog");
+        this.action = useService("action");
+        this.store = useService("mail.store");
+        this.loadMoreRef = elementRef();
+        useVisible(
+            this.loadMoreRef,
+            /** @param {boolean} isVisible */ (isVisible) => {
+                if (isVisible) {
+                    this.props.thread.loadMoreFollowers();
+                }
+            },
+        );
+    }
+
+    onClickAddFollowers() {
+        log.logic("onClickAddFollowers", () => ({ thread: this.props.thread.localId }));
+        const action = {
+            type: "ir.actions.act_window",
+            res_model: "wizard.mail.followers.update",
+            view_mode: "form",
+            views: [[false, "form"]],
+            name: _t("Add followers to this document"),
+            target: "new",
+            context: {
+                default_res_model: this.props.thread.model,
+                default_res_ids: [this.props.thread.id],
+                dialog_size: "medium",
+                form_view_ref: "mail.mail_followers_list_edit_form",
+            },
+        };
+        this.action.doAction(action, {
+            onClose: () => {
+                this.props.onAddFollowers?.();
+            },
+        });
+    }
+
+    async onClickFollow() {
+        await this.props.thread.follow();
+        this.props.onFollowerChanged?.();
+    }
+
+    async onClickUnfollow() {
+        log.logic("onClickUnfollow", () => ({
+            thread: this.props.thread.localId,
+            selfFollower: Boolean(this.props.thread.selfFollower),
+        }));
+        if (this.props.thread.selfFollower) {
+            await this.props.thread.selfFollower.remove();
+            this.props.onFollowerChanged?.();
+        }
+    }
+
+    async onClickEdit() {
+        this.dialog.add(FollowerSubtypeDialog, {
+            follower: this.props.thread.selfFollower,
+            onFollowerChanged: () => this.props.onFollowerChanged?.(),
+        });
+        this.props.dropdown.close();
+    }
+}

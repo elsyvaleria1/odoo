@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <menuitem
+        id="menu_dav_sync_root"
+        name="DAV Sync"
+        parent="device.menu_device_root"
+        sequence="50" />
+
+    <menuitem
+        id="menu_dav_addressbooks"
+        name="Addressbooks"
+        parent="menu_dav_sync_root"
+        action="action_dav_addressbook"
+        sequence="10" />
+
+    <menuitem
+        id="menu_dav_calendars"
+        name="Calendars"
+        parent="menu_dav_sync_root"
+        action="action_dav_calendar"
+        sequence="20" />
+
+    <menuitem
+        id="menu_dav_sync_states"
+        name="Sync States"
+        parent="menu_dav_sync_root"
+        action="action_dav_sync_state"
+        sequence="30" />
+
+</odoo>

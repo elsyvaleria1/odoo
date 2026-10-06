@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="hr_employee_cv_wizard_view_form" model="ir.ui.view">
+        <field name="name">hr.employee.cv.wizard.view.form</field>
+        <field name="model">wizard.hr.employee.print.resume</field>
+        <field name="arch" type="xml">
+            <form string="Print Resume">
+                <field name="can_show_others" invisible="1" />
+                <field name="can_show_skills" invisible="1" />
+                <group>
+                    <group>
+                        <field
+                            name="employee_ids"
+                            widget="many2many_tags"
+                            invisible="1" />
+                        <label for="color_primary" string="Colors" />
+                        <div class="d-flex flex-row">
+                            <field
+                                name="color_primary"
+                                widget="color"
+                                style="width: 35px;" />
+                            <field name="color_secondary" widget="color" />
+                        </div>
+                        <field name="show_contact" />
+                        <field name="show_others" invisible="not can_show_others" />
+                        <field name="show_skills" invisible="not can_show_skills" />
+                    </group>
+                </group>
+                <footer>
+                    <button
+                        name="action_print_resume"
+                        type="object"
+                        string="Print"
+                        class="oe_highlight"
+                        data-hotkey="q" />
+                    <button
+                        special="cancel"
+                        string="Discard"
+                        class="btn-secondary"
+                        data-hotkey="x" />
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_hr_employee_cv_wizard" model="ir.actions.act_window">
+        <field name="name">Print Resume</field>
+        <field name="res_model">wizard.hr.employee.print.resume</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+        <field name="context">{'default_employee_ids': active_ids}</field>
+        <field name="binding_model_id" ref="hr.model_hr_employee" />
+        <field name="binding_type">report</field>
+        <field name="binding_view_types">list,kanban,form</field>
+    </record>
+
+</odoo>

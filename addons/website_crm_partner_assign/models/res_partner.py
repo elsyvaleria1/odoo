@@ -1,0 +1,122 @@
+from odoo import api, fields, models
+
+
+class ResPartner(models.Model):
+    _inherit = "res.partner"
+
+    @api.model
+    def default_get(self, fields):
+        default_vals = super().default_get(fields)
+        if self.env.context.get("partner_set_default_grade_activation"):
+            if "grade_id" in fields and not default_vals.get("grade_id"):
+                default_vals["grade_id"] = (
+                    self.env["res.partner.grade"]
+                    .search([], order="sequence", limit=1)
+                    .id
+                )
+            if "activation" in fields and not default_vals.get("activation"):
+                default_vals["activation"] = (
+                    self.env["res.partner.activation"]
+                    .search([], order="sequence", limit=1)
+                    .id
+                )
+        return default_vals
+
+    partner_weight = fields.Integer(
+        string="Level Weight",
+        compute="_compute_partner_weight",
+        store=True,
+        readonly=False,
+        tracking=True,
+        help="This should be a numerical value greater than 0 which will decide the contention for this partner to take this lead/opportunity.",
+    )
+    grade_sequence = fields.Integer(
+        related="grade_id.sequence",
+        readonly=True,
+    )
+    activation = fields.Many2one(
+        comodel_name="res.partner.activation",
+        index="btree_not_null",
+        tracking=True,
+    )
+    date_partnership = fields.Date(string="Partnership Date")
+    date_review = fields.Date(string="Latest Review")
+    date_review_next = fields.Date(string="Next Review")
+    assigned_partner_id = fields.Many2one(
+        comodel_name="res.partner",
+        string="Implemented by",
+        index="btree_not_null",
+    )
+    implemented_partner_ids = fields.One2many(
+        comodel_name="res.partner",
+        inverse_name="assigned_partner_id",
+        string="Implementation References",
+    )
+    implemented_partner_count = fields.Integer(
+        compute="_compute_implemented_partner_count",
+        store=True,
+    )
+
+    @api.depends(
+        "implemented_partner_ids.is_published", "implemented_partner_ids.active"
+    )
+    def _compute_implemented_partner_count(self) -> None:
+        rg_result = self.env["res.partner"]._read_group(
+            [("assigned_partner_id", "in", self.ids), ("is_published", "=", True)],
+            ["assigned_partner_id"],
+            ["__count"],
+        )
+        rg_data = {assigned_partner.id: count for assigned_partner, count in rg_result}
+        for partner in self:
+            partner.implemented_partner_count = rg_data.get(partner.id, 0)
+
+    @api.depends("grade_id.partner_weight")
+    def _compute_partner_weight(self) -> None:
+        for partner in self:
+            partner.partner_weight = (
+                partner.grade_id.partner_weight if partner.grade_id else 0
+            )
+
+    def _get_domain_contact_opportunities(self) -> list:
+        all_partners = self._get_children_partners_for_hierarchy().ids
+        return [
+            "|",
+            ("partner_assigned_id", "in", all_partners),
+            ("partner_id", "in", all_partners),
+        ]
+
+    def _compute_opportunity_count(self):
+        if not self.ids or not self.env.user.has_group("sale.group_sale_salesman"):
+            return super()._compute_opportunity_count()
+
+        self.opportunity_count = 0
+        opportunity_data = (
+            self.env["crm.lead"]
+            .with_context(active_test=False)
+            ._read_group(
+                self._get_domain_contact_opportunities(),
+                ["partner_assigned_id", "partner_id"],
+                ["__count"],
+            )
+        )
+        current_pids = set(self._ids)
+        for assign_partner, partner, count in opportunity_data:
+            seen_partners = set()
+            while partner or assign_partner:
+                if (
+                    assign_partner
+                    and assign_partner.id in current_pids
+                    and assign_partner not in seen_partners
+                ):
+                    assign_partner.opportunity_count += count
+                    seen_partners.add(assign_partner)
+                if (
+                    partner
+                    and partner.id in current_pids
+                    and partner not in seen_partners
+                ):
+                    partner.opportunity_count += count
+                    seen_partners.add(partner)
+                assign_partner = assign_partner.parent_id
+                partner = partner.parent_id
+        return None

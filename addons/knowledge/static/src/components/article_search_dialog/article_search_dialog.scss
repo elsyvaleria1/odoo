@@ -1,0 +1,36 @@
+.o_article_search_dialog {
+    overflow: auto;
+    flex: 1;
+    max-height: 70vh;
+    @media (max-width: 480px) {
+        max-height: 85vh;
+    }
+    .o_article_search_item {
+        &.o_selected {
+            background-color: rgba($knowledge-bg--active, 0.1);
+        }
+    }
+    .o_article_search_item a {
+        .fa-star {
+            color: o-token(--o-favorite, $o-main-favorite-color);
+        }
+    }
+}
+
+// The dialog names its own `.modal-content` (contentClass): asked through
+// `.modal:has(.o_article_search_dialog) .modal-body`, every DOM change made
+// while any dialog is open restyled every modal part of the page.
+.modal .modal-content.o_article_search_dialog_content {
+    top: 15vh;
+    height: auto !important;
+    max-height: 100%;
+
+    .modal-body {
+        display: flex;
+        max-height: 100%;
+    }
+}
+.modal .modal-dialog:has(> .o_article_search_dialog_content) {
+    align-items: start;
+    padding: 0;
+}

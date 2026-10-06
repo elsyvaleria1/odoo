@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="stock_picking_view_form_trace_gps" model="ir.ui.view">
+        <field name="name">stock.picking.form.trace.gps</field>
+        <field name="model">stock.picking</field>
+        <field
+            name="inherit_id"
+            ref="stock_fleet_trace.stock_picking_view_form_trace" />
+        <field name="arch" type="xml">
+            <field name="trip_arrival_date" position="after">
+                <field name="trip_gps_verified" />
+                <field name="trip_gps_arrival" invisible="not trip_gps_arrival" />
+                <field name="trip_gps_departure" invisible="not trip_gps_departure" />
+            </field>
+        </field>
+    </record>
+
+</odoo>

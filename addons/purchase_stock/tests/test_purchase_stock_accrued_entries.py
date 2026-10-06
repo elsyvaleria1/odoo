@@ -1,0 +1,165 @@
+from odoo import Command, fields
+from odoo.exceptions import UserError
+from odoo.tests import Form, tagged
+
+from odoo.addons.account.tests.common import AccountTestInvoicingCommon
+
+
+@tagged("post_install", "-at_install")
+class TestAccruedPurchaseStock(AccountTestInvoicingCommon):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+
+        uom_unit = cls.env.ref("uom.product_uom_unit")
+        product = cls.env["product.product"].create(
+            {
+                "name": "Product",
+                "list_price": 30.0,
+                "type": "consu",
+                "uom_id": uom_unit.id,
+            }
+        )
+
+        cls.purchase_order = cls.env["purchase.order"].create(
+            {
+                "partner_id": cls.partner_a.id,
+                "line_ids": [
+                    Command.create(
+                        {
+                            "name": product.name,
+                            "product_id": product.id,
+                            "product_qty": 10.0,
+                            "product_uom_id": product.uom_id.id,
+                            "price_unit": product.list_price,
+                            "tax_ids": False,
+                        }
+                    ),
+                ],
+            }
+        )
+        cls.purchase_order.action_confirm()
+        cls.account_expense = cls.company_data["default_account_expense"]
+        cls.account_revenue = cls.company_data["default_account_revenue"]
+
+    def test_purchase_stock_accruals(self):
+        pick = self.purchase_order.picking_ids
+        pick.move_ids.write(
+            {
+                "quantity": 2,
+                "picked": True,
+            }
+        )
+        pick.button_validate()
+        Form.from_action(self.env, pick.button_validate()).save().process()
+        pick.move_ids.write({"date": fields.Date.to_date("2020-01-02")})
+
+        pick = pick.copy()
+        pick.move_ids.write({"quantity": 3, "picked": True})
+        pick.button_validate()
+        pick.move_ids.write({"date": fields.Date.to_date("2020-01-06")})
+
+        wizard = (
+            self.env["wizard.account.move.create.accrual"]
+            .with_context(
+                {
+                    "active_model": "purchase.order",
+                    "active_ids": self.purchase_order.ids,
+                }
+            )
+            .create(
+                {
+                    "account_id": self.account_expense.id,
+                    "date": "2020-01-01",
+                }
+            )
+        )
+        with self.assertRaises(UserError):
+            wizard.create_entries()
+
+        wizard.date = fields.Date.to_date("2020-01-04")
+        self.assertRecordValues(
+            self.env["account.move"].search(wizard.create_entries()["domain"]).line_ids,
+            [
+                {"account_id": self.account_expense.id, "debit": 0, "credit": 60},
+                {"account_id": wizard.account_id.id, "debit": 60, "credit": 0},
+                {"account_id": self.account_expense.id, "debit": 60, "credit": 0},
+                {"account_id": wizard.account_id.id, "debit": 0, "credit": 60},
+            ],
+        )
+
+        wizard.date = fields.Date.to_date("2020-01-07")
+        self.assertRecordValues(
+            self.env["account.move"].search(wizard.create_entries()["domain"]).line_ids,
+            [
+                {"account_id": self.account_expense.id, "debit": 0, "credit": 150},
+                {"account_id": wizard.account_id.id, "debit": 150, "credit": 0},
+                {"account_id": self.account_expense.id, "debit": 150, "credit": 0},
+                {"account_id": wizard.account_id.id, "debit": 0, "credit": 150},
+            ],
+        )
+
+    def test_purchase_stock_invoiced_accrued_entries(self):
+        pick = self.purchase_order.picking_ids
+        pick.move_ids.write({"quantity": 2, "picked": True})
+        pick.button_validate()
+        Form.from_action(self.env, pick.button_validate()).save().process()
+        pick.move_ids.write({"date": fields.Date.to_date("2020-01-02")})
+
+        move = self.purchase_order.create_invoice()
+        move.invoice_date = fields.Date.to_date("2020-01-04")
+        move.action_post()
+
+        pick = pick.copy()
+        pick.move_ids.write({"quantity": 3, "picked": True})
+        pick.button_validate()
+        pick.move_ids.write({"date": fields.Date.to_date("2020-01-06")})
+
+        move = self.purchase_order.create_invoice()
+        move.invoice_date = fields.Date.to_date("2020-01-08")
+        move.action_post()
+
+        wizard = (
+            self.env["wizard.account.move.create.accrual"]
+            .with_context(
+                {
+                    "active_model": "purchase.order",
+                    "active_ids": self.purchase_order.ids,
+                }
+            )
+            .create(
+                {
+                    "account_id": self.company_data["default_account_expense"].id,
+                    "date": "2020-01-02",
+                }
+            )
+        )
+
+        self.assertRecordValues(
+            self.env["account.move"].search(wizard.create_entries()["domain"]).line_ids,
+            [
+                {"account_id": self.account_expense.id, "debit": 0, "credit": 60},
+                {"account_id": wizard.account_id.id, "debit": 60, "credit": 0},
+                {"account_id": self.account_expense.id, "debit": 60, "credit": 0},
+                {"account_id": wizard.account_id.id, "debit": 0, "credit": 60},
+            ],
+        )
+
+        wizard.date = fields.Date.to_date("2020-01-05")
+        with self.assertRaises(UserError):
+            wizard.create_entries()
+
+        wizard.date = fields.Date.to_date("2020-01-07")
+        self.assertRecordValues(
+            self.env["account.move"].search(wizard.create_entries()["domain"]).line_ids,
+            [
+                {"account_id": self.account_expense.id, "debit": 0, "credit": 90},
+                {"account_id": wizard.account_id.id, "debit": 90, "credit": 0},
+                {"account_id": self.account_expense.id, "debit": 90, "credit": 0},
+                {"account_id": wizard.account_id.id, "debit": 0, "credit": 90},
+            ],
+        )
+
+        wizard.date = fields.Date.to_date("2020-01-09")
+        with self.assertRaises(UserError):
+            wizard.create_entries()

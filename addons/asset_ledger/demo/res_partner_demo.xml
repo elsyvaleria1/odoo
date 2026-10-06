@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="vendor_insurance_company" model="res.partner">
+        <field name="name">SafeGuard Insurance Co.</field>
+        <field name="is_company" eval="True" />
+        <field
+            name="phone_ids"
+            eval="[Command.create({'number': '+1-555-INSURE-1', 'type': 'landline'})]" />
+        <field name="email">contact@safeguard-insurance.example.com</field>
+        <field name="street">123 Insurance Plaza</field>
+        <field name="city">New York</field>
+        <field name="zip">10001</field>
+        <field name="country_id" ref="base.us" />
+    </record>
+
+    <record id="vendor_auto_service_center" model="res.partner">
+        <field name="name">Premier Auto Service Center</field>
+        <field name="is_company" eval="True" />
+        <field
+            name="phone_ids"
+            eval="[Command.create({'number': '+1-555-SERVICE', 'type': 'landline'})]" />
+        <field name="email">service@premierauto.example.com</field>
+        <field name="street">456 Mechanic Way</field>
+        <field name="city">Los Angeles</field>
+        <field name="zip">90001</field>
+        <field name="country_id" ref="base.us" />
+    </record>
+
+    <record id="vendor_fuel_station" model="res.partner">
+        <field name="name">QuickFuel Stations</field>
+        <field name="is_company" eval="True" />
+        <field
+            name="phone_ids"
+            eval="[Command.create({'number': '+1-555-FUEL-123', 'type': 'landline'})]" />
+        <field name="email">corporate@quickfuel.example.com</field>
+        <field name="street">789 Petroleum Drive</field>
+        <field name="city">Houston</field>
+        <field name="zip">77001</field>
+        <field name="country_id" ref="base.us" />
+    </record>
+
+    <record id="vendor_heavy_equipment_service" model="res.partner">
+        <field name="name">Industrial Equipment Services Inc.</field>
+        <field name="is_company" eval="True" />
+        <field
+            name="phone_ids"
+            eval="[Command.create({'number': '+1-555-HEAVY-01', 'type': 'landline'})]" />
+        <field name="email">service@ies-equipment.example.com</field>
+        <field name="street">321 Industrial Blvd</field>
+        <field name="city">Detroit</field>
+        <field name="zip">48201</field>
+        <field name="country_id" ref="base.us" />
+    </record>
+
+    <record id="vendor_tesla_service" model="res.partner">
+        <field name="name">Tesla Service Center - Central</field>
+        <field name="is_company" eval="True" />
+        <field
+            name="phone_ids"
+            eval="[Command.create({'number': '+1-555-TESLA-01', 'type': 'landline'})]" />
+        <field name="email">service@tesla.example.com</field>
+        <field name="street">999 Innovation Way</field>
+        <field name="city">Fremont</field>
+        <field name="zip">94538</field>
+        <field name="country_id" ref="base.us" />
+    </record>
+
+</odoo>

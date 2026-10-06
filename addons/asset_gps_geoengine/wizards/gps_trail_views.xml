@@ -1,0 +1,186 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_resource_asset_search_gps_trail" model="ir.ui.view">
+        <field name="name">resource.asset.search.gps.trail</field>
+        <field name="model">resource.asset</field>
+        <field name="arch" type="xml">
+            <search string="Search Assets for GPS Trail">
+                <field
+                    name="name"
+                    string="Asset / Operator / Device"
+                    filter_domain="[                         '|', '|', '|', '|', '|',                         ('name', 'ilike', self),                         ('license_plate', 'ilike', self),                         ('operator_id.name', 'ilike', self),                         ('gps_device_id.name', 'ilike', self),                         ('gps_device_id.imei', 'ilike', self),                         ('product_id.name', 'ilike', self)                     ]" />
+                <field name="license_plate" />
+                <field name="operator_id" string="Operator/Driver" />
+                <field name="gps_device_id" string="GPS Device" />
+                <field name="product_id" string="Vehicle Model" />
+                <separator />
+                <filter
+                    name="has_gps"
+                    string="With GPS Device"
+                    domain="[('gps_device_id', '!=', False)]" />
+                <filter
+                    name="has_operator"
+                    string="Has Operator"
+                    domain="[('operator_id', '!=', False)]" />
+                <separator />
+                <filter
+                    name="vehicles"
+                    string="Vehicles"
+                    domain="[('kind_code', '=', 'vehicle')]" />
+                <filter
+                    name="equipment"
+                    string="Equipment"
+                    domain="[('kind_code', 'in', ['equipment', 'machinery'])]" />
+                <group>
+                    <filter
+                        name="group_by_model"
+                        string="Vehicle Model"
+                        context="{'group_by': 'product_id'}" />
+                    <filter
+                        name="group_by_kind_code"
+                        string="Asset Type"
+                        context="{'group_by': 'kind_code'}" />
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="view_hr_employee_search_gps_trail" model="ir.ui.view">
+        <field name="name">hr.employee.search.gps.trail</field>
+        <field name="model">hr.employee</field>
+        <field name="arch" type="xml">
+            <search string="Search Operators for GPS Trail">
+                <field name="name" string="Operator Name" />
+                <field name="department_id" />
+                <field name="job_id" string="Job Position" />
+                <separator />
+                <filter
+                    name="has_asset_with_gps"
+                    string="Has Vehicle with GPS"
+                    domain="[('id', 'in', self.env['resource.asset'].search([('gps_device_id', '!=', False)]).mapped('operator_id').ids)]" />
+                <group>
+                    <filter
+                        name="group_by_department"
+                        string="Department"
+                        context="{'group_by': 'department_id'}" />
+                    <filter
+                        name="group_by_job"
+                        string="Job Position"
+                        context="{'group_by': 'job_id'}" />
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="view_device_device_search_gps_trail_asset" model="ir.ui.view">
+        <field name="name">device.device.search.gps.trail.asset</field>
+        <field name="model">device.device</field>
+        <field
+            name="inherit_id"
+            ref="device_gps_geoengine.view_device_device_search_gps_trail" />
+        <field name="arch" type="xml">
+            <field name="imei" position="after">
+                <field name="asset_id" string="Linked Asset" />
+                <field name="asset_operator_id" string="Operator" />
+            </field>
+        </field>
+    </record>
+
+    <record id="view_gps_trail_wizard_form_asset" model="ir.ui.view">
+        <field name="name">gps.trail.wizard.form.asset</field>
+        <field name="model">wizard.device.device.view.trail</field>
+        <field
+            name="inherit_id"
+            ref="device_gps_geoengine.view_gps_trail_wizard_form" />
+        <field name="arch" type="xml">
+            <group name="select_devices" position="before">
+                <group string="Select Assets" invisible="selection_mode != 'asset'">
+                    <field
+                        name="asset_ids"
+                        placeholder="Search by vehicle, operator, plate, or device..."
+                        widget="many2many_tags"
+                        context="{'search_view_ref': 'asset_gps_geoengine.view_resource_asset_search_gps_trail'}"
+                        options="{'no_create': true}" />
+                </group>
+
+                <group
+                    string="Select Operators"
+                    invisible="selection_mode != 'operator'">
+                    <field
+                        name="operator_ids"
+                        placeholder="Search operators by name..."
+                        widget="many2many_tags"
+                        context="{'search_view_ref': 'asset_gps_geoengine.view_hr_employee_search_gps_trail'}"
+                        options="{'no_create': true}" />
+                </group>
+            </group>
+        </field>
+    </record>
+
+    <record id="view_gps_trail_result_search_asset" model="ir.ui.view">
+        <field name="name">gps.trail.result.search.asset</field>
+        <field name="model">wizard.device.device.view.trail.result</field>
+        <field
+            name="inherit_id"
+            ref="device_gps_geoengine.view_gps_trail_result_search" />
+        <field name="arch" type="xml">
+            <field name="device_id" position="before">
+                <field name="operator_id" string="Operator" />
+                <field name="asset_id" string="Asset" />
+            </field>
+            <filter name="group_by_device" position="before">
+                <filter
+                    name="group_by_asset"
+                    string="Asset"
+                    context="{'group_by': 'asset_id'}" />
+            </filter>
+        </field>
+    </record>
+
+    <record id="view_gps_trail_result_list_asset" model="ir.ui.view">
+        <field name="name">gps.trail.result.list.asset</field>
+        <field name="model">wizard.device.device.view.trail.result</field>
+        <field
+            name="inherit_id"
+            ref="device_gps_geoengine.view_gps_trail_result_list" />
+        <field name="arch" type="xml">
+            <field name="name" position="after">
+                <field name="operator_name" optional="show" />
+                <field name="asset_name" optional="show" />
+                <field name="license_plate" optional="hide" />
+            </field>
+        </field>
+    </record>
+
+    <record id="view_gps_trail_result_form_asset" model="ir.ui.view">
+        <field name="name">gps.trail.result.form.asset</field>
+        <field name="model">wizard.device.device.view.trail.result</field>
+        <field
+            name="inherit_id"
+            ref="device_gps_geoengine.view_gps_trail_result_form" />
+        <field name="arch" type="xml">
+            <field name="device_id" position="before">
+                <field name="operator_id" />
+                <field name="asset_id" />
+                <field name="license_plate" invisible="not license_plate" />
+            </field>
+        </field>
+    </record>
+
+    <record id="view_gps_trail_result_geoengine_asset" model="ir.ui.view">
+        <field name="name">gps.trail.result.geoengine.asset</field>
+        <field name="model">wizard.device.device.view.trail.result</field>
+        <field
+            name="inherit_id"
+            ref="device_gps_geoengine.view_gps_trail_result_geoengine" />
+        <field name="arch" type="xml">
+            <field name="device_name" position="before">
+                <field name="operator_name" />
+                <field name="asset_name" />
+                <field name="license_plate" />
+            </field>
+        </field>
+    </record>
+
+</odoo>

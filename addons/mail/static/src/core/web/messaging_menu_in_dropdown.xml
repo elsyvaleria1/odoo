@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<templates xml:space="preserve">
+
+<t t-name="mail.MessagingMenuInDropdown">
+    <div t-att-class="this.discussSystray.class">
+        <Dropdown state="this.dropdown" beforeOpen.bind="this.beforeOpen" position="'bottom-end'" menuClass="this.discussSystray.menuClass" bottomSheet="false">
+            <button>
+                <i class="fa-solid fa-comments fa-lg" role="img" aria-label="Messages"/>
+                <span t-if="this.counter" class="o-mail-MessagingMenu-counter badge rounded-pill"><t t-out="this.counter"/></span>
+            </button>
+            <t t-set-slot="content">
+                <div t-att-class="`${this.discussSystray.contentClass} o-mail-MessagingMenuInDropdown`">
+                    <t name="before-content"/>
+                    <MessagingMenu state="this.store.messagingMenuSystrayState" close="this.closeDropdown"/>
+                </div>
+            </t>
+        </Dropdown>
+    </div>
+</t>
+
+</templates>

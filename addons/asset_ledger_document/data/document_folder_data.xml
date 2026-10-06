@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+
+    <record id="document_folder_equipment" model="document.document" forcecreate="0">
+        <field name="name">Equipment</field>
+        <field name="type">folder</field>
+        <field name="access_internal">view</field>
+        <field name="access_via_link">none</field>
+    </record>
+
+    <record id="document_folder_fleet" model="document.document" forcecreate="0">
+        <field name="name">Vehicles</field>
+        <field name="type">folder</field>
+        <field name="access_internal">view</field>
+        <field name="access_via_link">none</field>
+    </record>
+
+    <record id="document_folder_machinery" model="document.document" forcecreate="0">
+        <field name="name">Machinery</field>
+        <field name="type">folder</field>
+        <field name="access_internal">view</field>
+        <field name="access_via_link">none</field>
+    </record>
+
+    <record id="document_folder_property" model="document.document" forcecreate="0">
+        <field name="name">Properties</field>
+        <field name="type">folder</field>
+        <field name="access_internal">view</field>
+        <field name="access_via_link">none</field>
+    </record>
+
+</odoo>

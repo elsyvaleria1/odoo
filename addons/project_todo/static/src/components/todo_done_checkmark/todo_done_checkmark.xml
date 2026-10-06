@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<templates xml:space="preserve">
+
+    <t t-name="project_todo.TodoDoneCheckmark">
+        <a t-att-title="this.toggleTitle"
+           t-on-click.stop="this.onDoneToggled"
+           t-on-mouseleave="this.actualizeDoneState"
+           t-on-mouseover="this.freezeDoneState"
+           t-attf-class="{{ this.ui.isTouch ? 'o_todo_done_button_mobile' : 'o_todo_done_button' }} fa-lg {{ this.isDone ? 'fa-solid fa-circle-check done_button_enabled' : 'fa-regular fa-circle-check' }}"/>
+    </t>
+
+</templates>

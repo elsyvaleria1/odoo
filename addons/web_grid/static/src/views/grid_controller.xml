@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<templates>
+    <t t-name="web_grid.Buttons">
+        <div class="d-flex o_grid_buttons">
+            <div class="me-2" t-if="this.displayAddALine">
+                <button class="btn btn-primary o_grid_button_add"
+                        type="button"
+                        t-on-click="() => this.createRecord()">
+                    Add a Line
+                </button>
+            </div>
+            <t t-call="web_grid.CustomButtons" t-if="this.props.archInfo.buttons.length"/>
+        </div>
+    </t>
+    <t t-name="web_grid.CustomButtons">
+        <div class="o_grid_custom_buttons me-2">
+            <t t-foreach="this.props.archInfo.buttons" t-as="button" t-key="button.id">
+                <ViewButton
+                    t-if="!button.invisible"
+                    className="button.className"
+                    clickParams="button.clickParams"
+                    defaultRank="button.defaultRank"
+                    icon="button.icon"
+                    string="button.string"
+                    title="button.title"
+                    record="this.model.record"
+                />
+            </t>
+        </div>
+    </t>
+    <t t-name="web_grid.GridView">
+        <ViewLayout t-props="this.chassisProps">
+            <t t-set-slot="layout-buttons">
+                <t t-call="{{ this.props.buttonTemplate }}"/>
+            </t>
+            <t t-set-slot="default" t-slot-scope="layout">
+                <t t-component="this.props.Renderer"
+                   options="this.options"
+                   model="this.model"
+                   sections="this.model.sectionsArray"
+                   columns="this.columns"
+                   rows="this.model.itemsArray"
+                   sectionField="this.model.sectionField"
+                   rowFields="this.model.rowFields"
+                   measureField="this.props.archInfo.measureField"
+                   isEditable="this.isEditable"
+                   createInline="this.props.archInfo.activeActions.create and this.props.archInfo.createInline and !this.displayNoContent"
+                   createRecord.bind="this.createRecord"
+                   widgetPerFieldName="this.props.archInfo.widgetPerFieldName"
+                   openAction="this.props.archInfo.openAction"
+                   contentRef="layout.contentRef"
+                   ranges="this.model.ranges"
+                   state="this.state"
+                   isWeekendVisible="this.isWeekendVisible"
+                   toggleWeekendVisibility.bind="this.toggleWeekendVisibility"
+                />
+            </t>
+        </ViewLayout>
+    </t>
+</templates>

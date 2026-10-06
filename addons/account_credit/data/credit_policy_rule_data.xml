@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+
+    <record id="policy_rule_hold" model="credit.policy.rule">
+        <field name="name">A hold blocks every operation</field>
+        <field name="sequence" eval="5" />
+        <field name="document_kind">any</field>
+        <field name="payment_kind">any</field>
+        <field name="condition">hold_active</field>
+        <field name="outcome">block</field>
+        <field name="stop" eval="True" />
+        <field
+            name="message">Partner '%(partner)s' is in legal process. All operations are blocked.</field>
+    </record>
+
+    <record id="policy_rule_exception" model="credit.policy.rule">
+        <field name="name">A dated exception allows credit</field>
+        <field name="sequence" eval="10" />
+        <field name="document_kind">any</field>
+        <field name="payment_kind">credit</field>
+        <field name="condition">exception_active</field>
+        <field name="outcome">allow</field>
+        <field name="stop" eval="True" />
+        <field name="message">Credit exception running for '%(partner)s'.</field>
+    </record>
+
+    <record id="policy_rule_cash" model="credit.policy.rule">
+        <field name="name">Cash-only profiles buy on immediate terms</field>
+        <field name="sequence" eval="20" />
+        <field name="document_kind">any</field>
+        <field name="payment_kind">credit</field>
+        <field name="condition">state_is</field>
+        <field name="state">cash</field>
+        <field name="outcome">block</field>
+        <field
+            name="message">Partner '%(partner)s' has cash-only status. Only immediate payment terms are allowed.</field>
+    </record>
+
+    <record id="policy_rule_default" model="credit.policy.rule">
+        <field name="name">A profile in default needs authorization</field>
+        <field name="sequence" eval="30" />
+        <field name="document_kind">any</field>
+        <field name="payment_kind">credit</field>
+        <field name="condition">state_is</field>
+        <field name="state">default</field>
+        <field name="outcome">approve</field>
+        <field
+            name="message">Partner '%(partner)s' is in default: %(overdue)s overdue for %(days)s days.</field>
+    </record>
+
+    <record id="policy_rule_documents" model="credit.policy.rule">
+        <field name="name">Missing or expired documents need authorization</field>
+        <field name="sequence" eval="40" />
+        <field name="document_kind">any</field>
+        <field name="payment_kind">credit</field>
+        <field name="condition">documents_noncompliant</field>
+        <field name="outcome">approve</field>
+        <field
+            name="message">Partner '%(partner)s' is under credit review: documents are missing or expired.</field>
+    </record>
+
+    <record id="policy_rule_overdue" model="credit.policy.rule">
+        <field name="name">Any overdue receivable needs authorization</field>
+        <field name="sequence" eval="50" />
+        <field name="document_kind">any</field>
+        <field name="payment_kind">credit</field>
+        <field name="condition">overdue_amount_over</field>
+        <field name="threshold" eval="0.0" />
+        <field name="outcome">approve</field>
+        <field
+            name="message">Partner '%(partner)s' has %(overdue)s of overdue receivables.</field>
+    </record>
+
+    <record id="policy_rule_limit" model="credit.policy.rule">
+        <field name="name">Exceeding the credit limit needs authorization</field>
+        <field name="sequence" eval="60" />
+        <field name="document_kind">order</field>
+        <field name="payment_kind">credit</field>
+        <field name="condition">limit_exceeded</field>
+        <field name="outcome">approve</field>
+        <field
+            name="message">Credit limit exceeded for '%(partner)s': exposure %(exposure)s plus %(amount)s against a limit of %(limit)s.</field>
+    </record>
+
+    <record id="policy_rule_term" model="credit.policy.rule">
+        <field
+            name="name">A term longer than the grade allows needs authorization</field>
+        <field name="sequence" eval="70" />
+        <field name="document_kind">any</field>
+        <field name="payment_kind">credit</field>
+        <field name="condition">term_over_max</field>
+        <field name="outcome">approve</field>
+        <field
+            name="message">The payment term is longer than the grade of '%(partner)s' allows.</field>
+    </record>
+
+    <record id="policy_rule_picking_hold" model="credit.policy.rule">
+        <field name="name">A hold blocks deliveries too</field>
+        <field name="sequence" eval="6" />
+        <field name="document_kind">picking</field>
+        <field name="payment_kind">any</field>
+        <field name="condition">hold_active</field>
+        <field name="outcome">block</field>
+        <field name="stop" eval="True" />
+        <field
+            name="message">Partner '%(partner)s' is in legal process. All operations are blocked.</field>
+    </record>
+
+    <record id="policy_rule_picking_default" model="credit.policy.rule">
+        <field name="name">Delivering to a profile in default is flagged</field>
+        <field name="sequence" eval="80" />
+        <field name="document_kind">picking</field>
+        <field name="payment_kind">credit</field>
+        <field name="condition">state_is</field>
+        <field name="state">default</field>
+        <field name="outcome">warn</field>
+        <field
+            name="message">Partner '%(partner)s' is in default: %(overdue)s overdue for %(days)s days. This delivery is on credit terms.</field>
+    </record>
+
+</odoo>

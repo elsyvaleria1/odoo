@@ -1,0 +1,2 @@
+id,name,model_id/id,group_id/id,kind,operation,domain
+access_helpdesk_create_fsm_task,access.helpdesk.create.fsm.task,model_wizard_helpdesk_ticket_create_fsm_task,project.group_project_user,permission,cru,

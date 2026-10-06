@@ -1,0 +1,36 @@
+from odoo import fields, models
+
+
+class IapAccount(models.Model):
+    _inherit = "iap.account"
+
+    sender_name = fields.Char(
+        readonly=True,
+        help="This is the name that will be displayed as the sender of the SMS.",
+    )
+
+    def action_view_registration_wizard(self) -> dict:
+        return {
+            "type": "ir.actions.act_window",
+            "target": "new",
+            "name": self.env._("Register Account"),
+            "view_mode": "form",
+            "res_model": "wizard.iap.account.send.sms.code",
+            "context": {"default_account_id": self.id},
+        }
+
+    def action_view_sender_name_wizard(self) -> dict:
+        return {
+            "type": "ir.actions.act_window",
+            "target": "new",
+            "name": self.env._("Choose your sender name"),
+            "view_mode": "form",
+            "res_model": "wizard.iap.account.update.sms.sender",
+            "context": {"default_account_id": self.id},
+        }
+
+    def _get_account_info(self, account_id, balance, information):
+        res = super()._get_account_info(account_id, balance, information)
+        if account_id.service_name == "sms":
+            res["sender_name"] = information.get("sender_name")
+        return res

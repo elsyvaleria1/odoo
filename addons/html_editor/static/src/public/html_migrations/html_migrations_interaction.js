@@ -1,0 +1,63 @@
+/** @odoo-module native */
+import { VERSION_SELECTOR } from "@html_editor/html_migrations/html_migrations_utils";
+import { HtmlUpgradeManager } from "@html_editor/html_migrations/html_upgrade_manager";
+import { markup } from "@odoo/owl";
+import { registry } from "@web/core/registry";
+import { Interaction } from "@web/public/interaction";
+
+const upgradeElementToInteractionMap = new Map();
+
+export class HtmlMigrationsInteraction extends Interaction {
+    static selector = VERSION_SELECTOR;
+
+    setup() {
+        const parentElement = this.el.parentElement;
+        if (!parentElement) {
+            this.isComplete = true;
+            return;
+        }
+        for (const el of [...upgradeElementToInteractionMap.keys()]) {
+            if (el.contains(parentElement)) {
+                this.isComplete = true;
+                return;
+            } else if (parentElement.contains(el)) {
+                const interaction = upgradeElementToInteractionMap.get(el);
+                interaction.isComplete = true;
+                interaction.container = undefined;
+                upgradeElementToInteractionMap.delete(el);
+            }
+        }
+        this.container = parentElement;
+        upgradeElementToInteractionMap.set(this.container, this);
+    }
+
+    start() {
+        if (this.isComplete || this.isUpgrading || !this.container.isConnected) {
+            return;
+        }
+        this.isUpgrading = true;
+        this.services["public.interactions"].stopInteractions(this.container);
+        const htmlUpgradeManager = new HtmlUpgradeManager();
+        const initialValue = markup(this.container.innerHTML);
+        const upgradedValue = htmlUpgradeManager.processForUpgrade(initialValue);
+        if (initialValue !== upgradedValue) {
+            this.container.innerHTML = upgradedValue;
+        }
+        for (const el of this.container.querySelectorAll(VERSION_SELECTOR)) {
+            delete el.dataset.oeVersion;
+        }
+        this.services["public.interactions"].startInteractions(this.container);
+        this.isUpgrading = false;
+        this.isComplete = true;
+    }
+
+    destroy() {
+        if (this.isComplete && this.container) {
+            upgradeElementToInteractionMap.delete(this.container);
+        }
+    }
+}
+
+registry
+    .category("public.interactions")
+    .add("html_editor.html_migrations", HtmlMigrationsInteraction);

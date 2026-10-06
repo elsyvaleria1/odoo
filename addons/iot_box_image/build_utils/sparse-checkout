@@ -1,0 +1,5 @@
+addons/web
+addons/iot_box_image/configuration
+addons/iot_drivers
+odoo/
+odoo-bin

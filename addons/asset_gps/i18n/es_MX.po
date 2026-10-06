@@ -1,0 +1,26 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* asset_gps
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Language: es_MX\n"
+"Plural-Forms: \n"
+
+#. module: asset_gps
+#: model:ir.model.fields,field_description:asset_gps.field_device_data_log_gps_report__asset_id
+#: model_terms:ir.ui.view,arch_db:asset_gps.view_device_data_log_gps_report_search_asset
+msgid "Asset"
+msgstr "Activo"
+
+#. module: asset_gps
+#: model:res.groups,name:asset_gps.privilege_read_vehicle_gps
+msgid "Privilege: an asset reads its own GPS odometer"
+msgstr "Privilegio: un activo lee el odómetro de su propio GPS"

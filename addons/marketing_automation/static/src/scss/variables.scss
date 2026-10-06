@@ -1,0 +1,6 @@
+$o-ma-border-color: var(--MarketingAutomation-border-color, #{$o-gray-300});
+$o-ma-hierarchy-background: var(
+    --MarketingAutomation__Hierarchy-background-color,
+    #{$o-gray-100}
+);
+$o-ma-color-white: o-token(--o-bg-view, $o-view-background-color);

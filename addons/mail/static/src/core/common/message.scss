@@ -1,0 +1,349 @@
+.o-mail-Message {
+    transition:
+        background-color var(--o-duration-normal, 0.2s) ease-out,
+        opacity 0.5s ease-out,
+        box-shadow 0.5s ease-out,
+        transform var(--o-duration-normal, 0.2s) ease-out;
+
+    &.o-card {
+        background-color: o-token(--o-bg-view, $o-view-background-color);
+        --border-opacity: 0.2;
+    }
+
+    &.o-highlighted {
+        transform: translateY(-#{map-get($spacers, 3)});
+        z-index: 2;
+    }
+
+    &.o-actionMenuMobileOpen {
+        background-color: o-token-alpha(--o-action, $o-action, 0.075);
+        outline: 1px solid o-token-alpha(--o-action, $o-action, 0.125);
+        outline-offset: -1px;
+    }
+}
+
+.o-mail-Message-date {
+    color: o-palette-token(--o-text-muted, $text-muted);
+}
+
+.o-mail-Message-sidebar {
+    flex-basis: $o-mail-Message-sidebarWidth;
+    max-width: $o-mail-Message-sidebarWidth;
+
+    &.o-inChatWindow {
+        flex-basis: $o-mail-Message-sidebarSmallWidth;
+        max-width: $o-mail-Message-sidebarSmallWidth;
+    }
+}
+
+.o-mail-Message-avatarContainer {
+    width: $o-mail-Avatar-size;
+    height: $o-mail-Avatar-size;
+
+    &.o-inChatWindow {
+        width: $o-mail-Avatar-sizeSmall;
+        height: $o-mail-Avatar-sizeSmall;
+    }
+}
+
+.o-mail-Message-body {
+    &:not(.o-note) {
+        padding-left: (map-get($spacers, 2) + map-get($spacers, 3)) / 2;
+        padding-right: (map-get($spacers, 2) + map-get($spacers, 3)) / 2;
+
+        .o-mail-Message.o-editing & {
+            padding-left: map-get($spacers, 1);
+            padding-right: map-get($spacers, 1);
+        }
+    }
+
+    & > p:last-child,
+    .o-mail-Message-richBody > p:last-child {
+        margin-bottom: 0 !important;
+    }
+
+    table[align="left"][width="100%"] {
+        float: none;
+    }
+}
+
+.o-mail-Message-bubble {
+    background-color: var(--o-message-bubble-bg) !important;
+    border-color: var(--o-message-bubble-border-color) !important;
+
+    &.o-muted {
+        background-color: o-token(--o-bg-view, $o-view-background-color) !important;
+    }
+}
+
+.o-mail-Message-bubbleTail {
+    width: 6px;
+    height: 12px;
+    z-index: 1;
+    top: 0;
+
+    .o-mail-Message-bubbleTailBg {
+        color: var(--o-message-bubble-bg);
+    }
+    .o-mail-Message-bubbleTailBorder {
+        color: var(--o-message-bubble-border-color);
+    }
+}
+
+.o-mail-Message-bubble,
+.o-mail-Message-bubbleTail {
+    $_bubble_colors_map: (
+        ("o-blue", --info, $info),
+        ("o-green", --success, $success),
+        ("o-orange", --warning, $warning)
+    );
+
+    @each $_type, $_token, $_color in $_bubble_colors_map {
+        &.#{$_type} {
+            $-surface: o-token(--o-bg-view, $o-view-background-color);
+            $-hue: o-token($_token, $_color);
+            $-text: o-palette-token(--o-text, $body-color);
+            $-border-base: unquote("color-mix(in srgb, #{$-hue} 75%, #{$-text})");
+
+            --o-message-bubble-bg: #{unquote(
+                    "color-mix(in srgb, #{$-surface} 90%, #{$-hue})"
+                )};
+            --o-message-bubble-border-color: #{unquote(
+                    "color-mix(in srgb, #{$-surface} 80%, #{$-border-base})"
+                )};
+            --o-message-bubble-color-base: #{$-hue};
+        }
+    }
+}
+
+.o-mail-ChatWindow .o-mail-Message.o-selfAuthored {
+    flex-direction: row-reverse;
+
+    .o-mail-Message-core,
+    .o-mail-Message-textContent {
+        flex-direction: row-reverse;
+    }
+    .o-mail-Message-header {
+        justify-content: flex-end;
+    }
+    .o-mail-Message-author {
+        display: none;
+    }
+}
+
+.o-mail-Message-expandBtn {
+    i {
+        opacity: #{$o-opacity-muted};
+    }
+
+    &:hover,
+    &.focus,
+    &.show {
+        i {
+            opacity: 100%;
+        }
+    }
+}
+
+.o-mail-Message-actions {
+    --o-mail-ActionList-Button-opacity: 0.35;
+    --o-mail-ActionList-Button-opacity--hover: 1;
+    --o-mail-ActionList-Button-color--hover: var(
+        --mail-Message-actionIconHoveredColor,
+        black
+    );
+
+    .btn-danger,
+    .btn-success {
+        --o-mail-ActionList-Button-opacity: 0.5;
+    }
+
+    i {
+        font-size: 1rem;
+    }
+
+    .o-mail-Message.o-isMobileOS & i.oi-ellipsis-v {
+        opacity: 15%;
+    }
+}
+
+.o-mail-Message-moreMenu {
+    z-index: $o-mail-NavigableList-zIndex;
+}
+
+.o-mail-Message-pendingProgress {
+    animation: o-mail-message-pendingProgress-animation 0s ease-in 0.5s forwards;
+    visibility: hidden;
+}
+
+@keyframes o-mail-message-pendingProgress-animation {
+    to {
+        visibility: visible;
+    }
+}
+
+.o-mail-Message-searchHighlight {
+    background: o-token-alpha(--warning, $warning, 0.75);
+}
+
+.o-mail-Message-starred {
+    color: o-token(--o-favorite, $o-main-favorite-color);
+    filter: drop-shadow(1px 1px 0px #000000b0);
+}
+
+.o-mail-Message-translated {
+    color: o-token(--o-action, $o-enterprise-action-color);
+}
+
+@include media-only(screen) {
+    :root[data-color-scheme="dark"] {
+        .o-mail-Message.o-card {
+            background-color: mix($o-dark-gray-100, $o-dark-gray-200);
+        }
+
+        .o-mail-Message-actions {
+            --mail-Message-actionIconHoveredColor: white;
+        }
+
+        .o-mail-Message-author {
+            opacity: 50%;
+        }
+
+        .o-mail-Message-bubble {
+            &.o-blue {
+                background-color: mix(
+                    $o-dark-gray-100,
+                    darken($o-dark-bs-info, 10%),
+                    85.5%
+                ) !important;
+                border-color: mix(
+                    lighten(
+                        mix($o-dark-gray-100, darken($o-dark-bs-info, 10%), 85.5%),
+                        2.5%
+                    ),
+                    black,
+                    75%
+                ) !important;
+
+                &.o-muted {
+                    background-color: darken(
+                        mix($o-dark-gray-100, darken($o-dark-bs-info, 10%), 87.5%),
+                        5%
+                    ) !important;
+                }
+            }
+            &.o-green {
+                background-color: mix(
+                    $o-dark-gray-100,
+                    darken($o-dark-bs-success, 2.5%),
+                    85.5%
+                ) !important;
+                border-color: mix(
+                    lighten(
+                        mix($o-dark-gray-100, darken($o-dark-bs-success, 2.5%), 85.5%),
+                        2.5%
+                    ),
+                    black,
+                    75%
+                ) !important;
+
+                &.o-muted {
+                    background-color: darken(
+                        mix($o-dark-gray-100, darken($o-dark-bs-success, 2.5%), 85.5%),
+                        5%
+                    ) !important;
+                }
+            }
+            &.o-orange {
+                background-color: mix(
+                    $o-dark-gray-100,
+                    darken($o-dark-bs-warning, 5%),
+                    70.5%
+                ) !important;
+                border-color: mix(
+                    lighten(
+                        mix($o-dark-gray-100, darken($o-dark-bs-warning, 5%), 70.5%),
+                        2.5%
+                    ),
+                    black,
+                    75%
+                ) !important;
+
+                &.o-muted {
+                    background-color: darken(
+                        mix($o-dark-gray-100, darken($o-dark-bs-warning, 5%), 70.5%),
+                        10%
+                    ) !important;
+                }
+            }
+        }
+
+        .o-mail-Message-bubbleTail {
+            &.o-blue {
+                .o-mail-Message-bubbleTailBg {
+                    color: mix(
+                        $o-dark-gray-100,
+                        darken($o-dark-bs-info, 10%),
+                        85.5%
+                    ) !important;
+                }
+                .o-mail-Message-bubbleTailBorder {
+                    color: mix(
+                        lighten(
+                            mix($o-dark-gray-100, darken($o-dark-bs-info, 10%), 85.5%),
+                            2.5%
+                        ),
+                        black,
+                        75%
+                    ) !important;
+                }
+            }
+            &.o-green {
+                .o-mail-Message-bubbleTailBg {
+                    color: mix(
+                        $o-dark-gray-100,
+                        darken($o-dark-bs-success, 2.5%),
+                        85.5%
+                    ) !important;
+                }
+                .o-mail-Message-bubbleTailBorder {
+                    color: mix(
+                        lighten(
+                            mix(
+                                $o-dark-gray-100,
+                                darken($o-dark-bs-success, 2.5%),
+                                85.5%
+                            ),
+                            2.5%
+                        ),
+                        black,
+                        75%
+                    ) !important;
+                }
+            }
+            &.o-orange {
+                .o-mail-Message-bubbleTailBg {
+                    color: mix(
+                        $o-dark-gray-100,
+                        darken($o-dark-bs-warning, 5%),
+                        70.5%
+                    ) !important;
+                }
+                .o-mail-Message-bubbleTailBorder {
+                    color: mix(
+                        lighten(
+                            mix(
+                                $o-dark-gray-100,
+                                darken($o-dark-bs-warning, 5%),
+                                70.5%
+                            ),
+                            2.5%
+                        ),
+                        black,
+                        75%
+                    ) !important;
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,81 @@
+// @ts-check
+/** @odoo-module native */
+
+import { Component, onWillUnmount, proxy, useProps } from "@odoo/owl";
+import { browser } from "@web/core/browser/browser";
+import { useDebugMode } from "@web/core/debug/debug_context";
+import { RpcEvent } from "@web/core/events";
+import { rpcBus } from "@web/core/network/rpc";
+import { registry } from "@web/core/registry";
+import { Transition } from "@web/core/transition";
+import { useBus } from "@web/core/utils/hooks";
+import { SHOW_AFTER_DELAY } from "@web/ui/loading/loading_threshold";
+
+export class LoadingIndicator extends Component {
+    static template = "web.LoadingIndicator";
+    static components = { Transition };
+    static props = {};
+    props = useProps(this.constructor.props);
+
+    /** @type {Set} */
+    rpcIds;
+    /** @type {null | number} */
+    startShowTimer;
+    /** @type {{ count: number; show: boolean }} */
+    state;
+
+    setup() {
+        this.debug = useDebugMode();
+        this.state = proxy({
+            count: 0,
+            show: false,
+        });
+        this.rpcIds = new Set();
+        this.startShowTimer = null;
+        useBus(
+            rpcBus,
+            RpcEvent.REQUEST,
+            /** @type {any} */ (this.requestCall.bind(this)),
+        );
+        useBus(
+            rpcBus,
+            RpcEvent.RESPONSE,
+            /** @type {any} */ (this.responseCall.bind(this)),
+        );
+        onWillUnmount(() => browser.clearTimeout(this.startShowTimer));
+    }
+
+    /** @param {{ detail: { settings: Object, data: { id: number } } }} ev */
+    requestCall({ detail }) {
+        if (!detail?.data || detail.settings?.silent) {
+            return;
+        }
+        if (this.state.count === 0) {
+            browser.clearTimeout(this.startShowTimer);
+            this.startShowTimer = browser.setTimeout(() => {
+                if (this.state.count) {
+                    this.state.show = true;
+                }
+            }, SHOW_AFTER_DELAY);
+        }
+        this.rpcIds.add(detail.data.id);
+        this.state.count = this.rpcIds.size;
+    }
+
+    /** @param {{ detail: { settings: Object, data: { id: number } } }} ev */
+    responseCall({ detail }) {
+        if (!detail?.data || detail.settings?.silent) {
+            return;
+        }
+        this.rpcIds.delete(detail.data.id);
+        this.state.count = this.rpcIds.size;
+        if (this.state.count === 0) {
+            browser.clearTimeout(this.startShowTimer);
+            this.state.show = false;
+        }
+    }
+}
+
+registry.category("main_components").add("LoadingIndicator", {
+    Component: LoadingIndicator,
+});

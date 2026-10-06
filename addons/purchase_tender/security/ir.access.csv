@@ -1,0 +1,11 @@
+id,name,model_id/id,group_id/id,kind,operation,reach,anchor,domain
+access_purchase_tender,purchase.tender: a buyer's own or unassigned calls for tenders,model_purchase_tender,purchase.group_purchase_user,permission,crud,own,user_or_unset,
+purchase_tender_comp_rule,Call for Tenders multi-company,model_purchase_tender,base.group_everyone,guard,crud,company,,
+access_purchase_tender_warning,wizard.purchase.order.confirm.open.rival,model_wizard_purchase_order_confirm_open_rival,purchase.group_purchase_user,permission,crud,,,
+access_purchase_tender_invite,wizard.purchase.order.invite.vendor,model_wizard_purchase_order_invite_vendor,purchase.group_purchase_user,permission,crud,,,
+access_purchase_tender_readonly,purchase.tender,model_purchase_tender,purchase.group_purchase_readonly,permission,r,,,
+access_purchase_tender_line,purchase.tender.line: the needs of a buyer's own or unassigned calls for tenders,model_purchase_tender_line,purchase.group_purchase_user,permission,crud,own,user_or_unset,
+access_purchase_tender_line_readonly,purchase.tender.line,model_purchase_tender_line,purchase.group_purchase_readonly,permission,r,,,
+purchase_tender_line_comp_rule,Call for Tenders needs multi-company,model_purchase_tender_line,base.group_everyone,guard,crud,company,,
+purchase_tender_all,purchase.tender: all documents,model_purchase_tender,purchase.group_purchase_user_all,permission,crud,,,
+purchase_tender_line_all,purchase.tender.line: all documents,model_purchase_tender_line,purchase.group_purchase_user_all,permission,crud,,,

@@ -1,0 +1,1 @@
+from . import wizard_mrp_workorder_update_instruction

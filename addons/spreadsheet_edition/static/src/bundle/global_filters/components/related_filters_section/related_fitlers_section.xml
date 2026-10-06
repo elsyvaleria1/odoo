@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<templates>
+    <t t-name="spreadsheet_edition.RelatedFiltersSection">
+        <SidePanelCollapsible t-if="this.numberOfFilters > 0" isInitiallyCollapsed="true" title="this.collapsibleTitle">
+            <t t-set-slot="content">
+                <RelatedFilters t-props="this.props"/>
+            </t>
+        </SidePanelCollapsible>
+    </t>
+</templates>

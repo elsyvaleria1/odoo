@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="report_device_gps_stop_action" model="ir.actions.report">
+        <field name="name">Vehicle Stops</field>
+        <field name="model">device.gps.stop</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">asset_gps_geoengine.report_device_gps_stop</field>
+        <field name="report_file">asset_gps_geoengine.report_device_gps_stop</field>
+        <field name="binding_model_id" ref="model_device_gps_stop" />
+        <field name="binding_type">report</field>
+    </record>
+
+    <template id="report_device_gps_stop">
+        <t t-call="web.html_container">
+            <t t-call="web.internal_layout">
+                <div class="page">
+                    <h3>Vehicle Stops</h3>
+                    <t t-foreach="sections" t-as="section">
+                        <t t-set="first" t-value="section['stops'][:1]" />
+                        <h5 class="mt-4" style="page-break-inside: avoid;">
+                            <span
+                                t-out="first.asset_id.display_name or section['device'].name" />
+                            <small class="text-muted">
+                                <t t-if="first.operator_id">· <span t-out="first.operator_id.name" /></t>
+                                · <span t-field="first.date" />
+                            </small>
+                        </h5>
+                        <t
+                            t-set="silent"
+                            t-value="section['stops'].filtered(lambda s: s.kind == 'no_signal')" />
+                        <p t-if="silent" class="text-muted">
+                            No positions this day.
+                            <t t-if="silent[:1].last_seen">
+                                Last position: <span t-field="silent[:1].last_seen" />
+                            </t>
+                        </p>
+                        <table t-else="" class="table table-sm table-bordered">
+                            <thead>
+                                <tr>
+                                    <th style="width: 9%;">Arrival</th>
+                                    <th style="width: 9%;">Departure</th>
+                                    <th style="width: 9%;">Duration</th>
+                                    <th>Place</th>
+                                    <th style="width: 22%;">Coordinates</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr t-foreach="section['stops']" t-as="stop">
+                                    <td><span t-field="stop.arrival" t-options="{'widget': 'datetime', 'format': 'HH:mm'}" /></td>
+                                    <td>
+                                        <span
+                                            t-if="stop.departure"
+                                            t-field="stop.departure"
+                                            t-options="{'widget': 'datetime', 'format': 'HH:mm'}" />
+                                        <span t-else="" class="text-muted">Ongoing</span>
+                                    </td>
+                                    <td><span t-field="stop.duration_hours" t-options="{'widget': 'float_time'}" /></td>
+                                    <td><span t-out="stop.place" /></td>
+                                    <td>
+                                        <a t-att-href="stop.map_url">
+                                            <t
+                                                t-out="'%.5f, %.5f' % (stop.latitude, stop.longitude)" />
+                                        </a>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </t>
+                </div>
+            </t>
+        </t>
+    </template>
+
+</odoo>

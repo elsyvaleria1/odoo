@@ -1,0 +1,193 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="molecular_target_view_form" model="ir.ui.view">
+        <field name="name">molecular.target.form</field>
+        <field name="model">molecular.target</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button
+                        name="action_activate_latest_run"
+                        type="object"
+                        string="Activate Latest Run" />
+                    <field name="validation_state" widget="statusbar" />
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name" placeholder="e.g. EPSPS_wt" /></h1>
+                    </div>
+                    <group>
+                        <group string="Structure">
+                            <field name="campaign_id" />
+                            <field name="pdb_code" />
+                            <field name="reference_ligand" />
+                            <field name="cofactors" />
+                        </group>
+                        <group string="Gate">
+                            <field name="reference_active" />
+                            <field name="reference_smiles" />
+                            <field name="active_validation_id" />
+                            <field name="rmsd_top" />
+                            <field name="rmsd_best" />
+                            <field name="affinity_top" />
+                        </group>
+                    </group>
+                    <notebook>
+                        <page name="runs" string="Validation Runs">
+                            <field
+                                name="validation_run_ids"
+                                context="{'default_target_id': id}">
+                                <list
+                                    decoration-danger="not passed"
+                                    decoration-success="passed">
+                                    <field name="create_date" string="Run at" />
+                                    <field name="engine" />
+                                    <field name="scoring" />
+                                    <field name="exhaustiveness" optional="show" />
+                                    <field name="autobox_padding" optional="show" />
+                                    <field name="rmsd_top" />
+                                    <field name="rmsd_best" optional="show" />
+                                    <field name="best_pose_rank" optional="show" />
+                                    <field name="threshold" optional="hide" />
+                                    <field
+                                        name="passed"
+                                        widget="boolean_toggle"
+                                        readonly="1" />
+                                    <button
+                                        name="action_set_active"
+                                        type="object"
+                                        string="Govern"
+                                        icon="fa-check-circle" />
+                                </list>
+                            </field>
+                        </page>
+                        <page name="jobs" string="Docking Jobs">
+                            <field name="job_ids" readonly="1">
+                                <list>
+                                    <field name="campaign_id" />
+                                    <field name="status" widget="badge" />
+                                    <field name="pairs_done" />
+                                    <field name="pairs_expected" />
+                                </list>
+                            </field>
+                        </page>
+                        <page name="notes" string="Notes">
+                            <field name="note" />
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="molecular_target_view_list" model="ir.ui.view">
+        <field name="name">molecular.target.list</field>
+        <field name="model">molecular.target</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="campaign_id" optional="show" />
+                <field name="name" />
+                <field name="pdb_code" />
+                <field name="reference_active" />
+                <field name="rmsd_top" />
+                <field name="rmsd_best" />
+                <field name="validation_run_count" string="Runs" />
+                <field
+                    name="validation_state"
+                    widget="badge"
+                    decoration-danger="validation_state == 'fail'"
+                    decoration-success="validation_state == 'pass'" />
+            </list>
+        </field>
+    </record>
+
+    <record id="molecular_target_action" model="ir.actions.act_window">
+        <field name="name">Targets</field>
+        <field name="res_model">molecular.target</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <record id="molecular_validation_run_view_form" model="ir.ui.view">
+        <field name="name">molecular.validation.run.form</field>
+        <field name="model">molecular.validation.run</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button
+                        name="action_set_active"
+                        type="object"
+                        string="Make Governing Run" />
+                </header>
+                <sheet>
+                    <group>
+                        <group string="Setup">
+                            <field name="target_id" />
+                            <field name="ref_ligand" />
+                            <field name="engine" />
+                            <field name="engine_ver" />
+                            <field name="scoring" />
+                            <field name="exhaustiveness" />
+                            <field name="autobox_padding" />
+                        </group>
+                        <group string="Outcome">
+                            <field name="rmsd_top" />
+                            <field name="threshold" />
+                            <field name="passed" />
+                            <field name="rmsd_best" />
+                            <field name="best_pose_rank" />
+                            <field name="affinity_top" />
+                        </group>
+                        <group string="Box Centre">
+                            <field name="box_center_x" string="X" />
+                            <field name="box_center_y" string="Y" />
+                            <field name="box_center_z" string="Z" />
+                        </group>
+                        <group string="Box Size">
+                            <field name="box_size_x" string="X" />
+                            <field name="box_size_y" string="Y" />
+                            <field name="box_size_z" string="Z" />
+                        </group>
+                    </group>
+                    <notebook>
+                        <page name="poses" string="Poses">
+                            <field name="pose_ids">
+                                <list editable="bottom">
+                                    <field name="rank" />
+                                    <field name="affinity" />
+                                    <field name="rmsd" />
+                                </list>
+                            </field>
+                        </page>
+                        <page name="notes" string="Notes">
+                            <field name="notes" />
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="molecular_validation_run_view_list" model="ir.ui.view">
+        <field name="name">molecular.validation.run.list</field>
+        <field name="model">molecular.validation.run</field>
+        <field name="arch" type="xml">
+            <list decoration-danger="not passed" decoration-success="passed">
+                <field name="create_date" string="Run at" />
+                <field name="target_id" />
+                <field name="engine" />
+                <field name="scoring" />
+                <field name="rmsd_top" />
+                <field name="threshold" />
+                <field name="passed" />
+            </list>
+        </field>
+    </record>
+
+    <record id="molecular_validation_run_action" model="ir.actions.act_window">
+        <field name="name">Validation Runs</field>
+        <field name="res_model">molecular.validation.run</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+</odoo>

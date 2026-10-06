@@ -1,0 +1,382 @@
+$o-frontend-min-contrast-ratio: 2.9 !default;
+
+$o-webclient-media: screen !default;
+
+$o-webclient-color-scheme: light !default;
+
+$o-root-font-size: 1rem !default;
+$o-font-size-base: o-to-rem(14px) !default;
+$o-font-size-base-touch: o-to-rem(16px) !default;
+$o-font-size-base-small: o-to-rem(13px) !default;
+$o-font-size-base-smaller: o-to-rem(12px) !default;
+$o-line-height-base: 1.5 !default;
+$o-line-height-sm: 1.25 !default;
+$o-line-height-lg: 2 !default;
+
+$o-tracking-display: -0.022em !default;
+$o-tracking-heading: -0.015em !default;
+$o-tracking-tight: -0.006em !default;
+$o-tracking-wide: 0.05em !default;
+
+$o-type-scale-ratio: 1.2 !default;
+
+$o-system-fonts: (
+    -apple-system,
+    BlinkMacSystemFont,
+    "SF Pro Text",
+    "SF Pro Display",
+    "Helvetica Neue",
+    "Inter",
+    "Segoe UI",
+    Roboto,
+    Ubuntu,
+    "Noto Sans",
+    Arial,
+    sans-serif,
+    "Apple Color Emoji",
+    "Segoe UI Emoji",
+    "Segoe UI Symbol",
+    "Noto Color Emoji"
+) !default;
+
+$o-font-weight-normal: 400 !default;
+$o-font-weight-medium: 500 !default;
+$o-font-weight-semibold: 600 !default;
+$o-font-weight-bold: 700 !default;
+
+$o-grays: (
+    100: $o-gray-100,
+    200: $o-gray-200,
+    300: $o-gray-300,
+    400: $o-gray-400,
+    500: $o-gray-500,
+    600: $o-gray-600,
+    700: $o-gray-700,
+    800: $o-gray-800,
+    900: $o-gray-900,
+) !default;
+
+$o-community-color: #0071e3 !default;
+$o-enterprise-color: #0071e3 !default;
+$o-enterprise-action-color: #0071e3 !default;
+$o-enterprise-color-filled: #0071e3 !default;
+
+$o-brand-odoo: $o-enterprise-color !default;
+$o-brand-primary: $o-brand-odoo !default;
+
+$o-brand-primary-filled: $o-enterprise-color-filled !default;
+
+$o-brand-secondary: #8f8f8f !default;
+$o-brand-lightsecondary: $o-gray-100 !default;
+
+$o-action: $o-enterprise-action-color !default;
+$o-success: #34c759 !default;
+$o-info: #007aff !default;
+$o-warning: #ff9500 !default;
+$o-danger: #ff3b30 !default;
+
+$o-theme-text-colors: (
+    "primary": #0065c9,
+    "success": #1e7633,
+    "info": #0065c9,
+    "warning": #c03200,
+    "danger": #cf0014,
+) !default;
+
+$o-action-text: #0065c9 !default;
+
+$o-opacity-disabled: 0.5 !default;
+$o-opacity-muted: 0.76 !default;
+
+$o-opacities: (
+    0: 0,
+    25: 0.25,
+    50: 0.5,
+    75: 0.75,
+    100: 1,
+    disabled: $o-opacity-disabled,
+    muted: $o-opacity-muted,
+) !default;
+
+$o-font-family-sans-serif: o-add-unicode-support-font($o-system-fonts) !default;
+$o-font-family-monospace: o-add-unicode-support-font(
+    (
+        SFMono-Regular,
+        Menlo,
+        Monaco,
+        Consolas,
+        "Liberation Mono",
+        "Courier New",
+        monospace
+    )
+) !default;
+
+$o-headings-font-family: $o-font-family-sans-serif !default;
+
+$o-main-text-color: $o-gray-900 !default;
+$o-main-color-muted: rgba($o-gray-800, $o-opacity-muted) !default;
+$o-main-headings-color: $o-black !default;
+$o-main-link-color: $o-action-text !default;
+$o-main-favorite-color: #ffcc00 !default;
+$o-main-code-color: #d2317b !default;
+
+$o-table-cell-padding-x-sm: 0.3rem !default;
+$o-table-cell-padding-y-sm: 0.5rem !default;
+
+$o-component-active-color: $o-black !default;
+$o-component-active-bg: o-round-color(mix($o-action, $o-white, 10%)) !default;
+$o-component-active-border: $o-action !default;
+// the largest share that keeps every text token at WCAG AA on it for any
+// accent, black in light and white in dark included
+$o-app-accent-active-mix: 10% !default;
+$o-app-accent-active-mix-dark: 7% !default;
+
+$o-hairline: $o-gray-200 !default;
+$o-border-color: $o-gray-300 !default;
+
+$o-view-background-color: white !default;
+$o-shadow-color: #303030 !default;
+
+$o-form-lightsecondary: $o-gray-200 !default;
+
+$o-list-footer-bg-color: transparent !default;
+$o-list-footer-font-weight: 500 !default;
+
+$o-text-colors-custom: (
+    "action": $o-action-text,
+    "favorite": $o-main-favorite-color,
+) !default;
+
+$o-bg-colors-custom: (
+    "action": $o-action,
+    "view": $o-view-background-color,
+    "favorite": $o-main-favorite-color,
+) !default;
+
+$o-text-bg-contrast: 4.5 !default;
+
+$o-btn-custom: (
+    "favorite": $o-main-favorite-color,
+) !default;
+
+$o-input-padding-y: 1px !default;
+$o-input-padding-x: 0 !default;
+
+$o-input-bg: transparent !default;
+$o-input-invalid-bg: mix($o-danger, $o-input-bg, 10%) !default;
+$o-input-border-required: $o-black !default;
+
+$o-input-boundary-color: #86868b !default;
+
+$o-spacer: 16px !default;
+$o-form-spacing-unit: 4px !default;
+$o-horizontal-padding: $o-spacer !default;
+$o-dropdown-hpadding: 20px !default;
+$o-dropdown-vpadding: 4px !default;
+$o-dropdown-max-height: 70vh !default;
+
+$o-statbutton-height: 44px !default;
+$o-statbutton-spacing: 8px !default;
+
+$o-modal-lg: 980px !default;
+$o-modal-md: 650px !default;
+
+$o-sheet-cancel-tpadding: $o-horizontal-padding !default;
+
+$o-statusbar-height: 33px !default;
+
+$o-label-font-size-factor: 0.8 !default;
+
+$o-list-group-active-color: $o-black !default;
+$o-list-group-active-bg: mix($o-info, $o-white, 10%) !default;
+
+$o-breadcrumb-item-padding-x: 0.5rem !default;
+
+$o-badge-min-width: 2.7ch !default;
+
+$o-base-settings-mobile-tabs-height: 40px !default;
+
+$o-card-body-bg-opacity: 0.9 !default;
+
+$o-border-radius: o-to-rem(8px) !default;
+$o-border-radius-sm: o-to-rem(6px) !default;
+$o-hover-radius: o-to-rem(7px) !default;
+$o-border-radius-lg: o-to-rem(12px) !default;
+$o-border-radius-xl: o-to-rem(16px) !default;
+$o-border-radius-full: 9999px !default;
+
+$o-hit-target-touch: 44px !default;
+$o-touch-btn-padding: 7px 14px !default;
+$o-touch-btn-with-icon-padding: 7px 10px !default;
+
+$o-btns-bs-override: () !default;
+$o-btns-bs-override: map-merge(
+    (
+        "primary": (
+            background: $o-brand-primary-filled,
+            border: $o-brand-primary-filled,
+            color: $o-white,
+
+            hover-background: darken($o-brand-primary-filled, 10%),
+            hover-border: darken($o-brand-primary-filled, 10%),
+            hover-color: $o-white,
+
+            active-background: darken($o-brand-primary-filled, 15%),
+            active-border: darken($o-brand-primary-filled, 15%),
+            active-color: $o-white,
+        ),
+        "secondary": (
+            background: $o-gray-200,
+            border: $o-gray-200,
+            color: $o-gray-900,
+
+            hover-background: $o-gray-300,
+            hover-border: $o-gray-300,
+            hover-color: $o-black,
+
+            active-background: $o-component-active-bg,
+            active-border: $o-component-active-border,
+            active-color: $o-component-active-color,
+        ),
+        "light": (
+            background: $o-white,
+            border: $o-white,
+            color: $o-gray-900,
+
+            hover-background: $o-gray-200,
+            hover-border: $o-gray-200,
+            hover-color: $o-black,
+
+            active-background: $o-component-active-bg,
+            active-border: $o-component-active-border,
+            active-color: $o-component-active-color,
+        ),
+    ),
+    $o-btns-bs-override
+);
+
+$o-btns-bs-outline-override: () !default;
+$o-btns-bs-outline-override: map-merge(
+    (
+        "secondary": (
+            background: transparent,
+            border: $o-gray-300,
+            color: $o-gray-900,
+
+            hover-background: $o-gray-200,
+            hover-border: $o-gray-300,
+            hover-color: $o-black,
+
+            active-background: $o-component-active-bg,
+            active-border: $o-component-active-border,
+            active-color: $o-component-active-color,
+        ),
+    ),
+    $o-btns-bs-outline-override
+);
+
+$o-easings: (
+    "enter": cubic-bezier(0.05, 0.7, 0.1, 1),
+    "exit": cubic-bezier(0.3, 0, 0.8, 0.15),
+    "standard": cubic-bezier(0.4, 0, 0.2, 1),
+    "spring": cubic-bezier(0.34, 1.56, 0.64, 1),
+    "emphasized": cubic-bezier(0.32, 0.08, 0.24, 1),
+) !default;
+
+$o-durations: (
+    "fast": 150ms,
+    "normal": 200ms,
+    "slow": 300ms,
+) !default;
+
+$o-easing-enter: o-token(--o-easing-enter, map-get($o-easings, "enter")) !default;
+$o-easing-exit: o-token(--o-easing-exit, map-get($o-easings, "exit")) !default;
+$o-easing-standard: o-token(
+    --o-easing-standard,
+    map-get($o-easings, "standard")
+) !default;
+$o-easing-spring: o-token(--o-easing-spring, map-get($o-easings, "spring")) !default;
+$o-easing-emphasized: o-token(
+    --o-easing-emphasized,
+    map-get($o-easings, "emphasized")
+) !default;
+
+$o-duration-fast: o-token(--o-duration-fast, map-get($o-durations, "fast")) !default;
+$o-duration-normal: o-token(
+    --o-duration-normal,
+    map-get($o-durations, "normal")
+) !default;
+$o-duration-slow: o-token(--o-duration-slow, map-get($o-durations, "slow")) !default;
+
+@function o-shadow-ink($-alpha) {
+    @return unquote(
+        "color-mix(in srgb, var(--o-gray-900, #{$o-gray-900}) #{$-alpha}, transparent)"
+    );
+}
+
+$o-shadow-xs: 0 1px 2px 0 o-shadow-ink(5%) !default;
+$o-shadow-sm:
+    0 1px 3px 0 o-shadow-ink(10%),
+    0 1px 2px -1px o-shadow-ink(10%) !default;
+$o-shadow-md:
+    0 4px 6px -1px o-shadow-ink(10%),
+    0 2px 4px -2px o-shadow-ink(10%) !default;
+$o-shadow-lg:
+    0 10px 15px -3px o-shadow-ink(10%),
+    0 4px 6px -4px o-shadow-ink(10%) !default;
+
+$o-bg-chrome: $o-gray-800 !default;
+
+$o-bg-disabled: rgba($o-gray-200, 0.5) !default;
+
+$o-bg-raised: $o-gray-200 !default;
+
+$o-glass-bg: $o-white !default;
+
+// The launcher's material (icloud.com's home), shared by every view.
+$o-glass-surface: radial-gradient(
+    circle at 100% 0,
+    hsla(0, 0%, 100%, 0.85) 0,
+    hsla(0, 0%, 96.1%, 0.13) 183%
+) !default;
+$o-glass-surface-strong: rgba(248, 248, 252, 0.85) !default;
+$o-glass-bar: rgba(248, 248, 252, 0.4) !default;
+$o-glass-bar-border: hsl(240, 5.7%, 82.9%) !default;
+$o-glass-chip: $o-glass-bar !default;
+$o-glass-shadow: rgba(0, 0, 0, 0.16) !default;
+$o-glass-elevation: 17px 20px 40px o-token(--o-glass-shadow, $o-glass-shadow) !default;
+$o-glass-elevation-hover: 20px 20px 41px o-token(--o-glass-shadow, $o-glass-shadow) !default;
+$o-glass-elevation-sm: 6px 8px 20px o-token(--o-glass-shadow, $o-glass-shadow) !default;
+$o-glass-elevation-sm-hover: 8px 10px 24px o-token(--o-glass-shadow, $o-glass-shadow) !default;
+$o-glass-lift: scale(1.019) !default;
+$o-canvas-color: #c9dcf7 !default;
+$o-canvas-image: url("/web/static/img/home_menu_arcs_light.svg") !default;
+$o-canvas-tint-image: url("/web/static/img/home_menu_arcs_mono_light.svg") !default;
+
+$o-labels: (
+    1: rgba(0, 0, 0, 0.88),
+    2: rgba(0, 0, 0, 0.56),
+    3: rgba(0, 0, 0, 0.48),
+    4: rgba(0, 0, 0, 0.32),
+) !default;
+
+$o-fills: (
+    1: rgba(120, 120, 128, 0.2),
+    2: rgba(120, 120, 128, 0.16),
+    3: rgba(118, 118, 128, 0.12),
+    4: rgba(120, 120, 128, 0.08),
+) !default;
+
+$o-separator: $o-gray-300 !default;
+
+$o-materials: (
+    "ultrathin": blur(10px) saturate(1.2),
+    "thin": blur(14px) saturate(1.5),
+    "regular": blur(15px) saturate(0.86),
+    "thick": blur(24px),
+) !default;
+
+$o-ring-width: 2px !default;
+$o-ring-color: map-get($o-theme-text-colors, "primary") !default;
+$o-ring-offset: 2px !default;
+$o-ring-min-contrast: 3 !default;

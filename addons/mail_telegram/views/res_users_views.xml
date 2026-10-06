@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="res_users_view_form_preferences_mail_telegram" model="ir.ui.view">
+        <field name="name">res.users.preferences.form.mail.telegram</field>
+        <field name="model">res.users</field>
+        <field
+            name="inherit_id"
+            ref="telegram.res_users_view_form_preferences_telegram" />
+        <field name="arch" type="xml">
+            <xpath expr="//group[@name='telegram']" position="inside">
+                <field
+                    name="telegram_notify_inbox"
+                    invisible="not telegram_account_ids" />
+                <field
+                    name="telegram_notify_chats"
+                    invisible="not telegram_account_ids" />
+                <field
+                    name="telegram_notify_channels"
+                    invisible="not telegram_account_ids" />
+                <field
+                    name="telegram_grace_seconds"
+                    invisible="not telegram_account_ids" />
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <data>
+        <record id="view_account_bank_selection_form_wizard" model="ir.ui.view">
+            <field name="name">account.bank.selection.form.wizard</field>
+            <field name="model">wizard.account.online.link.connect.account</field>
+            <field name="arch" type="xml">
+                <form string="Select a Bank Account">
+                    <div style="font-size: 1.3rem;">
+                        Select the <field name="institution_name" class="oe_inline" /> account to connect:
+                    </div>
+                    <div>
+                        <field name="account_online_account_ids" invisible="1" />
+                        <field name="selected_account" widget="online_account_radio" />
+                    </div>
+                    <footer>
+                        <button
+                            name="sync_now"
+                            type="object"
+                            string="Connect Bank"
+                            invisible="not selected_account"
+                            class="btn-primary"
+                            data-hotkey="q" />
+                        <button
+                            special="cancel"
+                            string="Cancel"
+                            class="btn-secondary"
+                            data-hotkey="x" />
+                    </footer>
+                </form>
+            </field>
+        </record>
+    </data>
+
+</odoo>

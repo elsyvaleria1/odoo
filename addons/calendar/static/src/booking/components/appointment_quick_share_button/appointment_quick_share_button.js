@@ -1,0 +1,37 @@
+/** @odoo-module native */
+import { Component, useProps } from "@odoo/owl";
+import { browser } from "@web/core/browser/browser";
+import { registry } from "@web/core/registry";
+import { _t } from "@web/core/translation";
+import { useService } from "@web/core/utils/hooks";
+import { standardWidgetProps } from "@web/views/widgets";
+
+export class AppointmentQuickShareButton extends Component {
+    static props = { ...standardWidgetProps };
+    static template = "calendar.booking.appointmentQuickShareButton";
+    props = useProps(this.constructor.props);
+
+    setup() {
+        this.notification = useService("notification");
+        this.orm = useService("orm");
+    }
+
+    async onClickShareBtn() {
+        const bookUrl = await this.orm.call("appointment.type", "acquire_share_url", [
+            this.props.record.resId,
+        ]);
+
+        setTimeout(async () => {
+            await browser.navigator.clipboard.writeText(bookUrl);
+            this.notification.add(_t("Link copied to clipboard!"), { type: "success" });
+        });
+    }
+}
+
+export const appointmentQuickShareButton = {
+    component: AppointmentQuickShareButton,
+};
+
+registry
+    .category("view_widgets")
+    .add("appointment_quick_share_button", appointmentQuickShareButton);

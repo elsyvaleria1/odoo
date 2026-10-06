@@ -1,0 +1,344 @@
+from collections.abc import Sequence
+from typing import Any
+
+from odoo import api, fields, models
+from odoo.api import DomainType
+from odoo.exceptions import UserError
+from odoo.libs.debug_log import DebugLog
+from odoo.tools import SQL, frozendict
+
+from odoo.addons.resource.models.utils import filter_domain_leaf
+
+_debug = DebugLog(__name__)
+
+
+class ProjectTaskBurndownChartReport(models.AbstractModel):
+    _name = "project.task.burndown.chart.report"
+    _description = "Burndown Chart"
+    _auto = False
+    _order = "date"
+    _search_visibility_fields = ()
+    _access_anchors = frozendict(
+        {
+            "owner": "user_ids",
+        }
+    )
+
+    planned_hours = fields.Float(readonly=True)
+    date = fields.Datetime(readonly=True)
+    date_assign = fields.Datetime(
+        string="Assignment Date",
+        readonly=True,
+    )
+    date_end = fields.Date(
+        string="Deadline",
+        readonly=True,
+    )
+    date_last_status_change = fields.Date(
+        string="Last Status Change",
+        readonly=True,
+    )
+    state = fields.Selection(
+        selection=[
+            ("todo", "To Do"),
+            ("in_progress", "In Progress"),
+            ("changes_requested", "Changes Requested"),
+            ("approved", "Approved"),
+            ("done", "Done"),
+            ("canceled", "Cancelled"),
+            ("blocked", "Waiting"),
+        ],
+        readonly=True,
+    )
+    is_closed = fields.Selection(
+        selection=[("closed", "Closed tasks"), ("open", "Open tasks")],
+        string="Closing State",
+        readonly=True,
+    )
+    milestone_id = fields.Many2one(
+        comodel_name="project.milestone",
+        readonly=True,
+    )
+    partner_id = fields.Many2one(
+        comodel_name="res.partner",
+        string="Customer",
+        readonly=True,
+    )
+    project_id = fields.Many2one(
+        comodel_name="project.project",
+        readonly=True,
+    )
+    step_id = fields.Many2one(
+        comodel_name="project.workflow.step",
+        readonly=True,
+    )
+    tag_ids = fields.Many2many(
+        comodel_name="project.tags",
+        relation="project_tags_project_task_rel",
+        column1="project_task_id",
+        column2="project_tags_id",
+        string="Tags",
+        readonly=True,
+    )
+    user_ids = fields.Many2many(
+        comodel_name="res.users",
+        relation="project_task_user_rel",
+        column1="task_id",
+        column2="user_id",
+        string="Assignees",
+        readonly=True,
+    )
+
+    @property
+    def task_specific_fields(self) -> list[str]:
+        return [
+            "date_assign",
+            "date_end",
+            "date_last_status_change",
+            "state",
+            "milestone_id",
+            "partner_id",
+            "project_id",
+            "step_id",
+            "tag_ids",
+            "user_ids",
+        ]
+
+    @_debug.perf.timed
+    @api.model
+    def _search(
+        self,
+        domain: list,
+        offset: int = 0,
+        limit: int | None = None,
+        order: str | None = None,
+        **kwargs: Any,
+    ) -> Any:
+        burndown_specific_domain, task_specific_domain = (
+            self._get_domains_report_and_task(domain)
+        )
+        main_query = super()._search(
+            burndown_specific_domain,
+            offset=offset,
+            limit=limit,
+            order=order,
+            **kwargs,
+        )
+
+        project_task_query = self.env["project.task"]._search(
+            task_specific_domain, **kwargs
+        )
+        _debug.pipeline(
+            "search_domains_split",
+            report_domain=burndown_specific_domain,
+            task_domain=task_specific_domain,
+        )
+        self.env.flush_query(project_task_query.subselect())
+
+        field_id = self.env["ir.model.fields"]._get("project.task", "step_id").id
+
+        groupby = self.env.context.get(
+            "project_task_burndown_chart_report_groupby",
+            ["date:month", "step_id"],
+        )
+        date_groupby = next(g for g in groupby if g.startswith("date"))
+
+        interval = date_groupby.split(":")[1] if ":" in date_groupby else "month"
+        sql_interval = "1 %s" % interval if interval != "quarter" else "3 month"
+        _debug.logic(
+            "groupby_interval_resolved",
+            groupby=groupby,
+            interval=interval,
+            series_step=sql_interval,
+        )
+
+        simple_date_groupby_sql = self._read_group_groupby(
+            "project_task_burndown_chart_report",
+            f"date:{interval}",
+            main_query,
+        )
+        simple_date_groupby_sql = simple_date_groupby_sql.render()
+        simple_date_groupby_sql = simple_date_groupby_sql.replace(
+            '"project_task_burndown_chart_report".', ""
+        )
+
+        burndown_chart_sql = SQL(
+            """
+            (
+              WITH task_ids AS %(task_query_subselect)s,
+              all_step_task_moves AS (
+                 SELECT count(*) as __count,
+                        sum(planned_hours) as planned_hours,
+                        project_id,
+                        %(date_begin)s as date_begin,
+                        %(date_end)s as date_end,
+                        step_id,
+                        date_closed
+                   FROM (
+                            SELECT DISTINCT task_id,
+                                   planned_hours,
+                                   project_id,
+                                   %(date_begin)s as date_begin,
+                                   %(date_end)s as date_end,
+                                   first_value(step_id) OVER task_date_begin_window AS step_id,
+                                   date_closed
+                              FROM (
+                                     SELECT pt.id as task_id,
+                                            pt.planned_hours,
+                                            pt.project_id,
+                                            COALESCE(LAG(mm.date) OVER (PARTITION BY mm.res_id ORDER BY mm.id), pt.create_date) as date_begin,
+                                            CASE WHEN mtv.id IS NOT NULL THEN mm.date
+                                                ELSE (now() at time zone 'utc')::date + INTERVAL '%(interval)s'
+                                            END as date_end,
+                                            CASE WHEN mtv.id IS NOT NULL THEN mtv.old_value_integer
+                                               ELSE pt.step_id
+                                            END as step_id,
+                                            pt.date_closed
+                                       FROM project_task pt
+                                                LEFT JOIN (
+                                                    mail_message mm
+                                                        JOIN mail_tracking_value mtv ON mm.id = mtv.mail_message_id
+                                                                                     AND mtv.field_id = %(field_id)s
+                                                                                     AND mm.model='project.task'
+                                                                                     AND mm.message_type = 'notification'
+                                                        JOIN project_workflow_step pws ON pws.id = mtv.old_value_integer
+                                                ) ON mm.res_id = pt.id
+                                      WHERE pt.active=true AND pt.id IN (SELECT id from task_ids)
+                                   ) task_step_id_history
+                          GROUP BY task_id,
+                                   planned_hours,
+                                   project_id,
+                                   %(date_begin)s,
+                                   %(date_end)s,
+                                   step_id,
+                                   date_closed
+                            WINDOW task_date_begin_window AS (PARTITION BY task_id, %(date_begin)s)
+                          UNION ALL
+                            SELECT pt.id as task_id,
+                                   pt.planned_hours,
+                                   pt.project_id,
+                                   last_step_id_change_mail_message.date as date_begin,
+                                   (now() at time zone 'utc')::date + INTERVAL '%(interval)s' as date_end,
+                                   pt.step_id as old_value_integer,
+                                   pt.date_closed
+                              FROM project_task pt
+                                   JOIN LATERAL (
+                                       SELECT mm.date
+                                       FROM mail_message mm
+                                       JOIN mail_tracking_value mtv ON mm.id = mtv.mail_message_id
+                                       AND mtv.field_id = %(field_id)s
+                                       AND mm.model='project.task'
+                                       AND mm.message_type = 'notification'
+                                       AND mm.res_id = pt.id
+                                       ORDER BY mm.id DESC
+                                       FETCH FIRST ROW ONLY
+                                   ) AS last_step_id_change_mail_message ON TRUE
+                             WHERE pt.active=true AND pt.id IN (SELECT id from task_ids)
+                        ) AS project_task_burndown_chart
+               GROUP BY planned_hours,
+                        project_id,
+                        %(date_begin)s,
+                        %(date_end)s,
+                        step_id,
+                        date_closed
+              )
+              -- row_number(), not arithmetic on the grouping keys. The old
+              -- expression was not a key twice over: `^` is float8
+              -- exponentiation in Postgres, so project_id*10^13 passes 2^53 at
+              -- project_id 901 and consecutive days collapsed onto one id
+              -- (measured: 7 distinct ids for 14 distinct dates at 950); and
+              -- all_step_task_moves also groups by planned_hours and
+              -- date_closed, so two tasks in one (project, step) already
+              -- collided at any id. Nothing consumed the id -- both views are
+              -- graph-only with disable_linking -- so nothing was broken, but a
+              -- model whose id is not a key is a trap for whoever adds a list.
+              SELECT row_number() OVER ()::bigint as id,
+                     planned_hours,
+                     project_id,
+                     step_id,
+                     CASE WHEN date_closed IS NOT NULL
+                           AND date_closed < date + INTERVAL '%(interval)s'
+                          THEN 'closed' ELSE 'open'
+                     END as is_closed,
+                     date,
+                     __count
+                FROM all_step_task_moves t
+                         JOIN LATERAL generate_series(t.date_begin, t.date_end-INTERVAL '1 day', '%(interval)s')
+                            AS date ON TRUE
+            )
+            """,
+            task_query_subselect=project_task_query.subselect(),
+            date_begin=SQL(simple_date_groupby_sql.replace('"date"', '"date_begin"')),
+            date_end=SQL(simple_date_groupby_sql.replace('"date"', '"date_end"')),
+            interval=SQL(sql_interval),
+            field_id=field_id,
+        )
+
+        main_query._tables["project_task_burndown_chart_report"] = burndown_chart_sql
+
+        return main_query
+
+    @api.model
+    def _check_group_by(self, groupby: list[str]) -> None:
+        is_closed_or_step_in_groupby = False
+        date_in_groupby = False
+        for gb in groupby:
+            if gb.startswith("date"):
+                date_in_groupby = True
+            elif gb in ["step_id", "is_closed"]:
+                is_closed_or_step_in_groupby = True
+
+        if not date_in_groupby or not is_closed_or_step_in_groupby:
+            raise UserError(
+                self.env._(
+                    "The view must be grouped by date and by Workflow Step - Burndown chart or Is Closed - Burnup chart"
+                )
+            )
+
+    @api.model
+    def _get_domains_report_and_task(self, domain: list) -> tuple[list, list]:
+        burndown_chart_specific_fields = list(
+            set(self._fields) - set(self.task_specific_fields)
+        )
+        task_specific_domain = filter_domain_leaf(
+            domain, lambda field: field not in burndown_chart_specific_fields
+        )
+        non_task_specific_domain = filter_domain_leaf(
+            domain, lambda field: field not in self.task_specific_fields
+        )
+        return non_task_specific_domain, task_specific_domain
+
+    def _read_group_select(self, aggregate_spec: str, query: Any) -> SQL:
+        if aggregate_spec == "__count":
+            return SQL("SUM(%s)", SQL.identifier(self._table, "__count"))
+        return super()._read_group_select(aggregate_spec, query)
+
+    @_debug.perf.timed
+    def _read_group(
+        self,
+        domain: DomainType,
+        groupby: Sequence[str] = (),
+        aggregates: Sequence[str] = (),
+        having: DomainType | None = None,
+        offset: int = 0,
+        limit: int | None = None,
+        order: str | None = None,
+    ) -> list[tuple]:
+        self._check_group_by(groupby)
+        _debug.pipeline(
+            "read_group",
+            domain=domain,
+            groupby=list(groupby),
+            aggregates=list(aggregates),
+        )
+        self = self.with_context(project_task_burndown_chart_report_groupby=groupby)
+
+        return super()._read_group(
+            domain=domain,
+            groupby=groupby,
+            aggregates=aggregates,
+            having=having,
+            offset=offset,
+            limit=limit,
+            order=order,
+        )

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Technical / Spreadsheet -->
+    <menuitem
+        id="menu_technical_spreadsheet"
+        name="Spreadsheet"
+        parent="base.menu_custom"
+        sequence="9" />
+
+    <menuitem
+        id="menu_technical_spreadsheet_revision"
+        name="Revisions"
+        parent="menu_technical_spreadsheet"
+        action="spreadsheet_revision_action"
+        sequence="10" />
+
+</odoo>

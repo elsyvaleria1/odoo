@@ -1,0 +1,31 @@
+{
+    "name": "Discuss Integration Tests",
+    "version": "1.0",
+    "category": "Productivity/Discuss",
+    "sequence": 9877,
+    "summary": "Test Discuss Integration behaviour, including avatar card tour, livechat hr holidays, im livechat portal",
+    "description": "Run regression tests for Discuss Integration. Loaded test suites include ``TestAvatarCardTour``, ``TestLivechatHrHolidays``, ``TestImLivechatPortal``, ``TestDiscussFullPerformance``, ``TestInboxPerformance``.",
+    "author": "Odoo S.A.",
+    "license": "LGPL-3",
+    "depends": [
+        "calendar",
+        "crm",
+        "crm_livechat",
+        "hr_attendance",
+        "hr_fleet",
+        "hr_holidays",
+        "hr_homeworking",
+        "im_livechat",
+        "mail",
+        "mail_bot",
+        "project_todo",
+        "website_livechat",
+        "website_sale",
+        "website_slides",
+    ],
+    "assets": {
+        "web.assets_tests": [
+            "test_discuss_full/static/tests/tours/**/*",
+        ],
+    },
+}

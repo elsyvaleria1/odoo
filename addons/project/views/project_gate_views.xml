@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="project_gate_form" model="ir.ui.view">
+        <field name="name">project.gate.form</field>
+        <field name="model">project.gate</field>
+        <field name="arch" type="xml">
+            <form string="Gate Review">
+                <header>
+                    <field
+                        name="state"
+                        widget="statusbar"
+                        statusbar_visible="pending,passed" />
+                </header>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="name" placeholder="e.g. Feasibility Gate" />
+                            <field name="project_id" />
+                            <field
+                                name="milestone_id"
+                                domain="[('project_id', '=', project_id)]" />
+                            <field name="sequence" />
+                        </group>
+                        <group>
+                            <field name="date_review" />
+                            <field name="reviewer_ids" widget="many2many_avatar_user" />
+                            <field name="criteria_met_count" />
+                            <field name="criteria_total_count" />
+                        </group>
+                    </group>
+                    <notebook>
+                        <page name="criteria" string="Criteria">
+                            <field name="criterion_ids">
+                                <list editable="bottom">
+                                    <field name="sequence" widget="handle" />
+                                    <field name="name" />
+                                    <field name="is_met" />
+                                    <field name="evidence" optional="show" />
+                                </list>
+                            </field>
+                        </page>
+                        <page name="decision" string="Decision">
+                            <field
+                                name="decision_notes"
+                                placeholder="Record the go/no-go decision and rationale..." />
+                        </page>
+                        <page name="kill_criteria" string="Kill Criteria">
+                            <field
+                                name="kill_criteria"
+                                placeholder="Under what conditions should this project be cancelled?" />
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter />
+            </form>
+        </field>
+    </record>
+
+    <record id="project_gate_list" model="ir.ui.view">
+        <field name="name">project.gate.list</field>
+        <field name="model">project.gate</field>
+        <field name="arch" type="xml">
+            <list string="Gate Reviews">
+                <field name="sequence" widget="handle" />
+                <field name="name" />
+                <field name="project_id" />
+                <field name="milestone_id" />
+                <field name="date_review" />
+                <field name="criteria_met_count" />
+                <field name="criteria_total_count" />
+                <field
+                    name="state"
+                    widget="badge"
+                    decoration-danger="state == 'failed'"
+                    decoration-info="state == 'pending'"
+                    decoration-success="state == 'passed'"
+                    decoration-warning="state == 'deferred'" />
+            </list>
+        </field>
+    </record>
+
+    <record id="action_project_gate_from_project" model="ir.actions.act_window">
+        <field name="name">Gate Reviews</field>
+        <field name="res_model">project.gate</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('project_id', '=', active_id)]</field>
+        <field name="context">{'default_project_id': active_id}</field>
+    </record>
+
+</odoo>

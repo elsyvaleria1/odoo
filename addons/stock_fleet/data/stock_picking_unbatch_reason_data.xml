@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+
+    <record id="unbatch_reason_added_by_mistake" model="stock.picking.unbatch.reason">
+        <field name="name">Added by mistake</field>
+        <field name="sequence">10</field>
+        <field name="moment">before_departure</field>
+        <field name="accountable">operations</field>
+    </record>
+
+    <record
+        id="unbatch_reason_operations_instruction"
+        model="stock.picking.unbatch.reason">
+        <field name="name">Operations instruction</field>
+        <field name="sequence">20</field>
+        <field name="moment">before_departure</field>
+        <field name="accountable">internal</field>
+    </record>
+
+    <record
+        id="unbatch_reason_customer_cannot_receive"
+        model="stock.picking.unbatch.reason">
+        <field name="name">Customer cannot receive</field>
+        <field name="sequence">30</field>
+        <field name="moment">on_route</field>
+        <field name="accountable">customer</field>
+    </record>
+
+    <record id="unbatch_reason_customer_absent" model="stock.picking.unbatch.reason">
+        <field name="name">Customer absent</field>
+        <field name="sequence">40</field>
+        <field name="moment">on_route</field>
+        <field name="accountable">customer</field>
+    </record>
+
+    <record id="unbatch_reason_address_not_found" model="stock.picking.unbatch.reason">
+        <field name="name">Address not found</field>
+        <field name="sequence">50</field>
+        <field name="moment">on_route</field>
+        <field name="accountable">customer_data</field>
+    </record>
+
+    <record id="unbatch_reason_refused" model="stock.picking.unbatch.reason">
+        <field name="name">Refused by the customer</field>
+        <field name="sequence">60</field>
+        <field name="moment">on_route</field>
+        <field name="accountable">fulfilment</field>
+    </record>
+
+    <record id="unbatch_reason_route_incident" model="stock.picking.unbatch.reason">
+        <field name="name">Route incident</field>
+        <field name="sequence">70</field>
+        <field name="moment">on_route</field>
+        <field name="accountable">fleet</field>
+    </record>
+
+    <record id="unbatch_reason_credit_hold" model="stock.picking.unbatch.reason">
+        <field name="name">Held by Credit</field>
+        <field name="sequence">80</field>
+        <field name="moment">any</field>
+        <field name="accountable">credit</field>
+    </record>
+
+</odoo>

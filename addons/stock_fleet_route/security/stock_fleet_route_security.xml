@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="privilege_trip_route" model="res.groups">
+        <field
+            name="name">Privilege: a trip reads its delay threshold and its vehicle's position, and tells its crew and sellers on Telegram</field>
+        <field name="is_privilege" eval="True" />
+    </record>
+
+</odoo>

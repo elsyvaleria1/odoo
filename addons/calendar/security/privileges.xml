@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="privilege_keep_meeting_channels" model="res.groups">
+        <field
+            name="name">Privilege: keep a meeting's video call channel in line with the meeting</field>
+        <field
+            name="comment">Rename, describe and retire the Discuss video call channels of meetings their editor may change, members or not.</field>
+        <field name="is_privilege" eval="True" />
+    </record>
+
+</odoo>

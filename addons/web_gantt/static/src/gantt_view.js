@@ -1,0 +1,72 @@
+/** @odoo-module native */
+import { scrollSymbol } from "@web/core/action_hook";
+import { registry } from "@web/core/registry";
+import { omit } from "@web/core/utils/collections/objects";
+
+import { GanttArchParser } from "./gantt_arch_parser.js";
+import { GanttController } from "./gantt_controller.js";
+import { GanttModel } from "./gantt_model.js";
+import { GanttRenderer } from "./gantt_renderer.js";
+
+const viewRegistry = registry.category("views");
+
+export const ganttView = {
+    type: "gantt",
+    Controller: GanttController,
+    Renderer: GanttRenderer,
+    Model: GanttModel,
+    ArchParser: GanttArchParser,
+    searchMenuTypes: ["filter", "groupBy", "favorite"],
+    buttonTemplate: "web_gantt.GanttView.Buttons",
+
+    props: (genericProps, view, config) => {
+        const modelParams = {};
+        let scrollPosition;
+        let multiCreateValues;
+        if (genericProps.state) {
+            scrollPosition = genericProps.state[scrollSymbol];
+            modelParams.metaData = genericProps.state.metaData;
+            modelParams.displayParams = genericProps.state.displayParams;
+            multiCreateValues = genericProps.state.multiCreateValues;
+        } else {
+            const { arch, fields, resModel } = genericProps;
+            const parser = new view.ArchParser();
+            const archInfo = parser.parse(arch);
+
+            let formViewId = archInfo.formViewId;
+            if (!formViewId) {
+                const formView = config.views.find((v) => v[1] === "form");
+                if (formView) {
+                    formViewId = formView[0];
+                }
+            }
+
+            const kanbanViewId =
+                archInfo.kanbanViewId ??
+                config.views.find(([_, type]) => type === "kanban")?.[0];
+
+            modelParams.metaData = {
+                ...omit(archInfo, "displayMode"),
+                fields,
+                resModel,
+                formViewId,
+                kanbanViewId,
+            };
+            modelParams.displayParams = {
+                displayMode: archInfo.displayMode,
+            };
+        }
+
+        return {
+            ...genericProps,
+            modelParams,
+            Model: view.Model,
+            Renderer: view.Renderer,
+            buttonTemplate: view.buttonTemplate,
+            scrollPosition,
+            multiCreateValues,
+        };
+    },
+};
+
+viewRegistry.add("gantt", ganttView);

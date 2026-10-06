@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates>
+    <t t-name="homework.AttendeeCalendarCommonPopover">
+        <t t-if="this.isWorkLocationEvent()">
+        <Record resModel="'hr.employee.location'" fieldNames="this.fieldNames" fields="this.fields" activeFields="this.fields" values="this.values" mode="'readonly'" t-slot-scope="slot">
+            <Dialog t-if="this.ui.isSmall" title="this.props.record.title" contentClass="this.colorClass">
+                <t t-call="{{ this.constructor.subTemplates.body }}"/>
+                <t t-set-slot="footer">
+                    <t t-call="calendar.AttendeeCalendarCommonPopover.footer"/>
+                </t>
+            </Dialog>
+            <div t-else="" class="card-header d-flex justify-content-between py-2 pe-2">
+                <span class="popover-header border-0">
+                    <t t-if="slot.record.data.work_location_type === 'office'">
+                        <i class="fa-solid fa-building me-2" role="img" t-att-class="`wl_color_${this.props.record.colorIndex}`"/>
+                    </t>
+                    <t t-elif="slot.record.data.work_location_type === 'home'">
+                        <i class="fa-solid fa-house me-2" role="img" />
+                    </t>
+                    <t t-else="">
+                    <i class="fa-solid fa-location-dot me-2" t-att-class="`wl_color_${this.props.record.colorIndex}`" role="img"/>
+                    </t>
+                    <t t-out="this.props.record.title"/>
+                </span>
+                <span class="o_cw_popover_close ms-4 mt-2 me-2" t-on-click.stop="() => this.props.close()">
+                    <i class="fa-solid fa-xmark" />
+                </span>
+            </div>
+            <div class="o_cw_body">
+                <t t-call="{{ this.constructor.subTemplates.body }}" />
+                <div t-if="this.hasFooter" class="card-footer border-top d-flex gap-1">
+                    <t t-call="{{ this.constructor.subTemplates.footer }}" />
+                </div>
+            </div>
+        </Record>
+        </t>
+        <t t-else="">
+            <t t-call="web.CalendarCommonPopover" />
+        </t>
+    </t>
+    <t t-name="homework.AttendeeCalendarCommonPopover.body">
+        <t t-if="this.isWorkLocationEvent()">
+                <ul class="list-group list-group-flush">
+                    <div class="list-group-item">
+                        <i class="fa-solid fa-calendar-days me-2" t-att-class="`wl_color_${this.props.record.colorIndex}`"/>
+                        <t t-if="this.props.record.start.epochMilliseconds != this.props.record.end.epochMilliseconds">
+                            <t t-out="this.formatWorkLocationDate('d MMMM')"/>
+                        </t>
+                        <t t-else="">
+                            <t t-out="this.formatWorkLocationDate('d MMMM yyyy')"/>
+                        </t>
+                    </div>
+                    <div class="list-group-item">
+                        <i class="fa-solid fa-user me-2" t-att-class="`wl_color_${this.props.record.colorIndex}`"/>
+                        <Field name="'employee_name'" record="slot.record" readonly="true"/>
+                    </div>
+                </ul>
+        </t>
+        <t t-else="">
+            <t t-call="calendar.AttendeeCalendarCommonPopover.body" />
+        </t>
+    </t>
+
+    <t t-name="homework.AttendeeCalendarCommonPopover.footer">
+        <t t-if="this.isWorkLocationEvent()">
+            <t t-if="this.isCurrentUserIsOwnerWorklocation()">
+                <t t-call="calendar.AttendeeCalendarCommonPopover.footer" />
+            </t>
+        </t>
+        <t t-else="">
+            <t t-call="calendar.AttendeeCalendarCommonPopover.footer" />
+        </t>
+    </t>
+</templates>

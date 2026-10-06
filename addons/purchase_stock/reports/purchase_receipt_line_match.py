@@ -1,0 +1,89 @@
+from odoo import fields, models
+from odoo.tools import SQL, frozendict
+
+from odoo.addons.trade.tools import PURCHASE
+
+
+class PurchaseReceiptLineMatch(models.Model):
+    _name = "purchase.receipt.line.match"
+    _inherit = ["mixin.order.line.stock.match"]
+    _description = "Purchase Order Line & Receipt Move Matching"
+    _auto = False
+    _depends = frozendict(
+        {
+            "product.product": ["product_tmpl_id"],
+            "product.template": ["type"],
+            "purchase.order": ["company_id", "state"],
+            "purchase.order.line": [
+                "date_commitment",
+                "display_type",
+                "is_downpayment",
+                "order_id",
+                "partner_id",
+                "product_id",
+                "product_qty",
+                "product_uom_id",
+                "qty_to_transfer",
+                "qty_transferred",
+                "transfer_state",
+            ],
+            "stock.location": ["usage"],
+            "stock.move": [
+                "company_id",
+                "date",
+                "is_inventory",
+                "location_id",
+                "partner_id",
+                "picking_id",
+                "product_id",
+                "product_uom_id",
+                "product_uom_qty",
+                "purchase_line_id",
+                "quantity",
+                "scrap_id",
+                "state",
+            ],
+            "stock.picking": ["partner_id"],
+        }
+    )
+    _order = "product_id, move_id, order_line_id"
+
+    _order_line_table = "purchase_order_line"
+    _order_table = "purchase_order"
+    _link_column = "purchase_line_id"
+    _direction = PURCHASE
+    _date_expected_field = "date_commitment"
+
+    order_line_id = fields.Many2one(
+        comodel_name="purchase.order.line",
+        string="Purchase Order Line",
+        readonly=True,
+    )
+    order_id = fields.Many2one(
+        comodel_name="purchase.order",
+        string="Purchase Order",
+        readonly=True,
+    )
+
+    def _get_no_order_line_message(self) -> str:
+        return self.env._(
+            "You must select at least one Purchase Order line to match or receive."
+        )
+
+    def _get_no_move_message(self) -> str:
+        return self.env._("You must select at least one receipt move to match.")
+
+    def _get_location_rank(self, order_line, move) -> int:
+        if order_line.location_final_id and order_line.location_final_id == (
+            move.location_final_id
+        ):
+            return 0
+        return 1
+
+    def _select_order_line_date(self):
+        return SQL("ol.date_commitment")
+
+    def _action_create_moves_from_order_lines(self, order_lines):
+        orders = order_lines.order_id
+        orders._create_picking()
+        return orders.picking_ids._get_records_action()

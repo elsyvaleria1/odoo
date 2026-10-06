@@ -1,0 +1,2087 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# * telegram
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0+e\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-09-29 14:28+0000\n"
+"PO-Revision-Date: 2025-10-27 20:40+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: es\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"Generated-By: Babel 2.18.0\n"
+
+#. module: telegram
+#. odoo-python
+#: code:addons/telegram/models/telegram_handler_base.py:0
+msgid "/ayuda - Show this help message."
+msgstr "/ayuda - Muestra este mensaje de ayuda."
+
+#. module: telegram
+#. odoo-python
+#: code:addons/telegram/models/telegram_handler_base.py:0
+msgid "/cancelar - Cancel what you have in progress."
+msgstr "/cancelar - Cancela lo que tienes en curso."
+
+#. module: telegram
+#: model_terms:ir.ui.view,arch_db:telegram.view_telegram_command_form
+#: model_terms:ir.ui.view,arch_db:telegram.view_telegram_command_list
+msgid "/comando"
+msgstr "/comando"
+
+#. module: telegram
+#. odoo-python
+#: code:addons/telegram/models/telegram_handler_base.py:0
+msgid "/desconectar - Disconnect this Telegram account from Odoo."
+msgstr "/desconectar - Desconecta esta cuenta de Telegram de Odoo."
+
+#. module: telegram
+#. odoo-python
+#: code:addons/telegram/models/telegram_handler_base.py:0
+msgid "/quiensoy - Verify your identity in Odoo."
+msgstr "/quiensoy - Verifica tu identidad en Odoo."
+
+#. module: telegram
+#: model:ir.model.constraint,message:telegram.constraint_telegram_binding_one_active_per_account
+msgid "A Telegram account is one person at a time."
+msgstr "Una cuenta de Telegram es una sola persona a la vez."
+
+#. module: telegram
+#: model:ir.model.constraint,message:telegram.constraint_telegram_account_tg_user_id_uniq
+msgid "A Telegram user has one account."
+msgstr "Un usuario de Telegram tiene una sola cuenta."
+
+#. module: telegram
+#: model:ir.model.constraint,message:telegram.constraint_telegram_account_tg_user_id_digits
+msgid "A Telegram user id is digits."
+msgstr "El ID de usuario de Telegram solo lleva dígitos."
+
+#. module: telegram
+#: model:ir.model.fields,help:telegram.field_telegram_binding__expires_at
+msgid ""
+"A binding carried over from a chat link lapses unless its owner confirms it "
+"from an Odoo session."
+msgstr ""
+"Un vínculo heredado de un chat vinculado caduca a menos que su dueño lo "
+"confirme desde una sesión de Odoo."
+
+#. module: telegram
+#. odoo-python
+#: code:addons/telegram/models/telegram_binding.py:0
+msgid "A binding is revoked, never deleted: its history stays."
+msgstr "Un vínculo se revoca, nunca se elimina: su historial se conserva."
+
+#. module: telegram
+#. odoo-python
+#: code:addons/telegram/models/telegram_binding.py:0
+msgid "A binding's identity cannot change."
+msgstr "La identidad de un vínculo no puede cambiar."
+
+#. module: telegram
+#. odoo-python
+#: code:addons/telegram/models/telegram_binding.py:0
+msgid "A binding's user must be the user of its contact."
+msgstr "El usuario de un vínculo debe ser el usuario de su contacto."
+
+#. module: telegram
+#: model:ir.model.constraint,message:telegram.constraint_telegram_binding_user_is_partner
+msgid "A bound user comes with its contact."
+msgstr "Un usuario vinculado va con su contacto."
+
+#. module: telegram
+#: model:ir.model.constraint,message:telegram.constraint_telegram_business_connection_connection_uid_uniq
+msgid "A business connection is recorded once."
+msgstr "Una conexión de empresa se registra una sola vez."
+
+#. module: telegram
+#: model:ir.model.constraint,message:telegram.constraint_telegram_chat_chat_id_bot_id_uniq
+msgid "A chat ID must be unique per bot and business connection!"
+msgstr "¡El ID del chat debe ser único por bot y conexión de empresa!"
+
+#. module: telegram
+#: model:res.groups,comment:telegram.privilege_chat_conversation
+msgid ""
+"A command runs as the chat's own internal user, who reads the chat and may "
+"not write it. Moving its state, context and failure counter is the bot's "
+"flow, never the user's own call."
+msgstr ""
+"Un comando se ejecuta como el usuario interno del chat, que puede leer el "
+"chat pero no modificarlo. Mover su estado, contexto y contador de fallos "
+"corresponde al flujo del bot, nunca a una llamada del propio usuario."
+
+#. module: telegram
+#: model:ir.model.fields,help:telegram.field_telegram_chat__flow_expires_at
+msgid "A flow nobody moved since is over."
+msgstr "Un flujo que nadie ha movido desde entonces terminó."
+
+#. module: telegram
+#: model:ir.model.fields,help:telegram.field_telegram_chat__title
+msgid "A group's name in Telegram."
+msgstr "El nombre de un grupo en Telegram."
+
+#. module: telegram
+#: model:ir.model.constraint,message:telegram.constraint_telegram_link_token_token_hash_uniq
+msgid "A link token is issued once."
+msgstr "Un token de vinculación se emite una sola vez."
+
+#. module: telegram
+#. odoo-python
+#: code:addons/telegram/models/telegram_binding.py:0
+msgid "A revoked binding stays revoked."
+msgstr "Un vínculo revocado permanece revocado."
+
+#. module: telegram
+#. odoo-python
+#: code:addons/telegram/models/telegram_bot_receiver.py:0
+msgid "A webhook secret is 1 to 256 characters of A-Z, a-z, 0-9, _ and -."
+msgstr ""
+"Un secreto de webhook es de 1 a 256 caracteres de A-Z, a-z, 0-9, _ y -."
+
+#. module: telegram
+#: model:ir.model.fields,help:telegram.field_telegram_bot__credential_id
+msgid ""
+"API Transport credential for Telegram Bot API. The credential must contain "
+"the bot token in the bearer_token field."
+msgstr ""
+"Credencial de transporte para la API de bots de Telegram. Debe contener el "
+"token del bot en el campo bearer_token."
+
+#. module: telegram
+#: model:ir.model.fields,field_description:telegram.field_telegram_binding__account_id
+#: model:ir.model.fields,field_description:telegram.field_telegram_business_connection__account_id
+#: model:ir.model.fields,field_description:telegram.field_telegram_chat__account_id
+msgid "Account"
+msgstr "Cuenta"
+
+#. module: telegram
+#: model:ir.model.fields,field_description:telegram.field_telegram_binding_event__account_ref
+msgid "Account Ref"
+msgstr "Ref. de cuenta"
+
+#. module: telegram
+#: model:ir.ui.menu,name:telegram.menu_telegram_accounts
+msgid "Accounts"
+msgstr "Cuentas"
+
+#. module: telegram
+#: model:ir.model.fields.selection,name:telegram.selection__telegram_binding__state__active
+msgid "Active"
+msgstr "Activo"
+
+#. module: telegram
+#: model:ir.model.fields,field_description:telegram.field_telegram_account__binding_id
+msgid "Active Binding"
+msgstr "Vínculo activo"
+
+#. module: telegram
+#: model:ir.model.fields,field_description:telegram.field_telegram_binding_event__actor_ref
+msgid "Actor Ref"
+msgstr "Ref. del actor"
+
+#. module: telegram
+#: model:ir.model.fields,help:telegram.field_telegram_bot__command_ids
+msgid "Additional commands that this bot should respond to."
+msgstr "Comandos adicionales a los que este bot debe responder."
+
+#. module: telegram
+#: model:ir.model.fields,help:telegram.field_telegram_bot__mini_app_receiver_id
+msgid ""
+"Admits calls from this bot's Mini Apps, which authenticate with the initData"
+" Telegram signs with the bot token."
+msgstr ""
+"Admite las llamadas de las Mini Apps de este bot, que se autentican con el "
+"initData que Telegram firma con el token del bot."
+
+#. module: telegram
+#: model:ir.model.fields,help:telegram.field_telegram_bot__webhook_receiver_id
+msgid ""
+"Admits the updates Telegram posts to this bot's webhook: its caller limits, "
+"its refusals and its traffic in the exchange log."
+msgstr ""
+"Admite las actualizaciones que Telegram envía al webhook de este bot: sus "
+"límites por remitente, sus rechazos y su tráfico en el registro de "
+"intercambios."
+
+#. module: telegram
+#: model:ir.model.fields,field_description:telegram.field_telegram_bot__answer_in_bot_lang
+msgid "Always Answer in the Bot's Language"
+msgstr "Contestar siempre en el idioma del bot"
+
+#. module: telegram
+#. odoo-python
+#: code:addons/telegram/models/telegram_router.py:0
+msgid "An error occurred while processing your command. Please try again."
+msgstr "Ocurrió un error al procesar tu comando. Inténtalo de nuevo."
+
+#. module: telegram
+#: model_terms:ir.actions.act_window,help:telegram.action_telegram_business_connection
+msgid ""
+"An owner connects a bot in Telegram, under Settings, Telegram Business, "
+"Chatbots."
+msgstr ""
+"Un dueño conecta un bot en Telegram, en Ajustes, Telegram Business, "
+"Chatbots."
+
+#. module: telegram
+#: model:ir.model.fields,help:telegram.field_telegram_bot__answer_in_bot_lang
+msgid ""
+"Answer every chat in the bot's language, whatever language its linked "
+"contact has. Off, a linked contact's language comes first."
+msgstr ""
+"Contesta todos los chats en el idioma del bot, sin importar el idioma de su "
+"contacto vinculado. Si está desactivado, primero cuenta el idioma del "
+"contacto."
+
+#. module: telegram
+#: model:ir.model.fields,field_description:telegram.field_telegram_message__reply_to_uid
+msgid "Answers Message"
+msgstr "Responde al mensaje"
+
+#. module: telegram
+#: model:ir.model.fields,field_description:telegram.field_telegram_message__attachment_id
+msgid "Attachment"
+msgstr "Adjunto"
+
+#. module: telegram
+#: model:ir.model.fields,field_description:telegram.field_telegram_message__attempts
+msgid "Attempts"
+msgstr "Intentos"
+
+#. module: telegram
+#: model:ir.model.fields.selection,name:telegram.selection__telegram_message__media_type__audio
+#: model_terms:ir.ui.view,arch_db:telegram.view_telegram_message_search
+msgid "Audio"
+msgstr "Audio"
+
+#. module: telegram
+#: model:ir.model.fields,field_description:telegram.field_integration_receiver__auth_type
+msgid "Authentication Type"
+msgstr "Tipo de autenticación"
+
+#. module: telegram
+#: model:ir.model.fields,field_description:telegram.field_telegram_binding_event__binding_ref
+msgid "Binding Ref"
+msgstr "Ref. del vínculo"
+
+#. module: telegram
+#. odoo-python
+#: code:addons/telegram/models/telegram_binding.py:0
+msgid "Binding events are written by the binding."
+msgstr "Los eventos de vínculo los escribe el propio vínculo."
+
+#. module: telegram
+#. odoo-python
+#: code:addons/telegram/models/telegram_binding.py:0
+msgid "Binding events cannot be changed."
+msgstr "Los eventos de vínculo no se pueden modificar."
+
+#. module: telegram
+#. odoo-python
+#: code:addons/telegram/models/telegram_binding.py:0
+msgid "Binding events cannot be deleted."
+msgstr "Los eventos de vínculo no se pueden eliminar."
+
+#. module: telegram
+#: model:ir.model.fields,field_description:telegram.field_telegram_account__binding_ids
+#: model_terms:ir.ui.view,arch_db:telegram.telegram_account_view_form
+msgid "Bindings"
+msgstr "Vínculos"
+
+#. module: telegram
+#: model:ir.model.fields,field_description:telegram.field_telegram_business_connection__bot_id
+#: model:ir.model.fields,field_description:telegram.field_telegram_chat__bot_id
+#: model:ir.model.fields,field_description:telegram.field_telegram_link_token__bot_id
+#: model:ir.model.fields,field_description:telegram.field_telegram_message__bot_id
+#: model:ir.model.fields,field_description:telegram.field_wizard_telegram_invite__bot_id
+#: model_terms:ir.ui.view,arch_db:telegram.view_telegram_message_search
+msgid "Bot"
+msgstr "Bot"
+
+#. module: telegram
+#. odoo-python
+#: code:addons/telegram/models/telegram_bot_receiver.py:0
+#, python-format
+msgid ""
+"Bot %s has no webhook secret. Register Webhook on the bot to give it one."
+msgstr ""
+"El bot %s no tiene secreto de webhook. Pulsa Registrar Webhook en el bot "
+"para asignarle uno."
+
+#. module: telegram
+#: model:ir.model.fields,field_description:telegram.field_telegram_message__api_method
+msgid "Bot API Method"
+msgstr "Método de la API de bots"
+
+#. module: telegram
+#: model:ir.model.fields,field_description:telegram.field_telegram_chat__bot_blocked
+msgid "Bot Blocked"
+msgstr "Bot bloqueado"
+
+#. module: telegram
+#: model:ir.model.fields,field_description:telegram.field_telegram_bot__bot_username
+msgid "Bot Username"
+msgstr "Usuario del bot"
+
+#. module: telegram
+#: model:ir.model.fields,help:telegram.field_telegram_message__bot_id
+msgid "Bot that sent or received this message"
+msgstr "Bot que envió o recibió este mensaje"
+
+#. module: telegram
+#: model:ir.model.fields,help:telegram.field_res_users__telegram_connect_bot_ids
+msgid "Bots the user can connect their Telegram account through."
+msgstr ""
+"Bots mediante los que el usuario puede conectar su cuenta de Telegram."
+
+#. module: telegram
+#: model_terms:ir.ui.view,arch_db:telegram.telegram_account_view_search
+msgid "Bound"
+msgstr "Vinculadas"
+
+#. module: telegram
+#: model:ir.model.fields,field_description:telegram.field_telegram_chat__business_connection_id
+msgid "Business Connection"
+msgstr "Conexión de empresa"
+
+#. module: telegram
+#: model:ir.actions.act_window,name:telegram.action_telegram_business_connection
+#: model:ir.ui.menu,name:telegram.menu_telegram_business_connections
+msgid "Business Connections"
+msgstr "Conexiones de empresa"
+
+#. module: telegram
+#: model:ir.model.fields,field_description:telegram.field_telegram_bot__can_join_groups
+msgid "Can Join Groups"
+msgstr "Puede unirse a grupos"
+
+#. module: telegram
+#: model:ir.model.fields,field_description:telegram.field_telegram_bot__can_read_all_group_messages
+msgid "Can Read All Group Messages"
+msgstr "Lee todos los mensajes de grupo"
+
+#. module: telegram
+#: model:ir.model.fields,field_description:telegram.field_telegram_business_connection__can_reply
+msgid "Can Reply"
+msgstr "Puede responder"
+
+#. module: telegram
+#: model:ir.model.fields,field_description:telegram.field_telegram_message__caption
+msgid "Caption"
+msgstr "Pie de foto"
+
+#. module: telegram
+#: model:ir.model.fields,help:telegram.field_telegram_message__caption
+msgid "Caption text for media messages"
+msgstr "Texto del pie para mensajes multimedia"
+
+#. module: telegram
+#: model:ir.model.fields.selection,name:telegram.selection__telegram_binding__method__migration
+#: model:ir.model.fields.selection,name:telegram.selection__telegram_binding_event__method__migration
+msgid "Carried over from a chat link"
+msgstr "Heredado de un chat vinculado"
+
+#. module: telegram
+#: model:ir.model.fields,field_description:telegram.field_telegram_account__chat_ids
+#: model:ir.model.fields,field_description:telegram.field_telegram_bot__chat_ids
+#: model:ir.model.fields,field_description:telegram.field_telegram_business_connection__chat_ids
+#: model:ir.model.fields,field_description:telegram.field_telegram_chat__chat_id
+#: model:ir.model.fields,field_description:telegram.field_telegram_message__chat_id
+#: model_terms:ir.ui.view,arch_db:telegram.view_telegram_message_search
+msgid "Chat"
+msgstr "Chat"
+
+#. module: telegram
+#: model:ir.model.fields,field_description:telegram.field_telegram_chat__chat_type
+msgid "Chat Type"
+msgstr "Tipo de chat"
+
+#. module: telegram
+#: model:ir.model.fields,help:telegram.field_telegram_message__chat_id
+msgid "Chat session this message belongs to"
+msgstr "Sesión de chat a la que pertenece este mensaje"
+
+#. module: telegram
+#: model_terms:ir.ui.view,arch_db:telegram.telegram_account_view_form
+msgid "Chats"
+msgstr "Chats"
+
+#. module: telegram
+#: model_terms:ir.ui.view,arch_db:telegram.wizard_telegram_invite_view_form
+msgid "Close"
+msgstr "Cerrar"
+
+#. module: telegram
+#: model:ir.model.fields,field_description:telegram.field_telegram_bot__command_ids
+#: model:ir.model.fields,field_description:telegram.field_telegram_command__name
+#: model:ir.model.fields,field_description:telegram.field_telegram_message__command
+msgid "Command"
+msgstr "Comando"
+
+#. module: telegram
+#: model:ir.model.fields,help:telegram.field_telegram_message__command
+msgid "Command name if message is a command (e.g., /start)"
+msgstr "Nombre del comando si el mensaje es un comando (p. ej., /start)"
+
+#. module: telegram
+#: model:ir.model.fields,help:telegram.field_telegram_command__name
+msgid "Command name including the '/' prefix (e.g., /start)"
+msgstr "Nombre del comando con el prefijo '/' (p. ej., /start)"
+
+#. module: telegram
+#: model:ir.actions.act_window,name:telegram.action_telegram_command
+#: model:ir.ui.menu,name:telegram.menu_telegram_commands
+#: model_terms:ir.ui.view,arch_db:telegram.view_telegram_message_search
+msgid "Commands"
+msgstr "Comandos"
+
+#. module: telegram
+#: model_terms:ir.actions.act_window,help:telegram.action_telegram_command
+msgid "Commands must start with \"/\" (e.g., /pago, /ayuda, /start)"
+msgstr "Los comandos deben empezar con \"/\" (p. ej., /pago, /ayuda, /start)"
+
+#. module: telegram
+#: model:ir.model.fields,help:telegram.field_telegram_message__display_name
+msgid "Computed display name with message preview"
+msgstr "Nombre calculado con vista previa del mensaje"
+
+#. module: telegram
+#: model:ir.ui.menu,name:telegram.menu_telegram_config
+msgid "Configuration"
+msgstr "Configuración"
+
+#. module: telegram
+#. odoo-python
+#: code:addons/telegram/models/telegram_handler_base.py:0
+#, python-format
+msgid ""
+"Confirm this connection before %(date)s: in Odoo, open My Preferences and "
+"press Connect Telegram."
+msgstr ""
+"Confirma esta conexión antes del %(date)s: en Odoo, abre Mis preferencias y "
+"pulsa Conectar Telegram."
+
+#. module: telegram
+#: model_terms:ir.ui.view,arch_db:telegram.res_users_view_form_preferences_telegram
+msgid "Connect Telegram"
+msgstr "Conectar Telegram"
+
+#. module: telegram
+#: model:ir.model.fields.selection,name:telegram.selection__telegram_link_token__purpose__broadcast
+msgid "Connect a Channel"
+msgstr "Conectar un canal"
+
+#. module: telegram
+#: model:ir.model.fields.selection,name:telegram.selection__telegram_link_token__purpose__group
+msgid "Connect a Group"
+msgstr "Conectar un grupo"
+
+#. module: telegram
+#: model:ir.model.fields.selection,name:telegram.selection__telegram_link_token__purpose__bind
+msgid "Connect an Account"
+msgstr "Conectar una cuenta"
+
+#. module: telegram
+#. odoo-python
+#: code:addons/telegram/models/telegram_router.py:0
+msgid ""
+"Connect this Telegram account to your Odoo user before the bot answers your "
+"business chats: in Odoo, open My Preferences and press Connect Telegram."
+msgstr ""
+"Conecta esta cuenta de Telegram con tu usuario de Odoo para que el bot "
+"atienda tus chats de empresa: en Odoo, abre Mis preferencias y pulsa "
+"Conectar Telegram."
+
+#. module: telegram
+#. odoo-python
+#: code:addons/telegram/models/telegram_handler_base.py:0
+#, python-format
+msgid ""
+"Connected: this Telegram account is %(name)s in Odoo. Send /desconectar to "
+"undo it."
+msgstr ""
+"Conectado: esta cuenta de Telegram es %(name)s en Odoo. Envía /desconectar "
+"para deshacerlo."
+
+#. module: telegram
+#: model:ir.model.fields,field_description:telegram.field_telegram_business_connection__connection_uid
+msgid "Connection ID"
+msgstr "ID de conexión"
+
+#. module: telegram
+#: model:ir.model.fields,field_description:telegram.field_telegram_link_token__consumed_account_id
+msgid "Consumed Account"
+msgstr "Cuenta que lo usó"
+
+#. module: telegram
+#: model:ir.model.fields,field_description:telegram.field_telegram_link_token__consumed_at
+msgid "Consumed At"
+msgstr "Usado el"
+
+#. module: telegram
+#: model:ir.model,name:telegram.model_res_partner
+msgid "Contact"
+msgstr "Contacto"
+
+#. module: telegram
+#: model:ir.model.fields.selection,name:telegram.selection__telegram_binding__method__contact
+#: model:ir.model.fields.selection,name:telegram.selection__telegram_binding_event__method__contact
+msgid "Contact created on first contact"
+msgstr "Contacto creado en el primer contacto"
+
+#. module: telegram
+#: model:ir.model.fields,field_description:telegram.field_telegram_chat__context_data
+msgid "Context Data"
+msgstr "Datos de contexto"
+
+#. module: telegram
+#: model:ir.model.fields,field_description:telegram.field_telegram_binding_event__correlation_id
+msgid "Correlation"
+msgstr "Correlación"
+
+#. module: telegram
+#: model_terms:ir.ui.view,arch_db:telegram.wizard_telegram_invite_view_form
+msgid "Create Invitation"
+msgstr "Crear invitación"
+
+#. module: telegram
+#: model_terms:ir.actions.act_window,help:telegram.action_telegram_command
+msgid "Create your first Telegram command"
+msgstr "Crea tu primer comando de Telegram"
+
+#. module: telegram
+#: model:ir.model.fields,field_description:telegram.field_telegram_account__create_uid
+#: model:ir.model.fields,field_description:telegram.field_telegram_binding__create_uid
+#: model:ir.model.fields,field_description:telegram.field_telegram_bot__create_uid
+#: model:ir.model.fields,field_description:telegram.field_telegram_business_connection__create_uid
+#: model:ir.model.fields,field_description:telegram.field_telegram_chat__create_uid
+#: model:ir.model.fields,field_description:telegram.field_telegram_command__create_uid
+#: model:ir.model.fields,field_description:telegram.field_telegram_link_token__create_uid
+#: model:ir.model.fields,field_description:telegram.field_telegram_message__create_uid
+#: model:ir.model.fields,field_description:telegram.field_wizard_telegram_invite__create_uid
+msgid "Created by"
+msgstr "Creado por"
+
+#. module: telegram
+#: model:ir.model.fields,field_description:telegram.field_telegram_account__create_date
+#: model:ir.model.fields,field_description:telegram.field_telegram_binding__create_date
+#: model:ir.model.fields,field_description:telegram.field_telegram_bot__create_date
+#: model:ir.model.fields,field_description:telegram.field_telegram_business_connection__create_date
+#: model:ir.model.fields,field_description:telegram.field_telegram_chat__create_date
+#: model:ir.model.fields,field_description:telegram.field_telegram_command__create_date
+#: model:ir.model.fields,field_description:telegram.field_telegram_link_token__create_date
+#: model:ir.model.fields,field_description:telegram.field_telegram_message__create_date
+#: model:ir.model.fields,field_description:telegram.field_wizard_telegram_invite__create_date
+msgid "Created on"
+msgstr "Creado el"
+
+#. module: telegram
+#: model:ir.model.fields,field_description:telegram.field_telegram_bot__credential_id
+msgid "Credential"
+msgstr "Credencial"
+
+#. module: telegram
+#: model_terms:ir.ui.view,arch_db:telegram.view_telegram_message_list
+msgid "Date"
+msgstr "Fecha"
+
+#. module: telegram
+#: model:ir.model.fields,field_description:telegram.field_telegram_link_token__date_to
+msgid "Date To"
+msgstr "Válido hasta"
+
+#. module: telegram
+#: model:ir.model.fields,help:telegram.field_telegram_message__state
+msgid "Delivery status of the message"
+msgstr "Estado de entrega del mensaje"
+
+#. module: telegram
+#: model:ir.model.fields,help:telegram.field_telegram_message__message_type
+msgid "Direction of message flow"
+msgstr "Dirección del mensaje"
+
+#. module: telegram
+#. odoo-python
+#: code:addons/telegram/models/telegram_router.py:0
+msgid "Discard what you have going or finish it, then tap the button again."
+msgstr "Descarta lo que traes o termínalo, y vuelve a picar el botón."
+
+#. module: telegram
+#: model_terms:ir.ui.view,arch_db:telegram.res_users_view_form_preferences_telegram
+msgid "Disconnect"
+msgstr "Desconectar"
+
+#. module: telegram
+#: model:ir.model.fields.selection,name:telegram.selection__telegram_binding__revoked_reason__user
+#: model:ir.model.fields.selection,name:telegram.selection__telegram_binding_event__reason__user
+msgid "Disconnected by its owner"
+msgstr "Desconectado por su dueño"
+
+#. module: telegram
+#. odoo-python
+#: code:addons/telegram/models/telegram_handler_base.py:0
+msgid "Disconnected. This Telegram account no longer acts as anyone in Odoo."
+msgstr "Desconectado. Esta cuenta de Telegram ya no actúa como nadie en Odoo."
+
+#. module: telegram
+#: model:ir.model.fields,field_description:telegram.field_integration_receiver__display_name
+#: model:ir.model.fields,field_description:telegram.field_mixin_telegram_handler__display_name
+#: model:ir.model.fields,field_description:telegram.field_res_partner__display_name
+#: model:ir.model.fields,field_description:telegram.field_res_users__display_name
+#: model:ir.model.fields,field_description:telegram.field_telegram_account__display_name
+#: model:ir.model.fields,field_description:telegram.field_telegram_binding__display_name
+#: model:ir.model.fields,field_description:telegram.field_telegram_binding_event__display_name
+#: model:ir.model.fields,field_description:telegram.field_telegram_bot__display_name
+#: model:ir.model.fields,field_description:telegram.field_telegram_business_connection__display_name
+#: model:ir.model.fields,field_description:telegram.field_telegram_chat__display_name
+#: model:ir.model.fields,field_description:telegram.field_telegram_command__display_name
+#: model:ir.model.fields,field_description:telegram.field_telegram_handler_base__display_name
+#: model:ir.model.fields,field_description:telegram.field_telegram_link_token__display_name
+#: model:ir.model.fields,field_description:telegram.field_telegram_message__display_name
+#: model:ir.model.fields,field_description:telegram.field_telegram_router__display_name
+#: model:ir.model.fields,field_description:telegram.field_wizard_telegram_invite__display_name
+msgid "Display Name"
+msgstr "Nombre para mostrar"
+
+#. module: telegram
+#: model:ir.model.fields,help:telegram.field_telegram_account__username
+msgid ""
+"Display only: its owner can release it and somebody else can claim it, so it"
+" never decides who the account is."
+msgstr ""
+"Solo informativo: su dueño puede liberarlo y otra persona reclamarlo, así "
+"que nunca decide quién es la cuenta."
+
+#. module: telegram
+#: model:ir.model.fields.selection,name:telegram.selection__telegram_message__media_type__document
+msgid "Document"
+msgstr "Documento"
+
+#. module: telegram
+#: model_terms:ir.ui.view,arch_db:telegram.view_telegram_message_search
+msgid "Documents"
+msgstr "Documentos"
+
+#. module: telegram
+#. odoo-python
+#: code:addons/telegram/models/telegram_handler_base.py:0
+msgid "Done, I cancelled %(flow)s."
+msgstr "Listo, cancelé %(flow)s."
+
+#. module: telegram
+#. odoo-python
+#: code:addons/telegram/models/telegram_router.py:0
+msgid "Done, I discarded it. Tap the button you wanted again."
+msgstr "Listo, descarté lo que traías. Vuelve a picar el botón que querías."
+
+#. module: telegram
+#. odoo-python
+#: code:addons/telegram/models/telegram_router.py:0
+msgid "Done, I discarded it. Tell me again what you need."
+msgstr "Listo, descarté lo que traías. Vuelve a escribirme lo que necesitas."
+
+#. module: telegram
+#. odoo-python
+#: code:addons/telegram/models/telegram_router.py:0
+msgid "Done, I discarded the previous one. Starting over."
+msgstr "Listo, descarté lo anterior. Empezamos de nuevo."
+
+#. module: telegram
+#: model:ir.model.constraint,message:telegram.constraint_telegram_bot_credential_uniq
+msgid "Each credential can only be used by one bot!"
+msgstr "¡Cada credencial solo puede usarla un bot!"
+
+#. module: telegram
+#. odoo-python
+#: code:addons/telegram/models/telegram_handler_base.py:0
+msgid "Email:"
+msgstr "Correo:"
+
+#. module: telegram
+#: model:ir.model.fields,field_description:telegram.field_telegram_message__error_class
+msgid "Error Class"
+msgstr "Tipo de error"
+
+#. module: telegram
+#: model_terms:ir.ui.view,arch_db:telegram.view_telegram_message_form
+msgid "Error Details"
+msgstr "Detalles del error"
+
+#. module: telegram
+#: model:ir.model.fields,field_description:telegram.field_telegram_message__error_message
+msgid "Error Message"
+msgstr "Mensaje de error"
+
+#. module: telegram
+#: model:ir.model.fields,help:telegram.field_telegram_message__error_message
+msgid "Error details if message failed to send"
+msgstr "Detalles del error si el mensaje no se pudo enviar"
+
+#. module: telegram
+#: model:ir.model.fields,field_description:telegram.field_telegram_binding_event__event
+msgid "Event"
+msgstr "Evento"
+
+#. module: telegram
+#: model:ir.model.fields.selection,name:telegram.selection__telegram_binding__revoked_reason__expired
+#: model:ir.model.fields.selection,name:telegram.selection__telegram_binding_event__reason__expired
+msgid "Expired unconfirmed"
+msgstr "Caducó sin confirmarse"
+
+#. module: telegram
+#: model:ir.model.fields,field_description:telegram.field_telegram_binding__expires_at
+msgid "Expires At"
+msgstr "Caduca el"
+
+#. module: telegram
+#: model:ir.model.fields.selection,name:telegram.selection__telegram_message__state__error
+#: model_terms:ir.ui.view,arch_db:telegram.view_telegram_message_search
+msgid "Failed"
+msgstr "Fallido"
+
+#. module: telegram
+#: model:ir.model.fields,field_description:telegram.field_telegram_chat__failed_command_count
+msgid "Failed Command Count"
+msgstr "Comandos fallidos"
+
+#. module: telegram
+#. odoo-python
+#: code:addons/telegram/models/telegram_router.py:0
+#, python-format
+msgid ""
+"Finish what you have going before using %(command)s, or choose an option:"
+msgstr "Termina lo que traes antes de usar %(command)s, o elige una opción:"
+
+#. module: telegram
+#. odoo-python
+#: code:addons/telegram/models/telegram_router.py:0
+msgid ""
+"Finish what you have going by replying to my last message, or discard it "
+"with the button below."
+msgstr ""
+"Termina lo que traes respondiendo el último mensaje que te mandé, o "
+"descártalo con el botón de abajo."
+
+#. module: telegram
+#: model:ir.model.fields,field_description:telegram.field_telegram_account__first_name
+msgid "First Name"
+msgstr "Nombre"
+
+#. module: telegram
+#: model:ir.model.fields,field_description:telegram.field_telegram_chat__flow_data
+msgid "Flow Data"
+msgstr "Datos del flujo"
+
+#. module: telegram
+#: model:ir.model.fields,field_description:telegram.field_telegram_chat__flow_expires_at
+msgid "Flow Expires At"
+msgstr "Vencimiento del flujo"
+
+#. module: telegram
+#: model:ir.model.fields,field_description:telegram.field_telegram_chat__flow_owner
+msgid "Flow Owner"
+msgstr "Dueño del flujo"
+
+#. module: telegram
+#: model:ir.model.fields,field_description:telegram.field_telegram_chat__flow_step
+msgid "Flow Step"
+msgstr "Paso del flujo"
+
+#. module: telegram
+#: model:ir.model.fields,help:telegram.field_telegram_link_token__res_model
+msgid "For a group link, the model of the record the group is linked to."
+msgstr ""
+"En un enlace de grupo, el modelo del registro al que se vincula el grupo."
+
+#. module: telegram
+#: model:ir.model.fields,help:telegram.field_telegram_message__text
+msgid "Full text content of the message"
+msgstr "Texto completo del mensaje"
+
+#. module: telegram
+#. odoo-python
+#: code:addons/telegram/models/telegram_handler_base.py:0
+msgid "General Commands"
+msgstr "Comandos Generales"
+
+#. module: telegram
+#. odoo-python
+#: code:addons/telegram/models/telegram_router.py:0
+msgid "Go ahead, pick up where you left off. Reply to my last message."
+msgstr "Va, sigue donde te quedaste. Responde el último mensaje que te mandé."
+
+#. module: telegram
+#: model_terms:ir.ui.view,arch_db:telegram.view_telegram_message_search
+msgid "Has Media"
+msgstr "Tiene archivos multimedia"
+
+#. module: telegram
+#. odoo-python
+#: code:addons/telegram/models/telegram_router.py:0
+msgid "I received an action, but I don't know how to process it."
+msgstr "Recibí una acción, pero no sé cómo procesarla."
+
+#. module: telegram
+#: model:ir.model.fields,field_description:telegram.field_integration_receiver__id
+#: model:ir.model.fields,field_description:telegram.field_mixin_telegram_handler__id
+#: model:ir.model.fields,field_description:telegram.field_res_partner__id
+#: model:ir.model.fields,field_description:telegram.field_res_users__id
+#: model:ir.model.fields,field_description:telegram.field_telegram_account__id
+#: model:ir.model.fields,field_description:telegram.field_telegram_binding__id
+#: model:ir.model.fields,field_description:telegram.field_telegram_binding_event__id
+#: model:ir.model.fields,field_description:telegram.field_telegram_bot__id
+#: model:ir.model.fields,field_description:telegram.field_telegram_business_connection__id
+#: model:ir.model.fields,field_description:telegram.field_telegram_chat__id
+#: model:ir.model.fields,field_description:telegram.field_telegram_command__id
+#: model:ir.model.fields,field_description:telegram.field_telegram_handler_base__id
+#: model:ir.model.fields,field_description:telegram.field_telegram_link_token__id
+#: model:ir.model.fields,field_description:telegram.field_telegram_message__id
+#: model:ir.model.fields,field_description:telegram.field_telegram_router__id
+#: model:ir.model.fields,field_description:telegram.field_wizard_telegram_invite__id
+msgid "ID"
+msgstr "ID"
+
+#. module: telegram
+#: model:ir.model.fields,field_description:telegram.field_telegram_bot__idle_media_handler
+msgid "Idle Media Handler"
+msgstr "Receptor de fotos y documentos sueltos"
+
+#. module: telegram
+#: model:ir.model.fields,field_description:telegram.field_telegram_bot__idle_text_handler
+msgid "Idle Text Handler"
+msgstr "Receptor de texto suelto"
+
+#. module: telegram
+#: model:ir.model.fields,field_description:telegram.field_telegram_bot__idle_voice_handler
+msgid "Idle Voice Handler"
+msgstr "Receptor de notas de voz sueltas"
+
+#. module: telegram
+#: model:ir.model.fields.selection,name:telegram.selection__telegram_message__state__outgoing
+msgid "In Queue"
+msgstr "En cola"
+
+#. module: telegram
+#: model:ir.model.fields.selection,name:telegram.selection__telegram_message__message_type__inbound
+#: model_terms:ir.ui.view,arch_db:telegram.view_telegram_message_search
+msgid "Inbound"
+msgstr "Entrante"
+
+#. module: telegram
+#: model:ir.model,name:telegram.model_integration_receiver
+msgid "Integration Receiver"
+msgstr "Receptor de integración"
+
+#. module: telegram
+#: model:ir.model.fields.selection,name:telegram.selection__telegram_link_token__method__invitation
+msgid "Invitation"
+msgstr "Invitación"
+
+#. module: telegram
+#: model:ir.model,name:telegram.model_wizard_telegram_invite
+msgid "Invite a Contact to Telegram"
+msgstr "Invitar a un contacto a Telegram"
+
+#. module: telegram
+#: model_terms:ir.ui.view,arch_db:telegram.view_partner_form_telegram
+#: model_terms:ir.ui.view,arch_db:telegram.wizard_telegram_invite_view_form
+msgid "Invite to Telegram"
+msgstr "Invitar a Telegram"
+
+#. module: telegram
+#: model:ir.model.fields,field_description:telegram.field_telegram_business_connection__is_enabled
+msgid "Is Enabled"
+msgstr "Habilitada"
+
+#. module: telegram
+#. odoo-python
+#: code:addons/telegram/models/telegram_router.py:0
+msgid "It seems you're having trouble. Type /ayuda to see available commands."
+msgstr ""
+"Parece que algo no está saliendo. Escribe /ayuda para ver los comandos "
+"disponibles."
+
+#. module: telegram
+#: model:ir.model.fields,field_description:telegram.field_telegram_bot__lang
+msgid "Language"
+msgstr "Idioma"
+
+#. module: telegram
+#: model:ir.model.fields,field_description:telegram.field_telegram_account__language_code
+msgid "Language Code"
+msgstr "Código de idioma"
+
+#. module: telegram
+#: model:ir.model.fields,help:telegram.field_telegram_bot__lang
+msgid ""
+"Language the bot answers in when the chat has no linked contact with a "
+"language of its own, or always when Always Answer in the Bot's Language is "
+"set."
+msgstr ""
+"Idioma en que responde el bot cuando el chat no tiene un contacto vinculado "
+"con idioma propio, o siempre si está activado Responder siempre en el idioma"
+" del bot."
+
+#. module: telegram
+#: model:ir.model.fields,field_description:telegram.field_telegram_chat__last_error
+msgid "Last Error"
+msgstr "Último error"
+
+#. module: telegram
+#: model:ir.model.fields,field_description:telegram.field_telegram_chat__last_message_time
+msgid "Last Message Time"
+msgstr "Último mensaje"
+
+#. module: telegram
+#: model:ir.model.fields,field_description:telegram.field_telegram_account__last_name
+msgid "Last Name"
+msgstr "Apellidos"
+
+#. module: telegram
+#: model:ir.model.fields,field_description:telegram.field_telegram_account__write_uid
+#: model:ir.model.fields,field_description:telegram.field_telegram_binding__write_uid
+#: model:ir.model.fields,field_description:telegram.field_telegram_bot__write_uid
+#: model:ir.model.fields,field_description:telegram.field_telegram_business_connection__write_uid
+#: model:ir.model.fields,field_description:telegram.field_telegram_chat__write_uid
+#: model:ir.model.fields,field_description:telegram.field_telegram_command__write_uid
+#: model:ir.model.fields,field_description:telegram.field_telegram_link_token__write_uid
+#: model:ir.model.fields,field_description:telegram.field_telegram_message__write_uid
+#: model:ir.model.fields,field_description:telegram.field_wizard_telegram_invite__write_uid
+msgid "Last Updated by"
+msgstr "Última actualización por"
+
+#. module: telegram
+#: model:ir.model.fields,field_description:telegram.field_telegram_account__write_date
+#: model:ir.model.fields,field_description:telegram.field_telegram_binding__write_date
+#: model:ir.model.fields,field_description:telegram.field_telegram_bot__write_date
+#: model:ir.model.fields,field_description:telegram.field_telegram_business_connection__write_date
+#: model:ir.model.fields,field_description:telegram.field_telegram_chat__write_date
+#: model:ir.model.fields,field_description:telegram.field_telegram_command__write_date
+#: model:ir.model.fields,field_description:telegram.field_telegram_link_token__write_date
+#: model:ir.model.fields,field_description:telegram.field_telegram_message__write_date
+#: model:ir.model.fields,field_description:telegram.field_wizard_telegram_invite__write_date
+msgid "Last Updated on"
+msgstr "Última actualización el"
+
+#. module: telegram
+#: model:ir.model.fields,help:telegram.field_telegram_chat__last_error
+msgid "Last error message for debugging."
+msgstr "Último mensaje de error, para depuración."
+
+#. module: telegram
+#: model:ir.model.fields,field_description:telegram.field_telegram_bot__legacy_secretless_webhook
+msgid "Legacy Secretless Webhook"
+msgstr "Webhook heredado sin secreto"
+
+#. module: telegram
+#: model:ir.model.fields,field_description:telegram.field_wizard_telegram_invite__link
+msgid "Link"
+msgstr "Enlace"
+
+#. module: telegram
+#: model_terms:ir.ui.view,arch_db:telegram.view_telegram_bot_form
+msgid "Linked Chats"
+msgstr "Chats"
+
+#. module: telegram
+#: model:ir.model.fields,field_description:telegram.field_telegram_link_token__res_model
+msgid "Linked Model"
+msgstr "Modelo vinculado"
+
+#. module: telegram
+#: model:ir.model.fields,field_description:telegram.field_telegram_link_token__res_id
+msgid "Linked Record"
+msgstr "Registro vinculado"
+
+#. module: telegram
+#: model:ir.model.fields,help:telegram.field_telegram_bot__token_masked
+msgid ""
+"Masked version of the bot token for verification. Shows bot ID and last 4 "
+"characters only."
+msgstr ""
+"Versión enmascarada del token del bot para verificarlo. Muestra solo el ID "
+"del bot y los últimos 4 caracteres."
+
+#. module: telegram
+#: model:ir.model.fields,help:telegram.field_telegram_chat__rate_limit_requests
+msgid "Maximum number of messages allowed per time period"
+msgstr "Número máximo de mensajes permitidos por periodo"
+
+#. module: telegram
+#: model_terms:ir.ui.view,arch_db:telegram.view_telegram_message_form
+msgid "Media Details"
+msgstr "Detalles multimedia"
+
+#. module: telegram
+#: model:ir.model.fields,field_description:telegram.field_telegram_message__media_type
+#: model_terms:ir.ui.view,arch_db:telegram.view_telegram_message_search
+msgid "Media Type"
+msgstr "Tipo de archivo multimedia"
+
+#. module: telegram
+#: model:ir.model.fields,field_description:telegram.field_telegram_chat__message_ids
+msgid "Message"
+msgstr "Mensaje"
+
+#. module: telegram
+#: model_terms:ir.ui.view,arch_db:telegram.view_telegram_message_form
+msgid "Message Content"
+msgstr "Contenido del mensaje"
+
+#. module: telegram
+#: model_terms:ir.ui.view,arch_db:telegram.view_telegram_message_list
+msgid "Message Preview"
+msgstr "Vista previa"
+
+#. module: telegram
+#: model_terms:ir.ui.view,arch_db:telegram.view_telegram_message_search
+msgid "Message Text"
+msgstr "Texto del mensaje"
+
+#. module: telegram
+#: model:ir.actions.act_window,name:telegram.action_telegram_message
+#: model:ir.ui.menu,name:telegram.menu_telegram_messages
+msgid "Messages"
+msgstr "Mensajes"
+
+#. module: telegram
+#: model_terms:ir.actions.act_window,help:telegram.action_telegram_message
+msgid ""
+"Messages will appear here once the bot starts sending and receiving "
+"messages."
+msgstr ""
+"Los mensajes aparecerán aquí cuando el bot empiece a enviar y recibir "
+"mensajes."
+
+#. module: telegram
+#: model:ir.model.fields,field_description:telegram.field_telegram_binding__method
+#: model:ir.model.fields,field_description:telegram.field_telegram_binding_event__method
+#: model:ir.model.fields,field_description:telegram.field_telegram_link_token__method
+msgid "Method"
+msgstr "Método"
+
+#. module: telegram
+#: model:ir.model.fields,help:telegram.field_integration_receiver__auth_type
+msgid "Method used for authentication"
+msgstr "Método de autenticación"
+
+#. module: telegram
+#: model:ir.model.fields,field_description:telegram.field_telegram_chat__migrated_to_id
+msgid "Migrated To"
+msgstr "Migrado a"
+
+#. module: telegram
+#: model:ir.model.fields,field_description:telegram.field_telegram_bot__mini_app_receiver_id
+msgid "Mini App Receiver"
+msgstr "Receptor de Mini App"
+
+#. module: telegram
+#: model:ir.model.fields,field_description:telegram.field_telegram_account__name
+#: model:ir.model.fields,field_description:telegram.field_telegram_bot__name
+msgid "Name"
+msgstr "Nombre"
+
+#. module: telegram
+#. odoo-python
+#: code:addons/telegram/models/telegram_handler_base.py:0
+msgid "Name:"
+msgstr "Nombre:"
+
+#. module: telegram
+#: model_terms:ir.actions.act_window,help:telegram.action_telegram_business_connection
+msgid "No Telegram Business account manages its chats through a bot yet"
+msgstr ""
+"Todavía ninguna cuenta de Telegram Business gestiona sus chats con un bot"
+
+#. module: telegram
+#: model_terms:ir.actions.act_window,help:telegram.action_telegram_message
+msgid "No messages yet"
+msgstr "Aún no hay mensajes"
+
+#. module: telegram
+#: model:ir.model.fields.selection,name:telegram.selection__telegram_message__state__cancelled
+msgid "Not Needed"
+msgstr "Ya no necesario"
+
+#. module: telegram
+#: model:ir.model.fields,help:telegram.field_telegram_chat__failed_command_count
+msgid "Number of consecutive failed commands. Auto-resets on success."
+msgstr "Número de comandos fallidos seguidos. Se reinicia al tener éxito."
+
+#. module: telegram
+#: model:ir.model.fields,field_description:telegram.field_telegram_binding_event__occurred_at
+msgid "Occurred At"
+msgstr "Ocurrió el"
+
+#. module: telegram
+#: model:ir.model.fields,help:telegram.field_telegram_bot__can_read_all_group_messages
+msgid ""
+"Off while the bot's privacy mode is on: in a group it then sees only "
+"commands and replies to it."
+msgstr ""
+"Desactivado mientras el modo de privacidad del bot esté activo: en un grupo "
+"solo ve los comandos y las respuestas dirigidas a él."
+
+#. module: telegram
+#. odoo-python
+#: code:addons/telegram/models/telegram_router.py:0
+msgid "Only an administrator of the group can connect it."
+msgstr "Solo un administrador del grupo puede conectarlo."
+
+#. module: telegram
+#. odoo-python
+#: code:addons/telegram/models/res_users.py:0
+msgid "Only its owner or an administrator disconnects a Telegram account."
+msgstr ""
+"Solo su dueño o un administrador puede desconectar una cuenta de Telegram."
+
+#. module: telegram
+#. odoo-python
+#: code:addons/telegram/models/telegram_router.py:0
+msgid ""
+"Only the Odoo user who created this link can connect the group, from the "
+"Telegram account connected to them."
+msgstr ""
+"Solo el usuario de Odoo que creó este enlace puede conectar el grupo, desde "
+"la cuenta de Telegram conectada a él."
+
+#. module: telegram
+#: model:ir.model.fields.selection,name:telegram.selection__telegram_message__message_type__outbound
+#: model_terms:ir.ui.view,arch_db:telegram.view_telegram_message_search
+msgid "Outbound"
+msgstr "Saliente"
+
+#. module: telegram
+#: model:ir.model.fields.selection,name:telegram.selection__telegram_message__state__uncertain
+msgid "Outcome Unknown"
+msgstr "Resultado desconocido"
+
+#. module: telegram
+#: model:ir.model.fields,field_description:telegram.field_telegram_account__partner_id
+#: model:ir.model.fields,field_description:telegram.field_telegram_binding__partner_id
+#: model:ir.model.fields,field_description:telegram.field_telegram_chat__partner_id
+#: model:ir.model.fields,field_description:telegram.field_telegram_link_token__partner_id
+#: model:ir.model.fields,field_description:telegram.field_wizard_telegram_invite__partner_id
+msgid "Partner"
+msgstr "Contacto"
+
+#. module: telegram
+#: model:ir.model.fields,field_description:telegram.field_telegram_binding_event__partner_ref
+msgid "Partner Ref"
+msgstr "Ref. del contacto"
+
+#. module: telegram
+#: model:ir.model.fields,field_description:telegram.field_telegram_message__payload
+msgid "Payload"
+msgstr "Parámetros"
+
+#. module: telegram
+#: model:ir.model.fields.selection,name:telegram.selection__telegram_chat__rate_limit_period__hour
+msgid "Per Hour"
+msgstr "Por hora"
+
+#. module: telegram
+#: model:ir.model.fields.selection,name:telegram.selection__telegram_chat__rate_limit_period__minute
+msgid "Per Minute"
+msgstr "Por minuto"
+
+#. module: telegram
+#: model:ir.model.fields.selection,name:telegram.selection__telegram_message__media_type__photo
+msgid "Photo"
+msgstr "Foto"
+
+#. module: telegram
+#: model_terms:ir.ui.view,arch_db:telegram.view_telegram_message_search
+msgid "Photos"
+msgstr "Fotos"
+
+#. module: telegram
+#: model:ir.model.fields,help:telegram.field_telegram_chat__rate_limit_enabled
+msgid "Prevent spam with rate limiting (token bucket algorithm)"
+msgstr ""
+"Evita el spam con límite de frecuencia (algoritmo de cubeta de tokens)"
+
+#. module: telegram
+#: model:res.groups,name:telegram.privilege_chat_conversation
+msgid "Privilege: the bot moves the conversation of the chat it serves"
+msgstr "Privilegio: el bot avanza la conversación del chat que atiende"
+
+#. module: telegram
+#: model:ir.model.fields.selection,name:telegram.selection__telegram_binding_event__event__proven
+msgid "Proven"
+msgstr "Comprobado"
+
+#. module: telegram
+#: model:ir.model.fields,field_description:telegram.field_telegram_binding__proven_at
+msgid "Proven At"
+msgstr "Comprobado el"
+
+#. module: telegram
+#: model:ir.model.fields.selection,name:telegram.selection__telegram_binding__method__session
+#: model:ir.model.fields.selection,name:telegram.selection__telegram_binding_event__method__session
+msgid "Proven from an Odoo session"
+msgstr "Comprobado desde una sesión de Odoo"
+
+#. module: telegram
+#: model:ir.model.fields.selection,name:telegram.selection__telegram_binding__method__invitation
+#: model:ir.model.fields.selection,name:telegram.selection__telegram_binding_event__method__invitation
+msgid "Proven with an invitation"
+msgstr "Comprobado con una invitación"
+
+#. module: telegram
+#: model:ir.model.fields,field_description:telegram.field_telegram_link_token__purpose
+msgid "Purpose"
+msgstr "Propósito"
+
+#. module: telegram
+#: model:ir.model.fields,field_description:telegram.field_wizard_telegram_invite__qr_url
+msgid "Qr Url"
+msgstr "URL del QR"
+
+#. module: telegram
+#: model:ir.model.fields,field_description:telegram.field_telegram_chat__rate_limit_enabled
+msgid "Rate Limit Enabled"
+msgstr "Límite de frecuencia activo"
+
+#. module: telegram
+#: model:ir.model.fields,field_description:telegram.field_telegram_chat__rate_limit_period
+msgid "Rate Limit Period"
+msgstr "Periodo del límite"
+
+#. module: telegram
+#: model:ir.model.fields,field_description:telegram.field_telegram_chat__rate_limit_requests
+msgid "Rate Limit Requests"
+msgstr "Mensajes por periodo"
+
+#. module: telegram
+#. odoo-python
+#: code:addons/telegram/models/telegram_chat.py:0
+msgid "Rate limit requests must be greater than 0"
+msgstr "El límite de peticiones debe ser mayor que 0"
+
+#. module: telegram
+#: model:ir.model.fields,field_description:telegram.field_telegram_binding_event__reason
+msgid "Reason"
+msgstr "Motivo"
+
+#. module: telegram
+#: model:ir.model.fields.selection,name:telegram.selection__telegram_message__state__received
+msgid "Received"
+msgstr "Recibido"
+
+#. module: telegram
+#. odoo-python
+#: code:addons/telegram/models/telegram_bot_receiver.py:0
+#, python-format
+msgid "Receiver %s serves no Telegram bot."
+msgstr "El receptor %s no sirve a ningún bot de Telegram."
+
+#. module: telegram
+#: model_terms:ir.ui.view,arch_db:telegram.view_telegram_bot_form
+msgid "Register Webhook"
+msgstr "Registrar webhook"
+
+#. module: telegram
+#. odoo-python
+#: code:addons/telegram/wizards/wizard_telegram_invite.py:0
+msgid ""
+"Register the bot's webhook first: Telegram then tells Odoo the bot's "
+"username, which the link needs."
+msgstr ""
+"Primero registra el webhook del bot: así Telegram le dice a Odoo el usuario "
+"del bot, que el enlace necesita."
+
+#. module: telegram
+#: model_terms:ir.ui.view,arch_db:telegram.telegram_account_view_form
+msgid "Revoke Binding"
+msgstr "Revocar vínculo"
+
+#. module: telegram
+#: model:ir.model.fields.selection,name:telegram.selection__telegram_binding__state__revoked
+#: model:ir.model.fields.selection,name:telegram.selection__telegram_binding_event__event__revoked
+msgid "Revoked"
+msgstr "Revocado"
+
+#. module: telegram
+#: model:ir.model.fields,field_description:telegram.field_telegram_binding__revoked_at
+msgid "Revoked At"
+msgstr "Revocado el"
+
+#. module: telegram
+#: model:ir.model.fields,field_description:telegram.field_telegram_binding__revoked_reason
+msgid "Revoked Reason"
+msgstr "Motivo de revocación"
+
+#. module: telegram
+#: model:ir.model.fields.selection,name:telegram.selection__telegram_binding__revoked_reason__admin
+#: model:ir.model.fields.selection,name:telegram.selection__telegram_binding_event__reason__admin
+msgid "Revoked by an administrator"
+msgstr "Revocado por un administrador"
+
+#. module: telegram
+#: model:ir.model.fields,help:telegram.field_telegram_bot__token_hash
+msgid ""
+"SHA256 of the bot token, used to resolve the webhook URL to this bot. "
+"Recomputed whenever the credential or the token behind it changes."
+msgstr ""
+"SHA256 del token del bot, con el que la URL del webhook encuentra este bot. "
+"Se recalcula cuando cambia la credencial o su token."
+
+#. module: telegram
+#: model_terms:ir.ui.view,arch_db:telegram.view_telegram_message_search
+msgid "Search Messages"
+msgstr "Buscar mensajes"
+
+#. module: telegram
+#: model_terms:ir.ui.view,arch_db:telegram.wizard_telegram_invite_view_form
+msgid ""
+"Send this link to the contact through a channel only they hold, or let them scan\n"
+"                        the code. Opening it in their own Telegram connects their account to this contact.\n"
+"                        It works once, within seven days."
+msgstr ""
+"Envía este enlace al contacto por un medio que solo él tenga, o deja que escanee\n"
+"                        el código. Al abrirlo en su propio Telegram, su cuenta queda conectada a este contacto.\n"
+"                        Funciona una sola vez, durante siete días."
+
+#. module: telegram
+#: model:ir.model.fields.selection,name:telegram.selection__telegram_message__state__sending
+msgid "Sending"
+msgstr "Enviando"
+
+#. module: telegram
+#: model:ir.model.fields.selection,name:telegram.selection__telegram_message__state__sent
+msgid "Sent"
+msgstr "Enviado"
+
+#. module: telegram
+#: model:ir.model.fields.selection,name:telegram.selection__telegram_link_token__method__session
+msgid "Session"
+msgstr "Sesión"
+
+#. module: telegram
+#: model:ir.model.fields,help:telegram.field_telegram_chat__business_connection_id
+msgid ""
+"Set for a chat of a Telegram Business account the bot manages: the owner's "
+"own private chat with a customer, which shares its id with the customer's "
+"chat with the bot."
+msgstr ""
+"Se indica en un chat de una cuenta de Telegram Business que el bot gestiona:"
+" el chat privado del dueño con un cliente, que comparte su ID con el chat "
+"del cliente con el bot."
+
+#. module: telegram
+#: model:ir.model.fields,help:telegram.field_telegram_link_token__user_id
+msgid ""
+"Set when the user's own session minted it: the binding then names that user."
+msgstr ""
+"Se llena cuando lo generó la sesión del propio usuario: el vínculo nombra "
+"entonces a ese usuario."
+
+#. module: telegram
+#. odoo-python
+#: code:addons/telegram/models/telegram_router.py:0
+msgid "Sorry, I can only process commands. Type /ayuda to see the list."
+msgstr "Solo puedo procesar comandos. Escribe /ayuda para ver la lista."
+
+#. module: telegram
+#: model:ir.model.fields,field_description:telegram.field_telegram_binding__state
+msgid "State"
+msgstr "Estado"
+
+#. module: telegram
+#: model:ir.model.fields,field_description:telegram.field_telegram_message__state
+#: model_terms:ir.ui.view,arch_db:telegram.view_telegram_message_search
+msgid "Status"
+msgstr "Estado"
+
+#. module: telegram
+#: model:ir.model.fields.selection,name:telegram.selection__telegram_binding__revoked_reason__superseded
+#: model:ir.model.fields.selection,name:telegram.selection__telegram_binding_event__reason__superseded
+msgid "Superseded by a newer binding"
+msgstr "Reemplazado por un vínculo más reciente"
+
+#. module: telegram
+#: model:ir.model.fields,field_description:telegram.field_telegram_message__target_id
+msgid "Target"
+msgstr "Destino"
+
+#. module: telegram
+#: model:ir.ui.menu,name:telegram.menu_telegram_root
+#: model_terms:ir.ui.view,arch_db:telegram.res_users_view_form_preferences_telegram
+msgid "Telegram"
+msgstr "Telegram"
+
+#. module: telegram
+#: model:ir.model,name:telegram.model_telegram_account
+msgid "Telegram Account"
+msgstr "Cuenta de Telegram"
+
+#. module: telegram
+#: model:ir.model.fields,field_description:telegram.field_res_bank__telegram_account_count
+#: model:ir.model.fields,field_description:telegram.field_res_company__telegram_account_count
+#: model:ir.model.fields,field_description:telegram.field_res_partner__telegram_account_count
+#: model:ir.model.fields,field_description:telegram.field_res_users__telegram_account_count
+msgid "Telegram Account Count"
+msgstr "Número de cuentas de Telegram"
+
+#. module: telegram
+#: model:ir.actions.act_window,name:telegram.action_telegram_account
+#: model:ir.model.fields,field_description:telegram.field_res_bank__telegram_account_ids
+#: model:ir.model.fields,field_description:telegram.field_res_company__telegram_account_ids
+#: model:ir.model.fields,field_description:telegram.field_res_partner__telegram_account_ids
+#: model:ir.model.fields,field_description:telegram.field_res_users__telegram_account_ids
+msgid "Telegram Accounts"
+msgstr "Cuentas de Telegram"
+
+#. module: telegram
+#: model:ir.model,name:telegram.model_telegram_binding
+msgid "Telegram Binding"
+msgstr "Vínculo de Telegram"
+
+#. module: telegram
+#: model:ir.model,name:telegram.model_telegram_binding_event
+msgid "Telegram Binding Event"
+msgstr "Evento de vínculo de Telegram"
+
+#. module: telegram
+#: model_terms:ir.ui.view,arch_db:telegram.view_telegram_bot_form
+msgid "Telegram Bot"
+msgstr "Bot de Telegram"
+
+#. module: telegram
+#: model:integration.service,name:telegram.service_telegram
+msgid "Telegram Bot API"
+msgstr "API de bots de Telegram"
+
+#. module: telegram
+#: model:integration.service,description:telegram.service_telegram
+#, python-brace-format
+msgid ""
+"Telegram Bot API for sending messages, files, and managing bot interactions."
+" Authentication via URL path: /bot{token}/{method}"
+msgstr ""
+"API de bots de Telegram para enviar mensajes y archivos y gestionar las "
+"interacciones del bot. Autenticación por la ruta de la URL: "
+"/bot{token}/{method}"
+
+#. module: telegram
+#: model:ir.model,name:telegram.model_telegram_bot
+msgid "Telegram Bot Configuration"
+msgstr "Configuración del bot de Telegram"
+
+#. module: telegram
+#: model:ir.actions.act_window,name:telegram.action_telegram_bot
+#: model:ir.ui.menu,name:telegram.menu_telegram_bots
+#: model_terms:ir.ui.view,arch_db:telegram.view_telegram_bot_list
+msgid "Telegram Bots"
+msgstr "Bots de Telegram"
+
+#. module: telegram
+#: model:ir.model,name:telegram.model_telegram_business_connection
+msgid "Telegram Business Connection"
+msgstr "Conexión de Telegram Business"
+
+#. module: telegram
+#: model:ir.model,name:telegram.model_telegram_chat
+msgid "Telegram Chat Session"
+msgstr "Sesión de chat de Telegram"
+
+#. module: telegram
+#: model:ir.model,name:telegram.model_telegram_command
+#: model_terms:ir.ui.view,arch_db:telegram.view_telegram_command_form
+msgid "Telegram Command"
+msgstr "Comando de Telegram"
+
+#. module: telegram
+#: model_terms:ir.ui.view,arch_db:telegram.view_telegram_command_list
+msgid "Telegram Commands"
+msgstr "Comandos de Telegram"
+
+#. module: telegram
+#: model:ir.model.fields,field_description:telegram.field_res_users__telegram_connect_bot_ids
+msgid "Telegram Connect Bot"
+msgstr "Bots para conectar Telegram"
+
+#. module: telegram
+#: model:ir.model,name:telegram.model_mixin_telegram_handler
+msgid "Telegram Handler"
+msgstr "Manejador de Telegram"
+
+#. module: telegram
+#: model:ir.model,name:telegram.model_telegram_link_token
+msgid "Telegram Link Token"
+msgstr "Token de vinculación de Telegram"
+
+#. module: telegram
+#: model:ir.model,name:telegram.model_telegram_message
+#: model_terms:ir.ui.view,arch_db:telegram.view_telegram_message_form
+msgid "Telegram Message"
+msgstr "Mensaje de Telegram"
+
+#. module: telegram
+#: model:ir.model.fields,field_description:telegram.field_telegram_message__msg_uid
+msgid "Telegram Message ID"
+msgstr "ID del mensaje de Telegram"
+
+#. module: telegram
+#: model_terms:ir.ui.view,arch_db:telegram.view_telegram_message_list
+msgid "Telegram Messages"
+msgstr "Mensajes de Telegram"
+
+#. module: telegram
+#: model:ir.model.fields.selection,name:telegram.selection__integration_receiver__auth_type__telegram_init_data
+msgid "Telegram Mini App initData"
+msgstr "initData de Mini App de Telegram"
+
+#. module: telegram
+#: model:ir.model,name:telegram.model_telegram_router
+msgid "Telegram Update Router"
+msgstr "Enrutador de actualizaciones de Telegram"
+
+#. module: telegram
+#: model:ir.model.fields,field_description:telegram.field_telegram_account__tg_user_id
+msgid "Telegram User ID"
+msgstr "ID de usuario de Telegram"
+
+#. module: telegram
+#: model:ir.model.fields,help:telegram.field_telegram_chat__chat_type
+msgid ""
+"Telegram chat type as reported by the API: private, group, supergroup or "
+"channel. Only a private chat has a single speaker, so only a private chat "
+"can carry an identity."
+msgstr ""
+"Tipo de chat según la API: privado, grupo, supergrupo o canal. Solo un chat "
+"privado tiene un único interlocutor, así que solo un chat privado puede "
+"tener identidad."
+
+#. module: telegram
+#: model:ir.model.constraint,message:telegram.constraint_telegram_message_msg_uid_uniq
+msgid "Telegram message ID must be unique per chat!"
+msgstr "¡El ID del mensaje de Telegram debe ser único por chat!"
+
+#. module: telegram
+#. odoo-python
+#: code:addons/telegram/models/telegram_bot.py:0
+msgid "Telegram now delivers updates with the webhook secret."
+msgstr ""
+"Telegram ahora entrega las actualizaciones con el secreto del webhook."
+
+#. module: telegram
+#: model:ir.model.fields,help:telegram.field_telegram_chat__bot_blocked
+msgid ""
+"Telegram refused a message because the person blocked the bot or removed it:"
+" nothing more is sent until they write again."
+msgstr ""
+"Telegram rechazó un mensaje porque la persona bloqueó o eliminó el bot: no "
+"se envía nada más hasta que vuelva a escribir."
+
+#. module: telegram
+#: model:ir.model.fields.selection,name:telegram.selection__integration_receiver__auth_type__telegram_secret_token
+msgid "Telegram webhook secret"
+msgstr "Secreto del webhook de Telegram"
+
+#. module: telegram
+#: model:ir.actions.server,name:telegram.ir_cron_expire_bindings_ir_actions_server
+msgid "Telegram: Expire Unconfirmed Bindings"
+msgstr "Telegram: caducar vínculos sin confirmar"
+
+#. module: telegram
+#: model:ir.model,name:telegram.model_telegram_handler_base
+msgid "Telegram: General Commands"
+msgstr "Telegram: comandos generales"
+
+#. module: telegram
+#: model:ir.model.fields,field_description:telegram.field_telegram_message__text
+#: model:ir.model.fields.selection,name:telegram.selection__telegram_message__media_type__text
+msgid "Text"
+msgstr "Texto"
+
+#. module: telegram
+#: model:ir.model.fields,help:telegram.field_telegram_message__api_method
+msgid "The Bot API method a queued message is sent with."
+msgstr "El método de la API de bots con que se envía un mensaje en cola."
+
+#. module: telegram
+#: model:ir.model.fields,help:telegram.field_res_bank__telegram_account_ids
+#: model:ir.model.fields,help:telegram.field_res_company__telegram_account_ids
+#: model:ir.model.fields,help:telegram.field_res_partner__telegram_account_ids
+#: model:ir.model.fields,help:telegram.field_res_users__telegram_account_ids
+msgid "The Telegram accounts whose active binding says they are this contact."
+msgstr ""
+"Las cuentas de Telegram cuyo vínculo activo dice que son este contacto."
+
+#. module: telegram
+#: model:ir.model.fields,help:telegram.field_telegram_message__reply_to_uid
+msgid "The Telegram message this one answers, in the same chat."
+msgstr "El mensaje de Telegram al que este responde, en el mismo chat."
+
+#. module: telegram
+#: model:ir.model.fields,help:telegram.field_telegram_account__binding_id
+msgid "The active binding: who this person is in Odoo."
+msgstr "El vínculo activo: quién es esta persona en Odoo."
+
+#. module: telegram
+#. odoo-python
+#: code:addons/telegram/models/telegram_bot_receiver.py:0
+#, python-format
+msgid "The bot receiver %s served is gone."
+msgstr "El bot que servía el receptor %s ya no existe."
+
+#. module: telegram
+#: model:ir.model.fields,help:telegram.field_telegram_bot__bot_username
+msgid ""
+"The bot's @username, read from Telegram when the webhook is registered. A "
+"link that opens the bot (t.me) needs it."
+msgstr ""
+"El @usuario del bot, que se lee de Telegram al registrar el webhook. Un "
+"enlace que abre el bot (t.me) lo necesita."
+
+#. module: telegram
+#: model:ir.model.fields,help:telegram.field_telegram_business_connection__account_id
+msgid "The business account's owner."
+msgstr "El dueño de la cuenta de empresa."
+
+#. module: telegram
+#: model:ir.model.fields,help:telegram.field_telegram_message__payload
+msgid ""
+"The call's parameters, the chat id aside: the chat's current id is read when"
+" it is sent, so a group that became a supergroup is still reached."
+msgstr ""
+"Los parámetros de la llamada, salvo el ID del chat: el ID actual del chat se"
+" lee al enviar, así un grupo que se volvió supergrupo se sigue alcanzando."
+
+#. module: telegram
+#. odoo-python
+#: code:addons/telegram/models/telegram_chat.py:0
+msgid "The chat has no flow to move."
+msgstr "El chat no tiene ningún flujo que mover."
+
+#. module: telegram
+#. odoo-python
+#: code:addons/telegram/models/telegram_router.py:0
+msgid ""
+"The channel %(title)s was not connected: post the link there as one of its "
+"administrators, from this Telegram account."
+msgstr "El canal %(title)s no se conectó: publica el enlace ahí como uno de sus administradores, desde esta cuenta de Telegram."
+
+#. module: telegram
+#. odoo-python
+#: code:addons/telegram/models/telegram_bot.py:0
+#, python-format
+msgid "The credential of bot %(bot)s must belong to the Telegram service."
+msgstr ""
+"La credencial del bot %(bot)s debe pertenecer al servicio de Telegram."
+
+#. module: telegram
+#: model:ir.model.fields,help:telegram.field_telegram_bot__idle_media_handler
+msgid "The feature that takes a photo or document sent outside any flow."
+msgstr ""
+"La función que recibe una foto o un documento enviados fuera de cualquier "
+"flujo."
+
+#. module: telegram
+#: model:ir.model.fields,help:telegram.field_telegram_bot__idle_text_handler
+msgid ""
+"The feature that takes a text message sent outside any flow, when several "
+"could. Empty: the one with the lowest priority."
+msgstr ""
+"La función que recibe un mensaje de texto enviado fuera de cualquier flujo, "
+"cuando varias podrían. Vacío: la de menor prioridad."
+
+#. module: telegram
+#: model:ir.model.fields,help:telegram.field_telegram_bot__idle_voice_handler
+msgid "The feature that takes a voice note sent outside any flow."
+msgstr ""
+"La función que recibe una nota de voz enviada fuera de cualquier flujo."
+
+#. module: telegram
+#: model:ir.model.fields,help:telegram.field_telegram_message__attachment_id
+msgid "The file a queued photo or document sends."
+msgstr "El archivo que envía una foto o documento en cola."
+
+#. module: telegram
+#: model:ir.model.fields,help:telegram.field_telegram_message__thread_uid
+msgid "The forum topic of a supergroup the message is in."
+msgstr "El tema del foro de un supergrupo en el que está el mensaje."
+
+#. module: telegram
+#: model:ir.model.fields,help:telegram.field_telegram_chat__flow_owner
+msgid ""
+"The handler model whose multi-step flow the chat is in: it gets the chat's "
+"free text until the flow ends."
+msgstr ""
+"El modelo manejador cuyo flujo de varios pasos tiene el chat: recibe el "
+"texto libre del chat hasta que el flujo termina."
+
+#. module: telegram
+#: model:ir.model.fields,help:telegram.field_telegram_business_connection__user_id
+msgid "The internal user the owner is bound to: who answers these chats."
+msgstr ""
+"El usuario interno al que está vinculado el dueño: quien responde estos "
+"chats."
+
+#. module: telegram
+#: model:ir.model.fields,help:telegram.field_telegram_message__target_id
+msgid "The message an edit or a deletion applies to."
+msgstr "El mensaje al que se aplica una edición o un borrado."
+
+#. module: telegram
+#: model:ir.model.fields,help:telegram.field_telegram_chat__account_id
+msgid ""
+"The person on the other end of a private chat. A group has many speakers and"
+" records none."
+msgstr ""
+"La persona al otro lado de un chat privado. Un grupo tiene muchos "
+"interlocutores y no registra ninguno."
+
+#. module: telegram
+#: model:ir.model.fields,help:telegram.field_telegram_chat__migrated_to_id
+msgid "The supergroup this group became."
+msgstr "El supergrupo en el que se convirtió este grupo."
+
+#. module: telegram
+#: model:ir.model.fields,help:telegram.field_telegram_binding__user_id
+msgid ""
+"The user whose session proved the binding. Empty for an invitation to a "
+"contact: the contact's own user then acts."
+msgstr ""
+"El usuario cuya sesión comprobó el vínculo. Vacío en una invitación a un "
+"contacto: entonces actúa el propio usuario del contacto."
+
+#. module: telegram
+#. odoo-python
+#: code:addons/telegram/models/telegram_handler_base.py:0
+msgid "This Telegram account is not connected to Odoo."
+msgstr "Esta cuenta de Telegram no está conectada a Odoo."
+
+#. module: telegram
+#: model_terms:ir.ui.view,arch_db:telegram.telegram_account_view_form
+msgid "This Telegram account will no longer act as anyone in Odoo. Continue?"
+msgstr ""
+"Esta cuenta de Telegram dejará de actuar como alguien en Odoo. ¿Continuar?"
+
+#. module: telegram
+#. odoo-python
+#: code:addons/telegram/models/telegram_handler_base.py:0
+#, python-format
+msgid ""
+"This Telegram chat is linked to the Odoo contact:\n"
+"- %(bold_name)s %(name)s"
+msgstr ""
+"Este chat de Telegram está vinculado al contacto de Odoo:\n"
+"- %(bold_name)s %(name)s"
+
+#. module: telegram
+#: model:ir.model.constraint,message:telegram.constraint_telegram_command_name_uniq
+msgid "This Telegram command already exists!"
+msgstr "¡Este comando de Telegram ya existe!"
+
+#. module: telegram
+#: model:ir.model.fields,help:telegram.field_telegram_bot__legacy_secretless_webhook
+msgid ""
+"This bot existed before webhook secrets were enforced and was never "
+"registered with one, so its updates are still accepted without a secret. "
+"Register Webhook gives it a secret and ends that."
+msgstr ""
+"Este bot existía antes de que se exigieran secretos de webhook y nunca se "
+"registró con uno, así que sus actualizaciones aún se aceptan sin secreto. "
+"Registrar webhook le da un secreto y termina con eso."
+
+#. module: telegram
+#: model_terms:ir.ui.view,arch_db:telegram.view_telegram_bot_form
+msgid ""
+"This bot has no <b>Webhook Secret</b>. Without it the bot token in the\n"
+"                        webhook URL is the only credential, and that URL is written to every\n"
+"                        proxy access log it passes through. <b>Register Webhook</b> generates\n"
+"                        a secret and tells Telegram to send it with every update."
+msgstr ""
+"Este bot no tiene <b>secreto de webhook</b>. Sin él, el token del bot en la\n"
+"                        URL del webhook es la única credencial, y esa URL queda escrita en cada\n"
+"                        registro de acceso de los proxies por los que pasa. <b>Registrar webhook</b> genera\n"
+"                        un secreto y le indica a Telegram que lo envíe con cada actualización."
+
+#. module: telegram
+#. odoo-python
+#: code:addons/telegram/models/telegram_handler_base.py:0
+msgid "This chat is not linked to any Odoo contact."
+msgstr "Este chat no está vinculado a ningún contacto de Odoo."
+
+#. module: telegram
+#. odoo-python
+#: code:addons/telegram/models/telegram_router.py:0
+msgid "This link is expired or was already used. Create a new one in Odoo."
+msgstr "Este enlace expiró o ya se usó. Crea uno nuevo en Odoo."
+
+#. module: telegram
+#. odoo-python
+#: code:addons/telegram/models/telegram_handler_base.py:0
+msgid ""
+"This link is expired or was already used. Open Odoo and connect Telegram "
+"again to get a new one."
+msgstr ""
+"Este enlace caducó o ya se usó. Abre Odoo y vuelve a conectar Telegram para "
+"obtener uno nuevo."
+
+#. module: telegram
+#: model:ir.model.fields,help:telegram.field_telegram_chat__rate_limit_period
+msgid "Time period for rate limiting"
+msgstr "Periodo del límite de frecuencia"
+
+#. module: telegram
+#: model:ir.model.fields,help:telegram.field_telegram_chat__last_message_time
+msgid "Timestamp of last message sent by user (for cleanup/activity tracking)"
+msgstr ""
+"Fecha del último mensaje del usuario (para limpieza y seguimiento de "
+"actividad)"
+
+#. module: telegram
+#: model:ir.model.fields,field_description:telegram.field_telegram_chat__title
+msgid "Title"
+msgstr "Título"
+
+#. module: telegram
+#. odoo-python
+#: code:addons/telegram/models/telegram_handler_base.py:0
+msgid ""
+"To connect this chat to Odoo, open My Preferences in Odoo and press Connect "
+"Telegram, or ask an administrator for an invitation."
+msgstr ""
+"Para conectar este chat a Odoo, abre Mis preferencias en Odoo y pulsa "
+"Conectar Telegram, o pide una invitación a un administrador."
+
+#. module: telegram
+#. odoo-python
+#: code:addons/telegram/models/telegram_router.py:0
+#, python-format
+msgid ""
+"To use the command %(command)s connect your Telegram account to Odoo: in "
+"Odoo, open My Preferences and press Connect Telegram, or ask an "
+"administrator for an invitation."
+msgstr ""
+"Para usar el comando %(command)s conecta tu cuenta de Telegram a Odoo: en "
+"Odoo, abre Mis preferencias y pulsa Conectar Telegram, o pide una invitación"
+" a un administrador."
+
+#. module: telegram
+#: model:ir.model.fields,field_description:telegram.field_telegram_bot__token_hash
+#: model:ir.model.fields,field_description:telegram.field_telegram_link_token__token_hash
+msgid "Token Hash"
+msgstr "Hash del token"
+
+#. module: telegram
+#: model:ir.model.fields,field_description:telegram.field_telegram_bot__token_masked
+msgid "Token Masked"
+msgstr "Token enmascarado"
+
+#. module: telegram
+#: model:ir.model.constraint,message:telegram.constraint_telegram_bot_token_hash_uniq
+msgid "Token hash must be unique (duplicate bot token detected)!"
+msgstr ""
+"¡El hash del token debe ser único (se detectó un token de bot duplicado)!"
+
+#. module: telegram
+#: model:ir.model.fields,field_description:telegram.field_telegram_message__thread_uid
+msgid "Topic"
+msgstr "Tema"
+
+#. module: telegram
+#: model:ir.model.fields,field_description:telegram.field_telegram_message__message_type
+#: model_terms:ir.ui.view,arch_db:telegram.view_telegram_message_search
+msgid "Type"
+msgstr "Tipo"
+
+#. module: telegram
+#: model:ir.model.fields,help:telegram.field_telegram_message__media_type
+msgid "Type of media content in this message"
+msgstr "Tipo de contenido multimedia del mensaje"
+
+#. module: telegram
+#: model_terms:ir.ui.view,arch_db:telegram.telegram_account_view_search
+msgid "Unbound"
+msgstr "Sin vincular"
+
+#. module: telegram
+#: model:ir.model.fields,help:telegram.field_telegram_message__msg_uid
+msgid "Unique message ID from Telegram API"
+msgstr "ID único del mensaje según la API de Telegram"
+
+#. module: telegram
+#. odoo-python
+#: code:addons/telegram/models/telegram_router.py:0
+#, python-format
+msgid "Unknown command: %(command)s. Type /ayuda to see the list."
+msgstr "Comando desconocido: %(command)s. Escribe /ayuda para ver la lista."
+
+#. module: telegram
+#: model:ir.model,name:telegram.model_res_users
+#: model:ir.model.fields,field_description:telegram.field_telegram_binding__user_id
+#: model:ir.model.fields,field_description:telegram.field_telegram_business_connection__user_id
+#: model:ir.model.fields,field_description:telegram.field_telegram_link_token__user_id
+msgid "User"
+msgstr "Usuario"
+
+#. module: telegram
+#: model:ir.model.fields,field_description:telegram.field_telegram_binding_event__user_ref
+msgid "User Ref"
+msgstr "Ref. del usuario"
+
+#. module: telegram
+#: model:ir.model.fields,field_description:telegram.field_telegram_account__username
+msgid "Username"
+msgstr "Usuario"
+
+#. module: telegram
+#: model:ir.model.fields.selection,name:telegram.selection__telegram_message__media_type__video
+msgid "Video"
+msgstr "Video"
+
+#. module: telegram
+#: model_terms:ir.ui.view,arch_db:telegram.view_telegram_message_search
+msgid "Videos"
+msgstr "Videos"
+
+#. module: telegram
+#: model_terms:ir.ui.view,arch_db:telegram.view_telegram_message_search
+msgid "Voice"
+msgstr "Voz"
+
+#. module: telegram
+#: model:ir.model.fields.selection,name:telegram.selection__telegram_message__media_type__voice
+msgid "Voice Note"
+msgstr "Nota de voz"
+
+#. module: telegram
+#: model:ir.model.fields,field_description:telegram.field_telegram_bot__webhook_receiver_id
+msgid "Webhook Receiver"
+msgstr "Receptor del webhook"
+
+#. module: telegram
+#. odoo-python
+#: code:addons/telegram/models/telegram_handler_base.py:0
+#, python-format
+msgid ""
+"Welcome to %(bot_name)s!\n"
+"Type /ayuda to see what I can do."
+msgstr ""
+"¡Bienvenido a %(bot_name)s!\n"
+"Escribe /ayuda para ver qué puedo hacer."
+
+#. module: telegram
+#: model:ir.model.fields,help:telegram.field_telegram_chat__context_data
+msgid ""
+"What a handler parks on the chat outside any flow until a button of its "
+"answers it: a reply waiting for its visibility, a draft waiting for its "
+"thread."
+msgstr ""
+"Lo que un manejador deja guardado en el chat fuera de cualquier flujo hasta "
+"que uno de sus botones lo responde: una respuesta que espera su visibilidad,"
+" un borrador que espera su hilo."
+
+#. module: telegram
+#: model:ir.model.fields,help:telegram.field_telegram_message__error_class
+msgid "What the failure meant: the tools.errors class it was raised as."
+msgstr "Qué significó el fallo: la clase de tools.errors con que se lanzó."
+
+#. module: telegram
+#: model:ir.model.fields,help:telegram.field_telegram_chat__partner_id
+msgid "Who the private chat's person is in Odoo, by their active binding."
+msgstr ""
+"Quién es en Odoo la persona del chat privado, según su vínculo activo."
+
+#. module: telegram
+#. odoo-python
+#: code:addons/telegram/models/telegram_handler_base.py:0
+#, python-format
+msgid ""
+"You are operating as the Odoo user:\n"
+"- %(bold_name)s %(name)s\n"
+"- %(bold_email)s %(email)s"
+msgstr ""
+"Estás operando como el usuario de Odoo:\n"
+"- %(bold_name)s %(name)s\n"
+"- %(bold_email)s %(email)s"
+
+#. module: telegram
+#. odoo-python
+#: code:addons/telegram/models/telegram_router.py:0
+msgid "You can also type %(command)s to cancel it."
+msgstr "También puedes escribir %(command)s para cancelarlo."
+
+#. module: telegram
+#. odoo-python
+#: code:addons/telegram/models/telegram_router.py:0
+#, python-format
+msgid "You don't have permission to use the command %(command)s."
+msgstr "No tienes permiso para usar el comando %(command)s."
+
+#. module: telegram
+#. odoo-python
+#: code:addons/telegram/models/telegram_handler_base.py:0
+msgid "You have nothing in progress to cancel."
+msgstr "No tienes nada en curso que cancelar."
+
+#. module: telegram
+#. odoo-python
+#: code:addons/telegram/models/telegram_router.py:0
+msgid "You have reached the message limit. Please wait a moment."
+msgstr "Has alcanzado el límite de mensajes. Espera un momento."
+
+#. module: telegram
+#. odoo-python
+#: code:addons/telegram/models/telegram_router.py:0
+msgid ""
+"Your Odoo user is not a member of the company this bot speaks for, so it "
+"cannot act for you here. Ask an administrator to add you to that company, or"
+" write to your own company's bot."
+msgstr ""
+"Tu usuario de Odoo no es miembro de la empresa por la que habla este bot, así"
+" que aquí no puede actuar por ti. Pide a un administrador que te agregue a "
+"esa empresa, o escribe al bot de tu propia empresa."
+
+#. module: telegram
+#: model_terms:ir.ui.view,arch_db:telegram.res_users_view_form_preferences_telegram
+msgid "Your Telegram account will no longer act as you in Odoo. Continue?"
+msgstr "Tu cuenta de Telegram dejará de actuar como tú en Odoo. ¿Continuar?"
+
+#. module: telegram
+#. odoo-python
+#: code:addons/telegram/models/telegram_handler_base.py:0
+#, python-format
+msgid "Your chat is already linked to: %(partner_name)s"
+msgstr "Tu chat ya está vinculado a: %(partner_name)s"
+
+#. module: telegram
+#. odoo-python
+#: code:addons/telegram/models/mixin_telegram_handler.py:0
+msgid "an operation"
+msgstr "una operación"
+
+#. module: telegram
+#. odoo-python
+#: code:addons/telegram/models/telegram_router.py:0
+msgid "▶️ Continue what I have going"
+msgstr "▶️ Continuar con lo que traigo"
+
+#. module: telegram
+#. odoo-python
+#: code:addons/telegram/models/telegram_router.py:0
+#, python-format
+msgid "⚠️ You already have %(flow)s in progress."
+msgstr "⚠️ Ya tienes %(flow)s en proceso."
+
+#. module: telegram
+#. odoo-python
+#: code:addons/telegram/models/telegram_router.py:0
+msgid "🗑 Discard and start over"
+msgstr "🗑 Descartar y empezar de nuevo"
+
+#. module: telegram
+#. odoo-python
+#: code:addons/telegram/models/telegram_router.py:0
+msgid "🗑 Discard what I have going"
+msgstr "🗑 Descartar lo que traigo"

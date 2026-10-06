@@ -1,0 +1,66 @@
+/** @odoo-module native */
+import { registry } from "@web/core/registry";
+import { _t } from "@web/core/translation";
+import { useService } from "@web/core/utils/hooks";
+import { X2ManyField, x2ManyField } from "@web/fields/relational/x2many";
+import { ConfirmationDialog, deleteConfirmationMessage } from "@web/ui/dialog";
+import { ListRenderer } from "@web/views/list";
+
+export class PAVListRenderer extends ListRenderer {
+    setup() {
+        super.setup();
+        this.dialog = useService("dialog");
+        this.orm = useService("orm");
+    }
+
+    async onDeleteRecord(record) {
+        const message = await this.orm.call(
+            "product.attribute.value",
+            "check_is_used_on_products",
+            [record.resId],
+        );
+        if (message) {
+            return this.dialog.add(ConfirmationDialog, {
+                title: _t("Invalid Operation"),
+                body: message,
+            });
+        }
+        if (record.isNew) {
+            return super.onDeleteRecord(...arguments);
+        }
+        return new Promise((resolve) => {
+            this.dialog.add(ConfirmationDialog, {
+                title: _t("Bye-bye, record!"),
+                body: deleteConfirmationMessage,
+                confirmLabel: _t("Delete"),
+                confirm: () => this.onConfirmDelete(record).then(resolve),
+                cancel: resolve,
+                cancelLabel: _t("No, keep it"),
+            });
+        });
+    }
+
+    async onConfirmDelete(record) {
+        // The one2many's own delete command unlinks the value when the record is
+        // saved, inside that transaction. Unlinking here first as well made the
+        // deletion non-atomic: a save that failed validation left the value
+        // already gone from the database with the form still open on it.
+        const res = await super.onDeleteRecord(record);
+        await this.props.list.model.root.save();
+        return res;
+    }
+}
+
+export class PAVOne2ManyField extends X2ManyField {
+    static components = {
+        ...X2ManyField.components,
+        ListRenderer: PAVListRenderer,
+    };
+}
+
+export const pavOne2ManyField = {
+    ...x2ManyField,
+    component: PAVOne2ManyField,
+};
+
+registry.category("fields").add("pavs_one2many", pavOne2ManyField);

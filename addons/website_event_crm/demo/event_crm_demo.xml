@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <data>
+        <record id="event_lead_rule_1" model="event.lead.rule">
+            <field name="name">Rule per order</field>
+            <field name="lead_creation_basis">order</field>
+            <field name="event_id" ref="event.event_0" />
+            <field name="lead_user_id" ref="base.user_demo" />
+            <field
+                name="lead_tag_ids"
+                eval="[Command.set([ref('sale_team.categ_oppor3')]), Command.set([ref('sale_team.categ_oppor6')])]" />
+        </record>
+    </data>
+
+</odoo>

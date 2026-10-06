@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <menuitem
+        id="sale_accountant_accrual_menu"
+        name="Sales"
+        parent="account.menu_account_audit"
+        sequence="57">
+        <menuitem
+            id="menu_sale_order_line_accrual_to_bill_action"
+            name="Invoices To Be Issued"
+            action="sale_account_accountant.sale_order_line_accrual_to_bill_action"
+            groups="account.group_account_readonly" />
+        <menuitem
+            id="menu_sale_order_line_accrual_deferred_revenues_action"
+            name="Invoiced Not Delivered"
+            action="sale_account_accountant.sale_order_line_accrual_deferred_revenues_action"
+            sequence="20"
+            groups="account.group_account_readonly" />
+    </menuitem>
+
+</odoo>

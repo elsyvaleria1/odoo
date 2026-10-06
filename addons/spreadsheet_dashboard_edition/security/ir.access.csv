@@ -1,0 +1,3 @@
+id,name,model_id/id,group_id/id,kind,operation,domain
+ir_rule_spreadsheet_dashboard_threads,Spreadsheet dashboard threads: groups,spreadsheet_edition.model_spreadsheet_cell_thread,base.group_user,permission,cru,"['&', ('dashboard_id' ,'!=', False), ('dashboard_id.group_ids', 'in', group_ids)]"
+ir_rule_spreadsheet_dashboard_threads_group_system,Spreadsheet dashboard threads: groups,spreadsheet_edition.model_spreadsheet_cell_thread,base.group_system,permission,crud,"['&', ('dashboard_id' ,'!=', False), ('dashboard_id.group_ids', 'in', group_ids)]"

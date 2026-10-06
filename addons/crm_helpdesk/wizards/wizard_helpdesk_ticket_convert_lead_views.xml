@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="helpdesk_ticket_to_lead_view_form" model="ir.ui.view">
+        <field name="name">helpdesk.ticket.to.lead.view.form</field>
+        <field name="model">wizard.helpdesk.ticket.convert.lead</field>
+        <field name="arch" type="xml">
+            <form string="Convert Ticket to Lead">
+                <sheet class="pt-0">
+                    <separator string="Customer" />
+                    <field name="action" widget="radio" required="1" class="w-100" />
+                    <group class="mt-2">
+                        <field
+                            name="partner_id"
+                            widget="res_partner_many2one"
+                            context="{'res_partner_search_mode': 'customer', 'show_vat': True}"
+                            invisible="action != 'exist'"
+                            required="action == 'exist'" />
+                    </group>
+                    <group string="Sales Team">
+                        <field name="ticket_id" invisible="1" />
+                        <field name="team_id" />
+                        <field
+                            name="user_id"
+                            widget="many2one_avatar_leader_user"
+                            teamField="team_id" />
+                    </group>
+                </sheet>
+                <footer>
+                    <button
+                        name="action_convert_to_lead"
+                        type="object"
+                        string="Convert to Lead"
+                        context="{'show_create_ticket': True}"
+                        groups="crm.group_use_lead"
+                        class="btn-primary"
+                        data-hotkey="q" />
+                    <button
+                        name="action_convert_to_lead"
+                        type="object"
+                        string="Convert to Opportunity"
+                        groups="!crm.group_use_lead"
+                        class="btn-primary"
+                        data-hotkey="q" />
+                    <button
+                        special="cancel"
+                        string="Discard"
+                        class="btn-secondary"
+                        data-hotkey="x" />
+                </footer>
+            </form>
+        </field>
+    </record>
+
+</odoo>

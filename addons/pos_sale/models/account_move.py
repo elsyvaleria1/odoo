@@ -1,0 +1,52 @@
+from odoo import models
+
+
+class AccountMove(models.Model):
+    _inherit = "account.move"
+
+    def reflect_cancelled_sol(self, isCancelled) -> None:
+        if self.env.user.has_group("point_of_sale.group_pos_user"):
+            for invoice in self:
+                for pos_order_line in invoice.pos_order_ids.mapped("lines"):
+                    if pos_order_line.sale_order_line_id:
+                        if (
+                            isCancelled
+                            and "(Cancelled)"
+                            not in pos_order_line.sale_order_line_id.name
+                        ):
+                            name = self.env._(
+                                "%(old_name)s (Cancelled)",
+                                old_name=pos_order_line.sale_order_line_id.name,
+                            )
+                            pos_order_line.sale_order_line_id.name = name
+                        elif (
+                            not isCancelled
+                            and "(Cancelled)" in pos_order_line.sale_order_line_id.name
+                        ):
+                            pos_order_line.sale_order_line_id.name = (
+                                pos_order_line.sale_order_line_id.name.replace(
+                                    " (Cancelled)", ""
+                                )
+                            )
+
+    def action_cancel(self):
+        res = super().action_cancel()
+        self.reflect_cancelled_sol(True)
+        return res
+
+    def action_post(self):
+        res = super().action_post()
+        self.reflect_cancelled_sol(False)
+        return res
+
+    def _is_downpayment(self):
+        # EXTENDS sale
+        self.check_singleton()
+        if self.line_ids.sale_line_ids:
+            return super()._is_downpayment()
+
+        base_lines, _tax_lines = self._get_rounded_base_and_tax_lines()
+        return base_lines and all(
+            "down_payment" in (line["computation_key"] or "").split(",")
+            for line in base_lines
+        )

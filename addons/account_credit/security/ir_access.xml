@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="access_sale_order_authorize_credit_excess" model="ir.access">
+        <field
+            name="name">sale.order: a credit manager authorizes a credit excess</field>
+        <field name="model_id" ref="sale.model_sale_order" />
+        <field name="group_id" ref="group_credit_manager" />
+        <field name="kind">permission</field>
+        <field name="verbs">authorize_credit_excess</field>
+    </record>
+
+</odoo>

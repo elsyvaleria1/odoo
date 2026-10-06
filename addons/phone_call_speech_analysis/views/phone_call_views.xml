@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="phone_call_view_form_analysis" model="ir.ui.view">
+        <field name="name">phone.call.view.form.analysis</field>
+        <field name="model">phone.call</field>
+        <field name="inherit_id" ref="phone_call.phone_call_view_form" />
+        <field name="arch" type="xml">
+            <group name="recording" position="after">
+                <group string="Analysis" invisible="not analysis_summary">
+                    <field name="analysis_summary" colspan="2" nolabel="1" />
+                    <field name="analysis_topics" invisible="not analysis_topics" />
+                </group>
+                <notebook
+                    invisible="not commitment_ids and not question_ids and not moment_ids">
+                    <page
+                        name="commitments"
+                        string="Commitments"
+                        invisible="not commitment_ids">
+                        <field name="commitment_ids" readonly="1" />
+                    </page>
+                    <page
+                        name="questions"
+                        string="Questions"
+                        invisible="not question_ids">
+                        <field name="question_ids" readonly="1" />
+                    </page>
+                    <page name="moments" string="Moments" invisible="not moment_ids">
+                        <field name="moment_ids" readonly="1" />
+                    </page>
+                </notebook>
+            </group>
+        </field>
+    </record>
+
+    <record id="phone_call_view_list_analysis" model="ir.ui.view">
+        <field name="name">phone.call.view.list.analysis</field>
+        <field name="model">phone.call</field>
+        <field name="inherit_id" ref="phone_call.phone_call_view_list" />
+        <field name="arch" type="xml">
+            <list position="inside">
+                <field name="analysis_summary" optional="show" />
+            </list>
+        </field>
+    </record>
+
+</odoo>

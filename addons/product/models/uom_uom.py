@@ -1,0 +1,32 @@
+from odoo import fields, models
+from odoo.fields import Domain
+
+
+class UomUom(models.Model):
+    _inherit = "uom.uom"
+
+    product_uom_ids = fields.One2many(
+        comodel_name="product.uom",
+        inverse_name="uom_id",
+        string="Barcodes",
+        domain=lambda self: self._domain_product_uom_ids(),
+    )
+
+    def _domain_product_uom_ids(self):
+        domain = []
+        if self.env.context.get("product_id"):
+            domain.append(Domain("product_id", "=", self.env.context["product_id"]))
+        if self.env.context.get("product_ids"):
+            domain.append(Domain("product_id", "in", self.env.context["product_ids"]))
+        return Domain.OR(domain) if domain else Domain.TRUE
+
+    def action_view_packaging_barcodes(self) -> dict:
+        self.check_singleton()
+        return {
+            "type": "ir.actions.act_window",
+            "name": self.env._("Packaging Barcodes"),
+            "res_model": "product.uom",
+            "view_mode": "list",
+            "view_id": self.env.ref("product.product_uom_list_view").id,
+            "domain": [("uom_id", "=", self.id)],
+        }

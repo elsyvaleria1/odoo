@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-inherit="mail.MessagingMenuItem" t-inherit-mode="extension">
+        <xpath expr="//t[@name='itemName']" position="replace">
+            <span t-att-class="{ 'fst-italic text-muted fw-normal': this.channel?.livechat_end_dt }">$0</span>
+        </xpath>
+        <xpath expr="//t[@name='itemNameAfter']" position="inside">
+            <i t-if="this.channel?.livechat_status === 'need_help' and this.store.has_access_livechat and this.channel.matchesSelfExpertise" class="fa-solid fa-star o-mail-starred ms-1" role="img" title="Relevant to your expertise"/>
+            <span t-if="this.channel?.livechat_lang_id?.baseCode" class="o-livechat-MessagingMenuItem-lang fw-normal small text-uppercase text-muted ms-1" t-att-title="this.channel.livechat_lang_id.name" t-out="this.channel.livechat_lang_id.baseCode"/>
+            <t t-set="helpTime" t-value="this.helpTime"/>
+            <span t-if="helpTime.text" class="o-livechat-LookingForHelp-timer badge rounded-pill bg-primary fw-normal lh-1 o-px-1_5 ms-2 opacity-75 opacity-100-hover" t-att-title="helpTime.tooltip" t-out="helpTime.text"/>
+        </xpath>
+        <xpath expr="//span[hasclass('o-mail-MessagingMenuItem-body')]" position="replace">
+            <span t-if="this.channel?.livechat_status === 'need_help' and this.channel.description" class="o-mail-MessagingMenuItem-body o-livechat-MessagingMenuItem-helpReason" t-att-title="this.channel.description" t-out="this.channel.description"/>
+            <t t-else="">$0</t>
+        </xpath>
+    </t>
+</templates>

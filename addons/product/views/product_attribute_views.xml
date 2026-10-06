@@ -1,0 +1,242 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_product_attribute_search" model="ir.ui.view">
+        <field name="name">product.attribute.view.search</field>
+        <field name="model">product.attribute</field>
+        <field name="arch" type="xml">
+            <search>
+                <filter
+                    name="inactive"
+                    string="Inactive"
+                    domain="[('active', '=', False)]" />
+                <field name="name" />
+            </search>
+        </field>
+    </record>
+
+    <record id="view_product_attribute_list" model="ir.ui.view">
+        <field name="name">product.attribute.list</field>
+        <field name="model">product.attribute</field>
+        <field name="arch" type="xml">
+            <list string="Variant Values">
+                <field name="sequence" widget="handle" />
+                <field name="name" />
+                <field name="display_type" />
+                <field name="create_variant" />
+            </list>
+        </field>
+    </record>
+
+    <record id="view_product_attribute_form" model="ir.ui.view">
+        <field name="name">product.attribute.form</field>
+        <field name="model">product.attribute</field>
+        <field name="arch" type="xml">
+            <form string="Product Attribute">
+                <field name="count_product_tmpl" invisible="1" />
+                <sheet>
+                    <widget
+                        name="web_ribbon"
+                        title="Archived"
+                        invisible="active"
+                        bg_color="text-bg-danger" />
+                    <div class="oe_button_box" name="button_box">
+                        <button
+                            name="action_view_product_template_attribute_lines"
+                            type="object"
+                            icon="fa-bars"
+                            invisible="not count_product_tmpl"
+                            class="oe_stat_button">
+                            <div class="o_stat_info">
+                                <span class="o_stat_value">
+                                    <field name="count_product_tmpl" />
+                                </span>
+                                <span class="o_stat_text">Products</span>
+                            </div>
+                        </button>
+                    </div>
+                    <group name="main_fields">
+                        <group name="sale_main_fields">
+                            <label for="name" string="Attribute Name" />
+                            <field name="name" nolabel="1" />
+                            <field
+                                name="display_type"
+                                widget="radio"
+                                options="{'horizontal': True}" />
+                            <field
+                                name="create_variant"
+                                widget="radio"
+                                force_save="1"
+                                options="{'horizontal': True}"
+                                readonly="count_product_tmpl != 0 or display_type == 'multi'" />
+                        </group>
+                    </group>
+                    <notebook>
+                        <page name="attribute_values" string="Attribute Values">
+                            <field name="value_ids" widget="pavs_one2many">
+                                <list string="Values" editable="bottom">
+                                    <field name="sequence" widget="handle" />
+                                    <field name="name" />
+                                    <field
+                                        name="display_type"
+                                        column_invisible="True" />
+                                    <field
+                                        name="is_custom"
+                                        width="120px"
+                                        column_invisible="parent.display_type == 'multi'" />
+                                    <field
+                                        name="html_color"
+                                        widget="color"
+                                        invisible="image"
+                                        column_invisible="parent.display_type != 'color'" />
+                                    <field
+                                        name="image"
+                                        widget="image"
+                                        options="{'size': [70, 70]}"
+                                        column_invisible="parent.display_type not in ['color', 'image']"
+                                        class="oe_avatar text-start float-none" />
+                                    <field name="default_extra_price" width="160px" />
+                                    <button
+                                        name="action_add_to_products"
+                                        type="object"
+                                        string="Add to products"
+                                        icon="fa-plus"
+                                        invisible="pav_attribute_line_ids"
+                                        column_invisible="parent.count_product_tmpl &lt; 1" />
+                                    <button
+                                        name="action_update_prices"
+                                        type="object"
+                                        string="Update extra prices"
+                                        icon="fa-refresh"
+                                        invisible="not pav_attribute_line_ids or not default_extra_price_changed"
+                                        column_invisible="parent.count_product_tmpl &lt; 1" />
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_product_attribute" model="ir.actions.act_window">
+        <field name="name">Attributes</field>
+        <field name="res_model">product.attribute</field>
+        <field name="path">attributes</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <record id="view_product_template_attribute_line_form" model="ir.ui.view">
+        <field name="name">product.template.attribute.line.form</field>
+        <field name="model">product.template.attribute.line</field>
+        <field name="mode">primary</field>
+        <field name="priority" eval="8" />
+        <field name="arch" type="xml">
+            <form string="Product Attribute and Values">
+                <group name="main_field">
+                    <label for="attribute_id" string="Attribute Name" />
+                    <field name="attribute_id" nolabel="1" />
+                    <field name="value_ids" widget="many2many">
+                        <list string="Values">
+                            <field name="name" />
+                            <field name="html_color" />
+                        </list>
+                        <form string="Values">
+                            <field name="name" />
+                        </form>
+                    </field>
+                </group>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_product_template_attribute_value_search" model="ir.ui.view">
+        <field name="model">product.template.attribute.value</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name" />
+                <filter
+                    name="active"
+                    string="Active"
+                    domain="[('ptav_active', '=', True)]" />
+                <filter
+                    name="inactive"
+                    string="Inactive"
+                    domain="[('ptav_active', '=', False)]" />
+            </search>
+        </field>
+    </record>
+
+    <record id="view_product_template_attribute_value_list" model="ir.ui.view">
+        <field name="name">product.template.attribute.value.view.list</field>
+        <field name="model">product.template.attribute.value</field>
+        <field name="arch" type="xml">
+            <list string="Attributes" create="0" delete="0" multi_edit="1">
+                <field
+                    name="product_tmpl_id"
+                    string="Product"
+                    column_invisible="context.get('product_invisible', False)" />
+                <field name="attribute_id" optional="hide" />
+                <field name="name" />
+                <field name="display_type" optional="hide" />
+                <field
+                    name="html_color"
+                    widget="color"
+                    invisible="display_type != 'color' or image" />
+                <field
+                    name="image"
+                    widget="image"
+                    options="{'size': [70, 70]}"
+                    invisible="display_type != 'color'" />
+                <field name="ptav_active" optional="hide" />
+                <field
+                    name="price_extra"
+                    widget="monetary"
+                    options="{'field_digits': True}" />
+                <field name="currency_id" column_invisible="True" />
+            </list>
+        </field>
+    </record>
+
+    <record id="view_product_template_attribute_value_form" model="ir.ui.view">
+        <field name="name">product.template.attribute.value.view.form</field>
+        <field name="model">product.template.attribute.value</field>
+        <field name="arch" type="xml">
+            <form string="Product Attribute" create="0" delete="0">
+                <sheet>
+                    <group>
+                        <field
+                            name="ptav_active"
+                            invisible="ptav_active"
+                            readonly="1" />
+                        <field name="name" />
+                        <field name="display_type" invisible="1" />
+                        <field
+                            name="html_color"
+                            invisible="display_type != 'color' or image" />
+                        <field
+                            name="image"
+                            widget="image"
+                            options="{'size': [70, 70]}"
+                            invisible="display_type != 'color' or not image" />
+                        <field
+                            name="price_extra"
+                            widget="monetary"
+                            options="{'field_digits': True}" />
+                        <field name="currency_id" invisible="1" />
+                        <field name="exclude_for" widget="one2many" mode="list">
+                            <list editable="bottom">
+                                <field name="product_tmpl_id" />
+                                <field
+                                    name="value_ids"
+                                    widget="many2many_tags"
+                                    options="{'no_create': True}" />
+                            </list>
+                        </field>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+</odoo>

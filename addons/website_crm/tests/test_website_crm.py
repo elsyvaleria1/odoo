@@ -1,0 +1,91 @@
+import odoo.tests
+
+from odoo.addons.crm.tests.common import TestCrmCommon
+
+
+@odoo.tests.tagged("post_install", "-at_install")
+class TestWebsiteCrm(odoo.tests.HttpCase, TestCrmCommon):
+    def test_tour(self):
+        all_utm_campaign = self.env["utm.campaign"].search([])
+        utm_medium = self.env["utm.medium"].create({"name": "Medium"})
+        utm_source = self.env["utm.source"].create({"name": "Source"})
+        self.start_tour(
+            self.env["website"].get_client_action_url("/contactus"),
+            "website_crm_pre_tour",
+            login="admin",
+        )
+        self.start_tour(
+            "/?utm_source=Source&utm_medium=Medium&utm_campaign=New campaign",
+            "website_crm_tour",
+        )
+
+        record = self.env["crm.lead"].search(
+            [("description", "=", "<p>### TOUR DATA ###</p>")]
+        )
+        self.assertEqual(len(record), 1)
+        self.assertEqual(record.contact_name, "John Smith")
+        self.assertEqual(record.email_from, "john@smith.com")
+        self.assertEqual(record.partner_name, "Odoo S.A.")
+
+        self.assertEqual(record.source_id, utm_source)
+        self.assertEqual(record.medium_id, utm_medium)
+        self.assertNotIn(
+            record.campaign_id, all_utm_campaign, "Should have created a new campaign"
+        )
+        self.assertEqual(
+            record.campaign_id.name,
+            "New campaign",
+            'Name of the "on the fly" created campaign is wrong',
+        )
+
+    def test_catch_logged_partner_info_tour(self):
+        your_company = self.env["res.partner"].create(
+            {"name": "YourCompany", "is_company": True}
+        )
+        self.env.ref("base.partner_admin").write(
+            {
+                "name": "Mitchell Admin",
+                "parent_id": your_company.id,
+                "email": "mitchell.admin@example.com",
+            }
+        )
+        user_login = "admin"
+        user_partner = (
+            self.env["res.users"].search([("login", "=", user_login)]).partner_id
+        )
+        partner_email = user_partner.email
+        partner_phone = user_partner.phone_ids
+
+        self.start_tour(
+            self.env["website"].get_client_action_url("/contactus"),
+            "website_crm_pre_tour",
+            login=user_login,
+        )
+
+        with odoo.tests.RecordCapturer(self.env["crm.lead"]) as capt:
+            self.start_tour(
+                "/", "website_crm_catch_logged_partner_info_tour", login=user_login
+            )
+        self.assertEqual(capt.records.partner_id, user_partner)
+
+        with odoo.tests.RecordCapturer(self.env["crm.lead"]) as capt:
+            self.start_tour("/", "website_crm_tour", login=user_login)
+        self.assertFalse(capt.records.partner_id)
+
+        self.assertEqual(user_partner.email, partner_email)
+        self.assertEqual(user_partner.phone_ids, partner_phone)
+
+    def test_form_properties(self):
+        self.lead_1.lead_properties = [
+            {
+                "definition_changed": True,
+                "name": "test",
+                "string": "test property",
+                "type": "char",
+            }
+        ]
+        self.start_tour(
+            self.env["website"].get_client_action_url("/contactus"),
+            "website_crm_form_properties",
+            login="admin",
+        )

@@ -1,0 +1,100 @@
+/** @odoo-module native */
+import { useBuilderContext } from "@html_builder/core/builder_context";
+import { BaseOptionComponent } from "@html_builder/core/utils";
+import { onMounted, onWillDestroy, proxy } from "@odoo/owl";
+import { makeLogger } from "@web/core/debug/debug_logger";
+import { useLifecycleLog } from "@web/core/debug/logger_hooks";
+import { elementRef } from "@web/core/utils/element_ref";
+import { useLayoutEffect } from "@web/core/utils/layout_effect";
+
+const log = makeLogger("website.builder.option.google_maps_option");
+
+/** @import { Coordinates, Place } from './google_maps_option_plugin.js' */
+
+export class GoogleMapsOption extends BaseOptionComponent {
+    static template = "website.GoogleMapsOption";
+    static dependencies = ["googleMapsOption"];
+    static selector = ".s_google_map";
+
+    async setup() {
+        super.setup();
+        this.builderContext = useBuilderContext();
+        useLifecycleLog(log);
+
+        this.getMapsAPI = this.dependencies.googleMapsOption.getMapsAPI;
+        /** @type {(editingElement: Element, coordinates: Coordinates) => Promise<Place | undefined>} */
+        this.getPlace = this.dependencies.googleMapsOption.getPlace;
+        /** @type {(editingElement: Element, place: Place) => void} */
+        this.commitPlace = this.dependencies.googleMapsOption.commitPlace;
+
+        this.inputRef = elementRef();
+        /** @type {{ formattedAddress: string }} */
+        this.state = proxy({
+            formattedAddress:
+                this.builderContext.getEditingElement().dataset.pinAddress || "",
+        });
+        useLayoutEffect(
+            () => {
+                this.builderContext.getEditingElement().dataset.pinAddress =
+                    this.state.formattedAddress;
+            },
+            () => [this.state.formattedAddress],
+        );
+        onMounted(async () => {
+            this.initializeAutocomplete(this.inputRef.el);
+        });
+        onWillDestroy(() => {
+            log.lifecycle("GoogleMapsOption detach autocomplete", () => ({
+                hasListener: !!this.autocompleteListener,
+            }));
+            if (this.autocompleteListener) {
+                this.getMapsAPI().event.removeListener(this.autocompleteListener);
+            }
+            for (const container of document.body.querySelectorAll(".pac-container")) {
+                container.remove();
+            }
+        });
+    }
+
+    /**
+     * @param {Element} inputEl
+     */
+    initializeAutocomplete(inputEl) {
+        if (!this.googleMapsAutocomplete && this.getMapsAPI()) {
+            const mapsAPI = this.getMapsAPI();
+            this.googleMapsAutocomplete = new mapsAPI.places.Autocomplete(inputEl, {
+                types: ["geocode"],
+            });
+            this.autocompleteListener = mapsAPI.event.addListener(
+                this.googleMapsAutocomplete,
+                "place_changed",
+                this.onPlaceChanged.bind(this),
+            );
+            log.lifecycle("GoogleMapsOption autocomplete attached");
+            if (!this.state.formattedAddress) {
+                const editingElement = this.builderContext.getEditingElement();
+                /** @type {Coordinates} */
+                const coordinates = editingElement.dataset.mapGps;
+                log.logic("GoogleMapsOption resolve address from coordinates", () => ({
+                    coordinates,
+                }));
+                this.getPlace(editingElement, coordinates).then((place) => {
+                    if (place?.formatted_address) {
+                        this.state.formattedAddress = place.formatted_address;
+                    }
+                });
+            }
+        }
+    }
+
+    onPlaceChanged() {
+        /** @type {Place | undefined} */
+        const place = this.googleMapsAutocomplete.getPlace();
+        log.logic("GoogleMapsOption place changed", () => ({
+            hasPlace: !!place,
+            address: place?.formatted_address,
+        }));
+        this.commitPlace(this.builderContext.getEditingElement(), place);
+        this.state.formattedAddress = place?.formatted_address || "";
+    }
+}

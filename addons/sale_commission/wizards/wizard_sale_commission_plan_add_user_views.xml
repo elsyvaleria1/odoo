@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="sale_commission_plan_user_wizard" model="ir.ui.view">
+        <field name="name">sale.commission.plan.user.wizard.form</field>
+        <field name="model">wizard.sale.commission.plan.add.user</field>
+        <field name="arch" type="xml">
+            <form string="Add Multiple Salespersons">
+                <group class="oe_title">
+                    <field name="user_ids" widget="many2many_tags" />
+                </group>
+                <footer>
+                    <button
+                        name="submit"
+                        type="object"
+                        string="Submit"
+                        class="btn-primary"
+                        data-hotkey="q" />
+                    <button
+                        special="cancel"
+                        string="Cancel"
+                        class="btn-secondary"
+                        data-hotkey="x" />
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record
+        id="sale_subscription_change_customer_wizard_action"
+        model="ir.actions.act_window">
+        <field name="name">Add Salespersons</field>
+        <field name="res_model">wizard.sale.commission.plan.add.user</field>
+        <field name="view_mode">form</field>
+        <field name="view_id" ref="sale_commission_plan_user_wizard" />
+        <field name="target">new</field>
+        <field name="context">{'active_plan_id': active_ids}</field>
+    </record>
+
+</odoo>

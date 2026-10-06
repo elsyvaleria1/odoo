@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="project_task_lost_reason_view_form" model="ir.ui.view">
+        <field name="name">loss.reason.form.project</field>
+        <field name="model">loss.reason</field>
+        <field name="inherit_id" ref="loss_reason.loss_reason_view_form" />
+        <field name="arch" type="xml">
+            <div name="button_box" position="inside">
+                <button
+                    name="action_tasks_lost"
+                    type="object"
+                    icon="fa-tasks"
+                    invisible="scope not in (False, 'task')"
+                    class="oe_stat_button">
+                    <div class="o_stat_info">
+                        <field name="task_count" class="o_stat_value" />
+                        <span class="o_stat_text">Tasks</span>
+                    </div>
+                </button>
+            </div>
+        </field>
+    </record>
+
+    <record id="project_task_lost_reason_action" model="ir.actions.act_window">
+        <field name="name">Lost Reasons</field>
+        <field name="res_model">loss.reason</field>
+        <field name="path">task-lost-reasons</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('scope', 'in', [False, 'task'])]</field>
+        <field name="context">{'default_scope': 'task'}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No lost reasons found. Let's create one!
+            </p><p>
+                Record why tasks end without delivering, so the closures can be reported on
+                instead of retold. A workflow step says where a task stopped, not what closed it.
+            </p>
+        </field>
+    </record>
+
+</odoo>

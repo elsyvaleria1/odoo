@@ -1,0 +1,10 @@
+id,name,model_id/id,group_id/id,kind,operation,reach,anchor,domain
+approval_request_line_user_read,Approval Request Line: user read own or approver or delegate,model_approval_request_line,base.group_user,permission,r,own,,
+approval_request_line_user_read_2,Approval Request Line: user read own or approver or delegate (2),model_approval_request_line,base.group_user,permission,r,own,approval_request_approver_user,
+approval_request_line_user_read_3,Approval Request Line: user read own or approver or delegate (3),model_approval_request_line,base.group_user,permission,r,own,approval_request_approver_delegate,
+approval_request_line_restricted_users_read,Approval Request Line: read for restricted users audience,model_approval_request_line,base.group_user,permission,r,own,approval_request_category_allowed_user,"[('approval_request_id.category_id.privacy_visibility', '=', 'restricted_users')]"
+approval_request_line_restricted_groups_read,Approval Request Line: read for restricted groups audience,model_approval_request_line,base.group_user,permission,r,own,approval_request_category_allowed_group_all_user,"[('approval_request_id.category_id.privacy_visibility', '=', 'restricted_groups')]"
+approval_request_line_employees_read,Approval Request Line: read for all internal users,model_approval_request_line,base.group_user,permission,r,all,,"[('approval_request_id.category_id.privacy_visibility', '=', 'employees')]"
+approval_request_line_user_write,Approval Request Line: user write/create/unlink own request's lines,model_approval_request_line,base.group_user,permission,cud,own,,
+approval_request_line_manager_all,Approval Request Line: manager full access,model_approval_request_line,approval.group_approval_manager,permission,crud,,,
+approval_request_line_rule,Approval Request Line: multi-company,model_approval_request_line,base.group_everyone,guard,crud,company,,

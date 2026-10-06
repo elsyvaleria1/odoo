@@ -1,0 +1,164 @@
+/** @odoo-module native */
+import { Component, proxy, useProps } from "@odoo/owl";
+import { provideSocialContext } from "@social/social_context";
+import { Dropdown, DropdownItem } from "@web/components/dropdown";
+import { rpc } from "@web/core/network";
+import { _t } from "@web/core/translation";
+import { useService } from "@web/core/utils/hooks";
+import { ConfirmationDialog, Dialog } from "@web/ui/dialog";
+
+import { ImagesCarouselDialog } from "./images_carousel_dialog.js";
+import { SocialPostFormatterMixin } from "./social_post_formatter_mixin.js";
+import { StreamPostCommentList } from "./stream_post_comment_list.js";
+import { StreamPostCommentsReply } from "./stream_post_comments_reply.js";
+
+export class StreamPostComments extends SocialPostFormatterMixin(Component) {
+    static props = null;
+    static template = "social.StreamPostComments";
+    static components = { Dialog, Dropdown, DropdownItem };
+    props = useProps(this.constructor.props);
+
+    setup() {
+        super.setup();
+        this.orm = useService("orm");
+        this.dialog = useService("dialog");
+        this.comments = proxy(this.props.comments);
+        this.postId = this.props.postId;
+
+        this.state = proxy({
+            displayModal: true,
+            showLoadMoreComments: false,
+            isEditMode: false,
+            // because this component is inside a modal, it's not possible to
+            // change his props from his parent with a event handler without
+            // re-creating the modal, so we duplicate the message into the state
+            message: this._formatStreamPostForEdition(
+                this.originalPost.message.raw_value,
+            ),
+        });
+
+        this.mediaSpecificProps = {};
+
+        provideSocialContext({
+            closeCommentsModal: this.closeCommentsModal.bind(this),
+        });
+    }
+
+    //----------
+    // Handlers
+    //----------
+
+    onClickMoreImages(index, images) {
+        this.dialog.add(ImagesCarouselDialog, {
+            title: _t("Post Images"),
+            activeIndex: index,
+            images: images,
+        });
+    }
+
+    closeCommentsModal() {
+        this.state.displayModal = false;
+    }
+
+    loadMoreComments() {
+        // to be defined by social-media sub-implementations
+    }
+
+    onAddComment(newComment) {
+        this.comments.unshift(newComment);
+    }
+
+    onDeletePost() {
+        this.dialog.add(ConfirmationDialog, {
+            title: _t("Delete Post"),
+            body: _t("Do you really want to delete this Post ?"),
+            confirm: async () => {
+                await rpc(
+                    `/social_${this.props.originalPost.media_type.raw_value}/delete_post`,
+                    {
+                        stream_post_id: this.originalPost.id.raw_value,
+                    },
+                );
+                if (this.props.onPostDeleted) {
+                    this.props.onPostDeleted();
+                }
+            },
+            confirmLabel: _t("Delete"),
+            cancel: () => {},
+        });
+    }
+
+    async onEditPost(event) {
+        const textarea = event.currentTarget;
+        if (
+            event.key !== "Enter" ||
+            event.ctrlKey ||
+            event.shiftKey ||
+            textarea.value.trim() === ""
+        ) {
+            return;
+        }
+
+        this.state.isEditMode = false;
+        this.state.message = textarea.value;
+
+        await rpc(`/social_${this.props.originalPost.media_type.raw_value}/edit_post`, {
+            stream_post_id: this.originalPost.id.raw_value,
+            new_message: textarea.value,
+        });
+
+        this.props?.onPostUpdate(textarea.value);
+    }
+
+    preventAddComment() {
+        return false;
+    }
+
+    _formatCommentStreamPost(message) {
+        return this._formatPost(message);
+    }
+
+    _formatStreamPostForEdition(message) {
+        return message;
+    }
+
+    get bodyClass() {
+        return (
+            "o_social_comments_modal o_social_comments_modal_" +
+            this.originalPost.media_type.raw_value +
+            " pt-0 px-0 bg-100"
+        );
+    }
+
+    get originalPost() {
+        return this.props.originalPost;
+    }
+
+    get JSON() {
+        return JSON;
+    }
+
+    get commentListComponent() {
+        return StreamPostCommentList;
+    }
+
+    get commentReplyComponent() {
+        return StreamPostCommentsReply;
+    }
+
+    get isAuthor() {
+        return this.originalPost.is_author && this.originalPost.is_author.raw_value;
+    }
+
+    get isDeletable() {
+        return false;
+    }
+
+    get isEditable() {
+        return false;
+    }
+
+    get commentsDisabled() {
+        return false;
+    }
+}

@@ -1,0 +1,32 @@
+/** @odoo-module native */
+import { RottingColumnProgress } from "@mail/views/web/rotting/rotting_column_progress";
+import { onWillStart } from "@odoo/owl";
+import { user } from "@web/core/user";
+
+export class CrmColumnProgress extends RottingColumnProgress {
+    static template = "crm.ColumnProgress";
+    setup() {
+        super.setup();
+        this.showRecurringRevenue = false;
+
+        onWillStart(async () => {
+            if (
+                this.props.progressBarState.progressAttributes
+                    .recurring_revenue_sum_field
+            ) {
+                this.showRecurringRevenue = await user.hasGroup(
+                    "crm.group_use_recurring_revenues",
+                );
+            }
+        });
+    }
+
+    getRecurringRevenueGroupAggregate(group) {
+        if (!this.showRecurringRevenue) {
+            return {};
+        }
+        const rrField =
+            this.props.progressBarState.progressAttributes.recurring_revenue_sum_field;
+        return this.props.progressBarState.getAggregateValue(group, rrField);
+    }
+}

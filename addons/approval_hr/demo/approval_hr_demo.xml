@@ -1,0 +1,656 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+
+    <record id="user_ceo" model="res.users" context="{'no_reset_password': True}">
+        <field name="name">CEO - David Wilson</field>
+        <field name="login">ceo</field>
+        <field name="password">ceo</field>
+        <field
+            name="group_ids"
+            eval="[Command.link(ref('approval.group_approval_manager')), Command.link(ref('base.group_user')), Command.link(ref('hr.group_hr_manager'))]" />
+    </record>
+
+    <record
+        id="user_dept_manager"
+        model="res.users"
+        context="{'no_reset_password': True}">
+        <field name="name">Department Manager - Lisa Chen</field>
+        <field name="login">dept_manager</field>
+        <field name="password">dept_manager</field>
+        <field
+            name="group_ids"
+            eval="[Command.link(ref('base.group_user')), Command.link(ref('hr.group_hr_user'))]" />
+    </record>
+
+    <record id="user_team_lead" model="res.users" context="{'no_reset_password': True}">
+        <field name="name">Team Lead - Robert Johnson</field>
+        <field name="login">team_lead</field>
+        <field name="password">team_lead</field>
+        <field name="group_ids" eval="[Command.link(ref('base.group_user'))]" />
+    </record>
+
+    <record
+        id="user_employee_alice"
+        model="res.users"
+        context="{'no_reset_password': True}">
+        <field name="name">Alice Anderson</field>
+        <field name="login">alice</field>
+        <field name="password">alice</field>
+        <field name="group_ids" eval="[Command.link(ref('base.group_user'))]" />
+    </record>
+
+    <record
+        id="user_employee_bob"
+        model="res.users"
+        context="{'no_reset_password': True}">
+        <field name="name">Bob Martinez</field>
+        <field name="login">bob</field>
+        <field name="password">bob</field>
+        <field name="group_ids" eval="[Command.link(ref('base.group_user'))]" />
+    </record>
+
+    <record
+        id="user_employee_carol"
+        model="res.users"
+        context="{'no_reset_password': True}">
+        <field name="name">Carol Davis</field>
+        <field name="login">carol</field>
+        <field name="password">carol</field>
+        <field name="group_ids" eval="[Command.link(ref('base.group_user'))]" />
+    </record>
+
+    <record
+        id="user_employee_no_manager"
+        model="res.users"
+        context="{'no_reset_password': True}">
+        <field name="name">Dan Smith (No Manager)</field>
+        <field name="login">dan</field>
+        <field name="password">dan</field>
+        <field name="group_ids" eval="[Command.link(ref('base.group_user'))]" />
+    </record>
+
+    <record id="hr_employee_ceo" model="hr.employee">
+        <field name="name">CEO - David Wilson</field>
+        <field name="user_id" ref="user_ceo" />
+        <field name="work_email">ceo@company.com</field>
+        <field name="job_title">Chief Executive Officer</field>
+    </record>
+
+    <record id="hr_employee_dept_manager" model="hr.employee">
+        <field name="name">Department Manager - Lisa Chen</field>
+        <field name="user_id" ref="user_dept_manager" />
+        <field name="parent_id" ref="hr_employee_ceo" />
+        <field name="work_email">lisa.chen@company.com</field>
+        <field name="job_title">Operations Manager</field>
+    </record>
+
+    <record id="hr_employee_team_lead" model="hr.employee">
+        <field name="name">Team Lead - Robert Johnson</field>
+        <field name="user_id" ref="user_team_lead" />
+        <field name="parent_id" ref="hr_employee_dept_manager" />
+        <field name="work_email">robert.johnson@company.com</field>
+        <field name="job_title">Team Lead</field>
+    </record>
+
+    <record id="hr_employee_alice" model="hr.employee">
+        <field name="name">Alice Anderson</field>
+        <field name="user_id" ref="user_employee_alice" />
+        <field name="parent_id" ref="hr_employee_team_lead" />
+        <field name="work_email">alice.anderson@company.com</field>
+        <field name="job_title">Software Developer</field>
+    </record>
+
+    <record id="hr_employee_bob" model="hr.employee">
+        <field name="name">Bob Martinez</field>
+        <field name="user_id" ref="user_employee_bob" />
+        <field name="parent_id" ref="hr_employee_team_lead" />
+        <field name="work_email">bob.martinez@company.com</field>
+        <field name="job_title">Software Developer</field>
+    </record>
+
+    <record id="hr_employee_carol" model="hr.employee">
+        <field name="name">Carol Davis</field>
+        <field name="user_id" ref="user_employee_carol" />
+        <field name="parent_id" ref="hr_employee_dept_manager" />
+        <field name="work_email">carol.davis@company.com</field>
+        <field name="job_title">Marketing Specialist</field>
+    </record>
+
+    <record id="hr_employee_no_manager" model="hr.employee">
+        <field name="name">Dan Smith (No Manager)</field>
+        <field name="user_id" ref="user_employee_no_manager" />
+        <field name="work_email">dan.smith@company.com</field>
+        <field name="job_title">Contractor</field>
+    </record>
+
+    <record id="approval_category_time_off" model="approval.category">
+        <field name="name">Time Off Request</field>
+        <field name="sequence" eval="5" />
+        <field name="has_date_range">required</field>
+        <field name="has_date">no</field>
+        <field name="has_quantity">no</field>
+        <field name="has_amount">no</field>
+        <field name="has_reference">no</field>
+        <field name="has_partner">no</field>
+        <field name="has_location">no</field>
+        <field name="has_document">optional</field>
+        <field name="approval_minimum">1</field>
+        <field name="manager_approval">required</field>
+        <field name="approval_deadline_hours">24</field>
+        <field name="sequence_code">PTO-</field>
+        <field
+            name="step_ids"
+            eval="[Command.create({'name': 'Approvers', 'minimum': 1, 'counts_added_approvers': True, 'member_ids': [Command.create({'user_id': ref('user_dept_manager'), 'sequence': 20, 'required': False})]})]" />
+    </record>
+
+    <record id="approval_category_expense_report" model="approval.category">
+        <field name="name">Expense Report</field>
+        <field name="sequence" eval="6" />
+        <field name="has_date">required</field>
+        <field name="has_date_range">no</field>
+        <field name="has_quantity">optional</field>
+        <field name="has_amount">required</field>
+        <field name="has_reference">optional</field>
+        <field name="has_partner">no</field>
+        <field name="has_location">no</field>
+        <field name="has_document">required</field>
+        <field name="approval_minimum">2</field>
+        <field name="manager_approval">required</field>
+        <field name="approval_deadline_hours">48</field>
+        <field name="sequence_code">EXP-</field>
+        <field
+            name="step_ids"
+            eval="[Command.create({'name': 'Approvers', 'minimum': 1, 'counts_added_approvers': True, 'in_order': True, 'member_ids': [Command.create({'user_id': ref('user_ceo'), 'sequence': 30, 'required': True})]})]" />
+    </record>
+
+    <record id="approval_category_training_request" model="approval.category">
+        <field name="name">Training Request</field>
+        <field name="sequence" eval="7" />
+        <field name="has_date">no</field>
+        <field name="has_date_range">required</field>
+        <field name="has_quantity">no</field>
+        <field name="has_amount">required</field>
+        <field name="has_reference">optional</field>
+        <field name="has_partner">optional</field>
+        <field name="has_location">optional</field>
+        <field name="has_document">optional</field>
+        <field name="approval_minimum">2</field>
+        <field name="manager_approval">optional</field>
+        <field name="approval_deadline_hours">72</field>
+        <field name="sequence_code">TRN-</field>
+        <field
+            name="step_ids"
+            eval="[Command.create({'name': 'Approvers', 'minimum': 2, 'counts_added_approvers': True, 'member_ids': [Command.create({'user_id': ref('user_dept_manager'), 'sequence': 20, 'required': True}), Command.create({'user_id': ref('user_ceo'), 'sequence': 30, 'required': False})]})]" />
+    </record>
+
+    <record id="approval_category_remote_work" model="approval.category">
+        <field name="name">Remote Work Request</field>
+        <field name="sequence" eval="8" />
+        <field name="has_date_range">required</field>
+        <field name="has_date">no</field>
+        <field name="has_quantity">no</field>
+        <field name="has_amount">no</field>
+        <field name="has_reference">no</field>
+        <field name="has_partner">no</field>
+        <field name="has_location">required</field>
+        <field name="has_document">optional</field>
+        <field name="approval_minimum">1</field>
+        <field name="manager_approval">optional</field>
+        <field name="approval_deadline_hours">48</field>
+        <field name="sequence_code">RMT-</field>
+        <field
+            name="step_ids"
+            eval="[Command.create({'name': 'Approvers', 'minimum': 1, 'counts_added_approvers': True})]" />
+    </record>
+
+    <record id="group_it_approvers" model="res.groups">
+        <field name="name">IT Approvers</field>
+        <field name="privilege_id" ref="approval.res_groups_privilege_approvals" />
+        <field
+            name="user_ids"
+            eval="[             Command.link(ref('user_dept_manager')),             Command.link(ref('user_team_lead'))         ]" />
+    </record>
+
+    <record id="approval_category_equipment_request" model="approval.category">
+        <field name="name">Equipment Request</field>
+        <field name="sequence" eval="9" />
+        <field name="has_date">no</field>
+        <field name="has_date_range">no</field>
+        <field name="has_quantity">required</field>
+        <field name="has_amount">optional</field>
+        <field name="has_reference">optional</field>
+        <field name="has_partner">no</field>
+        <field name="has_location">no</field>
+        <field name="has_document">optional</field>
+        <field name="approval_minimum">2</field>
+        <field name="manager_approval">no</field>
+        <field name="approval_deadline_hours">72</field>
+        <field name="sequence_code">EQP-</field>
+        <field
+            name="step_ids"
+            eval="[Command.create({'name': 'IT Approvers', 'minimum': 2, 'counts_added_approvers': True, 'group_id': ref('group_it_approvers')})]" />
+    </record>
+
+    <record id="approval_request_time_off_vacation" model="approval.request">
+        <field name="name">PTO-00001</field>
+        <field name="category_id" ref="approval_category_time_off" />
+        <field name="request_owner_id" ref="user_employee_alice" />
+        <field
+            name="date_start"
+            eval="(datetime.now() + timedelta(days=30)).strftime('%Y-%m-%d 08:00:00')" />
+        <field
+            name="date_end"
+            eval="(datetime.now() + timedelta(days=34)).strftime('%Y-%m-%d 18:00:00')" />
+        <field
+            name="reason">&lt;p&gt;Annual vacation - Family trip to mountains&lt;/p&gt;&lt;ul&gt;&lt;li&gt;All project milestones completed&lt;/li&gt;&lt;li&gt;Handover document prepared&lt;/li&gt;&lt;li&gt;Bob will cover urgent issues&lt;/li&gt;&lt;/ul&gt;</field>
+        <field name="priority">1</field>
+    </record>
+
+    <record id="approval_request_time_off_sick_leave" model="approval.request">
+        <field name="name">PTO-00002</field>
+        <field name="category_id" ref="approval_category_time_off" />
+        <field name="request_owner_id" ref="user_employee_bob" />
+        <field
+            name="date_start"
+            eval="(datetime.now() + timedelta(days=2)).strftime('%Y-%m-%d 08:00:00')" />
+        <field
+            name="date_end"
+            eval="(datetime.now() + timedelta(days=3)).strftime('%Y-%m-%d 18:00:00')" />
+        <field
+            name="reason">&lt;p&gt;Medical appointment and recovery - 2 days&lt;/p&gt;</field>
+        <field name="priority">3</field>
+    </record>
+
+    <record id="approval_request_time_off_long" model="approval.request">
+        <field name="name">PTO-00003</field>
+        <field name="category_id" ref="approval_category_time_off" />
+        <field name="request_owner_id" ref="user_employee_carol" />
+        <field
+            name="date_start"
+            eval="(datetime.now() + timedelta(days=60)).strftime('%Y-%m-%d 08:00:00')" />
+        <field
+            name="date_end"
+            eval="(datetime.now() + timedelta(days=74)).strftime('%Y-%m-%d 18:00:00')" />
+        <field
+            name="reason">&lt;p&gt;Summer vacation - 2 weeks&lt;/p&gt;&lt;p&gt;&lt;b&gt;Preparation Plan:&lt;/b&gt;&lt;/p&gt;&lt;ul&gt;&lt;li&gt;Finish Q2 marketing campaigns by end of May&lt;/li&gt;&lt;li&gt;Schedule all social media posts in advance&lt;/li&gt;&lt;li&gt;Brief team on pending items&lt;/li&gt;&lt;li&gt;Set up out-of-office responses&lt;/li&gt;&lt;/ul&gt;</field>
+        <field name="priority">1</field>
+    </record>
+
+    <record id="approval_request_expense_client_dinner" model="approval.request">
+        <field name="name">EXP-00001</field>
+        <field name="category_id" ref="approval_category_expense_report" />
+        <field name="request_owner_id" ref="user_employee_alice" />
+        <field
+            name="date"
+            eval="(datetime.now() - timedelta(days=5)).strftime('%Y-%m-%d')" />
+        <field name="amount">425.50</field>
+        <field name="reference">RECEIPT-2025-0234</field>
+        <field
+            name="reason">&lt;p&gt;Client dinner expense - Acme Corp meeting&lt;/p&gt;&lt;p&gt;&lt;b&gt;Details:&lt;/b&gt;&lt;/p&gt;&lt;ul&gt;&lt;li&gt;Restaurant: Le Gourmet&lt;/li&gt;&lt;li&gt;Date: January 10, 2025&lt;/li&gt;&lt;li&gt;Attendees: 4 (2 from Acme Corp, 2 from our team)&lt;/li&gt;&lt;li&gt;Purpose: Contract negotiation dinner&lt;/li&gt;&lt;/ul&gt;&lt;p&gt;Receipt attached.&lt;/p&gt;</field>
+        <field name="priority">2</field>
+    </record>
+
+    <record id="approval_request_expense_conference" model="approval.request">
+        <field name="name">EXP-00002</field>
+        <field name="category_id" ref="approval_category_expense_report" />
+        <field name="request_owner_id" ref="user_employee_bob" />
+        <field
+            name="date"
+            eval="(datetime.now() - timedelta(days=10)).strftime('%Y-%m-%d')" />
+        <field name="amount">1250.00</field>
+        <field name="reference">CONF-2025-TECH</field>
+        <field
+            name="reason">&lt;p&gt;Tech Conference 2025 expenses&lt;/p&gt;&lt;p&gt;&lt;b&gt;Breakdown:&lt;/b&gt;&lt;/p&gt;&lt;ul&gt;&lt;li&gt;Conference ticket: $800&lt;/li&gt;&lt;li&gt;Hotel (2 nights): $350&lt;/li&gt;&lt;li&gt;Meals: $100&lt;/li&gt;&lt;/ul&gt;&lt;p&gt;All receipts attached.&lt;/p&gt;</field>
+        <field name="priority">1</field>
+    </record>
+
+    <record id="approval_request_expense_refused" model="approval.request">
+        <field name="name">EXP-00003</field>
+        <field name="category_id" ref="approval_category_expense_report" />
+        <field name="request_owner_id" ref="user_employee_carol" />
+        <field
+            name="date"
+            eval="(datetime.now() - timedelta(days=3)).strftime('%Y-%m-%d')" />
+        <field name="amount">350.00</field>
+        <field name="reference">TAXI-2025-001</field>
+        <field
+            name="reason">&lt;p&gt;Taxi expenses for client meetings - 5 trips during January&lt;/p&gt;</field>
+        <field name="priority">1</field>
+    </record>
+
+    <record id="approval_request_training_certification" model="approval.request">
+        <field name="name">TRN-00001</field>
+        <field name="category_id" ref="approval_category_training_request" />
+        <field name="request_owner_id" ref="user_employee_alice" />
+        <field
+            name="date_start"
+            eval="(datetime.now() + timedelta(days=45)).strftime('%Y-%m-%d 09:00:00')" />
+        <field
+            name="date_end"
+            eval="(datetime.now() + timedelta(days=47)).strftime('%Y-%m-%d 17:00:00')" />
+        <field name="amount">2500.00</field>
+        <field name="reference">AWS-CERT-2025</field>
+        <field name="location">Online</field>
+        <field
+            name="reason">&lt;p&gt;AWS Solutions Architect Certification Training&lt;/p&gt;&lt;p&gt;&lt;b&gt;Business Value:&lt;/b&gt;&lt;/p&gt;&lt;ul&gt;&lt;li&gt;Required for upcoming cloud migration project&lt;/li&gt;&lt;li&gt;Will enable team to design better architectures&lt;/li&gt;&lt;li&gt;Company will benefit from certified expertise&lt;/li&gt;&lt;/ul&gt;&lt;p&gt;&lt;b&gt;Course Details:&lt;/b&gt;&lt;/p&gt;&lt;ul&gt;&lt;li&gt;3-day intensive course&lt;/li&gt;&lt;li&gt;Official AWS training&lt;/li&gt;&lt;li&gt;Includes exam voucher&lt;/li&gt;&lt;/ul&gt;</field>
+        <field name="priority">2</field>
+    </record>
+
+    <record id="approval_request_training_workshop" model="approval.request">
+        <field name="name">TRN-00002</field>
+        <field name="category_id" ref="approval_category_training_request" />
+        <field name="request_owner_id" ref="user_employee_bob" />
+        <field
+            name="date_start"
+            eval="(datetime.now() + timedelta(days=30)).strftime('%Y-%m-%d 09:00:00')" />
+        <field
+            name="date_end"
+            eval="(datetime.now() + timedelta(days=30)).strftime('%Y-%m-%d 17:00:00')" />
+        <field name="amount">500.00</field>
+        <field name="reference">AGILE-WS-2025</field>
+        <field name="location">Downtown Conference Center</field>
+        <field
+            name="reason">&lt;p&gt;Agile Project Management Workshop&lt;/p&gt;&lt;p&gt;One-day workshop on advanced Agile techniques and Scrum practices.&lt;/p&gt;</field>
+        <field name="priority">1</field>
+    </record>
+
+    <record id="approval_request_remote_temporary" model="approval.request">
+        <field name="name">RMT-00001</field>
+        <field name="category_id" ref="approval_category_remote_work" />
+        <field name="request_owner_id" ref="user_employee_alice" />
+        <field
+            name="date_start"
+            eval="(datetime.now() + timedelta(days=14)).strftime('%Y-%m-%d 08:00:00')" />
+        <field
+            name="date_end"
+            eval="(datetime.now() + timedelta(days=28)).strftime('%Y-%m-%d 18:00:00')" />
+        <field name="location">Home Office - San Francisco, CA</field>
+        <field
+            name="reason">&lt;p&gt;Temporary remote work - 2 weeks&lt;/p&gt;&lt;p&gt;&lt;b&gt;Reason:&lt;/b&gt; Family member visiting from overseas&lt;/p&gt;&lt;p&gt;&lt;b&gt;Commitments:&lt;/b&gt;&lt;/p&gt;&lt;ul&gt;&lt;li&gt;Available during standard working hours&lt;/li&gt;&lt;li&gt;Will attend all team meetings via video&lt;/li&gt;&lt;li&gt;Home office setup meets company standards&lt;/li&gt;&lt;/ul&gt;</field>
+        <field name="priority">1</field>
+    </record>
+
+    <record id="approval_request_remote_permanent" model="approval.request">
+        <field name="name">RMT-00002</field>
+        <field name="category_id" ref="approval_category_remote_work" />
+        <field name="request_owner_id" ref="user_employee_carol" />
+        <field
+            name="date_start"
+            eval="(datetime.now() + timedelta(days=60)).strftime('%Y-%m-%d 08:00:00')" />
+        <field
+            name="date_end"
+            eval="(datetime.now() + timedelta(days=425)).strftime('%Y-%m-%d 18:00:00')" />
+        <field name="location">Home Office - Seattle, WA</field>
+        <field
+            name="reason">&lt;p&gt;Permanent remote work request - Relocating to Seattle&lt;/p&gt;&lt;p&gt;&lt;b&gt;Background:&lt;/b&gt;&lt;/p&gt;&lt;p&gt;Due to family circumstances, I need to relocate to Seattle. I would like to continue working for the company remotely.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Proposed Arrangement:&lt;/b&gt;&lt;/p&gt;&lt;ul&gt;&lt;li&gt;Full-time remote work from Seattle&lt;/li&gt;&lt;li&gt;Will travel to office quarterly for team meetings&lt;/li&gt;&lt;li&gt;Maintain same working hours (PST)&lt;/li&gt;&lt;li&gt;Full home office setup with high-speed internet&lt;/li&gt;&lt;/ul&gt;</field>
+        <field name="priority">2</field>
+    </record>
+
+    <record id="approval_request_equipment_laptop" model="approval.request">
+        <field name="name">EQP-00001</field>
+        <field name="category_id" ref="approval_category_equipment_request" />
+        <field name="request_owner_id" ref="user_employee_alice" />
+        <field name="quantity">1</field>
+        <field name="amount">2500.00</field>
+        <field name="reference">MODEL-MACBOOK-PRO-16</field>
+        <field
+            name="reason">&lt;p&gt;New laptop request - Current laptop is 4 years old&lt;/p&gt;&lt;p&gt;&lt;b&gt;Current Issues:&lt;/b&gt;&lt;/p&gt;&lt;ul&gt;&lt;li&gt;Slow compile times (5+ minutes)&lt;/li&gt;&lt;li&gt;Insufficient RAM for development tools&lt;/li&gt;&lt;li&gt;Battery lasts less than 2 hours&lt;/li&gt;&lt;/ul&gt;&lt;p&gt;&lt;b&gt;Requested Specs:&lt;/b&gt;&lt;/p&gt;&lt;ul&gt;&lt;li&gt;MacBook Pro 16" M3 Max&lt;/li&gt;&lt;li&gt;32GB RAM&lt;/li&gt;&lt;li&gt;1TB SSD&lt;/li&gt;&lt;/ul&gt;</field>
+        <field name="priority">2</field>
+    </record>
+
+    <record id="approval_request_equipment_monitor" model="approval.request">
+        <field name="name">EQP-00002</field>
+        <field name="category_id" ref="approval_category_equipment_request" />
+        <field name="request_owner_id" ref="user_employee_bob" />
+        <field name="quantity">2</field>
+        <field name="amount">800.00</field>
+        <field name="reference">MODEL-DELL-U2723DE</field>
+        <field
+            name="reason">&lt;p&gt;Dual monitor setup request&lt;/p&gt;&lt;p&gt;Current single monitor is limiting productivity when working with multiple applications and debugging.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Requested:&lt;/b&gt; 2x Dell UltraSharp 27" 4K monitors&lt;/p&gt;</field>
+        <field name="priority">1</field>
+    </record>
+
+    <record id="attachment_expense_client_dinner" model="ir.attachment">
+        <field name="name">client_dinner_receipt.txt</field>
+        <field name="res_model">approval.request</field>
+        <field name="res_id" ref="approval_request_expense_client_dinner" />
+        <field name="mimetype">text/plain</field>
+        <field
+            name="raw"
+            eval="b'Restaurant receipt, client dinner with Acme Corporation.'" />
+    </record>
+
+    <record id="attachment_expense_conference" model="ir.attachment">
+        <field name="name">conference_invoice.txt</field>
+        <field name="res_model">approval.request</field>
+        <field name="res_id" ref="approval_request_expense_conference" />
+        <field name="mimetype">text/plain</field>
+        <field
+            name="raw"
+            eval="b'Conference registration invoice and travel receipts.'" />
+    </record>
+
+    <record id="attachment_expense_refused" model="ir.attachment">
+        <field name="name">team_outing_receipt.txt</field>
+        <field name="res_model">approval.request</field>
+        <field name="res_id" ref="approval_request_expense_refused" />
+        <field name="mimetype">text/plain</field>
+        <field name="raw" eval="b'Receipts for the team outing.'" />
+    </record>
+
+    <function
+        model="approval.request"
+        name="action_confirm"
+        eval="[[ref('approval_request_time_off_vacation')]]"
+        uid="user_employee_alice" />
+
+    <function model="approval.approver" name="write" uid="user_team_lead">
+        <value
+            model="approval.approver"
+            eval="obj().search([('request_id', '=', ref('approval_request_time_off_vacation')), ('user_id', '=', ref('user_team_lead'))]).ids" />
+        <value
+            eval="{'note': 'Approved. Have a great vacation! Thanks for the detailed handover.'}" />
+    </function>
+
+    <function
+        model="approval.request"
+        name="action_approve"
+        eval="[ref('approval_request_time_off_vacation')]"
+        uid="user_team_lead" />
+
+    <function
+        model="approval.request"
+        name="action_confirm"
+        eval="[[ref('approval_request_time_off_sick_leave')]]"
+        uid="user_employee_bob" />
+
+    <function
+        model="approval.request"
+        name="action_confirm"
+        eval="[[ref('approval_request_time_off_long')]]"
+        uid="user_employee_carol" />
+
+    <function
+        model="approval.request"
+        name="action_confirm"
+        eval="[[ref('approval_request_expense_client_dinner')]]"
+        uid="user_employee_alice" />
+
+    <function model="approval.approver" name="write" uid="user_team_lead">
+        <value
+            model="approval.approver"
+            eval="obj().search([('request_id', '=', ref('approval_request_expense_client_dinner')), ('user_id', '=', ref('user_team_lead'))]).ids" />
+        <value
+            eval="{'note': 'Expense verified and approved. Good client engagement.'}" />
+    </function>
+
+    <function
+        model="approval.request"
+        name="action_approve"
+        eval="[ref('approval_request_expense_client_dinner')]"
+        uid="user_team_lead" />
+
+    <function
+        model="approval.request"
+        name="action_confirm"
+        eval="[[ref('approval_request_expense_conference')]]"
+        uid="user_employee_bob" />
+
+    <function model="approval.approver" name="write" uid="user_team_lead">
+        <value
+            model="approval.approver"
+            eval="obj().search([('request_id', '=', ref('approval_request_expense_conference')), ('user_id', '=', ref('user_team_lead'))]).ids" />
+        <value
+            eval="{'note': 'Conference was very valuable for team development. Approved.'}" />
+    </function>
+
+    <function
+        model="approval.request"
+        name="action_approve"
+        eval="[ref('approval_request_expense_conference')]"
+        uid="user_team_lead" />
+
+    <function model="approval.approver" name="write" uid="user_ceo">
+        <value
+            model="approval.approver"
+            eval="obj().search([('request_id', '=', ref('approval_request_expense_conference')), ('user_id', '=', ref('user_ceo'))]).ids" />
+        <value
+            eval="{'note': 'Final approval granted. Good ROI on professional development.'}" />
+    </function>
+
+    <function
+        model="approval.request"
+        name="action_approve"
+        eval="[ref('approval_request_expense_conference')]"
+        uid="user_ceo" />
+
+    <function
+        model="approval.request"
+        name="action_confirm"
+        eval="[[ref('approval_request_expense_refused')]]"
+        uid="user_employee_carol" />
+
+    <function
+        model="wizard.approval.request.decide"
+        name="action_confirm_refuse"
+        uid="user_dept_manager">
+        <function model="wizard.approval.request.decide" name="create">
+            <value
+                model="approval.approver"
+                eval="{'approver_id': obj().search([('request_id', '=', ref('approval_request_expense_refused')), ('user_id', '=', ref('user_dept_manager'))]).id, 'decision_type': 'refuse', 'refusal_reason_id': ref('approval.refusal_reason_policy_violation'), 'note': 'Company policy requires public transportation for local travel. Please use metro/bus and resubmit with those receipts. Taxi is only approved for emergencies or late-night work.'}" />
+        </function>
+    </function>
+
+    <function
+        model="approval.request"
+        name="action_confirm"
+        eval="[[ref('approval_request_training_certification')]]"
+        uid="user_employee_alice" />
+
+    <function model="approval.approver" name="write" uid="user_team_lead">
+        <value
+            model="approval.approver"
+            eval="obj().search([('request_id', '=', ref('approval_request_training_certification')), ('user_id', '=', ref('user_team_lead'))]).ids" />
+        <value
+            eval="{'note': 'Great initiative! This certification will be very valuable for our cloud projects.'}" />
+    </function>
+
+    <function
+        model="approval.request"
+        name="action_approve"
+        eval="[ref('approval_request_training_certification')]"
+        uid="user_team_lead" />
+
+    <function model="approval.approver" name="write" uid="user_dept_manager">
+        <value
+            model="approval.approver"
+            eval="obj().search([('request_id', '=', ref('approval_request_training_certification')), ('user_id', '=', ref('user_dept_manager'))]).ids" />
+        <value
+            eval="{'note': 'Approved from operations. Aligns with department goals.'}" />
+    </function>
+
+    <function
+        model="approval.request"
+        name="action_approve"
+        eval="[ref('approval_request_training_certification')]"
+        uid="user_dept_manager" />
+
+    <function
+        model="approval.request"
+        name="action_confirm"
+        eval="[[ref('approval_request_training_workshop')]]"
+        uid="user_employee_bob" />
+
+    <function
+        model="approval.request"
+        name="action_confirm"
+        eval="[[ref('approval_request_remote_temporary')]]"
+        uid="user_employee_alice" />
+
+    <function model="approval.approver" name="write" uid="user_team_lead">
+        <value
+            model="approval.approver"
+            eval="obj().search([('request_id', '=', ref('approval_request_remote_temporary')), ('user_id', '=', ref('user_team_lead'))]).ids" />
+        <value
+            eval="{'note': 'Approved. Thanks for advance notice and clear commitments.'}" />
+    </function>
+
+    <function
+        model="approval.request"
+        name="action_approve"
+        eval="[ref('approval_request_remote_temporary')]"
+        uid="user_team_lead" />
+
+    <function
+        model="approval.request"
+        name="action_confirm"
+        eval="[[ref('approval_request_remote_permanent')]]"
+        uid="user_employee_carol" />
+
+    <function
+        model="approval.request"
+        name="action_confirm"
+        eval="[[ref('approval_request_equipment_laptop')]]"
+        uid="user_employee_alice" />
+
+    <function model="approval.approver" name="write" uid="user_team_lead">
+        <value
+            model="approval.approver"
+            eval="obj().search([('request_id', '=', ref('approval_request_equipment_laptop')), ('user_id', '=', ref('user_team_lead'))]).ids" />
+        <value
+            eval="{'note': 'Justified - current laptop is indeed limiting productivity. Approved.'}" />
+    </function>
+
+    <function
+        model="approval.request"
+        name="action_approve"
+        eval="[ref('approval_request_equipment_laptop')]"
+        uid="user_team_lead" />
+
+    <function model="approval.approver" name="write" uid="user_dept_manager">
+        <value
+            model="approval.approver"
+            eval="obj().search([('request_id', '=', ref('approval_request_equipment_laptop')), ('user_id', '=', ref('user_dept_manager'))]).ids" />
+        <value
+            eval="{'note': 'IT approved. Specs are appropriate for development work.'}" />
+    </function>
+
+    <function
+        model="approval.request"
+        name="action_approve"
+        eval="[ref('approval_request_equipment_laptop')]"
+        uid="user_dept_manager" />
+
+    <function
+        model="approval.request"
+        name="action_confirm"
+        eval="[[ref('approval_request_equipment_monitor')]]"
+        uid="user_employee_bob" />
+
+    <function
+        model="approval.request"
+        name="action_approve"
+        eval="[ref('approval_request_equipment_monitor')]"
+        uid="user_team_lead" />
+
+</odoo>

@@ -1,0 +1,21 @@
+.o_action_manager:has(> .o_action_placeholder) {
+    position: relative;
+}
+
+// Laid over the outgoing controller, above its control panel. It paints the
+// canvas the web client paints, fixed to the viewport like it, so what shows
+// through the skeleton is what shows through every other surface.
+.o_action_placeholder {
+    position: absolute;
+    inset: 0;
+    z-index: 21;
+    background: {
+        color: var(--o-canvas-color);
+        image: var(--o-canvas-image);
+        size: cover;
+        attachment: fixed;
+        position: center;
+        blend-mode: var(--o-canvas-blend, normal);
+    }
+    @include o-placeholder-onset();
+}

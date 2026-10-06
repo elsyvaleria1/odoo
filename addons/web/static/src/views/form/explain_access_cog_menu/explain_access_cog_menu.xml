@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<templates>
+    <t t-name="web.ExplainAccessCogMenu">
+        <CogMenuItem icon="'fa-solid fa-circle-question'" class="'o_explain_access'" description.translate="Why can I see this?" onSelected.bind="this.explain"/>
+    </t>
+</templates>

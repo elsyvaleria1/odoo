@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_uom_uom_search" model="ir.ui.view">
+        <field name="name">uom.uom.view.search</field>
+        <field name="model">uom.uom</field>
+        <field name="arch" type="xml">
+            <search string="Search UOM">
+                <field name="name" />
+                <separator />
+                <filter
+                    name="inactive"
+                    string="Archived"
+                    domain="[('active', '=', False)]" />
+            </search>
+        </field>
+    </record>
+
+    <record id="view_uom_uom_list" model="ir.ui.view">
+        <field name="name">uom.uom.list</field>
+        <field name="model">uom.uom</field>
+        <field name="arch" type="xml">
+            <list string="Units &amp; Packagings">
+                <field name="sequence" widget="handle" />
+                <field name="name" />
+                <field
+                    name="relative_factor"
+                    digits="[16, 7]"
+                    invisible="relative_factor == 1 and not relative_uom_id" />
+                <field name="relative_uom_id" />
+            </list>
+        </field>
+    </record>
+
+    <record id="view_uom_uom_form" model="ir.ui.view">
+        <field name="name">uom.uom.form</field>
+        <field name="model">uom.uom</field>
+        <field name="arch" type="xml">
+            <form string="Units of Measure">
+                <sheet>
+                    <group>
+                        <group name="uom_details">
+                            <field
+                                name="name"
+                                readonly="(context.get('product_id') or context.get('product_ids')) and id" />
+                            <label for="relative_factor" string="Quantity" />
+                            <div name="relative_factor" class="o_row oe_inline">
+                                <field
+                                    name="relative_factor"
+                                    digits="[16, 7]"
+                                    readonly="(context.get('product_id') or context.get('product_ids')) and id"
+                                    class="oe_inline"
+                                    style="max-width: 80px;" />
+                                <field
+                                    name="relative_uom_id"
+                                    placeholder="Reference Unit"
+                                    readonly="(context.get('product_id') or context.get('product_ids')) and id"
+                                    class="oe_inline"
+                                    style="max-width: 150px;" />
+                            </div>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_uom_uom" model="ir.actions.act_window">
+        <field name="name">Units &amp; Packagings</field>
+        <field name="res_model">uom.uom</field>
+        <field name="view_id" ref="view_uom_uom_list" />
+        <field name="search_view_id" ref="view_uom_uom_search" />
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Add a new unit of measure
+            </p>
+        </field>
+    </record>
+
+</odoo>

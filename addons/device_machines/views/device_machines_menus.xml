@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <menuitem
+        id="menu_device_machine"
+        name="Production Machines"
+        parent="device.menu_device_devices"
+        action="action_device_machine_devices"
+        sequence="30" />
+
+    <menuitem
+        id="menu_device_machine_bucket_section"
+        name="Counter Aggregates"
+        parent="device.menu_device_data_analytics"
+        sequence="35" />
+
+    <menuitem
+        id="menu_device_machine_bucket"
+        name="Hourly Buckets"
+        parent="menu_device_machine_bucket_section"
+        action="action_device_machine_bucket"
+        sequence="10" />
+
+    <menuitem
+        id="plc_dashboard_menu"
+        name="Bottles Filled and Labeled"
+        parent="menu_device_machine_bucket_section"
+        action="plc_dashboard_action"
+        sequence="5" />
+
+    <menuitem
+        id="menu_mrp_reporting_plc_dashboard"
+        name="Bottles Filled and Labeled"
+        parent="mrp.menu_mrp_reporting"
+        action="plc_dashboard_action"
+        sequence="14"
+        groups="mrp.group_mrp_user" />
+
+    <menuitem
+        id="device_machine_workorder_menu"
+        name="Work Order Runs (detalle)"
+        parent="menu_device_machine_bucket_section"
+        action="device_machine_workorder_action"
+        sequence="20" />
+
+</odoo>

@@ -1,0 +1,11 @@
+/** @odoo-module native */
+import { KanbanRenderer } from "@web/views/kanban";
+
+import { LivechatChannelKanbanRecord } from "./livechat_channel_kanban_record.js";
+
+export class LivechatChannelKanbanRenderer extends KanbanRenderer {
+    static components = {
+        ...KanbanRenderer.components,
+        KanbanRecord: LivechatChannelKanbanRecord,
+    };
+}

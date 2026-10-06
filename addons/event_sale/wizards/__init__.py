@@ -1,0 +1,3 @@
+from . import wizard_sale_order_update_attendee
+from . import wizard_sale_order_update_attendee_line
+from . import wizard_sale_order_line_update_event

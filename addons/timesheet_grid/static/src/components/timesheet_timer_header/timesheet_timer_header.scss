@@ -1,0 +1,13 @@
+[data-input-modality="touch"] .o_web_client {
+    .timesheet-timer {
+        .btn:is(#{$o-icon-selector}) {
+            font-size: 1em;
+        }
+    }
+}
+
+.timesheet-timer {
+    div[name="display_timer"] {
+        font-variant-numeric: tabular-nums;
+    }
+}

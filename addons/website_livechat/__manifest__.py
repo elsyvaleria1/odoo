@@ -1,0 +1,74 @@
+{
+    "name": "Website Live Chat Integration",
+    "version": "1.0",
+    "category": "Website/Live Chat",
+    "summary": "Connect website visitors to configured live chat channels",
+    "description": "Adds per-website channel selection, visitor-to-conversation links, visitor context and chatbot testing pages. The website supplies chat information when a channel is configured; conversation availability and routing depend on live chat rules, operators and chatbot configuration.",
+    "author": "Odoo S.A.",
+    "license": "LGPL-3",
+    "depends": [
+        "website",
+        "im_livechat",
+    ],
+    "data": [
+        "views/website_livechat.xml",
+        "views/res_config_settings_views.xml",
+        "views/im_livechat_chatbot_script_view.xml",
+        "views/website_visitor_views.xml",
+        "views/im_livechat_channel_add.xml",
+        "security/ir.access.csv",
+        "data/website_livechat_data.xml",
+        "views/website_livechat_menus.xml",
+    ],
+    "demo": [
+        "demo/website_livechat_chatbot_demo.xml",
+        "demo/im_livechat_session_11.xml",
+    ],
+    "assets": {
+        "im_livechat.assets_embed_core": [
+            "website/static/src/**/common/**/*",
+            "website_livechat/static/src/**/common/**/*",
+        ],
+        "im_livechat.embed_assets_unit_tests_setup": [
+            (
+                "remove",
+                "website_livechat/static/**",
+            ),
+        ],
+        "im_livechat.embed_assets_unit_tests": [
+            "web/static/tests/public/helpers.js",
+            "website/static/tests/helpers.js",
+            "website_livechat/static/tests/website_livechat_test_helpers.js",
+            "website/static/tests/mock_server/**/*",
+            "website_livechat/static/tests/mock_server/**/*",
+        ],
+        "mail.assets_public": [
+            "website_livechat/static/src/**/common/**/*",
+        ],
+        "website.assets_wysiwyg": [
+            "website/static/src/**/common/**/*",
+        ],
+        "website.assets_editor": [
+            "website_livechat/static/src/js/**/*",
+        ],
+        "web.assets_frontend": [
+            "website_livechat/static/src/**/common/**/*",
+            "website_livechat/static/src/**/frontend/**/*",
+        ],
+        "web.assets_backend": [
+            "website_livechat/static/src/**/common/**/*",
+            "website_livechat/static/src/**/*",
+        ],
+        "web.assets_unit_tests": [
+            "website_livechat/static/tests/**/*",
+            (
+                "remove",
+                "website_livechat/static/tests/tours/**/*",
+            ),
+        ],
+        "web.assets_tests": [
+            "website_livechat/static/tests/tours/**/*",
+        ],
+    },
+    "auto_install": True,
+}

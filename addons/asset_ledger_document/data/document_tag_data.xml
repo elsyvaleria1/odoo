@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+
+    <record id="documents_tag_equipment_doc" model="document.tag" forcecreate="0">
+        <field name="name">Equipment Documents</field>
+        <field name="sequence" eval="14" />
+    </record>
+
+    <record id="documents_tag_fleet_doc" model="document.tag" forcecreate="0">
+        <field name="name">Vehicle Documents</field>
+        <field name="sequence" eval="14" />
+    </record>
+
+    <record id="documents_tag_machinery_doc" model="document.tag" forcecreate="0">
+        <field name="name">Machinery Documents</field>
+        <field name="sequence" eval="14" />
+    </record>
+
+    <record id="documents_tag_property_doc" model="document.tag" forcecreate="0">
+        <field name="name">Properties Documents</field>
+        <field name="sequence" eval="14" />
+    </record>
+
+    <record id="documents_tag_fine" model="document.tag" forcecreate="0">
+        <field name="name">Fine</field>
+        <field name="sequence" eval="15" />
+    </record>
+
+    <record id="documents_tag_plate" model="document.tag" forcecreate="0">
+        <field name="name">Vehicle plate</field>
+        <field name="sequence" eval="15" />
+    </record>
+
+    <record
+        id="documents_tag_environmental_verification"
+        model="document.tag"
+        forcecreate="0">
+        <field name="name">Environmental verification</field>
+        <field name="sequence" eval="13" />
+    </record>
+
+    <record id="documents_tag_fuel_card" model="document.tag" forcecreate="0">
+        <field name="name">Fuel Card</field>
+        <field name="sequence" eval="15" />
+    </record>
+
+    <record id="documents_tag_insurance_policy" model="document.tag" forcecreate="0">
+        <field name="name">Insurance policy</field>
+        <field name="sequence" eval="15" />
+    </record>
+
+    <record id="documents_tag_highway_pass" model="document.tag" forcecreate="0">
+        <field name="name">Highway Pass</field>
+        <field name="sequence" eval="15" />
+    </record>
+
+    <record id="documents_tag_gps" model="document.tag" forcecreate="0">
+        <field name="name">GPS</field>
+        <field name="sequence" eval="15" />
+    </record>
+
+    <record id="documents_tag_drivers_licence" model="document.tag" forcecreate="0">
+        <field name="name">Driver Licence</field>
+        <field name="sequence" eval="15" />
+    </record>
+
+    <record id="documents_tag_property_deed" model="document.tag" forcecreate="0">
+        <field name="name">Property Deed</field>
+        <field name="sequence" eval="15" />
+    </record>
+
+    <record id="documents_tag_property_title" model="document.tag" forcecreate="0">
+        <field name="name">Property Title</field>
+        <field name="sequence" eval="15" />
+    </record>
+
+    <record id="documents_tag_lease_agreement" model="document.tag" forcecreate="0">
+        <field name="name">Lease Agreement</field>
+        <field name="sequence" eval="15" />
+    </record>
+
+    <record id="documents_tag_building_permit" model="document.tag" forcecreate="0">
+        <field name="name">Building Permit</field>
+        <field name="sequence" eval="15" />
+    </record>
+
+    <record id="documents_tag_property_tax" model="document.tag" forcecreate="0">
+        <field name="name">Property Tax Document</field>
+        <field name="sequence" eval="15" />
+    </record>
+
+    <record id="documents_tag_warranty" model="document.tag" forcecreate="0">
+        <field name="name">Warranty</field>
+        <field name="sequence" eval="15" />
+    </record>
+
+    <record id="documents_tag_user_manual" model="document.tag" forcecreate="0">
+        <field name="name">User Manual</field>
+        <field name="sequence" eval="15" />
+    </record>
+
+    <record id="documents_tag_maintenance_log" model="document.tag" forcecreate="0">
+        <field name="name">Maintenance Log</field>
+        <field name="sequence" eval="15" />
+    </record>
+
+    <record id="documents_tag_calibration" model="document.tag" forcecreate="0">
+        <field name="name">Calibration Certificate</field>
+        <field name="sequence" eval="15" />
+    </record>
+
+    <record id="documents_tag_safety_cert" model="document.tag" forcecreate="0">
+        <field name="name">Safety Certificate</field>
+        <field name="sequence" eval="15" />
+    </record>
+
+    <record id="documents_tag_software_license" model="document.tag" forcecreate="0">
+        <field name="name">Software License</field>
+        <field name="sequence" eval="15" />
+    </record>
+
+    <record id="documents_tag_technical_specs" model="document.tag" forcecreate="0">
+        <field name="name">Technical Specifications</field>
+        <field name="sequence" eval="15" />
+    </record>
+
+    <record id="documents_tag_inspection_report" model="document.tag" forcecreate="0">
+        <field name="name">Inspection Report</field>
+        <field name="sequence" eval="15" />
+    </record>
+
+</odoo>

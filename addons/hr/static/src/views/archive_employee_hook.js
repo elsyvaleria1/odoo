@@ -1,0 +1,28 @@
+/** @odoo-module native */
+import { _t } from "@web/core/translation";
+import { useService } from "@web/core/utils/hooks";
+
+export function useArchiveEmployee(component) {
+    const action = useService("action");
+    return (ids) => {
+        action.doAction(
+            {
+                type: "ir.actions.act_window",
+                name: _t("Employee Termination"),
+                res_model: "wizard.hr.employee.register.departure",
+                views: [[false, "form"]],
+                view_mode: "form",
+                target: "new",
+                context: {
+                    active_ids: ids,
+                    employee_termination: true,
+                },
+            },
+            {
+                onClose: async () => {
+                    await component.model.load();
+                },
+            },
+        );
+    };
+}

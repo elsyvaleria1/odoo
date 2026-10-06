@@ -1,0 +1,170 @@
+from odoo import api, fields, models
+from odoo.fields import Domain
+from odoo.libs.debug_log import DebugLog
+from odoo.tools import frozendict
+
+_debug = DebugLog(__name__)
+
+
+class ResPartnerBankAccount(models.Model):
+    _inherit = "res.partner.bank.account"
+    _access_anchors = frozendict(
+        {
+            "employee_company": models.Anchor(
+                "partner_id.employee_ids.company_id", kind="company"
+            )
+        }
+    )
+
+    bank_street = fields.Char(
+        related="bank_id.street",
+        readonly=False,
+    )
+    bank_street2 = fields.Char(
+        related="bank_id.street2",
+        readonly=False,
+    )
+    bank_zip = fields.Char(
+        related="bank_id.zip",
+        readonly=False,
+    )
+    bank_city = fields.Char(
+        related="bank_id.city",
+        readonly=False,
+    )
+    bank_state = fields.Many2one(
+        related="bank_id.state_id",
+        readonly=False,
+    )
+    bank_country = fields.Many2one(
+        related="bank_id.country_id",
+        readonly=False,
+    )
+    bank_email = fields.Char(
+        related="bank_id.email",
+        readonly=False,
+    )
+    bank_phone_ids = fields.Many2many(
+        related="bank_id.phone_ids",
+        readonly=False,
+    )
+    salary_allocation_ids = fields.One2many(
+        comodel_name="hr.employee.bank.allocation",
+        inverse_name="bank_account_id",
+        string="Salary Allocations",
+    )
+    employee_id = fields.Many2one(
+        comodel_name="hr.employee",
+        compute="_compute_employee_id",
+        search="_search_employee_id",
+        help="The employee whose salary is paid into this account. Where the "
+        "account's contact has employee records in several companies, the one "
+        "that actually allocated it.",
+    )
+    employee_salary_amount = fields.Float(
+        string="Salary Allocation",
+        digits=(16, 4),
+        compute="_compute_salary_amount",
+        store=False,
+        readonly=True,
+    )
+    employee_salary_amount_is_percentage = fields.Boolean(
+        compute="_compute_salary_amount",
+        store=False,
+        readonly=True,
+    )
+    currency_symbol = fields.Char(related="currency_id.symbol")
+    employee_has_multiple_bank_accounts = fields.Boolean(
+        related="employee_id.has_multiple_bank_accounts"
+    )
+
+    @api.depends("salary_allocation_ids.amount", "employee_id")
+    def _compute_salary_amount(self) -> None:
+        for bank in self:
+            employee = bank.employee_id
+            allocation = bank.salary_allocation_ids.browse(
+                [a.id for a in bank.salary_allocation_ids if a.employee_id == employee]
+            )[:1]
+            if allocation:
+                bank.employee_salary_amount = allocation.amount
+                bank.employee_salary_amount_is_percentage = (
+                    allocation.amount_is_percentage
+                )
+                continue
+            # not allocated: offer what is still unclaimed, as the JSON did
+            bank.employee_salary_amount_is_percentage = True
+            bank.employee_salary_amount = (
+                bank.employee_id.get_remaining_percentage() if bank.employee_id else 0
+            )
+            _debug.logic(
+                "salary_share_defaulted",
+                bank=bank.id,
+                employee=bank.employee_id.id,
+                percentage=bank.employee_salary_amount,
+            )
+
+    def _search_employee_id(self, operator, value):
+        if operator not in ("in", "not in"):
+            return NotImplemented
+        Employee = self.env["hr.employee"].sudo()
+        in_companies = Domain("company_id", "in", self.env.companies.ids)
+        wanted_ids = [record_id for record_id in value if record_id]
+        matched = Domain.FALSE
+        if wanted_ids:
+            partners = Employee.search(
+                in_companies & Domain("id", "in", wanted_ids)
+            ).partner_id
+            matched |= Domain("partner_id", "in", partners.ids)
+        if any(not record_id for record_id in value):
+            employee_partners = Employee.search(in_companies).partner_id
+            matched |= Domain("partner_id", "not in", employee_partners.ids)
+        _debug.logic(
+            "search_employee_id",
+            operator=operator,
+            value=value,
+            wanted=len(wanted_ids),
+            unassigned=any(not record_id for record_id in value),
+        )
+        return matched if operator == "in" else ~matched
+
+    def action_view_allocation_wizard(self):
+        self.check_singleton()
+        return self.employee_id.action_view_allocation_wizard()
+
+    @_debug.perf.timed
+    @api.depends("partner_id", "partner_id.employee_ids")
+    def _compute_employee_id(self) -> None:
+        for bank in self:
+            bank.employee_id = bank.partner_id.sudo().employee_ids.filtered(
+                lambda employee: employee.company_id in self.env.companies
+            )[:1]
+
+    @staticmethod
+    def _mask_account_number(acc_number):
+        tail = acc_number[-4:]
+        n = len(acc_number)
+        if n <= 4:
+            return "*" * n
+        if n >= 7:
+            return acc_number[:2] + "*" * (n - 6) + tail
+        return "*" * (n - 4) + tail
+
+    @api.depends_context("uid")
+    def _compute_display_name(self):
+        account_employee = self.browse()
+        if not self.env.user.has_group("hr.group_hr_user"):
+            for account in self.sudo().filtered("partner_id.employee_ids"):
+                acc_number = account.acc_number
+                if not acc_number:
+                    continue
+                account.sudo(self.env.su).display_name = self._mask_account_number(
+                    acc_number
+                )
+                account_employee |= account
+            _debug.logic(
+                "employee_masked",
+                accounts=self,
+                uid=self.env.uid,
+                masked=account_employee,
+            )
+        super(ResPartnerBankAccount, self - account_employee)._compute_display_name()

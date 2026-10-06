@@ -1,0 +1,45 @@
+$o-white: #ffffff !default;
+$o-black: #000000 !default;
+
+$o-gray-100: #f5f5f7 !default;
+$o-gray-200: #e5e5ea !default;
+$o-gray-300: #d1d1d6 !default;
+$o-gray-400: #c7c7cc !default;
+$o-gray-500: #aeaeb2 !default;
+$o-gray-600: #8e8e93 !default;
+$o-gray-700: #636366 !default;
+$o-gray-800: #3a3a3c !default;
+$o-gray-900: #1d1d1f !default;
+
+$o-colors-lighten: 0% !default;
+
+$o-colors-source:
+    #a2a2a2, #ee2d2d, #dc8534, #e8bb1d, #5794dd, #9f628f, #db8865, #41a9a2, #304be0,
+    #ee2f8a, #61c36e, #9872e6 !default;
+
+$o-colors-secondary-source:
+    #aa4b6b, #30c381, #97743a, #f7cd1f, #4285f4, #8e24aa, #d6145f, #173e43, #348f50,
+    #aa3a38, #795548, #5e0231, #6be585, #999966, #e9d362, #b56969, #bdc3c7, #649173,
+    #ea00ff, #ff0026, #8bcc00, #00bfaf, #006aff, #af00bf, #bf001d, #bf6300, #8cff00,
+    #00f2ff, #004ab3, #ff00d0, #ffa600, #3acc00, #00b6bf, #0048ff, #bf7c00, #04ff00,
+    #00d0ff, #0036bf, #ff008c, #00bf49, #0092b3, #0004ff, #b20062, #649173 !default;
+
+@function o-build-color-ramp($-source, $-lighten) {
+    $-built: ();
+    @each $-color in $-source {
+        $-built: append($-built, o-round-color(lighten($-color, $-lighten)));
+    }
+    @return $-built;
+}
+
+$o-colors: o-build-color-ramp($o-colors-source, $o-colors-lighten) !default;
+$o-colors-secondary: o-build-color-ramp(
+    $o-colors-secondary-source,
+    $o-colors-lighten
+) !default;
+
+$o-dark-colors: o-build-color-ramp($o-colors-source, $o-dark-colors-lighten) !default;
+$o-dark-colors-secondary: o-build-color-ramp(
+    $o-colors-secondary-source,
+    $o-dark-colors-lighten
+) !default;

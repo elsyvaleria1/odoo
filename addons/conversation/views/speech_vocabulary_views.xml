@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="speech_vocabulary_view_list_catalog" model="ir.ui.view">
+        <field name="name">speech.vocabulary.view.list.catalog</field>
+        <field name="model">speech.vocabulary</field>
+        <field name="inherit_id" ref="speech.speech_vocabulary_view_list" />
+        <field name="arch" type="xml">
+            <list position="inside">
+                <header>
+                    <button
+                        name="action_sync_catalog"
+                        type="object"
+                        string="Add from catalog"
+                        display="always"
+                        groups="conversation.group_manager"
+                        class="btn-secondary" />
+                </header>
+            </list>
+        </field>
+    </record>
+
+</odoo>

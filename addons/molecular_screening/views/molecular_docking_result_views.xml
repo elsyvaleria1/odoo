@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="molecular_docking_job_view_form" model="ir.ui.view">
+        <field name="name">molecular.docking.job.form</field>
+        <field name="model">molecular.docking.job</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button
+                        name="action_refresh_gate"
+                        type="object"
+                        string="Re-read Gate"
+                        help="Block or unblock the job after its target's validation changed." />
+                    <field name="status" widget="statusbar" />
+                </header>
+                <sheet>
+                    <div
+                        class="alert alert-warning"
+                        role="alert"
+                        invisible="status != 'blocked'">
+                        This target did not pass its redocking gate, so its ranking would
+                        not be trustworthy. The other targets of the campaign are
+                        unaffected.
+                    </div>
+                    <group>
+                        <group>
+                            <field name="campaign_id" />
+                            <field name="target_id" />
+                            <field name="engine" />
+                            <field name="engine_ver" />
+                        </group>
+                        <group>
+                            <field name="pairs_done" />
+                            <field name="pairs_expected" />
+                            <field name="started_at" />
+                            <field name="finished_at" />
+                        </group>
+                    </group>
+                    <group invisible="not error_msg">
+                        <field name="error_msg" />
+                    </group>
+                    <notebook>
+                        <page name="results" string="Results">
+                            <field name="result_ids">
+                                <list editable="bottom">
+                                    <field name="structure_id" />
+                                    <field name="compound_id" readonly="1" />
+                                    <field name="score" />
+                                    <field name="pose_rank" />
+                                    <field name="rmsd_lb" optional="hide" />
+                                    <field name="rmsd_ub" optional="hide" />
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="molecular_docking_job_view_list" model="ir.ui.view">
+        <field name="name">molecular.docking.job.list</field>
+        <field name="model">molecular.docking.job</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="campaign_id" />
+                <field name="target_id" />
+                <field
+                    name="status"
+                    widget="badge"
+                    decoration-danger="status == 'error'"
+                    decoration-success="status == 'ok'"
+                    decoration-warning="status == 'blocked'" />
+                <field name="pairs_done" />
+                <field name="pairs_expected" />
+                <field name="started_at" optional="hide" />
+                <field name="finished_at" optional="hide" />
+                <field name="error_msg" optional="hide" />
+            </list>
+        </field>
+    </record>
+
+    <record id="molecular_docking_job_view_search" model="ir.ui.view">
+        <field name="name">molecular.docking.job.search</field>
+        <field name="model">molecular.docking.job</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="campaign_id" />
+                <field name="target_id" />
+                <filter
+                    name="blocked"
+                    string="Blocked"
+                    domain="[('status', '=', 'blocked')]" />
+                <filter
+                    name="open"
+                    string="Not finished"
+                    domain="[('status', 'in', ['pending', 'running'])]" />
+                <group>
+                    <filter
+                        name="group_status"
+                        string="Status"
+                        context="{'group_by': 'status'}" />
+                    <filter
+                        name="group_target"
+                        string="Target"
+                        context="{'group_by': 'target_id'}" />
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="molecular_docking_job_action" model="ir.actions.act_window">
+        <field name="name">Docking Jobs</field>
+        <field name="res_model">molecular.docking.job</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <record id="molecular_docking_result_view_list" model="ir.ui.view">
+        <field name="name">molecular.docking.result.list</field>
+        <field name="model">molecular.docking.result</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="job_id" />
+                <field name="target_id" />
+                <field name="compound_id" />
+                <field name="structure_id" optional="hide" />
+                <field name="score" />
+                <field name="pose_rank" />
+                <field name="rmsd_lb" optional="hide" />
+                <field name="rmsd_ub" optional="hide" />
+            </list>
+        </field>
+    </record>
+
+    <record id="molecular_docking_result_view_search" model="ir.ui.view">
+        <field name="name">molecular.docking.result.search</field>
+        <field name="model">molecular.docking.result</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="compound_id" />
+                <field name="target_id" />
+                <field name="campaign_id" />
+                <group>
+                    <filter
+                        name="group_target"
+                        string="Target"
+                        context="{'group_by': 'target_id'}" />
+                    <filter
+                        name="group_compound"
+                        string="Compound"
+                        context="{'group_by': 'compound_id'}" />
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="molecular_docking_result_action" model="ir.actions.act_window">
+        <field name="name">Docking Results</field>
+        <field name="res_model">molecular.docking.result</field>
+        <field name="view_mode">list</field>
+    </record>
+
+</odoo>

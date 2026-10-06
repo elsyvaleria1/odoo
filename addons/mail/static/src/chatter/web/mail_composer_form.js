@@ -1,0 +1,190 @@
+// @ts-check
+/** @odoo-module native */
+/** @import { SuggestedRecipient } from "@mail/core/common/thread_model" */
+import { MailAttachmentDropzone } from "@mail/core/common/mail_attachment_dropzone";
+import { getComposerTargetThreads } from "@mail/core/web/composer_target_threads";
+import { provideMailContext } from "@mail/utils/common/mail_context";
+import { EventBus, t, toRaw } from "@odoo/owl";
+import { useCustomDropzone } from "@web/components/dropzone";
+import { makeLogger } from "@web/core/debug/debug_logger";
+import { useDialogContext } from "@web/core/dialog_context_hooks";
+import { registry } from "@web/core/registry";
+import { useService } from "@web/core/utils/hooks";
+import { useLayoutEffect } from "@web/core/utils/layout_effect";
+import { useX2ManyCrud } from "@web/fields/relational/x2many_crud";
+import { formView } from "@web/views/form";
+
+const log = makeLogger("mail.composer.form");
+export class MailComposerFormController extends formView.Controller {
+    static props = {
+        ...formView.Controller.props,
+        fullComposerBus: t.instanceOf(EventBus).optional(),
+    };
+    setup() {
+        super.setup();
+        this.dialogContext = useDialogContext();
+        toRaw(this.dialogContext.dialogData).model = this.props.resModel;
+        this.fullComposerBus = this.props.fullComposerBus ?? new EventBus();
+        provideMailContext({
+            fullComposerBus: this.fullComposerBus,
+        });
+    }
+}
+
+/**
+ * @param {SuggestedRecipient} recipient
+ * @param {Object[]} selectedPartners
+ * @returns {SuggestedRecipient}
+ */
+function withCorrespondingPartner(recipient, selectedPartners) {
+    const partner = selectedPartners.find(
+        (partner) =>
+            partner.id === recipient.partner_id || partner.email === recipient.email,
+    );
+    if (!partner) {
+        return recipient;
+    }
+    return {
+        ...recipient,
+        email: partner.email,
+        lang: partner.lang,
+        name: partner.name,
+        partner_id: partner.id,
+    };
+}
+export class MailComposerFormRenderer extends formView.Renderer {
+    /** @returns {import("models").Thread[]} */
+    _getActiveMailThreads() {
+        return getComposerTargetThreads(this.mailStore, this.props.record);
+    }
+    _setupReplyAllFocus() {
+        useLayoutEffect(
+            /**
+             * @param {boolean} isInEdition
+             * @param {HTMLElement|null} el
+             */
+            (isInEdition, el) => {
+                if (
+                    el &&
+                    isInEdition &&
+                    this.props.record.data.composition_comment_option === "reply_all"
+                ) {
+                    const element = el.querySelector(".note-editable[contenteditable]");
+                    if (element) {
+                        element.focus();
+                        document.dispatchEvent(new Event("selectionchange", {}));
+                    }
+                }
+            },
+            () => [
+                this.props.record.isInEdition,
+                this.root.el,
+                this.props.record.resId,
+            ],
+        );
+    }
+    _setupAttachmentDropzone() {
+        this.attachmentUploadService = useService("mail.attachment_upload");
+        this.operations = useX2ManyCrud(
+            () => this.props.record.data["attachment_ids"],
+            true,
+        );
+
+        useCustomDropzone(this.root, MailAttachmentDropzone, {
+            /** @param {Event} event */
+            onDrop: async (event) => {
+                const [thread] = this._getActiveMailThreads();
+                if (!thread) {
+                    log.logic("onDrop without active thread");
+                    return;
+                }
+                log.logic("onDrop", () => ({
+                    thread: thread.localId,
+                    files: /** @type {DragEvent} */ (event).dataTransfer.files.length,
+                }));
+                const composer =
+                    this.props.record.resModel === "mail.scheduled.message"
+                        ? { attachments: [] }
+                        : thread.composer;
+                for (const file of /** @type {DragEvent} */ (event).dataTransfer
+                    .files) {
+                    const attachment = await this.attachmentUploadService.upload(
+                        thread,
+                        composer,
+                        file,
+                    );
+                    await this.operations.linkRecords([attachment.id]);
+                }
+            },
+        });
+    }
+    /**
+     * @param {import("models").Thread} thread
+     * @param {Object[]} selectedPartners
+     * @param {number[]} selectedPartnerIds
+     */
+    _updateThreadRecipients(thread, selectedPartners, selectedPartnerIds) {
+        /** @param {SuggestedRecipient} recipient */
+        const isSelected = (recipient) =>
+            recipient.partner_id !== false &&
+            selectedPartnerIds.includes(recipient.partner_id);
+        /** @param {SuggestedRecipient} recipient */
+        const merged = (recipient) =>
+            withCorrespondingPartner(recipient, selectedPartners);
+        thread.suggestedRecipients = thread.suggestedRecipients
+            .map(merged)
+            .filter(isSelected);
+        thread.additionalRecipients = thread.additionalRecipients
+            .map(merged)
+            .filter(isSelected);
+        for (const partner of selectedPartners) {
+            if (
+                !thread.allRecipients.some(
+                    (recipient) => recipient.partner_id === partner.id,
+                )
+            ) {
+                thread.additionalRecipients.push({
+                    display_name: partner.display_name,
+                    email: partner.email,
+                    lang: partner.lang,
+                    name: partner.name,
+                    partner_id: partner.id,
+                });
+            }
+        }
+    }
+    async _syncRecipientsFromFullComposer() {
+        if (this.props.record.resModel === "mail.scheduled.message") {
+            return;
+        }
+        const selectedPartnerIds = this.props.record.data.partner_ids.currentIds;
+        const selectedPartners = await this.orm.searchRead(
+            "res.partner",
+            [["id", "in", selectedPartnerIds]],
+            ["email", "id", "lang", "name"],
+        );
+        log.pipeline("syncRecipientsFromFullComposer", () => ({
+            selected: selectedPartnerIds.length,
+            threads: this._getActiveMailThreads().map((thread) => thread.localId),
+        }));
+        for (const thread of this._getActiveMailThreads()) {
+            this._updateThreadRecipients(thread, selectedPartners, selectedPartnerIds);
+        }
+    }
+    setup() {
+        super.setup();
+        this.dialogContext = useDialogContext();
+        this.orm = useService("orm");
+        this.root = this.rootRef;
+        this._setupReplyAllFocus();
+        this._setupAttachmentDropzone();
+        this.dialogContext.dialogData.dismiss = () =>
+            this._syncRecipientsFromFullComposer();
+    }
+}
+
+registry.category("views").add("mail_composer_form", {
+    ...formView,
+    Controller: MailComposerFormController,
+    Renderer: MailComposerFormRenderer,
+});

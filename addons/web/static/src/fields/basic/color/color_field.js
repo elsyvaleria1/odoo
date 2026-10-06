@@ -1,0 +1,73 @@
+// @ts-check
+/** @odoo-module native */
+
+import { proxy, t } from "@odoo/owl";
+import { _t } from "@web/core/translation";
+import { exprToBoolean } from "@web/core/utils/format/strings";
+import { registerField } from "@web/fields/_registry";
+import { FieldComponent } from "@web/fields/field_component";
+import { standardFieldProps } from "@web/fields/standard_field_props";
+
+export class ColorField extends FieldComponent {
+    static template = "web.ColorField";
+    static props = { ...standardFieldProps, autosave: t.boolean().optional(false) };
+
+    /** @type {{ livePreview: string | null }} */
+    state;
+
+    setup() {
+        this.state = proxy({ livePreview: null });
+    }
+
+    /** @returns {string} */
+    get color() {
+        if (this.state.livePreview !== null) {
+            return this.state.livePreview;
+        }
+        return this.field.value || "";
+    }
+
+    /** @param {Event} ev */
+    onInput(ev) {
+        this.state.livePreview = /** @type {HTMLInputElement} */ (ev.target).value;
+    }
+
+    /** @param {Event} ev */
+    onChange(ev) {
+        this.state.livePreview = null;
+        this.field.update(/** @type {HTMLInputElement} */ (ev.target).value, {
+            save: this.props.autosave,
+        });
+    }
+}
+
+/** @type {import("registries").FieldsRegistryItemShape} */
+export const colorField = {
+    component: ColorField,
+    displayName: _t("Color"),
+    interactiveOutsideEdition: true,
+    supportedOptions: [
+        {
+            label: _t("Autosave"),
+            name: "autosave",
+            type: "boolean",
+            help: _t(
+                "Save the record as soon as a colour is picked. Defaults to true in list and kanban views.",
+            ),
+        },
+    ],
+    supportedTypes: ["char"],
+    extractProps({ viewType, options }, dynamicInfo) {
+        let autosave = false;
+        if ("autosave" in options) {
+            autosave = exprToBoolean(options.autosave);
+        } else if (["list", "kanban"].includes(viewType)) {
+            autosave = true;
+        }
+        return {
+            autosave,
+        };
+    },
+};
+
+registerField("color", colorField);

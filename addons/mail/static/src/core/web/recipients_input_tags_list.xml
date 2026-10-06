@@ -1,0 +1,7 @@
+<templates xml:splace="preserve">
+    <t t-name="web.RecipientsInputTagsList" t-inherit="web.TagsList">
+        <xpath expr="//span[hasclass('o_tag')]" position="attributes">
+            <attribute name="t-ref">this.tagEquals(tag, this.state.tagToUpdate) ? this.tagToUpdateRef : this.otherTagRef</attribute>
+        </xpath>
+    </t>
+</templates>

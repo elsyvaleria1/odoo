@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="privilege_record_own_attendance" model="res.groups">
+        <field
+            name="name">Privilege: an employee records their own attendance from Telegram</field>
+        <field
+            name="comment">Held by the attendance commands of a Telegram chat: find the sender's employee, and read, start and close that employee's attendances at the time they type, lunch break included. A linked user reaches only the employee they are; a contact with no user only an employee without one whose contact a Telegram account was ever bound to. Odoo's own check-in takes the current time only, so the typed time is this privilege's.</field>
+        <field name="is_privilege" eval="True" />
+    </record>
+
+</odoo>

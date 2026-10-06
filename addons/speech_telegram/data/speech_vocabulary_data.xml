@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <function model="speech.vocabulary" name="_get_or_create_words">
+        <value
+            eval="[                 'CFDI',                 'RFC',                 'POS',                 'factura',                 'anticipo',                 'almacén',                 'formulación',                 'lote',                 'sucursal',                 'proveedor',                 'monto',                 'estado de cuenta',                 'cliente',                 'saldo',                 'vencido',                 'corte',                 'periodo',                 'Sistemas',                 'Soporte',             ]" />
+    </function>
+
+</odoo>

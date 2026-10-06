@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="group_note_user" model="res.groups">
+        <field name="name">Notes: User</field>
+        <field name="implied_ids" eval="[Command.link(ref('base.group_user'))]" />
+    </record>
+
+    <record id="group_note_manager" model="res.groups">
+        <field name="name">Notes: Manager</field>
+        <field name="implied_ids" eval="[Command.link(ref('group_note_user'))]" />
+    </record>
+
+    <record id="group_note_auditor" model="res.groups">
+        <field name="name">Notes: Auditor</field>
+    </record>
+
+    <record id="group_note_reader" model="res.groups">
+        <field name="name">Notes: Reader</field>
+    </record>
+
+</odoo>

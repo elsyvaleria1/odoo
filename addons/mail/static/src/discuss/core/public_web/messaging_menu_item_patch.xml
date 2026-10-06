@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<templates xml:space="preserve">
+
+<t t-inherit="mail.MessagingMenuItem" t-inherit-mode="extension">
+    <xpath expr="//t[@name='itemName']" position="replace">
+        <div t-if="this.channel?.parent_channel_id" class="d-flex align-items-center">
+            <span class="text-truncate flex-shrink-0 opacity-75 mw-50" t-out="this.channel.parent_channel_id.displayName"/>
+            <i class="fa-solid fa-chevron-right o-xsmaller mx-1"/>
+            <span class="text-truncate min-w-0" t-out="this.channel.displayName"/>
+        </div>
+        <t t-else="">$0</t>
+    </xpath>
+    <xpath expr="//t[@name='itemNameAfter']" position="inside">
+        <span t-if="this.meetingStartText" class="o-mail-MessagingMenuItem-meetingStart flex-shrink-0 align-self-baseline fw-normal text-muted smaller ms-1" t-out="this.meetingStartText"/>
+        <i t-if="this.channel?.self_member_id?.is_favorite" class="o-mail-MessagingMenuItem-favorite fa-solid fa-star o-xsmaller text-warning ms-1 align-self-center" role="img" title="Favorite"/>
+    </xpath>
+    <xpath expr="//span[hasclass('o-mail-MessagingMenuItem-body')]" position="before">
+        <t t-if="this.channelPreviewMessage?.hasOnlyAttachments">
+            <i class="me-1" t-att-class="this.channelPreviewMessage.previewIcon"/>
+        </t>
+    </xpath>
+    <xpath expr="//span[hasclass('o-mail-MessagingMenuItem-body')]" position="attributes">
+        <attribute name="t-att-class">{ 'opacity-75': this.channelPreviewMessage?.isEmpty }</attribute>
+    </xpath>
+    <xpath expr="//t[@name='itemIcon']" position="inside">
+        <t t-if="this.channel">
+            <ImStatus t-if="this.channel.channel_type === 'chat' and this.channel.correspondent" member="this.channel.correspondent" className="'position-absolute top-100 start-100 translate-middle mt-n1 ' + (this.channel.correspondent.isTyping ? 'ms-n2' : 'ms-n1')"/>
+            <ThreadIcon t-if="this.channel.channel_type === 'channel'" thread="this.channel" className="'o-mail-MessagingMenuItem-threadIcon position-absolute top-100 start-100 translate-middle mt-n1 ms-n1 bg-view rounded-circle o-xsmaller'"/>
+            <CountryFlag t-if="this.channel.showCorrespondentCountry" country="this.channel.correspondentCountry" class="'o-mail-NotificationItem-country position-absolute border shadow-sm'"/>
+        </t>
+    </xpath>
+    <xpath expr="//t[@name='itemBodyIcon']" position="inside">
+        <t t-if="this.channel and this.channelPreviewMessage" t-call="mail.message_preview_prefix" message="this.channelPreviewMessage" thread="this.channel"/>
+    </xpath>
+    <xpath expr="//t[@name='itemActions']" position="replace">
+        <ChannelActionList t-if="this.channel" thread="this.channel"/>
+        <t t-else="">$0</t>
+    </xpath>
+</t>
+
+</templates>

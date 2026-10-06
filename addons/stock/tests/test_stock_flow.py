@@ -1,0 +1,3775 @@
+from odoo import Command, fields
+from odoo.exceptions import ValidationError
+from odoo.tests import Form, HttpCase, tagged
+from odoo.tests.common import users
+from odoo.tools import float_round, mute_logger
+
+from odoo.addons.stock.tests.common import (
+    RECEPTION_ROUTE_BOUGHT,
+    TestStockCommon,
+    is_module_installed,
+)
+
+
+class TestStockFlow(TestStockCommon):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.env.ref("base.group_user").write(
+            {
+                "implied_ids": [
+                    Command.link(cls.env.ref("stock.group_production_lot").id)
+                ],
+            }
+        )
+        decimal_product_uom = cls.env.ref("uom.decimal_product_uom")
+        decimal_product_uom.digits = 3
+        cls.partner_company2 = cls.env["res.partner"].create(
+            {
+                "name": "My Company (Chicago)-demo",
+                "email": "chicago@yourcompany.com",
+                "company_id": False,
+            }
+        )
+        cls.company = cls.env["res.company"].create(
+            {
+                "currency_id": cls.env.ref("base.USD").id,
+                "partner_id": cls.partner_company2.id,
+                "name": "My Company (Chicago)-demo",
+            }
+        )
+        cls.uom_sdozen = cls.UomObj.create(
+            {
+                "name": "Test-SDozenA",
+                "relative_factor": 144,
+                "relative_uom_id": cls.uom_unit.id,
+            }
+        )
+
+        cls.DozA = cls.ProductObj.create(
+            {"name": "Dozon-A", "is_storable": True, "uom_id": cls.uom_dozen.id}
+        )
+        cls.SDozA = cls.ProductObj.create(
+            {"name": "SuperDozon-A", "is_storable": True, "uom_id": cls.uom_sdozen.id}
+        )
+        cls.UnitA = cls.ProductObj.create({"name": "Unit-A", "is_storable": True})
+
+    @mute_logger("odoo.addons.base.models.ir_model", "odoo.models")
+    def test_00_picking_create_and_transfer_quantity(self):
+        LotObj = self.env["product.trace"]
+
+        picking_in = self.PickingObj.create(
+            {
+                "picking_type_id": self.picking_type_in.id,
+                "location_id": self.supplier_location.id,
+                "state": "draft",
+                "location_dest_id": self.stock_location.id,
+            }
+        )
+        move_a = self.MoveObj.create(
+            {
+                "product_id": self.productA.id,
+                "product_uom_qty": 1,
+                "product_uom_id": self.productA.uom_id.id,
+                "picking_id": picking_in.id,
+                "location_id": self.supplier_location.id,
+                "location_dest_id": self.stock_location.id,
+            }
+        )
+        move_b = self.MoveObj.create(
+            {
+                "product_id": self.productB.id,
+                "product_uom_qty": 1,
+                "product_uom_id": self.productB.uom_id.id,
+                "picking_id": picking_in.id,
+                "location_id": self.supplier_location.id,
+                "location_dest_id": self.stock_location.id,
+            }
+        )
+        move_c = self.MoveObj.create(
+            {
+                "product_id": self.productC.id,
+                "product_uom_qty": 10,
+                "product_uom_id": self.productC.uom_id.id,
+                "picking_id": picking_in.id,
+                "location_id": self.supplier_location.id,
+                "location_dest_id": self.stock_location.id,
+            }
+        )
+        move_d = self.MoveObj.create(
+            {
+                "product_id": self.productD.id,
+                "product_uom_qty": 10,
+                "product_uom_id": self.productD.uom_id.id,
+                "picking_id": picking_in.id,
+                "location_id": self.supplier_location.id,
+                "location_dest_id": self.stock_location.id,
+            }
+        )
+        self.MoveObj.create(
+            {
+                "product_id": self.productD.id,
+                "product_uom_qty": 5,
+                "product_uom_id": self.productD.uom_id.id,
+                "picking_id": picking_in.id,
+                "location_id": self.supplier_location.id,
+                "location_dest_id": self.stock_location.id,
+            }
+        )
+
+        for move in picking_in.move_ids:
+            self.assertEqual(move.state, "draft", "Wrong state of move line.")
+        picking_in.action_confirm()
+        for move in picking_in.move_ids:
+            self.assertEqual(move.state, "assigned", "Wrong state of move line.")
+
+        picking_in.action_assign()
+        move_a.move_line_ids.quantity = 4
+        move_b.move_line_ids.quantity = 5
+        move_c.move_line_ids.quantity = 5
+        move_d.move_line_ids.quantity = 5
+        (move_a | move_b | move_c | move_d).picked = True
+        lot2_productC = LotObj.create(
+            {"name": "C Lot 2", "product_id": self.productC.id}
+        )
+        self.StockPackObj.create(
+            {
+                "product_id": self.productC.id,
+                "quantity": 2,
+                "product_uom_id": self.productC.uom_id.id,
+                "location_id": self.supplier_location.id,
+                "location_dest_id": self.stock_location.id,
+                "move_id": move_c.id,
+                "trace_id": lot2_productC.id,
+            }
+        )
+        self.StockPackObj.create(
+            {
+                "product_id": self.productD.id,
+                "quantity": 2,
+                "product_uom_id": self.productD.uom_id.id,
+                "location_id": self.supplier_location.id,
+                "location_dest_id": self.stock_location.id,
+                "move_id": move_d.id,
+            }
+        )
+
+        total_qty = sum(
+            self.StockPackObj.search(
+                [("move_id", "in", picking_in.move_ids.ids)]
+            ).mapped("quantity")
+        )
+        self.assertEqual(total_qty, 23, "Wrong quantity in pack operation")
+
+        picking_in._action_done()
+
+        self.assertEqual(len(picking_in.move_ids), 4, "Wrong number of move lines.")
+        self.assertEqual(
+            picking_in.state, "done", "Incoming shipment state should be done."
+        )
+        for move in picking_in.move_ids:
+            self.assertEqual(move.state, "done", "Wrong state of move line.")
+        moves = self.MoveObj.search(
+            [("product_id", "=", self.productA.id), ("picking_id", "=", picking_in.id)]
+        )
+        self.assertEqual(moves.quantity, 4.0, "Wrong move quantity for product A.")
+        moves = self.MoveObj.search(
+            [("product_id", "=", self.productB.id), ("picking_id", "=", picking_in.id)]
+        )
+        self.assertEqual(moves.quantity, 5.0, "Wrong move quantity for product B.")
+        c_done_qty = self.MoveObj.search(
+            [("product_id", "=", self.productC.id), ("picking_id", "=", picking_in.id)],
+            limit=1,
+        ).product_uom_qty
+        self.assertEqual(
+            c_done_qty,
+            7.0,
+            "Wrong move quantity of product C (%s found instead of 7)" % (c_done_qty),
+        )
+        d_done_qty = self.MoveObj.search(
+            [("product_id", "=", self.productD.id), ("picking_id", "=", picking_in.id)],
+            limit=1,
+        ).product_uom_qty
+        self.assertEqual(
+            d_done_qty,
+            7.0,
+            "Wrong move quantity of product D (%s found instead of 7)" % (d_done_qty),
+        )
+
+        back_order_in = self.PickingObj.search([("backorder_id", "=", picking_in.id)])
+        self.assertEqual(len(back_order_in), 1, "Back order should be created.")
+        self.assertEqual(len(back_order_in.move_ids), 2, "Wrong number of move lines.")
+        moves = self.MoveObj.search(
+            [
+                ("product_id", "=", self.productC.id),
+                ("picking_id", "=", back_order_in.id),
+            ]
+        )
+        product_c_qty = [move.product_uom_qty for move in moves]
+        self.assertEqual(
+            sum(product_c_qty),
+            3.0,
+            "Wrong move quantity of product C (%s found instead of 3)"
+            % (product_c_qty),
+        )
+        moves = self.MoveObj.search(
+            [
+                ("product_id", "=", self.productD.id),
+                ("picking_id", "=", back_order_in.id),
+            ]
+        )
+        product_d_qty = [move.product_uom_qty for move in moves]
+        self.assertEqual(
+            sum(product_d_qty),
+            8.0,
+            "Wrong move quantity of product D (%s found instead of 8)"
+            % (product_d_qty),
+        )
+
+        picking_out = self.PickingObj.create(
+            {
+                "picking_type_id": self.picking_type_out.id,
+                "location_id": self.stock_location.id,
+                "state": "draft",
+                "location_dest_id": self.customer_location.id,
+            }
+        )
+        move_cust_a = self.MoveObj.create(
+            {
+                "product_id": self.productA.id,
+                "product_uom_qty": 10,
+                "product_uom_id": self.productA.uom_id.id,
+                "picking_id": picking_out.id,
+                "location_id": self.stock_location.id,
+                "location_dest_id": self.customer_location.id,
+            }
+        )
+        move_cust_b = self.MoveObj.create(
+            {
+                "product_id": self.productB.id,
+                "product_uom_qty": 5,
+                "product_uom_id": self.productB.uom_id.id,
+                "picking_id": picking_out.id,
+                "location_id": self.stock_location.id,
+                "location_dest_id": self.customer_location.id,
+            }
+        )
+        move_cust_c = self.MoveObj.create(
+            {
+                "product_id": self.productC.id,
+                "product_uom_qty": 3,
+                "product_uom_id": self.productC.uom_id.id,
+                "picking_id": picking_out.id,
+                "location_id": self.stock_location.id,
+                "location_dest_id": self.customer_location.id,
+            }
+        )
+        move_cust_d = self.MoveObj.create(
+            {
+                "product_id": self.productD.id,
+                "product_uom_qty": 10,
+                "product_uom_id": self.productD.uom_id.id,
+                "picking_id": picking_out.id,
+                "location_id": self.stock_location.id,
+                "location_dest_id": self.customer_location.id,
+            }
+        )
+        picking_out.action_confirm()
+        for move in picking_out.move_ids:
+            self.assertEqual(move.state, "confirmed", "Wrong state of move line.")
+        picking_out.action_assign()
+        self.assertEqual(
+            move_cust_a.state, "partially_available", "Wrong state of move line."
+        )
+        self.assertEqual(move_cust_b.state, "assigned", "Wrong state of move line.")
+        self.assertEqual(move_cust_c.state, "assigned", "Wrong state of move line.")
+        self.assertEqual(
+            move_cust_d.state, "partially_available", "Wrong state of move line."
+        )
+        aval_a_qty = self.MoveObj.search(
+            [
+                ("product_id", "=", self.productA.id),
+                ("picking_id", "=", picking_out.id),
+            ],
+            limit=1,
+        ).quantity
+        self.assertEqual(
+            aval_a_qty,
+            4.0,
+            "Wrong move quantity availability of product A (%s found instead of 4)"
+            % (aval_a_qty),
+        )
+        aval_b_qty = self.MoveObj.search(
+            [
+                ("product_id", "=", self.productB.id),
+                ("picking_id", "=", picking_out.id),
+            ],
+            limit=1,
+        ).quantity
+        self.assertEqual(
+            aval_b_qty,
+            5.0,
+            "Wrong move quantity availability of product B (%s found instead of 5)"
+            % (aval_b_qty),
+        )
+        aval_c_qty = self.MoveObj.search(
+            [
+                ("product_id", "=", self.productC.id),
+                ("picking_id", "=", picking_out.id),
+            ],
+            limit=1,
+        ).quantity
+        self.assertEqual(
+            aval_c_qty,
+            3.0,
+            "Wrong move quantity availability of product C (%s found instead of 3)"
+            % (aval_c_qty),
+        )
+        aval_d_qty = self.MoveObj.search(
+            [
+                ("product_id", "=", self.productD.id),
+                ("picking_id", "=", picking_out.id),
+            ],
+            limit=1,
+        ).quantity
+        self.assertEqual(
+            aval_d_qty,
+            7.0,
+            "Wrong move quantity availability of product D (%s found instead of 7)"
+            % (aval_d_qty),
+        )
+
+        move_cust_a.move_line_ids.quantity = 2.0
+        move_cust_b.move_line_ids.quantity = 3.0
+        self.StockPackObj.create(
+            {
+                "product_id": self.productB.id,
+                "quantity": 2,
+                "product_uom_id": self.productB.uom_id.id,
+                "location_id": self.stock_location.id,
+                "location_dest_id": self.customer_location.id,
+                "move_id": move_cust_b.id,
+            }
+        )
+        move_cust_c.move_line_ids[0].write(
+            {
+                "quantity": 2.0,
+                "trace_id": lot2_productC.id,
+            }
+        )
+        move_cust_c.move_line_ids[1].write(
+            {
+                "quantity": 3.0,
+            }
+        )
+        move_cust_d.move_line_ids.quantity = 6.0
+
+        (move_cust_a | move_cust_b | move_cust_c | move_cust_d).picked = True
+        picking_out._action_done()
+
+        self.assertEqual(picking_out.state, "done", "Wrong state of outgoing shipment.")
+        self.assertEqual(len(picking_out.move_ids), 4, "Wrong number of move lines")
+        for move in picking_out.move_ids:
+            self.assertEqual(move.state, "done", "Wrong state of move line.")
+        back_order_out = self.PickingObj.search([("backorder_id", "=", picking_out.id)])
+
+        self.assertEqual(len(back_order_out), 1, "Back order should be created.")
+        self.assertEqual(len(back_order_out.move_ids), 2, "Wrong number of move lines")
+        product_a_qty = self.MoveObj.search(
+            [
+                ("product_id", "=", self.productA.id),
+                ("picking_id", "=", back_order_out.id),
+            ],
+            limit=1,
+        ).product_uom_qty
+        self.assertEqual(
+            product_a_qty,
+            8.0,
+            "Wrong move quantity of product A (%s found instead of 8)"
+            % (product_a_qty),
+        )
+        product_d_qty = self.MoveObj.search(
+            [
+                ("product_id", "=", self.productD.id),
+                ("picking_id", "=", back_order_out.id),
+            ],
+            limit=1,
+        ).product_uom_qty
+        self.assertEqual(
+            product_d_qty,
+            4.0,
+            "Wrong move quantity of product D (%s found instead of 4)"
+            % (product_d_qty),
+        )
+
+        quants = self.StockQuantObj.search(
+            [
+                ("product_id", "=", self.productA.id),
+                ("location_id", "=", self.stock_location.id),
+            ]
+        )
+        total_qty = [quant.quantity for quant in quants]
+
+        self.assertEqual(
+            sum(total_qty),
+            2.0,
+            "Expecting 2.0 Unit , got %.4f Unit on location stock!" % (sum(total_qty)),
+        )
+        self.assertEqual(
+            self.productA.qty_available,
+            2.0,
+            "Wrong quantity available (%s found instead of 2.0)"
+            % (self.productA.qty_available),
+        )
+        quants = self.StockQuantObj.search(
+            [
+                ("product_id", "=", self.productB.id),
+                ("location_id", "=", self.stock_location.id),
+                ("quantity", "!=", 0),
+            ]
+        )
+        self.assertFalse(
+            quants,
+            "No quant should found as outgoing shipment took everything out of stock.",
+        )
+        self.assertEqual(
+            self.productB.qty_available,
+            0.0,
+            "Product B should have zero quantity available.",
+        )
+        quants = self.StockQuantObj.search(
+            [
+                ("product_id", "=", self.productC.id),
+                ("location_id", "=", self.stock_location.id),
+                ("quantity", "!=", 0),
+            ]
+        )
+        total_qty = [quant.quantity for quant in quants]
+        self.assertEqual(
+            sum(total_qty),
+            2.0,
+            "Expecting 2.0 Unit, got %.4f Unit on location stock!" % (sum(total_qty)),
+        )
+        self.assertEqual(
+            self.productC.qty_available,
+            2.0,
+            "Wrong quantity available (%s found instead of 2.0)"
+            % (self.productC.qty_available),
+        )
+        quant = self.StockQuantObj.search(
+            [
+                ("product_id", "=", self.productD.id),
+                ("location_id", "=", self.stock_location.id),
+                ("quantity", "!=", 0),
+            ],
+            limit=1,
+        )
+        self.assertEqual(
+            quant.quantity,
+            1.0,
+            "Expecting 1.0 Unit , got %.4f Unit on location stock!" % (quant.quantity),
+        )
+        self.assertEqual(
+            self.productD.qty_available,
+            1.0,
+            "Wrong quantity available (%s found instead of 1.0)"
+            % (self.productD.qty_available),
+        )
+
+        lot3_productC = LotObj.create({"name": "Lot 3", "product_id": self.productC.id})
+        lot4_productC = LotObj.create({"name": "Lot 4", "product_id": self.productC.id})
+        lot5_productC = LotObj.create({"name": "Lot 5", "product_id": self.productC.id})
+        lot6_productC = LotObj.create({"name": "Lot 6", "product_id": self.productC.id})
+        lot1_productD = LotObj.create({"name": "Lot 1", "product_id": self.productD.id})
+        LotObj.create({"name": "Lot 2", "product_id": self.productD.id})
+
+        back_order_in.action_confirm()
+        self.assertEqual(
+            back_order_in.state,
+            "assigned",
+            "Wrong state of incoming shipment back order: %s instead of %s"
+            % (back_order_in.state, "assigned"),
+        )
+        for move in back_order_in.move_ids:
+            self.assertEqual(move.state, "assigned", "Wrong state of move line.")
+
+        packD = self.StockPackObj.search(
+            [
+                ("product_id", "=", self.productD.id),
+                ("picking_id", "=", back_order_in.id),
+            ],
+            order="quantity",
+        )
+        self.assertEqual(len(packD), 1, "Wrong number of pack operation.")
+        packD[0].write(
+            {
+                "quantity": 8,
+                "trace_id": lot1_productD.id,
+            }
+        )
+        packCs = self.StockPackObj.search(
+            [
+                ("product_id", "=", self.productC.id),
+                ("picking_id", "=", back_order_in.id),
+            ],
+            limit=1,
+        )
+        packCs.write(
+            {
+                "quantity": 1,
+                "trace_id": lot3_productC.id,
+            }
+        )
+        self.StockPackObj.create(
+            {
+                "product_id": self.productC.id,
+                "quantity": 1,
+                "product_uom_id": self.productC.uom_id.id,
+                "location_id": self.supplier_location.id,
+                "location_dest_id": self.stock_location.id,
+                "picking_id": back_order_in.id,
+                "trace_id": lot4_productC.id,
+            }
+        )
+        self.StockPackObj.create(
+            {
+                "product_id": self.productC.id,
+                "quantity": 2,
+                "product_uom_id": self.productC.uom_id.id,
+                "location_id": self.supplier_location.id,
+                "location_dest_id": self.stock_location.id,
+                "picking_id": back_order_in.id,
+                "trace_id": lot5_productC.id,
+            }
+        )
+        self.StockPackObj.create(
+            {
+                "product_id": self.productC.id,
+                "quantity": 2,
+                "product_uom_id": self.productC.uom_id.id,
+                "location_id": self.supplier_location.id,
+                "location_dest_id": self.stock_location.id,
+                "picking_id": back_order_in.id,
+                "trace_id": lot6_productC.id,
+            }
+        )
+        self.StockPackObj.create(
+            {
+                "product_id": self.productA.id,
+                "quantity": 10,
+                "product_uom_id": self.productA.uom_id.id,
+                "location_id": self.supplier_location.id,
+                "location_dest_id": self.stock_location.id,
+                "picking_id": back_order_in.id,
+            }
+        )
+        back_order_in.move_ids.picked = True
+        back_order_in._action_done()
+
+        self.assertEqual(len(back_order_in.move_ids), 3, "Wrong number of move lines")
+        self.assertEqual(back_order_in.state, "done", "Wrong state of picking.")
+        for move in back_order_in.move_ids:
+            self.assertEqual(move.state, "done", "Wrong state of move lines.")
+        movesA = self.MoveObj.search(
+            [
+                ("product_id", "=", self.productA.id),
+                ("picking_id", "=", back_order_in.id),
+            ]
+        )
+        self.assertEqual(
+            movesA.quantity,
+            10,
+            "Wrong move quantity of product A (%s found instead of 10)"
+            % (movesA.quantity),
+        )
+        movesC = self.MoveObj.search(
+            [
+                ("product_id", "=", self.productC.id),
+                ("picking_id", "=", back_order_in.id),
+            ]
+        )
+        self.assertEqual(movesC.quantity, 6.0, "Wrong quantity of moves product C.")
+        movesD = self.MoveObj.search(
+            [
+                ("product_id", "=", self.productD.id),
+                ("picking_id", "=", back_order_in.id),
+            ]
+        )
+        d_done_qty = [move.quantity for move in movesD]
+        self.assertEqual(set(d_done_qty), {8.0}, "Wrong quantity of moves product D.")
+        self.assertFalse(
+            self.PickingObj.search([("backorder_id", "=", back_order_in.id)]),
+            "Should not create any back order.",
+        )
+
+        quants = self.StockQuantObj.search(
+            [
+                ("product_id", "=", self.productA.id),
+                ("location_id", "=", self.stock_location.id),
+                ("quantity", "!=", 0),
+            ]
+        )
+        total_qty = [quant.quantity for quant in quants]
+        self.assertEqual(
+            sum(total_qty),
+            12.0,
+            "Wrong total stock location quantity (%s found instead of 12)"
+            % (sum(total_qty)),
+        )
+        self.assertEqual(
+            self.productA.qty_available,
+            12.0,
+            "Wrong quantity available (%s found instead of 12)"
+            % (self.productA.qty_available),
+        )
+        quants = self.StockQuantObj.search(
+            [
+                ("product_id", "=", self.productB.id),
+                ("location_id", "=", self.stock_location.id),
+                ("quantity", "!=", 0),
+            ]
+        )
+        self.assertFalse(
+            quants,
+            "No quant should found as outgoing shipment took everything out of stock",
+        )
+        self.assertEqual(
+            self.productB.qty_available,
+            0.0,
+            "Total quantity in stock should be 0 as the backorder took everything out of stock",
+        )
+        quants = self.StockQuantObj.search(
+            [
+                ("product_id", "=", self.productC.id),
+                ("location_id", "=", self.stock_location.id),
+                ("quantity", "!=", 0),
+            ]
+        )
+        total_qty = [quant.quantity for quant in quants]
+        self.assertEqual(
+            sum(total_qty),
+            8.0,
+            "Wrong total stock location quantity (%s found instead of 8)"
+            % (sum(total_qty)),
+        )
+        self.assertEqual(
+            self.productC.qty_available,
+            8.0,
+            "Wrong quantity available (%s found instead of 8)"
+            % (self.productC.qty_available),
+        )
+        quants = self.StockQuantObj.search(
+            [
+                ("product_id", "=", self.productD.id),
+                ("location_id", "=", self.stock_location.id),
+                ("quantity", "!=", 0),
+            ]
+        )
+        total_qty = [quant.quantity for quant in quants]
+        self.assertEqual(
+            sum(total_qty),
+            9.0,
+            "Wrong total stock location quantity (%s found instead of 9)"
+            % (sum(total_qty)),
+        )
+        self.assertEqual(
+            self.productD.qty_available,
+            9.0,
+            "Wrong quantity available (%s found instead of 9)"
+            % (self.productD.qty_available),
+        )
+
+        back_order_out._action_done()
+
+        quants = self.StockQuantObj.search(
+            [
+                ("product_id", "=", self.productA.id),
+                ("location_id", "=", self.stock_location.id),
+                ("quantity", "!=", 0),
+            ]
+        )
+        total_qty = [quant.quantity for quant in quants]
+        self.assertGreaterEqual(
+            float_round(sum(total_qty), precision_rounding=0.0001),
+            1,
+            "Total stock location quantity for product A should not be nagative.",
+        )
+
+    def test_10_pickings_transfer_with_different_uom(self):
+        picking_in_A = self.PickingObj.create(
+            {
+                "picking_type_id": self.picking_type_in.id,
+                "location_id": self.supplier_location.id,
+                "state": "draft",
+                "location_dest_id": self.stock_location.id,
+            }
+        )
+        self.MoveObj.create(
+            {
+                "product_id": self.DozA.id,
+                "product_uom_qty": 10,
+                "product_uom_id": self.DozA.uom_id.id,
+                "picking_id": picking_in_A.id,
+                "location_id": self.supplier_location.id,
+                "location_dest_id": self.stock_location.id,
+            }
+        )
+        self.MoveObj.create(
+            {
+                "product_id": self.SDozA.id,
+                "product_uom_qty": 10.5,
+                "product_uom_id": self.SDozA.uom_id.id,
+                "picking_id": picking_in_A.id,
+                "location_id": self.supplier_location.id,
+                "location_dest_id": self.stock_location.id,
+            }
+        )
+        self.MoveObj.create(
+            {
+                "product_id": self.kgB.id,
+                "product_uom_qty": 0.020,
+                "product_uom_id": self.kgB.uom_id.id,
+                "picking_id": picking_in_A.id,
+                "location_id": self.supplier_location.id,
+                "location_dest_id": self.stock_location.id,
+            }
+        )
+        self.MoveObj.create(
+            {
+                "product_id": self.gB.id,
+                "product_uom_qty": 525.3,
+                "product_uom_id": self.gB.uom_id.id,
+                "picking_id": picking_in_A.id,
+                "location_id": self.supplier_location.id,
+                "location_dest_id": self.stock_location.id,
+            }
+        )
+
+        for move in picking_in_A.move_ids:
+            self.assertEqual(move.state, "draft", "Move state must be draft.")
+        picking_in_A.action_confirm()
+        for move in picking_in_A.move_ids:
+            self.assertEqual(move.state, "assigned", "Move state must be draft.")
+        picking_in_A.button_validate()
+
+        quants = self.StockQuantObj.search(
+            [
+                ("product_id", "=", self.DozA.id),
+                ("location_id", "=", self.stock_location.id),
+            ]
+        )
+        total_qty = [quant.quantity for quant in quants]
+        self.assertEqual(
+            sum(total_qty),
+            10,
+            "Expecting 10 Dozen , got %.4f Dozen on location stock!" % (sum(total_qty)),
+        )
+        self.assertEqual(
+            self.DozA.qty_available,
+            10,
+            "Wrong quantity available (%s found instead of 10)"
+            % (self.DozA.qty_available),
+        )
+        quants = self.StockQuantObj.search(
+            [
+                ("product_id", "=", self.SDozA.id),
+                ("location_id", "=", self.stock_location.id),
+            ]
+        )
+        total_qty = [quant.quantity for quant in quants]
+        self.assertEqual(
+            sum(total_qty),
+            10.5,
+            "Expecting 10.5 SDozen , got %.4f SDozen on location stock!"
+            % (sum(total_qty)),
+        )
+        self.assertEqual(
+            self.SDozA.qty_available,
+            10.5,
+            "Wrong quantity available (%s found instead of 10.5)"
+            % (self.SDozA.qty_available),
+        )
+        quants = self.StockQuantObj.search(
+            [
+                ("product_id", "=", self.gB.id),
+                ("location_id", "=", self.stock_location.id),
+            ]
+        )
+        total_qty = [quant.quantity for quant in quants]
+        self.assertAlmostEqual(
+            sum(total_qty),
+            525.3,
+            msg="Expecting 525.3 gram , got %.4f gram on location stock!"
+            % (sum(total_qty)),
+        )
+        self.assertAlmostEqual(
+            self.gB.qty_available,
+            525.3,
+            msg="Wrong quantity available (%s found instead of 525.3"
+            % (self.gB.qty_available),
+        )
+        quants = self.StockQuantObj.search(
+            [
+                ("product_id", "=", self.kgB.id),
+                ("location_id", "=", self.stock_location.id),
+            ]
+        )
+        total_qty = [quant.quantity for quant in quants]
+        self.assertEqual(
+            sum(total_qty),
+            0.020,
+            "Expecting 0.020 kg , got %.4f kg on location stock!" % (sum(total_qty)),
+        )
+        self.assertEqual(
+            self.kgB.qty_available,
+            0.020,
+            "Wrong quantity available (%s found instead of 0.020)"
+            % (self.kgB.qty_available),
+        )
+
+        picking_in_B = self.PickingObj.create(
+            {
+                "picking_type_id": self.picking_type_in.id,
+                "location_id": self.supplier_location.id,
+                "state": "draft",
+                "location_dest_id": self.stock_location.id,
+            }
+        )
+        move_in_a = self.MoveObj.create(
+            {
+                "product_id": self.DozA.id,
+                "product_uom_qty": 120,
+                "product_uom_id": self.uom_unit.id,
+                "picking_id": picking_in_B.id,
+                "location_id": self.supplier_location.id,
+                "location_dest_id": self.stock_location.id,
+            }
+        )
+        self.MoveObj.create(
+            {
+                "product_id": self.SDozA.id,
+                "product_uom_qty": 1512,
+                "product_uom_id": self.uom_unit.id,
+                "picking_id": picking_in_B.id,
+                "location_id": self.supplier_location.id,
+                "location_dest_id": self.stock_location.id,
+            }
+        )
+        self.MoveObj.create(
+            {
+                "product_id": self.kgB.id,
+                "product_uom_qty": 20.0,
+                "product_uom_id": self.uom_gm.id,
+                "picking_id": picking_in_B.id,
+                "location_id": self.supplier_location.id,
+                "location_dest_id": self.stock_location.id,
+            }
+        )
+        self.MoveObj.create(
+            {
+                "product_id": self.gB.id,
+                "product_uom_qty": 0.525,
+                "product_uom_id": self.uom_kg.id,
+                "picking_id": picking_in_B.id,
+                "location_id": self.supplier_location.id,
+                "location_dest_id": self.stock_location.id,
+            }
+        )
+
+        for move in picking_in_B.move_ids:
+            self.assertEqual(move.state, "draft", "Wrong state of move line.")
+        picking_in_B.action_confirm()
+        for move in picking_in_B.move_ids:
+            self.assertEqual(move.state, "assigned", "Wrong state of move line.")
+
+        PackdozA = self.StockPackObj.search(
+            [("product_id", "=", self.DozA.id), ("picking_id", "=", picking_in_B.id)],
+            limit=1,
+        )
+        self.assertEqual(
+            PackdozA.quantity,
+            120,
+            "Wrong quantity in pack operation (%s found instead of 120)"
+            % (PackdozA.quantity),
+        )
+        self.assertEqual(
+            PackdozA.quantity_product_uom,
+            10,
+            "Wrong real quantity in pack operation (%s found instead of 10)"
+            % (PackdozA.quantity_product_uom),
+        )
+        self.assertEqual(
+            PackdozA.product_uom_id.id,
+            self.uom_unit.id,
+            "Wrong uom in pack operation for product DozA.",
+        )
+        PackSdozA = self.StockPackObj.search(
+            [("product_id", "=", self.SDozA.id), ("picking_id", "=", picking_in_B.id)],
+            limit=1,
+        )
+        self.assertEqual(
+            PackSdozA.quantity,
+            1512,
+            "Wrong quantity in pack operation (%s found instead of 1512)"
+            % (PackSdozA.quantity),
+        )
+        self.assertEqual(
+            PackSdozA.product_uom_id.id,
+            self.uom_unit.id,
+            "Wrong uom in pack operation for product SDozA.",
+        )
+        packgB = self.StockPackObj.search(
+            [("product_id", "=", self.gB.id), ("picking_id", "=", picking_in_B.id)],
+            limit=1,
+        )
+        self.assertEqual(
+            packgB.quantity,
+            0.525,
+            "Wrong quantity in pack operation (%s found instead of 0.525)"
+            % (packgB.quantity),
+        )
+        self.assertEqual(
+            packgB.quantity_product_uom,
+            525,
+            "Wrong real quantity in pack operation (%s found instead of 525)"
+            % (packgB.quantity_product_uom),
+        )
+        self.assertEqual(
+            packgB.product_uom_id.id,
+            packgB.move_id.product_uom_id.id,
+            "Wrong uom in pack operation for product kgB.",
+        )
+        packkgB = self.StockPackObj.search(
+            [("product_id", "=", self.kgB.id), ("picking_id", "=", picking_in_B.id)],
+            limit=1,
+        )
+        self.assertEqual(
+            packkgB.quantity,
+            20.0,
+            "Wrong quantity in pack operation (%s found instead of 20)"
+            % (packkgB.quantity),
+        )
+        self.assertEqual(
+            packkgB.product_uom_id.id,
+            self.uom_gm.id,
+            "Wrong uom in pack operation for product kgB",
+        )
+
+        self.StockPackObj.search(
+            [("product_id", "=", self.kgB.id), ("picking_id", "=", picking_in_B.id)]
+        ).write({"quantity": 0.020, "product_uom_id": self.uom_kg.id})
+        self.StockPackObj.search(
+            [("product_id", "=", self.gB.id), ("picking_id", "=", picking_in_B.id)]
+        ).write({"quantity": 526, "product_uom_id": self.uom_gm.id})
+        self.StockPackObj.search(
+            [("product_id", "=", self.DozA.id), ("picking_id", "=", picking_in_B.id)]
+        ).write({"quantity": 4, "product_uom_id": self.uom_dozen.id})
+        self.StockPackObj.create(
+            {
+                "product_id": self.DozA.id,
+                "quantity": 48,
+                "product_uom_id": self.uom_unit.id,
+                "location_id": self.supplier_location.id,
+                "location_dest_id": self.stock_location.id,
+                "move_id": move_in_a.id,
+            }
+        )
+
+        res_dict_for_back_order = picking_in_B.button_validate()
+        backorder_wizard = (
+            self.env[(res_dict_for_back_order.get("res_model"))]
+            .with_context(res_dict_for_back_order["context"])
+            .create({})
+        )
+        backorder_wizard.process()
+
+        self.assertEqual(
+            picking_in_B.state, "done", "Incoming shipment state should be done."
+        )
+        for move in picking_in_B.move_ids:
+            self.assertEqual(move.state, "done", "Wrong state of move line.")
+        self.assertEqual(len(picking_in_B.move_ids), 4, "Wrong number of move lines")
+        moves_DozA = self.MoveObj.search(
+            [("product_id", "=", self.DozA.id), ("picking_id", "=", picking_in_B.id)],
+            limit=1,
+        )
+        self.assertEqual(
+            moves_DozA.quantity,
+            96,
+            "Wrong move quantity (%s found instead of 96)"
+            % (moves_DozA.product_uom_qty),
+        )
+        self.assertEqual(
+            moves_DozA.product_uom_id.id,
+            self.uom_unit.id,
+            "Wrong uom in move for product DozA.",
+        )
+        moves_SDozA = self.MoveObj.search(
+            [("product_id", "=", self.SDozA.id), ("picking_id", "=", picking_in_B.id)],
+            limit=1,
+        )
+        self.assertEqual(
+            moves_SDozA.quantity,
+            1512,
+            "Wrong move quantity (%s found instead of 1512)"
+            % (moves_SDozA.product_uom_qty),
+        )
+        self.assertEqual(
+            moves_SDozA.product_uom_id.id,
+            self.uom_unit.id,
+            "Wrong uom in move for product SDozA.",
+        )
+        moves_kgB = self.MoveObj.search(
+            [("product_id", "=", self.kgB.id), ("picking_id", "=", picking_in_B.id)],
+            limit=1,
+        )
+        self.assertEqual(
+            moves_kgB.quantity,
+            20,
+            "Wrong quantity in move (%s found instead of 20)"
+            % (moves_kgB.product_uom_qty),
+        )
+        self.assertEqual(
+            moves_kgB.product_uom_id.id,
+            self.uom_gm.id,
+            "Wrong uom in move for product kgB.",
+        )
+        moves_gB_kg = self.MoveObj.search(
+            [
+                ("product_id", "=", self.gB.id),
+                ("picking_id", "=", picking_in_B.id),
+                ("product_uom_id", "=", self.uom_kg.id),
+            ],
+            limit=1,
+        )
+        self.assertEqual(
+            moves_gB_kg.quantity,
+            0.526,
+            "Wrong move quantity (%s found instead of 0.526)"
+            % (moves_gB_kg.product_uom_qty),
+        )
+        self.assertEqual(
+            moves_gB_kg.product_uom_id.id,
+            self.uom_kg.id,
+            "Wrong uom in move for product gB.",
+        )
+
+        bo_in_B = self.PickingObj.search([("backorder_id", "=", picking_in_B.id)])
+        self.assertEqual(len(bo_in_B), 1, "Back order should be created.")
+
+        self.assertTrue(picking_in_B.user_id)
+        self.assertFalse(bo_in_B.user_id)
+
+        self.assertEqual(len(bo_in_B.move_ids), 1, "Wrong number of move lines")
+        moves_DozA = self.MoveObj.search(
+            [("product_id", "=", self.DozA.id), ("picking_id", "=", bo_in_B.id)],
+            limit=1,
+        )
+        self.assertEqual(
+            moves_DozA.product_uom_qty,
+            24.0,
+            "Wrong move quantity (%s found instead of 0.525)"
+            % (moves_DozA.product_uom_qty),
+        )
+        self.assertEqual(
+            moves_DozA.product_uom_id.id,
+            self.uom_unit.id,
+            "Wrong uom in move for product DozA.",
+        )
+
+        quants = self.StockQuantObj.search(
+            [
+                ("product_id", "=", self.DozA.id),
+                ("location_id", "=", self.stock_location.id),
+            ]
+        )
+        total_qty = [quant.quantity for quant in quants]
+        self.assertEqual(
+            sum(total_qty),
+            18,
+            "Expecting 18 Dozen , got %.4f Dozen on location stock!" % (sum(total_qty)),
+        )
+        self.assertEqual(
+            self.DozA.qty_available,
+            18,
+            "Wrong quantity available (%s found instead of 18)"
+            % (self.DozA.qty_available),
+        )
+        quants = self.StockQuantObj.search(
+            [
+                ("product_id", "=", self.SDozA.id),
+                ("location_id", "=", self.stock_location.id),
+            ]
+        )
+        total_qty = [quant.quantity for quant in quants]
+        self.assertEqual(
+            sum(total_qty),
+            21,
+            "Expecting 21 SDozen , got %.4f SDozen on location stock!"
+            % (sum(total_qty)),
+        )
+        self.assertEqual(
+            self.SDozA.qty_available,
+            21,
+            "Wrong quantity available (%s found instead of 21)"
+            % (self.SDozA.qty_available),
+        )
+        quants = self.StockQuantObj.search(
+            [
+                ("product_id", "=", self.gB.id),
+                ("location_id", "=", self.stock_location.id),
+            ]
+        )
+        total_qty = [quant.quantity for quant in quants]
+        self.assertEqual(
+            round(sum(total_qty), 1),
+            1051.3,
+            "Expecting 1051 Gram , got %.4f Gram on location stock!" % (sum(total_qty)),
+        )
+        self.assertEqual(
+            round(self.gB.qty_available, 1),
+            1051.3,
+            "Wrong quantity available (%s found instead of 1051)"
+            % (self.gB.qty_available),
+        )
+        quants = self.StockQuantObj.search(
+            [
+                ("product_id", "=", self.kgB.id),
+                ("location_id", "=", self.stock_location.id),
+            ]
+        )
+        total_qty = [quant.quantity for quant in quants]
+        self.assertEqual(
+            sum(total_qty),
+            0.040,
+            "Expecting 0.040 kg , got %.4f kg on location stock!" % (sum(total_qty)),
+        )
+        self.assertEqual(
+            self.kgB.qty_available,
+            0.040,
+            "Wrong quantity available (%s found instead of 0.040)"
+            % (self.kgB.qty_available),
+        )
+
+        before_out_quantity = self.kgB.qty_available
+        picking_out = self.PickingObj.create(
+            {
+                "picking_type_id": self.picking_type_out.id,
+                "location_id": self.stock_location.id,
+                "state": "draft",
+                "location_dest_id": self.customer_location.id,
+            }
+        )
+        self.MoveObj.create(
+            {
+                "product_id": self.kgB.id,
+                "product_uom_qty": 0.966,
+                "product_uom_id": self.uom_gm.id,
+                "picking_id": picking_out.id,
+                "location_id": self.stock_location.id,
+                "location_dest_id": self.customer_location.id,
+            }
+        )
+        self.MoveObj.create(
+            {
+                "product_id": self.kgB.id,
+                "product_uom_qty": 0.034,
+                "product_uom_id": self.uom_gm.id,
+                "picking_id": picking_out.id,
+                "location_id": self.stock_location.id,
+                "location_dest_id": self.customer_location.id,
+            }
+        )
+        picking_out.action_confirm()
+        picking_out.action_assign()
+        picking_out.button_validate()
+
+        quantity_diff = before_out_quantity - self.kgB.qty_available
+        self.assertEqual(
+            float_round(quantity_diff, precision_rounding=0.0001),
+            0.001,
+            "Wrong quantity difference.",
+        )
+        self.assertEqual(
+            self.kgB.qty_available,
+            0.039,
+            "Wrong quantity available (%s found instead of 0.039)"
+            % (self.kgB.qty_available),
+        )
+
+        picking_out = self.PickingObj.create(
+            {
+                "picking_type_id": self.picking_type_out.id,
+                "location_id": self.stock_location.id,
+                "state": "draft",
+                "location_dest_id": self.customer_location.id,
+            }
+        )
+        self.MoveObj.create(
+            {
+                "product_id": self.DozA.id,
+                "product_uom_qty": 54,
+                "product_uom_id": self.uom_unit.id,
+                "picking_id": picking_out.id,
+                "location_id": self.stock_location.id,
+                "location_dest_id": self.customer_location.id,
+            }
+        )
+        self.MoveObj.create(
+            {
+                "product_id": self.SDozA.id,
+                "product_uom_qty": 288,
+                "product_uom_id": self.uom_unit.id,
+                "picking_id": picking_out.id,
+                "location_id": self.stock_location.id,
+                "location_dest_id": self.customer_location.id,
+            }
+        )
+        self.MoveObj.create(
+            {
+                "product_id": self.gB.id,
+                "product_uom_qty": 0.503,
+                "product_uom_id": self.uom_kg.id,
+                "picking_id": picking_out.id,
+                "location_id": self.stock_location.id,
+                "location_dest_id": self.customer_location.id,
+            }
+        )
+        self.MoveObj.create(
+            {
+                "product_id": self.kgB.id,
+                "product_uom_qty": 20,
+                "product_uom_id": self.uom_gm.id,
+                "picking_id": picking_out.id,
+                "location_id": self.stock_location.id,
+                "location_dest_id": self.customer_location.id,
+            }
+        )
+        picking_out.action_confirm()
+        for move in picking_out.move_ids:
+            self.assertEqual(move.state, "confirmed", "Wrong state of move line.")
+        picking_out.action_assign()
+        for move in picking_out.move_ids:
+            self.assertEqual(move.state, "assigned", "Wrong state of move line.")
+        DozA_qty = self.MoveObj.search(
+            [("product_id", "=", self.DozA.id), ("picking_id", "=", picking_out.id)],
+            limit=1,
+        ).product_qty
+        self.assertEqual(
+            DozA_qty,
+            4.5,
+            "Wrong move quantity availability (%s found instead of 4.5)" % (DozA_qty),
+        )
+        SDozA_qty = self.MoveObj.search(
+            [("product_id", "=", self.SDozA.id), ("picking_id", "=", picking_out.id)],
+            limit=1,
+        ).product_qty
+        self.assertEqual(
+            SDozA_qty,
+            2,
+            "Wrong move quantity availability (%s found instead of 2)" % (SDozA_qty),
+        )
+        gB_qty = self.MoveObj.search(
+            [("product_id", "=", self.gB.id), ("picking_id", "=", picking_out.id)],
+            limit=1,
+        ).product_qty
+        self.assertEqual(
+            gB_qty,
+            503,
+            "Wrong move quantity availability (%s found instead of 503)" % (gB_qty),
+        )
+        kgB_qty = self.MoveObj.search(
+            [("product_id", "=", self.kgB.id), ("picking_id", "=", picking_out.id)],
+            limit=1,
+        ).product_qty
+        self.assertEqual(
+            kgB_qty,
+            0.020,
+            "Wrong move quantity availability (%s found instead of 0.020)" % (kgB_qty),
+        )
+
+        picking_out.button_validate()
+
+        quants = self.StockQuantObj.search(
+            [
+                ("product_id", "=", self.DozA.id),
+                ("location_id", "=", self.stock_location.id),
+            ]
+        )
+        total_qty = [quant.quantity for quant in quants]
+        self.assertEqual(
+            sum(total_qty),
+            13.5,
+            "Expecting 13.5 Dozen , got %.4f Dozen on location stock!"
+            % (sum(total_qty)),
+        )
+        self.assertEqual(
+            self.DozA.qty_available,
+            13.5,
+            "Wrong quantity available (%s found instead of 13.5)"
+            % (self.DozA.qty_available),
+        )
+        quants = self.StockQuantObj.search(
+            [
+                ("product_id", "=", self.SDozA.id),
+                ("location_id", "=", self.stock_location.id),
+            ]
+        )
+        total_qty = [quant.quantity for quant in quants]
+        self.assertEqual(
+            sum(total_qty),
+            19,
+            "Expecting 19 SDozen , got %.4f SDozen on location stock!"
+            % (sum(total_qty)),
+        )
+        self.assertEqual(
+            self.SDozA.qty_available,
+            19,
+            "Wrong quantity available (%s found instead of 19)"
+            % (self.SDozA.qty_available),
+        )
+        quants = self.StockQuantObj.search(
+            [
+                ("product_id", "=", self.gB.id),
+                ("location_id", "=", self.stock_location.id),
+            ]
+        )
+        total_qty = [quant.quantity for quant in quants]
+        self.assertEqual(
+            round(sum(total_qty), 1),
+            548.3,
+            "Expecting 547.6 g , got %.4f g on location stock!" % (sum(total_qty)),
+        )
+        self.assertEqual(
+            round(self.gB.qty_available, 1),
+            548.3,
+            "Wrong quantity available (%s found instead of 547.6)"
+            % (self.gB.qty_available),
+        )
+        quants = self.StockQuantObj.search(
+            [
+                ("product_id", "=", self.kgB.id),
+                ("location_id", "=", self.stock_location.id),
+            ]
+        )
+        total_qty = [quant.quantity for quant in quants]
+        self.assertEqual(
+            sum(total_qty),
+            0.019,
+            "Expecting 0.019 kg , got %.4f kg on location stock!" % (sum(total_qty)),
+        )
+        self.assertEqual(
+            self.kgB.qty_available,
+            0.019,
+            "Wrong quantity available (%s found instead of 0.019)"
+            % (self.kgB.qty_available),
+        )
+
+        bo_in_B.button_validate()
+        quants = self.StockQuantObj.search(
+            [
+                ("product_id", "=", self.DozA.id),
+                ("location_id", "=", self.stock_location.id),
+            ]
+        )
+        total_qty = [quant.quantity for quant in quants]
+        self.assertEqual(
+            sum(total_qty),
+            15.5,
+            "Expecting 15.5 Dozen , got %.4f Dozen on location stock!"
+            % (sum(total_qty)),
+        )
+        self.assertEqual(
+            self.DozA.qty_available,
+            15.5,
+            "Wrong quantity available (%s found instead of 15.5)"
+            % (self.DozA.qty_available),
+        )
+
+        productKG = self.ProductObj.create(
+            {"name": "Product KG", "uom_id": self.uom_kg.id, "is_storable": True}
+        )
+        picking_in = self.PickingObj.create(
+            {
+                "picking_type_id": self.picking_type_in.id,
+                "location_id": self.supplier_location.id,
+                "state": "draft",
+                "location_dest_id": self.stock_location.id,
+            }
+        )
+        self.MoveObj.create(
+            {
+                "product_id": productKG.id,
+                "product_uom_qty": 1.0,
+                "product_uom_id": self.uom_ton.id,
+                "picking_id": picking_in.id,
+                "location_id": self.supplier_location.id,
+                "location_dest_id": self.stock_location.id,
+            }
+        )
+        self.assertEqual(
+            picking_in.state, "draft", "Incoming shipment state should be draft."
+        )
+        for move in picking_in.move_ids:
+            self.assertEqual(move.state, "draft", "Wrong state of move line.")
+        picking_in.action_confirm()
+        for move in picking_in.move_ids:
+            self.assertEqual(move.state, "assigned", "Wrong state of move line.")
+        packKG = self.StockPackObj.search(
+            [("product_id", "=", productKG.id), ("picking_id", "=", picking_in.id)],
+            limit=1,
+        )
+        self.assertEqual(
+            packKG.quantity_product_uom,
+            1000,
+            "Wrong product real quantity in pack operation (%s found instead of 1000)"
+            % (packKG.quantity_product_uom),
+        )
+        self.assertEqual(
+            packKG.quantity,
+            1,
+            "Wrong product quantity in pack operation (%s found instead of 1)"
+            % (packKG.quantity),
+        )
+        self.assertEqual(
+            packKG.product_uom_id.id,
+            self.uom_ton.id,
+            "Wrong product uom in pack operation.",
+        )
+        picking_in.button_validate()
+
+        self.assertEqual(
+            picking_in.state,
+            "done",
+            "Incoming shipment state: %s instead of %s" % (picking_in.state, "done"),
+        )
+        for move in picking_in.move_ids:
+            self.assertEqual(move.state, "done", "Wrong state of move lines.")
+        self.assertEqual(len(picking_in.move_ids), 1, "Wrong number of move lines")
+        move = self.MoveObj.search(
+            [("product_id", "=", productKG.id), ("picking_id", "=", picking_in.id)],
+            limit=1,
+        )
+        self.assertEqual(
+            move.product_uom_qty, 1, "Wrong product quantity in done move."
+        )
+        self.assertEqual(
+            move.product_uom_id.id,
+            self.uom_ton.id,
+            "Wrong unit of measure in done move.",
+        )
+        self.assertEqual(
+            productKG.qty_available,
+            1000,
+            "Wrong quantity available of product (%s found instead of 1000)"
+            % (productKG.qty_available),
+        )
+        picking_out = self.PickingObj.create(
+            {
+                "picking_type_id": self.picking_type_out.id,
+                "location_id": self.stock_location.id,
+                "state": "draft",
+                "location_dest_id": self.customer_location.id,
+            }
+        )
+        self.MoveObj.create(
+            {
+                "product_id": productKG.id,
+                "product_uom_qty": 25,
+                "product_uom_id": self.uom_gm.id,
+                "picking_id": picking_out.id,
+                "location_id": self.stock_location.id,
+                "location_dest_id": self.customer_location.id,
+            }
+        )
+        picking_out.action_confirm()
+        picking_out.action_assign()
+        pack_opt = self.StockPackObj.search(
+            [("product_id", "=", productKG.id), ("picking_id", "=", picking_out.id)],
+            limit=1,
+        )
+        pack_opt.write({"quantity": 5})
+        res_dict_for_back_order = picking_out.button_validate()
+        backorder_wizard = (
+            self.env[(res_dict_for_back_order.get("res_model"))]
+            .with_context(res_dict_for_back_order["context"])
+            .create({})
+        )
+        backorder_wizard.process()
+        quants = self.StockQuantObj.search(
+            [
+                ("product_id", "=", productKG.id),
+                ("location_id", "=", self.stock_location.id),
+            ]
+        )
+        total_qty = [quant.quantity for quant in quants]
+        self.assertEqual(
+            sum(total_qty),
+            999.995,
+            "Expecting 999.995 kg , got %.4f kg on location stock!" % (sum(total_qty)),
+        )
+
+        bo_out_1 = self.PickingObj.search([("backorder_id", "=", picking_out.id)])
+        self.assertEqual(len(bo_out_1), 1, "Back order should be created.")
+        self.assertEqual(len(bo_out_1.move_ids), 1, "Wrong number of move lines")
+        moves_KG = self.MoveObj.search(
+            [("product_id", "=", productKG.id), ("picking_id", "=", bo_out_1.id)],
+            limit=1,
+        )
+        self.assertEqual(
+            moves_KG.product_uom_qty,
+            20,
+            "Wrong move quantity (%s found instead of 20)" % (moves_KG.product_uom_qty),
+        )
+        self.assertEqual(
+            moves_KG.product_uom_id.id,
+            self.uom_gm.id,
+            "Wrong uom in move for product KG.",
+        )
+        bo_out_1.action_assign()
+        pack_opt = self.StockPackObj.search(
+            [("product_id", "=", productKG.id), ("picking_id", "=", bo_out_1.id)],
+            limit=1,
+        )
+        pack_opt.write({"quantity": 5})
+        res_dict_for_back_order = bo_out_1.button_validate()
+        backorder_wizard = (
+            self.env[(res_dict_for_back_order.get("res_model"))]
+            .with_context(res_dict_for_back_order["context"])
+            .create({})
+        )
+        backorder_wizard.process()
+        quants = self.StockQuantObj.search(
+            [
+                ("product_id", "=", productKG.id),
+                ("location_id", "=", self.stock_location.id),
+            ]
+        )
+        total_qty = [quant.quantity for quant in quants]
+
+        self.assertEqual(
+            sum(total_qty),
+            999.990,
+            "Expecting 999.990 kg , got %.4f kg on location stock!" % (sum(total_qty)),
+        )
+
+        bo_out_2 = self.PickingObj.search([("backorder_id", "=", bo_out_1.id)])
+        self.assertEqual(len(bo_out_2), 1, "Back order should be created.")
+        self.assertEqual(len(bo_out_2.move_ids), 1, "Wrong number of move lines")
+        moves_KG = self.MoveObj.search(
+            [("product_id", "=", productKG.id), ("picking_id", "=", bo_out_2.id)],
+            limit=1,
+        )
+        self.assertEqual(
+            moves_KG.product_uom_qty,
+            15,
+            "Wrong move quantity (%s found instead of 15)" % (moves_KG.product_uom_qty),
+        )
+        self.assertEqual(
+            moves_KG.product_uom_id.id,
+            self.uom_gm.id,
+            "Wrong uom in move for product KG.",
+        )
+        bo_out_2.action_assign()
+        pack_opt = self.StockPackObj.search(
+            [("product_id", "=", productKG.id), ("picking_id", "=", bo_out_2.id)],
+            limit=1,
+        )
+        pack_opt.write({"quantity": 5})
+        res_dict_for_back_order = bo_out_2.button_validate()
+        backorder_wizard = (
+            self.env[(res_dict_for_back_order.get("res_model"))]
+            .with_context(res_dict_for_back_order["context"])
+            .create({})
+        )
+        backorder_wizard.process()
+        quants = self.StockQuantObj.search(
+            [
+                ("product_id", "=", productKG.id),
+                ("location_id", "=", self.stock_location.id),
+            ]
+        )
+        total_qty = [quant.quantity for quant in quants]
+        self.assertEqual(
+            sum(total_qty),
+            999.985,
+            "Expecting 999.985 kg , got %.4f kg on location stock!" % (sum(total_qty)),
+        )
+
+        bo_out_3 = self.PickingObj.search([("backorder_id", "=", bo_out_2.id)])
+        self.assertEqual(len(bo_out_3), 1, "Back order should be created.")
+        self.assertEqual(len(bo_out_3.move_ids), 1, "Wrong number of move lines")
+        moves_KG = self.MoveObj.search(
+            [("product_id", "=", productKG.id), ("picking_id", "=", bo_out_3.id)],
+            limit=1,
+        )
+        self.assertEqual(
+            moves_KG.product_uom_qty,
+            10,
+            "Wrong move quantity (%s found instead of 10)" % (moves_KG.product_uom_qty),
+        )
+        self.assertEqual(
+            moves_KG.product_uom_id.id,
+            self.uom_gm.id,
+            "Wrong uom in move for product KG.",
+        )
+        bo_out_3.action_assign()
+        pack_opt = self.StockPackObj.search(
+            [("product_id", "=", productKG.id), ("picking_id", "=", bo_out_3.id)],
+            limit=1,
+        )
+        pack_opt.write({"quantity": 5})
+        res_dict_for_back_order = bo_out_3.button_validate()
+        backorder_wizard = (
+            self.env[(res_dict_for_back_order.get("res_model"))]
+            .with_context(res_dict_for_back_order["context"])
+            .create({})
+        )
+        backorder_wizard.process()
+        quants = self.StockQuantObj.search(
+            [
+                ("product_id", "=", productKG.id),
+                ("location_id", "=", self.stock_location.id),
+            ]
+        )
+        total_qty = [quant.quantity for quant in quants]
+        self.assertEqual(
+            sum(total_qty),
+            999.980,
+            "Expecting 999.980 kg , got %.4f kg on location stock!" % (sum(total_qty)),
+        )
+
+        bo_out_4 = self.PickingObj.search([("backorder_id", "=", bo_out_3.id)])
+
+        self.assertEqual(len(bo_out_4), 1, "Back order should be created.")
+        self.assertEqual(len(bo_out_4.move_ids), 1, "Wrong number of move lines")
+        moves_KG = self.MoveObj.search(
+            [("product_id", "=", productKG.id), ("picking_id", "=", bo_out_4.id)],
+            limit=1,
+        )
+        self.assertEqual(
+            moves_KG.product_uom_qty,
+            5,
+            "Wrong move quantity (%s found instead of 5)" % (moves_KG.product_uom_qty),
+        )
+        self.assertEqual(
+            moves_KG.product_uom_id.id,
+            self.uom_gm.id,
+            "Wrong uom in move for product KG.",
+        )
+        bo_out_4.action_assign()
+        pack_opt = self.StockPackObj.search(
+            [("product_id", "=", productKG.id), ("picking_id", "=", bo_out_4.id)],
+            limit=1,
+        )
+        pack_opt.write({"quantity": 5})
+        bo_out_4.button_validate()
+        quants = self.StockQuantObj.search(
+            [
+                ("product_id", "=", productKG.id),
+                ("location_id", "=", self.stock_location.id),
+            ]
+        )
+        total_qty = [quant.quantity for quant in quants]
+        self.assertAlmostEqual(
+            sum(total_qty),
+            999.975,
+            msg="Expecting 999.975 kg , got %.4f kg on location stock!"
+            % (sum(total_qty)),
+        )
+
+    def test_20_create_inventory_with_packs_and_lots(self):
+        packproduct = self.ProductObj.create(
+            {"name": "Pack Product", "uom_id": self.uom_unit.id, "is_storable": True}
+        )
+        lotproduct = self.ProductObj.create(
+            {"name": "Lot Product", "uom_id": self.uom_unit.id, "is_storable": True}
+        )
+        quant_obj = self.env["stock.quant"].with_context(inventory_mode=True)
+        pack_obj = self.env["stock.package"]
+        lot_obj = self.env["product.trace"]
+        pack1 = pack_obj.create({"name": "PACK00TEST1"})
+        pack_obj.create({"name": "PACK00TEST2"})
+        lot1 = lot_obj.create({"name": "Lot001", "product_id": lotproduct.id})
+
+        packproduct_no_pack_quant = quant_obj.create(
+            {
+                "product_id": packproduct.id,
+                "inventory_quantity": 10.0,
+                "location_id": self.stock_location.id,
+            }
+        )
+        packproduct_quant = quant_obj.create(
+            {
+                "product_id": packproduct.id,
+                "inventory_quantity": 20.0,
+                "location_id": self.stock_location.id,
+                "package_id": pack1.id,
+            }
+        )
+        lotproduct_no_lot_quant = quant_obj.create(
+            {
+                "product_id": lotproduct.id,
+                "inventory_quantity": 25.0,
+                "location_id": self.stock_location.id,
+            }
+        )
+        lotproduct_quant = quant_obj.create(
+            {
+                "product_id": lotproduct.id,
+                "inventory_quantity": 30.0,
+                "location_id": self.stock_location.id,
+                "trace_id": lot1.id,
+            }
+        )
+        (
+            packproduct_no_pack_quant
+            | packproduct_quant
+            | lotproduct_no_lot_quant
+            | lotproduct_quant
+        ).action_apply_inventory()
+
+        self.assertEqual(
+            packproduct.qty_available, 30, "Wrong qty available for packproduct"
+        )
+        self.assertEqual(
+            lotproduct.qty_available, 55, "Wrong qty available for lotproduct"
+        )
+        quants = self.StockQuantObj.search(
+            [
+                ("product_id", "=", packproduct.id),
+                ("location_id", "=", self.stock_location.id),
+                ("package_id", "=", pack1.id),
+            ]
+        )
+        total_qty = sum(quant.quantity for quant in quants)
+        self.assertEqual(
+            total_qty,
+            20,
+            "Expecting 20 units on package 1 of packproduct, but we got %.4f on location stock!"
+            % (total_qty),
+        )
+
+        packproduct_no_pack_quant.inventory_quantity = 20
+        lotproduct_no_lot_quant.inventory_quantity = 0
+        lotproduct_quant.inventory_quantity = 10
+        packproduct_no_pack_quant.action_apply_inventory()
+        lotproduct_no_lot_quant.action_apply_inventory()
+        lotproduct_quant.action_apply_inventory()
+
+        self.assertEqual(
+            packproduct.qty_available, 40, "Wrong qty available for packproduct"
+        )
+        self.assertEqual(
+            lotproduct.qty_available, 10, "Wrong qty available for lotproduct"
+        )
+        quants = self.StockQuantObj.search(
+            [
+                ("product_id", "=", lotproduct.id),
+                ("location_id", "=", self.stock_location.id),
+                ("trace_id", "=", lot1.id),
+            ]
+        )
+        total_qty = sum(quant.quantity for quant in quants)
+        self.assertEqual(
+            total_qty,
+            10,
+            "Expecting 10 units lot of lotproduct, but we got %.4f on location stock!"
+            % (total_qty),
+        )
+        quants = self.StockQuantObj.search(
+            [
+                ("product_id", "=", lotproduct.id),
+                ("location_id", "=", self.stock_location.id),
+                ("trace_id", "=", False),
+            ]
+        )
+        total_qty = sum(quant.quantity for quant in quants)
+        self.assertEqual(
+            total_qty,
+            0,
+            "Expecting 0 units lot of lotproduct, but we got %.4f on location stock!"
+            % (total_qty),
+        )
+
+    def test_30_check_with_no_incoming_lot(self):
+        self.picking_type_in.use_create_lots = False
+        self.productA.tracking = "lot"
+        picking_in = self.PickingObj.create(
+            {
+                "picking_type_id": self.picking_type_in.id,
+                "location_id": self.supplier_location.id,
+                "state": "draft",
+                "location_dest_id": self.stock_location.id,
+            }
+        )
+        self.MoveObj.create(
+            {
+                "product_id": self.productA.id,
+                "product_uom_qty": 4,
+                "product_uom_id": self.productA.uom_id.id,
+                "picking_id": picking_in.id,
+                "picking_type_id": self.picking_type_in.id,
+                "location_id": self.supplier_location.id,
+                "location_dest_id": self.stock_location.id,
+            }
+        )
+
+        for move in picking_in.move_ids:
+            self.assertEqual(move.state, "draft", "Wrong state of move line.")
+        picking_in.action_confirm()
+        for move in picking_in.move_ids:
+            self.assertEqual(move.state, "assigned", "Wrong state of move line.")
+
+        picking_in.button_validate()
+        picking_out = self.PickingObj.create(
+            {
+                "name": "testpicking",
+                "picking_type_id": self.picking_type_out.id,
+                "location_id": self.stock_location.id,
+                "state": "draft",
+                "location_dest_id": self.customer_location.id,
+            }
+        )
+        move_out = self.MoveObj.create(
+            {
+                "product_id": self.productA.id,
+                "product_uom_qty": 3,
+                "product_uom_id": self.productA.uom_id.id,
+                "picking_id": picking_out.id,
+                "location_id": self.stock_location.id,
+                "location_dest_id": self.customer_location.id,
+            }
+        )
+        picking_out.action_confirm()
+        picking_out.action_assign()
+        pack_opt = self.StockPackObj.search(
+            [("picking_id", "=", picking_out.id)], limit=1
+        )
+        lot1 = self.LotObj.create({"product_id": self.productA.id, "name": "LOT1"})
+        lot2 = self.LotObj.create({"product_id": self.productA.id, "name": "LOT2"})
+        lot3 = self.LotObj.create({"product_id": self.productA.id, "name": "LOT3"})
+
+        pack_opt.write({"trace_id": lot1.id, "quantity": 1.0})
+        self.StockPackObj.create(
+            {
+                "product_id": self.productA.id,
+                "move_id": move_out.id,
+                "product_uom_id": move_out.product_uom_id.id,
+                "trace_id": lot2.id,
+                "quantity": 1.0,
+                "location_id": self.stock_location.id,
+                "location_dest_id": self.customer_location.id,
+            }
+        )
+        self.StockPackObj.create(
+            {
+                "product_id": self.productA.id,
+                "move_id": move_out.id,
+                "product_uom_id": move_out.product_uom_id.id,
+                "trace_id": lot3.id,
+                "quantity": 2.0,
+                "location_id": self.stock_location.id,
+                "location_dest_id": self.customer_location.id,
+            }
+        )
+        picking_out._action_done()
+        self.StockQuantObj.search(
+            [
+                ("product_id", "=", self.productA.id),
+                ("location_id", "=", self.stock_location.id),
+            ]
+        )
+
+    def test_40_pack_in_pack(self):
+        picking_out = self.PickingObj.create(
+            {
+                "picking_type_id": self.picking_type_out.id,
+                "location_id": self.pack_location.id,
+                "state": "draft",
+                "location_dest_id": self.customer_location.id,
+            }
+        )
+        move_out = self.MoveObj.create(
+            {
+                "product_id": self.productA.id,
+                "product_uom_qty": 3,
+                "product_uom_id": self.productA.uom_id.id,
+                "picking_id": picking_out.id,
+                "location_id": self.pack_location.id,
+                "location_dest_id": self.customer_location.id,
+            }
+        )
+        picking_pack = self.PickingObj.create(
+            {
+                "picking_type_id": self.picking_type_out.id,
+                "location_id": self.stock_location.id,
+                "state": "draft",
+                "location_dest_id": self.pack_location.id,
+            }
+        )
+        move_pack = self.MoveObj.create(
+            {
+                "product_id": self.productA.id,
+                "product_uom_qty": 3,
+                "product_uom_id": self.productA.uom_id.id,
+                "picking_id": picking_pack.id,
+                "location_id": self.stock_location.id,
+                "location_dest_id": self.pack_location.id,
+                "move_dest_ids": [Command.link(move_out.id)],
+            }
+        )
+        picking_in = self.PickingObj.create(
+            {
+                "picking_type_id": self.picking_type_in.id,
+                "location_id": self.supplier_location.id,
+                "state": "draft",
+                "location_dest_id": self.stock_location.id,
+            }
+        )
+        move_in = self.MoveObj.create(
+            {
+                "product_id": self.productA.id,
+                "product_uom_qty": 3,
+                "product_uom_id": self.productA.uom_id.id,
+                "picking_id": picking_in.id,
+                "location_id": self.supplier_location.id,
+                "location_dest_id": self.stock_location.id,
+                "move_dest_ids": [Command.link(move_pack.id)],
+            }
+        )
+
+        for move in picking_in.move_ids:
+            self.assertEqual(move.state, "draft", "Wrong state of move line.")
+        picking_in.action_confirm()
+        for move in picking_in.move_ids:
+            self.assertEqual(move.state, "assigned", "Wrong state of move line.")
+
+        for move in picking_pack.move_ids:
+            self.assertEqual(move.state, "draft", "Wrong state of move line.")
+        picking_pack.action_confirm()
+        for move in picking_pack.move_ids:
+            self.assertEqual(move.state, "waiting", "Wrong state of move line.")
+
+        for move in picking_out.move_ids:
+            self.assertEqual(move.state, "draft", "Wrong state of move line.")
+        picking_out.action_confirm()
+        for move in picking_out.move_ids:
+            self.assertEqual(move.state, "waiting", "Wrong state of move line.")
+
+        move_in.move_line_ids.quantity = 3.0
+        picking_in.action_put_in_pack()
+        picking_in_package = move_in.move_line_ids.result_package_id
+        picking_in.move_ids.picked = True
+        picking_in._action_done()
+
+        for move in picking_in.move_ids:
+            self.assertEqual(move.state, "done", "Wrong state of move line.")
+        for move in picking_pack.move_ids:
+            self.assertEqual(move.state, "assigned", "Wrong state of move line.")
+
+        move_pack.move_line_ids.quantity = 3.0
+        move_pack.picked = True
+        picking_pack_package = move_pack.move_line_ids.result_package_id
+        picking_pack._action_done()
+
+        for move in picking_pack.move_ids:
+            self.assertEqual(move.state, "done", "Wrong state of move line.")
+        for move in picking_out.move_ids:
+            self.assertEqual(move.state, "assigned", "Wrong state of move line.")
+
+        picking_out.move_line_ids.quantity = 3.0
+        picking_out_package = move_out.move_line_ids.result_package_id
+        picking_out.move_ids.picked = True
+        picking_out._action_done()
+
+        for move in picking_in.move_ids:
+            self.assertEqual(move.state, "done", "Wrong state of move line.")
+        for move in picking_pack.move_ids:
+            self.assertEqual(move.state, "done", "Wrong state of move line.")
+        for move in picking_out.move_ids:
+            self.assertEqual(move.state, "done", "Wrong state of move line.")
+
+        self.assertEqual(
+            picking_in_package.id,
+            picking_pack_package.id,
+            "The package created in the picking in is not in the one created in picking pack",
+        )
+        self.assertEqual(
+            picking_pack_package.id,
+            picking_out_package.id,
+            "The package created in the picking in is not in the one created in picking pack",
+        )
+        quant = self.StockQuantObj.search(
+            [
+                ("product_id", "=", self.productA.id),
+                ("location_id", "=", self.customer_location.id),
+            ]
+        )
+        self.assertEqual(
+            len(quant),
+            1,
+            "There should be one quant with package for customer location",
+        )
+
+    def test_50_create_in_out_with_product_pack_lines(self):
+        picking_in = self.PickingObj.create(
+            {
+                "picking_type_id": self.picking_type_in.id,
+                "location_id": self.supplier_location.id,
+                "state": "draft",
+                "location_dest_id": self.stock_location.id,
+            }
+        )
+        self.MoveObj.create(
+            {
+                "product_id": self.productE.id,
+                "product_uom_qty": 10,
+                "product_uom_id": self.productE.uom_id.id,
+                "picking_id": picking_in.id,
+                "location_id": self.supplier_location.id,
+                "location_dest_id": self.stock_location.id,
+            }
+        )
+        picking_in.action_confirm()
+        pack_obj = self.env["stock.package"]
+        pack1 = pack_obj.create({"name": "PACKINOUTTEST1"})
+        pack2 = pack_obj.create({"name": "PACKINOUTTEST2"})
+        picking_in.move_line_ids[0].result_package_id = pack1
+        picking_in.move_line_ids[0].quantity = 4
+        packop2 = picking_in.move_line_ids[0].copy({"quantity": 0})
+        packop2.quantity = 6
+        packop2.result_package_id = pack2
+        picking_in.move_ids.picked = True
+        picking_in._action_done()
+        quants = self.env["stock.quant"]._gather(self.productE, self.stock_location)
+        self.assertEqual(
+            sum(x.quantity for x in quants), 10.0, "Expecting 10 pieces in stock"
+        )
+        self.assertEqual(
+            sum(x.quantity for x in pack1.quant_ids), 4.0, "Pack 1 should have 4 pieces"
+        )
+        self.assertEqual(
+            sum(x.quantity for x in pack2.quant_ids), 6.0, "Pack 2 should have 6 pieces"
+        )
+        picking_out = self.PickingObj.create(
+            {
+                "picking_type_id": self.picking_type_out.id,
+                "location_id": self.stock_location.id,
+                "state": "draft",
+                "location_dest_id": self.customer_location.id,
+            }
+        )
+        self.MoveObj.create(
+            {
+                "product_id": self.productE.id,
+                "product_uom_qty": 3,
+                "product_uom_id": self.productE.uom_id.id,
+                "picking_id": picking_out.id,
+                "location_id": self.stock_location.id,
+                "location_dest_id": self.customer_location.id,
+            }
+        )
+        picking_out.action_confirm()
+        picking_out.action_assign()
+        packout1 = picking_out.move_line_ids[0]
+        packout2 = picking_out.move_line_ids[0].copy({"quantity": 0})
+        packout1.quantity = 2
+        packout1.package_id = pack1
+        packout2.package_id = pack2
+        packout2.quantity = 1
+        picking_out.move_ids.picked = True
+        picking_out._action_done()
+        neg_quants = self.env["stock.quant"].search(
+            [("product_id", "=", self.productE.id), ("quantity", "<", 0.0)]
+        )
+        self.assertEqual(
+            len(neg_quants), 1, "There should be 1 negative quants for supplier!"
+        )
+        self.assertEqual(
+            neg_quants.location_id.id,
+            self.supplier_location.id,
+            "There shoud be 1 negative quants for supplier!",
+        )
+
+        quants = self.env["stock.quant"]._gather(self.productE, self.stock_location)
+        self.assertEqual(len(quants), 2, "We should have exactly 2 quants in the end")
+
+    def test_60_create_in_out_with_product_pack_lines(self):
+        picking_in = self.PickingObj.create(
+            {
+                "picking_type_id": self.picking_type_in.id,
+                "location_id": self.supplier_location.id,
+                "state": "draft",
+                "location_dest_id": self.stock_location.id,
+            }
+        )
+        self.MoveObj.create(
+            {
+                "product_id": self.productE.id,
+                "product_uom_qty": 200,
+                "product_uom_id": self.productE.uom_id.id,
+                "picking_id": picking_in.id,
+                "location_id": self.supplier_location.id,
+                "location_dest_id": self.stock_location.id,
+            }
+        )
+
+        picking_in.action_confirm()
+        pack_obj = self.env["stock.package"]
+        pack1 = pack_obj.create({"name": "PACKINOUTTEST1"})
+        pack2 = pack_obj.create({"name": "PACKINOUTTEST2"})
+        picking_in.move_line_ids[0].result_package_id = pack1
+        picking_in.move_line_ids[0].quantity = 120
+        packop2 = picking_in.move_line_ids[0].copy({"quantity": 0})
+        packop2.quantity = 80
+        packop2.result_package_id = pack2
+        picking_in.move_ids.picked = True
+        picking_in._action_done()
+        quants = self.env["stock.quant"]._gather(self.productE, self.stock_location)
+        self.assertEqual(
+            sum(x.quantity for x in quants), 200.0, "Expecting 200 pieces in stock"
+        )
+        self.assertEqual(
+            sum(x.quantity for x in pack1.quant_ids),
+            120,
+            "Pack 1 should have 120 pieces",
+        )
+        self.assertEqual(
+            sum(x.quantity for x in pack2.quant_ids), 80, "Pack 2 should have 80 pieces"
+        )
+        picking_out = self.PickingObj.create(
+            {
+                "picking_type_id": self.picking_type_out.id,
+                "location_id": self.stock_location.id,
+                "state": "draft",
+                "location_dest_id": self.customer_location.id,
+            }
+        )
+        self.MoveObj.create(
+            {
+                "product_id": self.productE.id,
+                "product_uom_qty": 200,
+                "product_uom_id": self.productE.uom_id.id,
+                "picking_id": picking_out.id,
+                "location_id": self.stock_location.id,
+                "location_dest_id": self.customer_location.id,
+            }
+        )
+        picking_out.action_confirm()
+        picking_out.action_assign()
+        packout0 = picking_out.move_line_ids[0]
+        packout1 = picking_out.move_line_ids[1]
+        packout0.write(
+            {
+                "package_id": pack1.id,
+                "product_id": self.productE.id,
+                "quantity": 120.0,
+                "product_uom_id": self.productE.uom_id.id,
+            }
+        )
+        packout1.write(
+            {
+                "package_id": pack2.id,
+                "product_id": self.productE.id,
+                "quantity": 80.0,
+                "product_uom_id": self.productE.uom_id.id,
+            }
+        )
+        picking_out.move_ids.picked = True
+        picking_out._action_done()
+        neg_quants = self.env["stock.quant"].search(
+            [("product_id", "=", self.productE.id), ("quantity", "<", 0.0)]
+        )
+        self.assertEqual(
+            len(neg_quants), 1, "There should be 1 negative quants for supplier!"
+        )
+        self.assertEqual(
+            neg_quants.location_id.id,
+            self.supplier_location.id,
+            "There shoud be 1 negative quants for supplier!",
+        )
+        quants = self.env["stock.quant"]._gather(self.productE, self.stock_location)
+        self.assertEqual(
+            sum(quants.mapped("quantity")), 0, "We should have no quants in the end"
+        )
+
+    def test_70_picking_state_all_at_once_reserve(self):
+        inventory_quant = self.env["stock.quant"].create(
+            {
+                "location_id": self.stock_location.id,
+                "product_id": self.productA.id,
+                "inventory_quantity": 1,
+            }
+        )
+        inventory_quant.action_apply_inventory()
+
+        picking_out = self.PickingObj.create(
+            {
+                "picking_type_id": self.picking_type_out.id,
+                "location_id": self.stock_location.id,
+                "state": "draft",
+                "location_dest_id": self.customer_location.id,
+            }
+        )
+        picking_out.move_type = "one"
+
+        self.MoveObj.create(
+            {
+                "product_id": self.productA.id,
+                "product_uom_qty": 2,
+                "product_uom_id": self.productA.uom_id.id,
+                "picking_id": picking_out.id,
+                "location_id": self.stock_location.id,
+                "location_dest_id": self.customer_location.id,
+            }
+        )
+        picking_out.action_assign()
+        self.assertEqual(picking_out.state, "confirmed")
+
+        inventory_quant.inventory_quantity = 2
+        inventory_quant.action_apply_inventory()
+        picking_out.action_assign()
+        self.assertEqual(len(picking_out.move_ids), 1.0)
+        self.assertEqual(picking_out.move_ids.product_qty, 2.0)
+        self.assertEqual(picking_out.state, "assigned")
+
+    def test_71_picking_state_all_at_once_force_assign(self):
+        picking_out = self.PickingObj.create(
+            {
+                "picking_type_id": self.picking_type_out.id,
+                "location_id": self.stock_location.id,
+                "state": "draft",
+                "location_dest_id": self.customer_location.id,
+            }
+        )
+        picking_out.move_type = "direct"
+
+        self.MoveObj.create(
+            {
+                "product_id": self.productA.id,
+                "product_uom_qty": 2,
+                "product_uom_id": self.productA.uom_id.id,
+                "picking_id": picking_out.id,
+                "location_id": self.stock_location.id,
+                "location_dest_id": self.customer_location.id,
+            }
+        )
+
+        picking_out.action_assign()
+        self.assertEqual(picking_out.state, "confirmed")
+
+    def test_72_picking_state_partial_reserve(self):
+        inventory_quant = self.env["stock.quant"].create(
+            {
+                "location_id": self.stock_location.id,
+                "product_id": self.productA.id,
+                "inventory_quantity": 1,
+            }
+        )
+        inventory_quant.action_apply_inventory()
+
+        picking_out = self.PickingObj.create(
+            {
+                "picking_type_id": self.picking_type_out.id,
+                "location_id": self.stock_location.id,
+                "state": "draft",
+                "location_dest_id": self.customer_location.id,
+            }
+        )
+        picking_out.move_type = "direct"
+
+        self.MoveObj.create(
+            {
+                "product_id": self.productA.id,
+                "product_uom_qty": 2,
+                "product_uom_id": self.productA.uom_id.id,
+                "picking_id": picking_out.id,
+                "location_id": self.stock_location.id,
+                "location_dest_id": self.customer_location.id,
+            }
+        )
+
+        picking_out.action_assign()
+        self.assertEqual(picking_out.state, "assigned")
+
+        inventory_quant.inventory_quantity = 2
+        inventory_quant.action_apply_inventory()
+
+        picking_out.action_assign()
+        self.assertEqual(picking_out.state, "assigned")
+
+    def test_73_picking_state_partial_force_assign(self):
+        picking_out = self.PickingObj.create(
+            {
+                "picking_type_id": self.picking_type_out.id,
+                "location_id": self.stock_location.id,
+                "state": "draft",
+                "location_dest_id": self.customer_location.id,
+            }
+        )
+        picking_out.move_type = "direct"
+
+        self.MoveObj.create(
+            {
+                "product_id": self.productA.id,
+                "product_uom_qty": 2,
+                "product_uom_id": self.productA.uom_id.id,
+                "picking_id": picking_out.id,
+                "location_id": self.stock_location.id,
+                "location_dest_id": self.customer_location.id,
+            }
+        )
+
+        picking_out.action_assign()
+        self.assertEqual(picking_out.state, "confirmed")
+
+    def test_74_move_state_waiting_mto(self):
+        # pins the stock-alone routing: the reception route pulls from Vendors,
+        # so an MTO move on a product without a vendor still finds a rule
+        if is_module_installed(self.env, "purchase_stock"):
+            self.skipTest(RECEPTION_ROUTE_BOUGHT)
+        picking_out = self.PickingObj.create(
+            {
+                "picking_type_id": self.picking_type_out.id,
+                "location_id": self.stock_location.id,
+                "state": "draft",
+                "location_dest_id": self.customer_location.id,
+            }
+        )
+        move_mto_alone = self.MoveObj.create(
+            {
+                "product_id": self.productA.id,
+                "product_uom_qty": 2,
+                "product_uom_id": self.productA.uom_id.id,
+                "picking_id": picking_out.id,
+                "location_id": self.stock_location.id,
+                "location_dest_id": self.customer_location.id,
+                "procure_method": "make_to_order",
+            }
+        )
+        move_with_ancestors = self.MoveObj.create(
+            {
+                "product_id": self.productB.id,
+                "product_uom_qty": 2,
+                "product_uom_id": self.productB.uom_id.id,
+                "picking_id": picking_out.id,
+                "location_id": self.stock_location.id,
+                "location_dest_id": self.customer_location.id,
+            }
+        )
+        self.MoveObj.create(
+            {
+                "product_id": self.productB.id,
+                "product_uom_qty": 2,
+                "product_uom_id": self.productB.uom_id.id,
+                "picking_id": picking_out.id,
+                "location_id": self.stock_location.id,
+                "location_dest_id": self.customer_location.id,
+                "move_dest_ids": [Command.link(move_with_ancestors.id)],
+            }
+        )
+        other_move = self.MoveObj.create(
+            {
+                "product_id": self.productC.id,
+                "product_uom_qty": 2,
+                "product_uom_id": self.productC.uom_id.id,
+                "picking_id": picking_out.id,
+                "location_id": self.stock_location.id,
+                "location_dest_id": self.customer_location.id,
+            }
+        )
+
+        move_mto_alone._action_confirm()
+        move_with_ancestors._action_confirm()
+        other_move._action_confirm()
+
+        move_mto_alone._unreserve()
+        move_with_ancestors._unreserve()
+        other_move._unreserve()
+
+        self.assertEqual(move_mto_alone.state, "waiting")
+        self.assertEqual(move_with_ancestors.state, "waiting")
+        self.assertEqual(other_move.state, "confirmed")
+
+    def test_80_partial_picking_without_backorder(self):
+        picking = self.PickingObj.create(
+            {
+                "picking_type_id": self.picking_type_in.id,
+                "location_id": self.supplier_location.id,
+                "state": "draft",
+                "location_dest_id": self.stock_location.id,
+            }
+        )
+        move_a = self.MoveObj.create(
+            {
+                "product_id": self.productA.id,
+                "product_uom_qty": 10,
+                "product_uom_id": self.productA.uom_id.id,
+                "picking_id": picking.id,
+                "location_id": self.supplier_location.id,
+                "location_dest_id": self.stock_location.id,
+            }
+        )
+
+        picking.action_confirm()
+
+        move_a.move_line_ids.quantity = 4
+        move_a.picked = True
+        res_dict = picking.button_validate()
+        backorder_wizard = Form(
+            self.env["wizard.stock.picking.validate.partial"].with_context(
+                res_dict["context"]
+            )
+        ).save()
+        backorder_wizard.action_cancel_backorder()
+
+        self.assertFalse(picking.backorder_ids)
+
+        self.assertEqual(move_a.picking_id.id, picking.id)
+
+        move_ids = picking.move_ids
+        move_done = move_ids.browse(move_a.id)
+
+        self.assertEqual(move_done.product_uom_qty, 10)
+        self.assertEqual(move_done.state, "done")
+
+    def test_backorder_setting(self):
+        self.picking_type_in.create_backorder = "ask"
+        picking_type_always = self.picking_type_in.copy(
+            {
+                "sequence_code": "always",
+                "create_backorder": "always",
+            }
+        )
+        picking_type_never = self.picking_type_in.copy(
+            {
+                "sequence_code": "never",
+                "create_backorder": "never",
+            }
+        )
+
+        picking_ask = self.PickingObj.create(
+            {
+                "picking_type_id": self.picking_type_in.id,
+                "location_id": self.supplier_location.id,
+                "state": "draft",
+                "location_dest_id": self.stock_location.id,
+            }
+        )
+        self.MoveObj.create(
+            {
+                "product_id": self.productA.id,
+                "product_uom_qty": 10,
+                "product_uom_id": self.productA.uom_id.id,
+                "picking_id": picking_ask.id,
+                "location_id": self.supplier_location.id,
+                "location_dest_id": self.stock_location.id,
+            }
+        )
+        picking_always = self.PickingObj.create(
+            {
+                "picking_type_id": picking_type_always.id,
+                "location_id": self.supplier_location.id,
+                "state": "draft",
+                "location_dest_id": self.stock_location.id,
+            }
+        )
+        self.MoveObj.create(
+            {
+                "product_id": self.productA.id,
+                "product_uom_qty": 10,
+                "product_uom_id": self.productA.uom_id.id,
+                "picking_id": picking_always.id,
+                "location_id": self.supplier_location.id,
+                "location_dest_id": self.stock_location.id,
+            }
+        )
+        picking_never = self.PickingObj.create(
+            {
+                "picking_type_id": picking_type_never.id,
+                "location_id": self.supplier_location.id,
+                "state": "draft",
+                "location_dest_id": self.stock_location.id,
+            }
+        )
+        self.MoveObj.create(
+            {
+                "product_id": self.productA.id,
+                "product_uom_qty": 10,
+                "product_uom_id": self.productA.uom_id.id,
+                "picking_id": picking_never.id,
+                "location_id": self.supplier_location.id,
+                "location_dest_id": self.stock_location.id,
+            }
+        )
+
+        pickings = picking_ask | picking_always | picking_never
+        pickings.action_confirm()
+        pickings.move_ids.move_line_ids.quantity = 4
+        pickings.move_ids.picked = True
+        res_dict = pickings.button_validate()
+        backorder_wizard = Form(
+            self.env["wizard.stock.picking.validate.partial"].with_context(
+                res_dict["context"]
+            )
+        ).save()
+
+        self.assertEqual(
+            backorder_wizard.pick_ids,
+            picking_ask,
+            "Only ask backorder for picking with setting 'set'",
+        )
+        backorder_wizard.action_cancel_backorder()
+
+        self.assertEqual(pickings.mapped("state"), ["done", "done", "done"])
+        self.assertFalse(picking_ask.backorder_ids)
+        self.assertTrue(
+            picking_always.backorder_ids,
+            "Picking with setting 'always' should have backorder created",
+        )
+        self.assertFalse(
+            picking_never.backorder_ids,
+            "Picking with setting 'never' should have no backorder created",
+        )
+
+    def test_transit_multi_companies(self):
+        grp_multi_loc = self.env.ref("stock.group_stock_multi_locations")
+        grp_multi_routes = self.env.ref("stock.group_adv_location")
+        grp_multi_companies = self.env.ref("base.group_multi_company")
+        self.env.user.write({"group_ids": [Command.link(grp_multi_loc.id)]})
+        self.env.user.write({"group_ids": [Command.link(grp_multi_routes.id)]})
+        self.env.user.write({"group_ids": [Command.link(grp_multi_companies.id)]})
+
+        company_2 = self.company
+        self.env.user.write({"company_ids": [Command.link(company_2.id)]})
+
+        warehouse_company_1 = self.env["stock.warehouse"].search(
+            [("company_id", "=", self.env.company.id)], limit=1
+        )
+
+        f = Form(self.env["stock.route"])
+        f.name = "From Company 1 to InterCompany"
+        f.company_id = self.env.company
+        with f.rule_ids.new() as rule:
+            rule.name = "From Company 1 to InterCompany"
+            rule.action = "pull"
+            rule.picking_type_id = warehouse_company_1.in_type_id
+            rule.location_src_id = self.inter_company_location
+            rule.procure_method = "make_to_order"
+        route_a = f.save()
+        warehouse_company_2 = self.env["stock.warehouse"].search(
+            [("company_id", "=", company_2.id)], limit=1
+        )
+        f = Form(self.env["stock.route"])
+        f.name = "From InterCompany to Company 2"
+        f.company_id = company_2
+        with f.rule_ids.new() as rule:
+            rule.name = "From InterCompany to Company 2"
+            rule.action = "pull"
+            rule.picking_type_id = warehouse_company_2.out_type_id
+            rule.location_dest_id = self.inter_company_location
+            rule.procure_method = "make_to_stock"
+        route_b = f.save()
+
+        product = self.env["product.product"].create(
+            {
+                "name": "The product from the other company that I absolutely want",
+                "is_storable": True,
+                "route_ids": [Command.link(route_a.id), Command.link(route_b.id)],
+            }
+        )
+
+        replenish_wizard = (
+            self.env["wizard.product.product.replenish"]
+            .with_context(default_product_tmpl_id=product.product_tmpl_id.id)
+            .create(
+                {
+                    "product_id": product.id,
+                    "product_tmpl_id": product.product_tmpl_id.id,
+                    "product_uom_id": self.uom_unit.id,
+                    "quantity": "5",
+                    "warehouse_id": warehouse_company_1.id,
+                }
+            )
+        )
+        replenish_wizard.action_replenish()
+        incoming_picking = self.env["stock.picking"].search(
+            [
+                ("product_id", "=", product.id),
+                ("picking_type_id", "=", warehouse_company_1.in_type_id.id),
+            ]
+        )
+        outgoing_picking = self.env["stock.picking"].search(
+            [
+                ("product_id", "=", product.id),
+                ("picking_type_id", "=", warehouse_company_2.out_type_id.id),
+            ]
+        )
+
+        self.assertEqual(incoming_picking.company_id, self.env.company)
+        self.assertEqual(incoming_picking.move_ids.company_id, self.env.company)
+        self.assertEqual(outgoing_picking.company_id, company_2)
+        self.assertEqual(outgoing_picking.move_ids.company_id, company_2)
+
+    def test_transit_multi_companies_ultimate(self):
+        grp_multi_loc = self.env.ref("stock.group_stock_multi_locations")
+        grp_multi_routes = self.env.ref("stock.group_adv_location")
+        grp_multi_companies = self.env.ref("base.group_multi_company")
+        self.env.user.write({"group_ids": [Command.link(grp_multi_loc.id)]})
+        self.env.user.write({"group_ids": [Command.link(grp_multi_routes.id)]})
+        self.env.user.write({"group_ids": [Command.link(grp_multi_companies.id)]})
+
+        company_2 = self.company
+        self.env.user.write({"company_ids": [Command.link(company_2.id)]})
+
+        warehouse_company_1 = self.env["stock.warehouse"].search(
+            [("company_id", "=", self.env.company.id)], limit=1
+        )
+
+        f = Form(self.env["stock.route"])
+        f.name = "From Company 1 to InterCompany"
+        f.company_id = self.env.company
+        with f.rule_ids.new() as rule:
+            rule.name = "From Company 1 to InterCompany"
+            rule.action = "pull"
+            rule.picking_type_id = warehouse_company_1.in_type_id
+            rule.location_src_id = self.inter_company_location
+            rule.procure_method = "make_to_order"
+        route_a = f.save()
+
+        warehouse_company_2 = self.env["stock.warehouse"].search(
+            [("company_id", "=", company_2.id)], limit=1
+        )
+        f = Form(self.env["stock.route"])
+        f.name = "From InterCompany to Company 2"
+        f.company_id = company_2
+        with f.rule_ids.new() as rule:
+            rule.name = "From InterCompany to Company 2"
+            rule.action = "pull"
+            rule.picking_type_id = warehouse_company_2.out_type_id
+            rule.location_dest_id = self.inter_company_location
+            rule.procure_method = "make_to_stock"
+        route_b = f.save()
+
+        company_3 = self.env["res.company"].create({"name": "Alaska Company"})
+
+        warehouse_company_3 = self.env["stock.warehouse"].search(
+            [("company_id", "=", company_3.id)], limit=1
+        )
+        f = Form(self.env["stock.route"])
+        f.name = "From InterCompany to Company 3"
+        f.company_id = company_3
+        with f.rule_ids.new() as rule:
+            rule.name = "From InterCompany to Company 3"
+            rule.action = "pull"
+            rule.picking_type_id = warehouse_company_3.out_type_id
+            rule.location_dest_id = self.inter_company_location
+            rule.procure_method = "make_to_stock"
+        route_c = f.save()
+
+        product_from_company_2 = self.env["product.product"].create(
+            {
+                "name": "The product from the other company that I absolutely want",
+                "is_storable": True,
+                "route_ids": [Command.link(route_a.id), Command.link(route_b.id)],
+            }
+        )
+
+        product_from_company_3 = self.env["product.product"].create(
+            {
+                "name": "Ice",
+                "is_storable": True,
+                "route_ids": [Command.link(route_a.id), Command.link(route_c.id)],
+            }
+        )
+
+        f = Form(self.env["stock.picking"], view="stock.view_stock_picking_form")
+        f.picking_type_id = warehouse_company_1.out_type_id
+        with f.move_ids.new() as move:
+            move.product_id = product_from_company_2
+            move.product_uom_qty = 5
+        with f.move_ids.new() as move:
+            move.product_id = product_from_company_3
+            move.product_uom_qty = 5
+        picking = f.save()
+
+        picking.move_ids.write({"procure_method": "make_to_order"})
+        picking.action_confirm()
+
+        incoming_picking = self.env["stock.picking"].search(
+            [
+                ("product_id", "=", product_from_company_2.id),
+                ("picking_type_id", "=", warehouse_company_1.in_type_id.id),
+            ]
+        )
+        outgoing_picking = self.env["stock.picking"].search(
+            [
+                ("product_id", "=", product_from_company_2.id),
+                ("picking_type_id", "=", warehouse_company_2.out_type_id.id),
+            ]
+        )
+
+        self.assertEqual(incoming_picking.company_id, self.env.company)
+        self.assertEqual(
+            incoming_picking.move_ids.mapped("company_id"), self.env.company
+        )
+        self.assertEqual(outgoing_picking.company_id, company_2)
+        self.assertEqual(outgoing_picking.move_ids.company_id, company_2)
+
+        incoming_picking = self.env["stock.picking"].search(
+            [
+                ("product_id", "=", product_from_company_3.id),
+                ("picking_type_id", "=", warehouse_company_1.in_type_id.id),
+            ]
+        )
+        outgoing_picking = self.env["stock.picking"].search(
+            [
+                ("product_id", "=", product_from_company_3.id),
+                ("picking_type_id", "=", warehouse_company_3.out_type_id.id),
+            ]
+        )
+
+        self.assertEqual(incoming_picking.company_id, self.env.company)
+        self.assertEqual(
+            incoming_picking.move_ids.mapped("company_id"), self.env.company
+        )
+        self.assertEqual(outgoing_picking.company_id, company_3)
+        self.assertEqual(outgoing_picking.move_ids.company_id, company_3)
+
+    def test_picking_date_planned_readonlyness(self):
+        partner = self.env["res.partner"].create(
+            {"name": "Hubert Bonisseur de la Bath"}
+        )
+        product = self.env["product.product"].create(
+            {"name": "Un petit coup de polish", "is_storable": True}
+        )
+        wh = self.env["stock.warehouse"].search(
+            [("company_id", "=", self.env.company.id)], limit=1
+        )
+
+        picking = self.env["stock.picking"].create(
+            {
+                "state": "draft",
+                "picking_type_id": wh.out_type_id.id,
+            }
+        )
+        f = Form(picking, view="stock.view_stock_picking_form")
+        f.partner_id = partner
+        with f.move_ids.new() as move:
+            move.product_id = product
+            move.product_uom_qty = 5
+        f.date_planned = fields.Datetime.now()
+        picking = f.save()
+
+        f = Form(picking, view="stock.view_stock_picking_form")
+        f.date_planned = fields.Datetime.now()
+        picking = f.save()
+
+        self.assertEqual(f.state, "draft")
+        picking.action_confirm()
+
+        f = Form(picking, view="stock.view_stock_picking_form")
+        f.date_planned = fields.Datetime.now()
+        picking = f.save()
+
+        self.assertEqual(f.state, "confirmed")
+
+    def test_scrap_location_readonlyness(self):
+        grp_multi_loc = self.env.ref("stock.group_stock_multi_locations")
+        self.env.user.write({"group_ids": [Command.link(grp_multi_loc.id)]})
+
+        product = self.env["product.product"].create(
+            {"name": "Un petit coup de polish", "is_storable": True}
+        )
+        wh = self.env["stock.warehouse"].search(
+            [("company_id", "=", self.env.company.id)], limit=1
+        )
+
+        self.env["stock.quant"]._update_available_quantity(
+            product, wh.wh_qc_stock_loc_id, 10
+        )
+
+        f = Form(self.env["stock.scrap"], view="stock.view_stock_scrap_form")
+        f.product_id = product
+        scrap = f.save()
+
+        f = Form(scrap, view="stock.view_stock_scrap_form")
+        f.location_id = wh.wh_qc_stock_loc_id
+        f.scrap_location_id = wh.wh_pack_stock_loc_id
+        scrap = f.save()
+
+        self.assertEqual(scrap.state, "draft")
+        scrap.action_validate()
+
+        f = Form(scrap, view="stock.view_stock_scrap_form")
+        self.assertEqual(f.state, "done")
+        with self.assertRaises(
+            AssertionError, msg="can't write on readonly field location_id"
+        ):
+            f.location_id = wh.lot_stock_id
+        with self.assertRaises(
+            AssertionError, msg="can't write on readonly field scrap_location_id"
+        ):
+            f.scrap_location_id = wh.wh_input_stock_loc_id
+
+    def test_validate_multiple_pickings_with_same_lot_names(self):
+        product_lot = self.env["product.product"].create(
+            {
+                "name": "Tracked by lot",
+                "is_storable": True,
+                "tracking": "lot",
+            }
+        )
+        product_serial = self.env["product.product"].create(
+            {
+                "name": "Tracked by SN",
+                "is_storable": True,
+                "tracking": "serial",
+            }
+        )
+        picking_form = Form(self.env["stock.picking"])
+        picking_form.picking_type_id = self.picking_type_in
+        with picking_form.move_ids.new() as move:
+            move.product_id = product_lot
+            move.product_uom_qty = 8
+        receipt_1 = picking_form.save()
+        receipt_1.action_confirm()
+
+        move_form = Form(
+            receipt_1.move_ids, view="stock.view_stock_move_form_operations"
+        )
+        with move_form.move_line_ids.edit(0) as line:
+            line.lot_name = "lot-001"
+            line.quantity = 3
+        with move_form.move_line_ids.new() as line:
+            line.lot_name = "lot-002"
+            line.quantity = 3
+        with move_form.move_line_ids.new() as line:
+            line.lot_name = "lot-003"
+            line.quantity = 2
+        move = move_form.save()
+        move.picked = True
+
+        picking_form = Form(self.env["stock.picking"])
+        picking_form.picking_type_id = self.picking_type_in
+        with picking_form.move_ids.new() as move:
+            move.product_id = product_lot
+            move.product_uom_qty = 8
+        receipt_2 = picking_form.save()
+        receipt_2.action_confirm()
+
+        move_form = Form(
+            receipt_2.move_ids, view="stock.view_stock_move_form_operations"
+        )
+        with move_form.move_line_ids.edit(0) as line:
+            line.lot_name = "lot-003"
+            line.quantity = 2
+        with move_form.move_line_ids.new() as line:
+            line.lot_name = "lot-004"
+            line.quantity = 4
+        with move_form.move_line_ids.new() as line:
+            line.lot_name = "lot-001"
+            line.quantity = 1
+        with move_form.move_line_ids.new() as line:
+            line.lot_name = "lot-005"
+            line.quantity = 1
+        move = move_form.save()
+        move.picked = True
+
+        (receipt_1 | receipt_2).button_validate()
+        lots = self.env["product.trace"].search(
+            [("product_id", "=", product_lot.id)], order="name asc"
+        )
+        self.assertEqual(len(lots), 5)
+        lot1, lot2, lot3, lot4, lot5 = lots
+        self.assertEqual(lot1.name, "lot-001")
+        self.assertEqual(lot2.name, "lot-002")
+        self.assertEqual(lot3.name, "lot-003")
+        self.assertEqual(lot4.name, "lot-004")
+        self.assertEqual(lot5.name, "lot-005")
+        self.assertEqual(receipt_1.move_line_ids[0].trace_id.id, lot1.id)
+        self.assertEqual(receipt_1.move_line_ids[1].trace_id.id, lot2.id)
+        self.assertEqual(receipt_1.move_line_ids[2].trace_id.id, lot3.id)
+        self.assertEqual(receipt_2.move_line_ids[0].trace_id.id, lot3.id)
+        self.assertEqual(receipt_2.move_line_ids[1].trace_id.id, lot4.id)
+        self.assertEqual(receipt_2.move_line_ids[2].trace_id.id, lot1.id)
+        self.assertEqual(receipt_2.move_line_ids[3].trace_id.id, lot5.id)
+
+        picking = self.env["stock.picking"].create(
+            {
+                "state": "draft",
+                "picking_type_id": self.picking_type_in.id,
+            }
+        )
+        picking_form = Form(picking)
+        with picking_form.move_ids.new() as move:
+            move.product_id = product_serial
+            move.product_uom_qty = 2
+        receipt_1 = picking_form.save()
+        receipt_1.action_confirm()
+
+        move_form = Form(
+            receipt_1.move_ids, view="stock.view_stock_move_form_operations"
+        )
+        with move_form.move_line_ids.edit(0) as line:
+            line.lot_name = "sn-001"
+        with move_form.move_line_ids.edit(1) as line:
+            line.lot_name = "sn-002"
+        move = move_form.save()
+        move.picked = True
+
+        picking = self.env["stock.picking"].create(
+            {
+                "state": "draft",
+                "picking_type_id": self.picking_type_in.id,
+            }
+        )
+        picking_form = Form(picking)
+        with picking_form.move_ids.new() as move:
+            move.product_id = product_serial
+            move.product_uom_qty = 2
+        receipt_2 = picking_form.save()
+        receipt_2.action_confirm()
+
+        move_form = Form(
+            receipt_2.move_ids, view="stock.view_stock_move_form_operations"
+        )
+        with move_form.move_line_ids.edit(0) as line:
+            line.lot_name = "sn-002"
+        with move_form.move_line_ids.edit(1) as line:
+            line.lot_name = "sn-001"
+        move = move_form.save()
+        move.picked = True
+
+        with self.assertRaises(ValidationError):
+            (receipt_1 | receipt_2).button_validate()
+
+    def test_assign_qty_to_first_move(self):
+        def create_picking(picking_type, from_loc, to_loc, sequence=10, delay=0):
+            picking = self.PickingObj.create(
+                {
+                    "picking_type_id": picking_type,
+                    "location_id": from_loc,
+                    "location_dest_id": to_loc,
+                    "state": "draft",
+                }
+            )
+            self.MoveObj.create(
+                {
+                    "sequence": sequence,
+                    "date": fields.Datetime.add(fields.Datetime.now(), second=delay),
+                    "date_reservation": fields.Date.today(),
+                    "product_id": self.productA.id,
+                    "product_uom_qty": 1,
+                    "product_uom_id": self.productA.uom_id.id,
+                    "picking_id": picking.id,
+                    "location_id": from_loc,
+                    "location_dest_id": to_loc,
+                }
+            )
+            picking.action_confirm()
+            return picking
+
+        self.picking_type_out.reservation_method = "at_confirm"
+        out01 = create_picking(
+            self.picking_type_out.id, self.stock_location.id, self.customer_location.id
+        )
+        out02 = create_picking(
+            self.picking_type_out.id,
+            self.stock_location.id,
+            self.customer_location.id,
+            sequence=2,
+            delay=1,
+        )
+        in01 = create_picking(
+            self.picking_type_in.id,
+            self.supplier_location.id,
+            self.stock_location.id,
+            delay=2,
+        )
+
+        in01.button_validate()
+        self.assertEqual(out01.state, "assigned")
+        self.assertEqual(out02.state, "confirmed")
+
+        out01.button_validate()
+
+        out03 = create_picking(
+            self.picking_type_out.id,
+            self.stock_location.id,
+            self.customer_location.id,
+            delay=3,
+        )
+        out03.priority = "1"
+        in02 = create_picking(
+            self.picking_type_in.id,
+            self.supplier_location.id,
+            self.stock_location.id,
+            delay=4,
+        )
+
+        in02.button_validate()
+        self.assertEqual(out02.state, "confirmed")
+        self.assertEqual(out03.state, "assigned")
+
+    def test_auto_assign_backorder(self):
+        self.env["stock.quant"]._update_available_quantity(
+            self.productA, self.stock_location, 10
+        )
+        self.picking_type_out.reservation_method = "at_confirm"
+
+        picking_out = self.PickingObj.create(
+            {
+                "picking_type_id": self.picking_type_out.id,
+                "location_id": self.stock_location.id,
+                "location_dest_id": self.customer_location.id,
+                "state": "draft",
+            }
+        )
+        move_out = self.MoveObj.create(
+            {
+                "product_id": self.productA.id,
+                "product_uom_qty": 10,
+                "product_uom_id": self.productA.uom_id.id,
+                "picking_id": picking_out.id,
+                "location_id": self.stock_location.id,
+                "location_dest_id": self.customer_location.id,
+            }
+        )
+        move_out.quantity = 7
+        move_out.picked = True
+        Form.from_action(self.env, picking_out.button_validate()).save().process()
+
+        bo = self.env["stock.picking"].search([("backorder_id", "=", picking_out.id)])
+        self.assertEqual(bo.state, "assigned")
+
+    def test_picking_set_clear_qty(self):
+        picking_in = self.PickingObj.create(
+            {
+                "picking_type_id": self.picking_type_in.id,
+                "location_id": self.supplier_location.id,
+                "location_dest_id": self.stock_location.id,
+                "state": "draft",
+            }
+        )
+        move_a = self.MoveObj.create(
+            {
+                "product_id": self.productA.id,
+                "product_uom_qty": 10,
+                "product_uom_id": self.productA.uom_id.id,
+                "picking_id": picking_in.id,
+                "location_id": self.supplier_location.id,
+                "location_dest_id": self.stock_location.id,
+            }
+        )
+        move_b = self.MoveObj.create(
+            {
+                "product_id": self.productB.id,
+                "product_uom_qty": 10,
+                "product_uom_id": self.productB.uom_id.id,
+                "picking_id": picking_in.id,
+                "location_id": self.supplier_location.id,
+                "location_dest_id": self.stock_location.id,
+            }
+        )
+        picking_in.action_confirm()
+
+        self.assertEqual(move_a.quantity, 10)
+        self.assertEqual(move_b.quantity, 10)
+
+        picking_in.action_unreserve()
+        self.assertEqual(move_a.quantity, 0)
+        self.assertEqual(move_b.quantity, 0)
+
+        move_a.quantity = 5
+        self.assertTrue(picking_in.show_check_availability)
+        picking_in.action_assign()
+        self.assertEqual(move_a.quantity, 10)
+        self.assertEqual(move_b.quantity, 10)
+        self.assertFalse(picking_in.show_check_availability)
+
+    def test_stock_move_with_partner_id(self):
+        partner_1 = self.env["res.partner"].create(
+            {"name": "Hubert Bonisseur de la Bath"}
+        )
+        partner_2 = self.env["res.partner"].create(
+            {"name": "Donald Clairvoyant du Bled"}
+        )
+        product = self.env["product.product"].create(
+            {"name": "Un petit coup de polish", "is_storable": True}
+        )
+        wh = self.env["stock.warehouse"].search(
+            [("company_id", "=", self.env.company.id)], limit=1
+        )
+
+        f = Form(self.env["stock.picking"])
+        f.partner_id = partner_1
+        f.picking_type_id = wh.out_type_id
+        with f.move_ids.new() as move:
+            move.product_id = product
+            move.product_uom_qty = 5
+        picking = f.save()
+
+        self.assertEqual(picking.move_ids.partner_id, partner_1)
+
+        picking.write({"partner_id": partner_2.id})
+        self.assertEqual(picking.move_ids.partner_id, partner_2)
+
+    def test_scrap_tracked_product_without_lot(self):
+        tracked_product = self.env["product.product"].create(
+            {
+                "name": "Tracked Product",
+                "type": "consu",
+                "is_storable": True,
+                "tracking": "lot",
+            }
+        )
+        self.env["stock.quant"]._update_available_quantity(
+            tracked_product, self.stock_location, 1.0
+        )
+
+        scrap = self.env["stock.scrap"].create(
+            {
+                "product_id": tracked_product.id,
+                "product_uom_id": tracked_product.uom_id.id,
+                "location_id": self.stock_location.id,
+                "scrap_qty": 1.0,
+            }
+        )
+        scrap._action_done()
+
+        self.assertEqual(scrap.move_ids.state, "done")
+
+    def test_cancel_picking_with_scrapped_products(self):
+        self.env["stock.quant"]._update_available_quantity(
+            self.productA, self.stock_location, 10
+        )
+
+        picking = self.env["stock.picking"].create(
+            {
+                "picking_type_id": self.picking_type_out.id,
+                "location_id": self.supplier_location.id,
+                "location_dest_id": self.stock_location.id,
+            }
+        )
+        move = self.env["stock.move"].create(
+            {
+                "product_id": self.productA.id,
+                "product_uom_qty": 1,
+                "product_uom_id": self.productA.uom_id.id,
+                "picking_id": picking.id,
+                "location_id": self.supplier_location.id,
+                "location_dest_id": self.stock_location.id,
+            }
+        )
+
+        picking.action_confirm()
+        picking.action_assign()
+
+        scrap = self.env["stock.scrap"].create(
+            {
+                "picking_id": picking.id,
+                "product_id": self.productA.id,
+                "product_uom_id": self.productA.uom_id.id,
+                "scrap_qty": 1.0,
+            }
+        )
+        scrap._action_done()
+
+        picking.action_cancel()
+
+        self.assertEqual(picking.state, "cancel")
+        self.assertEqual(move.state, "cancel")
+        self.assertEqual(scrap.move_ids[0].state, "done")
+
+    def test_receive_tracked_product(self):
+        self.productA.tracking = "serial"
+
+        receipt_form = Form(self.env["stock.picking"])
+        receipt_form.picking_type_id = self.picking_type_in
+        with receipt_form.move_ids.new() as move_line:
+            move_line.product_id = self.productA
+        receipt = receipt_form.save()
+
+        move_form = Form(receipt.move_ids, view="stock.view_stock_move_form_operations")
+        with move_form.move_line_ids.new() as line:
+            line.lot_name = "USN01"
+        move_form.save()
+
+        receipt.move_ids.picked = True
+        receipt.button_validate()
+        quant = self.productA.stock_quant_ids.filtered(
+            lambda q: q.location_id.id == self.stock_location.id
+        )
+
+        self.assertEqual(receipt.state, "done")
+        self.assertEqual(quant.quantity, 1.0)
+        self.assertEqual(quant.trace_id.name, "USN01")
+
+    def test_assign_sm_to_existing_picking(self):
+        wh01_address, wh02_address = self.env["res.partner"].create(
+            [
+                {
+                    "name": "Address %s" % i,
+                    "parent_id": self.env.company.id,
+                    "type": "delivery",
+                }
+                for i in [1, 2]
+            ]
+        )
+
+        warehouse01 = self.env["stock.warehouse"].search(
+            [("company_id", "=", self.env.company.id)], limit=1
+        )
+        warehouse01.partner_id = wh01_address
+        warehouse02 = self.env["stock.warehouse"].create(
+            {
+                "name": "Second Warehouse",
+                "code": "WH02",
+                "partner_id": wh02_address.id,
+                "resupply_wh_ids": [(6, 0, warehouse01.ids)],
+            }
+        )
+
+        wh01_stock_location = warehouse01.lot_stock_id
+        wh02_stock_location = warehouse02.lot_stock_id
+        products = self.productA + self.productB + self.productC
+
+        for product in products:
+            product.route_ids = [(6, 0, warehouse02.resupply_route_ids.ids)]
+            self.env["stock.quant"]._update_available_quantity(
+                product, wh01_stock_location, 10
+            )
+            self.env["stock.warehouse.orderpoint"].create(
+                {
+                    "name": "RR for %s" % product.name,
+                    "warehouse_id": warehouse02.id,
+                    "location_id": wh02_stock_location.id,
+                    "product_id": product.id,
+                    "product_min_qty": 1,
+                    "product_max_qty": 5,
+                }
+            )
+
+        self.env["stock.scheduler"].run()
+
+        out_moves = self.env["stock.move"].search(
+            [
+                ("product_id", "in", products.ids),
+                ("picking_id", "!=", False),
+                ("location_id", "=", wh01_stock_location.id),
+            ]
+        )
+        in_moves = self.env["stock.move"].search(
+            [
+                ("product_id", "in", products.ids),
+                ("picking_id", "!=", False),
+                ("location_dest_id", "=", wh02_stock_location.id),
+            ]
+        )
+
+        out_picking = out_moves[0].picking_id
+        self.assertEqual(len(out_moves), 3)
+        self.assertEqual(out_moves.product_id, products)
+        self.assertEqual(
+            out_moves.picking_id,
+            out_picking,
+            "All SM should be part of the same picking",
+        )
+        self.assertEqual(
+            out_picking.partner_id,
+            wh02_address,
+            "It should be an outgoing picking to %s" % wh02_address.display_name,
+        )
+
+        in_picking = in_moves[0].picking_id
+        self.assertEqual(len(in_moves), 3)
+        self.assertEqual(in_moves.product_id, products)
+        self.assertEqual(
+            in_moves.picking_id, in_picking, "All SM should be part of the same picking"
+        )
+        self.assertEqual(
+            in_picking.partner_id,
+            wh01_address,
+            "It should be an incoming picking from %s" % wh01_address.display_name,
+        )
+
+    def test_2steps_and_automatic_reservation(self):
+        self.env["ir.config_parameter"].sudo().set_param(
+            "stock.picking_no_auto_reserve", False
+        )
+        self.warehouse_1.out_type_id.reservation_method = "by_date"
+        self.warehouse_1.reception_steps = "two_steps"
+
+        out_move = self.env["stock.move"].create(
+            {
+                "product_id": self.productA.id,
+                "location_id": self.stock_location.id,
+                "location_dest_id": self.customer_location.id,
+                "product_uom_id": self.productA.uom_id.id,
+                "product_uom_qty": 1,
+                "picking_type_id": self.picking_type_out.id,
+                "date_reservation": fields.Date.today(),
+            }
+        )
+        out_move._action_confirm()
+
+        in_input_move = self.env["stock.move"].create(
+            {
+                "product_id": self.productA.id,
+                "location_id": self.supplier_location.id,
+                "location_dest_id": self.warehouse_1.wh_input_stock_loc_id.id,
+                "product_uom_id": self.productA.uom_id.id,
+                "product_uom_qty": 1,
+                "picking_type_id": self.picking_type_in.id,
+            }
+        )
+        in_input_move._action_confirm()
+        in_input_move.quantity = 1
+        in_input_move.picked = True
+        in_input_move._action_done()
+
+        in_stock_move = self.env["stock.move"].search(
+            [
+                ("product_id", "=", self.productA.id),
+                ("location_id", "=", self.warehouse_1.wh_input_stock_loc_id.id),
+            ],
+            limit=1,
+        )
+        in_stock_move.quantity = 1
+        in_stock_move.picked = True
+        in_stock_picking = in_stock_move.picking_id
+        in_stock_picking.button_validate()
+
+        self.assertEqual(
+            out_move.move_line_ids.quantity_product_uom,
+            1.0,
+            "The out move should be reserved",
+        )
+
+    def test_assign_done_sml_and_validate_it(self):
+        grp_multi_loc = self.env.ref("stock.group_stock_multi_locations")
+        self.env.user.write({"group_ids": [Command.link(grp_multi_loc.id)]})
+
+        warehouse = self.env["stock.warehouse"].search(
+            [("company_id", "=", self.env.company.id)], limit=1
+        )
+        stock_location = warehouse.lot_stock_id
+        sub_loc = stock_location.child_ids[0]
+
+        self.productA.tracking = "lot"
+
+        receipt_form = Form(self.env["stock.picking"])
+        receipt_form.picking_type_id = self.picking_type_in
+        with receipt_form.move_ids.new() as move:
+            move.product_id = self.productA
+        receipt = receipt_form.save()
+        receipt.action_confirm()
+
+        with Form(
+            receipt.move_ids, view="stock.view_stock_move_form_operations"
+        ) as move_form:
+            with move_form.move_line_ids.new() as sml:
+                sml.location_dest_id = sub_loc
+                sml.lot_name = "123"
+                sml.quantity = 10
+
+        done_sml = receipt.move_ids.move_line_ids.filtered(lambda sml: sml.quantity > 0)
+        self.assertEqual(done_sml.location_dest_id, sub_loc)
+
+        receipt.button_validate()
+
+        self.assertEqual(receipt.move_ids.move_line_ids.location_dest_id, sub_loc)
+
+    def test_multi_picking_validation(self):
+        self.env.user.write(
+            {
+                "group_ids": [
+                    Command.link(self.env.ref("stock.group_reception_report").id)
+                ]
+            }
+        )
+        picking_A, picking_B = self.PickingObj.create(
+            [
+                {
+                    "picking_type_id": self.picking_type_in.id,
+                    "location_id": self.supplier_location.id,
+                    "location_dest_id": self.stock_location.id,
+                },
+                {
+                    "picking_type_id": self.picking_type_out.id,
+                    "location_id": self.stock_location.id,
+                    "location_dest_id": self.customer_location.id,
+                },
+            ]
+        )
+        self.MoveObj.create(
+            [
+                {
+                    "product_id": self.DozA.id,
+                    "product_uom_qty": 10,
+                    "product_uom_id": self.DozA.uom_id.id,
+                    "quantity": 10,
+                    "picking_id": picking_A.id,
+                    "location_id": self.supplier_location.id,
+                    "location_dest_id": self.stock_location.id,
+                },
+                {
+                    "product_id": self.DozA.id,
+                    "product_uom_qty": 10,
+                    "product_uom_id": self.DozA.uom_id.id,
+                    "quantity": 10,
+                    "picking_id": picking_B.id,
+                    "location_id": self.stock_location.id,
+                    "location_dest_id": self.customer_location.id,
+                },
+            ]
+        )
+        pickings = picking_A | picking_B
+        pickings.move_ids.picked = True
+        pickings.button_validate()
+        self.assertTrue(
+            all(pickings.mapped(lambda p: p.state == "done")),
+            "Pickings should be set as done",
+        )
+
+    def test_empty_picking_draft(self):
+        picking = self.PickingObj.create(
+            {
+                "picking_type_id": self.picking_type_in.id,
+                "location_id": self.stock_location.id,
+                "location_dest_id": self.stock_location.id,
+            }
+        )
+        self.assertFalse(picking.move_ids)
+        self.assertEqual(picking.state, "draft")
+
+    def test_validate_backorder(self):
+        picking = self.env["stock.picking"].create(
+            {
+                "picking_type_id": self.picking_type_in.id,
+                "location_id": self.customer_location.id,
+                "location_dest_id": self.stock_location.id,
+            }
+        )
+        move1 = self.env["stock.move"].create(
+            {
+                "product_id": self.productA.id,
+                "product_uom_qty": 10,
+                "product_uom_id": self.productA.uom_id.id,
+                "picking_id": picking.id,
+                "location_id": self.customer_location.id,
+                "location_dest_id": self.stock_location.id,
+            }
+        )
+        move2 = self.env["stock.move"].create(
+            {
+                "product_id": self.productB.id,
+                "product_uom_qty": 10,
+                "product_uom_id": self.productB.uom_id.id,
+                "picking_id": picking.id,
+                "location_id": self.customer_location.id,
+                "location_dest_id": self.stock_location.id,
+            }
+        )
+        picking.action_confirm()
+        self.assertRecordValues(
+            picking.move_ids[0], [{"product_id": self.productA.id, "quantity": 10}]
+        )
+        self.assertRecordValues(
+            picking.move_ids[1], [{"product_id": self.productB.id, "quantity": 10}]
+        )
+        move1.quantity = 2
+        move2.quantity = 0
+        Form.from_action(self.env, picking.button_validate()).save().process()
+        backorder = picking.backorder_ids
+        self.assertRecordValues(
+            backorder.move_ids[0], [{"product_id": self.productB.id, "quantity": 10}]
+        )
+        self.assertRecordValues(
+            backorder.move_ids[1], [{"product_id": self.productA.id, "quantity": 8}]
+        )
+        backorder.button_validate()
+        self.assertEqual(backorder.state, "done")
+
+    def test_picking_mixed_tracking_with_backorder(self):
+        self.productB.tracking = "lot"
+        picking = self.env["stock.picking"].create(
+            {
+                "location_id": self.supplier_location.id,
+                "location_dest_id": self.stock_location.id,
+                "picking_type_id": self.picking_type_in.id,
+                "company_id": self.env.company.id,
+            }
+        )
+        no_tracking_move = self.env["stock.move"].create(
+            {
+                "product_id": self.productA.id,
+                "product_uom_qty": 1,
+                "product_uom_id": self.productA.uom_id.id,
+                "picking_id": picking.id,
+                "location_id": self.supplier_location.id,
+                "location_dest_id": self.stock_location.id,
+            }
+        )
+        self.env["stock.move"].create(
+            {
+                "product_id": self.productB.id,
+                "product_uom_qty": 1,
+                "product_uom_id": self.productB.uom_id.id,
+                "picking_id": picking.id,
+                "location_id": self.supplier_location.id,
+                "location_dest_id": self.stock_location.id,
+            }
+        )
+        picking.action_confirm()
+
+        no_tracking_move.picked = True
+        action_dict = picking.button_validate()
+        backorder_wizard = Form(
+            self.env["wizard.stock.picking.validate.partial"].with_context(
+                action_dict["context"]
+            )
+        ).save()
+        backorder_wizard.process()
+        bo = self.env["stock.picking"].search([("backorder_id", "=", picking.id)])
+        self.assertEqual(bo.state, "assigned")
+
+
+@tagged("-at_install", "post_install")
+class TestStockFlowTourPostInstall(TestStockCommon, HttpCase):
+    @users("pauline")
+    def test_basic_stock_flow_with_minimal_access_rights(self):
+        self.product.sudo().is_storable = True
+        if (
+            self.env["ir.module.module"]
+            .sudo()
+            .search_count([("name", "=", "marin"), ("state", "=", "installed")])
+        ):
+            # marin offers Mark as To Do and Validate only to the users each
+            # operation type lists, by design: on its deployment those lists are
+            # part of the minimal rights this flow needs, on the types the
+            # Receipts and Deliveries actions create their transfers in
+            pickings = self.env["stock.picking"]
+            self.env["stock.picking.type"].browse(
+                [
+                    pickings.with_context(
+                        restricted_picking_type_code=code
+                    )._default_picking_type_id()
+                    for code in ("incoming", "outgoing")
+                ]
+            ).sudo().write(
+                {
+                    "can_todo_user_ids": [Command.link(self.env.uid)],
+                    "can_validate_user_ids": [Command.link(self.env.uid)],
+                }
+            )
+        receipt, delivery = self.env["stock.picking"].create(
+            [
+                {
+                    "picking_type_id": self.picking_type_in.id,
+                    "location_id": self.supplier_location.id,
+                    "location_dest_id": self.stock_location.id,
+                    "move_ids": [
+                        Command.create(
+                            {
+                                "product_id": self.product.id,
+                                "product_uom_id": self.product.uom_id.id,
+                                "product_uom_qty": 1.0,
+                                "location_id": self.supplier_location.id,
+                                "location_dest_id": self.stock_location.id,
+                            }
+                        )
+                    ],
+                },
+                {
+                    "partner_id": self.partner.id,
+                    "picking_type_id": self.picking_type_out.id,
+                    "location_id": self.stock_location.id,
+                    "location_dest_id": self.customer_location.id,
+                    "move_ids": [
+                        Command.create(
+                            {
+                                "product_id": self.product.id,
+                                "product_uom_id": self.product.uom_id.id,
+                                "product_uom_qty": 1.0,
+                                "location_id": self.stock_location.id,
+                                "location_dest_id": self.customer_location.id,
+                            }
+                        )
+                    ],
+                },
+            ]
+        )
+        (receipt | delivery).action_confirm()
+        self.start_tour(
+            "/odoo/receipts",
+            "test_basic_stock_flow_with_minimal_access_rights",
+            login="pauline",
+        )
+
+
+@tagged("-at_install", "post_install")
+class TestStockFlowPostInstall(TestStockCommon):
+    def test_last_delivery_partner_field_on_lot(self):
+        partner = self.env["res.partner"].create({"name": "Super Partner"})
+
+        product = self.env["product.product"].create(
+            {
+                "name": "Super Product",
+                "is_storable": True,
+                "tracking": "serial",
+            }
+        )
+        sn = self.env["product.trace"].create(
+            {
+                "name": "super_sn",
+                "product_id": product.id,
+            }
+        )
+        self.env["stock.quant"]._update_available_quantity(
+            product, self.stock_location, 1, trace_id=sn
+        )
+
+        delivery = self.env["stock.picking"].create(
+            {
+                "partner_id": partner.id,
+                "picking_type_id": self.picking_type_out.id,
+                "location_id": self.stock_location.id,
+                "location_dest_id": self.customer_location.id,
+                "move_ids": [
+                    Command.create(
+                        {
+                            "product_id": product.id,
+                            "product_uom_id": product.uom_id.id,
+                            "product_uom_qty": 1.0,
+                            "location_id": self.stock_location.id,
+                            "location_dest_id": self.customer_location.id,
+                        }
+                    )
+                ],
+            }
+        )
+        delivery.action_confirm()
+        delivery.action_assign()
+        delivery.move_ids.move_line_ids.quantity = 1
+        delivery.move_ids.picked = True
+        delivery.button_validate()
+
+        sn.invalidate_recordset(fnames=["partner_ids"])
+        self.assertEqual(sn.partner_ids[0], partner)
+
+    def test_several_sm_with_same_product_and_backorders(self):
+        picking = self.env["stock.picking"].create(
+            {
+                "picking_type_id": self.picking_type_in.id,
+                "location_id": self.supplier_location.id,
+                "location_dest_id": self.stock_location.id,
+            }
+        )
+        move01, move02 = self.env["stock.move"].create(
+            [
+                {
+                    "product_id": self.productA.id,
+                    "product_uom_qty": 10,
+                    "product_uom_id": self.productA.uom_id.id,
+                    "description_picking": desc,
+                    "picking_id": picking.id,
+                    "location_id": self.supplier_location.id,
+                    "location_dest_id": self.stock_location.id,
+                }
+                for desc in ["Lorem", "Ipsum"]
+            ]
+        )
+
+        picking.action_confirm()
+
+        move01.quantity = 12
+        move02.quantity = 8
+
+        res = picking.button_validate()
+        self.assertIsInstance(res, dict)
+        self.assertEqual(res.get("res_model"), "wizard.stock.picking.validate.partial")
+
+        Form.from_action(self.env, res).save().process()
+
+        backorder = picking.backorder_ids
+        self.assertEqual(backorder.move_ids.product_uom_qty, 2)
+        self.assertEqual(backorder.move_ids.description_picking, "Ipsum")
+
+    def test_onchange_picking_type_id_and_name(self):
+        stock_location_1 = self.stock_location
+        stock_location_2 = stock_location_1.copy()
+        picking_type_1 = self.env["stock.picking.type"].create(
+            {
+                "name": "new_picking_type_1",
+                "code": "internal",
+                "sequence_code": "PT1",
+                "default_location_src_id": stock_location_1.id,
+                "default_location_dest_id": self.customer_location.id,
+            }
+        )
+        picking_type_2 = self.env["stock.picking.type"].create(
+            {
+                "name": "new_picking_type_2",
+                "code": "internal",
+                "sequence_code": "PT2",
+                "default_location_src_id": stock_location_2.id,
+                "default_location_dest_id": self.customer_location.id,
+            }
+        )
+        self.env["stock.quant"]._update_available_quantity(
+            self.productA, stock_location_1, 100
+        )
+        self.env["stock.quant"]._update_available_quantity(
+            self.productA, stock_location_2, 10
+        )
+        picking = self.env["stock.picking"].create(
+            {
+                "picking_type_id": picking_type_1.id,
+                "move_ids": [
+                    (
+                        0,
+                        0,
+                        {
+                            "product_id": self.productA.id,
+                            "product_uom_qty": 50,
+                        },
+                    )
+                ],
+            }
+        )
+        picking.action_confirm()
+        move = picking.move_ids[0]
+        self.assertEqual(picking.name, "WH/PT1/00001")
+        self.assertEqual(move.location_id, stock_location_1)
+        self.assertEqual(move.quantity, 50.0)
+        picking.picking_type_id = picking_type_2
+        self.assertEqual(picking.name, "WH/PT2/00001")
+        self.assertEqual(move.location_id, stock_location_2)
+        self.assertEqual(move.quantity, 10.0)
+        picking.picking_type_id = picking_type_1
+        self.assertEqual(picking.name, "WH/PT1/00002")
+        picking.picking_type_id = picking_type_1
+        self.assertEqual(picking.name, "WH/PT1/00002")
+
+    def test_name_create_location(self):
+        parent_location = self.env["stock.location"].create({"name": "ParentLocation"})
+        new_location_id = self.env["stock.location"].name_create(
+            "ParentLocation/TestLocation1"
+        )[0]
+        new_location = self.env["stock.location"].browse(new_location_id)
+        self.assertEqual(new_location.name, "TestLocation1")
+        self.assertEqual(new_location.complete_name, "ParentLocation/TestLocation1")
+        self.assertEqual(new_location.location_id, parent_location)
+
+        new_location_complete_name = self.env["stock.location"].name_create(
+            "FauxParentLocation/TestLocation2"
+        )[1]
+        self.assertEqual(new_location_complete_name, "TestLocation2")
+
+        new_location_complete_name = self.env["stock.location"].name_create(
+            "NoPrefixLocation"
+        )[1]
+        self.assertEqual(new_location_complete_name, "NoPrefixLocation")

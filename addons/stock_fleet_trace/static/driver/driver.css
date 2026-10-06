@@ -1,0 +1,384 @@
+:root {
+    --sft-green: #1f6f43;
+    --sft-blue: #1d5fa8;
+    --sft-red: #b3261e;
+    --sft-amber: #b26a00;
+    --sft-bg: #f3f4f2;
+    --sft-card: #ffffff;
+    --sft-text: #1b1c1a;
+    --sft-muted: #5c605a;
+    --sft-border: #d7dad4;
+    --sft-on-fill: #ffffff;
+    --sft-secondary: #4a4f47;
+    --sft-offline: #6b6f68;
+    --sft-ok-bg: #dff3e6;
+    --sft-ok-text: #0f4a2a;
+    --sft-info-bg: #e2ecf8;
+    --sft-info-text: #173f6d;
+    --sft-error-bg: #fde2df;
+    --sft-error-text: #7a1510;
+    --sft-camera: #000000;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+html,
+body {
+    margin: 0;
+    background: var(--sft-bg);
+    color: var(--sft-text);
+    font-family:
+        system-ui,
+        -apple-system,
+        "Segoe UI",
+        Roboto,
+        sans-serif;
+    font-size: 18px;
+    line-height: 1.35;
+    -webkit-text-size-adjust: 100%;
+}
+
+.sft-loading {
+    padding: 2rem 1rem;
+    text-align: center;
+}
+
+.sft-main {
+    padding: 0 12px 96px;
+    max-width: 720px;
+    margin: 0 auto;
+}
+
+.sft-sync {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    font-size: 15px;
+    color: var(--sft-on-fill);
+}
+
+.sft-sync-online {
+    background: var(--sft-green);
+}
+
+.sft-sync-offline {
+    background: var(--sft-offline);
+}
+
+.sft-session {
+    background: var(--sft-card);
+    color: var(--sft-red);
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.sft-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 0 8px;
+}
+
+.sft-header h1 {
+    font-size: 24px;
+    margin: 0;
+}
+
+.sft-subtitle,
+.sft-muted {
+    color: var(--sft-muted);
+}
+
+.sft-small {
+    font-size: 14px;
+}
+
+.sft-back {
+    min-width: 56px;
+    min-height: 56px;
+    border: 1px solid var(--sft-border);
+    border-radius: 12px;
+    background: var(--sft-card);
+    font-size: 32px;
+    line-height: 1;
+}
+
+.sft-message {
+    margin: 8px 12px 0;
+    padding: 14px 16px;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 18px;
+}
+
+.sft-message-ok {
+    background: var(--sft-ok-bg);
+    color: var(--sft-ok-text);
+}
+
+.sft-message-info {
+    background: var(--sft-info-bg);
+    color: var(--sft-info-text);
+}
+
+.sft-message-warn,
+.sft-message-error {
+    background: var(--sft-error-bg);
+    color: var(--sft-error-text);
+    border: 2px solid var(--sft-red);
+}
+
+.sft-card {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    width: 100%;
+    margin: 10px 0;
+    padding: 16px;
+    text-align: left;
+    background: var(--sft-card);
+    border: 1px solid var(--sft-border);
+    border-radius: 14px;
+    font: inherit;
+    color: inherit;
+}
+
+.sft-stop {
+    flex-direction: row;
+    align-items: center;
+    gap: 14px;
+    min-height: 84px;
+    border-left: 8px solid var(--sft-border);
+}
+
+.sft-stop-body {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.sft-stop-seq {
+    font-size: 26px;
+    font-weight: 700;
+    min-width: 36px;
+    text-align: center;
+}
+
+.sft-status-deliver,
+.sft-status-done {
+    border-left-color: var(--sft-green);
+}
+
+.sft-status-partial {
+    border-left-color: var(--sft-blue);
+}
+
+.sft-status-not_delivered,
+.sft-status-cancel {
+    border-left-color: var(--sft-red);
+}
+
+.sft-badge {
+    font-size: 15px;
+    font-weight: 600;
+}
+
+.sft-btn {
+    min-height: 56px;
+    padding: 12px 18px;
+    border: 0;
+    border-radius: 12px;
+    font: inherit;
+    font-weight: 700;
+    color: var(--sft-on-fill);
+    background: var(--sft-blue);
+}
+
+.sft-btn:disabled {
+    opacity: 0.6;
+}
+
+.sft-btn-small {
+    min-height: 40px;
+    padding: 6px 12px;
+    background: var(--sft-card);
+    color: var(--sft-green);
+}
+
+.sft-btn-primary {
+    background: var(--sft-blue);
+}
+
+.sft-btn-secondary {
+    background: var(--sft-secondary);
+}
+
+.sft-btn-success {
+    background: var(--sft-green);
+}
+
+.sft-btn-danger {
+    background: var(--sft-red);
+}
+
+.sft-btn-warning {
+    background: var(--sft-amber);
+}
+
+.sft-btn-light {
+    background: var(--sft-card);
+    color: var(--sft-text);
+    border: 1px solid var(--sft-border);
+}
+
+.sft-wide {
+    width: 100%;
+    margin: 10px 0;
+}
+
+.sft-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin: 16px 0;
+}
+
+.sft-actions .sft-btn {
+    min-height: 72px;
+}
+
+.sft-actions p {
+    grid-column: 1 / -1;
+}
+
+.sft-row {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+}
+
+.sft-row .sft-btn {
+    flex: 1;
+}
+
+.sft-scan {
+    display: flex;
+    gap: 8px;
+    margin: 10px 0;
+}
+
+.sft-input {
+    width: 100%;
+    min-height: 56px;
+    padding: 12px;
+    border: 2px solid var(--sft-border);
+    border-radius: 12px;
+    font: inherit;
+    background: var(--sft-card);
+}
+
+.sft-scan-input {
+    flex: 1;
+    min-width: 0;
+}
+
+.sft-input:focus {
+    outline: none;
+    border-color: var(--sft-blue);
+}
+
+.sft-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin: 12px 0;
+}
+
+.sft-field label {
+    font-weight: 600;
+}
+
+.sft-signature {
+    width: 100%;
+    height: 200px;
+    background: var(--sft-card);
+    border: 2px dashed var(--sft-border);
+    border-radius: 12px;
+    touch-action: none;
+}
+
+.sft-lines {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--sft-card);
+    border-radius: 12px;
+    font-size: 16px;
+}
+
+.sft-lines th,
+.sft-lines td {
+    padding: 10px 8px;
+    border-bottom: 1px solid var(--sft-border);
+    text-align: left;
+    vertical-align: top;
+}
+
+.sft-num {
+    text-align: right;
+    white-space: nowrap;
+}
+
+.sft-address {
+    margin: 0 0 8px;
+}
+
+.sft-link {
+    font-weight: 700;
+    color: var(--sft-blue);
+}
+
+.sft-history {
+    padding-left: 20px;
+}
+
+.sft-error {
+    color: var(--sft-red);
+}
+
+.sft-camera {
+    position: fixed;
+    inset: 0;
+    z-index: 20;
+    background: var(--sft-camera);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+}
+
+.sft-camera video {
+    width: 100%;
+    max-height: 75vh;
+    object-fit: cover;
+}
+
+.sft-camera-frame {
+    position: absolute;
+    top: 30%;
+    left: 15%;
+    width: 70%;
+    height: 25%;
+    border: 3px solid var(--sft-on-fill);
+    border-radius: 12px;
+    pointer-events: none;
+}

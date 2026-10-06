@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<templates xml:space="preserve">
+    <t t-name="upload_rfq_cog_menu.QuotationRequestUploader">
+        <FileUploader
+            multiUpload="true"
+            onUploaded.bind="this.onFileUploaded"
+            onUploadComplete.bind="this.onUploadComplete"
+        >
+            <t t-set-slot="toggler">
+                <span class="o-dropdown-item dropdown-item o-navigable o_menu_item o_upload_rfq_menu" role="menuitem" tabindex="0">
+                    <i class="o_cog_menu_item_icon fa-solid fa-file-arrow-up me-1" aria-hidden="true"/>Upload Request for Quotation…
+                </span>
+            </t>
+        </FileUploader>
+    </t>
+</templates>

@@ -1,0 +1,3 @@
+id,name,model_id/id,group_id/id,kind,operation,reach,anchor,domain
+access_google_reserve_merchant_all,google.reserve.merchant.all,model_google_reserve_merchant,base.group_everyone,permission,r,none,,
+access_google_reserve_merchant_manager,google.reserve.merchant.manager,model_google_reserve_merchant,calendar.group_appointment_manager,permission,crud,,,

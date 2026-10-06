@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="group_use_lead" model="res.groups">
+        <field name="name">Show Lead Menu</field>
+    </record>
+
+    <record id="group_use_recurring_revenues" model="res.groups">
+        <field name="name">Show Recurring Revenues Menu</field>
+    </record>
+
+    <record id="partner.res_partner_menu_config" model="ir.ui.menu">
+        <field name="group_ids" eval="[Command.link(ref('sale.group_sale_manager'))]" />
+    </record>
+
+</odoo>

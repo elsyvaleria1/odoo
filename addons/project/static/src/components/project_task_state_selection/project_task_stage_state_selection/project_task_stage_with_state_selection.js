@@ -1,0 +1,66 @@
+/** @odoo-module native */
+import { Component, t, useProps } from "@odoo/owl";
+import { registry } from "@web/core/registry";
+import { _t } from "@web/core/translation";
+import { omit } from "@web/core/utils/collections/objects";
+import { computeM2OProps, Many2One } from "@web/fields/relational/many2one";
+import { standardFieldProps } from "@web/fields/standard_field_props";
+
+import { ProjectTaskStateSelection } from "../project_task_state_selection.js";
+
+export class TaskStageWithStateSelection extends Component {
+    static template = "project.TaskStageWithStateSelection";
+
+    static props = {
+        ...standardFieldProps,
+        stateReadonly: t.boolean().optional(),
+        viewType: t.string(),
+    };
+
+    static components = {
+        ProjectTaskStateSelection,
+        Many2One,
+    };
+    props = useProps(this.constructor.props);
+
+    get stageProps() {
+        return computeM2OProps(this.props);
+    }
+
+    get stateProps() {
+        return {
+            ...omit(this.props, "stateReadonly", "viewType"),
+            name: "state",
+            readonly: this.props.stateReadonly,
+            viewType: this.props.viewType,
+            showLabel: false,
+        };
+    }
+}
+
+export const taskStageWithStateSelection = {
+    component: TaskStageWithStateSelection,
+    supportedOptions: [
+        {
+            label: _t("State readonly"),
+            name: "state_readonly",
+            type: "boolean",
+            default: true,
+        },
+    ],
+    fieldDependencies: [
+        { name: "state", type: "selection" },
+        { name: "project_id", type: "many2one" },
+    ],
+    supportedTypes: ["many2one"],
+    extractProps({ options, viewType }) {
+        return {
+            stateReadonly: "state_readonly" in options ? options.state_readonly : true,
+            viewType: viewType,
+        };
+    },
+};
+
+registry
+    .category("fields")
+    .add("task_step_with_state_selection", taskStageWithStateSelection);

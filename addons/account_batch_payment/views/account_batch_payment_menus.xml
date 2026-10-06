@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <menuitem
+        id="menu_batch_payment_sales"
+        name="Batch Payments"
+        parent="account.menu_finance_receivables"
+        action="action_batch_payment_in"
+        sequence="18"
+        groups="account.group_account_basic,account.group_account_readonly" />
+
+    <menuitem
+        id="menu_batch_payment_purchases"
+        name="Batch Payments"
+        parent="account.menu_finance_payables"
+        action="action_batch_payment_out"
+        sequence="21"
+        groups="account.group_account_basic,account.group_account_readonly" />
+
+</odoo>

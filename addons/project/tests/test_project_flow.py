@@ -1,0 +1,615 @@
+from odoo import Command
+from odoo.exceptions import AccessError
+
+from .test_project_base import TestProjectCommon
+from odoo.addons.mail.tests.common import MailCase
+
+
+class TestProjectFlow(TestProjectCommon, MailCase):
+    def test_project_process_project_manager_duplicate(self) -> None:
+        pigs = self.project_pigs.with_user(self.user_projectmanager)
+        dogs = pigs.copy()
+        self.assertEqual(
+            len(dogs.task_ids),
+            2,
+            "project: duplicating a project must duplicate its tasks",
+        )
+
+    def test_subtask_process(self) -> None:
+        Task = self.env["project.task"].with_context({"tracking_disable": True})
+
+        parent_task = Task.create(
+            {
+                "name": "Mother Task",
+                "user_ids": self.user_projectuser,
+                "project_id": self.project_pigs.id,
+                "partner_id": self.partner_2.id,
+                "allocated_hours": 12,
+            }
+        )
+
+        another_parent_task = Task.create(
+            {
+                "name": "Another Mother Task",
+                "user_ids": self.user_projectuser,
+                "project_id": self.project_pigs.id,
+                "partner_id": self.partner_3.id,
+                "allocated_hours": 0,
+            }
+        )
+
+        goats_partner_id = self.project_goats.partner_id
+
+        self.project_goats.write({"partner_id": False})
+
+        child_task_1 = Task.with_context(
+            default_project_id=self.project_goats.id,
+            default_parent_id=parent_task.id,
+        ).create(
+            {
+                "name": "Task Child with project",
+                "planned_hours": 3,
+            }
+        )
+
+        child_task_2 = Task.create(
+            {
+                "name": "Task Child without project",
+                "parent_id": parent_task.id,
+                "project_id": self.project_pigs.id,
+                "planned_hours": 5,
+            }
+        )
+
+        self.assertEqual(
+            child_task_1.partner_id,
+            child_task_1.parent_id.partner_id,
+            "When no project partner_id has been set, a subtask should have the same partner as its parent",
+        )
+
+        self.assertEqual(
+            child_task_2.partner_id,
+            child_task_2.parent_id.partner_id,
+            "When a project partner_id has been set, a subtask should have the same partner as its parent",
+        )
+
+        self.assertEqual(
+            parent_task.subtask_count, 2, "Parent task should have 2 children"
+        )
+
+        self.assertEqual(
+            parent_task.subtask_planned_hours,
+            8,
+            "Planned hours of subtask should impact parent task",
+        )
+
+        child_task_1.write({"parent_id": another_parent_task.id})
+
+        self.assertEqual(
+            child_task_1.partner_id,
+            parent_task.partner_id,
+            "When changing the parent task of a subtask with no project partner_id, the partner_id should remain the same.",
+        )
+
+        child_task_2.write({"parent_id": another_parent_task.id})
+
+        self.assertEqual(
+            child_task_2.partner_id,
+            parent_task.partner_id,
+            "When changing the parent task of a subtask with a project, the partner_id should remain the same.",
+        )
+
+        child_task_1.write({"project_id": self.project_pigs.id})
+
+        self.assertNotEqual(
+            child_task_1.partner_id,
+            self.project_pigs.partner_id,
+            "When the project changes, the subtask should keep its partner id as its partner id is set.",
+        )
+
+        self.project_goats.write({"partner_id": goats_partner_id})
+
+        child_task_2.write({"project_id": self.project_goats.id})
+
+        self.assertEqual(
+            child_task_2.partner_id,
+            parent_task.partner_id,
+            "When the project changes, the subtask should keep the same partner id even it has a new project.",
+        )
+
+    def test_rating_parent_name_follows_the_parent_rename(self) -> None:
+        task = self.env["project.task"].create(
+            {"name": "rated", "project_id": self.project_pigs.id}
+        )
+        rating = self.env["rating.rating"].create(
+            {
+                "res_model_id": self.env["ir.model"]._get("project.task").id,
+                "res_id": task.id,
+                "parent_res_model_id": self.env["ir.model"]._get("project.project").id,
+                "parent_res_id": self.project_pigs.id,
+                "rating": 5,
+                "consumed": True,
+            }
+        )
+        self.env.flush_all()
+        self.assertEqual(rating.parent_res_name, self.project_pigs.display_name)
+
+        self.project_pigs.name = "Renamed Pigs"
+        self.env.flush_all()
+        self.assertEqual(
+            rating.parent_res_name,
+            "Renamed Pigs",
+            "renaming the parent must reach the name denormalised onto its ratings",
+        )
+
+        stamp = rating.write_date
+        self.project_pigs.sequence = 42
+        self.env.flush_all()
+        self.assertEqual(rating.write_date, stamp)
+
+    def test_rating(self) -> None:
+        Task = self.env["project.task"].with_context({"tracking_disable": True})
+        first_task = Task.create(
+            {
+                "name": "first task",
+                "user_ids": self.user_projectuser,
+                "project_id": self.project_pigs.id,
+                "partner_id": self.partner_2.id,
+            }
+        )
+
+        self.assertEqual(
+            first_task.rating_count,
+            0,
+            "Task should have no rating associated with it",
+        )
+
+        rating_good = self.env["rating.rating"].create(
+            {
+                "res_model_id": self.env["ir.model"]._get("project.task").id,
+                "res_id": first_task.id,
+                "parent_res_model_id": self.env["ir.model"]._get("project.project").id,
+                "parent_res_id": self.project_pigs.id,
+                "rated_partner_id": self.partner_2.id,
+                "partner_id": self.partner_2.id,
+                "rating": 5,
+                "consumed": False,
+            }
+        )
+
+        rating_bad = self.env["rating.rating"].create(
+            {
+                "res_model_id": self.env["ir.model"]._get("project.task").id,
+                "res_id": first_task.id,
+                "parent_res_model_id": self.env["ir.model"]._get("project.project").id,
+                "parent_res_id": self.project_pigs.id,
+                "rated_partner_id": self.partner_2.id,
+                "partner_id": self.partner_2.id,
+                "rating": 3,
+                "consumed": True,
+            }
+        )
+
+        self.env.invalidate_all()
+
+        self.assertEqual(rating_good.rating_text, "top")
+        self.assertEqual(rating_bad.rating_text, "ok")
+        self.assertEqual(
+            first_task.rating_count,
+            1,
+            "Task should have only one rating associated, since one is not consumed",
+        )
+        self.assertEqual(rating_good.parent_res_id, self.project_pigs.id)
+
+        self.assertEqual(self.project_goats.rating_child_percentage_satisfaction, -1)
+        self.assertEqual(
+            self.project_goats.rating_child_avg,
+            0,
+            "Since there is no rating in this project, the Average Rating should be equal to 0.",
+        )
+        self.assertEqual(self.project_pigs.rating_child_percentage_satisfaction, 0)
+        self.assertEqual(
+            self.project_pigs.rating_child_avg,
+            rating_bad.rating,
+            "Since there is only one rating the Average Rating should be equal to the rating value of this one.",
+        )
+
+        first_task.rating_apply(5, rating_good.access_token)
+
+        self.env.invalidate_all()
+
+        rating_avg = (rating_good.rating + rating_bad.rating) / 2
+        self.assertEqual(
+            first_task.rating_count,
+            2,
+            "Task should have two ratings associated with it",
+        )
+        self.assertEqual(first_task.rating_avg_text, "top")
+        self.assertEqual(rating_good.parent_res_id, self.project_pigs.id)
+        self.assertEqual(self.project_goats.rating_child_percentage_satisfaction, -1)
+        self.assertEqual(self.project_pigs.rating_child_percentage_satisfaction, 50)
+        self.assertEqual(self.project_pigs.rating_child_avg, rating_avg)
+        self.assertEqual(self.project_pigs.rating_child_avg_percentage, rating_avg / 5)
+
+        first_task.project_id = self.project_goats.id
+
+        self.env.invalidate_all()
+
+        self.assertEqual(rating_good.parent_res_id, self.project_goats.id)
+        self.assertEqual(self.project_goats.rating_child_percentage_satisfaction, 50)
+        self.assertEqual(self.project_goats.rating_child_avg, rating_avg)
+        self.assertEqual(self.project_pigs.rating_child_percentage_satisfaction, -1)
+        self.assertEqual(self.project_pigs.rating_child_avg, 0)
+
+    def test_task_with_no_project(self) -> None:
+        task_without_project = (
+            self.env["project.task"]
+            .with_context({"mail_create_nolog": True})
+            .create({"name": "Test task without project"})
+        )
+
+        for field in task_without_project._fields:
+            try:
+                task_without_project[field]
+            except Exception as e:
+                raise AssertionError(
+                    "Error raised unexpectedly while computing a field of the task ! Exception : "
+                    + e.args[0]
+                ) from e
+
+        for field in self.project_pigs._fields:
+            try:
+                self.project_pigs[field]
+            except Exception as e:
+                raise AssertionError(
+                    "Error raised unexpectedly while computing a field of the project ! Exception : "
+                    + e.args[0]
+                ) from e
+
+        task_without_project.user_ids = [Command.link(self.user_projectuser.id)]
+        task_without_project.with_user(self.user_projectuser).read(["name"])
+        with self.assertRaises(AccessError):
+            task_without_project.with_user(self.user_projectmanager).read(["name"])
+
+        task = self.env["project.task"].create(
+            {
+                "name": "Test Task!",
+                "user_ids": [Command.link(self.env.user.id)],
+            }
+        )
+        triage_vals = task._prepare_default_triage_vals(self.env.user.id)
+        self.assertEqual(
+            task.personal_triage_id.triage_id.name,
+            triage_vals[0].get("name"),
+            "tasks assigned to the current user should be in the right default triage bucket",
+        )
+
+    def test_send_rating_review(self) -> None:
+        won_stage = self.project_goats.workflow_step_ids[-1]
+        won_stage.write(
+            {
+                "rating_active": True,
+                "rating_status": "stage",
+            }
+        )
+        rating_request_mail_template = self.env.ref(
+            "project.rating_project_request_email_template"
+        )
+        won_stage.write({"rating_template_id": rating_request_mail_template.id})
+        tasks = (
+            self.env["project.task"]
+            .with_context(
+                mail_create_nolog=True, default_project_id=self.project_goats.id
+            )
+            .create(
+                [
+                    {"name": "Goat Task 1", "user_ids": [Command.set([])]},
+                    {
+                        "name": "Goat Task 2",
+                        "user_ids": [Command.link(self.user_projectuser.id)],
+                    },
+                    {
+                        "name": "Goat Task 3",
+                        "user_ids": [
+                            Command.link(self.user_projectmanager.id),
+                            Command.link(self.user_projectuser.id),
+                        ],
+                    },
+                ]
+            )
+        )
+
+        with self.mock_mail_gateway():
+            tasks.with_user(self.user_projectmanager).write({"step_id": won_stage.id})
+
+        tasks.invalidate_model(["rating_ids"])
+        for task in tasks:
+            self.assertEqual(
+                len(task.rating_ids),
+                1,
+                "This task should have a generated rating when it arrives in the Won stage.",
+            )
+            rating_request_message = task.message_ids[:1]
+            if not task.user_ids or len(task.user_ids) > 1:
+                self.assertFalse(
+                    task.rating_ids.rated_partner_id,
+                    "This rating should have no assigned user if the task related have no assignees or more than one assignee.",
+                )
+                self.assertEqual(
+                    rating_request_message.email_from,
+                    self.user_projectmanager.partner_id.email_formatted,
+                    "The message should have the email of the Project Manager as email from.",
+                )
+            else:
+                self.assertEqual(
+                    task.rating_ids.rated_partner_id,
+                    task.user_ids.partner_id,
+                    "The rating should have an assigned user if the task has only one assignee.",
+                )
+                self.assertEqual(
+                    rating_request_message.email_from,
+                    task.user_ids.partner_id.email_formatted,
+                    "The message should have the email of the assigned user in the task as email from.",
+                )
+            self.assertTrue(
+                self.partner_1 in rating_request_message.partner_ids,
+                "The customer of the task should be in the partner_ids of the rating request message.",
+            )
+
+    def test_email_track_template(self) -> None:
+        project_settings = self.env["res.config.settings"].create(
+            {"group_project_stages": True}
+        )
+        project_settings.execute()
+
+        mail_template = self.env["mail.template"].create(
+            {
+                "name": "Test template",
+                "subject": "Test",
+                "body_html": "<p>Test</p>",
+                "auto_delete": True,
+                "model_id": self.env.ref("project.model_project_project").id,
+            }
+        )
+        project_A = self.env["project.project"].create(
+            {
+                "name": "project_A",
+                "privacy_visibility": "followers",
+                "alias_name": "project A",
+                "partner_id": self.partner_1.id,
+            }
+        )
+        init_stage = project_A.phase_id.name
+
+        project_stage = self.env.ref("project.project_phase_1")
+        self.assertNotEqual(project_A.phase_id, project_stage)
+
+        project_stage.mail_template_id = mail_template.id
+        self.flush_tracking()
+        init_nb_log = len(project_A.message_ids)
+        project_A.phase_id = project_stage.id
+        self.flush_tracking()
+        self.assertNotEqual(init_stage, project_A.phase_id.name)
+
+        self.assertEqual(
+            len(project_A.message_ids),
+            init_nb_log + 2,
+            "should have 2 new messages: one for tracking, one for template",
+        )
+
+    def test_private_task_search_tag(self) -> None:
+        task = self.env["project.task"].create(
+            {
+                "name": "Test Private Task",
+            }
+        )
+        task.tag_ids.with_context(project_id=task.project_id.id).name_search(
+            domain=["!", ["id", "in", []]]
+        )
+
+    def test_copy_project_with_default_name(self) -> None:
+        project = self.project_pigs.copy()
+        self.assertEqual(
+            project.name,
+            "Pigs (copy)",
+            "The name of the copied project should be 'Pigs (copy)'",
+        )
+
+        project = self.project_pigs.copy({"name": "Pigs 2"})
+        self.assertEqual(
+            project.name,
+            "Pigs 2",
+            "The name of the copied project should be 'Pigs 2'",
+        )
+
+    def test_description_field_history_on_update(self) -> None:
+        task = self.env["project.task"].create(
+            {
+                "name": "Test Task",
+                "description": "Hello",
+            }
+        )
+        task.description = False
+        self.assertEqual(
+            task.html_field_history_get_content_at_revision("description", 1),
+            "<p>Hello</p>",
+            "should recover previous text for description",
+        )
+
+    def test_copy_project_with_embedded_actions(self) -> None:
+        project_pigs_milestone_action = self.env["ir.actions.act_window"].create(
+            {
+                "name": "Milestones",
+                "res_model": "project.milestone",
+                "view_mode": "kanban,list,form",
+                "domain": f"[('project_id', '=', {self.project_pigs.id})]",
+            }
+        )
+        task_action = self.env["ir.actions.act_window"].create(
+            {
+                "name": "Tasks",
+                "res_model": "project.task",
+                "view_mode": "kanban,list,form",
+                "domain": "[('project_id', '=', active_id), ('display_in_project', '=', True)]",
+                "context": "{'default_project_id': active_id}",
+            }
+        )
+        task_embedded_action = self.env["ir.embedded.actions"].create(
+            {
+                "parent_res_model": "project.project",
+                "parent_res_id": self.project_pigs.id,
+                "action_id": project_pigs_milestone_action.id,
+                "parent_action_id": task_action.id,
+            }
+        )
+        project_model = self.env["ir.model"].search([("model", "=", "project.task")])
+        task_embedded_filter = self.env["ir.filters"].create(
+            {
+                "name": "filter",
+                "embedded_action_id": task_embedded_action.id,
+                "embedded_parent_res_id": self.project_pigs.id,
+                "action_id": project_pigs_milestone_action.id,
+                "model_id": project_model.id,
+            }
+        )
+
+        new_project_pigs = self.project_pigs.copy()
+        embedded_action = self.env["ir.embedded.actions"].search(
+            [
+                ("parent_res_model", "=", "project.project"),
+                ("parent_res_id", "=", new_project_pigs.id),
+            ]
+        )
+        self.assertTrue(
+            embedded_action,
+            "The embedded action linked to project pigs should also be copied.",
+        )
+        self.assertEqual(
+            embedded_action.action_id,
+            task_embedded_action.action_id,
+            "The new embedded action should have the same action than the one copied.",
+        )
+        self.assertEqual(
+            embedded_action.parent_res_model,
+            task_embedded_action.parent_res_model,
+        )
+        self.assertEqual(
+            embedded_action.parent_action_id,
+            task_embedded_action.parent_action_id,
+        )
+        duplicated_task_embedded_filter = embedded_action.filter_ids
+        self.assertEqual(
+            len(duplicated_task_embedded_filter),
+            1,
+            "The filter linked to the original embedded action should also be copied.",
+        )
+        self.assertEqual(
+            duplicated_task_embedded_filter.name,
+            f"{task_embedded_filter.name} (copy)",
+        )
+        self.assertEqual(
+            duplicated_task_embedded_filter.embedded_action_id, embedded_action
+        )
+        self.assertEqual(
+            duplicated_task_embedded_filter.embedded_parent_res_id,
+            new_project_pigs.id,
+        )
+        self.assertEqual(
+            duplicated_task_embedded_filter.action_id,
+            task_embedded_filter.action_id,
+        )
+        self.assertEqual(
+            duplicated_task_embedded_filter.model_id,
+            task_embedded_filter.model_id,
+        )
+
+    def test_do_not_copy_project_stage(self) -> None:
+        stage = self.env["project.phase"].create({"name": "Custom stage"})
+        self.project_pigs.phase_id = stage.id
+        project_copy = self.project_pigs.with_context(default_phase_id=stage.id).copy()
+        self.assertNotEqual(
+            project_copy.phase_id,
+            self.project_pigs.phase_id,
+            "Copied project should have lowest sequence stage",
+        )
+
+    def test_project_task_copy_without_archive_user(self) -> None:
+        self.user_projectuser.action_archive()
+        task = self.task_1.copy()
+        self.assertFalse(task.user_ids)
+        task_b = self.task_2.copy(
+            {
+                "name": "Task B",
+                "user_ids": [
+                    Command.set([self.user_projectuser.id, self.user_projectmanager.id])
+                ],
+            }
+        )
+        self.assertEqual(
+            self.user_projectuser + self.user_projectmanager, task_b.user_ids
+        )
+
+    def test_project_sub_task_copy_without_archive_user(self) -> None:
+        self.task_1.write({"child_ids": [self.task_2.id]})
+        self.user_projectmanager.action_archive()
+        task_1_copy = self.task_1.copy()
+        self.assertFalse(task_1_copy.child_ids.user_ids)
+
+    def test_task_email_context_with_subtitles(self) -> None:
+        task = self.env["project.task"].create(
+            {
+                "name": "Task",
+                "user_ids": [Command.set([self.user_projectuser.id])],
+                "project_id": self.project_goats.id,
+            }
+        )
+        self.assertFalse(self.project_goats.message_follower_ids)
+        self.assertEqual(self.project_goats.privacy_visibility, "followers")
+        self.project_goats.invalidate_recordset()
+        render_context = task.with_user(
+            self.user_projectuser
+        )._notify_by_email_prepare_rendering_context(task.message_ids, {})
+        self.assertListEqual(
+            render_context["subtitles"], ["Task", "Project: Goats, Stage: New"]
+        )
+
+    def test_project_multi_tasks_copy_with_archive_user(self) -> None:
+        user_projectuser = self.user_projectuser.copy()
+
+        tasks = self.env["project.task"].create(
+            [
+                {
+                    "name": "Task1",
+                    "project_id": self.project_goats.id,
+                },
+                {
+                    "name": "Task2",
+                    "user_ids": [
+                        Command.set(
+                            [
+                                self.user_projectuser.id,
+                                self.user_projectmanager.id,
+                            ]
+                        )
+                    ],
+                    "project_id": self.project_goats.id,
+                },
+                {
+                    "name": "Task3",
+                    "user_ids": [
+                        Command.set([self.user_projectuser.id, user_projectuser.id])
+                    ],
+                    "project_id": self.project_goats.id,
+                },
+            ]
+        )
+
+        user_projectuser.action_archive()
+
+        task1, task_2, task_3 = tasks.copy()
+
+        self.assertFalse(task1.user_ids)
+        self.assertEqual(
+            self.user_projectuser + self.user_projectmanager, task_2.user_ids
+        )
+        self.assertEqual(self.user_projectuser, task_3.user_ids)

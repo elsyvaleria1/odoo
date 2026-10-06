@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="res_config_settings_view_form" model="ir.ui.view">
+        <field name="name">res.config.settings.view.form.inherit.geoengine</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="base.res_config_settings_view_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//form" position="inside">
+                <app name="geoengine" string="GeoEngine">
+                    <block
+                        name="geometry_settings"
+                        title="Geometry Validation"
+                        help="How geometry is checked on the way into PostGIS.">
+                        <setting
+                            id="validate_geometry"
+                            string="Validate geometries"
+                            help="Check geometries before saving. With this off, invalid geometry reaches PostGIS unchecked and fails there instead, with a database-level error rather than a readable one.">
+                            <field name="enable_geometry_validation" />
+                        </setting>
+                        <setting
+                            id="auto_repair"
+                            string="Repair invalid geometries"
+                            help="Run ST_MakeValid on invalid geometry instead of rejecting it."
+                            invisible="not enable_geometry_validation">
+                            <field name="auto_repair_geometry" />
+                        </setting>
+                        <setting
+                            id="max_geometry_size"
+                            string="Maximum geometry size"
+                            help="Largest single geometry accepted, in bytes of WKT.">
+                            <field name="max_geometry_size" class="oe_inline" />
+                            <span> bytes</span>
+                        </setting>
+                    </block>
+
+                    <block
+                        name="map_settings"
+                        title="Map Display"
+                        help="Where the map opens when a view does not set its own extent.">
+                        <setting
+                            id="map_extent"
+                            string="Default map extent"
+                            help="Format: min_x, min_y, max_x, max_y in Web Mercator (EPSG:3857). Leave empty to fall back to the company's country, then to Europe.">
+                            <field
+                                name="geoengine_map_extent"
+                                placeholder="min_x, min_y, max_x, max_y" />
+                            <div class="mt8">
+                                <button
+                                    name="action_set_country_extent"
+                                    type="object"
+                                    string="Use company country"
+                                    icon="fa-globe"
+                                    class="btn-link" />
+                            </div>
+                        </setting>
+                    </block>
+
+                    <block
+                        name="maintenance_actions"
+                        title="Maintenance"
+                        help="Geometry columns are indexed automatically when their module installs. Rebuild only after a bulk load or a restore.">
+                        <setting
+                            id="rebuild_indexes"
+                            string="Spatial indexes"
+                            help="Drop and recreate the GIST index on every stored geometry column. Non-stored geo fields are skipped; failures are reported rather than counted as successes.">
+                            <button
+                                name="action_create_missing_spatial_indexes"
+                                type="object"
+                                string="Create missing spatial indexes"
+                                icon="fa-plus"
+                                class="btn-secondary" />
+                            <button
+                                name="action_rebuild_spatial_indexes"
+                                type="object"
+                                string="Rebuild spatial indexes"
+                                icon="fa-refresh"
+                                class="btn-secondary ms-2" />
+                        </setting>
+                    </block>
+                </app>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

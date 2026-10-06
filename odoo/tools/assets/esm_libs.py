@@ -1,0 +1,235 @@
+import hashlib
+import logging
+import posixpath
+import threading
+from collections.abc import Callable, Mapping
+from pathlib import Path
+from types import MappingProxyType
+from typing import NamedTuple
+
+from odoo.libs.asset_log import get_asset_logger, log_event
+from odoo.libs.debug_log import DebugLog
+from odoo.tools.files import file_path
+
+from .constants import ESM_LIB_URL_PREFIX
+from .esm_graph import _get_import_specifiers
+from .esm_registry import external_libs
+
+__all__ = [
+    "ServedLib",
+    "invalidate_served_libs",
+    "lib_closure",
+    "lib_unique",
+    "served_external_libs",
+    "served_lib_content",
+    "served_lib_files",
+]
+
+_TRANSFORM_TAG = b"minify-keep-names-1"
+
+_libs_log = get_asset_logger("bundle")
+_debug = DebugLog(__name__)
+
+
+class ServedLib(NamedTuple):
+    spec: str
+    declared_url: str
+    unique: str
+    files: Mapping
+
+
+class _ServedLibs(NamedTuple):
+    by_spec: Mapping
+    by_served_url: Mapping
+    stamps: Mapping
+
+
+_lock = threading.Lock()
+_cache: list = [None]
+
+
+def invalidate_served_libs() -> None:
+    with _lock:
+        _debug.lifecycle(
+            "esm_libs.invalidated",
+            cached=_cache[0] is not None,
+            contents=len(_content_cache),
+        )
+        _cache[0] = None
+        _content_cache.clear()
+
+
+def _stamp(path: Path) -> tuple[int, int] | None:
+    try:
+        stat = path.stat()
+    except OSError:
+        return None
+    return stat.st_mtime_ns, stat.st_size
+
+
+def _changed_on_disk(stamps: Mapping[Path, tuple[int, int] | None]) -> bool:
+    return any(_stamp(path) != stamp for path, stamp in stamps.items())
+
+
+def _static_root(url: str) -> str | None:
+    module, static, rest = url.lstrip("/").partition("/static/")
+    if not (module and static and rest) or "/" in module:
+        return None
+    return f"/{module}/static/"
+
+
+def _resolve_url(url: str) -> Path | None:
+    try:
+        return Path(file_path(url.lstrip("/")))
+    except FileNotFoundError, ValueError, OSError:
+        return None
+
+
+def lib_closure(declared_url: str) -> dict[str, Path]:
+    root = _static_root(declared_url)
+    path = _resolve_url(declared_url)
+    if root is None or path is None:
+        return {}
+    files: dict[str, Path] = {}
+    pending = [(declared_url, path)]
+    while pending:
+        url, path = pending.pop()
+        if url in files:
+            continue
+        files[url] = path
+        try:
+            source = path.read_text(encoding="utf-8")
+        except OSError, UnicodeDecodeError:
+            continue
+        for spec in sorted(_get_import_specifiers(source)):
+            if not isinstance(spec, str) or not spec.startswith(("./", "../")):
+                continue
+            target = posixpath.normpath(posixpath.join(posixpath.dirname(url), spec))
+            if not target.startswith(root):
+                continue
+            target_path = _resolve_url(target)
+            if target_path is not None and target not in files:
+                pending.append((target, target_path))
+    return files
+
+
+def lib_unique(files: Mapping[str, Path]) -> str:
+    digest = hashlib.sha256(_TRANSFORM_TAG)
+    for url in sorted(files):
+        digest.update(url.encode())
+        digest.update(b"\0")
+        digest.update(files[url].read_bytes())
+        digest.update(b"\0")
+    return digest.hexdigest()[:16]
+
+
+def served_lib_url(unique: str, url: str) -> str:
+    return f"{ESM_LIB_URL_PREFIX}{unique}{url}"
+
+
+def _merge_overlapping(closures: Mapping[str, dict[str, Path]]) -> dict[str, dict]:
+    groups: list[dict[str, Path]] = []
+    owner: dict[str, int] = {}
+    for declared_url, files in closures.items():
+        hit = sorted({owner[url] for url in files if url in owner}, reverse=True)
+        merged = dict(files)
+        for index in hit:
+            merged.update(groups[index])
+            groups[index] = {}
+        groups.append(merged)
+        for url in merged:
+            owner[url] = len(groups) - 1
+        owner[declared_url] = len(groups) - 1
+    return {declared: groups[owner[declared]] for declared in closures}
+
+
+def _prepare_served_libs() -> _ServedLibs:
+    by_spec: dict[str, ServedLib] = {}
+    by_served_url: dict[str, tuple[ServedLib, str]] = {}
+    closures: dict[str, dict[str, Path]] = {}
+    unresolved = []
+    for spec, declared_url in external_libs().items():
+        if declared_url not in closures:
+            with _debug.perf(
+                "esm_libs.closure_walked", spec=spec, url=declared_url
+            ) as span:
+                closures[declared_url] = lib_closure(declared_url)
+                span.set(files=len(closures[declared_url]))
+        if not closures[declared_url]:
+            _debug.logic("esm_libs.unresolved", spec=spec, url=declared_url)
+            unresolved.append(spec)
+    # before the files are hashed: an edit that lands meanwhile is seen stale
+    stamps = {
+        path: _stamp(path) for files in closures.values() for path in files.values()
+    }
+    groups = _merge_overlapping(
+        {url: files for url, files in closures.items() if files}
+    )
+    uniques: dict[int, str] = {}
+    for spec, declared_url in external_libs().items():
+        files = groups.get(declared_url)
+        if not files:
+            continue
+        unique = uniques.get(id(files))
+        if unique is None:
+            unique = uniques[id(files)] = lib_unique(files)
+        lib = ServedLib(spec, declared_url, unique, MappingProxyType(files))
+        by_spec[spec] = lib
+        for url in files:
+            by_served_url.setdefault(served_lib_url(unique, url), (lib, url))
+    log_event(
+        _libs_log,
+        logging.INFO,
+        "served_libs_built",
+        libs=len(by_spec),
+        groups=len(uniques),
+        files=len(by_served_url),
+        unresolved=len(unresolved),
+    )
+    return _ServedLibs(
+        MappingProxyType(by_spec),
+        MappingProxyType(by_served_url),
+        MappingProxyType(stamps),
+    )
+
+
+def _served_libs() -> _ServedLibs:
+    # nothing invalidates this on a static/lib edit (--dev=assets signals
+    # the assets caches only): unchecked, the lib kept its unique and its
+    # content under it until the apps list was updated
+    served = _cache[0]
+    if served is not None and not _changed_on_disk(served.stamps):
+        return served
+    with _lock:
+        if _cache[0] is served:
+            if served is not None:
+                _debug.lifecycle("esm_libs.changed_on_disk", files=len(served.stamps))
+                _content_cache.clear()
+            _cache[0] = _prepare_served_libs()
+        return _cache[0]
+
+
+def served_external_libs() -> Mapping[str, str]:
+    served = _served_libs().by_spec
+    return MappingProxyType(
+        {
+            spec: (served_lib_url(served[spec].unique, url) if spec in served else url)
+            for spec, url in external_libs().items()
+        }
+    )
+
+
+def served_lib_files() -> Mapping[str, tuple[ServedLib, str]]:
+    return _served_libs().by_served_url
+
+
+_content_cache: dict[str, bytes] = {}
+
+
+def served_lib_content(served_url: str, build: Callable[[], bytes]) -> bytes:
+    content = _content_cache.get(served_url)
+    if content is None:
+        with _debug.perf("esm_libs.content_built", url=served_url) as span:
+            content = _content_cache[served_url] = build()
+            span.set(size=len(content))
+    return content

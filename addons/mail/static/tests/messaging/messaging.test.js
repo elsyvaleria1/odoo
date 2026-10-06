@@ -1,0 +1,141 @@
+// @ts-check
+import {
+    click,
+    contains,
+    defineMailModels,
+    insertText,
+    listenStoreFetch,
+    openDiscuss,
+    openFormView,
+    start,
+    startServer,
+    waitStoreFetch,
+} from "@mail/../tests/mail_test_helpers";
+import { describe, expect, test } from "@odoo/hoot";
+import { press } from "@odoo/hoot-dom";
+import {
+    Command,
+    getService,
+    serverState,
+    withUser,
+} from "@web/../tests/web_test_helpers";
+import { rpc } from "@web/core/network";
+
+describe.current.tags("desktop");
+defineMailModels();
+
+test("Receiving a new message out of discuss app should open a chat bubble", async () => {
+    const pyEnv = await startServer();
+    const partnerId = pyEnv["res.partner"].create({ name: "Dumbledore" });
+    const userId = pyEnv["res.users"].create({ partner_id: partnerId });
+    const channelId = pyEnv["discuss.channel"].create({
+        channel_member_ids: [
+            Command.create({ partner_id: serverState.partnerId }),
+            Command.create({ partner_id: partnerId }),
+        ],
+        channel_type: "chat",
+    });
+    listenStoreFetch("init_messaging");
+    await start();
+    await waitStoreFetch("init_messaging");
+    withUser(userId, () =>
+        rpc("/mail/message/post", {
+            post_data: { body: "Magic!", message_type: "comment" },
+            thread_id: channelId,
+            thread_model: "discuss.channel",
+        }),
+    );
+    await contains(".o-mail-ChatBubble[name='Dumbledore']");
+});
+
+test("Show conversations with new message in chat hub (outside of discuss app)", async () => {
+    const pyEnv = await startServer();
+    const partnerId = pyEnv["res.partner"].create({ name: "Dumbledore" });
+    const userId = pyEnv["res.users"].create({ partner_id: partnerId });
+    const [chatId, groupChatId] = pyEnv["discuss.channel"].create([
+        {
+            channel_member_ids: [
+                Command.create({ partner_id: serverState.partnerId }),
+                Command.create({ partner_id: partnerId }),
+            ],
+            channel_type: "chat",
+        },
+        {
+            channel_member_ids: [
+                Command.create({ partner_id: serverState.partnerId }),
+                Command.create({ partner_id: partnerId }),
+            ],
+            channel_type: "group",
+            name: "GroupChat",
+        },
+    ]);
+    await start();
+    getService("bus_service").subscribe("discuss.channel/new_message", () =>
+        expect.step("discuss.channel/new_message"),
+    );
+    await withUser(userId, () =>
+        rpc("/mail/message/post", {
+            post_data: { body: "Chat Message 1", message_type: "comment" },
+            thread_id: chatId,
+            thread_model: "discuss.channel",
+        }),
+    );
+    await expect.waitForSteps(["discuss.channel/new_message"]);
+    await contains(".o-mail-ChatBubble .badge:contains(1)", { count: 1 });
+    await click(".o-mail-ChatBubble[name='Dumbledore']");
+    await contains(".o-mail-ChatWindow-header:contains('Dumbledore')");
+    await contains(".o-mail-Message:contains('Chat Message 1')");
+    await contains(".badge", { count: 0 });
+    await click(".o-mail-ChatWindow [title*='Close Chat Window']");
+    await withUser(userId, () =>
+        rpc("/mail/message/post", {
+            post_data: { body: "GroupChat Message", message_type: "comment" },
+            thread_id: groupChatId,
+            thread_model: "discuss.channel",
+        }),
+    );
+    await expect.waitForSteps(["discuss.channel/new_message"]);
+    await contains(".o-mail-ChatBubble[name='GroupChat']");
+    await openDiscuss();
+    await contains(".o-mail-Discuss[data-active]");
+    await contains(
+        ".o-mail-Discuss .o-mail-MessagingMenuItem:has(.o-mail-NotificationItem-name:contains('Dumbledore')) .o-mail-NotificationItem-counter",
+        {
+            count: 0,
+        },
+    );
+    await withUser(userId, () =>
+        rpc("/mail/message/post", {
+            post_data: { body: "Tricky", message_type: "comment" },
+            thread_id: chatId,
+            thread_model: "discuss.channel",
+        }),
+    );
+    await expect.waitForSteps(["discuss.channel/new_message"]);
+    await click(
+        ".o-mail-Discuss .o-mail-NotificationItem:has(.o-mail-NotificationItem-name:contains('Dumbledore')):has(.o-mail-NotificationItem-counter:contains(1))",
+    );
+    await contains(".o-mail-Message:contains('Tricky')");
+    await openFormView("res.partner", partnerId);
+    await contains(".o-mail-ChatBubble[name='GroupChat']");
+    await contains(".o-mail-ChatBubble[name='Dumbledore']", { count: 0 });
+    await contains(".o-mail-ChatWindow-header:contains('Dumbledore')", { count: 0 });
+});
+
+test("Posting a message in discuss app should not open a chat window after leaving discuss app", async () => {
+    const pyEnv = await startServer();
+    const partnerId = pyEnv["res.partner"].create({ name: "Dumbledore" });
+    const channelId = pyEnv["discuss.channel"].create({
+        channel_member_ids: [
+            Command.create({ partner_id: serverState.partnerId }),
+            Command.create({ partner_id: partnerId }),
+        ],
+        channel_type: "chat",
+    });
+    await start();
+    await openDiscuss(channelId);
+    await insertText(".o-mail-Composer-input", "test https://www.odoo.com/");
+    await press("Enter");
+    await openFormView("res.partner", partnerId);
+    await contains(".o-mail-ChatWindow", { count: 0, text: "Dumbledore" });
+});

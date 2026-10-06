@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates>
+    <t t-name="planning.PlanningCalendarCommonPopover.body" t-inherit="web.CalendarCommonPopover.body" t-inherit-mode="primary">
+        <xpath expr="//small[@t-if='this.timeDuration']" position="replace">
+            <small t-if="this.data.allocated_hours">
+                <b t-out="`(${this.allocatedHoursFormatted})`"/>
+            </small>
+            <small t-if="this.data.allocated_percentage and this.data.resource_type === 'human'">
+                <b t-out="` (${this.allocatedPercentageFormatted}%)`"/>
+            </small>
+            <t t-if="this.timeDuration and !(this.data.allocated_hours or this.data.allocated_percentage)">$0</t>
+        </xpath>
+        <!-- Filter on fields -->
+        <xpath expr="//t[@t-if='!this.isInvisible(fieldInfo, slot.record)']" position="attributes">
+            <attribute name="t-if" add="this.isSet(fieldInfo.name)" separator=" and "/>
+        </xpath>
+    </t>
+</templates>

@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_device_device_form_modbus" model="ir.ui.view">
+        <field name="name">device.device.form.modbus</field>
+        <field name="model">device.device</field>
+        <field name="inherit_id" ref="device.view_device_device_form" />
+        <field name="arch" type="xml">
+            <page name="connection" position="inside">
+                <group
+                    string="Modbus Configuration"
+                    invisible="comm_protocol not in ['modbus_tcp', 'modbus_rtu']">
+                    <group>
+                        <field
+                            name="modbus_register_start"
+                            readonly="connection_state == 'connected'" />
+                        <field
+                            name="modbus_register_count"
+                            readonly="connection_state == 'connected'" />
+                        <field name="modbus_poll_seconds" />
+                    </group>
+                    <group />
+                </group>
+            </page>
+        </field>
+    </record>
+
+    <record id="view_device_profile_form_modbus" model="ir.ui.view">
+        <field name="name">device.profile.form.modbus</field>
+        <field name="model">device.profile</field>
+        <field name="inherit_id" ref="device.view_device_profile_form" />
+        <field name="arch" type="xml">
+            <page name="protocol_settings" position="inside">
+                <group
+                    string="Modbus Settings"
+                    invisible="protocol not in ['modbus_tcp', 'modbus_rtu']">
+                    <field name="modbus_unit_id" />
+                    <field name="modbus_register_type" />
+                </group>
+            </page>
+        </field>
+    </record>
+
+</odoo>

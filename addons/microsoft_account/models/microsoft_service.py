@@ -1,0 +1,215 @@
+import logging
+from urllib.parse import urlencode, urlsplit
+
+import requests
+import werkzeug.http
+
+from odoo import api, fields, models
+
+_logger = logging.getLogger(__name__)
+
+TIMEOUT = 20
+
+DEFAULT_MICROSOFT_AUTH_ENDPOINT = (
+    "https://login.microsoftonline.com/common/oauth2/v2.0/authorize"
+)
+DEFAULT_MICROSOFT_TOKEN_ENDPOINT = (
+    "https://login.microsoftonline.com/common/oauth2/v2.0/token"
+)
+DEFAULT_MICROSOFT_GRAPH_ENDPOINT = "https://graph.microsoft.com"
+
+RESOURCE_NOT_FOUND_STATUSES = (204, 404)
+
+
+def _get_microsoft_client_secret(ICP_sudo, service):
+    """Return the client_secret for a specific service.
+
+    Note: This method serves as a hook for modules that would like share their own keys.
+        This method should never be callable from a method that return it in clear, it
+        should only be used directly in a request.
+
+    :param ICP_sudo: the model ir.config_parameters in sudo
+    :param service: the service that we need the secret key
+    :return: the secret, out of the credential vault
+    :rtype: str
+    """
+    return ICP_sudo.env["credential.credential"]._get_system_secret(
+        "microsoft_%s_client_secret" % service
+    )
+
+
+class MicrosoftService(models.AbstractModel):
+    _name = "microsoft.service"
+    _description = "Microsoft Service"
+
+    def _get_microsoft_client_id(self, service):
+        # client id is not a secret, and can be leaked without risk. e.g. in clear in authorize uri.
+        ICP = self.env["ir.config_parameter"].sudo()
+        return ICP.get_param("microsoft_%s_client_id" % service)
+
+    def _get_calendar_scope(self) -> str:
+        return "offline_access openid Calendars.ReadWrite"
+
+    @api.model
+    def _get_auth_endpoint(self):
+        return self.env.registry.settings.get(
+            self.env, "microsoft_account.auth_endpoint", DEFAULT_MICROSOFT_AUTH_ENDPOINT
+        )
+
+    @api.model
+    def _get_token_endpoint(self):
+        return self.env.registry.settings.get(
+            self.env,
+            "microsoft_account.token_endpoint",
+            DEFAULT_MICROSOFT_TOKEN_ENDPOINT,
+        )
+
+    @api.model
+    def _refresh_microsoft_token(self, service, credential):
+        return credential._oauth2_refresh(
+            self._get_token_endpoint(),
+            self._get_microsoft_client_id(service),
+            _get_microsoft_client_secret(
+                self.env["ir.config_parameter"].sudo(), service
+            ),
+            purpose="microsoft_api",
+            timeout=TIMEOUT,
+        )
+
+    @api.model
+    def _get_authorize_uri(self, service, scope, redirect_uri, state):
+        """This method return the url needed to allow this instance of Odoo to access to the scope
+        of gmail specified as parameters
+        """
+        encoded_params = urlencode(
+            {
+                "response_type": "code",
+                "client_id": self._get_microsoft_client_id(service),
+                "state": state,
+                "scope": scope,
+                "redirect_uri": redirect_uri,
+                "access_type": "offline",
+            }
+        )
+        return "%s?%s" % (self._get_auth_endpoint(), encoded_params)
+
+    @api.model
+    def _get_microsoft_tokens(self, authorize_code, service, redirect_uri) -> tuple:
+        """Call Microsoft API to exchange authorization code against token, with POST request, to
+        not be redirected.
+        """
+        ICP_sudo = self.env["ir.config_parameter"].sudo()
+        scope = self._get_calendar_scope()
+
+        headers = {"content-type": "application/x-www-form-urlencoded"}
+        data = {
+            "code": authorize_code,
+            "client_id": self._get_microsoft_client_id(service),
+            "client_secret": _get_microsoft_client_secret(ICP_sudo, service),
+            "grant_type": "authorization_code",
+            "scope": scope,
+            "redirect_uri": redirect_uri,
+        }
+        try:
+            _status, response, _ask_time = self._do_request(
+                self._get_token_endpoint(),
+                params=data,
+                headers=headers,
+                method="POST",
+                preuri="",
+            )
+            access_token = response.get("access_token")
+            refresh_token = response.get("refresh_token")
+            ttl = response.get("expires_in")
+            return access_token, refresh_token, ttl
+        except requests.HTTPError:
+            error_msg = self.env._(
+                "Something went wrong during your token generation. Maybe your Authorization Code is invalid"
+            )
+            raise self.env["res.config.settings"].prepare_config_warning(
+                error_msg
+            ) from None
+
+    @api.model
+    def _do_request(
+        self,
+        uri,
+        params=None,
+        headers=None,
+        method="POST",
+        preuri=DEFAULT_MICROSOFT_GRAPH_ENDPOINT,
+        timeout=TIMEOUT,
+    ) -> tuple:
+        """Execute the request to Microsoft API. Return a tuple ('HTTP_CODE', 'HTTP_RESPONSE')
+        :param uri : the url to contact
+        :param params : dict or already encoded parameters for the request to make
+        :param headers : headers of request
+        :param method : the method to use to make the request
+        :param preuri : pre url to prepend to param uri.
+        """
+        if params is None:
+            params = {}
+        if headers is None:
+            headers = {}
+
+        assert urlsplit(preuri + uri).hostname in [
+            urlsplit(url).hostname
+            for url in (
+                DEFAULT_MICROSOFT_TOKEN_ENDPOINT,
+                DEFAULT_MICROSOFT_GRAPH_ENDPOINT,
+            )
+        ]
+
+        _logger.debug(
+            "Uri: %s - Type : %s - Headers: %s - Params : %s !",
+            uri,
+            method,
+            headers,
+            params,
+        )
+
+        ask_time = fields.Datetime.now()
+        try:
+            if method.upper() in ("GET", "DELETE"):
+                res = self.env["ir.egress"].request(
+                    method.lower(),
+                    preuri + uri,
+                    purpose="microsoft_api",
+                    headers=headers,
+                    params=params,
+                    timeout=timeout,
+                )
+            elif method.upper() in ("POST", "PATCH", "PUT"):
+                res = self.env["ir.egress"].request(
+                    method.lower(),
+                    preuri + uri,
+                    purpose="microsoft_api",
+                    data=params,
+                    headers=headers,
+                    timeout=timeout,
+                )
+            else:
+                raise ValueError(
+                    f"Method not supported [{method}] not in [GET, POST, PUT, PATCH or DELETE]!"
+                )
+            res.raise_for_status()
+            status = res.status_code
+
+            if int(status) in RESOURCE_NOT_FOUND_STATUSES:
+                response = {}
+            else:
+                # Some answers return empty content
+                response = (res.content and res.json()) or {}
+
+            # An HTTP date is English whatever LC_TIME says; strptime's %a/%b
+            # are not, and failed silently under a non-English locale.
+            if server_time := werkzeug.http.parse_date(res.headers.get("date")):
+                ask_time = server_time.replace(tzinfo=None)
+        except requests.HTTPError as error:
+            if error.response.status_code in RESOURCE_NOT_FOUND_STATUSES:
+                status = error.response.status_code
+                response = {}
+            else:
+                _logger.exception("Bad microsoft request: %s!", error.response.content)
+                raise
+        return (status, response, ask_time)

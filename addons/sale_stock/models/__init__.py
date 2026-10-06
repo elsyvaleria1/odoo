@@ -1,0 +1,17 @@
+from . import (
+    account_move,
+    account_move_line,
+    product_product,
+    product_template,
+    res_partner,
+    sale_order,
+    sale_order_line,
+    product_trace,
+    stock_move,
+    stock_move_line,
+    stock_picking,
+    stock_reference,
+    stock_route,
+    stock_rule,
+)
+from . import sale_config

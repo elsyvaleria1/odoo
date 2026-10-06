@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="web.GraphView.Buttons">
+        <div class="btn-group" role="toolbar" aria-label="Main actions">
+            <ReportViewMeasures
+                measures="this.model.metaData.measures"
+                activeMeasures="[this.model.metaData.measure]"
+                onMeasureSelected.bind="this.onMeasureSelected"
+            />
+        </div>
+        <div class="btn-group" role="toolbar" aria-label="Change graph">
+            <button class="btn btn-secondary fa-solid fa-chart-column o_graph_button" data-tooltip="Bar Chart" aria-label="Bar Chart" data-mode="bar"
+                t-on-click="() => this.onModeSelected('bar')"
+                t-att-class="{ active: this.model.metaData.mode === 'bar' }"
+            />
+            <button class="btn btn-secondary fa-solid fa-chart-line o_graph_button" data-tooltip="Line Chart" aria-label="Line Chart" data-mode="line"
+                t-on-click="() => this.onModeSelected('line')"
+                t-att-class="{ active: this.model.metaData.mode === 'line' }"
+            />
+            <button class="btn btn-secondary fa-solid fa-chart-pie o_graph_button" data-tooltip="Pie Chart" aria-label="Pie Chart" data-mode="pie"
+                t-on-click="() => this.onModeSelected('pie')"
+                t-att-class="{ active: this.model.metaData.mode === 'pie' }"
+            />
+            <button class="btn btn-secondary fa-solid fa-braille o_graph_button" data-tooltip="Scatter Plot" aria-label="Scatter Plot" data-mode="scatter"
+                t-on-click="() => this.onModeSelected('scatter')"
+                t-att-class="{ active: this.model.metaData.mode === 'scatter' }"
+            />
+        </div>
+        <div t-if="this.model.metaData.mode === 'bar'" class="btn-group" role="toolbar" aria-label="Change graph">
+            <button class="btn btn-secondary fa-solid fa-database o_graph_button o_graph_stacked_button" aria-label="Stacked"
+                t-on-click="this.toggleStacked"
+                t-att-class="{ active: this.model.isStacked }"
+                t-att-disabled="this.model.seriesOverlap"
+                t-att-data-tooltip="this.stackedTooltip"
+            />
+        </div>
+        <div t-if="this.model.metaData.mode === 'line'" class="btn-group" role="toolbar" aria-label="Change graph">
+            <button class="btn btn-secondary fa-solid fa-database o_graph_button o_graph_stacked_button" aria-label="Stacked"
+                t-on-click="this.toggleStacked"
+                t-att-class="{ active: this.model.isStacked }"
+                t-att-disabled="this.model.seriesOverlap"
+                t-att-data-tooltip="this.stackedTooltip"
+            />
+            <button class="btn btn-secondary fa-solid fa-signal o_graph_button" data-tooltip="Cumulative" aria-label="Cumulative"
+                t-on-click="this.toggleCumulated"
+                t-att-class="{ active: this.model.metaData.cumulated }"
+            />
+        </div>
+        <div t-if="this.model.metaData.mode !== 'pie' and this.model.metaData.mode !== 'scatter'" class="btn-group" role="toolbar" aria-label="Sort graph" name="toggleOrderToolbar">
+            <button class="btn btn-secondary fa-solid fa-arrow-down-wide-short o_graph_button" data-tooltip="Descending" aria-label="Descending"
+                t-on-click="() => this.toggleOrder('DESC')"
+                t-att-class="{ active: this.model.metaData.order === 'DESC' }"
+            />
+            <button class="btn btn-secondary fa-solid fa-arrow-down-short-wide o_graph_button" data-tooltip="Ascending" aria-label="Ascending"
+                t-on-click="() => this.toggleOrder('ASC')"
+                t-att-class="{ active: this.model.metaData.order === 'ASC' }"
+            />
+        </div>
+    </t>
+
+    <t t-name="web.GraphView">
+        <t t-set="rendererReady" t-value="this.model.isReady"/>
+        <ViewLayout t-props="this.chassis.props">
+            <t t-if="rendererReady and this.model.data" t-component="this.props.Renderer" model="this.model" buttonTemplate="this.props.buttonTemplate"/>
+        </ViewLayout>
+    </t>
+
+</templates>

@@ -1,0 +1,182 @@
+// @ts-check
+
+import { after, describe, expect, test } from "@odoo/hoot";
+import { Deferred, mockFetch } from "@odoo/hoot-mock";
+import { allowTranslations, patchWithCleanup } from "@web/../tests/web_test_helpers";
+import { download } from "@web/core/network/download";
+import {
+    ConnectionLostError,
+    InvalidResponseError,
+    RPCError,
+} from "@web/core/network/rpc";
+
+describe.current.tags("headless");
+
+test("handles connection error when behind a server", async () => {
+    mockFetch(() => new Response("", { status: 502 }));
+
+    const error = new ConnectionLostError("/some_url");
+    await expect(download({ data: {}, url: "/some_url" })).rejects.toThrow(error);
+});
+
+test("maps 503 Service Unavailable to ConnectionLostError (like rpc.js)", async () => {
+    mockFetch(() => new Response("", { status: 503 }));
+    const error = new ConnectionLostError("/some_url");
+    await expect(download({ data: {}, url: "/some_url" })).rejects.toThrow(error);
+});
+
+test("maps 504 Gateway Timeout to ConnectionLostError (like rpc.js)", async () => {
+    mockFetch(() => new Response("", { status: 504 }));
+    const error = new ConnectionLostError("/some_url");
+    await expect(download({ data: {}, url: "/some_url" })).rejects.toThrow(error);
+});
+
+test("handles connection error when network unavailable", async () => {
+    mockFetch(() => Promise.reject());
+
+    const error = new ConnectionLostError("/some_url");
+    await expect(download({ data: {}, url: "/some_url" })).rejects.toThrow(error);
+});
+
+test("handles business error from server", async () => {
+    const serverError = {
+        code: 0,
+        data: {
+            name: "odoo.exceptions.RedirectWarning",
+            arguments: ["Business Error Message", "someArg"],
+            message: "Business Error Message",
+        },
+        message: "Odoo Server Error",
+    };
+
+    mockFetch(() => new Blob([JSON.stringify(serverError)], { type: "text/html" }));
+
+    let error = null;
+    try {
+        await download({
+            data: {},
+            url: "/some_url",
+        });
+    } catch (e) {
+        error = e;
+    }
+    expect(error).toBeInstanceOf(RPCError);
+    expect(error.data).toEqual(serverError.data);
+});
+
+test("classifies a 200 HTML page (session-expired login redirect) as InvalidResponseError", async () => {
+    const loginPage = `<html><body><div>HTML error message</div></body></html>`;
+
+    mockFetch(() => new Blob([JSON.stringify(loginPage)], { type: "text/html" }));
+
+    let error = null;
+    try {
+        await download({
+            data: {},
+            url: "/some_url",
+        });
+    } catch (e) {
+        error = e;
+    }
+
+    expect(error).toBeInstanceOf(InvalidResponseError);
+    expect(error.status).toBe(200);
+    expect(error.message).toMatch(/invalid \(non JSON-RPC\) response/);
+});
+
+test("handles success download", async () => {
+    allowTranslations();
+
+    mockFetch((_, { body }) => {
+        expect(body).toBeInstanceOf(FormData);
+        if (!(body instanceof FormData)) {
+            throw new Error("Expected FormData");
+        }
+        expect(body.get("someKey")).toBe("someValue");
+        expect(body.has("token")).toBe(true);
+        expect(body.has("csrf_token")).toBe(true);
+        expect.step("fetching file");
+
+        return new Blob(["some plain text file"], { type: "text/plain" });
+    });
+
+    const deferred = new Deferred();
+
+    const downloadOnClick = (ev) => {
+        const target = ev.target;
+        if (target.tagName === "A" && "download" in target.attributes) {
+            ev.preventDefault();
+
+            expect(target.href).toMatch(/^blob:/);
+            expect.step("file downloaded");
+            document.removeEventListener("click", downloadOnClick);
+            deferred.resolve();
+        }
+    };
+
+    document.addEventListener("click", downloadOnClick);
+    after(() => document.removeEventListener("click", downloadOnClick));
+
+    expect("a[download]").toHaveCount(0);
+    download({ data: { someKey: "someValue" }, url: "/some_url" });
+    await deferred;
+    expect.verifySteps(["fetching file", "file downloaded"]);
+});
+
+test("a FileReader failure rejects instead of hanging forever", async () => {
+    mockFetch(() => new Blob(["boom"], { type: "text/html" }));
+    patchWithCleanup(FileReader.prototype, {
+        readAsText() {
+            Promise.resolve().then(() =>
+                this.dispatchEvent(new ProgressEvent("error")),
+            );
+        },
+    });
+
+    const PENDING = Symbol("pending");
+    const outcome = await Promise.race([
+        download({ data: {}, url: "/some_url" }).then(
+            () => "resolved",
+            (error) => error,
+        ),
+        new Promise((resolve) => setTimeout(() => resolve(PENDING), 500)),
+    ]);
+    expect(outcome).not.toBe(PENDING, {
+        message: "download() must settle even when the response cannot be decoded",
+    });
+    expect(outcome).toBeInstanceOf(InvalidResponseError);
+});
+
+test("names a cloud storage download from the disposition signed into its url", async () => {
+    // A redirect to a bucket answers cross-origin: its Content-Disposition is
+    // unreadable, but the server signed it into the url the XHR ended on.
+    const disposition =
+        "attachment; filename=\"CSD Marin.cer\"; filename*=UTF-8''CSD%20Mar%C3%ADn.cer";
+    mockFetch(() => {
+        const response = new Response(
+            new Blob(["cert"], { type: "application/pkix-cert" }),
+        );
+        Object.defineProperty(response, "url", {
+            value:
+                "https://bucket.s3.us-east-2.amazonaws.com/a/b.cer?X-Amz-Signature=x" +
+                `&response-content-disposition=${encodeURIComponent(disposition)}`,
+        });
+        return response;
+    });
+
+    const deferred = new Deferred();
+    const downloadOnClick = (ev) => {
+        const target = ev.target;
+        if (target.tagName === "A" && "download" in target.attributes) {
+            ev.preventDefault();
+            expect.step(target.download);
+            deferred.resolve();
+        }
+    };
+    document.addEventListener("click", downloadOnClick);
+    after(() => document.removeEventListener("click", downloadOnClick));
+
+    download({ data: {}, url: "/documents/content/token" });
+    await deferred;
+    expect.verifySteps(["CSD Marín.cer"]);
+});

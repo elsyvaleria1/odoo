@@ -1,0 +1,41 @@
+{
+    "name": "Engineering Changes",
+    "version": "1.1",
+    "oldest_upgradable_version": "1.1",
+    "category": "Supply Chain/Product Lifecycle Management (PLM)",
+    "sequence": 155,
+    "summary": "Track engineering change orders and apply product and bill-of-material revisions",
+    "description": "Provides engineering change orders, stages, revision records and document links for products and bills of materials. Supports configured approval workflows and actions to apply revised bills of materials. Manufacturing orders can inspect available changes and update their bill of materials through the provided actions.",
+    "author": "Odoo S.A.",
+    "website": "https://www.odoo.com/app/plm",
+    "license": "OEEL-1",
+    "depends": [
+        "document_product",
+        "mrp",
+        "approval",
+    ],
+    "data": [
+        "security/mrp_plm.xml",
+        "security/ir.access.csv",
+        "data/mrp_data.xml",
+        "data/approval_category_data.xml",
+        "data/mrp_plm_bom_overview_data.xml",
+        "views/mrp_bom_views.xml",
+        "views/mrp_document_views.xml",
+        "views/mrp_eco_views.xml",
+        "views/product_views.xml",
+        "views/mrp_production_views.xml",
+        "views/mrp_plm_menus.xml",
+    ],
+    "demo": [
+        "demo/mrp_demo.xml",
+    ],
+    "assets": {
+        "web.assets_backend": [
+            "mrp_plm/static/src/**/*.js",
+            "mrp_plm/static/src/**/*.scss",
+            "mrp_plm/static/src/**/*.xml",
+        ],
+    },
+    "application": True,
+}

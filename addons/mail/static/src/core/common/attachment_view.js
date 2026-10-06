@@ -1,0 +1,197 @@
+// @ts-check
+/** @odoo-module native */
+import {
+    Component,
+    onMounted,
+    onWillUnmount,
+    onWillUpdateProps,
+    proxy,
+    t,
+    useProps,
+} from "@odoo/owl";
+import { makeLogger } from "@web/core/debug/debug_logger";
+import { useLifecycleLog } from "@web/core/debug/logger_hooks";
+import { deepEqual } from "@web/core/utils/collections/objects";
+import { elementRef } from "@web/core/utils/element_ref";
+import { useService } from "@web/core/utils/hooks";
+import { useLayoutEffect } from "@web/core/utils/layout_effect";
+import { hidePDFJSButtons } from "@web/core/utils/pdfjs";
+
+const log = makeLogger("mail.attachment_view");
+class AbstractAttachmentView extends Component {
+    static template = "mail.AttachmentView";
+    static components = {};
+    static props = { threadId: t.any(), threadModel: t.any() };
+    props = useProps(this.constructor.props);
+
+    setup() {
+        useLifecycleLog(log);
+        super.setup();
+        this.store = useService("mail.store");
+        this.uiService = useService("ui");
+        this.iframeViewerPdfRef = elementRef();
+        this.state = proxy({
+            /** @type {import("models").Thread|undefined} */
+            thread: undefined,
+        });
+        useLayoutEffect(
+            /** @param {HTMLIFrameElement|null} el */
+            (el) => {
+                if (el) {
+                    hidePDFJSButtons(this.iframeViewerPdfRef.el);
+                }
+            },
+            () => [this.iframeViewerPdfRef.el],
+        );
+        this.updateFromProps(this.props);
+        onWillUpdateProps(
+            /** @param {{threadId: number, threadModel: string}} props */ (props) =>
+                this.updateFromProps(props),
+        );
+    }
+
+    onClickNext() {
+        const index = this.state.thread.attachmentsInWebClientView.findIndex(
+            (attachment) => attachment.eq(this.state.thread.message_main_attachment_id),
+        );
+        log.logic("onClickNext", () => ({
+            thread: this.state.thread.localId,
+            index,
+            count: this.state.thread.attachmentsInWebClientView.length,
+        }));
+        this.state.thread.setMainAttachmentFromIndex(
+            index >= this.state.thread.attachmentsInWebClientView.length - 1
+                ? 0
+                : index + 1,
+        );
+    }
+
+    onClickPrevious() {
+        const index = this.state.thread.attachmentsInWebClientView.findIndex(
+            (attachment) => attachment.eq(this.state.thread.message_main_attachment_id),
+        );
+        log.logic("onClickPrevious", () => ({
+            thread: this.state.thread.localId,
+            index,
+            count: this.state.thread.attachmentsInWebClientView.length,
+        }));
+        this.state.thread.setMainAttachmentFromIndex(
+            index <= 0
+                ? this.state.thread.attachmentsInWebClientView.length - 1
+                : index - 1,
+        );
+    }
+
+    /** @param {{threadId: number, threadModel: string}} props */
+    updateFromProps(props) {
+        this.state.thread = this.store.Thread.insert({
+            id: props.threadId,
+            model: props.threadModel,
+        });
+    }
+
+    get displayName() {
+        return this.state.thread.message_main_attachment_id.name;
+    }
+
+    onClickPopout() {}
+}
+
+export class PopoutAttachmentView extends AbstractAttachmentView {
+    static template = "mail.PopoutAttachmentView";
+}
+
+/** @returns {DOMTokenList|null} */
+function attachmentViewParentElementClassList() {
+    const attachmentViewEl = document.querySelector(".o-mail-Attachment");
+    return attachmentViewEl?.parentElement?.classList ?? null;
+}
+/** @param {boolean} hidden */
+function setAttachmentViewHidden(hidden) {
+    attachmentViewParentElementClassList()?.toggle("d-none", hidden);
+}
+/**
+ * @param {{threadId: number, threadModel: string}} props
+ * @returns {{threadId: number, threadModel: string}}
+ */
+function extractPopoutProps(props) {
+    return {
+        threadId: props.threadId,
+        threadModel: props.threadModel,
+    };
+}
+export function usePopoutAttachment() {
+    const componentProps = /** @type {{threadId: number, threadModel: string}} */ (
+        useProps()
+    );
+    const uiService = useService("ui");
+    const mailPopoutService = useService("mail.popout");
+
+    function popout() {
+        log.logic("popout", () => extractPopoutProps(componentProps));
+        mailPopoutService.addHooks(
+            () => {
+                setAttachmentViewHidden(true);
+                uiService.bus.trigger("resize");
+            },
+            () => {
+                setAttachmentViewHidden(false);
+                uiService.bus.trigger("resize");
+            },
+        );
+        mailPopoutService.popout(
+            PopoutAttachmentView,
+            extractPopoutProps(componentProps),
+        );
+    }
+
+    /** @param {{threadId: number, threadModel: string}} [newProps=componentProps] */
+    function updatePopout(newProps = componentProps) {
+        if (mailPopoutService.externalWindow) {
+            log.logic("updatePopout", () => extractPopoutProps(newProps));
+            setAttachmentViewHidden(true);
+            mailPopoutService.popout(
+                PopoutAttachmentView,
+                extractPopoutProps(newProps),
+            );
+        }
+    }
+
+    function resetPopout() {
+        mailPopoutService.reset();
+    }
+
+    onMounted(() => updatePopout());
+    onWillUpdateProps(
+        /** @param {{threadId: number, threadModel: string}} props */ (props) => {
+            const oldProps = extractPopoutProps(componentProps);
+            const newProps = extractPopoutProps(props);
+            if (!deepEqual(oldProps, newProps)) {
+                updatePopout(newProps);
+            }
+        },
+    );
+    onWillUnmount(resetPopout);
+    return {
+        popout,
+        updatePopout,
+        resetPopout,
+    };
+}
+
+/**
+ * @typedef {Object} Props
+ * @property {number} threadId
+ * @property {string} threadModel
+ * @extends {AbstractAttachmentView}
+ */
+export class AttachmentView extends AbstractAttachmentView {
+    setup() {
+        super.setup();
+        this.attachmentPopout = usePopoutAttachment();
+    }
+
+    onClickPopout() {
+        this.attachmentPopout.popout();
+    }
+}

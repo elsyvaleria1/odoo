@@ -1,0 +1,148 @@
+// @ts-check
+/** @odoo-module native */
+
+import { Component, t, useProps } from "@odoo/owl";
+import { CallbackRecorder } from "@web/core/action_hook";
+import { useAction } from "@web/core/action_port";
+import { useDialogContext } from "@web/core/dialog_context_hooks";
+import { registry } from "@web/core/registry";
+import { useChildRef } from "@web/core/utils/hooks";
+import { Dialog } from "@web/ui/dialog/dialog";
+import { View } from "@web/views/view";
+
+export class FormViewDialog extends Component {
+    static template = "web.FormViewDialog";
+    static components = { Dialog, View };
+    static props = {
+        close: t.function(),
+        resModel: t.string(),
+        context: t.object().optional(),
+        expandedFormRef: t.string().optional(),
+        nextRecordsContext: t.object().optional(),
+        readonly: t.boolean().optional(),
+        onRecordSaved: t.function().optional(() => () => {}),
+        onRecordSave: t.function().optional(),
+        onRecordDiscarded: t.function().optional(),
+        removeRecord: t.function().optional(),
+        resId: t.or([t.number(), t.boolean()]).optional(),
+        title: t.string().optional(),
+        viewId: t.or([t.number(), t.boolean()]).optional(),
+        preventCreate: t.boolean().optional(false),
+        preventEdit: t.boolean().optional(false),
+        canExpand: t.boolean().optional(true),
+        isToMany: t.boolean().optional(false),
+        size: Dialog.props.size,
+    };
+    props = useProps(this.constructor.props);
+
+    /** @type {any} */
+    actionService;
+    /** @type {any} */
+    viewProps;
+
+    setup() {
+        super.setup();
+        this.dialogContext = useDialogContext();
+
+        this.actionService = useAction();
+        this.modalRef = useChildRef();
+        this.dialogContext.dialogData.dismiss = () => this.discardRecord();
+
+        const buttonTemplate = this.props.isToMany
+            ? "web.FormViewDialog.ToMany.buttons"
+            : "web.FormViewDialog.ToOne.buttons";
+
+        this.currentResId = this.props.resId;
+
+        if (this.props.canExpand) {
+            this.onExpandCallback = this.onExpand.bind(this);
+        }
+
+        this.viewProps = {
+            type: "form",
+            buttonTemplate,
+
+            context: this.props.context || {},
+            display: { controlPanel: false },
+            readonly: this.props.readonly,
+            resId: this.props.resId || false,
+            resModel: this.props.resModel,
+            viewId: this.props.viewId || false,
+            preventCreate: this.props.preventCreate,
+            preventEdit: this.props.preventEdit,
+            discardRecord: this.discardRecord.bind(this),
+            saveRecord: async (
+                /** @type {any} */ record,
+                /** @type {any} */ params,
+            ) => {
+                let saved;
+                if (this.props.onRecordSave) {
+                    saved = await this.props.onRecordSave(record);
+                    if (saved) {
+                        this.currentResId = record.resId;
+                    }
+                } else {
+                    saved = await record.save({ reload: false });
+                    if (saved) {
+                        this.currentResId = record.resId;
+                        await this.props.onRecordSaved(record);
+                    }
+                }
+                if (saved) {
+                    await this.onRecordSaved(record, params);
+                }
+                return saved;
+            },
+
+            __beforeLeave__: new CallbackRecorder(),
+        };
+        if (this.props.removeRecord) {
+            this.viewProps.removeRecord = async () => {
+                await this.props.removeRecord();
+                this.props.close();
+            };
+        }
+    }
+
+    /**
+     * @param {*} record
+     * @param {*} params
+     */
+    async onRecordSaved(record, params) {
+        if (params?.saveAndNew) {
+            this.currentResId = false;
+            const context = this.props.nextRecordsContext || this.props.context || {};
+            await record.model.load({ resId: false, context });
+        } else {
+            this.props.close();
+        }
+    }
+
+    async discardRecord() {
+        if (this.props.onRecordDiscarded) {
+            await this.props.onRecordDiscarded();
+        }
+        this.props.close();
+    }
+
+    async onExpand() {
+        const beforeLeaveCallbacks = this.viewProps.__beforeLeave__.callbacks;
+        const res = await Promise.all(
+            beforeLeaveCallbacks.map((/** @type {Function} */ callback) => callback()),
+        );
+        if (!res.includes(false)) {
+            this.actionService.doAction({
+                type: "ir.actions.act_window",
+                res_model: this.props.resModel,
+                res_id: this.currentResId,
+                views: [[false, "form"]],
+                context: {
+                    ...this.props.context,
+                    form_view_ref: this.props.expandedFormRef,
+                },
+            });
+        }
+    }
+}
+
+registry.category("dialogs").add("form_view", FormViewDialog);

@@ -1,0 +1,1057 @@
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-09-27 00:08+0000\n"
+"PO-Revision-Date: 2026-09-27 00:08+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: es\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: trade_competition
+#. odoo-python
+#: code:addons/trade_competition/models/mixin_order_competition.py:0
+msgid "%(competitor)s offers better terms on %(products)s."
+msgstr "%(competitor)s ofrece mejores condiciones en %(products)s."
+
+#. module: trade_competition
+#. odoo-python
+#: code:addons/trade_competition/models/competitor_offer.py:0
+msgid "%(competitor)s to %(partner)s, %(date)s"
+msgstr "%(competitor)s a %(partner)s, %(date)s"
+
+#. module: trade_competition
+#: model:ir.model.fields,help:trade_competition.field_res_bank__is_competitor
+#: model:ir.model.fields,help:trade_competition.field_res_company__is_competitor
+#: model:ir.model.fields,help:trade_competition.field_res_partner__is_competitor
+#: model:ir.model.fields,help:trade_competition.field_res_users__is_competitor
+msgid "A company competing with us for our customers or our growers."
+msgstr ""
+"Una empresa que compite con nosotros por nuestros clientes o nuestros "
+"productores."
+
+#. module: trade_competition
+#: model:ir.model,name:trade_competition.model_trade_config
+msgid "A company's trade configuration"
+msgstr "Configuración comercial de una empresa"
+
+#. module: trade_competition
+#. odoo-python
+#: code:addons/trade_competition/models/mixin_order_competition.py:0
+msgid "A competitor's offer beats ours"
+msgstr "La oferta de un competidor supera la nuestra"
+
+#. module: trade_competition
+#: model:ir.model.fields,field_description:trade_competition.field_competitor_offer__message_needaction
+msgid "Action Needed"
+msgstr "Acción requerida"
+
+#. module: trade_competition
+#: model:ir.model.fields,field_description:trade_competition.field_competitor_offer__active
+msgid "Active"
+msgstr "Activo"
+
+#. module: trade_competition
+#: model:ir.model.fields,field_description:trade_competition.field_competitor_offer__activity_ids
+msgid "Activities"
+msgstr "Actividades"
+
+#. module: trade_competition
+#: model:ir.model.fields,field_description:trade_competition.field_competitor_offer__activity_exception_decoration
+msgid "Activity Exception Decoration"
+msgstr "Decoración de Actividad de Excepción"
+
+#. module: trade_competition
+#: model:ir.model.fields,field_description:trade_competition.field_competitor_offer__activity_state
+msgid "Activity State"
+msgstr "Estado de la actividad"
+
+#. module: trade_competition
+#: model:ir.model.fields,field_description:trade_competition.field_competitor_offer__activity_type_icon
+msgid "Activity Type Icon"
+msgstr "Icono de tipo de actvidad"
+
+#. module: trade_competition
+#: model:ir.model.fields,help:trade_competition.field_res_config_settings__competition_freight_adjusted
+#: model:ir.model.fields,help:trade_competition.field_trade_config__competition_freight_adjusted
+msgid ""
+"Add the freight a competitor leaves to the counterparty to its comparable "
+"price."
+msgstr ""
+"Suma a su precio comparable el flete que un competidor deja a cargo de la "
+"contraparte."
+
+#. module: trade_competition
+#: model:ir.model.fields,field_description:trade_competition.field_res_config_settings__competition_freight_adjusted
+#: model:ir.model.fields,field_description:trade_competition.field_trade_config__competition_freight_adjusted
+msgid "Adjust for Freight"
+msgstr "Ajustar por flete"
+
+#. module: trade_competition
+#: model:ir.model.fields,field_description:trade_competition.field_competitor_offer__amount_total
+msgid "Amount Total"
+msgstr "Importe total"
+
+#. module: trade_competition
+#: model:ir.model.fields,help:trade_competition.field_res_config_settings__competition_financing_rate
+#: model:ir.model.fields,help:trade_competition.field_trade_config__competition_financing_rate
+msgid ""
+"Annual rate at which the credit a competitor's payment terms give is priced "
+"into its comparable price. Zero leaves credit out."
+msgstr ""
+"Tasa anual con la que el crédito que otorgan las condiciones de pago de un "
+"competidor se descuenta de su precio comparable. Cero deja fuera el crédito."
+
+#. module: trade_competition
+#: model_terms:ir.ui.view,arch_db:trade_competition.competitor_offer_view_form
+#: model_terms:ir.ui.view,arch_db:trade_competition.competitor_offer_view_search
+msgid "Archived"
+msgstr "Archivado"
+
+#. module: trade_competition
+#: model:ir.model.fields,field_description:trade_competition.field_competitor_offer__message_attachment_count
+msgid "Attachment Count"
+msgstr "Número de archivos adjuntos"
+
+#. module: trade_competition
+#: model:ir.model.fields,field_description:trade_competition.field_mixin_order_line_price_history__competitor_avg_price
+msgid "Average Competitor Price"
+msgstr "Precio medio de la competencia"
+
+#. module: trade_competition
+#: model:ir.model.fields.selection,name:trade_competition.selection__mixin_order_competition__market_position__behind
+#: model:ir.model.fields.selection,name:trade_competition.selection__mixin_order_line_competition__market_position__behind
+#: model:ir.model.fields.selection,name:trade_competition.selection__purchase_order__market_position__behind
+#: model:ir.model.fields.selection,name:trade_competition.selection__purchase_order_line__market_position__behind
+#: model:ir.model.fields.selection,name:trade_competition.selection__sale_order__market_position__behind
+#: model:ir.model.fields.selection,name:trade_competition.selection__sale_order_line__market_position__behind
+msgid "Behind the Market"
+msgstr "Detrás del mercado"
+
+#. module: trade_competition
+#: model:ir.model.fields,field_description:trade_competition.field_mixin_order_line_price_history__competitor_best_price
+msgid "Best Competitor Price"
+msgstr "Mejor precio de la competencia"
+
+#. module: trade_competition
+#: model:ir.model.fields,field_description:trade_competition.field_mixin_order_line_price_history__competitor_partner_price
+msgid "Best Offered to Them"
+msgstr "Mejor ofrecido a ellos"
+
+#. module: trade_competition
+#: model:ir.model.fields.selection,name:trade_competition.selection__mixin_order_competition__market_position__cannot_match
+#: model:ir.model.fields.selection,name:trade_competition.selection__mixin_order_line_competition__market_position__cannot_match
+#: model:ir.model.fields.selection,name:trade_competition.selection__purchase_order__market_position__cannot_match
+#: model:ir.model.fields.selection,name:trade_competition.selection__purchase_order_line__market_position__cannot_match
+#: model:ir.model.fields.selection,name:trade_competition.selection__sale_order__market_position__cannot_match
+#: model:ir.model.fields.selection,name:trade_competition.selection__sale_order_line__market_position__cannot_match
+msgid "Cannot Match"
+msgstr "No se puede igualar"
+
+#. module: trade_competition
+#: model:ir.model.fields,field_description:trade_competition.field_competitor_offer__company_id
+#: model:ir.model.fields,field_description:trade_competition.field_competitor_offer_line__company_id
+msgid "Company"
+msgstr "Compañía"
+
+#. module: trade_competition
+#: model:ir.model.fields.selection,name:trade_competition.selection__competitor_offer_line__equivalence__comparable
+msgid "Comparable"
+msgstr "Comparable"
+
+#. module: trade_competition
+#: model:ir.model.fields,field_description:trade_competition.field_competitor_offer_line__price_comparable
+msgid "Comparable Price"
+msgstr "Precio comparable"
+
+#. module: trade_competition
+#: model:ir.model.fields,field_description:trade_competition.field_res_bank__competitor_category_ids
+#: model:ir.model.fields,field_description:trade_competition.field_res_company__competitor_category_ids
+#: model:ir.model.fields,field_description:trade_competition.field_res_partner__competitor_category_ids
+#: model:ir.model.fields,field_description:trade_competition.field_res_users__competitor_category_ids
+msgid "Competes On"
+msgstr "Compite en"
+
+#. module: trade_competition
+#: model:ir.model.fields.selection,name:trade_competition.selection__competitor_offer__direction__purchase
+msgid "Competing to Buy"
+msgstr "Compitiendo por comprar"
+
+#. module: trade_competition
+#: model:ir.model.fields.selection,name:trade_competition.selection__competitor_offer__direction__sale
+msgid "Competing to Sell"
+msgstr "Compitiendo por vender"
+
+#. module: trade_competition
+#: model:ir.model.fields.selection,name:trade_competition.selection__mixin_order_competition__market_position__competitive
+#: model:ir.model.fields.selection,name:trade_competition.selection__mixin_order_line_competition__market_position__competitive
+#: model:ir.model.fields.selection,name:trade_competition.selection__purchase_order__market_position__competitive
+#: model:ir.model.fields.selection,name:trade_competition.selection__purchase_order_line__market_position__competitive
+#: model:ir.model.fields.selection,name:trade_competition.selection__sale_order__market_position__competitive
+#: model:ir.model.fields.selection,name:trade_competition.selection__sale_order_line__market_position__competitive
+msgid "Competitive"
+msgstr "Competitivo"
+
+#. module: trade_competition
+#: model:ir.model.fields,field_description:trade_competition.field_competitor_offer__competitor_id
+#: model:ir.model.fields,field_description:trade_competition.field_competitor_offer_line__competitor_id
+#: model:ir.model.fields,field_description:trade_competition.field_res_bank__is_competitor
+#: model:ir.model.fields,field_description:trade_competition.field_res_company__is_competitor
+#: model:ir.model.fields,field_description:trade_competition.field_res_partner__is_competitor
+#: model:ir.model.fields,field_description:trade_competition.field_res_users__is_competitor
+#: model_terms:ir.ui.view,arch_db:trade_competition.competitor_offer_line_view_search
+#: model_terms:ir.ui.view,arch_db:trade_competition.competitor_offer_view_search
+#: model_terms:ir.ui.view,arch_db:trade_competition.res_partner_view_form_competitor
+msgid "Competitor"
+msgstr "Competidor"
+
+#. module: trade_competition
+#. odoo-python
+#: code:addons/trade_competition/models/mixin_order_competition.py:0
+#: model:ir.model,name:trade_competition.model_competitor_offer
+#: model_terms:ir.ui.view,arch_db:trade_competition.competitor_offer_view_form
+msgid "Competitor Offer"
+msgstr "Oferta de competidor"
+
+#. module: trade_competition
+#: model:ir.model,name:trade_competition.model_competitor_offer_line
+msgid "Competitor Offer Line"
+msgstr "Línea de oferta de competidor"
+
+#. module: trade_competition
+#: model:ir.model.fields,field_description:trade_competition.field_mixin_order_line_price_history__competitor_offer_count
+#: model:ir.model.fields,field_description:trade_competition.field_res_bank__competitor_offer_count
+#: model:ir.model.fields,field_description:trade_competition.field_res_company__competitor_offer_count
+#: model:ir.model.fields,field_description:trade_competition.field_res_partner__competitor_offer_count
+#: model:ir.model.fields,field_description:trade_competition.field_res_users__competitor_offer_count
+#: model_terms:ir.ui.view,arch_db:trade_competition.competitor_offer_view_list
+#: model_terms:ir.ui.view,arch_db:trade_competition.competitor_offer_view_search
+msgid "Competitor Offers"
+msgstr "Ofertas de competidores"
+
+#. module: trade_competition
+#. odoo-python
+#: code:addons/trade_competition/models/mixin_order_line_price_history.py:0
+msgid "Competitor prices of %(product)s"
+msgstr "Precios de la competencia de %(product)s"
+
+#. module: trade_competition
+#: model:ir.model.fields.selection,name:trade_competition.selection__competitor_offer__source__price_list
+msgid "Competitor's Price List"
+msgstr "Lista de precios del competidor"
+
+#. module: trade_competition
+#: model:ir.model.fields,field_description:trade_competition.field_competitor_offer__confidence
+msgid "Confidence"
+msgstr "Confianza"
+
+#. module: trade_competition
+#: model:ir.model,name:trade_competition.model_res_config_settings
+msgid "Config Settings"
+msgstr "Ajustes de configuración"
+
+#. module: trade_competition
+#: model:ir.model.fields.selection,name:trade_competition.selection__competitor_offer__confidence__confirmed
+#: model_terms:ir.ui.view,arch_db:trade_competition.competitor_offer_view_search
+msgid "Confirmed"
+msgstr "Confirmado"
+
+#. module: trade_competition
+#: model:ir.model,name:trade_competition.model_res_partner
+msgid "Contact"
+msgstr "Contacto"
+
+#. module: trade_competition
+#: model:ir.model.fields,field_description:trade_competition.field_competitor_offer__create_uid
+#: model:ir.model.fields,field_description:trade_competition.field_competitor_offer_line__create_uid
+msgid "Created by"
+msgstr "Creado por"
+
+#. module: trade_competition
+#: model:ir.model.fields,field_description:trade_competition.field_competitor_offer__create_date
+#: model:ir.model.fields,field_description:trade_competition.field_competitor_offer_line__create_date
+msgid "Created on"
+msgstr "Creado el"
+
+#. module: trade_competition
+#: model:ir.model.fields,field_description:trade_competition.field_competitor_offer__credit_days
+msgid "Credit Days"
+msgstr "Días de crédito"
+
+#. module: trade_competition
+#: model:ir.model.fields,field_description:trade_competition.field_competitor_offer__currency_id
+#: model:ir.model.fields,field_description:trade_competition.field_competitor_offer_line__currency_id
+msgid "Currency"
+msgstr "Moneda"
+
+#. module: trade_competition
+#: model:ir.model.fields,help:trade_competition.field_competitor_offer__credit_days
+msgid "Days of credit the offer gives, read from its payment terms."
+msgstr ""
+"Días de crédito que otorga la oferta, tomados de sus condiciones de pago."
+
+#. module: trade_competition
+#: model:ir.model.fields,field_description:trade_competition.field_res_bank__competitor_deal_count
+#: model:ir.model.fields,field_description:trade_competition.field_res_company__competitor_deal_count
+#: model:ir.model.fields,field_description:trade_competition.field_res_partner__competitor_deal_count
+#: model:ir.model.fields,field_description:trade_competition.field_res_users__competitor_deal_count
+msgid "Deals Met"
+msgstr "Negocios enfrentados"
+
+#. module: trade_competition
+#: model:ir.model.fields,field_description:trade_competition.field_competitor_offer__direction
+#: model:ir.model.fields,field_description:trade_competition.field_competitor_offer_line__direction
+msgid "Direction"
+msgstr "Dirección"
+
+#. module: trade_competition
+#: model:ir.model.fields,field_description:trade_competition.field_competitor_offer_line__discount
+msgid "Discount (%)"
+msgstr "Descuento (%)"
+
+#. module: trade_competition
+#: model:ir.model.fields,field_description:trade_competition.field_competitor_offer__display_name
+#: model:ir.model.fields,field_description:trade_competition.field_competitor_offer_line__display_name
+#: model:ir.model.fields,field_description:trade_competition.field_mixin_order__display_name
+#: model:ir.model.fields,field_description:trade_competition.field_mixin_order_competition__display_name
+#: model:ir.model.fields,field_description:trade_competition.field_mixin_order_line_competition__display_name
+#: model:ir.model.fields,field_description:trade_competition.field_mixin_order_line_price_history__display_name
+#: model:ir.model.fields,field_description:trade_competition.field_mixin_order_loss__display_name
+#: model:ir.model.fields,field_description:trade_competition.field_res_config_settings__display_name
+#: model:ir.model.fields,field_description:trade_competition.field_res_partner__display_name
+#: model:ir.model.fields,field_description:trade_competition.field_trade_config__display_name
+msgid "Display Name"
+msgstr "Nombre para mostrar"
+
+#. module: trade_competition
+#: model:ir.model.fields.selection,name:trade_competition.selection__competitor_offer__source__document_seen
+msgid "Document Seen"
+msgstr "Documento visto"
+
+#. module: trade_competition
+#: model:ir.model.fields,field_description:trade_competition.field_competitor_offer_line__equivalence
+msgid "Equivalence"
+msgstr "Equivalencia"
+
+#. module: trade_competition
+#: model:ir.model.fields.selection,name:trade_competition.selection__competitor_offer__confidence__estimated
+msgid "Estimated"
+msgstr "Estimada"
+
+#. module: trade_competition
+#: model:ir.model.fields.selection,name:trade_competition.selection__competitor_offer__source__field_visit
+msgid "Field Visit"
+msgstr "Visita de campo"
+
+#. module: trade_competition
+#: model:ir.model.fields,field_description:trade_competition.field_res_config_settings__competition_financing_rate
+#: model:ir.model.fields,field_description:trade_competition.field_trade_config__competition_financing_rate
+msgid "Financing Rate (%)"
+msgstr "Tasa de financiamiento (%)"
+
+#. module: trade_competition
+#: model:ir.model.fields,field_description:trade_competition.field_competitor_offer__message_follower_ids
+msgid "Followers"
+msgstr "Seguidores"
+
+#. module: trade_competition
+#: model:ir.model.fields,field_description:trade_competition.field_competitor_offer__message_partner_ids
+msgid "Followers (Partners)"
+msgstr "Seguidores (Contactos)"
+
+#. module: trade_competition
+#: model:ir.model.fields,field_description:trade_competition.field_competitor_offer__freight_per_unit
+msgid "Freight per Unit"
+msgstr "Flete por unidad"
+
+#. module: trade_competition
+#: model:ir.model.fields,help:trade_competition.field_competitor_offer__freight_per_unit
+msgid "Freight the competitor leaves to the counterparty, per unit."
+msgstr "Flete que el competidor deja a cargo de la contraparte, por unidad."
+
+#. module: trade_competition
+#: model:ir.model.fields,field_description:trade_competition.field_mixin_order_line_competition__price_gap
+msgid "Gap to Market (%)"
+msgstr "Diferencia con el mercado (%)"
+
+#. module: trade_competition
+#: model:ir.model.fields,field_description:trade_competition.field_mixin_order_competition__price_gap_at_close
+msgid "Gap to Market at Close (%)"
+msgstr "Diferencia con el mercado al cierre (%)"
+
+#. module: trade_competition
+#: model:ir.model.fields,field_description:trade_competition.field_competitor_offer__has_message
+msgid "Has Message"
+msgstr "Tiene un mensaje"
+
+#. module: trade_competition
+#: model:ir.model.fields,help:trade_competition.field_mixin_order_line_competition__price_gap
+msgid ""
+"How far our net price sits above (positive) or below (negative) the market "
+"price."
+msgstr ""
+"Qué tan por encima (positivo) o por debajo (negativo) del precio de mercado "
+"está nuestro precio neto."
+
+#. module: trade_competition
+#: model:ir.model.fields,help:trade_competition.field_competitor_offer_line__equivalence
+msgid ""
+"How the offered product compares with ours. The market price reads only same"
+" and comparable offers."
+msgstr ""
+"Cómo se compara el producto ofrecido con el nuestro. El precio de mercado "
+"solo considera ofertas iguales y comparables."
+
+#. module: trade_competition
+#: model:ir.model.fields,field_description:trade_competition.field_competitor_offer__id
+#: model:ir.model.fields,field_description:trade_competition.field_competitor_offer_line__id
+#: model:ir.model.fields,field_description:trade_competition.field_mixin_order__id
+#: model:ir.model.fields,field_description:trade_competition.field_mixin_order_competition__id
+#: model:ir.model.fields,field_description:trade_competition.field_mixin_order_line_competition__id
+#: model:ir.model.fields,field_description:trade_competition.field_mixin_order_line_price_history__id
+#: model:ir.model.fields,field_description:trade_competition.field_mixin_order_loss__id
+#: model:ir.model.fields,field_description:trade_competition.field_res_config_settings__id
+#: model:ir.model.fields,field_description:trade_competition.field_res_partner__id
+#: model:ir.model.fields,field_description:trade_competition.field_trade_config__id
+msgid "ID"
+msgstr "ID"
+
+#. module: trade_competition
+#: model:ir.model.fields,field_description:trade_competition.field_competitor_offer__activity_exception_icon
+msgid "Icon"
+msgstr "Icono"
+
+#. module: trade_competition
+#: model:ir.model.fields,help:trade_competition.field_competitor_offer__activity_exception_icon
+msgid "Icon to indicate an exception activity."
+msgstr "Icono para indicar una actividad de excepción."
+
+#. module: trade_competition
+#: model:ir.model.fields,help:trade_competition.field_competitor_offer__message_needaction
+msgid "If checked, new messages require your attention."
+msgstr "Si está marcada, hay nuevos mensajes que requieren su atención."
+
+#. module: trade_competition
+#: model:ir.model.fields,help:trade_competition.field_competitor_offer__message_has_error
+#: model:ir.model.fields,help:trade_competition.field_competitor_offer__message_has_sms_error
+msgid "If checked, some messages have a delivery error."
+msgstr "Si está marcada, algunos mensajes tienen error de envío."
+
+#. module: trade_competition
+#: model:ir.model.fields,field_description:trade_competition.field_competitor_offer__incoterm_id
+msgid "Incoterm"
+msgstr "Incoterm"
+
+#. module: trade_competition
+#: model:ir.model.fields.selection,name:trade_competition.selection__competitor_offer_line__equivalence__inferior
+msgid "Inferior"
+msgstr "Inferior"
+
+#. module: trade_competition
+#: model:ir.model.fields,field_description:trade_competition.field_competitor_offer__message_is_follower
+msgid "Is Follower"
+msgstr "Es un seguidor"
+
+#. module: trade_competition
+#: model:ir.model.fields.selection,name:trade_competition.selection__mixin_order_line_competition__market_scope__segment
+msgid "Its Industry"
+msgstr "Su industria"
+
+#. module: trade_competition
+#: model:ir.model.fields,field_description:trade_competition.field_competitor_offer__write_uid
+#: model:ir.model.fields,field_description:trade_competition.field_competitor_offer_line__write_uid
+msgid "Last Updated by"
+msgstr "Última actualización por"
+
+#. module: trade_competition
+#: model:ir.model.fields,field_description:trade_competition.field_competitor_offer__write_date
+#: model:ir.model.fields,field_description:trade_competition.field_competitor_offer_line__write_date
+msgid "Last Updated on"
+msgstr "Última actualización el"
+
+#. module: trade_competition
+#: model:ir.model.fields.selection,name:trade_competition.selection__mixin_order_competition__market_position__leader
+#: model:ir.model.fields.selection,name:trade_competition.selection__mixin_order_line_competition__market_position__leader
+#: model:ir.model.fields.selection,name:trade_competition.selection__purchase_order__market_position__leader
+#: model:ir.model.fields.selection,name:trade_competition.selection__purchase_order_line__market_position__leader
+#: model:ir.model.fields.selection,name:trade_competition.selection__sale_order__market_position__leader
+#: model:ir.model.fields.selection,name:trade_competition.selection__sale_order_line__market_position__leader
+msgid "Leading"
+msgstr "Líder"
+
+#. module: trade_competition
+#: model:ir.model.fields,field_description:trade_competition.field_mixin_order_line_competition__limit_price
+msgid "Limit Price"
+msgstr "Precio límite"
+
+#. module: trade_competition
+#: model:ir.model.fields,field_description:trade_competition.field_competitor_offer__line_ids
+msgid "Lines"
+msgstr "Líneas"
+
+#. module: trade_competition
+#: model:ir.model.fields,field_description:trade_competition.field_mixin_order__lost_to_id
+msgid "Lost To"
+msgstr "Perdida ante"
+
+#. module: trade_competition
+#: model:ir.model.fields,field_description:trade_competition.field_res_bank__competitor_lost_count
+#: model:ir.model.fields,field_description:trade_competition.field_res_company__competitor_lost_count
+#: model:ir.model.fields,field_description:trade_competition.field_res_partner__competitor_lost_count
+#: model:ir.model.fields,field_description:trade_competition.field_res_users__competitor_lost_count
+msgid "Lost to Them"
+msgstr "Perdidos ante ellos"
+
+#. module: trade_competition
+#: model:ir.model,name:trade_competition.model_mixin_order_loss
+msgid "Mark Orders as Lost"
+msgstr "Marcar pedidos como perdidos"
+
+#. module: trade_competition
+#: model:ir.model.fields.selection,name:trade_competition.selection__mixin_order_line_competition__market_scope__market
+msgid "Market"
+msgstr "Mercado"
+
+#. module: trade_competition
+#: model:ir.model.fields,field_description:trade_competition.field_mixin_order_competition__market_position
+#: model:ir.model.fields,field_description:trade_competition.field_mixin_order_line_competition__market_position
+msgid "Market Position"
+msgstr "Posición en el mercado"
+
+#. module: trade_competition
+#: model:ir.model.fields,field_description:trade_competition.field_mixin_order_line_competition__market_price
+msgid "Market Price"
+msgstr "Precio de mercado"
+
+#. module: trade_competition
+#: model_terms:ir.ui.view,arch_db:trade_competition.competitor_offer_line_view_graph
+#: model_terms:ir.ui.view,arch_db:trade_competition.competitor_offer_line_view_list
+#: model_terms:ir.ui.view,arch_db:trade_competition.competitor_offer_line_view_pivot
+#: model_terms:ir.ui.view,arch_db:trade_competition.competitor_offer_line_view_search
+msgid "Market Prices"
+msgstr "Precios de mercado"
+
+#. module: trade_competition
+#: model:ir.model.fields,field_description:trade_competition.field_mixin_order_line_competition__market_scope
+msgid "Market Scope"
+msgstr "Alcance del mercado"
+
+#. module: trade_competition
+#: model:ir.model.fields,field_description:trade_competition.field_competitor_offer__message_has_error
+msgid "Message Delivery error"
+msgstr "Error de envío de mensaje"
+
+#. module: trade_competition
+#: model:ir.model.fields,field_description:trade_competition.field_competitor_offer__message_ids
+msgid "Messages"
+msgstr "Mensajes"
+
+#. module: trade_competition
+#: model_terms:ir.ui.view,arch_db:trade_competition.competitor_offer_line_view_search
+msgid "Month"
+msgstr "Mes"
+
+#. module: trade_competition
+#: model:ir.model.fields,field_description:trade_competition.field_competitor_offer__my_activity_date_deadline
+msgid "My Activity Deadline"
+msgstr "Fecha límite de mi actividad"
+
+#. module: trade_competition
+#: model:ir.model.fields,field_description:trade_competition.field_competitor_offer__name
+msgid "Name"
+msgstr "Nombre"
+
+#. module: trade_competition
+#: model:ir.model.fields,help:trade_competition.field_competitor_offer_line__price_comparable
+msgid ""
+"Net of discount, in the company's currency, per the product's reference "
+"unit, and adjusted for freight and credit where the company asks for it."
+msgstr ""
+"Neto de descuento, en la moneda de la empresa, por la unidad de referencia "
+"del producto y ajustado por flete y crédito cuando la empresa lo solicita."
+
+#. module: trade_competition
+#: model:ir.model.fields,field_description:trade_competition.field_competitor_offer__activity_date_deadline
+msgid "Next Activity Deadline"
+msgstr "Fecha límite de la siguiente actividad"
+
+#. module: trade_competition
+#: model:ir.model.fields,field_description:trade_competition.field_competitor_offer__activity_summary
+msgid "Next Activity Summary"
+msgstr "Resumen de la siguiente actividad"
+
+#. module: trade_competition
+#: model:ir.model.fields,field_description:trade_competition.field_competitor_offer__activity_type_id
+msgid "Next Activity Type"
+msgstr "Tipo de la siguiente actividad"
+
+#. module: trade_competition
+#: model:ir.model.fields,field_description:trade_competition.field_competitor_offer__note
+msgid "Note"
+msgstr "Nota"
+
+#. module: trade_competition
+#: model_terms:ir.ui.view,arch_db:trade_competition.competitor_offer_view_form
+msgid "Notes"
+msgstr "Notas"
+
+#. module: trade_competition
+#: model:ir.model.fields,field_description:trade_competition.field_competitor_offer__message_needaction_counter
+msgid "Number of Actions"
+msgstr "Número de acciones"
+
+#. module: trade_competition
+#: model:ir.model.fields,field_description:trade_competition.field_competitor_offer__message_has_error_counter
+msgid "Number of errors"
+msgstr "Número de errores"
+
+#. module: trade_competition
+#: model:ir.model.fields,help:trade_competition.field_competitor_offer__message_needaction_counter
+msgid "Number of messages requiring action"
+msgstr "Número de mensajes que requieren una acción"
+
+#. module: trade_competition
+#: model:ir.model.fields,help:trade_competition.field_competitor_offer__message_has_error_counter
+msgid "Number of messages with delivery error"
+msgstr "Número de mensajes con error de envío"
+
+#. module: trade_competition
+#: model:ir.model.fields,field_description:trade_competition.field_competitor_offer_line__offer_id
+msgid "Offer"
+msgstr "Oferta"
+
+#. module: trade_competition
+#: model_terms:ir.ui.view,arch_db:trade_competition.competitor_offer_view_form
+msgid "Offered"
+msgstr "Ofertado"
+
+#. module: trade_competition
+#: model:ir.model.fields,field_description:trade_competition.field_competitor_offer__partner_id
+#: model:ir.model.fields,field_description:trade_competition.field_competitor_offer_line__partner_id
+#: model_terms:ir.ui.view,arch_db:trade_competition.competitor_offer_view_search
+msgid "Offered To"
+msgstr "Ofertada a"
+
+#. module: trade_competition
+#: model:ir.model.fields,field_description:trade_competition.field_mixin_order_competition__market_offer_count
+msgid "Offers Compared"
+msgstr "Ofertas comparadas"
+
+#. module: trade_competition
+#: model:ir.model.fields,field_description:trade_competition.field_res_bank__competitor_offer_ids
+#: model:ir.model.fields,field_description:trade_competition.field_res_company__competitor_offer_ids
+#: model:ir.model.fields,field_description:trade_competition.field_res_partner__competitor_offer_ids
+#: model:ir.model.fields,field_description:trade_competition.field_res_users__competitor_offer_ids
+msgid "Offers Seen"
+msgstr "Ofertas observadas"
+
+#. module: trade_competition
+#. odoo-python
+#: code:addons/trade_competition/models/mixin_order_competition.py:0
+msgid "Offers against %(order)s"
+msgstr "Ofertas frente a %(order)s"
+
+#. module: trade_competition
+#. odoo-python
+#: code:addons/trade_competition/models/res_partner.py:0
+msgid "Offers of %(competitor)s"
+msgstr "Ofertas de %(competitor)s"
+
+#. module: trade_competition
+#: model:ir.model,name:trade_competition.model_mixin_order_line_competition
+msgid "Order Line Measured Against Competitor Offers"
+msgstr "Línea de pedido medida frente a ofertas de competidores"
+
+#. module: trade_competition
+#: model:ir.model,name:trade_competition.model_mixin_order_line_price_history
+msgid "Order Line Price History"
+msgstr "Historial de precios de la línea de pedido"
+
+#. module: trade_competition
+#: model:ir.model,name:trade_competition.model_mixin_order
+msgid "Order Management Base"
+msgstr "Base de gestión de pedidos"
+
+#. module: trade_competition
+#: model:ir.model,name:trade_competition.model_mixin_order_competition
+msgid "Order Measured Against Competitor Offers"
+msgstr "Pedido medido frente a ofertas de competidores"
+
+#. module: trade_competition
+#: model:ir.model.fields.selection,name:trade_competition.selection__competitor_offer__source__other
+msgid "Other"
+msgstr "Otro"
+
+#. module: trade_competition
+#: model:ir.model.fields,field_description:trade_competition.field_competitor_offer_line__product_id
+msgid "Our Product"
+msgstr "Nuestro producto"
+
+#. module: trade_competition
+#: model:ir.model.fields,field_description:trade_competition.field_mixin_order_competition__market_rank
+msgid "Our Rank"
+msgstr "Nuestra posición"
+
+#. module: trade_competition
+#: model:ir.model.fields,field_description:trade_competition.field_res_bank__competitor_win_rate
+#: model:ir.model.fields,field_description:trade_competition.field_res_company__competitor_win_rate
+#: model:ir.model.fields,field_description:trade_competition.field_res_partner__competitor_win_rate
+#: model:ir.model.fields,field_description:trade_competition.field_res_users__competitor_win_rate
+msgid "Our Win Rate (%)"
+msgstr "Nuestra tasa de éxito (%)"
+
+#. module: trade_competition
+#: model:ir.model.fields,help:trade_competition.field_res_bank__competitor_price_gap
+#: model:ir.model.fields,help:trade_competition.field_res_company__competitor_price_gap
+#: model:ir.model.fields,help:trade_competition.field_res_partner__competitor_price_gap
+#: model:ir.model.fields,help:trade_competition.field_res_users__competitor_price_gap
+msgid ""
+"Our average gap to the market when those deals closed: above zero we asked "
+"more than the market when selling, or offered more when buying."
+msgstr ""
+"Nuestra diferencia media con el mercado al cerrar esos negocios: por encima "
+"de cero pedimos más que el mercado al vender, u ofrecimos más al comprar."
+
+#. module: trade_competition
+#: model:ir.model.fields,help:trade_competition.field_competitor_offer__partner_id
+#: model:ir.model.fields,help:trade_competition.field_competitor_offer_line__partner_id
+msgid ""
+"Our counterparty the competitor made this offer to: a customer when we sell,"
+" a grower or vendor when we buy."
+msgstr ""
+"La contraparte a la que el competidor hizo esta oferta: un cliente cuando "
+"vendemos, un productor o proveedor cuando compramos."
+
+#. module: trade_competition
+#: model:ir.model.fields,help:trade_competition.field_competitor_offer_line__product_id
+msgid "Our product the offered one competes with."
+msgstr "Nuestro producto con el que compite el ofertado."
+
+#. module: trade_competition
+#: model:ir.model.fields,help:trade_competition.field_res_bank__competitor_deal_count
+#: model:ir.model.fields,help:trade_competition.field_res_company__competitor_deal_count
+#: model:ir.model.fields,help:trade_competition.field_res_partner__competitor_deal_count
+#: model:ir.model.fields,help:trade_competition.field_res_users__competitor_deal_count
+msgid ""
+"Our won and lost orders this competitor was part of: its offers competed "
+"with them, or it won them."
+msgstr ""
+"Nuestros pedidos ganados y perdidos en los que participó este competidor: "
+"sus ofertas compitieron con ellos, o los ganó."
+
+#. module: trade_competition
+#: model:ir.model.fields,field_description:trade_competition.field_competitor_offer__payment_term_id
+msgid "Payment Terms"
+msgstr "Condiciones de pago"
+
+#. module: trade_competition
+#: model:ir.model.fields,field_description:trade_competition.field_competitor_offer__website_message_ids
+msgid "Portal Messages"
+msgstr "Mensajes del portal"
+
+#. module: trade_competition
+#: model:ir.model.fields,help:trade_competition.field_competitor_offer__website_message_ids
+msgid "Portal communication history for this record."
+msgstr "Historial de comunicación del portal de este registro."
+
+#. module: trade_competition
+#: model:ir.model.fields,field_description:trade_competition.field_competitor_offer_line__price_subtotal
+msgid "Price Subtotal"
+msgstr "Subtotal"
+
+#. module: trade_competition
+#: model_terms:ir.ui.view,arch_db:trade_competition.competitor_offer_line_view_search
+#: model_terms:ir.ui.view,arch_db:trade_competition.competitor_offer_view_search
+msgid "Product"
+msgstr "Producto"
+
+#. module: trade_competition
+#: model:ir.model.fields,field_description:trade_competition.field_competitor_offer_line__product_category_id
+msgid "Product Category"
+msgstr "Categoría de producto"
+
+#. module: trade_competition
+#: model:ir.model.fields.selection,name:trade_competition.selection__competitor_offer__source__public_tender
+msgid "Public Tender Result"
+msgstr "Resultado de licitación pública"
+
+#. module: trade_competition
+#: model:ir.model.fields,field_description:trade_competition.field_competitor_offer_line__product_qty
+msgid "Quantity"
+msgstr "Cantidad"
+
+#. module: trade_competition
+#: model:ir.model.fields,field_description:trade_competition.field_mixin_order_line_competition__recommended_price
+msgid "Recommended Price"
+msgstr "Precio recomendado"
+
+#. module: trade_competition
+#: model_terms:ir.ui.view,arch_db:trade_competition.res_partner_view_form_competitor
+msgid "Record Against Them"
+msgstr "Historial frente a ellos"
+
+#. module: trade_competition
+#: model:ir.model.fields,field_description:trade_competition.field_competitor_offer__user_id
+msgid "Recorded By"
+msgstr "Registrada por"
+
+#. module: trade_competition
+#: model:ir.model.fields.selection,name:trade_competition.selection__competitor_offer__confidence__reported
+msgid "Reported"
+msgstr "Reportada"
+
+#. module: trade_competition
+#: model:ir.model.fields,field_description:trade_competition.field_competitor_offer__activity_user_id
+msgid "Responsible User"
+msgstr "Usuario responsable"
+
+#. module: trade_competition
+#: model:ir.model.fields,field_description:trade_competition.field_competitor_offer__message_has_sms_error
+msgid "SMS Delivery error"
+msgstr "Error de envío del SMS"
+
+#. module: trade_competition
+#: model:ir.model.fields.selection,name:trade_competition.selection__competitor_offer_line__equivalence__same
+msgid "Same"
+msgstr "Igual"
+
+#. module: trade_competition
+#: model:ir.model.fields,field_description:trade_competition.field_competitor_offer__date
+#: model:ir.model.fields,field_description:trade_competition.field_competitor_offer_line__date
+#: model_terms:ir.ui.view,arch_db:trade_competition.competitor_offer_line_view_search
+#: model_terms:ir.ui.view,arch_db:trade_competition.competitor_offer_view_search
+msgid "Seen On"
+msgstr "Vista el"
+
+#. module: trade_competition
+#: model:ir.model.fields,field_description:trade_competition.field_competitor_offer_line__sequence
+msgid "Sequence"
+msgstr "Secuencia"
+
+#. module: trade_competition
+#: model:ir.model.fields,field_description:trade_competition.field_competitor_offer__source
+#: model_terms:ir.ui.view,arch_db:trade_competition.competitor_offer_view_search
+msgid "Source"
+msgstr "Origen"
+
+#. module: trade_competition
+#: model:ir.model.fields,help:trade_competition.field_competitor_offer__activity_state
+msgid ""
+"Status based on activities\n"
+"Overdue: Due date is already passed\n"
+"Today: Activity date is today\n"
+"Planned: Future activities."
+msgstr ""
+"Estado basado en actividades\n"
+"Vencida: la fecha límite ya ha pasado\n"
+"Hoy: la fecha límite es hoy\n"
+"Planificada: actividades futuras."
+
+#. module: trade_competition
+#: model:ir.model.fields.selection,name:trade_competition.selection__competitor_offer_line__equivalence__superior
+msgid "Superior"
+msgstr "Superior"
+
+#. module: trade_competition
+#: model:ir.model.fields,help:trade_competition.field_mixin_order_line_competition__market_price
+msgid ""
+"The best comparable price a competitor offers for this product: to this "
+"counterparty when known, else to its industry, else to the market. Per this "
+"line's unit."
+msgstr ""
+"El mejor precio comparable que un competidor ofrece por este producto: a "
+"esta contraparte cuando se conoce, si no, a su industria, si no, al mercado."
+" Por la unidad de esta línea."
+
+#. module: trade_competition
+#: model:ir.model.fields,help:trade_competition.field_mixin_order_line_price_history__competitor_best_price
+msgid ""
+"The best comparable price competitors offered in the period: the lowest when"
+" we sell, the highest when we buy. Per the product's reference unit, in the "
+"currency above."
+msgstr ""
+"El mejor precio comparable que ofreció la competencia en el periodo: el más "
+"bajo cuando vendemos, el más alto cuando compramos. Por la unidad de "
+"referencia del producto, en la moneda indicada arriba."
+
+#. module: trade_competition
+#: model:ir.model.fields,help:trade_competition.field_mixin_order_line_price_history__competitor_partner_price
+msgid ""
+"The best comparable price competitors offered this partner in the period."
+msgstr ""
+"El mejor precio comparable que la competencia ofreció a este contacto en el "
+"periodo."
+
+#. module: trade_competition
+#: model:ir.model.fields,help:trade_competition.field_mixin_order__lost_to_id
+msgid "The competitor who won the deal this order lost."
+msgstr "El competidor que ganó el negocio que este pedido perdió."
+
+#. module: trade_competition
+#: model:ir.model.fields,help:trade_competition.field_mixin_order_loss__lost_to_id
+msgid ""
+"The competitor who won. Recording them keeps their offer in the market "
+"prices."
+msgstr ""
+"El competidor que ganó. Registrarlo conserva su oferta en los precios de "
+"mercado."
+
+#. module: trade_competition
+#: model:ir.model.fields,help:trade_competition.field_competitor_offer_line__competitor_product
+msgid "The competitor's brand, variety or grade, when it is not ours."
+msgstr "La marca, variedad o calidad del competidor, cuando no es la nuestra."
+
+#. module: trade_competition
+#: model:ir.model.fields,help:trade_competition.field_competitor_offer__date_valid
+msgid ""
+"The last day the offer stands. Without it, the offer is read as the market "
+"for 90 days."
+msgstr ""
+"El último día en que la oferta sigue en pie. Sin él, la oferta se toma como "
+"precio de mercado durante 90 días."
+
+#. module: trade_competition
+#: model:ir.model.fields,help:trade_competition.field_mixin_order_competition__market_position
+msgid "The least favourable position among the order's lines."
+msgstr "La posición menos favorable entre las líneas del pedido."
+
+#. module: trade_competition
+#: model:ir.model.fields,help:trade_competition.field_mixin_order_competition__price_gap_at_close
+msgid ""
+"The order's gap to the market, weighted by line, when it was won or lost."
+msgstr ""
+"La diferencia del pedido con el mercado, ponderada por línea, cuando se ganó"
+" o se perdió."
+
+#. module: trade_competition
+#: model:ir.model.fields,help:trade_competition.field_res_bank__competitor_category_ids
+#: model:ir.model.fields,help:trade_competition.field_res_company__competitor_category_ids
+#: model:ir.model.fields,help:trade_competition.field_res_partner__competitor_category_ids
+#: model:ir.model.fields,help:trade_competition.field_res_users__competitor_category_ids
+msgid "The product categories this competitor offers or buys."
+msgstr "Las categorías de producto que este competidor ofrece o compra."
+
+#. module: trade_competition
+#: model:ir.model.fields,help:trade_competition.field_res_bank__competitor_win_rate
+#: model:ir.model.fields,help:trade_competition.field_res_company__competitor_win_rate
+#: model:ir.model.fields,help:trade_competition.field_res_partner__competitor_win_rate
+#: model:ir.model.fields,help:trade_competition.field_res_users__competitor_win_rate
+msgid "The share of the deals met that we won."
+msgstr "La proporción de los negocios enfrentados que ganamos."
+
+#. module: trade_competition
+#: model:ir.model.fields,help:trade_competition.field_mixin_order_loss__winning_amount
+msgid ""
+"The winner's untaxed total, in the order's currency. Their offer's lines "
+"take it in proportion to ours; correct them on the offer when known line by "
+"line."
+msgstr ""
+"El total sin impuestos del ganador, en la moneda del pedido. Las líneas de "
+"su oferta lo reparten en proporción a las nuestras; corríjalas en la oferta "
+"cuando se conozcan línea por línea."
+
+#. module: trade_competition
+#: model:ir.model.fields,field_description:trade_competition.field_competitor_offer_line__competitor_product
+msgid "Their Product"
+msgstr "Su producto"
+
+#. module: trade_competition
+#: model:ir.model.fields,field_description:trade_competition.field_mixin_order_loss__winning_amount
+msgid "Their Total"
+msgstr "Su total"
+
+#. module: trade_competition
+#: model:ir.model.fields.selection,name:trade_competition.selection__mixin_order_line_competition__market_scope__partner
+msgid "This Counterparty"
+msgstr "Esta contraparte"
+
+#. module: trade_competition
+#: model:ir.model.fields,help:trade_competition.field_competitor_offer__is_winner
+msgid "This offer won the deal it was made for."
+msgstr "Esta oferta ganó el negocio para el que se hizo."
+
+#. module: trade_competition
+#: model:ir.model.fields.selection,name:trade_competition.selection__competitor_offer__source__customer_feedback
+msgid "Told by the Counterparty"
+msgstr "Informada por la contraparte"
+
+#. module: trade_competition
+#: model_terms:ir.ui.view,arch_db:trade_competition.competitor_offer_view_list
+msgid "Total"
+msgstr "Total"
+
+#. module: trade_competition
+#: model:ir.model.fields,help:trade_competition.field_competitor_offer__activity_exception_decoration
+msgid "Type of the exception activity on record."
+msgstr "Tipo de actividad de excepción en el registro."
+
+#. module: trade_competition
+#: model:ir.model.fields,field_description:trade_competition.field_res_bank__competitor_price_gap
+#: model:ir.model.fields,field_description:trade_competition.field_res_company__competitor_price_gap
+#: model:ir.model.fields,field_description:trade_competition.field_res_partner__competitor_price_gap
+#: model:ir.model.fields,field_description:trade_competition.field_res_users__competitor_price_gap
+msgid "Typical Gap at Close (%)"
+msgstr "Diferencia típica al cierre (%)"
+
+#. module: trade_competition
+#: model:ir.model.fields,field_description:trade_competition.field_competitor_offer_line__product_uom_id
+msgid "Unit"
+msgstr "Unidad"
+
+#. module: trade_competition
+#: model:ir.model.fields,field_description:trade_competition.field_competitor_offer_line__price_unit
+msgid "Unit Price"
+msgstr "Precio unitario"
+
+#. module: trade_competition
+#: model:ir.model.fields,field_description:trade_competition.field_competitor_offer__date_valid
+msgid "Valid Until"
+msgstr "Válido hasta"
+
+#. module: trade_competition
+#: model:ir.model.fields,help:trade_competition.field_mixin_order_competition__market_rank
+msgid ""
+"Where this order stands among the competitor offers linked to it, compared "
+"on the products each offer quotes: 1 when no offer beats it."
+msgstr ""
+"Dónde queda este pedido entre las ofertas de competidores vinculadas a él, "
+"comparadas en los productos que cotiza cada oferta: 1 cuando ninguna oferta "
+"lo supera."
+
+#. module: trade_competition
+#: model:ir.model.fields,help:trade_competition.field_competitor_offer__incoterm_id
+msgid ""
+"Who carries the goods and their risk in the competitor's offer, which its "
+"price includes or leaves to the counterparty."
+msgstr ""
+"Quién transporta la mercancía y asume su riesgo en la oferta del competidor,"
+" que su precio incluye o deja a la contraparte."
+
+#. module: trade_competition
+#: model_terms:ir.ui.view,arch_db:trade_competition.competitor_offer_view_form
+msgid "Won"
+msgstr "Ganado"
+
+#. module: trade_competition
+#: model:ir.model.fields,field_description:trade_competition.field_res_bank__competitor_won_count
+#: model:ir.model.fields,field_description:trade_competition.field_res_company__competitor_won_count
+#: model:ir.model.fields,field_description:trade_competition.field_res_partner__competitor_won_count
+#: model:ir.model.fields,field_description:trade_competition.field_res_users__competitor_won_count
+msgid "Won Against Them"
+msgstr "Ganados frente a ellos"
+
+#. module: trade_competition
+#: model:ir.model.fields,field_description:trade_competition.field_mixin_order_loss__lost_to_id
+msgid "Won By"
+msgstr "Ganada por"
+
+#. module: trade_competition
+#: model:ir.model.fields,field_description:trade_competition.field_competitor_offer__is_winner
+#: model_terms:ir.ui.view,arch_db:trade_competition.competitor_offer_view_search
+msgid "Won the Deal"
+msgstr "Ganó el negocio"

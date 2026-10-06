@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="web.Dialog">
+        <div class="o_dialog" t-att-id="this.id" t-att-class="{ o_inactive_modal: !this.data.isActive, o_dialog_closing: this.data.isClosing }">
+            <dialog open=""
+                t-att-aria-modal="this.data.isActive ? 'true' : undefined"
+                t-att-aria-labelledby="this.props.title ? this.id + '_title' : undefined"
+                class="modal d-block"
+                tabindex="-1"
+                t-att-inert="this.data.isClosing or !this.data.isActive or undefined"
+                t-att-class="{ o_technical_modal: this.props.technical, o_modal_full: this.isFullscreen, o_inactive_modal: !this.data.isActive }"
+                t-ref="this.modalRefRef"
+                >
+                <div class="modal-dialog modal-dialog-centered" t-attf-class="modal-{{this.props.size}}">
+                    <div class="modal-content" t-att-class="this.props.contentClass" t-att-style="this.contentStyle">
+                        <header t-if="this.props.header" class="modal-header">
+                            <t t-call-slot="header"
+                                close="this.data.close"
+                                isFullscreen="this.isFullscreen"
+                                isClosing="this.data.isClosing"
+                                title="this.props.title"
+                                titleId="this.id + '_title'">
+                                <t t-call="web.Dialog.header"
+                                    fullscreen="this.isFullscreen"
+                                    onExpand="this.props.onExpand"
+                                    isClosing="this.data.isClosing"
+                                    title="this.props.title"
+                                    titleId="this.id + '_title'"
+                                    dismiss="() => this.dismiss()">
+                                </t>
+                            </t>
+                        </header>
+                        <main class="modal-body" t-attf-class="{{ this.props.bodyClass }} {{ !this.props.withBodyPadding ? 'p-0': '' }}" t-att-tabindex="this.bodyTabIndex">
+                            <t t-call-slot="default" close="() => this.data.close()" />
+                        </main>
+                        <footer t-if="this.props.footer" class="modal-footer d-empty-none justify-content-around justify-content-md-start flex-wrap gap-1 w-100">
+                            <t t-call-slot="footer" close="() => this.data.close()"/>
+                        </footer>
+                    </div>
+                </div>
+            </dialog>
+        </div>
+    </t>
+
+    <t t-name="web.Dialog.header">
+        <t t-if="fullscreen">
+            <button type="button" class="btn oi oi-arrow-left" aria-label="Close" tabindex="-1" t-att-disabled="isClosing" t-on-click="dismiss" />
+        </t>
+        <h4 class="modal-title text-break flex-grow-1"
+            t-att-id="titleId"
+            t-att-class="{ 'me-auto': fullscreen }">
+            <t t-out="title"/>
+        </h4>
+        <t t-if="onExpand">
+            <button type="button" class="fa-solid fa-up-right-and-down-left-from-center btn opacity-75 opacity-100-hover o_expand_button" aria-label="Expand" tabindex="-1" t-on-click="onExpand"/>
+        </t>
+        <t t-if="!fullscreen">
+            <button type="button" class="btn-close" aria-label="Close" tabindex="-1" t-att-disabled="isClosing" t-on-click="dismiss"></button>
+        </t>
+    </t>
+</templates>

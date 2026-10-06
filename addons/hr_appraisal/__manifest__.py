@@ -1,0 +1,48 @@
+{
+    "name": "Appraisals",
+    "version": "1.5",
+    "oldest_upgradable_version": "1.5",
+    "category": "Human Resources/Appraisals",
+    "sequence": 180,
+    "summary": "Schedule employee reviews and record feedback, assessments and goals",
+    "description": "Provides employee appraisals, feedback templates, assessment notes and goals. Supports configured appraisal intervals, invitations and links to review meetings. Managers and employees supply the feedback and recorded assessments.",
+    "author": "Odoo S.A.",
+    "website": "https://www.odoo.com/app/appraisals",
+    "license": "OEEL-1",
+    "depends": [
+        "calendar",
+        "hr_gantt",
+    ],
+    "data": [
+        "security/hr_appraisal_security.xml",
+        "security/ir.access.csv",
+        "wizards/wizard_hr_appraisal_send_views.xml",
+        "data/hr_appraisal_templates.xml",
+        "views/hr_appraisal_views.xml",
+        "views/hr_appraisal_goal_template_views.xml",
+        "views/hr_appraisal_goal_views.xml",
+        "views/hr_appraisal_note_views.xml",
+        "views/hr_department_views.xml",
+        "views/res_config_settings_view.xml",
+        "views/hr_employee_views.xml",
+        "views/hr_appraisal_template_views.xml",
+        "data/hr_appraisal_data.xml",
+        "data/mail_template_data.xml",
+        "wizards/wizard_hr_employee_register_departure_views.xml",
+        "wizards/wizard_hr_appraisal_create_views.xml",
+        "views/hr_appraisal_menus.xml",
+    ],
+    "demo": [
+        "demo/hr_appraisal_demo.xml",
+    ],
+    "assets": {
+        "web.assets_backend": [
+            "hr_appraisal/static/src/**/*",
+        ],
+        "web.assets_tests": [
+            "hr_appraisal/static/tests/tours/*.js",
+        ],
+    },
+    "application": True,
+    "post_init_hook": "_create_assessment_notes",
+}

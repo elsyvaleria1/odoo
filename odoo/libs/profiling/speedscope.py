@@ -1,0 +1,285 @@
+__all__ = ["Speedscope"]
+
+import reprlib
+from collections.abc import Iterable
+from typing import Any, Self
+
+from odoo.libs.debug_log import DebugLog
+
+_debug = DebugLog(__name__)
+
+shortener = reprlib.Repr()
+shortener.maxstring = 150
+shorten = shortener.repr
+
+type _Frame = tuple[Any, ...]
+type _Entry = dict[str, Any]
+type _Event = dict[str, Any]
+
+
+class Speedscope:
+    def __init__(
+        self, name: str = "Speedscope", init_stack_trace: list[_Frame] | None = None
+    ) -> None:
+        self.init_stack_trace: list[_Frame] = init_stack_trace or []
+        self.init_stack_trace_level: int = len(self.init_stack_trace)
+        self.caller_frame: _Frame | None = None
+        self.init_caller_frame: _Frame | None = None
+        if self.init_stack_trace:
+            self.init_caller_frame = self.init_stack_trace[-1]
+        self.convert_stack(self.init_stack_trace)
+        self.profiles_raw: dict[str, list[_Entry]] = {}
+        self.name: str = name
+        self.frames_indexes: dict[_Frame, int] = {}
+        self.profiles: list[dict[str, Any]] = []
+
+    def add(self, key: str, profile: list[_Entry]) -> None:
+        queries = 0  # debuglog
+        for entry in profile:
+            self.caller_frame = self.init_caller_frame
+            self.convert_stack(entry["stack"] or [])
+            if "query" in entry:
+                queries += 1  # debuglog
+                query = entry["query"]
+                full_query = entry["full_query"]
+                entry["stack"].append((f"sql({shorten(query)})", full_query, None))
+        self.profiles_raw[key] = profile
+        _debug.lifecycle(
+            "speedscope.profile_added", key=key, entries=len(profile), queries=queries
+        )
+
+    def convert_stack(self, stack: list[_Frame]) -> None:
+        for index, frame in enumerate(stack):
+            method = frame[2]
+            line = ""
+            number = ""
+            if self.caller_frame and len(self.caller_frame) == 4:
+                line = (
+                    f"called at {self.caller_frame[0]} ({self.caller_frame[3].strip()})"
+                )
+                number = self.caller_frame[1]
+            stack[index] = (
+                method,
+                line,
+                number,
+            )
+            self.caller_frame = frame
+
+    def add_output(
+        self,
+        names: Iterable[str],
+        complete: bool = True,
+        display_name: str | None = None,
+        use_context: bool = True,
+        constant_time: bool = False,
+        context_per_name: dict[str, Any] | None = None,  # noqa: ARG002  accepted for call-site compatibility, unused on this path
+        **params: Any,
+    ) -> Self:
+        entries = []
+        display_name = display_name or ",".join(names)
+        for name in names:
+            raw = self.profiles_raw.get(name)
+            if not raw:
+                continue
+            entries += raw
+        entries.sort(key=lambda e: e["start"])
+        result = self.process(
+            entries,
+            use_context=use_context,
+            constant_time=constant_time,
+            **params,
+        )
+        if not result:
+            return self
+        start = result[0]["at"]
+        end = result[-1]["at"]
+
+        if complete:
+            init_stack_trace_ids = self.stack_to_ids(
+                self.init_stack_trace,
+                use_context and entries[0].get("exec_context"),
+            )
+            start_stack = [
+                {"type": "O", "frame": frame_id, "at": start}
+                for frame_id in init_stack_trace_ids
+            ]
+            end_stack = [
+                {"type": "C", "frame": frame_id, "at": end}
+                for frame_id in reversed(init_stack_trace_ids)
+            ]
+            result = start_stack + result + end_stack
+
+        self.profiles.append(
+            {
+                "name": display_name,
+                "type": "evented",
+                "unit": "entries" if constant_time else "seconds",
+                "startValue": 0,
+                "endValue": end - start,
+                "events": result,
+            }
+        )
+        return self
+
+    def add_default(self, **params: Any) -> Self:
+        if len(self.profiles_raw) > 1:
+            if params["combined_profile"]:
+                self.add_output(
+                    list(self.profiles_raw), display_name="Combined", **params
+                )
+        for key, profile in self.profiles_raw.items():
+            sql = profile and profile[0].get("query")
+            if sql:
+                if params["sql_no_gap_profile"]:
+                    self.add_output(
+                        [key],
+                        hide_gaps=True,
+                        display_name=f"{key} (no gap)",
+                        **params,
+                    )
+                if params["sql_density_profile"]:
+                    self.add_output(
+                        [key],
+                        continuous=False,
+                        complete=False,
+                        display_name=f"{key} (density)",
+                        **params,
+                    )
+
+            elif params["frames_profile"]:
+                self.add_output([key], display_name=key, **params)
+        return self
+
+    def prepare_document(self, **params: Any) -> dict[str, Any]:
+        if not self.profiles:
+            self.add_default(**params)
+        return {
+            "name": self.name,
+            "activeProfileIndex": 0,
+            "$schema": "https://www.speedscope.app/file-format-schema.json",
+            "shared": {
+                "frames": [
+                    {"name": frame[0], "file": frame[1], "line": frame[2]}
+                    for frame in self.frames_indexes
+                ]
+            },
+            "profiles": self.profiles,
+        }
+
+    def acquire_frame_id(self, frame: _Frame) -> int:
+        if frame not in self.frames_indexes:
+            self.frames_indexes[frame] = len(self.frames_indexes)
+        return self.frames_indexes[frame]
+
+    def stack_to_ids(
+        self,
+        stack: list[_Frame],
+        context: Any,
+        aggregate_sql: bool = False,
+        stack_offset: int = 0,
+    ) -> list[int]:
+        stack_ids = []
+        context_iterator = iter(context or ())
+        context_level, context_value = next(context_iterator, (None, None))
+        while context_level is not None and context_level < stack_offset:
+            context_level, context_value = next(context_iterator, (None, None))
+        for level, frame in enumerate(stack, start=stack_offset + 1):
+            if aggregate_sql:
+                frame = (frame[0], "", frame[2])
+            while context_level == level:
+                assert context_value is not None, "context level without a value"
+                context_frame = (
+                    ", ".join(f"{k}={v}" for k, v in context_value.items()),
+                    "",
+                    "",
+                )
+                stack_ids.append(self.acquire_frame_id(context_frame))
+                context_level, context_value = next(context_iterator, (None, None))
+            stack_ids.append(self.acquire_frame_id(frame))
+        return stack_ids
+
+    def process(
+        self,
+        entries: list[_Entry],
+        continuous: bool = True,
+        hide_gaps: bool = False,
+        use_context: bool = True,
+        constant_time: bool = False,
+        aggregate_sql: bool = False,
+        **params: Any,  # noqa: ARG002  accepted for call-site compatibility, unused on this path
+    ) -> list[_Event]:
+        entry_end = previous_end = None
+        if not entries:
+            return []
+        with _debug.perf(
+            "speedscope.process",
+            entries=len(entries),
+            continuous=continuous,
+            hide_gaps=hide_gaps,
+            constant_time=constant_time,
+            aggregate_sql=aggregate_sql,
+        ) as span:
+            events: list[dict] = []
+            current_stack_ids: list[int] = []
+            frames_start = entries[0]["start"]
+
+            last_entry = entries[-1]
+            if last_entry["stack"]:
+                entries.append(
+                    {
+                        "stack": [],
+                        "start": last_entry["start"] + last_entry.get("time", 0),
+                    }
+                )
+
+            for index, entry in enumerate(entries):
+                if constant_time:
+                    entry_start = close_time = index
+                else:
+                    previous_end = entry_end
+                    if hide_gaps and previous_end:
+                        entry_start = previous_end
+                    else:
+                        entry_start = entry["start"] - frames_start
+
+                    if previous_end and previous_end > entry_start:
+                        continue
+
+                    if previous_end:
+                        close_time = min(entry_start, previous_end)
+                    else:
+                        close_time = entry_start
+
+                    entry_time = entry.get("time")
+                    entry_end = None if entry_time is None else entry_start + entry_time
+
+                entry_stack_ids = self.stack_to_ids(
+                    entry["stack"] or [],
+                    use_context and entry.get("exec_context"),
+                    aggregate_sql,
+                    self.init_stack_trace_level,
+                )
+                level = 0
+                if continuous:
+                    level = -1
+                    for current, new in zip(
+                        current_stack_ids, entry_stack_ids, strict=False
+                    ):
+                        level += 1
+                        if current != new:
+                            break
+                    else:
+                        level += 1
+
+                events.extend(
+                    {"type": "C", "frame": frame, "at": close_time}
+                    for frame in reversed(current_stack_ids[level:])
+                )
+                events.extend(
+                    {"type": "O", "frame": frame, "at": entry_start}
+                    for frame in entry_stack_ids[level:]
+                )
+                current_stack_ids = entry_stack_ids
+
+            span.set(events=len(events))
+            return events

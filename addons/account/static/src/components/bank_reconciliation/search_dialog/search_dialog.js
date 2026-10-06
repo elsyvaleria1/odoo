@@ -1,0 +1,131 @@
+/** @odoo-module native */
+import { t } from "@odoo/owl";
+import { formatMonetary } from "@web/core/formatters";
+import { toLocaleString } from "@web/core/l10n/dates";
+import { useService } from "@web/core/utils/hooks";
+import { SelectCreateDialog } from "@web/views/view_dialogs";
+
+export class BankRecSelectCreateDialog extends SelectCreateDialog {
+    static template = "account.BankRecSelectCreateDialog";
+    static props = {
+        ...SelectCreateDialog.props,
+        suspenseAccountLine: t.object(),
+        reference: t.string(),
+        date: t.instanceOf(Temporal.PlainDate),
+        size: t.string().optional("lg"),
+    };
+
+    setup() {
+        super.setup();
+        this.orm = useService("orm");
+        this.ui = useService("ui");
+        this.state.remainingAmount = this.suspenseAccountLine.amount_currency;
+        this.state.remainingAmountFormatted = this.remainingAmountFormatted;
+        this.state.hideRemainingAmount = false;
+
+        this.baseViewProps.onSelectionChanged = (resIds, selectedLines) => {
+            this.state.resIds = resIds;
+            this.changeInSelectedMoveLine(selectedLines);
+        };
+
+        this.baseViewProps.bankRecInfo = {
+            date: this.formattedStatementLineDate,
+            reference: this.props.reference,
+            state: this.state,
+            currencyId: this.suspenseAccountLine.currency_id.id,
+            onSelectionChanged: (controller) => this.onSelectionChanged(controller),
+        };
+    }
+
+    async changeInSelectedMoveLine(selectedLines) {
+        this.state.hideRemainingAmount = false;
+        if (!selectedLines?.length) {
+            this.state.remainingAmount = this.suspenseAccountLine.amount_currency;
+            this.state.remainingAmountFormatted = this.remainingAmountFormatted;
+            return;
+        }
+
+        let selectedLinesSum;
+        if (
+            this.suspenseAccountLine.currency_id.id !==
+            this.suspenseAccountLine.company_currency_id.id
+        ) {
+            const selectedLineCurrencies = [
+                ...new Set(selectedLines.map((line) => line.currency_id)),
+            ];
+
+            if (
+                selectedLineCurrencies.length !== 1 ||
+                (selectedLineCurrencies.length === 1 &&
+                    selectedLineCurrencies[0] !==
+                        this.suspenseAccountLine.currency_id.id)
+            ) {
+                this.state.hideRemainingAmount = true;
+                return;
+            } else {
+                selectedLinesSum = selectedLines.reduce(
+                    (sum, line) => sum + line.amount_residual_currency,
+                    0,
+                );
+            }
+        } else {
+            selectedLinesSum = selectedLines.reduce(
+                (sum, line) => sum + line.amount_residual,
+                0,
+            );
+        }
+        this.state.remainingAmount =
+            this.suspenseAccountLine.amount_currency + selectedLinesSum;
+        this.state.remainingAmountFormatted = this.remainingAmountFormatted;
+    }
+
+    async onSelectionChanged(controller) {
+        const resIds = await controller.model.root.getResIds(true);
+        if (!resIds.length) {
+            this.baseViewProps.onSelectionChanged(resIds, []);
+        }
+
+        let selectedLines;
+        if (controller.isDomainSelected) {
+            const { resModel, context } = controller.model.root;
+            selectedLines = await this.orm.read(
+                resModel,
+                resIds,
+                ["amount_residual", "amount_residual_currency", "currency_id"],
+                { context },
+            );
+        } else {
+            selectedLines = Object.values(controller.model.root.records)
+                .filter((record) => resIds.includes(record.resId))
+                .map((record) => {
+                    const data = record.data;
+                    return {
+                        amount_residual: data.amount_residual,
+                        amount_residual_currency: data.amount_residual_currency,
+                        currency_id: data.currency_id.id,
+                    };
+                });
+        }
+        this.baseViewProps.onSelectionChanged(resIds, selectedLines);
+    }
+
+    get suspenseAccountLine() {
+        return this.props?.suspenseAccountLine;
+    }
+
+    get remainingAmountFormatted() {
+        return formatMonetary(this.state.remainingAmount, {
+            currencyId: this.suspenseAccountLine.currency_id.id,
+        });
+    }
+
+    get formattedStatementLineDate() {
+        return (
+            this.props.date &&
+            toLocaleString(this.props.date, {
+                month: "short",
+                day: "2-digit",
+            })
+        );
+    }
+}

@@ -1,0 +1,68 @@
+.offcanvas[popover] {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    overflow: visible;
+
+    &.offcanvas-start {
+        top: 0;
+        right: auto;
+        bottom: 0;
+        left: 0;
+        border-right: var(--#{$prefix}offcanvas-border-width) solid
+            var(--#{$prefix}offcanvas-border-color);
+    }
+
+    &.offcanvas-end {
+        top: 0;
+        right: 0;
+        bottom: 0;
+        left: auto;
+        border-left: var(--#{$prefix}offcanvas-border-width) solid
+            var(--#{$prefix}offcanvas-border-color);
+    }
+
+    &.offcanvas-top {
+        top: 0;
+        right: 0;
+        bottom: auto;
+        left: 0;
+        border-bottom: var(--#{$prefix}offcanvas-border-width) solid
+            var(--#{$prefix}offcanvas-border-color);
+    }
+
+    &.offcanvas-bottom {
+        top: auto;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        border-top: var(--#{$prefix}offcanvas-border-width) solid
+            var(--#{$prefix}offcanvas-border-color);
+    }
+
+    transition:
+        transform $offcanvas-transition-duration ease-in-out,
+        overlay $offcanvas-transition-duration allow-discrete,
+        display $offcanvas-transition-duration allow-discrete;
+
+    &::backdrop {
+        background-color: rgba(0, 0, 0, 0.5);
+    }
+}
+
+@starting-style {
+    .offcanvas[popover]:popover-open {
+        &.offcanvas-start {
+            transform: translateX(-100%);
+        }
+        &.offcanvas-end {
+            transform: translateX(100%);
+        }
+        &.offcanvas-top {
+            transform: translateY(-100%);
+        }
+        &.offcanvas-bottom {
+            transform: translateY(100%);
+        }
+    }
+}

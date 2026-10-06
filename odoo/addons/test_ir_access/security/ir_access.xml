@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="access_category_system" model="ir.access">
+        <field name="name">category: administrators</field>
+        <field name="model_id" ref="model_test_ir_access_category" />
+        <field name="group_id" ref="base.group_system" />
+        <field name="kind">permission</field>
+        <field name="operation">crud</field>
+    </record>
+
+    <record id="access_item_system" model="ir.access">
+        <field name="name">item: administrators</field>
+        <field name="model_id" ref="model_test_ir_access_item" />
+        <field name="group_id" ref="base.group_system" />
+        <field name="kind">permission</field>
+        <field name="operation">crud</field>
+    </record>
+
+    <record id="access_node_system" model="ir.access">
+        <field name="name">node: administrators</field>
+        <field name="model_id" ref="model_test_ir_access_node" />
+        <field name="group_id" ref="base.group_system" />
+        <field name="kind">permission</field>
+        <field name="operation">crud</field>
+    </record>
+
+    <record id="access_delegated_system" model="ir.access">
+        <field name="name">delegated: administrators</field>
+        <field name="model_id" ref="model_test_ir_access_delegated" />
+        <field name="group_id" ref="base.group_system" />
+        <field name="kind">permission</field>
+        <field name="operation">crud</field>
+    </record>
+
+    <record id="access_delegated_computed_system" model="ir.access">
+        <field name="name">delegated_computed: administrators</field>
+        <field name="model_id" ref="model_test_ir_access_delegated_computed" />
+        <field name="group_id" ref="base.group_system" />
+        <field name="kind">permission</field>
+        <field name="operation">crud</field>
+    </record>
+
+    <record id="access_guarded_system" model="ir.access">
+        <field name="name">guarded: administrators</field>
+        <field name="model_id" ref="model_test_ir_access_guarded" />
+        <field name="group_id" ref="base.group_system" />
+        <field name="kind">permission</field>
+        <field name="operation">crud</field>
+    </record>
+
+    <record id="access_owned_system" model="ir.access">
+        <field name="name">owned: administrators</field>
+        <field name="model_id" ref="model_test_ir_access_owned" />
+        <field name="group_id" ref="base.group_system" />
+        <field name="kind">permission</field>
+        <field name="operation">crud</field>
+    </record>
+
+    <record id="access_reached_system" model="ir.access">
+        <field name="name">reached: administrators</field>
+        <field name="model_id" ref="model_test_ir_access_reached" />
+        <field name="group_id" ref="base.group_system" />
+        <field name="kind">permission</field>
+        <field name="operation">crud</field>
+    </record>
+
+    <record id="access_reached_report_system" model="ir.access">
+        <field name="name">reached report: administrators</field>
+        <field name="model_id" ref="model_test_ir_access_reached_report" />
+        <field name="group_id" ref="base.group_system" />
+        <field name="kind">permission</field>
+        <field name="operation">r</field>
+    </record>
+
+    <record id="access_document_user" model="ir.access">
+        <field name="name">document: users</field>
+        <field name="model_id" ref="model_test_ir_access_document" />
+        <field name="group_id" ref="base.group_user" />
+        <field name="kind">permission</field>
+        <field name="operation">crud</field>
+    </record>
+
+    <record id="access_document_line_user" model="ir.access">
+        <field name="name">document line: users</field>
+        <field name="model_id" ref="model_test_ir_access_document_line" />
+        <field name="group_id" ref="base.group_user" />
+        <field name="kind">permission</field>
+        <field name="operation">crud</field>
+    </record>
+
+    <record id="access_document_post" model="ir.access">
+        <field name="name">document: administrators post</field>
+        <field name="model_id" ref="model_test_ir_access_document" />
+        <field name="group_id" ref="base.group_system" />
+        <field name="kind">permission</field>
+        <field name="verbs">post</field>
+    </record>
+
+    <record id="access_document_retire" model="ir.access">
+        <field name="name">document: administrators retire</field>
+        <field name="model_id" ref="model_test_ir_access_document" />
+        <field name="group_id" ref="base.group_system" />
+        <field name="kind">permission</field>
+        <field name="verbs">retire,clear</field>
+    </record>
+
+    <record id="access_classified_group_user" model="ir.access">
+        <field name="name">classified: base.group_user</field>
+        <field name="model_id" ref="model_test_ir_access_classified" />
+        <field name="group_id" ref="base.group_user" />
+        <field name="kind">permission</field>
+        <field name="operation">crud</field>
+    </record>
+
+    <record id="access_classified_group_portal" model="ir.access">
+        <field name="name">classified: base.group_portal</field>
+        <field name="model_id" ref="model_test_ir_access_classified" />
+        <field name="group_id" ref="base.group_portal" />
+        <field name="kind">permission</field>
+        <field name="operation">crud</field>
+    </record>
+
+    <record id="access_whitelisted_group_user" model="ir.access">
+        <field name="name">whitelisted: base.group_user</field>
+        <field name="model_id" ref="model_test_ir_access_whitelisted" />
+        <field name="group_id" ref="base.group_user" />
+        <field name="kind">permission</field>
+        <field name="operation">crud</field>
+    </record>
+
+    <record id="access_whitelisted_group_portal" model="ir.access">
+        <field name="name">whitelisted: base.group_portal</field>
+        <field name="model_id" ref="model_test_ir_access_whitelisted" />
+        <field name="group_id" ref="base.group_portal" />
+        <field name="kind">permission</field>
+        <field name="operation">crud</field>
+    </record>
+
+    <record id="access_profile_group_user" model="ir.access">
+        <field name="name">profile: base.group_user</field>
+        <field name="model_id" ref="model_test_ir_access_profile" />
+        <field name="group_id" ref="base.group_user" />
+        <field name="kind">permission</field>
+        <field name="operation">crud</field>
+    </record>
+
+    <record id="access_labelled_group_user" model="ir.access">
+        <field name="name">labelled: base.group_user</field>
+        <field name="model_id" ref="model_test_ir_access_labelled" />
+        <field name="group_id" ref="base.group_user" />
+        <field name="kind">permission</field>
+        <field name="operation">crud</field>
+    </record>
+
+</odoo>

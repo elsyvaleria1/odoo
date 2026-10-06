@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<templates>
+    <t t-name="spreadsheet.TextFilterValue">
+        <div class="o_input o-global-filter-text-value d-flex flex-wrap gap-1">
+            <TagsList tags="this.tags"/>
+            <AutoComplete
+                sources="this.sources"
+                input="this.inputRef"
+                onChange.bind="this.onInputChange"
+                inputDebounceDelay="0"
+            />
+        </div>
+    </t>
+</templates>

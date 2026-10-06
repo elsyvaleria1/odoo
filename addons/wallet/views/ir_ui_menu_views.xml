@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <menuitem
+        id="menu_wallet_root"
+        name="Wallets"
+        sequence="92"
+        groups="group_wallet_user"
+        web_icon="wallet,static/description/icon.png" />
+
+    <menuitem
+        id="menu_wallet_card"
+        name="Cards"
+        parent="menu_wallet_root"
+        action="action_wallet_card"
+        sequence="10" />
+
+    <menuitem
+        id="menu_wallet_transaction"
+        name="Transactions"
+        parent="menu_wallet_root"
+        action="action_wallet_transaction"
+        sequence="20" />
+
+    <menuitem
+        id="menu_wallet_balance"
+        name="Balances"
+        parent="menu_wallet_root"
+        action="action_wallet_balance"
+        sequence="30" />
+
+    <menuitem
+        id="menu_wallet_statement"
+        name="Statements"
+        parent="menu_wallet_root"
+        action="action_wallet_statement"
+        sequence="40" />
+
+    <menuitem
+        id="menu_wallet_config"
+        name="Configuration"
+        parent="menu_wallet_root"
+        sequence="90"
+        groups="group_wallet_manager" />
+
+    <menuitem
+        id="menu_wallet_account"
+        name="Wallet Accounts"
+        parent="menu_wallet_config"
+        action="action_wallet_account"
+        sequence="10" />
+
+</odoo>

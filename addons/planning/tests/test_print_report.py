@@ -1,0 +1,92 @@
+from datetime import datetime
+from urllib.parse import urlencode
+
+from odoo.libs.json import dumps as json_dumps
+from odoo.tests import HttpCase, tagged
+
+from .common import TestCommonPlanning
+
+
+@tagged("post_install", "-at_install")
+class TestPlanningPrintReport(HttpCase, TestCommonPlanning):
+    """How tall a printed shift block is.
+
+    The printed planning draws one ``div.shift-block`` per shift, and that block
+    reserves its ``min-height`` however short the title is. Nothing in Python can
+    answer how tall the result ends up, so the measurement happens in a browser,
+    against the HTML flavour of the very same report the PDF is paginated from.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.setUpEmployees()
+        cls.env["planning.slot"].create(
+            {
+                "resource_id": cls.resource_bert.id,
+                "start_datetime": datetime(2025, 5, 19, 8, 0),
+                "end_datetime": datetime(2025, 5, 19, 16, 0),
+            }
+        )
+
+    def _print_planning_url(self):
+        """Build the report URL the Print button opens, for that one week."""
+        action = (
+            self.env["planning.slot"]
+            .with_context(discard_logo_check=True)
+            .action_print_plannings(
+                date_start="2025-05-19 00:00:00",
+                date_end="2025-05-25 23:59:59",
+                group_bys=["resource_id"],
+                domain=[
+                    ("start_datetime", "<", "2025-05-26 00:00:00"),
+                    ("end_datetime", ">", "2025-05-19 00:00:00"),
+                ],
+            )
+        )
+        self.assertTrue(
+            action, "the week holds a shift, so there is a planning to print"
+        )
+        data = action["data"]
+        shifts = [
+            shift
+            for groups in data["group_by_slots_per_day_per_week"].values()
+            for _group, days in groups
+            for day_shifts in days.values()
+            for shift in day_shifts
+        ]
+        self.assertEqual(
+            len(shifts), 1, "one shift in the week, so one block in the report"
+        )
+        # No role and no partial allocation: the title is the time range alone,
+        # which is what makes the block a single line in the first place.
+        self.assertLessEqual(
+            len(shifts[0]["title"]),
+            20,
+            "this test only means something while the printed title fits on one line",
+        )
+        # The report reads its payload from the query string: that is how the
+        # Print button reaches it, and the template already indexes weeks with
+        # `str(week[0])`, i.e. it expects the keys JSON leaves behind.
+        return "/report/html/planning.slot_report?" + urlencode(
+            {"options": json_dumps(data)}
+        )
+
+    def test_single_line_shift_block_is_not_double_height(self):
+        self.browser_js(
+            self._print_planning_url(),
+            """
+            const block = document.querySelector(".shift-block");
+            if (!block) {
+                console.error("the printed planning drew no .shift-block");
+            } else if (block.offsetHeight >= 30) {
+                console.error(
+                    `a single-line shift block is ${block.offsetHeight}px tall, ` +
+                    `it should take little more than its one line of text`
+                );
+            } else {
+                console.log("test successful");
+            }
+            """,
+            login="admin",
+        )

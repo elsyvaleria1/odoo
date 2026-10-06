@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_account_collection_custody_report_list" model="ir.ui.view">
+        <field name="name">account.collection.custody.report.list</field>
+        <field name="model">account.collection.custody.report</field>
+        <field name="arch" type="xml">
+            <list string="Custody Aging" create="False" edit="False" delete="False">
+                <field name="payment_id" />
+                <field name="collector_id" />
+                <field name="partner_id" />
+                <field name="collection_method" />
+                <field name="date" />
+                <field name="date_custody_due" />
+                <field name="age_days" />
+                <field name="currency_id" column_invisible="True" />
+                <field name="amount" sum="Total" />
+                <field
+                    name="company_id"
+                    optional="hide"
+                    groups="base.group_multi_company" />
+                <field name="is_far_from_customer" optional="show" />
+                <field name="is_overdue" widget="boolean_toggle" readonly="True" />
+            </list>
+        </field>
+    </record>
+
+    <record id="view_account_collection_custody_report_pivot" model="ir.ui.view">
+        <field name="name">account.collection.custody.report.pivot</field>
+        <field name="model">account.collection.custody.report</field>
+        <field name="arch" type="xml">
+            <pivot string="Custody Aging" sample="1">
+                <field name="collector_id" type="row" />
+                <field name="age" type="col" />
+                <field name="amount" type="measure" />
+            </pivot>
+        </field>
+    </record>
+
+    <record id="view_account_collection_custody_report_graph" model="ir.ui.view">
+        <field name="name">account.collection.custody.report.graph</field>
+        <field name="model">account.collection.custody.report</field>
+        <field name="arch" type="xml">
+            <graph type="bar" string="Custody Aging" sample="1" stacked="True">
+                <field name="collector_id" />
+                <field name="age" />
+                <field name="amount" type="measure" />
+            </graph>
+        </field>
+    </record>
+
+    <record id="view_account_collection_custody_report_search" model="ir.ui.view">
+        <field name="name">account.collection.custody.report.search</field>
+        <field name="model">account.collection.custody.report</field>
+        <field name="arch" type="xml">
+            <search string="Custody Aging">
+                <field name="collector_id" />
+                <field name="partner_id" />
+                <filter
+                    name="overdue"
+                    string="Overdue"
+                    domain="[('is_overdue', '=', True)]" />
+                <filter
+                    name="far_from_customer"
+                    string="Far From Customer"
+                    domain="[('is_far_from_customer', '=', True)]" />
+                <separator />
+                <filter
+                    name="cash"
+                    string="Cash"
+                    domain="[('collection_method', '=', 'cash')]" />
+                <filter
+                    name="check"
+                    string="Checks"
+                    domain="[('collection_method', '=', 'check')]" />
+                <separator />
+                <filter
+                    name="group_by_collector"
+                    string="Collector"
+                    context="{'group_by': 'collector_id'}" />
+                <filter
+                    name="group_by_age"
+                    string="Held For"
+                    context="{'group_by': 'age'}" />
+                <filter
+                    name="group_by_method"
+                    string="Collected In"
+                    context="{'group_by': 'collection_method'}" />
+            </search>
+        </field>
+    </record>
+
+    <record id="action_account_collection_custody_report" model="ir.actions.act_window">
+        <field name="name">Custody Aging</field>
+        <field name="res_model">account.collection.custody.report</field>
+        <field name="path">collection-custody-aging</field>
+        <field name="view_mode">pivot,graph,list</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Nothing is in custody</p>
+            <p>What each collector holds, by how long they have held it.</p>
+        </field>
+    </record>
+
+</odoo>

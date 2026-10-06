@@ -1,0 +1,89 @@
+from odoo import api, fields, models
+from odoo.fields import Domain
+from odoo.libs.debug_log import DebugLog
+
+_debug = DebugLog(__name__)
+
+
+class WizardProductProductReplenish(models.TransientModel):
+    _inherit = "wizard.product.product.replenish"
+
+    @api.depends("product_id.bom_ids", "product_id.bom_ids.product_uom_id")
+    def _compute_allowed_uom_ids(self):
+        super()._compute_allowed_uom_ids()
+        for rec in self:
+            rec.allowed_uom_ids |= rec.product_id.bom_ids.product_uom_id
+
+    @api.depends("route_id", "product_id", "warehouse_id")
+    def _compute_date_planned(self) -> None:
+        super()._compute_date_planned()
+        for rec in self:
+            if "manufacture" in rec.route_id.rule_ids.mapped("action"):
+                rec.date_planned = rec._get_date_planned(
+                    rec.route_id, product=rec.product_id
+                )
+
+    def _get_record_to_notify(self, date):
+        order_line = self.env["mrp.production"].search(
+            [("write_date", ">=", date), ("product_id", "=", self.product_id.id)],
+            order="id desc",
+            limit=1,
+        )
+        return order_line or super()._get_record_to_notify(date)
+
+    def _get_replenishment_order_notification_link(self, production) -> list | None:
+        if production._name == "mrp.production":
+            return [
+                {
+                    "label": production.name,
+                    "url": f"/odoo/action-mrp.action_mrp_production_form/{production.id}",
+                }
+            ]
+        return super()._get_replenishment_order_notification_link(production)
+
+    def _get_date_planned(self, route, **kwargs):
+        date = super()._get_date_planned(route, **kwargs)
+        if "manufacture" not in route.rule_ids.mapped("action"):
+            return date
+        product = (kwargs.get("product") or self.product_id).with_company(
+            self.warehouse_id.company_id
+        )
+        rules = product._get_rules_from_location(
+            self.warehouse_id.lot_stock_id, route_ids=route
+        )
+        manufacture_rule = rules.filtered(lambda rule: rule.action == "manufacture")
+        if not manufacture_rule:
+            return date
+        bom = manufacture_rule._get_matching_bom(
+            product, self.warehouse_id.company_id, {}
+        )
+        delays, _description = rules.with_context(
+            bypass_delay_description=True
+        )._get_lead_days(product, bom_id=bom)
+        _debug.logic(
+            "replenish_date_planned",
+            product=product.id,
+            route=route.id,
+            rules=rules,
+            lead_days=delays["total_delay"],
+        )
+        return fields.Datetime.add(fields.Datetime.now(), days=delays["total_delay"])
+
+    def _get_domain_route(self, product_tmpl_id):
+        domain = super()._get_domain_route(product_tmpl_id)
+        company = product_tmpl_id.company_id or self.env.company
+        manufacture_route = (
+            self.env["stock.rule"]
+            .search([("action", "=", "manufacture"), ("company_id", "=", company.id)])
+            .route_id
+        )
+        if manufacture_route and product_tmpl_id.bom_ids.filtered(
+            lambda b: b.type == "normal"
+        ):
+            _debug.logic(
+                "replenish_route_widened",
+                template=product_tmpl_id.id,
+                route=manufacture_route.id,
+            )
+            domain = Domain.OR([domain, Domain("id", "in", manufacture_route.ids)])
+        return domain

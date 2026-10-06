@@ -1,0 +1,48 @@
+id,name,model_id/id,group_id/id,kind,operation,reach,anchor,domain
+access_hr_payroll_structure,hr.payroll.structure,model_hr_payroll_structure,group_hr_payroll_user,permission,cud,,,
+access_hr_payroll_structure_hr_user,hr.payroll.structure.hr.user,model_hr_payroll_structure,hr.group_hr_user,permission,r,,,
+access_hr_salary_rule_category,hr.salary.rule.category,model_hr_salary_rule_category,group_hr_payroll_user,permission,crud,,,
+access_hr_payslip_correction_wizard,wizard.hr.payslip.correct,model_wizard_hr_payslip_correct,group_hr_payroll_user,permission,crud,,,
+hr_payroll_rule_officer,Officer and subordinates Payslip,model_hr_payslip,group_hr_payroll_user,permission,crud,,,
+access_hr_payslip_line,hr.payslip.line,model_hr_payslip_line,group_hr_payroll_user,permission,crud,,,
+access_hr_payslip_input_user,hr.payslip.input.user,model_hr_payslip_input,group_hr_payroll_user,permission,crud,,,
+access_hr_payslip_input_type_user,hr.payslip.input.type.user,model_hr_payslip_input_type,group_hr_payroll_user,permission,r,,,
+access_hr_payslip_input_type_manager,hr.payslip.input.type.manager,model_hr_payslip_input_type,group_hr_payroll_manager,permission,cud,,,
+access_hr_payslip_worked_days_officer,hr.payslip.worked_days.officer,model_hr_payslip_worked_days,group_hr_payroll_user,permission,crud,,,
+access_hr_payslip_run,hr.payslip.run,model_hr_payslip_run,group_hr_payroll_user,permission,crud,,,
+access_hr_salary_rule_user,hr.salary.rule.user,model_hr_salary_rule,group_hr_payroll_user,permission,r,,,
+access_hr_salary_rule_manager,hr.salary.rule.manager,model_hr_salary_rule,group_hr_payroll_manager,permission,cud,,,
+access_hr_rule_parameter_manager,access_hr_rule_parameter_manager,model_hr_rule_parameter,group_hr_payroll_manager,permission,cud,,,
+access_hr_rule_parameter_user,access_hr_rule_parameter_user,model_hr_rule_parameter,hr.group_hr_user,permission,r,,,
+access_hr_rule_parameter_value_manager,access_hr_rule_parameter_value_manager,model_hr_rule_parameter_value,group_hr_payroll_manager,permission,cud,,,
+access_hr_rule_parameter_value_user,access_hr_rule_parameter_value_user,model_hr_rule_parameter_value,hr.group_hr_user,permission,r,,,
+access_hr_payroll_structure_type,hr.payroll.structure.type,model_hr_payroll_structure_type,group_hr_payroll_user,permission,crud,,,
+access_hr_payroll_index,access.hr.payroll.index,model_wizard_hr_version_index_wage,group_hr_payroll_manager,permission,cru,,,
+access_hr_work_entry_report_manager,hr.work.entry.report,model_hr_work_entry_report,group_hr_payroll_user,permission,r,,,
+access_hr_payroll_edit_payslip_lines_wizard,access.hr.payroll.edit.payslip.lines.wizard,model_wizard_hr_payslip_update_line,group_hr_payroll_user,permission,cru,,,
+access_hr_payroll_edit_payslip_line,access.hr.payroll.edit.payslip.line,model_wizard_hr_payslip_update_line_payslip_line,group_hr_payroll_user,permission,crud,,,
+access_hr_payroll_edit_payslip_worked_days_line,access.hr.payroll.edit.payslip.worked.days.line,model_wizard_hr_payslip_update_line_worked_days,group_hr_payroll_user,permission,crud,,,
+access_hr_salary_assignment,hr.salary.attachment,model_hr_salary_attachment,group_hr_payroll_user,permission,crud,,,
+access_hr_payroll_note,hr.payroll.note,model_hr_payroll_note,group_hr_payroll_user,permission,crud,,,
+access_hr_payroll_employee_declaration,access_hr_payroll_employee_declaration,model_hr_payroll_employee_declaration,group_hr_payroll_user,permission,crud,,,
+access_hr_payroll_dashboard_warning_user,access_hr_payroll_dashboard_warning_user,model_hr_payroll_dashboard_warning,group_hr_payroll_user,permission,r,,,
+access_hr_payroll_dashboard_warning_manager,access_hr_payroll_dashboard_warning_manager,model_hr_payroll_dashboard_warning,group_hr_payroll_manager,permission,cud,,,
+access_hr_payroll_payment_report_wizard,wizard.hr.payslip.export.payment.file,model_wizard_hr_payslip_export_payment_file,group_hr_payroll_user,permission,cru,,,
+access_hr_payroll_headcount,access_hr_payroll_headcount,model_hr_payroll_headcount,group_hr_payroll_user,permission,crud,,,
+access_hr_payroll_headcount_line,access_hr_payroll_headcount_line,model_hr_payroll_headcount_line,group_hr_payroll_user,permission,crud,,,
+access_hr_payroll_headcount_working_rate,access_hr_payroll_headcount_working_rate,model_hr_payroll_headcount_working_rate,group_hr_payroll_user,permission,crd,,,
+access_hr_salary_rule_section,access_hr_salary_rule_section,model_hr_salary_rule_section,group_hr_payroll_user,permission,crud,,,
+ir_rule_hr_payroll_structure_multi_company,HR Payroll Structure: Multi Company,model_hr_payroll_structure,base.group_everyone,guard,crud,,,"['|', ('country_id', '=', False), ('country_id', 'in', user.env.companies.mapped('country_id').ids)]"
+ir_rule_hr_payslip_input_type_multi_company,HR Payslip Input Type: Multi Company,model_hr_payslip_input_type,base.group_everyone,guard,crud,,,"['|', ('country_id', '=', False), ('country_id', 'in', user.env.companies.mapped('country_id').ids)]"
+ir_rule_hr_payroll_paramater_multi_company,HR Rule Parameter: Multi Company,model_hr_rule_parameter,base.group_everyone,guard,crud,,,"['|', ('country_id', '=', False), ('country_id', 'in', user.env.companies.mapped('country_id').ids)]"
+ir_rule_hr_payroll_paramater_value_multi_company,HR Rule Parameter Value: Multi Company,model_hr_rule_parameter_value,base.group_everyone,guard,crud,,,"['|', ('country_id', '=', False), ('country_id', 'in', user.env.companies.mapped('country_id').ids)]"
+ir_rule_hr_payslip_multi_company,HR Payslip: Multi Company,model_hr_payslip,base.group_everyone,guard,crud,company,,
+ir_rule_hr_payslip_line_multi_company,HR Payslip Line: Multi Company,model_hr_payslip_line,base.group_everyone,guard,crud,company,,
+ir_rule_hr_payslip_run_multi_company,HR Payslip Batch: Multi Company,model_hr_payslip_run,base.group_everyone,guard,crud,company,,
+ir_rule_hr_salary_attachment_multi_company,HR Salary Adjustment: Multi Company,model_hr_salary_attachment,base.group_everyone,guard,crud,company,,
+ir_rule_hr_payroll_salary_rule_multi_company,HR Salary Rule: Multi Company,model_hr_salary_rule,base.group_everyone,guard,crud,,,"['|', ('struct_id.country_id', '=', False), ('struct_id.country_id', 'in', user.env.companies.mapped('country_id').ids)]"
+ir_rule_hr_payroll_note_multi_company,HR Payroll Note: Multi Company,model_hr_payroll_note,base.group_everyone,guard,crud,company,,
+ir_rule_hr_employee_declaration,HR Payroll Employee Declaration: Multi Company,model_hr_payroll_employee_declaration,base.group_everyone,guard,crud,company,,
+ir_rule_hr_payroll_dashboard_warning_multi_company,HR Payroll Dashboard Warning: Multi Company,model_hr_payroll_dashboard_warning,base.group_everyone,guard,crud,,,"['|', ('country_id', '=', False), ('country_id', 'in', user.env.companies.mapped('country_id').ids)]"
+ir_rule_hr_payroll_headcount_multi_company,HR Payroll Headcount: Multi Company,model_hr_payroll_headcount,base.group_everyone,guard,crud,company,,
+ir_rule_hr_payroll_salary_rule_category_multi_company,HR Salary Rule Category: Multi Company,model_hr_salary_rule_category,base.group_everyone,guard,crud,,,"['|', ('country_id', '=', False), ('country_id', 'in', user.env.companies.country_id.ids)]"

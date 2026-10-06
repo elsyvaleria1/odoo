@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+
+    <record id="ir_cron_refresh_asset_compliance_report" model="ir.cron">
+        <field name="name">Asset Compliance Dashboard: refresh</field>
+        <field name="model_id" ref="model_asset_compliance_report" />
+        <field name="state">code</field>
+        <field name="code">model._cron_refresh_materialized_view()</field>
+        <field name="user_id" ref="base.user_root" />
+        <field name="repeat_interval" eval="30" />
+        <field name="repeat_unit">minute</field>
+    </record>
+
+</odoo>

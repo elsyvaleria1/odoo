@@ -1,0 +1,161 @@
+/** @odoo-module native */
+import { Component, proxy, useProps } from "@odoo/owl";
+import { CustomFieldCard } from "@sale_pdf_quote_builder/js/custom_content_kanban_like_widget/custom_field_card/custom_field_card";
+import { x2ManyCommands } from "@web/core/network";
+import { registry } from "@web/core/registry";
+import { useService } from "@web/core/utils/hooks";
+import { useLayoutEffect } from "@web/core/utils/layout_effect";
+import { standardWidgetProps } from "@web/views/widgets";
+
+export class CustomContentKanbanLikeWidget extends Component {
+    static components = { CustomFieldCard };
+    static template = "sale_pdf_quote_builder.CustomContentKanbanLike";
+    static props = { ...standardWidgetProps };
+    props = useProps(this.constructor.props);
+
+    get isReadonly() {
+        return this.props.readonly || this.state.lockedBySale;
+    }
+
+    setup() {
+        this.orm = useService("orm");
+        this.state = proxy({
+            headers: {},
+            lines: {},
+            footers: {},
+            lockedBySale: false,
+        });
+
+        useLayoutEffect(
+            () => {
+                this.updateState();
+            },
+            () => [this.props.record.data.template_id],
+        );
+
+        useLayoutEffect(
+            (saleOrderState) => {
+                if (saleOrderState === "sale") {
+                    this.state.lockedBySale = true;
+                    this.props.record.save();
+                }
+            },
+            () => [this.props.record.data.state],
+        );
+    }
+
+    async updateState() {
+        const saved = await this.props.record.save();
+        if (saved) {
+            const { headers, lines, footers } = await this.orm.call(
+                "sale.order",
+                "get_update_included_pdf_params",
+                [this.props.record.resId],
+            );
+            this.state.headers = headers;
+            this.state.lines = lines;
+            this.state.footers = footers;
+        }
+    }
+
+    updateJson() {
+        const selectedHeaders = this.state.headers.files.filter((f) => f.is_selected);
+        const selectedFooters = this.state.footers.files.filter((f) => f.is_selected);
+        const value = JSON.stringify({
+            header: Object.assign(
+                {},
+                ...selectedHeaders.map((header) => ({
+                    [header.id]: {
+                        document_name: header.name,
+                        custom_form_fields: Object.assign(
+                            {},
+                            ...header.custom_form_fields.map((formField) => ({
+                                [formField.name]: formField.value,
+                            })),
+                        ),
+                    },
+                })),
+            ),
+            line: Object.assign(
+                {},
+                ...this.state.lines.map((line) => ({
+                    [line.id]: Object.assign(
+                        {},
+                        ...line.files
+                            .filter((f) => f.is_selected)
+                            .map((doc) => ({
+                                [doc.id]: {
+                                    document_name: doc.name,
+                                    custom_form_fields: Object.assign(
+                                        {},
+                                        ...doc.custom_form_fields.map((formField) => ({
+                                            [formField.name]: formField.value,
+                                        })),
+                                    ),
+                                },
+                            })),
+                    ),
+                })),
+            ),
+            footer: Object.assign(
+                {},
+                ...selectedFooters.map((footer) => ({
+                    [footer.id]: {
+                        document_name: footer.name,
+                        custom_form_fields: Object.assign(
+                            {},
+                            ...footer.custom_form_fields.map((formField) => ({
+                                [formField.name]: formField.value,
+                            })),
+                        ),
+                    },
+                })),
+            ),
+        });
+        this.props.record.update({ ["customizable_pdf_form_fields"]: value });
+    }
+
+    async saveProductDocument(lineId, docId, isSelected) {
+        if (this.isReadonly) {
+            return;
+        }
+        const sol = this.props.record.data.line_ids.records.find(
+            (sol) => sol.resId === lineId,
+        );
+        const command = isSelected
+            ? x2ManyCommands.link(docId)
+            : x2ManyCommands.unlink(docId);
+        await sol.update(
+            { product_document_ids: [command] },
+            { save: true, withoutParentUpdate: true },
+        );
+        await this.props.record.data.line_ids.notifyParentUpdate({
+            withoutOnchange: true,
+        });
+        this.updateJson();
+    }
+
+    async saveQuotationDocument(docId, isSelected) {
+        if (this.isReadonly) {
+            return;
+        }
+        if (isSelected) {
+            await this.props.record.update({
+                quotation_document_ids: [x2ManyCommands.link(docId)],
+            });
+        } else {
+            await this.props.record.update({
+                quotation_document_ids: [x2ManyCommands.unlink(docId)],
+            });
+        }
+        this.updateJson();
+    }
+}
+
+export const customContentKanbanLikeWidget = {
+    component: CustomContentKanbanLikeWidget,
+};
+
+registry
+    .category("view_widgets")
+    .add("customContentKanbanLikeWidget", customContentKanbanLikeWidget);

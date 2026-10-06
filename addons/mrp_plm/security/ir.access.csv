@@ -1,0 +1,12 @@
+id,name,model_id/id,group_id/id,kind,operation,reach,anchor,domain
+access_model_mrp_eco_approval_template_manager,mrp.eco.approval.template,model_mrp_eco_approval_template,group_plm_manager,permission,cud,,,
+access_model_mrp_eco_approval_template_user,mrp.eco.approval.template,model_mrp_eco_approval_template,group_plm_user,permission,r,,,
+access_model_mrp_eco_stage_manager,mrp.eco.stage,model_mrp_eco_stage,group_plm_manager,permission,cud,,,
+access_model_mrp_eco_stage_user,mrp.eco.stage,model_mrp_eco_stage,group_plm_user,permission,r,,,
+access_model_mrp_eco_bom_change_user,mrp.eco.bom.change,model_mrp_eco_bom_change,group_plm_user,permission,crud,,,
+access_model_mrp_eco_routing_change_user,mrp.eco.routing.change,model_mrp_eco_routing_change,group_plm_user,permission,crud,,,
+access_mrp_eco_tag_user,mrp.eco.tag,model_mrp_eco_tag,group_plm_user,permission,crud,,,
+access_mrp_eco_type_user,mrp.eco.type,model_mrp_eco_type,group_plm_user,permission,r,,,
+access_mrp_eco_type_manager,mrp.eco.type,model_mrp_eco_type,group_plm_manager,permission,cud,,,
+access_mrp_eco_user,mrp.eco,model_mrp_eco,group_plm_user,permission,crud,,,
+mrp_eco_comp_rule,Manufacturing ECO company rule,model_mrp_eco,base.group_everyone,guard,crud,company,,

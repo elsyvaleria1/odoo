@@ -1,0 +1,632 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* approval_product
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-09-18 04:57+0000\n"
+"PO-Revision-Date: 2026-09-18 04:57+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: approval_product
+#. odoo-python
+#: code:addons/approval_product/models/mixin_approval_document.py:0
+msgid "%(document)s Approved"
+msgstr ""
+
+#. module: approval_product
+#. odoo-python
+#: code:addons/approval_product/models/mixin_approval_document.py:0
+msgid "%(document)s Rejected"
+msgstr ""
+
+#. module: approval_product
+#. odoo-python
+#: code:addons/approval_product/models/mixin_approval_document.py:0
+msgid ""
+"%(document)s amount has changed since approval was granted.\n"
+"\n"
+"Approved amount: %(approved)s\n"
+"Current amount: %(current)s\n"
+"\n"
+"Please refuse the current approval and request a new one with the updated amount."
+msgstr ""
+
+#. module: approval_product
+#. odoo-python
+#: code:addons/approval_product/models/approval_request_target.py:0
+msgid ""
+"%(documents)s can only be created from an APPROVED request. Request "
+"'%(name)s' is in state '%(state)s'."
+msgstr ""
+
+#. module: approval_product
+#. odoo-python
+#: code:addons/approval_product/models/approval_request_target.py:0
+msgid ""
+"<p><strong>Warning: Approval Request Refused</strong></p><p>Approval request"
+" %(request)s was refused, but this %(document)s is already confirmed. The "
+"following products from the approval could not be automatically "
+"removed:</p><ul>%(products)s</ul><p>Please review this %(document)s and "
+"update manually if needed.</p>"
+msgstr ""
+
+#. module: approval_product
+#: model:ir.model.fields,help:approval_product.field_mixin_approval_document__locked
+msgid "A locked document cannot be modified."
+msgstr ""
+
+#. module: approval_product
+#: model:ir.model.fields,help:approval_product.field_approval_category__has_product
+#: model:ir.model.fields,help:approval_product.field_approval_request__has_product
+msgid "Additional products that should be specified on the request."
+msgstr ""
+
+#. module: approval_product
+#. odoo-python
+#: code:addons/approval_product/models/approval_request_target.py:0
+msgid ""
+"All lines of this request already have %(documents)s lines — nothing left to"
+" create."
+msgstr ""
+
+#. module: approval_product
+#: model:ir.model.fields,field_description:approval_product.field_approval_request_line__allowed_product_ids
+msgid "Allowed Product"
+msgstr ""
+
+#. module: approval_product
+#: model:ir.model.fields,field_description:approval_product.field_approval_category__product_ids
+msgid "Allowed Products"
+msgstr ""
+
+#. module: approval_product
+#: model:ir.model,name:approval_product.model_approval_category
+msgid "Approval Category"
+msgstr "Categoría de aprobación"
+
+#. module: approval_product
+#: model:ir.model.fields,field_description:approval_product.field_mixin_approval_document__date_approval_granted
+msgid "Approval Granted Date"
+msgstr ""
+
+#. module: approval_product
+#: model:ir.model,name:approval_product.model_mixin_approval_document
+msgid "Approval Mixin for Order-Like Documents"
+msgstr ""
+
+#. module: approval_product
+#: model:ir.model.fields,field_description:approval_product.field_mixin_approval_document__approval_progress
+msgid "Approval Progress"
+msgstr ""
+
+#. module: approval_product
+#: model:ir.model,name:approval_product.model_approval_request
+#: model:ir.model.fields,field_description:approval_product.field_approval_request_line__approval_request_id
+#: model:ir.model.fields,field_description:approval_product.field_mixin_approval_document__approval_request_id
+msgid "Approval Request"
+msgstr "Solicitud de aprobación"
+
+#. module: approval_product
+#. odoo-python
+#: code:addons/approval_product/models/approval_request_target.py:0
+msgid "Approval Request Refused"
+msgstr ""
+
+#. module: approval_product
+#: model:ir.model.fields,field_description:approval_product.field_mixin_approval_document__date_approval_requested
+msgid "Approval Requested Date"
+msgstr ""
+
+#. module: approval_product
+#: model:ir.model.fields,field_description:approval_product.field_mixin_approval_document__approval_required
+msgid "Approval Required"
+msgstr ""
+
+#. module: approval_product
+#: model:ir.model.fields,field_description:approval_product.field_mixin_approval_document__approval_state
+msgid "Approval Status"
+msgstr ""
+
+#. module: approval_product
+#. odoo-python
+#: code:addons/approval_product/models/mixin_approval_document.py:0
+msgid "Approval request refused. Order can be modified."
+msgstr ""
+
+#. module: approval_product
+#. odoo-python
+#: code:addons/approval_product/models/mixin_approval_document.py:0
+msgid "Approved amount"
+msgstr ""
+
+#. module: approval_product
+#. odoo-python
+#: code:addons/approval_product/models/mixin_approval_document.py:0
+msgid "Approved by"
+msgstr ""
+
+#. module: approval_product
+#: model:ir.model.fields,field_description:approval_product.field_mixin_approval_document__approval_user_ids
+msgid "Approvers"
+msgstr ""
+
+#. module: approval_product
+#: model:ir.model.fields,field_description:approval_product.field_mixin_approval_document__can_request_approval
+msgid "Can Request Approval"
+msgstr ""
+
+#. module: approval_product
+#. odoo-python
+#: code:addons/approval_product/models/approval_request_target.py:0
+msgid "Cannot create %(documents)s from an empty approval request."
+msgstr ""
+
+#. module: approval_product
+#. odoo-python
+#: code:addons/approval_product/models/approval_request_line.py:0
+msgid ""
+"Cannot modify product lines after the request has been submitted — approvers decide on these values.\n"
+"\n"
+"Request: %(name)s\n"
+"Current state: %(state)s"
+msgstr ""
+
+#. module: approval_product
+#: model:ir.model.fields,field_description:approval_product.field_approval_request_line__company_id
+msgid "Company"
+msgstr ""
+
+#. module: approval_product
+#: model:ir.model.fields,field_description:approval_product.field_approval_request_line__create_uid
+msgid "Created by"
+msgstr ""
+
+#. module: approval_product
+#: model:ir.model.fields,field_description:approval_product.field_approval_request_line__create_date
+msgid "Created on"
+msgstr ""
+
+#. module: approval_product
+#: model:ir.model.fields,help:approval_product.field_approval_category__order_amount_currency_id
+msgid ""
+"Currency the order amount criteria are expressed in. A global category has "
+"no company of its own, so it falls back to the active company's currency "
+"instead of leaving the thresholds currency-less."
+msgstr ""
+
+#. module: approval_product
+#: model:ir.model.fields,help:approval_product.field_mixin_approval_document__approval_state
+msgid ""
+"Current approval status:\n"
+"        • new: Approval created but not submitted\n"
+"        • pending: Waiting for approvers\n"
+"        • approved: All required approvals obtained\n"
+"        • refused: Approval was refused (terminal)\n"
+"        • cancelled: Approval was retracted or expired (terminal)"
+msgstr ""
+
+#. module: approval_product
+#. odoo-python
+#: code:addons/approval_product/models/approval_request_target.py:0
+msgid ""
+"Data integrity error: multiple %(documents)s lines found for approval line "
+"%(line_id)s (product: %(product)s). Please contact your administrator."
+msgstr ""
+
+#. module: approval_product
+#: model:ir.model.fields,help:approval_product.field_mixin_approval_document__date_approval_requested
+msgid "Date and time when approval was requested for this document"
+msgstr ""
+
+#. module: approval_product
+#: model:ir.model.fields,help:approval_product.field_mixin_approval_document__date_approval_granted
+msgid "Date and time when final approval was granted"
+msgstr ""
+
+#. module: approval_product
+#: model:ir.model.fields,field_description:approval_product.field_approval_request_line__description
+#: model_terms:ir.ui.view,arch_db:approval_product.report_approval_request_document_products
+msgid "Description"
+msgstr ""
+
+#. module: approval_product
+#: model:ir.model.fields,field_description:approval_product.field_approval_category__display_name
+#: model:ir.model.fields,field_description:approval_product.field_approval_request__display_name
+#: model:ir.model.fields,field_description:approval_product.field_approval_request_line__display_name
+#: model:ir.model.fields,field_description:approval_product.field_mixin_approval_document__display_name
+msgid "Display Name"
+msgstr "Nombre a mostrar"
+
+#. module: approval_product
+#. odoo-python
+#: code:addons/approval_product/models/mixin_approval_document.py:0
+msgid "Expected Delivery"
+msgstr "Entrega esperada"
+
+#. module: approval_product
+#. odoo-python
+#: code:addons/approval_product/models/approval_request_target.py:0
+msgid ""
+"Failed to link the %(documents)s line for approval line %(line_id)s "
+"(product: %(product)s). The line was not created properly. Please contact "
+"your administrator."
+msgstr ""
+
+#. module: approval_product
+#: model:ir.model.fields,field_description:approval_product.field_approval_category__has_product
+#: model:ir.model.fields,field_description:approval_product.field_approval_request__has_product
+msgid "Has Product"
+msgstr ""
+
+#. module: approval_product
+#: model:ir.model.fields,field_description:approval_product.field_approval_category__id
+#: model:ir.model.fields,field_description:approval_product.field_approval_request__id
+#: model:ir.model.fields,field_description:approval_product.field_approval_request_line__id
+#: model:ir.model.fields,field_description:approval_product.field_mixin_approval_document__id
+msgid "ID"
+msgstr ""
+
+#. module: approval_product
+#: model:ir.model.fields,help:approval_product.field_approval_category__order_partner_ids
+msgid "If set, this category applies only to these partners"
+msgstr ""
+
+#. module: approval_product
+#: model:ir.model.fields,help:approval_product.field_approval_category__product_categ_ids
+msgid ""
+"If set, this category applies when the order contains products from these "
+"categories"
+msgstr ""
+
+#. module: approval_product
+#: model:ir.model.fields,field_description:approval_product.field_approval_request_line__write_uid
+msgid "Last Updated by"
+msgstr ""
+
+#. module: approval_product
+#: model:ir.model.fields,field_description:approval_product.field_approval_request_line__write_date
+msgid "Last Updated on"
+msgstr ""
+
+#. module: approval_product
+#: model_terms:ir.ui.view,arch_db:approval_product.approval_category_view_form_product
+msgid "Leave empty to allow all products"
+msgstr ""
+
+#. module: approval_product
+#: model:ir.model.fields,field_description:approval_product.field_approval_request__line_ids
+msgid "Line"
+msgstr ""
+
+#. module: approval_product
+#: model:ir.model.fields,help:approval_product.field_mixin_approval_document__approval_request_id
+msgid ""
+"Link to the approval request for this document. Automatically created when "
+"approval is requested."
+msgstr ""
+
+#. module: approval_product
+#: model:ir.model.fields,field_description:approval_product.field_mixin_approval_document__locked
+msgid "Locked"
+msgstr ""
+
+#. module: approval_product
+#: model:ir.model.fields,field_description:approval_product.field_approval_category__order_amount_max
+msgid "Maximum Amount"
+msgstr ""
+
+#. module: approval_product
+#: model:ir.model.fields,field_description:approval_product.field_approval_category__order_amount_min
+msgid "Minimum Amount"
+msgstr ""
+
+#. module: approval_product
+#. odoo-python
+#: code:addons/approval_product/models/approval_category.py:0
+msgid ""
+"Minimum amount (%(minimum)s) cannot be greater than maximum amount "
+"(%(maximum)s) on category '%(name)s'."
+msgstr ""
+
+#. module: approval_product
+#. odoo-python
+#: code:addons/approval_product/models/mixin_approval_document.py:0
+msgid ""
+"No approval category configured for %(documents)s.\n"
+"\n"
+"Please configure an approval category with:\n"
+"• Approval Type = '%(type)s'\n"
+"• Target Model = empty (for mixin flow)\n"
+"• Company = '%(company)s' or global\n"
+"\n"
+"Go to %(menu)s to configure."
+msgstr ""
+
+#. module: approval_product
+#. odoo-python
+#: code:addons/approval_product/models/mixin_approval_document.py:0
+msgid ""
+"No approval category matches this %(document)s.\n"
+"\n"
+"Order: %(order)s\n"
+"%(partner_label)s: %(partner)s\n"
+"Amount: %(amount)s\n"
+"\n"
+"%(report)s\n"
+"\n"
+"Note: a criterion still constrains matching even when the category's trigger hides it on the form."
+msgstr ""
+
+#. module: approval_product
+#: model:ir.model.fields.selection,name:approval_product.selection__approval_category__has_product__no
+msgid "None"
+msgstr ""
+
+#. module: approval_product
+#. odoo-python
+#: code:addons/approval_product/models/mixin_approval_document.py:0
+msgid "Not specified"
+msgstr ""
+
+#. module: approval_product
+#: model:ir.model.fields.selection,name:approval_product.selection__approval_category__has_product__optional
+msgid "Optional"
+msgstr ""
+
+#. module: approval_product
+#: model:ir.model.fields,field_description:approval_product.field_approval_category__order_amount_currency_id
+msgid "Order Amount Currency"
+msgstr ""
+
+#. module: approval_product
+#: model:ir.model.fields,help:approval_product.field_approval_category__order_amount_max
+msgid "Orders with amount <= this value will use this category (0 = no limit)"
+msgstr ""
+
+#. module: approval_product
+#: model:ir.model.fields,help:approval_product.field_approval_category__order_amount_min
+msgid "Orders with amount >= this value will use this category"
+msgstr ""
+
+#. module: approval_product
+#: model:ir.model.fields,field_description:approval_product.field_approval_request_line__partner_id
+msgid "Partner"
+msgstr ""
+
+#. module: approval_product
+#: model:ir.model.fields,field_description:approval_product.field_mixin_approval_document__pending_approver_ids
+msgid "Pending Approvers"
+msgstr ""
+
+#. module: approval_product
+#: model:ir.model.fields,help:approval_product.field_mixin_approval_document__approval_progress
+msgid "Percentage of approvals completed (approved / total approvers)"
+msgstr ""
+
+#. module: approval_product
+#: model:ir.model.fields,field_description:approval_product.field_approval_request_line__price_unit
+msgid "Price"
+msgstr ""
+
+#. module: approval_product
+#. odoo-python
+#: code:addons/approval_product/models/approval_request_line.py:0
+msgid "Price cannot be negative. Got: %(price)s for product %(product)s"
+msgstr ""
+
+#. module: approval_product
+#: model_terms:ir.ui.view,arch_db:approval_product.approval_category_view_form_product
+#: model_terms:ir.ui.view,arch_db:approval_product.report_approval_request_document_products
+msgid "Product"
+msgstr ""
+
+#. module: approval_product
+#: model:ir.model.fields,field_description:approval_product.field_approval_category__product_categ_ids
+msgid "Product Categories"
+msgstr ""
+
+#. module: approval_product
+#: model:ir.model.fields,field_description:approval_product.field_approval_request_line__product_template_id
+msgid "Product Template"
+msgstr ""
+
+#. module: approval_product
+#: model:ir.ui.menu,name:approval_product.approvals_menu_product_variant
+msgid "Product Variants"
+msgstr "Variantes de producto"
+
+#. module: approval_product
+#. odoo-python
+#: code:addons/approval_product/models/approval_request.py:0
+#: code:addons/approval_product/models/mixin_approval_document.py:0
+#: model:ir.model.fields,field_description:approval_product.field_approval_request_line__product_id
+#: model:ir.ui.menu,name:approval_product.approvals_menu_product_template
+#: model_terms:ir.ui.view,arch_db:approval_product.approval_product_kanban_mobile_view
+#: model_terms:ir.ui.view,arch_db:approval_product.approval_request_line_view_form
+#: model_terms:ir.ui.view,arch_db:approval_product.approval_request_line_view_tree
+#: model_terms:ir.ui.view,arch_db:approval_product.approval_request_line_view_tree_independent
+#: model_terms:ir.ui.view,arch_db:approval_product.report_approval_request_document_products
+#: model_terms:ir.ui.view,arch_db:approval_product.view_approval_request_form_product
+msgid "Products"
+msgstr "Productos"
+
+#. module: approval_product
+#: model:ir.model.fields,help:approval_product.field_approval_category__product_ids
+msgid ""
+"Products admissible in the request lines of this category. In purchase/sale "
+"categories this same list also constrains category matching against the "
+"order, whatever the trigger is set to. Leave empty to allow all products."
+msgstr ""
+
+#. module: approval_product
+#: model:ir.model.fields,help:approval_product.field_approval_request_line__allowed_product_ids
+msgid ""
+"Products selectable on this line, mirroring the category's allowed products."
+" Empty means the category sets no restriction and every product is "
+"selectable — the views drop the domain in that case rather than listing the "
+"whole catalogue here."
+msgstr ""
+
+#. module: approval_product
+#: model:ir.model.fields,field_description:approval_product.field_approval_request__quantity
+#: model:ir.model.fields,field_description:approval_product.field_approval_request_line__quantity
+#: model_terms:ir.ui.view,arch_db:approval_product.report_approval_request_document_products
+msgid "Quantity"
+msgstr "Cantidad"
+
+#. module: approval_product
+#. odoo-python
+#: code:addons/approval_product/models/approval_request_line.py:0
+msgid "Quantity must be positive. Got: %(qty)s for product %(product)s"
+msgstr ""
+
+#. module: approval_product
+#. odoo-python
+#: code:addons/approval_product/models/mixin_approval_document.py:0
+msgid "Rejected by"
+msgstr ""
+
+#. module: approval_product
+#: model:ir.model,name:approval_product.model_approval_request_line
+msgid "Request Line"
+msgstr "Línea de solicitud"
+
+#. module: approval_product
+#: model:ir.model.fields.selection,name:approval_product.selection__approval_category__has_product__required
+msgid "Required"
+msgstr ""
+
+#. module: approval_product
+#: model:ir.model.fields,field_description:approval_product.field_approval_category__order_partner_ids
+msgid "Specific Partners"
+msgstr ""
+
+#. module: approval_product
+#: model_terms:ir.ui.view,arch_db:approval_product.report_approval_request_document_products
+msgid "Subtotal"
+msgstr ""
+
+#. module: approval_product
+#. odoo-python
+#: code:addons/approval_product/models/approval_request_target.py:0
+msgid ""
+"The following products couldn't be removed because the %(documents)s are not"
+" in draft state:"
+msgstr ""
+
+#. module: approval_product
+#. odoo-python
+#: code:addons/approval_product/models/approval_request_target.py:0
+msgid "The following products have been added to the %(documents)s:"
+msgstr ""
+
+#. module: approval_product
+#. odoo-python
+#: code:addons/approval_product/models/approval_request_target.py:0
+msgid "The following products have been removed from the %(documents)s:"
+msgstr ""
+
+#. module: approval_product
+#. odoo-python
+#: code:addons/approval_product/models/mixin_approval_document.py:0
+msgid ""
+"This %(document)s was created from an approval request (%(request)s). It "
+"does not need a separate approval."
+msgstr ""
+
+#. module: approval_product
+#: model:ir.model.fields,field_description:approval_product.field_approval_request_line__price_subtotal
+#: model_terms:ir.ui.view,arch_db:approval_product.report_approval_request_document_products
+msgid "Total"
+msgstr ""
+
+#. module: approval_product
+#. odoo-python
+#: code:addons/approval_product/models/mixin_approval_document.py:0
+msgid "Total Amount"
+msgstr "Importe total"
+
+#. module: approval_product
+#: model:ir.model.fields,field_description:approval_product.field_approval_request_line__product_uom_id
+#: model_terms:ir.ui.view,arch_db:approval_product.report_approval_request_document_products
+msgid "Unit"
+msgstr ""
+
+#. module: approval_product
+#: model_terms:ir.ui.view,arch_db:approval_product.report_approval_request_document_products
+msgid "Unit Price"
+msgstr ""
+
+#. module: approval_product
+#: model:ir.model.fields,help:approval_product.field_mixin_approval_document__approval_user_ids
+msgid "Users who need to approve this document"
+msgstr ""
+
+#. module: approval_product
+#: model:ir.model.fields,help:approval_product.field_mixin_approval_document__pending_approver_ids
+msgid "Users who still need to approve this document"
+msgstr ""
+
+#. module: approval_product
+#: model:ir.model.fields,help:approval_product.field_mixin_approval_document__can_request_approval
+msgid "Whether approval can be requested (all required fields filled)"
+msgstr ""
+
+#. module: approval_product
+#: model:ir.model.fields,help:approval_product.field_mixin_approval_document__approval_required
+msgid "Whether this document requires approval based on current rules"
+msgstr ""
+
+#. module: approval_product
+#. odoo-python
+#: code:addons/approval_product/models/approval_request_line.py:0
+msgid ""
+"You can only modify product lines on your own approval requests.\n"
+"\n"
+"Request: %(name)s\n"
+"Owner: %(owner)s"
+msgstr ""
+
+#. module: approval_product
+#. odoo-python
+#: code:addons/approval_product/models/mixin_approval_document.py:0
+msgid "amount"
+msgstr "importe"
+
+#. module: approval_product
+#. odoo-python
+#: code:addons/approval_product/models/mixin_approval_document.py:0
+msgid "credit/debit policy"
+msgstr "política de crédito/débito"
+
+#. module: approval_product
+#. odoo-python
+#: code:addons/approval_product/models/mixin_approval_document.py:0
+msgid "partner"
+msgstr "contacto"
+
+#. module: approval_product
+#. odoo-python
+#: code:addons/approval_product/models/mixin_approval_document.py:0
+msgid "product"
+msgstr "producto"
+
+#. module: approval_product
+#. odoo-python
+#: code:addons/approval_product/models/mixin_approval_document.py:0
+msgid "product category"
+msgstr "categoría de producto"
+
+#. module: approval_product
+#. odoo-python
+#: code:addons/approval_product/models/mixin_approval_document.py:0
+msgid "• %(category)s — failed on: %(criteria)s"
+msgstr ""

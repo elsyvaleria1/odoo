@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="resource_relation_view_list" model="ir.ui.view">
+        <field name="name">resource.relation.list</field>
+        <field name="model">resource.relation</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="parent_id" />
+                <field name="relation_type" />
+                <field name="member_id" />
+                <field name="date_start" />
+                <field name="date_end" />
+                <field name="company_id" groups="base.group_multi_company" />
+            </list>
+        </field>
+    </record>
+
+    <record id="resource_relation_view_form" model="ir.ui.view">
+        <field name="name">resource.relation.form</field>
+        <field name="model">resource.relation</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <field name="active" invisible="1" />
+                    <widget
+                        name="web_ribbon"
+                        title="Archived"
+                        invisible="active"
+                        bg_color="text-bg-danger" />
+                    <group>
+                        <group>
+                            <field name="parent_id" />
+                            <field name="relation_type" />
+                            <field name="member_id" />
+                        </group>
+                        <group>
+                            <field name="date_start" />
+                            <field name="date_end" />
+                            <field
+                                name="company_id"
+                                groups="base.group_multi_company" />
+                        </group>
+                    </group>
+                    <field name="note" placeholder="Purpose of this relationship" />
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="resource_relation_view_search" model="ir.ui.view">
+        <field name="name">resource.relation.search</field>
+        <field name="model">resource.relation</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="parent_id" />
+                <field name="member_id" />
+                <filter
+                    name="contains"
+                    string="Containment"
+                    domain="[('relation_type', '=', 'contains')]" />
+                <filter
+                    name="dependencies"
+                    string="Dependencies"
+                    domain="[('relation_type', '=', 'depends_on')]" />
+                <separator />
+                <filter
+                    name="archived"
+                    string="Archived"
+                    domain="[('active', '=', False)]" />
+                <group>
+                    <filter
+                        name="group_resource"
+                        string="Resource"
+                        context="{'group_by': 'parent_id'}" />
+                    <filter
+                        name="group_type"
+                        string="Relation"
+                        context="{'group_by': 'relation_type'}" />
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="resource_relation_action" model="ir.actions.act_window">
+        <field name="name">Resource Relations</field>
+        <field name="res_model">resource.relation</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="resource_relation_view_search" />
+    </record>
+
+</odoo>

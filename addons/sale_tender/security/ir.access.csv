@@ -1,0 +1,11 @@
+id,name,model_id/id,group_id/id,kind,operation,reach,anchor,domain
+access_sale_tender,sale.tender: a salesperson's own or unassigned tenders,model_sale_tender,sale.group_sale_salesman,permission,crud,own,user_or_unset,
+access_sale_tender_readonly,sale.tender,model_sale_tender,sale.group_sale_readonly,permission,r,,,
+sale_tender_comp_rule,Sale Tender multi-company,model_sale_tender,base.group_everyone,guard,crud,company,,
+access_sale_tender_invite,wizard.sale.order.invite.buyer,model_wizard_sale_order_invite_buyer,sale.group_sale_salesman,permission,crud,,,
+access_sale_tender_warning,wizard.sale.order.confirm.open.rival,model_wizard_sale_order_confirm_open_rival,sale.group_sale_salesman,permission,crud,,,
+access_sale_tender_line,sale.tender.line: the needs of a salesperson's own or unassigned tenders,model_sale_tender_line,sale.group_sale_salesman,permission,crud,own,user_or_unset,
+access_sale_tender_line_readonly,sale.tender.line,model_sale_tender_line,sale.group_sale_readonly,permission,r,,,
+sale_tender_line_comp_rule,Sale Tender needs multi-company,model_sale_tender_line,base.group_everyone,guard,crud,company,,
+sale_tender_all,sale.tender: all documents,model_sale_tender,sale.group_sale_salesman_all_leads,permission,crud,,,
+sale_tender_line_all,sale.tender.line: all documents,model_sale_tender_line,sale.group_sale_salesman_all_leads,permission,crud,,,

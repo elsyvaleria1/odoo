@@ -1,0 +1,67 @@
+/** @odoo-module native */
+import { makeContext } from "@web/core/context";
+import { Domain } from "@web/core/domain";
+import { now, serializeDate, serializeDateTime, startOf } from "@web/core/l10n/dates";
+import { SearchModel } from "@web/search/search_model";
+
+export class ForecastSearchModel extends SearchModel {
+    exportState() {
+        const state = super.exportState();
+        state.forecast = {
+            forecastStart: this.forecastStart,
+        };
+        return state;
+    }
+
+    getSearchItemDomain(activeItem) {
+        let domain = super.getSearchItemDomain(activeItem);
+        const { searchItemId } = activeItem;
+        const searchItem = this.searchItems[searchItemId];
+        const context = makeContext([searchItem.context || {}]);
+        if (context.forecast_filter) {
+            const forecastField = this.globalContext.forecast_field;
+            const forecastStart = this._getForecastStart(forecastField);
+            const forecastDomain = [
+                "|",
+                [forecastField, "=", false],
+                [forecastField, ">=", forecastStart],
+            ];
+            domain = Domain.and([domain, forecastDomain]);
+        }
+        return domain;
+    }
+
+    _getForecastStart(forecastField) {
+        if (!this.forecastStart) {
+            const { type } = this.searchViewFields[forecastField];
+            const groupBy = this.groupBy;
+            const firstForecastGroupBy = groupBy.find((gb) =>
+                gb.includes(forecastField),
+            );
+            let granularity = "month";
+            if (firstForecastGroupBy) {
+                granularity = firstForecastGroupBy.split(":")[1] || "month";
+            } else if (groupBy.length) {
+                granularity = "day";
+            }
+            const startDateTime = startOf(now(), granularity);
+            this.forecastStart =
+                type === "datetime"
+                    ? serializeDateTime(startDateTime)
+                    : serializeDate(startDateTime);
+        }
+        return this.forecastStart;
+    }
+
+    _importState(state) {
+        super._importState(...arguments);
+        if (state.forecast) {
+            this.forecastStart = state.forecast.forecastStart;
+        }
+    }
+
+    _reset() {
+        super._reset();
+        this.forecastStart = null;
+    }
+}

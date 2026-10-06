@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_device_device_search_inherit_access" model="ir.ui.view">
+        <field name="name">device.device.search.inherit.access</field>
+        <field name="model">device.device</field>
+        <field name="inherit_id" ref="device.view_device_device_search" />
+        <field name="arch" type="xml">
+            <xpath expr="//filter[@name='filter_error']" position="after">
+                <separator />
+                <filter
+                    name="filter_access_devices"
+                    string="Access Control"
+                    domain="[('is_access_device', '=', True)]" />
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

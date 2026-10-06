@@ -1,0 +1,403 @@
+#!/usr/bin/env python3
+import argparse
+import contextlib
+import logging.config
+import os
+import sys
+import time
+from collections.abc import Sequence
+from pathlib import Path
+from typing import Any
+from unittest import SkipTest
+
+import odoo.tests.loader
+from odoo import api
+from odoo.libs.debug_log import DebugLog
+from odoo.libs.iteration import topological_sort, unique
+from odoo.libs.worker_thread import current_worker_thread
+from odoo.logutils import init_logger
+from odoo.modules.registry import Registry
+from odoo.service.db.lifecycle import _create_faketime_now_function
+from odoo.tests import standalone_tests
+from odoo.tools import config, profiler
+
+_logger = logging.getLogger("odoo.tests.module_operations")
+_debug = DebugLog(__name__)
+
+BLACKLIST = {
+    "auth_ldap",
+    "pos_blackbox_be",
+}
+IGNORE = ("hw_", "theme_", "l10n_", "test_")
+
+
+def install(db_name: str, module_id: int, module_name: str) -> None:
+    with (
+        Registry(db_name).cursor() as cr,
+        _debug.perf("test.modules.install", cr=cr, module=module_name, db=db_name),
+    ):
+        env = api.Environment(cr, api.SUPERUSER_ID, {})
+        module = env["ir.module.module"].browse(module_id)
+        module.button_immediate_install()
+    _logger.info("%s installed", module_name)
+
+
+def uninstall(db_name: str, module_id: int, module_name: str) -> None:
+    with (
+        Registry(db_name).cursor() as cr,
+        _debug.perf("test.modules.uninstall", cr=cr, module=module_name, db=db_name),
+    ):
+        env = api.Environment(cr, api.SUPERUSER_ID, {})
+        module = env["ir.module.module"].browse(module_id)
+        module.button_immediate_uninstall()
+    _logger.info("%s uninstalled", module_name)
+
+
+def cycle(db_name: str, module_id: int, module_name: str) -> None:
+    _debug.pipeline("test.modules.cycle", module=module_name, stage="install")
+    install(db_name, module_id, module_name)
+    _debug.pipeline("test.modules.cycle", module=module_name, stage="uninstall")
+    uninstall(db_name, module_id, module_name)
+    _debug.pipeline("test.modules.cycle", module=module_name, stage="reinstall")
+    install(db_name, module_id, module_name)
+
+
+def addons_path(value: str) -> Any:
+    return config._parse_addons_path(
+        config.options_index["addons_path"], "--addons-path", value
+    )
+
+
+def _add_global_options(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument(
+        "--database",
+        "-d",
+        type=str,
+        required=True,
+        help="The database to test (/ run the command on)",
+    )
+    parser.add_argument(
+        "--data-dir",
+        "-D",
+        dest="data_dir",
+        type=str,
+        help="Directory where to store Odoo data",
+    )
+    parser.add_argument(
+        "--skip",
+        "-s",
+        type=str,
+        help="Comma-separated list of modules to skip (they will only be installed)",
+    )
+    parser.add_argument(
+        "--resume-at",
+        "-r",
+        type=str,
+        help="Skip modules (only install) up to the specified one in topological order",
+    )
+    parser.add_argument(
+        "--addons-path",
+        "-p",
+        type=addons_path,
+        help="Comma-separated list of paths to directories containing extra Odoo modules",
+    )
+
+
+def _add_cycle_command(cmds: argparse._SubParsersAction) -> None:
+    cycle_cmd = cmds.add_parser(
+        "cycle",
+        help="Full install/uninstall/reinstall cycle.",
+        description="Installs, uninstalls, and reinstalls all modules which are"
+        " not skipped or blacklisted, the database should have"
+        " 'base' installed (only).",
+    )
+    cycle_cmd.set_defaults(func=test_cycle)
+
+
+def _add_uninstall_command(
+    cmds: argparse._SubParsersAction, fake_commands: argparse._MutuallyExclusiveGroup
+) -> None:
+    fake_commands.add_argument(
+        "--uninstall",
+        "-U",
+        action=UninstallAction,
+        help="Comma-separated list of modules to uninstall/reinstall. Prefer the 'uninstall' subcommand.",
+    )
+    uninstall_cmd = cmds.add_parser(
+        "uninstall",
+        help="Uninstallation",
+        description="Uninstalls then (by default) reinstalls every specified "
+        "module. Modules which are not installed before running "
+        "are ignored.",
+    )
+    uninstall_cmd.set_defaults(func=test_uninstall)
+    uninstall_cmd.add_argument(
+        "uninstall",
+        help="comma-separated list of modules to uninstall/reinstall",
+    )
+    uninstall_cmd.add_argument(
+        "-n",
+        "--no-reinstall",
+        dest="reinstall",
+        action="store_false",
+        help="Skips reinstalling the module(s) after uninstalling.",
+    )
+
+
+def _add_standalone_command(
+    cmds: argparse._SubParsersAction, fake_commands: argparse._MutuallyExclusiveGroup
+) -> None:
+    fake_commands.add_argument(
+        "--standalone",
+        action=StandaloneAction,
+        help="Launch standalone scripts tagged with @standalone. Accepts a list of "
+        "module names or tags separated by commas. 'all' will run all available scripts. Prefer the 'standalone' subcommand.",
+    )
+    standalone_cmd = cmds.add_parser(
+        "standalone", help="Run scripts tagged with @standalone"
+    )
+    standalone_cmd.set_defaults(func=test_standalone)
+    standalone_cmd.add_argument(
+        "standalone",
+        help="List of module names or tags separated by commas, 'all' will run all available scripts.",
+    )
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description="Script for testing the install / uninstall / reinstall"
+        " cycle of Odoo modules. Prefer the 'cycle' subcommand to"
+        " running this without anything specified (this is the"
+        " default behaviour)."
+    )
+    parser.set_defaults(
+        func=test_cycle,
+        reinstall=True,
+    )
+    fake_commands = parser.add_mutually_exclusive_group()
+
+    _add_global_options(parser)
+
+    cmds = parser.add_subparsers(title="subcommands", metavar="")
+    _add_cycle_command(cmds)
+    _add_uninstall_command(cmds, fake_commands)
+    _add_standalone_command(cmds, fake_commands)
+
+    return parser.parse_args()
+
+
+def test_cycle(args: argparse.Namespace) -> None:
+    with Registry(args.database).cursor() as cr:
+        env = odoo.api.Environment(cr, odoo.api.SUPERUSER_ID, {})
+
+        def valid(module: Any) -> bool:
+            return not (
+                module.name in BLACKLIST
+                or module.name.startswith(IGNORE)
+                or module.state in ("installed", "uninstallable")
+            )
+
+        modules = env["ir.module.module"].search([]).filtered(valid)
+
+        modules = modules.browse(
+            topological_sort(
+                {module.id: module.dependencies_id.linked_id.ids for module in modules}
+            )
+        )
+        modules_todo = [(module.id, module.name) for module in modules]
+
+    resume = args.resume_at
+    if resume and resume not in {name for _, name in modules_todo}:
+        _debug.logic("test.modules.resume_unknown", module=resume)
+        _logger.error(
+            "unknown --resume-at module: %s; known modules: %s",
+            resume,
+            ", ".join(sorted(name for _, name in modules_todo)) or "(none)",
+        )
+        sys.exit(1)
+    skip = set(args.skip.split(",")) if args.skip else set()
+    _debug.pipeline(
+        "test.modules.cycle_plan",
+        db=args.database,
+        modules=len(modules_todo),
+        skip=len(skip),
+        resume=resume,
+    )
+    for module_id, module_name in modules_todo:
+        if module_name == resume:
+            resume = None
+
+        if resume or module_name in skip:
+            _debug.logic(
+                "test.modules.cycle_decision",
+                module=module_name,
+                action="install",
+                reason="resume" if resume else "skip",
+            )
+            install(args.database, module_id, module_name)
+        else:
+            _debug.logic(
+                "test.modules.cycle_decision", module=module_name, action="cycle"
+            )
+            cycle(args.database, module_id, module_name)
+
+
+def test_uninstall(args: argparse.Namespace) -> None:
+    for module_name in args.uninstall.split(","):
+        with Registry(args.database).cursor() as cr:
+            env = odoo.api.Environment(cr, odoo.api.SUPERUSER_ID, {})
+            module = env["ir.module.module"].search([("name", "=", module_name)])
+            module_id, module_state = module.id, module.state
+
+        _debug.logic(
+            "test.modules.uninstall_state",
+            module=module_name,
+            state=module_state or None,
+            reinstall=args.reinstall,
+        )
+        if module_state == "installed":
+            uninstall(args.database, module_id, module_name)
+            if args.reinstall:
+                install(args.database, module_id, module_name)
+        elif module_state:
+            _logger.warning("Module %r is not installed", module_name)
+        else:
+            _logger.warning("Module %r does not exist", module_name)
+
+
+def test_standalone(args: argparse.Namespace) -> None:
+    registry = Registry(args.database)
+    for module_name in registry.loaded_modules:
+        odoo.tests.loader.get_test_modules(module_name)
+
+    requested = [tag.strip() for tag in args.standalone.split(",") if tag.strip()]
+    _debug.pipeline(
+        "test.modules.standalone_plan",
+        db=args.database,
+        loaded_modules=len(registry.loaded_modules),
+        requested=requested,
+        registered=len(standalone_tests["all"]),
+    )
+    if unknown := [tag for tag in requested if tag not in standalone_tests]:
+        _debug.logic("test.modules.standalone_unknown", unknown=unknown)
+        _logger.error(
+            "unknown standalone tag(s): %s; registered: %s",
+            ", ".join(sorted(unknown)),
+            ", ".join(sorted(standalone_tests)) or "(none)",
+        )
+        sys.exit(1)
+
+    funcs = list(unique(func for tag in requested for func in standalone_tests[tag]))
+
+    start_time = time.monotonic()
+    failures = 0
+    skipped = 0
+    for index, func in enumerate(funcs, start=1):
+        _logger.info(
+            "Executing standalone script: %s (%d / %d)",
+            func.__name__,
+            index,
+            len(funcs),
+        )
+        try:
+            with (
+                _debug.perf(
+                    "test.modules.standalone", func=func.__qualname__, index=index
+                ),
+                Registry(args.database).cursor() as cr,
+            ):
+                env = odoo.api.Environment(cr, odoo.api.SUPERUSER_ID, {})
+                func(env)
+        except SkipTest as exc:
+            skipped += 1
+            _logger.info("Standalone script %s skipped: %s", func.__name__, exc)
+        except Exception:
+            failures += 1
+            _logger.exception("Standalone script %s failed", func.__name__)
+
+    _logger.info(
+        "%d standalone scripts executed in %.2fs (%d skipped, %d failed)",
+        len(funcs),
+        time.monotonic() - start_time,
+        skipped,
+        failures,
+    )
+    if failures:
+        sys.exit(1)
+
+
+class _SelectsCommand(argparse.Action):
+    command: Any = None
+
+    def __call__(
+        self,
+        parser: argparse.ArgumentParser,
+        namespace: argparse.Namespace,
+        values: str | Sequence[Any] | None,
+        option_string: str | None = None,
+    ) -> None:
+        namespace.func = self.command
+        setattr(namespace, self.dest, values)
+
+
+class UninstallAction(_SelectsCommand):
+    command = staticmethod(test_uninstall)
+
+
+class StandaloneAction(_SelectsCommand):
+    command = staticmethod(test_standalone)
+
+
+if __name__ == "__main__":
+    sys.path.append(str(Path(__file__, "../../../").resolve()))
+
+    args = parse_args()
+
+    config["db_name"] = current_worker_thread().dbname = args.database
+    if args.data_dir:
+        config["data_dir"] = args.data_dir
+    if args.addons_path:
+        config["addons_path"] = args.addons_path + config["addons_path"]
+    if args.addons_path or args.data_dir:
+        odoo.modules.module.initialize_sys_path()
+
+    init_logger()
+    logging.config.dictConfig(
+        {
+            "version": 1,
+            "incremental": True,
+            "disable_existing_loggers": False,
+            "loggers": {
+                "odoo.modules.loading": {"level": "CRITICAL"},
+                "odoo.db": {"level": "CRITICAL"},
+                "odoo.models.unlink": {"level": "WARNING"},
+                "odoo.addons.base.models.ir_model": {"level": "WARNING"},
+            },
+        }
+    )
+
+    _debug.lifecycle(
+        "test.modules.main",
+        command=args.func.__name__,
+        db=args.database,
+        addons_path=bool(args.addons_path),
+        data_dir=bool(args.data_dir),
+        profile=bool(os.environ.get("ODOO_PROFILE_PRELOAD")),
+    )
+    prof: contextlib.AbstractContextManager = contextlib.nullcontext()
+    if os.environ.get("ODOO_PROFILE_PRELOAD"):
+        interval = float(os.environ.get("ODOO_PROFILE_PRELOAD_INTERVAL", "0.1"))
+        collectors: list[str | profiler.Collector] = [
+            profiler.PeriodicCollector(interval=interval)
+        ]
+        if os.environ.get("ODOO_PROFILE_PRELOAD_SQL"):
+            collectors.append("sql")
+        prof = profiler.Profiler(db=args.database, collectors=collectors)
+    _create_faketime_now_function(args.database)
+
+    try:
+        with prof:
+            args.func(args)
+    except Exception:
+        _logger.exception("%s tests failed", args.func.__name__[5:])
+        sys.exit(1)

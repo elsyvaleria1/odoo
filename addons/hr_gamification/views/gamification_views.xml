@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="hr_badge_form_view" model="ir.ui.view">
+        <field name="name">gamification.badge.form.inherit</field>
+        <field name="model">gamification.badge</field>
+        <field name="inherit_id" ref="gamification.badge_form_view" />
+        <field name="arch" type="xml">
+            <div name="button_box" position="inside">
+                <button
+                    name="get_granted_employees"
+                    type="object"
+                    icon="fa-user"
+                    invisible="granted_count == 0"
+                    class="oe_stat_button">
+                    <field
+                        name="granted_employees_count"
+                        string="Granted"
+                        widget="statinfo" />
+                </button>
+            </div>
+        </field>
+    </record>
+
+    <record id="view_current_badge_form" model="ir.ui.view">
+        <field name="name">gamification.badge.user.form</field>
+        <field name="model">gamification.badge.user</field>
+        <field name="arch" type="xml">
+            <form>
+                <div class="row flex-column-reverse flex-lg-row">
+                    <div class="col-12 col-lg-9">
+                        <div class="mb-2">
+                            <h1>
+                                <field
+                                    name="badge_id"
+                                    string="Badge Name"
+                                    options="{'no_open': True}"
+                                    readonly="1"
+                                    class="oe_inline" />
+                            </h1>
+                            <p class="d-flex align-items-center"> Granted by
+                                <field name="create_uid" widget="many2one_avatar_user" options="{'no_open': True}" class="m-0 mx-1" /> on <field name="create_date" widget="datetime" options="{'show_time': false}" class="m-0 mx-1" />
+                            </p>
+                        </div>
+                    </div>
+                    <div
+                        class="col-12 col-lg-3 d-flex justify-content-center align-items-start">
+                        <field
+                            name="badge_id"
+                            widget="image"
+                            options="{'preview_image': 'image_1024'}"
+                            class="oe_avatar" />
+                    </div>
+                </div>
+                <div class="row">
+                    <field
+                        name="comment"
+                        string="Description"
+                        placeholder="Describe what they did and why it matters (will be public)"
+                        readonly="not has_edit_delete_access"
+                        rows="5" />
+                </div>
+                <footer>
+                    <div class="d-flex justify-content-between w-100">
+                        <div>
+                            <button
+                                special="save"
+                                string="Save"
+                                invisible="not has_edit_delete_access"
+                                class="btn-primary me-1"
+                                data-hotkey="q" />
+                            <button
+                                special="cancel"
+                                string="Discard"
+                                class="btn-secondary"
+                                data-hotkey="x" />
+                        </div>
+                        <button
+                            name="unlink"
+                            type="object"
+                            string="Delete"
+                            confirm="Are you sure you want to delete this granted badge?"
+                            invisible="not has_edit_delete_access"
+                            class="btn-danger w-fit" />
+                    </div>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+</odoo>

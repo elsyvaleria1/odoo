@@ -1,0 +1,17 @@
+.product-card {
+    border: $border-width solid o-token(--border-color, $border-color);
+    transition: border-color var(--o-duration-normal, 0.2s) ease-in-out;
+
+    img {
+        aspect-ratio: 1;
+        object-fit: contain;
+    }
+
+    &:hover {
+        border-color: o-token(--primary, $primary);
+    }
+}
+
+.product-card.selected {
+    border-color: o-token(--primary, $primary);
+}

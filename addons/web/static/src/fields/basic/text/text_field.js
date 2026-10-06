@@ -1,0 +1,135 @@
+// @ts-check
+/** @odoo-module native */
+
+import { t } from "@odoo/owl";
+import { _t } from "@web/core/translation";
+import { useAutoresize } from "@web/core/utils/dom/autoresize";
+import { elementRef } from "@web/core/utils/element_ref";
+import { useSpellCheck } from "@web/core/utils/hooks";
+import { registerField } from "@web/fields/_registry";
+import {
+    archAttribute,
+    dynamicPlaceholderDependency,
+    dynamicPlaceholderOptions,
+    placeholderFieldOption,
+} from "@web/fields/field_options";
+import { parseDimensionAttr } from "@web/fields/field_utils";
+import { useInputField } from "@web/fields/input_field_hook";
+import { standardFieldProps } from "@web/fields/standard_field_props";
+import { TranslationButton } from "@web/fields/translation_button";
+
+import { TextInputFieldBase } from "../text_input_field_base.js";
+
+export const textFieldProps = {
+    ...standardFieldProps,
+    lineBreaks: t.boolean().optional(true),
+    placeholder: t.string().optional(),
+    dynamicPlaceholder: t.boolean().optional(false),
+    dynamicPlaceholderModelReferenceField: t.string().optional(),
+    rowCount: t.number().optional(2),
+};
+
+export class TextField extends TextInputFieldBase {
+    static template = "web.TextField";
+    static components = {
+        TranslationButton,
+    };
+    static props = textFieldProps;
+
+    /** @type {import("@odoo/owl").Ref<HTMLTextAreaElement>} */
+    textareaRef;
+    /** @type {import("@odoo/owl").Ref<HTMLElement>} */
+    divRef;
+
+    /** @returns {HTMLTextAreaElement | null} */
+    get inputEl() {
+        return /** @type {HTMLTextAreaElement | null} */ (this.textareaRef.el);
+    }
+
+    setup() {
+        this.divRef = elementRef();
+        this.textareaRef = elementRef();
+        this.setupDynamicPlaceholder(this.textareaRef);
+        useInputField({
+            getValue: () => this.field.value || "",
+            ref: this.textareaRef,
+            parse: (v) => this.parse(v),
+            preventLineBreaks: !this.props.lineBreaks,
+        });
+        useSpellCheck({ ref: this.textareaRef });
+
+        useAutoresize(/** @type {any} */ (this.textareaRef), {
+            minimumHeight: this.minimumHeight,
+        });
+    }
+
+    /** @returns {number} */
+    get minimumHeight() {
+        return this.props.lineBreaks ? 50 : 0;
+    }
+    /** @returns {number} */
+    get rowCount() {
+        return this.props.lineBreaks ? this.props.rowCount : 1;
+    }
+}
+
+/** @type {import("registries").FieldsRegistryItemShape} */
+export const textField = {
+    component: TextField,
+    displayName: _t("Multiline Text"),
+    supportedAttributes: [
+        archAttribute("rows", _t("Rows"), {
+            type: "number",
+            help: _t(
+                "Height of the textarea, in rows. The list variant caps it at one.",
+            ),
+        }),
+    ],
+    supportedTypes: ["html", "text", "char"],
+    supportedOptions: [
+        {
+            label: _t("Enable line breaks"),
+            name: "line_breaks",
+            type: "boolean",
+            default: true,
+        },
+        ...dynamicPlaceholderOptions(),
+        placeholderFieldOption(["char", "text"]),
+    ],
+    fieldDependencies: dynamicPlaceholderDependency(),
+    extractProps: ({ attrs, options, placeholder }) => ({
+        placeholder,
+        dynamicPlaceholder: options.dynamic_placeholder || false,
+        dynamicPlaceholderModelReferenceField:
+            options.dynamic_placeholder_model_reference_field || "",
+        rowCount: parseDimensionAttr(attrs.rows),
+        lineBreaks:
+            options.line_breaks !== undefined ? Boolean(options.line_breaks) : true,
+    }),
+};
+
+registerField("text", textField);
+
+export class ListTextField extends TextField {
+    static props = {
+        ...TextField.props,
+        rowCount: TextField.props.rowCount.optional(1),
+    };
+
+    // @ts-ignore — narrower return type is intentional for list view
+    /** @returns {number} */
+    get minimumHeight() {
+        return 0;
+    }
+    /** @returns {number} */
+    get rowCount() {
+        return this.props.rowCount;
+    }
+}
+
+const listTextField = {
+    ...textField,
+    component: ListTextField,
+};
+
+registerField({ name: "text", view: "list" }, listTextField);

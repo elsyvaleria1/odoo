@@ -1,0 +1,5 @@
+// Every class that makes an element an icon: the FA4 bases old markup still
+// carries and FA7's style classes new markup carries instead of `fa`. Match an
+// icon with `:is(#{$o-icon-selector})`, never the FA4 base class alone. Held
+// equal to iconClasses in @web/core/utils/icons by web's test_icon_classes.
+$o-icon-selector: ".fa, .fab, .fad, .far, .oi, .fa-solid, .fa-regular, .fa-brands";

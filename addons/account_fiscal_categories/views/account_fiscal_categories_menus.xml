@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <menuitem
+        id="menu_action_account_fiscal_category_list"
+        parent="account.menu_account_accounting"
+        action="action_account_fiscal_category_list"
+        sequence="14"
+        groups="base.group_no_one" />
+
+    <menuitem
+        id="menu_action_account_fiscal_report"
+        name="Fiscal Report"
+        parent="account.menu_account_reports_taxes"
+        action="action_account_fiscal_report"
+        sequence="40"
+        groups="account.group_account_readonly" />
+
+</odoo>

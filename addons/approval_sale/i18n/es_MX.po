@@ -1,0 +1,968 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* approval_sale
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-09-23 00:56+0000\n"
+"PO-Revision-Date: 2026-09-23 00:56+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: approval_sale
+#: model_terms:ir.ui.view,arch_db:approval_sale.view_approval_category_form_sale
+msgid "0 = no limit"
+msgstr ""
+
+#. module: approval_sale
+#: model_terms:ir.ui.view,arch_db:approval_sale.view_product_category_form_sale_approval
+msgid ""
+"<strong>Approval Required:</strong> This category is flagged for sales order\n"
+"                    approval. All sales orders containing products from this category will require\n"
+"                    approval through the configured approval workflow."
+msgstr ""
+
+#. module: approval_sale
+#: model_terms:ir.ui.view,arch_db:approval_sale.view_partner_form_sale_approval
+msgid ""
+"<strong>Approval Required:</strong> This customer is flagged for sales order\n"
+"                    approval. All sales orders for this customer will require approval through\n"
+"                    the configured approval workflow."
+msgstr ""
+
+#. module: approval_sale
+#: model_terms:ir.ui.view,arch_db:approval_sale.view_product_template_form_sale_approval
+msgid ""
+"<strong>Approval Required:</strong> This product is flagged for sales order\n"
+"                    approval. All sales orders containing this product will require approval\n"
+"                    through the configured approval workflow."
+msgstr ""
+
+#. module: approval_sale
+#: model_terms:ir.ui.view,arch_db:approval_sale.view_approval_category_form_sale
+msgid ""
+"<strong>Creation Flow (Approval → SO)</strong><br/> Approval\n"
+"                                request creates sale order when approved. Ensure \"Has Product\" is\n"
+"                                set to Required."
+msgstr ""
+
+#. module: approval_sale
+#: model_terms:ir.ui.view,arch_db:approval_sale.view_approval_category_form_sale
+msgid ""
+"<strong>Mixin Flow (SO → Approval)</strong><br/> Sale orders\n"
+"                                trigger approval automatically based on rules below."
+msgstr ""
+
+#. module: approval_sale
+#: model:ir.model.fields,help:approval_sale.field_sale_order__locked
+msgid "A locked document cannot be modified."
+msgstr "No puede modificar las órdenes bloqueadas."
+
+#. module: approval_sale
+#: model_terms:ir.ui.view,arch_db:approval_sale.view_product_category_form_sale_approval
+msgid ""
+"Add special instructions or notes for approvers regarding products in this category...\n"
+"\n"
+"Example: 'High-value products - verify customer payment terms and credit limit before approving'"
+msgstr ""
+
+#. module: approval_sale
+#: model_terms:ir.ui.view,arch_db:approval_sale.view_partner_form_sale_approval
+msgid ""
+"Add special instructions or notes for approvers regarding sales orders for this customer...\n"
+"\n"
+"Example: 'New customer - verify credit limit and payment terms before approving first order'"
+msgstr ""
+
+#. module: approval_sale
+#: model_terms:ir.ui.view,arch_db:approval_sale.view_product_template_form_sale_approval
+msgid ""
+"Add special instructions or notes for approvers...\n"
+"\n"
+"Example: 'High-value item - verify customer credit before approving'"
+msgstr ""
+
+#. module: approval_sale
+#: model:ir.model.fields.selection,name:approval_sale.selection__res_company__so_validation_level__module_approval
+msgid "Advanced Approval Workflow"
+msgstr ""
+
+#. module: approval_sale
+#: model_terms:ir.ui.view,arch_db:approval_sale.view_sale_order_form_approval
+msgid "Approval"
+msgstr ""
+
+#. module: approval_sale
+#: model:ir.model,name:approval_sale.model_approval_category
+msgid "Approval Category"
+msgstr "Categoría de aprobación"
+
+#. module: approval_sale
+#: model:ir.model.fields,field_description:approval_sale.field_sale_order__date_approval_granted
+msgid "Approval Granted Date"
+msgstr ""
+
+#. module: approval_sale
+#: model_terms:ir.ui.view,arch_db:approval_sale.view_sale_order_form_approval
+msgid "Approval Information"
+msgstr ""
+
+#. module: approval_sale
+#: model_terms:ir.ui.view,arch_db:approval_sale.view_partner_form_sale_approval
+#: model_terms:ir.ui.view,arch_db:approval_sale.view_product_category_form_sale_approval
+#: model_terms:ir.ui.view,arch_db:approval_sale.view_product_template_form_sale_approval
+msgid "Approval Notes"
+msgstr ""
+
+#. module: approval_sale
+#: model:ir.model.fields,field_description:approval_sale.field_sale_order__approval_progress
+msgid "Approval Progress"
+msgstr ""
+
+#. module: approval_sale
+#: model:ir.model,name:approval_sale.model_approval_request
+#: model:ir.model.fields,field_description:approval_sale.field_sale_order__approval_request_id
+msgid "Approval Request"
+msgstr "Solicitud de aprobación"
+
+#. module: approval_sale
+#: model:ir.model.fields,field_description:approval_sale.field_sale_order_line__approval_request_line_id
+msgid "Approval Request Line"
+msgstr ""
+
+#. module: approval_sale
+#: model:ir.model.fields,field_description:approval_sale.field_sale_order__date_approval_requested
+msgid "Approval Requested Date"
+msgstr ""
+
+#. module: approval_sale
+#: model:ir.model.fields,field_description:approval_sale.field_sale_order__approval_required
+msgid "Approval Required"
+msgstr ""
+
+#. module: approval_sale
+#: model:ir.model.fields,field_description:approval_sale.field_sale_order__approval_state
+msgid "Approval Status"
+msgstr ""
+
+#. module: approval_sale
+#: model:ir.model.fields,field_description:approval_sale.field_approval_category__approval_type
+msgid "Approval Type"
+msgstr "Tipo de aprobación"
+
+#. module: approval_sale
+#: model:ir.ui.menu,name:approval_sale.menu_approval_category_sale
+msgid "Approval Types"
+msgstr "Tipos de aprobación"
+
+#. module: approval_sale
+#: model:approval.category,description:approval_sale.approval_category_sale_order
+msgid "Approval workflow for existing sale orders"
+msgstr ""
+
+#. module: approval_sale
+#: model:mail.message.subtype,name:approval_sale.mt_sale_approved
+msgid "Approved"
+msgstr ""
+
+#. module: approval_sale
+#: model:ir.model.fields,field_description:approval_sale.field_sale_order__approval_user_ids
+msgid "Approvers"
+msgstr ""
+
+#. module: approval_sale
+#: model_terms:ir.ui.view,arch_db:approval_sale.res_config_settings_view_form_approval_sale
+msgid "Automatically confirm sales orders when all approvals are granted"
+msgstr ""
+
+#. module: approval_sale
+#: model:ir.model.fields,help:approval_sale.field_res_company__so_auto_confirm_on_approval
+#: model:ir.model.fields,help:approval_sale.field_res_config_settings__so_auto_confirm_on_approval
+msgid ""
+"Automatically confirm sales orders when all required approvals are granted"
+msgstr ""
+
+#. module: approval_sale
+#: model:ir.model.fields.selection,name:approval_sale.selection__approval_category__so_approval_mode__amount
+msgid "Based on Amount"
+msgstr ""
+
+#. module: approval_sale
+#: model:ir.model.fields.selection,name:approval_sale.selection__approval_category__so_approval_mode__credit
+msgid "Based on Credit Limit"
+msgstr ""
+
+#. module: approval_sale
+#: model:ir.model.fields.selection,name:approval_sale.selection__approval_category__so_approval_mode__partner
+msgid "Based on Customer"
+msgstr ""
+
+#. module: approval_sale
+#: model:ir.model.fields.selection,name:approval_sale.selection__approval_category__so_approval_mode__product
+msgid "Based on Product Category"
+msgstr ""
+
+#. module: approval_sale
+#: model:ir.model.fields,field_description:approval_sale.field_sale_order__can_request_approval
+msgid "Can Request Approval"
+msgstr ""
+
+#. module: approval_sale
+#. odoo-python
+#: code:addons/approval_sale/models/sale_order_line.py:0
+msgid ""
+"Cannot add or remove lines while the order's approval is pending — approvers are deciding on the current values. Withdraw or refuse the approval first.\n"
+"\n"
+"Document: %(name)s"
+msgstr ""
+
+#. module: approval_sale
+#. odoo-python
+#: code:addons/approval_sale/models/sale_order_line.py:0
+msgid ""
+"Cannot modify %(fields)s on a line while the order's approval is pending — approvers are deciding on the current values. Withdraw or refuse the approval first.\n"
+"\n"
+"Document: %(name)s"
+msgstr ""
+
+#. module: approval_sale
+#: model_terms:ir.ui.view,arch_db:approval_sale.view_product_category_search_sale_approval
+msgid "Categories that require sales order approval"
+msgstr ""
+
+#. module: approval_sale
+#: model:ir.model.fields,help:approval_sale.field_approval_category__approval_type
+msgid ""
+"Category of approval for filtering and grouping purposes (e.g., 'purchase', "
+"'expense', 'vacation'). Used to organize and filter approval requests."
+msgstr ""
+
+#. module: approval_sale
+#: model:ir.model.fields,field_description:approval_sale.field_approval_category__check_credit_limit
+msgid "Check Customer Credit Limit"
+msgstr ""
+
+#. module: approval_sale
+#: model:ir.model.fields.selection,name:approval_sale.selection__approval_category__so_approval_mode__combined
+msgid "Combined Rules"
+msgstr ""
+
+#. module: approval_sale
+#: model:ir.model,name:approval_sale.model_res_company
+msgid "Companies"
+msgstr "Empresas"
+
+#. module: approval_sale
+#: model:ir.model.fields,field_description:approval_sale.field_res_config_settings__company_currency_id
+msgid "Company Currency"
+msgstr ""
+
+#. module: approval_sale
+#: model:ir.model,name:approval_sale.model_res_config_settings
+msgid "Config Settings"
+msgstr "Ajustes de configuración"
+
+#. module: approval_sale
+#: model_terms:ir.ui.view,arch_db:approval_sale.res_config_settings_view_form_approval_sale
+msgid "Configure Approval Categories"
+msgstr "Configurar categorías de aprobación"
+
+#. module: approval_sale
+#: model:ir.model,name:approval_sale.model_res_partner
+msgid "Contact"
+msgstr "Contacto"
+
+#. module: approval_sale
+#: model:ir.model.fields,field_description:approval_sale.field_approval_request__count_sale_order
+msgid "Count Sale Order"
+msgstr ""
+
+#. module: approval_sale
+#: model_terms:ir.ui.view,arch_db:approval_sale.view_approval_request_form_inherit_sale
+msgid "Create Sale Orders"
+msgstr "Crear órdenes de venta"
+
+#. module: approval_sale
+#: model:approval.category,description:approval_sale.approval_category_sale_request
+msgid "Create sale order from approval request"
+msgstr ""
+
+#. module: approval_sale
+#: model_terms:ir.actions.act_window,help:approval_sale.action_approval_category_sale
+msgid "Create your first sales approval type"
+msgstr ""
+
+#. module: approval_sale
+#: model:ir.model.fields,help:approval_sale.field_sale_order__approval_state
+msgid ""
+"Current approval status:\n"
+"        • new: Approval created but not submitted\n"
+"        • pending: Waiting for approvers\n"
+"        • approved: All required approvals obtained\n"
+"        • refused: Approval was refused (terminal)\n"
+"        • cancelled: Approval was retracted or expired (terminal)"
+msgstr ""
+
+#. module: approval_sale
+#. odoo-python
+#: code:addons/approval_sale/models/sale_order.py:0
+msgid "Customer"
+msgstr ""
+
+#. module: approval_sale
+#. odoo-python
+#: code:addons/approval_sale/models/approval_request.py:0
+msgid ""
+"Customer not specified for line with product %s. Please set a customer on "
+"the approval request or line."
+msgstr ""
+
+#. module: approval_sale
+#: model_terms:ir.ui.view,arch_db:approval_sale.view_res_partner_filter_sale_approval
+msgid "Customers that require sales order approval"
+msgstr ""
+
+#. module: approval_sale
+#: model:ir.model.fields,help:approval_sale.field_sale_order__date_approval_requested
+msgid "Date and time when approval was requested for this document"
+msgstr ""
+
+#. module: approval_sale
+#: model:ir.model.fields,help:approval_sale.field_sale_order__date_approval_granted
+msgid "Date and time when final approval was granted"
+msgstr ""
+
+#. module: approval_sale
+#: model_terms:ir.actions.act_window,help:approval_sale.action_approval_category_sale
+msgid ""
+"Define approval workflows for sale orders: <br><br>\n"
+"                <strong>Flow 1: Mixin\n"
+"                    Flow (SO → Approval)</strong><br> • Set Approval Type = \"Sale\"<br> • Leave\n"
+"                Target Model empty<br> • Configure approval triggers (amount, customer, etc.)<br>\n"
+"                • SOs trigger approval automatically based on rules <br><br>\n"
+"                <strong>Flow 2:\n"
+"                Creation Flow (Approval → SO)</strong><br> • Set Approval Type = \"Sale\"<br> •\n"
+"                Set Target Model = \"Sale Order\"<br> • Set \"Has Product\" = Required<br> •\n"
+"                Approval creates SO when approved"
+msgstr ""
+
+#. module: approval_sale
+#: model_terms:ir.ui.view,arch_db:approval_sale.res_config_settings_view_form_approval_sale
+msgid "Define how sales orders should be validated and approved"
+msgstr ""
+
+#. module: approval_sale
+#: model:ir.model.fields,help:approval_sale.field_res_company__so_validation_level
+#: model:ir.model.fields,help:approval_sale.field_res_config_settings__so_validation_level
+msgid ""
+"Define the validation workflow for sales orders:\n"
+"\n"
+"        • No Validation: All orders are auto-approved (not recommended)\n"
+"        • Manager Approval Above Threshold: Orders above threshold require manager approval\n"
+"        • Advanced Approval Workflow: Use sophisticated approval categories with custom rules\n"
+"\n"
+"        Recommendation: Use 'Advanced Approval Workflow' for best control\n"
+"        "
+msgstr ""
+
+#. module: approval_sale
+#: model:ir.model.fields,field_description:approval_sale.field_approval_category__display_name
+#: model:ir.model.fields,field_description:approval_sale.field_approval_request__display_name
+#: model:ir.model.fields,field_description:approval_sale.field_approval_request_line__display_name
+#: model:ir.model.fields,field_description:approval_sale.field_product_category__display_name
+#: model:ir.model.fields,field_description:approval_sale.field_product_template__display_name
+#: model:ir.model.fields,field_description:approval_sale.field_res_company__display_name
+#: model:ir.model.fields,field_description:approval_sale.field_res_config_settings__display_name
+#: model:ir.model.fields,field_description:approval_sale.field_res_partner__display_name
+#: model:ir.model.fields,field_description:approval_sale.field_sale_order__display_name
+#: model:ir.model.fields,field_description:approval_sale.field_sale_order_line__display_name
+msgid "Display Name"
+msgstr "Nombre a mostrar"
+
+#. module: approval_sale
+#: model:ir.model.fields,field_description:approval_sale.field_res_company__so_rate_limit_enabled
+#: model:ir.model.fields,field_description:approval_sale.field_res_config_settings__so_rate_limit_enabled
+msgid "Enable Sales Rate Limiter"
+msgstr ""
+
+#. module: approval_sale
+#: model_terms:ir.ui.view,arch_db:approval_sale.view_approval_category_form_sale
+msgid "Flow"
+msgstr ""
+
+#. module: approval_sale
+#: model_terms:ir.ui.view,arch_db:approval_sale.res_config_settings_view_form_approval_sale
+msgid ""
+"Fraud prevention: monitor for suspicious patterns of below-threshold orders"
+msgstr ""
+
+#. module: approval_sale
+#: model:ir.model.fields,field_description:approval_sale.field_approval_category__id
+#: model:ir.model.fields,field_description:approval_sale.field_approval_request__id
+#: model:ir.model.fields,field_description:approval_sale.field_approval_request_line__id
+#: model:ir.model.fields,field_description:approval_sale.field_product_category__id
+#: model:ir.model.fields,field_description:approval_sale.field_product_template__id
+#: model:ir.model.fields,field_description:approval_sale.field_res_company__id
+#: model:ir.model.fields,field_description:approval_sale.field_res_config_settings__id
+#: model:ir.model.fields,field_description:approval_sale.field_res_partner__id
+#: model:ir.model.fields,field_description:approval_sale.field_sale_order__id
+#: model:ir.model.fields,field_description:approval_sale.field_sale_order_line__id
+msgid "ID"
+msgstr ""
+
+#. module: approval_sale
+#: model:ir.model.fields,help:approval_sale.field_product_category__so_approval_required
+msgid ""
+"If checked, all sales orders containing products from this category will "
+"require approval regardless of amount or other settings. Use this for "
+"controlled products (high-value items, regulated products, etc.)."
+msgstr ""
+
+#. module: approval_sale
+#: model:ir.model.fields,help:approval_sale.field_product_product__so_approval_required
+#: model:ir.model.fields,help:approval_sale.field_product_template__so_approval_required
+msgid ""
+"If checked, all sales orders containing this product will require approval "
+"regardless of amount or other settings. Use this for controlled products "
+"(high-value items, regulated goods, etc.)."
+msgstr ""
+
+#. module: approval_sale
+#: model:ir.model.fields,help:approval_sale.field_res_bank__so_approval_required
+#: model:ir.model.fields,help:approval_sale.field_res_company__so_approval_required
+#: model:ir.model.fields,help:approval_sale.field_res_partner__so_approval_required
+#: model:ir.model.fields,help:approval_sale.field_res_users__so_approval_required
+msgid ""
+"If checked, all sales orders for this customer will require approval "
+"regardless of amount or other settings. Use this for new customers or high "
+"credit risk."
+msgstr ""
+
+#. module: approval_sale
+#: model:ir.model.fields,help:approval_sale.field_approval_category__check_credit_limit
+msgid ""
+"If checked, this category only applies when creating this SO would cause the customer's receivable balance to exceed their credit limit. Use this to control customer credit exposure.\n"
+"\n"
+"Superseded once `account_credit` is installed: it clears this flag on every category in its pre_init_hook and hides this field on the form, so credit-driven approval is owned by its credit policy from then on. The flag stays writable through the ORM and the trigger still works if you set it, but nothing in the interface will."
+msgstr ""
+
+#. module: approval_sale
+#: model_terms:ir.ui.view,arch_db:approval_sale.view_approval_category_form_sale
+msgid "Leave empty for all categories"
+msgstr ""
+
+#. module: approval_sale
+#: model_terms:ir.ui.view,arch_db:approval_sale.view_approval_category_form_sale
+msgid "Leave empty for all customers"
+msgstr ""
+
+#. module: approval_sale
+#: model_terms:ir.ui.view,arch_db:approval_sale.view_approval_category_form_sale
+msgid "Leave empty for all products"
+msgstr ""
+
+#. module: approval_sale
+#: model:ir.model.fields,help:approval_sale.field_sale_order__approval_request_id
+msgid ""
+"Link to the approval request for this document. Automatically created when "
+"approval is requested."
+msgstr ""
+
+#. module: approval_sale
+#: model:ir.model.fields,help:approval_sale.field_sale_order_line__approval_request_line_id
+msgid "Link to the approval request line that created this sale order line"
+msgstr ""
+
+#. module: approval_sale
+#: model:ir.model.fields,help:approval_sale.field_approval_request_line__sale_order_line_id
+msgid "Link to the sale order line created from this approval line"
+msgstr ""
+
+#. module: approval_sale
+#: model:ir.model.fields,field_description:approval_sale.field_sale_order__locked
+msgid "Locked"
+msgstr "Bloqueado"
+
+#. module: approval_sale
+#: model:ir.model.fields.selection,name:approval_sale.selection__res_company__so_validation_level__manager_amount
+msgid "Manager Approval Above Threshold"
+msgstr ""
+
+#. module: approval_sale
+#: model_terms:ir.ui.view,arch_db:approval_sale.res_config_settings_view_form_approval_sale
+msgid "Max Cumulative Amount"
+msgstr ""
+
+#. module: approval_sale
+#: model_terms:ir.ui.view,arch_db:approval_sale.res_config_settings_view_form_approval_sale
+msgid "Max Orders in Window"
+msgstr ""
+
+#. module: approval_sale
+#: model:ir.model.fields,help:approval_sale.field_res_company__so_rate_limit_amount
+#: model:ir.model.fields,help:approval_sale.field_res_config_settings__so_rate_limit_amount
+msgid ""
+"Maximum cumulative amount of below-threshold orders within the time window "
+"before approval is required."
+msgstr ""
+
+#. module: approval_sale
+#: model:ir.model.fields,help:approval_sale.field_res_company__so_rate_limit_count
+#: model:ir.model.fields,help:approval_sale.field_res_config_settings__so_rate_limit_count
+msgid ""
+"Maximum number of below-threshold orders a user can create within the time "
+"window before approval is required."
+msgstr ""
+
+#. module: approval_sale
+#: model:ir.model.fields.selection,name:approval_sale.selection__res_company__so_validation_level__none
+msgid "No Validation - Auto-approve All"
+msgstr ""
+
+#. module: approval_sale
+#. odoo-python
+#: code:addons/approval_sale/models/sale_order.py:0
+msgid "Notes for approvers"
+msgstr ""
+
+#. module: approval_sale
+#: model:ir.model.fields,field_description:approval_sale.field_approval_request_line__sale_order_id
+msgid "Order Reference"
+msgstr ""
+
+#. module: approval_sale
+#: model:ir.model.fields,help:approval_sale.field_res_company__so_validation_amount
+#: model:ir.model.fields,help:approval_sale.field_res_config_settings__so_validation_amount
+msgid ""
+"Orders with total >= this amount require approval (only for 'Manager "
+"Approval Above Threshold' level)"
+msgstr ""
+
+#. module: approval_sale
+#: model:ir.model.fields,field_description:approval_sale.field_sale_order__pending_approver_ids
+msgid "Pending Approvers"
+msgstr ""
+
+#. module: approval_sale
+#. odoo-python
+#: code:addons/approval_sale/wizards/res_config_settings.py:0
+#: model_terms:ir.ui.view,arch_db:approval_sale.res_config_settings_view_form_approval_sale
+msgid "Pending Sales Approvals"
+msgstr "Aprobaciones de venta pendientes"
+
+#. module: approval_sale
+#: model:ir.model.fields,help:approval_sale.field_sale_order__approval_progress
+msgid "Percentage of approvals completed (approved / total approvers)"
+msgstr ""
+
+#. module: approval_sale
+#: model:ir.model,name:approval_sale.model_product_template
+msgid "Product"
+msgstr "Producto"
+
+#. module: approval_sale
+#: model:ir.model,name:approval_sale.model_product_category
+msgid "Product Category"
+msgstr "Categoría del producto"
+
+#. module: approval_sale
+#. odoo-python
+#: code:addons/approval_sale/models/sale_order.py:0
+msgid "Products"
+msgstr ""
+
+#. module: approval_sale
+#: model_terms:ir.ui.view,arch_db:approval_sale.view_product_template_search_sale_approval
+msgid "Products that require sales order approval"
+msgstr ""
+
+#. module: approval_sale
+#. odoo-python
+#: code:addons/approval_sale/models/sale_order.py:0
+msgid "Qty"
+msgstr ""
+
+#. module: approval_sale
+#: model:mail.message.subtype,name:approval_sale.mt_sale_refused
+msgid "Refused"
+msgstr ""
+
+#. module: approval_sale
+#: model:ir.model,name:approval_sale.model_approval_request_line
+msgid "Request Line"
+msgstr "Línea de solicitud"
+
+#. module: approval_sale
+#: model_terms:ir.ui.view,arch_db:approval_sale.view_approval_category_form_sale
+msgid "Require approval by"
+msgstr ""
+
+#. module: approval_sale
+#: model_terms:ir.ui.view,arch_db:approval_sale.view_partner_form_sale_approval
+msgid "Requires Approval"
+msgstr ""
+
+#. module: approval_sale
+#: model_terms:ir.ui.view,arch_db:approval_sale.view_product_category_search_sale_approval
+#: model_terms:ir.ui.view,arch_db:approval_sale.view_product_template_search_sale_approval
+#: model_terms:ir.ui.view,arch_db:approval_sale.view_res_partner_filter_sale_approval
+msgid "Requires SO Approval"
+msgstr "Requiere aprobación de la orden de venta"
+
+#. module: approval_sale
+#: model_terms:ir.ui.view,arch_db:approval_sale.view_partner_list_sale_approval
+#: model_terms:ir.ui.view,arch_db:approval_sale.view_product_category_list_sale_approval
+#: model_terms:ir.ui.view,arch_db:approval_sale.view_product_template_list_sale_approval
+msgid "SO Approval"
+msgstr ""
+
+#. module: approval_sale
+#: model_terms:ir.ui.view,arch_db:approval_sale.view_product_category_search_sale_approval
+#: model_terms:ir.ui.view,arch_db:approval_sale.view_product_template_search_sale_approval
+msgid "SO Approval Required"
+msgstr "Requiere aprobación de la orden de venta"
+
+#. module: approval_sale
+#: model:ir.model.fields,field_description:approval_sale.field_res_company__so_rate_limit_amount
+#: model:ir.model.fields,field_description:approval_sale.field_res_config_settings__so_rate_limit_amount
+msgid "SO Max Cumulative Amount Below Threshold"
+msgstr ""
+
+#. module: approval_sale
+#: model:ir.model.fields,field_description:approval_sale.field_res_company__so_rate_limit_count
+#: model:ir.model.fields,field_description:approval_sale.field_res_config_settings__so_rate_limit_count
+msgid "SO Max Orders Below Threshold"
+msgstr ""
+
+#. module: approval_sale
+#: model:ir.model.fields,field_description:approval_sale.field_res_company__so_rate_limit_hours
+#: model:ir.model.fields,field_description:approval_sale.field_res_config_settings__so_rate_limit_hours
+msgid "SO Rate Limit Time Window (Hours)"
+msgstr ""
+
+#. module: approval_sale
+#: model:ir.model.fields.selection,name:approval_sale.selection__approval_category__approval_type__sale
+msgid "Sale"
+msgstr ""
+
+#. module: approval_sale
+#: model:ir.model,name:approval_sale.model_sale_order
+#: model:ir.model.fields.selection,name:approval_sale.selection__approval_category__target_model__sale_order
+msgid "Sale Order"
+msgstr "Orden de venta"
+
+#. module: approval_sale
+#: model:approval.category,name:approval_sale.approval_category_sale_order
+msgid "Sale Order Approval"
+msgstr ""
+
+#. module: approval_sale
+#: model:ir.model.fields,field_description:approval_sale.field_approval_request_line__sale_order_line_id
+msgid "Sale Order Line"
+msgstr ""
+
+#. module: approval_sale
+#: model:approval.category,name:approval_sale.approval_category_sale_request
+msgid "Sale Order Request"
+msgstr ""
+
+#. module: approval_sale
+#. odoo-python
+#: code:addons/approval_sale/models/approval_request.py:0
+#: model_terms:ir.ui.view,arch_db:approval_sale.view_approval_request_form_inherit_sale
+msgid "Sale Orders"
+msgstr "Órdenes de venta"
+
+#. module: approval_sale
+#: model:ir.model.fields,help:approval_sale.field_approval_request_line__sale_order_id
+msgid "Sale order that contains the line created from this approval"
+msgstr ""
+
+#. module: approval_sale
+#: model_terms:ir.ui.view,arch_db:approval_sale.view_approval_category_form_sale
+msgid "Sales"
+msgstr ""
+
+#. module: approval_sale
+#: model_terms:ir.ui.view,arch_db:approval_sale.view_product_category_form_sale_approval
+#: model_terms:ir.ui.view,arch_db:approval_sale.view_product_template_form_sale_approval
+msgid "Sales Approval"
+msgstr ""
+
+#. module: approval_sale
+#. odoo-python
+#: code:addons/approval_sale/wizards/res_config_settings.py:0
+msgid "Sales Approval Categories"
+msgstr ""
+
+#. module: approval_sale
+#: model:ir.model.fields,field_description:approval_sale.field_res_config_settings__so_validation_amount
+msgid "Sales Approval Threshold"
+msgstr ""
+
+#. module: approval_sale
+#: model:ir.model.fields,field_description:approval_sale.field_res_company__so_validation_amount
+msgid "Sales Approval Threshold Amount"
+msgstr ""
+
+#. module: approval_sale
+#: model:ir.model.fields,field_description:approval_sale.field_approval_category__so_approval_mode
+msgid "Sales Approval Trigger"
+msgstr ""
+
+#. module: approval_sale
+#: model:ir.actions.act_window,name:approval_sale.action_approval_category_sale
+msgid "Sales Approval Types"
+msgstr ""
+
+#. module: approval_sale
+#: model:ir.model.fields,field_description:approval_sale.field_res_config_settings__so_auto_confirm_on_approval
+msgid "Sales Auto-Confirm When Approved"
+msgstr ""
+
+#. module: approval_sale
+#: model:ir.model.fields,field_description:approval_sale.field_res_company__so_auto_confirm_on_approval
+msgid "Sales Auto-Confirm on Approval"
+msgstr ""
+
+#. module: approval_sale
+#: model:approval.category.step,name:approval_sale.approval_category_sale_order_step_approvers
+#: model:approval.category.step,name:approval_sale.approval_category_sale_request_step_approvers
+msgid "Sales Managers"
+msgstr ""
+
+#. module: approval_sale
+#. odoo-python
+#: code:addons/approval_sale/models/sale_order.py:0
+msgid "Sales Order"
+msgstr ""
+
+#. module: approval_sale
+#: model_terms:ir.ui.view,arch_db:approval_sale.res_config_settings_view_form_approval_sale
+msgid "Sales Order Approval"
+msgstr ""
+
+#. module: approval_sale
+#: model:ir.model,name:approval_sale.model_sale_order_line
+msgid "Sales Order Line"
+msgstr "Línea de la orden de venta"
+
+#. module: approval_sale
+#: model:ir.model.fields,field_description:approval_sale.field_res_company__so_validation_level
+msgid "Sales Order Validation Level"
+msgstr ""
+
+#. module: approval_sale
+#: model:ir.model.fields,field_description:approval_sale.field_res_config_settings__so_validation_level
+msgid "Sales Validation Level"
+msgstr ""
+
+#. module: approval_sale
+#: model:mail.message.subtype,description:approval_sale.mt_sale_refused
+msgid "Sales order approval refused"
+msgstr ""
+
+#. module: approval_sale
+#: model:mail.message.subtype,description:approval_sale.mt_sale_approved
+msgid "Sales order approved"
+msgstr ""
+
+#. module: approval_sale
+#. odoo-python
+#: code:addons/approval_sale/models/sale_order.py:0
+msgid "Sales → Configuration → Approval Types"
+msgstr ""
+
+#. module: approval_sale
+#: model:ir.model.fields,field_description:approval_sale.field_product_category__so_approval_notes
+#: model:ir.model.fields,field_description:approval_sale.field_product_product__so_approval_notes
+#: model:ir.model.fields,field_description:approval_sale.field_product_template__so_approval_notes
+#: model:ir.model.fields,field_description:approval_sale.field_res_bank__so_approval_notes
+#: model:ir.model.fields,field_description:approval_sale.field_res_company__so_approval_notes
+#: model:ir.model.fields,field_description:approval_sale.field_res_partner__so_approval_notes
+#: model:ir.model.fields,field_description:approval_sale.field_res_users__so_approval_notes
+msgid "So Approval Notes"
+msgstr ""
+
+#. module: approval_sale
+#: model:ir.model.fields,field_description:approval_sale.field_product_category__so_approval_required
+#: model:ir.model.fields,field_description:approval_sale.field_product_product__so_approval_required
+#: model:ir.model.fields,field_description:approval_sale.field_product_template__so_approval_required
+#: model:ir.model.fields,field_description:approval_sale.field_res_bank__so_approval_required
+#: model:ir.model.fields,field_description:approval_sale.field_res_company__so_approval_required
+#: model:ir.model.fields,field_description:approval_sale.field_res_partner__so_approval_required
+#: model:ir.model.fields,field_description:approval_sale.field_res_users__so_approval_required
+msgid "So Approval Required"
+msgstr ""
+
+#. module: approval_sale
+#: model:ir.model.fields,help:approval_sale.field_product_category__so_approval_notes
+msgid ""
+"Special instructions or notes for approvers regarding sales orders "
+"containing products from this category. Example: 'High-value product - "
+"verify customer payment terms'"
+msgstr ""
+
+#. module: approval_sale
+#: model:ir.model.fields,help:approval_sale.field_product_product__so_approval_notes
+#: model:ir.model.fields,help:approval_sale.field_product_template__so_approval_notes
+msgid ""
+"Special instructions or notes for approvers regarding sales orders "
+"containing this product. Example: 'High-value item - verify customer credit "
+"before approving'"
+msgstr ""
+
+#. module: approval_sale
+#: model:ir.model.fields,help:approval_sale.field_res_bank__so_approval_notes
+#: model:ir.model.fields,help:approval_sale.field_res_company__so_approval_notes
+#: model:ir.model.fields,help:approval_sale.field_res_partner__so_approval_notes
+#: model:ir.model.fields,help:approval_sale.field_res_users__so_approval_notes
+msgid ""
+"Special instructions or notes for approvers regarding sales orders for this "
+"customer. Example: 'New customer - verify credit limit before approving'"
+msgstr ""
+
+#. module: approval_sale
+#: model:ir.model.fields,field_description:approval_sale.field_approval_category__target_model
+msgid "Target Model"
+msgstr ""
+
+#. module: approval_sale
+#: model:ir.model.fields,help:approval_sale.field_approval_category__target_model
+msgid ""
+"Technical name of the model to create when this approval is granted. Leave "
+"empty if the approval is for an existing record (e.g., approving a purchase "
+"order). Set to model name (e.g., 'purchase.order') if approval should create"
+" a new record."
+msgstr ""
+
+#. module: approval_sale
+#. odoo-python
+#: code:addons/approval_sale/models/approval_request.py:0
+msgid ""
+"This approval category is configured to create sale orders but does not have"
+" product lines enabled. Please contact your administrator."
+msgstr ""
+
+#. module: approval_sale
+#: model_terms:ir.ui.view,arch_db:approval_sale.view_approval_category_form_sale
+msgid ""
+"This category will apply when the customer's credit limit would be\n"
+"                                exceeded by this order. Uses the partner's Credit Limit field."
+msgstr ""
+
+#. module: approval_sale
+#: model_terms:ir.ui.view,arch_db:approval_sale.res_config_settings_view_form_approval_sale
+msgid "Threshold Amount"
+msgstr ""
+
+#. module: approval_sale
+#: model_terms:ir.ui.view,arch_db:approval_sale.res_config_settings_view_form_approval_sale
+msgid "Time Window (Hours)"
+msgstr ""
+
+#. module: approval_sale
+#: model:ir.model.fields,help:approval_sale.field_res_company__so_rate_limit_hours
+#: model:ir.model.fields,help:approval_sale.field_res_config_settings__so_rate_limit_hours
+msgid ""
+"Time window in hours for rate limit calculations. Orders older than this are"
+" not counted."
+msgstr ""
+
+#. module: approval_sale
+#: model_terms:ir.ui.view,arch_db:approval_sale.view_approval_category_form_sale
+msgid "Trigger Conditions"
+msgstr ""
+
+#. module: approval_sale
+#: model:ir.model.fields,help:approval_sale.field_sale_order__approval_user_ids
+msgid "Users who need to approve this document"
+msgstr ""
+
+#. module: approval_sale
+#: model:ir.model.fields,help:approval_sale.field_sale_order__pending_approver_ids
+msgid "Users who still need to approve this document"
+msgstr ""
+
+#. module: approval_sale
+#: model_terms:ir.ui.view,arch_db:approval_sale.res_config_settings_view_form_approval_sale
+msgid "Validation Level"
+msgstr ""
+
+#. module: approval_sale
+#: model:ir.model.fields,help:approval_sale.field_approval_category__so_approval_mode
+msgid "What triggers this approval category to be used"
+msgstr ""
+
+#. module: approval_sale
+#: model_terms:ir.ui.view,arch_db:approval_sale.view_product_category_form_sale_approval
+msgid ""
+"When enabled, all sales orders containing products\n"
+"                            from this category will require approval."
+msgstr ""
+
+#. module: approval_sale
+#: model_terms:ir.ui.view,arch_db:approval_sale.view_product_template_form_sale_approval
+msgid ""
+"When enabled, all sales orders containing this product\n"
+"                            will require approval regardless of other settings."
+msgstr ""
+
+#. module: approval_sale
+#: model_terms:ir.ui.view,arch_db:approval_sale.view_partner_form_sale_approval
+msgid ""
+"When enabled, all sales orders for this customer\n"
+"                    will require approval regardless of amount."
+msgstr ""
+
+#. module: approval_sale
+#: model:ir.model.fields,help:approval_sale.field_res_company__so_rate_limit_enabled
+#: model:ir.model.fields,help:approval_sale.field_res_config_settings__so_rate_limit_enabled
+msgid ""
+"When enabled, monitors for suspicious patterns of below-threshold orders. If"
+" limits are exceeded, approval is required even for managers."
+msgstr ""
+
+#. module: approval_sale
+#: model:ir.model.fields,help:approval_sale.field_sale_order__can_request_approval
+msgid "Whether approval can be requested (all required fields filled)"
+msgstr ""
+
+#. module: approval_sale
+#: model:ir.model.fields,help:approval_sale.field_sale_order__approval_required
+msgid "Whether this document requires approval based on current rules"
+msgstr ""
+
+#. module: approval_sale
+#. odoo-python
+#: code:addons/approval_sale/models/approval_request.py:0
+msgid "You cannot confirm an empty sale request. Please add product lines."
+msgstr ""
+
+#. module: approval_sale
+#: model_terms:ir.ui.view,arch_db:approval_sale.view_approval_category_form_sale
+msgid "e.g., 5000"
+msgstr ""
+
+#. module: approval_sale
+#. odoo-python
+#: code:addons/approval_sale/models/approval_request.py:0
+msgid "sales order"
+msgstr ""
+
+#. module: approval_sale
+#: model_terms:ir.ui.view,arch_db:approval_sale.view_approval_category_form_sale
+msgid "to"
+msgstr ""
+
+#. module: approval_sale
+#. odoo-python
+#: code:addons/approval_sale/models/sale_order.py:0
+msgid "… and %(count)s more lines"
+msgstr ""

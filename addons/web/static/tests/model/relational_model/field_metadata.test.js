@@ -1,0 +1,432 @@
+// @ts-check
+
+import { describe, expect, test } from "@odoo/hoot";
+import {
+    addFieldDependencies,
+    combineModifiers,
+    createPropertyActiveField,
+    extractFieldsFromArchInfo,
+    makeActiveField,
+    patchActiveFields,
+} from "@web/model/relational_model/field_metadata";
+
+describe.current.tags("headless");
+
+describe("makeActiveField — defaults", () => {
+    test("no args produces default field", () => {
+        const f = makeActiveField();
+        expect(f.context).toBe("{}");
+        expect(f.invisible).toBe("False");
+        expect(f.readonly).toBe("False");
+        expect(f.required).toBe("False");
+        expect(f.onChange).toBe(false);
+        expect(f.forceSave).toBe(false);
+        expect(f.isHandle).toBe(false);
+    });
+});
+
+describe("makeActiveField — boolean conversions", () => {
+    test("onChange normalizes boolean expressions", () => {
+        for (const onChange of [false, "0", "False", "false"]) {
+            expect(makeActiveField({ onChange }).onChange).toBe(false);
+        }
+        for (const onChange of [true, "1", "True", "true"]) {
+            expect(makeActiveField({ onChange }).onChange).toBe(true);
+        }
+    });
+
+    test("boolean true → 'True' for invisible", () => {
+        expect(makeActiveField({ invisible: true }).invisible).toBe("True");
+    });
+
+    test("boolean false → 'False' for readonly", () => {
+        expect(makeActiveField({ readonly: false }).readonly).toBe("False");
+    });
+
+    test("boolean true → 'True' for required", () => {
+        expect(makeActiveField({ required: true }).required).toBe("True");
+    });
+
+    test("string expression passed through unchanged", () => {
+        const f = makeActiveField({
+            invisible: "state == 'done'",
+            readonly: "amount > 0",
+        });
+        expect(f.invisible).toBe("state == 'done'");
+        expect(f.readonly).toBe("amount > 0");
+    });
+});
+
+describe("makeActiveField — optional fields", () => {
+    test("context is set when provided", () => {
+        expect(makeActiveField({ context: "{'a': 1}" }).context).toBe("{'a': 1}");
+    });
+
+    test("onChange, forceSave, isHandle set correctly", () => {
+        const f = makeActiveField({ onChange: true, forceSave: true, isHandle: true });
+        expect(f.onChange).toBe(true);
+        expect(f.forceSave).toBe(true);
+        expect(f.isHandle).toBe(true);
+    });
+});
+
+describe("combineModifiers — AND", () => {
+    test("False AND anything = False", () => {
+        expect(combineModifiers("False", "True", "AND")).toBe("False");
+        expect(combineModifiers("False", "expr", "AND")).toBe("False");
+        expect(combineModifiers("True", "False", "AND")).toBe("False");
+    });
+
+    test("falsy mod1 AND anything = False", () => {
+        expect(combineModifiers(false, "True", "AND")).toBe("False");
+        expect(combineModifiers("", "expr", "AND")).toBe("False");
+    });
+
+    test("True AND expr = expr", () => {
+        expect(combineModifiers("True", "state == 'done'", "AND")).toBe(
+            "state == 'done'",
+        );
+    });
+
+    test("expr AND True = expr", () => {
+        expect(combineModifiers("state == 'done'", "True", "AND")).toBe(
+            "state == 'done'",
+        );
+    });
+
+    test("two expressions joined with AND", () => {
+        const result = combineModifiers("a > 0", "b == 'done'", "AND");
+        expect(result).toBe("(a > 0) and (b == 'done')");
+    });
+});
+
+describe("combineModifiers — OR", () => {
+    test("True OR anything = True", () => {
+        expect(combineModifiers("True", "False", "OR")).toBe("True");
+        expect(combineModifiers("False", "True", "OR")).toBe("True");
+    });
+
+    test("False OR expr = expr", () => {
+        expect(combineModifiers("False", "state == 'done'", "OR")).toBe(
+            "state == 'done'",
+        );
+    });
+
+    test("falsy OR expr = expr", () => {
+        expect(combineModifiers(false, "x > 0", "OR")).toBe("x > 0");
+    });
+
+    test("expr OR False = expr", () => {
+        expect(combineModifiers("x > 0", "False", "OR")).toBe("x > 0");
+    });
+
+    test("two expressions joined with OR", () => {
+        const result = combineModifiers("a > 0", "b == 'done'", "OR");
+        expect(result).toBe("(a > 0) or (b == 'done')");
+    });
+});
+
+describe("combineModifiers — invalid operator", () => {
+    test("throws for unknown operator", () => {
+        expect(() =>
+            combineModifiers("True", "False", /** @type {any} */ ("XOR")),
+        ).toThrow(Error);
+    });
+});
+
+describe("patchActiveFields", () => {
+    test("invisible combines with AND", () => {
+        const base = makeActiveField({ invisible: "state == 'done'" });
+        const patch = makeActiveField({ invisible: "amount > 0" });
+        patchActiveFields(base, patch);
+        expect(base.invisible).toBe("(state == 'done') and (amount > 0)");
+    });
+
+    test("readonly combines with AND", () => {
+        const base = makeActiveField({ readonly: "True" });
+        const patch = makeActiveField({ readonly: "False" });
+        patchActiveFields(base, patch);
+        expect(base.readonly).toBe("False");
+    });
+
+    test("required combines with OR", () => {
+        const base = makeActiveField({ required: "False" });
+        const patch = makeActiveField({ required: "state == 'done'" });
+        patchActiveFields(base, patch);
+        expect(base.required).toBe("state == 'done'");
+    });
+
+    test("onChange is set to true when patch has it", () => {
+        const base = makeActiveField({ onChange: false });
+        const patch = makeActiveField({ onChange: true });
+        patchActiveFields(base, patch);
+        expect(base.onChange).toBe(true);
+    });
+
+    test("forceSave is set to true when patch has it", () => {
+        const base = makeActiveField();
+        const patch = makeActiveField({ forceSave: true });
+        patchActiveFields(base, patch);
+        expect(base.forceSave).toBe(true);
+    });
+
+    test("isHandle is set to true when patch has it", () => {
+        const base = makeActiveField();
+        const patch = makeActiveField({ isHandle: true });
+        patchActiveFields(base, patch);
+        expect(base.isHandle).toBe(true);
+    });
+
+    test("limit set from patch", () => {
+        const base = makeActiveField();
+        const patch = { ...makeActiveField(), limit: 20 };
+        patchActiveFields(base, patch);
+        expect(base.limit).toBe(20);
+    });
+
+    test("defaultOrderBy set from patch", () => {
+        const base = makeActiveField();
+        const patch = {
+            ...makeActiveField(),
+            defaultOrderBy: [{ name: "name", asc: true }],
+        };
+        patchActiveFields(base, patch);
+        expect(base.defaultOrderBy).toEqual([{ name: "name", asc: true }]);
+    });
+});
+
+describe("patchActiveFields — context", () => {
+    test("an explicit context fills a default one", () => {
+        const base = makeActiveField();
+        patchActiveFields(base, makeActiveField({ context: "{'a': 1}" }));
+        expect(base.context).toBe("{'a': 1}");
+    });
+
+    test("an explicit context is not replaced by a later one", () => {
+        const base = makeActiveField({ context: "{'a': 1}" });
+        patchActiveFields(base, makeActiveField({ context: "{'b': 2}" }));
+        expect(base.context).toBe("{'a': 1}");
+        patchActiveFields(base, makeActiveField());
+        expect(base.context).toBe("{'a': 1}");
+    });
+});
+
+/**
+ * @param {string} name
+ * @param {Record<string, any>} [extra]
+ */
+function archNode(name, extra = {}) {
+    return { name, options: {}, ...extra };
+}
+
+/** @param {any[]} dependencies */
+function widgetDeclaring(dependencies) {
+    return { fieldDependencies: dependencies };
+}
+
+describe("extractFieldsFromArchInfo — context precedence", () => {
+    const fields = () => ({
+        partner_id: { name: "partner_id", type: "many2one", relation: "res.partner" },
+        amount: { name: "amount", type: "char" },
+    });
+
+    test("a node's context survives a dependency processed before it", () => {
+        const { activeFields } = extractFieldsFromArchInfo(
+            {
+                fieldNodes: {
+                    amount: archNode("amount", {
+                        field: widgetDeclaring([
+                            { name: "partner_id", type: "many2one" },
+                        ]),
+                    }),
+                    partner_id: archNode("partner_id", {
+                        context: "{'show_address': 1}",
+                    }),
+                },
+            },
+            fields(),
+        );
+        expect(activeFields.partner_id.context).toBe("{'show_address': 1}");
+    });
+
+    test("a node's context beats a dependency's own context", () => {
+        const { activeFields } = extractFieldsFromArchInfo(
+            {
+                fieldNodes: {
+                    amount: archNode("amount", {
+                        field: widgetDeclaring([
+                            {
+                                name: "partner_id",
+                                type: "many2one",
+                                context: "{'from_widget': 1}",
+                            },
+                        ]),
+                    }),
+                    partner_id: archNode("partner_id", {
+                        context: "{'show_address': 1}",
+                    }),
+                },
+            },
+            fields(),
+        );
+        expect(activeFields.partner_id.context).toBe("{'show_address': 1}");
+    });
+
+    test("a dependency after the node leaves the node's context alone", () => {
+        const { activeFields } = extractFieldsFromArchInfo(
+            {
+                fieldNodes: {
+                    partner_id: archNode("partner_id", {
+                        context: "{'show_address': 1}",
+                    }),
+                    amount: archNode("amount", {
+                        field: widgetDeclaring([
+                            {
+                                name: "partner_id",
+                                type: "many2one",
+                                context: "{'from_widget': 1}",
+                            },
+                        ]),
+                    }),
+                },
+            },
+            fields(),
+        );
+        expect(activeFields.partner_id.context).toBe("{'show_address': 1}");
+    });
+
+    test("between two nodes the first explicit context wins", () => {
+        const { activeFields } = extractFieldsFromArchInfo(
+            {
+                fieldNodes: {
+                    partner_id: archNode("partner_id"),
+                    partner_id_1: archNode("partner_id", { context: "{'a': 1}" }),
+                    partner_id_2: archNode("partner_id", { context: "{'b': 2}" }),
+                },
+            },
+            fields(),
+        );
+        expect(activeFields.partner_id.context).toBe("{'a': 1}");
+    });
+});
+
+describe("createPropertyActiveField", () => {
+    test("creates basic active field for simple types", () => {
+        const f = createPropertyActiveField({ type: "char" });
+        expect(f.invisible).toBe("False");
+        expect(f.readonly).toBe("False");
+        expect("related" in f).toBe(false);
+    });
+
+    test("creates field with related for one2many", () => {
+        const f = createPropertyActiveField({ type: "one2many" });
+        expect("related" in f).toBe(true);
+        expect(f.related.fields.id.type).toBe("integer");
+        expect(f.related.fields.display_name.type).toBe("char");
+        expect(f.related.activeFields.id.readonly).toBe("True");
+    });
+
+    test("creates field with related for many2many", () => {
+        const f = createPropertyActiveField({ type: "many2many" });
+        expect("related" in f).toBe(true);
+    });
+});
+
+describe("addFieldDependencies", () => {
+    test("adds new field to activeFields and fields", () => {
+        const activeFields = {};
+        const fields = {};
+        addFieldDependencies(activeFields, fields, [
+            { name: "currency_id", type: "many2one" },
+        ]);
+        expect("currency_id" in activeFields).toBe(true);
+        expect("currency_id" in fields).toBe(true);
+        expect(fields.currency_id.type).toBe("many2one");
+    });
+
+    test("default readonly=true for new dependency", () => {
+        const activeFields = {};
+        const fields = {};
+        addFieldDependencies(activeFields, fields, [
+            { name: "company_id", type: "many2one" },
+        ]);
+        expect(activeFields.company_id.readonly).toBe("True");
+    });
+
+    test("written dependency is writable when it introduces the field", () => {
+        const activeFields = {};
+        const fields = { doc_name: { type: "char" } };
+        addFieldDependencies(activeFields, fields, [
+            { name: "doc_name", optional: true, written: true },
+        ]);
+        expect(activeFields.doc_name.readonly).toBe("False");
+    });
+
+    test("written dependency leaves an existing field's modifiers alone", () => {
+        const activeFields = {
+            doc_name: makeActiveField({ readonly: "not datas", required: true }),
+        };
+        const fields = { doc_name: { type: "char" } };
+        addFieldDependencies(activeFields, fields, [
+            { name: "doc_name", optional: true, written: true },
+        ]);
+        expect(activeFields.doc_name.readonly).toBe("not datas");
+        expect(activeFields.doc_name.required).toBe("True");
+    });
+
+    test("readonly:false dependency DOES override an existing modifier", () => {
+        const activeFields = { doc_name: makeActiveField({ readonly: "not datas" }) };
+        const fields = { doc_name: { type: "char" } };
+        addFieldDependencies(activeFields, fields, [
+            { name: "doc_name", readonly: false },
+        ]);
+        expect(activeFields.doc_name.readonly).toBe("False");
+    });
+
+    test("patches existing active field (doesn't duplicate)", () => {
+        const activeFields = { name: makeActiveField({ readonly: false }) };
+        const fields = { name: { type: "char" } };
+        addFieldDependencies(activeFields, fields, [
+            { name: "name", type: "char", readonly: false },
+        ]);
+        expect(Object.keys(activeFields).length).toBe(1);
+    });
+
+    test("x2many dependency gets related structure", () => {
+        const activeFields = {};
+        const fields = {};
+        addFieldDependencies(activeFields, fields, [
+            { name: "line_ids", type: "one2many" },
+        ]);
+        expect(activeFields.line_ids.related).toBeOfType("object");
+        expect(activeFields.line_ids.related.activeFields).toEqual({});
+        expect(activeFields.line_ids.related.fields).toEqual({});
+    });
+
+    test("no-op when fieldDependencies is empty", () => {
+        const activeFields = {};
+        const fields = {};
+        addFieldDependencies(activeFields, fields, []);
+        expect(Object.keys(activeFields).length).toBe(0);
+    });
+
+    test("optional dependency skipped when the view doesn't know the field", () => {
+        const activeFields = {};
+        const fields = {};
+        addFieldDependencies(activeFields, fields, [
+            { name: "state", type: "selection", optional: true },
+        ]);
+        expect("state" in activeFields).toBe(false);
+        expect("state" in fields).toBe(false);
+    });
+
+    test("optional dependency loaded when the view knows the field", () => {
+        const activeFields = {};
+        const fields = { state: { type: "selection", selection: [] } };
+        addFieldDependencies(activeFields, fields, [
+            { name: "state", type: "selection", optional: true },
+        ]);
+        expect("state" in activeFields).toBe(true);
+        expect(activeFields.state.readonly).toBe("True");
+    });
+});

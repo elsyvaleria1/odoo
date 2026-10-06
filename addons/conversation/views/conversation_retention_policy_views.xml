@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_conversation_retention_policy_list" model="ir.ui.view">
+        <field name="name">conversation.retention.policy.list</field>
+        <field name="model">conversation.retention.policy</field>
+        <field name="arch" type="xml">
+            <list string="Audio retention" editable="bottom">
+                <field name="company_id" />
+                <field name="kind" />
+                <field name="audio_retention_days" />
+            </list>
+        </field>
+    </record>
+
+    <record id="action_conversation_retention_policy" model="ir.actions.act_window">
+        <field name="name">Audio retention</field>
+        <field name="res_model">conversation.retention.policy</field>
+        <field name="view_mode">list</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Set how long audio is kept</p>
+            <p>Without a row, audio is kept ninety days. Which vendors may transcribe it is the data policy of the AI providers (speech.transcription.call, .meeting, .visit).</p>
+        </field>
+    </record>
+
+</odoo>

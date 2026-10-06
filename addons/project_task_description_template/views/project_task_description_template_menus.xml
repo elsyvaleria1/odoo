@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <menuitem
+        id="project_task_description_template_menu"
+        name="Task Description Templates"
+        parent="project.menu_project_config"
+        action="project_task_description_template_action"
+        sequence="30"
+        groups="project.group_project_manager" />
+
+</odoo>

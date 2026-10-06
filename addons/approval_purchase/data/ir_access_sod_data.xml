@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+
+    <record id="sod_function_buy" model="ir.access.sod.function">
+        <field name="name">buy</field>
+        <field
+            name="group_ids"
+            eval="[Command.link(ref('purchase.group_purchase_user'))]" />
+        <field
+            name="excluded_group_ids"
+            eval="[Command.link(ref('purchase.group_purchase_manager'))]" />
+    </record>
+
+    <record id="sod_function_approve_purchases" model="ir.access.sod.function">
+        <field name="name">approve purchases</field>
+        <field name="approval_types">purchase</field>
+    </record>
+
+    <record id="sod_rule_buy_and_approve" model="ir.access.sod.rule">
+        <field name="name">buy and approve purchases</field>
+        <field name="function_a_id" ref="sod_function_buy" />
+        <field name="function_b_id" ref="sod_function_approve_purchases" />
+        <field name="action">block</field>
+    </record>
+
+</odoo>

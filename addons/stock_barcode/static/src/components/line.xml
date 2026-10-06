@@ -1,0 +1,177 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+<!-- Line's sub-elements -->
+    <t t-name="stock_barcode.LineTitle">
+        <div class="d-flex justify-content-between align-items-start">
+            <div class="o_barcode_line_title">
+                <div t-if="this.line.product_id.default_code or this.line.product_id.code"
+                    class="o_product_ref fs-2">
+                    <span t-if="this.line.product_id.default_code"
+                        class="o_product_code font-monospace"
+                        t-out="this.line.product_id.default_code"/>
+                    <span t-if="this.line.product_id.code !== this.line.product_id.default_code"
+                        class="o_partner_code ms-1 text-muted"
+                        t-out="this.line.product_id.code"/>
+                </div>
+                <div class="o_product_label small" t-out="this.line.product_id.display_name"/>
+                <div t-if="this.showDescription" name="description" class="text-muted o_stock_barcode_line_description" t-out="this.line.description_picking"/>
+            </div>
+            <t t-if="upperButtons !== false" t-call="{{upperButtons || 'stock_barcode.LineUpperButtons'}}"/>
+        </div>
+    </t>
+
+    <t t-name="stock_barcode.LineUpperButtons">
+        <div class="d-flex flex-nowrap gap-2 mb-1">
+            <button class="o_line_button o_picture p-0 btn" t-if="this.imageSource"
+                t-attf-class="btn-{{this.isSelected || this.isComplete ? 'light' : 'secondary'}}"
+                t-on-click="this.onClickImage" title="Product image" aria-label="Product image">
+                <img loading="lazy" t-att-src="this.imageSource" t-att-alt="this.line.product_id.display_name"/>
+            </button>
+            <button t-if="!this.displayToggleBtn" class="o_line_button o_edit btn"
+                    t-on-click="() => this.props.editLine(this.line)"
+                    title="Edit" aria-label="Edit"
+                    t-attf-class="btn-{{this.isSelected || this.isComplete ? 'light' : 'secondary'}}"
+                    t-att-disabled="!this.model.lineCanBeEdited(this.line)">
+                <i class="fa-solid fa-pencil fa-lg" role="img"/>
+            </button>
+        </div>
+    </t>
+
+    <t t-name="stock_barcode.LineQuantity">
+        <div class="d-flex justify-content-between align-items-end">
+            <div name="quantity">
+                <span class="o_packaging text-muted" t-if="this.line.packaging_uom_id &amp;&amp; this.line.packaging_uom_id.id !== this.line.product_uom_id.id">
+                    Packaging: <span t-out="this.line.quantity_packaging_uom"/> <span t-out="this.line.packaging_uom_id.name"/>
+                </span>
+                <br/>
+                <span t-attf-class="o_barcode_scanner_qty font-monospace fs-1">
+                    <span class="qty-done"
+                        t-attf-class="
+                            {{this.nextExpected === 'quantity' &amp;&amp; this.qtyDone ? 'o_flash' : ''}}
+                            {{this.qtyDemand &amp;&amp; this.qtyDone === 0 ? this.model.zeroQtyClass(this.line) : ''}}
+                            {{this.qtyDemand &amp;&amp; this.qtyDone &amp;&amp; this.qtyDone === this.qtyDemand ? 'text-success' : ''}}"
+                        t-out="this.model.lineIsNotSet(this.line) ? '?' : this.qtyDone"/>
+                    <span t-if="this.model.displayLineQtyDemand(this.line)" t-out="'/' + this.qtyDemand"/>
+                </span>
+                <small t-if="this.props.displayUOM" class="o_line_uom ms-1"
+                    t-out="this.props.line.product_uom_id.name"/>
+            </div>
+            <t t-if="lowerButtons !== false" t-call="{{lowerButtons || 'stock_barcode.LineLowerButtons'}}"/>
+        </div>
+    </t>
+
+    <t t-name="stock_barcode.LineLowerButtons">
+        <div t-if="this.displayToggleBtn">
+            <button t-on-click="this.toggleSublines"
+                class="o_line_button o_toggle_sublines btn btn-secondary ms-2"
+                title="Show or hide the lines" aria-label="Show or hide the lines"
+                t-att-aria-expanded="this.opened ? 'true' : 'false'">
+                <!-- The suffix belongs on `fa-angle-`, not on `fa-2x`: this used to build
+                     `fa-angle- fa-2xup`, so no chevron ever rendered. -->
+                <i t-att-class="'fa-solid fa-2x fa-angle-' + (this.opened ? 'up' : 'down')"/>
+            </button>
+        </div>
+        <div t-else="" class="d-flex flex-nowrap gap-2">
+            <!-- Workaround: empty button use to set the container height and avoid flickering when real buttons are rendered -->
+            <button class="o_line_button btn px-0" style="min-width:0" tabindex="-1" aria-hidden="true"/>
+
+            <button t-if="this.isSelected &amp;&amp; this.model.toggleAsCounted" t-on-click="this.toggleAsCounted"
+                    t-attf-class="o_line_button btn btn-{{this.quantityIsSet ? 'warning o_unset' : 'danger o_count_zero'}}">
+                <span t-if="this.quantityIsSet" class="fa-solid fa-question fa-lg" title="Mark as not counted" aria-label="Mark as not counted"/>
+                <span t-else="">0</span>
+            </button>
+            <button t-if="this.isSelected &amp;&amp; this.qtyDone &amp;&amp; !this.isPackage" name="decrementButton"
+                    class="o_line_button o_remove_unit btn btn-light"
+                    t-att-disabled="!this.model.lineCanBeEdited(this.line)"
+                    t-on-click="() => this.addQuantity(-1)">
+                -1
+            </button>
+            <button t-if="this.displayIncrementButton" name="incrementButton"
+                    class="o_line_button o_add_quantity btn btn-light"
+                    t-att-disabled="!this.model.lineCanBeEdited(this.line)"
+                    t-on-click="() => this.addQuantity(1)">+1</button>
+            <button t-if="this.displayFulfillbutton" name="fulfillButton"
+                    t-on-click="() => this.addQuantity(this.incrementQty)"
+                    t-att-disabled="!this.model.lineCanBeEdited(this.line)"
+                    t-attf-class="o_line_button o_add_remaining_quantity btn btn-{{this.isSelected ? 'light' : 'secondary'}}">
+                <t t-if="this.incrementQty > 0">+</t><t t-out="this.incrementQty"/>
+            </button>
+            <button t-if="this.displayDeleteButton" name="deleteButton"
+                    t-on-click="this.delete"
+                    t-att-disabled="!this.model.lineCanBeEdited(this.line)"
+                    class="o_line_button o_delete_line btn btn-danger" title="Delete" aria-label="Delete">
+                <span class="fa-solid fa-trash-can fa-lg"/>
+            </button>
+            <button t-if="this.displayCompletePackageButton" name="completePackageButton"
+                    t-on-click="() => this.completePackage()"
+                    t-att-disabled="!this.model.lineCanBeEdited(this.line)"
+                    t-attf-class="o_line_button btn btn-{{this.isComplete ? 'success' : 'light'}}"
+                    title="Complete the package" aria-label="Complete the package">
+                <span class="fa-solid fa-check fa-lg"/>
+            </button>
+        </div>
+    </t>
+
+    <t t-name="stock_barcode.LineOwner">
+        <div t-if="this.line.owner_id">
+            <i class="fa-regular fa-user"/>
+            <small class="o_line_owner" t-out="this.line.owner_id.display_name"/>
+        </div>
+    </t>
+
+    <t t-name="stock_barcode.LineLot">
+        <div t-if="this.isTracked" class="o_line_tracking_number d-flex justify-content-between align-items-center">
+            <div name="lot">
+                <i class="fa-solid fa-barcode" t-attf-class="{{this.nextExpected === 'lot' ? 'o_next_expected' : ''}}"/>
+                <span class="o_line_lot_name ms-1" t-out="this.lotName"/>
+            </div>
+            <div t-if="this.props.subline" class="mb-1">
+                <button t-if="!this.displayToggleBtn" class="o_line_button o_edit btn btn-secondary ms-2"
+                        title="Edit" aria-label="Edit"
+                        t-on-click="() => this.props.editLine(this.line)"
+                        t-att-disabled="!this.model.lineCanBeEdited(this.line)">
+                    <i class="fa-solid fa-pencil fa-lg"/>
+                </button>
+            </div>
+        </div>
+    </t>
+
+    <t t-name="stock_barcode.LineDestinationLocation">
+        <div name="destination_location" t-if="this.displayDestinationLocation"
+             title="Destination Location" class="text-muted"
+             t-att-class="this.line.location_dest_id.usage !== 'internal' ? 'text-danger' : ''">
+            <i class="fa-solid fa-right-to-bracket"/>
+            <span class="o_line_destination_location fst-italic">
+                <t t-out="this.destinationLocationPath"/>
+                <i t-out="this.line.location_dest_id.name"
+                   t-attf-class="
+                    {{this.model.lastScanned.destLocation &amp;&amp; this.model.lastScanned.destLocation.id === this.line.location_dest_id.id ? 'fw-bold' : ''}}
+                    {{this.line.location_dest_id.usage !== 'internal' ? 'text-danger' : ''}}"/>
+            </span>
+        </div>
+    </t>
+
+<!-- Line's template -->
+    <t t-name="stock_barcode.LineComponent">
+        <div t-on-click="this.select"
+            class="o_barcode_line list-group-item d-flex flex-row flex-nowrap"
+            t-att-data-virtual-id="this.line.virtual_id" t-attf-class="{{this.componentClasses}}"
+            t-att-data-barcode="this.line.product_id.barcode">
+            <div class="o_barcode_line_details flex-grow-1 flex-column flex-nowrap">
+                <!-- Hides product's name if it's a subline, as it is already on the parent line. -->
+                <t t-if="!this.props.subline" t-call="stock_barcode.LineTitle"/>
+                <t t-call="stock_barcode.LineLot"/>
+                <t t-call="stock_barcode.LineOwner"/>
+                <t t-call="stock_barcode.LineDestinationLocation"/>
+                <t t-call="stock_barcode.LineQuantity"/>
+                <div t-if="this.line.package_id || this.line.result_package_id" name="package">
+                    <i class="fa-solid fa-archive"/>
+                    <span t-if="this.line.package_id" class="package" t-out="this.packageLabel"/>
+                    <i t-if="this.displayResultPackage" class="fa-solid fa-right-long mx-1"/>
+                    <span t-if="this.line.result_package_id" class="result-package" t-out="this.resultPackageLabel"/>
+                </div>
+            </div>
+        </div>
+    </t>
+
+</templates>

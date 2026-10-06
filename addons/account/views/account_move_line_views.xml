@@ -1,0 +1,1025 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_account_move_line_filter" model="ir.ui.view">
+        <field name="name">account.move.line.search</field>
+        <field name="model">account.move.line</field>
+        <field name="priority" eval="16" />
+        <field name="arch" type="xml">
+            <search string="Search Journal Items">
+                <field
+                    name="name"
+                    string="Journal Item"
+                    filter_domain="[                     '|', '|', '|',                     ('name', 'ilike', self), ('ref', 'ilike', self), ('account_id', 'ilike', self), ('partner_id', 'ilike', self)]" />
+                <field name="name" />
+                <field name="ref" />
+                <field name="invoice_date" />
+                <field name="date" />
+                <field name="date_maturity" string="Due Date" />
+                <field name="discount_date" string="Discount Date" />
+                <field
+                    name="balance"
+                    string="Amount"
+                    filter_domain="['|', ('credit', '=', raw_value), ('debit', '=', raw_value)]" />
+                <field name="account_id" context="{'active_test': False}" />
+                <field name="account_type" />
+                <field name="partner_id" />
+                <field name="journal_id" />
+                <field name="journal_group_id" />
+                <field name="product_id" />
+                <field name="product_category_id" />
+                <field
+                    name="move_id"
+                    string="Journal Entry"
+                    filter_domain="[                         '|',                         ('move_id.name', 'ilike', self), ('move_id.ref', 'ilike', self)]" />
+                <field name="tax_ids" />
+                <field name="tax_line_id" string="Originator Tax" />
+                <field name="reconcile_model_id" />
+                <separator />
+                <filter
+                    name="unposted"
+                    string="Unposted"
+                    help="Unposted Journal Items"
+                    domain="[('parent_state', '=', 'draft')]" />
+                <filter
+                    name="posted"
+                    string="Posted"
+                    help="Posted Journal Items"
+                    domain="[('parent_state', '=', 'posted')]" />
+                <separator groups="account.group_account_secured,base.group_no_one" />
+                <filter
+                    name="not_secured"
+                    string="Not Secured"
+                    domain="[('move_id.secured', '=', False), ('move_id.state', '=', 'posted')]"
+                    groups="account.group_account_secured,base.group_no_one" />
+                <separator />
+                <filter
+                    name="to_check"
+                    string="To Review"
+                    domain="[('move_id.checked', '=', False), ('parent_state', '!=', 'draft')]" />
+                <separator />
+                <filter
+                    name="reconcilable_account"
+                    string="Unreconciled"
+                    help="Journal items where matching number isn't set"
+                    domain="[('balance', '!=', 0), ('account_id.reconcile', '=', True), '|', ('matching_number', '=', False), ('matching_number', '=like', 'P%')]" />
+                <filter
+                    name="unreconciled"
+                    string="With residual"
+                    help="Journal items where the account allows reconciliation and the residual amount is not zero"
+                    domain="[('amount_residual', '!=', 0), ('account_id.reconcile', '=', True)]" />
+                <separator />
+                <filter
+                    name="sales"
+                    string="Sales"
+                    domain="[('journal_id.type', '=', 'sale')]"
+                    context="{'default_journal_type': 'sale'}" />
+                <filter
+                    name="purchases"
+                    string="Purchases"
+                    domain="[('journal_id.type', '=', 'purchase')]"
+                    context="{'default_journal_type': 'purchase'}" />
+                <filter
+                    name="bank"
+                    string="Bank"
+                    domain="[('journal_id.type', '=', 'bank')]"
+                    context="{'default_journal_type': 'bank'}" />
+                <filter
+                    name="cash"
+                    string="Cash"
+                    domain="[('journal_id.type', '=', 'cash')]"
+                    context="{'default_journal_type': 'cash'}" />
+                <filter
+                    name="credit"
+                    string="Credit"
+                    domain="[('journal_id.type', '=', 'credit')]"
+                    context="{'default_journal_type': 'credit'}" />
+                <filter
+                    name="misc_filter"
+                    string="Miscellaneous"
+                    domain="[('journal_id.type', '=', 'general')]"
+                    context="{'default_journal_type': 'general'}" />
+                <filter
+                    name="journal_ids"
+                    string="Journals"
+                    domain="[('journal_id', 'in', context.get('journal_ids'))]"
+                    invisible="not context.get('journal_ids')" />
+                <separator />
+                <filter
+                    name="trade_payable"
+                    string="Payable"
+                    help="From Trade Payable accounts"
+                    domain="[('account_id.account_type', '=', 'liability_payable'), ('account_id.non_trade', '=', False)]" />
+                <filter
+                    name="trade_receivable"
+                    string="Receivable"
+                    help="From Trade Receivable accounts"
+                    domain="[('account_id.account_type', '=', 'asset_receivable'), ('account_id.non_trade', '=', False)]" />
+                <filter
+                    name="non_trade_payable"
+                    string="Non Trade Payable"
+                    help="From Non Trade Receivable accounts"
+                    domain="[('account_id.account_type', '=', 'liability_payable'), ('account_id.non_trade', '=', True)]"
+                    invisible="1" />
+                <filter
+                    name="non_trade_receivable"
+                    string="Non Trade Receivable"
+                    help="From Non Trade Receivable accounts"
+                    domain="[('account_id.account_type', '=', 'asset_receivable'), ('account_id.non_trade', '=', True)]"
+                    invisible="1" />
+                <filter
+                    name="pl_accounts"
+                    string="P&amp;L Accounts"
+                    help="From P&amp;L accounts"
+                    domain="[('account_id.internal_group', 'in', ('income', 'expense'))]" />
+                <filter
+                    name="no_st_line_id"
+                    string="No Bank Transaction"
+                    domain="[('statement_line_id', '=', False), ('payment_id', '=', False)]"
+                    invisible="1" />
+                <separator />
+                <filter name="date" string="Date" date="date" />
+                <filter name="invoice_date" string="Invoice Date" date="invoice_date" />
+                <separator />
+                <filter
+                    name="date_between"
+                    string="Report Dates"
+                    domain="[('date', '&gt;=', context.get('date_from')), ('date', '&lt;=', context.get('date_to'))]"
+                    invisible="1" />
+                <filter
+                    name="date_before"
+                    string="Report Dates"
+                    domain="[('date', '&lt;=', context.get('date_to'))]"
+                    invisible="1" />
+                <separator />
+                <filter
+                    name="analytic_accounts"
+                    string="Analytic Accounts"
+                    domain="[('analytic_distribution', 'in', context.get('analytic_ids'))]"
+                    invisible="1" />
+                <group>
+                    <filter
+                        name="group_by_move"
+                        string="Journal Entry"
+                        context="{'group_by': 'move_name'}" />
+                    <filter
+                        name="group_by_account"
+                        string="Account"
+                        context="{'group_by': 'account_id'}" />
+                    <filter
+                        name="group_by_partner"
+                        string="Partner"
+                        context="{'group_by': 'partner_id'}" />
+                    <filter
+                        name="journal"
+                        string="Journal"
+                        context="{'group_by': 'journal_id'}" />
+                    <filter
+                        name="groupby_date"
+                        string="Date"
+                        context="{'group_by': 'date'}" />
+                    <filter
+                        name="groupby_invoice_date"
+                        string="Invoice Date"
+                        context="{'group_by': 'invoice_date'}" />
+                    <filter
+                        name="group_by_taxes"
+                        string="Taxes"
+                        context="{'group_by': 'tax_ids'}" />
+                    <filter
+                        name="group_by_tax_tags"
+                        string="Tax Grid"
+                        context="{'group_by': 'tax_tag_ids'}" />
+                    <filter
+                        name="group_by_matching"
+                        string="Matching"
+                        context="{'group_by': 'matching_number'}" />
+                </group>
+                <searchpanel class="account_root w-auto">
+                    <field
+                        name="account_root_id"
+                        icon="fa-filter"
+                        limit="false"
+                        groupby="account_id" />
+                </searchpanel>
+            </search>
+        </field>
+    </record>
+
+    <record id="view_account_move_line_payment_filter" model="ir.ui.view">
+        <field name="name">account.move.line.payment.search</field>
+        <field name="model">account.move.line</field>
+        <field name="priority" eval="200" />
+        <field name="arch" type="xml">
+            <search string="Search Journal Items">
+                <field
+                    name="name"
+                    string="Journal Item"
+                    filter_domain="[                     '|', '|', '|',                     ('name', 'ilike', self), ('ref', 'ilike', self), ('account_id', 'ilike', self), ('partner_id', 'ilike', self)]" />
+                <field name="name" />
+                <field name="move_id" />
+                <field name="ref" />
+                <field name="payment_date" />
+                <field name="partner_id" />
+                <field name="journal_id" />
+                <field
+                    name="currency_id"
+                    groups="base.group_multi_currency"
+                    invisible="1" />
+                <field name="company_currency_id" invisible="1" />
+                <separator />
+                <filter
+                    name="posted"
+                    string="Posted"
+                    help="Posted Journal Items"
+                    domain="[('parent_state', '=', 'posted')]"
+                    invisible="1" />
+                <separator />
+                <filter
+                    name="invoices"
+                    string="Invoices"
+                    domain="[('amount_residual', '&gt;', '0')]"
+                    invisible="context.get('journal_type') != 'sale'" />
+                <filter
+                    name="credit_notes"
+                    string="Credit Notes"
+                    domain="[('amount_residual', '&lt;', '0')]"
+                    invisible="context.get('journal_type') != 'sale'" />
+                <filter
+                    name="bills"
+                    string="Bills"
+                    domain="[('amount_residual', '&lt;', '0')]"
+                    invisible="context.get('journal_type') != 'purchase'" />
+                <filter
+                    name="refunds"
+                    string="Refunds"
+                    domain="[('amount_residual', '&gt;', '0')]"
+                    invisible="context.get('journal_type') != 'purchase'" />
+                <separator />
+                <filter name="invoice_date" string="Invoice Date" date="invoice_date" />
+                <filter
+                    name="payment_date"
+                    string="Next Payment Date"
+                    date="payment_date" />
+                <filter
+                    name="late"
+                    string="Overdue"
+                    help="Overdue payments, due date passed"
+                    domain="[('date_maturity', '&lt;', 'today')]" />
+                <filter
+                    name="early_discount"
+                    string="Early Discount"
+                    domain="[('discount_date', '!=', False), ('discount_date', '&gt;', 'today')]" />
+                <separator />
+                <filter
+                    name="date_between"
+                    string="Report Dates"
+                    domain="[('date', '&gt;=', context.get('date_from')), ('date', '&lt;=', context.get('date_to'))]"
+                    invisible="1" />
+                <filter
+                    name="date_before"
+                    string="Report Dates"
+                    domain="[('date', '&lt;=', context.get('date_to'))]"
+                    invisible="1" />
+                <separator />
+                <group>
+                    <filter
+                        name="group_by_currencies"
+                        string="Currency"
+                        context="{'group_by': 'currency_id'}" />
+                    <filter
+                        name="group_by_partner"
+                        string="Partner"
+                        context="{'group_by': 'partner_id'}" />
+                    <filter
+                        name="journal"
+                        string="Journal"
+                        context="{'group_by': 'journal_id'}" />
+                    <filter
+                        name="groupby_invoice_date"
+                        string="Invoice Date"
+                        context="{'group_by': 'invoice_date'}" />
+                    <filter
+                        name="groupby_payment_date"
+                        string="Next Payment Date"
+                        context="{'group_by': 'payment_date'}" />
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="account_move_line_view_kanban" model="ir.ui.view">
+        <field name="name">account.move.line.kanban</field>
+        <field name="model">account.move.line</field>
+        <field name="arch" type="xml">
+            <kanban create="false" class="o_kanban_mobile" group_create="false">
+                <field name="company_currency_id" />
+                <templates>
+                    <t t-name="card">
+                        <div class="row mb4">
+                            <div class="col-8">
+                                <field name="account_id" />
+                            </div>
+                            <strong
+                                t-if="record.date_maturity.raw_value"
+                                class="col-4 ps-0 text-end">
+                                <i
+                                    class="fa-regular fa-clock"
+                                    aria-label="Date"
+                                    role="img"
+                                    title="Date" />
+                                <field name="date_maturity" />
+                            </strong>
+                        </div>
+                        <div class="row mb4" style="min-height: 60px;">
+                            <em class="col-10">
+                                <field name="name" />
+                            </em>
+                            <div class="col-2 text-end">
+                                <field
+                                    name="partner_id"
+                                    widget="image"
+                                    options="{'preview_image': 'avatar_128'}" />
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-6">
+                                <field name="tax_ids" widget="many2many_tax_tags" />
+                            </div>
+                            <div class="col-6 text-end">
+                                <t t-if="record.debit.raw_value &gt; 0">
+                                    <field name="debit" />
+                                    <span> (DR)</span>
+                                </t>
+                                <t t-if="record.credit.raw_value &gt; 0">
+                                    <field name="credit" />
+                                    <span> (CR)</span>
+                                </t>
+                            </div>
+                        </div>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
+    <record id="account_move_line_view_kanban_mobile" model="ir.ui.view">
+        <field name="name">account.move.line.kanban.mobile</field>
+        <field name="model">account.move.line</field>
+        <field name="inherit_id" ref="account_move_line_view_kanban" />
+        <field name="mode">primary</field>
+        <field name="arch" type="xml">
+            <xpath expr="//kanban[hasclass('o_kanban_mobile')]" position="attributes">
+                <attribute name="create">true</attribute>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_move_line_pivot" model="ir.ui.view">
+        <field name="name">account.move.line.pivot</field>
+        <field name="model">account.move.line</field>
+        <field name="arch" type="xml">
+            <pivot string="Journal Items" sample="1">
+                <field name="journal_id" type="row" />
+                <field name="date" type="col" />
+                <field name="balance" type="measure" />
+            </pivot>
+        </field>
+    </record>
+
+    <record id="account_move_line_graph_date" model="ir.ui.view">
+        <field name="name">account.move.line.graph</field>
+        <field name="model">account.move.line</field>
+        <field name="arch" type="xml">
+            <graph string="Account Statistics" sample="1">
+                <field name="date" />
+                <field name="balance" type="measure" operator="+" />
+            </graph>
+        </field>
+    </record>
+
+    <record id="view_account_move_line_list" model="ir.ui.view">
+        <field name="name">account.move.line.list</field>
+        <field name="model">account.move.line</field>
+        <field name="priority" eval="10" />
+        <field name="arch" type="xml">
+            <list
+                name="move_line_tree"
+                string="Journal Items"
+                create="false"
+                edit="true"
+                multi_edit="1"
+                decoration-info="parent_state == 'draft'"
+                expand="context.get('expand', False)">
+                <field name="move_id" column_invisible="True" />
+                <field name="invoice_date" string="Invoice Date" optional="hide" />
+                <field name="date" readonly="1" />
+                <field name="company_id" column_invisible="True" />
+                <field
+                    name="company_id"
+                    optional="hide"
+                    groups="base.group_multi_company"
+                    readonly="1" />
+                <field
+                    name="journal_id"
+                    optional="hide"
+                    options="{&quot;no_open&quot;:True}"
+                    readonly="1" />
+                <field
+                    name="move_name"
+                    string="Journal Entry"
+                    widget="open_move_widget" />
+                <field
+                    name="account_id"
+                    domain="[('company_ids', 'parent_of', company_id)]"
+                    options="{'no_open': True, 'no_create': True}"
+                    groups="account.group_account_readonly" />
+                <field
+                    name="partner_id"
+                    optional="show"
+                    readonly="move_type != 'entry'" />
+                <field name="ref" optional="hide" readonly="False" />
+                <field name="product_id" optional="hide" readonly="1" />
+                <field name="name" optional="show" />
+                <field
+                    name="analytic_distribution"
+                    widget="analytic_distribution"
+                    optional="hide"
+                    options="{'product_field': 'product_id', 'account_field': 'account_id', 'force_applicability': 'optional', 'multi_edit': true}"
+                    groups="analytic.group_analytic_accounting" />
+                <field
+                    name="tax_ids"
+                    widget="many2many_tax_tags"
+                    optional="hide"
+                    readonly="1" />
+                <field
+                    name="amount_currency"
+                    string="In Currency"
+                    optional="hide"
+                    groups="base.group_multi_currency"
+                    invisible="is_same_currency"
+                    readonly="1" />
+                <field
+                    name="currency_id"
+                    string="Currency"
+                    optional="hide"
+                    groups="base.group_multi_currency"
+                    invisible="is_same_currency"
+                    readonly="1" />
+                <field
+                    name="debit"
+                    sum="Total Debit"
+                    readonly="1"
+                    decoration-muted="debit == 0" />
+                <field
+                    name="credit"
+                    sum="Total Credit"
+                    readonly="1"
+                    decoration-muted="credit == 0" />
+                <field
+                    name="tax_tag_ids"
+                    string="Tax Grids"
+                    widget="many2many_tags"
+                    optional="hide"
+                    domain="[('applicability', '=', 'taxes')]"
+                    options="{'no_create': True, 'no_create_edit': True}" />
+                <field name="discount_date" string="Discount Date" optional="hide" />
+                <field
+                    name="discount_amount_currency"
+                    string="Discount Amount"
+                    optional="hide" />
+                <field
+                    name="tax_line_id"
+                    string="Originator Tax"
+                    optional="hide"
+                    readonly="1" />
+                <field
+                    name="date_maturity"
+                    optional="hide"
+                    readonly="1"
+                    decoration-danger="not reconciled and date_maturity &lt; context_today().strftime('%Y-%m-%d')" />
+                <field
+                    name="balance"
+                    optional="hide"
+                    sum="Total Balance"
+                    readonly="1" />
+                <field
+                    name="matching_number"
+                    string="Matching"
+                    optional="show"
+                    readonly="1" />
+                <field
+                    name="amount_residual"
+                    string="Residual"
+                    optional="hide"
+                    sum="Total Residual"
+                    invisible="not is_account_reconcile"
+                    readonly="1" />
+                <field
+                    name="amount_residual_currency"
+                    string="Residual in Currency"
+                    optional="hide"
+                    sum="Total Residual in Currency"
+                    groups="base.group_multi_currency"
+                    invisible="is_same_currency or not is_account_reconcile"
+                    readonly="1" />
+                <field name="move_type" column_invisible="True" />
+                <field name="parent_state" column_invisible="True" />
+                <field name="account_type" column_invisible="True" />
+                <field name="statement_line_id" column_invisible="True" />
+                <field name="company_currency_id" column_invisible="True" />
+                <field name="is_same_currency" column_invisible="True" />
+                <field name="is_account_reconcile" column_invisible="True" />
+                <field name="sequence" column_invisible="True" />
+                <field name="deductible_amount" optional="hide" />
+                <groupby name="partner_id">
+                    <button name="edit" type="edit" title="Edit" icon="fa-edit" />
+                </groupby>
+                <groupby name="move_id">
+                    <button
+                        name="action_post"
+                        type="object"
+                        string="Post"
+                        groups="account.group_account_user"
+                        invisible="state != 'draft'"
+                        class="btn-primary" />
+                    <button
+                        name="set_moves_checked"
+                        type="object"
+                        string="Review"
+                        groups="account.group_account_user"
+                        invisible="state != 'posted' or checked"
+                        class="btn-primary" />
+                    <button name="edit_move" type="edit" string="Edit" icon="fa-edit" />
+                </groupby>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_account_move_line_list_grouped_sales_purchases" model="ir.ui.view">
+        <field name="name">account.move.line.list.grouped.sales.purchase</field>
+        <field name="model">account.move.line</field>
+        <field name="inherit_id" ref="account.view_account_move_line_list" />
+        <field name="mode">primary</field>
+        <field name="arch" type="xml">
+            <field name="date" position="attributes">
+                <attribute name="optional">hide</attribute>
+            </field>
+            <field name="tax_tag_ids" position="attributes">
+                <attribute name="optional">show</attribute>
+            </field>
+        </field>
+    </record>
+
+    <record id="view_account_move_line_list_grouped_bank_cash" model="ir.ui.view">
+        <field name="name">account.move.line.list.grouped.bank.cash</field>
+        <field name="model">account.move.line</field>
+        <field name="inherit_id" ref="account.view_account_move_line_list" />
+        <field name="mode">primary</field>
+        <field name="arch" type="xml">
+            <field name="date" position="attributes">
+                <attribute name="optional">hide</attribute>
+            </field>
+        </field>
+    </record>
+
+    <record id="view_account_move_line_list_grouped_misc" model="ir.ui.view">
+        <field name="name">account.move.line.list.grouped.misc</field>
+        <field name="model">account.move.line</field>
+        <field name="inherit_id" ref="account.view_account_move_line_list" />
+        <field name="mode">primary</field>
+        <field name="arch" type="xml">
+            <field name="date" position="attributes">
+                <attribute name="optional">hide</attribute>
+            </field>
+        </field>
+    </record>
+
+    <record id="view_account_move_line_list_grouped_general" model="ir.ui.view">
+        <field name="name">account.move.line.list.grouped.misc</field>
+        <field name="model">account.move.line</field>
+        <field name="inherit_id" ref="account.view_account_move_line_list" />
+        <field name="mode">primary</field>
+        <field name="arch" type="xml">
+            <field name="account_id" position="attributes">
+                <attribute name="optional">hide</attribute>
+            </field>
+            <field name="balance" position="attributes">
+                <attribute name="optional">show</attribute>
+            </field>
+        </field>
+    </record>
+
+    <record id="view_account_move_line_list_grouped_partner" model="ir.ui.view">
+        <field name="name">account.move.line.list.grouped.partner</field>
+        <field name="model">account.move.line</field>
+        <field name="inherit_id" ref="account.view_account_move_line_list" />
+        <field name="mode">primary</field>
+        <field name="arch" type="xml">
+            <field name="partner_id" position="attributes">
+                <attribute name="optional">hide</attribute>
+            </field>
+            <field name="date_maturity" position="attributes">
+                <attribute name="optional">show</attribute>
+            </field>
+            <field name="balance" position="attributes">
+                <attribute name="optional">show</attribute>
+            </field>
+        </field>
+    </record>
+
+    <record id="view_move_line_tax_audit_tree" model="ir.ui.view">
+        <field name="name">account.move.line.tax.audit.list</field>
+        <field name="model">account.move.line</field>
+        <field name="inherit_id" ref="account.view_account_move_line_list" />
+        <field name="mode">primary</field>
+        <field name="arch" type="xml">
+            <field name="matching_number" position="replace">
+                <field name="tax_line_id" string="Tax" />
+                <field name="tax_base_amount" sum="Total Base Amount" />
+            </field>
+            <field name="analytic_distribution" position="attributes">
+                <attribute name="optional">hide</attribute>
+            </field>
+            <field name="debit" position="attributes">
+                <attribute name="optional">show</attribute>
+            </field>
+            <field name="credit" position="attributes">
+                <attribute name="optional">show</attribute>
+            </field>
+            <field name="journal_id" position="attributes">
+                <attribute name="optional">show</attribute>
+            </field>
+        </field>
+    </record>
+
+    <record id="view_move_line_payment_tree" model="ir.ui.view">
+        <field name="name">account.move.line.payment.list</field>
+        <field name="model">account.move.line</field>
+        <field name="priority" eval="200" />
+        <field name="arch" type="xml">
+            <list
+                string="Payment Items"
+                default_order="payment_date asc, id asc"
+                create="false"
+                edit="true"
+                multi_edit="1"
+                sample="1"
+                decoration-info="parent_state == 'draft'"
+                expand="context.get('expand', False)">
+                <header>
+                    <button
+                        name="action_payment_items_register_payment"
+                        type="object"
+                        string="Pay"
+                        groups="account.group_account_user" />
+                </header>
+                <field name="move_id" column_invisible="True" />
+                <field name="invoice_date" string="Bill Date" />
+                <field name="date" optional="hide" readonly="1" />
+                <field
+                    name="date_maturity"
+                    string="Invoice Due Date"
+                    optional="hide"
+                    readonly="1" />
+                <field name="discount_date" string="Discount Date" optional="hide" />
+                <field name="payment_date" readonly="1" />
+                <field name="company_id" column_invisible="True" />
+                <field
+                    name="company_id"
+                    optional="hide"
+                    groups="base.group_multi_company"
+                    readonly="1" />
+                <field
+                    name="journal_id"
+                    optional="hide"
+                    options="{&quot;no_open&quot;:True}"
+                    readonly="1" />
+                <field
+                    name="move_name"
+                    string="Journal Entry"
+                    widget="open_move_widget" />
+                <field
+                    name="partner_id"
+                    optional="show"
+                    readonly="move_type != 'entry'" />
+                <field name="ref" readonly="False" />
+                <field name="name" optional="show" />
+                <field
+                    name="discount_amount_currency"
+                    string="Discount Amount"
+                    optional="show"
+                    invisible="not discount_amount_currency" />
+                <field
+                    name="amount_residual"
+                    string="Residual"
+                    sum="Total Residual"
+                    invisible="not is_account_reconcile"
+                    readonly="1" />
+                <field
+                    name="amount_residual_currency"
+                    string="Residual in Currency"
+                    optional="hide"
+                    groups="base.group_multi_currency"
+                    invisible="is_same_currency or not is_account_reconcile"
+                    readonly="1" />
+                <field
+                    name="currency_id"
+                    string="Currency"
+                    optional="hide"
+                    groups="base.group_multi_currency"
+                    invisible="is_same_currency"
+                    readonly="1" />
+                <field name="company_currency_id" column_invisible="True" />
+                <field name="move_type" column_invisible="True" />
+                <field name="is_same_currency" column_invisible="True" />
+                <field name="is_account_reconcile" column_invisible="True" />
+                <field name="parent_state" column_invisible="True" />
+                <groupby name="partner_id">
+                    <button name="edit" type="edit" title="Edit" icon="fa-edit" />
+                </groupby>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_account_move_line_form" model="ir.ui.view">
+        <field name="name">account.move.line.form</field>
+        <field name="model">account.move.line</field>
+        <field name="priority" eval="2" />
+        <field name="arch" type="xml">
+            <form string="Journal Item" create="false">
+                <sheet>
+                    <field name="company_id" invisible="1" />
+                    <field name="parent_state" invisible="1" />
+                    <group>
+                        <field name="name" />
+                        <field
+                            name="partner_id"
+                            domain="['|', ('parent_id', '=', False), ('is_company', '=', True)]"
+                            readonly="1" />
+                    </group>
+                    <notebook colspan="4">
+                        <page name="information" string="Information">
+                            <group>
+                                <group string="Amount">
+                                    <field
+                                        name="account_id"
+                                        domain="[('company_ids', 'parent_of', company_id)]"
+                                        options="{'no_create': True}"
+                                        readonly="1" />
+                                    <field name="debit" readonly="1" />
+                                    <field name="credit" readonly="1" />
+                                    <field name="balance" readonly="1" />
+                                    <field name="quantity" readonly="1" />
+                                </group>
+                                <group string="Dates">
+                                    <field
+                                        name="date"
+                                        groups="account.group_account_readonly" />
+                                    <field name="date_maturity" />
+                                </group>
+
+                                <group
+                                    string="Taxes"
+                                    invisible="not tax_line_id and not tax_ids">
+                                    <field
+                                        name="tax_line_id"
+                                        invisible="not tax_line_id"
+                                        readonly="1" />
+                                    <field
+                                        name="tax_ids"
+                                        widget="many2many_tax_tags"
+                                        invisible="not tax_ids"
+                                        readonly="1" />
+                                </group>
+                                <group
+                                    string="Matching"
+                                    invisible="not matched_debit_ids and not matched_credit_ids">
+                                    <label for="full_reconcile_id" />
+                                    <div>
+                                        <field
+                                            name="full_reconcile_id"
+                                            invisible="not full_reconcile_id" />
+                                        <field name="matched_debit_ids" invisible="1" />
+                                        <field
+                                            name="matched_credit_ids"
+                                            invisible="1" />
+                                        <button
+                                            name="open_reconcile_view"
+                                            type="object"
+                                            string="-&gt; View partially reconciled entries"
+                                            invisible="full_reconcile_id or not matched_debit_ids and not matched_credit_ids"
+                                            class="oe_link">
+                                        </button>
+                                    </div>
+                                </group>
+                                <group
+                                    string="Currency"
+                                    groups="base.group_multi_currency">
+                                    <field name="currency_id" invisible="1" />
+                                    <field name="display_type" invisible="1" />
+                                    <field
+                                        name="amount_currency"
+                                        readonly="display_type != 'tax' or parent_state != 'draft'" />
+                                </group>
+                                <group string="Product" invisible="not product_id">
+                                    <field name="product_id" readonly="1" />
+                                </group>
+                                <group
+                                    string="Analytic"
+                                    groups="analytic.group_analytic_accounting">
+                                    <field
+                                        name="analytic_distribution"
+                                        widget="analytic_distribution"
+                                        groups="analytic.group_analytic_accounting"
+                                        readonly="1" />
+                                </group>
+                            </group>
+                        </page>
+                        <page
+                            name="analytic_lines"
+                            string="Analytic Lines"
+                            groups="analytic.group_analytic_accounting">
+                            <field name="date" invisible="1" />
+                            <field
+                                name="analytic_line_ids"
+                                context="{'list_view_ref':'analytic.view_account_analytic_line_tree', 'default_general_account_id':account_id, 'default_name': name, 'default_date':date, 'amount': (debit or 0.0)-(credit or 0.0)}" />
+                        </page>
+                        <page
+                            name="page_accounting_documents"
+                            string="Accounting documents">
+                            <label for="move_id" string="Journal Entry" />
+                            <field name="move_id" readonly="1" />
+                            <group invisible="not statement_line_id" readonly="1">
+                                <label
+                                    for="statement_line_id"
+                                    string="Originator Statement Line" />
+                                <field name="statement_line_id" />
+                            </group>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_move_line_select" model="ir.actions.act_window">
+        <field name="name">Journal Items</field>
+        <field name="res_model">account.move.line</field>
+        <field
+            name="context">{'search_default_account_id': [active_id], 'search_default_posted': 1}</field>
+    </record>
+
+    <record id="action_automatic_entry_change_account" model="ir.actions.server">
+        <field name="name">Move to Account</field>
+        <field name="model_id" ref="account.model_account_move_line" />
+        <field name="binding_model_id" ref="account.model_account_move_line" />
+        <field
+            name="group_ids"
+            eval="[Command.link(ref('account.group_account_user'))]" />
+        <field name="state">code</field>
+        <field
+            name="code">action = records.action_automatic_entry('change_account')</field>
+    </record>
+
+    <record id="action_automatic_entry_change_period" model="ir.actions.server">
+        <field name="name">Change Period</field>
+        <field name="model_id" ref="account.model_account_move_line" />
+        <field name="binding_model_id" ref="account.model_account_move_line" />
+        <field
+            name="group_ids"
+            eval="[Command.link(ref('account.group_account_user'))]" />
+        <field name="state">code</field>
+        <field
+            name="code">action = records.action_automatic_entry('change_period')</field>
+    </record>
+
+    <record id="action_account_moves_all_a" model="ir.actions.act_window">
+        <field name="name">Journal Items</field>
+        <field name="res_model">account.move.line</field>
+        <field name="view_mode">list,pivot,graph,kanban</field>
+        <field name="view_id" ref="view_account_move_line_list" />
+        <field
+            name="domain">[('display_type', 'not in', ('line_section', 'line_subsection', 'line_note'))]</field>
+        <field
+            name="context">{'journal_type':'general', 'search_default_group_by_move': 1, 'search_default_posted':1, 'create':0}</field>
+    </record>
+
+    <record
+        id="action_account_moves_all_grouped_matching"
+        model="ir.actions.act_window">
+        <field name="name">Journal Items</field>
+        <field name="res_model">account.move.line</field>
+        <field name="view_mode">list,pivot,graph,kanban</field>
+        <field name="view_id" ref="view_account_move_line_list" />
+        <field
+            name="domain">[('display_type', 'not in', ('line_section', 'line_subsection', 'line_note'))]</field>
+        <field
+            name="context">{'journal_type':'general', 'search_default_posted':1, 'expand':'1'}</field>
+    </record>
+
+    <record id="action_account_moves_journal_sales" model="ir.actions.act_window">
+        <field name="name">Sales</field>
+        <field name="res_model">account.move.line</field>
+        <field name="view_mode">list,pivot,graph,kanban</field>
+        <field
+            name="view_id"
+            ref="view_account_move_line_list_grouped_sales_purchases" />
+        <field
+            name="domain">[('display_type', 'not in', ('line_section', 'line_subsection', 'line_note'))]</field>
+        <field
+            name="context">{'journal_type':'sales', 'search_default_group_by_move': 1, 'search_default_posted':1, 'search_default_sales':1, 'expand': 1}</field>
+    </record>
+
+    <record id="action_account_moves_journal_purchase" model="ir.actions.act_window">
+        <field name="name">Purchases</field>
+        <field name="res_model">account.move.line</field>
+        <field name="view_mode">list,pivot,graph,kanban</field>
+        <field
+            name="view_id"
+            ref="view_account_move_line_list_grouped_sales_purchases" />
+        <field
+            name="domain">[('display_type', 'not in', ('line_section', 'line_subsection', 'line_note'))]</field>
+        <field
+            name="context">{'journal_type':'purchase', 'search_default_group_by_move': 1, 'search_default_posted':1, 'search_default_purchases':1, 'expand': 1}</field>
+    </record>
+
+    <record id="action_account_moves_journal_bank_cash" model="ir.actions.act_window">
+        <field name="name">Bank and Cash</field>
+        <field name="res_model">account.move.line</field>
+        <field name="view_mode">list,pivot,graph,kanban</field>
+        <field name="view_id" ref="view_account_move_line_list_grouped_bank_cash" />
+        <field
+            name="domain">[('display_type', 'not in', ('line_section', 'line_subsection', 'line_note'))]</field>
+        <field
+            name="context">{'journal_type':'bank', 'search_default_group_by_move': 1,
+            'search_default_posted':1, 'search_default_bank':1, 'search_default_cash':1, 'expand':
+            1}</field>
+    </record>
+
+    <record id="action_account_moves_journal_misc" model="ir.actions.act_window">
+        <field name="name">Miscellaneous</field>
+        <field name="res_model">account.move.line</field>
+        <field name="view_mode">list,pivot,graph,kanban</field>
+        <field name="view_id" ref="view_account_move_line_list_grouped_misc" />
+        <field
+            name="domain">[('display_type', 'not in', ('line_section', 'line_subsection', 'line_note'))]</field>
+        <field
+            name="context">{'journal_type':'general', 'search_default_group_by_move': 1, 'search_default_posted':1, 'search_default_misc_filter':1, 'expand': 1}</field>
+    </record>
+
+    <record id="action_account_moves_ledger_partner" model="ir.actions.act_window">
+        <field name="name">Partner Ledger</field>
+        <field name="res_model">account.move.line</field>
+        <field name="view_mode">list,pivot,graph</field>
+        <field name="view_id" ref="view_account_move_line_list_grouped_partner" />
+        <field name="search_view_id" ref="view_account_move_line_filter" />
+        <field
+            name="domain">[('display_type', 'not in', ('line_section', 'line_subsection', 'line_note'))]</field>
+        <field
+            name="context">{'journal_type':'general', 'search_default_group_by_partner': 1,
+            'search_default_posted':1, 'search_default_trade_payable':1,
+            'search_default_trade_receivable':1, 'search_default_unreconciled':1}</field>
+    </record>
+
+    <record id="action_account_moves_all_tree" model="ir.actions.act_window">
+        <field name="name">Journal Items</field>
+        <field name="res_model">account.move.line</field>
+        <field name="view_id" ref="view_account_move_line_list" />
+        <field
+            name="domain">[('display_type', 'not in', ('line_section', 'line_subsection', 'line_note'))]</field>
+        <field
+            name="context">{'search_default_partner_id': [active_id], 'default_partner_id': active_id, 'search_default_posted':1}</field>
+    </record>
+
+    <record id="action_account_moves_all" model="ir.actions.act_window">
+        <field name="name">Journal Items</field>
+        <field name="res_model">account.move.line</field>
+        <field name="path">items</field>
+        <field name="view_mode">list,pivot,graph,kanban</field>
+        <field name="view_id" ref="view_account_move_line_list" />
+        <field
+            name="domain">[('display_type', 'not in', ('line_section', 'line_subsection', 'line_note')), ('parent_state', '!=', 'cancel')]</field>
+        <field
+            name="context">{'journal_type':'general', 'search_default_posted':1}</field>
+    </record>
+
+    <record id="action_amounts_to_settle" model="ir.actions.act_window">
+        <field name="name">Amounts to Settle</field>
+        <field name="res_model">account.move.line</field>
+        <field name="view_mode">list</field>
+        <field name="view_id" ref="view_move_line_payment_tree" />
+        <field name="search_view_id" ref="view_account_move_line_payment_filter" />
+        <field
+            name="domain">[('parent_state', '=', 'posted'), ('date_maturity', '!=', False), ('amount_residual', '!=', 0), ('account_id.reconcile', '=', True)]</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Amounts to settle
+            </p>
+            <p>
+                Cool, it looks like you don't have any amount to settle.
+            </p>
+        </field>
+    </record>
+
+</odoo>

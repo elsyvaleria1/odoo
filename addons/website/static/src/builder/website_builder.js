@@ -1,0 +1,306 @@
+/** @odoo-module native */
+import { Builder } from "@html_builder/builder";
+import { BuilderActionsPlugin } from "@html_builder/core/builder_actions_plugin";
+import { BuilderComponentPlugin } from "@html_builder/core/builder_component_plugin";
+import { BuilderContentEditablePlugin } from "@html_builder/core/builder_content_editable_plugin";
+import { BuilderOptionsTranslationPlugin } from "@html_builder/core/builder_options_plugin_translate";
+import { BuilderOverlayPlugin } from "@html_builder/core/builder_overlay/builder_overlay_plugin";
+import { CoreBuilderActionPlugin } from "@html_builder/core/core_builder_action_plugin";
+import { CORE_PLUGINS, MAIN_PLUGINS } from "@html_builder/core/core_plugins";
+import { CustomizeTabPlugin } from "@html_builder/core/customize_tab_plugin";
+import { DisableSnippetsPlugin } from "@html_builder/core/disable_snippets_plugin_translation";
+import { DropZonePlugin } from "@html_builder/core/drop_zone_plugin";
+import { DropZoneSelectorPlugin } from "@html_builder/core/dropzone_selector_plugin";
+import { FieldChangeReplicationPlugin } from "@html_builder/core/field_change_replication_plugin";
+import { OperationPlugin } from "@html_builder/core/operation_plugin";
+import { OverlayButtonsPlugin } from "@html_builder/core/overlay_buttons/overlay_buttons_plugin";
+import { SavePlugin } from "@html_builder/core/save_plugin";
+import { SetupEditorPlugin } from "@html_builder/core/setup_editor_plugin";
+import { revertPreview } from "@html_builder/core/utils";
+import { VisibilityPlugin } from "@html_builder/core/visibility_plugin";
+import { ImageFieldPlugin } from "@html_builder/plugins/image_field_plugin";
+import { Many2OneOptionPlugin } from "@html_builder/plugins/many2one_option_plugin";
+import { MonetaryFieldPlugin } from "@html_builder/plugins/monetary_field_plugin";
+import { removePlugins } from "@html_builder/utils/utils";
+import { Plugin } from "@html_editor/plugin";
+import { closestElement } from "@html_editor/utils/dom_traversal";
+import { Component, onMounted, onWillStart, t, useProps } from "@odoo/owl";
+import { useSetupAction } from "@web/core/action_hook";
+import { browser } from "@web/core/browser/browser";
+import { makeLogger } from "@web/core/debug/debug_logger";
+import { useLifecycleLog } from "@web/core/debug/logger_hooks";
+import { rpc } from "@web/core/network";
+import { registry } from "@web/core/registry";
+import { _t } from "@web/core/translation";
+import { useService } from "@web/core/utils/hooks";
+import { redirect } from "@web/core/utils/urls";
+import { ConfirmationDialog } from "@web/ui/dialog";
+import { CustomizeTranslationTab } from "@website/builder/plugins/translation_tab/customize_translation_tab";
+
+import { CarouselOptionTranslationPlugin } from "./plugins/carousel_option_translation_plugin.js";
+import { EditInteractionPlugin } from "./plugins/edit_interaction_plugin.js";
+import { HighlightPlugin } from "./plugins/highlight/highlight_plugin.js";
+import { AnimateOptionPlugin } from "./plugins/options/animate_option_plugin.js";
+import { TranslateTableOfContentOptionPlugin } from "./plugins/options/table_of_content_option_plugin_translate.js";
+import { PopupVisibilityPlugin } from "./plugins/popup_visibility_plugin.js";
+import { SaveTranslationPlugin } from "./plugins/save_translation_plugin.js";
+import { WebsiteSetupEditorPlugin } from "./plugins/setup_editor_plugin.js";
+import { ThemeTab } from "./plugins/theme/theme_tab.js";
+import { TranslateAnnouncementScrollPlugin } from "./plugins/translate_announcement_scroll_plugin.js";
+import { TranslateLinkInlinePlugin } from "./plugins/translate_link_inline_plugin.js";
+import { TranslateSetupEditorPlugin } from "./plugins/translate_setup_editor_plugin.js";
+import { TranslationPlugin } from "./plugins/translation_plugin.js";
+import { CustomizeTranslationTabPlugin } from "./plugins/translation_tab/customize_translation_tab_plugin.js";
+import { WebsiteVisibilityPlugin } from "./plugins/website_visibility_plugin.js";
+import {
+    localStorageNoDialogKey,
+    TranslatorInfoDialog,
+} from "./translation_components/translatorInfoDialog.js";
+
+const TRANSLATION_PLUGINS = [
+    BuilderOptionsTranslationPlugin,
+    BuilderActionsPlugin,
+    BuilderComponentPlugin,
+    CoreBuilderActionPlugin,
+    DisableSnippetsPlugin,
+    SavePlugin,
+    SetupEditorPlugin,
+    TranslateSetupEditorPlugin,
+    WebsiteSetupEditorPlugin,
+    VisibilityPlugin,
+    PopupVisibilityPlugin,
+    SaveTranslationPlugin,
+    TranslateLinkInlinePlugin,
+    TranslationPlugin,
+    TranslateAnnouncementScrollPlugin,
+    WebsiteVisibilityPlugin,
+    AnimateOptionPlugin,
+    HighlightPlugin,
+    OperationPlugin,
+    EditInteractionPlugin,
+    TranslateTableOfContentOptionPlugin,
+    CarouselOptionTranslationPlugin,
+    FieldChangeReplicationPlugin,
+    BuilderContentEditablePlugin,
+    ImageFieldPlugin,
+    MonetaryFieldPlugin,
+    Many2OneOptionPlugin,
+    CustomizeTranslationTabPlugin,
+    class FakeRemovePlugin extends Plugin {
+        static id = "remove";
+    },
+    class FakeClonePlugin extends Plugin {
+        static id = "clone";
+    },
+];
+
+const log = makeLogger("website.builder.editor");
+
+export class WebsiteBuilder extends Component {
+    static template = "website.WebsiteBuilder";
+    static components = { Builder };
+    static props = { translation: t.boolean(), builderProps: t.object() };
+    props = useProps(this.constructor.props);
+
+    setup() {
+        useLifecycleLog(log);
+        this.websiteService = useService("website");
+        this.dialog = useService("dialog");
+        useSetupAction({
+            beforeUnload: (ev) => this.onBeforeUnload(ev),
+            beforeLeave: () => this.onBeforeLeave(),
+        });
+        onWillStart(async () => {
+            const endTranslated = log.perf("loadTranslatedElements", () => ({
+                translation: this.props.translation,
+            }));
+            this.translatedElements = this.props.translation
+                ? await rpc("/website/get_translated_elements")
+                : [];
+            endTranslated(() => ({ count: this.translatedElements.length }));
+        });
+        onMounted(() => {
+            if (
+                this.props.translation &&
+                !browser.localStorage.getItem(localStorageNoDialogKey)
+            ) {
+                log.lifecycle("TranslatorInfoDialog open");
+                this.dialog.add(TranslatorInfoDialog);
+            }
+        });
+    }
+
+    async discard() {
+        log.logic("discard", () => ({ canUndo: this.editor.shared.history.canUndo() }));
+        const endRevert = log.perf("discard revertPreview");
+        await revertPreview(this.editor);
+        endRevert();
+        if (this.editor.shared.history.canUndo()) {
+            this.dialog.add(ConfirmationDialog, {
+                title: _t("Discard all changes?"),
+                body: _t(
+                    "Are you sure you want to discard all your changes? Once you do, they're gone for good.",
+                ),
+                confirmLabel: _t("Discard changes"),
+                cancelLabel: _t("Keep editing"),
+                confirm: () => this.props.builderProps.closeEditor(),
+                cancel: () => {},
+            });
+        } else {
+            this.props.builderProps.closeEditor();
+        }
+        this.reloadAfterTimeout();
+    }
+
+    onBeforeUnload(event) {
+        if (!this.editor) {
+            return;
+        }
+        if (this.editor.shared.history.canUndo()) {
+            log.logic("onBeforeUnload: unsaved changes, prompting");
+            event.preventDefault();
+            event.returnValue = "Unsaved changes";
+        }
+    }
+
+    async onBeforeLeave() {
+        if (!this.editor) {
+            return true;
+        }
+        if (this.editor.shared.history.canUndo()) {
+            log.logic("onBeforeLeave: unsaved changes, asking confirmation");
+            let continueProcess = true;
+            await new Promise((resolve) => {
+                this.dialog.add(ConfirmationDialog, {
+                    body: _t("If you proceed, your changes will be lost"),
+                    confirmLabel: _t("Continue"),
+                    confirm: () => resolve(),
+                    cancel: () => {
+                        continueProcess = false;
+                        resolve();
+                    },
+                });
+            });
+            log.logic("onBeforeLeave: user choice", { continueProcess });
+            return continueProcess;
+        }
+        return true;
+    }
+
+    reloadAfterTimeout() {
+        if (this.editor.shared.operation.hasTimedOut()) {
+            const currentUrl = new URL(window.location.href);
+            log.logic("reloadAfterTimeout: operation timed out, redirecting", () => ({
+                pathname: currentUrl.pathname,
+            }));
+            redirect(`/@${currentUrl.pathname}`);
+        }
+    }
+
+    async save() {
+        log.logic("save", () => ({
+            timedOut: this.editor.shared.operation.hasTimedOut(),
+        }));
+        if (this.editor.shared.operation.hasTimedOut()) {
+            const shouldContinue = await new Promise((resolve) => {
+                this.dialog.add(ConfirmationDialog, {
+                    title: _t("Corrupted content"),
+                    body: _t(
+                        "This page may be corrupted if you save these changes. Are you sure you want to continue?",
+                    ),
+                    confirmLabel: _t("Save anyway"),
+                    confirmClass: "btn-danger",
+                    confirm: () => resolve(true),
+                    cancel: () => resolve(false),
+                    dismiss: () => resolve(false),
+                });
+            });
+            if (!shouldContinue) {
+                log.logic("save aborted: user declined saving corrupted content");
+                return;
+            }
+        }
+
+        const endSave = log.perf("save");
+        await this.editor.shared.operation.next(
+            async () => {
+                await this.editor.shared.savePlugin.save();
+                this.props.builderProps.closeEditor();
+            },
+            { withLoadingEffect: false, canTimeout: false },
+        );
+        endSave();
+        this.reloadAfterTimeout();
+    }
+
+    get builderProps() {
+        const builderProps = Object.assign({}, this.props.builderProps);
+        const websitePlugins = this.props.translation
+            ? [
+                  ...TRANSLATION_PLUGINS,
+                  ...registry.category("website-translation-plugins").getAll(),
+              ]
+            : [
+                  ...registry.category("builder-plugins").getAll(),
+                  ...registry.category("website-plugins").getAll(),
+              ];
+        const builderPluginsToRemove = [];
+        const pluginsBlockedInTranslationMode = [
+            "PowerboxPlugin",
+            "SearchPowerboxPlugin",
+            "MediaUrlPastePlugin",
+            "YoutubePlugin",
+            "ImagePlugin",
+            "AlignPlugin",
+            "ListPlugin",
+            "FontFamilyPlugin",
+        ];
+        const pluginsToRemove = this.props.translation
+            ? [...builderPluginsToRemove, ...pluginsBlockedInTranslationMode]
+            : builderPluginsToRemove;
+        const coreBuilderPlugins = removePlugins(
+            this.props.translation
+                ? [
+                      ...MAIN_PLUGINS,
+                      BuilderOverlayPlugin,
+                      OverlayButtonsPlugin,
+                      DropZonePlugin,
+                      DropZoneSelectorPlugin,
+                      CustomizeTabPlugin,
+                  ]
+                : CORE_PLUGINS,
+            pluginsToRemove,
+        );
+        const Plugins = [...coreBuilderPlugins, ...(websitePlugins || [])];
+        builderProps.Plugins = Plugins;
+        builderProps.onEditorLoad = (editor) => {
+            this.editor = editor;
+        };
+        builderProps.config.getRecordInfo = (editableEl) => {
+            if (this.editor && !editableEl) {
+                editableEl = closestElement(
+                    this.editor.shared.selection.getEditableSelection().anchorNode,
+                    "[data-oe-model]",
+                );
+            }
+            if (!editableEl) {
+                return {};
+            }
+            return {
+                resModel: editableEl.dataset["oeModel"],
+                resId: editableEl.dataset["oeId"],
+                field: editableEl.dataset["oeField"],
+                type: editableEl.dataset["oeType"],
+            };
+        };
+        builderProps.config.translatedElements = this.translatedElements;
+        builderProps.getThemeTab = () => this.websiteService.isDesigner && ThemeTab;
+        builderProps.getCustomizeTranslationTab = () => CustomizeTranslationTab;
+        const installSnippetModule = builderProps.installSnippetModule;
+        builderProps.installSnippetModule = (snippet) =>
+            installSnippetModule(snippet, this.save.bind(this));
+        return builderProps;
+    }
+}
+
+registry.category("lazy_components").add("website.WebsiteBuilder", WebsiteBuilder);

@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<templates>
+
+    <t t-name="voip.CallQueueSwitch">
+        <div class="o-voip-call-queue-switch">
+            <button class="btn d-flex align-items-center fa-stack" t-att-title="this.titleText" t-on-click.stop="this.onClick">
+                <i class="fa-solid fa-phone fa-lg fa-stack-1x"/>
+                <i class="o-voip-call-queue-switch-op-icon fa-stack-1x" t-att-class="this.iconClasses"/>
+            </button>
+        </div>
+    </t>
+
+</templates>

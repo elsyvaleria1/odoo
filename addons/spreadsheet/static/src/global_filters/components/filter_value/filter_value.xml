@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<templates>
+    <t t-name="spreadsheet.FilterValue">
+        <div class="o-filter-value d-flex align-items-start w-100" t-att-title="this.props.showTitle and this.filter.label">
+            <div t-if="this.isSetOperator" class="w-100"></div>
+            <div t-elif="this.isTextualOperator || this.filter.type === 'text'" class="w-100">
+                <TextFilterValue
+                    value="this.filterValue?.strings"
+                    options="this.textAllowedValues"
+                    onValueChanged="(value) => this.onTextInput(this.filter.id, value)"
+                />
+            </div>
+            <div t-elif="this.filter.type === 'selection'" class="w-100">
+                <SelectionFilterValue
+                    resModel="this.filter.resModel"
+                    field="this.filter.selectionField"
+                    value="this.filterValue?.selectionValues ?? []"
+                    onValueChanged="(value) => this.onSelectionInput(this.filter.id, value)"
+                />
+            </div>
+            <div t-elif="this.filter.type === 'date'" class="w-100">
+                <DateFilterValue value="this.filterValue"
+                                 update.bind="(value) => this.onDateInput(this.filter.id, value)"/>
+            </div>
+            <div t-elif="this.filter.type === 'numeric'" class="w-100 d-flex align-items-center"
+                 t-att-class="this.filterValue?.operator === 'between' ? 'justify-content-between' : ''">
+                <t t-if="this.filterValue?.operator === 'between'">
+                    <NumericFilterValue
+                        value="this.filterValue.minimumValue"
+                        onValueChanged="(value) => this.onMinimumValueNumericInput(this.filter.id, value)"
+                    />
+                    <i class="fa-solid fa-right-long mx-2"/>
+                    <NumericFilterValue
+                        value="this.filterValue.maximumValue"
+                        onValueChanged="(value) => this.onMaximumValueNumericInput(this.filter.id, value)"
+                    />
+                </t>
+                <t t-else="">
+                    <NumericFilterValue
+                        value="this.filterValue.targetValue"
+                        onValueChanged="(value) => this.onTargetValueNumericInput(this.filter.id, value)"
+                    />
+                </t>
+            </div>
+            <span t-elif="this.filter.type === 'relation'" class="w-100">
+                <MultiRecordSelector
+                    t-if="this.isValid"
+                    resModel="this.filter.modelName"
+                    resIds="this.filterValue?.ids ?? []"
+                    domain="this.relationalAllowedDomain"
+                    update="(resIds) => this.onTagSelected(this.filter.id, resIds)" />
+                <ValidationMessages t-else="1"
+                                    messages="[this.invalidModel]"
+                                    msgType="'error'"/>
+            </span>
+            <i t-if="this.isValid and this.props.showClear and this.getters.isGlobalFilterActive(this.filter.id)"
+                class="fa-solid fa-times btn btn-link text-muted ms-1 mt-1"
+                title="Clear"
+                t-on-click="() => this.clear(this.filter.id)"/>
+        </div>
+    </t>
+</templates>

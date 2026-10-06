@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates>
+    <t t-name="DataCleaning.buttons" t-inherit="web.ListView.Buttons" t-inherit-mode="primary">
+        <xpath expr="." position="inside">
+            <t t-if="this.hasSelectedRecords">
+                <button type="button" class="btn btn-primary o_data_cleaning_validate_button" t-on-click="this.onValidateClick">
+                    Validate
+                </button>
+                <button type="button" class="btn btn-secondary o_data_cleaning_unselect_button" t-on-click="this.onUnselectClick">
+                    Unselect
+                </button>
+            </t>
+        </xpath>
+    </t>
+</templates>

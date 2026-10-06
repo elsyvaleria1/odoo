@@ -1,0 +1,8 @@
+.o_cookies_bar_toggle {
+    $-o-livechat-button-margin: 3%;
+    inset-inline-end: calc(56px + #{$-o-livechat-button-margin} + 1rem);
+    inset-block-end: var(
+        --cookies-bar-toggle-inset-block-end,
+        #{$-o-livechat-button-margin}
+    );
+}

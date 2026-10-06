@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+
+    <record id="service_telegram" model="integration.service">
+        <field name="name">Telegram Bot API</field>
+        <field name="code">telegram</field>
+        <field name="category">communication</field>
+        <field name="provider">Telegram</field>
+        <field name="website">https://telegram.org</field>
+        <field name="documentation_url">https://core.telegram.org/bots/api</field>
+        <field name="endpoint_url">https://api.telegram.org</field>
+        <field name="auth_type">custom</field>
+        <field name="rate_limit_requests">30</field>
+        <field name="rate_limit_period">second</field>
+        <field name="timeout_connect">10</field>
+        <field name="timeout_read">30</field>
+        <field name="retry_enabled" eval="True" />
+        <field name="retry_max_attempts" eval="3" />
+        <field name="retry_backoff_type">exponential</field>
+        <field name="allow_multiple_credentials" eval="True" />
+        <field
+            name="description">Telegram Bot API for sending messages, files, and managing bot interactions. Authentication via URL path: /bot{token}/{method}</field>
+    </record>
+
+</odoo>

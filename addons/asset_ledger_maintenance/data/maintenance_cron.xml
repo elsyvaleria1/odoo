@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+
+    <record id="cron_generate_maintenance_orders" model="ir.cron">
+        <field name="name">Send Due Maintenance Orders Out</field>
+        <field name="model_id" ref="maintenance.model_maintenance_plan" />
+        <field name="state">code</field>
+        <field name="code">model._cron_start_due_orders()</field>
+        <field name="repeat_interval" eval="1" />
+        <field name="repeat_unit">day</field>
+        <field name="active" eval="True" />
+    </record>
+
+    <record id="cron_recompute_maintenance_plan_state" model="ir.cron">
+        <field name="name">Refresh Maintenance Plan State</field>
+        <field name="model_id" ref="maintenance.model_maintenance_plan" />
+        <field name="state">code</field>
+        <field name="code">model._cron_recompute_state()</field>
+        <field name="repeat_interval" eval="1" />
+        <field name="repeat_unit">day</field>
+        <field name="active" eval="True" />
+    </record>
+
+</odoo>

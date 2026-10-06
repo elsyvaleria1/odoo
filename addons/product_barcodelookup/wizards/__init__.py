@@ -1,0 +1,1 @@
+from . import wizard_product_product_update_image

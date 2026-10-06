@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <data noupdate="1">
+        <record
+            id="hr_payroll_dashboard_warning_employee_multiple_cars"
+            model="hr.payroll.dashboard.warning">
+            <field name="name">Employees With Multiple Company Cars</field>
+            <field name="country_id" eval="False" />
+            <field
+                name="evaluation_code">if self.env['resource.asset'].has_access('read') and self.env['resource.assignment'].has_access('read'):
+    self.env.cr.execute("""
+        SELECT employee.id
+          FROM resource_assignment assignment
+          JOIN resource_asset_vehicle vehicle
+            ON vehicle.resource_id = assignment.resource_id
+           AND vehicle.active IS TRUE
+          JOIN hr_employee employee ON employee.resource_id = assignment.assignee_id
+         WHERE assignment.custody_role = 'operator'
+           AND assignment.active IS TRUE
+           AND assignment.date_start &lt;= (NOW() AT TIME ZONE 'utc')
+           AND (assignment.date_end IS NULL OR assignment.date_end &gt; (NOW() AT TIME ZONE 'utc'))
+           AND vehicle.company_id = ANY(%s)
+      GROUP BY employee.id
+        HAVING COUNT(DISTINCT vehicle.id) &gt; 1
+    """, (self.env.companies.ids, ))
+    employees_multiple_vehicles = [eid[0] for eid in self.env.cr.fetchall()]
+
+    if employees_multiple_vehicles:
+        warning_count = len(employees_multiple_vehicles)
+        warning_records = self.env['hr.employee'].browse(employees_multiple_vehicles)</field>
+        </record>
+    </data>
+
+</odoo>

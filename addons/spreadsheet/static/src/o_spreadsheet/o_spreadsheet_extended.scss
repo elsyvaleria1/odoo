@@ -1,0 +1,94 @@
+.o-spreadsheet {
+    .o-scorecard,
+    .o-gauge-chart {
+        border-radius: 8px;
+    }
+
+    .o-sp-badge {
+        background-color: #374151c2;
+        color: #fff;
+    }
+}
+
+.o-sidePanel {
+    --o-spreadsheet-input-border-color: #d8dadd;
+    .o_input {
+        color: #111827;
+        border-color: var(--o-spreadsheet-input-border-color);
+        &::placeholder {
+            opacity: 0.5;
+        }
+    }
+
+    .o_field_invalid,
+    .o_missing_field {
+        .o-input,
+        .o_input {
+            border-color: var(--o-input-border-color);
+        }
+    }
+
+    .o_required_modifier:not(.o_field_invalid):not(.o_missing_field) {
+        .o_input {
+            border-color: #111827;
+        }
+    }
+
+    .o_tree_editor_condition {
+        flex-wrap: wrap;
+    }
+}
+
+// The dark half, folded in from `o_spreadsheet_extended.dark.scss`.
+@include media-only(screen) {
+    :root[data-color-scheme="dark"] {
+        // Force light theme for everything in o-spreadsheet until
+        // we have the proper scss tool chain to support dark theme properly
+        // in the library
+        .o-spreadsheet {
+            color-scheme: light;
+            select > option {
+                color: inherit;
+                background-color: inherit;
+            }
+
+            .bg-white {
+                background-color: #fff !important;
+            }
+
+            .o_multi_record_selector .badge {
+                background-color: #e6dddd !important;
+                color: #3c3c3c !important;
+            }
+            .o_model_field_selector_chain_part {
+                background: #f6f7fa !important;
+                border-color: #d5dae8 !important;
+            }
+            input {
+                color: #333 !important;
+            }
+            .o_input {
+                color: #3c3c3c !important;
+            }
+            .o_read_mode .o_tree_editor_condition {
+                background: #f6f7fa !important;
+                border-color: #d5dae8 !important;
+            }
+            .o_domain_selector input {
+                background-color: #333 !important;
+            }
+            .btn {
+                color: #374151;
+            }
+            .border {
+                border-color: #d5dae8 !important;
+            }
+            .border-bottom {
+                border-bottom-color: #d5dae8 !important;
+            }
+            .border-top {
+                border-top-color: #d5dae8 !important;
+            }
+        }
+    }
+}

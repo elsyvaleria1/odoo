@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+
+    <record id="device_kind_access_control" model="device.kind">
+        <field name="name">Access Control</field>
+        <field name="code">access_control</field>
+        <field name="icon">fa-id-card</field>
+        <field
+            name="description">Hikvision ISAPI/EHOME access control devices (doors, turnstiles).</field>
+        <field name="comm_protocol">https</field>
+        <field name="link_mode">pull</field>
+    </record>
+
+</odoo>

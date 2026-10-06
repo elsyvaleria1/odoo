@@ -1,0 +1,65 @@
+{
+    "name": "Blog",
+    "version": "1.2",
+    "oldest_upgradable_version": "1.2",
+    "category": "Website/Website",
+    "sequence": 200,
+    "summary": "Publish categorized blog posts and expose feeds on your website",
+    "description": "Adds blogs, posts, tags, publication controls and website routes for reading and searching posts. Provides feed generation and integration with website editing and messaging. Authors maintain the content and choose which posts to publish.",
+    "author": "Odoo S.A.",
+    "website": "https://www.odoo.com/app/blog",
+    "license": "LGPL-3",
+    "depends": [
+        "website_mail",
+        "website_partner",
+        "html_builder",
+    ],
+    "data": [
+        "data/mail_message_subtype_data.xml",
+        "data/mail_templates.xml",
+        "data/website_blog_data.xml",
+        "data/blog_snippet_template_data.xml",
+        "data/website_blog_tour.xml",
+        "views/website_blog_views.xml",
+        "views/website_blog_components.xml",
+        "views/website_blog_posts_loop.xml",
+        "views/website_blog_templates.xml",
+        "views/snippets/snippets.xml",
+        "views/snippets/s_blog_posts.xml",
+        "views/snippets/s_dynamic_snippet_blog_posts_preview_data.xml",
+        "views/website_pages_views.xml",
+        "views/blog_post_add.xml",
+        "security/ir.access.csv",
+        "views/website_blog_menus.xml",
+    ],
+    "demo": [
+        "demo/website_blog_demo.xml",
+    ],
+    "assets": {
+        "web.assets_backend": [
+            "website_blog/static/src/tours/website_blog.js",
+        ],
+        "web.assets_tests": [
+            "website_blog/static/tests/tours/**/*",
+        ],
+        "web.assets_unit_tests": [
+            "website_blog/static/tests/interactions/**/*",
+            "website_blog/static/tests/website_builder/**/*",
+        ],
+        "web.assets_unit_tests_setup": [
+            "website_blog/static/src/interactions/**/*.js",
+            "website_blog/static/src/snippets/**/*.js",
+        ],
+        "web.assets_frontend": [
+            "website_blog/static/src/interactions/**/*",
+            "website_blog/static/src/scss/website_blog.scss",
+            "website_blog/static/src/snippets/**/*.js",
+        ],
+        "website.assets_editor": [
+            "website_blog/static/src/js/systray_items/*.js",
+        ],
+        "website.website_builder_assets": [
+            "website_blog/static/src/website_builder/**/*",
+        ],
+    },
+}

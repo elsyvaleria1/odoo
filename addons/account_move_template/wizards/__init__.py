@@ -1,0 +1,2 @@
+from . import wizard_account_move_template_create_move
+from . import wizard_account_move_template_create_move_line

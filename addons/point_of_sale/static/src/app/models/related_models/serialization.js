@@ -1,0 +1,256 @@
+/** @odoo-module native */
+import { makeLogger } from "@web/core/debug/debug_logger";
+import { serializeDate, serializeDateTime } from "@web/core/l10n/dates";
+
+import { DATE_TIME_TYPE, X2MANY_TYPES } from "./utils.js";
+const log = makeLogger("pos.models.serialization");
+const deepSerialization = (
+    record,
+    opts,
+    { serialized = {}, uuidMapping = {}, parentRelInverseName = null, stack = [] },
+) => {
+    const result = {};
+    const { fields, name: currentModel } = record.model;
+    const DYNAMIC_MODELS = opts.dynamicModels;
+    const recursiveSerialize = (childRecord, parentRelInverseName) =>
+        deepSerialization(childRecord, opts, {
+            serialized,
+            uuidMapping,
+            parentRelInverseName,
+            stack,
+        });
+
+    const scheduleClear = (fn) => {
+        if (opts.keepCommands) {
+            return;
+        }
+        if (opts.deferClear) {
+            opts.clearActions.push(fn);
+        } else {
+            fn();
+        }
+    };
+
+    for (const [fieldName, field] of Object.entries(fields)) {
+        if (field.local || field.related || field.compute || field.dummy) {
+            continue;
+        }
+
+        const relatedModel = field.relation;
+        const targetModel = field.model;
+        const modelCommands = record.models.commands[currentModel];
+
+        if (relatedModel) {
+            if (!record.models[relatedModel]) {
+                continue;
+            }
+
+            if (DYNAMIC_MODELS.includes(relatedModel) && !serialized[relatedModel]) {
+                serialized[relatedModel] = {};
+            }
+        }
+        if (DYNAMIC_MODELS.includes(currentModel) && !serialized[currentModel]) {
+            serialized[currentModel] = { [record.uuid]: record.uuid };
+        }
+        if (DYNAMIC_MODELS.includes(targetModel) && !uuidMapping[targetModel]) {
+            uuidMapping[targetModel] = {};
+        }
+        if (X2MANY_TYPES.has(field.type) && record[fieldName]) {
+            if (DYNAMIC_MODELS.includes(relatedModel)) {
+                const toUpdate = [];
+                const toCreate = [];
+
+                for (const childRecord of record[fieldName]) {
+                    if (serialized[relatedModel][childRecord.uuid]) {
+                        continue;
+                    }
+
+                    if (childRecord.isSynced && childRecord._dirty) {
+                        toUpdate.push(childRecord);
+                        const epoch = childRecord._dirtyEpoch;
+                        scheduleClear(() => {
+                            if (childRecord._dirtyEpoch === epoch) {
+                                childRecord._markClean();
+                            }
+                        });
+                    } else if (!childRecord.isSynced) {
+                        toCreate.push(childRecord);
+                    }
+                    serialized[relatedModel][childRecord.uuid] = childRecord.uuid;
+                }
+                log.logic("x2many commands", () => ({
+                    model: currentModel,
+                    record: record.uuid ?? record.id,
+                    field: fieldName,
+                    update: toUpdate.length,
+                    create: toCreate.length,
+                }));
+                stack.push([
+                    result,
+                    fieldName,
+                    () => [
+                        ...(result[fieldName] || []),
+                        ...toUpdate.map((childRecord) => [
+                            1,
+                            childRecord.id,
+                            recursiveSerialize(childRecord, field.inverse_name),
+                        ]),
+                        ...toCreate.map((childRecord) => [
+                            0,
+                            0,
+                            recursiveSerialize(childRecord, field.inverse_name),
+                        ]),
+                    ],
+                ]);
+            } else {
+                result[fieldName] = record[fieldName]
+                    .filter((childRecord) => childRecord.id)
+                    .map((childRecord) => {
+                        if (!childRecord.isSynced) {
+                            throw new Error(
+                                `Trying to create a non serializable record '${relatedModel}'`,
+                            );
+                        }
+                        return childRecord.id;
+                    });
+            }
+
+            if (
+                modelCommands.unlink.has(fieldName) ||
+                modelCommands.delete.has(fieldName)
+            ) {
+                result[fieldName] = result[fieldName] || [];
+                const processRecords = (records, cmdCode) => {
+                    for (const { id, parentId } of records) {
+                        const isAlreadyDeleted =
+                            serialized[relatedModel]?.["_deleted_" + id];
+                        if (parentId === record.id && !isAlreadyDeleted) {
+                            const isCascadeDelete =
+                                record.models[relatedModel]?.fields[field.inverse_name]
+                                    ?.ondelete;
+                            if (isCascadeDelete) {
+                                serialized[relatedModel]["_deleted_" + id] = true;
+                            }
+                            result[fieldName].push([cmdCode, id]);
+                        }
+                    }
+                };
+                processRecords(modelCommands.unlink.get(fieldName) || [], 3);
+                processRecords(modelCommands.delete.get(fieldName) || [], 2);
+                log.logic("x2many unlink/delete commands", () => ({
+                    model: currentModel,
+                    record: record.uuid ?? record.id,
+                    field: fieldName,
+                    unlink: (modelCommands.unlink.get(fieldName) || []).length,
+                    delete: (modelCommands.delete.get(fieldName) || []).length,
+                    emitted: result[fieldName].filter((c) => c[0] === 2 || c[0] === 3)
+                        .length,
+                }));
+
+                for (const commands of [modelCommands.unlink, modelCommands.delete]) {
+                    if (opts.keepCommands) {
+                        continue;
+                    }
+                    const commandList = commands.get(fieldName) || [];
+                    const consumed = new Set(
+                        commandList.filter(({ parentId }) => parentId === record.id),
+                    );
+
+                    scheduleClear(() => {
+                        const remaining = (commands.get(fieldName) || []).filter(
+                            (cmd) => !consumed.has(cmd),
+                        );
+                        if (remaining.length) {
+                            commands.set(fieldName, remaining);
+                        } else {
+                            commands.delete(fieldName);
+                        }
+                    });
+                }
+            }
+            continue;
+        }
+
+        if (field.type === "many2one") {
+            const recordId = record[fieldName]?.id;
+            if (DYNAMIC_MODELS.includes(relatedModel) && record[fieldName]) {
+                if (
+                    fieldName !== parentRelInverseName &&
+                    record.uuid &&
+                    serialized[relatedModel][record[fieldName].uuid]
+                ) {
+                    if (!record[fieldName].isSynced) {
+                        uuidMapping[targetModel][record.uuid] ??= {};
+                        uuidMapping[targetModel][record.uuid][fieldName] =
+                            record[fieldName].uuid;
+                    }
+                }
+                serialized[relatedModel][record[fieldName].uuid] =
+                    record[fieldName].uuid;
+            }
+            if (typeof recordId === "number" && recordId >= 0) {
+                result[fieldName] = recordId;
+            } else if (record[fieldName] === undefined) {
+                result[fieldName] = false;
+            }
+            continue;
+        }
+        if (DATE_TIME_TYPE.has(field.type) && typeof record[fieldName] === "object") {
+            result[fieldName] =
+                field.type === "datetime"
+                    ? serializeDateTime(record[fieldName])
+                    : serializeDate(record[fieldName]);
+            continue;
+        }
+        if (fieldName === "id") {
+            if (typeof record[fieldName] === "number") {
+                result[fieldName] = record[fieldName];
+            }
+            continue;
+        }
+        result[fieldName] = record[fieldName] !== undefined ? record[fieldName] : false;
+    }
+
+    while (stack.length) {
+        const [res, key, getValue] = stack.pop();
+        res[key] = getValue();
+    }
+
+    const recordEpoch = record._dirtyEpoch;
+    scheduleClear(() => {
+        if (record._dirtyEpoch === recordEpoch) {
+            record._markClean();
+        }
+    });
+
+    for (const key in uuidMapping) {
+        if (
+            uuidMapping[key] &&
+            typeof uuidMapping[key] === "object" &&
+            Object.keys(uuidMapping[key]).length === 0
+        ) {
+            delete uuidMapping[key];
+        }
+    }
+
+    return result;
+};
+
+export const ormSerialization = (record, opts) => {
+    const uuidMapping = {};
+    const endSerialize = log.perf(`serializeForORM ${record.model.name}`);
+    const result = deepSerialization(record, opts, {
+        uuidMapping,
+    });
+    if (Object.keys(uuidMapping).length !== 0) {
+        result.relations_uuid_mapping = uuidMapping;
+    }
+    endSerialize({
+        record: record.uuid ?? record.id,
+        keys: Object.keys(result).length,
+        uuidMappings: Object.keys(uuidMapping).length,
+        deferClear: Boolean(opts.deferClear),
+        keepCommands: Boolean(opts.keepCommands),
+    });
+    return result;
+};

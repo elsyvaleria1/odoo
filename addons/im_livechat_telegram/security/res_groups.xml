@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="privilege_serve_customers" model="res.groups">
+        <field
+            name="name">Privilege: a Telegram customer is answered in their live chat session</field>
+        <field
+            name="comment">Held by the updates of a bot's customers and by what the session sends them back: read and keep the Telegram sessions (live chat channels of a Telegram chat), post and edit their comments, follow their chatbot's questions and answers, and read who answered them. A customer is no Odoo user and no member the session's own rules know; the session itself opens on im_livechat's privilege to open one, as the web route opens a visitor's.</field>
+        <field name="is_privilege" eval="True" />
+    </record>
+
+</odoo>

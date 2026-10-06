@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="helpdesk_ticket_view_form_inherit_helpdesk_repair" model="ir.ui.view">
+        <field name="name">helpdesk.ticket.form.inherit.helpdesk.repair</field>
+        <field name="model">helpdesk.ticket</field>
+        <field name="inherit_id" ref="helpdesk.helpdesk_ticket_view_form" />
+        <field name="arch" type="xml">
+            <button name="action_view_helpdesk_ticket" position="before">
+                <button
+                    name="action_view_repairs"
+                    type="object"
+                    icon="fa-wrench"
+                    groups="stock.group_stock_user"
+                    invisible="repairs_count == 0"
+                    class="oe_stat_button">
+                    <field name="repairs_count" string="Repairs" widget="statinfo" />
+                </button>
+            </button>
+        </field>
+    </record>
+
+    <record id="helpdesk_ticket_view_form_inherit_stock_user" model="ir.ui.view">
+        <field name="name">helpdesk.ticket.form.inherit.repair.stock.user</field>
+        <field name="model">helpdesk.ticket</field>
+        <field name="inherit_id" ref="helpdesk.helpdesk_ticket_view_form" />
+        <field name="priority">50</field>
+        <field name="arch" type="xml">
+            <field name="stage_id" position="before">
+                <field
+                    name="use_product_repairs"
+                    groups="stock.group_stock_user"
+                    invisible="1" />
+                <button
+                    name="action_repair_order_form"
+                    type="object"
+                    string="Repair"
+                    groups="stock.group_stock_user"
+                    invisible="not use_product_repairs"
+                    data-hotkey="t" />
+            </field>
+        </field>
+    </record>
+
+</odoo>

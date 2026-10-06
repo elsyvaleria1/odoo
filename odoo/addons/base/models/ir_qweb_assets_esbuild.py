@@ -1,0 +1,970 @@
+import contextlib
+import logging
+import re
+from collections.abc import Collection, Iterator
+from typing import Any, Self
+
+from psycopg.errors import LockNotAvailable
+
+from odoo import models
+from odoo.libs.asset_log import get_asset_logger, log_event
+from odoo.libs.debug_log import DebugLog
+from odoo.libs.lru import LRU
+from odoo.modules import module as _module
+from odoo.tools.assets import esm_index
+from odoo.tools.assets.esbuild import (
+    EsbuildCompiler,
+    EsbuildGroupResult,
+    EsbuildResult,
+    classic_script,
+    get_esbuild_version,
+    module_specifiers,
+)
+from odoo.tools.assets.esm_bridges import get_evaluation_time_bridge_uses
+from odoo.tools.assets.esm_graph import (
+    _TRANSITIVE_IMPORT_RE,
+    _get_import_specifiers,
+    get_escaping_relative_imports,
+    reachable_module_sources,
+)
+from odoo.tools.assets.esm_registry import (
+    esm_registry,
+    external_bare_specifiers,
+    external_libs,
+)
+
+from odoo.addons.base.models.assetsbundle import AssetsBundle
+
+# above esbuild's own 30 s timeout, so a normal compile is always waited for,
+# and well under limit_time_real, so a stalled holder cannot queue every waiter
+# until the workers are killed
+_ESBUILD_LOCK_TIMEOUT_S = 45
+_LOCK_TIMED_OUT = object()
+_fallback_log = get_asset_logger("fallback")
+_bridge_log = get_asset_logger("bridge")
+_debug = DebugLog(__name__)
+
+# specifier literals per source, keyed by the asset's unique descriptor (url
+# and mtime): the page bundles of one process share most of their sources,
+# and one bundle's consumers re-list many of its own
+_SPECIFIER_LITERALS_CACHE: LRU = LRU(16384)
+
+
+class EsbuildBundleError(RuntimeError):
+    pass
+
+
+def _get_specs_imported_by_consumers(
+    consumers: list[AssetsBundle], members: set[str]
+) -> set[str]:
+    imported: set[str] = set()
+    ext_lib_names = set(external_libs())
+    for consumer in consumers:
+        own = [a for a in consumer.native_modules if a.module_path not in members]
+        own_specs = {name for a in own for name in module_specifiers(a)}
+        # the reach walk records an external lib's specifier aside, and a
+        # bundle can own one (@odoo/hoot-mock): a direct import is read here
+        imported.update(
+            spec
+            for asset in own
+            for spec in _get_import_specifiers(asset.raw_content)
+            if spec in members
+        )
+        reached, _ext = consumer._bridges._discover_reachable_specifiers(
+            own_specs, ext_lib_names, provided=members, modules=own
+        )
+        imported.update(spec for spec in reached if spec in members)
+        imported.update(
+            resolved
+            for _module, _spec, resolved in get_escaping_relative_imports(
+                own, own_specs
+            )
+            if resolved in members
+        )
+    _debug.perf.count(
+        "consumer_imports",
+        consumers=len(consumers),
+        members=len(members),
+        imported=len(imported),
+    )
+    return imported
+
+
+class IrQweb(models.AbstractModel):
+    _inherit = "ir.qweb"
+
+    def _check_lazy_bundle_relative_imports(
+        self,
+        asset_bundle: AssetsBundle,
+    ) -> None:
+        escapes = get_escaping_relative_imports(asset_bundle.native_modules)
+        if not escapes:
+            return
+        _debug.logic(
+            "lazy_bundle_rejected",
+            bundle=asset_bundle.name,
+            reason="escaping_relative_imports",
+            escapes=len(escapes),
+        )
+        details = "; ".join(
+            f"{module_path} imports {spec!r} (-> {resolved})"
+            for module_path, spec, resolved in escapes
+        )
+        raise EsbuildBundleError(
+            f"ESM bundle {asset_bundle.name!r} is served per-file but has "
+            f"relative imports escaping the bundle: {details}. Use the bare "
+            f"'@addon/...' specifier instead, so the import resolves through "
+            f"the import map (parent-bridge shim) rather than fetching the "
+            f"raw source."
+        )
+
+    def _can_compile_with_esbuild(self, bundle: str) -> bool:
+        if bundle in self._get_esbuild_bundles_forced_fallback():
+            _debug.logic("esbuild_declined", bundle=bundle, reason="admin_override")
+            log_event(_fallback_log, logging.INFO, "admin_override", bundle=bundle)
+            return False
+        allow, circuit_reason = self._get_esbuild_circuit_state(bundle)
+        if not allow:
+            log_event(
+                _fallback_log,
+                logging.DEBUG,
+                "circuit_blocked",
+                bundle=bundle,
+                reason=circuit_reason,
+            )
+        return allow
+
+    def _get_esbuild_child_externals(
+        self,
+        bundle: str,
+        asset_bundle: AssetsBundle,
+        assets_params: dict[str, Any] | None,
+        child_bundles: list[AssetsBundle],
+        page_scope: tuple[str, ...] = (),
+    ) -> tuple[frozenset[str] | None, dict[str, str]]:
+        parent_specs = {a.module_path for a in asset_bundle.native_modules}
+        child_specs = {
+            asset.module_path
+            for child_ab in child_bundles
+            for asset in child_ab.native_modules
+        } - parent_specs
+        secondary_stubs = self._get_secondary_parent_stubs(
+            bundle, assets_params, page_scope
+        )
+        if not child_specs:
+            _debug.logic(
+                "child_externals",
+                bundle=bundle,
+                children=len(child_bundles),
+                child_specs=0,
+                stubs=len(secondary_stubs),
+            )
+            return None, secondary_stubs
+
+        aliasable = {
+            spec
+            for spec in child_specs
+            if "/../" not in spec and not spec.startswith("../")
+        }
+        if aliasable:
+            child_stubs = asset_bundle._bridges.prepare_shim_sources(aliasable)
+            secondary_stubs = {**child_stubs, **secondary_stubs}
+            self._warn_bridges_read_at_evaluation(
+                bundle, asset_bundle.native_modules, aliasable
+            )
+        _debug.pipeline(
+            "child_externals",
+            bundle=bundle,
+            children=len(child_bundles),
+            child_specs=len(child_specs),
+            aliasable=len(aliasable),
+            stubs=len(secondary_stubs),
+        )
+        return frozenset(child_specs - aliasable) or None, secondary_stubs
+
+    def _warn_bridges_read_at_evaluation(
+        self, bundle: str, native_modules: list, bridged: set[str]
+    ) -> None:
+        # Loud, not fatal: the bundle already fails in the browser with an
+        # error that names neither module; this names both.
+        for use in get_evaluation_time_bridge_uses(native_modules, bridged):
+            log_event(
+                _bridge_log,
+                logging.ERROR,
+                "bridge_read_at_evaluation",
+                bundle=bundle,
+                module=use.module,
+                line=use.line,
+                binding=use.binding,
+                specifier=use.specifier,
+                hint=f"{use.specifier} belongs to a lazy child of {bundle}, so "
+                f"{use.binding} is undefined while {use.module} is evaluated: move "
+                "the module into a bundle that includes the child (as "
+                "website_forum.assets_forum_editor does) or read the binding only "
+                "inside a function",
+            )
+
+    def _compile_with_esbuild(
+        self,
+        bundle: str,
+        asset_bundle: AssetsBundle,
+        dynamic_child_specs: frozenset[str] | None,
+        secondary_stubs: dict[str, str],
+        exported_specs: frozenset[str] | None = None,
+        registered_reach: dict[str, str] | None = None,
+    ) -> EsbuildResult:
+        config = self._get_esbuild_config()
+        excluded_specs = frozenset(
+            asset.module_path
+            for asset in asset_bundle.native_modules
+            if asset.module_path in secondary_stubs
+        )
+        try:
+            with _debug.perf(
+                "esbuild",
+                bundle=bundle,
+                dynamic_children=len(dynamic_child_specs or ()),
+                secondary_stubs=len(secondary_stubs),
+                excluded=len(excluded_specs),
+                exported=len(exported_specs or ()),
+            ) as span:
+                result = asset_bundle.esbuild_native_bundle(
+                    timeout_s=config.get_param_int(
+                        "web.esbuild.timeout_s", EsbuildCompiler._ESBUILD_TIMEOUT_S
+                    ),
+                    target=config.get_param("web.esbuild.target")
+                    or EsbuildCompiler._ESBUILD_TARGET,
+                    source_maps=config.get_param("web.esbuild.source_maps")
+                    or EsbuildCompiler._ESBUILD_SOURCE_MAPS,
+                    dynamic_child_specs=dynamic_child_specs,
+                    secondary_parent_stubs=secondary_stubs or None,
+                    exported_specs=exported_specs,
+                    registered_reach=registered_reach,
+                    excluded_specs=excluded_specs,
+                )
+                span.set(chars=len(result.code) if result.code else 0)
+        except Exception as exc:
+            log_event(
+                _fallback_log,
+                logging.WARNING,
+                "esbuild_exception",
+                bundle=bundle,
+                err=type(exc).__name__,
+                msg=str(exc)[:200],
+            )
+            _debug.logic(
+                "esbuild_failed",
+                bundle=bundle,
+                error=type(exc).__name__,
+                fail_closed=self._is_esbuild_fail_closed(),
+            )
+            if self._is_esbuild_fail_closed():
+                raise EsbuildBundleError(
+                    f"esbuild failed for bundle {bundle!r}: {exc}"
+                ) from exc
+            self._open_esbuild_circuit(bundle, reason=type(exc).__name__)
+            return EsbuildResult("", None, None)
+        self._close_esbuild_circuit(bundle)
+        return result
+
+    def _compile_with_esbuild_locked(
+        self,
+        bundle: str,
+        asset_bundle: AssetsBundle,
+        assets_params: dict[str, Any] | None,
+        page_scope: tuple[str, ...] = (),
+        standalone: bool = False,
+    ) -> tuple[EsbuildResult, list[AssetsBundle]]:
+        empty = EsbuildResult("", None, None)
+        child_bundles: list[AssetsBundle] = []
+        if not self._can_compile_with_esbuild(bundle):
+            _debug.logic("esbuild_declined", bundle=bundle, standalone=standalone)
+            return empty, child_bundles
+        if assets_params is None:
+            assets_params = self.env["ir.asset"]._prepare_assets_params()
+
+        # everything a waiter would redo under the lock is prepared first, and
+        # a build another worker already published is served without queuing
+        # behind the lock, as the runtime-group path does
+        child_bundles = self._get_dynamic_child_bundles(
+            bundle, assets_params, debug_assets=False
+        )
+        _debug.pipeline(
+            "esbuild_children_resolved",
+            bundle=bundle,
+            children=len(child_bundles),
+            standalone=standalone,
+            page_scope=len(page_scope),
+        )
+        exported_specs = None
+        registered_reach = None
+        if standalone:
+            dynamic_child_specs, secondary_stubs = None, {}
+        else:
+            dynamic_child_specs, secondary_stubs = self._get_esbuild_child_externals(
+                bundle, asset_bundle, assets_params, child_bundles, page_scope
+            )
+            registry = esm_registry()
+            if self._registers_secondary_reach(bundle):
+                registered_reach = self._get_secondary_inlined_reach(
+                    bundle, assets_params, page_scope, sec_ab=asset_bundle
+                )
+                _debug.logic(
+                    "esbuild_bundle_kind",
+                    bundle=bundle,
+                    kind="secondary",
+                    registered_reach=len(registered_reach),
+                )
+            elif bundle not in registry.import_map_included_bundles:
+                exported_specs = self._get_exported_specs(
+                    bundle, asset_bundle, assets_params, child_bundles
+                )
+                _debug.logic(
+                    "esbuild_bundle_kind",
+                    bundle=bundle,
+                    kind="exporting",
+                    exported=len(exported_specs),
+                )
+        source_key = self._esm_source_key(
+            bundle,
+            asset_bundle,
+            dynamic_child_specs,
+            secondary_stubs,
+            exported_specs,
+            registered_reach,
+            classic=self._is_classic_page(bundle, standalone),
+        )
+        variant = esm_index.variant_key(
+            assets_params, page_scope=page_scope, standalone=standalone
+        )
+        reused = self._load_esbuild_result_committed(bundle, source_key, variant)
+        if reused is not None:
+            _debug.logic(
+                "esbuild_result",
+                bundle=bundle,
+                by="reused",
+                variant=variant,
+                source_key=source_key,
+            )
+            return reused, child_bundles
+
+        with self._esbuild_lock(bundle) as locked:
+            if locked is None:
+                _debug.logic("esbuild_declined", bundle=bundle, reason="no_lock_cursor")
+                self._open_esbuild_circuit(bundle, "no_lock_cursor", decline=True)
+                return empty, []
+            if locked is _LOCK_TIMED_OUT:
+                # a holder stalled past the timeout: serve its build if it
+                # published meanwhile, else fall back rather than queue on
+                reused = self._load_esbuild_result_committed(
+                    bundle, source_key, variant
+                )
+                if reused is not None:
+                    return reused, child_bundles
+                _debug.logic("esbuild_declined", bundle=bundle, reason="lock_timeout")
+                self._open_esbuild_circuit(bundle, "lock_timeout", decline=True)
+                return empty, []
+
+            if locked is not self:
+                # the holder before us may have published it meanwhile
+                reused = locked._load_esbuild_result_by_source(
+                    bundle, source_key, variant
+                )
+            if reused is not None:
+                _debug.logic(
+                    "esbuild_result",
+                    bundle=bundle,
+                    by="reused",
+                    variant=variant,
+                    source_key=source_key,
+                )
+                return reused, child_bundles
+            result = self._compile_with_esbuild(
+                bundle,
+                asset_bundle,
+                dynamic_child_specs,
+                secondary_stubs,
+                exported_specs,
+                registered_reach,
+            )
+            if result.code:
+                if self._is_classic_page(bundle, standalone):
+                    result = self._as_classic_page(bundle, result)
+                result = result._replace(source_key=source_key, variant=variant)
+                if locked is not self and not standalone:
+                    self._publish_esbuild_result(bundle, asset_bundle, result)
+            _debug.logic(
+                "esbuild_result",
+                bundle=bundle,
+                by="compiled" if result.code else "fallback",
+                standalone=standalone,
+                exported=len(exported_specs or ()),
+                variant=variant,
+                source_key=source_key,
+            )
+        return result, child_bundles
+
+    @contextlib.contextmanager
+    def _esbuild_lock(self, bundle: str) -> Iterator[Self | None]:
+        with self._get_esbuild_lock_cursor(bundle) as lock_cr:
+            if lock_cr is None:
+                log_event(
+                    _fallback_log, logging.INFO, "lock_unavailable", bundle=bundle
+                )
+                yield None
+                return
+            if _module.current_test:
+                # the lock cursor is a test cursor over this very transaction,
+                # and the rollback that closes it would undo what the caller
+                # publishes under the lock
+                self._acquire_esbuild_lock(bundle, cr=self.env.cr)
+                yield self
+                return
+            # the waiter must see what the holder published before releasing
+            lock_cr.use_read_committed()
+            try:
+                self._acquire_esbuild_lock(
+                    bundle, cr=lock_cr, timeout_s=_ESBUILD_LOCK_TIMEOUT_S
+                )
+            except LockNotAvailable:
+                log_event(_fallback_log, logging.WARNING, "lock_timeout", bundle=bundle)
+                yield _LOCK_TIMED_OUT
+                return
+            yield self.with_env(self.env(cr=lock_cr))
+
+    def _publish_esbuild_result(
+        self, bundle: str, asset_bundle: AssetsBundle, result: EsbuildResult
+    ) -> None:
+        # the same artifact the page saves afterwards, saved while the lock is
+        # held: a request waiting on the lock reuses it instead of compiling
+        code = self._combine_bundle_with_templates(
+            result.code, asset_bundle.generate_esm_template_bundle(use_import=False)
+        )
+        savepoint = self.env.cr.savepoint()
+        try:
+            self._save_esm_attachment(
+                bundle,
+                code,
+                metafile=result.metafile,
+                sourcemap=result.sourcemap,
+                source_key=result.source_key,
+                variant=result.variant or esm_index.DEFAULT_VARIANT,
+            )
+        except Exception as exc:
+            savepoint.close(rollback=self.env.cr.in_failed_transaction())
+            _debug.logic(
+                "esbuild_publish_deferred", bundle=bundle, error=type(exc).__name__
+            )
+        else:
+            savepoint.close(rollback=False)
+
+    def _esm_source_key(
+        self,
+        bundle: str,
+        asset_bundle: AssetsBundle,
+        dynamic_child_specs: frozenset[str] | None,
+        secondary_stubs: dict[str, str],
+        exported_specs: frozenset[str] | None,
+        registered_reach: dict[str, str] | None = None,
+        classic: bool = False,
+    ) -> str:
+        config = self._get_esbuild_config()
+        return esm_index.source_key(
+            bundle,
+            asset_bundle.native_modules,
+            dynamic_child_specs,
+            secondary_stubs,
+            exported_specs,
+            str(
+                config.get_param("web.esbuild.target")
+                or EsbuildCompiler._ESBUILD_TARGET
+            ),
+            str(
+                config.get_param("web.esbuild.source_maps")
+                or EsbuildCompiler._ESBUILD_SOURCE_MAPS
+            ),
+            registered_reach=registered_reach,
+            legacy_scripts=asset_bundle.javascripts,
+            inlined_sources=self._inlined_module_sources(
+                bundle,
+                asset_bundle.native_modules,
+                registered_reach or (),
+                {*secondary_stubs, *(dynamic_child_specs or ())},
+            ),
+            esbuild_version=get_esbuild_version(),
+            external_specifiers=external_bare_specifiers(),
+            script_format="classic" if classic else "",
+        )
+
+    def _is_classic_page(self, bundle: str, standalone: bool = False) -> bool:
+        return not standalone and bundle in esm_registry().classic_page_bundles
+
+    def _as_classic_page(self, bundle: str, result: EsbuildResult) -> EsbuildResult:
+        # a source map of the first pass does not describe the second's output
+        if result.sourcemap or "\n//# sourceMappingURL=" in result.code:
+            _debug.logic("classic_page_declined", bundle=bundle, reason="source_map")
+            return result
+        # the metafile is what says which libraries the page has to provide
+        if not result.metafile:
+            _debug.logic("classic_page_declined", bundle=bundle, reason="no_metafile")
+            return result
+        config = self._get_esbuild_config()
+        classic = classic_script(
+            result.code,
+            self._get_static_external_imports(result.metafile),
+            label=bundle,
+            target=config.get_param("web.esbuild.target")
+            or EsbuildCompiler._ESBUILD_TARGET,
+            timeout_s=config.get_param_int(
+                "web.esbuild.timeout_s", EsbuildCompiler._ESBUILD_TIMEOUT_S
+            ),
+        )
+        _debug.logic("classic_page", bundle=bundle, classic=classic is not None)
+        return result if classic is None else result._replace(code=classic)
+
+    def _inlined_module_sources(
+        self,
+        bundle: str,
+        modules: Collection,
+        reached: Collection[str],
+        provided: Collection[str],
+    ) -> dict[str, str]:
+        # what esbuild reads besides the modules it is handed: an import
+        # through an alias, static or a literal import(), of a module nothing
+        # stubs or externalises is built in, and a key without it would serve
+        # the build of that module's old text
+        members = {module.module_path for module in modules}
+        if not members:
+            return {}
+        reachable = reachable_module_sources(
+            [*members, *reached],
+            {*members, *reached, *provided},
+            self._external_libs(),
+            bundle,
+            dynamic=True,
+            modules=modules,
+        )
+        return {
+            spec: content
+            for spec, (_url, content) in reachable.items()
+            if spec not in members
+        }
+
+    def _read_generated_asset(self, url: str) -> bytes | None:
+        IrAttachment = self.env["ir.attachment"].sudo()
+        row = IrAttachment.search(
+            IrAttachment._get_domain_generated_assets(url), limit=1
+        )
+        return row.raw if row else None
+
+    def _load_esbuild_result_committed(
+        self, bundle: str, source_key: str, variant: str
+    ) -> EsbuildResult | None:
+        # the request's snapshot predates builds other workers committed since;
+        # a short READ COMMITTED cursor sees them without taking the lock
+        if _module.current_test:
+            return self._load_esbuild_result_by_source(bundle, source_key, variant)
+        try:
+            with self.env.registry.cursor(readonly=True) as cr:
+                cr.use_read_committed()
+                return self.with_env(self.env(cr=cr))._load_esbuild_result_by_source(
+                    bundle, source_key, variant
+                )
+        except Exception:
+            _debug.logic("esbuild_reuse_check_failed", bundle=bundle)
+            return self._load_esbuild_result_by_source(bundle, source_key, variant)
+
+    def _load_esbuild_result_by_source(
+        self, bundle: str, source_key: str, variant: str
+    ) -> EsbuildResult | None:
+        build = (
+            self.env["ir.asset.build"]
+            .sudo()
+            ._find_reusable("bundle", bundle, variant, source_key)
+        )
+        if not build:
+            _debug.perf.count("esbuild_index_miss", bundle=bundle, reason="no_build")
+            return None
+        url = f"{build.directories[0]}{bundle}.esm.js"
+        code = self._read_generated_asset(url)
+        sidecars = esm_index.sidecar_urls(url)
+        parts: dict[str, str | None] = {"metafile": None, "sourcemap": None}
+        for name, wanted in (
+            ("metafile", build.has_metafile),
+            ("sourcemap", build.has_sourcemap),
+        ):
+            raw = self._read_generated_asset(sidecars[name]) if wanted else None
+            if wanted and raw is None:
+                code = None
+            parts[name] = raw.decode("utf-8") if raw is not None else None
+        if code is None:
+            _debug.perf.count("esbuild_index_miss", bundle=bundle, reason="rows_gone")
+            return None
+        log_event(
+            _fallback_log, logging.DEBUG, "reuse_by_source", bundle=bundle, url=url
+        )
+        _debug.logic(
+            "esbuild_reused_by_source",
+            bundle=bundle,
+            variant=variant,
+            source_key=source_key,
+            built_for=build.variant,
+            shared=build.variant != variant,
+            state=build.state,
+        )
+        return EsbuildResult(
+            code.decode("utf-8"),
+            parts["metafile"],
+            parts["sourcemap"],
+            source_key,
+            prebuilt=True,
+            variant=variant,
+        )
+
+    _SPECIFIER_LITERAL_RE = re.compile(r"""["'](@[\w./+-]+)["']""")
+
+    def _get_export_consumers(
+        self,
+        bundle: str,
+        asset_bundle: AssetsBundle,
+        assets_params: dict[str, Any] | None,
+        child_bundles: list[AssetsBundle],
+    ) -> list[AssetsBundle]:
+        registry = esm_registry()
+        installed = self.env["ir.asset"]._get_addons_installed()
+        consumers = list(child_bundles)
+        consumer_names = {child.name for child in consumers}
+
+        def add_consumer(name: str) -> None:
+            if name in consumer_names or registry.bundle_addon(name) not in installed:
+                return
+            consumer_names.add(name)
+            consumers.append(
+                self._get_asset_bundle(
+                    name,
+                    js=True,
+                    css=False,
+                    debug_assets=True,
+                    assets_params=assets_params,
+                )
+            )
+
+        # A consumer is declared under a bundle NAME, and the name it is
+        # declared under need not be the bundle that serves the page:
+        # `web.assets_frontend` is a logical parent that pages load as
+        # `web.assets_frontend_minimal` plus `web.assets_frontend_lazy`, and
+        # survey declares its secondary bundles under the logical one. So a
+        # consumer of any bundle whose modules this bundle carries is a
+        # consumer of this bundle -- otherwise `@web/core/browser/cookie`, a
+        # member of the minimal bundle alone, was registered by nobody and the
+        # survey form's bridge read `undefined` for it.
+        member_paths = {asset.module_path for asset in asset_bundle.native_modules}
+        carried_by: dict[str, bool] = {bundle: True}
+
+        def carries_members(parent: str) -> bool:
+            if parent not in carried_by:
+                carried_by[parent] = member_paths <= self._get_bundle_specifiers(
+                    parent, assets_params
+                )
+            return carried_by[parent]
+
+        for mapping in (
+            registry.secondary_import_map_includes,
+            registry.import_map_includes,
+            registry.dynamic_children,
+        ):
+            for parent, children in mapping.items():
+                if registry.bundle_addon(parent) not in installed:
+                    continue
+                if not any(registry.bundle_addon(c) in installed for c in children):
+                    continue
+                if not carries_members(parent):
+                    continue
+                for name in children:
+                    add_consumer(name)
+        declared_children = {
+            name for children in registry.dynamic_children.values() for name in children
+        }
+        for name in sorted(registry.runtime_bundle_names - declared_children):
+            add_consumer(name)
+        _debug.pipeline(
+            "export_consumers",
+            bundle=bundle,
+            children=len(child_bundles),
+            consumers=len(consumers),
+            members=len(member_paths),
+        )
+        return consumers
+
+    def _get_exported_specs(
+        self,
+        bundle: str,
+        asset_bundle: AssetsBundle,
+        assets_params: dict[str, Any] | None,
+        child_bundles: list[AssetsBundle],
+    ) -> frozenset[str]:
+        members = {
+            name
+            for asset in asset_bundle.native_modules
+            for name in module_specifiers(asset)
+        }
+        consumers = self._get_export_consumers(
+            bundle, asset_bundle, assets_params, child_bundles
+        )
+        exported = {"@web/core/templates", "@web/core/assets"} & members
+        exported.update(esm_registry().exports & members)
+        exported.update(_get_specs_imported_by_consumers(consumers, members))
+        # the page's import map bridges every specifier a dynamic child's
+        # modules import that the page does not serve as a file
+        # (`_get_esm_import_map_prod`): a per-file fallback of a secondary
+        # resolves its imports through those bridges, so each one this bundle
+        # carries, it registers
+        for child in child_bundles:
+            bridged, _ext = child._bridges._discover_bridge_specifiers(
+                set(), set(external_libs()), modules=child.native_modules
+            )
+            exported.update(bridged.keys() & members)
+        sources = {
+            source.unique_descriptor: source
+            for source in (
+                *asset_bundle.native_modules,
+                *(a for c in consumers for a in c.native_modules),
+            )
+        }
+        for descriptor, source in sources.items():
+            exported.update(self._get_specifier_literals(descriptor, source) & members)
+        log_event(
+            _fallback_log,
+            logging.DEBUG,
+            "exported_specs",
+            bundle=bundle,
+            members=len(members),
+            exported=len(exported),
+            consumers=len(consumers),
+        )
+        return frozenset(exported)
+
+    @classmethod
+    def _get_specifier_literals(cls, descriptor: str, source: Any) -> frozenset[str]:
+        literals = _SPECIFIER_LITERALS_CACHE.get(descriptor)
+        _debug.perf.count("specifier_literals", cached=literals is not None)
+        if literals is None:
+            body = _TRANSITIVE_IMPORT_RE.sub("", source.raw_content)
+            literals = frozenset(cls._SPECIFIER_LITERAL_RE.findall(body))
+            _SPECIFIER_LITERALS_CACHE[descriptor] = literals
+        return literals
+
+    def _get_runtime_parent_specs(
+        self,
+        parents: tuple[str, ...],
+        assets_params: dict[str, Any] | None,
+        with_test_satellites: bool = False,
+    ) -> frozenset[str]:
+        registry = esm_registry()
+        installed = self.env["ir.asset"]._get_addons_installed()
+        spec_sets = []
+        for parent in parents:
+            owners = [
+                parent,
+                *(
+                    name
+                    for name in registry.import_map_includes.get(parent, ())
+                    if registry.bundle_addon(name) in installed
+                ),
+            ]
+            if with_test_satellites:
+                owners.extend(
+                    name
+                    for name in registry.secondary_import_map_includes.get(parent, ())
+                    if registry.bundle_addon(name) in installed
+                )
+            specs: set[str] = set()
+            for owner in owners:
+                specs |= self._get_bundle_specifiers(owner, assets_params)
+                if owner != parent:
+                    specs |= set(
+                        self._get_secondary_inlined_reach(
+                            owner, assets_params, page_scope=(parent,)
+                        )
+                    )
+            if specs:
+                spec_sets.append(specs)
+        if not spec_sets:
+            _debug.logic("runtime_parent_specs", parents=parents, counted=0)
+            return frozenset()
+        shared = frozenset(set.intersection(*spec_sets))
+        _debug.logic(
+            "runtime_parent_specs",
+            parents=parents,
+            counted=len(spec_sets),
+            shared=len(shared),
+            with_test_satellites=with_test_satellites,
+        )
+        return shared
+
+    def _get_runtime_child_own_modules(
+        self,
+        bundle: str,
+        asset_bundle: AssetsBundle,
+        parent_specs: frozenset[str],
+    ) -> tuple[list, set[str], set[str]]:
+        external_urls = set(external_libs().values())
+        own_modules = [
+            asset
+            for asset in asset_bundle.native_modules
+            if asset.module_path not in parent_specs and asset.url not in external_urls
+        ]
+        own_specs = {name for asset in own_modules for name in module_specifiers(asset)}
+        discovered, _ext = asset_bundle._bridges._discover_reachable_specifiers(
+            own_specs, set(external_libs()), provided=parent_specs, modules=own_modules
+        )
+        reached = set(discovered) | {
+            resolved
+            for _module, _spec, resolved in get_escaping_relative_imports(
+                own_modules, own_specs
+            )
+        }
+        inlined = sorted(set(discovered) - parent_specs)
+        if inlined:
+            log_event(
+                _fallback_log,
+                logging.WARNING,
+                "runtime_child_inlines",
+                bundle=bundle,
+                count=len(inlined),
+                specs=",".join(inlined[:5]),
+            )
+        log_event(
+            _fallback_log,
+            logging.DEBUG,
+            "runtime_child",
+            bundle=bundle,
+            members=len(asset_bundle.native_modules),
+            own=len(own_modules),
+            stubbed_members=len(asset_bundle.native_modules) - len(own_modules),
+        )
+        return own_modules, own_specs, reached & parent_specs
+
+    def _prepare_runtime_group(
+        self,
+        parents: tuple[str, ...],
+        children: dict[str, AssetsBundle],
+        assets_params: dict[str, Any] | None,
+        with_test_satellites: bool = False,
+    ) -> tuple[dict[str, list], dict[str, str], frozenset[str]]:
+        parent_specs = self._get_runtime_parent_specs(
+            parents, assets_params, with_test_satellites
+        )
+        entries: dict[str, list] = {}
+        stubbed: set[str] = set()
+        for name, child in children.items():
+            own_modules, _own_specs, child_stubs = self._get_runtime_child_own_modules(
+                name, child, parent_specs
+            )
+            entries[name] = own_modules
+            stubbed |= child_stubs
+        reference = next(iter(children.values()))
+        with _debug.perf(
+            "runtime_group_prepared",
+            parents=parents,
+            children=len(children),
+            parent_specs=len(parent_specs),
+            stubbed=len(stubbed),
+        ) as span:
+            stubs = reference._bridges.prepare_shim_sources(stubbed, strict=True)
+            span.set(stubs=len(stubs))
+        return entries, stubs, parent_specs
+
+    def _get_runtime_group_source_key(
+        self,
+        group: str,
+        entries: dict[str, list],
+        templates: dict[str, str],
+        parent_specs: frozenset[str],
+        stubs: dict[str, str],
+    ) -> str:
+        config = self._get_esbuild_config()
+        return esm_index.group_source_key(
+            group,
+            entries,
+            templates,
+            parent_specs,
+            stubs,
+            str(
+                config.get_param("web.esbuild.target")
+                or EsbuildCompiler._ESBUILD_TARGET
+            ),
+            str(
+                config.get_param("web.esbuild.source_maps")
+                or EsbuildCompiler._ESBUILD_SOURCE_MAPS
+            ),
+            inlined_sources=self._inlined_module_sources(
+                group,
+                [module for modules in entries.values() for module in modules],
+                (),
+                {*parent_specs, *stubs},
+            ),
+            esbuild_version=get_esbuild_version(),
+            external_specifiers=external_bare_specifiers(),
+        )
+
+    def _compile_runtime_group(
+        self,
+        group: str,
+        children: dict[str, AssetsBundle],
+        entries: dict[str, list],
+        stubs: dict[str, str],
+    ) -> EsbuildGroupResult:
+        empty = EsbuildGroupResult({}, None)
+        if not self._can_compile_with_esbuild(group):
+            _debug.logic("esbuild_group_declined", group=group, reason="circuit")
+            return empty
+        reference = next(iter(children.values()))
+        compiler = EsbuildCompiler(
+            group,
+            [module for modules in entries.values() for module in modules],
+            addon_flags_provider=reference._get_esbuild_addon_flags,
+        )
+        config = self._get_esbuild_config()
+        try:
+            with _debug.perf(
+                "esbuild_group",
+                group=group,
+                children=len(children),
+                modules=sum(len(modules) for modules in entries.values()),
+                stubs=len(stubs),
+            ):
+                result = compiler.compile_group(
+                    entries,
+                    timeout_s=config.get_param_int(
+                        "web.esbuild.timeout_s", EsbuildCompiler._ESBUILD_TIMEOUT_S
+                    ),
+                    target=config.get_param("web.esbuild.target")
+                    or EsbuildCompiler._ESBUILD_TARGET,
+                    source_maps=config.get_param("web.esbuild.source_maps")
+                    or EsbuildCompiler._ESBUILD_SOURCE_MAPS,
+                    secondary_parent_stubs=stubs or None,
+                )
+        except Exception as exc:
+            log_event(
+                _fallback_log,
+                logging.WARNING,
+                "esbuild_exception",
+                bundle=group,
+                err=type(exc).__name__,
+                msg=str(exc)[:200],
+            )
+            _debug.logic("esbuild_group_failed", group=group, error=type(exc).__name__)
+            if self._is_esbuild_fail_closed():
+                raise EsbuildBundleError(
+                    f"esbuild failed for runtime group {group!r}: {exc}"
+                ) from exc
+            self._open_esbuild_circuit(group, reason=type(exc).__name__)
+            return empty
+        self._close_esbuild_circuit(group)
+        _debug.lifecycle(
+            "esbuild_group_compiled",
+            group=group,
+            outputs=len(getattr(result, "outputs", None) or ()),
+        )
+        return result

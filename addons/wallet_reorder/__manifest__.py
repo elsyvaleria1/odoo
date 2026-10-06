@@ -1,0 +1,26 @@
+{
+    "name": "Wallet Top-Up Purchase Rules",
+    "version": "19.0.1.0.1",
+    "oldest_upgradable_version": "19.0.1.0.1",
+    "category": "Accounting/Accounting",
+    "summary": "Create top-up purchase lines from configured wallet balance thresholds",
+    "description": "Adds card minimum and maximum balance rules, top-up products and procurement actions. Considers existing purchase lines when calculating a refill and groups procurement by wallet account and company. Requires current balance snapshots, an issuer vendor and purchasing configuration; a purchase order does not itself transfer funds to the issuer.",
+    "author": "AgroMarin",
+    "website": "https://www.agromarin.mx",
+    "license": "LGPL-3",
+    "depends": [
+        "wallet",
+        "purchase",
+    ],
+    "data": [
+        "security/ir.access.csv",
+        "data/product_data.xml",
+        "data/ir_cron_data.xml",
+        "views/wallet_reorder_rule_views.xml",
+        "views/wallet_account_views.xml",
+        "views/wallet_card_views.xml",
+        "views/purchase_order_views.xml",
+        "views/ir_ui_menu_views.xml",
+    ],
+    "auto_install": True,
+}

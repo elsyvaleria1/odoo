@@ -1,0 +1,5 @@
+.o_mobile_preview_active {
+    span:is(#{$o-icon-selector}) {
+        color: $o-we-color-success;
+    }
+}

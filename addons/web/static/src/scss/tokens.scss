@@ -1,0 +1,589 @@
+@mixin o-print-scheme-targets($-scheme) {
+    @include print-variable("o-tint-target", map-get($-scheme, "tint-mix"));
+    @include print-variable("o-shade-target", map-get($-scheme, "shade-mix"));
+}
+
+@function o-bootstrap-inputs(
+    $-grays,
+    $-white,
+    $-black,
+    $-theme-colors,
+    $-body-bg,
+    $-body-color,
+    $-link-color,
+    $-link-hover-color,
+    $-code-color,
+    $-text-emphasis,
+    $-bg-subtle,
+    $-border-subtle,
+    $-mark-bg,
+    $-mark-color,
+    $-border-color,
+    $-shadows
+) {
+    @return (
+        "grays": $-grays,
+        "white": $-white,
+        "black": $-black,
+        "theme-colors": $-theme-colors,
+        "body-bg": $-body-bg,
+        "body-color": $-body-color,
+        "link-color": $-link-color,
+        "link-hover-color": $-link-hover-color,
+        "code-color": $-code-color,
+        "text-emphasis": $-text-emphasis,
+        "bg-subtle": $-bg-subtle,
+        "border-subtle": $-border-subtle,
+        "mark-bg": $-mark-bg,
+        "mark-color": $-mark-color,
+        "border-color": $-border-color,
+        "shadows": $-shadows
+    );
+}
+
+@function o-token-set(
+    $-grays,
+    $-white,
+    $-black,
+    $-brand,
+    $-brand-odoo,
+    $-brand-fill,
+    $-text,
+    $-action,
+    $-action-text,
+    $-theme-text,
+    $-bg-view,
+    $-bg-chrome,
+    $-bg-disabled,
+    $-bg-raised,
+    $-bg-active,
+    $-text-muted,
+    $-ring,
+    $-favorite
+) {
+    $-set: (
+        "o-white": $-white,
+        "o-black": $-black,
+        "o-brand": $-brand,
+        "o-brand-odoo": $-brand-odoo,
+        "o-brand-fill": $-brand-fill,
+        "o-text": $-text,
+        "o-action": $-action,
+        "o-action-text": $-action-text,
+        "o-bg-view": $-bg-view,
+        "o-bg-chrome": $-bg-chrome,
+        "o-bg-disabled": $-bg-disabled,
+        "o-bg-raised": $-bg-raised,
+        "o-bg-active": $-bg-active,
+        "o-text-muted": $-text-muted,
+        "o-ring-color": $-ring,
+        "o-favorite": $-favorite,
+    );
+    @each $-step, $-value in $-grays {
+        $-set: map-merge(
+            $-set,
+            (
+                "o-gray-#{$-step}": $-value,
+            )
+        );
+    }
+    @each $-name, $-value in $-theme-text {
+        $-set: map-merge(
+            $-set,
+            (
+                "o-#{$-name}-text": $-value,
+            )
+        );
+    }
+    @return $-set;
+}
+
+$-o-rgb-tokens: (
+    "o-white",
+    "o-black",
+    "o-action",
+    "o-bg-view",
+    "o-gray-200",
+    "o-gray-300"
+);
+
+@function o-system-tokens($-dark) {
+    // the dark scheme map is still being built when this runs, so its
+    // contrast inputs are taken from the variables o-dark-scheme() reads
+    $-contrast: if(
+        $-dark,
+        o-scheme(
+            (
+                $o-dark-color-contrast-light,
+                $o-dark-color-contrast-dark,
+                $o-dark-white,
+                $o-dark-black
+            ),
+            $o-dark-min-contrast-ratio,
+            true
+        ),
+        null
+    );
+    $-levels: ();
+    @each $-level in (1, 2, 3, 4) {
+        $-levels: map-merge(
+            $-levels,
+            (
+                "o-label-#{$-level}":
+                    map-get(if($-dark, $o-dark-labels, $o-labels), $-level),
+                "o-fill-#{$-level}":
+                    map-get(if($-dark, $o-dark-fills, $o-fills), $-level),
+            )
+        );
+    }
+    @return map-merge(
+        $-levels,
+        (
+            "o-separator": if($-dark, $o-dark-separator, $o-separator),
+            "o-glass-bg": if($-dark, $o-dark-glass-bg, $o-glass-bg),
+            "o-glass-surface": if($-dark, $o-dark-glass-surface, $o-glass-surface),
+            "o-glass-surface-strong":
+                if($-dark, $o-dark-glass-surface-strong, $o-glass-surface-strong),
+            "o-glass-bar": if($-dark, $o-dark-glass-bar, $o-glass-bar),
+            "o-glass-bar-border":
+                if($-dark, $o-dark-glass-bar-border, $o-glass-bar-border),
+            "o-glass-chip": if($-dark, $o-dark-glass-chip, $o-glass-chip),
+            "o-glass-shadow": if($-dark, $o-dark-glass-shadow, $o-glass-shadow),
+            "o-canvas-color": if($-dark, $o-dark-canvas-color, $o-canvas-color),
+            "o-canvas-image": if($-dark, $o-dark-canvas-image, $o-canvas-image),
+            "o-canvas-tint-image":
+                if($-dark, $o-dark-canvas-tint-image, $o-canvas-tint-image),
+            "o-dropdown-bg": if($-dark, $o-dark-surface-raised, $dropdown-bg),
+            "o-popover-bg": if($-dark, $o-dark-surface-raised, $popover-bg),
+            "o-hairline": if($-dark, $o-dark-hairline, $o-hairline),
+            "o-form-lightsecondary":
+                if($-dark, $o-dark-form-lightsecondary, $o-form-lightsecondary),
+            "o-form-separator-color":
+                if($-dark, $o-dark-form-separator-color, $o-form-separator-color),
+            "o-shadow-color": if($-dark, $o-dark-shadow-color, $o-shadow-color),
+            "o-input-focus-border":
+                if(
+                    $-dark,
+                    mix($o-dark-enterprise-action-color, $o-dark-gray-200),
+                    $input-focus-border-color
+                ),
+            "o-table-hover-bg-factor":
+                if($-dark, $o-dark-table-hover-bg-factor, $table-hover-bg-factor),
+            "o-input-border-required":
+                if($-dark, $o-dark-input-border-required, $o-input-border-required),
+            "o-input-placeholder-color":
+                if($-dark, $o-dark-input-placeholder-color, $input-placeholder-color),
+            "o-link-shade":
+                o-strip-unit(
+                    if(
+                        $-dark,
+                        o-or($o-dark-link-shade-percentage, $link-shade-percentage),
+                        $link-shade-percentage
+                    )
+                ),
+            "o-bs-component-active-bg":
+                if($-dark, $o-dark-surface-raised, $component-active-bg),
+            "o-range-track-bg": if($-dark, $o-dark-surface-raised, $form-range-track-bg),
+            "o-on-action":
+                if(
+                    $-dark,
+                    o-scheme-contrast($o-dark-component-active-border, $-contrast),
+                    color-contrast($o-component-active-border)
+                ),
+            "o-on-danger":
+                if(
+                    $-dark,
+                    o-scheme-contrast(
+                        map-get($o-dark-theme-colors, "danger"),
+                        $-contrast
+                    ),
+                    color-contrast($o-danger)
+                ),
+            "o-on-info":
+                if(
+                    $-dark,
+                    o-scheme-contrast(
+                        map-get($o-dark-theme-colors, "info"),
+                        $-contrast
+                    ),
+                    color-contrast($info)
+                ),
+            "o-input-invalid-bg":
+                if(
+                    $-dark,
+                    rgba(map-get($o-dark-theme-text-colors, "danger"), 0.1),
+                    $o-input-invalid-bg
+                ),
+        )
+    );
+}
+
+@mixin o-print-token-set($-set) {
+    @each $-name, $-value in $-set {
+        @if type-of($-value) == "string" {
+            --#{$-name}: #{$-value};
+        } @else {
+            @include print-variable($-name, $-value);
+        }
+        @if index($-o-rgb-tokens, $-name) and type-of($-value) == "color" {
+            @include print-variable("#{$-name}-rgb", to-rgb($-value));
+        }
+    }
+}
+
+@function o-scheme($-foregrounds, $-min-contrast-ratio, $-inverted) {
+    @return (
+        "tint-mix": if($-inverted, #000, white),
+        "shade-mix": if($-inverted, #fff, black),
+        "foregrounds": $-foregrounds,
+        "min-contrast-ratio": $-min-contrast-ratio,
+        "dark": $-inverted
+    );
+}
+
+@function o-scheme-tint($-color, $-weight, $-scheme) {
+    @return mix(map-get($-scheme, "tint-mix"), $-color, $-weight);
+}
+
+@function o-scheme-shade($-color, $-weight, $-scheme) {
+    @return mix(map-get($-scheme, "shade-mix"), $-color, $-weight);
+}
+
+@function o-scheme-shift($-color, $-weight, $-scheme) {
+    @return if(
+        $-weight > 0,
+        o-scheme-shade($-color, $-weight, $-scheme),
+        o-scheme-tint($-color, -$-weight, $-scheme)
+    );
+}
+
+@function o-scheme-contrast-light($-scheme) {
+    @return nth(map-get($-scheme, "foregrounds"), 1);
+}
+
+@function o-scheme-contrast(
+    $-background,
+    $-scheme,
+    $-min-contrast-ratio: map-get($-scheme, "min-contrast-ratio")
+) {
+    $-best: null;
+    $-best-ratio: 0;
+    @each $-foreground in map-get($-scheme, "foregrounds") {
+        $-ratio: contrast-ratio($-background, $-foreground);
+        @if $-ratio > $-min-contrast-ratio {
+            @return $-foreground;
+        } @else if $-ratio > $-best-ratio {
+            $-best-ratio: $-ratio;
+            $-best: $-foreground;
+        }
+    }
+    @return $-best;
+}
+
+@mixin o-print-color-ramp($-colors, $-scheme) {
+    @for $-i from 1 through length($-colors) {
+        $-color: nth($-colors, $-i);
+        $-subtle: o-round-color(mix(map-get($-scheme, "tint-mix"), $-color, 55%));
+        $-shade: o-round-color(mix(map-get($-scheme, "shade-mix"), $-color, 20%));
+
+        @include print-variable("o-record-color-#{$-i}", $-color);
+        @include print-variable("o-record-color-#{$-i}-rgb", to-rgb($-color));
+        @include print-variable("o-record-color-#{$-i}-subtle-rgb", to-rgb($-subtle));
+        @include print-variable(
+            "o-record-color-#{$-i}-text",
+            o-scheme-contrast($-subtle, $-scheme)
+        );
+        @include print-variable(
+            "o-record-color-#{$-i}-popover-bg",
+            o-round-color(lighten($-subtle, 10%))
+        );
+        @include print-variable("o-record-color-#{$-i}-shade", $-shade);
+        @include print-variable(
+            "o-record-color-#{$-i}-on-rgb",
+            to-rgb(o-scheme-contrast($-color, $-scheme))
+        );
+    }
+}
+
+@mixin o-print-record-chip-ramp($-colors, $-scheme) {
+    @for $-i from 1 through length($-colors) {
+        $-color: nth($-colors, $-i);
+
+        @include print-variable(
+            "o-record-color-#{$-i}-chip-bg-rgb",
+            to-rgb(
+                o-round-color(adjust-color($-color, $lightness: 25%, $saturation: 15%))
+            )
+        );
+        @include print-variable(
+            "o-record-color-#{$-i}-chip-text-rgb",
+            to-rgb(
+                o-round-color(
+                    adjust-color($-color, $lightness: -40%, $saturation: -15%)
+                )
+            )
+        );
+    }
+}
+
+$-o-light-scheme: map-merge(
+    o-scheme(
+        ($color-contrast-light, $color-contrast-dark, $white, $black),
+        $min-contrast-ratio,
+        $o-webclient-color-scheme == dark
+    ),
+    (
+        "tokens":
+            o-token-set(
+                $o-grays,
+                $o-white,
+                $o-black,
+                $o-brand-primary,
+                $o-brand-odoo,
+                $o-brand-primary-filled,
+                $o-main-text-color,
+                $o-action,
+                $o-action-text,
+                $o-theme-text-colors,
+                $o-view-background-color,
+                $o-bg-chrome,
+                $o-bg-disabled,
+                $o-bg-raised,
+                $o-component-active-bg,
+                $o-main-color-muted,
+                $o-ring-color,
+                $o-main-favorite-color
+            ),
+        "system": o-system-tokens(false),
+        "bootstrap":
+            o-bootstrap-inputs(
+                $o-grays,
+                $o-white,
+                $o-black,
+                $theme-colors,
+                $body-bg,
+                $body-color,
+                $o-main-link-color,
+                $link-hover-color,
+                $o-main-code-color,
+                $theme-colors-text,
+                $theme-colors-bg-subtle,
+                $theme-colors-border-subtle,
+                $mark-bg,
+                $mark-color,
+                $border-color,
+                ()
+            ),
+    )
+);
+$-o-dark-scheme: map-merge(
+    o-scheme(
+        (
+            $o-dark-color-contrast-light,
+            $o-dark-color-contrast-dark,
+            $o-dark-white,
+            $o-dark-black
+        ),
+        $o-dark-min-contrast-ratio,
+        true
+    ),
+    (
+        "tokens":
+            o-token-set(
+                $o-dark-grays,
+                $o-dark-white,
+                $o-dark-black,
+                $o-dark-brand-primary,
+                $o-dark-brand-odoo,
+                $o-dark-brand-primary-filled,
+                $o-dark-main-text-color,
+                $o-dark-action,
+                $o-dark-action-text,
+                $o-dark-theme-text-colors,
+                $o-dark-view-background-color,
+                $o-dark-bg-chrome,
+                $o-dark-bg-disabled,
+                $o-dark-bg-raised,
+                $o-dark-component-active-bg,
+                $o-dark-main-color-muted,
+                $o-dark-ring-color,
+                $o-dark-main-favorite-color
+            ),
+        "system": o-system-tokens(true),
+        "bootstrap":
+            o-bootstrap-inputs(
+                $o-dark-grays,
+                $o-dark-white,
+                $o-dark-black,
+                $o-dark-theme-colors,
+                $o-dark-webclient-background-color,
+                $o-dark-main-text-color,
+                $o-dark-main-link-color,
+                $o-dark-link-hover-color,
+                $o-dark-main-code-color,
+                $o-dark-theme-colors-text,
+                $o-dark-theme-colors-bg-subtle,
+                $o-dark-theme-colors-border-subtle,
+                $o-dark-mark-bg,
+                $o-dark-mark-color,
+                $o-dark-border-color,
+                (
+                    "box-shadow": $o-dark-box-shadow,
+                    "box-shadow-sm": $o-dark-box-shadow-sm,
+                    "box-shadow-lg": $o-dark-box-shadow-lg,
+                    "box-shadow-inset": $o-dark-box-shadow-inset,
+                )
+            ),
+    )
+);
+
+@function o-light-scheme() {
+    @return $-o-light-scheme;
+}
+
+@function o-dark-scheme() {
+    @return $-o-dark-scheme;
+}
+
+@mixin o-publish-per-scheme {
+    :root {
+        @content ($-o-light-scheme, $o-colors-complete, $o-colors);
+    }
+
+    @include media-only(screen) {
+        :root[data-color-scheme="dark"] {
+            @content ($-o-dark-scheme, $o-dark-colors-complete, $o-dark-colors);
+        }
+    }
+}
+
+@mixin o-print-bootstrap-root($-scheme) {
+    $-bs: map-get($-scheme, "bootstrap");
+    $-grays: map-get($-bs, "grays");
+    $-white: map-get($-bs, "white");
+    $-black: map-get($-bs, "black");
+    $-theme-colors: map-get($-bs, "theme-colors");
+    $-body-bg: map-get($-bs, "body-bg");
+    $-body-color: map-get($-bs, "body-color");
+    $-gray-100: map-get($-grays, 100);
+    $-gray-200: map-get($-grays, 200);
+    $-gray-600: map-get($-grays, 600);
+    $-gray-800: map-get($-grays, 800);
+    $-text-emphasis: map-get($-bs, "text-emphasis");
+    $-bg-subtle: map-get($-bs, "bg-subtle");
+    $-border-subtle: map-get($-bs, "border-subtle");
+
+    @each $-name, $-color in $-theme-colors {
+        --#{$prefix}#{$-name}: #{$-color};
+        --#{$prefix}#{$-name}-rgb: #{to-rgb($-color)};
+
+        --#{$prefix}#{$-name}-text-emphasis: #{map-get($-text-emphasis, $-name)};
+        --#{$prefix}#{$-name}-bg-subtle: #{map-get($-bg-subtle, $-name)};
+        --#{$prefix}#{$-name}-border-subtle: #{map-get($-border-subtle, $-name)};
+    }
+
+    --#{$prefix}gray: #{$-gray-600};
+    --#{$prefix}gray-dark: #{$-gray-800};
+
+    --#{$prefix}white-rgb: #{to-rgb($-white)};
+    --#{$prefix}black-rgb: #{to-rgb($-black)};
+
+    --#{$prefix}body-color-rgb: #{to-rgb($-body-color)};
+    --#{$prefix}body-bg: #{$-body-bg};
+    --#{$prefix}body-bg-rgb: #{to-rgb($-body-bg)};
+
+    --#{$prefix}emphasis-color-rgb: #{to-rgb($-black)};
+
+    --#{$prefix}secondary-color: #{rgba($-body-color, 0.75)};
+    --#{$prefix}secondary-color-rgb: #{to-rgb($-body-color)};
+    --#{$prefix}secondary-bg-rgb: #{to-rgb($-gray-200)};
+    --#{$prefix}tertiary-color: #{rgba($-body-color, 0.5)};
+    --#{$prefix}tertiary-color-rgb: #{to-rgb($-body-color)};
+    --#{$prefix}tertiary-bg-rgb: #{to-rgb($-gray-100)};
+
+    $-link-color: map-get($-bs, "link-color");
+    $-link-hover-color: map-get($-bs, "link-hover-color");
+    --#{$prefix}link-color: #{$-link-color};
+    --#{$prefix}link-color-rgb: #{to-rgb($-link-color)};
+    --#{$prefix}link-hover-color: #{$-link-hover-color};
+    --#{$prefix}link-hover-color-rgb: #{to-rgb($-link-hover-color)};
+
+    --#{$prefix}code-color: #{map-get($-bs, "code-color")};
+
+    --#{$prefix}highlight-color: #{o-safe-get($-bs, "mark-color", $-body-color)};
+    --#{$prefix}highlight-bg: #{o-safe-get(
+            $-bs,
+            "mark-bg",
+            o-scheme-tint($yellow, 80%, $-scheme)
+        )};
+
+    --#{$prefix}border-color: #{o-safe-get($-bs, "border-color", map-get($-grays, 300))};
+    --#{$prefix}border-color-translucent: #{rgba($-black, 0.175)};
+
+    --#{$prefix}gradient: #{linear-gradient(
+            180deg,
+            rgba($-white, 0.15),
+            rgba($-white, 0)
+        )};
+
+    --#{$prefix}focus-ring-color: #{rgba(
+            map-get($-theme-colors, "primary"),
+            $focus-ring-opacity
+        )};
+
+    $-valid: map-get($-theme-colors, "success");
+    $-invalid: map-get($-theme-colors, "danger");
+    --#{$prefix}form-valid-color: #{$-valid};
+    --#{$prefix}form-valid-border-color: #{$-valid};
+    --#{$prefix}form-invalid-color: #{$-invalid};
+    --#{$prefix}form-invalid-border-color: #{$-invalid};
+
+    --#{$prefix}carousel-caption-color: #{$-white};
+    --#{$prefix}carousel-indicator-active-bg: #{$-white};
+
+    @each $-name, $-shadow in map-get($-bs, "shadows") {
+        @if $-shadow {
+            --#{$prefix}#{$-name}: #{$-shadow};
+        }
+    }
+}
+
+@include o-publish-per-scheme using ($-scheme, $-ramp, $-record-colors) {
+    color-scheme: if(map-get($-scheme, "dark"), dark, light);
+
+    @include o-print-scheme-targets($-scheme);
+    @include o-print-token-set(map-get($-scheme, "tokens"));
+    @include o-print-token-set(map-get($-scheme, "system"));
+    @include o-print-color-ramp($-ramp, $-scheme);
+    @include o-print-record-chip-ramp($-record-colors, $-scheme);
+
+    @if $o-bootstrap-follows-palette {
+        @include o-print-bootstrap-root($-scheme);
+    }
+}
+
+@include o-print-motion-tokens();
+
+@if $o-bootstrap-follows-palette {
+    :root {
+        @each $-step in (100, 200, 300, 400, 500, 600, 700, 800, 900) {
+            --gray-#{$-step}: var(--o-gray-#{$-step});
+        }
+
+        --white: var(--o-white);
+        --primary: var(--o-brand);
+        --secondary: var(--o-gray-300);
+
+        --body-color: var(--o-text);
+        --emphasis-color: var(--o-black);
+        --heading-color: var(--o-black);
+
+        --secondary-bg: var(--o-gray-200);
+        --tertiary-bg: var(--o-gray-100);
+        --light-border-subtle: var(--o-gray-200);
+        --dark-border-subtle: var(--o-gray-500);
+        --dark-bg-subtle: var(--o-gray-400);
+        --light-text-emphasis: var(--o-gray-700);
+        --dark-text-emphasis: var(--o-gray-700);
+    }
+}

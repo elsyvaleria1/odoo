@@ -1,0 +1,98 @@
+from odoo import fields, models
+from odoo.tools import SQL, frozendict
+
+
+class PurchaseReport(models.Model):
+    _inherit = "purchase.report"
+    _depends = frozendict(
+        {
+            "purchase.order": ["date_effective", "picking_type_id"],
+            "stock.location": ["usage"],
+            "stock.move": ["picking_id", "purchase_line_id"],
+            "stock.picking": ["date_done", "location_dest_id", "state"],
+            "stock.picking.type": ["warehouse_id"],
+        }
+    )
+
+    order_id = fields.Many2one(
+        comodel_name="purchase.order",
+        string="Purchase Order",
+        readonly=True,
+    )
+    picking_type_id = fields.Many2one(
+        comodel_name="stock.warehouse",
+        string="Warehouse",
+        readonly=True,
+    )
+    date_effective = fields.Datetime(string="Effective Date")
+    days_to_arrival = fields.Float(
+        string="Effective Days To Arrival",
+        digits=(16, 2),
+        readonly=True,
+        aggregator="avg",
+    )
+
+    def _get_fields_select(self) -> dict:
+        fields = super()._get_fields_select()
+        fields["order_id"] = "o.id"
+        fields["picking_type_id"] = "spt.warehouse_id"
+        fields["date_effective"] = "o.date_effective"
+        fields["days_to_arrival"] = """EXTRACT(
+            EPOCH FROM age(
+                l.date_commitment,
+                COALESCE(
+                    order_date_effective.date_done,
+                    o.date_order
+                )
+            )
+        ) / (24*60*60)::decimal(16,2)"""
+        return fields
+
+    def _get_from_tables(self) -> list:
+        tables = super()._get_from_tables()
+
+        tables.append(
+            ("stock_picking_type", "spt", "LEFT JOIN", "spt.id=o.picking_type_id")
+        )
+
+        order_effective_date_subquery = SQL(
+            """(
+                SELECT MIN(picking.date_done) AS date_done,
+                    purchase.id AS purchase_id
+                FROM purchase_order AS purchase
+                JOIN purchase_order_line AS order_line
+                    ON order_line.order_id = purchase.id
+                JOIN stock_move AS move
+                    ON move.purchase_line_id = order_line.id
+                JOIN stock_picking AS picking
+                    ON picking.id = move.picking_id
+                JOIN stock_location AS location_dest
+                    ON location_dest.id = picking.location_dest_id
+                WHERE picking.state = 'done'
+                    AND location_dest.usage != 'supplier'
+                    AND picking.date_done IS NOT NULL
+                GROUP BY purchase.id
+            ) AS order_date_effective""",
+        )
+
+        tables.append(
+            (
+                order_effective_date_subquery,
+                None,
+                "LEFT JOIN",
+                "order_date_effective.purchase_id = l.order_id",
+            ),
+        )
+
+        return tables
+
+    def _get_fields_group_by(self) -> list:
+        fields = super()._get_fields_group_by()
+        fields.extend(
+            [
+                "spt.warehouse_id",
+                "o.date_effective",
+                "order_date_effective.date_done",
+            ],
+        )
+        return fields

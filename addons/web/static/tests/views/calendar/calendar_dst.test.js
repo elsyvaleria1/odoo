@@ -1,0 +1,205 @@
+// @ts-check
+
+import { expect, test } from "@odoo/hoot";
+import { queryAllTexts, queryOne } from "@odoo/hoot-dom";
+import { mockDate, mockTimeZone } from "@odoo/hoot-mock";
+import {
+    defineModels,
+    fields,
+    models,
+    mountView,
+    onRpc,
+    patchWithCleanup,
+    preloadFullCalendar,
+} from "@web/../tests/web_test_helpers";
+import { dateSettings } from "@web/core/l10n/dates";
+import { getFullCalendarTimeZone } from "@web/views/calendar/hooks/full_calendar_hook";
+
+class Event extends models.Model {
+    name = fields.Char();
+    start = fields.Datetime();
+    stop = fields.Datetime();
+
+    has_access() {
+        return true;
+    }
+
+    _records = [
+        {
+            id: 1,
+            name: "before spring switch",
+            start: "2024-03-31 00:30:00",
+            stop: "2024-03-31 00:45:00",
+        },
+        {
+            id: 2,
+            name: "after spring switch, crosses UTC midnight",
+            start: "2024-03-31 23:30:00",
+            stop: "2024-03-31 23:45:00",
+        },
+        {
+            id: 3,
+            name: "before fall switch, crosses UTC midnight",
+            start: "2024-10-26 22:30:00",
+            stop: "2024-10-26 22:45:00",
+        },
+        {
+            id: 4,
+            name: "after fall switch",
+            start: "2024-10-27 22:30:00",
+            stop: "2024-10-27 22:45:00",
+        },
+        {
+            id: 5,
+            name: "summer CET, crosses UTC midnight",
+            start: "2024-07-09 22:30:00",
+            stop: "2024-07-09 22:45:00",
+        },
+    ];
+}
+
+defineModels([Event]);
+preloadFullCalendar();
+
+onRpc("has_group", () => true);
+
+test("week range crossing spring-forward serializes each bound with its own offset", async () => {
+    mockDate("2024-04-02T08:00:00");
+    mockTimeZone("Europe/Brussels");
+    onRpc("search_read", ({ kwargs }) => {
+        expect.step("search_read");
+        expect(kwargs.domain).toEqual([
+            ["start", "<=", "2024-04-06 21:59:59"],
+            ["stop", ">=", "2024-03-30 23:00:00"],
+        ]);
+    });
+
+    await mountView({
+        resModel: "event",
+        type: "calendar",
+        arch: `<calendar date_start="start" date_stop="stop" mode="week"/>`,
+    });
+    expect.verifySteps(["search_read"]);
+});
+
+test("week range crossing fall-back serializes each bound with its own offset", async () => {
+    mockDate("2024-10-29T08:00:00");
+    mockTimeZone("Europe/Brussels");
+    onRpc("search_read", ({ kwargs }) => {
+        expect.step("search_read");
+        expect(kwargs.domain).toEqual([
+            ["start", "<=", "2024-11-02 22:59:59"],
+            ["stop", ">=", "2024-10-26 22:00:00"],
+        ]);
+    });
+
+    await mountView({
+        resModel: "event",
+        type: "calendar",
+        arch: `<calendar date_start="start" date_stop="stop" mode="week"/>`,
+    });
+    expect.verifySteps(["search_read"]);
+});
+
+test.tags("desktop");
+test("events around spring-forward render in the local day column", async () => {
+    mockDate("2024-04-02T08:00:00");
+    mockTimeZone("Europe/Brussels");
+
+    await mountView({
+        resModel: "event",
+        type: "calendar",
+        arch: `<calendar date_start="start" date_stop="stop" mode="week"/>`,
+    });
+
+    expect(
+        queryOne(`.o_event[data-event-id="1"]`).closest("[data-date]"),
+    ).toHaveAttribute("data-date", "2024-03-31");
+    expect(
+        queryOne(`.o_event[data-event-id="2"]`).closest("[data-date]"),
+    ).toHaveAttribute("data-date", "2024-04-01");
+});
+
+test.tags("desktop");
+test("events around fall-back render in the local day column", async () => {
+    mockDate("2024-10-29T08:00:00");
+    mockTimeZone("Europe/Brussels");
+
+    await mountView({
+        resModel: "event",
+        type: "calendar",
+        arch: `<calendar date_start="start" date_stop="stop" mode="week"/>`,
+    });
+
+    expect(
+        queryOne(`.o_event[data-event-id="3"]`).closest("[data-date]"),
+    ).toHaveAttribute("data-date", "2024-10-27");
+    expect(
+        queryOne(`.o_event[data-event-id="4"]`).closest("[data-date]"),
+    ).toHaveAttribute("data-date", "2024-10-27");
+});
+
+test.tags("desktop");
+test("week header labels stay aligned across the transition", async () => {
+    mockDate("2024-04-02T08:00:00");
+    mockTimeZone("Europe/Brussels");
+
+    await mountView({
+        resModel: "event",
+        type: "calendar",
+        arch: `<calendar date_start="start" date_stop="stop" mode="week"/>`,
+    });
+
+    expect(queryAllTexts(`.fc-col-header-cell .o_cw_day_name`)).toEqual([
+        "SUN",
+        "MON",
+        "TUE",
+        "WED",
+        "THU",
+        "FRI",
+        "SAT",
+    ]);
+    expect(queryAllTexts(`.fc-col-header-cell .o_cw_day_number`)).toEqual([
+        "31",
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6",
+    ]);
+});
+
+test("getFullCalendarTimeZone passes slash-less IANA zones through by name", async () => {
+    patchWithCleanup(dateSettings, { timeZone: "CET" });
+    expect(getFullCalendarTimeZone()).toBe("CET");
+});
+
+test("getFullCalendarTimeZone accepts a system zone resolving to an IANA name", async () => {
+    patchWithCleanup(dateSettings, { timeZone: null });
+    patchWithCleanup(Temporal.Now, { timeZoneId: () => "CET" });
+    expect(getFullCalendarTimeZone()).toBe("CET");
+});
+
+test("getFullCalendarTimeZone maps fixed offsets to inverted POSIX Etc/GMT names", async () => {
+    mockTimeZone(+2);
+    expect(getFullCalendarTimeZone()).toBe("Etc/GMT-2");
+    mockTimeZone(-7);
+    expect(getFullCalendarTimeZone()).toBe("Etc/GMT+7");
+});
+
+test.tags("desktop");
+test("summer events in a slash-less DST zone render in the local day column", async () => {
+    mockDate("2024-07-10T08:00:00");
+    patchWithCleanup(dateSettings, { timeZone: "CET" });
+
+    await mountView({
+        resModel: "event",
+        type: "calendar",
+        arch: `<calendar date_start="start" date_stop="stop" mode="week"/>`,
+    });
+
+    expect(
+        queryOne(`.o_event[data-event-id="5"]`).closest("[data-date]"),
+    ).toHaveAttribute("data-date", "2024-07-10");
+});

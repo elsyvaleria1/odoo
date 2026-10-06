@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="access_class_delivery" model="ir.access.class">
+        <field name="name">mail_telegram.delivery</field>
+        <field
+            name="description">The Telegram messages a chatter message went out as: the bridge's delivery records. Administrators read them; only the bridge writes them.</field>
+    </record>
+
+    <record id="access_delivery_system" model="ir.access">
+        <field name="name">mail_telegram.delivery: administrators</field>
+        <field name="group_id" ref="base.group_system" />
+        <field name="kind">permission</field>
+        <field name="operation">r</field>
+        <field name="class_id" ref="access_class_delivery" />
+    </record>
+
+</odoo>

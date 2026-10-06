@@ -1,0 +1,48 @@
+/** @odoo-module native */
+import { useEditorOverlayContext } from "@html_editor/core/editor_overlay_context";
+import { useDropdownAutoVisibility } from "@html_editor/dropdown_autovisibility_hook";
+import { toolbarButtonProps } from "@html_editor/main/toolbar/toolbar";
+import { Component, onWillStart, proxy, t, useProps } from "@odoo/owl";
+import { Dropdown, DropdownItem } from "@web/components/dropdown";
+import { jsToPyLocale } from "@web/core/l10n/utils";
+import { loadLanguages } from "@web/core/translation";
+import { user } from "@web/core/user";
+import { useChildRef, useService } from "@web/core/utils/hooks";
+
+export class LanguageSelector extends Component {
+    static template = "html_editor.LanguageSelector";
+    static props = { ...toolbarButtonProps, onSelected: t.function() };
+    static components = { Dropdown, DropdownItem };
+    props = useProps(this.constructor.props);
+
+    setup() {
+        this.overlayContext = useEditorOverlayContext();
+        this.orm = useService("orm");
+        this.state = proxy({
+            languages: [],
+        });
+        this.menuRef = useChildRef();
+        useDropdownAutoVisibility(this.overlayContext.overlayState, this.menuRef);
+        onWillStart(() => {
+            if (user.userId) {
+                const userLang = jsToPyLocale(user.lang);
+                loadLanguages(this.orm).then(
+                    (res) => {
+                        const userLangIndex = res.findIndex(
+                            (lang) => lang[0] === userLang,
+                        );
+                        if (userLangIndex !== -1) {
+                            const [userLangItem] = res.splice(userLangIndex, 1);
+                            res.unshift(userLangItem);
+                        }
+                        this.state.languages = res;
+                    },
+                    () => {},
+                );
+            }
+        });
+    }
+    onSelected(language) {
+        this.props.onSelected(language);
+    }
+}

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-inherit="mail.ChatWindow.headerContent" t-inherit-mode="extension">
+        <xpath expr="//*[@name='threadAvatar']" position="before">
+            <t t-if="this.props.chatWindow.thread" t-call="im_livechat.LivechatStatusLabelOfThread"
+                templateParams="{ livechatThread: this.props.chatWindow.thread }"/>
+        </xpath>
+    </t>
+</templates>

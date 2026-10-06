@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <menuitem
+        id="menu_credit_root"
+        name="Credit"
+        parent="partner.partner_menu_root"
+        sequence="40"
+        groups="account_credit.group_credit_readonly" />
+
+    <menuitem
+        id="menu_credit_profile"
+        name="Profiles"
+        parent="menu_credit_root"
+        action="action_credit_profile"
+        sequence="10" />
+
+    <menuitem
+        id="menu_credit_review"
+        name="Reviews"
+        parent="menu_credit_root"
+        action="action_credit_review"
+        sequence="20" />
+
+    <menuitem
+        id="menu_credit_facility"
+        name="Facilities"
+        parent="menu_credit_root"
+        action="action_credit_facility"
+        sequence="30" />
+
+    <menuitem
+        id="menu_credit_event"
+        name="Events"
+        parent="menu_credit_root"
+        action="action_credit_event"
+        sequence="40" />
+
+    <menuitem
+        id="menu_credit_grade_transitions"
+        name="Grade Transitions"
+        parent="menu_credit_root"
+        action="action_credit_grade_transitions"
+        sequence="55" />
+
+    <menuitem
+        id="menu_credit_provision_run"
+        name="Expected Credit Loss"
+        parent="menu_credit_root"
+        action="action_credit_provision_run"
+        sequence="60" />
+
+    <menuitem
+        id="menu_credit_config"
+        name="Credit Configuration"
+        parent="partner.res_partner_menu_config"
+        sequence="80"
+        groups="account_credit.group_credit_manager" />
+
+    <menuitem
+        id="menu_credit_grade"
+        name="Grades"
+        parent="menu_credit_config"
+        action="action_credit_grade"
+        sequence="10" />
+
+    <menuitem
+        id="menu_credit_policy_rule"
+        name="Policy Rules"
+        parent="menu_credit_config"
+        action="action_credit_policy_rule"
+        sequence="20" />
+
+    <menuitem
+        id="menu_credit_scorecard"
+        name="Scorecard"
+        parent="menu_credit_config"
+        action="action_credit_scorecard"
+        sequence="30" />
+
+    <menuitem
+        id="menu_credit_event_type"
+        name="Event Types"
+        parent="menu_credit_config"
+        action="action_credit_event_type"
+        sequence="40" />
+
+    <menuitem
+        id="menu_credit_provision_matrix"
+        name="Expected Loss Matrices"
+        parent="menu_credit_config"
+        action="action_credit_provision_matrix"
+        sequence="50" />
+
+    <menuitem
+        id="menu_credit_portfolio_report"
+        name="Portfolio"
+        parent="menu_credit_root"
+        action="action_credit_portfolio_report"
+        sequence="50" />
+
+</odoo>

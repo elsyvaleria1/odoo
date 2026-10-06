@@ -1,0 +1,752 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# * trade_agreement
+#
+# Translators:
+# Martin Trigaux, 2022
+# David Ramia, 2023
+# Richard Mouthier <rmo@odoo.com>, 2023
+# "Dylan Kiss (dyki)" <dyki@odoo.com>, 2025.
+# "Noemi Pla Garcia (nopl)" <nopl@odoo.com>, 2025.
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 16.0+e\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-01-25 18:36+0000\n"
+"PO-Revision-Date: 2025-12-20 09:37+0000\n"
+"Last-Translator: \"Noemi Pla Garcia (nopl)\" <nopl@odoo.com>\n"
+"Language-Team: Spanish <https://translate.odoo.com/projects/odoo-19/"
+"trade_agreement/es/>\n"
+"Language: es\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: nplurals=3; plural=(n == 1) ? 0 : ((n != 0 && n % 1000000 == "
+"0) ? 1 : 2);\n"
+"X-Generator: Weblate 5.14.3\n"
+
+#. module: trade_agreement
+#. odoo-python
+#: code:addons/trade_agreement/models/mixin_agreement.py:0
+msgid "%(agreement)s ends on %(date)s: renew it or let it close."
+msgstr "%(agreement)s termina el %(date)s: renuévelo o deje que se cierre."
+
+#. module: trade_agreement
+#. odoo-python
+#: code:addons/trade_agreement/models/mixin_agreement.py:0
+msgid "%(agreement)s is %(percent)s%% consumed."
+msgstr "%(agreement)s está consumido al %(percent)s%%."
+
+#. module: trade_agreement
+#. odoo-python
+#: code:addons/trade_agreement/models/mixin_order_agreement.py:0
+msgid ""
+"%(order)s goes beyond its agreement:\n"
+"%(breaches)s"
+msgstr ""
+"%(order)s va más allá de su acuerdo:\n"
+"%(breaches)s"
+
+#. module: trade_agreement
+#. odoo-python
+#: code:addons/trade_agreement/models/mixin_order_agreement.py:0
+msgid "%(partner)s is not a party to %(agreement)s."
+msgstr "%(partner)s no es parte de %(agreement)s."
+
+#. module: trade_agreement
+#. odoo-python
+#: code:addons/trade_agreement/models/mixin_agreement_line_break.py:0
+msgid "%(product)s already has a price from %(qty)s."
+msgstr "%(product)s ya tiene un precio desde %(qty)s."
+
+#. module: trade_agreement
+#. odoo-python
+#: code:addons/trade_agreement/models/mixin_order_agreement.py:0
+msgid "%(product)s: %(wanted)s ordered, %(remaining)s left on %(agreement)s."
+msgstr ""
+"%(product)s: %(wanted)s pedidos, quedan %(remaining)s en %(agreement)s."
+
+#. module: trade_agreement
+#. odoo-python
+#: code:addons/trade_agreement/models/mixin_agreement.py:0
+msgid ""
+"A category line grants a discount; quantity breaks price a product line."
+msgstr ""
+"Una línea de categoría otorga un descuento; los escalones de cantidad fijan "
+"el precio de una línea de producto."
+
+#. module: trade_agreement
+#. odoo-python
+#: code:addons/trade_agreement/models/mixin_agreement.py:0
+msgid "A category line of an agreement needs the discount it grants."
+msgstr ""
+"Una línea de categoría de un acuerdo necesita el descuento que otorga."
+
+#. module: trade_agreement
+#. odoo-python
+#: code:addons/trade_agreement/models/mixin_agreement_line_break.py:0
+msgid "A quantity break belongs to a line of its agreement."
+msgstr "Un escalón de cantidad pertenece a una línea de su acuerdo."
+
+#. module: trade_agreement
+#. odoo-python
+#: code:addons/trade_agreement/models/mixin_agreement_line_break.py:0
+msgid "A quantity break needs a quantity and a price above zero."
+msgstr ""
+"Un escalón de cantidad necesita una cantidad y un precio mayores que cero."
+
+#. module: trade_agreement
+#: model:ir.model.fields,field_description:trade_agreement.field_mixin_agreement__message_needaction
+msgid "Action Needed"
+msgstr "Acción requerida"
+
+#. module: trade_agreement
+#: model:ir.model.fields,field_description:trade_agreement.field_mixin_agreement__active
+msgid "Active"
+msgstr "Activo"
+
+#. module: trade_agreement
+#: model:ir.model.fields,field_description:trade_agreement.field_mixin_agreement__activity_ids
+msgid "Activities"
+msgstr "Actividades"
+
+#. module: trade_agreement
+#: model:ir.model.fields,field_description:trade_agreement.field_mixin_agreement__activity_exception_decoration
+msgid "Activity Exception Decoration"
+msgstr "Decoración de Actividad de Excepción"
+
+#. module: trade_agreement
+#: model:ir.model.fields,field_description:trade_agreement.field_mixin_agreement__activity_state
+msgid "Activity State"
+msgstr "Estado de la actividad"
+
+#. module: trade_agreement
+#: model:ir.model.fields,field_description:trade_agreement.field_mixin_agreement__activity_type_icon
+msgid "Activity Type Icon"
+msgstr "Icono de tipo de actvidad"
+
+#. module: trade_agreement
+#: model:ir.model.fields,field_description:trade_agreement.field_mixin_agreement__name
+#: model:ir.model.fields,field_description:trade_agreement.field_mixin_agreement_line_break__agreement_id
+msgid "Agreement"
+msgstr "Acuerdo"
+
+#. module: trade_agreement
+#: model:ir.model.fields,field_description:trade_agreement.field_mixin_order_line_agreement__agreement_line_id
+msgid "Agreement Line"
+msgstr "Línea del acuerdo"
+
+#. module: trade_agreement
+#: model:ir.model,name:trade_agreement.model_mixin_agreement_line_break
+msgid "Agreement Quantity Break"
+msgstr "Escalón de cantidad del acuerdo"
+
+#. module: trade_agreement
+#: model:ir.model.fields,field_description:trade_agreement.field_mixin_agreement__agreement_type
+msgid "Agreement Type"
+msgstr "Tipo de acuerdo de compra"
+
+#. module: trade_agreement
+#: model:ir.model.fields,field_description:trade_agreement.field_mixin_order_agreement__agreement_warning
+msgid "Agreement Warning"
+msgstr "Advertencia del acuerdo"
+
+#. module: trade_agreement
+#: model:ir.model.fields.selection,name:trade_agreement.selection__mixin_agreement__overrelease_policy__allow
+#: model:ir.model.fields.selection,name:trade_agreement.selection__purchase_agreement__overrelease_policy__allow
+#: model:ir.model.fields.selection,name:trade_agreement.selection__sale_agreement__overrelease_policy__allow
+msgid "Allow"
+msgstr "Permitir"
+
+#. module: trade_agreement
+#. odoo-python
+#: code:addons/trade_agreement/models/mixin_agreement.py:0
+msgid "An agreement line names either a product or a product category."
+msgstr "Una línea de acuerdo indica un producto o una categoría de producto."
+
+#. module: trade_agreement
+#: model:ir.model.fields,field_description:trade_agreement.field_mixin_agreement_line__analytic_distribution
+msgid "Analytic Distribution"
+msgstr "Distribución analítica"
+
+#. module: trade_agreement
+#: model:ir.model.fields,field_description:trade_agreement.field_mixin_agreement_line__analytic_precision
+msgid "Analytic Precision"
+msgstr "Precisión analítica"
+
+#. module: trade_agreement
+#: model:ir.model.fields,field_description:trade_agreement.field_mixin_agreement__message_attachment_count
+msgid "Attachment Count"
+msgstr "Número de archivos adjuntos"
+
+#. module: trade_agreement
+#: model:ir.model.fields,field_description:trade_agreement.field_mixin_agreement__overrelease_policy
+msgid "Beyond the Commitment"
+msgstr "Más allá del compromiso"
+
+#. module: trade_agreement
+#: model:ir.model.fields.selection,name:trade_agreement.selection__mixin_agreement__agreement_type__blanket_order
+#: model:ir.model.fields.selection,name:trade_agreement.selection__purchase_agreement__agreement_type__blanket_order
+#: model:ir.model.fields.selection,name:trade_agreement.selection__sale_agreement__agreement_type__blanket_order
+msgid "Blanket Order"
+msgstr "Pedido abierto"
+
+#. module: trade_agreement
+#: model:ir.model.fields.selection,name:trade_agreement.selection__mixin_agreement__overrelease_policy__block
+#: model:ir.model.fields.selection,name:trade_agreement.selection__purchase_agreement__overrelease_policy__block
+#: model:ir.model.fields.selection,name:trade_agreement.selection__sale_agreement__overrelease_policy__block
+msgid "Block"
+msgstr "Bloquear"
+
+#. module: trade_agreement
+#: model:ir.model.fields.selection,name:trade_agreement.selection__mixin_agreement__state__cancel
+#: model:ir.model.fields.selection,name:trade_agreement.selection__purchase_agreement__state__cancel
+#: model:ir.model.fields.selection,name:trade_agreement.selection__sale_agreement__state__cancel
+msgid "Cancelled"
+msgstr "Cancelado"
+
+#. module: trade_agreement
+#. odoo-python
+#: code:addons/trade_agreement/models/mixin_agreement.py:0
+msgid "Cancelled by the agreement associated to this quotation."
+msgstr "Cancelado por el acuerdo asociado a este presupuesto."
+
+#. module: trade_agreement
+#: model:ir.model.fields.selection,name:trade_agreement.selection__mixin_agreement__state__done
+#: model:ir.model.fields.selection,name:trade_agreement.selection__purchase_agreement__state__done
+#: model:ir.model.fields.selection,name:trade_agreement.selection__sale_agreement__state__done
+msgid "Closed"
+msgstr "Cerrado"
+
+#. module: trade_agreement
+#: model:ir.model.fields,field_description:trade_agreement.field_mixin_agreement__commitment
+msgid "Commitment"
+msgstr "Compromiso"
+
+#. module: trade_agreement
+#: model:ir.model.fields,field_description:trade_agreement.field_mixin_agreement__amount_committed
+msgid "Committed Amount"
+msgstr "Importe comprometido"
+
+#. module: trade_agreement
+#: model:ir.model.fields,field_description:trade_agreement.field_mixin_agreement__company_id
+msgid "Company"
+msgstr "Compañía"
+
+#. module: trade_agreement
+#: model:ir.model.fields.selection,name:trade_agreement.selection__mixin_agreement__state__confirmed
+#: model:ir.model.fields.selection,name:trade_agreement.selection__purchase_agreement__state__confirmed
+#: model:ir.model.fields.selection,name:trade_agreement.selection__sale_agreement__state__confirmed
+msgid "Confirmed"
+msgstr "Confirmado"
+
+#. module: trade_agreement
+#: model:ir.model.fields,field_description:trade_agreement.field_mixin_agreement__consumed_percent
+msgid "Consumed"
+msgstr "Consumido"
+
+#. module: trade_agreement
+#: model:ir.model.fields,field_description:trade_agreement.field_mixin_agreement__currency_id
+#: model:ir.model.fields,field_description:trade_agreement.field_mixin_agreement_line__currency_id
+#: model:ir.model.fields,field_description:trade_agreement.field_mixin_agreement_line_break__currency_id
+msgid "Currency"
+msgstr "Moneda"
+
+#. module: trade_agreement
+#: model:ir.model.fields,field_description:trade_agreement.field_mixin_agreement__description
+msgid "Description"
+msgstr "Descripción"
+
+#. module: trade_agreement
+#: model:ir.model.fields,field_description:trade_agreement.field_mixin_agreement_line__discount
+msgid "Discount (%)"
+msgstr "Descuento (%)"
+
+#. module: trade_agreement
+#: model:ir.model.fields,field_description:trade_agreement.field_mixin_agreement__display_name
+#: model:ir.model.fields,field_description:trade_agreement.field_mixin_agreement_line__display_name
+#: model:ir.model.fields,field_description:trade_agreement.field_mixin_agreement_line_break__display_name
+#: model:ir.model.fields,field_description:trade_agreement.field_mixin_order_agreement__display_name
+#: model:ir.model.fields,field_description:trade_agreement.field_mixin_order_line_agreement__display_name
+msgid "Display Name"
+msgstr "Nombre para mostrar"
+
+#. module: trade_agreement
+#: model:ir.model.fields,field_description:trade_agreement.field_mixin_agreement_line__distribution_analytic_account_ids
+msgid "Distribution Analytic Account"
+msgstr "Cuenta analítica de distribución"
+
+#. module: trade_agreement
+#: model:ir.model.fields.selection,name:trade_agreement.selection__mixin_agreement__state__draft
+#: model:ir.model.fields.selection,name:trade_agreement.selection__purchase_agreement__state__draft
+#: model:ir.model.fields.selection,name:trade_agreement.selection__sale_agreement__state__draft
+msgid "Draft"
+msgstr "Borrador"
+
+#. module: trade_agreement
+#: model:ir.model.fields,field_description:trade_agreement.field_mixin_agreement__date_end
+msgid "End Date"
+msgstr "Fecha de finalización"
+
+#. module: trade_agreement
+#. odoo-python
+#: code:addons/trade_agreement/models/mixin_agreement.py:0
+msgid ""
+"End date cannot be earlier than start date. Please check dates for "
+"agreements: %s"
+msgstr ""
+"La fecha de finalización no puede ser anterior a la fecha de inicio. "
+"Verifique las fechas de los acuerdos: %s"
+
+#. module: trade_agreement
+#: model:ir.model.fields,field_description:trade_agreement.field_mixin_agreement__message_follower_ids
+msgid "Followers"
+msgstr "Seguidores"
+
+#. module: trade_agreement
+#: model:ir.model.fields,field_description:trade_agreement.field_mixin_agreement__message_partner_ids
+msgid "Followers (Partners)"
+msgstr "Seguidores (Contactos)"
+
+#. module: trade_agreement
+#: model:ir.model.fields,help:trade_agreement.field_mixin_agreement__consumed_percent
+msgid ""
+"For a value commitment, the share of the amount ordered; for a quantity "
+"commitment, the share ordered of its most consumed line."
+msgstr ""
+"En un compromiso de valor, la parte del importe pedida; en un compromiso de"
+" cantidad, la parte pedida de su línea más consumida."
+
+#. module: trade_agreement
+#: model:ir.model.fields,field_description:trade_agreement.field_mixin_agreement_line_break__min_qty
+msgid "From Quantity"
+msgstr "Desde la cantidad"
+
+#. module: trade_agreement
+#: model:ir.model.fields,field_description:trade_agreement.field_mixin_agreement__has_message
+msgid "Has Message"
+msgstr "Tiene un mensaje"
+
+#. module: trade_agreement
+#: model:ir.model.fields,field_description:trade_agreement.field_mixin_agreement__id
+#: model:ir.model.fields,field_description:trade_agreement.field_mixin_agreement_line__id
+#: model:ir.model.fields,field_description:trade_agreement.field_mixin_agreement_line_break__id
+#: model:ir.model.fields,field_description:trade_agreement.field_mixin_order_agreement__id
+#: model:ir.model.fields,field_description:trade_agreement.field_mixin_order_line_agreement__id
+msgid "ID"
+msgstr "ID"
+
+#. module: trade_agreement
+#: model:ir.model.fields,field_description:trade_agreement.field_mixin_agreement__activity_exception_icon
+msgid "Icon"
+msgstr "Icono"
+
+#. module: trade_agreement
+#: model:ir.model.fields,help:trade_agreement.field_mixin_agreement__activity_exception_icon
+msgid "Icon to indicate an exception activity."
+msgstr "Icono para indicar una actividad de excepción."
+
+#. module: trade_agreement
+#: model:ir.model.fields,help:trade_agreement.field_mixin_agreement__message_needaction
+msgid "If checked, new messages require your attention."
+msgstr "Si está marcada, hay nuevos mensajes que requieren su atención."
+
+#. module: trade_agreement
+#: model:ir.model.fields,help:trade_agreement.field_mixin_agreement__message_has_error
+#: model:ir.model.fields,help:trade_agreement.field_mixin_agreement__message_has_sms_error
+msgid "If checked, some messages have a delivery error."
+msgstr "Si está marcada, algunos mensajes tienen error de envío."
+
+#. module: trade_agreement
+#: model:ir.model.fields,field_description:trade_agreement.field_mixin_agreement__message_is_follower
+msgid "Is Follower"
+msgstr "Es un seguidor"
+
+#. module: trade_agreement
+#: model:ir.model.fields,field_description:trade_agreement.field_mixin_agreement__message_has_error
+msgid "Message Delivery error"
+msgstr "Error de envío de mensaje"
+
+#. module: trade_agreement
+#: model:ir.model.fields,field_description:trade_agreement.field_mixin_agreement__message_ids
+msgid "Messages"
+msgstr "Mensajes"
+
+#. module: trade_agreement
+#: model:ir.model.fields,field_description:trade_agreement.field_mixin_agreement__my_activity_date_deadline
+msgid "My Activity Deadline"
+msgstr "Fecha límite de mi actividad"
+
+#. module: trade_agreement
+#. odoo-python
+#: code:addons/trade_agreement/models/mixin_agreement.py:0
+msgid "New"
+msgstr "Nuevo"
+
+#. module: trade_agreement
+#: model:ir.model.fields,field_description:trade_agreement.field_mixin_agreement__activity_date_deadline
+msgid "Next Activity Deadline"
+msgstr "Fecha límite de la siguiente actividad"
+
+#. module: trade_agreement
+#: model:ir.model.fields,field_description:trade_agreement.field_mixin_agreement__activity_summary
+msgid "Next Activity Summary"
+msgstr "Resumen de la siguiente actividad"
+
+#. module: trade_agreement
+#: model:ir.model.fields,field_description:trade_agreement.field_mixin_agreement__activity_type_id
+msgid "Next Activity Type"
+msgstr "Tipo de la siguiente actividad"
+
+#. module: trade_agreement
+#: model:ir.model.fields,field_description:trade_agreement.field_mixin_agreement__message_needaction_counter
+msgid "Number of Actions"
+msgstr "Número de acciones"
+
+#. module: trade_agreement
+#: model:ir.model.fields,field_description:trade_agreement.field_mixin_agreement__message_has_error_counter
+msgid "Number of errors"
+msgstr "Número de errores"
+
+#. module: trade_agreement
+#: model:ir.model.fields,help:trade_agreement.field_mixin_agreement__message_needaction_counter
+msgid "Number of messages requiring action"
+msgstr "Número de mensajes que requieren una acción"
+
+#. module: trade_agreement
+#: model:ir.model.fields,help:trade_agreement.field_mixin_agreement__message_has_error_counter
+msgid "Number of messages with delivery error"
+msgstr "Número de mensajes con error de envío"
+
+#. module: trade_agreement
+#: model:ir.model.fields,help:trade_agreement.field_mixin_agreement_line__discount
+msgid ""
+"On a category line, the discount its products take off their usual price."
+msgstr ""
+"En una línea de categoría, el descuento que sus productos aplican sobre su "
+"precio habitual."
+
+#. module: trade_agreement
+#: model:ir.model,name:trade_agreement.model_mixin_order_line_agreement
+msgid "Order Line Placed Against an Agreement Line"
+msgstr "Línea de pedido hecha contra una línea de acuerdo"
+
+#. module: trade_agreement
+#: model:ir.model.fields,field_description:trade_agreement.field_mixin_agreement_line__order_line_ids
+msgid "Order Lines"
+msgstr "Líneas de pedido"
+
+#. module: trade_agreement
+#: model:ir.model,name:trade_agreement.model_mixin_order_agreement
+msgid "Order Placed Against an Agreement"
+msgstr "Pedido realizado contra un acuerdo"
+
+#. module: trade_agreement
+#: model:ir.model.fields,field_description:trade_agreement.field_mixin_agreement_line__qty_ordered
+msgid "Ordered"
+msgstr "Pedido"
+
+#. module: trade_agreement
+#: model:ir.model.fields,field_description:trade_agreement.field_mixin_agreement__amount_ordered
+#: model:ir.model.fields,field_description:trade_agreement.field_mixin_agreement_line__amount_ordered
+msgid "Ordered Amount"
+msgstr "Importe pedido"
+
+#. module: trade_agreement
+#: model:ir.model.fields,field_description:trade_agreement.field_mixin_agreement__partner_id
+msgid "Partner"
+msgstr "Contacto"
+
+#. module: trade_agreement
+#: model:ir.model.fields,field_description:trade_agreement.field_mixin_agreement__website_message_ids
+msgid "Portal Messages"
+msgstr "Mensajes del portal"
+
+#. module: trade_agreement
+#: model:ir.model.fields,help:trade_agreement.field_mixin_agreement__website_message_ids
+msgid "Portal communication history for this record."
+msgstr "Historial de comunicación del portal de este registro."
+
+#. module: trade_agreement
+#: model:ir.model.fields.selection,name:trade_agreement.selection__mixin_agreement__commitment__price
+#: model:ir.model.fields.selection,name:trade_agreement.selection__purchase_agreement__commitment__price
+#: model:ir.model.fields.selection,name:trade_agreement.selection__sale_agreement__commitment__price
+msgid "Prices Only"
+msgstr "Solo precios"
+
+#. module: trade_agreement
+#: model:ir.model.fields,help:trade_agreement.field_mixin_agreement__commitment
+msgid ""
+"Prices only: the agreed prices apply, with no volume promised. Quantity: "
+"each line commits its quantity. Value: the agreement commits a total "
+"amount."
+msgstr ""
+"Solo precios: se aplican los precios acordados, sin volumen prometido. "
+"Cantidad: cada línea compromete su cantidad. Valor: el acuerdo compromete "
+"un importe total."
+
+#. module: trade_agreement
+#: model:ir.model.fields,field_description:trade_agreement.field_mixin_agreement_line__product_id
+#: model:ir.model.fields,field_description:trade_agreement.field_mixin_agreement_line_break__line_id
+msgid "Product"
+msgstr "Producto"
+
+#. module: trade_agreement
+#: model:ir.model.fields,field_description:trade_agreement.field_mixin_agreement_line__product_category_id
+msgid "Product Category"
+msgstr "Categoría de producto"
+
+#. module: trade_agreement
+#: model:ir.model.fields,field_description:trade_agreement.field_mixin_agreement_line__product_qty
+#: model:ir.model.fields.selection,name:trade_agreement.selection__mixin_agreement__commitment__quantity
+#: model:ir.model.fields.selection,name:trade_agreement.selection__purchase_agreement__commitment__quantity
+#: model:ir.model.fields.selection,name:trade_agreement.selection__sale_agreement__commitment__quantity
+msgid "Quantity"
+msgstr "Cantidad"
+
+#. module: trade_agreement
+#: model:ir.model.fields,field_description:trade_agreement.field_mixin_agreement_line__break_ids
+msgid "Quantity Breaks"
+msgstr "Escalones de cantidad"
+
+#. module: trade_agreement
+#: model:ir.model.fields,field_description:trade_agreement.field_mixin_agreement__reference
+msgid "Reference"
+msgstr "Referencia"
+
+#. module: trade_agreement
+#: model:ir.model.fields,field_description:trade_agreement.field_mixin_agreement_line__qty_remaining
+msgid "Remaining"
+msgstr "Restante"
+
+#. module: trade_agreement
+#: model:ir.model.fields,field_description:trade_agreement.field_mixin_agreement__amount_remaining
+msgid "Remaining Amount"
+msgstr "Importe restante"
+
+#. module: trade_agreement
+#: model:ir.model.fields,field_description:trade_agreement.field_mixin_agreement__reminded_consumption
+msgid "Reminded Consumption"
+msgstr "Consumo recordado"
+
+#. module: trade_agreement
+#: model:ir.model.fields,field_description:trade_agreement.field_mixin_agreement__reminded_expiry
+msgid "Reminded Expiry"
+msgstr "Vencimiento recordado"
+
+#. module: trade_agreement
+#: model:ir.model.fields,field_description:trade_agreement.field_mixin_agreement__previous_agreement_id
+msgid "Renews"
+msgstr "Renueva"
+
+#. module: trade_agreement
+#: model:ir.model.fields,field_description:trade_agreement.field_mixin_agreement__activity_user_id
+msgid "Responsible User"
+msgstr "Usuario responsable"
+
+#. module: trade_agreement
+#: model:ir.model.fields,field_description:trade_agreement.field_mixin_agreement__message_has_sms_error
+msgid "SMS Delivery error"
+msgstr "Error de envío del SMS"
+
+#. module: trade_agreement
+#: model:ir.model.fields,field_description:trade_agreement.field_mixin_agreement__date_start
+msgid "Start Date"
+msgstr "Fecha de inicio"
+
+#. module: trade_agreement
+#: model:ir.model.fields,field_description:trade_agreement.field_mixin_agreement__state
+msgid "Status"
+msgstr "Estado"
+
+#. module: trade_agreement
+#: model:ir.model.fields,help:trade_agreement.field_mixin_agreement__activity_state
+msgid ""
+"Status based on activities\n"
+"Overdue: Due date is already passed\n"
+"Today: Activity date is today\n"
+"Planned: Future activities."
+msgstr ""
+"Estado basado en actividades\n"
+"Vencida: la fecha límite ya ha pasado\n"
+"Hoy: la fecha límite es hoy\n"
+"Planificada: actividades futuras."
+
+#. module: trade_agreement
+#: model:ir.model.fields,help:trade_agreement.field_mixin_agreement_line__product_category_id
+msgid ""
+"The category this line agrees a discount on: every product in it or below it"
+" that no product line of the agreement names."
+msgstr ""
+"La categoría sobre la que esta línea acuerda un descuento: cada producto de "
+"ella o de sus subcategorías que ninguna línea de producto del acuerdo "
+"nombra."
+
+#. module: trade_agreement
+#. odoo-python
+#: code:addons/trade_agreement/models/mixin_order_agreement.py:0
+msgid "The order date is outside %(agreement)s's validity."
+msgstr "La fecha del pedido está fuera de la vigencia de %(agreement)s."
+
+#. module: trade_agreement
+#: model:ir.model.fields,help:trade_agreement.field_mixin_agreement_line__product_id
+msgid ""
+"The product this line agrees a price for. Leave it empty to agree a discount"
+" on a whole category instead."
+msgstr ""
+"El producto para el que esta línea acuerda un precio. Déjelo vacío para "
+"acordar en cambio un descuento sobre toda una categoría."
+
+#. module: trade_agreement
+#: model:ir.model.fields,help:trade_agreement.field_mixin_agreement_line_break__min_qty
+msgid ""
+"The quantity an order line must reach, in the agreement line's unit, for "
+"this price to apply."
+msgstr ""
+"La cantidad que debe alcanzar una línea de pedido, en la unidad de la línea "
+"del acuerdo, para que se aplique este precio."
+
+#. module: trade_agreement
+#. odoo-python
+#: code:addons/trade_agreement/models/mixin_agreement.py:0
+msgid ""
+"There is already an open blanket order for this partner. We suggest you "
+"complete this open blanket order, instead of creating a new one."
+msgstr ""
+"Ya hay un pedido abierto vigente para este contacto. Le sugerimos completar "
+"ese pedido abierto en lugar de crear uno nuevo."
+
+#. module: trade_agreement
+#. odoo-python
+#: code:addons/trade_agreement/models/mixin_order_agreement.py:0
+msgid "This order spends %(amount)s, %(remaining)s left on %(agreement)s."
+msgstr "Este pedido gasta %(amount)s, quedan %(remaining)s en %(agreement)s."
+
+#. module: trade_agreement
+#. odoo-python
+#: code:addons/trade_agreement/models/mixin_agreement.py:0
+msgid ""
+"To close this agreement, cancel its related quotations first.\n"
+"\n"
+"Imagine the mess if someone confirms these duplicates: double the order, double the trouble :)"
+msgstr ""
+"Para cerrar este acuerdo, cancele primero sus presupuestos relacionados.\n"
+"\n"
+"Imagine el desorden si alguien confirma estos duplicados: el doble de pedido, el doble de problemas :)"
+
+#. module: trade_agreement
+#: model:ir.model,name:trade_agreement.model_mixin_agreement
+msgid "Trade Agreement"
+msgstr "Acuerdo comercial"
+
+#. module: trade_agreement
+#: model:ir.model,name:trade_agreement.model_mixin_agreement_line
+msgid "Trade Agreement Line"
+msgstr "Línea de acuerdo comercial"
+
+#. module: trade_agreement
+#: model:ir.model.fields,help:trade_agreement.field_mixin_agreement__activity_exception_decoration
+msgid "Type of the exception activity on record."
+msgstr "Tipo de actividad de excepción en el registro."
+
+#. module: trade_agreement
+#: model:ir.model.fields,field_description:trade_agreement.field_mixin_agreement_line__product_uom_id
+#: model:ir.model.fields,field_description:trade_agreement.field_mixin_agreement_line_break__product_uom_id
+msgid "Unit"
+msgstr "Unidad"
+
+#. module: trade_agreement
+#: model:ir.model.fields,field_description:trade_agreement.field_mixin_agreement_line__price_unit
+#: model:ir.model.fields,field_description:trade_agreement.field_mixin_agreement_line_break__price_unit
+msgid "Unit Price"
+msgstr "Precio unitario"
+
+#. module: trade_agreement
+#: model:ir.model.fields,field_description:trade_agreement.field_mixin_agreement__user_id
+msgid "User"
+msgstr "Usuario"
+
+#. module: trade_agreement
+#: model:ir.model.fields.selection,name:trade_agreement.selection__mixin_agreement__commitment__value
+#: model:ir.model.fields.selection,name:trade_agreement.selection__purchase_agreement__commitment__value
+#: model:ir.model.fields.selection,name:trade_agreement.selection__sale_agreement__commitment__value
+msgid "Value"
+msgstr "Valor"
+
+#. module: trade_agreement
+#: model:ir.model.fields.selection,name:trade_agreement.selection__mixin_agreement__overrelease_policy__warn
+#: model:ir.model.fields.selection,name:trade_agreement.selection__purchase_agreement__overrelease_policy__warn
+#: model:ir.model.fields.selection,name:trade_agreement.selection__sale_agreement__overrelease_policy__warn
+msgid "Warn"
+msgstr "Advertir"
+
+#. module: trade_agreement
+#. odoo-python
+#: code:addons/trade_agreement/models/mixin_agreement.py:0
+msgid "Warning for %s"
+msgstr "Advertencia para %s"
+
+#. module: trade_agreement
+#: model:ir.model.fields,help:trade_agreement.field_mixin_agreement_line__qty_ordered
+msgid ""
+"What confirmed orders took from this line, less what was returned or "
+"credited back."
+msgstr ""
+"Lo que los pedidos confirmados tomaron de esta línea, menos lo devuelto o "
+"abonado."
+
+#. module: trade_agreement
+#: model:ir.model.fields,help:trade_agreement.field_mixin_agreement__overrelease_policy
+msgid ""
+"What confirming an order does when it would exceed what remains of the "
+"commitment, or falls outside the agreement's dates."
+msgstr ""
+"Qué hace la confirmación de un pedido cuando excedería lo que queda del "
+"compromiso o cae fuera de las fechas del acuerdo."
+
+#. module: trade_agreement
+#. odoo-python
+#: code:addons/trade_agreement/models/mixin_agreement.py:0
+msgid "You can only delete draft or cancelled agreements."
+msgstr "Solo puede eliminar acuerdos en borrador o cancelados."
+
+#. module: trade_agreement
+#. odoo-python
+#: code:addons/trade_agreement/models/mixin_agreement.py:0
+msgid ""
+"You cannot change the Agreement Type or Company of an agreement that is not "
+"a draft."
+msgstr ""
+"No puede cambiar el tipo de acuerdo ni la empresa de un acuerdo que no está "
+"en borrador."
+
+#. module: trade_agreement
+#. odoo-python
+#: code:addons/trade_agreement/models/mixin_agreement.py:0
+msgid "You cannot confirm a blanket order with lines missing a price."
+msgstr "No puede confirmar una orden abierta con líneas sin precio."
+
+#. module: trade_agreement
+#. odoo-python
+#: code:addons/trade_agreement/models/mixin_agreement.py:0
+msgid "You cannot confirm a blanket order with lines missing a quantity."
+msgstr ""
+"No puede confirmar una orden abierta con líneas que no cuenten con una "
+"cantidad."
+
+#. module: trade_agreement
+#. odoo-python
+#: code:addons/trade_agreement/models/mixin_agreement.py:0
+msgid "You cannot confirm a value commitment without the amount it commits."
+msgstr ""
+"No puede confirmar un compromiso de valor sin el importe que compromete."
+
+#. module: trade_agreement
+#. odoo-python
+#: code:addons/trade_agreement/models/mixin_agreement.py:0
+msgid ""
+"You cannot confirm agreement '%(agreement)s' because it does not contain any"
+" product lines."
+msgstr ""
+"No puede confirmar el acuerdo '%(agreement)s' porque no contiene líneas de "
+"producto."

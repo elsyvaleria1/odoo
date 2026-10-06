@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="phone_call_view_form" model="ir.ui.view">
+        <field name="name">phone.call.form</field>
+        <field name="model">phone.call</field>
+        <field name="inherit_id" ref="phone_call.phone_call_view_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//div[hasclass('oe_button_box')]" position="inside">
+                <button
+                    name="voip_action_view_applications"
+                    type="object"
+                    icon="fa-pencil"
+                    groups="hr_recruitment.group_hr_recruitment_interviewer"
+                    invisible="application_count == 0"
+                    class="oe_stat_button">
+                    <field
+                        name="application_count"
+                        string="Applications"
+                        widget="statinfo" />
+                </button>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

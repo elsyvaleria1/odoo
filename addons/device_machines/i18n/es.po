@@ -1,0 +1,231 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* device_machines
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: es\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: \n"
+
+#. module: device_machines
+#: model_terms:ir.ui.view,arch_db:device_machines.mrp_workorder_view_form_plc
+msgid "<span class=\"o_stat_text\">Bottles Counted</span>"
+msgstr "<span class=\"o_stat_text\">Botellas contadas</span>"
+
+#. module: device_machines
+#: model:ir.model.constraint,message:device_machines.constraint_device_machine_bucket_delta_not_negative
+msgid "A bucket cannot report negative production."
+msgstr "Un bucket no puede reportar producción negativa."
+
+#. module: device_machines
+#. odoo-javascript
+#: code:addons/device_machines/static/src/dashboard/plc_date_popover.xml:0
+msgid "Apply"
+msgstr "Aplicar"
+
+#. module: device_machines
+#. odoo-javascript
+#: code:addons/device_machines/static/src/dashboard/plc_dashboard.xml:0
+msgid "Bottle filling and labeling — Packaging"
+msgstr "Llenado y etiquetado de botellas — Envasado"
+
+#. module: device_machines
+#: model_terms:ir.ui.view,arch_db:device_machines.workcenter_line_kanban_plc
+msgid "Bottles Counted"
+msgstr "Botellas contadas"
+
+#. module: device_machines
+#. odoo-python
+#: code:addons/device_machines/models/mrp_workorder.py:0
+#: model:ir.actions.client,name:device_machines.plc_dashboard_action
+#: model:ir.ui.menu,name:device_machines.menu_mrp_reporting_plc_dashboard
+#: model:ir.ui.menu,name:device_machines.plc_dashboard_menu
+msgid "Bottles Filled and Labeled"
+msgstr "Botellas llenadas y etiquetadas"
+
+#. module: device_machines
+#. odoo-javascript
+#: code:addons/device_machines/static/src/dashboard/plc_dashboard.xml:0
+msgid "Bottles per hour of day"
+msgstr "Botellas por hora del día"
+
+#. module: device_machines
+#. odoo-javascript
+#: code:addons/device_machines/static/src/dashboard/plc_date_popover.xml:0
+msgid "Clear"
+msgstr "Limpiar"
+
+#. module: device_machines
+#. odoo-javascript
+#: code:addons/device_machines/static/src/dashboard/plc_dashboard.xml:0
+msgid "Difference ("
+msgstr "Diferencia ("
+
+#. module: device_machines
+#. odoo-javascript
+#: code:addons/device_machines/static/src/dashboard/plc_dashboard.xml:0
+msgid "Filling and labeling · Work order"
+msgstr "Llenado y etiquetado · Orden de trabajo"
+
+#. module: device_machines
+#: model:ir.model.fields,help:device_machines.field_device_machine_bucket__msg_count
+msgid ""
+"MQTT pings recorded once this hour started producing. The bucket opens on "
+"the first reading that moves the counter, so pings received earlier in the "
+"hour, while the machine was idle, are not counted. Use it as a sanity check:"
+" few pings against a large count means readings went missing."
+msgstr ""
+"Pings MQTT registrados desde que esta hora empezó a producir. El bucket se "
+"abre con la primera lectura que mueve el contador, así que los pings "
+"recibidos antes en la hora, con la máquina parada, no se cuentan. Sirve como"
+" verificación: pocos pings contra un conteo grande significa que se "
+"perdieron lecturas."
+
+#. module: device_machines
+#. odoo-javascript
+#: code:addons/device_machines/static/src/dashboard/plc_dashboard.xml:0
+msgid "No data yet"
+msgstr "Sin datos todavía"
+
+#. module: device_machines
+#. odoo-javascript
+#: code:addons/device_machines/static/src/dashboard/plc_dashboard.xml:0
+msgid "Overview"
+msgstr "Resumen global"
+
+#. module: device_machines
+#. odoo-javascript
+#: code:addons/device_machines/static/src/dashboard/plc_dashboard.xml:0
+msgid "Peak hour:"
+msgstr "Hora pico:"
+
+#. module: device_machines
+#. odoo-javascript
+#: code:addons/device_machines/static/src/dashboard/plc_dashboard.xml:0
+msgid "Pieces per machine and day"
+msgstr "Piezas por máquina y día"
+
+#. module: device_machines
+#. odoo-javascript
+#: code:addons/device_machines/static/src/dashboard/plc_dashboard.xml:0
+msgid "Pieces per machine and order"
+msgstr "Piezas por máquina y orden"
+
+#. module: device_machines
+#: model:ir.model.fields,field_description:device_machines.field_device_machine_bucket__msg_count
+msgid "Pings While Producing"
+msgstr "Pings mientras produce"
+
+#. module: device_machines
+#: model_terms:ir.ui.view,arch_db:device_machines.view_device_machine_bucket_list
+msgid "Pings while producing"
+msgstr "Pings mientras produce"
+
+#. module: device_machines
+#. odoo-javascript
+#: code:addons/device_machines/static/src/dashboard/plc_dashboard.js:0
+msgid "Recent"
+msgstr "Recientes"
+
+#. module: device_machines
+#. odoo-javascript
+#: code:addons/device_machines/static/src/dashboard/plc_dashboard.xml:0
+msgid "Refresh"
+msgstr "Actualizar"
+
+#. module: device_machines
+#. odoo-javascript
+#: code:addons/device_machines/static/src/dashboard/plc_dashboard.js:0
+msgid "This month"
+msgstr "Este mes"
+
+#. module: device_machines
+#. odoo-javascript
+#: code:addons/device_machines/static/src/dashboard/plc_dashboard.js:0
+msgid "This week"
+msgstr "Esta semana"
+
+#. module: device_machines
+#. odoo-javascript
+#: code:addons/device_machines/static/src/dashboard/plc_dashboard.js:0
+msgid "Today"
+msgstr "Hoy"
+
+#. module: device_machines
+#. odoo-javascript
+#: code:addons/device_machines/static/src/dashboard/plc_dashboard.xml:0
+msgid "View a day or a date range"
+msgstr "Ver un día o un rango de fechas"
+
+#. module: device_machines
+#. odoo-javascript
+#: code:addons/device_machines/static/src/dashboard/plc_dashboard.xml:0
+msgid "hours with output ·"
+msgstr "horas con producción ·"
+
+#. module: device_machines
+#. odoo-python
+#: code:addons/device_machines/models/device_machine_bucket.py:0
+msgid "last %s days"
+msgstr "últimos %s días"
+
+#. module: device_machines
+#. odoo-javascript
+#: code:addons/device_machines/static/src/dashboard/plc_dashboard.xml:0
+msgid "machines"
+msgstr "máquinas"
+
+#. module: device_machines
+#. odoo-javascript
+#: code:addons/device_machines/static/src/dashboard/plc_dashboard.xml:0
+msgid "pcs/h"
+msgstr "pzas/h"
+
+#. module: device_machines
+#. odoo-javascript
+#: code:addons/device_machines/static/src/dashboard/plc_dashboard.xml:0
+msgid "pieces ·"
+msgstr "piezas ·"
+
+#. module: device_machines
+#. odoo-javascript
+#: code:addons/device_machines/static/src/dashboard/plc_dashboard.xml:0
+msgid "pieces)"
+msgstr "piezas)"
+
+#. module: device_machines
+#. odoo-javascript
+#: code:addons/device_machines/static/src/dashboard/plc_dashboard.xml:0
+msgid "runs ·"
+msgstr "corridas ·"
+
+#. module: device_machines
+#. odoo-python
+#: code:addons/device_machines/models/device_machine_bucket.py:0
+msgid "this month"
+msgstr "este mes"
+
+#. module: device_machines
+#. odoo-python
+#: code:addons/device_machines/models/device_machine_bucket.py:0
+msgid "this week"
+msgstr "esta semana"
+
+#. module: device_machines
+#. odoo-python
+#: code:addons/device_machines/models/device_machine_bucket.py:0
+msgid "today"
+msgstr "hoy"
+
+#. module: device_machines
+#. odoo-javascript
+#: code:addons/device_machines/static/src/dashboard/plc_dashboard.xml:0
+msgid "· Average while producing:"
+msgstr "· Promedio en horas activas:"

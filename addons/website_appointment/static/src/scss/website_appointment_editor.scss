@@ -1,0 +1,19 @@
+body.editor_enable {
+    .o_appointment {
+        .alert.o_not_editable {
+            display: none;
+        }
+        .o_appointment_card_user_fct,
+        .o_wappointment_card_user_fct,
+        .o_wappointment_card_user_dsc {
+            .o_editable {
+                &::before {
+                    opacity: 1 !important;
+                }
+            }
+        }
+        + .o_appointment_intro {
+            display: block !important;
+        }
+    }
+}

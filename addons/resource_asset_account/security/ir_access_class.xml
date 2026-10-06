@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="access_class_asset_bill_lines" model="ir.access.class">
+        <field name="name">resource_asset.bill_lines</field>
+        <field
+            name="description">The vendor bill lines an asset carries: read by accounting readers, as the bills themselves.</field>
+    </record>
+
+    <record id="access_asset_bill_lines_readonly" model="ir.access">
+        <field name="name">resource_asset.bill_lines: accounting readers</field>
+        <field name="group_id" ref="account.group_account_readonly" />
+        <field name="kind">permission</field>
+        <field name="operation">r</field>
+        <field name="class_id" ref="access_class_asset_bill_lines" />
+    </record>
+
+</odoo>

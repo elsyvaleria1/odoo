@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="privilege_read_folder_setting" model="res.groups">
+        <field name="name">Read a Journal's Document Folder</field>
+        <field
+            name="comment">Code that files a record's attachment into Documents reads which folder the record's journal files into, for a user who may not read the journal settings.</field>
+        <field name="is_privilege" eval="True" />
+    </record>
+
+</odoo>

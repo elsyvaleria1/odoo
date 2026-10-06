@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="module_category_asset_management" model="ir.module.category">
+        <field name="name">Asset Management</field>
+        <field name="description">Comprehensive asset tracking and management</field>
+        <field name="sequence" eval="15" />
+    </record>
+
+    <record id="res_groups_privilege_asset_management" model="res.groups.privilege">
+        <field name="name">Asset Management</field>
+        <field name="category_id" ref="module_category_asset_management" />
+        <field
+            name="description">Access to asset management features across all asset types</field>
+        <field name="sequence" eval="10" />
+    </record>
+
+    <record id="group_asset_user" model="res.groups">
+        <field name="name">User</field>
+        <field name="sequence" eval="10" />
+        <field name="privilege_id" ref="res_groups_privilege_asset_management" />
+        <field
+            name="comment">Can view, create, and edit all asset types. Cannot delete or
+            configure.</field>
+        <field
+            name="implied_ids"
+            eval="[Command.link(ref('base.group_user')), Command.link(ref('resource_asset.group_asset_user'))]" />
+    </record>
+
+    <!--
+        Each enable-group is the gate for one asset family's menus, and grants the
+        asset-user rights those menus need. A menuitem's groups= is an OR, so a menu
+        must be gated on the enable-group ALONE for the gate to mean anything.
+    -->
+    <record id="group_enable_fleet_assets" model="res.groups">
+        <field name="name">Enable Fleet Assets</field>
+        <field name="comment">Show fleet/vehicle management menus and features</field>
+        <field
+            name="implied_ids"
+            eval="[Command.link(ref('group_asset_user')), Command.link(ref('resource_asset_vehicle.fleet_group_user'))]" />
+    </record>
+
+    <record id="group_enable_equipment_assets" model="res.groups">
+        <field name="name">Enable Equipment Assets</field>
+        <field
+            name="comment">Show equipment/maintenance management menus and features</field>
+        <field name="implied_ids" eval="[Command.link(ref('group_asset_user'))]" />
+    </record>
+
+    <record id="group_enable_property_assets" model="res.groups">
+        <field name="name">Enable Property Assets</field>
+        <field
+            name="comment">Show property/real estate management menus and features</field>
+        <field name="implied_ids" eval="[Command.link(ref('group_asset_user'))]" />
+    </record>
+
+    <record id="group_enable_machinery_assets" model="res.groups">
+        <field name="name">Enable Machinery Assets</field>
+        <field name="comment">Show machinery management menus and features</field>
+        <field name="implied_ids" eval="[Command.link(ref('group_asset_user'))]" />
+    </record>
+
+    <record id="group_enable_tools" model="res.groups">
+        <field name="name">Enable Tools</field>
+        <field name="comment">Show tools management menus and features</field>
+        <field name="implied_ids" eval="[Command.link(ref('group_asset_user'))]" />
+    </record>
+
+    <record id="group_enable_it_assets" model="res.groups">
+        <field name="name">Enable IT Assets</field>
+        <field name="comment">Show IT asset management menus and features</field>
+        <field name="implied_ids" eval="[Command.link(ref('group_asset_user'))]" />
+    </record>
+
+    <record id="group_asset_manager" model="res.groups">
+        <field name="name">Administrator</field>
+        <field name="sequence" eval="20" />
+        <field name="privilege_id" ref="res_groups_privilege_asset_management" />
+        <field
+            name="comment">Full access to all asset types including delete and configuration.</field>
+        <field
+            name="implied_ids"
+            eval="[                 Command.link(ref('group_asset_user')),                 Command.link(ref('resource_asset.group_asset_manager')),                 Command.link(ref('group_enable_fleet_assets')),                 Command.link(ref('group_enable_equipment_assets')),                 Command.link(ref('group_enable_property_assets')),                 Command.link(ref('group_enable_machinery_assets')),                 Command.link(ref('group_enable_tools')),                 Command.link(ref('group_enable_it_assets')),             ]" />
+        <field
+            name="user_ids"
+            eval="[Command.link(ref('base.user_root')), Command.link(ref('base.user_admin'))]" />
+    </record>
+
+</odoo>

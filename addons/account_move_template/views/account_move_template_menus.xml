@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <menuitem
+        id="account_move_template_menu"
+        parent="account.menu_account_accounting"
+        action="account_move_template_action"
+        sequence="300" />
+
+    <menuitem
+        id="account_move_template_run_menu"
+        parent="account.menu_finance_entries"
+        action="account_move_template_run_action"
+        sequence="10" />
+
+</odoo>

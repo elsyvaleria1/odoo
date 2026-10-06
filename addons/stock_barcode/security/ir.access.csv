@@ -1,0 +1,2 @@
+id,name,model_id/id,group_id/id,kind,operation,domain
+access_stock_barcode_cancel_operation,access.stock_barcode.cancel.operation,model_wizard_stock_picking_cancel,stock.group_stock_user,permission,cru,

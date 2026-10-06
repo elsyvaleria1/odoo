@@ -1,0 +1,10 @@
+from odoo import api, models
+
+
+class ResLang(models.Model):
+    _name = "res.lang"
+    _inherit = ["res.lang", "mixin.pos.load"]
+
+    @api.model
+    def _load_pos_data_fields(self, config):
+        return ["id", "name", "code", "flag_image_url", "display_name"]

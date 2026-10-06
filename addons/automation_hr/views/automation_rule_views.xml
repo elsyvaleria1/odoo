@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_automation_form_resource" model="ir.ui.view">
+        <field name="name">automation.rule.form</field>
+        <field name="model">automation.rule</field>
+        <field name="inherit_id" ref="automation.view_automation_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='trg_date_calendar_id']" position="before">
+                <field
+                    name="trg_date_resource_field_id"
+                    domain="[('model_id', '=', model_id), ('relation', '=', 'res.users'), ('ttype', 'in', ['many2one'])]"
+                    options="{'no_create': True}"
+                    invisible="not trg_date_id or trg_date_range_type != 'day'" />
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

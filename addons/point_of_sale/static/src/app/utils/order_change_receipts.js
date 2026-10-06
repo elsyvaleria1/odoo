@@ -1,0 +1,191 @@
+/** @odoo-module native */
+import { makeLogger } from "@web/core/debug/debug_logger";
+import { formatValue, now } from "@web/core/l10n/dates";
+import { _t } from "@web/core/translation";
+
+import { parseNoteEntries } from "../models/utils/note_entries.js";
+
+const log = makeLogger("pos.order.change.receipts");
+
+export function getStrNotes(note) {
+    return parseNoteEntries(note)
+        .map((entry) => entry.text)
+        .join(", ");
+}
+
+export function getOrderData(pos, order, reprint) {
+    return {
+        reprint: reprint,
+        pos_reference: order.getName(),
+        config_name: order.config_id?.name || order.config.name,
+        time: formatValue(now(), "HH:mm"),
+        tracking_number: order.tracking_number,
+        preset_time: order.presetDateTime,
+        preset_name: order.preset_id?.name || "",
+        employee_name: order.employee_id?.name || order.user_id?.name,
+        internal_note: pos.getStrNotes(order.internal_note),
+        general_customer_note: order.general_customer_note,
+        changes: {
+            title: "",
+            data: [],
+        },
+    };
+}
+
+export function generateOrderChange(
+    pos,
+    order,
+    orderChange,
+    categories,
+    reprint = false,
+) {
+    const isPartOfCombo = (line) =>
+        line.isCombo ||
+        line.combo_parent_uuid ||
+        pos.models["product.product"].get(line.product_id).type === "combo";
+    const comboChanges = orderChange.new.filter(isPartOfCombo);
+    const normalChanges = orderChange.new.filter((line) => !isPartOfCombo(line));
+    normalChanges.sort((a, b) => {
+        const sequenceA = a.pos_categ_sequence;
+        const sequenceB = b.pos_categ_sequence;
+        if (sequenceA === 0 && sequenceB === 0) {
+            return a.pos_categ_id - b.pos_categ_id;
+        }
+
+        return sequenceA - sequenceB;
+    });
+    orderChange.new = [...comboChanges, ...normalChanges];
+
+    const orderData = pos.getOrderData(order, reprint);
+
+    const changes = pos.filterChangeByCategories(categories, orderChange);
+    log.logic("generateOrderChange", () => ({
+        order: order.uuid,
+        reprint,
+        categories: categories?.length,
+        combo: comboChanges.length,
+        normal: normalChanges.length,
+        afterFilter: {
+            new: changes.new.length,
+            cancelled: changes.cancelled.length,
+            noteUpdate: changes.noteUpdate.length,
+        },
+    }));
+    const stringifyNotes = (items) =>
+        items.map((changeItem) => ({
+            ...changeItem,
+            note: pos.getStrNotes(changeItem.note || "[]"),
+        }));
+    return {
+        orderData,
+        changes: {
+            ...changes,
+            new: stringifyNotes(changes.new),
+            cancelled: stringifyNotes(changes.cancelled),
+            noteUpdate: stringifyNotes(changes.noteUpdate),
+        },
+    };
+}
+
+export async function generateReceiptsDataToPrint(
+    pos,
+    orderData,
+    changes,
+    orderChange,
+) {
+    const receiptsData = [];
+    if (changes.new.length) {
+        const orderDataNew = { ...orderData };
+        orderDataNew.changes = {
+            title: _t("NEW"),
+            data: changes.new,
+        };
+        receiptsData.push(await pos.prepareReceiptGroupedData(orderDataNew));
+    }
+
+    if (changes.cancelled.length) {
+        const orderDataCancelled = { ...orderData };
+        orderDataCancelled.changes = {
+            title: _t("CANCELLED"),
+            data: changes.cancelled,
+        };
+        receiptsData.push(await pos.prepareReceiptGroupedData(orderDataCancelled));
+    }
+
+    if (changes.noteUpdate.length) {
+        const orderDataNoteUpdate = { ...orderData };
+        const { noteUpdateTitle, printNoteUpdateData = true } = orderChange;
+        orderDataNoteUpdate.changes = {
+            title: noteUpdateTitle || _t("NOTE UPDATE"),
+            data: printNoteUpdateData ? changes.noteUpdate : [],
+        };
+        receiptsData.push(await pos.prepareReceiptGroupedData(orderDataNoteUpdate));
+    }
+
+    if (orderChange.internal_note || orderChange.general_customer_note) {
+        const orderDataNote = { ...orderData };
+        orderDataNote.changes = { title: "", data: [] };
+        receiptsData.push(await pos.prepareReceiptGroupedData(orderDataNote));
+    }
+    log.pipeline("generateReceiptsDataToPrint", () => ({
+        order: orderData.pos_reference,
+        receipts: receiptsData.map((r) => ({
+            title: r.changes.title,
+            lines: r.changes.data.length,
+            groups: r.changes.groupedData?.length,
+        })),
+    }));
+    return receiptsData;
+}
+
+export async function prepareReceiptGroupedData(data) {
+    const dataChanges = data.changes?.data;
+    if (dataChanges && dataChanges.some((c) => c.group)) {
+        const groupedData = dataChanges.reduce((acc, c) => {
+            const { name = "", index = -1 } = c.group || {};
+            if (!acc[name]) {
+                acc[name] = { name, index, data: [] };
+            }
+            acc[name].data.push(c);
+            return acc;
+        }, {});
+        data.changes.groupedData = Object.values(groupedData).sort(
+            (a, b) => a.index - b.index,
+        );
+    }
+    return data;
+}
+
+export function filterChangeByCategories(pos, categories, currentOrderChange) {
+    const matchesCategories = (change) => {
+        const product = pos.models["product.product"].get(change["product_id"]);
+        const categoryIds = product.parentPosCategIds;
+        for (const categoryId of categoryIds) {
+            if (categories.includes(categoryId)) {
+                return true;
+            }
+        }
+        return false;
+    };
+
+    const filterChanges = (changes) => {
+        const validComboUuids = new Set(
+            changes
+                .filter(
+                    (change) => change.combo_parent_uuid && matchesCategories(change),
+                )
+                .map((change) => change.combo_parent_uuid),
+        );
+        return changes.filter(
+            (change) =>
+                (change.isCombo && validComboUuids.has(change.uuid)) ||
+                (!change.isCombo && matchesCategories(change)),
+        );
+    };
+
+    return {
+        new: filterChanges(currentOrderChange["new"]),
+        cancelled: filterChanges(currentOrderChange["cancelled"]),
+        noteUpdate: filterChanges(currentOrderChange["noteUpdate"]),
+    };
+}

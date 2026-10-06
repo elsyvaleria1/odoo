@@ -1,0 +1,533 @@
+import itertools
+import re
+from typing import TYPE_CHECKING
+
+from odoo.libs.debug_log import DebugLog
+from odoo.libs.sql import SQL, normalize_identifier
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable, Iterator
+
+    from odoo.api import Environment
+
+_debug = DebugLog(__name__)
+
+# one placeholder per pinned id overflows the 65535 bind-parameter limit
+_SUBSELECT_UNNEST_THRESHOLD = 100
+
+
+def _prepare_table_sql(alias: str, table: SQL) -> SQL:
+    if (alias_identifier := SQL.identifier(alias)) == table:
+        return table
+    return SQL("%s AS %s", table, alias_identifier)
+
+
+def _prepare_join_sql(kind: SQL, alias: str, table: SQL, condition: SQL) -> SQL:
+    return SQL("%s %s ON (%s)", kind, _prepare_table_sql(alias, table), condition)
+
+
+_SQL_JOINS = {
+    "JOIN": SQL("JOIN"),
+    "LEFT JOIN": SQL("LEFT JOIN"),
+}
+
+
+def _generate_table_alias(src_table_alias: str, link: str) -> str:
+    return normalize_identifier(f"{src_table_alias}__{link}")
+
+
+_PLACEHOLDER_RE = re.compile(r"%[%s]")
+
+
+def _count_placeholders(code: str) -> int:
+    return sum(match[0] == "%s" for match in _PLACEHOLDER_RE.finditer(code))
+
+
+class Query:
+    __slots__ = (
+        "_any_value_orderby",
+        "_empty_by_construction",
+        "_env",
+        "_groupby",
+        "_having",
+        "_ids",
+        "_joins",
+        "_limit",
+        "_offset",
+        "_once",
+        "_order",
+        "_tables",
+        "_where_clauses",
+    )
+
+    def __init__(self, env: Environment, alias: str, table: SQL | None = None) -> None:
+        self._env = env
+
+        self._tables: dict[str, SQL] = {
+            alias: table if table is not None else SQL.identifier(alias),
+        }
+
+        self._joins: dict[str, tuple[SQL, SQL, SQL]] = {}
+
+        self._once: list[SQL] = []
+
+        self._where_clauses: list[SQL] = []
+
+        self._groupby: SQL | None = None
+        self._any_value_orderby: bool = False
+        self._having: SQL | None = None
+        self._order: SQL | None = None
+        self._limit: int | None = None
+        self._offset: int | None = None
+
+        self._ids: tuple[int, ...] | None = None
+
+        self._empty_by_construction: bool = False
+
+    def _invalidate_ids(self) -> None:
+        if self._ids:
+            self._ids = None
+
+    def _drop_ids(self) -> None:
+        self._ids = None
+
+    @staticmethod
+    def get_table_alias(alias: str, link: str) -> str:
+        return _generate_table_alias(alias, link)
+
+    def add_table(self, alias: str, table: SQL | None = None) -> None:
+        if alias in self._tables or alias in self._joins:
+            raise ValueError(f"Alias {alias!r} already in {self}")
+        self._tables[alias] = table if table is not None else SQL.identifier(alias)
+        self._invalidate_ids()
+
+    def add_join(
+        self, kind: str, alias: str, table: str | SQL | None, condition: SQL
+    ) -> None:
+        sql_kind = _SQL_JOINS.get(kind.upper())
+        if sql_kind is None:
+            raise ValueError(f"Invalid JOIN type {kind!r}")
+        if alias in self._tables:
+            raise ValueError(f"Alias {alias!r} already used")
+        table = table or alias
+        if isinstance(table, str):
+            table = SQL.identifier(table)
+
+        if alias in self._joins:
+            if self._joins[alias] != (sql_kind, table, condition):
+                raise ValueError(f"Alias {alias!r} already used with a different join")
+        else:
+            self._joins[alias] = (sql_kind, table, condition)
+            self._invalidate_ids()
+
+    def once(self, expression: SQL) -> SQL:
+        """A scalar subquery standing for ``expression``, computed once.
+
+        For an expression that reads none of the query's tables and that its
+        conditions name many times over -- the set of nodes a principal holds
+        a grant on, asked of every alias an access rule walks. Written inline,
+        each occurrence is a subquery PostgreSQL plans on its own. The
+        statement the query is run as (`statement`, the ids, the counts)
+        states each distinct expression once, as a common table expression,
+        and what comes back here reads it: to the planner the same parameter
+        the inline subquery was, so the plan of the rest does not change.
+
+        What goes into another statement stays whole on its own -- `select`,
+        `subselect`, `from_clause` and `where_clause` have the expression
+        back inline: a subquery that opens with WITH is one PostgreSQL no
+        longer folds into the query around it.
+        Inside ``ANY(...)`` the reference needs a cast (``ANY(%s::int4[])``),
+        or PostgreSQL reads it as the subquery form of ``ANY``.
+        """
+        try:
+            index = self._once.index(expression)
+        except ValueError:
+            index = len(self._once)
+            self._once.append(expression)
+            self._invalidate_ids()
+        return SQL("(SELECT v FROM %s)", self._once_identifier(index))
+
+    def _once_identifier(self, index: int) -> SQL:
+        return SQL.identifier(_generate_table_alias(self.table, f"$once{index}"))
+
+    def _inline_once(self, sql: SQL) -> SQL:
+        if not self._once or not sql:
+            return sql
+        expressions = {
+            SQL("(SELECT v FROM %s)", self._once_identifier(index)).code: expression
+            for index, expression in enumerate(self._once)
+        }
+        references = re.compile("|".join(map(re.escape, expressions)))
+        code: list[str] = []
+        params: list = []
+        pending = list(sql.params)
+        position = 0
+        for match in references.finditer(sql.code):
+            before = sql.code[position : match.start()]
+            taken = _count_placeholders(before)
+            expression = expressions[match[0]]
+            code += (before, expression.code)
+            params += pending[:taken]
+            params += expression.params
+            del pending[:taken]
+            position = match.end()
+        if not position:
+            return sql
+        code.append(sql.code[position:])
+        return SQL(
+            "".join(code),
+            *params,
+            *pending,
+            to_flush=(
+                *sql.to_flush,
+                *(field for each in self._once for field in each.to_flush),
+            ),
+        )
+
+    def _with_sql(self) -> SQL:
+        if not self._once:
+            return SQL.EMPTY
+        # MATERIALIZED: one evaluation whatever the number of references; left
+        # to itself PostgreSQL inlines an expression referenced once
+        return SQL(
+            "WITH %s ",
+            SQL(", ").join(
+                SQL(
+                    "%s AS MATERIALIZED (SELECT %s AS v)",
+                    self._once_identifier(index),
+                    expression,
+                )
+                for index, expression in enumerate(self._once)
+            ),
+        )
+
+    def copy(self) -> Query:
+        """A query with this one's state, sharing none of its mutable parts.
+
+        A `Query` handed to a domain -- `("line_ids", "in", query)` -- is still
+        the caller's object, so a field that has to narrow it by its own
+        `domain=` narrows this copy instead. Without it the caller's query is
+        filtered for every later use of it.
+        """
+        cls = type(self)
+        other = cls.__new__(cls)
+        for klass in cls.__mro__:
+            for slot in klass.__dict__.get("__slots__", ()):
+                value = getattr(self, slot)
+                if type(value) is dict:
+                    value = dict(value)
+                elif type(value) is list:
+                    value = list(value)
+                setattr(other, slot, value)
+        return other
+
+    def add_where(self, where_clause: SQL) -> None:
+        self._where_clauses.append(where_clause)
+        self._invalidate_ids()
+
+    def _join_on_column(
+        self,
+        kind: str,
+        lhs_alias: str,
+        lhs_column: str,
+        rhs_table: str | SQL,
+        rhs_column: str,
+        link: str,
+    ) -> str:
+        assert lhs_alias in self._tables or lhs_alias in self._joins, (
+            "Alias %r not in %s" % (lhs_alias, str(self))
+        )
+        rhs_alias = self.get_table_alias(lhs_alias, link)
+        condition = SQL(
+            "%s = %s",
+            SQL.identifier(lhs_alias, lhs_column),
+            SQL.identifier(rhs_alias, rhs_column),
+        )
+        self.add_join(kind, rhs_alias, rhs_table, condition)
+        return rhs_alias
+
+    def join(
+        self,
+        lhs_alias: str,
+        lhs_column: str,
+        rhs_table: str | SQL,
+        rhs_column: str,
+        link: str,
+    ) -> str:
+        return self._join_on_column(
+            "JOIN", lhs_alias, lhs_column, rhs_table, rhs_column, link
+        )
+
+    def left_join(
+        self,
+        lhs_alias: str,
+        lhs_column: str,
+        rhs_table: str | SQL,
+        rhs_column: str,
+        link: str,
+    ) -> str:
+        return self._join_on_column(
+            "LEFT JOIN", lhs_alias, lhs_column, rhs_table, rhs_column, link
+        )
+
+    @property
+    def order(self) -> SQL | None:
+        return self._order
+
+    @order.setter
+    def order(self, value: SQL | None) -> None:
+        self._order = value
+        self._invalidate_ids()
+
+    @property
+    def groupby(self) -> SQL | None:
+        return self._groupby
+
+    @groupby.setter
+    def groupby(self, value: SQL | None) -> None:
+        self._groupby = value
+        self._invalidate_ids()
+
+    @property
+    def having(self) -> SQL | None:
+        return self._having
+
+    @having.setter
+    def having(self, value: SQL | None) -> None:
+        self._having = value
+        self._invalidate_ids()
+
+    @property
+    def limit(self) -> int | None:
+        return self._limit
+
+    @limit.setter
+    def limit(self, value: int | None) -> None:
+        self._limit = value
+        self._drop_ids()
+
+    @property
+    def offset(self) -> int | None:
+        return self._offset
+
+    @offset.setter
+    def offset(self, value: int | None) -> None:
+        self._offset = value
+        self._drop_ids()
+
+    @property
+    def table(self) -> str:
+        return next(iter(self._tables))
+
+    @property
+    def from_clause(self) -> SQL:
+        return self._inline_once(self._from_sql())
+
+    def _from_sql(self) -> SQL:
+        tables = SQL(" CROSS JOIN ").join(
+            itertools.starmap(_prepare_table_sql, self._tables.items())
+        )
+        if not self._joins:
+            return tables
+        items = (
+            tables,
+            *(
+                _prepare_join_sql(kind, alias, table, condition)
+                for alias, (kind, table, condition) in self._joins.items()
+            ),
+        )
+        return SQL(" ").join(items)
+
+    @property
+    def where_clause(self) -> SQL:
+        return self._inline_once(self._where_sql())
+
+    def _where_sql(self) -> SQL:
+        return SQL(" AND ").join(self._where_clauses)
+
+    def is_empty(self) -> bool:
+        return self._empty_by_construction or self._ids == ()
+
+    def select(self, *args: str | SQL) -> SQL:
+        return self._select_sql(args, self.from_clause, self.where_clause)
+
+    def statement(self, *args: str | SQL) -> SQL:
+        """`select()` as the statement to execute, not a part of another one:
+        it opens with what `once()` was given and reads it from there."""
+        if not self._once:
+            return self.select(*args)
+        return SQL(
+            "%s%s",
+            self._with_sql(),
+            self._select_sql(args, self._from_sql(), self._where_sql()),
+        )
+
+    def _select_sql(
+        self, args: tuple[str | SQL, ...], from_clause: SQL, where_clause: SQL
+    ) -> SQL:
+        sql_args = map(SQL, args) if args else [SQL.identifier(self.table, "id")]
+        return SQL(
+            "%s%s%s%s%s%s%s%s",
+            SQL("SELECT %s", SQL(", ").join(sql_args)),
+            SQL(" FROM %s", from_clause),
+            (SQL(" WHERE %s", where_clause) if self._where_clauses else SQL.EMPTY),
+            SQL(" GROUP BY %s", self.groupby) if self.groupby else SQL.EMPTY,
+            SQL(" HAVING %s", self.having) if self.having else SQL.EMPTY,
+            SQL(" ORDER BY %s", self._order) if self._order else SQL.EMPTY,
+            SQL(" LIMIT %s", self.limit) if self.limit is not None else SQL.EMPTY,
+            SQL(" OFFSET %s", self.offset) if self.offset else SQL.EMPTY,
+        )
+
+    def subselect(self, *args: str | SQL) -> SQL:
+        if self.groupby or self.having:
+            raise ValueError(
+                "Query.subselect() does not support groupby/having; use select()"
+            )
+
+        if self._ids is not None and not args:
+            if not self._ids:
+                return SQL("(SELECT 1 WHERE FALSE)")
+            if len(self._ids) > _SUBSELECT_UNNEST_THRESHOLD:
+                return SQL("(SELECT unnest(%s))", list(self._ids))
+            return SQL("%s", self._ids)
+
+        if self.limit is not None or self.offset:
+            return SQL("(%s)", self.select(*args))
+
+        sql_args = map(SQL, args) if args else [SQL.identifier(self.table, "id")]
+        return SQL(
+            "(%s%s%s)",
+            SQL("SELECT %s", SQL(", ").join(sql_args)),
+            SQL(" FROM %s", self.from_clause),
+            (SQL(" WHERE %s", self.where_clause) if self._where_clauses else SQL.EMPTY),
+        )
+
+    def get_result_ids(self, env: Environment | None = None) -> tuple[int, ...]:
+        """Ids of the rows matched by this query.
+
+        :param env: environment to execute on, when the caller has a live one.
+            A query may outlive the request that built it -- an access
+            domain is cached across requests, and the queries inside it come
+            along -- and by then its own environment holds a closed cursor.
+        :return: the matched ids
+        """
+        if self._empty_by_construction:
+            self._ids = ()
+            return self._ids
+
+        if env is None or env.cr is self._env.cr:
+            if self._ids is None:
+                self._ids = tuple(
+                    id_ for (id_,) in self._env.execute_query(self.statement())
+                )
+                _debug.perf.count(
+                    "query.result_ids",
+                    table=self.table,
+                    joins=len(self._joins),
+                    rows=len(self._ids),
+                    limit=self.limit,
+                )
+            return self._ids
+
+        # Another transaction: the result is neither read from nor written to
+        # the memo, which belongs to the cursor that built this query and would
+        # otherwise hand back rows read in a transaction that already ended.
+        _debug.logic("query.result_ids.foreign_transaction", table=self.table)
+        return tuple(id_ for (id_,) in env.execute_query(self.statement()))
+
+    def set_result_ids(self, ids: Iterable[int], ordered: bool = True) -> None:
+        if (
+            self._joins
+            or self._once
+            or self._where_clauses
+            or self.limit is not None
+            or self.offset
+        ):
+            raise ValueError(
+                "Method set_result_ids() can only be called on a virgin Query"
+            )
+        ids = tuple(ids)
+        _debug.logic(
+            "query.result_ids_pinned", table=self.table, ids=len(ids), ordered=ordered
+        )
+        if not ids:
+            self.add_where(SQL("FALSE"))
+            self._empty_by_construction = True
+        elif ordered:
+            alias = self.join(
+                self.table,
+                "id",
+                SQL("(SELECT * FROM unnest(%s) WITH ORDINALITY)", list(ids)),
+                "unnest",
+                "ids",
+            )
+            self.order = SQL.identifier(alias, "ordinality")
+        else:
+            self.add_where(
+                SQL("%s = ANY(%s)", SQL.identifier(self.table, "id"), list(ids))
+            )
+        self._ids = ids
+
+    def __str__(self) -> str:
+        sql = self.select()
+        return f"<Query: {sql.code!r} with params: {sql.params!r}>"
+
+    def __bool__(self) -> bool:
+        return bool(self.get_result_ids())
+
+    def __len__(self) -> int:
+        if self._ids is None:
+            if self.limit is not None or self.offset or self.groupby or self.having:
+                sql = SQL("SELECT COUNT(*) FROM (%s) t", self.statement(""))
+            else:
+                sql = self.statement("COUNT(*)")
+            count = self._env.execute_query(sql)[0][0]
+            _debug.perf.count(
+                "query.len_counted",
+                table=self.table,
+                joins=len(self._joins),
+                count=count,
+                wrapped=self.limit is not None or bool(self.offset),
+            )
+            return count
+        return len(self.get_result_ids())
+
+    def count_matching(self, limit: int | None = None) -> int:
+        if self._empty_by_construction:
+            return 0
+        if (
+            self._ids is not None
+            and self.limit is None
+            and not self.offset
+            and not self.groupby
+            and not self.having
+        ):
+            return len(self._ids) if limit is None else min(len(self._ids), limit)
+
+        _debug.perf.count(
+            "query.count_matching",
+            table=self.table,
+            joins=len(self._joins),
+            limit=limit,
+            subquery=bool(self.groupby or self.having or limit is not None),
+        )
+        if self.groupby or self.having or limit is not None:
+            parts = [SQL("%sSELECT FROM %s", self._with_sql(), self._from_sql())]
+            if self._where_clauses:
+                parts.append(SQL(" WHERE %s", self._where_sql()))
+            if self.groupby:
+                parts.append(SQL(" GROUP BY %s", self.groupby))
+            if self.having:
+                parts.append(SQL(" HAVING %s", self.having))
+            if limit is not None:
+                parts.append(SQL(" LIMIT %s", limit))
+            return self._env.execute_query(
+                SQL("SELECT COUNT(*) FROM (%s) t", SQL("").join(parts))
+            )[0][0]
+        sql = SQL("%sSELECT COUNT(*) FROM %s", self._with_sql(), self._from_sql())
+        if self._where_clauses:
+            sql = SQL("%s WHERE %s", sql, self._where_sql())
+        return self._env.execute_query(sql)[0][0]
+
+    def __iter__(self) -> Iterator[int]:
+        return iter(self.get_result_ids())

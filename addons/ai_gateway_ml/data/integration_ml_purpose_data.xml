@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+
+    <record id="purpose_ai" model="integration.ml.purpose">
+        <field name="key">ai</field>
+        <field name="name">AI features</field>
+    </record>
+
+    <record id="purpose_ai_agent" model="integration.ml.purpose">
+        <field name="key">ai.agent</field>
+        <field name="name">AI agents answering in chat</field>
+    </record>
+
+    <record id="purpose_ai_action" model="integration.ml.purpose">
+        <field name="key">ai.action</field>
+        <field name="name">AI server actions acting on records</field>
+    </record>
+
+    <record id="purpose_ai_embedding" model="integration.ml.purpose">
+        <field name="key">ai.embedding</field>
+        <field name="name">Embedding documents for AI agents</field>
+    </record>
+
+    <record id="purpose_ai_fields" model="integration.ml.purpose">
+        <field name="key">ai.fields</field>
+        <field name="name">AI-computed fields</field>
+    </record>
+
+</odoo>

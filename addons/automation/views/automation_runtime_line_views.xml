@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_automation_runtime_line_tree" model="ir.ui.view">
+        <field name="name">automation.runtime.line.tree</field>
+        <field name="model">automation.runtime.line</field>
+        <field name="arch" type="xml">
+            <list string="Workflow Steps">
+                <field name="sequence" widget="handle" />
+                <field name="runtime_id" />
+                <field name="name" />
+                <field name="action_id" />
+                <field
+                    name="state"
+                    widget="badge"
+                    decoration-danger="state == 'error'"
+                    decoration-info="state in ('waiting', 'scheduled')"
+                    decoration-muted="state == 'done'"
+                    decoration-primary="state == 'in_progress'"
+                    decoration-success="state == 'ready'" />
+                <field name="created_record_ref" />
+            </list>
+        </field>
+    </record>
+
+    <record id="view_automation_runtime_line_form" model="ir.ui.view">
+        <field name="name">automation.runtime.line.form</field>
+        <field name="model">automation.runtime.line</field>
+        <field name="arch" type="xml">
+            <form string="Workflow Step">
+                <header>
+                    <button
+                        name="action_mark_ready"
+                        type="object"
+                        string="Mark Ready"
+                        invisible="state != 'waiting'"
+                        class="btn-secondary" />
+                    <button
+                        name="action_execute"
+                        type="object"
+                        string="Execute"
+                        invisible="state != 'in_progress'"
+                        class="btn-primary" />
+                    <button
+                        name="action_mark_done"
+                        type="object"
+                        string="Mark Done"
+                        invisible="state != 'in_progress'"
+                        class="btn-success" />
+                    <button
+                        name="action_cancel"
+                        type="object"
+                        string="Cancel"
+                        invisible="state in ['done', 'skipped', 'cancel', 'error']" />
+                    <field
+                        name="state"
+                        widget="statusbar"
+                        statusbar_visible="waiting,scheduled,ready,in_progress,done" />
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button
+                            name="action_view_document"
+                            type="object"
+                            icon="fa-regular fa-file-lines"
+                            invisible="not created_record_ref"
+                            class="oe_stat_button">
+                            <div class="o_field_widget o_stat_info">
+                                <span class="o_stat_text">View Document</span>
+                            </div>
+                        </button>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="runtime_id" />
+                            <field name="action_id" />
+                            <field name="name" />
+                            <field name="sequence" />
+                        </group>
+                        <group>
+                            <field name="created_record_ref" />
+                            <field name="date_resume" invisible="not date_resume" />
+                            <field name="date_settled" invisible="not date_settled" />
+                        </group>
+                    </group>
+                    <group
+                        string="Dependencies"
+                        invisible="not edge_in_ids and not edge_out_ids">
+                        <field name="edge_in_ids" colspan="2" nolabel="1" readonly="1">
+                            <list string="Waits For">
+                                <field name="source_line_id" />
+                                <field name="condition" />
+                                <field name="condition_expr" optional="hide" />
+                                <field name="event_code" optional="show" />
+                                <field name="delay" optional="show" />
+                                <field name="delay_unit" optional="show" />
+                                <field name="date_event" optional="show" />
+                                <field name="revoked" optional="hide" />
+                            </list>
+                        </field>
+                        <field name="edge_out_ids" colspan="2" nolabel="1" readonly="1">
+                            <list string="Enables">
+                                <field name="target_line_id" />
+                                <field name="condition" />
+                                <field name="event_code" optional="show" />
+                                <field name="date_event" optional="show" />
+                            </list>
+                        </field>
+                    </group>
+                    <group string="Error Details" invisible="state != 'error'">
+                        <field name="error_message" colspan="2" nolabel="1" />
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+</odoo>

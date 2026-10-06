@@ -1,0 +1,113 @@
+import base64
+import io
+import re
+
+from odoo.exceptions import RedirectWarning
+from odoo.tests import tagged
+from odoo.tools import file_open, mute_logger, pdf
+from odoo.tools.pdf import BrandedFileWriter, PdfReader
+
+from odoo.addons.account.tests.common import AccountTestInvoicingCommon
+
+
+@tagged("post_install", "-at_install")
+class TestIrActionsReport(AccountTestInvoicingCommon):
+    def setUp(self):
+        super().setUp()
+        self.file = file_open("base/tests/minimal.pdf", "rb").read()
+        self.minimal_reader_buffer = io.BytesIO(self.file)
+        self.minimal_pdf_reader = pdf.OdooPdfFileReader(self.minimal_reader_buffer)
+
+    def test_download_one_corrupted_pdf(self):
+        attach_name = "original_vendor_bill.pdf"
+
+        in_invoice_1 = self.env["account.move"].create(
+            {
+                "move_type": "in_invoice",
+                "date": "2017-01-01",
+                "invoice_date": "2017-01-01",
+            }
+        )
+
+        in_invoice_1.message_main_attachment_id = self.env["ir.attachment"].create(
+            {
+                "datas": base64.b64encode(self.file),
+                "name": attach_name,
+                "mimetype": "application/pdf",
+                "res_model": "account.move",
+                "res_id": in_invoice_1.id,
+            }
+        )
+        test_record_report = (
+            self.env["ir.actions.report"]
+            .with_context(force_report_rendering=True)
+            ._render_qweb_pdf(
+                "account.action_account_original_vendor_bill", res_ids=in_invoice_1.id
+            )
+        )
+        self.assertTrue(test_record_report, "The PDF should have been generated")
+
+    @mute_logger("odoo.addons.document.models.document_document")
+    def test_download_with_encrypted_pdf(self):
+        attach_name = "original_vendor_bill.pdf"
+        with file_open("base/tests/minimal.pdf", "rb") as pdf_file:
+            pdf_reader = PdfReader(pdf_file)
+            pdf_writer = BrandedFileWriter()
+            for page_num in range(len(pdf_reader.pages)):
+                pdf_writer.add_page(pdf_reader.pages[page_num])
+            pdf_writer.encrypt("")
+            output_buffer = io.BytesIO()
+            pdf_writer.write(output_buffer)
+            encrypted_file = output_buffer.getvalue()
+
+        encrypted_file, n = re.subn(
+            rb"/Encrypt (?P<index>\d+) (?P<gen>\d+) R",
+            b"/Encrypt 1 \\g<gen> R",
+            encrypted_file,
+        )
+        self.assertEqual(n, 1, "should have updated the /Encrypt entry")
+
+        in_invoice_1 = self.env["account.move"].create(
+            {
+                "move_type": "in_invoice",
+                "date": "2017-01-01",
+                "invoice_date": "2017-01-01",
+            }
+        )
+
+        in_invoice_1.message_main_attachment_id = self.env["ir.attachment"].create(
+            {
+                "raw": encrypted_file,
+                "name": attach_name,
+                "mimetype": "application/pdf",
+                "res_model": "account.move",
+                "res_id": in_invoice_1.id,
+            }
+        )
+        test_record_report = (
+            self.env["ir.actions.report"]
+            .with_context(force_report_rendering=True)
+            ._render_qweb_pdf(
+                "account.action_account_original_vendor_bill", res_ids=in_invoice_1.id
+            )
+        )
+        self.assertTrue(test_record_report, "The PDF should have been generated")
+
+        in_invoice_2 = in_invoice_1.copy()
+
+        in_invoice_2.message_main_attachment_id = self.env["ir.attachment"].create(
+            {
+                "raw": self.file,
+                "name": attach_name,
+                "mimetype": "application/pdf",
+                "res_model": "account.move",
+                "res_id": in_invoice_2.id,
+            }
+        )
+        with self.assertRaises(RedirectWarning):
+            self.env["ir.actions.report"].with_context(
+                force_report_rendering=True
+            )._render_qweb_pdf(
+                "account.action_account_original_vendor_bill",
+                res_ids=[in_invoice_1.id, in_invoice_2.id],
+            )

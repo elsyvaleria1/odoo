@@ -1,0 +1,7 @@
+id,name,model_id/id,group_id/id,kind,operation,reach,anchor,domain
+rule_conversation_coaching_note_user,Coach notices: own or attended,model_conversation_coaching_note,conversation.group_user,permission,r,own,conversation_user,
+rule_conversation_coaching_note_user_2,Coach notices: own or attended (2),model_conversation_coaching_note,conversation.group_user,permission,r,own,,
+rule_conversation_coaching_note_leader,Coach notices: company,model_conversation_coaching_note,conversation.group_leader,permission,r,company,,
+rule_conversation_coaching_note_user_group_manager,Coach notices: own or attended,model_conversation_coaching_note,conversation.group_manager,permission,crud,own,conversation_user,
+rule_conversation_coaching_note_user_group_manager_2,Coach notices: own or attended (2),model_conversation_coaching_note,conversation.group_manager,permission,crud,own,,
+rule_conversation_coaching_note_leader_group_manager,Coach notices: company,model_conversation_coaching_note,conversation.group_manager,permission,crud,company,,

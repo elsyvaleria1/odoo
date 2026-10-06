@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Appointment's main menu-->
+    <menuitem
+        id="main_menu_appointments"
+        name="Bookings"
+        parent="calendar.mail_menu_calendar"
+        action="calendar.appointment_type_action"
+        sequence="15"
+        groups="base.group_user" />
+
+    <!-- Schedule menu -->
+    <menuitem
+        id="menu_appointment_schedule_resources"
+        name="Schedule"
+        parent="calendar.main_menu_appointments"
+        sequence="13"
+        groups="group_appointment_user" />
+
+    <menuitem
+        id="menu_appointment_schedule_resource_booking"
+        name="Resources Bookings"
+        parent="menu_appointment_schedule_resources"
+        action="calendar_event_action_all_resources_bookings" />
+
+    <menuitem
+        id="menu_appointment_schedule_staff_appointment"
+        name="Staff Bookings"
+        parent="menu_appointment_schedule_resources"
+        action="calendar_event_action_all_users_appointments"
+        sequence="20" />
+
+    <!-- Appointment's type, Shared Links -->
+    <menuitem
+        id="appointment_type_menu"
+        parent="calendar.main_menu_appointments"
+        action="appointment_type_action"
+        sequence="10" />
+
+    <menuitem
+        id="menu_appointment_invite"
+        name="Shared Links"
+        parent="calendar.main_menu_appointments"
+        action="appointment_invite_action"
+        sequence="11" />
+
+    <!-- Appointment's Reporting -->
+    <menuitem
+        id="menu_appointment_reporting"
+        name="Reporting"
+        parent="calendar.main_menu_appointments"
+        sequence="15" />
+
+    <menuitem
+        id="menu_appointment_reporting_bookings"
+        name="Bookings"
+        parent="menu_appointment_reporting"
+        action="calendar_event_action_appointment_reporting" />
+
+    <menuitem
+        id="menu_appointment_reporting_answers"
+        name="Answers"
+        parent="menu_appointment_reporting"
+        action="appointment_answer_input_action"
+        sequence="20" />
+
+    <!-- Appointment's config menu-->
+    <menuitem
+        id="appointment_menu_config"
+        name="Configuration"
+        parent="calendar.main_menu_appointments"
+        sequence="20"
+        groups="group_appointment_user" />
+
+    <menuitem
+        id="menu_appointment_questions"
+        name="Questions"
+        parent="calendar.appointment_menu_config"
+        action="appointment_question_action"
+        groups="group_appointment_user" />
+
+    <menuitem
+        id="menu_appointment_reminders"
+        name="Reminders"
+        parent="calendar.appointment_menu_config"
+        action="calendar.action_calendar_alarm"
+        sequence="20"
+        groups="group_appointment_manager" />
+
+    <menuitem
+        id="menu_appointment_resource"
+        parent="calendar.appointment_menu_config"
+        action="appointment_resource_action"
+        sequence="30"
+        groups="group_appointment_manager" />
+
+    <menuitem
+        id="menu_appointment_resource_leaves"
+        name="Resource Leaves"
+        parent="calendar.appointment_menu_config"
+        action="calendar.resource_schedule_exception_action_show_appointment_resources"
+        sequence="40"
+        groups="group_appointment_manager" />
+
+</odoo>

@@ -1,0 +1,6 @@
+id,name,model_id/id,group_id/id,kind,operation,reach,anchor,domain
+access_hr_timesheet_tip_user,access_hr_timesheet_tip_user,model_hr_timesheet_tip,hr_timesheet.group_hr_timesheet_user,permission,r,,,
+access_hr_timesheet_tip_system,access_hr_timesheet_tip_system,model_hr_timesheet_tip,hr_timesheet.group_timesheet_manager,permission,cud,,,
+billable_timesheet_approver,Billable Timesheet Approver,model_edit_billable_time_target,hr_timesheet.group_hr_timesheet_approver,permission,ru,own,timesheet_manager_or_unset,
+billable_timesheet_approver_2,Billable Timesheet Approver (2),model_edit_billable_time_target,hr_timesheet.group_hr_timesheet_approver,permission,ru,own,,
+edit_billable_time_target_rule_multi_company,Edit Billable Time Target multi-company,model_edit_billable_time_target,base.group_everyone,guard,crud,company,,

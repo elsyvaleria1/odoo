@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_device_client_visit_list" model="ir.ui.view">
+        <field name="name">device.client.visit.list</field>
+        <field name="model">device.client.visit</field>
+        <field name="arch" type="xml">
+            <list default_order="arrival desc" create="0">
+                <field name="partner_id" />
+                <field name="geofence_id" />
+                <field name="arrival" />
+                <field name="departure" />
+                <field name="duration_hours" string="Duration" widget="float_time" />
+            </list>
+        </field>
+    </record>
+
+    <record id="view_device_client_visit_search" model="ir.ui.view">
+        <field name="name">device.client.visit.search</field>
+        <field name="model">device.client.visit</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="partner_id" />
+                <field name="geofence_id" />
+                <filter
+                    name="ongoing"
+                    string="Ongoing"
+                    domain="[('departure', '=', False)]" />
+                <filter
+                    name="finished"
+                    string="Finished"
+                    domain="[('departure', '!=', False)]" />
+                <separator />
+                <filter
+                    name="today"
+                    string="Today"
+                    domain="[('arrival', '&gt;=', context_today().strftime('%Y-%m-%d'))]" />
+                <group>
+                    <filter
+                        name="group_partner"
+                        string="Client"
+                        context="{'group_by': 'partner_id'}" />
+                    <filter
+                        name="group_arrival"
+                        string="Date"
+                        context="{'group_by': 'arrival'}" />
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_device_client_visit" model="ir.actions.act_window">
+        <field name="name">Client Visits</field>
+        <field name="res_model">device.client.visit</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_device_client_visit_search" />
+        <field name="context">{'search_default_today': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No visits recorded yet
+            </p>
+            <p>
+                Every time a vehicle enters and leaves a client's parcel, a
+                record is kept here with the arrival time, the departure time
+                and the duration.
+            </p>
+        </field>
+    </record>
+
+</odoo>

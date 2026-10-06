@@ -1,0 +1,132 @@
+@media (min-width: 576px) {
+    .o_accrual_plan_settings .o_accrual {
+        grid-template-columns: 1fr 1fr !important;
+    }
+
+    .o_accrual_level_form .o_accrual {
+        grid-template-columns: max-content 1fr !important;
+    }
+}
+
+.o_accrual {
+    .o_field_accrual,
+    .o_field_selection,
+    .o_field_day_selection,
+    .o_field_filterable_selection {
+        width: fit-content !important;
+
+        &:not(.o_readonly_modifier) > *:first-child {
+            min-width: 50px;
+            border-bottom: solid $border-width o-token(--border-color, $border-color);
+            max-width: fit-content;
+            field-sizing: content;
+        }
+
+        &:not(.o_field_selection, .o_field_day_selection, .o_field_filterable_selection)
+            > *:first-child {
+            max-width: 8ch;
+        }
+    }
+
+    .o_form_label {
+        font-weight: $o-font-weight-normal;
+    }
+}
+
+.o_accrual_plan_summary {
+    & div {
+        display: flex !important;
+        justify-content: center;
+    }
+
+    & p {
+        width: 70%;
+        padding: 8px;
+        font-weight: $o-font-weight-normal;
+        border: solid $border-width o-token(--border-color, $border-color);
+        border-radius: $border-radius;
+        background-color: o-palette-token(--body-bg, $o-webclient-background-color);
+    }
+}
+
+.o_accrual_plan_form {
+    .o_form_sheet_bg {
+        max-width: 100% !important;
+        margin: 0;
+        padding-bottom: 8px;
+    }
+
+    .o_accrual_plan_settings {
+        .oe_title {
+            .o_inner_group {
+                grid-template-columns: max-content 1fr;
+            }
+        }
+    }
+
+    .o_accrual_plan_levels {
+        background-color: o-palette-token(--body-bg, $o-webclient-background-color);
+
+        & > .o_accrual_levels_scrollable {
+            overflow-y: auto;
+            box-sizing: border-box;
+
+            &:has(.o_view_nocontent) {
+                justify-content: center;
+            }
+        }
+    }
+}
+
+.o_accrual_level {
+    .new-text {
+        top: -20px;
+        right: 5px;
+        color: o-token(--o-brand, $o-brand-primary);
+        pointer-events: none;
+    }
+
+    .circle {
+        background-color: o-token(--border-color, $border-color);
+    }
+
+    .new {
+        background-color: o-token(--o-brand, $o-brand-primary);
+        border-color: o-token(--o-brand, $o-brand-primary);
+    }
+
+    .arrow {
+        border: solid o-token(--border-color, $border-color);
+        border-width: 0 $border-width * 2 $border-width * 2 0;
+        padding: 5px;
+        margin-top: -10px - $border-width * 2;
+        transform: rotate(45deg);
+    }
+
+    .o_accrual_bg {
+        background-color: o-token(--o-bg-view, $o-view-background-color);
+    }
+
+    .delete span:hover {
+        background-color: o-palette-token(--danger, $o-danger);
+        color: o-token(--o-white, $o-white);
+    }
+
+    // `.o_accrual_bg` names the two cells: behind an ancestor `:has()`, a
+    // subject like `.time > span` has every DOM change of every screen restyle
+    // every `<span>` of the page
+    &:has(.content:hover, .time > span:hover) {
+        .content.o_accrual_bg {
+            border-color: o-token(--o-brand, $o-brand-primary) !important;
+        }
+
+        .time > .o_accrual_bg {
+            border-color: o-token(--o-brand, $o-brand-primary) !important;
+        }
+
+        .timeline > .circle {
+            border-color: o-token(--o-brand, $o-brand-primary) !important;
+            background-color: o-token(--o-brand, $o-brand-primary);
+        }
+    }
+}

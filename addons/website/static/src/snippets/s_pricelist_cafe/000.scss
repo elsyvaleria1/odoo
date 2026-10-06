@@ -1,0 +1,7 @@
+.s_pricelist_cafe {
+    @include media-breakpoint-down(lg) {
+        > .o_html_builder_Origins_19:not(.o_shape_show_mobile) {
+            display: none;
+        }
+    }
+}

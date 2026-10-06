@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="spreadsheet_document_to_dashboard_view_form" model="ir.ui.view">
+        <field name="name">spreadsheet.document.to.dashboard.view.form</field>
+        <field name="model">wizard.document.document.convert.dashboard</field>
+        <field name="arch" type="xml">
+            <form>
+                <div class="alert alert-warning" role="alert">
+                    We're sending the original spreadsheet to the trash. No worries, though! You can still make edits by heading over to the Dashboard configuration.
+                </div>
+                <group>
+                    <group>
+                        <field name="name" />
+                        <field
+                            name="dashboard_group_id"
+                            placeholder="Choose a dashboard section..."
+                            options="{'no_open': True, 'no_create_edit': True}" />
+                    </group>
+                    <group>
+                        <field name="group_ids" widget="many2many_tags" />
+                    </group>
+                </group>
+                <footer>
+                    <button
+                        name="create_dashboard"
+                        type="object"
+                        string="Create"
+                        class="btn-primary" />
+                    <button special="cancel" string="Cancel" class="btn-secondary" />
+                </footer>
+            </form>
+        </field>
+    </record>
+
+</odoo>

@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_approval_category_form_sale" model="ir.ui.view">
+        <field name="name">approval.category.form.sale</field>
+        <field name="model">approval.category</field>
+        <field name="inherit_id" ref="approval.view_approval_category_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//page[@name='settings']" position="before">
+                <page
+                    name="sale_config"
+                    string="Sales"
+                    invisible="approval_type != 'sale'">
+                    <group>
+                        <group string="Flow">
+                            <!-- `target_model` itself is not repeated here: the
+                                base form already renders it in `general_group`
+                                with no `invisible` and no `groups`, so a second
+                                editable widget only gave one field two labels
+                                on one form. The divs below are what this page
+                                actually adds — they read the base field. -->
+                            <div
+                                class="text-muted"
+                                colspan="2"
+                                invisible="target_model != False">
+                                <strong>Mixin Flow (SO → Approval)</strong><br /> Sale orders
+                                trigger approval automatically based on rules below. </div>
+                            <div
+                                class="text-muted"
+                                colspan="2"
+                                invisible="target_model != 'sale.order'">
+                                <strong>Creation Flow (Approval → SO)</strong><br /> Approval
+                                request creates sale order when approved. Ensure "Has Product" is
+                                set to Required. </div>
+                        </group>
+                        <!-- No "Automation" group here. `order_auto_confirm`
+                            had no reader: auto-confirm is decided solely by
+                            the company field `so_auto_confirm_on_approval`
+                            (`approval_product/models/mixin_approval_document
+                            .py`), so unchecking the box on the category
+                            changed nothing and the form said otherwise. The
+                            field itself lives in `approval_product`; removing
+                            it there is its own task. -->
+                    </group>
+                    <group>
+                        <group
+                            string="Trigger Conditions"
+                            invisible="target_model != False">
+                            <field
+                                name="so_approval_mode"
+                                string="Require approval by" />
+                            <label
+                                for="order_amount_min"
+                                invisible="so_approval_mode not in ['amount', 'combined']" />
+                            <div
+                                invisible="so_approval_mode not in ['amount', 'combined']">
+                                <field name="order_amount_min" placeholder="e.g., 5000" class="oe_inline" /> to <field name="order_amount_max" placeholder="0 = no limit" class="oe_inline" />
+                            </div>
+                            <field
+                                name="order_partner_ids"
+                                placeholder="Leave empty for all customers"
+                                widget="many2many_tags"
+                                domain="[('customer_rank', '&gt;', 0)]"
+                                invisible="so_approval_mode not in ['partner', 'credit', 'combined']" />
+                            <field
+                                name="product_categ_ids"
+                                placeholder="Leave empty for all categories"
+                                widget="many2many_tags"
+                                invisible="so_approval_mode not in ['product', 'combined']" />
+                            <field
+                                name="product_ids"
+                                placeholder="Leave empty for all products"
+                                widget="many2many_tags"
+                                invisible="so_approval_mode not in ['product', 'combined']" />
+                            <field
+                                name="check_credit_limit"
+                                invisible="so_approval_mode not in ['credit', 'combined']" />
+                            <div
+                                class="text-muted"
+                                colspan="2"
+                                invisible="not check_credit_limit">
+                                This category will apply when the customer's credit limit would be
+                                exceeded by this order. Uses the partner's Credit Limit field.
+                            </div>
+                        </group>
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="action_approval_category_sale" model="ir.actions.act_window">
+        <field name="name">Sales Approval Types</field>
+        <field name="res_model">approval.category</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('approval_type', '=', 'sale')]</field>
+        <field
+            name="context">{'default_approval_type': 'sale', 'approval_category_routes_by_steps': True}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Create your first sales approval type
+            </p>
+            <p> Define approval workflows for sale orders: <br /><br />
+                <strong>Flow 1: Mixin
+                    Flow (SO → Approval)</strong><br /> • Set Approval Type = "Sale"<br /> • Leave
+                Target Model empty<br /> • Configure approval triggers (amount, customer, etc.)<br />
+                • SOs trigger approval automatically based on rules <br /><br />
+                <strong>Flow 2:
+                Creation Flow (Approval → SO)</strong><br /> • Set Approval Type = "Sale"<br /> •
+                Set Target Model = "Sale Order"<br /> • Set "Has Product" = Required<br /> •
+                Approval creates SO when approved </p>
+        </field>
+    </record>
+
+</odoo>

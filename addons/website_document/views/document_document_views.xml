@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="documents_view_list" model="ir.ui.view">
+        <field name="name">document.view.list.inherit.website</field>
+        <field name="model">document.document</field>
+        <field name="inherit_id" ref="document.documents_view_list" />
+        <field name="arch" type="xml">
+            <field name="write_date" position="after">
+                <field
+                    name="website_id"
+                    optional="hide"
+                    groups="website.group_multi_website" />
+            </field>
+        </field>
+    </record>
+
+</odoo>

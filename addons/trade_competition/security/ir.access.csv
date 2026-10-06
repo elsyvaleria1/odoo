@@ -1,0 +1,4 @@
+id,name,model_id/id,group_id/id,kind,operation,reach,anchor,domain
+competitor_offer_comp_rule,Competitor offers: the user's companies,model_competitor_offer,base.group_everyone,guard,crud,company,,
+competitor_offer_line_comp_rule,Competitor offer lines: the user's companies,model_competitor_offer_line,base.group_everyone,guard,crud,company,,
+privilege_count_competitor_offers_offer,Competitor offers: the count on a partner,model_competitor_offer,privilege_count_competitor_offers,permission,r,,,

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="mail.ActivitiesTile">
+        <div class="o_activities_tile d-flex flex-column gap-2">
+            <button type="button" class="btn btn-link p-0 d-flex gap-3 text-start o_activities_tile_totals" t-on-click="() => this.openAll()">
+                <span><strong class="text-danger" t-out="this.props.data.overdue"/> <small class="text-muted">Late</small></span>
+                <span><strong class="text-warning" t-out="this.props.data.today"/> <small class="text-muted">Today</small></span>
+                <span><strong class="text-success" t-out="this.props.data.planned"/> <small class="text-muted">Future</small></span>
+            </button>
+            <ul t-if="this.groups.length" class="list-unstyled mb-0">
+                <li t-foreach="this.groups" t-as="group" t-key="group.model + '_' + group.subkey">
+                    <button type="button" class="btn btn-link p-0 border-0 text-start text-decoration-none w-100 d-flex align-items-center gap-2 o_activities_tile_group" t-on-click="() => this.open(group)">
+                        <img t-if="group.icon" class="o_activities_tile_icon" t-att-src="group.icon" alt=""/>
+                        <span class="flex-grow-1 text-truncate" t-out="group.name"/>
+                        <span t-if="group.overdue" class="badge text-bg-danger" t-out="group.overdue"/>
+                        <span t-if="group.today" class="badge text-bg-warning" t-out="group.today"/>
+                    </button>
+                </li>
+            </ul>
+            <p t-else="" class="text-muted small mb-0">Nothing is waiting for you.</p>
+        </div>
+    </t>
+
+</templates>

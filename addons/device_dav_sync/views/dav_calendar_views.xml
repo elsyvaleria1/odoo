@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_dav_calendar_tree" model="ir.ui.view">
+        <field name="name">dav.calendar.tree</field>
+        <field name="model">dav.calendar</field>
+        <field name="arch" type="xml">
+            <list string="DAV Calendars">
+                <field name="sequence" widget="handle" />
+                <field name="name" />
+                <field name="user_id" />
+                <field name="event_count" />
+                <field name="collection_uid" />
+                <field name="color" widget="color" />
+            </list>
+        </field>
+    </record>
+
+    <record id="view_dav_calendar_form" model="ir.ui.view">
+        <field name="name">dav.calendar.form</field>
+        <field name="model">dav.calendar</field>
+        <field name="arch" type="xml">
+            <form string="DAV Calendar">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="name" />
+                            <field name="user_id" />
+                            <field name="sequence" />
+                            <field name="color" widget="color" />
+                        </group>
+                        <group>
+                            <field name="collection_uid" readonly="1" />
+                            <field name="ctag" readonly="1" />
+                            <field name="event_count" />
+                        </group>
+                    </group>
+                    <group string="Filter Settings">
+                        <field name="include_shared_events" />
+                        <field
+                            name="event_domain"
+                            widget="domain"
+                            options="{'model': 'calendar.event'}" />
+                    </group>
+                    <group>
+                        <field name="description" />
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_dav_calendar" model="ir.actions.act_window">
+        <field name="name">DAV Calendars</field>
+        <field name="res_model">dav.calendar</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+</odoo>

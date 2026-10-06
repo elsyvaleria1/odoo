@@ -1,0 +1,15 @@
+.o_font_size_selector_menu {
+    --dropdown-min-width: none;
+}
+.o-we-font-size-item-bg {
+    background-color: o-palette-token(--o-gray-300, $gray-300);
+}
+
+// The dark half, folded in from `font_size_selector.dark.scss`.
+@include media-only(screen) {
+    :root[data-color-scheme="dark"] {
+        .o-we-font-size-item-bg {
+            background-color: $o-dark-gray-200;
+        }
+    }
+}

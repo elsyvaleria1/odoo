@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="geo_raster_view_list" model="ir.ui.view">
+        <field name="name">geoengine.raster.layer.list</field>
+        <field name="model">geoengine.raster.layer</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name" />
+                <field name="raster_type" />
+                <field name="sequence" />
+                <field name="overlay" />
+            </list>
+        </field>
+    </record>
+
+    <record id="geo_raster_view_form" model="ir.ui.view">
+        <field name="name">geoengine.raster.layer.form</field>
+        <field name="model">geoengine.raster.layer</field>
+        <field name="arch" type="xml">
+            <form string="Raster Layer View">
+                <sheet>
+                    <field name="id" invisible="1" />
+                    <group string="General" col="4">
+                        <field name="name" />
+                        <field name="view_id" />
+                        <field name="raster_type" />
+                        <field name="sequence" />
+                        <field name="overlay" />
+                        <field
+                            name="url"
+                            widget="url"
+                            colspan="4"
+                            required="raster_type in ['wmts', 'd_wms', 'i_wms']" />
+                        <field name="opacity" />
+                        <field
+                            name="attribution"
+                            invisible="raster_type not in ['xyz', 'google']" />
+                        <field
+                            name="max_zoom"
+                            invisible="raster_type not in ['xyz', 'google']" />
+                    </group>
+                    <group
+                        string="WMTS options"
+                        colspan="4"
+                        invisible="raster_type != 'wmts'">
+                        <field name="wmts_layer" required="raster_type == 'wmts'" />
+                        <field name="matrix_set" required="raster_type == 'wmts'" />
+                        <field name="format_suffix" required="raster_type == 'wmts'" />
+                        <field name="request_encoding" />
+                        <field name="projection" required="raster_type == 'wmts'" />
+                        <field name="resolutions" required="raster_type == 'wmts'" />
+                        <field name="max_extent" />
+                        <field name="params" />
+                    </group>
+                    <group
+                        string="WMS options"
+                        colspan="4"
+                        invisible="raster_type not in ['d_wms', 'i_wms']">
+                        <field
+                            name="params_wms"
+                            required="raster_type in ['d_wms', 'i_wms']" />
+                        <field
+                            name="server_type"
+                            required="raster_type in ['d_wms', 'i_wms']" />
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="geo_raster_layer_list_action" model="ir.actions.act_window">
+        <field name="name">Raster Layer</field>
+        <field name="res_model">geoengine.raster.layer</field>
+        <field name="view_id" ref="geo_raster_view_list" />
+        <field name="type">ir.actions.act_window</field>
+    </record>
+
+    <record id="geo_engine_form_view_raster_action" model="ir.actions.act_window">
+        <field name="name">Raster Layer</field>
+        <field name="res_model">geoengine.raster.layer</field>
+        <field name="view_id" ref="geo_raster_view_form" />
+        <field name="target">new</field>
+        <field name="type">ir.actions.act_window</field>
+    </record>
+
+</odoo>

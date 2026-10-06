@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="sms_composer_view_form" model="ir.ui.view">
+        <field name="name">sms.composer.view.form</field>
+        <field name="model">wizard.sms.sms.send</field>
+        <field name="arch" type="xml">
+            <form string="Send an SMS">
+                <!-- Single mode information (invalid number) -->
+                <div
+                    class="alert alert-danger text-center"
+                    role="alert"
+                    invisible="not res_model_description or not comment_single_recipient or recipient_single_valid">
+                    <p class="my-0">
+                        <strong>Invalid number:</strong>
+                        <span> make sure to set a country on the </span>
+                        <span><field name="res_model_description" /></span>
+                        <span> or to specify the country code.</span>
+                    </p>
+                </div>
+
+                <!-- Mass mode information (res_ids versus active domain) -->
+                <div
+                    class="alert alert-info text-center"
+                    role="alert"
+                    invisible="comment_single_recipient or recipient_invalid_count == 0">
+                    <p class="my-0">
+                        <field name="recipient_invalid_count" class="oe_inline fw-bold" /> out of
+                        <field name="res_ids_count" class="oe_inline fw-bold" /> recipients have an invalid phone number and will not receive this text message.
+                    </p>
+                </div>
+                <sheet>
+                    <group>
+                        <field name="composition_mode" invisible="1" />
+                        <field name="comment_single_recipient" invisible="1" />
+                        <field name="res_id" invisible="1" />
+                        <field name="res_ids" invisible="1" />
+                        <field name="res_model" invisible="1" />
+                        <field name="mass_force_send" invisible="1" />
+                        <field name="recipient_single_valid" invisible="1" />
+                        <field name="recipient_single_number" invisible="1" />
+                        <field name="number_field_name" invisible="1" />
+                        <field name="numbers" invisible="1" />
+                        <field name="sanitized_numbers" invisible="1" />
+                        <field name="template_id" invisible="1" />
+
+                        <label
+                            for="recipient_single_description"
+                            string="To"
+                            invisible="not comment_single_recipient"
+                            class="fw-bold" />
+                        <div invisible="not comment_single_recipient">
+                            <field
+                                name="recipient_single_description"
+                                invisible="not recipient_single_description"
+                                class="w-auto text-muted me-2" />
+                            <field
+                                name="recipient_single_number_itf"
+                                placeholder="e.g. +1 415 555 0100"
+                                class="oe_inline border-bottom"
+                                onchange_on_keydown="True" />
+                        </div>
+                    </group>
+                        <field
+                            name="body"
+                            placeholder="Write a message..."
+                            widget="sms_widget"
+                            options="{'dynamic_placeholder': true, 'dynamic_placeholder_model_reference_field': 'res_model'}"
+                            invisible="comment_single_recipient or recipient_single_valid" />
+                        <field
+                            name="body"
+                            placeholder="Write a message..."
+                            widget="sms_widget"
+                            default_focus="1"
+                            options="{'dynamic_placeholder': true, 'dynamic_placeholder_model_reference_field': 'res_model'}"
+                            invisible="comment_single_recipient or not recipient_single_valid" />
+                        <field
+                            name="body"
+                            placeholder="Write a message..."
+                            widget="sms_widget"
+                            invisible="not comment_single_recipient" />
+                        <field name="mass_keep_log" invisible="1" />
+                        <field name="use_exclusion_list" invisible="1" />
+                </sheet>
+                <footer>
+                    <!-- attrs doesn't work for 'disabled'-->
+                    <button
+                        name="action_send_sms"
+                        type="object"
+                        string="Send"
+                        invisible="composition_mode not in ('comment', 'numbers') or not recipient_single_valid"
+                        class="oe_highlight"
+                        data-hotkey="q" />
+                    <button
+                        name="action_send_sms"
+                        type="object"
+                        string="Send"
+                        invisible="composition_mode not in ('comment', 'numbers') or recipient_single_valid"
+                        class="oe_highlight"
+                        data-hotkey="q"
+                        disabled="1" />
+                    <button
+                        name="action_send_sms"
+                        type="object"
+                        string="Put in queue"
+                        invisible="composition_mode != 'mass'"
+                        class="oe_highlight"
+                        data-hotkey="q" />
+                    <button
+                        name="action_send_sms_mass_now"
+                        type="object"
+                        string="Send now"
+                        invisible="composition_mode != 'mass'"
+                        data-hotkey="w" />
+                    <button
+                        special="cancel"
+                        string="Discard"
+                        class="btn btn-secondary"
+                        data-hotkey="x" />
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="sms_composer_action_form" model="ir.actions.act_window">
+        <field name="name">Send SMS</field>
+        <field name="res_model">wizard.sms.sms.send</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+
+</odoo>

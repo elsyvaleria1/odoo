@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!--
+        The trip's stops, events and alerts over the trail they belong to:
+        the layer reads the points of the trails the map shows.
+    -->
+    <record id="vector_layer_trip_track_points" model="geoengine.vector.layer">
+        <field name="name">Trip stops, incidents and alerts</field>
+        <field
+            name="view_id"
+            ref="device_gps_geoengine.view_gps_trail_result_geoengine" />
+        <field name="model_id" ref="model_wizard_stock_trip_track_point" />
+        <field name="model_domain">[('trail_result_id', 'in', '{ACTIVE_IDS}')]</field>
+        <field
+            name="geo_field_id"
+            ref="field_wizard_stock_trip_track_point__the_point" />
+        <field name="geo_repr">colored_field</field>
+        <field name="color_field_id" ref="field_wizard_stock_trip_track_point__color" />
+        <field name="begin_color">#dc3545</field>
+        <field name="sequence" eval="2" />
+        <field name="active_on_startup" eval="True" />
+        <field name="layer_opacity">1.0</field>
+    </record>
+
+</odoo>

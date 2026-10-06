@@ -1,0 +1,19 @@
+@mixin text-emphasis-variant(
+    $-parent,
+    $-color,
+    $-hover-color: shift-color($-color, $link-shade-percentage)
+) {
+    #{$-parent} {
+        @include o-print-color($-color, color, text-opacity);
+    }
+
+    a#{$-parent},
+    button#{$-parent} {
+        &:hover,
+        &:focus,
+        &:active,
+        &.active {
+            @include o-print-color($-hover-color, color, text-opacity);
+        }
+    }
+}

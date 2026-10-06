@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="payroll_tours" model="web_tour.tour">
+        <field name="name">payroll_tours</field>
+        <field name="sequence">80</field>
+        <field
+            name="rainbow_man_message">&lt;strong&gt;Congrats, Your first payslip is now finished. It's time for you to explore the Payroll app by yourself.&lt;/strong&gt;</field>
+    </record>
+
+</odoo>

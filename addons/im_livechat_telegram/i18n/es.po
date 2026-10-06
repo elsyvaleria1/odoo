@@ -1,0 +1,147 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# * im_livechat_telegram
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-09-29 14:28+0000\n"
+"PO-Revision-Date: 2026-09-29 14:16+0000\n"
+"Last-Translator: \n"
+"Language: es\n"
+"Language-Team: \n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.18.0\n"
+
+#. module: im_livechat_telegram
+#: model:ir.model.fields,field_description:im_livechat_telegram.field_telegram_bot__livechat_chatbot_script_id
+msgid "Chatbot"
+msgstr "Chatbot"
+
+#. module: im_livechat_telegram
+#: model:ir.model.fields,help:im_livechat_telegram.field_telegram_bot__livechat_channel_id
+msgid ""
+"Customers -- anyone who is not an Odoo user -- writing to this bot are "
+"answered in a session of this Live Chat channel."
+msgstr ""
+"Los clientes -- cualquiera que no sea usuario de Odoo -- que escriben a "
+"este bot se atienden en una sesión de este canal de chat en vivo."
+
+#. module: im_livechat_telegram
+#: model:ir.model,name:im_livechat_telegram.model_discuss_channel
+msgid "Discussion Channel"
+msgstr "Canal de conversación"
+
+#. module: im_livechat_telegram
+#: model:ir.model.fields,field_description:im_livechat_telegram.field_discuss_channel__display_name
+#: model:ir.model.fields,field_description:im_livechat_telegram.field_telegram_bot__display_name
+#: model:ir.model.fields,field_description:im_livechat_telegram.field_telegram_handler_livechat__display_name
+msgid "Display Name"
+msgstr "Nombre mostrado"
+
+#. module: im_livechat_telegram
+#. odoo-python
+#: code:addons/im_livechat_telegram/models/discuss_channel.py:0
+msgid "How did we do?"
+msgstr "¿Cómo te atendimos?"
+
+#. module: im_livechat_telegram
+#: model:ir.model.fields,field_description:im_livechat_telegram.field_discuss_channel__id
+#: model:ir.model.fields,field_description:im_livechat_telegram.field_telegram_bot__id
+#: model:ir.model.fields,field_description:im_livechat_telegram.field_telegram_handler_livechat__id
+msgid "ID"
+msgstr "ID"
+
+#. module: im_livechat_telegram
+#: model_terms:ir.ui.view,arch_db:im_livechat_telegram.telegram_bot_view_form_livechat
+msgid "Live Chat"
+msgstr "Chat en vivo"
+
+#. module: im_livechat_telegram
+#: model:ir.model.fields,field_description:im_livechat_telegram.field_telegram_bot__livechat_channel_id
+msgid "Live Chat Channel"
+msgstr "Canal de chat en vivo"
+
+#. module: im_livechat_telegram
+#: model:ir.model.fields,field_description:im_livechat_telegram.field_telegram_bot__livechat_waiting_message
+msgid "Message While Nobody Is Online"
+msgstr "Mensaje cuando nadie está en línea"
+
+#. module: im_livechat_telegram
+#. odoo-python
+#: code:addons/im_livechat_telegram/models/telegram_handler_livechat.py:0
+msgid "Nobody can answer here right now. Please try again later."
+msgstr "Ahora nadie puede atenderte aquí. Inténtalo más tarde, por favor."
+
+#. module: im_livechat_telegram
+#. odoo-python
+#: code:addons/im_livechat_telegram/models/telegram_handler_livechat.py:0
+msgid "Only text, photos and documents reach us here."
+msgstr "Aquí solo nos llegan textos, fotos y documentos."
+
+#. module: im_livechat_telegram
+#: model:ir.model.fields,help:im_livechat_telegram.field_telegram_bot__livechat_operator_label
+msgid ""
+"Prefix operators' messages with their name. Off, customers see the bot "
+"speaking for the company."
+msgstr ""
+"Antepone el nombre del operador a sus mensajes. Desactivado, los clientes "
+"ven al bot hablando por la empresa."
+
+#. module: im_livechat_telegram
+#: model:ir.model.fields,help:im_livechat_telegram.field_telegram_bot__livechat_waiting_message
+msgid "Sent to a customer whose session opens with no operator online."
+msgstr "Se envía al cliente cuya sesión se abre sin operadores en línea."
+
+#. module: im_livechat_telegram
+#: model:ir.model.fields,field_description:im_livechat_telegram.field_telegram_bot__livechat_operator_label
+msgid "Show Operator Names"
+msgstr "Mostrar nombres de operadores"
+
+#. module: im_livechat_telegram
+#: model:ir.model,name:im_livechat_telegram.model_telegram_bot
+msgid "Telegram Bot Configuration"
+msgstr "Configuración del bot de Telegram"
+
+#. module: im_livechat_telegram
+#: model:ir.model.fields,field_description:im_livechat_telegram.field_discuss_channel__telegram_chat_id
+msgid "Telegram Chat"
+msgstr "Chat de Telegram"
+
+#. module: im_livechat_telegram
+#: model:ir.model,name:im_livechat_telegram.model_telegram_handler_livechat
+msgid "Telegram: Live Chat"
+msgstr "Telegram: chat en vivo"
+
+#. module: im_livechat_telegram
+#. odoo-python
+#: code:addons/im_livechat_telegram/models/telegram_handler_livechat.py:0
+msgid "Thank you!"
+msgstr "¡Gracias!"
+
+#. module: im_livechat_telegram
+#: model:ir.model.fields,help:im_livechat_telegram.field_discuss_channel__telegram_chat_id
+msgid "The Telegram chat of the customer this live chat session serves."
+msgstr "El chat de Telegram del cliente que atiende esta sesión de chat en vivo."
+
+#. module: im_livechat_telegram
+#. odoo-python
+#: code:addons/im_livechat_telegram/models/telegram_bot.py:0
+#, python-format
+msgid "The chatbot of bot %(bot)s must be one of its Live Chat channel's rules."
+msgstr ""
+"El chatbot del bot %(bot)s debe ser una de las reglas de su canal de chat "
+"en vivo."
+
+#. module: im_livechat_telegram
+#: model:ir.model.fields,help:im_livechat_telegram.field_telegram_bot__livechat_chatbot_script_id
+msgid ""
+"The script that greets a customer on a new session, when no operator should"
+" answer first. It must be one of the channel's rules."
+msgstr ""
+"El guion que saluda al cliente en una sesión nueva, cuando no debe "
+"responder primero un operador. Debe ser una de las reglas del canal."

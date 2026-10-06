@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <menuitem
+        id="menu_sale_commission"
+        name="Commissions"
+        parent="sale.sale_menu_root"
+        sequence="35" />
+
+    <menuitem
+        id="sale_commission_my_menu"
+        parent="menu_sale_commission"
+        action="sale_commission_action_my_report"
+        sequence="10" />
+
+    <menuitem
+        id="sale_commission_plan_report_menu"
+        parent="menu_sale_commission"
+        action="sale_commission_action_report"
+        sequence="30"
+        groups="sale.group_sale_manager" />
+
+    <menuitem
+        id="sale_commission_achievement_report_menu"
+        parent="menu_sale_commission"
+        action="sale_achievement_action_report"
+        sequence="40"
+        groups="base.group_no_one" />
+
+    <menuitem
+        id="sale_commission_plan_menu"
+        parent="menu_sale_commission"
+        action="sale_commission_action_plan"
+        sequence="50"
+        groups="sale.group_sale_manager" />
+
+    <menuitem
+        id="sale_commission_achievement_menu"
+        parent="menu_sale_commission"
+        action="sale_commission_action_achievement"
+        sequence="60"
+        groups="sale.group_sale_salesman" />
+
+    <menuitem
+        id="sale_commission_plan_report_menu_report"
+        parent="sale.menu_sale_report"
+        action="sale_commission_action_report_sale"
+        sequence="50"
+        groups="sale.group_sale_manager" />
+
+</odoo>

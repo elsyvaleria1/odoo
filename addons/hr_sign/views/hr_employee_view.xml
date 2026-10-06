@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="hr_employee_sign_view_form" model="ir.ui.view">
+        <field name="name">hr.employee.form</field>
+        <field name="model">hr.employee</field>
+        <field name="inherit_id" ref="hr.view_employee_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//header" position="inside">
+                <!--
+                    hr.group_hr_manager implies sign.group_sign_manager
+                    https://github.com/odoo/enterprise/blob/435fa269064d358c8b78a957b8201dc6b6aeb6af/hr_contract_sign/security/security.xml#L4
+                    -->
+                <button
+                    name="%(sign_contract_wizard_action)d"
+                    type="action"
+                    string="Signature Request"
+                    context="{'default_version_id': version_id}"
+                    groups="hr.group_hr_manager"
+                    invisible="not id" />
+            </xpath>
+            <button name="action_view_versions" position="before">
+                <button
+                    name="open_employee_sign_requests"
+                    type="object"
+                    icon="fa-pencil"
+                    groups="hr.group_hr_manager"
+                    invisible="sign_request_count == 0"
+                    class="oe_stat_button">
+                    <div class="o_field_widget o_stat_info">
+                        <span class="o_stat_value"><field name="sign_request_count" /></span>
+                        <span class="o_stat_text">Signature Requests</span>
+                    </div>
+                </button>
+            </button>
+            <xpath expr="//field[@name='hr_responsible_id']" position="after">
+                <field
+                    name="sign_request_ids"
+                    groups="sign.group_sign_user"
+                    invisible="1" />
+            </xpath>
+        </field>
+    </record>
+
+    <record id="action_signature_request_multi" model="ir.actions.server">
+        <field name="name">Signature Request…</field>
+        <field name="model_id" ref="hr.model_hr_employee" />
+        <field name="binding_model_id" ref="hr.model_hr_employee" />
+        <field name="binding_view_types">list,kanban</field>
+        <field name="binding_sequence">7</field>
+        <field name="binding_icon">fa-solid fa-signature</field>
+        <field name="group_ids" eval="[Command.link(ref('hr.group_hr_manager'))]" />
+        <field name="state">code</field>
+        <field name="code">action = model._open_sign_document_wizard()</field>
+    </record>
+
+</odoo>

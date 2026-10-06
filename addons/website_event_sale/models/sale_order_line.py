@@ -1,0 +1,19 @@
+from odoo import api, models
+
+
+class SaleOrderLine(models.Model):
+    _inherit = "sale.order.line"
+
+    @api.depends("product_id.display_name", "event_ticket_id.display_name")
+    def _compute_name_short(self) -> None:
+        super()._compute_name_short()
+
+        for line in self:
+            if line.event_ticket_id:
+                line.name_short = line.event_ticket_id.display_name
+
+    def _is_strikethrough_price_shown(self) -> bool:
+        return super()._is_strikethrough_price_shown() and not self.event_id
+
+    def _is_reorder_allowed(self) -> bool:
+        return bool(not self.event_id and super()._is_reorder_allowed())

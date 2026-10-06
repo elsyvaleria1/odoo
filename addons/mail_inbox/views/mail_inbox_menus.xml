@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <menuitem
+        id="mail_inbox_menu"
+        parent="base.menu_email"
+        action="mail_inbox_action"
+        sequence="13"
+        groups="base.group_system" />
+
+</odoo>

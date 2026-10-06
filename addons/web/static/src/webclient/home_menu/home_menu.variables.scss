@@ -1,0 +1,66 @@
+$o-home-menu-font-size-base: 1rem;
+$o-home-menu-tile-unit: 315px;
+$o-home-menu-tile-gap: 30px;
+$o-home-menu-container-size: $o-home-menu-tile-unit * 3 + $o-home-menu-tile-gap * 2;
+$o-home-menu-search-max-width: 480px;
+$o-home-menu-app-icon-max-width: 3.25rem;
+$o-home-menu-app-icon-padding: 0.4rem;
+$o-home-menu-app-icon-background-color: rgba(#fff, 1);
+$o-home-menu-tile-radius: 11px;
+$o-home-menu-launcher-radius: 16px;
+$o-home-menu-font-family: $o-font-family-sans-serif;
+
+$o-home-menu-caption-color: $o-main-text-color !default;
+$o-home-menu-caption-shadow: none !default;
+
+$o-home-menu-custom-caption-color: #fff !default;
+$o-home-menu-custom-caption-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.75),
+    0 2px 5px rgba(0, 0, 0, 0.05),
+    0 0 5px rgba(0, 0, 0, 0.05) !default;
+
+// The home menu's background tints: light from, light to, dark from, dark to.
+$o-home-menu-tints: (
+    blue: (
+        #6c9ee8,
+        #8f8fe6,
+        #3f5fa6,
+        #5a4fa0,
+    ),
+    teal: (
+        #5fbfb5,
+        #7fb3d9,
+        #2f8f88,
+        #3f6fa0,
+    ),
+    green: (
+        #7cc27a,
+        #b5d66b,
+        #4f9150,
+        #7a9a3f,
+    ),
+    amber: (
+        #e8b04f,
+        #ef8f6a,
+        #b07f2f,
+        #b0583f,
+    ),
+    rose: (
+        #e88aa3,
+        #c48ae8,
+        #b0506f,
+        #8a4fa8,
+    ),
+    violet: (
+        #a08ae8,
+        #d08ae0,
+        #6f55b0,
+        #9a4fa8,
+    ),
+    graphite: (
+        #9aa3ad,
+        #7d8691,
+        #6a7078,
+        #555c66,
+    ),
+);

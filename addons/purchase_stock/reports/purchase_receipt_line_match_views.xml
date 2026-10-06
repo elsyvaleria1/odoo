@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="purchase_receipt_line_match_list" model="ir.ui.view">
+        <field name="name">purchase.receipt.line.match.list</field>
+        <field name="model">purchase.receipt.line.match</field>
+        <field name="arch" type="xml">
+            <list
+                type="object"
+                string="Purchase Receipt Lines"
+                editable="bottom"
+                edit="1"
+                decoration-info="order_line_id != False"
+                decoration-muted="state == 'cancel'"
+                decoration-warning="transfer_state == 'over done'">
+                <header>
+                    <button
+                        name="action_match_lines"
+                        type="object"
+                        string="Match"
+                        groups="purchase.group_purchase_user"
+                        class="btn btn-primary" />
+                </header>
+                <field name="partner_id" string="Vendor" optional="hide" />
+                <field name="reference" widget="open_match_line" />
+                <field
+                    name="display_name"
+                    string="Product Description"
+                    decoration-it="not product_id" />
+                <field name="product_uom_qty" string="Quantity" />
+                <field name="qty_transferred" optional="hide" />
+                <field name="qty_to_transfer" optional="show" />
+                <field name="product_uom_id" groups="uom.group_uom" />
+                <field name="trace_ids" widget="many2many_tags" optional="hide" />
+                <field name="date_expected" optional="show" />
+                <field name="transferred_qty" string="Received" sum="Total Received" />
+                <field name="ordered_qty" string="Ordered" sum="Total Ordered" />
+                <field name="transfer_state" optional="hide" />
+            </list>
+        </field>
+    </record>
+
+</odoo>

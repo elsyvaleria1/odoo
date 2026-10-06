@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_asset_trip_report_list" model="ir.ui.view">
+        <field name="name">asset.trip.report.list</field>
+        <field name="model">asset.trip.report</field>
+        <field name="arch" type="xml">
+            <list string="Vehicle Loans" create="false" edit="false" delete="false">
+                <field name="operator_name" string="Operator" />
+                <field name="department_name" string="Department" optional="show" />
+                <field name="asset_name" string="Vehicle" />
+                <field name="license_plate" string="License Plate" />
+                <field name="work_hours_status" string="Status" />
+                <field name="date_start_local" string="Start" />
+                <field name="weekday_start" string="Day" optional="show" />
+                <field name="date_end_local" string="End" />
+                <field name="weekday_end" string="Day" optional="hide" />
+                <field
+                    name="duration_hours"
+                    string="Duration (hrs)"
+                    sum="Total Hours" />
+                <field name="distance" string="Distance (km)" sum="Total Distance" />
+                <field name="odometer_start" string="Odometer Start" optional="hide" />
+                <field name="odometer_end" string="Odometer End" optional="hide" />
+                <field name="fuel_cost_per_km" string="Fuel $/km" optional="hide" />
+                <field
+                    name="fuel_amount"
+                    string="Fuel Amount"
+                    sum="Total Fuel Amount" />
+            </list>
+        </field>
+    </record>
+
+    <record id="view_asset_trip_report_search" model="ir.ui.view">
+        <field name="name">asset.trip.report.search</field>
+        <field name="model">asset.trip.report</field>
+        <field name="arch" type="xml">
+            <search string="Search Loans">
+                <field name="operator_name" string="Operator" />
+                <field name="department_name" string="Department" />
+                <field name="asset_name" string="Vehicle" />
+                <field name="license_plate" string="License Plate" />
+                <separator />
+                <filter
+                    name="filter_in_hours"
+                    string="In hours"
+                    domain="[('work_hours_status', '=', 'In hours')]" />
+                <filter
+                    name="filter_out_hours"
+                    string="Out of hours"
+                    domain="[('work_hours_status', '=', 'Out of hours')]" />
+                <separator />
+                <filter
+                    name="filter_commercial"
+                    string="Commercial"
+                    domain="[('department_name', 'ilike', 'comercial')]" />
+                <separator />
+                <filter
+                    name="group_status"
+                    string="Status"
+                    context="{'group_by': 'work_hours_status'}" />
+                <filter
+                    name="group_operator"
+                    string="Operator"
+                    context="{'group_by': 'operator_id'}" />
+                <filter
+                    name="group_department"
+                    string="Department"
+                    context="{'group_by': 'department_id'}" />
+                <filter
+                    name="group_vehicle"
+                    string="Vehicle"
+                    context="{'group_by': 'asset_id'}" />
+                <filter
+                    name="group_day"
+                    string="Day"
+                    context="{'group_by': 'date_start:day'}" />
+                <filter
+                    name="group_week"
+                    string="Week"
+                    context="{'group_by': 'date_start:week'}" />
+                <filter
+                    name="group_month"
+                    string="Month"
+                    context="{'group_by': 'date_start:month'}" />
+            </search>
+        </field>
+    </record>
+
+    <record id="view_asset_trip_report_pivot" model="ir.ui.view">
+        <field name="name">asset.trip.report.pivot</field>
+        <field name="model">asset.trip.report</field>
+        <field name="arch" type="xml">
+            <pivot string="Loans Analysis">
+                <field name="operator_id" type="row" />
+                <field name="work_hours_status" type="col" />
+                <field name="duration_hours" type="measure" />
+                <field name="distance" type="measure" />
+                <field name="fuel_amount" type="measure" />
+            </pivot>
+        </field>
+    </record>
+
+    <record id="view_asset_trip_report_graph" model="ir.ui.view">
+        <field name="name">asset.trip.report.graph</field>
+        <field name="model">asset.trip.report</field>
+        <field name="arch" type="xml">
+            <graph type="bar" string="Loans Analysis">
+                <field name="operator_id" />
+                <field name="work_hours_status" />
+                <field name="distance" type="measure" />
+            </graph>
+        </field>
+    </record>
+
+    <record id="action_asset_trip_report" model="ir.actions.act_window">
+        <field name="name">Vehicle Loans</field>
+        <field name="res_model">asset.trip.report</field>
+        <field name="view_mode">list,pivot,graph</field>
+        <field name="search_view_id" ref="view_asset_trip_report_search" />
+    </record>
+
+</odoo>

@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_document_type_list_credit" model="ir.ui.view">
+        <field name="name">document.type.list.credit</field>
+        <field name="model">document.type</field>
+        <field name="inherit_id" ref="document.view_document_type_list" />
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='is_renewable']" position="after">
+                <field name="has_amount" optional="hide" />
+                <field name="has_collateral" optional="hide" />
+                <field name="has_guarantor" optional="hide" />
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_document_type_form_credit" model="ir.ui.view">
+        <field name="name">document.type.form.credit</field>
+        <field name="model">document.type</field>
+        <field name="inherit_id" ref="document.view_document_type_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//group[@name='compliance']" position="inside">
+                <field name="has_amount" />
+                <field name="has_collateral" />
+                <field name="has_guarantor" />
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

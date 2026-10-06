@@ -1,0 +1,266 @@
+from odoo import Command
+from odoo.tests import Form, tagged, users
+from odoo.tools import float_compare
+
+from .common import PurchaseTestCommon
+
+
+@tagged("post_install", "-at_install")
+class TestPurchaseOrderProcess(PurchaseTestCommon):
+    @users("purchase_user")
+    def test_00_cancel_purchase_order_flow(self):
+        purchase_order = self.env["purchase.order"].create(
+            {
+                "partner_id": self.vendor.id,
+                "state": "draft",
+                "line_ids": [
+                    Command.create(
+                        {
+                            "product_id": self.product.id,
+                            "product_qty": 1.0,
+                            "product_uom_id": self.product.uom_id.id,
+                        }
+                    )
+                ],
+            }
+        )
+
+        purchase_order.action_confirm()
+
+        self.assertEqual(
+            purchase_order.state, "done", 'Purchase: PO state should be "Purchase'
+        )
+
+        purchase_order.picking_ids.action_cancel()
+
+        purchase_order.action_cancel()
+
+        self.assertEqual(
+            purchase_order.state, "cancel", 'Purchase: PO state should be "Cancel'
+        )
+
+    def test_02_vendor_delay_report_partially_cancelled_purchase_order(self):
+        self.product_2 = self.product.copy()
+        purchase_order = self.env["purchase.order"].create(
+            {
+                "partner_id": self.vendor.id,
+                "line_ids": [
+                    Command.create(
+                        {
+                            "product_id": self.product.id,
+                            "product_qty": 2.0,
+                            "product_uom_id": self.uom.id,
+                        }
+                    ),
+                    Command.create(
+                        {
+                            "product_id": self.product_2.id,
+                            "product_qty": 3.0,
+                            "product_uom_id": self.uom.id,
+                        }
+                    ),
+                ],
+            }
+        )
+        purchase_order.action_confirm()
+        purchase_order.line_ids.flush_recordset()
+        purchase_order.picking_ids.move_ids.flush_recordset()
+        delay_reports = self.env["vendor.delay.report"]._read_group(
+            [("partner_id", "=", self.vendor.id)], ["product_id"], ["on_time_rate:sum"]
+        )
+        self.assertEqual([rec[1] for rec in delay_reports], [0.0, 0.0])
+        purchase_order.line_ids.filtered(
+            lambda l: l.product_id == self.product
+        ).product_qty = 0
+        self.assertEqual(self.vendor.purchase_order_count, 1)
+        self.assertTrue(
+            float_compare(self.vendor.on_time_rate, 0.0, precision_rounding=0.01) <= 0,
+            "negative number indicates no data",
+        )
+        self.assertEqual(
+            purchase_order.picking_ids.move_ids.filtered(
+                lambda l: l.product_id == self.product
+            ).state,
+            "cancel",
+        )
+        purchase_order.picking_ids.move_ids.filtered(
+            lambda l: l.product_id == self.product_2
+        ).quantity = 3.0
+        purchase_order.picking_ids.button_validate()
+        self.assertEqual(
+            purchase_order.picking_ids.move_ids.filtered(
+                lambda l: l.product_id == self.product_2
+            ).state,
+            "done",
+        )
+        self.assertEqual(
+            self.vendor.purchase_line_ids.mapped("qty_transferred"), [0.0, 3.0]
+        )
+        self.vendor.invalidate_recordset(fnames=["on_time_rate"])
+        self.assertEqual(self.vendor.on_time_rate, 100.0)
+        purchase_order.picking_ids.move_ids.flush_recordset()
+        delay_reports = self.env["vendor.delay.report"]._read_group(
+            [("partner_id", "=", self.vendor.id)], ["product_id"], ["on_time_rate:sum"]
+        )
+        self.assertEqual([rec[1] for rec in delay_reports], [100.0])
+
+    def test_a_vendor_return_is_not_an_on_time_receipt(self):
+        purchase_order = self.env["purchase.order"].create(
+            {
+                "partner_id": self.vendor.id,
+                "line_ids": [
+                    Command.create(
+                        {
+                            "product_id": self.product.id,
+                            "product_qty": 10.0,
+                            "product_uom_id": self.uom.id,
+                        }
+                    )
+                ],
+            }
+        )
+        purchase_order.action_confirm()
+        receipt = purchase_order.picking_ids
+        receipt.move_ids.quantity = 10.0
+        receipt.move_ids.picked = True
+        receipt._action_done()
+        wizard = Form(
+            self.env["wizard.stock.picking.return"].with_context(
+                active_ids=receipt.ids,
+                active_id=receipt.id,
+                active_model="stock.picking",
+            )
+        ).save()
+        wizard.product_return_moves.quantity = 3.0
+        vendor_return = self.env["stock.picking"].browse(
+            wizard.action_create_returns()["res_id"]
+        )
+        vendor_return.move_ids.quantity = 3.0
+        vendor_return.move_ids.picked = True
+        vendor_return._action_done()
+        self.env.invalidate_all()
+
+        self.assertEqual(self.vendor.on_time_rate, 100.0)
+        [(__, rate)] = self.env["vendor.delay.report"]._read_group(
+            [("partner_id", "=", self.vendor.id)], ["product_id"], ["on_time_rate:sum"]
+        )
+        self.assertEqual(rate, 100.0, "a return to the vendor counted as a receipt")
+
+    def test_cancel_redraft_fulfilled(self):
+        po = self.env["purchase.order"].create(
+            {
+                "partner_id": self.vendor.id,
+                "line_ids": [
+                    Command.create(
+                        {
+                            "product_id": self.product.id,
+                            "product_qty": 2.0,
+                        }
+                    ),
+                ],
+            }
+        )
+        po.action_confirm()
+
+        picking = po.picking_ids[0]
+        picking.button_validate()
+
+        po.action_cancel()
+        self.assertEqual(po.state, "cancel")
+        self.assertEqual(
+            picking.state, "done", "Done pickings should not change state."
+        )
+
+        po.action_draft()
+        self.assertEqual(
+            po.state, "draft", "The PO should gracefully return to draft state."
+        )
+        self.assertEqual(
+            picking.state, "done", "Done pickings should not change state."
+        )
+
+        po.action_confirm()
+        self.assertEqual(po.state, "done")
+        self.assertEqual(
+            len(po.picking_ids),
+            1,
+            "No new pickings should be created for a fulfilled PO.",
+        )
+
+    def test_cancel_redraft_backordered(self):
+        po = self.env["purchase.order"].create(
+            {
+                "partner_id": self.vendor.id,
+                "line_ids": [
+                    Command.create(
+                        {
+                            "product_id": self.product.id,
+                            "product_qty": 5.0,
+                        }
+                    ),
+                ],
+            }
+        )
+        po.action_confirm()
+
+        picking = po.picking_ids[0]
+        move = picking.move_ids[0]
+        move.quantity = 3.0
+        action = picking.button_validate()
+
+        Form(
+            self.env["wizard.stock.picking.validate.partial"].with_context(
+                action["context"]
+            )
+        ).save().process()
+        remainder_qty = po.line_ids.product_qty - move.quantity
+        backorder = picking.backorder_ids[0]
+        self.assertEqual(
+            po.line_ids.qty_transferred,
+            move.quantity,
+            "Only the quantity set in the picking should be received.",
+        )
+        self.assertEqual(
+            backorder.move_ids.quantity,
+            remainder_qty,
+            "The backorder should contain the unreceived quantity.",
+        )
+
+        po.action_cancel()
+        self.assertEqual(po.state, "cancel")
+        self.assertEqual(
+            picking.state, "done", "Done pickings should not change state."
+        )
+        self.assertEqual(
+            backorder.state,
+            "cancel",
+            "The backorder should be cancelled with the PO, as it was not validated.",
+        )
+
+        po.action_draft()
+        self.assertEqual(
+            po.state, "draft", "The PO should gracefully return to draft state."
+        )
+
+        po.action_confirm()
+        self.assertEqual(po.state, "done")
+        self.assertEqual(
+            len(po.picking_ids),
+            3,
+            "A new picking should be created to compensate for the cancelled backorder.",
+        )
+
+        new_picking = po.picking_ids - picking - backorder
+        self.assertEqual(
+            new_picking.move_ids.quantity,
+            remainder_qty,
+            "The newly created picking should contain the amount left undelivered.",
+        )
+
+        new_picking.move_ids.picked = True
+        new_picking.button_validate()
+        self.assertEqual(
+            po.line_ids.qty_transferred,
+            po.line_ids.product_qty,
+            "We should have received the entire quantity specified in the PO.",
+        )

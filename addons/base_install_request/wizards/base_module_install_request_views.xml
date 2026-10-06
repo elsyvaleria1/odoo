@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="base_module_install_request_view_form_record" model="ir.ui.view">
+        <field name="name">base.module.install.request.view.form.record</field>
+        <field name="model">base.module.install.request</field>
+        <field name="arch" type="xml">
+            <form string="Activation Request" create="0">
+                <header />
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="module_id" />
+                            <field name="user_id" />
+                        </group>
+                        <group name="decision" />
+                    </group>
+                    <group string="Why is this module needed?">
+                        <field name="body_html" colspan="2" nolabel="1" readonly="1" />
+                    </group>
+                </sheet>
+                <chatter />
+            </form>
+        </field>
+    </record>
+
+    <record id="base_module_install_request_view_form" model="ir.ui.view">
+        <field name="name">base.module.install.request.view.form</field>
+        <field name="model">base.module.install.request</field>
+        <field name="priority">20</field>
+        <field name="arch" type="xml">
+            <form>
+                <field name="module_id" invisible="1" />
+                <group string="Send to:">
+                    <field
+                        name="user_ids"
+                        widget="many2many_tags"
+                        colspan="2"
+                        nolabel="1" />
+                </group>
+                <group string="Why do you need this module?">
+                    <field
+                        name="body_html"
+                        placeholder="e.g. I'd like to use the SMS Marketing module to organize the promotion of our internal events, and exhibitions. I need access for 3 people of my team."
+                        widget="html"
+                        colspan="2"
+                        nolabel="1" />
+                </group>
+                <footer>
+                    <button
+                        name="action_send_request"
+                        type="object"
+                        string="Request Activation"
+                        class="btn-primary"
+                        data-hotkey="q" />
+                    <button
+                        special="cancel"
+                        string="Cancel"
+                        class="btn-secondary"
+                        data-hotkey="x" />
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="base_module_install_review_view_form" model="ir.ui.view">
+        <field name="name">base.module.install.review.view.form</field>
+        <field name="model">wizard.ir.module.module.install</field>
+        <field name="arch" type="xml">
+            <form>
+                <field name="module_id" invisible="1" />
+                <field name="module_ids" widget="many2many_tags" invisible="1" />
+                <field name="modules_description" />
+                <footer>
+                    <button
+                        name="action_install_module"
+                        type="object"
+                        string="Install App"
+                        class="btn-primary"
+                        data-hotkey="q" />
+                    <button
+                        special="cancel"
+                        string="Cancel"
+                        class="btn-secondary"
+                        data-hotkey="x" />
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_base_module_install_review" model="ir.actions.act_window">
+        <field name="name">You are about to install an extra application</field>
+        <field name="res_model">wizard.ir.module.module.install</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+        <field name="context">{ 'default_module_id': active_id }</field>
+    </record>
+
+</odoo>

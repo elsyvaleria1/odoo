@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="privilege_track_legacy_hash" model="res.groups">
+        <field
+            name="name">Privilege: track and end the legacy portal link fallback</field>
+        <field
+            name="comment">Record the last day a portal link signed with the bare database secret was used, and turn that fallback off once it has been idle long enough; the two system parameters, and only those.</field>
+        <field name="is_privilege" eval="True" />
+    </record>
+
+</odoo>

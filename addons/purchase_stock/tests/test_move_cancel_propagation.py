@@ -1,0 +1,255 @@
+from odoo import Command
+
+from .common import PurchaseTestCommon
+
+
+class TestMoveCancelPropagation(PurchaseTestCommon):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.customer = cls.env["res.partner"].create({"name": "abc"})
+        product = cls.env["product.product"].create(
+            {
+                "name": "Geyser",
+                "is_storable": True,
+                "route_ids": [Command.set([cls.route_mto.id, cls.route_buy.id])],
+                "seller_ids": [
+                    Command.create(
+                        {
+                            "partner_id": cls.customer.id,
+                            "price": 100.0,
+                        }
+                    )
+                ],
+            }
+        )
+        cls.picking_out = cls.env["stock.picking"].create(
+            {
+                "location_id": cls.picking_type_out.default_location_src_id.id,
+                "location_dest_id": cls.customer_location.id,
+                "partner_id": cls.customer.id,
+                "picking_type_id": cls.picking_type_out.id,
+            }
+        )
+        cls.move = cls.env["stock.move"].create(
+            {
+                "product_id": product.id,
+                "product_uom_qty": 10,
+                "product_uom_id": product.uom_id.id,
+                "picking_id": cls.picking_out.id,
+                "location_id": cls.picking_type_out.default_location_src_id.id,
+                "location_dest_id": cls.customer_location.id,
+                "procure_method": "make_to_order",
+            }
+        )
+
+    def test_01_cancel_draft_purchase_order_one_steps(self):
+        self.warehouse.delivery_steps = "ship_only"
+        self.warehouse.reception_steps = "one_step"
+        self.picking_out.location_id = self.picking_type_out.default_location_src_id.id
+        self.move.location_id = self.picking_type_out.default_location_src_id.id
+        self.picking_out.action_confirm()
+
+        purchase_order = self.env["purchase.order"].search(
+            [("partner_id", "=", self.customer.id)]
+        )
+
+        self.assertTrue(purchase_order, "No purchase order created.")
+
+        self.assertEqual(
+            purchase_order.state, "draft", "Purchase order should be in 'draft' state."
+        )
+
+        purchase_order.action_cancel()
+
+        self.assertNotEqual(self.picking_out.state, "cancel")
+
+    def test_02_cancel_confirm_purchase_order_one_steps(self):
+        self.warehouse.delivery_steps = "ship_only"
+        self.warehouse.reception_steps = "one_step"
+        self.picking_out.location_id = self.picking_type_out.default_location_src_id.id
+        self.move.location_id = self.picking_type_out.default_location_src_id.id
+        self.picking_out.action_confirm()
+
+        purchase_order = self.env["purchase.order"].search(
+            [("partner_id", "=", self.customer.id)]
+        )
+        self.assertTrue(purchase_order, "No purchase order created.")
+
+        self.assertEqual(
+            purchase_order.state, "draft", "Purchase order should be in 'draft' state."
+        )
+        purchase_order.action_confirm()
+        picking_in = purchase_order.picking_ids.filtered(
+            lambda r: r.picking_type_id == self.picking_type_in
+        )
+        purchase_order.action_cancel()
+
+        self.assertEqual(picking_in.state, "cancel")
+        self.assertNotEqual(self.picking_out.state, "cancel")
+
+    def test_03_cancel_draft_purchase_order_two_steps_push(self):
+        self.warehouse.delivery_steps = "pick_ship"
+        self.warehouse.reception_steps = "two_steps"
+        self.move.write(
+            {
+                "picking_id": False,
+                "picking_type_id": self.warehouse.pick_type_id.id,
+                "location_final_id": self.customer_location.id,
+            }
+        )
+        self.move._action_confirm()
+        self.assertEqual(self.move.picking_id.state, "waiting")
+
+        purchase_order = self.env["purchase.order"].search(
+            [("partner_id", "=", self.customer.id)]
+        )
+        self.assertTrue(purchase_order, "No purchase order created.")
+        self.assertEqual(
+            purchase_order.state, "draft", "Purchase order should be in 'draft' state."
+        )
+        purchase_order.action_cancel()
+
+        self.assertNotEqual(self.move.picking_id.state, "cancel")
+        self.assertEqual(self.move.procure_method, "make_to_stock")
+
+    def test_04_cancel_confirm_purchase_order_two_steps_push(self):
+        self.warehouse.delivery_steps = "pick_ship"
+        self.warehouse.reception_steps = "two_steps"
+        self.move.write(
+            {
+                "picking_id": False,
+                "picking_type_id": self.warehouse.pick_type_id.id,
+                "location_final_id": self.customer_location.id,
+            }
+        )
+        self.move._action_confirm()
+        self.assertEqual(self.move.picking_id.state, "waiting")
+
+        purchase_order = self.env["purchase.order"].search(
+            [("partner_id", "=", self.customer.id)]
+        )
+        self.assertTrue(purchase_order, "purchase order is created.")
+
+        self.assertEqual(
+            purchase_order.state, "draft", "Purchase order should be in 'draft' state."
+        )
+
+        purchase_order.action_confirm()
+        picking_in = purchase_order.picking_ids.filtered(
+            lambda r: r.picking_type_id == self.picking_type_in
+        )
+        purchase_order.action_cancel()
+
+        self.assertEqual(picking_in.state, "cancel")
+        self.assertNotEqual(self.move.picking_id.state, "cancel")
+
+    def test_05_cancel_draft_purchase_order_three_steps_push(self):
+        self.warehouse.delivery_steps = "pick_pack_ship"
+        self.warehouse.reception_steps = "three_steps"
+        self.move.write(
+            {
+                "picking_id": False,
+                "picking_type_id": self.warehouse.pick_type_id.id,
+                "location_final_id": self.customer_location.id,
+            }
+        )
+        self.move._action_confirm()
+        self.assertEqual(self.move.picking_id.state, "waiting")
+
+        purchase_order = self.env["purchase.order"].search(
+            [("partner_id", "=", self.customer.id)]
+        )
+        self.assertTrue(purchase_order, "No purchase order created.")
+
+        self.assertEqual(
+            purchase_order.state, "draft", "Purchase order should be in 'draft' state."
+        )
+        purchase_order.action_cancel()
+
+        self.assertNotEqual(self.move.picking_id.state, "cancel")
+        self.assertEqual(self.move.procure_method, "make_to_stock")
+
+    def test_06_cancel_confirm_purchase_order_three_steps_push(self):
+        self.warehouse.delivery_steps = "pick_pack_ship"
+        self.warehouse.reception_steps = "three_steps"
+        self.move.write(
+            {
+                "picking_id": False,
+                "picking_type_id": self.warehouse.pick_type_id.id,
+                "location_final_id": self.customer_location.id,
+            }
+        )
+        self.move._action_confirm()
+        self.assertEqual(self.move.picking_id.state, "waiting")
+
+        purchase_order = self.env["purchase.order"].search(
+            [("partner_id", "=", self.customer.id)]
+        )
+        self.assertTrue(purchase_order, "No purchase order created.")
+
+        self.assertEqual(
+            purchase_order.state, "draft", "Purchase order should be in 'draft' state."
+        )
+
+        purchase_order.action_confirm()
+        picking_in = purchase_order.picking_ids.filtered(
+            lambda r: r.picking_type_id == self.picking_type_in
+        )
+        purchase_order.action_cancel()
+
+        self.assertEqual(picking_in.state, "cancel")
+        self.assertNotEqual(self.move.picking_id.state, "cancel")
+
+    def test_cancel_move_lines_operation(self):
+        partner = self.env["res.partner"].create({"name": "Steve"})
+        product_car = self.env["product.product"].create(
+            {
+                "name": "Car",
+                "is_storable": True,
+                "route_ids": [
+                    Command.link(self.route_mto.id),
+                    Command.link(self.route_buy.id),
+                ],
+                "seller_ids": [
+                    Command.create(
+                        {
+                            "product_uom_id": self.env.ref("uom.product_uom_unit").id,
+                            "partner_id": partner.id,
+                            "price": 10.0,
+                        }
+                    )
+                ],
+            }
+        )
+        customer_picking = self.env["stock.picking"].create(
+            {
+                "location_id": self.stock_location.id,
+                "location_dest_id": self.customer_location.id,
+                "partner_id": partner.id,
+                "picking_type_id": self.picking_type_out.id,
+            }
+        )
+        customer_move = self.env["stock.move"].create(
+            {
+                "location_id": self.stock_location.id,
+                "location_dest_id": self.customer_location.id,
+                "product_id": product_car.id,
+                "product_uom_id": product_car.uom_id.id,
+                "product_uom_qty": 10.0,
+                "procure_method": "make_to_order",
+                "picking_id": customer_picking.id,
+            }
+        )
+        customer_move._action_confirm()
+        purchase_order = self.env["purchase.order"].search(
+            [("partner_id", "=", partner.id)]
+        )
+        customer_move._action_cancel()
+        self.assertEqual(customer_move.state, "cancel", "Move should be cancelled")
+        purchase_order.action_cancel()
+        self.assertEqual(
+            customer_move.state,
+            "cancel",
+            "State of cancelled and done moves should not change.",
+        )

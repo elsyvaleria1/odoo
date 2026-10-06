@@ -1,0 +1,2 @@
+from . import wizard_res_partner_update_address
+from . import wizard_res_company_view_avatax_connection

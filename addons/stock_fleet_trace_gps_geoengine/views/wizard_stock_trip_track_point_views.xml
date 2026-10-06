@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!--
+        The trail map draws the trip's points through this view: a layer on
+        another model needs one, and its popup names the marker.
+    -->
+    <record id="wizard_stock_trip_track_point_view_geoengine" model="ir.ui.view">
+        <field name="name">wizard.stock.trip.track.point.geoengine</field>
+        <field name="model">wizard.stock.trip.track.point</field>
+        <field name="arch" type="xml">
+            <geoengine>
+                <field name="name" />
+                <field name="kind" />
+                <field name="label" />
+                <field name="date" />
+                <field name="color" />
+                <field name="the_point" />
+                <templates>
+                    <t t-name="info_box">
+                        <div class="o_geoengine_popup">
+                            <strong><t t-out="record.name.value" /></strong>
+                            <div><t t-out="record.label.value" /></div>
+                        </div>
+                    </t>
+                </templates>
+            </geoengine>
+        </field>
+    </record>
+
+</odoo>

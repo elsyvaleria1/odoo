@@ -1,0 +1,20 @@
+/** @odoo-module native */
+import { Plugin } from "@html_editor/plugin";
+import { registry } from "@web/core/registry";
+import { _t } from "@web/core/translation";
+
+class HrRecruitmentSearchbarOptionPlugin extends Plugin {
+    static id = "hrRecruitmentSearchbarOption";
+
+    resources = {
+        searchbar_option_display_items: {
+            label: _t("Description"),
+            dataAttribute: "displayDescription",
+            dependency: "search_jobs_opt",
+        },
+    };
+}
+
+registry
+    .category("website-plugins")
+    .add(HrRecruitmentSearchbarOptionPlugin.id, HrRecruitmentSearchbarOptionPlugin);

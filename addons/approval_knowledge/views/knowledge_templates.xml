@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <template id="article_request_access">
+        <t t-call="web.layout">
+            <t t-set="head">
+                <t t-call-assets="web.assets_frontend" />
+            </t>
+            <div class="container py-5 text-center">
+                <h1 class="mb-3">You cannot open this article yet.</h1>
+                <t t-if="requested_role">
+                    <h4>
+                        <t t-if="requested_role == 'write'">Your request to edit it is waiting for a decision.</t>
+                        <t t-else="">Your request to read it is waiting for a decision.</t>
+                    </h4>
+                </t>
+                <t t-else="">
+                    <h4>Ask its editors for access.</h4>
+                    <p t-if="error" class="text-danger" t-out="error" />
+                    <form
+                        method="post"
+                        class="d-flex justify-content-center gap-2 mt-3"
+                        t-attf-action="/knowledge/article/#{article_id}/request_access">
+                        <input
+                            type="hidden"
+                            name="csrf_token"
+                            t-att-value="request.csrf_token()" />
+                        <button type="submit" name="role" value="read" class="btn btn-primary">Request to read</button>
+                        <button type="submit" name="role" value="write" class="btn btn-secondary">Request to edit</button>
+                    </form>
+                </t>
+            </div>
+        </t>
+    </template>
+
+</odoo>

@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="bill_fuel_civic_001" model="account.move">
+        <field name="move_type">in_invoice</field>
+        <field name="partner_id" ref="asset_ledger.vendor_fuel_station" />
+        <field
+            name="invoice_date"
+            eval="(DateTime.now() - timedelta(days=10)).strftime('%Y-%m-%d')" />
+        <field
+            name="invoice_date_due"
+            eval="(DateTime.now() + timedelta(days=20)).strftime('%Y-%m-%d')" />
+        <field name="ref">FUEL-INV-2024-001</field>
+    </record>
+
+    <record id="bill_fuel_f150_001" model="account.move">
+        <field name="move_type">in_invoice</field>
+        <field name="partner_id" ref="asset_ledger.vendor_fuel_station" />
+        <field
+            name="invoice_date"
+            eval="(DateTime.now() - timedelta(days=8)).strftime('%Y-%m-%d')" />
+        <field
+            name="invoice_date_due"
+            eval="(DateTime.now() + timedelta(days=22)).strftime('%Y-%m-%d')" />
+        <field name="ref">FUEL-INV-2024-002</field>
+    </record>
+
+    <record id="bill_fuel_transit_001" model="account.move">
+        <field name="move_type">in_invoice</field>
+        <field name="partner_id" ref="asset_ledger.vendor_fuel_station" />
+        <field
+            name="invoice_date"
+            eval="(DateTime.now() - timedelta(days=6)).strftime('%Y-%m-%d')" />
+        <field
+            name="invoice_date_due"
+            eval="(DateTime.now() + timedelta(days=24)).strftime('%Y-%m-%d')" />
+        <field name="ref">FUEL-INV-2024-003</field>
+    </record>
+
+    <record id="bill_fuel_tractor_001" model="account.move">
+        <field name="move_type">in_invoice</field>
+        <field name="partner_id" ref="asset_ledger.vendor_fuel_station" />
+        <field
+            name="invoice_date"
+            eval="(DateTime.now() - timedelta(days=12)).strftime('%Y-%m-%d')" />
+        <field
+            name="invoice_date_due"
+            eval="(DateTime.now() + timedelta(days=18)).strftime('%Y-%m-%d')" />
+        <field name="ref">FUEL-INV-2024-004</field>
+    </record>
+
+    <record id="bill_maintenance_civic_001" model="account.move">
+        <field name="move_type">in_invoice</field>
+        <field name="partner_id" ref="asset_ledger.vendor_auto_service_center" />
+        <field
+            name="invoice_date"
+            eval="(DateTime.now() - timedelta(days=15)).strftime('%Y-%m-%d')" />
+        <field
+            name="invoice_date_due"
+            eval="(DateTime.now() + timedelta(days=15)).strftime('%Y-%m-%d')" />
+        <field name="ref">SERV-INV-2024-105</field>
+    </record>
+
+    <record id="bill_maintenance_f150_001" model="account.move">
+        <field name="move_type">in_invoice</field>
+        <field name="partner_id" ref="asset_ledger.vendor_auto_service_center" />
+        <field
+            name="invoice_date"
+            eval="(DateTime.now() - timedelta(days=20)).strftime('%Y-%m-%d')" />
+        <field
+            name="invoice_date_due"
+            eval="(DateTime.now() + timedelta(days=10)).strftime('%Y-%m-%d')" />
+        <field name="ref">SERV-INV-2024-106</field>
+    </record>
+
+    <record id="bill_maintenance_model3_001" model="account.move">
+        <field name="move_type">in_invoice</field>
+        <field name="partner_id" ref="asset_ledger.vendor_tesla_service" />
+        <field
+            name="invoice_date"
+            eval="(DateTime.now() - timedelta(days=5)).strftime('%Y-%m-%d')" />
+        <field
+            name="invoice_date_due"
+            eval="(DateTime.now() + timedelta(days=25)).strftime('%Y-%m-%d')" />
+        <field name="ref">TESLA-SERV-2024-089</field>
+    </record>
+
+    <record id="bill_maintenance_tractor_001" model="account.move">
+        <field name="move_type">in_invoice</field>
+        <field name="partner_id" ref="asset_ledger.vendor_heavy_equipment_service" />
+        <field
+            name="invoice_date"
+            eval="(DateTime.now() - timedelta(days=25)).strftime('%Y-%m-%d')" />
+        <field
+            name="invoice_date_due"
+            eval="(DateTime.now() + timedelta(days=5)).strftime('%Y-%m-%d')" />
+        <field name="ref">HEAVY-SERV-2024-045</field>
+    </record>
+
+    <record id="bill_insurance_civic_001" model="account.move">
+        <field name="move_type">in_invoice</field>
+        <field name="partner_id" ref="asset_ledger.vendor_insurance_company" />
+        <field
+            name="invoice_date"
+            eval="(DateTime.now() - timedelta(days=30)).strftime('%Y-%m-%d')" />
+        <field name="invoice_date_due" eval="(DateTime.now()).strftime('%Y-%m-%d')" />
+        <field name="ref">INSURANCE-2024-CIVIC-001</field>
+    </record>
+
+    <record id="bill_insurance_f150_001" model="account.move">
+        <field name="move_type">in_invoice</field>
+        <field name="partner_id" ref="asset_ledger.vendor_insurance_company" />
+        <field
+            name="invoice_date"
+            eval="(DateTime.now() - timedelta(days=35)).strftime('%Y-%m-%d')" />
+        <field
+            name="invoice_date_due"
+            eval="(DateTime.now() - timedelta(days=5)).strftime('%Y-%m-%d')" />
+        <field name="ref">INSURANCE-2024-F150-001</field>
+    </record>
+
+    <record id="bill_insurance_model3_001" model="account.move">
+        <field name="move_type">in_invoice</field>
+        <field name="partner_id" ref="asset_ledger.vendor_insurance_company" />
+        <field
+            name="invoice_date"
+            eval="(DateTime.now() - timedelta(days=10)).strftime('%Y-%m-%d')" />
+        <field
+            name="invoice_date_due"
+            eval="(DateTime.now() + timedelta(days=20)).strftime('%Y-%m-%d')" />
+        <field name="ref">INSURANCE-2024-MODEL3-001</field>
+    </record>
+
+    <record id="bill_multi_asset_001" model="account.move">
+        <field name="move_type">in_invoice</field>
+        <field name="partner_id" ref="asset_ledger.vendor_auto_service_center" />
+        <field
+            name="invoice_date"
+            eval="(DateTime.now() - timedelta(days=18)).strftime('%Y-%m-%d')" />
+        <field
+            name="invoice_date_due"
+            eval="(DateTime.now() + timedelta(days=12)).strftime('%Y-%m-%d')" />
+        <field name="ref">SERV-MULTI-2024-150</field>
+    </record>
+
+</odoo>

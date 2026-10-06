@@ -1,0 +1,10 @@
+id,name,model_id/id,group_id/id,kind,operation,reach,anchor,domain
+spreadsheet_cell_thread_rule_sale_manager,Sale order spreadsheet threads: groups,spreadsheet_edition.model_spreadsheet_cell_thread,sale.group_sale_manager,permission,cru,all,,"[('sale_order_spreadsheet_id', '!=', False)]"
+spreadsheet_cell_thread_rule_salesman,Personal Order Spreadsheets Comments,spreadsheet_edition.model_spreadsheet_cell_thread,sale.group_sale_salesman,permission,cru,own,sale_order_spreadsheet_order_user_or_unset,"['&', ('sale_order_spreadsheet_id', '!=', False), ('sale_order_spreadsheet_id.order_id', '!=', False)]"
+spreadsheet_cell_thread_rule_salesman_all_leads,All Orders Spreadsheets Comments,spreadsheet_edition.model_spreadsheet_cell_thread,sale.group_sale_salesman_all_leads,permission,cru,all,,"['&', ('sale_order_spreadsheet_id', '!=', False), ('sale_order_spreadsheet_id.order_id', '!=', False)]"
+sale_order_spreadsheet_rule_sale_manager,Manager Order Spreadsheets,model_sale_order_spreadsheet,sale.group_sale_manager,permission,cud,,,
+sale_order_spreadsheet_rule_salesman_template,Order Spreadsheet Templates,model_sale_order_spreadsheet,sale.group_sale_salesman,permission,r,all,,"[('order_id', '=', False)]"
+sale_order_spreadsheet_rule_salesman,Personal Order Spreadsheets,model_sale_order_spreadsheet,sale.group_sale_salesman,permission,crud,own,,"[('order_id', '!=', False)]"
+sale_order_spreadsheet_rule_salesman_all_leads,All Orders Spreadsheets,model_sale_order_spreadsheet,sale.group_sale_salesman_all_leads,permission,cud,all,,"[('order_id', '!=', False)]"
+sale_order_spreadsheet_rule_readonly,Sale order spreadsheet: read-only sees all,model_sale_order_spreadsheet,sale.group_sale_readonly,permission,r,,,
+sale_order_spreadsheet_rule_company,Order Spreadsheet multi-company,model_sale_order_spreadsheet,base.group_everyone,guard,crud,company,,

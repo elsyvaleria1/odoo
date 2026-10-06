@@ -1,0 +1,721 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="resource_asset_view_list_fleet" model="ir.ui.view">
+        <field name="name">resource.asset.list.fleet.assets</field>
+        <field name="model">resource.asset.vehicle</field>
+        <field name="inherit_id" ref="resource_asset_vehicle.fleet_vehicle_view_tree" />
+        <field name="arch" type="xml">
+            <field name="state" position="before">
+                <field name="currency_id" column_invisible="True" />
+                <field name="kind_code" column_invisible="True" />
+                <field name="model_year" optional="hide" options="{'format': false}" />
+                <field name="engine_sn" optional="hide" />
+                <field name="date_disposal" optional="hide" />
+                <field name="value_original" optional="hide" />
+                <field name="value_residual" optional="hide" />
+                <field name="activity_ids" widget="list_activity" optional="show" />
+            </field>
+        </field>
+    </record>
+
+    <record id="resource_asset_view_kanban_fleet" model="ir.ui.view">
+        <field name="name">resource.asset.kanban.fleet.assets</field>
+        <field name="model">resource.asset.vehicle</field>
+        <field
+            name="inherit_id"
+            ref="resource_asset_vehicle.fleet_vehicle_view_kanban" />
+        <field name="arch" type="xml">
+            <field name="state" position="after">
+                <field name="currency_id" />
+                <field name="odometer" />
+                <field name="odometer_uom_name" />
+                <field name="location" />
+                <field name="service_activity" />
+                <field name="value_residual" />
+            </field>
+            <xpath expr="//main" position="inside">
+                <div class="row g-2 mt-1">
+                    <div class="col-6 text-muted small">
+                        <i class="fa-solid fa-gauge-high me-1" title="Odometer" />
+                        <field name="odometer" />
+                        <field name="odometer_uom_name" class="ms-1" />
+                    </div>
+                    <div
+                        class="col-6 text-muted small"
+                        t-if="record.location.raw_value">
+                        <i class="fa-solid fa-location-dot me-1" title="Location" />
+                        <field name="location" />
+                    </div>
+                </div>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="resource_asset_view_search_asset" model="ir.ui.view">
+        <field name="name">resource.asset.asset.search</field>
+        <field name="model">resource.asset</field>
+        <field name="arch" type="xml">
+            <search string="Assets">
+                <field
+                    name="name"
+                    string="Asset"
+                    filter_domain="['|', '|', ('name', 'ilike', self), ('vin_sn', 'ilike', self), ('license_plate', 'ilike', self)]" />
+                <field name="product_id" string="Model" />
+                <field name="kind_code" />
+                <field name="kind_id" />
+                <field name="location" />
+                <field name="holder_id" />
+                <field name="asset_tag_ids" />
+                <separator />
+                <filter
+                    name="service_overdue"
+                    string="Service Overdue"
+                    domain="[('service_activity', '=', 'overdue')]" />
+                <filter
+                    name="service_today"
+                    string="Service Today"
+                    domain="[('service_activity', '=', 'today')]" />
+                <filter
+                    name="missing_identifiers"
+                    string="Missing Identifiers"
+                    domain="[('missing_identifier_type_ids', '!=', False)]" />
+                <separator />
+                <filter
+                    name="archived"
+                    string="Archived"
+                    domain="[('active', '=', False)]" />
+                <group>
+                    <filter
+                        name="group_by_kind_code"
+                        string="Asset Type"
+                        context="{'group_by': 'kind_code'}" />
+                    <filter
+                        name="group_by_product"
+                        string="Model"
+                        context="{'group_by': 'product_id'}" />
+                    <filter
+                        name="group_by_location"
+                        string="Location"
+                        context="{'group_by': 'location'}" />
+                    <filter
+                        name="group_by_state"
+                        string="State"
+                        context="{'group_by': 'state'}" />
+                    <filter
+                        name="group_by_service_activity"
+                        string="Service Activity"
+                        context="{'group_by': 'service_activity'}" />
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="resource_asset_view_list_property" model="ir.ui.view">
+        <field name="name">resource.asset.property.list</field>
+        <field name="model">resource.asset</field>
+        <field name="arch" type="xml">
+            <list
+                string="Properties"
+                multi_edit="1"
+                decoration-muted="state in ('out_of_service', 'disposed')">
+                <field name="currency_id" column_invisible="True" />
+                <field name="kind_code" column_invisible="1" />
+                <field name="name" decoration-bf="1" />
+                <field
+                    name="product_id"
+                    string="Property Type"
+                    optional="show"
+                    readonly="1" />
+                <field name="location" optional="show" />
+                <field
+                    name="asset_tag_ids"
+                    widget="many2many_tags"
+                    optional="show"
+                    options="{'color_field': 'color'}" />
+                <field name="area" string="Area (m²)" optional="show" />
+                <field name="model_year" optional="show" options="{'format': false}" />
+                <field name="state" widget="badge" optional="show" />
+                <field name="date_acquisition" optional="show" />
+                <field name="value_original" string="Purchase Value" optional="show" />
+                <field name="value_residual" string="Current Value" optional="show" />
+                <field name="account_prefix" optional="hide" />
+                <field name="brand_new" optional="hide" />
+                <field name="activity_ids" widget="list_activity" optional="show" />
+            </list>
+        </field>
+    </record>
+
+    <record id="resource_asset_view_list_general" model="ir.ui.view">
+        <field name="name">resource.asset.general.list</field>
+        <field name="model">resource.asset</field>
+        <field name="arch" type="xml">
+            <list
+                string="Assets"
+                multi_edit="1"
+                decoration-muted="state in ('out_of_service', 'disposed')">
+                <field name="currency_id" column_invisible="True" />
+                <field name="kind_code" optional="show" />
+                <field name="name" decoration-bf="1" />
+                <field
+                    name="product_id"
+                    string="Asset Model"
+                    optional="show"
+                    readonly="1" />
+                <field name="state" widget="badge" optional="show" />
+                <field name="holder_id" optional="show" />
+                <field name="location" optional="show" />
+                <field
+                    name="asset_tag_ids"
+                    widget="many2many_tags"
+                    optional="show"
+                    options="{'color_field': 'color'}" />
+                <field name="model_year" optional="hide" options="{'format': false}" />
+                <field name="vin_sn" string="Serial Number" optional="hide" />
+                <field name="date_acquisition" optional="show" />
+                <field name="value_original" optional="show" />
+                <field name="value_residual" optional="show" />
+                <field name="odometer" optional="hide" />
+                <field name="area" optional="hide" />
+                <field
+                    name="service_activity"
+                    widget="badge"
+                    optional="show"
+                    decoration-danger="service_activity == 'overdue'"
+                    decoration-warning="service_activity == 'today'" />
+                <field name="activity_ids" widget="list_activity" optional="show" />
+            </list>
+        </field>
+    </record>
+
+    <record id="resource_asset_view_kanban_property" model="ir.ui.view">
+        <field name="name">resource.asset.property.kanban</field>
+        <field name="model">resource.asset</field>
+        <field name="arch" type="xml">
+            <kanban
+                class="o_kanban_asset o_kanban_property"
+                group_create="false"
+                group_delete="false">
+                <field name="id" />
+                <field name="currency_id" />
+                <field name="name" />
+                <field name="state" />
+                <field name="product_id" />
+                <field name="location" />
+                <field name="area" />
+                <field name="model_year" options="{'format': false}" />
+                <field name="date_acquisition" />
+                <field name="value_original" />
+                <field name="value_residual" />
+                <field name="account_prefix" />
+                <field name="company_id" />
+                <field name="activity_ids" />
+                <field name="activity_state" />
+                <templates>
+                    <t t-name="card">
+                        <div class="o_kanban_card_content">
+                            <div class="o_kanban_card_header mb-2">
+                                <div class="o_kanban_card_header_title">
+                                    <div class="o_primary">
+                                        <a type="open" class="fs-5 fw-bold text-dark">
+                                            <field name="name" />
+                                        </a>
+                                    </div>
+                                    <div class="o_secondary text-muted">
+                                        <field name="product_id" />
+                                    </div>
+                                    <field
+                                        name="asset_tag_ids"
+                                        widget="many2many_tags"
+                                        options="{'color_field': 'color'}" />
+                                </div>
+                            </div>
+                            <div class="container-fluid mt-3">
+                                <div class="row g-2">
+                                    <div class="col-12">
+                                        <div class="o_kanban_card_section mb-3">
+                                            <div
+                                                class="row mb-2"
+                                                t-if="record.location.raw_value">
+                                                <div class="col-12 text-muted small">
+                                                    <i class="fa-solid fa-location-dot me-1" title="Location" />Address </div>
+                                                <div
+                                                    class="col-12"
+                                                    t-att-title="record.location.raw_value">
+                                                    <field name="location" />
+                                                </div>
+                                            </div>
+                                            <div
+                                                class="row mb-2"
+                                                t-if="record.area.raw_value">
+                                                <div class="col-12 text-muted small">
+                                                    <i class="fa-solid fa-maximize me-1" title="Area" /> Area </div>
+                                                <div class="col-12 fw-bold">
+                                                    <field name="area" /> m² </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="row mb-2">
+                                            <div class="col-12 text-muted small">
+                                                Original Value
+                                            </div>
+                                            <div class="col-12 fw-bold">
+                                                <field
+                                                    name="value_original"
+                                                    widget="monetary" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="row mb-2">
+                                            <div class="col-12 text-muted small">
+                                                Current Value
+                                            </div>
+                                            <div class="col-12 fw-bold text-success">
+                                                <field
+                                                    name="value_residual"
+                                                    widget="monetary" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div
+                                        class="col-6"
+                                        t-if="record.date_acquisition.raw_value">
+                                        <div class="row">
+                                            <div class="col-12 text-muted small">
+                                                Acquisition Date
+                                            </div>
+                                            <div class="col-12">
+                                                <field name="date_acquisition" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div
+                                        class="col-6"
+                                        t-if="record.model_year.raw_value">
+                                        <div class="row">
+                                            <div class="col-12 text-muted small">
+                                                Model Year
+                                            </div>
+                                            <div class="col-12">
+                                                <field
+                                                    name="model_year"
+                                                    options="{'format': false}" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="o_kanban_card_footer mt-3 pt-3 border-top">
+                                <div class="d-flex gap-1 mb-2">
+                                    <button type="open" class="btn btn-sm btn-secondary flex-fill"><i class="fa-regular fa-pen-to-square me-1" title="Edit" /> Edit</button>
+                                </div>
+                                <div
+                                    class="d-flex justify-content-between align-items-center">
+                                    <div class="text-muted small">
+                                        <span t-if="record.account_prefix.raw_value"> Ref: <field name="account_prefix" /></span>
+                                    </div>
+                                    <field
+                                        name="activity_ids"
+                                        widget="kanban_activity" />
+                                </div>
+                            </div>
+                        </div>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
+    <record id="resource_asset_view_kanban_general" model="ir.ui.view">
+        <field name="name">resource.asset.general.kanban</field>
+        <field name="model">resource.asset</field>
+        <field name="arch" type="xml">
+            <kanban
+                class="o_kanban_asset o_kanban_general"
+                group_create="false"
+                group_delete="false">
+                <field name="id" />
+                <field name="currency_id" />
+                <field name="name" />
+                <field name="state" />
+                <field name="kind_code" />
+                <field name="kind_id" />
+                <field name="product_id" />
+                <field name="vin_sn" />
+                <field name="location" />
+                <field name="holder_id" />
+                <field name="model_year" options="{'format': false}" />
+                <field name="value_residual" />
+                <field name="service_activity" />
+                <field name="odometer" />
+                <field name="company_id" />
+                <field name="activity_ids" />
+                <field name="activity_state" />
+                <templates>
+                    <t t-name="card">
+                        <div class="o_kanban_card_content">
+                            <div class="o_kanban_card_header mb-2">
+                                <div class="o_kanban_card_header_title">
+                                    <div class="o_primary d-flex align-items-center">
+                                        <a type="open" class="fs-5 fw-bold text-dark me-2"><field name="name" /></a>
+                                        <span class="badge bg-primary">
+                                            <field name="kind_id" />
+                                        </span>
+                                    </div>
+                                    <div class="o_secondary text-muted">
+                                        <field name="product_id" />
+                                    </div>
+                                    <field
+                                        name="asset_tag_ids"
+                                        widget="many2many_tags"
+                                        options="{'color_field': 'color'}" />
+                                </div>
+                            </div>
+                            <div class="container-fluid mt-3">
+                                <div class="row g-2">
+                                    <div class="col-12">
+                                        <div class="o_kanban_card_section mb-2">
+                                            <div
+                                                class="row mb-2"
+                                                t-if="record.vin_sn.raw_value">
+                                                <div class="col-12 text-muted small">
+                                                    <i class="fa-solid fa-barcode me-1" title="Serial Number" />Serial Number </div>
+                                                <div
+                                                    class="col-12 font-monospace small">
+                                                    <field name="vin_sn" />
+                                                </div>
+                                            </div>
+                                            <div
+                                                class="row mb-2"
+                                                t-if="record.holder_id.raw_value">
+                                                <div class="col-12 text-muted small">
+                                                    <i class="fa-solid fa-user me-1" title="Holder" />Holder </div>
+                                                <div class="col-12">
+                                                    <field name="holder_id" />
+                                                </div>
+                                            </div>
+                                            <div
+                                                class="row mb-2"
+                                                t-if="record.location.raw_value">
+                                                <div class="col-12 text-muted small">
+                                                    <i class="fa-solid fa-location-dot me-1" title="Location" />Location </div>
+                                                <div class="col-12">
+                                                    <field name="location" />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div
+                                        class="col-6"
+                                        t-if="record.odometer.raw_value &gt; 0">
+                                        <div class="row">
+                                            <div class="col-12 text-muted small">
+                                                <i class="fa-solid fa-gauge-high me-1" title="Odometer" /> Hours/KM </div>
+                                            <div class="col-12 fw-bold">
+                                                <field name="odometer" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div
+                                        class="col-6"
+                                        t-if="record.model_year.raw_value">
+                                        <div class="row">
+                                            <div class="col-12 text-muted small">Year</div>
+                                            <div class="col-12 fw-bold">
+                                                <field
+                                                    name="model_year"
+                                                    options="{'format': false}" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-12">
+                                        <div class="d-flex gap-1 flex-wrap mt-2">
+                                            <span t-if="record.service_activity.raw_value == 'overdue'" class="badge bg-danger"><i class="fa-solid fa-wrench me-1" title="Service" />Service Overdue</span>
+                                            <span t-if="record.service_activity.raw_value == 'today'" class="badge bg-warning text-dark"><i class="fa-solid fa-wrench me-1" title="Service" />Service Today</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="o_kanban_card_footer mt-3 pt-3 border-top">
+                                <div class="d-flex gap-1 mb-2">
+                                    <button name="action_view_logs_service" type="object" class="btn btn-sm btn-primary flex-fill"><i class="fa-solid fa-wrench me-1" title="Service" /> Services</button>
+                                    <button type="open" class="btn btn-sm btn-secondary flex-fill"><i class="fa-regular fa-pen-to-square me-1" title="Edit" /> Edit</button>
+                                </div>
+                                <div
+                                    class="d-flex justify-content-between align-items-center">
+                                    <div class="text-muted small"> Value: <field name="value_residual" widget="monetary" /></div>
+                                    <field
+                                        name="activity_ids"
+                                        widget="kanban_activity" />
+                                </div>
+                            </div>
+                        </div>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
+    <record id="resource_asset_view_form_ledger" model="ir.ui.view">
+        <field name="name">resource.asset.form.ledger</field>
+        <field name="model">resource.asset</field>
+        <field name="inherit_id" ref="resource_asset.resource_asset_view_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//sheet/widget[@name='web_ribbon']" position="before">
+                <div class="oe_button_box" name="button_box">
+                    <button
+                        name="action_view_logs_all"
+                        type="object"
+                        title="View all asset records"
+                        icon="fa-book"
+                        class="oe_stat_button">
+                        <field name="count_logs_all" string="Logs" widget="statinfo" />
+                    </button>
+                    <button
+                        name="action_view_logs_service"
+                        type="object"
+                        title="View service records"
+                        icon="fa-wrench"
+                        invisible="kind_code not in ('vehicle', 'equipment', 'machinery')"
+                        class="oe_stat_button">
+                        <field
+                            name="count_logs_service"
+                            string="Services"
+                            widget="statinfo" />
+                    </button>
+                    <button
+                        name="action_view_logs_fuel"
+                        type="object"
+                        title="View fuel logs"
+                        icon="fa-tint"
+                        invisible="kind_code not in ('vehicle', 'machinery')"
+                        class="oe_stat_button">
+                        <field name="count_logs_fuel" string="Fuel" widget="statinfo" />
+                    </button>
+                </div>
+            </xpath>
+            <xpath expr="//div[hasclass('oe_title')]" position="before">
+                <div
+                    class="alert alert-warning mb-0"
+                    role="alert"
+                    invisible="not missing_identifier_type_ids">
+                    <span>This asset's kind requires identifiers it does not carry:</span>
+                    <field
+                        name="missing_identifier_type_ids"
+                        widget="many2many_tags"
+                        nolabel="1"
+                        readonly="1" />
+                </div>
+            </xpath>
+            <field name="kind_id" position="before">
+                <field name="kind_code" invisible="1" />
+                <field name="currency_id" invisible="1" />
+                <field
+                    name="product_id"
+                    string="Asset Model"
+                    domain="[('asset_kind_code', 'in', context.get('kind_code_scope', ['vehicle', 'property', 'equipment', 'machinery', 'it', 'tool']))]" />
+            </field>
+            <field name="brand_new" position="after">
+                <field
+                    name="location"
+                    placeholder="e.g. Main Garage, Industrial Park" />
+                <field
+                    name="asset_tag_ids"
+                    widget="many2many_tags"
+                    options="{'color_field': 'color', 'no_create_edit': True}" />
+            </field>
+            <xpath expr="//notebook" position="before">
+                <group name="asset_identification" string="Identification">
+                    <!-- Which identity a kind expects is the kind's
+                        `identifier_type_ids`, and a gap shows in the banner
+                        above. These modifiers only keep a building's form
+                        from asking for a plate. -->
+                    <field
+                        name="license_plate"
+                        placeholder="e.g. ABC-123"
+                        invisible="kind_code == 'property'" />
+                    <field name="vin_sn" invisible="kind_code == 'property'" />
+                    <field name="engine_sn" invisible="kind_code == 'property'" />
+                    <label for="area" invisible="kind_code != 'property'" />
+                    <div class="o_row" invisible="kind_code != 'property'">
+                        <field name="area" />
+                        <field name="area_uom_name" />
+                    </div>
+                    <field name="account_prefix" />
+                </group>
+                <group name="asset_lifecycle">
+                    <group name="asset_financial" string="Financial Information">
+                        <field
+                            name="value_residual"
+                            string="Current Value"
+                            widget="monetary" />
+                    </group>
+                    <group name="asset_operational" string="Operational Data">
+                        <label
+                            for="odometer"
+                            string="Current Odometer"
+                            invisible="kind_code == 'property'" />
+                        <div class="o_row" invisible="kind_code == 'property'">
+                            <field name="odometer" />
+                            <field
+                                name="odometer_uom_id"
+                                options="{'no_create': True}" />
+                        </div>
+                        <field
+                            name="service_activity"
+                            widget="badge"
+                            invisible="kind_code not in ('vehicle', 'equipment', 'machinery')" />
+                    </group>
+                </group>
+            </xpath>
+            <xpath
+                expr="//group[@name='asset_financial']/field[@name='value_residual']"
+                position="before">
+                <xpath
+                    expr="//group[@name='purchase']/field[@name='value_original']"
+                    position="move" />
+            </xpath>
+            <xpath expr="//page[@name='lifecycle']" position="after">
+            </xpath>
+        </field>
+    </record>
+
+    <record id="resource_asset_view_search_ledger" model="ir.ui.view">
+        <field name="name">resource.asset.search.ledger</field>
+        <field name="model">resource.asset</field>
+        <field name="inherit_id" ref="resource_asset.resource_asset_view_search" />
+        <field name="arch" type="xml">
+            <field name="holder_id" position="after">
+                <field name="product_id" string="Model" />
+                <field name="license_plate" />
+                <field name="vin_sn" />
+                <field name="asset_tag_ids" />
+                <filter
+                    name="service_overdue"
+                    string="Service Overdue"
+                    domain="[('service_activity', '=', 'overdue')]" />
+            </field>
+        </field>
+    </record>
+
+    <record id="action_resource_asset_all" model="ir.actions.act_window">
+        <field name="name">All Assets</field>
+        <field name="res_model">resource.asset</field>
+        <field name="view_mode">list,kanban,form</field>
+        <field name="search_view_id" ref="resource_asset_view_search_asset" />
+        <field name="context">{}</field>
+        <field
+            name="view_ids"
+            eval="[                 Command.clear(),                 Command.create({'view_mode': 'list', 'view_id': ref('resource_asset_view_list_general')}),                 Command.create({'view_mode': 'kanban', 'view_id': ref('resource_asset_view_kanban_general')}),                 Command.create({'view_mode': 'form', 'view_id': ref('resource_asset.resource_asset_view_form')}),             ]" />
+    </record>
+
+    <record id="action_resource_asset_property" model="ir.actions.act_window">
+        <field name="name">Property Assets</field>
+        <field name="res_model">resource.asset</field>
+        <field name="view_mode">kanban,list,form</field>
+        <field name="search_view_id" ref="resource_asset_view_search_asset" />
+        <field name="domain">[('kind_code', '=', 'property')]</field>
+        <field
+            name="context"
+            eval="{'kind_code_scope': ['property'], 'default_kind_id': ref('resource_asset.kind_property')}" />
+        <field
+            name="view_ids"
+            eval="[                 Command.clear(),                 Command.create({'view_mode': 'kanban', 'view_id': ref('resource_asset_view_kanban_property')}),                 Command.create({'view_mode': 'list', 'view_id': ref('resource_asset_view_list_property')}),                 Command.create({'view_mode': 'form', 'view_id': ref('resource_asset.resource_asset_view_form')}),             ]" />
+    </record>
+
+    <record id="action_resource_asset_general" model="ir.actions.act_window">
+        <field name="name">Equipment</field>
+        <field name="res_model">resource.asset</field>
+        <field name="view_mode">kanban,list,form</field>
+        <field name="search_view_id" ref="resource_asset_view_search_asset" />
+        <field name="domain">[('kind_code', '=', 'equipment')]</field>
+        <field
+            name="context"
+            eval="{'kind_code_scope': ['equipment'], 'default_kind_id': ref('resource_asset.kind_equipment')}" />
+        <field
+            name="view_ids"
+            eval="[                 Command.clear(),                 Command.create({'view_mode': 'kanban', 'view_id': ref('resource_asset_view_kanban_general')}),                 Command.create({'view_mode': 'list', 'view_id': ref('resource_asset_view_list_general')}),                 Command.create({'view_mode': 'form', 'view_id': ref('resource_asset.resource_asset_view_form')}),             ]" />
+    </record>
+
+    <record id="action_resource_asset_machinery" model="ir.actions.act_window">
+        <field name="name">Machinery</field>
+        <field name="res_model">resource.asset</field>
+        <field name="view_mode">kanban,list,form</field>
+        <field name="search_view_id" ref="resource_asset_view_search_asset" />
+        <field name="domain">[('kind_code', '=', 'machinery')]</field>
+        <field
+            name="context"
+            eval="{'kind_code_scope': ['machinery'], 'default_kind_id': ref('resource_asset.kind_machinery')}" />
+        <field
+            name="view_ids"
+            eval="[                 Command.clear(),                 Command.create({'view_mode': 'kanban', 'view_id': ref('resource_asset_view_kanban_general')}),                 Command.create({'view_mode': 'list', 'view_id': ref('resource_asset_view_list_general')}),                 Command.create({'view_mode': 'form', 'view_id': ref('resource_asset.resource_asset_view_form')}),             ]" />
+    </record>
+
+    <record id="action_resource_asset_tools" model="ir.actions.act_window">
+        <field name="name">Tools</field>
+        <field name="res_model">resource.asset</field>
+        <field name="view_mode">kanban,list,form</field>
+        <field name="search_view_id" ref="resource_asset_view_search_asset" />
+        <field name="domain">[('kind_code', '=', 'tool')]</field>
+        <field
+            name="context"
+            eval="{'kind_code_scope': ['tool'], 'default_kind_id': ref('resource_asset.kind_tool')}" />
+        <field
+            name="view_ids"
+            eval="[                 Command.clear(),                 Command.create({'view_mode': 'kanban', 'view_id': ref('resource_asset_view_kanban_general')}),                 Command.create({'view_mode': 'list', 'view_id': ref('resource_asset_view_list_general')}),                 Command.create({'view_mode': 'form', 'view_id': ref('resource_asset.resource_asset_view_form')}),             ]" />
+    </record>
+
+    <record id="action_resource_asset_it_asset" model="ir.actions.act_window">
+        <field name="name">IT Assets</field>
+        <field name="res_model">resource.asset</field>
+        <field name="view_mode">kanban,list,form</field>
+        <field name="search_view_id" ref="resource_asset_view_search_asset" />
+        <field name="domain">[('kind_code', '=', 'it')]</field>
+        <field
+            name="context"
+            eval="{'kind_code_scope': ['it'], 'default_kind_id': ref('resource_asset.kind_it')}" />
+        <field
+            name="view_ids"
+            eval="[                 Command.clear(),                 Command.create({'view_mode': 'kanban', 'view_id': ref('resource_asset_view_kanban_general')}),                 Command.create({'view_mode': 'list', 'view_id': ref('resource_asset_view_list_general')}),                 Command.create({'view_mode': 'form', 'view_id': ref('resource_asset.resource_asset_view_form')}),             ]" />
+    </record>
+
+    <record id="resource_asset_vehicle_view_form_ledger" model="ir.ui.view">
+        <field name="name">resource.asset.vehicle.form.ledger</field>
+        <field name="model">resource.asset.vehicle</field>
+        <field name="inherit_id" ref="resource_asset_vehicle.fleet_vehicle_view_form" />
+        <field name="arch" type="xml">
+            <field name="trailer_hook" position="attributes">
+                <attribute name="string">Trailer Hitch</attribute>
+            </field>
+            <page name="model" position="after">
+                <page name="vehicle_capacity" string="Transport Capacity">
+                    <group>
+                        <group string="Weight &amp; Volume Capacity">
+                            <label for="weight_capacity" />
+                            <div class="o_row">
+                                <field name="weight_capacity" />
+                                <field name="weight_capacity_uom_name" />
+                            </div>
+                            <label for="volume_capacity" />
+                            <div class="o_row">
+                                <field name="volume_capacity" />
+                                <field name="volume_capacity_uom_name" />
+                            </div>
+                            <field name="fuel_tank_capacity" />
+                        </group>
+                        <group string="Information">
+                            <div class="text-muted">
+                                <p>These ratings belong to the asset's model, not to this
+                                    unit: they are read from it and cannot be edited
+                                    here. Change them on the model itself.</p>
+                            </div>
+                        </group>
+                    </group>
+                </page>
+            </page>
+        </field>
+    </record>
+
+</odoo>

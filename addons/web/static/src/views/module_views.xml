@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<templates>
+    <t t-name="web.ResetModuleStateCogMenu">
+        <CogMenuItem icon="'fa-solid fa-rotate-left'" description.translate="Reset Updating States" onSelected.bind="this.resetModuleState"/>
+    </t>
+</templates>

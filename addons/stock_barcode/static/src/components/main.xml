@@ -1,0 +1,210 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="stock_barcode.UnlinkButton">
+        <button class="btn btn-danger text-uppercase o_delete" t-on-click="this.onClick" t-if="!this.props.record.isNew">
+            <i class="fa-regular fa-trash-can"/> Delete
+        </button>
+    </t>
+
+    <div t-name="stock_barcode.MainComponent" class="o_content o_barcode_client_action h-100 flex-column">
+        <CountScreenRFID t-if="this.state.displayCountRFID" receivedRFIDs="this.state.receivedRFIDs" totalRFIDs="this.state.totalRFIDs" close.bind="this.closeRFIDCount"/>
+        <BarcodeBlockUI t-if="this.state.uiBlocked" message="this.state.blockUIMessage"/>
+        <header class="o_barcode_header border-bottom">
+            <div class="navbar navbar-expand p-2 m-1">
+                <nav class="navbar-nav me-auto">
+                    <button t-on-click="this.exit" class="o_exit btn btn-secondary me-3" title="Back" aria-label="Back">
+                        <i class="oi oi-chevron-left"/>
+                    </button>
+                    <button class="o_title btn text-start p-0" t-on-click="this.toggleInformation" t-att-disabled="this.isEditingInForm">
+                        <div t-out="this.model.name"/>
+                        <div t-if="this.model.record.partner_id" class="o_barcode_partner text-muted">
+                            <i class="fa-regular fa-circle-user me-1"/>
+                            <t t-out="this.model.record.partner_id.display_name"/>
+                        </div>
+                    </button>
+                </nav>
+                <nav class="navbar-nav">
+                    <t t-if="this.state.view === 'barcodeLines'">
+                        <button t-if="this.cameraScannerSupported"
+                                class="o_stock_mobile_barcode btn"
+                                t-att-class="this.cameraScannerClassState"
+                                t-att-disabled="this.state.cameraScannedEnabled &amp;&amp; !this.state.readyToToggleCamera"
+                                t-on-click="this.toggleCameraScanner"
+                                title="Scan with the camera" aria-label="Scan with the camera">
+                            <i class="fa-solid fa-barcode" role="img"/>
+                        </button>
+                        <button t-on-click="() => this.changeView('actionsView')" class="o_barcode_actions btn" title="Actions" aria-label="Actions">
+                            <i class="fa-solid fa-cog oi-large"/>
+                        </button>
+                    </t>
+                    <button t-else="" t-on-click="() => this.toggleBarcodeLines()" class="o_close btn" title="Close" aria-label="Close">
+                        <i class="oi oi-close oi-large"/>
+                    </button>
+                </nav>
+            </div>
+            <div t-if="this.state.cameraScannedEnabled" class="text-bg-800">
+                <BarcodeVideoScanner t-props="this.barcodeVideoScannerProps"/>
+            </div>
+            <t t-if="this.state.view === 'barcodeLines'">
+                <div t-if="this.state.displayNote" class="alert alert-warning text-start mb-0">
+                    <button type="button" class="btn-close float-end" title="Close" aria-label="Close" t-on-click="() => this.state.displayNote = false"/>
+                    <t t-out="this.model.record.note"/>
+                </div>
+                <div class="o_barcode_lines_header py-3 px-1 text-bg-800">
+                    <t t-set="info" t-value="this.model.barcodeInfo"/>
+                    <div t-if="info.warning" class="o_barcode_pic position-relative text-center my-2">
+                        <i t-attf-class="fa-solid fa-5x fa-{{info.icon}}"/>
+                    </div>
+                    <div name="barcode_messages" class="d-flex align-items-center justify-content-center w-100">
+                        <span t-if="!info.warning &amp;&amp; info.icon" t-attf-class="fa-solid fa-lg fa-{{info.icon}} me-3"/>
+                        <span class="o_scan_message" t-attf-class="o_{{info.class}}" t-out="info.message"/>
+                    </div>
+                </div>
+            </t>
+        </header>
+        <div t-if="this.state.view === 'barcodeLines' &amp;&amp; this.model.canBeProcessed"
+             class="o_barcode_lines list-group flex-grow-1 text-bg-200">
+            <div t-if="this.model.resModel === 'stock.picking' &amp;&amp; this.model.record.picking_warning_text"
+                 class="alert alert-info mb-1 mt-1 text-center fw-bold" role="alert" style="white-space: pre-wrap;">
+                <t t-out="this.model.record.picking_warning_text"/>
+            </div>
+            <t t-foreach="this.model.groupedLinesByLocation" t-as="group" t-key="group.location.id">
+                <t t-set="currentLocation" t-value="this.model.location &amp;&amp; this.model.location.id === group.location.id"/>
+                <div class="o_barcode_location_group" t-att-class="currentLocation ? 'o_current_location' : ''">
+                    <!-- Source location separator -->
+                    <div t-if="this.model.displaySourceLocation"
+                        class="o_barcode_location_line p-1 px-3 border d-flex align-items-center"
+                        t-att-class="currentLocation ? 'text-bg-400' : 'text-muted bg-secondary'"
+                        t-att-data-location-id="group.location.id"
+                        t-att-data-location="group.location.display_name">
+                        <i class="fa-solid fa-location-dot me-2"/>
+                        <span class="o_location_name" t-out="group.location.display_name"/>
+                    </div>
+                    <!-- Barcode lines -->
+                    <t t-foreach="group.lines" t-as="line" t-key="line.virtual_id">
+                        <PackageLineComponent t-if="line.isPackageLine" line="line" displayUOM="false" openPackage.bind="this.onOpenPackage"/>
+                        <GroupedLineComponent t-elif="line.lines" line="line" displayUOM="this.groups.group_uom" editLine.bind="this.onOpenProductPage"/>
+                        <LineComponent t-else="" line="line" displayUOM="this.groups.group_uom" editLine.bind="this.onOpenProductPage"/>
+                    </t>
+                </div>
+            </t>
+        </div>
+        <div t-elif="this.state.view === 'scrapProductPage'"> <!-- Scrap Create Form View -->
+            <View t-props="this.scrapViewProps"/>
+        </div>
+        <div t-elif="this.state.view === 'productPage'"> <!-- Barcode Line Edit Form View -->
+            <View t-props="this.lineFormViewProps"/>
+        </div>
+        <div t-elif="this.state.view === 'packagePage'"> <!-- Quants (in package) Kanban View -->
+            <View type="'kanban'"
+                viewId="this.model.packageKanbanViewId"
+                display="{ controlPanel: false }"
+                resModel="'stock.quant'"
+                domain="[['package_id', 'in', this._inspectedPackageIds]]"/>
+        </div>
+        <div t-elif="this.state.view === 'infoFormView'"> <!-- Res Model Form View -->
+            <View type="'form'"
+                viewId="this.model.formViewId"
+                display="{ controlPanel: false }"
+                resModel="this.resModel"
+                resId="this.resId"
+                onSave="() => this._onRefreshState({ lineId: this._editedLineParams &amp;&amp; this._editedLineParams.currentId })"
+                onDiscard="() => this.toggleBarcodeLines()"/>
+            <Chatter threadModel="this.resModel" threadId="this.resId"/>
+        </div>
+        <div t-elif="this.state.view === 'actionsView'"
+             class="o_barcode_settings d-flex flex-grow-1 flex-column p-2">
+            <BarcodeInput onSubmit.bind="this.onBarcodeSubmitted"/>
+            <div class="my-2" t-if="this.model.resModel === 'stock.quant'">
+                <button class="w-100 fs-4 btn btn-secondary mb-2 py-2"
+                    t-attf-class="{{`o_count_entire_locations ${this.model.countEntireLocation ? 'active' : ''}`}}"
+                    t-on-click="() => { this.model.countEntireLocation = !this.model.countEntireLocation; this.model.trigger('update'); }"
+                >
+                    <input type="checkbox" class="me-2" t-att-checked="this.model.countEntireLocation"/>
+                    Count Entire Locations
+                </button>
+            </div>
+            <div t-if="this.model.printButtons">
+                <div class="w-100 my-2 d-flex justify-contents-center">
+                    <hr class="flex-grow-1"/>
+                    <span class="fs-5 fw-bold text-center text-muted mt-1 px-2">
+                        <i class="fa-solid fa-print me-1"/>Print
+                    </span>
+                    <hr class="flex-grow-1"/>
+                </div>
+                <t t-foreach="this.model.printButtons" t-as="button" t-key="button.class">
+                    <button class="w-100 fs-4 btn btn-secondary mb-2 py-2"
+                        t-attf-class="{{button.class}}" t-out="button.name"
+                        t-on-click="() => this.model.print(button.action, button.method)"/>
+                </t>
+            </div>
+            <div t-if="this.displayOperationButtons">
+                <div class="o_buttons_operations w-100 my-2 d-flex justify-contents-center">
+                    <hr class="flex-grow-1"/>
+                    <span class="fs-5 fw-bold text-center text-muted mt-1 px-2">Operations</span>
+                    <hr class="flex-grow-1"/>
+                </div>
+                <button t-if="this.model.displayReturnButton"
+                        t-on-click="this.returnProducts"
+                        class="o_create_return btn btn-secondary w-100 fs-4 mb-2 py-2">
+                    Return Products
+                </button>
+                <button t-if="this.model.displaySignatureButton"
+                        class="o_sign btn btn-secondary w-100 fs-4 mb-2 py-2"
+                        t-on-click="() => this.model.openSignatureDialog()">
+                    Sign
+                </button>
+                <button t-if="this.model.canScrap" t-on-click="this.newScrapProduct"
+                    class="o_scrap w-100 fs-4 btn btn-danger mb-2 py-2">
+                    Scrap
+                </button>
+                <button t-if="this.model.displayCancelButton" t-on-click="this.cancel"
+                    class="o_cancel_operation w-100 fs-4 btn btn-danger mb-2 py-2">
+                    <i class="fa-solid fa-trash-can me-2"/><t t-out="this.model.cancelLabel"/>
+                </button>
+            </div>
+        </div>
+        <footer t-if="this.displayActionButtons" class="o_barcode_control o_action_buttons d-flex justify-content-between p-2 gap-2 border-top">
+            <button t-if="this.model.displayAddProductButton" class="o_add_line btn btn-secondary" t-on-click="() => this.onOpenProductPage()">
+                <t t-out="this.addLineBtnName" />
+            </button>
+            <button t-if="this.model.displayPutInPackButton" t-on-click="this.putInPack"
+                    t-att-disabled="!this.model.canPutInPack"
+                    class="o_put_in_pack btn btn-secondary">
+                Put In Pack
+            </button>
+            <button t-if="this.model.displayValidateButton" t-on-click="this.validate"
+                class="o_validate_page btn"
+                t-att-disabled="!this.model.canBeValidated"
+                t-attf-class="{{this.highlightValidateButton ? 'btn-primary' : 'btn-secondary'}}">
+                <t t-out="this.model.validateButtonLabel"/>
+            </button>
+            <button t-if="this.model.displayApplyButton" t-on-click="() => this.model.apply()"
+                class="o_apply_page btn"
+                t-att-disabled="this.model.applyOn === 0"
+                t-attf-class="{{this.highlightValidateButton ? 'btn-primary' : 'btn-secondary'}}">
+                Confirm
+                <span t-attf-class="{{this.highlightValidateButton ? '' : 'text-muted'}}">
+                    (<t t-out="this.model.applyOn"/>)
+                </span>
+            </button>
+        </footer>
+        <footer t-if="this.model.displayReturnButton and this.state.view === 'barcodeLines'"
+            class="o_barcode_control o_action_buttons d-flex mt-auto">
+            <button t-on-click="this.returnProducts" class="o_create_return btn btn-secondary">
+                Return Products
+            </button>
+        </footer>
+    </div>
+
+    <t t-name="stock_barcode.BlockUI">
+        <div class="o_blockUI fixed-top d-flex justify-content-center align-items-center flex-column vh-100 bg-black-50">
+            <div class="o_spinner mb-4">
+                <img src="/web/static/img/spin.svg" alt="Loading..."/>
+            </div>
+            <div t-if="this.props.message" class="o_message text-center px-4" t-out="this.props.message"/>
+        </div>
+    </t>
+
+</templates>

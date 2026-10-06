@@ -1,0 +1,238 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_account_collection_remittance_form" model="ir.ui.view">
+        <field name="name">account.collection.remittance.form</field>
+        <field name="model">account.collection.remittance</field>
+        <field name="arch" type="xml">
+            <form string="Remittance">
+                <header>
+                    <button
+                        name="action_submit"
+                        type="object"
+                        string="Submit"
+                        invisible="state != 'draft'"
+                        class="oe_highlight" />
+                    <button
+                        name="action_validate"
+                        type="object"
+                        string="Validate"
+                        groups="account.group_account_invoice"
+                        invisible="state != 'submitted'"
+                        class="oe_highlight" />
+                    <button
+                        name="action_load_custody"
+                        type="object"
+                        string="Add Everything in Custody"
+                        invisible="state != 'draft'" />
+                    <button
+                        name="action_reopen"
+                        type="object"
+                        string="Back to Draft"
+                        invisible="state != 'submitted'" />
+                    <button
+                        name="action_cancel"
+                        type="object"
+                        string="Cancel"
+                        invisible="state not in ('draft', 'submitted')" />
+                    <button
+                        name="action_revert"
+                        type="object"
+                        string="Revert"
+                        confirm="The hand-in entry is reversed, the collections return to custody and the remittance to draft."
+                        groups="account.group_account_manager"
+                        invisible="state != 'done'" />
+                    <field
+                        name="state"
+                        widget="statusbar"
+                        statusbar_visible="draft,submitted,done" />
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name" readonly="1" />
+                        </h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field
+                                name="collector_id"
+                                options="{'no_create': True}"
+                                readonly="state != 'draft'" />
+                            <field
+                                name="date"
+                                readonly="state not in ('draft', 'submitted')" />
+                            <field
+                                name="destination_journal_id"
+                                options="{'no_create': True}"
+                                readonly="state not in ('draft', 'submitted')" />
+                            <field name="destination_type" invisible="1" />
+                            <field
+                                name="bank_reference"
+                                invisible="destination_type != 'bank'" />
+                            <field
+                                name="deposit_reference"
+                                invisible="destination_type != 'bank'"
+                                readonly="state not in ('draft', 'submitted')" />
+                            <field
+                                name="statement_line_id"
+                                options="{'no_create': True}"
+                                groups="account.group_account_invoice"
+                                invisible="destination_type != 'bank'"
+                                readonly="state != 'submitted'" />
+                        </group>
+                        <group>
+                            <field name="currency_id" invisible="1" />
+                            <field name="amount_collected" />
+                            <field
+                                name="amount_handed_in"
+                                readonly="state not in ('draft', 'submitted')" />
+                            <field
+                                name="amount_difference"
+                                invisible="not amount_difference"
+                                decoration-danger="amount_difference &lt; 0" />
+                            <field name="move_id" invisible="not move_id" />
+                            <field
+                                name="validated_by_id"
+                                invisible="not validated_by_id" />
+                            <field
+                                name="company_id"
+                                options="{'no_create': True}"
+                                groups="base.group_multi_company"
+                                readonly="state != 'draft'" />
+                        </group>
+                    </group>
+                    <notebook>
+                        <page name="collections" string="Collections">
+                            <field
+                                name="payment_ids"
+                                context="{'search_default_in_custody': 1}"
+                                readonly="state != 'draft'">
+                                <list>
+                                    <field name="date" />
+                                    <field name="name" />
+                                    <field name="partner_id" />
+                                    <field name="collection_method" />
+                                    <field name="memo" />
+                                    <field
+                                        name="company_currency_id"
+                                        column_invisible="True" />
+                                    <field
+                                        name="amount_company_currency_signed"
+                                        string="Amount"
+                                        sum="Total" />
+                                </list>
+                            </field>
+                        </page>
+                        <page name="note" string="Notes">
+                            <field name="note" />
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter />
+            </form>
+        </field>
+    </record>
+
+    <record id="view_account_collection_remittance_list" model="ir.ui.view">
+        <field name="name">account.collection.remittance.list</field>
+        <field name="model">account.collection.remittance</field>
+        <field name="arch" type="xml">
+            <list string="Remittances">
+                <field name="name" />
+                <field name="date" />
+                <field name="collector_id" />
+                <field name="destination_journal_id" />
+                <field name="count_payment" string="Collections" />
+                <field name="currency_id" column_invisible="True" />
+                <field name="amount_collected" sum="Total" />
+                <field name="amount_handed_in" sum="Total" />
+                <field name="amount_difference" optional="show" sum="Total" />
+                <field
+                    name="company_id"
+                    optional="hide"
+                    groups="base.group_multi_company" />
+                <field
+                    name="state"
+                    widget="badge"
+                    decoration-info="state == 'draft'"
+                    decoration-success="state == 'done'"
+                    decoration-warning="state == 'submitted'" />
+            </list>
+        </field>
+    </record>
+
+    <record id="view_account_collection_remittance_pivot" model="ir.ui.view">
+        <field name="name">account.collection.remittance.pivot</field>
+        <field name="model">account.collection.remittance</field>
+        <field name="arch" type="xml">
+            <pivot string="Remittances" sample="1">
+                <field name="collector_id" type="row" />
+                <field name="date" type="col" interval="month" />
+                <field name="amount_collected" type="measure" />
+                <field name="amount_handed_in" type="measure" />
+                <field name="amount_difference" type="measure" />
+            </pivot>
+        </field>
+    </record>
+
+    <record id="view_account_collection_remittance_graph" model="ir.ui.view">
+        <field name="name">account.collection.remittance.graph</field>
+        <field name="model">account.collection.remittance</field>
+        <field name="arch" type="xml">
+            <graph type="bar" string="Remittance Differences" sample="1">
+                <field name="collector_id" />
+                <field name="amount_difference" type="measure" />
+            </graph>
+        </field>
+    </record>
+
+    <record id="view_account_collection_remittance_search" model="ir.ui.view">
+        <field name="name">account.collection.remittance.search</field>
+        <field name="model">account.collection.remittance</field>
+        <field name="arch" type="xml">
+            <search string="Remittances">
+                <field name="name" />
+                <field name="bank_reference" />
+                <field name="collector_id" />
+                <field name="destination_journal_id" />
+                <filter
+                    name="my_remittances"
+                    string="My Remittances"
+                    domain="[('collector_id', '=', uid)]" />
+                <separator />
+                <filter
+                    name="to_validate"
+                    string="To Validate"
+                    domain="[('state', '=', 'submitted')]" />
+                <filter
+                    name="with_difference"
+                    string="With Difference"
+                    domain="[('amount_difference', '!=', 0)]" />
+                <separator />
+                <filter name="date" string="Hand-in Date" date="date" />
+                <filter
+                    name="group_by_collector"
+                    string="Collector"
+                    context="{'group_by': 'collector_id'}" />
+                <filter
+                    name="group_by_state"
+                    string="Status"
+                    context="{'group_by': 'state'}" />
+            </search>
+        </field>
+    </record>
+
+    <record id="action_account_collection_remittance" model="ir.actions.act_window">
+        <field name="name">Remittances</field>
+        <field name="res_model">account.collection.remittance</field>
+        <field name="path">collection-remittances</field>
+        <field name="view_mode">list,pivot,graph,form</field>
+        <field name="context">{'search_default_to_validate': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Hand in your collections</p>
+            <p>A remittance groups what a collector hands in to a till or deposits at the bank; the treasury validates it.</p>
+        </field>
+    </record>
+
+</odoo>

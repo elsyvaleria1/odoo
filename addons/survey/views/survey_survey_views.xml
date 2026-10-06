@@ -1,0 +1,756 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="survey_survey_view_form" model="ir.ui.view">
+        <field name="name">survey.survey.view.form</field>
+        <field name="model">survey.survey</field>
+        <field name="arch" type="xml">
+            <form string="Survey" class="o_survey_form">
+                <field name="id" invisible="1" />
+                <field name="session_state" invisible="1" />
+                <field name="question_ids" invisible="1" />
+                <field name="session_available" invisible="1" />
+                <header>
+                    <button
+                        name="action_send_survey"
+                        type="object"
+                        string="Share"
+                        invisible="not active"
+                        class="oe_highlight" />
+                    <button
+                        name="action_result_survey"
+                        type="object"
+                        string="See results"
+                        invisible="answer_done_count &lt;= 0"
+                        class="oe_highlight" />
+                    <button
+                        name="action_start_session"
+                        type="object"
+                        string="Create Live Session"
+                        invisible="session_state or not active or not session_available"
+                        class="d-none d-sm-block" />
+                    <button
+                        name="action_view_session_manager"
+                        type="object"
+                        string="Open Session Manager"
+                        invisible="not session_state"
+                        class="d-none d-sm-block" />
+                    <button
+                        name="action_end_session"
+                        type="object"
+                        string="Close Live Session"
+                        invisible="session_state not in ['ready', 'in_progress']"
+                        class="d-none d-sm-block" />
+                    <button
+                        name="action_test_survey"
+                        type="object"
+                        string="Test"
+                        invisible="not active or not question_ids" />
+                    <button
+                        name="action_unarchive"
+                        type="object"
+                        string="Reopen"
+                        invisible="active"
+                        class="btn-primary" />
+                    <button
+                        name="action_archive"
+                        type="object"
+                        string="Close"
+                        invisible="not active" />
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button
+                            name="action_survey_user_input"
+                            type="object"
+                            icon="fa-regular fa-envelope"
+                            invisible="access_mode == 'public'"
+                            class="oe_stat_button">
+                            <field
+                                name="answer_count"
+                                string="Registered"
+                                widget="statinfo" />
+                        </button>
+                        <button
+                            name="action_survey_user_input_certified"
+                            type="object"
+                            icon="fa-trophy"
+                            invisible="not certification"
+                            class="oe_stat_button">
+                            <field
+                                name="success_count"
+                                string="Certified"
+                                widget="statinfo" />
+                        </button>
+                        <button
+                            name="action_survey_user_input_completed"
+                            type="object"
+                            icon="fa-regular fa-square-check"
+                            class="oe_stat_button">
+                            <field
+                                name="answer_done_count"
+                                string="Participants"
+                                widget="statinfo" />
+                        </button>
+                    </div>
+                    <widget
+                        name="web_ribbon"
+                        title="Archived"
+                        invisible="active"
+                        bg_color="text-bg-danger" />
+                    <field name="background_image" widget="image" class="oe_avatar" />
+                    <field name="allowed_survey_types" invisible="True" />
+                    <field
+                        name="survey_type"
+                        widget="radio_selection_with_filter"
+                        options="{'horizontal': True, 'allowed_selection_field': 'allowed_survey_types'}"
+                        invisible="not allowed_survey_types"
+                        class="o_field_radio" />
+                    <div class="oe_title" style="width: 100%;">
+                        <h1>
+                            <field
+                                name="title"
+                                placeholder="e.g. Satisfaction Survey"
+                                widget="text"
+                                options="{'line_breaks': False}" />
+                        </h1>
+                    </div>
+                    <group>
+                        <group class="ps-md-0">
+                            <field
+                                name="user_id"
+                                widget="many2one_avatar_user"
+                                domain="[('share', '=', False)]" />
+                            <field
+                                name="category_id"
+                                placeholder="No category"
+                                options="{'no_create': True}" />
+                            <field name="active" invisible="1" />
+                            <field name="has_conditional_questions" invisible="1" />
+                            <field
+                                name="lang_ids"
+                                placeholder="All installed languages"
+                                widget="many2many_tags"
+                                options="{'no_quick_create': True, 'no_create_edit': True, 'no_open': True}" />
+                        </group>
+                        <group class="ps-3 ps-md-0 ps-lg-3">
+                            <field
+                                name="restrict_user_ids"
+                                widget="many2many_tags_avatar" />
+                            <field
+                                name="tag_ids"
+                                widget="many2many_tags"
+                                options="{'color_field': 'color'}" />
+                        </group>
+                    </group>
+                    <notebook>
+                        <page name="questions" string="Questions">
+                            <field
+                                name="question_and_page_ids"
+                                widget="question_page_one2many"
+                                mode="list,kanban"
+                                context="{'default_survey_id': id}">
+                                <list decoration-bf="is_page">
+                                    <field name="sequence" widget="handle" />
+                                    <field
+                                        name="title"
+                                        widget="survey_description_page" />
+                                    <field
+                                        name="background_image"
+                                        column_invisible="True" />
+                                    <field name="question_type" />
+                                    <field
+                                        name="is_time_limited"
+                                        string="Time Limit"
+                                        optional="hide"
+                                        column_invisible="not parent.session_available" />
+                                    <field
+                                        name="time_limit"
+                                        optional="hide"
+                                        invisible="not is_time_limited"
+                                        column_invisible="not parent.session_available" />
+                                    <field
+                                        name="is_time_customized"
+                                        column_invisible="True" />
+                                    <field name="constr_mandatory" optional="hide" />
+                                    <field name="is_page" column_invisible="True" />
+                                    <field
+                                        name="questions_selection"
+                                        column_invisible="True" />
+                                    <field name="survey_id" column_invisible="True" />
+                                    <field
+                                        name="random_questions_count"
+                                        invisible="not is_page"
+                                        column_invisible="parent.questions_selection == 'all'" />
+                                    <field
+                                        name="triggering_question_ids"
+                                        column_invisible="True" />
+                                    <field name="triggering_answer_ids" widget="many2many_tags" column_invisible="True"/> <!-- widget to fetch display_name -->
+                                    <widget
+                                        name="survey_question_trigger"
+                                        width="30px" />
+                                    <button
+                                        name="copy"
+                                        type="object"
+                                        title="Duplicate Question"
+                                        icon="fa-clone" />
+                                    <control>
+                                        <create
+                                            name="add_question_control"
+                                            string="Add a question" />
+                                        <create
+                                            name="add_section_control"
+                                            string="Add a section"
+                                            context="{'default_is_page': True, 'default_questions_selection': 'all'}" />
+                                    </control>
+                                </list>
+                            </field>
+                        </page>
+                        <page name="options" string="Options">
+                            <group name="options">
+                                <group name="questions" string="Questions">
+                                    <field
+                                        name="questions_layout"
+                                        widget="radio"
+                                        force_save="1"
+                                        readonly="session_state in ['ready', 'in_progress'] or survey_type == 'live_session'" />
+                                    <field
+                                        name="progression_mode"
+                                        widget="radio"
+                                        invisible="questions_layout == 'one_page' or survey_type == 'live_session'" />
+                                    <field
+                                        name="questions_selection"
+                                        widget="radio"
+                                        invisible="survey_type == 'live_session'" />
+                                    <field
+                                        name="users_can_go_back"
+                                        string="Allow Roaming"
+                                        invisible="questions_layout == 'one_page' or survey_type == 'live_session'" />
+                                </group>
+                                <group name="participants" string="Participants">
+                                    <field
+                                        name="access_mode"
+                                        force_save="1"
+                                        readonly="survey_type == 'live_session'" />
+                                    <field name="users_login_required" />
+                                    <label
+                                        for="is_attempts_limited"
+                                        string="Limit Attempts"
+                                        invisible="survey_type == 'live_session' or access_mode == 'public' and not users_login_required" />
+                                    <div
+                                        class="o_checkbox_optional_field"
+                                        invisible="survey_type == 'live_session' or access_mode == 'public' and not users_login_required">
+                                        <field name="is_attempts_limited" />
+                                        <div invisible="not is_attempts_limited"> to <field name="attempts_limit" class="oe_inline" />
+                                            attempts </div>
+                                    </div>
+                                    <field
+                                        name="survey_url"
+                                        widget="CopyClipboardChar" />
+                                    <field
+                                        name="slug"
+                                        placeholder="e.g. customer-feedback" />
+                                    <field
+                                        name="survey_embed_code"
+                                        widget="CopyClipboardChar" />
+                                    <field
+                                        name="webhook_url"
+                                        placeholder="https://example.com/webhook" />
+                                    <field
+                                        name="webhook_events"
+                                        invisible="not webhook_url" />
+                                    <field
+                                        name="survey_qr_url"
+                                        widget="image_url"
+                                        nolabel="1"
+                                        options="{'size': [128, 128]}"
+                                        class="w-auto" />
+                                    <field name="date_open" />
+                                    <field name="date_close" />
+                                    <field
+                                        name="data_retention_days"
+                                        help="0 = keep forever" />
+                                    <field name="anonymize_ip" />
+                                </group>
+                                <group
+                                    name="scoring"
+                                    string="Time &amp; Scoring"
+                                    invisible="survey_type == 'survey'">
+                                    <!-- Time -->
+                                    <label
+                                        for="is_time_limited"
+                                        string="Survey Time Limit"
+                                        invisible="survey_type == 'live_session'" />
+                                    <div
+                                        class="o_checkbox_optional_field"
+                                        name="is_time_limited"
+                                        invisible="survey_type == 'live_session'">
+                                        <field name="is_time_limited" />
+                                        <div invisible="not is_time_limited">
+                                            <field name="time_limit" widget="float_time" class="oe_inline" /> minutes </div>
+                                    </div>
+                                    <!-- Scoring -->
+                                    <field
+                                        name="scoring_type"
+                                        widget="radio"
+                                        force_save="1" />
+                                    <field
+                                        name="scoring_success_min"
+                                        invisible="scoring_type == 'no_scoring'" />
+                                    <label
+                                        for="certification"
+                                        invisible="survey_type == 'live_session' or scoring_type == 'no_scoring'" />
+                                    <div
+                                        class="o_checkbox_optional_field"
+                                        name="certification"
+                                        invisible="survey_type == 'live_session'">
+                                        <field
+                                            name="certification"
+                                            invisible="scoring_type == 'no_scoring'" />
+                                        <div
+                                            invisible="not certification"
+                                            class="w-100">
+                                            <field
+                                                name="certification_report_layout"
+                                                placeholder="Pick a Style..."
+                                                class="w-50" />
+                                            <button
+                                                name="action_survey_preview_certification_template"
+                                                type="object"
+                                                string="Preview"
+                                                icon="fa-external-link"
+                                                class="btn-link pt-0"
+                                                target="_blank" />
+                                        </div>
+                                    </div>
+                                    <field
+                                        name="certification_mail_template_id"
+                                        placeholder="Pick a Template..."
+                                        invisible="not certification" />
+                                    <label
+                                        for="certification_give_badge"
+                                        invisible="not certification or not users_login_required" />
+                                    <div
+                                        class="float-start o_checkbox_optional_field"
+                                        invisible="not certification or not users_login_required">
+                                        <field name="certification_give_badge" />
+                                        <div invisible="not certification_give_badge">
+                                            <field
+                                                name="certification_badge_id"
+                                                placeholder="Pick a Badge..."
+                                                domain="[('survey_id', '=', id), ('survey_id', '!=', False)]"
+                                                context="{'default_name': title,                                                         'default_description': 'Congratulations, you have succeeded this certification',                                                         'default_rule_auth': 'nobody',                                                         'default_level': None,                                                         'form_view_ref': 'survey.gamification_badge_form_view_simplified'}"
+                                                invisible="not certification_give_badge or certification_badge_id"
+                                                required="certification_give_badge" />
+                                            <field
+                                                name="certification_badge_id_dummy"
+                                                placeholder="Pick a Badge..."
+                                                context="{'form_view_ref': 'survey.gamification_badge_form_view_simplified'}"
+                                                options="{'no_create': True}"
+                                                invisible="not certification_give_badge or not certification_badge_id" />
+                                        </div>
+                                    </div>
+                                </group>
+                                <group
+                                    name="live_session"
+                                    string="Live Session"
+                                    invisible="not session_available">
+                                    <field name="access_token" invisible="1"/>  <!-- dependency of
+                                    'session_code' -->
+                                    <field name="session_code" />
+                                    <field
+                                        name="session_link"
+                                        widget="CopyClipboardChar" />
+                                    <field
+                                        name="session_speed_rating"
+                                        invisible="scoring_type == 'no_scoring'" />
+                                    <field
+                                        name="session_speed_rating_time_limit"
+                                        invisible="scoring_type == 'no_scoring' or not session_speed_rating" />
+                                </group>
+                            </group>
+                        </page>
+                        <page name="description" string="Description">
+                            <field
+                                name="description"
+                                placeholder="e.g. &quot;The following Survey will help us...&quot;"
+                                options="{'embedded_components': false}" />
+                        </page>
+                        <page name="description_done" string="End Message">
+                            <field
+                                name="description_done"
+                                placeholder="e.g. &quot;Thank you very much for your feedback!&quot;"
+                                options="{'embedded_components': false}" />
+                        </page>
+                        <page name="quotas" string="Quotas">
+                            <field name="quota_ids">
+                                <list editable="bottom">
+                                    <field
+                                        name="question_id"
+                                        domain="[('survey_id', '=', parent.id), ('question_type', 'in', ['simple_choice', 'multiple_choice'])]" />
+                                    <field
+                                        name="answer_id"
+                                        domain="[('question_id', '=', question_id)]" />
+                                    <field name="limit" />
+                                    <field name="current_count" />
+                                    <field name="is_full" />
+                                </list>
+                            </field>
+                        </page>
+                        <page name="followup_rules" string="Follow-up Rules">
+                            <field name="followup_rule_ids">
+                                <list editable="bottom">
+                                    <field name="sequence" widget="handle" />
+                                    <field name="name" />
+                                    <field name="condition_type" />
+                                    <field
+                                        name="score_min"
+                                        invisible="condition_type != 'score_range'" />
+                                    <field
+                                        name="score_max"
+                                        invisible="condition_type != 'score_range'" />
+                                    <field name="mail_template_id" />
+                                    <field name="active" />
+                                </list>
+                            </field>
+                        </page>
+                        <page name="theme" string="Theme">
+                            <group>
+                                <group string="Appearance">
+                                    <field name="theme_color" widget="color" />
+                                    <field name="theme_font" />
+                                </group>
+                                <group string="Advanced">
+                                    <field
+                                        name="theme_custom_css"
+                                        placeholder="/* Custom CSS for survey frontend */"
+                                        widget="ace"
+                                        options="{'mode': 'css'}" />
+                                </group>
+                            </group>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter />
+            </form>
+        </field>
+    </record>
+
+    <record id="survey_survey_view_tree" model="ir.ui.view">
+        <field name="name">survey.survey.view.list</field>
+        <field name="model">survey.survey</field>
+        <field name="arch" type="xml">
+            <list string="Survey" js_class="survey_view_tree">
+                <field name="active" column_invisible="True" />
+                <field name="title" />
+                <field
+                    name="certification"
+                    widget="boolean_icon"
+                    options="{'icon': 'fa-trophy'}"
+                    invisible="not certification"
+                    readonly="1" />
+                <field name="user_id" widget="many2one_avatar_user" />
+                <field
+                    name="tag_ids"
+                    widget="many2many_tags"
+                    optional="show"
+                    options="{'color_field': 'color'}" />
+                <field name="category_id" optional="hide" />
+                <field name="answer_duration_avg" widget="float_time" />
+                <field name="answer_count" />
+                <field name="answer_done_count" optional="hide" />
+                <field name="success_count" optional="hide" />
+                <field name="success_ratio" />
+                <field name="answer_score_avg" />
+                <!-- Tweak as icons aren't directly supported in xml -->
+            </list>
+        </field>
+    </record>
+
+    <record id="survey_survey_view_kanban" model="ir.ui.view">
+        <field name="name">survey.survey.view.kanban</field>
+        <field name="model">survey.survey</field>
+        <field name="arch" type="xml">
+            <kanban highlight_color="color" js_class="survey_view_kanban">
+                <field name="active" />
+                <field name="certification" />
+                <field name="create_date" />
+                <field name="scoring_type" />
+                <field name="session_state" />
+                <field name="session_available" />
+                <templates>
+                    <div t-name="menu" t-if="widget.editable">
+                        <a role="menuitem" type="open" class="dropdown-item">Edit Survey</a>
+                        <a t-if="record.active.raw_value" role="menuitem" type="object" class="dropdown-item" name="action_send_survey">Share</a>
+                        <a t-if="widget.deletable" role="menuitem" type="delete" class="dropdown-item">Delete</a>
+                        <div role="separator" class="dropdown-divider" />
+                        <div role="separator" class="dropdown-item-text">Color</div>
+                        <field name="color" widget="kanban_color_picker" />
+                    </div>
+                    <div
+                        t-name="card"
+                        t-attf-class="o_survey_kanban_card #{record.certification.raw_value ? 'o_survey_kanban_card_certification' : ''}"
+                        class="px-0">
+                        <div class="row mx-4">
+                            <widget
+                                name="web_ribbon"
+                                title="Archived"
+                                invisible="active"
+                                bg_color="text-bg-danger" />
+                            <div class="col-lg-2 col-sm-8 py-0 my-2 my-lg-0 col-12 g-0">
+                                <div
+                                    class="d-flex flex-grow-1 flex-column my-0 my-lg-2">
+                                    <field name="title" class="fw-bold" />
+                                    <span
+                                        t-if="!selection_mode"
+                                        class="d-flex align-items-center">
+                                        <field
+                                            name="user_id"
+                                            widget="many2one_avatar_user"
+                                            options="{'display_avatar_name': True}" />
+                                        <span class="mx-1">-</span>
+                                        <t
+                                            t-out="dates.formatValue(dates.parseISO(record.create_date.raw_value), 'MMM yyyy')" />
+                                    </span>
+                                    <field
+                                        name="tag_ids"
+                                        widget="many2many_tags"
+                                        options="{'color_field': 'color'}" />
+                                </div>
+                            </div>
+                            <div
+                                t-attf-class="col-lg-1 col-sm-4 d-sm-block py-0 my-2 col-#{selection_mode ? '12' : '6'}">
+                                <field name="question_count" class="fw-bold" />
+                                <br t-if="!selection_mode" />
+                                <span class="text-muted">Questions</span>
+                            </div>
+                            <div
+                                t-if="selection_mode"
+                                class="col-12 d-flex justify-content-end">
+                                <field name="user_id" widget="many2one_avatar_user" />
+                            </div>
+                            <div
+                                t-if="!selection_mode"
+                                class="col-lg-1 col-sm-4 col-6 d-none py-0 my-2">
+                                <field
+                                    name="answer_duration_avg"
+                                    widget="float_time"
+                                    class="fw-bold" />
+                                <span class="text-muted">Average Duration</span>
+                            </div>
+                            <div
+                                t-if="!selection_mode"
+                                class="col-lg-1 col-sm-4 col-6 d-none py-0 my-2">
+                                <a
+                                    type="object"
+                                    name="action_survey_user_input"
+                                    class="fw-bold">
+                                    <field name="answer_count" />
+                                    <br />
+                                    <span class="text-muted">Registered</span>
+                                </a>
+                            </div>
+                            <div
+                                t-if="!selection_mode"
+                                class="col-lg-1 col-sm-4 col-6 d-sm-block py-0 my-2">
+                                <a
+                                    type="object"
+                                    name="action_survey_user_input_completed"
+                                    class="fw-bold">
+                                    <field name="answer_done_count" />
+                                    <br />
+                                    <span class="text-muted">Completed</span>
+                                </a>
+                            </div>
+                            <div
+                                t-if="!selection_mode"
+                                class="col-lg-1 col-sm-4 col-6 py-0 my-2"
+                                name="o_survey_kanban_card_section_success">
+                                <a
+                                    t-if="record.scoring_type.raw_value != 'no_scoring'"
+                                    type="object"
+                                    name="action_survey_user_input_certified"
+                                    class="fw-bold">
+                                    <field
+                                        name="success_ratio"
+                                        widget="progressbar"
+                                        class="d-block"
+                                        style="word-break: normal;" />
+                                    <span
+                                        class="text-muted"
+                                        t-if="!record.certification.raw_value">
+                                        Passed</span>
+                                    <span class="text-muted" t-else="">Certified</span>
+                                </a>
+                            </div>
+                            <div
+                                t-if="!selection_mode"
+                                class="col-lg-3 col-sm-12 d-none d-sm-flex justify-content-end gap-1 my-2 ms-auto pb-lg-3 py-0">
+                                <button
+                                    name="action_send_survey"
+                                    type="object"
+                                    string="Share"
+                                    invisible="not active"
+                                    class="btn btn-secondary text-nowrap">
+                                    Share
+                                </button>
+                                <button
+                                    name="action_test_survey"
+                                    type="object"
+                                    string="Test"
+                                    invisible="not active"
+                                    class="btn btn-secondary text-nowrap">
+                                    Test
+                                </button>
+                                <button
+                                    name="action_result_survey"
+                                    type="object"
+                                    string="See results"
+                                    invisible="not active"
+                                    class="btn btn-secondary">
+                                    See results
+                                </button>
+                                <button
+                                    name="action_start_session"
+                                    type="object"
+                                    string="Start Live Session"
+                                    invisible="session_state or not active or not session_available"
+                                    class="btn btn-secondary">
+                                    Start Live Session
+                                </button>
+                                <button
+                                    name="action_end_session"
+                                    type="object"
+                                    string="End Live Session"
+                                    invisible="session_state not in ['ready', 'in_progress'] or not active"
+                                    class="btn btn-secondary">
+                                    End Live Session
+                                </button>
+                            </div>
+                        </div>
+                        <!-- Generic -->
+                        <div t-if="!selection_mode" class="o_survey_kanban_card_bottom">
+                            <field name="activity_ids" widget="kanban_activity" />
+                        </div>
+                    </div>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
+    <record id="survey_survey_view_activity" model="ir.ui.view">
+        <field name="name">survey.survey.view.activity</field>
+        <field name="model">survey.survey</field>
+        <field name="arch" type="xml">
+            <activity string="Survey">
+                <templates>
+                    <div t-name="activity-box" class="d-flex w-100">
+                        <field name="user_id" widget="many2one_avatar_user" />
+                        <div class="flex-grow-1">
+                            <field name="title" class="o_text_block" />
+                        </div>
+                    </div>
+                </templates>
+            </activity>
+        </field>
+    </record>
+
+    <record id="survey_survey_view_search" model="ir.ui.view">
+        <field name="name">survey.survey.search</field>
+        <field name="model">survey.survey</field>
+        <field name="arch" type="xml">
+            <search string="Survey">
+                <field
+                    name="title"
+                    string="Survey"
+                    filter_domain="['|', ('title', 'ilike', self), ('session_code', 'ilike', self)]" />
+                <field name="question_and_page_ids" string="Question &amp; Pages" />
+                <field name="user_id" />
+                <field name="restrict_user_ids" />
+                <field name="tag_ids" />
+                <field name="category_id" />
+                <filter
+                    name="certification"
+                    string="Is a Certification"
+                    domain="[('certification', '=', True)]" />
+                <filter
+                    name="not_certification"
+                    string="Is not a Certification"
+                    domain="[('certification', '=', False)]" />
+                <separator />
+                <filter
+                    name="inactive"
+                    string="Archived"
+                    domain="[('active', '=', False)]" />
+                <separator />
+                <filter
+                    name="filter_activities_my"
+                    string="My Activities"
+                    domain="[('activity_user_id', '=', uid)]"
+                    invisible="1" />
+                <separator invisible="1" />
+                <filter
+                    name="activities_overdue"
+                    string="Late Activities"
+                    help="Show all records whose next activity date is past"
+                    domain="[('my_activity_date_deadline', '&lt;', 'today')]"
+                    invisible="1" />
+                <filter
+                    name="activities_today"
+                    string="Today Activities"
+                    domain="[('my_activity_date_deadline', '=', 'today')]"
+                    invisible="1" />
+                <filter
+                    name="activities_upcoming_all"
+                    string="Upcoming Activities"
+                    domain="[('my_activity_date_deadline', '&gt;', 'today')]"
+                    invisible="1" />
+                <group>
+                    <filter
+                        name="group_by_responsible"
+                        string="Responsible"
+                        context="{'group_by': 'user_id'}" />
+                    <filter
+                        name="group_by_category"
+                        string="Category"
+                        context="{'group_by': 'category_id'}" />
+                    <filter
+                        name="group_by_tags"
+                        string="Tags"
+                        context="{'group_by': 'tag_ids'}" />
+                    <filter
+                        name="group_by_restrict_user_ids"
+                        context="{'group_by': 'restrict_user_ids'}" />
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_survey_form" model="ir.actions.act_window">
+        <field name="name">Surveys</field>
+        <field name="res_model">survey.survey</field>
+        <field name="path">surveys</field>
+        <field name="view_mode">kanban,list,form,activity</field>
+    </record>
+
+    <record id="survey_survey_view_graph" model="ir.ui.view">
+        <field name="name">survey.survey.view.graph</field>
+        <field name="model">survey.survey</field>
+        <field name="arch" type="xml">
+            <graph>
+                <field name="color" type="measure" invisible="1" />
+            </graph>
+        </field>
+    </record>
+
+    <record id="survey_survey_view_pivot" model="ir.ui.view">
+        <field name="name">survey.survey.view.pivot</field>
+        <field name="model">survey.survey</field>
+        <field name="arch" type="xml">
+            <pivot>
+                <field name="color" type="measure" invisible="1" />
+            </pivot>
+        </field>
+    </record>
+
+</odoo>

@@ -1,0 +1,181 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* asset_delivery_gps
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-09-25 09:41+0000\n"
+"PO-Revision-Date: 2026-09-25 09:41+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: es_MX\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: asset_delivery_gps
+#: model:ir.model,name:asset_delivery_gps.model_resource_asset
+msgid "Asset"
+msgstr "Activo"
+
+#. module: asset_delivery_gps
+#: model:ir.model,name:asset_delivery_gps.model_stock_picking_batch
+msgid "Batch Transfer"
+msgstr "Lote de transferencias"
+
+#. module: asset_delivery_gps
+#: model:ir.model.fields,field_description:asset_delivery_gps.field_resource_asset__display_name
+#: model:ir.model.fields,field_description:asset_delivery_gps.field_stock_picking_batch__display_name
+msgid "Display Name"
+msgstr "Nombre mostrado"
+
+#. module: asset_delivery_gps
+#: model:ir.model.fields,field_description:asset_delivery_gps.field_resource_asset__id
+#: model:ir.model.fields,field_description:asset_delivery_gps.field_stock_picking_batch__id
+msgid "ID"
+msgstr ""
+
+#. module: asset_delivery_gps
+#. odoo-python
+#: code:addons/asset_delivery_gps/models/resource_asset.py:0
+msgid ""
+"No GPS data available for vehicle %s. Waiting for GPS device to send data."
+msgstr ""
+"No hay datos de GPS para el vehículo %s. Esperando a que el equipo GPS envíe"
+" datos."
+
+#. module: asset_delivery_gps
+#. odoo-python
+#: code:addons/asset_delivery_gps/models/resource_asset.py:0
+msgid ""
+"No GPS device assigned to vehicle %s. Please assign a GPS device or enter "
+"fuel level manually."
+msgstr ""
+"El vehículo %s no tiene equipo GPS asignado. Asigna un equipo GPS o captura "
+"el nivel de combustible a mano."
+
+#. module: asset_delivery_gps
+#. odoo-python
+#: code:addons/asset_delivery_gps/models/resource_asset.py:0
+msgid ""
+"No GPS device assigned to vehicle %s. Please assign a GPS device or enter "
+"odometer manually."
+msgstr ""
+"El vehículo %s no tiene equipo GPS asignado. Asigna un equipo GPS o captura "
+"el odómetro a mano."
+
+#. module: asset_delivery_gps
+#. odoo-python
+#: code:addons/asset_delivery_gps/models/resource_asset.py:0
+msgid ""
+"No valid GPS odometer reading for vehicle %(vehicle)s in the last "
+"%(minutes)s minutes. Please enter the odometer manually."
+msgstr ""
+"No hay una lectura válida de odómetro GPS para el vehículo %(vehicle)s en "
+"los últimos %(minutes)s minutos. Captura el odómetro a mano."
+
+#. module: asset_delivery_gps
+#: model_terms:ir.ui.view,arch_db:asset_delivery_gps.stock_picking_batch_form_driver_gps
+#: model_terms:ir.ui.view,arch_db:asset_delivery_gps.stock_picking_batch_form_trip_gps
+msgid "Read from GPS"
+msgstr "Leer del GPS"
+
+#. module: asset_delivery_gps
+#: model_terms:ir.ui.view,arch_db:asset_delivery_gps.stock_picking_batch_form_trip_gps
+msgid "Read return from GPS"
+msgstr "Leer cierre del GPS"
+
+#. module: asset_delivery_gps
+#. odoo-python
+#: code:addons/asset_delivery_gps/models/resource_asset.py:0
+msgid ""
+"The last GPS reading for vehicle %(vehicle)s is from %(timestamp)s, older "
+"than the %(days)s day(s) considered current. Please enter the value "
+"manually."
+msgstr ""
+"La última lectura GPS del vehículo %(vehicle)s es del %(timestamp)s, más "
+"antigua que los %(days)s día(s) que se consideran vigentes. Captura el valor"
+" a mano."
+
+#. module: asset_delivery_gps
+#. odoo-python
+#: code:addons/asset_delivery_gps/models/stock_picking_batch.py:0
+msgid "Trip %s has already departed."
+msgstr "El viaje %s ya salió."
+
+#. module: asset_delivery_gps
+#. odoo-python
+#: code:addons/asset_delivery_gps/models/stock_picking_batch.py:0
+msgid "Trip %s has no vehicle."
+msgstr "El viaje %s no tiene vehículo."
+
+#. module: asset_delivery_gps
+#. odoo-python
+#: code:addons/asset_delivery_gps/models/stock_picking_batch.py:0
+msgid "Trip %s is already closed."
+msgstr "El viaje %s ya está cerrado."
+
+#. module: asset_delivery_gps
+#: model_terms:ir.ui.view,arch_db:asset_delivery_gps.stock_picking_batch_form_trip_gps
+msgid "Capture km from GPS"
+msgstr "Capturar km por GPS"
+
+#. module: asset_delivery_gps
+#. odoo-python
+#: code:addons/asset_delivery_gps/models/stock_picking_batch.py:0
+msgid ""
+"Kilometres from the GPS: %(legs)s; return %(back)s km; trip %(total)s km."
+msgstr "Kilómetros del GPS: %(legs)s; regreso %(back)s km; viaje %(total)s km."
+
+#. module: asset_delivery_gps
+#: model:ir.model.fields,help:asset_delivery_gps.field_stock_picking_batch__trip_return_leg_km
+msgid "Kilometres from the last delivery back to the warehouse, from the GPS."
+msgstr "Kilómetros de la última entrega de regreso al almacén, según el GPS."
+
+#. module: asset_delivery_gps
+#: model:ir.model.fields,help:asset_delivery_gps.field_stock_picking_batch__trip_gps_km
+msgid "Kilometres of every leg of the trip, return included, from the GPS."
+msgstr "Kilómetros de todos los tramos del viaje, incluido el regreso, según el GPS."
+
+#. module: asset_delivery_gps
+#: model:ir.model.fields,help:asset_delivery_gps.field_stock_picking__trip_leg_km
+msgid ""
+"Kilometres the vehicle drove from the previous stop, or from the departure, "
+"to this delivery's stop, read from its GPS when the trip returns. Other "
+"deliveries of the same stop show 0."
+msgstr "Kilómetros que recorrió el vehículo desde la parada anterior, o desde la salida, hasta la parada de esta entrega, leídos de su GPS al registrar el regreso. Las demás entregas de la misma parada muestran 0."
+
+#. module: asset_delivery_gps
+#: model:ir.model.fields,field_description:asset_delivery_gps.field_stock_picking__trip_leg_km
+msgid "Leg km (GPS)"
+msgstr "Km del tramo (GPS)"
+
+#. module: asset_delivery_gps
+#: model:ir.model.fields,field_description:asset_delivery_gps.field_stock_picking_batch__trip_return_leg_km
+msgid "Return leg km (GPS)"
+msgstr "Km de regreso (GPS)"
+
+#. module: asset_delivery_gps
+#: model:ir.model,name:asset_delivery_gps.model_stock_picking
+msgid "Transfer"
+msgstr "Albarán"
+
+#. module: asset_delivery_gps
+#. odoo-python
+#: code:addons/asset_delivery_gps/models/stock_picking_batch.py:0
+msgid "Trip %s has not departed yet."
+msgstr "El viaje %s todavía no ha salido."
+
+#. module: asset_delivery_gps
+#: model:ir.model.fields,field_description:asset_delivery_gps.field_stock_picking_batch__trip_gps_km
+msgid "Trip km (GPS)"
+msgstr "Km del viaje (GPS)"
+
+#. module: asset_delivery_gps
+#. odoo-python
+#: code:addons/asset_delivery_gps/models/stock_picking_batch.py:0
+msgid "Vehicle %s has no GPS device; its kilometres cannot be read."
+msgstr "El vehículo %s no tiene dispositivo GPS; no se pueden leer sus kilómetros."

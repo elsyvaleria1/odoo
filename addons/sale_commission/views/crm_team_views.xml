@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="crm_team_salesteams_view_form_hide" model="ir.ui.view">
+        <field name="name">team.team.form</field>
+        <field name="model">team.team</field>
+        <field name="inherit_id" ref="team.team_view_form" />
+        <field name="priority">9</field>
+        <field name="arch" type="xml">
+            <label for="invoiced_target" position="attributes">
+                <attribute name="invisible">1</attribute>
+            </label>
+
+            <div id="invoiced_target" position="attributes">
+                <attribute name="invisible">1</attribute>
+            </div>
+        </field>
+    </record>
+
+</odoo>

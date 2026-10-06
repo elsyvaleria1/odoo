@@ -1,0 +1,5 @@
+// The PDF engine drops a selector with more than 11 combinators
+// (_MAX_SELECTOR_COMBINATORS in web's ir_actions_report.py) and warns for each.
+// A list nested deeper keeps the deepest style it reaches, as it did when the
+// deeper selectors were emitted and dropped.
+$o-html-list-max-depth: 11;

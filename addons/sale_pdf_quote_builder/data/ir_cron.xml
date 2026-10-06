@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="cron_post_upgrade_assign_missing_form_fields" model="ir.cron">
+        <field
+            name="name">Sale Pdf Quote Builder: assign form fields to documents post upgrade</field>
+        <field name="model_id" ref="sale_pdf_quote_builder.model_sale_pdf_form_field" />
+        <field name="state">code</field>
+        <field name="code">model._cron_post_upgrade_update_missing_form_fields()</field>
+        <field name="user_id" ref="base.user_root" />
+        <field name="repeat_interval">9999</field>
+        <field name="repeat_unit">month</field>
+    </record>
+
+</odoo>

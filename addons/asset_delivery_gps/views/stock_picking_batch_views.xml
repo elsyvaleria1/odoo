@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="stock_picking_batch_form_trip_gps" model="ir.ui.view">
+        <field name="name">stock.picking.batch.form.trip.gps</field>
+        <field name="model">stock.picking.batch</field>
+        <field name="inherit_id" ref="stock_fleet.stock_picking_batch_form_trip" />
+        <field name="arch" type="xml">
+            <field name="odometer_uom_id" position="after">
+                <button
+                    name="action_read_gps_odometer_departure"
+                    type="object"
+                    string="Read from GPS"
+                    icon="fa-crosshairs"
+                    invisible="date_departure or not vehicle_id"
+                    class="btn-link" />
+            </field>
+            <field name="odometer_return" position="after">
+                <button
+                    name="action_read_gps_odometer_return"
+                    type="object"
+                    string="Read return from GPS"
+                    icon="fa-crosshairs"
+                    invisible="not date_departure or date_return"
+                    class="btn-link" />
+                <field name="trip_gps_km" invisible="not trip_gps_km" />
+                <field name="trip_return_leg_km" invisible="not trip_gps_km" />
+            </field>
+            <xpath expr="//header" position="inside">
+                <button
+                    name="action_capture_gps_legs"
+                    type="object"
+                    string="Capture km from GPS"
+                    invisible="not date_departure or not vehicle_id" />
+            </xpath>
+        </field>
+    </record>
+
+    <record id="stock_picking_view_batch_tree_trip_gps" model="ir.ui.view">
+        <field name="name">stock.picking.list.batch.trip.gps</field>
+        <field name="model">stock.picking</field>
+        <field
+            name="inherit_id"
+            ref="stock_picking_batch.stock_picking_view_batch_tree_ref" />
+        <field name="arch" type="xml">
+            <xpath expr="//list" position="inside">
+                <field name="trip_leg_km" optional="show" />
+            </xpath>
+        </field>
+    </record>
+
+    <record id="stock_picking_batch_form_driver_gps" model="ir.ui.view">
+        <field name="name">stock.picking.batch.form.driver.gps</field>
+        <field name="model">stock.picking.batch</field>
+        <field name="inherit_id" ref="stock_fleet.stock_picking_batch_form_driver" />
+        <field name="arch" type="xml">
+            <field name="odometer_uom_id" position="after">
+                <button
+                    name="action_read_gps_odometer_return"
+                    type="object"
+                    string="Read from GPS"
+                    icon="fa-crosshairs"
+                    invisible="not date_departure or date_return"
+                    class="btn-link" />
+            </field>
+            <xpath
+                expr="//field[@name='picking_ids']/list/field[@name='state']"
+                position="after">
+                <field name="trip_leg_km" optional="show" />
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

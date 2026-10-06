@@ -1,0 +1,2 @@
+id,name,model_id/id,group_id/id,kind,operation,domain
+access_account_intrastat_code_readonly,account.intrastat.code,model_account_intrastat_code,account.group_account_readonly,permission,r,

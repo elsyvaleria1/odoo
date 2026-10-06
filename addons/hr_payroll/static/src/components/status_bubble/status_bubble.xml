@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates>
+    <t t-name="hr_payroll.StatusBubble">
+        <span class="state-bubbles d-flex justify-content-center">
+            <t t-foreach="this.selection" t-as="option" t-key="option_index">
+                <span class="state d-inline-flex flex-column align-items-center justify-content-center" style="min-width: 60px;">
+                    <span class="small" t-att-style="this.activeIndex &gt;= 0 &amp;&amp; (this.issueCount || this.hasError) ? 'height: 20px;' : ''">
+                        <span t-if="option_index === this.activeIndex &amp;&amp; (this.issueCount || this.hasError)">
+                            <t t-out="this.issueCount"/> Issues
+                        </span>
+                    </span>
+                    <div class="w-100 d-inline-flex position-relative justify-content-center">
+                        <div class="bg-secondary rounded-circle z-1" style="width: 20px; height: 20px;" t-att-class="{
+                            'bg-success': this.isReached(option_index),
+                            'bg-warning': option_index === this.activeIndex &amp;&amp; this.issueCount,
+                            'bg-danger': option_index === this.activeIndex &amp;&amp; this.hasError,
+                            }"/>
+                        <span class="state-bubble-line-left position-absolute w-50 border start-0 top-50"
+                              t-if="option_index &gt; 0"
+                              t-att-class="{
+                            'border-success': this.isReached(option_index),
+                            'border-warning': option_index === this.activeIndex &amp;&amp; this.issueCount,
+                            'border-danger': option_index === this.activeIndex &amp;&amp; this.hasError,
+                            }"/>
+                        <span class="state-bubble-line-right position-absolute w-50 border end-0 top-50"
+                              t-if="option_index &lt; this.selection.length-1"
+                              t-att-class="{
+                            'border-success': option_index &lt; this.activeIndex,
+                            }"/>
+                    </div>
+                    <span class="small"><t t-out="option[1]"/></span>
+                </span>
+            </t>
+        </span>
+    </t>
+</templates>

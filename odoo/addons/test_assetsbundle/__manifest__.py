@@ -1,0 +1,109 @@
+{
+    "name": "Asset Bundles Tests",
+    "version": "0.1",
+    "category": "Hidden/Tests",
+    "summary": "Test Asset Bundles behaviour, including assetsbundle, attachment store, css pipeline",
+    "description": "Run regression tests for Asset Bundles. Loaded test suites include ``TestJavascriptAssetsBundle``, ``TestAssetsBundleWithIRAMock``, ``AssetsNodeOrmCacheUsage``, ``TestExternalAssetFilter``, ``TestAssetErrorTaxonomy``.",
+    "author": "Odoo S.A.",
+    "license": "LGPL-3",
+    "depends": [
+        "web",
+    ],
+    "data": [
+        "data/ir_asset.xml",
+        "views/views.xml",
+    ],
+    "assets": {
+        "web.assets_tests": [
+            "test_assetsbundle/static/tests/test_css_error.js",
+        ],
+        "test_assetsbundle.bundle2": [
+            "test_assetsbundle/static/src/css/test_cssfile1.css",
+        ],
+        "test_assetsbundle.bundle3": [
+            "test_assetsbundle/static/src/scss/test_file1.scss",
+        ],
+        "test_assetsbundle.bundle4": [
+            "test_assetsbundle/static/src/js/test_jsfile1.js",
+            "test_assetsbundle/static/src/js/test_jsfile2.js",
+            "http://test.external.link/javascript1.js",
+            "test_assetsbundle/static/src/css/test_cssfile1.css",
+            "http://test.external.link/style1.css",
+            "test_assetsbundle/static/src/css/test_cssfile2.css",
+            "test_assetsbundle/static/src/js/test_jsfile3.js",
+            "http://test.external.link/javascript2.js",
+            "http://test.external.link/style2.css",
+        ],
+        "test_assetsbundle.manifest1": [
+            "test_assetsbundle/static/src/*/**",
+        ],
+        "test_assetsbundle.manifest2": [
+            "test_assetsbundle/static/src/js/test_jsfile1.js",
+            "test_assetsbundle/static/src/*/**",
+        ],
+        "test_assetsbundle.manifest3": [
+            "test_assetsbundle/static/src/js/test_jsfile3.js",
+            "test_assetsbundle/static/src/*/**",
+        ],
+        "test_assetsbundle.manifest4": [
+            "test_assetsbundle/static/src/js/test_jsfile3.js",
+        ],
+        "test_assetsbundle.manifest5": [
+            "test_assetsbundle/static/src/js/test_jsfile1.js",
+            "test_assetsbundle/static/src/js/test_jsfile2.js",
+            "test_assetsbundle/static/src/js/test_jsfile3.js",
+            "test_assetsbundle/static/src/js/test_jsfile4.js",
+        ],
+        "test_assetsbundle.manifest6": [
+            (
+                "include",
+                "test_assetsbundle.manifest4",
+            ),
+        ],
+        "test_assetsbundle.broken_css": [
+            "test_assetsbundle/static/invalid_src/css/invalid_css.css",
+        ],
+        "test_assetsbundle.lazy_test_component": [
+            "test_assetsbundle/static/tests/lazy_test_component/**/*",
+        ],
+        "test_assetsbundle.broken_xml": [
+            "test_assetsbundle/static/invalid_src/xml/invalid_xml.xml",
+        ],
+        "test_assetsbundle.multiple_broken_xml": [
+            "test_assetsbundle/static/invalid_src/xml/invalid_xml.xml",
+            "test_assetsbundle/static/invalid_src/xml/second_invalid_xml.xml",
+        ],
+        "test_assetsbundle.multiple_same_name": [
+            "test_assetsbundle/static/invalid_src/xml/multiple_same_name.xml",
+        ],
+        "test_assetsbundle.wo_name": [
+            "test_assetsbundle/static/invalid_src/xml/template_wo_name.xml",
+        ],
+        "test_assetsbundle.file_not_found": [
+            "test_assetsbundle/static/invalid_src/xml/file_not_found.xml",
+        ],
+        "test_assetsbundle.native_esm": [
+            "test_assetsbundle/static/tests/native_esm/*.js",
+        ],
+        "test_assetsbundle.esm_inlined": [
+            "test_assetsbundle/static/tests/esm_inlined/*.js",
+        ],
+        "web.assets_unit_tests": [
+            "test_assetsbundle/static/tests/lazy_component.test.js",
+        ],
+    },
+    "esm": {
+        "bundles": [
+            "test_assetsbundle.lazy_test_component",
+            "test_assetsbundle.native_esm",
+            "test_assetsbundle.esm_inlined",
+        ],
+        "standalone_bundles": [
+            "test_assetsbundle.native_esm",
+            "test_assetsbundle.esm_inlined",
+        ],
+        "runtime_bundles": [
+            "test_assetsbundle.lazy_test_component",
+        ],
+    },
+}

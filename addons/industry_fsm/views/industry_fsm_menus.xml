@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!--
+        FSM Menus
+    -->
+    <menuitem
+        id="fsm_menu_root"
+        name="Field Service"
+        sequence="80"
+        groups="industry_fsm.group_fsm_user"
+        web_icon="industry_fsm,static/description/icon.png" />
+
+    <menuitem
+        id="fsm_tasks_menu"
+        name="My Tasks"
+        parent="fsm_menu_root"
+        sequence="10"
+        groups="industry_fsm.group_fsm_user" />
+
+    <menuitem
+        id="fsm_menu_tasks_kanban"
+        name="Tasks"
+        parent="fsm_tasks_menu"
+        action="project_task_fsm_server_action"
+        sequence="10"
+        groups="industry_fsm.group_fsm_user" />
+
+    <menuitem
+        id="fsm_menu_tasks_map"
+        name="Map"
+        parent="fsm_tasks_menu"
+        action="project_task_fsm_map_server_action"
+        sequence="20"
+        groups="industry_fsm.group_fsm_user" />
+
+    <menuitem
+        id="fsm_menu_all_tasks_root"
+        name="All Tasks"
+        parent="fsm_menu_root"
+        sequence="15"
+        groups="industry_fsm.group_fsm_manager" />
+
+    <menuitem
+        id="fsm_menu_all_tasks_todo"
+        name="All Tasks"
+        parent="industry_fsm.fsm_menu_all_tasks_root"
+        action="project_task_all_fsm_server_action"
+        sequence="10"
+        groups="industry_fsm.group_fsm_manager" />
+
+    <menuitem
+        id="fsm_menu_all_tasks_schedule"
+        name="To Schedule"
+        parent="industry_fsm.fsm_menu_all_tasks_root"
+        action="project_task_to_schedule_fsm_server_action"
+        sequence="20"
+        groups="industry_fsm.group_fsm_manager" />
+
+    <menuitem
+        id="fsm_menu_planning"
+        name="Planning"
+        parent="fsm_menu_root"
+        sequence="20"
+        groups="industry_fsm.group_fsm_manager" />
+
+    <menuitem
+        id="project_task_menu_planning_by_user_fsm"
+        name="By User"
+        parent="fsm_menu_planning"
+        action="industry_fsm.project_task_fsm_planning_groupby_user_server_action"
+        sequence="10"
+        groups="industry_fsm.group_fsm_manager" />
+
+    <menuitem
+        id="project_task_menu_planning_by_project_fsm"
+        name="By Project"
+        parent="fsm_menu_planning"
+        action="industry_fsm.project_task_fsm_planning_groupby_project_server_action"
+        sequence="15"
+        groups="industry_fsm.group_fsm_manager" />
+
+    <menuitem
+        id="project_task_menu_planning_by_location_fsm"
+        name="By Location"
+        parent="fsm_menu_planning"
+        action="industry_fsm.project_task_fsm_planning_groupby_location_server_action"
+        sequence="25"
+        groups="industry_fsm.group_fsm_manager" />
+
+    <menuitem
+        id="fsm_menu_reporting"
+        name="Reporting"
+        parent="fsm_menu_root"
+        sequence="40" />
+
+    <menuitem
+        id="fsm_menu_reporting_customer_ratings"
+        name="Customer Ratings"
+        parent="industry_fsm.fsm_menu_reporting"
+        action="rating_rating_action_fsm"
+        sequence="20" />
+
+    <menuitem
+        id="fsm_menu_settings"
+        name="Configuration"
+        parent="industry_fsm.fsm_menu_root"
+        sequence="50"
+        groups="industry_fsm.group_fsm_manager">
+        <menuitem
+            id="fsm_menu_settings_res_config"
+            name="Settings"
+            action="industry_fsm.res_config_settings_action_fsm"
+            sequence="0"
+            groups="base.group_system" />
+        <menuitem
+            id="fsm_menu_settings_project"
+            name="Projects"
+            action="project_project_action_only_fsm"
+            sequence="10"
+            groups="industry_fsm.group_fsm_manager" />
+        <menuitem
+            id="fsm_menu_settings_stage"
+            name="Stages"
+            action="industry_fsm.project_task_type_action_fsm"
+            sequence="15"
+            groups="industry_fsm.group_fsm_manager" />
+        <menuitem
+            id="menu_project_tags_act"
+            name="Tags"
+            action="project.project_tags_action"
+            sequence="40"
+            groups="industry_fsm.group_fsm_manager" />
+        <menuitem
+            id="fsm_menu_config_activity_type"
+            name="Activity Types"
+            action="project.mail_activity_type_action_config_project_types"
+            sequence="45"
+            groups="industry_fsm.group_fsm_manager" />
+        <menuitem
+            id="mail_activity_plan_menu_config_task"
+            name="Activity Plans"
+            action="project.mail_activity_plan_action_config_project_task_plan"
+            sequence="50"
+            groups="industry_fsm.group_fsm_manager" />
+    </menuitem>
+
+    <menuitem
+        id="fsm_menu_reporting_task_analysis"
+        name="Tasks Analysis"
+        parent="industry_fsm.fsm_menu_reporting"
+        action="project_task_user_action_report_fsm"
+        sequence="10" />
+
+</odoo>

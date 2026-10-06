@@ -1,0 +1,162 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* wallet
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-09-21 17:17+0000\n"
+"PO-Revision-Date: 2026-09-21 17:17+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: es_MX\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#. module: wallet
+#. odoo-javascript
+#: code:addons/wallet/static/src/home_tile/wallet_low_tile.xml:0
+msgid "Every card is above its threshold."
+msgstr "Todas las tarjetas están sobre su umbral."
+
+#. module: wallet
+#: model:ir.model,name:wallet.model_home_tile
+msgid "Home Dashboard Tile"
+msgstr "Tarjeta del tablero de inicio"
+
+#. module: wallet
+#. odoo-python
+#: code:addons/wallet/models/home_tile.py:0
+msgid "Low wallet balances"
+msgstr "Saldos bajos de monedero"
+
+#. module: wallet
+#. odoo-javascript
+#: code:addons/wallet/static/src/home_tile/wallet_low_tile.xml:0
+msgid "below their threshold"
+msgstr "bajo su umbral"
+
+#. module: wallet
+#: model:ir.model.fields,field_description:wallet.field_wallet_balance__account_id
+#: model:ir.model.fields,field_description:wallet.field_wallet_card__account_id
+#: model:ir.model.fields,field_description:wallet.field_wallet_statement__account_id
+#: model:ir.model.fields,field_description:wallet.field_wallet_transaction__account_id
+#: model_terms:ir.ui.view,arch_db:wallet.view_wallet_card_search
+msgid "Account"
+msgstr "Cuenta"
+
+#. module: wallet
+#: model_terms:ir.ui.view,arch_db:wallet.view_wallet_account_search
+#: model_terms:ir.ui.view,arch_db:wallet.view_wallet_card_search
+msgid "Archived"
+msgstr "Archivado"
+
+#. module: wallet
+#: model:ir.actions.act_window,name:wallet.action_wallet_balance
+#: model:ir.ui.menu,name:wallet.menu_wallet_balance
+msgid "Balances"
+msgstr "Saldos"
+
+#. module: wallet
+#: model:ir.model.fields,field_description:wallet.field_wallet_account__card_ids
+#: model:ir.model.fields,field_description:wallet.field_wallet_balance__card_id
+#: model:ir.model.fields,field_description:wallet.field_wallet_transaction__card_id
+#: model_terms:ir.ui.view,arch_db:wallet.view_wallet_balance_search
+#: model_terms:ir.ui.view,arch_db:wallet.view_wallet_transaction_search
+msgid "Card"
+msgstr "Tarjeta"
+
+#. module: wallet
+#. odoo-python
+#: code:addons/wallet/models/wallet_account.py:0
+#: model:ir.actions.act_window,name:wallet.action_wallet_card
+#: model:ir.ui.menu,name:wallet.menu_wallet_card
+#: model_terms:ir.ui.view,arch_db:wallet.view_wallet_account_form
+msgid "Cards"
+msgstr "Tarjetas"
+
+#. module: wallet
+#: model:ir.ui.menu,name:wallet.menu_wallet_config
+msgid "Configuration"
+msgstr "Configuración"
+
+#. module: wallet
+#: model:ir.model.fields,field_description:wallet.field_wallet_balance__date
+#: model:ir.model.fields,field_description:wallet.field_wallet_transaction__date
+#: model_terms:ir.ui.view,arch_db:wallet.view_wallet_balance_search
+msgid "Date"
+msgstr "Fecha"
+
+#. module: wallet
+#: model:ir.model.fields.selection,name:wallet.selection__wallet_account__kind__fuel
+#: model_terms:ir.ui.view,arch_db:wallet.view_wallet_account_search
+#: model_terms:ir.ui.view,arch_db:wallet.view_wallet_transaction_search
+msgid "Fuel"
+msgstr "Combustible"
+
+#. module: wallet
+#: model:ir.model.fields,field_description:wallet.field_wallet_card__holder_id
+#: model_terms:ir.ui.view,arch_db:wallet.view_wallet_card_search
+msgid "Holder"
+msgstr "Titular"
+
+#. module: wallet
+#: model:ir.model.fields,field_description:wallet.field_wallet_account__issuer_id
+#: model_terms:ir.ui.view,arch_db:wallet.view_wallet_account_search
+msgid "Issuer"
+msgstr "Emisor"
+
+#. module: wallet
+#: model:ir.model.fields,field_description:wallet.field_wallet_account__kind
+#: model:ir.model.fields,field_description:wallet.field_wallet_card__kind
+#: model:ir.model.fields,field_description:wallet.field_wallet_transaction__kind
+#: model_terms:ir.ui.view,arch_db:wallet.view_wallet_account_search
+msgid "Kind"
+msgstr "Clase"
+
+#. module: wallet
+#: model_terms:ir.ui.view,arch_db:wallet.view_wallet_card_search
+msgid "Low balance"
+msgstr "Saldo bajo"
+
+#. module: wallet
+#: model_terms:ir.ui.view,arch_db:wallet.view_wallet_transaction_search
+msgid "Month"
+msgstr "Mes"
+
+#. module: wallet
+#: model:ir.actions.act_window,name:wallet.action_wallet_statement
+#: model:ir.ui.menu,name:wallet.menu_wallet_statement
+msgid "Statements"
+msgstr "Estados de cuenta"
+
+#. module: wallet
+#: model:ir.model.fields.selection,name:wallet.selection__wallet_account__kind__toll
+#: model_terms:ir.ui.view,arch_db:wallet.view_wallet_account_search
+#: model_terms:ir.ui.view,arch_db:wallet.view_wallet_transaction_search
+msgid "Toll"
+msgstr "Peaje"
+
+#. module: wallet
+#. odoo-python
+#: code:addons/wallet/models/wallet_card.py:0
+#: model:ir.actions.act_window,name:wallet.action_wallet_transaction
+#: model:ir.ui.menu,name:wallet.menu_wallet_transaction
+#: model_terms:ir.ui.view,arch_db:wallet.view_wallet_card_form
+#: model_terms:ir.ui.view,arch_db:wallet.view_wallet_statement_form
+msgid "Transactions"
+msgstr "Transacciones"
+
+#. module: wallet
+#: model:ir.actions.act_window,name:wallet.action_wallet_account
+#: model:ir.ui.menu,name:wallet.menu_wallet_account
+msgid "Wallet Accounts"
+msgstr "Cuentas de monedero"
+
+#. module: wallet
+#: model:ir.ui.menu,name:wallet.menu_wallet_root
+msgid "Wallets"
+msgstr "Monederos"

@@ -1,0 +1,67 @@
+/** @odoo-module native */
+import { Component, markup, t, useProps } from "@odoo/owl";
+import { _t } from "@web/core/translation";
+import { useService } from "@web/core/utils/hooks";
+
+export class ForecastedButtons extends Component {
+    static template = "stock.ForecastedButtons";
+    static props = {
+        action: t.object(),
+        resModel: t.string().optional(),
+        reloadReport: t.function(),
+    };
+    props = useProps(this.constructor.props);
+
+    setup() {
+        this.actionService = useService("action");
+        this.orm = useService("orm");
+        this.context = this.props.action.context;
+        this.productId = this.context.active_id;
+        this.resModel =
+            this.props.resModel ||
+            this.context.active_model ||
+            this.context.params?.active_model ||
+            "product.template";
+    }
+
+    _onClose(res) {
+        return res?.special || res?.noReload || this.props.reloadReport();
+    }
+
+    async _onClickReplenish() {
+        const context = { ...this.context };
+        if (this.resModel === "product.product") {
+            context.default_product_id = this.productId;
+        } else if (this.resModel === "product.template") {
+            context.default_product_tmpl_id = this.productId;
+        }
+        context.default_warehouse_id = this.context.warehouse_id;
+
+        const action = {
+            res_model: "wizard.product.product.replenish",
+            name: _t("Product Replenish"),
+            type: "ir.actions.act_window",
+            views: [[false, "form"]],
+            target: "new",
+            context: context,
+        };
+        return this.actionService.doAction(action, {
+            onClose: this._onClose.bind(this),
+        });
+    }
+
+    async _onClickUpdateQuantity() {
+        const action = await this.orm.call(this.resModel, "action_view_quants", [
+            [this.productId],
+        ]);
+        if (action.res_model === "stock.quant") {
+            action.views = [[false, "list"]];
+        }
+        if (action.help) {
+            action.help = markup(action.help);
+        }
+        return this.actionService.doAction(action, {
+            onClose: this._onClose.bind(this),
+        });
+    }
+}

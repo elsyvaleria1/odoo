@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record
+        id="project_sharing_project_task_view_form_inherited_in_gantt"
+        model="ir.ui.view">
+        <field name="name">project.task.form.inherited</field>
+        <field name="model">project.task</field>
+        <field name="inherit_id" ref="project.project_sharing_project_task_view_form" />
+        <field name="mode">primary</field>
+        <field name="priority">300</field>
+        <field name="arch" type="xml">
+            <xpath expr="//sheet" position="after">
+                <footer>
+                    <button
+                        special="save"
+                        string="Save"
+                        class="btn btn-primary"
+                        close="1"
+                        data-hotkey="q" />
+                    <button
+                        name="action_unschedule_task"
+                        type="object"
+                        string="Unschedule"
+                        invisible="not id"
+                        class="btn btn-secondary"
+                        close="1"
+                        data-hotkey="u" />
+                    <button
+                        special="cancel"
+                        string="Discard"
+                        class="btn btn-secondary"
+                        close="1"
+                        data-hotkey="x" />
+                </footer>
+            </xpath>
+        </field>
+    </record>
+
+    <record
+        id="project_task_view_gantt_inherited_project_sharing_task"
+        model="ir.ui.view">
+        <field name="name">project.task.view.gantt.project.sharing.task</field>
+        <field name="model">project.task</field>
+        <field name="arch" type="xml">
+            <gantt
+                string="Planning"
+                default_group_by="step_id"
+                cell_create="False"
+                color="project_id"
+                date_start="date_start"
+                date_stop="date_end"
+                default_scale="month"
+                dependency_field="predecessor_ids"
+                dependency_inverted_field="successor_ids"
+                js_class="task_sharing_gantt"
+                pill_label="True"
+                precision="{'day': 'hour:quarter', 'week': 'day:half', 'month': 'day:half'}"
+                scales="day,week,month,quarter,year"
+                total_row="True">
+                <templates>
+                    <div t-name="gantt-popover">
+                        <footer replace="0">
+                            <button
+                                name="action_unschedule_task"
+                                type="object"
+                                string="Unschedule"
+                                class="btn btn-sm btn-secondary" />
+                        </footer>
+                    </div>
+                </templates>
+                <field name="project_id" />
+                <field name="allow_milestones" />
+                <field name="milestone_id" />
+                <field name="portal_user_names" />
+                <field name="partner_id" />
+                <field name="successor_count" />
+            </gantt>
+        </field>
+    </record>
+
+    <record
+        id="project_sharing_task_gantt_action_view"
+        model="ir.actions.act_window.view">
+        <field name="sequence" eval="30" />
+        <field name="view_mode">gantt</field>
+        <field
+            name="view_id"
+            ref="project_task_view_gantt_inherited_project_sharing_task" />
+        <field name="act_window_id" ref="project.project_sharing_project_task_action" />
+    </record>
+
+</odoo>

@@ -1,0 +1,302 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="tool_create_calendar_event" model="ir.actions.server">
+        <field name="name">Conversation: create calendar event</field>
+        <field name="model_id" ref="conversation.model_conversation_conversation" />
+        <field name="state">code</field>
+        <field
+            name="code">start_utc = tools.datetime(start, default_time="09:00", tz=record.user_id.tz or "America/Mexico_City")
+hours = duration_hours or 1.0
+owner = record._tool_assignee()
+partners = owner.partner_id | record.partner_id
+known = record.attendee_ids
+for attendee in attendee_names or []:
+    partners |= known.filtered(lambda p: p.name and p.name.lower() == attendee.strip().lower())
+event = env["calendar.event"].create({
+    "name": name,
+    "start": start_utc,
+    "stop": start_utc + datetime.timedelta(hours=hours),
+    "partner_ids": [(6, 0, partners.ids)],
+    "user_id": owner.id,
+    "description": description or "",
+})
+ai["result"] = {"model": "calendar.event", "id": event.id}</field>
+        <field
+            name="ai_approval_category_id"
+            ref="approval_category_tool_responsible" />
+        <field
+            name="ai_tool_description">Crear un evento de calendario (visita, llamada de seguimiento, junta) con fecha y hora acordadas. Los asistentes son el responsable de la conversación, el cliente y las personas nombradas.</field>
+        <field
+            name="ai_tool_schema">{
+    "type": "object",
+    "properties": {
+        "name": {"type": "string", "description": "Título del evento"},
+        "start": {"type": "string", "description": "Inicio en formato YYYY-MM-DD HH:MM (hora local de México)"},
+        "duration_hours": {"type": "number", "description": "Duración en horas, 1 si no se dijo"},
+        "attendee_names": {"type": "array", "items": {"type": "string"}, "description": "Nombres, tal como aparecen en la lista de personas conocidas, de asistentes además del responsable"},
+        "description": {"type": "string"}
+    },
+    "required": ["name", "start"]
+}</field>
+        <field name="conversation_enabled" eval="True" />
+        <field
+            name="conversation_examples">"nos vemos el 21 a las 8", "agendamos la visita", "la próxima junta es el viernes"</field>
+        <field name="conversation_key">create_calendar_event</field>
+        <field name="use_in_ai" eval="True" />
+    </record>
+
+    <record id="tool_create_task" model="ir.actions.server">
+        <field name="name">Conversation: create task</field>
+        <field name="model_id" ref="conversation.model_conversation_conversation" />
+        <field name="state">code</field>
+        <field
+            name="code">project = tools.find("project.project", project_name)
+if not project and record.hub_task_id:
+    project = record.hub_task_id.project_id
+if not project:
+    raise UserError("No se encontró el proyecto '%s'; indícalo en los argumentos." % (project_name or ""))
+assignee = tools.find("res.users", assignee_name, [("share", "=", False)]) or record._tool_assignee()
+vals = {
+    "name": name,
+    "project_id": project.id,
+    "partner_id": record.partner_id.id,
+    "description": description or "",
+}
+vals.update(record._tool_task_assignees(assignee))
+if date_end:
+    vals["date_end"] = tools.datetime(date_end, default_time="09:00", tz=record.user_id.tz or "America/Mexico_City")
+if record.hub_task_id:
+    vals["predecessor_ids"] = [(4, record.hub_task_id.id)]
+task = env["project.task"].create(vals)
+ai["result"] = {"model": "project.task", "id": task.id}</field>
+        <field
+            name="ai_approval_category_id"
+            ref="approval_category_tool_responsible" />
+        <field
+            name="ai_tool_description">Crear una tarea de proyecto para un compromiso concreto (visita, entregable, seguimiento). El proyecto se nombra tal como se conoce en la empresa; si la conversación tiene tarea hub, las tareas nuevas cuelgan de su proyecto.</field>
+        <field
+            name="ai_tool_schema">{
+    "type": "object",
+    "properties": {
+        "name": {"type": "string", "description": "Título corto de la tarea"},
+        "project_name": {"type": "string", "description": "Nombre del proyecto, vacío si no se sabe"},
+        "assignee_name": {"type": "string", "description": "Persona responsable; vacío = responsable de la conversación"},
+        "date_end": {"type": "string", "description": "Fecha límite YYYY-MM-DD, vacío si no se dijo"},
+        "description": {"type": "string"}
+    },
+    "required": ["name"]
+}</field>
+        <field name="conversation_enabled" eval="True" />
+        <field
+            name="conversation_examples">"yo me encargo de", "hay que hacer", "queda pendiente que X haga Y", visitas en campo</field>
+        <field name="conversation_key">create_task</field>
+        <field name="use_in_ai" eval="True" />
+    </record>
+
+    <record id="tool_log_activity" model="ir.actions.server">
+        <field name="name">Conversation: schedule activity</field>
+        <field name="model_id" ref="conversation.model_conversation_conversation" />
+        <field name="state">code</field>
+        <field
+            name="code">target = record.partner_id or record
+activity = target.activity_schedule(
+    "mail.mail_activity_data_todo",
+    date_deadline=tools.date(date_deadline),
+    summary=summary,
+    note=note or "",
+    user_id=record._tool_assignee().id,
+)
+ai["result"] = {"model": "mail.activity", "id": activity.id}</field>
+        <field
+            name="ai_approval_category_id"
+            ref="approval_category_tool_responsible" />
+        <field
+            name="ai_tool_description">Programar una actividad (llamada, recordatorio, pendiente) en el cliente, o en la conversación si no hay cliente, con fecha límite.</field>
+        <field
+            name="ai_tool_schema">{
+    "type": "object",
+    "properties": {
+        "summary": {"type": "string"},
+        "date_deadline": {"type": "string", "description": "YYYY-MM-DD"},
+        "note": {"type": "string"}
+    },
+    "required": ["summary", "date_deadline"]
+}</field>
+        <field name="conversation_enabled" eval="True" />
+        <field
+            name="conversation_examples">"te confirmo mañana", "le llamo la próxima semana", "hay que revisar antes del 21"</field>
+        <field name="conversation_key">log_activity</field>
+        <field name="use_in_ai" eval="True" />
+    </record>
+
+    <record id="tool_note_on_customer" model="ir.actions.server">
+        <field name="name">Conversation: note on customer</field>
+        <field name="model_id" ref="conversation.model_conversation_conversation" />
+        <field name="state">code</field>
+        <field
+            name="code">if not record.partner_id:
+    raise UserError("La conversación no tiene cliente.")
+message = record.partner_id.message_post(body=body, subject="Nota desde conversación #%s" % record.id)
+ai["result"] = {"model": "res.partner", "id": record.partner_id.id, "created": False}</field>
+        <field
+            name="ai_approval_category_id"
+            ref="approval_category_tool_responsible" />
+        <field
+            name="ai_tool_description">Dejar una nota en el historial del cliente con información dicha en la conversación (preferencias, situación, avisos).</field>
+        <field
+            name="ai_tool_schema">{
+    "type": "object",
+    "properties": {"body": {"type": "string"}},
+    "required": ["body"]
+}</field>
+        <field name="conversation_enabled" eval="True" />
+        <field
+            name="conversation_examples">datos sueltos del cliente que conviene recordar y que no caben en otro campo</field>
+        <field name="conversation_key">note_on_customer</field>
+        <field name="use_in_ai" eval="True" />
+    </record>
+
+    <record id="tool_create_product" model="ir.actions.server">
+        <field name="name">Conversation: create product (archived)</field>
+        <field name="model_id" ref="conversation.model_conversation_conversation" />
+        <field name="state">code</field>
+        <field
+            name="code">vals = {"name": name, "active": False, "description": description or ""}
+category = tools.find("product.category", category_name)
+if category:
+    vals["categ_id"] = category.id
+uom = tools.find("uom.uom", uom_name)
+if uom:
+    vals["uom_id"] = uom.id
+if list_price:
+    vals["list_price"] = list_price
+template = env["product.template"].create(vals)
+ai["result"] = {"model": "product.template", "id": template.id}</field>
+        <field name="ai_approval_category_id" ref="approval_category_tool_manager" />
+        <field
+            name="ai_tool_description">Crear un producto nuevo acordado en la conversación. Nace archivado para que Producción o Dirección lo revisen antes de publicarlo.</field>
+        <field
+            name="ai_tool_schema">{
+    "type": "object",
+    "properties": {
+        "name": {"type": "string", "description": "Nombre comercial con presentación, p. ej. 'Neonic XM 250 SC 20L'"},
+        "category_name": {"type": "string"},
+        "uom_name": {"type": "string", "description": "Unidad de medida: Litro, Kilo, Unidad"},
+        "list_price": {"type": "number"},
+        "description": {"type": "string"}
+    },
+    "required": ["name"]
+}</field>
+        <field name="conversation_enabled" eval="True" />
+        <field
+            name="conversation_examples">"vamos a sacar un producto nuevo", "el nuevo Neonic de 20 litros", "registramos la presentación"</field>
+        <field name="conversation_key">create_product</field>
+        <field name="use_in_ai" eval="True" />
+    </record>
+
+    <record id="tool_create_record" model="ir.actions.server">
+        <field name="name">Conversation: create a record (allowed models)</field>
+        <field name="model_id" ref="conversation.model_conversation_conversation" />
+        <field name="state">code</field>
+        <field
+            name="code">env["ai.tool.model.access"]._check(model_name, "create")
+created = env[model_name].create(tools.json(values_json))
+ai["result"] = {"model": model_name, "id": created.id}</field>
+        <field name="ai_approval_category_id" ref="approval_category_tool_manager" />
+        <field
+            name="ai_tool_description">Crear un registro de cualquier modelo de Odoo autorizado en la lista de modelos permitidos (nombre técnico, p. ej. 'crm.lead'), con los valores dichos. Úsalo solo cuando ninguna otra herramienta aplique.</field>
+        <field
+            name="ai_tool_schema">{
+    "type": "object",
+    "properties": {
+        "model_name": {"type": "string", "description": "Nombre técnico del modelo, p. ej. crm.lead"},
+        "values_json": {"type": "string", "description": "Objeto JSON con los valores por nombre técnico de campo"},
+        "reason": {"type": "string"}
+    },
+    "required": ["model_name", "values_json", "reason"]
+}</field>
+        <field name="conversation_enabled" eval="True" />
+        <field
+            name="conversation_examples">cualquier registro de Odoo que no tenga herramienta propia y esté en la lista de modelos permitidos</field>
+        <field name="conversation_key">create_record</field>
+        <field name="use_in_ai" eval="True" />
+    </record>
+
+    <record id="tool_update_record" model="ir.actions.server">
+        <field name="name">Conversation: update a record (allowed models)</field>
+        <field name="model_id" ref="conversation.model_conversation_conversation" />
+        <field name="state">code</field>
+        <field
+            name="code">env["ai.tool.model.access"]._check(model_name, "write")
+target = env[model_name].browse(res_id).exists()
+if not target:
+    raise UserError("No existe el registro %s #%s." % (model_name, res_id))
+if not record._tool_can_update(target):
+    raise UserError("Desde una conversación solo se actualiza su cliente o un registro creado desde ella.")
+target.write(tools.json(values_json))
+record._tool_note(target, "Actualizado desde conversación #%s: %s" % (record.id, reason))
+ai["result"] = {"model": model_name, "id": target.id, "created": False}</field>
+        <field name="ai_approval_category_id" ref="approval_category_tool_manager" />
+        <field
+            name="ai_tool_description">Actualizar campos del cliente de la conversación, o de un registro creado desde ella, con los valores dichos. Solo modelos autorizados.</field>
+        <field
+            name="ai_tool_schema">{
+    "type": "object",
+    "properties": {
+        "model_name": {"type": "string", "description": "Nombre técnico del modelo, p. ej. res.partner"},
+        "res_id": {"type": "integer", "description": "Id del registro; para el cliente de la conversación usa su id del contexto"},
+        "values_json": {"type": "string", "description": "Objeto JSON con los valores a escribir"},
+        "reason": {"type": "string"}
+    },
+    "required": ["model_name", "res_id", "values_json", "reason"]
+}</field>
+        <field name="conversation_enabled" eval="True" />
+        <field
+            name="conversation_examples">"el cliente ahora siembra 40 hectáreas", "cambió de teléfono", datos que actualizan un registro existente</field>
+        <field name="conversation_key">update_record</field>
+        <field name="use_in_ai" eval="True" />
+    </record>
+
+    <record id="tool_create_contact" model="ir.actions.server">
+        <field name="name">Conversation: create contact</field>
+        <field name="model_id" ref="conversation.model_conversation_conversation" />
+        <field name="state">code</field>
+        <field
+            name="code">existing = env["res.partner"].search([("name", "=ilike", tools.like(name))], limit=1)
+if not existing and phone:
+    existing = env["res.partner"].search([("phone_ids.number", "=", phone)], limit=1)
+if existing:
+    raise UserError("Ya existe un contacto con ese nombre o teléfono: %s (id %s)." % (existing.display_name, existing.id))
+vals = {"name": name, "is_company": bool(is_company), "email": email or False, "city": city or False, "comment": note or False}
+if phone:
+    vals["phone_ids"] = [(0, 0, {"number": phone, "type": "mobile", "primary": True})]
+contact = env["res.partner"].create(vals)
+if is_supplier and "supplier_rank" in contact._fields:
+    contact.write({"supplier_rank": 1})
+ai["result"] = {"model": "res.partner", "id": contact.id}</field>
+        <field name="ai_approval_category_id" ref="approval_category_tool_leader" />
+        <field
+            name="ai_tool_description">Crear un contacto nuevo (cliente, prospecto o proveedor) con nombre, teléfono, correo y municipio dichos. Úsalo solo cuando la persona o empresa no exista ya en Odoo.</field>
+        <field
+            name="ai_tool_schema">{
+    "type": "object",
+    "properties": {
+        "name": {"type": "string"},
+        "phone": {"type": "string"},
+        "email": {"type": "string"},
+        "city": {"type": "string"},
+        "is_company": {"type": "boolean"},
+        "is_supplier": {"type": "boolean", "description": "Verdadero si es proveedor"},
+        "note": {"type": "string"}
+    },
+    "required": ["name"]
+}</field>
+        <field name="conversation_enabled" eval="True" />
+        <field
+            name="conversation_examples">"es un cliente nuevo", "pásame su teléfono", "el proveedor se llama", un nombre y un número que no están en Odoo</field>
+        <field name="conversation_key">create_contact</field>
+        <field name="use_in_ai" eval="True" />
+    </record>
+
+</odoo>

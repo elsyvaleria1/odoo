@@ -1,0 +1,163 @@
+{
+    "name": "HTML Editor",
+    "version": "1.0",
+    "category": "Hidden",
+    "summary": "Provide rich-text editing, media tools and HTML editing extensions",
+    "description": "Supplies an extensible HTML editor with frontend plugins, attachment and media helpers, and view-editing support. Includes reusable HTML-field history support. Available editing features depend on the plugins and permissions enabled by the consuming application.",
+    "author": "odoo",
+    "website": "https://www.odoo.com",
+    "license": "LGPL-3",
+    "depends": [
+        "bus",
+    ],
+    "assets": {
+        "web._assets_primary_variables": [
+            (
+                "after",
+                "web/static/src/scss/primary_variables.scss",
+                "html_editor/static/src/scss/html_editor.variables.scss",
+            ),
+        ],
+        "web.assets_frontend": [
+            (
+                "include",
+                "html_editor.assets_media_dialog",
+            ),
+            (
+                "include",
+                "html_editor.assets_readonly",
+            ),
+            "html_editor/static/src/public/**/*",
+            "html_editor/static/src/scss/html_editor.common.scss",
+            "html_editor/static/src/scss/html_editor.frontend.scss",
+            "html_editor/static/src/scss/base_style.scss",
+            "html_editor/static/src/main/selection_placeholder_plugin.scss",
+        ],
+        "web.assets_backend": [
+            (
+                "include",
+                "html_editor._assets_editor",
+            ),
+            "html_editor/static/src/others/dynamic_placeholder_plugin.js",
+            "html_editor/static/src/backend/**/*",
+            "html_editor/static/src/fields/**/*",
+            "html_editor/static/lib/vkbeautify/**/*",
+            "html_editor/static/src/scss/base_style.scss",
+            "html_editor/static/src/scss/html_editor.common.scss",
+            "html_editor/static/src/scss/html_editor.scheme_rules.scss",
+            "html_editor/static/src/scss/html_editor.backend.scss",
+        ],
+        "html_editor._assets_editor": [
+            (
+                "include",
+                "html_editor.assets_media_dialog",
+            ),
+            (
+                "include",
+                "html_editor.assets_readonly",
+            ),
+            "html_editor/static/src/*",
+            "html_editor/static/src/components/history_dialog/**/*",
+            "html_editor/static/src/core/**/*",
+            "html_editor/static/src/main/**/*",
+            "html_editor/static/src/others/collaboration/**/*",
+            "html_editor/static/src/others/embedded_components/**/*",
+            "html_editor/static/src/others/embedded_component*",
+            "html_editor/static/src/others/qweb_picker*",
+            "html_editor/static/src/others/qweb_plugin*",
+            "html_editor/static/src/services/**/*",
+        ],
+        "html_editor.assets_history_diff": [
+            "html_editor/static/lib/diff2html/diff2html.min.css",
+            "html_editor/static/lib/diff2html/diff2html.min.js",
+        ],
+        "html_editor.assets_media_dialog": [
+            (
+                "include",
+                "web._assets_helpers",
+            ),
+            "html_editor/static/src/components/switch/**/*",
+            "html_editor/static/src/main/media/media_dialog/**/*",
+        ],
+        "html_editor.assets_readonly": [
+            (
+                "include",
+                "web._assets_helpers",
+            ),
+            "html_editor/static/src/components/html_viewer/**/*",
+            "html_editor/static/src/local_overlay_container.*",
+            "html_editor/static/src/main/local_overlay.scss",
+            "html_editor/static/src/position_hook.*",
+            "html_editor/static/src/html_migrations/**/*",
+            "html_editor/static/src/main/list/list.scss",
+            "html_editor/static/src/main/media/file.scss",
+            "html_editor/static/src/others/embedded_component_utils.js",
+            "html_editor/static/src/others/embedded_components/core/**/*",
+            "html_editor/static/src/utils/**/*",
+            "html_editor/static/src/others/qweb_plugin.scss",
+        ],
+        "web.assets_web_dark": [],
+        "web.assets_tests": [
+            "html_editor/static/tests/tours/**/*",
+        ],
+        "web.assets_unit_tests": [
+            "html_editor/static/tests/**/*",
+        ],
+        "web.assets_unit_tests_setup": [
+            "html_editor/static/src/public/**/*",
+        ],
+        "html_editor.assets_image_cropper": [
+            "html_editor/static/lib/cropperjs/cropper.css",
+            "html_editor/static/lib/cropperjs/cropper.js",
+            "html_editor/static/lib/webgl-image-filter/webgl-image-filter.js",
+        ],
+        "web.report_assets_common": [
+            "html_editor/static/src/scss/report_variables.scss",
+            "html_editor/static/src/scss/base_style.scss",
+            "html_editor/static/src/scss/bootstrap_overridden.scss",
+            "html_editor/static/src/scss/html_editor.common.scss",
+        ],
+        "web._assets_secondary_variables": [
+            "html_editor/static/src/scss/secondary_variables.scss",
+        ],
+        "web._assets_backend_helpers": [
+            "html_editor/static/src/scss/bootstrap_overridden_backend.scss",
+            "html_editor/static/src/scss/bootstrap_overridden.scss",
+        ],
+        "web._assets_frontend_helpers": [
+            (
+                "prepend",
+                "html_editor/static/src/scss/bootstrap_overridden.scss",
+            ),
+        ],
+        "html_editor.assets_prism": [
+            "web/static/lib/prismjs/prism.js",
+        ],
+        "html_editor.assets_prism_light": [
+            "web/static/lib/prismjs/themes/default.css",
+        ],
+        "html_editor.assets_prism_dark": [
+            "web/static/lib/prismjs/themes/okaida.css",
+        ],
+    },
+    "esm": {
+        "bundles": [
+            "html_editor._assets_editor",
+            "html_editor.assets_history_diff",
+            "html_editor.assets_image_cropper",
+            "html_editor.assets_link_popover",
+            "html_editor.assets_media_dialog",
+            "html_editor.assets_prism",
+            "html_editor.assets_prism_dark",
+            "html_editor.assets_prism_light",
+            "html_editor.assets_readonly",
+        ],
+        "dynamic_children": {
+            "web.assets_web": [
+                "html_editor.assets_history_diff",
+                "html_editor.assets_image_cropper",
+            ],
+        },
+    },
+    "auto_install": True,
+}

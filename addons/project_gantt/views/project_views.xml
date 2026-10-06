@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="project_project_view_gantt" model="ir.ui.view">
+        <field name="name">project.project.view.gantt</field>
+        <field name="model">project.project</field>
+        <field name="priority">10</field>
+        <field name="arch" type="xml">
+            <gantt
+                string="Planning"
+                default_group_by="user_id"
+                color="phase_color"
+                date_start="date_start"
+                date_stop="date"
+                default_scale="month"
+                display_unavailability="1"
+                js_class="project_gantt"
+                kanban_view_id="%(project.view_project_kanban)d"
+                precision="{'week': 'day:full', 'month': 'day:full'}"
+                scales="week,month,quarter,year"
+                total_row="True">
+                <templates>
+                    <div t-name="gantt-popover">
+                        <footer replace="0">
+                            <button
+                                name="action_view_tasks"
+                                type="object"
+                                string="View Tasks"
+                                class="btn btn-sm btn-secondary" />
+                        </footer>
+                    </div>
+                </templates>
+                <field name="user_id" />
+                <field name="partner_id" />
+                <field name="phase_color" invisible="1" />
+            </gantt>
+        </field>
+    </record>
+
+    <record id="project_templates_view_gantt" model="ir.ui.view">
+        <field name="name">project.project.template.gantt</field>
+        <field name="model">project.project</field>
+        <field name="inherit_id" ref="project_gantt.project_project_view_gantt" />
+        <field name="mode">primary</field>
+        <field name="arch" type="xml">
+            <gantt position="attributes">
+                <attribute name="js_class" />
+            </gantt>
+        </field>
+    </record>
+
+</odoo>

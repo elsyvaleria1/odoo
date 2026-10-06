@@ -1,0 +1,33 @@
+/** @odoo-module native */
+import { useMovePackageDialog } from "@stock/views/select_packages_dialog";
+import { registry } from "@web/core/registry";
+import { ListRenderer, listView } from "@web/views/list";
+
+export class AddPackageListRenderer extends ListRenderer {
+    setup() {
+        super.setup();
+        this.openPackageDialog = useMovePackageDialog();
+        this.pickingId = this.props.list.context.picking_ids?.length
+            ? this.props.list.context.picking_ids[0]
+            : 0;
+        this.locationId = this.props.list.context.location_id || 0;
+        this.canAddEntirePacks = this.props.list.context?.can_add_entire_packs;
+    }
+
+    get displayRowCreates() {
+        return this.canAddEntirePacks;
+    }
+
+    async add() {
+        await this.onClickAdd();
+    }
+
+    async onClickAdd() {
+        this.openPackageDialog(this.pickingId, this.locationId);
+    }
+}
+
+registry.category("views").add("stock_add_package_list_view", {
+    ...listView,
+    Renderer: AddPackageListRenderer,
+});

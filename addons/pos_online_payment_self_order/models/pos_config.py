@@ -1,0 +1,38 @@
+from odoo import api, fields, models
+from odoo.exceptions import ValidationError
+
+
+class PosConfig(models.Model):
+    _inherit = "pos.config"
+
+    self_order_online_payment_method_id = fields.Many2one(
+        comodel_name="pos.payment.method",
+        string="Self Online Payment",
+        store=True,
+        readonly=False,
+        domain=[("is_online_payment", "=", True)],
+        help="The online payment method to use when a customer pays a self-order online.",
+    )
+
+    @api.constrains("self_order_online_payment_method_id")
+    def _check_self_order_online_payment_method_id(self) -> None:
+        for config in self:
+            if (
+                config.self_ordering_mode == "mobile"
+                and config.self_ordering_service_mode == "each"
+                and config.self_order_online_payment_method_id
+                and not config.self_order_online_payment_method_id._get_online_payment_providers(
+                    config.id, error_if_invalid=True
+                )
+            ):
+                raise ValidationError(
+                    self.env._(
+                        "The online payment method used for self-order in a POS config must have at least one published payment provider supporting the currency of that POS config."
+                    )
+                )
+
+    def has_valid_self_payment_method(self) -> bool:
+        res = super().has_valid_self_payment_method()
+        if self.self_ordering_mode == "mobile":
+            return bool(res or bool(self.self_order_online_payment_method_id))
+        return bool(res or any(pm.is_online_payment for pm in self.payment_method_ids))

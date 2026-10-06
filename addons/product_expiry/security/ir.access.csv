@@ -1,0 +1,2 @@
+id,name,model_id/id,group_id/id,kind,operation,domain
+access_expiry_picking_confirmation,access.expiry.picking.confirmation,model_wizard_stock_picking_validate_expired,stock.group_stock_user,permission,cru,

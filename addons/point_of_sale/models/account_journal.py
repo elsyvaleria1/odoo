@@ -1,0 +1,99 @@
+from odoo import api, fields, models
+from odoo.exceptions import ValidationError
+from odoo.libs.debug_log import DebugLog
+
+from odoo.addons.base.models.ir_model_common import MODULE_UNINSTALL_FLAG
+
+_debug = DebugLog(__name__)
+
+
+class AccountJournal(models.Model):
+    _inherit = "account.journal"
+
+    pos_payment_method_ids = fields.One2many(
+        comodel_name="pos.payment.method",
+        inverse_name="journal_id",
+        string="Point of Sale Payment Methods",
+    )
+
+    @api.constrains("type")
+    def _check_type(self) -> None:
+        methods = (
+            self.env["pos.payment.method"]
+            .sudo()
+            .search([("journal_id", "in", self.ids)])
+        )
+        if methods:
+            raise ValidationError(
+                self.env._(
+                    "This journal is associated with a payment method. You cannot modify its type"
+                )
+            )
+
+    def _check_no_active_payments(self) -> None:
+        linked_payment_methods = (
+            self.env["pos.payment.method"]
+            .sudo()
+            .search([("journal_id", "in", self.ids)], limit=1)
+        )
+        if linked_payment_methods:
+            raise ValidationError(
+                self.env._(
+                    "You can not archive this journal because it is set on the following payment method : %s.",
+                    linked_payment_methods.name,
+                )
+            )
+
+    @api.ondelete(at_uninstall=False)
+    def _unlink_journal_except_with_active_payments(self) -> None:
+        for journal in self:
+            journal._check_no_active_payments()
+
+    @api.ondelete(at_uninstall=True)
+    def _unlink_journal_cascade_pos_payment_methods(self) -> None:
+        if self.env.context.get(MODULE_UNINSTALL_FLAG):
+            _debug.lifecycle(
+                "uninstall_journal_cascade",
+                journals=self,
+                methods=self.pos_payment_method_ids,
+            )
+            self.pos_payment_method_ids.unlink()
+            self.env["pos.config"].search([("journal_id", "in", self.ids)]).unlink()
+
+    def action_archive(self):
+        self._check_no_active_payments()
+        return super().action_archive()
+
+    def _get_journal_inbound_outstanding_payment_accounts(self):
+        res = super()._get_journal_inbound_outstanding_payment_accounts()
+        account_ids = set(res.ids)
+        account_ids.update(
+            payment_method.outstanding_account_id.id
+            for payment_method in self.sudo().pos_payment_method_ids
+        )
+        return self.env["account.account"].browse(account_ids)
+
+    @api.model
+    def _get_or_create_company_account_journal(self):
+        journal = self.search(
+            [
+                ("code", "=", "POSS"),
+                ("company_id", "=", self.env.company.id),
+            ],
+            limit=1,
+        )
+        if not journal:
+            journal = self.create(
+                {
+                    "name": self.env._("Point of Sale"),
+                    "code": "POSS",
+                    "type": "general",
+                    "company_id": self.env.company.id,
+                }
+            )
+            _debug.lifecycle(
+                "poss_journal_created",
+                journal=journal,
+                company=self.env.company.id,
+            )
+        return journal

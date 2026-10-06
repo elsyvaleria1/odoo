@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="privilege_log_payment_request" model="res.groups">
+        <field
+            name="name">Privilege: the bot logs the payment request it filed for its sender</field>
+        <field
+            name="comment">A payment or payment-in-kind request filed over Telegram is created by its sender, who reads no payment log: writing the log row of what the bot filed is the bot's record, never the sender's own right.</field>
+        <field name="is_privilege" eval="True" />
+    </record>
+
+    <record id="privilege_start_approved_workflow" model="res.groups">
+        <field
+            name="name">Privilege: an approved payment starts the workflow its category names</field>
+        <field
+            name="comment">The approver who gives the last approval of a payment request starts the automation workflow of its category: creating the run, its steps and their links, and reading the rule and the server actions those steps copy; reading the bank statement line the request claims and naming the request's partner on it, its entry and their items. The approver holds no right on automations or on the bank statement of their own.</field>
+        <field name="is_privilege" eval="True" />
+    </record>
+
+</odoo>

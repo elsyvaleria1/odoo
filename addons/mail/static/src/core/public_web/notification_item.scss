@@ -1,0 +1,89 @@
+.o-mail-NotificationItem {
+    outline: 1px solid transparent;
+    outline-offset: -1px;
+
+    &:not(.o-interest) {
+        --border-opacity: 0.35;
+    }
+    &.o-active {
+        outline-color: rgba(
+            var(--o-action-rgb, #{to-rgb($o-action)}),
+            var(--mail-NotificationItem-activeOutlineOpacity, 0.5)
+        );
+    }
+    &:hover,
+    &.o-active {
+        backdrop-filter: contrast(0.9);
+    }
+}
+
+.o-mail-NotificationItem-avatarContainer {
+    height: 42px;
+    aspect-ratio: 1;
+    margin-top: calc(map-get($spacers, 1) / 2);
+    margin-bottom: calc(map-get($spacers, 1) / 2);
+
+    &.o-small {
+        height: 52px;
+    }
+}
+
+.o-mail-NotificationItem-badge {
+    padding: 3px 6px !important;
+    &.o-discuss-badge:not(.o-important) {
+        --o-discuss-badge-bg: #{o-palette-token(--o-gray-500, $gray-500)};
+    }
+}
+
+.o-mail-NotificationItem-counter.o-empty {
+    font-size: 0.5rem !important;
+    aspect-ratio: 1;
+
+    &:before {
+        content: "\200b";
+    }
+}
+
+.o-mail-NotificationItem-country {
+    width: 16px;
+    bottom: -2px;
+    left: -4px;
+}
+
+.o-mail-NotificationItem-line {
+    line-height: 1.15rem;
+}
+
+.o-mail-NotificationItem-markAsRead {
+    background-color: o-token(--o-bg-view, $o-view-background-color);
+    color: o-token(--success, $success) !important;
+    outline: 1px solid o-token-alpha(--success, $success, 0.75);
+    outline-offset: -1px;
+    padding: calc(map-get($spacers, 1) / 2);
+
+    &:hover {
+        outline-color: o-token-darken(--success, $success, 10%);
+        color: o-token-darken(--success, $success, 10%) !important;
+        background-color: unquote(
+            "color-mix(in srgb, #{o-token(--o-bg-view, $o-view-background-color)} 75%, #{o-token(--success, $success)})"
+        );
+        filter: brightness(1.1);
+        box-shadow: o-token(--box-shadow-sm, $box-shadow-sm);
+    }
+}
+
+.o-mail-NotificationItem-text {
+    opacity: 0.75;
+
+    &:before {
+        content: "\200b";
+    }
+}
+
+@include media-only(screen) {
+    :root[data-color-scheme="dark"] {
+        .o-mail-NotificationItem {
+            --mail-NotificationItem-activeOutlineOpacity: 1;
+        }
+    }
+}

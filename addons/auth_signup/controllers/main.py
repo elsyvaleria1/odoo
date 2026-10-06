@@ -1,0 +1,293 @@
+import logging
+from urllib.parse import urlencode
+
+import werkzeug
+from markupsafe import Markup
+
+from odoo import http, tools
+from odoo.exceptions import UserError
+from odoo.http import request
+from odoo.tools.translate import LazyTranslate
+
+from odoo.addons.auth_signup.models.res_users import SignupError
+from odoo.addons.web.controllers.home import (
+    LOGIN_SUCCESSFUL_PARAMS,
+    SIGN_UP_REQUEST_PARAMS,
+    Home,
+    select_db,
+)
+from odoo.addons.web.controllers.settings import BaseSetup
+from odoo.addons.web.models.res_users import SKIP_CAPTCHA_LOGIN
+
+_lt = LazyTranslate(__name__)
+_logger = logging.getLogger(__name__)
+
+LOGIN_SUCCESSFUL_PARAMS.add("account_created")
+
+
+class AuthSignupHome(Home):
+    @http.route()
+    def web_login(self, *args, **kw):
+        select_db()
+        response = super().web_login(*args, **kw)
+        response.qcontext.update(self.get_auth_signup_config())
+        if request.session.uid:
+            if request.httprequest.method == "GET" and request.params.get("redirect"):
+                # Redirect if already logged in and redirect param is present
+                return request.redirect(request.params.get("redirect"))
+            # Add message for non-internal user account without redirect if account was just created
+            if response.location == "/web/login_successful" and kw.get(
+                "confirm_password"
+            ):
+                return request.redirect_query(
+                    "/web/login_successful", query={"account_created": True}
+                )
+        return response
+
+    @http.route(
+        "/web/signup",
+        type="http",
+        auth="public",
+        website=True,
+        sitemap=False,
+        captcha="signup",
+        list_as_website_content=_lt("Sign Up"),
+    )
+    def web_auth_signup(self, *args, **kw):
+        qcontext = self.get_auth_signup_qcontext()
+
+        if qcontext.get("token") and qcontext.get("signup_type") == "reset":
+            # a reset link sets a password and never opens a session
+            return request.redirect_query(
+                "/web/reset_password", query={"token": qcontext["token"]}
+            )
+
+        if not qcontext.get("token") and not qcontext.get("signup_enabled"):
+            raise werkzeug.exceptions.NotFound
+
+        if "error" not in qcontext and request.httprequest.method == "POST":
+            try:
+                self.do_signup(qcontext)
+
+                # Set user to public if they were not signed in by do_signup
+                # (mfa enabled)
+                if request.session.uid is None:
+                    public_user = request.env.ref("base.public_user")
+                    request.update_env(user=public_user)
+
+                # Send an account creation confirmation email
+                User = request.env["res.users"]
+                user_sudo = User.sudo().search(
+                    User._get_domain_login(qcontext.get("login")),
+                    order=User._get_login_order(),
+                    limit=1,
+                )
+                template = request.env.ref(
+                    "auth_signup.mail_template_user_signup_account_created",
+                    raise_if_not_found=False,
+                )
+                if user_sudo and template:
+                    template.sudo().send_mail(user_sudo.id, force_send=True)
+                request.update_context(skip_captcha_login=SKIP_CAPTCHA_LOGIN)
+                return self.web_login(*args, **kw)
+            except UserError as e:
+                qcontext["error"] = e.args[0]
+            except (SignupError, AssertionError) as e:
+                User = request.env["res.users"]
+                if (
+                    User.sudo()
+                    .with_context(active_test=False)
+                    .search_count(
+                        User._get_domain_login(qcontext.get("login")), limit=1
+                    )
+                ):
+                    qcontext["error"] = request.env._(
+                        "Another user is already registered using this email address."
+                    )
+                else:
+                    _logger.warning("%s", e)
+                    qcontext["error"] = (
+                        request.env._("Could not create a new account.")
+                        + Markup("<br/>")
+                        + str(e)
+                    )
+
+        elif "signup_email" in qcontext:
+            user = (
+                request.env["res.users"]
+                .sudo()
+                .search(
+                    [
+                        ("email", "=", qcontext.get("signup_email")),
+                        ("state", "!=", "new"),
+                    ],
+                    limit=1,
+                )
+            )
+            if user:
+                return request.redirect(
+                    "/web/login?%s"
+                    % urlencode({"login": user.login, "redirect": "/web"})
+                )
+
+        response = request.render("auth_signup.signup", qcontext)
+        response.headers["X-Frame-Options"] = "SAMEORIGIN"
+        response.headers["Content-Security-Policy"] = "frame-ancestors 'self'"
+        return response
+
+    @http.route(
+        "/web/reset_password",
+        type="http",
+        auth="public",
+        website=True,
+        sitemap=False,
+        captcha="password_reset",
+        list_as_website_content=_lt("Reset Password"),
+    )
+    def web_auth_reset_password(self, *args, **kw):
+        qcontext = self.get_auth_signup_qcontext()
+
+        if not qcontext.get("token") and not qcontext.get("reset_password_enabled"):
+            raise werkzeug.exceptions.NotFound
+
+        if "error" not in qcontext and request.httprequest.method == "POST":
+            try:
+                if qcontext.get("token"):
+                    self.do_signup(qcontext, do_login=False)
+                    request.update_context(skip_captcha_login=SKIP_CAPTCHA_LOGIN)
+                    qcontext["message"] = request.env._(
+                        "Your password has been reset successfully."
+                    )
+                else:
+                    login = qcontext.get("login")
+                    assert login, request.env._("No login provided.")
+                    _logger.info(
+                        "Password reset attempt for <%s> by user <%s> from %s",
+                        login,
+                        request.env.user.login,
+                        request.httprequest.remote_addr,
+                    )
+                    # `reset_password` raises a plain Exception distinguishing
+                    # "no account"/"multiple accounts" from a successful send;
+                    # letting that message reach the user is a login/email
+                    # enumeration oracle (classic password-reset attack
+                    # surface). Log the real outcome server-side and always
+                    # show the same generic message regardless of it.
+                    try:
+                        request.env["res.users"].sudo().reset_password(login)
+                    except Exception:
+                        _logger.info(
+                            "Password reset for <%s> did not send an email "
+                            "(no or multiple matching accounts, or a delivery error)",
+                            login,
+                            exc_info=True,
+                        )
+                    qcontext["message"] = request.env._(
+                        "Password reset instructions sent to your email address."
+                    )
+            except UserError as e:
+                qcontext["error"] = e.args[0]
+            except SignupError:
+                qcontext["error"] = request.env._("Could not reset your password")
+                _logger.exception("error when resetting password")
+            except AssertionError as e:
+                qcontext["error"] = str(e)
+            except Exception:
+                _logger.exception("error when resetting password")
+                qcontext["error"] = request.env._("Could not reset your password")
+
+        elif "signup_email" in qcontext:
+            user = (
+                request.env["res.users"]
+                .sudo()
+                .search(
+                    [
+                        ("email", "=", qcontext.get("signup_email")),
+                        ("state", "!=", "new"),
+                    ],
+                    limit=1,
+                )
+            )
+            if user:
+                return request.redirect(
+                    "/web/login?%s"
+                    % urlencode({"login": user.login, "redirect": "/web"})
+                )
+
+        response = request.render("auth_signup.reset_password", qcontext)
+        response.headers["X-Frame-Options"] = "SAMEORIGIN"
+        response.headers["Content-Security-Policy"] = "frame-ancestors 'self'"
+        return response
+
+    def get_auth_signup_config(self):
+        """retrieve the module config (which features are enabled) for the login page"""
+
+        get_param = request.env["ir.config_parameter"].sudo().get_param
+        return {
+            "disable_database_manager": not tools.config["list_db"],
+            "signup_enabled": request.env["res.users"]._get_signup_invitation_scope()
+            == "b2c",
+            "reset_password_enabled": get_param("auth_signup.reset_password") == "True",
+        }
+
+    def get_auth_signup_qcontext(self):
+        """Shared helper returning the rendering context for signup and reset password"""
+        qcontext = {
+            k: v for (k, v) in request.params.items() if k in SIGN_UP_REQUEST_PARAMS
+        }
+        qcontext.update(self.get_auth_signup_config())
+        if not qcontext.get("token") and request.session.get("auth_signup_token"):
+            qcontext["token"] = request.session.get("auth_signup_token")
+        if qcontext.get("token"):
+            try:
+                # retrieve the user info (name, login or email) corresponding to a signup token
+                # `_resolve_signup_info` returns None for an invalid/expired token, so the
+                # expected failure here is AttributeError on `.items()` - catch only that,
+                # not every exception, so an unrelated bug isn't masked as "Invalid signup token".
+                token_infos = (
+                    request.env["res.partner"]
+                    .sudo()
+                    ._resolve_signup_info(qcontext.get("token"))
+                )
+                for k, v in token_infos.items():
+                    qcontext.setdefault(k, v)
+            except AttributeError:
+                qcontext["error"] = request.env._("Invalid signup token")
+                qcontext["invalid_token"] = True
+        return qcontext
+
+    def _prepare_signup_values(self, qcontext):
+        values = {key: qcontext.get(key) for key in ("login", "name", "password")}
+        if not values.get("login") or not values.get("name"):
+            raise UserError(request.env._("The form was not properly filled in."))
+        if values.get("password") != qcontext.get("confirm_password"):
+            raise UserError(
+                request.env._("Passwords do not match; please retype them.")
+            )
+        supported_lang_codes = [
+            code for code, _ in request.env["res.lang"].get_installed()
+        ]
+        lang = request.env.context.get("lang", "")
+        if lang in supported_lang_codes:
+            values["lang"] = lang
+        return values
+
+    def do_signup(self, qcontext, do_login=True):
+        """Shared helper that creates a res.users out of a token"""
+        values = self._prepare_signup_values(qcontext)
+        self._signup_with_values(qcontext.get("token"), values, do_login)
+        request.env.cr.commit()
+
+    def _signup_with_values(self, token, values, do_login):
+        login, password = request.env["res.users"].sudo().signup(values, token)
+        credential = {"login": login, "password": password, "type": "password"}
+        if do_login:
+            request.session.authenticate(request.env, credential)
+
+
+class AuthBaseSetup(BaseSetup):
+    @http.route()
+    def base_setup_data(self, **kwargs):
+        res = super().base_setup_data(**kwargs)
+        res.update({"resend_invitation": True})
+        return res

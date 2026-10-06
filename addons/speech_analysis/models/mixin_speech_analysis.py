@@ -1,0 +1,186 @@
+from __future__ import annotations
+
+import typing
+
+from odoo import fields, models
+from odoo.libs.documents import Document, parse_offset
+
+from ..tools.people import fold, match_person
+from ..tools.schema import DOCUMENT_TYPE
+
+if typing.TYPE_CHECKING:
+    from odoo.addons.extract.tools import ExtractionResult
+
+FINDINGS = ("speech.commitment", "speech.question", "speech.moment")
+
+
+class MixinSpeechAnalysis(models.AbstractModel):
+    _name = "mixin.speech.analysis"
+    _inherit = ["mixin.media.timeline", "mixin.extract"]
+    _description = "Speech Analysis"
+    _extract_document_type = DOCUMENT_TYPE
+
+    analysis_summary = fields.Text(
+        copy=False,
+        readonly=True,
+    )
+    analysis_topics = fields.Text(
+        copy=False,
+        readonly=True,
+    )
+    commitment_ids = fields.One2many(
+        comodel_name="speech.commitment",
+        inverse_name="res_id",
+        string="Commitments",
+        domain=lambda self: [("res_model", "=", self._name)],
+    )
+    question_ids = fields.One2many(
+        comodel_name="speech.question",
+        inverse_name="res_id",
+        string="Questions",
+        domain=lambda self: [("res_model", "=", self._name)],
+    )
+    moment_ids = fields.One2many(
+        comodel_name="speech.moment",
+        inverse_name="res_id",
+        string="Moments",
+        domain=lambda self: [("res_model", "=", self._name)],
+    )
+
+    def _speech_analysis_ready(self) -> bool:
+        return True
+
+    def _on_media_fully_transcribed(self) -> None:
+        super()._on_media_fully_transcribed()
+        for record in self:
+            if record._speech_analysis_ready() and record.timeline_transcript:
+                record._extract_later()
+
+    def action_analyse_speech(self) -> None:
+        return self.action_extract_later()
+
+    def _get_extract_source(self) -> Document | None:
+        return self._as_timeline_document(self._analysis_preamble())
+
+    def _analysis_preamble(self) -> str:
+        return ""
+
+    def _update_from_extraction(self, result: ExtractionResult) -> None:
+        self.check_singleton()
+        values = result.flat()
+        _text, voices = self._spoken_lines()
+        self.write(
+            {
+                "analysis_summary": values.get("summary") or False,
+                "analysis_topics": "\n".join(
+                    f"[{row['at']}] {row['name']}" if row.get("at") else row["name"]
+                    for row in values.get("topics") or []
+                )
+                or False,
+            }
+        )
+        for model in FINDINGS:
+            self.env[model]._of(self).unlink()
+        rows = values.get("speakers") or []
+        self._name_speakers(rows, voices)
+        self._create_findings(values, voices)
+        self._rate_speakers(rows, voices)
+
+    def _create_findings(self, values: dict, voices: dict[str, models.Model]) -> None:
+        owner = {"res_model": self._name, "res_id": self.id}
+
+        def found(row: dict, speaker_key: str) -> dict:
+            return {
+                **owner,
+                "at_s": parse_offset(row.get("at")) or 0.0,
+                "speaker_id": voices.get(
+                    row.get(speaker_key) or "", self.env["speech.speaker"]
+                )[:1].id,
+            }
+
+        self.env["speech.commitment"].create(
+            [
+                {
+                    **found(row, "who"),
+                    "name": row["what"],
+                    "due_date": row.get("due") or False,
+                }
+                for row in values.get("commitments") or []
+            ]
+        )
+        self.env["speech.question"].create(
+            [
+                {
+                    **found(row, "asked_by"),
+                    "name": row["question"],
+                    "answered": bool(row.get("answered")),
+                    "answer": row.get("answer") or False,
+                }
+                for row in values.get("questions") or []
+            ]
+        )
+        self.env["speech.moment"].create(
+            [
+                {
+                    **found(row, "speaker"),
+                    "name": row["quote"],
+                    "kind": row["kind"],
+                }
+                for row in values.get("moments") or []
+            ]
+        )
+
+    def _speech_people(self) -> models.Model:
+        return self.env["res.partner"]
+
+    def _name_speakers(self, rows: list[dict], voices: dict[str, models.Model]) -> None:
+        named = self.timeline_speaker_ids.partner_id
+        known = {
+            person.name: person
+            for person in self._speech_people() - named
+            if person.name
+        }
+        anonymous = {
+            shown: speakers
+            for shown, speakers in voices.items()
+            if not speakers.partner_id
+        }
+        guesses = {row["speaker"]: row.get("name_guess") for row in rows}
+        for shown, speakers in list(anonymous.items()):
+            person = match_person(known, guesses.get(shown))
+            if person is not None:
+                speakers.sudo().partner_id = person
+                known = {name: p for name, p in known.items() if p != person}
+                del anonymous[shown]
+        if len(anonymous) == 1 and len(known) == 1:
+            (speakers,) = anonymous.values()
+            speakers.sudo().partner_id = next(iter(known.values()))
+            anonymous.clear()
+        for shown, speakers in anonymous.items():
+            guess = (guesses.get(shown) or "").strip()
+            if guess:
+                speakers.filtered(
+                    lambda speaker: fold(speaker.name) == fold(speaker.label)
+                ).sudo().name = guess
+
+    def _rate_speakers(self, rows: list[dict], voices: dict[str, models.Model]) -> None:
+        self.timeline_speaker_ids.sudo().write(
+            {
+                "sentiment": False,
+                "engagement": False,
+                "interruptions": 0,
+                "questions_asked": 0,
+            }
+        )
+        for row in rows:
+            speakers = voices.get(row["speaker"])
+            if not speakers:
+                continue
+            speakers.sudo().write(
+                {
+                    "sentiment": row.get("sentiment") or False,
+                    "engagement": row.get("engagement") or False,
+                    "interruptions": row.get("interruptions") or 0,
+                    "questions_asked": row.get("questions_asked") or 0,
+                }
+            )

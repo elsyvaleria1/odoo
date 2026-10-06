@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="res_partner_view_form_phone_call" model="ir.ui.view">
+        <field name="name">res.partner.view.form.phone.call</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_form" />
+        <field name="arch" type="xml">
+            <div name="button_box" position="inside">
+                <button
+                    name="action_view_phone_calls"
+                    type="object"
+                    icon="fa-phone"
+                    invisible="phone_call_count == 0"
+                    class="oe_stat_button">
+                    <field name="phone_call_count" string="Calls" widget="statinfo" />
+                </button>
+            </div>
+        </field>
+    </record>
+
+</odoo>

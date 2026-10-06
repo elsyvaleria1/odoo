@@ -1,0 +1,6 @@
+id,name,model_id/id,group_id/id,kind,operation,domain
+access_automation_runtime_create,access_automation_runtime_create,model_wizard_account_bank_statement_line_start_automation,account.group_account_basic,permission,cru,
+access_automation_runtime_account,automation.runtime.account,automation.model_automation_runtime,account.group_account_basic,permission,u,
+access_automation_runtime_line_account,automation.runtime.line.account,automation.model_automation_runtime_line,account.group_account_basic,permission,u,
+access_automation_rule_account,automation.rule: accounting reads the workflows it runs,automation.model_automation_rule,account.group_account_basic,permission,r,
+access_ir_actions_server_workflow_account,ir.actions.server: accounting reads the workflow steps it runs,base.model_ir_actions_server,account.group_account_basic,permission,r,"[('automation_rule_id', '!=', False)]"

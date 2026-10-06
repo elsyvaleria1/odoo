@@ -1,0 +1,235 @@
+from collections import defaultdict
+from datetime import timedelta
+
+from odoo import Command, api, fields, models
+from odoo.exceptions import AccessError, UserError, ValidationError
+from odoo.libs.debug_log import DebugLog
+
+_debug = DebugLog(__name__)
+
+
+class MrpProduction(models.Model):
+    _inherit = "mrp.production"
+    _rec_names_search = ["name", "incoming_picking.name"]
+
+    move_line_raw_ids = fields.One2many(
+        comodel_name="stock.move.line",
+        string="Detail Component",
+        compute="_compute_move_line_raw_ids",
+        inverse="_inverse_move_line_raw_ids",
+        readonly=False,
+    )
+    subcontracting_has_been_recorded = fields.Boolean(
+        string="Has been recorded?",
+        copy=False,
+    )
+    subcontractor_id = fields.Many2one(
+        comodel_name="res.partner",
+        help="Used to restrict access to the portal user through Record Rules",
+    )
+    bom_product_ids = fields.Many2many(
+        comodel_name="product.product",
+        compute="_compute_bom_product_ids",
+        help="List of Products used in the BoM, used to filter the list of products in the subcontracting portal view",
+    )
+
+    incoming_picking = fields.Many2one(
+        related="move_finished_ids.move_dest_ids.picking_id"
+    )
+
+    @api.depends("move_raw_ids.move_line_ids")
+    def _compute_move_line_raw_ids(self) -> None:
+        for production in self:
+            production.move_line_raw_ids = production.move_raw_ids.move_line_ids
+
+    def _compute_bom_product_ids(self) -> None:
+        for production in self:
+            production.bom_product_ids = production.bom_id.bom_line_ids.product_id
+
+    def _inverse_move_line_raw_ids(self) -> None:
+        for production in self:
+            line_by_product = defaultdict(lambda: self.env["stock.move.line"])
+            for line in production.move_line_raw_ids:
+                line_by_product[line.product_id] |= line
+            for move in production.move_raw_ids:
+                move.move_line_ids = line_by_product.pop(
+                    move.product_id, self.env["stock.move.line"]
+                )
+            for product_id, lines in line_by_product.items():
+                qty = sum(
+                    line.product_uom_id._get_quantity_in_unit(
+                        line.quantity, product_id.uom_id
+                    )
+                    for line in lines
+                )
+                move = production._prepare_move_raw_vals(
+                    product_id, qty, product_id.uom_id
+                )
+                move["additional"] = True
+                production.move_raw_ids = [Command.create(move)]
+                production.move_raw_ids.filtered_domain(
+                    [("product_id", "=", product_id.id)]
+                )[:1].move_line_ids = lines
+
+    def write(self, vals):
+        if self.env.user._is_portal() and not self.env.su:
+            unauthorized_fields = set(vals.keys()) - set(
+                self._get_writeable_fields_portal_user()
+            )
+            if unauthorized_fields:
+                _debug.logic(
+                    "portal_write_refused",
+                    productions=self,
+                    fields=sorted(unauthorized_fields),
+                )
+                raise AccessError(
+                    self.env._(
+                        "You cannot write on fields %s in mrp.production.",
+                        ", ".join(unauthorized_fields),
+                    )
+                )
+
+        if "date_start" in vals and self.env.context.get("from_subcontract"):
+            _debug.logic(
+                "subcontract_date_backdated", productions=self, by="produce_delay"
+            )
+            date_start = fields.Datetime.to_datetime(vals["date_start"])
+            date_start_map = {
+                prod: date_start - timedelta(days=prod.bom_id.produce_delay)
+                if prod.bom_id
+                else date_start
+                for prod in self
+            }
+            res = True
+            for production in self:
+                res &= super(MrpProduction, production).write(
+                    {**vals, "date_start": date_start_map[production]}
+                )
+            return res
+
+        old_lots = [mo.trace_producing_ids for mo in self]
+        if self.env.context.get("mrp_subcontracting") and "product_qty" in vals:
+            for mo in self:
+                self.sudo().env["wizard.mrp.production.update.quantity"].with_context(
+                    skip_activity=True, mrp_subcontracting=False, no_procurement=True
+                ).create(
+                    [
+                        {
+                            "mo_id": mo.id,
+                            "product_qty": vals["product_qty"],
+                        }
+                    ]
+                ).change_prod_qty()
+                mo.sudo().action_assign()
+
+        res = super().write(vals)
+
+        if self.env.context.get("mrp_subcontracting") and (
+            "product_qty" in vals or "trace_producing_ids" in vals
+        ):
+            for mo, old_lot in zip(self, old_lots, strict=True):
+                sbc_move = mo._get_subcontract_move()
+                if not sbc_move:
+                    continue
+                if mo.product_tracking in ("lot", "serial"):
+                    sbc_move_lines = sbc_move.move_line_ids.browse(
+                        [
+                            ml.id
+                            for ml in sbc_move.move_line_ids
+                            if ml.trace_id == old_lot
+                        ]
+                    )
+                    sbc_move_line = sbc_move_lines[0]
+                    sbc_move_line.quantity = mo.product_qty
+                    sbc_move_line.trace_id = mo.trace_producing_ids
+                    sbc_move_lines[1:].unlink()
+                else:
+                    sbc_move.quantity = mo.product_qty
+
+        return res
+
+    def action_merge(self):
+        if any(production._get_subcontract_move() for production in self):
+            _debug.logic("merge_refused", reason="subcontracted", productions=self)
+            raise ValidationError(
+                self.env._("Subcontracted manufacturing orders cannot be merged.")
+            )
+        return super().action_merge()
+
+    def pre_button_mark_done(self):
+        if self._get_subcontract_move():
+            return super(
+                MrpProduction, self.with_context(skip_consumption=True)
+            ).pre_button_mark_done()
+        return super().pre_button_mark_done()
+
+    def _is_date_end_postponement_required(self, date_end) -> bool:
+        return (
+            super()._is_date_end_postponement_required(date_end)
+            and not self._get_subcontract_move()
+        )
+
+    def _has_workorders(self) -> bool:
+        if self.subcontractor_id:
+            return False
+        else:
+            return super()._has_workorders()
+
+    def _get_subcontract_move(self):
+        return self.move_finished_ids.move_dest_ids.filtered(lambda m: m.is_subcontract)
+
+    def _get_covered_component_qties(self):
+        covered = {}
+        for production in self:
+            for raw in production.move_raw_ids:
+                if raw.state in ("done", "cancel"):
+                    continue
+                if not raw.move_orig_ids:
+                    covered[raw.id] = raw.product_uom_qty
+                    continue
+                supplied = sum(
+                    origin.product_qty
+                    for origin in raw.move_orig_ids
+                    if origin.state != "cancel"
+                )
+                covered[raw.id] = raw.product_id.uom_id._get_quantity_in_unit(
+                    supplied,
+                    raw.product_uom_id,
+                    rounding_method="HALF-UP",
+                )
+        return covered
+
+    def _get_writeable_fields_portal_user(self) -> list:
+        return [
+            "move_line_raw_ids",
+            "trace_producing_ids",
+            "qty_producing",
+            "product_qty",
+        ]
+
+    def action_split_subcontracting(self):
+        self.check_singleton()
+        if not self.trace_producing_ids:
+            raise UserError(
+                self.env._(
+                    "Please set a lot/serial for the currently opened subcontracting MO first."
+                )
+            )
+        move = self._get_subcontract_move()
+        if not move:
+            return None
+        if move.state == "done":
+            raise UserError(
+                self.env._("The subcontracted goods have already been received.")
+            )
+        if all(l.trace_id for l in move.move_line_ids):
+            move.move_line_ids.create(
+                {
+                    "product_id": move.product_id.id,
+                    "move_id": move.id,
+                    "quantity": 1,
+                    "picking_id": move.picking_id.id,
+                    "trace_id": False,
+                }
+            )
+        return move.action_show_subcontract_details(trace_id=False)

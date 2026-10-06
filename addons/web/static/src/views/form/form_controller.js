@@ -1,0 +1,739 @@
+// @ts-check
+/** @odoo-module native */
+
+import { onError, onMounted, proxy, status, t, untrack, useEffect } from "@odoo/owl";
+import { usePushStateBeforeReload, useSetupAction } from "@web/core/action_hook";
+import { useDebugCategory } from "@web/core/debug/debug_context";
+import { makeLogger } from "@web/core/debug/debug_logger";
+import { useDialogContext } from "@web/core/dialog_context_hooks";
+import { ModelEvent } from "@web/core/events";
+import { inputModality } from "@web/core/input_modality";
+import { evaluateBooleanExpr } from "@web/core/py_js/py";
+import { _t } from "@web/core/translation";
+import { createElement } from "@web/core/utils/dom/xml";
+import { useService } from "@web/core/utils/hooks";
+import { useLayoutEffect } from "@web/core/utils/layout_effect";
+import { effect } from "@web/core/utils/reactive";
+import { useViewConfig } from "@web/core/view_config_hooks";
+import { Field } from "@web/fields/field";
+import { provideViewModel, useModel } from "@web/model/model";
+import {
+    addFieldDependencies,
+    extractFieldsFromArchInfo,
+} from "@web/model/relational_model";
+import { FetchRecordError } from "@web/model/relational_model/errors";
+import { Layout } from "@web/search/layout";
+import { usePager } from "@web/search/pager_hook";
+import { ConfirmationDialog } from "@web/ui/dialog/confirmation_dialog";
+import { SIZES } from "@web/ui/viewport";
+import { standardViewProps } from "@web/views/standard_view_props";
+import { ViewButton } from "@web/views/view_button/view_button";
+import {
+    executeButtonCallback,
+    useViewButtons,
+} from "@web/views/view_button/view_button_hook";
+import { compileViewTemplates } from "@web/views/view_compiler";
+import { ViewBusy } from "@web/views/view_components/view_busy";
+import { ViewController } from "@web/views/view_controller";
+import { useDeleteRecords } from "@web/views/view_hook";
+import {
+    archiveConfirmationProps,
+    computeArchiveEnabled,
+    handleBeforeUnload,
+    prepareStaticActionMenuItems,
+} from "@web/views/view_utils";
+import { Widget } from "@web/views/widgets/widget";
+
+import { ButtonBox } from "./button_box/button_box.js";
+import { FormCogMenu } from "./form_cog_menu/form_cog_menu.js";
+import { FormCompiler } from "./form_compiler.js";
+import { FormErrorDialog } from "./form_error_dialog/form_error_dialog.js";
+import { FormSaveCoordinator } from "./form_save_coordinator.js";
+import { FormStatusIndicator } from "./form_status_indicator/form_status_indicator.js";
+import { loadSubViews, useFormViewInDialog } from "./form_utils.js";
+
+/** @type {WeakMap<object, { footerArchInfo: object, strippedArchInfo: object }>} */
+const footerArchInfoCache = new WeakMap();
+
+const log = makeLogger("web.view.form");
+
+export const formControllerProps = {
+    ...standardViewProps,
+    discardRecord: t.function().optional(),
+    readonly: t.boolean().optional(),
+    saveRecord: t.function().optional(),
+    removeRecord: t.function().optional(),
+    Model: t.function(),
+    Renderer: t.function(),
+    Compiler: t.function(),
+    archInfo: t.object(),
+    buttonTemplate: t.string(),
+    preventCreate: t.boolean().optional(false),
+    preventEdit: t.boolean().optional(false),
+    updateActionState: standardViewProps.updateActionState.optional(() => () => {}),
+    onDiscard: t.function().optional(),
+    onSave: t.function().optional(),
+};
+
+export class FormController extends ViewController {
+    static template = `web.FormView`;
+    static components = {
+        FormStatusIndicator,
+        Layout,
+        ButtonBox,
+        ViewButton,
+        Field,
+        CogMenu: FormCogMenu,
+        Widget,
+        ViewBusy,
+    };
+
+    /** @type {Record<string, any>} */
+    static props = formControllerProps;
+
+    /** @type {any} */
+    ui;
+    /** @type {any} */
+    multiCompanyRecovery;
+    /** @type {any} */
+    formDialogStack;
+    /** @type {any} */
+    duplicateId;
+    /** @type {any} */
+    onWillDisplayOnchangeWarning;
+    /** @type {any} */
+    model;
+    /** @type {any} */
+    saveCoordinator;
+    /** @type {any} */
+    deleteRecordsWithConfirmation;
+    /** @type {(notebookId: string, page: string) => void} */
+    onNotebookPageChange;
+
+    setup() {
+        this.dialogContext = useDialogContext();
+        this.pushStateBeforeReload = usePushStateBeforeReload();
+        this.config = useViewConfig();
+        this.setupControllerServices();
+        this.setupModel();
+        this.setupArch();
+        this.setupInteractions();
+    }
+
+    setupControllerServices() {
+        this.evaluateBooleanExpr = evaluateBooleanExpr;
+        super.setupControllerServices();
+        this.viewService = useService("view");
+        this.ui = proxy(useService("ui"));
+        this.multiCompanyRecovery = useService("multi_company_recovery");
+        this.formDialogStack = useService("form_dialog_stack");
+
+        const { create, edit } = this.archInfo.activeActions;
+        this.canCreate = create && !this.props.preventCreate;
+        this.canEdit = edit && !this.props.preventEdit;
+        this.duplicateId = false;
+
+        this.display = { ...this.props.display };
+        if (this.dialogContext.inDialog) {
+            this.display.controlPanel = false;
+        }
+    }
+
+    setupModel() {
+        const mountedProm = new Promise((r) => onMounted(/** @type {any} */ (r)));
+        this.onWillDisplayOnchangeWarning = () => mountedProm;
+
+        const beforeFirstLoad = async () => {
+            await loadSubViews(
+                this.archInfo.fieldNodes,
+                this.props.fields,
+                this.props.context,
+                this.props.resModel,
+                this.viewService,
+                this.ui.isSmall,
+            );
+            const { activeFields, fields } = extractFieldsFromArchInfo(
+                this.archInfo,
+                this.props.fields,
+            );
+            if (this.display.controlPanel) {
+                addFieldDependencies(activeFields, fields, [
+                    { name: "display_name", type: "char", readonly: true },
+                ]);
+            }
+            this.model.config.activeFields = activeFields;
+            this.model.config.fields = fields;
+        };
+        this.model = proxy(
+            useModel(this.props.Model, this.modelParams, { beforeFirstLoad }),
+        );
+        this.saveCoordinator = proxy(
+            new FormSaveCoordinator(this.model, {
+                onSaveError: (error, callbacks) =>
+                    this._renderSaveErrorDialog(error, callbacks),
+                onUrgentSaveFailed: () => this._onUrgentSaveFailed(),
+                recoverFromSaveError: (error, model) =>
+                    this.multiCompanyRecovery.recoverFromSaveError(error, model),
+            }),
+        );
+        provideViewModel(this.model);
+        onMounted(() => {
+            effect(
+                (model) => {
+                    if (status(this) === "mounted") {
+                        this.props.updateActionState({
+                            resId: model.root.resId,
+                        });
+                    }
+                },
+                [this.model],
+            );
+        });
+
+        onError((error) => {
+            if (
+                this.multiCompanyRecovery.recoverFromLifecycleError(error, {
+                    inDialog: this.dialogContext.inDialog,
+                    pushStateBeforeReload: this.pushStateBeforeReload,
+                })
+            ) {
+                return;
+            }
+            throw error;
+        });
+    }
+
+    setupArch() {
+        if (this.archInfo.xmlDoc.querySelector("footer:not(field footer)")) {
+            let cached = footerArchInfoCache.get(this.props.archInfo);
+            if (!cached) {
+                const xmlDoc = this.archInfo.xmlDoc.cloneNode(true);
+                const footerArchInfo = { ...this.archInfo };
+                footerArchInfo.xmlDoc = createElement("t");
+                for (const footer of xmlDoc.querySelectorAll(
+                    "footer:not(field footer)",
+                )) {
+                    footerArchInfo.xmlDoc.append(footer);
+                }
+                footerArchInfo.arch = footerArchInfo.xmlDoc.outerHTML;
+                cached = {
+                    footerArchInfo,
+                    strippedArchInfo: {
+                        ...this.archInfo,
+                        xmlDoc,
+                        arch: xmlDoc.outerHTML,
+                    },
+                };
+                footerArchInfoCache.set(this.props.archInfo, cached);
+            }
+            this.footerArchInfo = cached.footerArchInfo;
+            this.archInfo = cached.strippedArchInfo;
+        }
+
+        const xmlDocButtonBox = this.archInfo.xmlDoc.querySelector(
+            "div[name='button_box']:not(field div)",
+        );
+        if (xmlDocButtonBox) {
+            const buttonBoxTemplates = compileViewTemplates(
+                this.props.Compiler || FormCompiler,
+                { ButtonBox: xmlDocButtonBox },
+                { isSubView: true },
+            );
+            this.buttonBoxTemplate = buttonBoxTemplates.ButtonBox;
+        }
+    }
+
+    setupInteractions() {
+        useViewButtons(this.rootRef, {
+            beforeExecuteAction: this.beforeExecuteActionButton.bind(this),
+            afterExecuteAction: this.afterExecuteActionButton.bind(this),
+            reload: () => this.model.load(),
+        });
+
+        const state = this.props.state || {};
+        const activeNotebookPages = { ...state.activeNotebookPages };
+        this.onNotebookPageChange = (notebookId, page) => {
+            if (page) {
+                activeNotebookPages[notebookId] = page;
+            }
+        };
+
+        useSetupAction({
+            rootRef: this.rootRef,
+            beforeVisibilityChange: () => this.beforeVisibilityChange(),
+            beforeLeave: (options) => this.beforeLeave(options),
+            beforeUnload: (ev) => this.beforeUnload(ev),
+            getLocalState: () => ({
+                activeNotebookPages: !this.model.root.isNew ? activeNotebookPages : {},
+                modelState: /** @type {any} */ (this.model).exportState(),
+                resId: this.model.root.resId,
+            }),
+        });
+        useDebugCategory("form", { component: this });
+
+        usePager(() => {
+            if (!this.model.root.isNew) {
+                const resIds = this.model.root.resIds;
+                return {
+                    offset: resIds.indexOf(this.model.root.resId),
+                    limit: 1,
+                    total: resIds.length,
+                    onUpdate: ({ offset }) => this.onPagerUpdate({ offset, resIds }),
+                };
+            }
+        });
+
+        // the name follows the record, which re-renders its fields, not the
+        // controller; the first run is in setup, before the model has a root
+        useEffect(() => {
+            if (!this.model.root) {
+                return;
+            }
+            const displayName = this.displayName();
+            untrack(() => this.config.setDisplayName(displayName));
+        });
+
+        const recentRecords = useService("recent_records");
+        useLayoutEffect(
+            (resModel, resId) => {
+                if (resId) {
+                    recentRecords.note(resModel, resId);
+                }
+            },
+            () => [this.model.root?.resModel, this.model.root?.resId],
+        );
+
+        const { disableAutofocus } = this.archInfo;
+        if (!disableAutofocus) {
+            useLayoutEffect(
+                (isInEdition) => {
+                    if (
+                        !isInEdition &&
+                        !this.rootRef.el
+                            ?.querySelector(".o_content")
+                            ?.contains(document.activeElement)
+                    ) {
+                        const elementToFocus = this.rootRef.el?.querySelector(
+                            ".o_content button.btn-primary",
+                        );
+                        if (elementToFocus) {
+                            elementToFocus.focus();
+                        }
+                    }
+                },
+                () => [this.model.root.isInEdition],
+            );
+        }
+
+        if (this.dialogContext.inDialog) {
+            useFormViewInDialog();
+        }
+
+        this.deleteRecordsWithConfirmation = useDeleteRecords(this.model);
+    }
+
+    get cogMenuProps() {
+        return {
+            getActiveIds: () => (this.model.root.isNew ? [] : [this.model.root.resId]),
+            context: this.model.root.context,
+            items: this.props.info.actionMenus ? this.actionMenuItems : {},
+            isDomainSelected: this.model.root.isDomainSelected,
+            resModel: this.model.root.resModel,
+            domain: this.props.domain,
+            onActionExecuted: (
+                /** @type {{ noReload?: boolean }} */ { noReload } = {},
+            ) => {
+                if (!noReload) {
+                    const { resId, resIds } = this.model.root;
+                    return this.model.load({ resId: resId, resIds: resIds });
+                }
+            },
+            shouldExecuteAction: this.shouldExecuteAction.bind(this),
+        };
+    }
+
+    get modelParams() {
+        return {
+            config: {
+                resModel: this.props.resModel,
+                resId: this.props.resId || false,
+                resIds:
+                    this.props.resIds || (this.props.resId ? [this.props.resId] : []),
+                fields: this.props.fields,
+                activeFields: {},
+                isMonoRecord: true,
+                mode: this.props.readonly ? "readonly" : "edit",
+                context: this.props.context,
+            },
+            state: this.props.state?.modelState,
+            hooks: {
+                lifecycle: {
+                    onWillLoadRoot: this.onWillLoadRoot.bind(this),
+                    onWillSaveRecord: this.onWillSaveRecord.bind(this),
+                    onRecordSaved: this.onRecordSaved.bind(this),
+                    onWillDisplayOnchangeWarning:
+                        this.onWillDisplayOnchangeWarning.bind(this),
+                },
+                ui: this._uiHooks,
+            },
+            useSendBeaconToSaveUrgently: true,
+        };
+    }
+
+    onWillLoadRoot() {
+        this.duplicateId = undefined;
+        this.saveCoordinator?.reset();
+    }
+
+    /** @param {any} record */
+    async onRecordSaved(record, changes) {
+        log.lifecycle("onRecordSaved", () => ({
+            resModel: record.resModel,
+            resId: record.resId,
+            fields: Object.keys(changes),
+        }));
+        if (this.duplicateId === record.id) {
+            const translationChanges = {};
+            for (const fieldName of Object.keys(changes)) {
+                if (record.fields[fieldName].translate) {
+                    translationChanges[fieldName] = changes[fieldName];
+                }
+            }
+            if (Object.keys(translationChanges).length) {
+                await this.orm.call(
+                    this.model.root.resModel,
+                    "web_override_translations",
+                    [[this.model.root.resId], translationChanges],
+                );
+            }
+        }
+    }
+
+    async onWillSaveRecord() {}
+
+    /**
+     * @param {Object} error
+     * @param {{ discard: Function, retry: Function }} callbacks
+     * @returns {Promise<boolean>}
+     */
+    _renderSaveErrorDialog(error, { discard, retry }) {
+        return new Promise((resolve) => {
+            this.dialogService.add(
+                FormErrorDialog,
+                {
+                    message: error.data.message,
+                    data: error.data,
+                    onDiscard: () => {
+                        discard();
+                        resolve(true);
+                    },
+                    onRedirect: async ({ action, additionalContext }) => {
+                        try {
+                            await this.actionService.doAction(action, {
+                                additionalContext,
+                                forceLeave: true,
+                            });
+                        } finally {
+                            resolve(false);
+                        }
+                    },
+                    onStayHere: () => resolve(false),
+                },
+                // Escape and the backdrop close the dialog without a button: the
+                // save still holds the model mutex until this promise settles.
+                {
+                    onClose: () => {
+                        log.logic("save error dialog closed", () => ({
+                            resId: this.model.root.resId,
+                        }));
+                        resolve(false);
+                    },
+                },
+            );
+        });
+    }
+
+    _onUrgentSaveFailed() {}
+
+    /** @returns {string} */
+    displayName() {
+        const displayName = this.model.root.data.display_name;
+        if (displayName) {
+            return displayName.split("\n")[0];
+        }
+        return (this.model.root.isNew && _t("New")) || "";
+    }
+
+    /** @param {{ offset: number, resIds: number[] }} params */
+    async onPagerUpdate({ offset, resIds }) {
+        const nextId = resIds[offset];
+        log.logic("onPagerUpdate", () => ({ offset, nextId, total: resIds.length }));
+        try {
+            const isDirty = await this.model.root.isDirty();
+            if (isDirty) {
+                await this.saveCoordinator.requestSave({ nextId });
+            } else {
+                await this.model.load({ resId: nextId });
+            }
+        } catch (e) {
+            if (e instanceof FetchRecordError) {
+                await this.model.load({
+                    resIds: this.model.config.resIds.filter(
+                        (id) => !e.resIds.includes(id),
+                    ),
+                });
+            }
+            throw e;
+        }
+    }
+
+    async beforeVisibilityChange() {
+        if (
+            document.visibilityState !== "hidden" ||
+            !this.formDialogStack.isEmpty ||
+            this.model.root.isNew
+        ) {
+            return;
+        }
+        let saved;
+        try {
+            saved = await this.saveCoordinator.requestSave({
+                errorMode: "silent",
+                checkDirty: true,
+            });
+        } catch (error) {
+            this.onAutoSaveFailed(error);
+            return;
+        }
+        if (saved === false) {
+            this.onAutoSaveFailed(this.saveCoordinator.lastError);
+        }
+    }
+
+    /** @param {any} [error] */
+    onAutoSaveFailed(error) {
+        console.warn("Auto-save on tab switch failed:", error);
+    }
+
+    /** @param {{ forceLeave?: boolean }} [options] */
+    async beforeLeave({ forceLeave } = {}) {
+        log.logic("beforeLeave", () => ({
+            forceLeave: Boolean(forceLeave),
+            resId: this.model.root.resId,
+        }));
+        if (forceLeave) {
+            return;
+        }
+        if (!(await this.model.root.isDirty())) {
+            return true;
+        }
+        const saved = await this.saveCoordinator.requestSave({
+            reload: false,
+            saveOverride: this.props.saveRecord,
+        });
+        if (saved !== false && this.props.onSave) {
+            this.props.onSave(this.model.root, { reload: false });
+        }
+        return saved;
+    }
+
+    beforeUnload(ev) {
+        return handleBeforeUnload(ev, {
+            record: this.model.root,
+            inDialog: this.dialogContext.inDialog,
+            useSendBeacon: this.model.useSendBeaconToSaveUrgently,
+            urgentSave: () => this.saveCoordinator.requestUrgentSave(),
+        });
+    }
+
+    getStaticActionMenuItems() {
+        const { activeActions } = this.archInfo;
+        return prepareStaticActionMenuItems({
+            addPropertyFieldValue: {
+                isAvailable: () => activeActions.addPropertyFieldValue,
+                callback: () => this.model.bus.trigger(ModelEvent.PROPERTY_FIELD_EDIT),
+            },
+            duplicate: {
+                isAvailable: () => activeActions.duplicate,
+                callback: () => this.duplicateRecord(),
+            },
+            archive: {
+                isAvailable: () => this.archiveEnabled && this.model.root.isActive,
+                callback: () => this.archiveRecord(),
+            },
+            unarchive: {
+                isAvailable: () => this.archiveEnabled && !this.model.root.isActive,
+                callback: () => this.model.root.unarchive(),
+            },
+            delete: {
+                isAvailable: () => activeActions.delete && !this.model.root.isNew,
+                callback: () => this.deleteRecord(),
+                skipSave: true,
+            },
+        });
+    }
+
+    /** @param {Object} [overrides] */
+    archiveRecord(overrides = {}) {
+        this.dialogService.add(ConfirmationDialog, {
+            ...archiveConfirmationProps(() => this.model.root.archive()),
+            ...this.archiveDialogProps,
+            ...overrides,
+        });
+    }
+
+    /** @returns {Object} */
+    get archiveDialogProps() {
+        return {};
+    }
+
+    get archiveEnabled() {
+        return computeArchiveEnabled(this.props.fields, {
+            presentIn: this.model.root.activeFields,
+        });
+    }
+
+    async shouldExecuteAction(item) {
+        const dirty = await this.model.root.isDirty();
+        if ((dirty || this.model.root.isNew) && !item.skipSave) {
+            const saved = await this.saveCoordinator.requestSave();
+            return (
+                saved !== false &&
+                !this.saveCoordinator.lastError &&
+                !this.model.root.isNew
+            );
+        }
+        return true;
+    }
+
+    async duplicateRecord() {
+        await this.model.root.duplicate();
+        this.duplicateId = this.model.root.id;
+    }
+
+    get deleteConfirmationDialogProps() {
+        return {
+            confirm: async () => {
+                await this.model.root.delete();
+                if (!this.model.root.resId) {
+                    this.config.historyBack();
+                }
+            },
+        };
+    }
+
+    deleteRecord() {
+        this.deleteRecordsWithConfirmation(this.deleteConfirmationDialogProps, [
+            this.model.root,
+        ]);
+    }
+
+    async beforeExecuteActionButton(clickParams) {
+        const record = this.model.root;
+        log.logic("beforeExecuteActionButton", () => ({
+            resModel: record.resModel,
+            resId: record.resId,
+            name: clickParams.name,
+            type: clickParams.type,
+            special: clickParams.special,
+        }));
+        if (clickParams.special !== "cancel") {
+            let saved;
+            if (clickParams.special === "save" && this.props.saveRecord) {
+                saved = await this.saveCoordinator.requestSave({
+                    saveOverride: (r) => this.props.saveRecord(r, clickParams),
+                    errorMode: "rethrow",
+                });
+            } else {
+                saved = await this.saveCoordinator.requestSave({
+                    reload: !(this.dialogContext.inDialog && clickParams.close),
+                    errorMode: "rethrow",
+                });
+            }
+            if (saved !== false && this.props.onSave) {
+                this.props.onSave(record, clickParams);
+            }
+            return saved;
+        } else if (this.props.onDiscard) {
+            this.props.onDiscard(record);
+        }
+    }
+
+    async afterExecuteActionButton(clickParams) {}
+
+    async create() {
+        log.logic("create", () => ({ resModel: this.model.root.resModel }));
+        const canProceed = await this.saveCoordinator.requestSave({
+            checkDirty: true,
+        });
+        if (canProceed) {
+            await executeButtonCallback(
+                /** @type {any} */ (this.ui.activeElement),
+                () => this.model.load({ resId: false }),
+            );
+        }
+    }
+
+    /**
+     * @param {Object} [params]
+     * @returns {Promise<boolean>}
+     */
+    async save(params) {
+        const record = this.model.root;
+        log.logic("save", () => ({
+            resModel: record.resModel,
+            resId: record.resId,
+            params,
+        }));
+        const saved = await this.saveCoordinator.requestSave({
+            saveOverride: this.props.saveRecord,
+            errorMode: "rethrow",
+            params,
+        });
+        if (saved !== false && this.props.onSave) {
+            this.props.onSave(record, params);
+        }
+        return saved;
+    }
+
+    saveButtonClicked(params = {}) {
+        return executeButtonCallback(/** @type {any} */ (this.ui.activeElement), () =>
+            this.save(params),
+        );
+    }
+
+    async discard() {
+        log.logic("discard", () => ({
+            resModel: this.model.root.resModel,
+            resId: this.model.root.resId,
+        }));
+        if (this.props.discardRecord) {
+            this.props.discardRecord(this.model.root);
+            return;
+        }
+        await this.saveCoordinator.requestDiscard();
+        if (this.props.onDiscard) {
+            this.props.onDiscard(this.model.root);
+        }
+        if (this.dialogContext.inDialog) {
+            await this.dialogContext.dialogData.close();
+        } else if (this.model.root.isNew) {
+            this.config.historyBack();
+        }
+    }
+
+    get className() {
+        const result = {};
+        const { size } = this.ui;
+        if (size <= SIZES.XS) {
+            result.o_xxs_form_view = true;
+        } else if (!this.dialogContext.inDialog && size === SIZES.XXL) {
+            result["o_xxl_form_view h-100"] = true;
+        }
+        if (this.props.className) {
+            result[this.props.className] = true;
+        }
+        result["o_field_highlight"] = size < SIZES.SM || inputModality.isTouch;
+        return result;
+    }
+}

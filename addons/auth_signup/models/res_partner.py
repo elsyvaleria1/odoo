@@ -1,0 +1,275 @@
+import random
+from collections import defaultdict
+from datetime import datetime, timedelta
+from urllib.parse import urlencode
+
+from odoo import api, exceptions, fields, models, tools
+from odoo.tools import SQL
+
+SIGNUP_SCOPE = tools.register_signed_scope(
+    "signup",
+    purpose="sign up, or reset the password of, the partner and users the token "
+    "names, while their login and password are what they were at mint time",
+    lifetime="dated: auth_signup.signup.validity.hours or "
+    "auth_signup.reset_password.validity.hours",
+)
+PASSWORD_STATE_SCOPE = tools.register_signed_scope(
+    "auth_signup-password-state",
+    purpose="fingerprint the users' stored passwords, so a signup token dies "
+    "when one changes",
+    lifetime="undated: it changes with the passwords",
+)
+
+
+class SignupError(Exception):
+    pass
+
+
+def random_token() -> str:
+    # the token has an entropy of about 120 bits (6 bits/char * 20 chars)
+    chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
+    return "".join(random.SystemRandom().choice(chars) for _ in range(20))
+
+
+def now(**kwargs):
+    return datetime.now() + timedelta(**kwargs)
+
+
+class ResPartner(models.Model):
+    _inherit = "res.partner"
+
+    signup_type = fields.Char(
+        string="Signup Token Type",
+        copy=False,
+        groups="base.group_erp_manager",
+    )
+
+    def _get_signup_url(self):
+        self.check_singleton()
+        result = self.sudo()._get_signup_url_for_action()
+        if any(u._is_internal() for u in self.user_ids if u != self.env.user):
+            self.env["res.users"].check_access("write")
+        if any(u._is_portal() for u in self.user_ids if u != self.env.user):
+            self.env["res.partner"].check_access("write")
+        return result.get(self.id, False)
+
+    def _get_signup_url_for_action(
+        self,
+        url=None,
+        action=None,
+        view_type=None,
+        menu_id=None,
+        res_id=None,
+        model=None,
+    ):
+        """generate a signup url for the given partner ids and action, possibly overriding
+        the url state components (menu_id, id, view_type)"""
+
+        res = dict.fromkeys(self.ids, False)
+        for partner in self:
+            base_url = partner.get_base_url()
+            # when required, make sure the partner has a valid signup token
+            if self.env.context.get("signup_valid") and not partner.user_ids:
+                partner.sudo().signup_prepare()
+
+            route = "login"
+            # the parameters to encode for the query
+            query = {"db": self.env.cr.dbname}
+            if self.env.context.get("create_user"):
+                query["signup_email"] = partner.email
+
+            signup_type = self.env.context.get(
+                "signup_force_type_in_url", partner.sudo().signup_type or ""
+            )
+            if signup_type:
+                route = "reset_password" if signup_type == "reset" else signup_type
+
+            query["token"] = partner.sudo()._generate_signup_token()
+
+            if url:
+                query["redirect"] = url
+            else:
+                fragment = {}
+                base = "/odoo/"
+                if action == "/mail/view":
+                    base = "/mail/view?"
+                elif action:
+                    fragment["action"] = action
+                if view_type:
+                    fragment["view_type"] = view_type
+                if menu_id:
+                    fragment["menu_id"] = menu_id
+                if model:
+                    fragment["model"] = model
+                if res_id:
+                    fragment["res_id"] = res_id
+
+                if fragment:
+                    query["redirect"] = base + urlencode(fragment)
+
+            signup_url = "/web/%s?%s" % (route, urlencode(query))
+            if not self.env.context.get("relative_url"):
+                signup_url = tools.urls.urljoin(base_url, signup_url)
+            res[partner.id] = signup_url
+        return res
+
+    def action_signup_prepare(self):
+        return self.signup_prepare()
+
+    def signup_get_auth_param(self):
+        """Get a signup token related to the partner if signup is enabled.
+        If the partner already has a user, get the login parameter.
+        """
+        if not self.env.user._is_internal() and not self.env.is_admin():
+            raise exceptions.AccessDenied
+
+        res = defaultdict(dict)
+
+        allow_signup = self.env["res.users"]._get_signup_invitation_scope() == "b2c"
+        for partner in self:
+            partner = partner.sudo()
+            if allow_signup and not partner.user_ids:
+                partner.signup_prepare()
+                res[partner.id]["auth_signup_token"] = partner._generate_signup_token()
+            elif partner.user_ids:
+                res[partner.id]["auth_login"] = partner.user_ids[0].login
+        return res
+
+    def signup_cancel(self):
+        return self.write({"signup_type": None})
+
+    def signup_prepare(self, signup_type="signup") -> bool:
+        """set the signup token type on the partners"""
+        self.write({"signup_type": signup_type})
+        return True
+
+    @api.model
+    def _get_signup_partner(self, token, check_validity=False, raise_exception=False):
+        """find the partner corresponding to a token, and possibly check its validity
+
+        :param token: the token to resolve
+        :param bool check_validity: if True, also check validity
+        :param bool raise_exception: if True, raise exception instead of returning False
+        :return: partner (browse record) or False (if raise_exception is False)
+        """
+        partner = self._get_partner_from_token(token)
+        if not partner:
+            raise exceptions.UserError(
+                self.env._("Signup token '%s' is not valid or expired", token)
+            )
+        return partner
+
+    @api.model
+    def _resolve_signup_info(self, token):
+        """retrieve the user info about the token
+
+        :rtype: dict | None
+        :return: a dictionary with the user information if the token is valid,
+            None otherwise:
+
+                db
+                    the name of the database
+                token
+                    the token, if token is valid
+                signup_type
+                    what the token was minted for ("signup" or "reset")
+                name
+                    the name of the partner, if token is valid
+                login
+                    the user login, if the user already exists
+                email
+                    the partner email, if the user does not exist
+        """
+        partner = self._get_partner_from_token(token)
+        if not partner:
+            return None
+        res = {"db": self.env.cr.dbname}
+        res["token"] = token
+        res["signup_type"] = partner.signup_type
+        res["name"] = partner.name
+        if partner.user_ids:
+            res["login"] = partner.user_ids[0].login
+        else:
+            res["email"] = res["login"] = partner.email or ""
+        return res
+
+    def _get_login_date(self) -> int | None:
+        self.check_singleton()
+        users_login_dates = self.user_ids.mapped("login_date")
+        users_login_dates = list(filter(None, users_login_dates))  # remove falsy values
+        if any(users_login_dates):
+            return int(max(map(datetime.timestamp, users_login_dates)))
+        return None
+
+    def _generate_signup_token(self, expiration=None):
+        """Generate the signup token for the partner in self.
+
+        Assume that :attr:`signup_type` is either ``'signup'`` or ``'reset'``.
+
+        :param expiration: the time in hours before the expiration of the token
+        :return: the signed payload/token that can be used to reset the
+                 password/signup.
+
+        Since ``login_date`` is part of the payload, this token is
+        invalidated as soon as the user logs in.
+        """
+        self.check_singleton()
+        self = self.sudo()
+        if not expiration:
+            if self.signup_type == "reset":
+                expiration = int(
+                    self.env["ir.config_parameter"].get_param(
+                        "auth_signup.reset_password.validity.hours", 4
+                    )
+                )
+            else:
+                expiration = int(
+                    self.env["ir.config_parameter"].get_param(
+                        "auth_signup.signup.validity.hours", 144
+                    )
+                )
+        plist = [
+            self.id,
+            self.user_ids.ids,
+            self._get_login_date(),
+            self.signup_type,
+            self._get_password_state(),
+        ]
+        return tools.hash_sign(
+            self.env, SIGNUP_SCOPE, plist, expiration_hours=expiration
+        )
+
+    def _get_password_state(self) -> str:
+        self.check_singleton()
+        if not self.user_ids:
+            return ""
+        self.env.cr.execute(
+            SQL(
+                "SELECT COALESCE(password, '') FROM res_users WHERE id IN %s ORDER BY id",
+                tuple(self.user_ids.ids),
+            )
+        )
+        stored = tuple(row[0] for row in self.env.cr.fetchall())
+        return tools.hmac(self.env(su=True), PASSWORD_STATE_SCOPE, stored)[:16]
+
+    @api.model
+    def _get_partner_from_token(self, token):
+        env = self.sudo().env
+        if payload := tools.resolve_hash_signed(env, SIGNUP_SCOPE, token):
+            partner_id, user_ids, login_date, signup_type, *password_state = payload
+            # login_date can be either an int or "None" as a string for signup
+            partner = env["res.partner"].browse(partner_id)
+            if (
+                login_date == partner._get_login_date()
+                and partner.user_ids.ids == user_ids
+                and signup_type == partner.signup_type
+                # a token minted before the password state entered the payload
+                # carries four values, and lives out its own few hours
+                and (
+                    not password_state
+                    or (not partner.user_ids and password_state[0] == "")
+                    or tools.consteq(password_state[0], partner._get_password_state())
+                )
+            ):
+                return partner
+        return None

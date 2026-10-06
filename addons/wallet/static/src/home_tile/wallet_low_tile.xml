@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="wallet.WalletLowTile">
+        <div class="o_wallet_low_tile d-flex flex-column gap-2">
+            <button type="button" class="btn btn-link p-0 text-start o_wallet_low_tile_count" t-on-click="() => this.openAll()">
+                <strong class="text-danger" t-out="this.props.data.count"/> <small class="text-muted">below their threshold</small>
+            </button>
+            <ul t-if="this.cards.length" class="list-unstyled mb-0">
+                <li t-foreach="this.cards" t-as="card" t-key="card.id">
+                    <HomeTileRecordLink resModel="'wallet.card'" resId="card.id" className="'d-flex flex-column o_wallet_low_tile_card'">
+                        <span class="d-flex gap-2">
+                            <span class="text-truncate flex-grow-1" t-out="card.name"/>
+                            <strong class="text-danger flex-shrink-0" t-out="card.balance"/>
+                        </span>
+                        <small class="text-muted text-truncate"><t t-out="card.account"/> · <t t-out="card.threshold"/></small>
+                    </HomeTileRecordLink>
+                </li>
+            </ul>
+            <p t-else="" class="text-muted small mb-0">Every card is above its threshold.</p>
+        </div>
+    </t>
+
+</templates>

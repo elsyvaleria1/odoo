@@ -1,0 +1,71 @@
+// @ts-check
+
+import { advanceTime, after, queryOne } from "@odoo/hoot";
+import { inputModality } from "@web/core/input_modality";
+
+import { contains } from "./dom_test_helpers.js";
+
+/**
+ * @typedef {import("@odoo/hoot").PointerOptions} PointerOptions
+ * @typedef {import("@odoo/hoot").Target} Target
+ */
+
+/**
+ * @param {Target} target
+ * @param {number} direction
+ * @param {PointerOptions} [dragOptions]
+ * @param {PointerOptions} [moveToOptions]
+ * @returns {Promise<void>}
+ */
+async function swipe(target, direction, dragOptions, moveToOptions) {
+    const el = queryOne(target);
+    if (direction < 0) {
+        el.scrollLeft = el.scrollWidth - el.offsetWidth;
+    } else {
+        el.scrollLeft = 0;
+    }
+
+    const { moveTo, drop } = await contains(el).drag({
+        position: { x: 0, y: 0 },
+        ...dragOptions,
+    });
+
+    await moveTo(el, {
+        position: { x: direction * el.clientWidth },
+        ...moveToOptions,
+    });
+
+    await drop();
+    await advanceTime(1000);
+}
+
+/**
+ * @param {Target} target
+ * @param {PointerOptions} [dragOptions]
+ * @param {PointerOptions} [moveToOptions]
+ * @returns {Promise<void>}
+ */
+export async function swipeLeft(target, dragOptions, moveToOptions) {
+    await swipe(target, -1, dragOptions, moveToOptions);
+}
+
+/**
+ * @param {Target} target
+ * @param {PointerOptions} [dragOptions]
+ * @param {PointerOptions} [moveToOptions]
+ * @returns {Promise<void>}
+ */
+export async function swipeRight(target, dragOptions, moveToOptions) {
+    await swipe(target, +1, dragOptions, moveToOptions);
+}
+
+/**
+ * Puts the interface in the given input modality for the rest of the test,
+ * as if the user's last input had been of that kind.
+ * @param {import("@web/core/input_modality").InputModality} modality
+ */
+export function setInputModality(modality) {
+    const previous = inputModality.current;
+    inputModality.set(modality);
+    after(() => inputModality.set(previous));
+}

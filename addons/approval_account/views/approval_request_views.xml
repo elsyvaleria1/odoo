@@ -1,0 +1,188 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_approval_request_tree" model="ir.ui.view">
+        <field name="name">approval.request.tree.inherit</field>
+        <field name="model">approval.request</field>
+        <field name="inherit_id" ref="approval.view_approval_request_tree" />
+        <field name="arch" type="xml">
+            <xpath expr="//list" position="inside">
+                <header>
+                    <button
+                        name="action_create_account_moves_bulk"
+                        type="object"
+                        string="Create Journal Entries"
+                        groups="account.group_account_basic" />
+                </header>
+                <field name="journal_id" optional="hide" />
+                <field name="payment_state" optional="hide" />
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_approval_search_search_inherit_payment" model="ir.ui.view">
+        <field name="name">approval.request.search.inherit.payment</field>
+        <field name="model">approval.request</field>
+        <field name="inherit_id" ref="approval.view_approval_search_search" />
+        <field name="arch" type="xml">
+            <filter name="filter_approved_requests" position="after">
+                <filter
+                    name="filter_to_pay"
+                    string="To Pay"
+                    domain="[('payment_state', '=', 'not_paid'), ('is_payable', '=', True)]" />
+                <filter
+                    name="filter_paid"
+                    string="Paid"
+                    domain="[('payment_state', '=', 'paid')]" />
+                <separator />
+                <filter
+                    name="filter_to_invoice"
+                    string="To Invoice"
+                    help="Approved requests that create a journal entry and have none yet"
+                    domain="[('state', '=', 'approved'), ('target_model', '=', 'account.move'), ('line_ids', '!=', False), ('line_ids.account_move_id', '=', False), ('account_move_ids', '=', False)]" />
+                <filter
+                    name="filter_recent"
+                    string="Last 7 Days"
+                    domain="[('date', '&gt;=', (context_today() - relativedelta(days=7)).strftime('%Y-%m-%d'))]" />
+            </filter>
+            <filter name="groupby_state" position="after">
+                <filter
+                    name="groupby_journal"
+                    string="Journal"
+                    context="{'group_by': 'journal_id'}" />
+                <filter
+                    name="groupby_payment_state"
+                    string="Payment Status"
+                    context="{'group_by': 'payment_state'}" />
+            </filter>
+        </field>
+    </record>
+
+    <record id="action_approval_request_to_pay" model="ir.actions.act_window">
+        <field name="name">To Pay</field>
+        <field name="res_model">approval.request</field>
+        <field name="view_mode">list,form</field>
+        <field
+            name="domain">[('state', '=', 'approved'), ('is_payable', '=', True), ('payment_state', '=', 'not_paid')]</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Nothing pending — all approved payments are up to date.
+            </p>
+        </field>
+    </record>
+
+    <record id="action_approval_request_to_invoice" model="ir.actions.act_window">
+        <field name="name">To Invoice</field>
+        <field name="res_model">approval.request</field>
+        <field name="view_mode">list,form</field>
+        <field
+            name="domain">[('state', '=', 'approved'), ('target_model', '=', 'account.move'), ('line_ids', '!=', False), ('line_ids.account_move_id', '=', False), ('account_move_ids', '=', False)]</field>
+        <field
+            name="context">{'search_default_filter_recent': 1, 'search_default_groupby_journal': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Nothing to invoice — every approved request already has its journal entry.
+            </p>
+            <p>
+                Select the requests and use "Create Journal Entries" to invoice them all at once.
+            </p>
+        </field>
+    </record>
+
+    <record id="view_approval_request_form_inherit_accounting" model="ir.ui.view">
+        <field name="name">approval.request.form.inherit.accounting</field>
+        <field name="model">approval.request</field>
+        <field name="inherit_id" ref="approval.view_approval_request_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='can_change_request_owner']" position="after">
+                <field name="has_journal" invisible="1" />
+                <field name="has_bsl" invisible="1" />
+                <field name="count_account_move" invisible="1" />
+                <field name="journal_type" invisible="1" />
+                <field name="is_payable" invisible="1" />
+            </xpath>
+
+            <xpath expr="//field[@name='state'][@widget='statusbar']" position="before">
+                <button
+                    name="action_mark_paid"
+                    type="object"
+                    string="Mark as Paid"
+                    groups="approval_account.group_treasury_payment"
+                    invisible="state != 'approved' or payment_state == 'paid'"
+                    class="btn-success" />
+                <button
+                    name="action_mark_not_paid"
+                    type="object"
+                    string="Not Paid"
+                    groups="approval_account.group_treasury_payment"
+                    invisible="state != 'approved' or payment_state != 'paid'"
+                    class="btn-danger" />
+            </xpath>
+
+            <xpath expr="//button[@name='action_view_attachment']" position="after">
+                <button
+                    name="action_view_account_move"
+                    type="object"
+                    icon="fa-credit-card"
+                    groups="account.group_account_basic"
+                    invisible="count_account_move == 0"
+                    class="oe_stat_button">
+                    <field
+                        name="count_account_move"
+                        string="Journal Entries"
+                        widget="statinfo"
+                        groups="account.group_account_basic" />
+                </button>
+            </xpath>
+
+            <xpath expr="//button[@name='action_confirm']" position="after">
+                <button
+                    name="action_create_account_moves"
+                    type="object"
+                    string="Create Journal Entry"
+                    groups="account.group_account_basic"
+                    invisible="target_model != 'account.move' or state != 'approved' or count_account_move &gt; 0"
+                    class="btn-primary"
+                    data-hotkey="g" />
+            </xpath>
+
+            <xpath expr="//group[@name='request_main']" position="inside">
+                <field
+                    name="journal_id"
+                    invisible="has_journal == 'no'"
+                    readonly="state != 'new'"
+                    required="has_journal == 'required' and state == 'new'" />
+            </xpath>
+
+            <xpath expr="//notebook" position="inside">
+                <page
+                    name="accounting_details"
+                    string="Accounting Details"
+                    invisible="has_bsl == 'no' and has_automation == 'no' and not is_payable">
+                    <group>
+                        <group string="Bank Reconciliation" invisible="has_bsl == 'no'">
+                            <field
+                                name="include_reconciled_bsl"
+                                readonly="state != 'new' and state != 'pending'" />
+                            <field
+                                name="bank_statement_line_id"
+                                readonly="state != 'new' and state != 'pending'" />
+                        </group>
+                        <group string="Payment Tracking" invisible="not is_payable">
+                            <field name="payment_state" readonly="1" />
+                            <field
+                                name="payment_date"
+                                invisible="payment_state == 'not_paid'"
+                                readonly="1" />
+                            <field
+                                name="paid_by_user_id"
+                                invisible="payment_state == 'not_paid'"
+                                readonly="1" />
+                        </group>
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

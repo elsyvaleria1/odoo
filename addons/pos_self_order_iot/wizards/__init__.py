@@ -1,0 +1,1 @@
+from . import wizard_pos_config_update_iot_device

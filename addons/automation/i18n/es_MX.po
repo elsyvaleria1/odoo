@@ -1,0 +1,430 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* automation
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"Language-Team: Spanish (Mexico)\n"
+"Language: es_MX\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#. module: automation
+#. odoo-javascript
+#: code:addons/automation/static/src/workflow_canvas.xml:0
+msgid "Add step"
+msgstr "Agregar paso"
+
+#. module: automation
+#. odoo-javascript
+#: code:addons/automation/static/src/workflow_canvas.js:0
+msgid "New Step"
+msgstr "Nuevo paso"
+
+#. module: automation
+#. odoo-javascript
+#: code:addons/automation/static/src/workflow_canvas.js:0
+msgid "Step"
+msgstr "Paso"
+
+#. module: automation
+#: model_terms:ir.ui.view,arch_db:automation.view_automation_runtime_form
+msgid "Diagram"
+msgstr "Diagrama"
+
+#. module: automation
+#: model_terms:ir.ui.view,arch_db:automation.view_automation_runtime_form
+msgid "Retry Failed Step"
+msgstr "Reintentar paso fallido"
+
+#. module: automation
+#. odoo-python
+#: code:addons/automation/models/automation_runtime.py:0
+msgid "Retrying: %(steps)s"
+msgstr "Reintentando: %(steps)s"
+
+#. module: automation
+#. odoo-python
+#: code:addons/automation/models/automation_runtime.py:0
+msgid "Workflow Retried"
+msgstr "Flujo de trabajo reintentado"
+
+#. module: automation
+#. odoo-python
+#: code:addons/automation/models/automation_runtime.py:0
+msgid "Only a failed workflow can be retried."
+msgstr "Solo se puede reintentar un flujo de trabajo fallido."
+
+#. module: automation
+#. odoo-python
+#: code:addons/automation/models/automation_runtime.py:0
+msgid ""
+"'%(run)s' is a sub-workflow of '%(parent)s'. Retry that workflow instead: "
+"its step starts a new sub-workflow."
+msgstr ""
+"'%(run)s' es un subflujo de '%(parent)s'. Reintente ese flujo de trabajo: su"
+" paso inicia un subflujo nuevo."
+
+#. module: automation
+#. odoo-python
+#: code:addons/automation/models/automation_runtime.py:0
+msgid "Workflow '%(run)s' has no failed step to retry."
+msgstr ""
+"El flujo de trabajo '%(run)s' no tiene ningún paso fallido que reintentar."
+
+#. module: automation
+#. odoo-python
+#: code:addons/automation/models/automation_runtime.py:0
+msgid "Workflow failed at: %(steps)s"
+msgstr "El flujo de trabajo falló en: %(steps)s"
+
+#. module: automation
+#. odoo-python
+#: code:addons/automation/models/automation_runtime.py:0
+msgid "Workflow Failed"
+msgstr "Flujo de trabajo fallido"
+
+#. module: automation
+#. odoo-python
+#: code:addons/automation/models/automation_runtime.py:0
+msgid "unknown step"
+msgstr "paso desconocido"
+
+#. module: automation
+#. odoo-javascript
+#: code:addons/automation/static/src/workflow_canvas.xml:0
+msgid ""
+"Each step shows where this run stands. Double-click a step to open it, with\n"
+"                the document it created or the reason it failed."
+msgstr ""
+"Cada paso muestra en qué punto va esta ejecución. Haga doble clic en un paso"
+" para abrirlo, con el documento que creó o el motivo por el que falló."
+
+#. module: automation
+#. odoo-javascript
+#: code:addons/automation/static/src/workflow_canvas.xml:0
+msgid "This run has no steps yet. Start the workflow to draw them."
+msgstr ""
+"Esta ejecución aún no tiene pasos. Inicie el flujo de trabajo para "
+"dibujarlos."
+
+#. module: automation
+#. odoo-javascript
+#: code:addons/automation/static/src/workflow_canvas.xml:0
+msgid ""
+"This automation has no steps yet. Add a step, then connect the steps here."
+msgstr ""
+"Esta automatización aún no tiene pasos. Agregue un paso y después conecte "
+"los pasos aquí."
+
+#. module: automation
+#. odoo-javascript
+#: code:addons/automation/static/src/workflow_canvas.xml:0
+msgid "Tidy up"
+msgstr "Ordenar"
+
+#. module: automation
+#. odoo-javascript
+#: code:addons/automation/static/src/workflow_canvas.xml:0
+msgid "steps,"
+msgstr "pasos,"
+
+#. module: automation
+#. odoo-javascript
+#: code:addons/automation/static/src/workflow_canvas.xml:0
+msgid "connections"
+msgstr "conexiones"
+
+#. module: automation
+#. odoo-javascript
+#: code:addons/automation/static/src/workflow_canvas.xml:0
+msgid "Loading the workflow…"
+msgstr "Cargando el flujo de trabajo…"
+
+#. module: automation
+#. odoo-javascript
+#: code:addons/automation/static/src/workflow_canvas.xml:0
+msgid "The workflow could not be drawn."
+msgstr "No se pudo dibujar el flujo de trabajo."
+
+#. module: automation
+#: model:ir.model.fields,field_description:automation.field_automation_runtime_line__error_message
+#: model_terms:ir.ui.view,arch_db:automation.view_automation_runtime_line_form
+msgid "Error Details"
+msgstr "Detalle del error"
+
+#. module: automation
+#. odoo-javascript
+#: code:addons/automation/static/src/workflow_graph.js:0
+#: model:ir.model.fields.selection,name:automation.selection__automation_runtime_line__state__waiting
+msgid "Waiting"
+msgstr "En espera"
+
+#. module: automation
+#. odoo-javascript
+#: code:addons/automation/static/src/workflow_graph.js:0
+#: model:ir.model.fields.selection,name:automation.selection__automation_runtime_line__state__scheduled
+msgid "Scheduled"
+msgstr "Programado"
+
+#. module: automation
+#. odoo-javascript
+#: code:addons/automation/static/src/workflow_graph.js:0
+#: model:ir.model.fields.selection,name:automation.selection__automation_runtime_line__state__ready
+msgid "Ready"
+msgstr "Listo"
+
+#. module: automation
+#. odoo-javascript
+#: code:addons/automation/static/src/workflow_graph.js:0
+msgid "In progress"
+msgstr "En progreso"
+
+#. module: automation
+#. odoo-javascript
+#: code:addons/automation/static/src/workflow_graph.js:0
+#: model:ir.model.fields.selection,name:automation.selection__automation_runtime_line__state__paused
+msgid "Paused"
+msgstr "En pausa"
+
+#. module: automation
+#. odoo-javascript
+#: code:addons/automation/static/src/workflow_graph.js:0
+#: model:ir.model.fields.selection,name:automation.selection__automation_runtime_line__state__skipped
+msgid "Skipped"
+msgstr "Omitido"
+
+#. module: automation
+#. odoo-javascript
+#: code:addons/automation/static/src/workflow_graph.js:0
+#: model:ir.model.fields.selection,name:automation.selection__automation_runtime_line__state__error
+msgid "Error"
+msgstr "Error"
+
+#. module: automation
+#. odoo-javascript
+#: code:addons/automation/static/src/workflow_graph.js:0
+#: model:ir.model.fields.selection,name:automation.selection__automation_runtime__state__cancel
+#: model:ir.model.fields.selection,name:automation.selection__automation_runtime_line__skip_reason__cancelled
+#: model:ir.model.fields.selection,name:automation.selection__automation_runtime_line__state__cancel
+msgid "Cancelled"
+msgstr "Cancelado"
+
+#. module: automation
+#. odoo-javascript
+#: code:addons/automation/static/src/workflow_graph.js:0
+msgid "on success"
+msgstr "si tiene éxito"
+
+#. module: automation
+#. odoo-javascript
+#: code:addons/automation/static/src/workflow_graph.js:0
+msgid "on error"
+msgstr "si falla"
+
+#. module: automation
+#. odoo-javascript
+#: code:addons/automation/static/src/workflow_graph.js:0
+msgid "always"
+msgstr "siempre"
+
+#. module: automation
+#: model:ir.model.fields,field_description:automation.field_automation_runtime__line_ids
+#: model_terms:ir.ui.view,arch_db:automation.view_automation_runtime_form
+#: model_terms:ir.ui.view,arch_db:automation.view_automation_runtime_line_tree
+msgid "Workflow Steps"
+msgstr "Pasos del flujo de trabajo"
+
+#. module: automation
+#: model:ir.model.fields,field_description:automation.field_automation_runtime__company_ids
+msgid "Companies"
+msgstr "Compañías"
+
+#. module: automation
+#: model:ir.model.fields,help:automation.field_automation_runtime__company_ids
+msgid ""
+"Every company this run works in. A run that creates documents in two "
+"companies belongs to both, and is listed in each of them."
+msgstr ""
+"Todas las compañías en las que trabaja esta ejecución. Una ejecución que "
+"crea documentos en dos compañías pertenece a ambas y aparece en cada una."
+
+#. module: automation
+#: model:ir.model.fields,field_description:automation.field_automation_runtime__third_party_id
+msgid "Third Party"
+msgstr "Tercero"
+
+#. module: automation
+#: model:ir.model.fields,help:automation.field_automation_runtime__third_party_id
+msgid ""
+"The party a step issues a document to in place of the partner, when it "
+"cannot be issued to the partner himself. The partner stays the one the "
+"operation is about."
+msgstr ""
+"A quien un paso emite un documento en lugar del contacto, cuando no se le "
+"puede emitir al propio contacto. El contacto sigue siendo aquel de quien "
+"trata la operación."
+
+#. module: automation
+#. odoo-python
+#: code:addons/automation/models/automation_runtime.py:0
+msgid ""
+"A workflow run belongs to at least one company:\n"
+"%(runs)s"
+msgstr ""
+"Una ejecución de flujo de trabajo pertenece al menos a una compañía:\n"
+"%(runs)s"
+
+#. module: automation
+#: model:ir.model.fields.selection,name:automation.selection__ir_actions_server__node_type__input
+msgid "Input"
+msgstr "Captura"
+
+#. module: automation
+#: model:ir.model.fields,field_description:automation.field_ir_actions_server__input_field_ids
+msgid "Asks For"
+msgstr "Solicita"
+
+#. module: automation
+#: model:ir.model.fields,help:automation.field_ir_actions_server__input_field_ids
+msgid ""
+"The run's fields an Input step asks someone to fill in before the workflow "
+"continues"
+msgstr ""
+"Los campos de la ejecución que un paso de captura pide llenar antes de que "
+"el flujo de trabajo continúe"
+
+#. module: automation
+#: model:ir.model.fields,help:automation.field_ir_actions_server__node_type
+msgid ""
+"What this step does when the workflow reaches it. An Action runs the server "
+"action; a Wait pauses the run and resumes it later; an Input pauses it until "
+"someone fills in the run's fields it asks for."
+msgstr ""
+"Qué hace este paso cuando el flujo de trabajo llega a él. Una acción ejecuta "
+"la acción de servidor; una espera pausa la ejecución y la reanuda después; "
+"una captura la pausa hasta que alguien llena los campos de la ejecución que "
+"solicita."
+
+#. module: automation
+#. odoo-python
+#: code:addons/automation/models/ir_actions_server.py:0
+msgid ""
+"Step '%(action)s' asks for input but names no field to fill in, so the "
+"workflow would wait forever."
+msgstr ""
+"El paso '%(action)s' solicita una captura pero no indica ningún campo por "
+"llenar, así que el flujo de trabajo esperaría para siempre."
+
+#. module: automation
+#: model:ir.model.fields,field_description:automation.field_automation_runtime__awaiting_input
+msgid "Awaiting Input"
+msgstr "Esperando captura"
+
+#. module: automation
+#: model:ir.model.fields,help:automation.field_automation_runtime__awaiting_input
+msgid "A step waits for someone to fill in fields of this run"
+msgstr "Un paso espera que alguien llene campos de esta ejecución"
+
+#. module: automation
+#: model_terms:ir.ui.view,arch_db:automation.view_automation_runtime_form
+#: model_terms:ir.ui.view,arch_db:automation.view_automation_runtime_form_input
+#: model_terms:ir.ui.view,arch_db:automation.view_automation_runtime_line_form_input
+msgid "Provide Input"
+msgstr "Capturar datos"
+
+#. module: automation
+#: model_terms:ir.ui.view,arch_db:automation.view_automation_runtime_form_input
+#: model_terms:ir.ui.view,arch_db:automation.view_automation_runtime_line_form_input
+msgid "Continue"
+msgstr "Continuar"
+
+#. module: automation
+#: model_terms:ir.ui.view,arch_db:automation.view_automation_runtime_form_input
+#: model_terms:ir.ui.view,arch_db:automation.view_automation_runtime_line_form_input
+msgid "Discard"
+msgstr "Descartar"
+
+#. module: automation
+#. odoo-python
+#: code:addons/automation/models/automation_runtime.py:0
+msgid "No step of '%(run)s' is waiting for input."
+msgstr "Ningún paso de '%(run)s' espera una captura."
+
+#. module: automation
+#. odoo-python
+#: code:addons/automation/models/automation_runtime.py:0
+msgid "This step of '%(run)s' is no longer waiting for input."
+msgstr "Este paso de '%(run)s' ya no espera una captura."
+
+#. module: automation
+#. odoo-python
+#: code:addons/automation/models/automation_runtime.py:0
+msgid "'%(step)s' still needs: %(fields)s"
+msgstr "'%(step)s' todavía necesita: %(fields)s"
+
+#. module: automation
+#. odoo-python
+#: code:addons/automation/models/automation_runtime.py:0
+msgid "'%(step)s' received its input."
+msgstr "'%(step)s' recibió su captura."
+
+#. module: automation
+#. odoo-python
+#: code:addons/automation/models/automation_runtime.py:0
+msgid "Input Received"
+msgstr "Captura recibida"
+
+#. module: automation
+#: model:ir.model.fields,field_description:automation.field_automation_runtime_line__output
+msgid "Output"
+msgstr "Salida"
+
+#. module: automation
+#: model:ir.model.fields,help:automation.field_automation_runtime_line__output
+msgid ""
+"What the step reports it did, as data. An edge leaving the step reads it as "
+"`output` in its expression."
+msgstr ""
+"Lo que el paso informa que hizo, como datos. Una conexión que sale del paso "
+"lo lee como `output` en su expresión."
+
+#. module: automation
+#: model:ir.model.fields,field_description:automation.field_automation_runtime_line__output_summary
+msgid "Result"
+msgstr "Resultado"
+
+#. module: automation
+#: model:ir.model.fields,help:automation.field_automation_runtime_line__output_summary
+msgid "What the step reports it did, in words"
+msgstr "Lo que el paso informa que hizo, en palabras"
+
+#. module: automation
+#: model:ir.model.fields,help:automation.field_workflow_edge__condition_expr
+msgid ""
+"Python expression evaluated against the runtime; required when the condition "
+"is Expression. It reads `runtime`, `record`, `state` and `output`, what the "
+"source step reported it did"
+msgstr ""
+"Expresión de Python evaluada sobre la ejecución; obligatoria cuando la "
+"condición es Expresión. Lee `runtime`, `record`, `state` y `output`, lo que "
+"el paso de origen informó que hizo"
+
+#. module: automation
+#: model:ir.model.fields,field_description:automation.field_ir_actions_server__line_input_field_ids
+msgid "Asks Before Running"
+msgstr "Solicita antes de ejecutarse"
+
+#. module: automation
+#: model:ir.model.fields,help:automation.field_ir_actions_server__line_input_field_ids
+msgid ""
+"Fields of this step, on each run, that must be filled before it runs. A step "
+"reached with one empty waits for someone to fill it in."
+msgstr ""
+"Campos de este paso, en cada ejecución, que deben llenarse antes de que se "
+"ejecute. Un paso al que se llega con alguno vacío espera a que alguien lo "
+"llene."

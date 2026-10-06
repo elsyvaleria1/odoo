@@ -1,0 +1,24 @@
+/** @odoo-module native */
+import { proxy } from "@odoo/owl";
+
+export function useOperationGuard(sharedState) {
+    const state = sharedState || proxy({ busy: false });
+    return {
+        get busy() {
+            return state.busy;
+        },
+        guard(fn) {
+            return async (...args) => {
+                if (state.busy) {
+                    return;
+                }
+                state.busy = true;
+                try {
+                    return await fn(...args);
+                } finally {
+                    state.busy = false;
+                }
+            };
+        },
+    };
+}

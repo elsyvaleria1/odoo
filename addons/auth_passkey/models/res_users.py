@@ -1,0 +1,101 @@
+from odoo import fields, models
+from odoo.exceptions import AccessDenied
+from odoo.libs.json import loads as json_loads
+from odoo.tools import SQL
+
+from .._vendor.webauthn.helpers.exceptions import InvalidAuthenticationResponse
+from odoo.addons.base.models.res_users import check_identity
+
+
+class ResUsers(models.Model):
+    _inherit = "res.users"
+
+    auth_passkey_key_ids = fields.One2many(
+        comodel_name="auth.passkey.key",
+        inverse_name="create_uid",
+    )
+
+    @property
+    def SELF_READABLE_FIELDS(self):
+        return super().SELF_READABLE_FIELDS + ["auth_passkey_key_ids"]
+
+    @check_identity
+    def action_create_passkey(self) -> dict:
+        return {
+            "name": self.env._("Create Passkey"),
+            "type": "ir.actions.act_window",
+            "res_model": "wizard.auth.passkey.key.create",
+            "view_mode": "form",
+            "target": "new",
+            "context": {
+                "dialog_size": "medium",
+                "registration": self.env["auth.passkey.key"]._start_registration(),
+            },
+        }
+
+    def _login(self, credential, user_agent_env):
+        if credential["type"] == "webauthn":
+            webauthn = json_loads(credential["webauthn_response"])
+            self.env.cr.execute(
+                SQL(
+                    """
+                SELECT login
+                    FROM auth_passkey_key key
+                    JOIN res_users usr ON usr.id = key.create_uid
+                    WHERE credential_identifier=%s AND usr.active
+            """,
+                    webauthn["id"],
+                )
+            )
+            res = self.env.cr.fetchone()
+            if not res:
+                raise AccessDenied(self.env._("Unknown passkey"))
+            credential["login"] = res[0]
+        return super()._login(credential, user_agent_env=user_agent_env)
+
+    def _check_credentials(self, credential, env):
+        if credential["type"] == "webauthn":
+            webauthn = json_loads(credential["webauthn_response"])
+            passkey = (
+                self.env["auth.passkey.key"]
+                .sudo()
+                .search(
+                    [
+                        ("create_uid", "=", self.id),
+                        ("credential_identifier", "=", webauthn["id"]),
+                    ]
+                )
+            )
+            if not passkey:
+                raise AccessDenied(self.env._("Unknown passkey"))
+            try:
+                new_sign_count = self.env["auth.passkey.key"]._get_new_sign_count(
+                    webauthn,
+                    passkey.public_key,
+                    passkey.sign_count,
+                )
+            except InvalidAuthenticationResponse as e:
+                raise AccessDenied(e.args[0]) from None
+            passkey.sign_count = new_sign_count
+            return {
+                "uid": self.id,
+                "auth_method": "passkey",
+                "mfa": "skip",
+            }
+        else:
+            return super()._check_credentials(credential, env)
+
+    def _get_fields_session_token(self):
+        return super()._get_fields_session_token() | {"auth_passkey_key_ids"}
+
+    def _prepare_session_token_query_params(self):
+        params = super()._prepare_session_token_query_params()
+        params["select"] = SQL(
+            "%s, ARRAY_AGG(key.id ORDER BY key.id DESC) FILTER (WHERE key.id IS NOT NULL) as auth_passkey_key_ids",
+            params["select"],
+        )
+        params["joins"] = SQL(
+            "%s LEFT JOIN auth_passkey_key key ON res_users.id = key.create_uid",
+            params["joins"],
+        )
+        return params

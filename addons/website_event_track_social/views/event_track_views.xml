@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="event_track_view_form" model="ir.ui.view">
+        <field name="name">event.track.view.form.inherit.social</field>
+        <field name="model">event.track</field>
+        <field name="inherit_id" ref="website_event_track.view_event_track_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='stage_id']" position="before">
+                <field name="push_reminder_posts" invisible="1" />
+                <button
+                    name="action_edit_reminder"
+                    type="object"
+                    string="Edit Push Reminder"
+                    groups="social.group_social_manager"
+                    invisible="not push_reminder_posts" />
+            </xpath>
+            <xpath expr="//field[@name='active']" position="after">
+                <field name="firebase_enable_push_notifications" invisible="1" />
+                <label
+                    for="push_reminder"
+                    string="Push Reminder"
+                    invisible="not firebase_enable_push_notifications" />
+                <div class="o_row" invisible="not firebase_enable_push_notifications">
+                    <field name="push_reminder" nolabel="1" />
+                    <field
+                        name="push_reminder_delay"
+                        nolabel="1"
+                        invisible="not push_reminder" />
+                    <span invisible="not push_reminder">minutes before start</span>
+                </div>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="event_track_view_graph" model="ir.ui.view">
+        <field name="name">event.track.view.graph.inherit.social</field>
+        <field name="model">event.track</field>
+        <field name="inherit_id" ref="website_event_track.view_event_track_graph" />
+        <field name="arch" type="xml">
+            <xpath expr="//graph" position="inside">
+                <field name="push_reminder_delay" invisible="1" />
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="account.JournalsTile">
+        <div class="o_journals_tile d-flex flex-column gap-2">
+            <button type="button" class="btn btn-link p-0 d-flex gap-3 text-start o_journals_tile_totals" t-on-click="() => this.openDashboard()">
+                <span><strong t-out="this.props.data.to_reconcile"/> <small class="text-muted">To reconcile</small></span>
+                <span><strong t-out="this.props.data.to_validate"/> <small class="text-muted">To validate</small></span>
+                <span><strong class="text-danger" t-out="this.props.data.late"/> <small class="text-muted">Late</small></span>
+            </button>
+            <ul t-if="this.journals.length" class="list-unstyled mb-0">
+                <li t-foreach="this.journals" t-as="journal" t-key="journal.id">
+                    <button type="button" class="btn btn-link p-0 border-0 text-start text-decoration-none w-100 d-flex align-items-center gap-2 o_journals_tile_journal" t-on-click="() => this.open(journal)">
+                        <span class="flex-grow-1 text-truncate" t-out="journal.name"/>
+                        <span t-if="journal.late" class="badge text-bg-danger" t-out="journal.late"/>
+                        <span t-if="journal.to_reconcile" class="badge text-bg-primary" t-out="journal.to_reconcile"/>
+                        <span t-if="journal.to_validate" class="badge text-bg-secondary" t-out="journal.to_validate"/>
+                    </button>
+                </li>
+            </ul>
+            <p t-else="" class="text-muted small mb-0">Every journal is up to date.</p>
+        </div>
+    </t>
+
+</templates>

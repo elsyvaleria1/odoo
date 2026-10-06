@@ -1,0 +1,601 @@
+// @ts-check
+
+import { expect, test } from "@odoo/hoot";
+import { click, queryFirst } from "@odoo/hoot-dom";
+import { animationFrame, Deferred } from "@odoo/hoot-mock";
+import { Component, proxy, t, useProps, xml } from "@odoo/owl";
+import { mountWithCleanup } from "@web/../tests/web_test_helpers";
+import { Notebook } from "@web/components/notebook/notebook";
+
+for (const change of ["hidden", "disabled"]) {
+    test(`pending page activation does not select a ${change} page`, async () => {
+        const gate = new Deferred();
+        class Host extends Component {
+            static props = null;
+            static components = { Notebook };
+            static template = xml`
+                <Notebook onWillActivatePage="() => this.beforeActivate()">
+                    <t t-set-slot="a" title="'A'" isVisible="true"><div class="page-a"/></t>
+                    <t t-set-slot="b" title="'B'"
+                       isVisible="!this.state.hidden" isDisabled="this.state.disabled"><div class="page-b"/></t>
+                </Notebook>`;
+            props = useProps(this.constructor.props);
+            setup() {
+                this.state = proxy({ hidden: false, disabled: false });
+            }
+            beforeActivate() {
+                expect.step("activation requested");
+                return gate;
+            }
+        }
+        const host = await mountWithCleanup(Host);
+        await click(".nav-item:nth-child(2) .nav-link");
+        expect.verifySteps(["activation requested"]);
+        host.state[change] = true;
+        await animationFrame();
+        gate.resolve();
+        await animationFrame();
+        expect(".nav-link.active").toHaveText("A");
+        expect(".page-a").toHaveCount(1);
+        expect(".page-b").toHaveCount(0);
+    });
+}
+
+test("pending page activation does not select a removed page", async () => {
+    const gate = new Deferred();
+    class Page extends Component {
+        static props = null;
+        static template = xml`<div class="page-body" t-out="this.props.title"/>`;
+        props = useProps(this.constructor.props);
+    }
+    class Host extends Component {
+        static props = null;
+        static components = { Notebook };
+        static template = xml`<Notebook pages="this.state.pages" onWillActivatePage="() => this.beforeActivate()"/>`;
+        props = useProps(this.constructor.props);
+        setup() {
+            this.state = proxy({
+                pages: ["A", "B"].map((title) => ({
+                    id: title,
+                    title,
+                    Component: Page,
+                    props: { title },
+                })),
+            });
+        }
+        beforeActivate() {
+            expect.step("activation requested");
+            return gate;
+        }
+    }
+    const host = await mountWithCleanup(Host);
+    await click(".nav-item:nth-child(2) .nav-link");
+    expect.verifySteps(["activation requested"]);
+    host.state.pages = host.state.pages.slice(0, 1);
+    await animationFrame();
+    expect(".nav-link").toHaveCount(1);
+    gate.resolve();
+    await animationFrame();
+    expect(".nav-link.active").toHaveText("A");
+    expect(".page-body").toHaveText("A");
+});
+
+test("not rendered if empty slots", async () => {
+    await mountWithCleanup(Notebook);
+    expect("div.o_notebook").toHaveCount(0);
+});
+
+test("notebook with multiple pages given as slots", async () => {
+    class Parent extends Component {
+        static template = xml`<Notebook>
+                <t t-set-slot="page_about" title="'About'" isVisible="true">
+                    <h3>About the bird</h3>
+                    <p>Owls are birds from the order Strigiformes which includes over
+                    200 species of mostly solitary and nocturnal birds of prey typified by an upright stance, ...</p>
+                </t>
+                <t t-set-slot="page_hunting" title="'Owl Activities'" isVisible="true">
+                    <h3>Their favorite activity: hunting</h3>
+                    <p>Owls are called raptors, or birds of prey, which means they use sharp talons and curved bills to hunt, kill, and eat other animals.</p>
+                </t>
+                <t t-set-slot="page_secret" title="'Secret about OWLs'" isVisible="false">
+                    <p>TODO find a great secret about OWLs.</p>
+                </t>
+            </Notebook>`;
+        static components = { Notebook };
+        static props = null;
+        props = useProps(this.constructor.props);
+    }
+
+    await mountWithCleanup(Parent);
+    expect("div.o_notebook").toHaveCount(1);
+    expect(".o_notebook").toHaveClass("horizontal", {
+        message: "default orientation is set as horizontal",
+    });
+    expect(".nav").toHaveClass("flex-row", {
+        message:
+            "navigation container uses the right class to display as horizontal tabs",
+    });
+    expect(".o_notebook_headers a.nav-link").toHaveCount(2, {
+        message: "navigation link is present for each visible page",
+    });
+    expect(".o_notebook_headers .nav-item:first-child a").toHaveClass("active", {
+        message: "first page is selected by default",
+    });
+    expect(".active h3").toHaveText("About the bird", {
+        message: "first page content is displayed by the notebook",
+    });
+
+    await click(".o_notebook_headers .nav-item:nth-child(2) a");
+    await animationFrame();
+    expect(".o_notebook_headers .nav-item:nth-child(2) a").toHaveClass("active", {
+        message: "second page is now selected",
+    });
+    expect(".active h3").toHaveText("Their favorite activity: hunting", {
+        message: "second page content is displayed by the notebook",
+    });
+});
+
+test("notebook with defaultPage props", async () => {
+    class Parent extends Component {
+        static template = xml`<Notebook defaultPage="'page_hunting'">
+                <t t-set-slot="page_about" title="'About'" isVisible="true">
+                    <h3>About the bird</h3>
+                    <p>Owls are birds from the order Strigiformes which includes over
+                    200 species of mostly solitary and nocturnal birds of prey typified by an upright stance, ...</p>
+                </t>
+                <t t-set-slot="page_hunting" title="'Owl Activities'" isVisible="true">
+                    <h3>Their favorite activity: hunting</h3>
+                    <p>Owls are called raptors, or birds of prey, which means they use sharp talons and curved bills to hunt, kill, and eat other animals.</p>
+                </t>
+                <t t-set-slot="page_secret" title="'Secret about OWLs'" isVisible="false">
+                    <p>TODO find a great secret about OWLs.</p>
+                </t>
+            </Notebook>`;
+        static components = { Notebook };
+        static props = null;
+        props = useProps(this.constructor.props);
+    }
+
+    await mountWithCleanup(Parent);
+    expect("div.o_notebook").toHaveCount(1);
+    expect(".o_notebook_headers .nav-item:nth-child(2) a").toHaveClass("active", {
+        message: "second page is selected by default",
+    });
+    expect(".active h3").toHaveText("Their favorite activity: hunting", {
+        message: "second page content is displayed by the notebook",
+    });
+});
+
+test("notebook with defaultPage set on invisible page", async () => {
+    class Parent extends Component {
+        static template = xml`<Notebook defaultPage="'page_secret'">
+                    <t t-set-slot="page_about" title="'About'" isVisible="true">
+                        <h3>About the bird</h3>
+                        <p>Owls are birds from the order Strigiformes which includes over
+                        200 species of mostly solitary and nocturnal birds of prey typified by an upright stance, ...</p>
+                    </t>
+                    <t t-set-slot="page_hunting" title="'Owl Activities'" isVisible="true">
+                        <h3>Their favorite activity: hunting</h3>
+                        <p>Owls are called raptors, or birds of prey, which means they use sharp talons and curved bills to hunt, kill, and eat other animals.</p>
+                    </t>
+                    <t t-set-slot="page_secret" title="'Secret about OWLs'" isVisible="false">
+                        <h3>Oooops</h3>
+                        <p>TODO find a great secret to reveal about OWLs.</p>
+                    </t>
+                </Notebook>`;
+        static components = { Notebook };
+        static props = null;
+        props = useProps(this.constructor.props);
+    }
+
+    await mountWithCleanup(Parent);
+    expect(".o_notebook_headers .nav-item a.active").toHaveText("About", {
+        message: "The first page is selected",
+    });
+});
+
+test("notebook set vertically", async () => {
+    class Parent extends Component {
+        static template = xml`<Notebook orientation="'vertical'">
+                <t t-set-slot="page_about" title="'About'" isVisible="true">
+                    <h3>About the bird</h3>
+                    <p>Owls are birds from the order Strigiformes which includes over
+                    200 species of mostly solitary and nocturnal birds of prey typified by an upright stance, ...</p>
+                </t>
+                <t t-set-slot="page_hunting" title="'Owl Activities'" isVisible="true">
+                    <h3>Their favorite activity: hunting</h3>
+                    <p>Owls are called raptors, or birds of prey, which means they use sharp talons and curved bills to hunt, kill, and eat other animals.</p>
+                </t>
+            </Notebook>`;
+        static components = { Notebook };
+        static props = null;
+        props = useProps(this.constructor.props);
+    }
+
+    await mountWithCleanup(Parent);
+    expect("div.o_notebook").toHaveCount(1);
+    expect(".o_notebook").toHaveClass("vertical", {
+        message: "orientation is set as vertical",
+    });
+    expect(".nav").toHaveClass("flex-column", {
+        message:
+            "navigation container uses the right class to display as vertical buttons",
+    });
+});
+
+test("notebook pages rendered by a template component", async () => {
+    class NotebookPageRenderer extends Component {
+        static template = xml`
+                <h3 t-out="this.props.heading"></h3>
+                <p t-out="this.props.text" />
+            `;
+        static props = { heading: t.string(), text: t.string() };
+        props = useProps(this.constructor.props);
+    }
+
+    class Parent extends Component {
+        static template = xml`<Notebook defaultPage="'page_three'" pages="this.pages">
+                <t t-set-slot="page_one" title="'Page 1'" isVisible="true">
+                    <h3>Page 1</h3>
+                    <p>First page set directly as a slot</p>
+                </t>
+                <t t-set-slot="page_four" title="'Page 4'" isVisible="true">
+                    <h3>Page 4</h3>
+                </t>
+            </Notebook>`;
+        static components = { Notebook };
+        static props = null;
+        props = useProps(this.constructor.props);
+        setup() {
+            this.pages = [
+                {
+                    Component: NotebookPageRenderer,
+                    index: 1,
+                    title: "Page 2",
+                    props: {
+                        heading: "Page 2",
+                        text: "Second page rendered by a template component",
+                    },
+                },
+                {
+                    Component: NotebookPageRenderer,
+                    id: "page_three",
+                    index: 2,
+                    title: "Page 3",
+                    props: {
+                        heading: "Page 3",
+                        text: "Third page rendered by a template component",
+                    },
+                },
+            ];
+        }
+    }
+
+    await mountWithCleanup(Parent);
+    expect("div.o_notebook").toHaveCount(1);
+    expect(".o_notebook_headers .nav-item:nth-child(3) a").toHaveClass("active", {
+        message: "third page is selected by default",
+    });
+
+    await click(".o_notebook_headers .nav-item:nth-child(2) a");
+    await animationFrame();
+    expect(".o_notebook_content p").toHaveText(
+        "Second page rendered by a template component",
+        {
+            message: "displayed content corresponds to the current page",
+        },
+    );
+});
+
+test("a programmatic page with index 0 is ordered first", async () => {
+    class Page extends Component {
+        static template = xml`<h3 t-out="this.props.heading"/>`;
+        static props = null;
+        props = useProps(this.constructor.props);
+    }
+
+    class Parent extends Component {
+        static template = xml`<Notebook pages="this.pages"/>`;
+        static components = { Notebook };
+        static props = null;
+        props = useProps(this.constructor.props);
+        setup() {
+            this.pages = [
+                {
+                    Component: Page,
+                    title: "Unindexed",
+                    props: { heading: "Unindexed" },
+                },
+                {
+                    Component: Page,
+                    index: 0,
+                    title: "Zero",
+                    props: { heading: "Zero" },
+                },
+            ];
+        }
+    }
+
+    await mountWithCleanup(Parent);
+    expect(".o_notebook_headers .nav-item:first-child a").toHaveText("Zero");
+    expect(".o_notebook_headers .nav-item:nth-child(2) a").toHaveText("Unindexed");
+    expect(".o_notebook_headers .nav-item:first-child a").toHaveClass("active");
+    expect(".active h3").toHaveText("Zero");
+});
+
+test("each page is different", async () => {
+    class Page extends Component {
+        static template = xml`<h3>Coucou</h3>`;
+        static props = null;
+        props = useProps(this.constructor.props);
+    }
+
+    class Parent extends Component {
+        static template = xml`<Notebook pages="this.pages"/>`;
+        static components = { Notebook };
+        static props = null;
+        props = useProps(this.constructor.props);
+        setup() {
+            this.pages = [
+                {
+                    Component: Page,
+                    index: 1,
+                    title: "Page 1",
+                },
+                {
+                    Component: Page,
+                    index: 2,
+                    title: "Page 2",
+                },
+            ];
+        }
+    }
+
+    await mountWithCleanup(Parent);
+    const firstPage = queryFirst("h3");
+    expect(firstPage).toBeInstanceOf(HTMLElement);
+
+    await click(".o_notebook_headers .nav-item:nth-child(2) a");
+    await animationFrame();
+    const secondPage = queryFirst("h3");
+    expect(secondPage).toBeInstanceOf(HTMLElement);
+    expect(firstPage).not.toBe(secondPage);
+});
+
+test("defaultPage recomputed when isVisible is dynamic", async () => {
+    let defaultPageVisible = false;
+    class Parent extends Component {
+        static components = { Notebook };
+        static template = xml`
+                <Notebook defaultPage="'3'">
+                    <t t-set-slot="1" title="'page1'" isVisible="true">
+                        <div class="page1" />
+                    </t>
+                    <t t-set-slot="2" title="'page2'" isVisible="true">
+                        <div class="page2" />
+                    </t>
+                    <t t-set-slot="3" title="'page3'" isVisible="this.defaultPageVisible">
+                        <div class="page3" />
+                    </t>
+                </Notebook>`;
+        static props = null;
+        props = useProps(this.constructor.props);
+        get defaultPageVisible() {
+            return defaultPageVisible;
+        }
+    }
+
+    const parent = await mountWithCleanup(Parent);
+    expect(".page1").toHaveCount(1);
+    expect(".nav-link.active").toHaveText("page1");
+    defaultPageVisible = true;
+    parent.__owl__.render(true);
+
+    await animationFrame();
+    expect(".page3").toHaveCount(1);
+    expect(".nav-link.active").toHaveText("page3");
+
+    await click(".o_notebook_headers .nav-item:nth-child(2) a");
+    await animationFrame();
+    expect(".page2").toHaveCount(1);
+    expect(".nav-link.active").toHaveText("page2");
+
+    parent.__owl__.render(true);
+    await animationFrame();
+    expect(".page2").toHaveCount(1);
+    expect(".nav-link.active").toHaveText("page2");
+});
+
+test("disabled pages are greyed out and can't be toggled", async () => {
+    class Parent extends Component {
+        static components = { Notebook };
+        static template = xml`
+            <Notebook defaultPage="'1'">
+                <t t-set-slot="1" title="'page1'" isVisible="true">
+                    <div class="page1" />
+                </t>
+                <t t-set-slot="2" title="'page2'" isVisible="true" isDisabled="true">
+                    <div class="page2" />
+                </t>
+                <t t-set-slot="3" title="'page3'" isVisible="true">
+                    <div class="page3" />
+                </t>
+            </Notebook>`;
+        static props = null;
+        props = useProps(this.constructor.props);
+    }
+
+    await mountWithCleanup(Parent);
+    expect(".page1").toHaveCount(1);
+    expect(".nav-item:nth-child(2)").toHaveClass("disabled", {
+        message: "tab of the disabled page is greyed out",
+    });
+
+    await click(".nav-item:nth-child(2) .nav-link");
+    await animationFrame();
+    expect(".page1").toHaveCount(1, {
+        message: "the same page is still displayed",
+    });
+
+    await click(".nav-item:nth-child(3) .nav-link");
+    await animationFrame();
+    expect(".page3").toHaveCount(1, {
+        message: "the third page is now displayed",
+    });
+});
+
+test("icons can be given for each page tab", async () => {
+    class Parent extends Component {
+        static components = { Notebook };
+        static template = xml`
+            <Notebook defaultPage="'1'" icons="this.icons">
+                <t t-set-slot="1" title="'page1'" isVisible="true">
+                    <div class="page1" />
+                </t>
+                <t t-set-slot="2" title="'page2'" isVisible="true">
+                    <div class="page2" />
+                </t>
+                <t t-set-slot="3" title="'page3'" isVisible="true">
+                    <div class="page3" />
+                </t>
+            </Notebook>`;
+        static props = null;
+        props = useProps(this.constructor.props);
+        get icons() {
+            return {
+                1: "fa-trash",
+                3: "fa-pencil",
+            };
+        }
+    }
+
+    await mountWithCleanup(Parent);
+    expect(".nav-item:nth-child(1) i").toHaveClass("fa-trash");
+    expect(".nav-item:nth-child(1)").toHaveText("page1");
+    expect(".nav-item:nth-child(2) i").toHaveCount(0);
+    expect(".nav-item:nth-child(2)").toHaveText("page2");
+    expect(".nav-item:nth-child(3) i").toHaveClass("fa-pencil");
+    expect(".nav-item:nth-child(3)").toHaveText("page3");
+});
+
+test("invalid pages come from the isFieldInvalid prop, not from env.model", async () => {
+    class Page extends Component {
+        static props = null;
+        static template = xml`<div class="page-body"/>`;
+        props = useProps(this.constructor.props);
+    }
+    class Parent extends Component {
+        static components = { Notebook };
+        static props = {};
+        static template = xml`<Notebook pages="this.pages" isFieldInvalid="(f) => f === 'bar'"/>`;
+        props = useProps(this.constructor.props);
+        get pages() {
+            return [
+                {
+                    id: "p1",
+                    title: "P1",
+                    Component: Page,
+                    props: {},
+                    fieldNames: ["foo"],
+                },
+                {
+                    id: "p2",
+                    title: "P2",
+                    Component: Page,
+                    props: {},
+                    fieldNames: ["bar"],
+                },
+            ];
+        }
+    }
+    await mountWithCleanup(Parent);
+    expect(".o_notebook .nav-link.o_page_invalid").toHaveCount(1);
+    expect(".o_notebook .nav-link.o_page_invalid").toHaveText("P2");
+});
+
+test("no isFieldInvalid prop means no page is flagged", async () => {
+    class Page extends Component {
+        static props = null;
+        static template = xml`<div class="page-body"/>`;
+        props = useProps(this.constructor.props);
+    }
+    class Parent extends Component {
+        static components = { Notebook };
+        static props = {};
+        static template = xml`<Notebook pages="this.pages"/>`;
+        props = useProps(this.constructor.props);
+        get pages() {
+            return [
+                {
+                    id: "p1",
+                    title: "P1",
+                    Component: Page,
+                    props: {},
+                    fieldNames: ["foo"],
+                },
+            ];
+        }
+    }
+    await mountWithCleanup(Parent);
+    expect(".o_notebook .nav-link").toHaveCount(1);
+    expect(".o_notebook .nav-link.o_page_invalid").toHaveCount(0);
+});
+
+test("both class spellings reach the root, because both callers exist", async () => {
+    class Page extends Component {
+        static template = xml`<div class="page-a"/>`;
+        static props = null;
+        props = useProps(this.constructor.props);
+    }
+    class Parent extends Component {
+        static template = xml`<Notebook className="'from-template'" class="'from-compiler'" pages="this.pages"/>`;
+        static components = { Notebook };
+        static props = null;
+        props = useProps(this.constructor.props);
+        setup() {
+            this.pages = [{ Component: Page, title: "A", props: {} }];
+        }
+    }
+    await mountWithCleanup(Parent);
+    expect("div.o_notebook").toHaveClass("from-template");
+    expect("div.o_notebook").toHaveClass("from-compiler");
+});
+
+for (const intent of ["current page", "new default", "ordinary render"]) {
+    test(`a pending tab activation respects ${intent}`, async () => {
+        const pending = new Deferred();
+        class Parent extends Component {
+            static components = { Notebook };
+            static props = {};
+            static template = xml`
+                <Notebook defaultPage="this.state.defaultPage" className="this.state.className"
+                    onWillActivatePage="() => this.pending">
+                    <t t-set-slot="a" title="'A'" isVisible="true"><div class="page-a"/></t>
+                    <t t-set-slot="b" title="'B'" isVisible="true"><div class="page-b"/></t>
+                    <t t-set-slot="c" title="'C'" isVisible="true"><div class="page-c"/></t>
+                </Notebook>`;
+            props = useProps(this.constructor.props);
+            setup() {
+                this.pending = pending;
+                this.state = proxy({ defaultPage: "a", className: "before" });
+            }
+        }
+        const parent = await mountWithCleanup(Parent);
+        await click(".nav-item:nth-child(2) .nav-link");
+        await animationFrame();
+        expect(".page-a").toHaveCount(1);
+        if (intent === "current page") {
+            await click(".nav-item:first-child .nav-link");
+        } else if (intent === "new default") {
+            parent.state.defaultPage = "c";
+        } else {
+            parent.state.className = "after";
+        }
+        await animationFrame();
+        pending.resolve();
+        await animationFrame();
+        const expectedPage =
+            intent === "current page" ? "a" : intent === "new default" ? "c" : "b";
+        expect(`.page-${expectedPage}`).toHaveCount(1);
+    });
+}

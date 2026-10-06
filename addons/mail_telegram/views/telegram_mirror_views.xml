@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="telegram_mirror_view_list" model="ir.ui.view">
+        <field name="name">telegram.mirror.list</field>
+        <field name="model">telegram.mirror</field>
+        <field name="arch" type="xml">
+            <list create="False" edit="False">
+                <field name="bot_id" />
+                <field name="chat_id" />
+                <field name="kind" />
+                <field name="thread_uid" optional="hide" />
+                <field name="res_model" optional="hide" />
+                <field name="res_id" widget="many2one_reference" />
+                <field name="active" widget="boolean_toggle" />
+            </list>
+        </field>
+    </record>
+
+    <record id="telegram_mirror_view_search" model="ir.ui.view">
+        <field name="name">telegram.mirror.search</field>
+        <field name="model">telegram.mirror</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="chat_id" />
+                <field name="bot_id" />
+                <filter
+                    name="inactive"
+                    string="Archived"
+                    domain="[('active', '=', False)]" />
+            </search>
+        </field>
+    </record>
+
+    <record id="action_telegram_mirror" model="ir.actions.act_window">
+        <field name="name">Mirrored Groups</field>
+        <field name="res_model">telegram.mirror</field>
+        <field name="view_mode">list</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">No Telegram group is mirrored in Odoo yet</p>
+            <p>Connect one from Discuss or with Connect a Telegram Group.</p>
+        </field>
+    </record>
+
+</odoo>

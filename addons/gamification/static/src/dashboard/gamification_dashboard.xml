@@ -1,0 +1,438 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+<t t-name="gamification.Dashboard">
+    <Layout display="this.display">
+        <div class="o_gamification_dashboard p-3">
+            <t t-if="this.state.loading">
+                <div class="text-center p-5">
+                    <i class="fa fa-spinner fa-spin fa-3x"/>
+                </div>
+            </t>
+            <t t-else="">
+                <!-- Profile Header -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <div class="card shadow-sm">
+                            <div class="card-body d-flex align-items-center gap-4">
+                                <t t-if="this.state.profile.rank_image">
+                                    <img t-att-src="'data:image/png;base64,' + this.state.profile.rank_image"
+                                         class="rounded-circle" style="width:64px;height:64px;"/>
+                                </t>
+                                <t t-else="">
+                                    <div class="rounded-circle bg-primary d-flex align-items-center justify-content-center"
+                                         style="width:64px;height:64px;">
+                                        <i class="fa fa-trophy fa-2x text-white"/>
+                                    </div>
+                                </t>
+                                <div class="flex-grow-1">
+                                    <h3 class="mb-1" t-out="this.state.profile.user_name"/>
+                                    <div class="d-flex align-items-center gap-3">
+                                        <span class="badge bg-primary fs-6" t-out="this.state.profile.rank_name"/>
+                                        <span class="text-muted">
+                                            <i class="fa fa-star text-warning"/>
+                                            <t t-out="this.state.profile.karma"/> XP
+                                        </span>
+                                    </div>
+                                    <t t-if="this.state.profile.next_rank_name">
+                                        <div class="mt-2">
+                                            <div class="d-flex justify-content-between small text-muted mb-1">
+                                                <span>Progress to <t t-out="this.state.profile.next_rank_name"/></span>
+                                                <span><t t-out="this.state.profile.xp_to_next_rank"/> XP to go</span>
+                                            </div>
+                                            <div class="progress" style="height: 8px;">
+                                                <div class="progress-bar bg-success"
+                                                     role="progressbar"
+                                                     t-att-style="'width: ' + this.state.profile.xp_progress_percent + '%'"
+                                                     t-att-aria-valuenow="this.state.profile.xp_progress_percent"
+                                                     aria-valuemin="0" aria-valuemax="100"/>
+                                            </div>
+                                        </div>
+                                    </t>
+                                </div>
+                                <div class="d-flex gap-3 text-center">
+                                    <div>
+                                        <div class="fs-4 text-warning" t-out="this.state.profile.gold_badge"/>
+                                        <small class="text-muted">Gold</small>
+                                    </div>
+                                    <div>
+                                        <div class="fs-4 text-secondary" t-out="this.state.profile.silver_badge"/>
+                                        <small class="text-muted">Silver</small>
+                                    </div>
+                                    <div>
+                                        <div class="fs-4 text-danger" t-out="this.state.profile.bronze_badge"/>
+                                        <small class="text-muted">Bronze</small>
+                                    </div>
+                                </div>
+                                <button class="btn btn-sm btn-outline-secondary" t-on-click="this.refresh"
+                                        title="Refresh dashboard" aria-label="Refresh dashboard">
+                                    <i class="fa fa-refresh" aria-hidden="true"/>
+                                </button>
+                            </div>
+                            <!-- Featured Badges -->
+                            <t t-if="this.state.profile.featured_badges and this.state.profile.featured_badges.length">
+                                <div class="card-footer bg-transparent d-flex align-items-center gap-3">
+                                    <small class="text-muted me-2">Featured:</small>
+                                    <t t-foreach="this.state.profile.featured_badges" t-as="fb" t-key="fb.id">
+                                        <span class="badge bg-light text-dark border">
+                                            <i t-att-class="'fa fa-certificate me-1 ' + this.getBadgeLevelClass(fb.level)"/>
+                                            <t t-out="fb.badge_name"/>
+                                        </span>
+                                    </t>
+                                </div>
+                            </t>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Analytics Summary (if available) -->
+                <t t-if="this.state.analytics and this.state.analytics.current and this.state.analytics.current.snapshot_date">
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <div class="card shadow-sm">
+                                <div class="card-header d-flex justify-content-between align-items-center">
+                                    <h5 class="mb-0"><i class="fa fa-line-chart text-info me-2"/>Engagement Analytics</h5>
+                                    <button class="btn btn-sm btn-outline-primary" t-on-click="() => this.openAction('gamification.engagement_snapshot_list_action')">
+                                        View History
+                                    </button>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row text-center">
+                                        <t t-set="a" t-value="this.state.analytics.current"/>
+                                        <t t-set="t" t-value="this.state.analytics.trends"/>
+                                        <div class="col">
+                                            <div class="fs-4 fw-bold" t-out="a.active_users_7d"/>
+                                            <small class="text-muted">Active Users (7d)</small>
+                                            <br/><i t-att-class="'fa small ' + this.getTrendIcon(t.active_users_7d)"/>
+                                        </div>
+                                        <div class="col">
+                                            <div class="fs-4 fw-bold" t-out="a.goals_reached_7d"/>
+                                            <small class="text-muted">Goals Reached (7d)</small>
+                                            <br/><i t-att-class="'fa small ' + this.getTrendIcon(t.goals_reached_7d)"/>
+                                        </div>
+                                        <div class="col">
+                                            <div class="fs-4 fw-bold" t-out="a.kudos_7d"/>
+                                            <small class="text-muted">Kudos Sent (7d)</small>
+                                            <br/><i t-att-class="'fa small ' + this.getTrendIcon(t.kudos_7d)"/>
+                                        </div>
+                                        <div class="col">
+                                            <div class="fs-4 fw-bold" t-out="a.active_streaks"/>
+                                            <small class="text-muted">Active Streaks</small>
+                                            <br/><i t-att-class="'fa small ' + this.getTrendIcon(t.active_streaks)"/>
+                                        </div>
+                                        <div class="col">
+                                            <div class="fs-4 fw-bold" t-out="a.karma_granted_7d"/>
+                                            <small class="text-muted">Karma (7d)</small>
+                                            <br/><i t-att-class="'fa small ' + this.getTrendIcon(t.karma_granted_7d)"/>
+                                        </div>
+                                        <div class="col">
+                                            <div class="fs-4 fw-bold">
+                                                <t t-out="Math.round(a.goal_completion_rate)"/>%
+                                            </div>
+                                            <small class="text-muted">Completion Rate</small>
+                                            <br/><i t-att-class="'fa small ' + this.getTrendIcon(t.goal_completion_rate)"/>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </t>
+
+                <div class="row">
+                    <!-- Left Column: Streaks + Goals -->
+                    <div class="col-lg-8">
+                        <!-- Active Streaks -->
+                        <div class="card shadow-sm mb-3">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0"><i class="fa fa-fire text-warning me-2"/>Streaks</h5>
+                                <button class="btn btn-sm btn-outline-primary" t-on-click="() => this.openAction('gamification.streak_list_action')">
+                                    View All
+                                </button>
+                            </div>
+                            <div class="card-body p-0">
+                                <t t-if="this.state.streaks.length === 0">
+                                    <div class="p-3 text-center text-muted">No active streaks yet</div>
+                                </t>
+                                <t t-else="">
+                                    <table class="table table-sm mb-0">
+                                        <thead>
+                                            <tr>
+                                                <th scope="col">Streak</th>
+                                                <th scope="col" class="text-center">Current</th>
+                                                <th scope="col" class="text-center">Best</th>
+                                                <th scope="col" class="text-end">Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <t t-foreach="this.state.streaks" t-as="streak" t-key="streak.id">
+                                                <tr>
+                                                    <td class="align-middle">
+                                                        <i t-att-class="'fa me-2 ' + this.getStreakIcon(streak)"/>
+                                                        <t t-out="streak.name"/>
+                                                    </td>
+                                                    <td class="align-middle text-center">
+                                                        <strong t-out="streak.current_count"/>
+                                                        <small class="text-muted"> days</small>
+                                                    </td>
+                                                    <td class="align-middle text-center">
+                                                        <small class="text-muted">Best: <t t-out="streak.longest_count"/></small>
+                                                    </td>
+                                                    <td class="align-middle text-end">
+                                                        <t t-if="streak.state === 'active'">
+                                                            <span class="badge bg-success">Active</span>
+                                                        </t>
+                                                        <t t-else="">
+                                                            <span class="badge bg-danger">Broken</span>
+                                                        </t>
+                                                    </td>
+                                                </tr>
+                                            </t>
+                                        </tbody>
+                                    </table>
+                                </t>
+                            </div>
+                        </div>
+
+                        <!-- Active Challenge Goals -->
+                        <div class="card shadow-sm mb-3">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0"><i class="fa fa-bullseye text-primary me-2"/>Active Goals</h5>
+                                <button class="btn btn-sm btn-outline-primary" t-on-click="() => this.openAction('gamification.challenge_list_action')">
+                                    View All
+                                </button>
+                            </div>
+                            <div class="card-body p-0">
+                                <t t-if="this.state.goals.length === 0">
+                                    <div class="p-3 text-center text-muted">No active goals</div>
+                                </t>
+                                <t t-else="">
+                                    <div class="list-group list-group-flush">
+                                        <t t-foreach="this.state.goals" t-as="goal" t-key="goal.id">
+                                            <div class="list-group-item">
+                                                <div class="d-flex justify-content-between mb-1">
+                                                    <div>
+                                                        <strong t-out="goal.definition_name"/>
+                                                        <t t-if="goal.challenge_name">
+                                                            <small class="text-muted ms-2">
+                                                                <t t-out="goal.challenge_name"/>
+                                                            </small>
+                                                        </t>
+                                                    </div>
+                                                    <span>
+                                                        <t t-out="goal.current"/>
+                                                        / <t t-out="goal.target"/>
+                                                    </span>
+                                                </div>
+                                                <div class="progress" style="height: 6px;">
+                                                    <div t-att-class="'progress-bar ' + (goal.state === 'reached' ? 'bg-success' : 'bg-primary')"
+                                                         t-att-style="'width: ' + Math.min(goal.completeness, 100) + '%'"/>
+                                                </div>
+                                                <t t-if="goal.end_date">
+                                                    <small class="text-muted">
+                                                        Due: <t t-out="goal.end_date"/>
+                                                    </small>
+                                                </t>
+                                            </div>
+                                        </t>
+                                    </div>
+                                </t>
+                            </div>
+                        </div>
+
+                        <!-- Leaderboard -->
+                        <div class="card shadow-sm mb-3">
+                            <div class="card-header">
+                                <h5 class="mb-0"><i class="fa fa-trophy text-warning me-2"/>Karma Leaderboard</h5>
+                            </div>
+                            <div class="card-body p-0">
+                                <t t-if="this.state.leaderboard.length === 0">
+                                    <div class="p-3 text-center text-muted">No karma leaders yet</div>
+                                </t>
+                                <t t-else="">
+                                    <table class="table table-sm mb-0">
+                                        <tbody>
+                                            <t t-foreach="this.state.leaderboard" t-as="entry" t-key="entry.user_id">
+                                                <tr t-att-class="entry.is_current_user ? 'table-primary' : ''">
+                                                    <td class="align-middle text-center" style="width: 40px;">
+                                                        <t t-if="entry_index === 0">
+                                                            <i class="fa fa-trophy text-warning" role="img" aria-label="1st place"/>
+                                                        </t>
+                                                        <t t-elif="entry_index === 1">
+                                                            <i class="fa fa-trophy text-secondary" role="img" aria-label="2nd place"/>
+                                                        </t>
+                                                        <t t-elif="entry_index === 2">
+                                                            <i class="fa fa-trophy text-danger" role="img" aria-label="3rd place"/>
+                                                        </t>
+                                                        <t t-else="">
+                                                            <span class="text-muted" t-out="entry_index + 1"/>
+                                                        </t>
+                                                    </td>
+                                                    <td class="align-middle">
+                                                        <strong t-out="entry.user_name"/>
+                                                        <t t-if="entry.is_current_user">
+                                                            <small class="text-primary ms-1">(you)</small>
+                                                        </t>
+                                                    </td>
+                                                    <td class="align-middle text-center">
+                                                        <small class="text-muted" t-out="entry.rank_name"/>
+                                                    </td>
+                                                    <td class="align-middle text-end">
+                                                        <i class="fa fa-star text-warning me-1"/>
+                                                        <strong t-out="entry.karma"/>
+                                                    </td>
+                                                </tr>
+                                            </t>
+                                        </tbody>
+                                    </table>
+                                </t>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Column: Badges + Achievements + Kudos -->
+                    <div class="col-lg-4">
+                        <!-- Recent Badges -->
+                        <div class="card shadow-sm mb-3">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0"><i class="fa fa-certificate text-warning me-2"/>Badges</h5>
+                                <button class="btn btn-sm btn-outline-primary" t-on-click="() => this.openAction('gamification.badge_list_action')">
+                                    View All
+                                </button>
+                            </div>
+                            <div class="card-body p-0">
+                                <t t-if="this.state.badges.length === 0">
+                                    <div class="p-3 text-center text-muted">No badges earned yet</div>
+                                </t>
+                                <t t-else="">
+                                    <div class="list-group list-group-flush">
+                                        <t t-foreach="this.state.badges" t-as="badge" t-key="badge.id">
+                                            <div class="list-group-item d-flex align-items-center gap-2">
+                                                <i t-att-class="'fa fa-certificate ' + this.getBadgeLevelClass(badge.level)"/>
+                                                <div class="flex-grow-1">
+                                                    <strong t-out="badge.badge_name"/>
+                                                    <t t-if="badge.sender_name">
+                                                        <br/><small class="text-muted">
+                                                            from <t t-out="badge.sender_name"/>
+                                                        </small>
+                                                    </t>
+                                                </div>
+                                                <small class="text-muted" t-out="badge.date"/>
+                                            </div>
+                                        </t>
+                                    </div>
+                                </t>
+                            </div>
+                        </div>
+
+                        <!-- Achievements -->
+                        <div class="card shadow-sm mb-3">
+                            <div class="card-header">
+                                <h5 class="mb-0"><i class="fa fa-trophy text-success me-2"/>Achievements</h5>
+                            </div>
+                            <div class="card-body p-0">
+                                <t t-if="this.state.achievements.length === 0">
+                                    <div class="p-3 text-center text-muted">No achievements unlocked yet</div>
+                                </t>
+                                <t t-else="">
+                                    <div class="list-group list-group-flush">
+                                        <t t-foreach="this.state.achievements" t-as="ach" t-key="ach.id">
+                                            <div class="list-group-item">
+                                                <div class="d-flex justify-content-between">
+                                                    <strong t-out="ach.name"/>
+                                                    <span t-att-class="'badge ' + this.getRarityBadgeClass(ach.rarity)"
+                                                          t-out="ach.rarity"/>
+                                                </div>
+                                                <small class="text-muted" t-out="ach.date"/>
+                                            </div>
+                                        </t>
+                                    </div>
+                                </t>
+                            </div>
+                        </div>
+
+                        <!-- Activity Feed + Send Kudos -->
+                        <div class="card shadow-sm mb-3">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0"><i class="fa fa-rss text-info me-2"/>Activity Feed</h5>
+                                <button class="btn btn-sm btn-outline-primary" t-on-click="this.toggleKudosForm">
+                                    <i class="fa fa-plus me-1"/>Send Kudos
+                                </button>
+                            </div>
+                            <!-- Inline Send Kudos Form -->
+                            <t t-if="this.state.kudosFormOpen">
+                                <div class="card-body border-bottom bg-light">
+                                    <div class="mb-2">
+                                        <select class="form-select form-select-sm"
+                                                t-model.proxy.number="this.state.kudosRecipientId"
+                                                aria-label="Select kudos recipient">
+                                            <option value="">Select recipient...</option>
+                                            <t t-foreach="this.state.kudosUsers" t-as="u" t-key="u.id">
+                                                <option t-att-value="u.id" t-out="u.name"/>
+                                            </t>
+                                        </select>
+                                    </div>
+                                    <div class="mb-2">
+                                        <select class="form-select form-select-sm"
+                                                t-model.proxy.number="this.state.kudosCategoryId"
+                                                aria-label="Select kudos category">
+                                            <option value="">Select category...</option>
+                                            <t t-foreach="this.state.kudosCategories" t-as="cat" t-key="cat.id">
+                                                <option t-att-value="cat.id">
+                                                    <t t-out="cat.name"/> (+<t t-out="cat.karma_granted"/> karma)
+                                                </option>
+                                            </t>
+                                        </select>
+                                    </div>
+                                    <div class="mb-2">
+                                        <textarea class="form-control form-control-sm" rows="2"
+                                                  placeholder="Write your recognition message..."
+                                                  aria-label="Kudos message"
+                                                  t-model.proxy="this.state.kudosMessage"/>
+                                    </div>
+                                    <button class="btn btn-sm btn-primary w-100"
+                                            t-on-click="this.sendKudos"
+                                            t-att-disabled="this.state.kudosSending">
+                                        <t t-if="this.state.kudosSending">
+                                            <i class="fa fa-spinner fa-spin me-1"/>Sending...
+                                        </t>
+                                        <t t-else="">
+                                            <i class="fa fa-paper-plane me-1"/>Send Kudos
+                                        </t>
+                                    </button>
+                                </div>
+                            </t>
+                            <div class="card-body p-0">
+                                <t t-if="this.state.activity_feed.length === 0">
+                                    <div class="p-3 text-center text-muted">No activity yet</div>
+                                </t>
+                                <t t-else="">
+                                    <div class="list-group list-group-flush">
+                                        <t t-foreach="this.state.activity_feed" t-as="act" t-key="act.id">
+                                            <div class="list-group-item py-2">
+                                                <div class="d-flex align-items-start gap-2">
+                                                    <i t-att-class="(act.icon || 'fa fa-star') + ' mt-1 text-primary'" aria-hidden="true"/>
+                                                    <div class="flex-grow-1">
+                                                        <div t-out="act.summary"/>
+                                                        <div class="d-flex justify-content-between">
+                                                            <small class="text-muted" t-out="act.date"/>
+                                                            <t t-if="act.karma_gained">
+                                                                <small class="text-success">+<t t-out="act.karma_gained"/> karma</small>
+                                                            </t>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </t>
+                                    </div>
+                                </t>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </t>
+        </div>
+    </Layout>
+</t>
+
+</templates>

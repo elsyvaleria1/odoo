@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="privilege_share_articles" model="res.groups">
+        <field name="name">Share Articles on a User's Behalf</field>
+        <field
+            name="comment">Code that changes who reaches an article for an editor of it (the employees' permission, an article that stops inheriting, a partner taken off it) writes the grant rows the editor has no rights on of their own.</field>
+        <field name="is_privilege" eval="True" />
+    </record>
+
+</odoo>

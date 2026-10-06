@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_bank_statement_form_extract" model="ir.ui.view">
+        <field name="name">account.bank.statement.form.document.extract</field>
+        <field name="model">account.bank.statement</field>
+        <field
+            name="inherit_id"
+            ref="account.view_bank_statement_form_bank_rec_widget" />
+        <field name="arch" type="xml">
+            <xpath expr="//sheet" position="before">
+                <header>
+                    <button
+                        name="action_extract_document"
+                        type="object"
+                        string="Read the statement"
+                        invisible="not extract_can_be_read" />
+                    <field name="extract_can_be_read" invisible="1" />
+                    <field name="extract_state" invisible="1" />
+                </header>
+            </xpath>
+            <xpath expr="//notebook" position="inside">
+                <page
+                    name="extract"
+                    string="Extraction"
+                    invisible="extract_state == 'none'">
+                    <field
+                        name="extract_result"
+                        widget="document_extraction"
+                        nolabel="1" />
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

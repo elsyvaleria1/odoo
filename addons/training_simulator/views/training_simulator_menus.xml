@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="action_training_dashboard" model="ir.actions.client">
+        <field name="name">Training</field>
+        <field name="tag">training_simulator_dashboard</field>
+    </record>
+
+    <menuitem
+        id="menu_training_root"
+        name="Training"
+        action="action_training_dashboard"
+        sequence="80"
+        groups="group_training_player"
+        web_icon="training_simulator,static/description/icon.svg" />
+
+    <menuitem
+        id="menu_training_dashboard"
+        name="Training Center"
+        parent="menu_training_root"
+        action="action_training_dashboard"
+        sequence="5" />
+
+    <menuitem
+        id="menu_training_simulator"
+        name="Simulators"
+        parent="menu_training_root"
+        action="action_training_simulator"
+        sequence="10"
+        groups="group_training_instructor" />
+
+    <menuitem
+        id="menu_training_simulator_session"
+        name="Sessions"
+        parent="menu_training_root"
+        action="action_training_simulator_session"
+        sequence="20" />
+
+</odoo>

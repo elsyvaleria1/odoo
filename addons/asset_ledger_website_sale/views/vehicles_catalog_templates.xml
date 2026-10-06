@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <template id="vehicles_catalog_page" name="Catálogo de Vehículos">
+        <t t-call="website.layout">
+            <div id="wrap" class="m-vehicles-catalog">
+                <section class="m-vehicles-hero">
+                    <div class="m-vehicles-container">
+                        <span class="m-vehicles-kicker">Catálogo MARIN</span>
+                    </div>
+                </section>
+
+                <div class="m-vehicles-container">
+                    <div class="m-vehicle-filters" t-if="vehicle_tags">
+                        <button type="button" class="m-vehicle-filter m-vehicle-filter--active" data-m-filter="all">Todos</button>
+                        <t t-foreach="vehicle_tags" t-as="tag">
+                            <button
+                                type="button"
+                                class="m-vehicle-filter"
+                                t-att-data-m-filter="tag.id"
+                                t-out="tag.name" />
+                        </t>
+                    </div>
+
+                    <t t-call="asset_ledger_website_sale.vehicles_catalog_grid" />
+                </div>
+            </div>
+        </t>
+    </template>
+
+    <template id="vehicles_catalog_grid" name="Vehicle Catalog Grid">
+        <div class="m-vehicle-grid">
+            <t t-foreach="products" t-as="product">
+                <t
+                    t-set="visible_tags"
+                    t-value="product.product_tag_ids.filtered('visible_to_customers')" />
+                <a
+                    class="m-vehicle-card"
+                    t-att-href="product.website_url"
+                    t-att-data-m-tags="' '.join([str(i) for i in visible_tags.ids])">
+                    <div class="m-vehicle-card__media">
+                        <t t-if="product.image_512">
+                            <img
+                                t-attf-src="/web/image/product.template/#{product.id}/image_512"
+                                t-att-alt="product.name"
+                                loading="lazy" />
+                        </t>
+                        <t t-else="">
+                            <div class="m-vehicle-card__placeholder">
+                                <span>MARIN</span>
+                            </div>
+                        </t>
+                        <t t-if="visible_tags">
+                            <span
+                                class="m-vehicle-card__badge"
+                                t-out="visible_tags[:1].name" />
+                        </t>
+                    </div>
+                    <div class="m-vehicle-card__body">
+                        <h3 class="m-vehicle-card__name" t-out="product.name" />
+
+                        <div
+                            class="m-vehicle-card__specs"
+                            t-if="product.power or product.seats or product.doors">
+                            <span t-if="product.power" class="m-vehicle-spec">
+                                <i class="fa fa-bolt" aria-hidden="true" />
+                                <t t-out="'{:g}'.format(product.power)" /> <t t-out="product.power_uom_name" />
+                            </span>
+                            <span t-if="product.seats" class="m-vehicle-spec">
+                                <i class="fa fa-users" aria-hidden="true" />
+                                <t t-out="product.seats" /> plazas
+                            </span>
+                            <span t-if="product.doors" class="m-vehicle-spec">
+                                <i class="fa fa-car" aria-hidden="true" />
+                                <t t-out="product.doors" /> puertas
+                            </span>
+                        </div>
+
+                        <div class="m-vehicle-card__foot">
+                            <span
+                                class="m-vehicle-card__price"
+                                t-out="product.list_price"
+                                t-options="{'widget': 'monetary', 'display_currency': product.currency_id}" />
+                            <span class="m-vehicle-card__cta" aria-hidden="true">
+                                <svg
+                                    viewBox="0 0 24 24"
+                                    width="18"
+                                    height="18"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2.25"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round">
+                                    <line x1="5" y1="12" x2="19" y2="12" />
+                                    <polyline points="13 6 19 12 13 18" />
+                                </svg>
+                            </span>
+                        </div>
+                    </div>
+                </a>
+            </t>
+            <p t-if="not products" class="m-vehicles-empty">
+                Próximamente más unidades disponibles.
+            </p>
+        </div>
+    </template>
+
+</odoo>

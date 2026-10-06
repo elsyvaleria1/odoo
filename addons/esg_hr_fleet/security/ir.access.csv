@@ -1,0 +1,4 @@
+id,name,model_id/id,group_id/id,kind,operation,reach,anchor,domain
+access_esg_employee_commuting_report,access_esg_employee_commuting_report,model_esg_employee_commuting_report,resource_asset_vehicle.fleet_group_user,permission,r,,,
+access_employee_commuting_emissions_wizard,access_employee_commuting_emissions_wizard,model_wizard_esg_other_emission_create_commuting,resource_asset_vehicle.fleet_group_user,permission,cru,,,
+esg_employee_commuting_report_multi_company,ESG Employee Commuting Report Multi-Company,model_esg_employee_commuting_report,base.group_everyone,guard,crud,company,,

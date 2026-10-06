@@ -1,0 +1,4 @@
+id,name,model_id/id,group_id/id,kind,operation,domain
+access_fleet_disallowed_expenses_rate_account_user,access.fleet.disallowed.expenses.rate.account.user,model_fleet_disallowed_expenses_rate,account.group_account_readonly,permission,r,
+access_fleet_disallowed_expenses_rate_account_manager,access.fleet.disallowed.expenses.rate.account.manager,model_fleet_disallowed_expenses_rate,account.group_account_manager,permission,cud,
+access_fleet_disallowed_expenses_rate_fleet_user,access.fleet.disallowed.expenses.rate.fleet.user,model_fleet_disallowed_expenses_rate,resource_asset_vehicle.fleet_group_user,permission,r,

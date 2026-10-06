@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="telegram_account_view_list" model="ir.ui.view">
+        <field name="name">telegram.account.list</field>
+        <field name="model">telegram.account</field>
+        <field name="arch" type="xml">
+            <list create="False">
+                <field name="name" />
+                <field name="username" />
+                <field name="tg_user_id" optional="hide" />
+                <field name="partner_id" />
+                <field name="binding_id" optional="hide" />
+            </list>
+        </field>
+    </record>
+
+    <record id="telegram_account_view_form" model="ir.ui.view">
+        <field name="name">telegram.account.form</field>
+        <field name="model">telegram.account</field>
+        <field name="arch" type="xml">
+            <form create="False">
+                <header>
+                    <button
+                        name="action_revoke"
+                        type="object"
+                        string="Revoke Binding"
+                        confirm="This Telegram account will no longer act as anyone in Odoo. Continue?"
+                        groups="base.group_system"
+                        invisible="not binding_id" />
+                </header>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="name" />
+                            <field name="username" />
+                            <field name="tg_user_id" />
+                            <field name="language_code" />
+                        </group>
+                        <group>
+                            <field name="partner_id" />
+                            <field name="binding_id" />
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Bindings">
+                            <field name="binding_ids">
+                                <list>
+                                    <field name="partner_id" />
+                                    <field name="user_id" />
+                                    <field name="method" />
+                                    <field name="state" />
+                                    <field name="proven_at" />
+                                    <field name="expires_at" />
+                                    <field name="revoked_at" />
+                                    <field name="revoked_reason" />
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Chats">
+                            <field name="chat_ids">
+                                <list>
+                                    <field name="bot_id" />
+                                    <field name="chat_id" />
+                                    <field name="last_message_time" />
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="telegram_account_view_search" model="ir.ui.view">
+        <field name="name">telegram.account.search</field>
+        <field name="model">telegram.account</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name" />
+                <field name="username" />
+                <field name="partner_id" />
+                <filter
+                    name="bound"
+                    string="Bound"
+                    domain="[('binding_id', '!=', False)]" />
+                <filter
+                    name="unbound"
+                    string="Unbound"
+                    domain="[('binding_id', '=', False)]" />
+            </search>
+        </field>
+    </record>
+
+    <record id="action_telegram_account" model="ir.actions.act_window">
+        <field name="name">Telegram Accounts</field>
+        <field name="res_model">telegram.account</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{'search_default_bound': 1}</field>
+    </record>
+
+    <record id="wizard_telegram_invite_view_form" model="ir.ui.view">
+        <field name="name">wizard.telegram.invite.form</field>
+        <field name="model">wizard.telegram.invite</field>
+        <field name="arch" type="xml">
+            <form string="Invite to Telegram">
+                <group>
+                    <field name="partner_id" readonly="1" />
+                    <field name="bot_id" readonly="link" />
+                </group>
+                <div invisible="not link">
+                    <p>
+                        Send this link to the contact through a channel only they hold, or let them scan
+                        the code. Opening it in their own Telegram connects their account to this contact.
+                        It works once, within seven days.
+                    </p>
+                    <field name="link" widget="CopyClipboardChar" />
+                    <field
+                        name="qr_url"
+                        widget="image_url"
+                        options="{'size': [300, 300]}" />
+                </div>
+                <footer>
+                    <button
+                        name="action_issue"
+                        type="object"
+                        string="Create Invitation"
+                        invisible="link"
+                        class="btn-primary" />
+                    <button special="cancel" string="Close" />
+                </footer>
+            </form>
+        </field>
+    </record>
+
+</odoo>

@@ -1,0 +1,99 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* approval_knowledge
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-09-13 13:45+0000\n"
+"PO-Revision-Date: 2026-09-13 13:45+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: approval_knowledge
+#: model:ir.model.fields,field_description:approval_knowledge.field_knowledge_article__approval_request_ids
+msgid "Approval Requests"
+msgstr ""
+
+#. module: approval_knowledge
+#: model:approval.category.step,name:approval_knowledge.approval_category_article_access_step_editors
+msgid "Article Editors"
+msgstr ""
+
+#. module: approval_knowledge
+#: model_terms:ir.ui.view,arch_db:approval_knowledge.article_request_access
+msgid "Ask its editors for access."
+msgstr ""
+
+#. module: approval_knowledge
+#. odoo-python
+#: code:addons/approval_knowledge/models/knowledge_article.py:0
+msgid "Ask to read or to edit an article."
+msgstr ""
+
+#. module: approval_knowledge
+#: model:ir.model.fields,field_description:approval_knowledge.field_knowledge_article__display_name
+msgid "Display Name"
+msgstr ""
+
+#. module: approval_knowledge
+#. odoo-python
+#: code:addons/approval_knowledge/models/knowledge_article.py:0
+msgid "Edit access to %(article)s for %(partner)s"
+msgstr ""
+
+#. module: approval_knowledge
+#: model:ir.model.fields,field_description:approval_knowledge.field_knowledge_article__access_approver_user_ids
+msgid "Editors Deciding Access"
+msgstr ""
+
+#. module: approval_knowledge
+#: model:ir.model.fields,field_description:approval_knowledge.field_knowledge_article__id
+msgid "ID"
+msgstr ""
+
+#. module: approval_knowledge
+#: model:ir.model,name:approval_knowledge.model_knowledge_article
+msgid "Knowledge Article"
+msgstr ""
+
+#. module: approval_knowledge
+#: model:approval.category,name:approval_knowledge.approval_category_article_access
+msgid "Knowledge Article Access"
+msgstr ""
+
+#. module: approval_knowledge
+#. odoo-python
+#: code:addons/approval_knowledge/models/knowledge_article.py:0
+msgid "Read access to %(article)s for %(partner)s"
+msgstr ""
+
+#. module: approval_knowledge
+#: model_terms:ir.ui.view,arch_db:approval_knowledge.article_request_access
+msgid "Request to edit"
+msgstr ""
+
+#. module: approval_knowledge
+#: model_terms:ir.ui.view,arch_db:approval_knowledge.article_request_access
+msgid "Request to read"
+msgstr ""
+
+#. module: approval_knowledge
+#: model_terms:ir.ui.view,arch_db:approval_knowledge.article_request_access
+msgid "You cannot open this article yet."
+msgstr ""
+
+#. module: approval_knowledge
+#: model_terms:ir.ui.view,arch_db:approval_knowledge.article_request_access
+msgid "Your request to edit it is waiting for a decision."
+msgstr ""
+
+#. module: approval_knowledge
+#: model_terms:ir.ui.view,arch_db:approval_knowledge.article_request_access
+msgid "Your request to read it is waiting for a decision."
+msgstr ""

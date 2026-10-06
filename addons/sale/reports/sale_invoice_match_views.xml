@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_sale_invoice_match_search" model="ir.ui.view">
+        <field name="name">sale.invoice.match.select</field>
+        <field name="model">sale.invoice.match</field>
+        <field name="arch" type="xml">
+            <search string="Search Reference Document">
+                <field
+                    name="name"
+                    string="Reference"
+                    filter_domain="['|', ('name','ilike',self), ('reference','=like',self+'%')]" />
+                <field name="amount" />
+                <separator />
+                <field name="partner_id" operator="child_of" />
+                <separator />
+                <filter
+                    name="sale_orders"
+                    string="Sales Orders"
+                    domain="[('order_id', '!=', False)]" />
+                <filter
+                    name="customer_invoices"
+                    string="Customer Invoices"
+                    domain="[('move_id', '!=', False)]" />
+            </search>
+        </field>
+    </record>
+
+    <record id="view_sale_invoice_match_list" model="ir.ui.view">
+        <field name="name">sale.invoice.match.list</field>
+        <field name="model">sale.invoice.match</field>
+        <field name="arch" type="xml">
+            <list string="Reference Document">
+                <field name="name" />
+                <field name="reference" />
+                <field name="partner_id" />
+                <field name="date" />
+                <field name="amount" />
+                <field name="currency_id" column_invisible="True" />
+                <field
+                    name="company_id"
+                    options="{'no_create': True}"
+                    groups="base.group_multi_company" />
+            </list>
+        </field>
+    </record>
+
+</odoo>

@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record
+        id="account_bank_statement_line_view_kanban_bank_rec_widget"
+        model="ir.ui.view">
+        <field
+            name="name">account.bank.statement.line.kanban.bank_rec_widget.automation</field>
+        <field name="model">account.bank.statement.line</field>
+        <field
+            name="inherit_id"
+            ref="account.view_bank_statement_line_kanban_bank_rec_widget" />
+        <field name="arch" type="xml">
+            <field name="bank_statement_attachment_ids" position="after">
+                <field name="automation_runtime_id" />
+                <field name="automation_runtime_state" />
+            </field>
+        </field>
+    </record>
+
+    <!--
+        Both filters share a group, so selecting them together ORs them:
+        the lines that offer Start Automation plus those with a workflow.
+    -->
+    <record
+        id="account_bank_statement_line_view_search_bank_rec_widget"
+        model="ir.ui.view">
+        <field
+            name="name">account.bank.statement.line.search.bank_rec_widget.automation</field>
+        <field name="model">account.bank.statement.line</field>
+        <field
+            name="inherit_id"
+            ref="account.view_bank_statement_line_search_bank_rec_widget" />
+        <field name="arch" type="xml">
+            <filter name="with_activities" position="after">
+                <separator />
+                <filter
+                    name="to_automate"
+                    string="To Automate"
+                    domain="[('is_reconciled', '=', False), ('automation_runtime_ids', 'not any', [('state', '!=', 'cancel')])]" />
+                <filter
+                    name="with_automation"
+                    string="With Automation"
+                    domain="[('automation_runtime_ids', 'any', [('state', '!=', 'cancel')])]" />
+            </filter>
+        </field>
+    </record>
+
+</odoo>

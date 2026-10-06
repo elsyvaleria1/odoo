@@ -1,0 +1,42 @@
+from odoo import SUPERUSER_ID
+from odoo.http import request
+from odoo.libs import netguard
+
+from odoo.addons.web.controllers.home import Home as WebHome
+
+
+def _is_private_address(remote_addr) -> bool:
+    return netguard.classify_peer(remote_addr) in netguard.LOCAL_SCOPES
+
+
+def _admin_password_warn(uid):
+    if request.params.get("password") != "admin":
+        return
+    if _is_private_address(request.httprequest.remote_addr):
+        return
+    env = request.env(user=SUPERUSER_ID, su=True)
+    admin = env.ref("base.partner_admin")
+    if uid not in admin.user_ids.ids:
+        return
+    has_demo = bool(
+        env["ir.module.module"].search_count([("demo", "=", True)], limit=1)
+    )
+    if has_demo:
+        return
+    admin.with_context(request.env(user=uid)["res.users"].context_get())._bus_send(
+        "simple_notification",
+        {
+            "type": "danger",
+            "message": request.env._(
+                "Your password is the default (admin)! If this system is exposed to untrusted users it is important to change it immediately for security reasons. I will keep nagging you about it!"
+            ),
+            "sticky": True,
+        },
+    )
+
+
+class Home(WebHome):
+    def _login_redirect(self, uid, redirect=None):
+        if request.params.get("login_success"):
+            _admin_password_warn(uid)
+        return super()._login_redirect(uid, redirect)

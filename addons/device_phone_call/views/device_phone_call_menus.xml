@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <menuitem
+        id="menu_device_phone_call"
+        name="Calls"
+        parent="device.menu_device_data_analytics"
+        action="phone_call_action_device"
+        sequence="30" />
+
+</odoo>

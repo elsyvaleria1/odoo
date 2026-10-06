@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="account_missing_transaction_wizard_view_form" model="ir.ui.view">
+        <field name="name">account.missing.transaction.wizard.form</field>
+        <field name="model">wizard.account.journal.preview.missing.transaction</field>
+        <field name="arch" type="xml">
+            <form string="Fetch Missing Bank Statements Wizard" create="false">
+                <p>
+                    Choose a date and a journal from which you want to fetch transactions
+                </p>
+                <group class="oe_form_field">
+                    <field
+                        name="journal_id"
+                        options="{'no_quick_create':True,'no_create_edit':True}"
+                        required="1" />
+                    <field name="date" required="1" />
+                </group>
+                <footer>
+                    <button
+                        name="action_fetch_missing_transaction"
+                        type="object"
+                        string="Fetch"
+                        class="btn-primary"
+                        data-hotkey="q" />
+                    <button
+                        special="cancel"
+                        string="Cancel"
+                        class="btn-secondary"
+                        data-hotkey="z" />
+                </footer>
+            </form>
+        </field>
+    </record>
+
+</odoo>

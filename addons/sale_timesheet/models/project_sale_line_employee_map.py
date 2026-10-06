@@ -1,0 +1,231 @@
+from odoo import api, fields, models
+from odoo.fields import Domain
+from odoo.libs.debug_log import DebugLog
+from odoo.tools.misc import unquote
+
+_debug = DebugLog(__name__)
+
+
+class ProjectSaleLineEmployeeMap(models.Model):
+    _name = "project.sale.line.employee.map"
+    _description = "Project Sales line, employee mapping"
+
+    def _domain_sale_line_id(self):
+        return Domain.AND(
+            [
+                self.env["sale.order.line"]._get_domain_lines_sellable(),
+                self.env["sale.order.line"]._domain_sale_line_service(),
+                [
+                    ("partner_id", "=?", unquote("partner_id")),
+                ],
+            ]
+        )
+
+    project_id = fields.Many2one(
+        comodel_name="project.project",
+        index=True,
+        required=True,
+        domain=[("is_template", "=", False)],
+    )
+    employee_id = fields.Many2one(
+        comodel_name="hr.employee",
+        required=True,
+        domain="[('id', 'not in', existing_employee_ids)]",
+    )
+    existing_employee_ids = fields.Many2many(
+        comodel_name="hr.employee",
+        export_string_translation=False,
+        compute="_compute_existing_employee_ids",
+        compute_sudo=True,
+    )
+    sale_line_id = fields.Many2one(
+        comodel_name="sale.order.line",
+        string="Sales Order Item",
+        compute="_compute_sale_line_id",
+        store=True,
+        readonly=False,
+        domain=lambda self: str(self._domain_sale_line_id()),
+    )
+    sale_order_id = fields.Many2one(
+        related="project_id.sale_order_id",
+        export_string_translation=False,
+    )
+    company_id = fields.Many2one(
+        comodel_name="res.company",
+        related="project_id.company_id",
+        string="Company",
+        export_string_translation=False,
+    )
+    partner_id = fields.Many2one(
+        related="project_id.partner_id",
+        export_string_translation=False,
+    )
+    price_unit = fields.Float(
+        string="Unit Price",
+        compute="_compute_price_unit",
+        store=True,
+        readonly=True,
+    )
+    currency_id = fields.Many2one(
+        comodel_name="res.currency",
+        compute="_compute_currency_id",
+        store=True,
+        readonly=False,
+    )
+    cost = fields.Monetary(
+        currency_field="cost_currency_id",
+        compute="_compute_cost",
+        store=True,
+        readonly=False,
+        help="This cost overrides the employee's default employee hourly wage in employee's HR Settings",
+    )
+    display_cost = fields.Monetary(
+        string="Hourly Cost",
+        currency_field="cost_currency_id",
+        compute="_compute_display_cost",
+        inverse="_inverse_display_cost",
+        groups="project.group_project_manager,hr.group_hr_user",
+    )
+    cost_currency_id = fields.Many2one(
+        comodel_name="res.currency",
+        related="employee_id.currency_id",
+        string="Cost Currency",
+        export_string_translation=False,
+        readonly=True,
+    )
+    is_cost_changed = fields.Boolean(
+        string="Is Cost Manually Changed",
+        export_string_translation=False,
+        compute="_compute_is_cost_changed",
+        store=True,
+    )
+
+    _uniqueness_employee = models.Constraint(
+        "UNIQUE(project_id,employee_id)",
+        "An employee cannot be selected more than once in the mapping. Please remove duplicate(s) and try again.",
+    )
+
+    @api.depends("employee_id", "project_id.sale_line_employee_ids.employee_id")
+    def _compute_existing_employee_ids(self) -> None:
+        project = self.project_id
+        if len(project) == 1:
+            self.existing_employee_ids = project.sale_line_employee_ids.employee_id
+            return
+        for map_entry in self:
+            map_entry.existing_employee_ids = (
+                map_entry.project_id.sale_line_employee_ids.employee_id
+            )
+
+    @api.depends("partner_id")
+    def _compute_sale_line_id(self) -> None:
+        self.filtered(
+            lambda map_entry: (
+                map_entry.sale_line_id
+                and map_entry.partner_id
+                and map_entry.sale_line_id.partner_id.commercial_partner_id
+                != map_entry.partner_id.commercial_partner_id
+            )
+        ).update({"sale_line_id": False})
+
+    @api.depends("sale_line_id.price_unit")
+    def _compute_price_unit(self) -> None:
+        for line in self:
+            if line.sale_line_id:
+                line.price_unit = line.sale_line_id.price_unit
+            else:
+                line.price_unit = 0
+
+    @api.depends("sale_line_id.price_unit")
+    def _compute_currency_id(self) -> None:
+        for line in self:
+            line.currency_id = (
+                line.sale_line_id.currency_id if line.sale_line_id else False
+            )
+
+    @api.depends("employee_id.hourly_cost")
+    def _compute_cost(self) -> None:
+        self.env.remove_to_compute(self._fields["is_cost_changed"], self)
+        for map_entry in self:
+            if not map_entry.is_cost_changed:
+                map_entry.cost = map_entry.employee_id.hourly_cost
+                _debug.logic(
+                    "map_cost_from_employee",
+                    entry=map_entry,
+                    employee=map_entry.employee_id,
+                    cost=map_entry.cost,
+                )
+
+    def _get_working_hours_per_calendar(self, is_uom_day=False):
+        resource_calendar_per_hours = {}
+
+        if not is_uom_day:
+            return resource_calendar_per_hours
+
+        read_group_data = self.env["resource.calendar"]._read_group(
+            [("id", "in", self.employee_id.resource_calendar_id.ids)],
+            ["hours_per_day"],
+            ["id:array_agg"],
+        )
+        for hours_per_day, ids in read_group_data:
+            for calendar_id in ids:
+                resource_calendar_per_hours[calendar_id] = hours_per_day
+
+        return resource_calendar_per_hours
+
+    @api.depends_context("company")
+    @api.depends("cost", "employee_id.resource_calendar_id")
+    def _compute_display_cost(self) -> None:
+        is_uom_day = (
+            self.env.ref("uom.product_uom_day")
+            == self.env.company.hr_timesheet_config_id.timesheet_encode_uom_id
+        )
+        resource_calendar_per_hours = self._get_working_hours_per_calendar(is_uom_day)
+
+        for map_line in self:
+            if is_uom_day:
+                map_line.display_cost = map_line.cost * resource_calendar_per_hours.get(
+                    map_line.employee_id.resource_calendar_id.id, 1
+                )
+            else:
+                map_line.display_cost = map_line.cost
+
+    def _inverse_display_cost(self) -> None:
+        is_uom_day = (
+            self.env.ref("uom.product_uom_day")
+            == self.env.company.hr_timesheet_config_id.timesheet_encode_uom_id
+        )
+        resource_calendar_per_hours = self._get_working_hours_per_calendar(is_uom_day)
+
+        for map_line in self:
+            if is_uom_day:
+                map_line.cost = map_line.display_cost / resource_calendar_per_hours.get(
+                    map_line.employee_id.resource_calendar_id.id, 1
+                )
+            else:
+                map_line.cost = map_line.display_cost
+
+    @api.depends("cost")
+    def _compute_is_cost_changed(self) -> None:
+        for map_entry in self:
+            map_entry.is_cost_changed = (
+                map_entry.employee_id
+                and map_entry.cost != map_entry.employee_id.hourly_cost
+            )
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        maps = super().create(vals_list)
+        _debug.lifecycle("create", entries=maps, rows=len(vals_list))
+        maps._update_project_timesheet()
+        return maps
+
+    def write(self, vals):
+        res = super().write(vals)
+        _debug.lifecycle("write", entries=self, fields=list(vals))
+        self._update_project_timesheet()
+        return res
+
+    def _update_project_timesheet(self) -> None:
+        self.filtered(
+            lambda l: l.sale_line_id
+        ).project_id._update_timesheets_sale_line_id()

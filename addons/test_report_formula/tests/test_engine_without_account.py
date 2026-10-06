@@ -1,0 +1,350 @@
+from odoo import Command
+from odoo.tests import TransactionCase, tagged
+
+
+@tagged("post_install", "-at_install")
+class TestEngineWithoutAccount(TransactionCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.anna, cls.bruno = cls.env["res.partner"].create(
+            [{"name": "Anna"}, {"name": "Bruno"}]
+        )
+        cls.env["test.report.formula.entry"].create(
+            [
+                {
+                    "name": f"entry {amount}",
+                    "date": date,
+                    "amount": amount,
+                    "partner_id": partner.id,
+                }
+                for partner, date, amount in (
+                    (cls.anna, "2020-01-10", 100.0),
+                    (cls.anna, "2020-01-20", 50.0),
+                    (cls.bruno, "2020-01-15", 25.0),
+                    (cls.bruno, "2019-12-31", 1000.0),
+                )
+            ]
+        )
+        cls.report = cls.env["report.formula"].create(
+            {
+                "name": "Amounts",
+                "source_model": "test.report.formula.entry",
+                "source_measure_field": "amount",
+                "filter_date_range": True,
+                "filter_unfold_all": True,
+                "column_ids": [
+                    Command.create({"name": "Balance", "expression_label": "balance"})
+                ],
+                "line_ids": [
+                    Command.create(
+                        {
+                            "name": "All entries",
+                            "code": "ALL",
+                            "groupby": "partner_id",
+                            "expression_ids": [
+                                Command.create(
+                                    {
+                                        "label": "balance",
+                                        "engine": "domain",
+                                        "formula": "[('name', 'like', 'entry')]",
+                                        "subformula": "sum",
+                                    }
+                                )
+                            ],
+                        }
+                    ),
+                    Command.create(
+                        {
+                            "name": "Twice",
+                            "code": "TWICE",
+                            "expression_ids": [
+                                Command.create(
+                                    {
+                                        "label": "balance",
+                                        "engine": "aggregation",
+                                        "formula": "ALL.balance * 2",
+                                    }
+                                )
+                            ],
+                        }
+                    ),
+                ],
+            }
+        )
+
+    def _options(self, date_from, date_to, **extra):
+        return self.report.get_options(
+            {
+                "selected_variant_id": self.report.id,
+                "date": {
+                    "date_from": date_from,
+                    "date_to": date_to,
+                    "mode": "range",
+                    "filter": "custom",
+                },
+                **extra,
+            }
+        )
+
+    def test_account_is_not_installed(self):
+        self.assertNotIn(
+            "account.move.line",
+            self.env,
+            "this suite proves the engine runs without the ledger: run it on a "
+            "database where account is not installed",
+        )
+
+    def test_the_domain_engine_sums_the_source_model_in_the_period(self):
+        options = self._options("2020-01-01", "2020-01-31")
+        lines = self.report._get_lines(options)
+        values = {line["name"]: line["columns"][0]["no_format"] for line in lines}
+        self.assertEqual(values["All entries"], 175.0)
+        self.assertEqual(values["Twice"], 350.0)
+
+    def test_a_line_unfolds_by_a_field_of_the_source_model(self):
+        options = self._options("2020-01-01", "2020-01-31", unfold_all=True)
+        lines = self.report._get_lines(options)
+        values = {line["name"]: line["columns"][0]["no_format"] for line in lines}
+        self.assertEqual(values.get("Anna"), 150.0)
+        self.assertEqual(values.get("Bruno"), 25.0)
+
+    def test_the_period_follows_the_calendar_year_without_a_fiscal_year(self):
+        options = self._options("2019-01-01", "2019-12-31")
+        lines = self.report._get_lines(options)
+        values = {line["name"]: line["columns"][0]["no_format"] for line in lines}
+        self.assertEqual(values["All entries"], 1000.0)
+        self.assertEqual(options["date"]["string"], "2019")
+
+    def test_a_report_without_a_source_model_refuses_a_domain_expression(self):
+        self.report.source_model = False
+        with self.assertRaisesRegex(Exception, "no source model"):
+            self.report._get_lines(self._options("2020-01-01", "2020-01-31"))
+
+    def test_the_client_entry_point_serves_lines_and_the_generic_carets(self):
+        options = self._options("2020-01-01", "2020-01-31")
+        information = self.report.dispatch_report_action(
+            options, "get_report_information"
+        )
+        self.assertEqual(
+            [line["name"] for line in information["lines"]],
+            ["All entries", "Anna", "Bruno", "Twice"],
+        )
+        self.assertEqual(list(information["caret_options"]), ["res.partner"])
+        self.assertEqual(information["annotations"], {})
+
+    def test_auditing_a_cell_opens_the_source_model(self):
+        options = self._options("2020-01-01", "2020-01-31")
+        line = self.report.line_ids.filtered(lambda line: line.code == "ALL")
+        action = self.report.action_audit_cell(
+            options,
+            {
+                "report_line_id": line.id,
+                "expression_label": "balance",
+                "column_group_key": next(iter(options["column_groups"])),
+                "calling_line_dict_id": self.report._get_generic_line_id(
+                    "report.formula.line", line.id
+                ),
+            },
+        )
+        self.assertEqual(action["res_model"], "test.report.formula.entry")
+        audited = self.env["test.report.formula.entry"].search(action["domain"])
+        self.assertEqual(sorted(audited.mapped("amount")), [25.0, 50.0, 100.0])
+
+    def test_a_manual_value_is_stored_and_the_aggregations_follow(self):
+        manual_line = self.env["report.formula.line"].create(
+            {
+                "name": "Manual",
+                "code": "MAN",
+                "report_id": self.report.id,
+                "expression_ids": [
+                    Command.create(
+                        {
+                            "label": "balance",
+                            "engine": "external",
+                            "formula": "sum",
+                            "subformula": "editable",
+                        }
+                    )
+                ],
+            }
+        )
+        self.report.line_ids.filtered(
+            lambda line: line.code == "TWICE"
+        ).expression_ids.formula = "ALL.balance * 2 + MAN.balance"
+        options = self._options("2020-01-01", "2020-01-31")
+        information = self.report.get_report_information(options)
+        result = self.report.action_modify_manual_value(
+            self.report._get_generic_line_id("report.formula.line", manual_line.id),
+            options,
+            next(iter(options["column_groups"])),
+            "7",
+            manual_line.expression_ids.id,
+            2,
+            information["column_groups_totals"],
+        )
+        values = {
+            line["name"]: line["columns"][0]["no_format"] for line in result["lines"]
+        }
+        self.assertEqual(values["Manual"], 7.0)
+        self.assertEqual(values["Twice"], 357.0)
+        self.assertEqual(
+            self.env["report.formula.external.value"]
+            .search(
+                [("target_report_expression_id", "=", manual_line.expression_ids.id)]
+            )
+            .mapped("value"),
+            [7.0],
+        )
+
+    def test_the_report_exports_to_xlsx(self):
+        options = self._options("2020-01-01", "2020-01-31")
+        export = self.report.dispatch_report_action(options, "export_to_xlsx")
+        self.assertEqual(export["file_type"], "xlsx")
+        self.assertTrue(export["file_content"].startswith(b"PK"))
+
+    def test_the_report_renders_its_pdf_body(self):
+        options = self._options("2020-01-01", "2020-01-31", export_mode="print")
+        html = str(
+            self.report._get_pdf_export_html(options, self.report._get_lines(options))
+        )
+        self.assertIn("All entries", html)
+        self.assertIn("175.00", html)
+        self.assertIn("report_formula.assets_pdf_export", html)
+
+    def _fetch(self, *requests):
+        return self.env["report.formula"].spreadsheet_fetch_report_values(
+            [
+                {
+                    "report": self.report.id,
+                    "line_code": line_code,
+                    "label": "balance",
+                    "date_range": date_range,
+                    "company_id": None,
+                    "include_unposted": False,
+                }
+                for line_code, date_range in requests
+            ]
+        )
+
+    def test_a_spreadsheet_cell_reads_a_line_over_a_period(self):
+        january = {"range_type": "month", "year": 2020, "month": 1}
+        self.assertEqual(
+            self._fetch(
+                ("ALL", january),
+                ("TWICE", january),
+                ("ALL", {"range_type": "year", "year": 2019}),
+                ("ALL", {"range_type": "quarter", "year": 2020, "quarter": 1}),
+                ("ALL", {"range_type": "day", "year": 2020, "month": 1, "day": 15}),
+            ),
+            [
+                {"value": 175.0},
+                {"value": 350.0},
+                {"value": 1000.0},
+                {"value": 175.0},
+                {"value": 125.0},
+            ],
+        )
+
+    def test_a_spreadsheet_cell_naming_no_line_gets_false(self):
+        january = {"range_type": "month", "year": 2020, "month": 1}
+        self.assertEqual(self._fetch(("NOPE", january)), [False])
+
+    def _optional_column_report(self, hidden_by_default):
+        return self.env["report.formula"].create(
+            {
+                "name": "Amounts with an optional column",
+                "source_model": "test.report.formula.entry",
+                "source_measure_field": "amount",
+                "filter_date_range": True,
+                "column_ids": [
+                    Command.create(
+                        {
+                            "name": "Balance",
+                            "expression_label": "balance",
+                            "sequence": 1,
+                        }
+                    ),
+                    Command.create(
+                        {
+                            "name": "Doubled",
+                            "expression_label": "doubled",
+                            "sequence": 10,
+                            "optional": True,
+                            "optional_hidden": hidden_by_default,
+                        }
+                    ),
+                ],
+                "line_ids": [
+                    Command.create(
+                        {
+                            "name": "All entries",
+                            "code": "OPTALL",
+                            "expression_ids": [
+                                Command.create(
+                                    {
+                                        "label": "balance",
+                                        "engine": "domain",
+                                        "formula": "[('name', 'like', 'entry')]",
+                                        "subformula": "sum",
+                                    }
+                                ),
+                                Command.create(
+                                    {
+                                        "label": "doubled",
+                                        "engine": "aggregation",
+                                        "formula": "OPTALL.balance * 2",
+                                    }
+                                ),
+                            ],
+                        }
+                    ),
+                ],
+            }
+        )
+
+    def _column_names(self, report, **extra):
+        options = report.get_options(
+            {
+                "selected_variant_id": report.id,
+                "date": {
+                    "date_from": "2020-01-01",
+                    "date_to": "2020-01-31",
+                    "mode": "range",
+                    "filter": "custom",
+                },
+                **extra,
+            }
+        )
+        return options, [column["name"] for column in options["columns"]]
+
+    def test_an_optional_column_hidden_by_default_is_absent_until_asked_for(self):
+        report = self._optional_column_report(hidden_by_default=True)
+        options, names = self._column_names(report)
+        self.assertEqual(names, ["Balance"])
+        optional_column = report.column_ids.filtered("optional")
+        self.assertEqual(
+            options["optional_columns"],
+            [{"id": optional_column.id, "name": "Doubled", "selected": False}],
+        )
+
+        options, names = self._column_names(report, hidden_columns=[])
+        self.assertEqual(names, ["Balance", "Doubled"])
+        self.assertTrue(options["optional_columns"][0]["selected"])
+
+    def test_an_optional_column_shown_by_default_is_dropped_when_hidden(self):
+        report = self._optional_column_report(hidden_by_default=False)
+        _options, names = self._column_names(report)
+        self.assertEqual(names, ["Balance", "Doubled"])
+
+        column = report.column_ids.filtered(lambda column: column.optional)
+        options, names = self._column_names(report, hidden_columns=[column.id])
+        self.assertEqual(names, ["Balance"])
+        lines = report._get_lines(options)
+        self.assertTrue(all(len(line["columns"]) == 1 for line in lines))
+
+    def test_a_report_without_optional_columns_offers_no_choice(self):
+        options, names = self._column_names(self.report)
+        self.assertEqual(names, ["Balance"])
+        self.assertNotIn("optional_columns", options)
+        self.assertNotIn("hidden_columns", options)

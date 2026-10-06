@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="stock.TransfersTile">
+        <div class="o_transfers_tile d-flex flex-column gap-2">
+            <div class="d-flex gap-3 o_transfers_tile_totals">
+                <button type="button" class="btn btn-link p-0" t-on-click="() => this.openAll('ready')">
+                    <strong class="text-success" t-out="this.props.data.ready"/> <small class="text-muted">Ready</small>
+                </button>
+                <button type="button" class="btn btn-link p-0" t-on-click="() => this.openAll('late')">
+                    <strong class="text-danger" t-out="this.props.data.late"/> <small class="text-muted">Late</small>
+                </button>
+                <button type="button" class="btn btn-link p-0" t-on-click="() => this.openAll('waiting')">
+                    <strong class="text-warning" t-out="this.props.data.waiting"/> <small class="text-muted">Waiting</small>
+                </button>
+            </div>
+            <ul t-if="this.types.length" class="list-unstyled mb-0">
+                <li t-foreach="this.types" t-as="type" t-key="type.id">
+                    <button type="button" class="btn btn-link p-0 border-0 text-start text-decoration-none w-100 d-flex align-items-center gap-2 o_transfers_tile_type" t-on-click="() => this.open(type)">
+                        <span class="flex-grow-1 text-truncate" t-out="type.name"/>
+                        <span t-if="type.late" class="badge text-bg-danger" t-out="type.late"/>
+                        <span t-if="type.ready" class="badge text-bg-success" t-out="type.ready"/>
+                    </button>
+                </li>
+            </ul>
+            <p t-else="" class="text-muted small mb-0">Nothing is ready or late.</p>
+        </div>
+    </t>
+
+</templates>

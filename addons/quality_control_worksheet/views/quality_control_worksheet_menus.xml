@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- settings menu -->
+    <menuitem
+        id="settings_worksheet_template"
+        name="Quality Worksheet Templates"
+        parent="quality_control.menu_quality_configuration"
+        action="quality_control_worksheet_template_action_settings"
+        sequence="20"
+        groups="quality.group_quality_manager" />
+
+</odoo>

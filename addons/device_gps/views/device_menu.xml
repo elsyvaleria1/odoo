@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <menuitem
+        id="menu_device_gps_trackers"
+        name="GPS Trackers"
+        parent="device.menu_device_devices"
+        action="action_device_device_gps"
+        sequence="20" />
+
+    <menuitem
+        id="menu_device_gps_analysis"
+        name="GPS Analysis"
+        parent="device.menu_device_data_analytics"
+        sequence="40" />
+
+    <menuitem
+        id="menu_device_gps_analysis_daily"
+        name="Daily Reports"
+        parent="menu_device_gps_analysis"
+        sequence="5" />
+
+    <menuitem
+        id="menu_device_data_log_gps_report_main"
+        name="GPS Overview"
+        parent="menu_device_gps_analysis_daily"
+        action="action_device_data_log_gps_report"
+        sequence="10" />
+
+    <menuitem
+        id="menu_device_data_log_gps_report_distance"
+        name="Distance"
+        parent="menu_device_gps_analysis_daily"
+        action="action_device_data_log_gps_report_distance"
+        sequence="20" />
+
+    <menuitem
+        id="menu_device_data_log_gps_report_fuel"
+        name="Fuel"
+        parent="menu_device_gps_analysis_daily"
+        action="action_device_data_log_gps_report_fuel"
+        sequence="30" />
+
+    <menuitem
+        id="menu_device_data_log_gps_report_activity"
+        name="Activity"
+        parent="menu_device_gps_analysis_daily"
+        action="action_device_data_log_gps_report_activity"
+        sequence="40" />
+
+    <menuitem
+        id="menu_device_data_log_gps_report_speed"
+        name="Speed &amp; Safety"
+        parent="menu_device_gps_analysis_daily"
+        action="action_device_data_log_gps_report_speed"
+        sequence="60" />
+
+    <menuitem
+        id="menu_device_gps_analysis_fuel"
+        name="Fuel"
+        parent="menu_device_gps_analysis"
+        sequence="30" />
+
+    <menuitem
+        id="menu_device_gps_raw_data"
+        name="GPS Raw Data"
+        parent="device.menu_device_data_analytics"
+        sequence="50" />
+
+    <menuitem
+        id="menu_device_gps_tracking_logs"
+        name="Tracking Logs"
+        parent="menu_device_gps_raw_data"
+        action="action_device_data_log_gps"
+        sequence="10" />
+
+    <menuitem
+        id="menu_device_gps_config"
+        name="GPS Configurations"
+        parent="device.menu_device_profileuration"
+        action="action_device_gps_config"
+        sequence="250" />
+
+</odoo>

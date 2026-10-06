@@ -1,0 +1,7 @@
+id,name,model_id/id,group_id/id,kind,operation,reach,anchor,domain
+rule_dav_sync_state_user,DAV Sync State: User can see own states,model_dav_sync_state,group_dav_user,permission,crud,own,,
+rule_dav_manager_sync_state,DAV Manager: Can see all sync states,model_dav_sync_state,group_dav_manager,permission,crud,,,
+rule_dav_addressbook_user,DAV Addressbook: User can see own addressbooks,model_dav_addressbook,group_dav_user,permission,crud,own,,
+rule_dav_manager_addressbook,DAV Manager: Can see all addressbooks,model_dav_addressbook,group_dav_manager,permission,crud,,,
+rule_dav_calendar_user,DAV Calendar: User can see own calendars,model_dav_calendar,group_dav_user,permission,crud,own,,
+rule_dav_manager_calendar,DAV Manager: Can see all calendars,model_dav_calendar,group_dav_manager,permission,crud,,,

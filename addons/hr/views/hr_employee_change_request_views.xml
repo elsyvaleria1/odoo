@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <data>
+        <record id="hr_employee_change_request_view_form" model="ir.ui.view">
+            <field name="name">hr.employee.change.request.form</field>
+            <field name="model">hr.employee.change.request</field>
+            <field name="arch" type="xml">
+                <form string="Change Request">
+                    <header>
+                        <button
+                            name="action_view_approval_request"
+                            type="object"
+                            string="Approval Request"
+                            invisible="not approval_request_id"
+                            class="btn-primary" />
+                        <field name="approval_state" widget="statusbar" />
+                    </header>
+                    <sheet>
+                        <group>
+                            <group>
+                                <field name="employee_id" readonly="1" />
+                                <field name="requested_by_uid" readonly="1" />
+                            </group>
+                            <group>
+                                <field name="approval_request_id" readonly="1" />
+                                <field
+                                    name="pending_approver_ids"
+                                    widget="many2many_tags"
+                                    invisible="approval_state not in ['new', 'pending']"
+                                    readonly="1" />
+                                <field
+                                    name="date_approval_granted"
+                                    invisible="approval_state != 'approved'"
+                                    readonly="1" />
+                            </group>
+                        </group>
+                        <group>
+                            <group string="Private Information">
+                                <label for="private_street" string="Private Address" />
+                                <div class="o_address_format">
+                                    <field
+                                        name="private_street"
+                                        placeholder="Street..."
+                                        readonly="approval_state not in ['new', 'pending']"
+                                        class="o_address_street" />
+                                    <field
+                                        name="private_street2"
+                                        placeholder="Street 2..."
+                                        readonly="approval_state not in ['new', 'pending']"
+                                        class="o_address_street" />
+                                    <field
+                                        name="private_city"
+                                        placeholder="City"
+                                        readonly="approval_state not in ['new', 'pending']"
+                                        class="o_address_city" />
+                                    <field
+                                        name="private_state_id"
+                                        placeholder="State"
+                                        options="{'no_open': True, 'no_create': True}"
+                                        readonly="approval_state not in ['new', 'pending']"
+                                        class="o_address_state" />
+                                    <field
+                                        name="private_zip"
+                                        placeholder="ZIP"
+                                        readonly="approval_state not in ['new', 'pending']"
+                                        class="o_address_zip" />
+                                    <field
+                                        name="private_country_id"
+                                        placeholder="Country"
+                                        options="{'no_open': True, 'no_create': True}"
+                                        readonly="approval_state not in ['new', 'pending']"
+                                        class="o_address_country" />
+                                </div>
+                                <field
+                                    name="private_email"
+                                    readonly="approval_state not in ['new', 'pending']" />
+                                <field
+                                    name="private_phone_ids"
+                                    widget="many2many_tags"
+                                    readonly="approval_state not in ['new', 'pending']" />
+                            </group>
+                            <group string="Emergency Contact">
+                                <field
+                                    name="emergency_contact"
+                                    placeholder="e.g. John Doe"
+                                    readonly="approval_state not in ['new', 'pending']" />
+                                <field
+                                    name="emergency_phone_ids"
+                                    widget="many2many_tags"
+                                    readonly="approval_state not in ['new', 'pending']" />
+                            </group>
+                        </group>
+                    </sheet>
+                </form>
+            </field>
+        </record>
+        <record id="hr_employee_change_request_view_list" model="ir.ui.view">
+            <field name="name">hr.employee.change.request.list</field>
+            <field name="model">hr.employee.change.request</field>
+            <field name="arch" type="xml">
+                <list string="Change Requests">
+                    <field name="create_date" string="Requested" />
+                    <field name="employee_id" />
+                    <field name="requested_by_uid" />
+                    <field name="approval_request_id" optional="hide" />
+                    <field name="approval_state" widget="badge" />
+                </list>
+            </field>
+        </record>
+        <record id="hr_employee_change_request_action" model="ir.actions.act_window">
+            <field name="name">Information Change Requests</field>
+            <field name="res_model">hr.employee.change.request</field>
+            <field name="view_mode">list,form</field>
+            <field name="context">{'search_default_pending': 1}</field>
+        </record>
+        <record id="hr_employee_change_request_view_search" model="ir.ui.view">
+            <field name="name">hr.employee.change.request.search</field>
+            <field name="model">hr.employee.change.request</field>
+            <field name="arch" type="xml">
+                <search string="Change Requests">
+                    <field name="employee_id" />
+                    <filter
+                        name="pending"
+                        string="Pending"
+                        domain="[('approval_state', 'in', ['new', 'pending'])]" />
+                    <group>
+                        <filter
+                            name="group_by_state"
+                            string="Status"
+                            context="{'group_by': 'approval_state'}" />
+                    </group>
+                </search>
+            </field>
+        </record>
+    </data>
+
+</odoo>

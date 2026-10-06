@@ -1,0 +1,418 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="action_hr_offer_new" model="ir.actions.act_window">
+        <field name="name">Offer</field>
+        <field name="res_model">hr.contract.salary.offer</field>
+        <field name="view_mode">form</field>
+        <field name="context">{'is_hr_payroll': True}</field>
+    </record>
+
+    <record id="hr_contract_salary_offer_action" model="ir.actions.act_window">
+        <field name="name">Offers</field>
+        <field name="res_model">hr.contract.salary.offer</field>
+        <field name="view_mode">list,form</field>
+        <field
+            name="context">{
+            'search_default_group_by_state': True,
+            'search_default_employees': True,
+            'is_hr_payroll': True
+        }</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Manage your Offers
+            </p><p>
+                Offers are sent to employee with a predefined selection of data.
+                It allows to reflect on the proposition and discuss it.<br /><br />
+                <a name="hr_contract_salary.action_hr_offer_new" type="action" class="btn btn-secondary">Create an Offer</a>
+            </p>
+        </field>
+    </record>
+
+    <record id="hr_contract_salary_offer_view_tree" model="ir.ui.view">
+        <field name="name">hr.contract.salary.offer.view.list</field>
+        <field name="model">hr.contract.salary.offer</field>
+        <field name="arch" type="xml">
+            <list string="Salary Package Offers" default_order="id desc">
+                <field name="contract_start_date" string="Date" optional="show" />
+                <field name="display_name" optional="show" />
+                <field
+                    name="employee_id"
+                    optional="hide"
+                    invisible="context.get('default_employee_id') or not employee_version_id" />
+                <field
+                    name="applicant_id"
+                    optional="hide"
+                    context="{'show_partner_name': True}"
+                    invisible="context.get('default_applicant_id') or not applicant_id" />
+                <field
+                    name="final_yearly_costs"
+                    widget="monetary"
+                    width="125"
+                    optional="show"
+                    options="{'currency_field': 'currency_id'}" />
+                <field name="employee_job_id" optional="show" />
+                <field name="department_id" optional="hide" />
+                <field name="offer_end_date" optional="hide" />
+                <field name="contract_template_id" optional="hide" />
+                <field
+                    name="company_id"
+                    optional="hide"
+                    groups="base.group_multi_company" />
+                <field name="create_date" optional="hide" />
+                <field name="create_uid" optional="hide" />
+                <field
+                    name="state"
+                    widget="badge"
+                    optional="show"
+                    decoration-danger="state in ('expired', 'refused', 'cancelled')"
+                    decoration-info="state == 'half_signed'"
+                    decoration-muted="state == 'open'"
+                    decoration-success="state =='full_signed'" />
+                <field name="currency_id" column_invisible="True" />
+                <field name="employee_version_id" column_invisible="True" />
+            </list>
+        </field>
+    </record>
+
+    <record id="hr_contract_salary_offer_view_form" model="ir.ui.view">
+        <field name="name">hr.contract.salary.offer.view.form</field>
+        <field name="model">hr.contract.salary.offer</field>
+        <field name="arch" type="xml">
+            <form string="Salary Package Offer">
+                <header>
+                    <button
+                        name="action_send_by_email"
+                        type="object"
+                        string="Send By Email"
+                        invisible="not id or state in ['refused', 'expired', 'cancelled'] or not sign_template_id"
+                        class="oe_highlight"
+                        data-hotkey="shift+e" />
+                    <button
+                        string="Send By Email"
+                        invisible="not id or state in ['refused', 'expired', 'cancelled'] or sign_template_id"
+                        class="oe_highlight disabled"
+                        data-hotkey="shift+e" />
+                    <button
+                        name="action_jump_to_offer"
+                        type="object"
+                        string="Salary Configurator"
+                        invisible="not id or state in ['refused', 'expired', 'cancelled'] or not sign_template_id"
+                        class="btn btn-secondary"
+                        data-hotkey="shift+g" />
+                    <button
+                        string="Salary Configurator"
+                        invisible="not id or state in ['refused', 'expired', 'cancelled'] or sign_template_id"
+                        class="btn btn-secondary disabled"
+                        data-hotkey="shift+g" />
+                    <field
+                        name="url"
+                        string="Copy link"
+                        widget="SaveAndCopyToClipboardButton"
+                        options="{'btn_class': 'btn btn-secondary'}"
+                        invisible="not id or not sign_template_id"
+                        class="btn btn-addr ps-0" />
+                    <field
+                        name="url"
+                        string="Copy link"
+                        widget="SaveAndCopyToClipboardButton"
+                        options="{'btn_class': 'btn btn-secondary'}"
+                        invisible="not id or sign_template_id"
+                        class="btn btn-addr ps-0 disabled" />
+                    <field
+                        name="state"
+                        widget="statusbar"
+                        invisible="not is_half_sign_state_required"
+                        readonly="1"
+                        statusbar_visible="open,half_signed,full_signed" />
+                    <field
+                        name="state"
+                        widget="statusbar"
+                        invisible="is_half_sign_state_required"
+                        readonly="1"
+                        statusbar_visible="open,full_signed" />
+                </header>
+                <sheet>
+                    <div name="button_box" class="oe_button_box">
+                        <button
+                            name="action_view_version"
+                            type="object"
+                            icon="fa-book"
+                            invisible="state != 'half_signed'"
+                            class="oe_stat_button">
+                            <div class="o_field_widget o_stat_info">
+                                <span class="o_stat_text">Contract Details</span>
+                            </div>
+                        </button>
+                        <button
+                            name="action_view_signature_request"
+                            type="object"
+                            icon="fa-pencil"
+                            invisible="state != 'half_signed' or not sign_request_ids"
+                            class="oe_stat_button"
+                            data-hotkey="shift+g">
+                            <div class="o_field_widget o_stat_info">
+                                <span class="o_stat_text">Requested Signature</span>
+                            </div>
+                        </button>
+
+                        <button
+                            name="action_view_version"
+                            type="object"
+                            icon="fa-book"
+                            invisible="state != 'full_signed'"
+                            class="oe_stat_button"
+                            data-hotkey="shift+g">
+                            <div class="o_field_widget o_stat_info">
+                                <span class="o_stat_text">Signed Contract</span>
+                            </div>
+                        </button>
+                    </div>
+                    <widget
+                        name="web_ribbon"
+                        title="Refused"
+                        invisible="state != 'refused'"
+                        bg_color="text-bg-danger" />
+                    <widget
+                        name="web_ribbon"
+                        title="Cancelled"
+                        invisible="state != 'cancelled'"
+                        bg_color="text-bg-danger" />
+                    <div
+                        class="alert alert-info text-center"
+                        role="status"
+                        invisible="state != 'full_signed'">
+                        This offer has been fully signed and can no longer be edited. However, you can still make changes to the Signed Contract if needed.
+                    </div>
+                    <div
+                        role="alert"
+                        class="alert alert-danger"
+                        invisible="sign_template_id">
+                        Please define a signature template on the contract before generating the offer.
+                    </div>
+                    <div class="oe_title pe-0">
+                        <label for="display_name" />
+                        <h1>
+                            <field
+                                name="display_name"
+                                placeholder="e.g. Offer 70k Employer Cost"
+                                options="{'line_breaks': False}"
+                                readonly="state == 'cancelled'" />
+                        </h1>
+                    </div>
+                    <group>
+                        <group name="group_offer">
+                            <field
+                                name="contract_template_id"
+                                placeholder="Select a contract template to load its predefined values"
+                                readonly="state in ['cancelled', 'full_signed']" />
+                            <label for="sign_template_id" string="PDF Template" />
+                            <div class="o_row">
+                                <field
+                                    name="sign_template_id"
+                                    placeholder="Select the PDF that the employee will sign"
+                                    options="{'no_create': True}"
+                                    readonly="contract_template_id" />
+                                <button
+                                    name="action_edit_offer_signatories"
+                                    type="object"
+                                    string="Edit Signatories"
+                                    invisible="sign_template_id"
+                                    class="btn btn-secondary"
+                                    disabled="1" />
+                                <button
+                                    name="action_edit_offer_signatories"
+                                    type="object"
+                                    string="Edit Signatories"
+                                    invisible="not sign_template_id"
+                                    class="btn btn-secondary" />
+                            </div>
+                            <field
+                                name="final_yearly_costs"
+                                readonly="state in ['cancelled', 'full_signed']" />
+                            <field
+                                name="job_title"
+                                placeholder="e.g. Lead Dev, Junior Consultant"
+                                readonly="state == 'cancelled'" />
+                            <field
+                                name="employee_job_id"
+                                placeholder="e.g. Developer, Sales, Consultant"
+                                readonly="state in ['cancelled', 'full_signed']" />
+                            <field
+                                name="department_id"
+                                placeholder="e.g. Human Resources, Research &amp; Development, Marketing"
+                                readonly="state == 'cancelled'" />
+                            <label for="contract_start_date" string="Contract Date" />
+                            <div class="o_row">
+                                <field
+                                    name="contract_start_date"
+                                    readonly="state in ['cancelled', 'full_signed']" />
+                                <i
+                                    class="fa-solid fa-right-long mx-2"
+                                    aria-label="Arrow icon"
+                                    title="Arrow" />
+                                <field
+                                    name="contract_end_date"
+                                    placeholder="No limit"
+                                    readonly="state in ['cancelled', 'full_signed']" />
+                            </div>
+                            <field name="offer_create_date" readonly="1" />
+                            <field
+                                name="offer_end_date"
+                                placeholder="Always valid"
+                                readonly="state in ['cancelled', 'full_signed']" />
+                        </group>
+                        <group name="group_offer_to">
+                            <field
+                                name="employee_id"
+                                placeholder="Select an employee..."
+                                domain="[('company_id', 'in', allowed_company_ids)]"
+                                invisible="applicant_id or not context.get('is_hr_payroll', True)"
+                                readonly="not context.get('is_hr_payroll', False) or state == 'full_signed'"
+                                required="context.get('is_hr_payroll')" />
+                            <field
+                                name="applicant_id"
+                                placeholder="Select an applicant..."
+                                domain="[('company_id', 'in', allowed_company_ids)]"
+                                context="{'show_partner_name': True}"
+                                invisible="employee_version_id or context.get('is_hr_payroll', False)"
+                                readonly="context.get('is_hr_payroll', True) or state == 'full_signed'"
+                                required="not context.get('is_hr_payroll')" />
+                            <field
+                                name="company_id"
+                                groups="base.group_multi_company"
+                                readonly="state in ['cancelled', 'full_signed']" />
+                            <field
+                                name="refusal_reason"
+                                invisible="not refusal_reason"
+                                readonly="1" />
+                            <field
+                                name="refusal_date"
+                                invisible="not refusal_date"
+                                readonly="1" />
+                            <field name="currency_id" invisible="1" />
+                        </group>
+                        <group
+                            name="group_token"
+                            string="Token"
+                            groups="base.group_no_one">
+                            <field name="access_token" />
+                            <field name="create_date" />
+                        </group>
+                    </group>
+                </sheet>
+                <chatter />
+            </form>
+        </field>
+    </record>
+
+    <record id="hr_contract_salary_offer_view_search" model="ir.ui.view">
+        <field name="name">hr.contract.salary.offer.view.search</field>
+        <field name="model">hr.contract.salary.offer</field>
+        <field name="arch" type="xml">
+            <search string="Search Offers">
+                <field name="applicant_name" string="Applicant" />
+                <field name="employee_id" />
+                <field name="display_name" />
+                <filter
+                    name="employees"
+                    string="Employees"
+                    domain="[('employee_id', '!=', False)]" />
+                <filter
+                    name="applicants"
+                    string="Applicants"
+                    domain="[('applicant_id', '!=', False)]" />
+                <separator />
+                <filter
+                    name="expired"
+                    string="Expired"
+                    domain="[('offer_end_date', '&lt;', 'today')]" />
+                <separator />
+                <filter
+                    name="refused"
+                    string="Refused"
+                    domain="[('state', '=', 'refused')]" />
+                <group>
+                    <filter
+                        name="group_by_state"
+                        string="State"
+                        context="{'group_by': 'state'}" />
+                    <filter
+                        name="group_by_employee_job_id"
+                        string="Job Position"
+                        context="{'group_by': 'employee_job_id'}" />
+                    <filter
+                        name="group_by_department_id"
+                        string="Department"
+                        context="{'group_by': 'department_id'}" />
+                    <filter
+                        name="group_by_contract_template_id"
+                        string="Contract Template"
+                        context="{'group_by': 'contract_template_id'}" />
+                    <filter
+                        name="group_by_employee_id"
+                        string="Employee"
+                        context="{'group_by': 'employee_id'}" />
+                    <filter
+                        name="group_by_applicant_id"
+                        string="Applicant"
+                        context="{'group_by': 'applicant_id'}" />
+                    <filter
+                        name="group_by_company_id"
+                        string="Company"
+                        context="{'group_by': 'company_id'}"
+                        groups="base.group_multi_company" />
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_refuse_salary_offer" model="ir.actions.server">
+        <field name="name">Refuse…</field>
+        <field name="model_id" ref="model_hr_contract_salary_offer" />
+        <field name="binding_model_id" ref="model_hr_contract_salary_offer" />
+        <field name="binding_icon">fa-solid fa-xmark</field>
+        <field name="state">code</field>
+        <field name="code">action = records.action_view_refuse_wizard()</field>
+    </record>
+
+    <record
+        id="hr_contract_salary_offer_recruitment_action"
+        model="ir.actions.act_window">
+        <field name="name">Offers</field>
+        <field name="res_model">hr.contract.salary.offer</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('employee_id', '=', False)]</field>
+        <field
+            name="context">{'search_default_group_by_state': True, 'is_hr_payroll': False}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Create new offer
+            </p><p>
+                Did you know that you can create an offer for any applicant?<br />
+                Why don't you try? They're listed <a type="action" class="text-primary" name="hr_recruitment.crm_case_categ0_act_job">here</a>
+            </p>
+        </field>
+    </record>
+
+    <record id="action_view_contract_statbutton" model="ir.actions.act_window">
+        <field name="name">Contract Details</field>
+        <field name="res_model">hr.employee</field>
+        <field name="view_mode">form</field>
+        <field name="view_id" ref="hr.view_employee_form" />
+        <field name="target">current</field>
+    </record>
+
+    <record
+        id="action_view_partially_signed_contract_statbutton"
+        model="ir.actions.act_window">
+        <field name="name">Contract Details (Read Only) </field>
+        <field name="res_model">hr.employee</field>
+        <field name="view_mode">form</field>
+        <field
+            name="view_id"
+            ref="hr_contract_salary.hr_contract_salary_view_employee_form_readonly" />
+        <field name="target">current</field>
+    </record>
+
+</odoo>

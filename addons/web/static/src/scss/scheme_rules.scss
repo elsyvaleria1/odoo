@@ -1,0 +1,797 @@
+@mixin o-table-variant-from($-state, $-background, $-scheme, $-body-bg, $-factors) {
+    .table-#{$-state} {
+        $-color: o-scheme-contrast(opaque($-body-bg, $-background), $-scheme);
+        $-hover-bg: mix($-color, $-background, percentage(map-get($-factors, "hover")));
+        $-striped-bg: mix(
+            $-color,
+            $-background,
+            percentage(map-get($-factors, "striped"))
+        );
+        $-active-bg: mix(
+            $-color,
+            $-background,
+            percentage(map-get($-factors, "active"))
+        );
+        $-border-color: mix(
+            $-color,
+            $-background,
+            percentage(map-get($-factors, "border"))
+        );
+
+        --#{$prefix}table-color: #{$-color};
+        --#{$prefix}table-bg: #{$-background};
+        --#{$prefix}table-border-color: #{$-border-color};
+        --#{$prefix}table-striped-bg: #{$-striped-bg};
+        --#{$prefix}table-striped-color: #{o-scheme-contrast($-striped-bg, $-scheme)};
+        --#{$prefix}table-active-bg: #{$-active-bg};
+        --#{$prefix}table-active-color: #{o-scheme-contrast($-active-bg, $-scheme)};
+        --#{$prefix}table-hover-bg: #{$-hover-bg};
+        --#{$prefix}table-hover-color: #{o-scheme-contrast($-hover-bg, $-scheme)};
+
+        color: var(--#{$prefix}table-color);
+        border-color: var(--#{$prefix}table-border-color);
+    }
+}
+
+@include media-only(screen) {
+    :root[data-color-scheme="dark"] {
+        @each $-state, $-background in $o-dark-table-variants {
+            @include o-table-variant-from(
+                $-state,
+                $-background,
+                o-dark-scheme(),
+                $o-dark-webclient-background-color,
+                (
+                    "hover": o-or($o-dark-table-hover-bg-factor, $table-hover-bg-factor),
+                    "striped":
+                        o-or($o-dark-table-striped-bg-factor, $table-striped-bg-factor),
+                    "active":
+                        o-or($o-dark-table-active-bg-factor, $table-active-bg-factor),
+                    "border": o-or($o-dark-table-border-factor, $table-border-factor),
+                )
+            );
+        }
+    }
+}
+
+@include media-only(screen) {
+    :root[data-color-scheme="dark"] {
+        $-o-dark-link-shade: o-or(
+            $o-dark-link-shade-percentage,
+            $link-shade-percentage
+        );
+
+        @each $-name, $-spec in $o-dark-btns-bs-override {
+            .btn-#{$-name},
+            .btn-fill-#{$-name} {
+                @include o-button-variant-from(
+                    o-dark-button-spec($-spec, o-dark-scheme())
+                );
+            }
+        }
+        @each $-name, $-spec in $o-dark-btns-bs-outline-override {
+            .btn-outline-#{$-name} {
+                @include o-button-variant-from(
+                    o-dark-button-spec($-spec, o-dark-scheme())
+                );
+            }
+        }
+
+        @each $-name in ("secondary", "light") {
+            .btn-#{$-name},
+            .btn-fill-#{$-name} {
+                @include o-glass-button($-name);
+            }
+        }
+
+        @each $-name, $-color in $o-dark-theme-colors {
+            @if not map-get($o-dark-btns-bs-override, $-name) {
+                .btn-#{$-name} {
+                    @include o-scheme-button-variant($-color, $-color, o-dark-scheme());
+                }
+            }
+            @if not map-get($o-dark-btns-bs-outline-override, $-name) {
+                .btn-outline-#{$-name} {
+                    @include o-scheme-button-outline-variant($-color, o-dark-scheme());
+                }
+            }
+        }
+
+        @each $-name, $-color in $o-dark-btn-custom {
+            .btn-#{$-name} {
+                @include o-scheme-button-variant($-color, $-color, o-dark-scheme());
+            }
+        }
+
+        $-o-dark-text-colors: map-merge(
+            $o-dark-theme-colors,
+            $o-dark-theme-text-colors
+        );
+
+        @each $-name, $-color in $-o-dark-text-colors {
+            @include o-scheme-text-emphasis-variant(
+                ".text-#{$-name}",
+                $-color,
+                o-dark-scheme(),
+                $-o-dark-link-shade
+            );
+        }
+
+        .btn-link {
+            @each $-name,
+                $-color in map-merge($-o-dark-text-colors, $o-dark-text-colors-custom)
+            {
+                &.btn-#{$-name},
+                &.text-#{$-name} {
+                    @include o-btn-link-variant(
+                        $o-dark-gray-600 !important,
+                        map-get($-o-dark-text-colors, $-name) or $-color !important,
+                        $muted-color: $o-dark-main-color-muted
+                    );
+                }
+            }
+        }
+
+        @each $-name, $-color in $o-dark-theme-colors {
+            .bg-#{$-name} {
+                @include o-print-color($-color, background-color, bg-opacity);
+            }
+        }
+
+        @each $-name, $-color in map-merge($o-dark-text-colors-custom, $o-dark-grays) {
+            @include o-scheme-text-emphasis-variant(
+                ".text-#{$-name}",
+                $-color,
+                o-dark-scheme(),
+                $-o-dark-link-shade
+            );
+        }
+
+        @each $-name, $-color in $o-dark-theme-colors {
+            .text-bg-#{$-name} {
+                @include o-print-color(
+                    o-scheme-contrast(
+                        $-color,
+                        o-dark-scheme(),
+                        $-min-contrast-ratio: $o-text-bg-contrast
+                    ),
+                    color,
+                    text-opacity
+                );
+            }
+        }
+
+        @each $-name, $-color in map-merge($o-dark-bg-colors-custom, $o-dark-grays) {
+            .bg-#{$-name},
+            .text-bg-#{$-name} {
+                @include o-print-color($-color, background-color, bg-opacity);
+            }
+
+            .text-bg-#{$-name} {
+                @include o-print-color(
+                    o-scheme-contrast(
+                        $-color,
+                        o-dark-scheme(),
+                        $-min-contrast-ratio: $o-text-bg-contrast
+                    ),
+                    color,
+                    text-opacity
+                );
+            }
+        }
+
+        @if $-o-dark-link-shade != 0 {
+            @each $-name, $-color in $o-dark-theme-colors {
+                $-shades: o-scheme-contrast($-color, o-dark-scheme()) ==
+                    o-scheme-contrast-light(o-dark-scheme());
+                $-hover: if(
+                    $-shades,
+                    o-scheme-shade($-color, $-o-dark-link-shade, o-dark-scheme()),
+                    o-scheme-tint($-color, $-o-dark-link-shade, o-dark-scheme())
+                );
+                .link-#{$-name} {
+                    &:hover,
+                    &:focus {
+                        color: RGBA(
+                                #{to-rgb($-hover)},
+                                var(--#{$prefix}link-opacity, 1)
+                            )
+                            if($enable-important-utilities, !important, null);
+                        text-decoration-color: RGBA(
+                                #{to-rgb($-hover)},
+                                var(--#{$prefix}link-underline-opacity, 1)
+                            )
+                            if($enable-important-utilities, !important, null);
+                    }
+                }
+            }
+        }
+
+        .form-switch.o_switch_toggle {
+            .form-check-input,
+            .form-check-input:checked {
+                &,
+                &:focus,
+                &:checked {
+                    background-image: escape-svg(
+                        url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'><circle r='3' fill='#{$o-dark-action}'/></svg>")
+                    );
+                }
+            }
+        }
+    }
+}
+
+@include media-only(screen) {
+    :root[data-color-scheme="dark"] {
+        $-focus: rgba($o-dark-brand-primary, $input-btn-focus-color-opacity);
+        $-bg: $o-dark-view-background-color;
+
+        body {
+            -webkit-tap-highlight-color: rgba($o-dark-black, 0);
+        }
+
+        .form-control:focus {
+            border-color: $o-dark-brand-primary;
+            box-shadow: 0 0 0 $input-btn-focus-width $-focus;
+        }
+        .form-select:focus {
+            border-color: $o-dark-brand-primary;
+            box-shadow: 0 0 0 $input-btn-focus-width $-focus;
+        }
+        .form-check-input:focus {
+            border-color: $o-dark-brand-primary;
+            box-shadow: 0 0 0 $input-btn-focus-width $-focus;
+        }
+        .form-check-input:checked {
+            background-color: $o-dark-brand-primary;
+            border-color: $o-dark-brand-primary;
+        }
+        .form-check-input[type="checkbox"]:indeterminate {
+            background-color: $o-dark-component-active-bg;
+            border-color: $o-dark-component-active-bg;
+        }
+        .form-range::-webkit-slider-thumb {
+            background-color: $o-dark-brand-primary;
+        }
+        .form-range::-moz-range-thumb {
+            background-color: $o-dark-brand-primary;
+        }
+        .form-range:focus::-webkit-slider-thumb {
+            box-shadow: 0 0 0 1px $o-dark-brand-primary;
+        }
+        .form-range:focus::-moz-range-thumb {
+            box-shadow: 0 0 0 1px $o-dark-brand-primary;
+        }
+        .form-floating > :disabled ~ label,
+        .form-floating > .form-control:disabled ~ label {
+            color: $o-dark-gray-600;
+        }
+
+        .nav-link:focus-visible {
+            box-shadow: 0 0 0 $input-btn-focus-width $-focus;
+        }
+        .nav-pills {
+            --#{$prefix}nav-pills-link-active-color: #{$o-dark-white};
+        }
+
+        .navbar-dark,
+        .navbar[data-bs-theme="dark"] {
+            --#{$prefix}navbar-color: #{rgba($o-dark-white, 0.55)};
+            --#{$prefix}navbar-active-color: #{$o-dark-white};
+            --#{$prefix}navbar-brand-color: #{$o-dark-white};
+            --#{$prefix}navbar-brand-hover-color: #{$o-dark-white};
+        }
+
+        .card {
+            --#{$prefix}card-bg: #{$-bg};
+        }
+        .modal {
+            --#{$prefix}modal-bg: #{$-bg};
+        }
+        .list-group {
+            --#{$prefix}list-group-bg: #{$-bg};
+            --#{$prefix}list-group-disabled-bg: #{$-bg};
+            --#{$prefix}list-group-active-color: #{$o-dark-black};
+        }
+        .popover {
+            --#{$prefix}popover-bg: #{$o-dark-white};
+        }
+        .toast {
+            --#{$prefix}toast-bg: #{rgba($o-dark-white, 0.7)};
+            --#{$prefix}toast-header-bg: #{rgba($o-dark-white, 0.7)};
+        }
+        $-ring: 0 0 $focus-ring-blur $focus-ring-width $-focus;
+
+        .accordion {
+            --#{$prefix}accordion-btn-focus-box-shadow: #{$-ring};
+        }
+        .pagination {
+            --#{$prefix}pagination-active-color: #{$o-dark-black};
+            --#{$prefix}pagination-focus-box-shadow: #{$-ring};
+        }
+        .btn-close {
+            --#{$prefix}btn-close-color: #{$o-dark-black};
+            --#{$prefix}btn-close-focus-shadow: #{$-ring};
+        }
+
+        .carousel-control-prev,
+        .carousel-control-next {
+            color: $o-dark-white;
+        }
+        .carousel-control-prev:hover,
+        .carousel-control-prev:focus,
+        .carousel-control-next:hover,
+        .carousel-control-next:focus {
+            color: $o-dark-white;
+        }
+    }
+}
+
+@include media-only(screen) {
+    :root[data-color-scheme="dark"] {
+        $-mark: $o-dark-brand-lightsecondary;
+        $-dash: $o-dark-black;
+        $-switch: o-or($o-dark-form-switch-color, rgba($o-dark-black, 0.25));
+        $-switch-focus: o-or(
+            $o-dark-form-switch-focus-color,
+            mix($o-dark-bs-success, $input-bg)
+        );
+
+        .form-check-input:checked[type="checkbox"] {
+            --#{$prefix}form-check-bg-image: #{escape-svg(o-check-icon($-mark))};
+        }
+        .form-check-input:checked[type="radio"] {
+            --#{$prefix}form-check-bg-image: #{escape-svg(o-radio-icon($-mark))};
+        }
+        .form-check-input[type="checkbox"]:indeterminate {
+            --#{$prefix}form-check-bg-image: #{escape-svg(o-indeterminate-icon($-dash))};
+        }
+
+        .form-switch .form-check-input {
+            --#{$prefix}form-switch-bg: #{escape-svg(o-switch-icon($-switch))};
+        }
+        .form-switch .form-check-input:focus {
+            --#{$prefix}form-switch-bg: #{escape-svg(
+                    o-switch-focus-icon($-switch-focus)
+                )};
+        }
+        .form-switch .form-check-input:checked {
+            --#{$prefix}form-switch-bg: #{escape-svg(
+                    o-switch-checked-icon($o-dark-white)
+                )};
+        }
+
+        .form-select {
+            --#{$prefix}form-select-bg-img: #{escape-svg(
+                    o-select-caret-icon($o-dark-gray-800)
+                )};
+        }
+
+        select {
+            --o-select-caret-img: #{escape-svg(
+                    o-caret-down-icon($o-dark-main-text-color)
+                )};
+        }
+
+        .was-validated .form-control:valid,
+        .form-control.is-valid {
+            background-image: escape-svg(o-valid-icon($o-dark-bs-success));
+        }
+        .was-validated .form-control:invalid,
+        .form-control.is-invalid {
+            background-image: escape-svg(o-invalid-icon($o-dark-bs-danger));
+        }
+        .was-validated .form-select:valid:not([multiple]):not([size]),
+        .was-validated .form-select:valid:not([multiple])[size="1"],
+        .form-select.is-valid:not([multiple]):not([size]),
+        .form-select.is-valid:not([multiple])[size="1"] {
+            --#{$prefix}form-select-bg-icon: #{escape-svg(
+                    o-valid-icon($o-dark-bs-success)
+                )};
+        }
+        .was-validated .form-select:invalid:not([multiple]):not([size]),
+        .was-validated .form-select:invalid:not([multiple])[size="1"],
+        .form-select.is-invalid:not([multiple]):not([size]),
+        .form-select.is-invalid:not([multiple])[size="1"] {
+            --#{$prefix}form-select-bg-icon: #{escape-svg(
+                    o-invalid-icon($o-dark-bs-danger)
+                )};
+        }
+    }
+}
+
+@include media-only(screen) {
+    :root[data-color-scheme="dark"] {
+        $-scheme: o-dark-scheme();
+        $-link: $o-dark-main-link-color;
+        $-active-bg: $o-dark-component-active-bg;
+
+        .table-group-divider {
+            border-top: calc(var(--#{$prefix}border-width) * 2) solid
+                #{o-or($o-dark-border-color, $o-dark-gray-200)};
+        }
+
+        .btn-link {
+            --#{$prefix}btn-focus-shadow-rgb: #{to-rgb(
+                    mix(o-scheme-contrast($-link, $-scheme), $-link, 15%)
+                )};
+        }
+
+        .pagination {
+            --#{$prefix}pagination-active-bg: #{$-active-bg};
+            --#{$prefix}pagination-active-border-color: #{$-active-bg};
+        }
+
+        .list-group {
+            --#{$prefix}list-group-active-bg: #{$o-dark-list-group-active-bg};
+            --#{$prefix}list-group-active-border-color: #{$o-dark-list-group-active-bg};
+        }
+
+        .form-range::-webkit-slider-thumb:active,
+        .form-range::-moz-range-thumb:active {
+            background-color: o-or(
+                $o-dark-form-range-thumb-active-bg,
+                o-scheme-tint($-active-bg, 70%, $-scheme)
+            );
+        }
+
+        .navbar {
+            --#{$prefix}navbar-toggler-icon-bg: #{escape-svg(
+                    o-navbar-toggler-icon(rgba($o-dark-main-text-color, 0.75))
+                )};
+        }
+
+        .navbar-dark,
+        .navbar[data-bs-theme="dark"] {
+            --#{$prefix}navbar-toggler-icon-bg: #{escape-svg(
+                    o-navbar-toggler-icon(rgba($o-dark-white, 0.55))
+                )};
+        }
+
+        .progress-bar-striped {
+            $-stripe: rgba($o-dark-white, 0.15);
+            background-image: linear-gradient(
+                45deg,
+                $-stripe 25%,
+                transparent 25%,
+                transparent 50%,
+                $-stripe 50%,
+                $-stripe 75%,
+                transparent 75%,
+                transparent
+            );
+        }
+    }
+}
+
+@include media-only(screen) {
+    :root[data-color-scheme="dark"] {
+        .badge {
+            @for $-i from 1 through length($o-dark-colors) {
+                &.o_badge_color_#{$-i - 1} {
+                    background-color: #{mix(
+                            nth($o-dark-colors, $-i),
+                            $o-dark-view-background-color,
+                            15%
+                        )} !important;
+                    color: #{adjust-color(
+                            nth($o-dark-colors, $-i),
+                            $lightness: 5%,
+                            $saturation: -15%
+                        )} !important;
+                }
+            }
+        }
+
+        .o_tag {
+            @for $-i from 1 through length($o-dark-colors) {
+                &.o_tag_color_#{$-i - 1} {
+                    --background-color: #{mix(
+                            nth($o-dark-colors, $-i),
+                            $o-dark-view-background-color,
+                            15%
+                        )};
+                    --color: #{adjust-color(
+                            nth($o-dark-colors, $-i),
+                            $lightness: 5%,
+                            $saturation: -15%
+                        )};
+
+                    &::after {
+                        --background-color: var(--background-color);
+                        --color: var(--color);
+                    }
+                }
+            }
+        }
+
+        @for $-i from 2 through length($o-dark-colors) {
+            .o_colorlist_item_color_#{$-i - 1} {
+                --background-color: #{adjust-color(
+                        nth($o-dark-colors, $-i),
+                        $lightness: -5%,
+                        $saturation: -15%
+                    )};
+                --color: #{mix(
+                        nth($o-dark-colors, $-i),
+                        $o-dark-view-background-color,
+                        15%
+                    )};
+            }
+        }
+
+        .o-dropdown {
+            --border-color: #{$o-dark-dropdown-border-color};
+            --o-input-border-color: #{$o-dark-dropdown-border-color};
+        }
+
+        .o_popover {
+            --border-color: #{$o-dark-popover-border-color};
+
+            .table {
+                --table-bg: #{$o-dark-popover-bg};
+            }
+
+            .o_input {
+                --o-input-border-color: #{$o-dark-popover-border-color};
+            }
+
+            .form-range {
+                &::-moz-range-track {
+                    background: darken($o-dark-popover-bg, 10%);
+                }
+                &::-webkit-slider-runnable-track {
+                    background: darken($o-dark-popover-bg, 10%);
+                }
+            }
+        }
+
+        .o_mobile_search {
+            --mobileSearch-bg: #{$o-dark-gray-200};
+            --mobileSearch__header-bg: #{$o-dark-gray-100};
+        }
+
+        .o_searchview {
+            --SearchBar-background-color: #{$o-dark-gray-100};
+        }
+
+        .o_field_image {
+            --ImageField-background-color: #{$o-dark-gray-900};
+        }
+
+        .o_dashboard_view {
+            --DashboardView-background-color: #{$o-dark-gray-100};
+            --DashboardView__controlPanel-background-color: transparent;
+            --DashboardView__pieChart-background-color: transparent;
+        }
+
+        .o_kanban_renderer {
+            --KanbanGroup-grouped-bg: #{$o-dark-view-background-color};
+            --KanbanRecord__image-bg-color: #{$o-dark-gray-900};
+            --KanbanColumn__highlight-background: #{mix(
+                    $o-dark-action,
+                    $o-dark-gray-100,
+                    15%
+                )};
+            --KanbanColumn__highlight-border: #{$o-dark-component-active-border};
+            --KanbanColumn__highlight-selected: #20364b;
+        }
+
+        .o_base_settings_view .o_form_renderer {
+            --settings__tab-bg: #{$o-dark-gray-100};
+            --settings__tab-bg--active: #{mix($o-dark-action, $o-dark-gray-100, 10%)};
+            --settings__tab-color: #{$o-dark-main-text-color};
+            --settings__title-bg: #{$o-dark-gray-300};
+        }
+
+        .o-form-buttonbox {
+            --o-stat-button-color: currentColor;
+            --o-stat-text-color: #{map-get($o-dark-theme-text-colors, "primary")};
+        }
+
+        .o_field_property_definition_type,
+        .o_field_property_definition_type_menu {
+            img {
+                -webkit-filter: invert(100%);
+                filter: invert(100%);
+            }
+        }
+
+        .o_property_field_value select option {
+            background-color: $o-dark-border-color;
+        }
+
+        .o_bottom_sheet {
+            .o_bottom_sheet_sheet {
+                --BottomSheetStatusBar__entry-background--active: #{rgba(
+                        $o-dark-gray-400,
+                        0.5
+                    )};
+                --BottomSheetStatusBar__entry-color--active: #{o-scheme-contrast(
+                        $o-dark-gray-400,
+                        o-dark-scheme()
+                    )};
+
+                .o_cp_switch_buttons .o-dropdown-item {
+                    --#{$prefix}btn-bg: #{$o-dark-gray-400};
+                }
+            }
+
+            .o_search_panel_section .list-group {
+                --#{$prefix}list-group-active-bg: #{$o-dark-gray-400};
+            }
+
+            .o-form-buttonbox {
+                --o-stat-button-border-color: #{$o-dark-gray-400};
+            }
+        }
+    }
+}
+
+@include media-only(screen) {
+    :root[data-color-scheme="dark"] {
+        kbd {
+            color: $o-dark-kbd-color;
+            background-color: $o-dark-kbd-bg;
+            box-shadow: $o-dark-kbd-box-shadow;
+        }
+
+        .text-body {
+            color: $o-dark-main-text-color !important;
+        }
+
+        .text-muted {
+            color: $o-dark-main-color-muted !important;
+        }
+
+        .o_list_renderer .o_list_table {
+            --#{$prefix}table-bg: transparent;
+        }
+
+        .table {
+            --#{$prefix}table-bg: #{$o-dark-surface-sunken};
+            --#{$prefix}table-striped-bg: rgba(
+                var(--#{$prefix}emphasis-color-rgb),
+                #{$o-dark-table-striped-bg-factor}
+            );
+            --#{$prefix}table-active-bg: rgba(
+                var(--#{$prefix}emphasis-color-rgb),
+                #{$o-dark-table-active-bg-factor}
+            );
+            --#{$prefix}table-hover-bg: rgba(
+                var(--#{$prefix}emphasis-color-rgb),
+                #{$o-dark-table-hover-bg-factor}
+            );
+        }
+
+        @each $-control in (".form-control", ".form-select", ".input-group-text") {
+            #{$-control} {
+                border: $input-border-width solid $o-dark-border-color;
+            }
+        }
+
+        .form-control:focus {
+            background-color: $o-dark-input-focus-bg;
+        }
+
+        .form-control::placeholder {
+            color: $o-dark-input-placeholder-color;
+        }
+
+        .form-check-input {
+            border: var(--#{$prefix}border-width) solid #{$o-dark-input-boundary-color};
+        }
+
+        .form-range::-webkit-slider-thumb {
+            box-shadow: 0 0.1rem 0.25rem rgba($o-dark-black, 0.1);
+        }
+
+        .form-range::-webkit-slider-thumb:active {
+            background-color: $o-dark-form-range-thumb-active-bg;
+        }
+
+        .form-range::-webkit-slider-runnable-track {
+            background-color: $o-dark-surface-raised;
+        }
+
+        .form-range::-moz-range-thumb {
+            box-shadow: 0 0.1rem 0.25rem rgba($o-dark-black, 0.1);
+        }
+
+        .form-range::-moz-range-thumb:active {
+            background-color: $o-dark-form-range-thumb-active-bg;
+        }
+
+        .form-range::-moz-range-track {
+            background-color: $o-dark-surface-raised;
+        }
+
+        .dropdown-menu {
+            --#{$prefix}dropdown-bg: #{$o-dark-surface-raised};
+            --#{$prefix}dropdown-header-color: #{$o-dark-dropdown-header-color};
+        }
+
+        .nav {
+            --#{$prefix}nav-link-color: #{$o-dark-main-text-color};
+        }
+
+        .nav-tabs {
+            --#{$prefix}nav-tabs-link-active-color: #{$o-dark-black};
+        }
+
+        .card {
+            --#{$prefix}card-border-color: #{$o-dark-card-border-color};
+            --#{$prefix}card-cap-bg: #{$o-dark-surface-sunken};
+        }
+
+        .breadcrumb {
+            --#{$prefix}breadcrumb-divider-color: #{$o-dark-main-color-muted};
+            --#{$prefix}breadcrumb-item-active-color: #{$o-dark-main-text-color};
+        }
+
+        .modal {
+            --#{$prefix}modal-border-color: #{$o-dark-hairline};
+        }
+
+        .offcanvas,
+        .offcanvas-xxl,
+        .offcanvas-xl,
+        .offcanvas-lg,
+        .offcanvas-md,
+        .offcanvas-sm {
+            --#{$prefix}offcanvas-border-color: #{$o-dark-hairline};
+        }
+
+        .tooltip {
+            --#{$prefix}tooltip-bg: #{$o-dark-surface-raised};
+            --#{$prefix}tooltip-color: #{$o-dark-tooltip-color};
+        }
+    }
+}
+
+@include media-only(screen) {
+    :root[data-color-scheme="dark"] .o_datetime_picker {
+        .o_select_start,
+        .o_select_end {
+            --selected-day-color: #{mix(
+                    lighten($o-dark-component-active-border, 10%),
+                    $o-dark-component-active-bg,
+                    15%
+                )};
+        }
+
+        .o_today > div {
+            color: o-scheme-contrast(
+                map-get($o-dark-theme-text-colors, "danger"),
+                o-dark-scheme()
+            );
+        }
+    }
+
+    :root[data-color-scheme="dark"] .o-dropdown {
+        &.btn-secondary,
+        &.btn-outline-secondary {
+            &.show {
+                $-value: map-get($o-dark-btns-bs-outline-override, "secondary");
+                background-color: map-get($-value, "active-background");
+                border-color: map-get($-value, "active-border");
+            }
+        }
+    }
+
+    :root[data-color-scheme="dark"] .o-FileViewer-headerButton:hover {
+        color: lighten($o-dark-gray-400, 15%);
+    }
+
+    :root[data-color-scheme="dark"] .o-file-upload-progress-bar-value {
+        border-right: 1px solid darken($o-dark-brand-primary, 7.5%);
+    }
+
+    :root[data-color-scheme="dark"]
+        .o_model_field_selector
+        > .o_model_field_selector_value
+        > .o_model_field_selector_chain_part {
+        border: 1px solid darken($o-dark-brand-lightsecondary, 10%);
+    }
+}

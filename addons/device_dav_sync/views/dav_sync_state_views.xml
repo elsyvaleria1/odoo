@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_dav_sync_state_tree" model="ir.ui.view">
+        <field name="name">dav.sync.state.tree</field>
+        <field name="model">dav.sync.state</field>
+        <field name="arch" type="xml">
+            <list string="DAV Sync States" sample="1">
+                <field name="device_id" />
+                <field name="resource_type" />
+                <field name="resource_id" />
+                <field
+                    name="sync_status"
+                    decoration-danger="sync_status == 'error'"
+                    decoration-success="sync_status == 'synced'"
+                    decoration-warning="sync_status == 'pending'" />
+                <field name="last_modified" />
+                <field name="etag" />
+            </list>
+        </field>
+    </record>
+
+    <record id="view_dav_sync_state_form" model="ir.ui.view">
+        <field name="name">dav.sync.state.form</field>
+        <field name="model">dav.sync.state</field>
+        <field name="arch" type="xml">
+            <form string="DAV Sync State">
+                <header>
+                    <button
+                        name="action_retry_sync"
+                        type="object"
+                        string="Retry Sync"
+                        invisible="sync_status == 'synced'"
+                        class="oe_highlight" />
+                    <field name="sync_status" widget="statusbar" />
+                </header>
+                <sheet>
+                    <group>
+                        <group string="Device">
+                            <field name="device_id" />
+                            <field name="user_id" />
+                            <field name="company_id" />
+                        </group>
+                        <group string="Resource">
+                            <field name="resource_type" />
+                            <field name="resource_model" />
+                            <field name="resource_id" />
+                            <field name="resource_uid" />
+                        </group>
+                    </group>
+                    <group>
+                        <group string="Sync Metadata">
+                            <field name="etag" />
+                            <field name="last_modified" />
+                        </group>
+                        <group>
+                            <button
+                                name="action_view_resource"
+                                type="object"
+                                string="View Resource"
+                                class="oe_link" />
+                        </group>
+                    </group>
+                    <group string="Error Details" invisible="not error_message">
+                        <field name="error_message" nolabel="1" />
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_dav_sync_state_search" model="ir.ui.view">
+        <field name="name">dav.sync.state.search</field>
+        <field name="model">dav.sync.state</field>
+        <field name="arch" type="xml">
+            <search string="DAV Sync States">
+                <field name="device_id" />
+                <field name="resource_type" />
+                <field name="sync_status" />
+                <filter
+                    name="synced"
+                    string="Synced"
+                    domain="[('sync_status', '=', 'synced')]" />
+                <filter
+                    name="pending"
+                    string="Pending"
+                    domain="[('sync_status', '=', 'pending')]" />
+                <filter
+                    name="errors"
+                    string="Errors"
+                    domain="[('sync_status', '=', 'error')]" />
+                <separator />
+                <filter
+                    name="contacts"
+                    string="Contacts"
+                    domain="[('resource_type', '=', 'contact')]" />
+                <filter
+                    name="events"
+                    string="Events"
+                    domain="[('resource_type', '=', 'event')]" />
+                <group>
+                    <filter
+                        name="group_device"
+                        string="Device"
+                        context="{'group_by': 'device_id'}" />
+                    <filter
+                        name="group_type"
+                        string="Resource Type"
+                        context="{'group_by': 'resource_type'}" />
+                    <filter
+                        name="group_status"
+                        string="Status"
+                        context="{'group_by': 'sync_status'}" />
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_dav_sync_state" model="ir.actions.act_window">
+        <field name="name">DAV Sync States</field>
+        <field name="res_model">dav.sync.state</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No sync states found
+            </p>
+            <p>
+                Sync states track the synchronization status of individual resources
+                (contacts, events) for each DAV client device.
+            </p>
+        </field>
+    </record>
+
+</odoo>

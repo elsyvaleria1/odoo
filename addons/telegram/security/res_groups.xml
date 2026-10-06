@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="privilege_chat_conversation" model="res.groups">
+        <field
+            name="name">Privilege: the bot moves the conversation of the chat it serves</field>
+        <field
+            name="comment">A command runs as the chat's own internal user, who reads the chat and may not write it. Moving its state, context and failure counter is the bot's flow, never the user's own call.</field>
+        <field name="is_privilege" eval="True" />
+    </record>
+
+    <record id="privilege_operate_bot" model="res.groups">
+        <field
+            name="name">Privilege: the bot keeps the records of what it serves</field>
+        <field
+            name="comment">Held by every Telegram update and every hook that queues a Telegram message, whoever it runs as: the bot's chats, its message ledger, the accounts and bindings of the people it talks to, its link tokens, its receivers and token, the stand-in contact of a new sender. It reads no business data: what an update does in Odoo is its sender's own right.</field>
+        <field name="is_privilege" eval="True" />
+    </record>
+
+</odoo>

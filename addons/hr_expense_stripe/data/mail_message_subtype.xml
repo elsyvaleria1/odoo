@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <data noupdate="1">
+        <record id="mt_stripe_cardholder_updated" model="mail.message.subtype">
+            <field name="name">Cardholder updated</field>
+            <field name="description">The cardholder data was updated on Stripe</field>
+            <field
+                name="res_model">wizard.hr.expense.stripe.card.update.cardholder</field>
+            <field name="default" eval="False" />
+        </record>
+        <record id="mt_stripe_card_received" model="mail.message.subtype">
+            <field name="name">Cardholder Received</field>
+            <field name="description">Card marked as received.</field>
+            <field name="res_model">hr.expense.stripe.card</field>
+            <field name="default" eval="False" />
+        </record>
+    </data>
+
+</odoo>

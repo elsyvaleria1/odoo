@@ -1,0 +1,50 @@
+.o-mail-NavigableList {
+    z-index: $o-mail-NavigableList-zIndex;
+}
+
+.o-mail-NavigableList-active {
+    background-color: var(
+        --mail-NavigableList-activeBgColor,
+        #{o-token-mix(
+                --o-bg-view,
+                $o-view-background-color,
+                --o-action,
+                $o-action,
+                90%
+            )}
+    );
+}
+
+.o-mail-NavigableList-item:hover {
+    background-color: var(
+        --mail-NavigableList-hoverBgColor,
+        #{o-token-mix(
+                --o-bg-view,
+                $o-view-background-color,
+                --o-action,
+                $o-action,
+                95%
+            )}
+    );
+}
+
+.o-mail-NavigableList-floatingLoading {
+    right: $border-width;
+}
+
+@include media-only(screen) {
+    :root[data-color-scheme="dark"] {
+        .o-mail-NavigableList {
+            --mail-NavigableList-activeBgColor: #{mix(
+                    $o-dark-white,
+                    $o-dark-action,
+                    90%
+                )};
+            --mail-NavigableList-hoverBgColor: #{mix(
+                    $o-dark-white,
+                    $o-dark-action,
+                    82.5%
+                )};
+        }
+    }
+}

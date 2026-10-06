@@ -1,0 +1,11 @@
+id,name,model_id/id,group_id/id,kind,operation,reach,anchor,domain
+access_account_move_template_user,access.account.move.template.user,model_account_move_template,account.group_account_user,permission,r,,,
+access_account_move_template_manager,access.account.move.template.manager,model_account_move_template,account.group_account_manager,permission,crud,,,
+access_account_move_template_line_user,access.account.move.template.line.user,model_account_move_template_line,account.group_account_user,permission,r,,,
+access_account_move_template_line_manager,access.account.move.template.line.manager,model_account_move_template_line,account.group_account_manager,permission,crud,,,
+access_account_move_template_run_user,access.account.move.template.run.user,model_wizard_account_move_template_create_move,account.group_account_user,permission,crud,,,
+access_account_move_template_line_run_user,access.account.move.template.line.run.user,model_wizard_account_move_template_create_move_line,account.group_account_user,permission,crud,,,
+access_account_move_template_run_manager,access.account.move.template.run.manager,model_wizard_account_move_template_create_move,account.group_account_manager,permission,crud,,,
+access_account_move_template_line_run_manager,access.account.move.template.line.run.manager,model_wizard_account_move_template_create_move_line,account.group_account_manager,permission,crud,,,
+account_move_template_comp_rule,Move Template multi-company rule,model_account_move_template,base.group_everyone,guard,crud,company,,
+account_move_template_line_comp_rule,Move Template Line multi-company rule,model_account_move_template_line,base.group_everyone,guard,crud,company,,

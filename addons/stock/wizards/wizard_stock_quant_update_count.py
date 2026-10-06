@@ -1,0 +1,23 @@
+from odoo import fields, models
+from odoo.libs.debug_log import DebugLog
+
+_debug = DebugLog(__name__)
+
+
+class WizardStockQuantUpdateCount(models.TransientModel):
+    _name = "wizard.stock.quant.update.count"
+    _description = "Inventory Adjustment Warning"
+
+    quant_ids = fields.Many2many(comodel_name="stock.quant")
+
+    def action_reset(self):
+        return self.quant_ids.action_clear_inventory_quantity()
+
+    def action_set(self):
+        valid_quants = self.quant_ids.filtered(
+            lambda quant: not quant.inventory_quantity_set
+        )
+        _debug.logic(
+            "inventory_warning_set", quants=valid_quants, selected=len(self.quant_ids)
+        )
+        return valid_quants.action_set_inventory_quantity()

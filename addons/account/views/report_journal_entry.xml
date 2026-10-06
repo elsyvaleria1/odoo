@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <template id="report_journal_entry_document">
+        <t t-call="web.external_layout">
+            <t t-set="layout_document_title">
+                <t t-if="o.state == 'draft'" name="draft_journal_entry_title">Draft Journal Entry</t>
+                <t t-elif="o.state == 'cancel'" name="cancelled_journal_entry_title">Cancelled Journal Entry</t>
+                <t t-else="" name="journal_entry_title">Journal Entry</t>
+                <span t-if="o.name and o.name != '/'" t-field="o.name">MISC/2026/00001</span>
+            </t>
+            <t
+                t-set="lines"
+                t-value="o.line_ids.filtered(lambda line: line.display_type not in ('line_section', 'line_subsection', 'line_note'))" />
+            <t
+                t-set="display_amount_currency"
+                t-value="any(line.currency_id != line.company_currency_id for line in lines)" />
+            <t
+                t-set="display_tax_line"
+                t-value="any(line.tax_line_id for line in lines)" />
+            <t t-set="display_taxes" t-value="any(line.tax_ids for line in lines)" />
+            <t t-set="total_debit" t-value="sum(lines.mapped('debit'))" />
+            <t t-set="total_credit" t-value="sum(lines.mapped('credit'))" />
+            <div class="page">
+                <div class="oe_structure" />
+                <div id="informations" class="row mb-4">
+                    <div class="col" name="accounting_date">
+                        <strong>Accounting Date</strong>
+                        <div t-field="o.date">2026-01-31</div>
+                    </div>
+                    <div class="col" name="journal">
+                        <strong>Journal</strong>
+                        <div t-field="o.journal_id">Miscellaneous Operations</div>
+                    </div>
+                    <div class="col" t-if="o.ref" name="reference">
+                        <strong>Reference</strong>
+                        <div t-field="o.ref">Accrual</div>
+                    </div>
+                    <div class="col" t-if="o.partner_id" name="partner">
+                        <strong>Partner</strong>
+                        <div t-field="o.partner_id">Azure Interior</div>
+                    </div>
+                    <div class="col" name="company" groups="base.group_multi_company">
+                        <strong>Company</strong>
+                        <div t-field="o.company_id">My Company</div>
+                    </div>
+                </div>
+                <table
+                    class="o_has_total_table table o_main_table table-borderless mb-0"
+                    name="journal_entry_line_table">
+                    <thead>
+                        <tr>
+                            <th name="th_account" class="text-start">Account</th>
+                            <th name="th_partner" class="text-start">Partner</th>
+                            <th name="th_label" class="text-start">Label</th>
+                            <th name="th_amount_currency" t-if="display_amount_currency" class="text-end">Amount in Currency</th>
+                            <th name="th_debit" class="text-end">Debit</th>
+                            <th name="th_credit" class="text-end">Credit</th>
+                            <th name="th_tax_line" t-if="display_tax_line" class="text-end">Tax</th>
+                            <th name="th_taxes" t-if="display_taxes" class="text-end">Taxes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr t-foreach="lines" t-as="line">
+                            <td name="td_account">
+                                <span t-field="line.account_id">400000 Product Sales</span>
+                            </td>
+                            <td name="td_partner">
+                                <span t-field="line.partner_id">Azure Interior</span>
+                            </td>
+                            <td name="td_label">
+                                <span t-field="line.name">Accrual</span>
+                            </td>
+                            <td
+                                name="td_amount_currency"
+                                t-if="display_amount_currency"
+                                class="text-end">
+                                <span t-if="line.currency_id != line.company_currency_id" t-field="line.amount_currency" class="text-nowrap">100.00</span>
+                            </td>
+                            <td name="td_debit" class="text-end">
+                                <span t-field="line.debit" class="text-nowrap">100.00</span>
+                            </td>
+                            <td name="td_credit" class="text-end">
+                                <span t-field="line.credit" class="text-nowrap">0.00</span>
+                            </td>
+                            <td
+                                name="td_tax_line"
+                                t-if="display_tax_line"
+                                class="text-end">
+                                <span t-field="line.tax_line_id">Tax 15%</span>
+                            </td>
+                            <td name="td_taxes" t-if="display_taxes" class="text-end">
+                                <span t-out="', '.join(tax.tax_label or tax.name for tax in line.tax_ids)">Tax 15%</span>
+                            </td>
+                        </tr>
+                    </tbody>
+                    <tfoot>
+                        <tr name="tr_total" class="fw-bold">
+                            <td class="text-end" t-att-colspan="4 if display_amount_currency else 3">Total</td>
+                            <td name="tf_debit" class="text-end">
+                                <span t-out="total_debit" t-options="{'widget': 'monetary', 'display_currency': o.company_currency_id}" class="text-nowrap">100.00</span>
+                            </td>
+                            <td name="tf_credit" class="text-end">
+                                <span t-out="total_credit" t-options="{'widget': 'monetary', 'display_currency': o.company_currency_id}" class="text-nowrap">100.00</span>
+                            </td>
+                            <td
+                                t-if="display_tax_line or display_taxes"
+                                t-att-colspan="int(display_tax_line) + int(display_taxes)" />
+                        </tr>
+                        <tr
+                            name="tr_unbalanced"
+                            t-if="not o.company_currency_id.is_zero(total_debit - total_credit)"
+                            class="text-danger">
+                            <td colspan="99" class="text-center fw-bold">This entry is not balanced.</td>
+                        </tr>
+                    </tfoot>
+                </table>
+                <div t-if="not is_html_empty(o.narration)" name="comment" class="mt-4">
+                    <strong>Notes</strong>
+                    <div t-field="o.narration" />
+                </div>
+                <div class="oe_structure" />
+            </div>
+        </t>
+    </template>
+
+    <template id="report_journal_entry">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="o">
+                <t
+                    t-call="account.report_journal_entry_document"
+                    t-lang="o.company_id.partner_id.lang" />
+            </t>
+        </t>
+    </template>
+
+</odoo>

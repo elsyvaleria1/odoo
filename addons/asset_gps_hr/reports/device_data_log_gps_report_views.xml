@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_device_data_log_gps_report_search_operator" model="ir.ui.view">
+        <field name="name">device.data.log.gps.report.search.operator</field>
+        <field name="model">device.data.log.gps.report</field>
+        <field
+            name="inherit_id"
+            ref="device_gps.view_device_data_log_gps_report_search" />
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='device_id']" position="after">
+                <field name="operator_id" />
+            </xpath>
+            <xpath expr="//filter[@name='group_by_device']" position="before">
+                <filter
+                    name="group_by_operator"
+                    string="Operator"
+                    context="{'group_by': 'operator_id'}" />
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_device_data_log_gps_report_list_operator" model="ir.ui.view">
+        <field name="name">device.data.log.gps.report.list.operator</field>
+        <field name="model">device.data.log.gps.report</field>
+        <field
+            name="inherit_id"
+            ref="device_gps.view_device_data_log_gps_report_list" />
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='device_id']" position="after">
+                <field name="operator_name" optional="show" />
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_device_data_log_gps_report_pivot_operator" model="ir.ui.view">
+        <field name="name">device.data.log.gps.report.pivot.operator</field>
+        <field name="model">device.data.log.gps.report</field>
+        <field
+            name="inherit_id"
+            ref="device_gps.view_device_data_log_gps_report_pivot" />
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='device_id']" position="after">
+                <field name="operator_id" type="row" />
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

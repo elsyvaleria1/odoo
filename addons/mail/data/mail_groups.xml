@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <data noupdate="1">
+        <record id="res_groups_privilege_canned_response" model="res.groups.privilege">
+            <field name="name">Canned Responses</field>
+            <field name="sequence">100</field>
+            <field name="category_id" ref="base.module_category_marketing" />
+        </record>
+        <record id="group_mail_canned_response_admin" model="res.groups">
+            <field name="name">Canned Response Administrator</field>
+            <field name="privilege_id" ref="res_groups_privilege_canned_response" />
+        </record>
+        <record id="group_mail_template_editor" model="res.groups">
+            <field name="name">Mail Template Editor</field>
+        </record>
+        <record id="base.group_system" model="res.groups">
+            <field
+                name="implied_ids"
+                eval="[Command.link(ref('mail.group_mail_template_editor')), Command.link(ref('mail.group_mail_canned_response_admin'))]" />
+        </record>
+        <record id="group_mail_notification_type_inbox" model="res.groups">
+            <field name="name">Receive notifications in Odoo</field>
+        </record>
+    </data>
+
+    <record id="privilege_chain_next_activity" model="res.groups">
+        <field
+            name="name">Privilege: a completed activity's declared successor is created on the completer's authority</field>
+        <field name="is_privilege" eval="True" />
+    </record>
+
+    <record id="privilege_post_as_author" model="res.groups">
+        <field
+            name="name">Privilege: code posts a message in another author's name -- an agent's or a bot's reply -- where the caller could not</field>
+        <field name="is_privilege" eval="True" />
+    </record>
+
+    <record id="privilege_clean_emptied_message" model="res.groups">
+        <field
+            name="name">Privilege: whoever empties a message drops its link previews, which only the administrators read</field>
+        <field name="is_privilege" eval="True" />
+    </record>
+
+    <record id="privilege_configure_channels" model="res.groups">
+        <field
+            name="name">Privilege: a channel kept in line with the record it belongs to is configured whoever triggered it, member or not</field>
+        <field name="is_privilege" eval="True" />
+    </record>
+
+    <record id="privilege_grant_inbox" model="res.groups">
+        <field
+            name="name">Privilege: keep the inbox group in step with the notification preference</field>
+        <field name="is_privilege" eval="True" />
+    </record>
+
+    <record id="privilege_record_mail_delivery" model="res.groups">
+        <field
+            name="name">Privilege: sending mail records its outcome on the email notifications it carries</field>
+        <field name="is_privilege" eval="True" />
+    </record>
+
+    <record id="privilege_subscribe_group_channels" model="res.groups">
+        <field
+            name="name">Privilege: a user's groups subscribe them to the channels of those groups</field>
+        <field name="is_privilege" eval="True" />
+    </record>
+
+</odoo>

@@ -1,0 +1,64 @@
+from defusedxml.ElementTree import fromstring as defused_fromstring
+
+from odoo import fields, models
+
+from odoo.addons.payment.logging import get_payment_logger
+from odoo.addons.payment_dpo import const
+
+_logger = get_payment_logger(__name__)
+
+
+class PaymentProvider(models.Model):
+    _inherit = "payment.provider"
+    _CREDENTIAL_FIELDS = {
+        "dpo_company_token": "dpo_company_token",
+    }
+
+    code = fields.Selection(
+        selection_add=[("dpo", "DPO")],
+        ondelete={"dpo": "set default"},
+    )
+    dpo_service_ref = fields.Char(
+        string="DPO Service ID",
+        copy=False,
+        required_if_provider="dpo",
+    )
+    dpo_company_token = fields.Char(
+        string="DPO Company Token",
+        compute="_compute_credential_doors",
+        inverse="_inverse_credential_doors",
+        classification="secret.credential",
+        required_if_provider="dpo",
+        groups="base.group_system",
+    )
+
+    # === CRUD METHODS === #
+
+    def _get_default_payment_method_codes(self):
+        """Override of `payment` to return the default payment method codes."""
+        self.check_singleton()
+        if self.code != "dpo":
+            return super()._get_default_payment_method_codes()
+        return const.DEFAULT_PAYMENT_METHOD_CODES
+
+    # === REQUEST HELPERS === #
+
+    def _prepare_request_url(self, endpoint, **kwargs):
+        """Override of `payment` to build the request URL."""
+        if self.code != "dpo":
+            return super()._prepare_request_url(endpoint, **kwargs)
+        return "https://secure.3gdirectpay.com/API/v6/"
+
+    def _prepare_request_headers(self, *args, **kwargs):
+        """Override of `payment` to build the request headers."""
+        if self.code != "dpo":
+            return super()._prepare_request_headers(*args, **kwargs)
+        return {"Content-Type": "application/xml; charset=utf-8"}
+
+    def _parse_response_content(self, response, **kwargs):
+        """Override of `payment` to parse the response content."""
+        if self.code != "dpo":
+            return super()._parse_response_content(response, **kwargs)
+
+        root = defused_fromstring(response.content.decode("utf-8"))
+        return {element.tag: element.text for element in root}

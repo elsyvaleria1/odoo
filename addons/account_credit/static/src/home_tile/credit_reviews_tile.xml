@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="account_credit.CreditReviewsTile">
+        <div class="o_credit_reviews_tile d-flex flex-column gap-2">
+            <button type="button" class="btn btn-link p-0 text-start o_credit_reviews_tile_count" t-on-click="() => this.openAll()">
+                <strong t-out="this.props.data.count"/> <small class="text-muted">to review</small>
+            </button>
+            <ul t-if="this.reviews.length" class="list-unstyled mb-0">
+                <li t-foreach="this.reviews" t-as="review" t-key="review.id">
+                    <HomeTileRecordLink resModel="'credit.review'" resId="review.id" className="'d-flex flex-column o_credit_reviews_tile_review'">
+                        <span class="text-truncate" t-out="review.partner"/>
+                        <small class="text-muted text-truncate"><t t-out="review.kind"/> · <t t-out="review.name"/></small>
+                    </HomeTileRecordLink>
+                </li>
+            </ul>
+            <p t-else="" class="text-muted small mb-0">No credit review is waiting for you.</p>
+        </div>
+    </t>
+
+</templates>

@@ -1,0 +1,30 @@
+from odoo import api, models
+
+
+class ProjectProject(models.Model):
+    _name = "project.project"
+    _inherit = "project.project"
+
+    def _send_sms(self) -> None:
+        for project in self.sudo():
+            if (
+                project.partner_id
+                and project.phase_id
+                and project.phase_id.sms_template_id
+            ):
+                project.with_env(self.env)._message_sms_with_template(
+                    template=project.phase_id.sms_template_id,
+                    partner_ids=project.partner_id.ids,
+                )
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        projects = super().create(vals_list)
+        projects._send_sms()
+        return projects
+
+    def write(self, vals):
+        res = super().write(vals)
+        if "phase_id" in vals:
+            self._send_sms()
+        return res

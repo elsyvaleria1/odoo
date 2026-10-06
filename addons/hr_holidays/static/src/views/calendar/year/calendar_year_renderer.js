@@ -1,0 +1,105 @@
+/** @odoo-module native */
+import { compareDates, endOf, parseISO, toISO } from "@web/core/l10n/dates";
+import { useService } from "@web/core/utils/hooks";
+import { CalendarYearRenderer, useCalendarPopover } from "@web/views/calendar";
+
+import { useMandatoryDays } from "../../hooks.js";
+import { TimeOffCalendarYearPopover } from "./calendar_year_popover.js";
+
+export class TimeOffCalendarYearRenderer extends CalendarYearRenderer {
+    setup() {
+        super.setup();
+        this.ui = useService("ui");
+        this.orm = useService("orm");
+        this.mandatoryDays = useMandatoryDays(this.props);
+        this.mandatoryDaysList = [];
+        this.mandatoryDayPopover = useCalendarPopover(TimeOffCalendarYearPopover);
+    }
+
+    get options() {
+        return Object.assign(super.options, {
+            weekNumbers: true,
+        });
+    }
+
+    get customOptions() {
+        return {
+            ...super.customOptions,
+            weekNumbersWithinDays: false,
+        };
+    }
+
+    async onDateClick(info) {
+        const is_mandatory_day = [...info.dayEl.classList].some((elClass) =>
+            elClass.startsWith("hr_mandatory_day_"),
+        );
+        this.mandatoryDayPopover.close();
+        if (is_mandatory_day && !this.ui.isSmall) {
+            this.popover.close();
+            const date = parseISO(info.dateStr);
+            const target = info.dayEl;
+            const mandatory_days_data = await this.orm.call(
+                "hr.employee",
+                "get_mandatory_days_data",
+                [toISO(date), toISO(date)],
+            );
+            mandatory_days_data.forEach((mandatory_day_data) => {
+                mandatory_day_data["start"] = parseISO(mandatory_day_data["start"]);
+                mandatory_day_data["end"] = parseISO(mandatory_day_data["end"]);
+            });
+            const records = Object.values(this.props.model.records).filter(
+                (r) =>
+                    compareDates(r.start.startOfDay(), date) <= 0 &&
+                    compareDates(date, endOf(r.end, "day")) < 0,
+            );
+            const props = this.getPopoverProps(date, records);
+            props["records"] = mandatory_days_data.concat(props["records"]);
+            this.mandatoryDayPopover.open(
+                target,
+                props,
+                "o_cw_popover_holidays o_cw_popover",
+            );
+        } else {
+            super.onDateClick(info);
+        }
+    }
+
+    openPopover(target, date, records) {
+        this.popover.open(
+            target,
+            this.getPopoverProps(date, records),
+            "o_cw_popover_holidays o_cw_popover",
+        );
+    }
+
+    getDayCellClassNames(info) {
+        return [...super.getDayCellClassNames(info), ...this.mandatoryDays(info)];
+    }
+
+    /** @override */
+    eventClassNames({ event }) {
+        const classesToAdd = super.eventClassNames(...arguments);
+        const record = this.props.model.records[event.id];
+        if (record && record.requestDateFromPeriod && record.sameDay) {
+            if (
+                record.requestDateFromPeriod === "am" &&
+                record.requestDateToPeriod === "am"
+            ) {
+                classesToAdd.push("o_event_half_left");
+            } else if (
+                record.requestDateFromPeriod === "pm" &&
+                record.requestDateToPeriod === "pm"
+            ) {
+                classesToAdd.push("o_event_half_right");
+            }
+        }
+        if (record?.rawRecord?.request_unit_hours && record.sameDay) {
+            if (record.end.hour < 12) {
+                classesToAdd.push("o_event_half_left");
+            } else if (record.end.hour >= 12 && record.start.hour >= 12) {
+                classesToAdd.push("o_event_half_right");
+            }
+        }
+        return classesToAdd;
+    }
+}

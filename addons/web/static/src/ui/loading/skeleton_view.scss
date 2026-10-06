@@ -1,0 +1,52 @@
+.o_skeleton_view {
+    .o_skeleton_cp {
+        min-height: 52px;
+    }
+
+    .o_skeleton_row,
+    .o_skeleton_kanban_card,
+    .o_skeleton_form .col-6 {
+        animation: o-skeletonFadeIn var(--o-duration-slow, 300ms) ease-out both;
+    }
+
+    .o_skeleton_list {
+        th {
+            background: var(--o-list-thead-bg-color, var(--o-gray-200));
+            padding: 8px 12px;
+            border-bottom: 2px solid var(--o-gray-300);
+        }
+
+        td {
+            padding: 6px 12px;
+            border-bottom: 1px solid var(--o-gray-200);
+        }
+
+        .o_skeleton_checkbox {
+            text-align: center;
+        }
+    }
+
+    .o_skeleton_kanban_group {
+        min-width: 280px;
+    }
+
+    .o_skeleton_kanban_card {
+        border-color: var(--o-gray-200);
+    }
+
+    .o_skeleton_form {
+        min-height: 100%;
+        background: var(--o-gray-100);
+    }
+}
+
+@keyframes o-skeletonFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(4px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}

@@ -1,0 +1,12 @@
+/** @odoo-module native */
+import { registry } from "@web/core/registry";
+import { kanbanView } from "@web/views/kanban";
+
+import { DashboardKanbanRenderer } from "./account_dashboard_kanban_renderer.js";
+
+export const accountDashboardKanbanView = {
+    ...kanbanView,
+    Renderer: DashboardKanbanRenderer,
+};
+
+registry.category("views").add("account_dashboard_kanban", accountDashboardKanbanView);

@@ -1,0 +1,420 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* integration
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Language: es\n"
+"Plural-Forms: \n"
+
+#. module: integration
+#: model:ir.actions.act_window,name:integration.action_integration_service
+#: model:ir.ui.menu,name:integration.menu_integration_service_list
+msgid "API Services"
+msgstr "Servicios de API"
+
+#. module: integration
+#: model:ir.ui.menu,name:integration.menu_integration_root
+#: model:res.groups.privilege,name:integration.res_groups_privilege_api_transport
+#: model_terms:ir.ui.view,arch_db:integration.res_config_settings_view_form_inherit
+msgid "API Transport"
+msgstr "Transporte de API"
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_api_credential_access_log_search
+msgid "Access Date"
+msgstr "Fecha de acceso"
+
+#. module: integration
+#: model:ir.ui.menu,name:integration.menu_api_credential_access_log
+msgid "Access Logs"
+msgstr "Registros de acceso"
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_connection__active
+#: model:ir.model.fields,field_description:integration.field_integration_receiver__active
+#: model:ir.model.fields,field_description:integration.field_integration_service__active
+#: model:ir.model.fields,field_description:integration.field_integration_stream__active
+#: model:ir.model.fields,field_description:integration.field_mixin_integration_channel__active
+#: model:ir.model.fields,field_description:integration.field_mixin_integration_receiver__active
+#: model_terms:ir.ui.view,arch_db:integration.view_api_credential_search
+msgid "Active"
+msgstr "Activo"
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_integration_connection_search
+#: model_terms:ir.ui.view,arch_db:integration.view_integration_receiver_search
+#: model_terms:ir.ui.view,arch_db:integration.view_integration_service_form
+msgid "Archived"
+msgstr "Archivado"
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_api_credential_form_oauth
+msgid "Authorize with OAuth"
+msgstr "Autorizar con OAuth"
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_service__category
+#: model_terms:ir.ui.view,arch_db:integration.view_integration_service_search
+msgid "Category"
+msgstr "Categoría"
+
+#. module: integration
+#. odoo-python
+#: code:addons/integration/models/integration_exchange.py:0
+#: model:ir.model.fields,field_description:integration.field_integration_exchange__channel_id
+#: model_terms:ir.ui.view,arch_db:integration.view_integration_exchange_search
+msgid "Channel"
+msgstr "Canal"
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_connection__company_id
+#: model:ir.model.fields,field_description:integration.field_integration_exchange__company_id
+#: model:ir.model.fields,field_description:integration.field_integration_receiver__company_id
+#: model:ir.model.fields,field_description:integration.field_integration_response_cache__company_id
+#: model:ir.model.fields,field_description:integration.field_integration_service__company_id
+#: model:ir.model.fields,field_description:integration.field_integration_stream__company_id
+#: model:ir.model.fields,field_description:integration.field_mixin_integration_channel__company_id
+#: model:ir.model.fields,field_description:integration.field_mixin_integration_receiver__company_id
+#: model_terms:ir.ui.view,arch_db:integration.view_api_credential_access_log_search
+#: model_terms:ir.ui.view,arch_db:integration.view_api_credential_search
+msgid "Company"
+msgstr "Empresa"
+
+#. module: integration
+#: model:ir.ui.menu,name:integration.menu_integration_config
+msgid "Configuration"
+msgstr "Configuración"
+
+#. module: integration
+#: model:ir.actions.act_window,name:integration.action_integration_connection
+#: model:ir.model.fields,field_description:integration.field_credential_credential__connection_ids
+#: model:ir.model.fields,field_description:integration.field_integration_service__connection_ids
+#: model:ir.ui.menu,name:integration.menu_integration_connection
+#: model_terms:ir.ui.view,arch_db:integration.view_integration_service_form
+msgid "Connections"
+msgstr "Conexiones"
+
+#. module: integration
+#: model:ir.model,name:integration.model_credential_credential
+#: model:ir.model.fields,field_description:integration.field_integration_connection__credential_id
+#: model:ir.model.fields,field_description:integration.field_integration_exchange__credential_id
+#: model:ir.model.fields,field_description:integration.field_integration_stream__credential_id
+#: model_terms:ir.ui.view,arch_db:integration.view_api_credential_access_log_search
+msgid "Credential"
+msgstr "Credencial"
+
+#. module: integration
+#. odoo-python
+#: code:addons/integration/models/integration_service.py:0
+#: model:ir.model.fields,field_description:integration.field_integration_service__credential_ids
+#: model:ir.ui.menu,name:integration.menu_api_credential_list
+#: model_terms:ir.ui.view,arch_db:integration.view_api_credential_form
+#: model_terms:ir.ui.view,arch_db:integration.view_integration_service_form
+msgid "Credentials"
+msgstr "Credenciales"
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_integration_exchange_search
+msgid "Date"
+msgstr "Fecha"
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_exchange__direction
+#: model_terms:ir.ui.view,arch_db:integration.view_integration_exchange_search
+msgid "Direction"
+msgstr "Dirección"
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_connection__environment
+#: model:ir.model.fields,field_description:integration.field_integration_service__environment
+#: model_terms:ir.ui.view,arch_db:integration.view_api_credential_search
+#: model_terms:ir.ui.view,arch_db:integration.view_integration_connection_search
+#: model_terms:ir.ui.view,arch_db:integration.view_integration_service_search
+msgid "Environment"
+msgstr "Entorno"
+
+#. module: integration
+#: model:ir.actions.act_window,name:integration.action_integration_exchange
+#: model:ir.ui.menu,name:integration.menu_integration_exchanges
+msgid "Event Logs"
+msgstr "Registros de eventos"
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_api_credential_search
+msgid "Expired"
+msgstr "Vencido"
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_api_credential_search
+msgid "Expiring Soon"
+msgstr "Por vencer"
+
+#. module: integration
+#: model:ir.model.fields.selection,name:integration.selection__integration_exchange__state__failed
+#: model:ir.model.fields.selection,name:integration.selection__integration_service__cache_health__failed
+#: model:ir.model.fields.selection,name:integration.selection__integration_stream_outbox__state__failed
+#: model_terms:ir.ui.view,arch_db:integration.view_integration_exchange_search
+msgid "Failed"
+msgstr "Fallido"
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_api_credential_access_log_search
+msgid "Failed Access"
+msgstr "Accesos fallidos"
+
+#. module: integration
+#: model:ir.model.fields.selection,name:integration.selection__integration_service__cache_health__healthy
+#: model_terms:ir.ui.view,arch_db:integration.view_integration_service_search
+msgid "Healthy"
+msgstr "Saludable"
+
+#. module: integration
+#: model:ir.model.fields.selection,name:integration.selection__integration_exchange__direction__inbound
+#: model_terms:ir.ui.view,arch_db:integration.view_integration_exchange_search
+msgid "Inbound"
+msgstr "Entrante"
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_api_credential_access_log_search
+msgid "Last 30 Days"
+msgstr "Últimos 30 días"
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_api_credential_access_log_search
+msgid "Last 7 Days"
+msgstr "Últimos 7 días"
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_integration_stream_search
+msgid "Not open"
+msgstr "No abierto"
+
+#. module: integration
+#: model:ir.model.fields.selection,name:integration.selection__integration_stream__state__open
+#: model_terms:ir.ui.view,arch_db:integration.view_integration_stream_search
+msgid "Open"
+msgstr "Abrir"
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_api_credential_access_log_search
+msgid "Operation"
+msgstr "Operación"
+
+#. module: integration
+#: model:ir.model.fields.selection,name:integration.selection__integration_exchange__direction__outbound
+#: model_terms:ir.ui.view,arch_db:integration.view_integration_exchange_search
+msgid "Outbound"
+msgstr "Saliente"
+
+#. module: integration
+#: model:ir.model.fields.selection,name:integration.selection__integration_exchange__state__pending
+#: model:ir.model.fields.selection,name:integration.selection__integration_stream_outbox__state__pending
+#: model_terms:ir.ui.view,arch_db:integration.view_integration_exchange_search
+msgid "Pending"
+msgstr "Pendiente"
+
+#. module: integration
+#: model:ir.model.fields.selection,name:integration.selection__integration_connection__environment__production
+#: model:ir.model.fields.selection,name:integration.selection__integration_service__environment__production
+#: model:ir.model.fields.selection,name:integration.selection__integration_service__health_check_environment__production
+#: model_terms:ir.ui.view,arch_db:integration.view_api_credential_search
+#: model_terms:ir.ui.view,arch_db:integration.view_integration_service_search
+msgid "Production"
+msgstr "Producción"
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_stream__protocol
+#: model_terms:ir.ui.view,arch_db:integration.view_integration_stream_search
+msgid "Protocol"
+msgstr "Protocolo"
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_api_credential_form_oauth
+msgid "Re-authorize"
+msgstr "Volver a autorizar"
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_api_credential_access_log_search
+msgid "Read"
+msgstr "Leer"
+
+#. module: integration
+#: model:ir.actions.act_window,name:integration.action_integration_receiver
+#: model:ir.ui.menu,name:integration.menu_integration_receiver
+msgid "Receivers"
+msgstr "Receptores"
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_integration_exchange_search
+msgid "Refusal"
+msgstr "Rechazo"
+
+#. module: integration
+#: model:ir.model.fields.selection,name:integration.selection__integration_exchange__state__refused
+#: model_terms:ir.ui.view,arch_db:integration.view_integration_exchange_search
+msgid "Refused"
+msgstr "Rechazado"
+
+#. module: integration
+#: model:ir.actions.act_window,name:integration.action_integration_exchange_refused
+#: model:ir.ui.menu,name:integration.menu_inbound_access_logs
+msgid "Refused Calls"
+msgstr "Llamadas rechazadas"
+
+#. module: integration
+#: model:ir.actions.act_window,name:integration.action_integration_response_cache
+#: model:ir.model,name:integration.model_integration_response_cache
+#: model:ir.ui.menu,name:integration.menu_integration_response_cache
+msgid "Response Cache"
+msgstr "Caché de respuestas"
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_integration_exchange_form
+#: model_terms:ir.ui.view,arch_db:integration.view_integration_service_form
+#: model_terms:ir.ui.view,arch_db:integration.view_integration_stream_outbox_list
+msgid "Retry"
+msgstr "Reintentar"
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_integration_exchange_form
+msgid "Retry Now"
+msgstr "Reintentar ahora"
+
+#. module: integration
+#: model:ir.ui.menu,name:integration.menu_integration_security
+msgid "Security & Audit"
+msgstr "Seguridad y auditoría"
+
+#. module: integration
+#: model:ir.ui.menu,name:integration.menu_api_credential_security_report
+msgid "Security Report"
+msgstr "Reporte de seguridad"
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_credential_access_log__service_name
+#: model:ir.model.fields,field_description:integration.field_integration_connection__service_id
+#: model_terms:ir.ui.view,arch_db:integration.view_api_credential_access_log_search
+#: model_terms:ir.ui.view,arch_db:integration.view_api_credential_search
+#: model_terms:ir.ui.view,arch_db:integration.view_integration_connection_search
+msgid "Service"
+msgstr "Servicio"
+
+#. module: integration
+#: model:ir.ui.menu,name:integration.menu_integration_services
+msgid "Services"
+msgstr "Servicios"
+
+#. module: integration
+#: model:ir.model.fields.selection,name:integration.selection__integration_connection__environment__staging
+#: model:ir.model.fields.selection,name:integration.selection__integration_service__environment__staging
+#: model:ir.model.fields.selection,name:integration.selection__integration_service__health_check_environment__staging
+#: model_terms:ir.ui.view,arch_db:integration.view_api_credential_search
+msgid "Staging"
+msgstr "Preproducción"
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_integration_stream_form
+msgid "Start"
+msgstr "Iniciar"
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_exchange__state
+#: model:ir.model.fields,field_description:integration.field_integration_stream__state
+#: model:ir.model.fields,field_description:integration.field_integration_stream_outbox__state
+#: model_terms:ir.ui.view,arch_db:integration.view_integration_exchange_search
+#: model_terms:ir.ui.view,arch_db:integration.view_integration_stream_search
+msgid "State"
+msgstr "Estado"
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_integration_stream_form
+msgid "Stop"
+msgstr "Detener"
+
+#. module: integration
+#: model:ir.model.fields.selection,name:integration.selection__integration_stream__state__stopped
+#: model_terms:ir.ui.view,arch_db:integration.view_integration_stream_search
+msgid "Stopped"
+msgstr "Detenido"
+
+#. module: integration
+#: model:ir.actions.act_window,name:integration.action_integration_stream_outbox
+#: model:ir.model,name:integration.model_integration_stream_outbox
+#: model:ir.ui.menu,name:integration.menu_integration_stream_outbox
+msgid "Stream Outbox"
+msgstr "Bandeja de salida de flujos"
+
+#. module: integration
+#: model:ir.actions.act_window,name:integration.action_integration_stream
+#: model:ir.ui.menu,name:integration.menu_integration_stream_list
+msgid "Streams"
+msgstr "Flujos"
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_credential_access_log__success
+#: model:ir.model.fields.selection,name:integration.selection__integration_exchange__state__success
+#: model_terms:ir.ui.view,arch_db:integration.view_integration_exchange_search
+msgid "Success"
+msgstr "Éxito"
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_api_credential_access_log_search
+msgid "Successful Access"
+msgstr "Accesos exitosos"
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_api_credential_search
+#: model_terms:ir.ui.view,arch_db:integration.view_integration_service_search
+msgid "Test"
+msgstr "Probar"
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_integration_service_form
+msgid "Test Connection"
+msgstr "Probar conexión"
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_integration_exchange_search
+msgid "This Week"
+msgstr "Esta semana"
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_api_credential_access_log_search
+#: model_terms:ir.ui.view,arch_db:integration.view_integration_exchange_search
+msgid "Today"
+msgstr "Hoy"
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_integration_service_search
+msgid "Unhealthy"
+msgstr "No saludable"
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_api_credential_access_log_search
+msgid "Use"
+msgstr "Usar"
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_exchange__user_id
+#: model:res.groups,name:integration.group_api_transport_user
+#: model_terms:ir.ui.view,arch_db:integration.view_api_credential_access_log_search
+msgid "User"
+msgstr "Usuario"
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_api_credential_access_log_search
+msgid "Validate"
+msgstr "Validar"
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_api_credential_access_log_search
+msgid "Write"
+msgstr "Escribir"

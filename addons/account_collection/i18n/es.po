@@ -1,0 +1,1632 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* account_collection
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: es\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: account_collection
+#: model:ir.model.fields,help:account_collection.field_account_collection_remittance__destination_type
+msgid ""
+"\n"
+"        Select 'Sale' for customer invoices journals.\n"
+"        Select 'Purchase' for vendor bills journals.\n"
+"        Select 'Cash', 'Bank' or 'Credit Card' for journals that are used in customer or vendor payments.\n"
+"        Select 'General' for miscellaneous operations journals.\n"
+"        "
+msgstr ""
+"\n"
+"        Selecciona «Ventas» para ver los diarios de facturas de cliente.\n"
+"        Selecciona «Compras» para ver los diarios de facturas de proveedor.\n"
+"        Selecciona «Caja», «Banco» o «Tarjeta de crédito» para ver los diarios que se usan para pagos de clientes y proveedores.\n"
+"        Selecciona «General» para ver los diarios con varias operaciones.\n"
+"        "
+
+#. module: account_collection
+#. odoo-python
+#: code:addons/account_collection/models/account_move.py:0
+msgid "%(company)s has no collection custody journal."
+msgstr "%(company)s no tiene diario de cobranza en custodia."
+
+#. module: account_collection
+#. odoo-python
+#: code:addons/account_collection/models/account_payment.py:0
+msgid ""
+"%(payments)s already went to remittance %(remittances)s; cancel the "
+"remittance first."
+msgstr ""
+"%(payments)s ya está en la rendición %(remittances)s; cancela primero la "
+"rendición."
+
+#. module: account_collection
+#. odoo-python
+#: code:addons/account_collection/models/account_collection_remittance.py:0
+msgid "%(payments)s are no longer in custody."
+msgstr "%(payments)s ya no está en custodia."
+
+#. module: account_collection
+#: model:mail.template,body_html:account_collection.mail_template_collection_receipt
+msgid ""
+"<div style=\"margin: 0px; padding: 0px;\">\n"
+"                <p style=\"margin: 0px; padding: 0px; font-size: 13px;\">\n"
+"                    Dear <t t-out=\"object.partner_id.name or ''\">Agricola El Sauce</t>,<br/><br/>\n"
+"                    <t t-out=\"object.collector_id.name or ''\">Juan Perez</t> received your payment of\n"
+"                    <span style=\"font-weight:bold;\" t-out=\"format_amount(object.amount, object.currency_id) or ''\">$ 1,000.00</span>\n"
+"                    on <t t-out=\"format_date(object.date) or ''\">10/02/2026</t>, on behalf of\n"
+"                    <t t-out=\"object.company_id.name or ''\">YourCompany</t>.\n"
+"                    Your receipt <span style=\"font-weight:bold;\" t-out=\"object.name or ''\">COB01/2026/00001</span> is attached.\n"
+"                    <br/><br/>\n"
+"                    Check it, and tell us right away if anything is wrong:\n"
+"                    <br/><br/>\n"
+"                    <a t-att-href=\"object.get_collection_receipt_url()\" style=\"background-color: #875A7B; padding: 8px 16px; color: #ffffff; border-radius: 5px;\">\n"
+"                        Verify my receipt\n"
+"                    </a>\n"
+"                </p>\n"
+"            </div>\n"
+"        "
+msgstr ""
+"<div style=\"margin: 0px; padding: 0px;\">\n"
+"                <p style=\"margin: 0px; padding: 0px; font-size: 13px;\">\n"
+"                    Estimado(a) <t t-out=\"object.partner_id.name or ''\">Agricola El Sauce</t>,<br/><br/>\n"
+"                    <t t-out=\"object.collector_id.name or ''\">Juan Perez</t> recibió tu pago de\n"
+"                    <span style=\"font-weight:bold;\" t-out=\"format_amount(object.amount, object.currency_id) or ''\">$ 1,000.00</span>\n"
+"                    el <t t-out=\"format_date(object.date) or ''\">10/02/2026</t>, a nombre de\n"
+"                    <t t-out=\"object.company_id.name or ''\">YourCompany</t>.\n"
+"                    Adjuntamos tu recibo <span style=\"font-weight:bold;\" t-out=\"object.name or ''\">COB01/2026/00001</span>.\n"
+"                    <br/><br/>\n"
+"                    Revísalo y avísanos de inmediato si algo no está bien:\n"
+"                    <br/><br/>\n"
+"                    <a t-att-href=\"object.get_collection_receipt_url()\" style=\"background-color: #875A7B; padding: 8px 16px; color: #ffffff; border-radius: 5px;\">\n"
+"                        Verificar mi recibo\n"
+"                    </a>\n"
+"                </p>\n"
+"            </div>\n"
+"        "
+
+#. module: account_collection
+#. odoo-python
+#: code:addons/account_collection/wizards/wizard_account_move_line_pay.py:0
+msgid ""
+"A collection held in custody names its collector and how the customer paid."
+msgstr "Un cobro en custodia indica su cobrador y cómo pagó el cliente."
+
+#. module: account_collection
+#. odoo-python
+#: code:addons/account_collection/models/account_move.py:0
+msgid ""
+"A collection in custody is recorded in %(currency)s; collect invoices in "
+"another currency at the office."
+msgstr ""
+"Un cobro en custodia se registra en %(currency)s; las facturas en otra "
+"moneda se cobran en oficina."
+
+#. module: account_collection
+#. odoo-python
+#: code:addons/account_collection/models/account_payment.py:0
+msgid "A collector holds this collection past its due date"
+msgstr "Un cobrador trae este cobro después de su fecha de entrega"
+
+#. module: account_collection
+#: model:res.groups,comment:account_collection.privilege_register_collection
+msgid ""
+"A collector who holds no accounting right records a customer's payment in a "
+"collection custody journal: creating and posting that payment and its entry "
+"in their own name, reading the customer's open posted invoices and "
+"reconciling them with it. Nothing else of accounting is theirs."
+msgstr ""
+"Un cobrador sin derechos contables registra el pago de un cliente en un "
+"diario de cobranza en custodia: crea y publica ese pago y su asiento a su "
+"nombre, lee las facturas publicadas pendientes del cliente y las concilia "
+"con él. Nada más de contabilidad le corresponde."
+
+#. module: account_collection
+#: model:ir.model,name:account_collection.model_account_config
+msgid "A company's accounting configuration"
+msgstr "Configuración contable de una empresa"
+
+#. module: account_collection
+#: model:ir.model.fields,help:account_collection.field_account_journal__is_collection_custody
+#: model:ir.model.fields,help:account_collection.field_account_payment__is_collection_custody
+#: model:ir.model.fields,help:account_collection.field_wizard_account_move_line_pay__is_collection_custody
+msgid ""
+"A customer payment recorded here stays in its collector's custody, booked to"
+" the inbound payment method's outstanding account, until a remittance hands "
+"it in."
+msgstr ""
+"Un pago de cliente registrado aquí queda bajo custodia de su cobrador, en la"
+" cuenta pendiente del método de cobro, hasta que una rendición lo entregue."
+
+#. module: account_collection
+#. odoo-python
+#: code:addons/account_collection/models/account_payment.py:0
+msgid "A customer reports a problem with this receipt"
+msgstr "Un cliente reporta un problema con este recibo"
+
+#. module: account_collection
+#. odoo-python
+#: code:addons/account_collection/models/account_payment.py:0
+msgid ""
+"A payment in custody journal %(journal)s names the collector who holds the "
+"money."
+msgstr ""
+"Un pago en el diario de custodia %(journal)s indica el cobrador que tiene el"
+" dinero."
+
+#. module: account_collection
+#: model_terms:ir.actions.act_window,help:account_collection.action_account_collection_remittance
+msgid ""
+"A remittance groups what a collector hands in to a till or deposits at the "
+"bank; the treasury validates it."
+msgstr ""
+"Una rendición agrupa lo que un cobrador entrega en caja o deposita en el "
+"banco; tesorería la valida."
+
+#. module: account_collection
+#: model:ir.model.fields,help:account_collection.field_account_config__collection_overage_account_id
+#: model:ir.model.fields,help:account_collection.field_res_config_settings__collection_overage_account_id
+msgid ""
+"Account the money a remittance brings beyond its collections is credited to."
+msgstr ""
+"Cuenta a la que se abona lo que una rendición entrega de más sobre sus "
+"cobros."
+
+#. module: account_collection
+#: model:ir.model.fields,field_description:account_collection.field_account_collection_remittance__message_needaction
+msgid "Action Needed"
+msgstr "Acción requerida"
+
+#. module: account_collection
+#: model:ir.model.fields,field_description:account_collection.field_account_collection_remittance__activity_ids
+msgid "Activities"
+msgstr "Actividades"
+
+#. module: account_collection
+#: model:ir.model.fields,field_description:account_collection.field_account_collection_remittance__activity_exception_decoration
+msgid "Activity Exception Decoration"
+msgstr "Decoración de excepción de actividad"
+
+#. module: account_collection
+#: model:ir.model.fields,field_description:account_collection.field_account_collection_remittance__activity_state
+msgid "Activity State"
+msgstr "Estado de la actividad"
+
+#. module: account_collection
+#: model:ir.model.fields,field_description:account_collection.field_account_collection_remittance__activity_type_icon
+msgid "Activity Type Icon"
+msgstr "Icono de tipo de actividad"
+
+#. module: account_collection
+#: model_terms:ir.ui.view,arch_db:account_collection.view_account_collection_remittance_form
+msgid "Add Everything in Custody"
+msgstr "Agregar todo lo que está en custodia"
+
+#. module: account_collection
+#. odoo-python
+#: code:addons/account_collection/models/account_collection_remittance.py:0
+msgid "Add the collections being handed in."
+msgstr "Agrega los cobros que se entregan."
+
+#. module: account_collection
+#: model_terms:ir.ui.view,arch_db:account_collection.collection_receipt_page
+#: model_terms:ir.ui.view,arch_db:account_collection.view_account_collection_remittance_form
+msgid "Amount"
+msgstr "Importe"
+
+#. module: account_collection
+#: model:ir.model.fields,field_description:account_collection.field_account_collection_remittance__message_attachment_count
+msgid "Attachment Count"
+msgstr "Número de archivos adjuntos"
+
+#. module: account_collection
+#: model_terms:ir.ui.view,arch_db:account_collection.view_account_collection_remittance_form
+msgid "Back to Draft"
+msgstr "Regresar a borrador"
+
+#. module: account_collection
+#: model:ir.model,name:account_collection.model_account_bank_statement_line
+msgid "Bank Statement Line"
+msgstr "Línea de estado de cuenta"
+
+#. module: account_collection
+#: model:ir.model.fields,field_description:account_collection.field_account_collection_remittance__statement_line_id
+msgid "Bank Transaction"
+msgstr "Movimiento bancario"
+
+#. module: account_collection
+#: model_terms:ir.ui.view,arch_db:account_collection.view_account_collection_remittance_form
+msgid "Cancel"
+msgstr "Cancelar"
+
+#. module: account_collection
+#: model:ir.model.fields.selection,name:account_collection.selection__account_collection_remittance__state__cancel
+msgid "Cancelled"
+msgstr "Cancelada"
+
+#. module: account_collection
+#: model:ir.model.fields.selection,name:account_collection.selection__account_payment__collection_method__card
+#: model:ir.model.fields.selection,name:account_collection.selection__wizard_account_move_line_pay__collection_method__card
+msgid "Card"
+msgstr "Tarjeta"
+
+#. module: account_collection
+#: model:ir.model.fields.selection,name:account_collection.selection__account_payment__collection_method__cash
+#: model:ir.model.fields.selection,name:account_collection.selection__wizard_account_move_line_pay__collection_method__cash
+msgid "Cash"
+msgstr "Efectivo"
+
+#. module: account_collection
+#: model:ir.model.fields,field_description:account_collection.field_account_config__collection_custody_days_cash
+#: model:ir.model.fields,field_description:account_collection.field_res_config_settings__collection_custody_days_cash
+msgid "Cash Custody Days"
+msgstr "Días de custodia de efectivo"
+
+#. module: account_collection
+#: model:ir.model.fields.selection,name:account_collection.selection__account_payment__collection_method__check
+#: model:ir.model.fields.selection,name:account_collection.selection__wizard_account_move_line_pay__collection_method__check
+msgid "Check"
+msgstr "Cheque"
+
+#. module: account_collection
+#: model:ir.model.fields,field_description:account_collection.field_account_config__collection_custody_days_check
+#: model:ir.model.fields,field_description:account_collection.field_res_config_settings__collection_custody_days_check
+msgid "Check Custody Days"
+msgstr "Días de custodia de cheques"
+
+#. module: account_collection
+#: model:ir.model.fields,field_description:account_collection.field_account_collection_remittance__amount_collected
+msgid "Collected"
+msgstr "Cobrado"
+
+#. module: account_collection
+#: model:ir.model.fields,field_description:account_collection.field_account_payment__collection_method
+#: model:ir.model.fields,field_description:account_collection.field_wizard_account_move_line_pay__collection_method
+msgid "Collected In"
+msgstr "Forma de cobro"
+
+#. module: account_collection
+#. odoo-python
+#: code:addons/account_collection/models/account_payment.py:0
+msgid ""
+"Collected on %(date)s by %(collector)s, due to be handed in by %(due)s and "
+"still in custody: hand it in through a remittance."
+msgstr ""
+"Cobrado el %(date)s por %(collector)s, debía entregarse a más tardar el "
+"%(due)s y sigue en custodia: entrégalo mediante una rendición."
+
+#. module: account_collection
+#: model:ir.model.fields,help:account_collection.field_account_payment__is_in_custody
+msgid ""
+"Collected, still in the collector's hands: its custody item is not yet "
+"settled by a validated remittance."
+msgstr ""
+"Cobrado y aún en manos del cobrador: su partida de custodia no la ha "
+"liquidado una rendición validada."
+
+#. module: account_collection
+#. odoo-python
+#: code:addons/account_collection/models/account_collection_remittance.py:0
+msgid ""
+"Collection %(payment)s is in remittances %(remittances)s; a collection is "
+"handed in once."
+msgstr ""
+"El cobro %(payment)s está en las rendiciones %(remittances)s; un cobro se "
+"entrega una sola vez."
+
+#. module: account_collection
+#: model:ir.model.fields,field_description:account_collection.field_account_journal__is_collection_custody
+#: model:ir.model.fields,field_description:account_collection.field_account_payment__is_collection_custody
+#: model:ir.model.fields,field_description:account_collection.field_wizard_account_move_line_pay__is_collection_custody
+msgid "Collection Custody"
+msgstr "Cobranza en custodia"
+
+#. module: account_collection
+#: model:ir.model,name:account_collection.model_account_collection_remittance
+msgid "Collection Remittance"
+msgstr "Rendición de cobranza"
+
+#. module: account_collection
+#: model:ir.model.fields,field_description:account_collection.field_account_config__collection_supervisor_id
+#: model:ir.model.fields,field_description:account_collection.field_res_config_settings__collection_supervisor_id
+msgid "Collection Supervisor"
+msgstr "Supervisor de cobranza"
+
+#. module: account_collection
+#: model_terms:ir.ui.view,arch_db:account_collection.collection_receipt_page
+msgid "Collection receipt"
+msgstr "Recibo de cobro"
+
+#. module: account_collection
+#: model:ir.model.fields,field_description:account_collection.field_account_collection_remittance__payment_ids
+#: model:ir.ui.menu,name:account_collection.menu_account_collection_root
+#: model_terms:ir.ui.view,arch_db:account_collection.view_account_collection_remittance_form
+#: model_terms:ir.ui.view,arch_db:account_collection.view_account_collection_remittance_list
+msgid "Collections"
+msgstr "Cobros"
+
+#. module: account_collection
+#: model_terms:ir.actions.act_window,help:account_collection.action_account_payment_custody
+msgid ""
+"Collections a collector holds appear here until a validated remittance hands"
+" them in."
+msgstr ""
+"Aquí aparecen los cobros que trae un cobrador hasta que una rendición "
+"validada los entregue."
+
+#. module: account_collection
+#: model_terms:ir.ui.view,arch_db:account_collection.res_config_settings_view_form
+msgid "Collections a collector holds before handing them in"
+msgstr "Cobros que trae un cobrador antes de entregarlos"
+
+#. module: account_collection
+#. odoo-python
+#: code:addons/account_collection/models/account_collection_remittance.py:0
+msgid "Collections handed in: %(name)s"
+msgstr "Cobros entregados: %(name)s"
+
+#. module: account_collection
+#: model:ir.actions.act_window,name:account_collection.action_account_payment_custody
+#: model:ir.ui.menu,name:account_collection.menu_account_payment_custody
+msgid "Collections in Custody"
+msgstr "Cobros en custodia"
+
+#. module: account_collection
+#: model:ir.model.fields,field_description:account_collection.field_account_collection_remittance__collector_id
+#: model:ir.model.fields,field_description:account_collection.field_account_payment__collector_id
+#: model:ir.model.fields,field_description:account_collection.field_wizard_account_move_line_pay__collector_id
+#: model:res.groups,name:account_collection.group_collection_collector
+#: model_terms:ir.ui.view,arch_db:account_collection.view_account_collection_remittance_search
+#: model_terms:ir.ui.view,arch_db:account_collection.view_account_payment_search
+msgid "Collector"
+msgstr "Cobrador"
+
+#. module: account_collection
+#: model:ir.model.fields,field_description:account_collection.field_account_config__collection_overage_account_id
+#: model:ir.model.fields,field_description:account_collection.field_res_config_settings__collection_overage_account_id
+msgid "Collector Overage Account"
+msgstr "Cuenta de sobrantes de cobradores"
+
+#. module: account_collection
+#: model:ir.model.fields,field_description:account_collection.field_account_config__collection_shortage_account_id
+#: model:ir.model.fields,field_description:account_collection.field_res_config_settings__collection_shortage_account_id
+msgid "Collector Shortage Account"
+msgstr "Cuenta de faltantes de cobradores"
+
+#. module: account_collection
+#: model:res.groups,comment:account_collection.group_collection_collector
+msgid ""
+"Collectors record what customers pay them, see what they hold in custody and"
+" hand it in through their own remittances."
+msgstr ""
+"Los cobradores registran lo que les pagan los clientes, ven lo que traen en "
+"custodia y lo entregan mediante sus propias rendiciones."
+
+#. module: account_collection
+#: model:ir.model.fields,field_description:account_collection.field_account_collection_remittance__company_id
+msgid "Company"
+msgstr "Empresa"
+
+#. module: account_collection
+#: model:ir.model,name:account_collection.model_res_config_settings
+msgid "Config Settings"
+msgstr "Ajustes de configuración"
+
+#. module: account_collection
+#: model:ir.model.fields,field_description:account_collection.field_account_collection_remittance__count_payment
+msgid "Count Payment"
+msgstr "Número de cobros"
+
+#. module: account_collection
+#: model:ir.model.fields,field_description:account_collection.field_account_collection_remittance__create_uid
+msgid "Created by"
+msgstr "Creado por"
+
+#. module: account_collection
+#: model:ir.model.fields,field_description:account_collection.field_account_collection_remittance__create_date
+msgid "Created on"
+msgstr "Creado el"
+
+#. module: account_collection
+#: model:ir.model.fields,field_description:account_collection.field_account_collection_remittance__currency_id
+#: model:ir.model.fields,field_description:account_collection.field_account_config__collection_currency_id
+msgid "Currency"
+msgstr "Moneda"
+
+#. module: account_collection
+#: model:ir.model.fields,field_description:account_collection.field_account_config__collection_custody_limit
+#: model:ir.model.fields,field_description:account_collection.field_res_config_settings__collection_custody_limit
+msgid "Custody Limit"
+msgstr "Límite de custodia"
+
+#. module: account_collection
+#: model_terms:ir.ui.view,arch_db:account_collection.collection_receipt_page
+msgid "Customer"
+msgstr "Cliente"
+
+#. module: account_collection
+#: model:ir.model.fields,field_description:account_collection.field_account_collection_remittance__deposit_reference
+msgid "Deposit Reference"
+msgstr "Referencia del depósito"
+
+#. module: account_collection
+#: model:ir.model.fields,field_description:account_collection.field_account_collection_remittance__bank_reference
+msgid "Deposit Reference Number"
+msgstr "Referencia numérica del depósito"
+
+#. module: account_collection
+#: model:ir.model.fields,field_description:account_collection.field_account_collection_remittance__amount_difference
+msgid "Difference"
+msgstr "Diferencia"
+
+#. module: account_collection
+#: model:ir.model.fields,field_description:account_collection.field_account_bank_statement_line__display_name
+#: model:ir.model.fields,field_description:account_collection.field_account_collection_remittance__display_name
+#: model:ir.model.fields,field_description:account_collection.field_account_config__display_name
+#: model:ir.model.fields,field_description:account_collection.field_account_journal__display_name
+#: model:ir.model.fields,field_description:account_collection.field_account_move__display_name
+#: model:ir.model.fields,field_description:account_collection.field_account_payment__display_name
+#: model:ir.model.fields,field_description:account_collection.field_account_payment_channel__display_name
+#: model:ir.model.fields,field_description:account_collection.field_res_config_settings__display_name
+#: model:ir.model.fields,field_description:account_collection.field_res_users__display_name
+#: model:ir.model.fields,field_description:account_collection.field_wizard_account_move_line_pay__display_name
+msgid "Display Name"
+msgstr "Nombre para mostrar"
+
+#. module: account_collection
+#: model_terms:ir.ui.view,arch_db:account_collection.collection_receipt_page
+msgid "Download the receipt"
+msgstr "Descargar el recibo"
+
+#. module: account_collection
+#: model:ir.model.fields.selection,name:account_collection.selection__account_collection_remittance__state__draft
+msgid "Draft"
+msgstr "Borrador"
+
+#. module: account_collection
+#: model:ir.ui.menu,name:account_collection.menu_account_collection_receivables
+#: model:res.groups.privilege,name:account_collection.res_groups_privilege_collection
+#: model_terms:ir.ui.view,arch_db:account_collection.res_config_settings_view_form
+msgid "Field Collections"
+msgstr "Cobranza en campo"
+
+#. module: account_collection
+#: model:mail.template,name:account_collection.mail_template_collection_receipt
+msgid "Field Collections: Collection Receipt"
+msgstr "Cobranza en campo: recibo de cobro"
+
+#. module: account_collection
+#: model:ir.actions.server,name:account_collection.ir_cron_notify_overdue_custody_ir_actions_server
+msgid "Field Collections: remind collectors of custody held too long"
+msgstr "Cobranza en campo: recordar a los cobradores la custodia vencida"
+
+#. module: account_collection
+#: model:ir.actions.server,name:account_collection.ir_cron_match_remittance_bank_transactions_ir_actions_server
+msgid "Field Collections: validate remittances the bank reports"
+msgstr "Cobranza en campo: validar las rendiciones que reporta el banco"
+
+#. module: account_collection
+#: model:ir.model.fields,field_description:account_collection.field_account_collection_remittance__message_follower_ids
+msgid "Followers"
+msgstr "Seguidores"
+
+#. module: account_collection
+#: model:ir.model.fields,field_description:account_collection.field_account_collection_remittance__message_partner_ids
+msgid "Followers (Partners)"
+msgstr "Seguidores (contactos)"
+
+#. module: account_collection
+#: model_terms:ir.ui.view,arch_db:account_collection.collection_receipt_page
+msgid "For example: I paid a different amount"
+msgstr "Por ejemplo: pagué un importe distinto"
+
+#. module: account_collection
+#: model:ir.model.fields,field_description:account_collection.field_account_payment__date_custody_due
+msgid "Hand In By"
+msgstr "Entregar a más tardar"
+
+#. module: account_collection
+#. odoo-python
+#: code:addons/account_collection/models/account_payment.py:0
+msgid "Hand in this collection"
+msgstr "Entrega este cobro"
+
+#. module: account_collection
+#: model_terms:ir.actions.act_window,help:account_collection.action_account_collection_remittance
+msgid "Hand in your collections"
+msgstr "Entrega tus cobros"
+
+#. module: account_collection
+#: model:ir.model.fields,field_description:account_collection.field_account_collection_remittance__date
+#: model_terms:ir.ui.view,arch_db:account_collection.view_account_collection_remittance_search
+msgid "Hand-in Date"
+msgstr "Fecha de entrega"
+
+#. module: account_collection
+#: model:ir.model.fields,field_description:account_collection.field_account_collection_remittance__move_id
+msgid "Hand-in Entry"
+msgstr "Asiento de entrega"
+
+#. module: account_collection
+#. odoo-python
+#: code:addons/account_collection/models/account_collection_remittance.py:0
+msgid "Hand-in difference: %(name)s"
+msgstr "Diferencia de entrega: %(name)s"
+
+#. module: account_collection
+#: model:ir.model.fields,field_description:account_collection.field_account_collection_remittance__amount_handed_in
+#: model:ir.model.fields.selection,name:account_collection.selection__account_collection_remittance__state__done
+msgid "Handed In"
+msgstr "Entregado"
+
+#. module: account_collection
+#: model:ir.model.fields,field_description:account_collection.field_account_collection_remittance__destination_journal_id
+msgid "Handed In To"
+msgstr "Entregado en"
+
+#. module: account_collection
+#: model:ir.model.fields,help:account_collection.field_account_collection_remittance__amount_difference
+msgid ""
+"Handed in minus collected: below zero is a shortage charged to the "
+"collector, above zero an overage."
+msgstr ""
+"Entregado menos cobrado: debajo de cero es un faltante a cargo del cobrador;"
+" arriba de cero, un sobrante."
+
+#. module: account_collection
+#: model:ir.model.fields,field_description:account_collection.field_account_collection_remittance__has_message
+msgid "Has Message"
+msgstr "Tiene mensaje"
+
+#. module: account_collection
+#: model:ir.model.fields,field_description:account_collection.field_account_bank_statement_line__id
+#: model:ir.model.fields,field_description:account_collection.field_account_collection_remittance__id
+#: model:ir.model.fields,field_description:account_collection.field_account_config__id
+#: model:ir.model.fields,field_description:account_collection.field_account_journal__id
+#: model:ir.model.fields,field_description:account_collection.field_account_move__id
+#: model:ir.model.fields,field_description:account_collection.field_account_payment__id
+#: model:ir.model.fields,field_description:account_collection.field_account_payment_channel__id
+#: model:ir.model.fields,field_description:account_collection.field_res_config_settings__id
+#: model:ir.model.fields,field_description:account_collection.field_res_users__id
+#: model:ir.model.fields,field_description:account_collection.field_wizard_account_move_line_pay__id
+msgid "ID"
+msgstr "ID"
+
+#. module: account_collection
+#: model:ir.model.fields,field_description:account_collection.field_account_collection_remittance__activity_exception_icon
+msgid "Icon"
+msgstr "Icono"
+
+#. module: account_collection
+#: model:ir.model.fields,help:account_collection.field_account_collection_remittance__activity_exception_icon
+msgid "Icon to indicate an exception activity."
+msgstr "Icono que indica una actividad de excepción."
+
+#. module: account_collection
+#: model:ir.model.fields,help:account_collection.field_account_collection_remittance__message_needaction
+msgid "If checked, new messages require your attention."
+msgstr "Si está marcado, hay nuevos mensajes que requieren su atención."
+
+#. module: account_collection
+#: model:ir.model.fields,help:account_collection.field_account_collection_remittance__message_has_error
+#: model:ir.model.fields,help:account_collection.field_account_collection_remittance__message_has_sms_error
+msgid "If checked, some messages have a delivery error."
+msgstr "Si está marcado, algunos mensajes tienen un error de entrega."
+
+#. module: account_collection
+#: model:ir.model.fields,field_description:account_collection.field_account_payment__is_in_custody
+#: model_terms:ir.ui.view,arch_db:account_collection.view_account_payment_search
+msgid "In Custody"
+msgstr "En custodia"
+
+#. module: account_collection
+#: model_terms:ir.ui.view,arch_db:account_collection.collection_receipt_page
+msgid "Invoices"
+msgstr "Facturas"
+
+#. module: account_collection
+#: model:ir.model.fields,field_description:account_collection.field_account_collection_remittance__message_is_follower
+msgid "Is Follower"
+msgstr "Es seguidor"
+
+#. module: account_collection
+#: model:ir.model,name:account_collection.model_account_journal
+msgid "Journal"
+msgstr "Diario"
+
+#. module: account_collection
+#. odoo-python
+#: code:addons/account_collection/models/account_journal.py:0
+msgid ""
+"Journal %(journal)s holds collections in custody but receives no payment "
+"method."
+msgstr ""
+"El diario %(journal)s guarda cobranza en custodia pero no recibe ningún "
+"método de pago."
+
+#. module: account_collection
+#. odoo-python
+#: code:addons/account_collection/models/account_journal.py:0
+msgid ""
+"Journal %(journal)s holds collections in custody, so it must be a bank or "
+"cash journal."
+msgstr ""
+"El diario %(journal)s guarda cobranza en custodia, así que debe ser de banco"
+" o de efectivo."
+
+#. module: account_collection
+#. odoo-python
+#: code:addons/account_collection/models/account_journal.py:0
+msgid ""
+"Journal %(journal)s holds collections in custody: its payment method "
+"%(method)s must book to a reconcilable outstanding account that is not a "
+"cash account, or a collection would count as money already handed in."
+msgstr ""
+"El diario %(journal)s guarda cobranza en custodia: su método de pago "
+"%(method)s debe registrar en una cuenta pendiente conciliable que no sea de "
+"efectivo; si no, un cobro contaría como dinero ya entregado."
+
+#. module: account_collection
+#. odoo-python
+#: code:addons/account_collection/models/account_payment.py:0
+#: code:addons/account_collection/wizards/wizard_account_move_line_pay.py:0
+msgid "Journal %(journal)s holds customer collections only."
+msgstr "El diario %(journal)s solo guarda cobros de clientes."
+
+#. module: account_collection
+#: model:ir.model,name:account_collection.model_account_move
+msgid "Journal Entry"
+msgstr "Asiento contable"
+
+#. module: account_collection
+#: model:ir.model.fields,field_description:account_collection.field_account_collection_remittance__write_uid
+msgid "Last Updated by"
+msgstr "Última actualización por"
+
+#. module: account_collection
+#: model:ir.model.fields,field_description:account_collection.field_account_collection_remittance__write_date
+msgid "Last Updated on"
+msgstr "Última actualización el"
+
+#. module: account_collection
+#: model:ir.model.fields,field_description:account_collection.field_account_collection_remittance__message_has_error
+msgid "Message Delivery error"
+msgstr "Error de entrega del mensaje"
+
+#. module: account_collection
+#: model:ir.model.fields,field_description:account_collection.field_account_collection_remittance__message_ids
+msgid "Messages"
+msgstr "Mensajes"
+
+#. module: account_collection
+#: model:ir.model.fields,help:account_collection.field_account_config__collection_custody_limit
+#: model:ir.model.fields,help:account_collection.field_res_config_settings__collection_custody_limit
+msgid ""
+"Most a collector may hold before handing it in, in the company currency; "
+"zero sets no limit. Past it, the collector is asked to hand in before "
+"collecting more."
+msgstr ""
+"Lo máximo que un cobrador puede traer antes de entregarlo, en la moneda de "
+"la empresa; cero significa sin límite. Al rebasarlo, se le pide entregar "
+"antes de seguir cobrando."
+
+#. module: account_collection
+#: model:ir.model.fields,field_description:account_collection.field_account_collection_remittance__my_activity_date_deadline
+msgid "My Activity Deadline"
+msgstr "Fecha límite de mi actividad"
+
+#. module: account_collection
+#: model:ir.ui.menu,name:account_collection.menu_account_collection_my_custody
+msgid "My Custody"
+msgstr "Mi custodia"
+
+#. module: account_collection
+#: model:ir.ui.menu,name:account_collection.menu_account_collection_my_remittances
+#: model_terms:ir.ui.view,arch_db:account_collection.view_account_collection_remittance_search
+msgid "My Remittances"
+msgstr "Mis rendiciones"
+
+#. module: account_collection
+#: model:ir.model.fields,field_description:account_collection.field_account_collection_remittance__activity_date_deadline
+msgid "Next Activity Deadline"
+msgstr "Fecha límite de la siguiente actividad"
+
+#. module: account_collection
+#: model:ir.model.fields,field_description:account_collection.field_account_collection_remittance__activity_summary
+msgid "Next Activity Summary"
+msgstr "Resumen de la siguiente actividad"
+
+#. module: account_collection
+#: model:ir.model.fields,field_description:account_collection.field_account_collection_remittance__activity_type_id
+msgid "Next Activity Type"
+msgstr "Tipo de la siguiente actividad"
+
+#. module: account_collection
+#: model:ir.model.fields,field_description:account_collection.field_account_collection_remittance__note
+msgid "Note"
+msgstr "Nota"
+
+#. module: account_collection
+#: model_terms:ir.ui.view,arch_db:account_collection.view_account_collection_remittance_form
+msgid "Notes"
+msgstr "Notas"
+
+#. module: account_collection
+#: model_terms:ir.actions.act_window,help:account_collection.action_account_payment_custody
+msgid "Nothing is in custody"
+msgstr "No hay nada en custodia"
+
+#. module: account_collection
+#: model:ir.model.fields,field_description:account_collection.field_account_collection_remittance__name
+msgid "Number"
+msgstr "Número"
+
+#. module: account_collection
+#: model:ir.model.fields,field_description:account_collection.field_account_collection_remittance__message_needaction_counter
+msgid "Number of Actions"
+msgstr "Número de acciones"
+
+#. module: account_collection
+#: model:ir.model.fields,field_description:account_collection.field_account_collection_remittance__message_has_error_counter
+msgid "Number of errors"
+msgstr "Número de errores"
+
+#. module: account_collection
+#: model:ir.model.fields,help:account_collection.field_account_collection_remittance__message_needaction_counter
+msgid "Number of messages requiring action"
+msgstr "Número de mensajes que requieren una acción"
+
+#. module: account_collection
+#: model:ir.model.fields,help:account_collection.field_account_collection_remittance__message_has_error_counter
+msgid "Number of messages with delivery error"
+msgstr "Número de mensajes con error de entrega"
+
+#. module: account_collection
+#. odoo-python
+#: code:addons/account_collection/models/account_move.py:0
+msgid "One collection settles the invoices of one customer."
+msgstr "Un cobro liquida las facturas de un solo cliente."
+
+#. module: account_collection
+#. odoo-python
+#: code:addons/account_collection/models/account_collection_remittance.py:0
+msgid "Only a draft or cancelled remittance can be deleted."
+msgstr "Solo se puede eliminar una rendición en borrador o cancelada."
+
+#. module: account_collection
+#. odoo-python
+#: code:addons/account_collection/models/account_collection_remittance.py:0
+msgid "Only a draft remittance can be submitted."
+msgstr "Solo se puede enviar una rendición en borrador."
+
+#. module: account_collection
+#. odoo-python
+#: code:addons/account_collection/models/account_collection_remittance.py:0
+msgid "Only a handed-in remittance can be reverted."
+msgstr "Solo se puede revertir una rendición entregada."
+
+#. module: account_collection
+#. odoo-python
+#: code:addons/account_collection/models/account_collection_remittance.py:0
+msgid "Only a remittance awaiting validation can be reopened."
+msgstr "Solo se puede reabrir una rendición por validar."
+
+#. module: account_collection
+#. odoo-python
+#: code:addons/account_collection/models/account_collection_remittance.py:0
+msgid "Only a submitted remittance can be validated."
+msgstr "Solo se puede validar una rendición enviada."
+
+#. module: account_collection
+#. odoo-python
+#: code:addons/account_collection/models/account_collection_remittance.py:0
+msgid "Only an open remittance can be cancelled; revert a handed-in one."
+msgstr ""
+"Solo se puede cancelar una rendición abierta; una entregada se revierte."
+
+#. module: account_collection
+#. odoo-python
+#: code:addons/account_collection/models/account_move.py:0
+msgid "Only open, posted customer invoices can be collected."
+msgstr "Solo se pueden cobrar facturas de cliente publicadas y pendientes."
+
+#. module: account_collection
+#: model_terms:ir.ui.view,arch_db:account_collection.collection_receipt_page
+msgid "Paid in"
+msgstr "Forma de pago"
+
+#. module: account_collection
+#: model_terms:ir.ui.view,arch_db:account_collection.collection_receipt_page
+msgid "Paid on"
+msgstr "Fecha de pago"
+
+#. module: account_collection
+#: model:ir.model,name:account_collection.model_wizard_account_move_line_pay
+msgid "Pay"
+msgstr "Pagar"
+
+#. module: account_collection
+#: model:ir.model,name:account_collection.model_account_payment_channel
+msgid "Payment Channel"
+msgstr "Canal de pago"
+
+#. module: account_collection
+#: model:ir.model,name:account_collection.model_account_payment
+msgid "Payments"
+msgstr "Pagos"
+
+#. module: account_collection
+#: model:ir.model.fields,field_description:account_collection.field_account_collection_remittance__website_message_ids
+msgid "Portal Messages"
+msgstr "Mensajes del portal"
+
+#. module: account_collection
+#: model:ir.model.fields,help:account_collection.field_account_collection_remittance__website_message_ids
+msgid "Portal communication history for this record."
+msgstr "Historial de comunicación del portal para este registro."
+
+#. module: account_collection
+#: model:res.groups,name:account_collection.privilege_register_collection
+msgid "Privilege: a collector records the payment a customer handed them"
+msgstr "Privilegio: un cobrador registra el pago que le entregó un cliente"
+
+#. module: account_collection
+#: model:res.groups,name:account_collection.privilege_read_custody_status
+msgid ""
+"Privilege: whoever acts on a collector's work reads what that collector "
+"holds"
+msgstr ""
+"Privilegio: quien actúa sobre el trabajo de un cobrador lee lo que ese "
+"cobrador trae"
+
+#. module: account_collection
+#: model_terms:ir.ui.view,arch_db:account_collection.collection_receipt_page
+msgid "Receipt"
+msgstr "Recibo"
+
+#. module: account_collection
+#: model:ir.model.fields,help:account_collection.field_account_config__collection_shortage_account_id
+#: model:ir.model.fields,help:account_collection.field_res_config_settings__collection_shortage_account_id
+msgid ""
+"Receivable the money missing from a remittance is charged to, in the "
+"collector's name."
+msgstr ""
+"Cuenta por cobrar a la que se carga, a nombre del cobrador, el dinero que "
+"falta en una rendición."
+
+#. module: account_collection
+#: model_terms:ir.ui.view,arch_db:account_collection.collection_receipt_page
+msgid "Received by"
+msgstr "Recibido por"
+
+#. module: account_collection
+#: model_terms:ir.ui.view,arch_db:account_collection.collection_receipt_page
+msgid "Recorded and received by the company"
+msgstr "Registrado y recibido por la empresa"
+
+#. module: account_collection
+#: model_terms:ir.ui.view,arch_db:account_collection.collection_receipt_page
+msgid "Recorded, held by the collector until handed in"
+msgstr "Registrado; en poder del cobrador hasta su entrega"
+
+#. module: account_collection
+#: model:ir.model.fields,field_description:account_collection.field_account_payment__collection_remittance_id
+#: model_terms:ir.ui.view,arch_db:account_collection.view_account_collection_remittance_form
+msgid "Remittance"
+msgstr "Rendición"
+
+#. module: account_collection
+#. odoo-python
+#: code:addons/account_collection/models/account_collection_remittance.py:0
+msgid ""
+"Remittance %(name)s hands in %(handed)s against %(collected)s collected: set"
+" the collector shortage and overage accounts of %(company)s to book the "
+"difference."
+msgstr ""
+"La rendición %(name)s entrega %(handed)s contra %(collected)s cobrados: "
+"configura las cuentas de faltantes y sobrantes de cobradores de %(company)s "
+"para registrar la diferencia."
+
+#. module: account_collection
+#. odoo-python
+#: code:addons/account_collection/models/account_collection_remittance.py:0
+msgid ""
+"Remittance %(remittance)s hands in only %(collector)s's collections held in "
+"custody, not %(payments)s."
+msgstr ""
+"La rendición %(remittance)s solo entrega cobros en custodia de "
+"%(collector)s, no %(payments)s."
+
+#. module: account_collection
+#: model:ir.actions.act_window,name:account_collection.action_account_collection_remittance
+#: model:ir.model.fields,field_description:account_collection.field_account_payment__collection_remittance_ids
+#: model:ir.ui.menu,name:account_collection.menu_account_collection_remittance
+#: model_terms:ir.ui.view,arch_db:account_collection.view_account_collection_remittance_list
+#: model_terms:ir.ui.view,arch_db:account_collection.view_account_collection_remittance_search
+msgid "Remittances"
+msgstr "Rendiciones"
+
+#. module: account_collection
+#: model_terms:ir.ui.view,arch_db:account_collection.collection_receipt_page
+msgid "Report a problem"
+msgstr "Reportar un problema"
+
+#. module: account_collection
+#: model:ir.model.fields,field_description:account_collection.field_account_collection_remittance__activity_user_id
+msgid "Responsible User"
+msgstr "Usuario responsable"
+
+#. module: account_collection
+#. odoo-python
+#: code:addons/account_collection/models/account_collection_remittance.py:0
+msgid "Reversal of %(name)s"
+msgstr "Reversión de %(name)s"
+
+#. module: account_collection
+#: model_terms:ir.ui.view,arch_db:account_collection.view_account_collection_remittance_form
+msgid "Revert"
+msgstr "Revertir"
+
+#. module: account_collection
+#: model:ir.model.fields,field_description:account_collection.field_account_collection_remittance__message_has_sms_error
+msgid "SMS Delivery error"
+msgstr "Error de entrega del SMS"
+
+#. module: account_collection
+#. odoo-python
+#: code:addons/account_collection/models/account_collection_remittance.py:0
+msgid "Say where the money was handed in."
+msgstr "Indica dónde se entregó el dinero."
+
+#. module: account_collection
+#: model:ir.model.fields,field_description:account_collection.field_account_config__collection_send_receipt
+#: model:ir.model.fields,field_description:account_collection.field_res_config_settings__collection_send_receipt
+msgid "Send Collection Receipts"
+msgstr "Enviar recibos de cobro"
+
+#. module: account_collection
+#: model:ir.model.fields,help:account_collection.field_account_config__collection_send_receipt
+#: model:ir.model.fields,help:account_collection.field_res_config_settings__collection_send_receipt
+msgid ""
+"Send the customer a receipt, with a link to verify it, as soon as a "
+"collector records what the customer paid."
+msgstr ""
+"Enviar al cliente un recibo, con un enlace para verificarlo, en cuanto un "
+"cobrador registra lo que pagó."
+
+#. module: account_collection
+#: model:mail.template,description:account_collection.mail_template_collection_receipt
+msgid ""
+"Sent to the customer as soon as a collector records what the customer paid "
+"them"
+msgstr "Se envía al cliente en cuanto un cobrador registra lo que le pagó"
+
+#. module: account_collection
+#. odoo-python
+#: code:addons/account_collection/models/account_collection_remittance.py:0
+msgid ""
+"Set the inter-bank transfer account of %(company)s: a deposit waits there "
+"for the bank to report it."
+msgstr ""
+"Configura la cuenta de traspasos bancarios de %(company)s: un depósito "
+"espera ahí a que el banco lo reporte."
+
+#. module: account_collection
+#: model_terms:ir.ui.view,arch_db:account_collection.collection_receipt_page
+msgid "Something wrong?"
+msgstr "¿Algo está mal?"
+
+#. module: account_collection
+#: model:ir.model.fields,field_description:account_collection.field_account_collection_remittance__state
+msgid "State"
+msgstr "Estado"
+
+#. module: account_collection
+#: model_terms:ir.ui.view,arch_db:account_collection.collection_receipt_page
+#: model_terms:ir.ui.view,arch_db:account_collection.view_account_collection_remittance_search
+msgid "Status"
+msgstr "Estado"
+
+#. module: account_collection
+#: model:ir.model.fields,help:account_collection.field_account_collection_remittance__activity_state
+msgid ""
+"Status based on activities\n"
+"Overdue: Due date is already passed\n"
+"Today: Activity date is today\n"
+"Planned: Future activities."
+msgstr ""
+"Estado basado en actividades\n"
+"Vencida: la fecha límite ya pasó\n"
+"Hoy: la fecha de la actividad es hoy\n"
+"Planeada: actividades futuras."
+
+#. module: account_collection
+#: model_terms:ir.ui.view,arch_db:account_collection.view_account_collection_remittance_form
+msgid "Submit"
+msgstr "Enviar"
+
+#. module: account_collection
+#: model_terms:ir.ui.view,arch_db:account_collection.collection_receipt_page
+msgid "Thank you. We received your report and will contact you."
+msgstr "Gracias. Recibimos tu reporte y te contactaremos."
+
+#. module: account_collection
+#. odoo-python
+#: code:addons/account_collection/models/account_collection_remittance.py:0
+msgid ""
+"The bank reported this deposit (%(transaction)s), but the remittance could "
+"not be validated: %(reason)s"
+msgstr ""
+"El banco reportó este depósito (%(transaction)s), pero la rendición no se "
+"pudo validar: %(reason)s"
+
+#. module: account_collection
+#: model:ir.model.fields,help:account_collection.field_account_collection_remittance__date
+msgid "The day the money reached the till or the bank."
+msgstr "El día en que el dinero llegó a la caja o al banco."
+
+#. module: account_collection
+#: model:ir.model.fields,help:account_collection.field_account_collection_remittance__statement_line_id
+msgid "The deposit as the bank reports it. Once set, validating settles it."
+msgstr ""
+"El depósito tal como lo reporta el banco. Si se indica, al validar se "
+"concilia."
+
+#. module: account_collection
+#: model:ir.model.fields,help:account_collection.field_account_payment__collection_method
+msgid "The form in which the customer paid the collector."
+msgstr "La forma en que el cliente pagó al cobrador."
+
+#. module: account_collection
+#: model_terms:ir.ui.view,arch_db:account_collection.view_account_collection_remittance_form
+msgid ""
+"The hand-in entry is reversed, the collections return to custody and the "
+"remittance to draft."
+msgstr ""
+"Se revierte el asiento de entrega, los cobros regresan a custodia y la "
+"rendición a borrador."
+
+#. module: account_collection
+#: model:ir.model.fields,help:account_collection.field_account_payment__date_custody_due
+msgid "The last working day the collector may hold this collection."
+msgstr "El último día hábil en que el cobrador puede traer este cobro."
+
+#. module: account_collection
+#: model:ir.model.fields,help:account_collection.field_account_collection_remittance__bank_reference
+msgid ""
+"The number the collector gives the bank as the deposit's reference: the bank"
+" transaction that carries it, for the amount handed in, validates this "
+"remittance by itself."
+msgstr ""
+"El número que el cobrador da al banco como referencia del depósito: el "
+"movimiento bancario que lo trae, por el importe entregado, valida esta "
+"rendición automáticamente."
+
+#. module: account_collection
+#: model:ir.model.fields,help:account_collection.field_account_collection_remittance__deposit_reference
+msgid "The reference printed on the deposit slip."
+msgstr "La referencia impresa en la ficha de depósito."
+
+#. module: account_collection
+#: model:ir.model.fields,help:account_collection.field_account_payment__collection_remittance_id
+msgid "The remittance handing this collection in, unless cancelled."
+msgstr "La rendición que entrega este cobro, salvo que esté cancelada."
+
+#. module: account_collection
+#: model:ir.model.fields,help:account_collection.field_account_collection_remittance__destination_journal_id
+msgid ""
+"The till that received the cash, or the bank account it was deposited into."
+msgstr ""
+"La caja que recibió el efectivo, o la cuenta bancaria donde se depositó."
+
+#. module: account_collection
+#: model:ir.model.fields.selection,name:account_collection.selection__account_collection_remittance__state__submitted
+#: model_terms:ir.ui.view,arch_db:account_collection.view_account_collection_remittance_search
+msgid "To Validate"
+msgstr "Por validar"
+
+#. module: account_collection
+#: model_terms:ir.ui.view,arch_db:account_collection.view_account_collection_remittance_form
+#: model_terms:ir.ui.view,arch_db:account_collection.view_account_collection_remittance_list
+msgid "Total"
+msgstr "Total"
+
+#. module: account_collection
+#: model:ir.model.fields.selection,name:account_collection.selection__account_payment__collection_method__transfer
+#: model:ir.model.fields.selection,name:account_collection.selection__wizard_account_move_line_pay__collection_method__transfer
+msgid "Transfer"
+msgstr "Transferencia"
+
+#. module: account_collection
+#: model:ir.model.fields,field_description:account_collection.field_account_collection_remittance__destination_type
+msgid "Type"
+msgstr "Tipo"
+
+#. module: account_collection
+#: model:ir.model.fields,help:account_collection.field_account_collection_remittance__activity_exception_decoration
+msgid "Type of the exception activity on record."
+msgstr "Tipo de actividad de excepción en el registro."
+
+#. module: account_collection
+#: model:ir.model,name:account_collection.model_res_users
+msgid "User"
+msgstr "Usuario"
+
+#. module: account_collection
+#: model_terms:ir.ui.view,arch_db:account_collection.view_account_collection_remittance_form
+msgid "Validate"
+msgstr "Validar"
+
+#. module: account_collection
+#: model:ir.model.fields,field_description:account_collection.field_account_collection_remittance__validated_by_id
+msgid "Validated By"
+msgstr "Validado por"
+
+#. module: account_collection
+#. odoo-python
+#: code:addons/account_collection/models/account_collection_remittance.py:0
+msgid ""
+"Validated by itself: the bank reported this deposit as %(transaction)s."
+msgstr ""
+"Validada automáticamente: el banco reportó este depósito como "
+"%(transaction)s."
+
+#. module: account_collection
+#: model:ir.model.fields,help:account_collection.field_account_collection_remittance__amount_handed_in
+msgid "What actually reached the till or the bank."
+msgstr "Lo que realmente llegó a la caja o al banco."
+
+#. module: account_collection
+#: model:res.groups,comment:account_collection.privilege_read_custody_status
+msgid ""
+"Whether a collector holds collections past their hand-in date, or above "
+"their limit, decides what they may do next: collect more, or have a credit "
+"sale confirmed. Whoever asks reads the collector's collections in custody "
+"journals, and nothing else of their payments."
+msgstr ""
+"Que un cobrador traiga cobros vencidos o por encima de su límite decide qué "
+"puede hacer después: seguir cobrando o que se le confirme una venta a "
+"crédito. Quien pregunta lee los cobros del cobrador en diarios de custodia, "
+"y nada más de sus pagos."
+
+#. module: account_collection
+#: model:ir.model.fields,help:account_collection.field_account_config__collection_supervisor_id
+#: model:ir.model.fields,help:account_collection.field_res_config_settings__collection_supervisor_id
+msgid ""
+"Who answers for field collections: receives what customers report about "
+"their receipts and the payment complements still unsent."
+msgstr ""
+"Quién responde por la cobranza en campo: recibe lo que reportan los clientes"
+" sobre sus recibos y los complementos de pago aún sin timbrar."
+
+#. module: account_collection
+#: model:ir.model.fields,help:account_collection.field_account_collection_remittance__collector_id
+msgid "Who hands the money in."
+msgstr "Quién entrega el dinero."
+
+#. module: account_collection
+#: model:ir.model.fields,help:account_collection.field_wizard_account_move_line_pay__collector_id
+msgid "Who received the money from the customer."
+msgstr "Quién recibió el dinero del cliente."
+
+#. module: account_collection
+#: model:ir.model.fields,help:account_collection.field_account_payment__collector_id
+msgid ""
+"Who received the money from the customer. While the payment is in a custody "
+"journal, the money is in this person's hands."
+msgstr ""
+"Quién recibió el dinero del cliente. Mientras el pago esté en un diario de "
+"custodia, el dinero está en manos de esta persona."
+
+#. module: account_collection
+#: model_terms:ir.ui.view,arch_db:account_collection.view_account_collection_remittance_search
+msgid "With Difference"
+msgstr "Con diferencia"
+
+#. module: account_collection
+#: model:ir.model.fields,help:account_collection.field_account_config__collection_custody_days_check
+#: model:ir.model.fields,help:account_collection.field_res_config_settings__collection_custody_days_check
+msgid ""
+"Working days, on the company's calendar, a collector may hold a check before"
+" it is overdue."
+msgstr ""
+"Días hábiles, según el calendario de la empresa, que un cobrador puede traer"
+" un cheque antes de que se venza."
+
+#. module: account_collection
+#: model:ir.model.fields,help:account_collection.field_account_config__collection_custody_days_cash
+#: model:ir.model.fields,help:account_collection.field_res_config_settings__collection_custody_days_cash
+msgid ""
+"Working days, on the company's calendar, a collector may hold cash before it"
+" is overdue and the daily check reminds them to hand it in."
+msgstr ""
+"Días hábiles, según el calendario de la empresa, que un cobrador puede traer"
+" efectivo antes de que se venza y la revisión diaria le recuerde entregarlo."
+
+#. module: account_collection
+#: model:mail.template,subject:account_collection.mail_template_collection_receipt
+msgid ""
+"{{ object.company_id.name }}: receipt {{ object.name }} for {{ "
+"format_amount(object.amount, object.currency_id) }}"
+msgstr ""
+"{{ object.company_id.name }}: recibo {{ object.name }} por {{ "
+"format_amount(object.amount, object.currency_id) }}"
+
+#. module: account_collection
+#: model:ir.model.fields,field_description:account_collection.field_account_collection_remittance__activity_calendar_event_id
+msgid "Next Activity Calendar Event"
+msgstr "Próximo evento del calendario de actividades"
+
+#. module: account_collection
+#: model:ir.model.fields,field_description:account_collection.field_account_collection_remittance__rating_ids
+msgid "Ratings"
+msgstr "Calificaciones"
+
+#. module: account_collection
+#: model:ir.model.fields.selection,name:account_collection.selection__account_collection_custody_report__age__0_1
+msgid "0-1 days"
+msgstr "0-1 días"
+
+#. module: account_collection
+#: model:ir.model.fields.selection,name:account_collection.selection__account_collection_custody_report__age__2_3
+msgid "2-3 days"
+msgstr "2-3 días"
+
+#. module: account_collection
+#: model:ir.model.fields,field_description:account_collection.field_wizard_account_payment_bounce__fee
+msgid "Bank Fee Charged to the Customer"
+msgstr "Comisión bancaria cargada al cliente"
+
+#. module: account_collection
+#. odoo-python
+#: code:addons/account_collection/models/account_payment.py:0
+msgid "Bank fee for bounced check %(payment)s"
+msgstr "Comisión bancaria por el cheque devuelto %(payment)s"
+
+#. module: account_collection
+#: model:ir.model.fields,field_description:account_collection.field_account_payment__collection_bounce_move_id
+msgid "Bounce Entry"
+msgstr "Asiento de devolución"
+
+#. module: account_collection
+#: model:ir.model.fields.selection,name:account_collection.selection__account_payment__collection_check_state__bounced
+msgid "Bounced"
+msgstr "Devuelto"
+
+#. module: account_collection
+#: model:ir.model.fields,field_description:account_collection.field_account_config__collection_check_fee_account_id
+#: model:ir.model.fields,field_description:account_collection.field_res_config_settings__collection_check_fee_account_id
+msgid "Bounced Check Fee Account"
+msgstr "Cuenta de comisión por cheque devuelto"
+
+#. module: account_collection
+#: model:ir.model.fields,field_description:account_collection.field_wizard_account_payment_bounce__date
+msgid "Bounced On"
+msgstr "Devuelto el"
+
+#. module: account_collection
+#. odoo-python
+#: code:addons/account_collection/models/account_payment.py:0
+msgid "Bounced check %(payment)s: %(reason)s"
+msgstr "Cheque devuelto %(payment)s: %(reason)s"
+
+#. module: account_collection
+#. odoo-python
+#: code:addons/account_collection/models/account_payment.py:0
+msgid ""
+"Check %(payment)s bounced: %(reason)s. %(invoices)s are open again; collect "
+"them from the customer."
+msgstr ""
+"El cheque %(payment)s fue devuelto: %(reason)s. %(invoices)s vuelven a estar"
+" abiertas; cóbralas de nuevo al cliente."
+
+#. module: account_collection
+#: model:ir.model.fields,field_description:account_collection.field_wizard_account_payment_bounce__amount
+msgid "Check Amount"
+msgstr "Importe del cheque"
+
+#. module: account_collection
+#. odoo-python
+#: code:addons/account_collection/models/account_payment.py:0
+#: model_terms:ir.ui.view,arch_db:account_collection.view_account_payment_form
+#: model_terms:ir.ui.view,arch_db:account_collection.view_wizard_account_payment_bounce_form
+msgid "Check Bounced"
+msgstr "Cheque devuelto"
+
+#. module: account_collection
+#: model:ir.model.fields,field_description:account_collection.field_account_payment__collection_check_date
+#: model:ir.model.fields,field_description:account_collection.field_wizard_account_move_line_pay__collection_check_date
+msgid "Check Date"
+msgstr "Fecha del cheque"
+
+#. module: account_collection
+#: model:ir.model.fields,field_description:account_collection.field_account_payment__collection_check_state
+msgid "Check Status"
+msgstr "Estado del cheque"
+
+#. module: account_collection
+#. odoo-python
+#: code:addons/account_collection/models/account_payment.py:0
+msgid "Check bounced"
+msgstr "Cheque devuelto"
+
+#. module: account_collection
+#: model_terms:ir.ui.view,arch_db:account_collection.view_account_collection_custody_report_search
+msgid "Checks"
+msgstr "Cheques"
+
+#. module: account_collection
+#: model:ir.model.fields.selection,name:account_collection.selection__account_payment__collection_check_state__cleared
+msgid "Cleared"
+msgstr "Cobrado"
+
+#. module: account_collection
+#: model:ir.model.fields,field_description:account_collection.field_account_collection_custody_report__date
+msgid "Collected On"
+msgstr "Cobrado el"
+
+#. module: account_collection
+#: model:ir.model.fields,field_description:account_collection.field_account_collection_custody_report__payment_id
+#: model:ir.model.fields,field_description:account_collection.field_wizard_account_payment_bounce__payment_id
+msgid "Collection"
+msgstr "Cobro"
+
+#. module: account_collection
+#: model:ir.model,name:account_collection.model_account_collection_custody_report
+msgid "Collections in Custody by Age"
+msgstr "Cobros en custodia por antigüedad"
+
+#. module: account_collection
+#: model:ir.model.fields,field_description:account_collection.field_wizard_account_payment_bounce__currency_id
+msgid "Company Currency"
+msgstr "Moneda de la empresa"
+
+#. module: account_collection
+#: model:ir.actions.act_window,name:account_collection.action_account_collection_custody_report
+#: model:ir.ui.menu,name:account_collection.menu_account_collection_custody_report
+#: model_terms:ir.ui.view,arch_db:account_collection.view_account_collection_custody_report_graph
+#: model_terms:ir.ui.view,arch_db:account_collection.view_account_collection_custody_report_list
+#: model_terms:ir.ui.view,arch_db:account_collection.view_account_collection_custody_report_pivot
+#: model_terms:ir.ui.view,arch_db:account_collection.view_account_collection_custody_report_search
+msgid "Custody Aging"
+msgstr "Antigüedad de la custodia"
+
+#. module: account_collection
+#: model:ir.model.fields,field_description:account_collection.field_account_collection_custody_report__journal_id
+msgid "Custody Journal"
+msgstr "Diario de custodia"
+
+#. module: account_collection
+#: model:ir.model.fields,field_description:account_collection.field_account_collection_custody_report__age_days
+msgid "Days Held"
+msgstr "Días en custodia"
+
+#. module: account_collection
+#: model:ir.model.fields.selection,name:account_collection.selection__account_payment__collection_check_state__deposited
+msgid "Deposited"
+msgstr "Depositado"
+
+#. module: account_collection
+#: model_terms:ir.ui.view,arch_db:account_collection.view_wizard_account_payment_bounce_form
+msgid "Discard"
+msgstr "Descartar"
+
+#. module: account_collection
+#: model:ir.model.fields,field_description:account_collection.field_account_collection_custody_report__amount
+msgid "Held"
+msgstr "En custodia"
+
+#. module: account_collection
+#: model:ir.model.fields,field_description:account_collection.field_account_collection_custody_report__age
+#: model_terms:ir.ui.view,arch_db:account_collection.view_account_collection_custody_report_search
+msgid "Held For"
+msgstr "Tiempo en custodia"
+
+#. module: account_collection
+#: model:ir.model.fields,help:account_collection.field_account_collection_custody_report__is_overdue
+msgid "Held past the working days the company allows for its method."
+msgstr ""
+"En custodia más días hábiles de los que la empresa permite para su forma de "
+"pago."
+
+#. module: account_collection
+#: model:ir.model.fields,help:account_collection.field_account_config__collection_check_fee_account_id
+#: model:ir.model.fields,help:account_collection.field_res_config_settings__collection_check_fee_account_id
+msgid ""
+"Income account crediting the bank fee a customer is charged when their check"
+" bounces."
+msgstr ""
+"Cuenta de ingresos que abona la comisión bancaria que se cobra al cliente "
+"cuando su cheque es devuelto."
+
+#. module: account_collection
+#. odoo-python
+#: code:addons/account_collection/models/account_payment.py:0
+msgid ""
+"Only a check handed in to the bank or a till can bounce. A check still in "
+"custody goes back to the customer by cancelling its collection."
+msgstr ""
+"Solo un cheque entregado al banco o a una caja puede ser devuelto. Un cheque"
+" que sigue en custodia se regresa al cliente cancelando su cobro."
+
+#. module: account_collection
+#: model:ir.model.fields.selection,name:account_collection.selection__account_collection_custody_report__age__4_plus
+msgid "Over 3 days"
+msgstr "Más de 3 días"
+
+#. module: account_collection
+#: model:ir.model.fields,field_description:account_collection.field_account_collection_custody_report__is_overdue
+#: model_terms:ir.ui.view,arch_db:account_collection.view_account_collection_custody_report_search
+msgid "Overdue"
+msgstr "Vencido"
+
+#. module: account_collection
+#: model:ir.model.fields,field_description:account_collection.field_wizard_account_payment_bounce__reason
+msgid "Reason"
+msgstr "Motivo"
+
+#. module: account_collection
+#: model_terms:ir.ui.view,arch_db:account_collection.view_wizard_account_payment_bounce_form
+msgid "Record Bounce"
+msgstr "Registrar devolución"
+
+#. module: account_collection
+#: model:ir.model,name:account_collection.model_wizard_account_payment_bounce
+msgid "Record a Bounced Check"
+msgstr "Registrar un cheque devuelto"
+
+#. module: account_collection
+#: model_terms:ir.ui.view,arch_db:account_collection.view_account_collection_remittance_graph
+msgid "Remittance Differences"
+msgstr "Diferencias de rendiciones"
+
+#. module: account_collection
+#. odoo-python
+#: code:addons/account_collection/models/account_payment.py:0
+msgid ""
+"Set the bounced check fee account of %(company)s to charge the customer the "
+"bank's fee."
+msgstr ""
+"Configura la cuenta de comisión por cheque devuelto de %(company)s para "
+"cobrar al cliente la comisión del banco."
+
+#. module: account_collection
+#. odoo-python
+#: code:addons/account_collection/models/account_payment.py:0
+msgid ""
+"Set the inter-bank transfer account of %(company)s: the bounced check is "
+"charged back where its deposit waited."
+msgstr ""
+"Configura la cuenta de transferencias entre bancos de %(company)s: el cheque"
+" devuelto se carga de vuelta donde esperaba su depósito."
+
+#. module: account_collection
+#. odoo-python
+#: code:addons/account_collection/models/account_collection_remittance.py:0
+msgid ""
+"The checks of %(payments)s are dated after %(date)s: hand them in on their "
+"date."
+msgstr ""
+"Los cheques de %(payments)s tienen fecha posterior al %(date)s: entrégalos "
+"en su fecha."
+
+#. module: account_collection
+#. odoo-python
+#: code:addons/account_collection/models/account_collection_remittance.py:0
+msgid ""
+"The checks of %(payments)s bounced after this remittance; it stands as "
+"handed in."
+msgstr ""
+"Los cheques de %(payments)s fueron devueltos después de esta rendición; "
+"queda como entregada."
+
+#. module: account_collection
+#: model:ir.model.fields,help:account_collection.field_wizard_account_move_line_pay__collection_check_date
+msgid "The date written on the check, when it is post-dated."
+msgstr "La fecha escrita en el cheque, cuando es posfechado."
+
+#. module: account_collection
+#: model:ir.model.fields,help:account_collection.field_account_payment__collection_check_date
+msgid ""
+"The date written on the check. A post-dated check is handed in to the bank "
+"on that date, not before."
+msgstr ""
+"La fecha escrita en el cheque. Un cheque posfechado se entrega al banco en "
+"esa fecha, no antes."
+
+#. module: account_collection
+#: model:ir.model.fields,help:account_collection.field_account_payment__collection_bounce_move_id
+msgid "The entry that charged the bounced check back to the customer."
+msgstr "El asiento que volvió a cargar el cheque devuelto al cliente."
+
+#. module: account_collection
+#: model_terms:ir.ui.view,arch_db:account_collection.view_wizard_account_payment_bounce_form
+msgid ""
+"The invoices this check paid open again, the check is charged back where it "
+"was deposited and the collector is asked to collect again."
+msgstr ""
+"Las facturas que pagó este cheque vuelven a abrirse, el cheque se carga de "
+"vuelta donde se depositó y se pide al cobrador que cobre de nuevo."
+
+#. module: account_collection
+#: model_terms:ir.actions.act_window,help:account_collection.action_account_collection_custody_report
+msgid "What each collector holds, by how long they have held it."
+msgstr "Lo que tiene cada cobrador, según cuánto tiempo lo ha tenido."
+
+#. module: account_collection
+#: model:ir.model.fields,help:account_collection.field_account_payment__collection_check_state
+msgid ""
+"Where a collected check stands: in the collector's custody, deposited by a "
+"remittance, cleared once the bank reports the deposit, or bounced."
+msgstr ""
+"Dónde está un cheque cobrado: en custodia del cobrador, depositado por una "
+"rendición, cobrado cuando el banco reporta el depósito, o devuelto."
+
+#. module: account_collection
+#: model:ir.model.fields,help:account_collection.field_wizard_account_payment_bounce__reason
+msgid "Why the bank returned the check, as it reports it."
+msgstr "Por qué el banco devolvió el cheque, tal como lo reporta."
+
+#. module: account_collection
+#: model:ir.model.fields,help:account_collection.field_account_config__collection_max_distance_km
+#: model:ir.model.fields,help:account_collection.field_res_config_settings__collection_max_distance_km
+msgid ""
+"A collection recorded farther than this from the customer's geolocated "
+"address is marked for review; zero marks none."
+msgstr ""
+"Un cobro registrado más lejos que esto del domicilio geolocalizado del "
+"cliente queda marcado para revisión; cero no marca ninguno."
+
+#. module: account_collection
+#: model:ir.model.fields,field_description:account_collection.field_account_payment__collection_latitude
+msgid "Collected At (Latitude)"
+msgstr "Cobrado en (latitud)"
+
+#. module: account_collection
+#: model:ir.model.fields,field_description:account_collection.field_account_payment__collection_longitude
+msgid "Collected At (Longitude)"
+msgstr "Cobrado en (longitud)"
+
+#. module: account_collection
+#: model:ir.model.fields,field_description:account_collection.field_account_config__collection_max_distance_km
+#: model:ir.model.fields,field_description:account_collection.field_res_config_settings__collection_max_distance_km
+msgid "Collection Distance Limit (km)"
+msgstr "Distancia máxima del cobro (km)"
+
+#. module: account_collection
+#: model:ir.model.fields,field_description:account_collection.field_account_payment__collection_distance_km
+msgid "Distance to Customer (km)"
+msgstr "Distancia al cliente (km)"
+
+#. module: account_collection
+#: model:ir.model.fields,field_description:account_collection.field_account_collection_custody_report__is_far_from_customer
+#: model:ir.model.fields,field_description:account_collection.field_account_payment__is_far_from_customer
+#: model_terms:ir.ui.view,arch_db:account_collection.view_account_collection_custody_report_search
+#: model_terms:ir.ui.view,arch_db:account_collection.view_account_payment_search
+msgid "Far From Customer"
+msgstr "Lejos del cliente"
+
+#. module: account_collection
+#: model:ir.model.fields,help:account_collection.field_account_payment__collection_distance_km
+msgid ""
+"How far from the customer's geolocated address the collector stood when "
+"recording the collection; empty when either point is unknown."
+msgstr ""
+"A qué distancia del domicilio geolocalizado del cliente estaba el cobrador "
+"al registrar el cobro; vacío si se desconoce alguno de los dos puntos."
+
+#. module: account_collection
+#: model:ir.model.fields,help:account_collection.field_account_payment__is_far_from_customer
+msgid ""
+"Recorded farther from the customer's address than the company allows. "
+"Evidence to review, not a refusal."
+msgstr ""
+"Registrado más lejos del domicilio del cliente de lo que la empresa permite."
+" Es evidencia para revisar, no un rechazo."

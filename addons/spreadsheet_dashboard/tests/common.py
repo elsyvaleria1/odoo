@@ -1,0 +1,31 @@
+from odoo import Command
+from odoo.tests.common import TransactionCase, new_test_user
+
+
+class DashboardTestCommon(TransactionCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.group = cls.env["res.groups"].create({"name": "test group"})
+        cls.user = new_test_user(cls.env, login="Raoul")
+        cls.user.group_ids |= cls.group
+
+    def create_dashboard(self, group=None):
+        dashboard_group = group or self.env["spreadsheet.dashboard.group"].create(
+            {"name": "Dashboard group"}
+        )
+        return self.env["spreadsheet.dashboard"].create(
+            {
+                "name": "a dashboard",
+                "group_ids": [Command.set(self.group.ids)],
+                "dashboard_group_id": dashboard_group.id,
+            }
+        )
+
+    def share_dashboard(self, dashboard):
+        return self.env["spreadsheet.dashboard.share"].create(
+            {
+                "dashboard_id": dashboard.id,
+                "spreadsheet_data": dashboard.spreadsheet_data,
+            }
+        )

@@ -1,0 +1,163 @@
+/** @odoo-module native */
+import { proxy } from "@odoo/owl";
+import { rpc } from "@web/core/network";
+import { registry } from "@web/core/registry";
+import { _t } from "@web/core/translation";
+import { checkFileSize } from "@web/core/utils/files";
+import { humanNumber } from "@web/core/utils/format/numbers";
+import { getDataURLFromFile } from "@web/core/utils/urls";
+
+import { UploadProgressToast } from "./upload_progress_toast.js";
+
+export const AUTOCLOSE_DELAY = 3000;
+export const AUTOCLOSE_DELAY_LONG = 8000;
+
+export const uploadService = {
+    dependencies: ["notification"],
+    start(env, { notification }) {
+        let fileId = 0;
+        const progressToast = proxy({
+            files: {},
+            isVisible: false,
+        });
+
+        registry.category("main_components").add("UploadProgressToast", {
+            Component: UploadProgressToast,
+            props: {
+                close: () => (progressToast.isVisible = false),
+            },
+        });
+
+        const addFile = (file) => {
+            progressToast.files[file.id] = file;
+            progressToast.isVisible = true;
+            return progressToast.files[file.id];
+        };
+
+        const deleteFile = (fileId) => {
+            delete progressToast.files[fileId];
+            if (!Object.keys(progressToast.files).length) {
+                progressToast.isVisible = false;
+            }
+        };
+        return {
+            get progressToast() {
+                return progressToast;
+            },
+            get fileId() {
+                return fileId;
+            },
+            addFile,
+            deleteFile,
+            incrementId() {
+                fileId++;
+            },
+            uploadUrl: async (url, { resModel, resId }, onUploaded) => {
+                const attachment = await rpc("/html_editor/attachment/add_url", {
+                    url,
+                    res_model: resModel,
+                    res_id: resId,
+                });
+                await onUploaded(attachment);
+            },
+            /**
+             * @param {Array<File>} files
+             * @param {Object} options
+             * @param {Function} onUploaded
+             */
+            uploadFiles: async (files, { resModel, resId, isImage }, onUploaded) => {
+                const sortedFiles = Array.from(files).sort((a, b) => a.size - b.size);
+                for (const file of sortedFiles) {
+                    let fileSize = file.size;
+                    if (!checkFileSize(fileSize, notification)) {
+                        return null;
+                    }
+                    if (!fileSize) {
+                        fileSize = "";
+                    } else {
+                        fileSize = humanNumber(fileSize) + "B";
+                    }
+
+                    const id = ++fileId;
+                    file.progressToastId = id;
+                    addFile({
+                        id,
+                        name: file.name,
+                        size: fileSize,
+                        progress: 0,
+                    });
+                }
+
+                for (const sortedFile of sortedFiles) {
+                    const file = progressToast.files[sortedFile.progressToastId];
+                    let dataURL;
+                    try {
+                        dataURL = await getDataURLFromFile(sortedFile);
+                    } catch {
+                        deleteFile(file.id);
+                        env.services.notification.add(
+                            _t('Could not load the file "%s".', sortedFile.name),
+                            { type: "danger" },
+                        );
+                        continue;
+                    }
+                    try {
+                        const attachment = await rpc(
+                            "/html_editor/attachment/add_data",
+                            {
+                                name: file.name,
+                                data: dataURL.split(",")[1],
+                                res_id: resId,
+                                res_model: resModel,
+                                is_image: !!isImage,
+                                width: 0,
+                                quality: 0,
+                            },
+                        );
+                        if (attachment.error) {
+                            file.hasError = true;
+                            file.errorMessage = attachment.error;
+                        } else {
+                            if (attachment.mimetype === "image/webp") {
+                                const image = document.createElement("img");
+                                image.src = `data:image/webp;base64,${dataURL.split(",")[1]}`;
+                                await new Promise((resolve) =>
+                                    image.addEventListener("load", resolve),
+                                );
+                                const canvas = document.createElement("canvas");
+                                canvas.width = image.width;
+                                canvas.height = image.height;
+                                const ctx = canvas.getContext("2d");
+                                ctx.fillStyle = "rgb(255, 255, 255)";
+                                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                                ctx.drawImage(image, 0, 0);
+                                const altDataURL = canvas.toDataURL("image/jpeg");
+                                await rpc("/html_editor/attachment/add_data", {
+                                    name: file.name.replace(/\.webp$/, ".jpg"),
+                                    data: altDataURL.split(",")[1],
+                                    res_id: attachment.id,
+                                    res_model: "ir.attachment",
+                                    is_image: true,
+                                    width: 0,
+                                    quality: 0,
+                                });
+                            }
+                            file.uploaded = true;
+                            await onUploaded(attachment);
+                        }
+                        const message_autoclose_delay = file.hasError
+                            ? AUTOCLOSE_DELAY_LONG
+                            : AUTOCLOSE_DELAY;
+                        setTimeout(() => deleteFile(file.id), message_autoclose_delay);
+                    } catch (error) {
+                        file.hasError = true;
+                        setTimeout(() => deleteFile(file.id), AUTOCLOSE_DELAY_LONG);
+                        throw error;
+                    }
+                }
+            },
+        };
+    },
+};
+
+registry.category("services").add("upload", uploadService);

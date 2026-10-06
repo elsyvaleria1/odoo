@@ -1,0 +1,118 @@
+// @ts-check
+/** @odoo-module native */
+import { useMailContext } from "@mail/utils/common/mail_context";
+import { Component, proxy, t, useListener, useProps } from "@odoo/owl";
+import { Dropdown, DropdownItem } from "@web/components/dropdown";
+import { browser } from "@web/core/browser/browser";
+import { makeLogger } from "@web/core/debug/debug_logger";
+import { _t } from "@web/core/translation";
+import { elementRef } from "@web/core/utils/element_ref";
+import { useAutofocus } from "@web/core/utils/hooks";
+
+const log = makeLogger("mail.message.search");
+/**
+ * @typedef {Object} SearchFilter
+ * @property {string} label
+ * @property {string} name
+ * @property {true|false|undefined} [is_notification]
+ */
+
+/**
+ * @typedef {Object} Props
+ * @property {ReturnType<typeof import("@mail/core/common/message_search_hook").useMessageSearch>} messageSearch
+ * @property {import("models").Thread} thread
+ * @property {function} [closeSearch]
+ * @extends {Component<Props, import("@web/env").OdooEnv>}
+ */
+export class SearchMessageInput extends Component {
+    static template = "mail.SearchMessageInput";
+    static props = {
+        closeSearch: t.any().optional(),
+        messageSearch: t.any(),
+        thread: t.any(),
+    };
+    static components = { Dropdown, DropdownItem };
+    props = useProps(this.constructor.props);
+
+    setup() {
+        super.setup();
+        this.mailContext = useMailContext();
+        this.state = proxy({ searchTerm: "", searchedTerm: "" });
+        this.autofocusRef = elementRef();
+        useAutofocus({ ref: this.autofocusRef });
+        useListener(
+            browser,
+            "keydown",
+            /** @param {Event} event */
+            (event) => {
+                const ev = /** @type {KeyboardEvent} */ (event);
+                if (ev.key === "Escape") {
+                    this.props.closeSearch?.();
+                }
+            },
+            { capture: true },
+        );
+    }
+
+    search() {
+        log.logic("search", () => ({
+            thread: this.props.thread?.localId,
+            term: this.state.searchTerm,
+            is_notification: this.props.messageSearch.is_notification,
+        }));
+        this.props.messageSearch.searchTerm = this.state.searchTerm;
+        this.props.messageSearch.search();
+        this.state.searchedTerm = this.state.searchTerm;
+    }
+
+    clear() {
+        this.state.searchTerm = "";
+        this.state.searchedTerm = this.state.searchTerm;
+        this.props.messageSearch.clear();
+        this.props.closeSearch?.();
+    }
+
+    /** @param {KeyboardEvent} ev */
+    onKeydownSearch(ev) {
+        if (ev.key !== "Enter") {
+            return;
+        }
+        if (!this.state.searchTerm) {
+            this.clear();
+        } else {
+            this.search();
+        }
+    }
+
+    /** @param {SearchFilter} searchFilter */
+    onChangeSearchFilter(searchFilter) {
+        if (searchFilter.is_notification !== this.props.messageSearch.is_notification) {
+            log.logic("onChangeSearchFilter", () => ({
+                is_notification: searchFilter.is_notification,
+            }));
+            this.props.messageSearch.is_notification = searchFilter.is_notification;
+            this.search();
+        }
+    }
+
+    /** @returns {SearchFilter[]} */
+    get searchFilters() {
+        return [
+            {
+                label: "all",
+                name: _t("All"),
+                is_notification: undefined,
+            },
+            {
+                label: "conversations",
+                name: _t("Conversations"),
+                is_notification: false,
+            },
+            {
+                label: "tracked_changes",
+                name: _t("Tracked Changes"),
+                is_notification: true,
+            },
+        ];
+    }
+}

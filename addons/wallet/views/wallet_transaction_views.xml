@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_wallet_transaction_form" model="ir.ui.view">
+        <field name="name">wallet.transaction.form</field>
+        <field name="model">wallet.transaction</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name" /></h1>
+                    </div>
+                    <group name="main">
+                        <group name="left_col">
+                            <field name="card_id" />
+                            <field name="account_id" />
+                            <field name="statement_id" />
+                            <field name="external_ref" />
+                        </group>
+                        <group name="right_col">
+                            <field name="date_transaction" />
+                            <field name="place" />
+                            <field name="place_code" />
+                            <field name="vendor_id" />
+                            <field name="currency_id" invisible="1" />
+                            <field name="amount" widget="monetary" />
+                            <label for="quantity" />
+                            <div class="o_row">
+                                <field name="quantity" />
+                                <field name="uom_id" />
+                            </div>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page
+                            name="raw"
+                            string="Raw data"
+                            groups="wallet.group_wallet_manager">
+                            <field name="raw_data" />
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_wallet_transaction_list" model="ir.ui.view">
+        <field name="name">wallet.transaction.list</field>
+        <field name="model">wallet.transaction</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="date_transaction" />
+                <field name="card_id" />
+                <field name="account_id" optional="hide" />
+                <field name="place" />
+                <field name="vendor_id" optional="hide" />
+                <field name="quantity" optional="show" />
+                <field name="uom_id" optional="show" />
+                <field name="amount" widget="monetary" sum="Total" />
+                <field name="external_ref" optional="hide" />
+                <field name="currency_id" column_invisible="True" />
+            </list>
+        </field>
+    </record>
+
+    <record id="view_wallet_transaction_pivot" model="ir.ui.view">
+        <field name="name">wallet.transaction.pivot</field>
+        <field name="model">wallet.transaction</field>
+        <field name="arch" type="xml">
+            <pivot>
+                <field name="card_id" type="row" />
+                <field name="date" type="col" interval="month" />
+                <field name="amount" type="measure" />
+            </pivot>
+        </field>
+    </record>
+
+    <record id="view_wallet_transaction_search" model="ir.ui.view">
+        <field name="name">wallet.transaction.search</field>
+        <field name="model">wallet.transaction</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name" />
+                <field name="card_id" />
+                <field name="account_id" />
+                <field name="place" />
+                <field name="external_ref" />
+                <filter name="fuel" string="Fuel" domain="[('kind', '=', 'fuel')]" />
+                <filter name="toll" string="Toll" domain="[('kind', '=', 'toll')]" />
+                <group>
+                    <filter
+                        name="group_by_card"
+                        string="Card"
+                        context="{'group_by': 'card_id'}" />
+                    <filter
+                        name="group_by_month"
+                        string="Month"
+                        context="{'group_by': 'date:month'}" />
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_wallet_transaction" model="ir.actions.act_window">
+        <field name="name">Transactions</field>
+        <field name="res_model">wallet.transaction</field>
+        <field name="view_mode">list,pivot,form</field>
+        <field name="search_view_id" ref="view_wallet_transaction_search" />
+    </record>
+
+</odoo>

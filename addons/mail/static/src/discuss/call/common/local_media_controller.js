@@ -1,0 +1,493 @@
+// @ts-check
+/** @odoo-module native */
+import {
+    BlurManager,
+    selfieSegmentationLoader,
+} from "@mail/discuss/call/common/blur_manager";
+import { monitorAudio } from "@mail/utils/common/media_monitoring";
+import { closeStream } from "@mail/utils/common/misc";
+import { browser } from "@web/core/browser/browser";
+import { isMobileOS } from "@web/core/browser/feature_detection";
+import { makeLogger } from "@web/core/debug/debug_logger";
+import { _t } from "@web/core/translation";
+import { Mutex } from "@web/core/utils/concurrency";
+import { debounce } from "@web/core/utils/timing";
+
+const log = makeLogger("mail.rtc.media");
+
+const SCREEN_CONFIG = {
+    width: { max: 1920 },
+    height: { max: 1080 },
+    aspectRatio: 16 / 9,
+    frameRate: {
+        max: 24,
+    },
+};
+
+/**
+ * @typedef {Object} LocalMediaHooks
+ * @property {() => Pick<import("models").Settings, "audioConstraints" | "cameraConstraints" | "useBlur" | "use_push_to_talk" | "voiceActivationThreshold" | "cameraFacingMode" | "setUseBlur"> & Partial<Pick<import("models").Settings, "backgroundBlurAmount" | "edgeBlurAmount">>} getSettings
+ * @property {() => Pick<import("models").RtcSession, "isMute" | "is_muted" | "isTalking">|undefined} getLocalSession
+ * @property {() => Pick<import("models").RtcSession, "isMute" | "is_muted" | "isTalking">|undefined} getSelfSession
+ * @property {(type: import("./rtc_service").streamType, track: MediaStreamTrack|undefined) => Promise} updateTrackUpload
+ * @property {(isMute: boolean) => Promise} setMute
+ * @property {(media: {microphone?: boolean, camera?: boolean, screen?: boolean}) => void} onMediaUnavailable
+ * @property {(type: "camera" | "screen", options: Object|boolean) => Promise} toggleVideo
+ * @property {(soundName: string) => void} playSound
+ * @property {(text: string) => void} notify
+ * @property {(isTalking: boolean) => void} setTalking
+ * @property {() => Promise} updateMicAudioStatus
+ */
+export class LocalMediaController {
+    /** @type {AudioContext} */
+    audioContext;
+    /** @type {Pick<BlurManager, "stream" | "close" | "backgroundBlur" | "edgeBlur">|undefined} */
+    blurManager;
+    _audioTrackMutex = new Mutex();
+    _micResetMutex = new Mutex();
+    /** @type {WeakSet<MediaStreamTrack>} */
+    _videoTracksWatchedForEnd = new WeakSet();
+    _videoMutexes = { camera: new Mutex(), screen: new Mutex() };
+    _voiceActivationMutex = new Mutex();
+
+    /**
+     * @param {Object} param0
+     * @param {Pick<import("./rtc_service").RtcCallState, "micAudioTrack" | "screenAudioTrack" | "audioTrack" | "cameraTrack" | "screenTrack" | "disconnectAudioMonitor" | "sourceCameraStream" | "sourceScreenStream" | "sendCamera" | "sendScreen"> & {channel?: Pick<import("models").Thread, "id">}} param0.state
+     * @param {LocalMediaHooks} param0.hooks
+     */
+    constructor({ state, hooks }) {
+        this.state = state;
+        this.hooks = hooks;
+        this.linkVoiceActivationDebounce = debounce(this.linkVoiceActivation, 500);
+    }
+
+    /**
+     * @param {MediaStream} videoStream
+     * @returns {Promise<Pick<BlurManager, "stream" | "close" | "backgroundBlur" | "edgeBlur">>}
+     */
+    async applyBlurEffect(videoStream) {
+        // a failed load rejects here, into the callers' notify-and-disable path
+        await selfieSegmentationLoader.load();
+        const settings = this.hooks.getSettings();
+        return new BlurManager(videoStream, {
+            backgroundBlur: settings.backgroundBlurAmount,
+            edgeBlur: settings.edgeBlurAmount,
+        });
+    }
+
+    applyMicState() {
+        const session = this.hooks.getLocalSession();
+        this.state.micAudioTrack.enabled = !session.isMute && session.isTalking;
+    }
+
+    /**
+     * @param {MediaStreamTrack|undefined} track
+     * @param {"camera"|"screen"} type
+     * @param {SetVideoOptions|boolean} [options]
+     */
+    async setVideo(track, type, options) {
+        return this._videoMutexes[type].exec(() =>
+            this._setVideo(track, type, options),
+        );
+    }
+
+    /**
+     * @typedef {Object} SetVideoOptions
+     * @property {boolean} [activateVideo=false]
+     * @property {import("@web/env").OdooEnv} [env]
+     * @property {boolean} [refreshStream]
+     */
+    /**
+     * @param {MediaStreamTrack|undefined} track
+     * @param {"camera"|"screen"} type
+     */
+    async _stopVideo(track, type) {
+        if (track) {
+            track.stop();
+        }
+        switch (type) {
+            case "camera": {
+                this.state.cameraTrack = undefined;
+                closeStream(this.state.sourceCameraStream);
+                this.state.sourceCameraStream = null;
+                break;
+            }
+            case "screen": {
+                this.state.screenTrack = undefined;
+                this.state.screenAudioTrack?.stop();
+                this.state.screenAudioTrack = undefined;
+                closeStream(this.state.sourceScreenStream);
+                this.state.sourceScreenStream = null;
+                await this.updateAudioTrack();
+                break;
+            }
+        }
+    }
+    /**
+     * @param {SetVideoOptions|boolean} [options]
+     * @returns {{activateVideo: boolean, env: any, refreshStream: boolean}}
+     */
+    _getSetVideoOptions(options) {
+        if (typeof options === "boolean") {
+            return {
+                activateVideo: options ?? false,
+                env: undefined,
+                refreshStream: undefined,
+            };
+        }
+        return {
+            activateVideo: options?.activateVideo ?? false,
+            env: options?.env,
+            refreshStream: options?.refreshStream,
+        };
+    }
+    /**
+     * @param {"camera"|"screen"} type
+     * @param {Object} settings
+     * @param {any} env
+     * @param {boolean} refreshStream
+     * @returns {Promise<MediaStream|undefined>}
+     */
+    async _acquireVideoStream(type, settings, env, refreshStream) {
+        const sourceWindow = env?.pipWindow ?? browser;
+        if (type === "camera") {
+            if (this.state.sourceCameraStream && !refreshStream) {
+                return this.state.sourceCameraStream;
+            }
+            closeStream(this.state.sourceCameraStream);
+            return await sourceWindow.navigator.mediaDevices.getUserMedia({
+                video: settings.cameraConstraints,
+            });
+        }
+        if (type === "screen") {
+            let sourceStream;
+            if (this.state.sourceScreenStream) {
+                sourceStream = this.state.sourceScreenStream;
+            } else {
+                sourceStream =
+                    await sourceWindow.navigator.mediaDevices.getDisplayMedia({
+                        video: SCREEN_CONFIG,
+                        audio: true,
+                    });
+            }
+            this.hooks.playSound("screen-sharing");
+            return sourceStream;
+        }
+        return undefined;
+    }
+    /**
+     * @param {MediaStream} sourceStream
+     * @param {Object} settings
+     * @returns {Promise<MediaStreamTrack>}
+     */
+    async _applyBlurToStream(sourceStream, settings) {
+        this.blurManager?.close();
+        this.blurManager = undefined;
+        try {
+            this.blurManager = await this.applyBlurEffect(sourceStream);
+            const blurredStream = await Promise.race([
+                this.blurManager.stream,
+                new Promise((_, reject) =>
+                    browser.setTimeout(
+                        () => reject(new Error(_t("Blur is unavailable"))),
+                        10_000,
+                    ),
+                ),
+            ]);
+            return blurredStream.getVideoTracks()[0];
+        } catch (_e) {
+            this.hooks.notify(_e.message);
+            settings.setUseBlur(false);
+            this.blurManager?.close();
+            this.blurManager = undefined;
+            return sourceStream.getVideoTracks()[0];
+        }
+    }
+    /**
+     * @param {"camera"|"screen"} type
+     * @param {MediaStream|undefined} sourceStream
+     * @param {MediaStreamTrack|undefined} outputTrack
+     * @param {MediaStreamTrack|undefined} screenAudioTrack
+     */
+    _storeVideoState(type, sourceStream, outputTrack, screenAudioTrack) {
+        switch (type) {
+            case "camera": {
+                Object.assign(this.state, {
+                    sourceCameraStream: sourceStream,
+                    cameraTrack: outputTrack,
+                    sendCamera: Boolean(outputTrack),
+                });
+                break;
+            }
+            case "screen": {
+                Object.assign(this.state, {
+                    sourceScreenStream: sourceStream,
+                    screenTrack: outputTrack,
+                    screenAudioTrack: screenAudioTrack,
+                    sendScreen: Boolean(outputTrack),
+                });
+                break;
+            }
+        }
+    }
+    /**
+     * @param {MediaStreamTrack|undefined} track
+     * @param {"camera"|"screen"} type
+     * @param {SetVideoOptions|boolean} [options]
+     */
+    async _setVideo(track, type, options) {
+        const settings = this.hooks.getSettings();
+        const { activateVideo, env, refreshStream } = this._getSetVideoOptions(options);
+        log.pipeline("setVideo", () => ({
+            type,
+            activateVideo,
+            refreshStream,
+            hadTrack: Boolean(track),
+            useBlur: settings.useBlur,
+        }));
+        if (!activateVideo) {
+            if (type === "screen") {
+                this.hooks.playSound("screen-sharing");
+            }
+            if (type === "camera" && this.blurManager) {
+                this.blurManager.close();
+                this.blurManager = undefined;
+            }
+            await this._stopVideo(track, type);
+            return;
+        }
+        let sourceStream;
+        const endAcquire = log.perf("acquireVideoStream");
+        try {
+            sourceStream = await this._acquireVideoStream(
+                type,
+                settings,
+                env,
+                refreshStream,
+            );
+            endAcquire({ type });
+        } catch {
+            endAcquire({ type, failed: true });
+            this.hooks.onMediaUnavailable({
+                camera: type === "camera",
+                screen: type === "screen",
+            });
+            await this._stopVideo(track, type);
+            return;
+        }
+        if (!this.hooks.getSelfSession()) {
+            log.logic("setVideo discards stream: no self session", () => ({ type }));
+            closeStream(sourceStream);
+            return;
+        }
+        let outputTrack = sourceStream ? sourceStream.getVideoTracks()[0] : undefined;
+        const screenAudioTrack = sourceStream
+            ? sourceStream.getAudioTracks()[0]
+            : undefined;
+        if (outputTrack) {
+            if (!this._videoTracksWatchedForEnd.has(outputTrack)) {
+                this._videoTracksWatchedForEnd.add(outputTrack);
+                outputTrack.addEventListener("ended", async () => {
+                    log.lifecycle("video track ended", () => ({ type }));
+                    await this.hooks.toggleVideo(type, { force: false });
+                });
+            }
+            if (type === "camera" && isMobileOS()) {
+                const trackSettings = outputTrack.getSettings();
+                if (
+                    trackSettings?.facingMode === "user" ||
+                    trackSettings?.facingMode === "environment"
+                ) {
+                    settings.cameraFacingMode = trackSettings.facingMode;
+                } else if (!settings.cameraFacingMode) {
+                    settings.cameraFacingMode = "user";
+                }
+            }
+        }
+        if (settings.useBlur && type === "camera") {
+            outputTrack = await this._applyBlurToStream(sourceStream, settings);
+        } else if (!settings.useBlur && type === "camera") {
+            this.blurManager?.close();
+            this.blurManager = undefined;
+        }
+        this._storeVideoState(type, sourceStream, outputTrack, screenAudioTrack);
+        if (this.state.screenAudioTrack) {
+            await this.updateAudioTrack();
+        }
+    }
+
+    updateAudioTrack() {
+        return this._audioTrackMutex.exec(async () => {
+            const { micAudioTrack, screenAudioTrack } = this.state;
+            if (micAudioTrack && screenAudioTrack) {
+                await this.audioContext?.close();
+                this.audioContext = new AudioContext();
+                const micSource = this.audioContext.createMediaStreamSource(
+                    new MediaStream([micAudioTrack]),
+                );
+                const screenSource = this.audioContext.createMediaStreamSource(
+                    new MediaStream([screenAudioTrack]),
+                );
+                const destination = this.audioContext.createMediaStreamDestination();
+                micSource.connect(destination);
+                screenSource.connect(destination);
+                this.state.audioTrack = destination.stream.getAudioTracks()[0];
+            } else {
+                if (this.audioContext) {
+                    await this.audioContext.close();
+                    this.audioContext = undefined;
+                }
+                const previousTrack = this.state.audioTrack;
+                this.state.audioTrack = micAudioTrack ?? screenAudioTrack;
+                if (previousTrack && previousTrack !== this.state.audioTrack) {
+                    previousTrack.stop();
+                }
+            }
+            await this.hooks.updateTrackUpload("audio", this.state.audioTrack);
+        });
+    }
+
+    /**
+     * @param {Object} [options]
+     * @param {boolean} [options.force]
+     * @param {boolean} [options.unmute]
+     */
+    resetMicAudioTrack({ force = false, unmute = true } = {}) {
+        return this._micResetMutex.exec(() =>
+            this._resetMicAudioTrack({ force, unmute }),
+        );
+    }
+
+    /**
+     * @param {Object} options
+     * @param {boolean} options.force
+     * @param {boolean} options.unmute
+     */
+    async _resetMicAudioTrack({ force, unmute }) {
+        const wasMuted = Boolean(this.hooks.getLocalSession()?.is_muted);
+        log.pipeline("resetMicAudioTrack", () => ({
+            force,
+            unmute,
+            wasMuted,
+            hadTrack: Boolean(this.state.micAudioTrack),
+        }));
+        this.state.micAudioTrack?.stop();
+        this.state.micAudioTrack = undefined;
+        if (
+            this.state.audioTrack &&
+            this.state.audioTrack !== this.state.screenAudioTrack
+        ) {
+            this.state.audioTrack.stop();
+        }
+        this.state.audioTrack = undefined;
+        if (!this.state.channel) {
+            return;
+        }
+        if (this.hooks.getLocalSession()) {
+            await this.hooks.setMute(true);
+        }
+        if (force) {
+            let micAudioTrack;
+            try {
+                const audioStream = await browser.navigator.mediaDevices.getUserMedia({
+                    audio: this.hooks.getSettings().audioConstraints,
+                });
+                micAudioTrack = audioStream.getAudioTracks()[0];
+                if (this.hooks.getLocalSession()) {
+                    await this.hooks.setMute(unmute ? false : wasMuted);
+                }
+            } catch {
+                log.logic("microphone unavailable");
+                this.hooks.onMediaUnavailable({ microphone: true });
+                await this.updateAudioTrack();
+                return;
+            }
+            if (!this.hooks.getLocalSession()) {
+                log.logic("mic track discarded: no local session");
+                micAudioTrack.stop();
+                return;
+            }
+            micAudioTrack.addEventListener("ended", async () => {
+                log.lifecycle("mic track ended");
+                await this.resetMicAudioTrack({ force: false });
+                await this.hooks.setMute(true);
+            });
+            const session = this.hooks.getLocalSession();
+            micAudioTrack.enabled = !session.isMute && session.isTalking;
+            this.state.micAudioTrack = micAudioTrack;
+            this.linkVoiceActivationDebounce();
+        }
+        await this.updateAudioTrack();
+    }
+
+    async linkVoiceActivation() {
+        return this._voiceActivationMutex.exec(async () => {
+            this.state.disconnectAudioMonitor?.();
+            const session = this.hooks.getLocalSession();
+            if (!session) {
+                return;
+            }
+            const settings = this.hooks.getSettings();
+            const micAudioTrack = this.state.micAudioTrack;
+            if (settings.use_push_to_talk || !this.state.channel || !micAudioTrack) {
+                log.logic("voice activation off", () => ({
+                    pushToTalk: settings.use_push_to_talk,
+                    hasTrack: Boolean(micAudioTrack),
+                }));
+                session.isTalking = false;
+                await this.hooks.updateMicAudioStatus();
+                return;
+            }
+            try {
+                const disconnect = await monitorAudio(micAudioTrack, {
+                    /** @param {boolean} isAboveThreshold */
+                    onThreshold: async (isAboveThreshold) => {
+                        this.hooks.setTalking(isAboveThreshold);
+                    },
+                    volumeThreshold: settings.voiceActivationThreshold,
+                });
+                if (this.state.micAudioTrack !== micAudioTrack) {
+                    disconnect?.();
+                    return;
+                }
+                this.state.disconnectAudioMonitor = disconnect;
+            } catch {
+                log.logic("voice activation unsupported");
+                this.hooks.notify(_t("Your browser does not support voice activation"));
+                session.isTalking = true;
+            }
+            await this.hooks.updateMicAudioStatus();
+        });
+    }
+
+    dispose() {
+        log.lifecycle("dispose");
+        this.linkVoiceActivationDebounce?.cancel?.();
+        this.state.disconnectAudioMonitor?.();
+        this.state.micAudioTrack?.stop();
+        this.state.screenAudioTrack?.stop();
+        this.state.audioTrack?.stop();
+        this.state.cameraTrack?.stop();
+        this.state.screenTrack?.stop();
+        closeStream(this.state.sourceCameraStream);
+        this.state.sourceCameraStream = null;
+        closeStream(this.state.sourceScreenStream);
+        this.state.sourceScreenStream = null;
+        this.audioContext?.close();
+        this.audioContext = undefined;
+        if (this.blurManager) {
+            this.blurManager.close();
+            this.blurManager = undefined;
+        }
+        Object.assign(this.state, {
+            disconnectAudioMonitor: undefined,
+            cameraTrack: undefined,
+            screenTrack: undefined,
+            screenAudioTrack: undefined,
+            micAudioTrack: undefined,
+            audioTrack: undefined,
+            sendCamera: false,
+            sendScreen: false,
+        });
+    }
+}

@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="manual_reminder_view_form" model="ir.ui.view">
+        <field name="name">account.followup.manual_reminder.view.form</field>
+        <field name="model">wizard.res.partner.send.followup</field>
+        <field name="arch" type="xml">
+            <form>
+                <field name="can_edit_body" invisible="1" />
+                <field name="lang" invisible="1" />
+                <field name="render_model" invisible="1" />
+
+                <div class="mb-2" name="options">
+                    <field name="print_letter" /><label for="print_letter" />
+                    <field name="email" /><label for="email" />
+                    <field name="sms" /><label for="sms" />
+                </div>
+
+                <group name="email_header" invisible="not email">
+                    <group col="6" colspan="2">
+                        <group colspan="1">
+                            <label for="email_recipient_ids" />
+                        </group>
+                        <group colspan="5">
+                            <field
+                                name="email_recipient_ids"
+                                string="Email Recipients"
+                                placeholder="Add contacts to notify..."
+                                widget="many2many_tags_email"
+                                colspan="2"
+                                nolabel="1"
+                                context="{'show_email': True, 'form_view_ref': 'base.view_partner_simple_form'}"
+                                options="{'no_quick_create': True}" />
+                        </group>
+                    </group>
+                    <group col="6" colspan="2">
+                        <group colspan="1">
+                            <label for="subject" />
+                        </group>
+                        <group colspan="5">
+                            <field
+                                name="subject"
+                                string="Email Subject"
+                                placeholder="Kind reminder!"
+                                colspan="2"
+                                nolabel="1"
+                                required="email" />
+                        </group>
+                    </group>
+                </group>
+
+                <group name="email_content" invisible="not email and not print_letter">
+                    <group colspan="2">
+                        <label for="body" colspan="2" />
+                        <field
+                            name="body"
+                            string="Letter/Email Content"
+                            placeholder="Write your message here..."
+                            widget="html_mail"
+                            colspan="2"
+                            nolabel="1"
+                            force_save="1"
+                            readonly="not can_edit_body"
+                            class="oe-bordered-editor" />
+                    </group>
+                </group>
+
+                <group
+                    name="attachments"
+                    col="4"
+                    invisible="not email and not print_letter">
+                    <group colspan="2">
+                        <field name="join_invoices" />
+                    </group>
+                    <group colspan="2">
+                        <field
+                            name="template_id"
+                            string="Content Template"
+                            context="{'default_model': 'res.partner', 'default_body': body, 'default_subject': subject}"
+                            options="{'no_create': True}" />
+                    </group>
+                    <group colspan="2">
+                        <field
+                            name="attachment_ids"
+                            widget="many2many_binary"
+                            colspan="2"
+                            nolabel="1"
+                            invisible="not join_invoices" />
+                    </group>
+                </group>
+
+                <group name="sms" string="SMS" invisible="not sms">
+                    <field
+                        name="sms_template_id"
+                        context="{'default_model': 'res.partner', 'default_body': sms_body}"
+                        options="{'no_create': True}" />
+                    <label for="sms_body" />
+                    <field
+                        name="sms_body"
+                        string="Sms Content"
+                        placeholder="Write your message here..."
+                        widget="text"
+                        colspan="2"
+                        nolabel="1"
+                        force_save="1"
+                        readonly="not can_edit_body"
+                        class="oe-bordered-editor" />
+                </group>
+
+                <footer>
+                    <button
+                        name="process_followup"
+                        type="object"
+                        string="Send &amp; Print"
+                        invisible="not show_print_button or not show_send_button"
+                        class="btn-primary"
+                        data-hotkey="q" />
+                    <button
+                        name="process_followup"
+                        type="object"
+                        string="Send"
+                        invisible="show_print_button or not show_send_button"
+                        class="btn-primary"
+                        data-hotkey="q" />
+                    <button
+                        name="process_followup"
+                        type="object"
+                        string="Print"
+                        invisible="not show_print_button or show_send_button"
+                        class="btn-primary"
+                        data-hotkey="q" />
+                    <button
+                        special="cancel"
+                        string="Cancel"
+                        class="btn-secondary"
+                        data-hotkey="x" />
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="manual_reminder_action" model="ir.actions.act_window">
+        <field name="name">Send and Print</field>
+        <field name="res_model">wizard.res.partner.send.followup</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+
+</odoo>

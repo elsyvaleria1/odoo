@@ -1,0 +1,79 @@
+#calendar_employee {
+    .o_planning_day_header {
+        @include o-bg-color($o-brand-odoo, $important: false);
+        a {
+            color: inherit;
+        }
+    }
+    .o_planning_more_link {
+        color: $o-enterprise-action-color;
+    }
+    // FullCalendar 7 only exposes an event's color as custom properties.
+    .o_planning_shift_block {
+        border: 1px solid var(--fc-event-color);
+        background-color: var(--fc-event-color);
+        color: var(--fc-event-contrast-color);
+    }
+    .o_planning_shift_dot {
+        flex-shrink: 0;
+        align-self: center;
+        width: 0.5rem;
+        height: 0.5rem;
+        margin-inline-end: 0.25rem;
+        border-radius: 50%;
+        background-color: var(--fc-event-color);
+    }
+    .o_planning_shift_switch_requested {
+        opacity: 0.5;
+    }
+    .o_planning_shift_block.o_planning_shift_switch_requested {
+        border-width: 5px;
+        background: repeating-linear-gradient(
+            40deg,
+            #a0a0a0,
+            #a0a0a0 5px,
+            var(--fc-event-color) 5px,
+            var(--fc-event-color) 10px
+        );
+    }
+}
+
+.o_planning_calendar_container .o_planning_toast {
+    top: 5em;
+    right: 1em;
+}
+
+.contact-assignee-popover {
+    text-align: left;
+
+    .popover-header {
+        padding: 0.3rem 1rem;
+    }
+
+    .popover-body {
+        padding: 0.5rem 1rem;
+    }
+}
+
+$odoo-color: #714b67;
+.o_base_shift_legend {
+    min-width: 35px;
+    background-color: $o-enterprise-color;
+    border-radius: 4px;
+}
+
+.o_open_shifts_legend {
+    opacity: 50%;
+}
+
+.o_unwanted_shifts_legend {
+    opacity: 50%;
+    background: repeating-linear-gradient(
+        40deg,
+        #a0a0a0,
+        #a0a0a0 2px,
+        $o-enterprise-color 2px,
+        $o-enterprise-color 4px
+    );
+    border: 2px solid $o-enterprise-color;
+}

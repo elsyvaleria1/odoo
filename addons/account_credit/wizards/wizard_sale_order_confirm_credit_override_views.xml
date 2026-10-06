@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="credit_exceeded_authorization_form" model="ir.ui.view">
+        <field name="name">credit.exceeded.authorization.form</field>
+        <field name="model">wizard.sale.order.confirm.credit.override</field>
+        <field name="arch" type="xml">
+            <form string="Credit Authorization">
+                <field name="company_currency_id" invisible="1" />
+                <field name="safe_order_ids" invisible="1" />
+                <field name="profile_id" invisible="1" />
+                <div class="alert alert-warning" role="alert" invisible="not reasons">
+                    <field name="reasons" />
+                </div>
+                <group>
+                    <group string="Partner Credit">
+                        <field name="partner_id" />
+                        <field name="partner_credit" string="Current Receivables" />
+                        <field
+                            name="credit_limit"
+                            widget="monetary"
+                            options="{'currency_field': 'company_currency_id'}" />
+                    </group>
+                    <group string="Authorization">
+                        <field name="amount_order" string="SO Amount" />
+                        <field name="amount_available" />
+                        <field name="amount_authorized" string="Amount to Authorize" />
+                        <field
+                            name="reason"
+                            placeholder="Why this credit is authorized..." />
+                    </group>
+                </group>
+                <field name="order_ids" readonly="1">
+                    <list>
+                        <field name="name" string="Order" />
+                        <field name="partner_id" optional="hide" />
+                        <field name="amount_total" sum="Total" />
+                        <field name="currency_id" column_invisible="1" />
+                    </list>
+                </field>
+                <footer>
+                    <button
+                        name="action_authorize_confirm"
+                        type="object"
+                        string="Authorize &amp; Confirm"
+                        groups="account_credit.group_credit_manager"
+                        class="btn-primary" />
+                    <button
+                        name="action_authorize"
+                        type="object"
+                        string="Authorize"
+                        groups="account_credit.group_credit_manager" />
+                    <button special="cancel" string="Cancel" class="btn-secondary" />
+                </footer>
+            </form>
+        </field>
+    </record>
+
+</odoo>

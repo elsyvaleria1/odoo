@@ -1,0 +1,139 @@
+/** @odoo-module native */
+import { Component, proxy, t, useProps } from "@odoo/owl";
+import { makeLogger } from "@web/core/debug/debug_logger";
+const log = makeLogger("pos.boot.error");
+
+export class CriticalPOSError extends Component {
+    static template = "point_of_sale.CriticalPOSError";
+    static props = { error: t.object() };
+    props = useProps(this.constructor.props);
+
+    setup() {
+        this.state = proxy({ expanded: false });
+        log.lifecycle("shown", () => ({
+            name: this.props.error?.constructor?.name,
+            message: this.props.error?.message,
+        }));
+    }
+    retry() {
+        log.lifecycle("retry: reload");
+        location.reload();
+    }
+
+    async exportLocalData() {
+        const dump = {};
+        const endExport = log.perf("exportLocalData");
+        const dbs = await indexedDB.databases();
+        for (const { name } of dbs) {
+            if (!name) {
+                continue;
+            }
+            const db = await new Promise((resolve, reject) => {
+                const req = indexedDB.open(name);
+                req.onsuccess = () => resolve(req.result);
+                req.onerror = () => reject(req.error);
+            });
+            try {
+                dump[name] = {};
+                for (const storeName of db.objectStoreNames) {
+                    dump[name][storeName] = await new Promise((resolve, reject) => {
+                        const req = db
+                            .transaction(storeName, "readonly")
+                            .objectStore(storeName)
+                            .getAll();
+                        req.onsuccess = () => resolve(req.result);
+                        req.onerror = () => reject(req.error);
+                    });
+                }
+            } finally {
+                db.close();
+            }
+        }
+        const blob = new Blob([JSON.stringify(dump)], { type: "application/json" });
+        endExport({ databases: Object.keys(dump).length, bytes: blob.size });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = `pos-data-backup-${new Date().toISOString().replaceAll(":", "-")}.json`;
+        link.click();
+        URL.revokeObjectURL(link.href);
+    }
+
+    async fullReset() {
+        if (
+            !window.confirm(
+                "This permanently deletes ALL locally cached Point of Sale data on this device, including orders that were not yet synchronized to the server.\n\nA backup file of the local data will be downloaded first.\n\nReset this device?",
+            )
+        ) {
+            return;
+        }
+        const step = async (fn) => {
+            try {
+                await fn();
+            } catch {}
+        };
+        log.lifecycle("fullReset: confirmed");
+
+        try {
+            await step(() => this.exportLocalData());
+
+            await step(() => localStorage.clear());
+            await step(() => sessionStorage.clear());
+
+            if ("serviceWorker" in navigator) {
+                await step(async () => {
+                    const regs = await navigator.serviceWorker.getRegistrations();
+                    await Promise.allSettled(regs.map((r) => r.unregister()));
+                });
+            }
+
+            if ("caches" in window) {
+                await step(async () => {
+                    const keys = await caches.keys();
+                    await Promise.allSettled(keys.map((k) => caches.delete(k)));
+                });
+            }
+
+            if ("indexedDB" in window && typeof indexedDB.databases === "function") {
+                await step(async () => {
+                    const dbs = await indexedDB.databases();
+                    const names = dbs.map((db) => db?.name).filter(Boolean);
+                    await Promise.allSettled(
+                        names.map((name) =>
+                            Promise.race([
+                                new Promise((resolve, reject) => {
+                                    const req = indexedDB.deleteDatabase(name);
+                                    req.onsuccess = () => resolve();
+                                    req.onerror = () => resolve();
+                                    req.onblocked = () => resolve();
+                                }),
+                                new Promise((resolve) =>
+                                    setTimeout(() => {
+                                        resolve();
+                                    }, 1500),
+                                ),
+                            ]),
+                        ),
+                    );
+                });
+            }
+        } finally {
+            location.reload();
+        }
+    }
+    async copyToClipboard() {
+        const error = this.props.error;
+        const text = this.state.expanded ? error.stack : error.message || String(error);
+        if (!text) {
+            return;
+        }
+
+        try {
+            await navigator.clipboard.writeText(text);
+        } catch (err) {
+            console.error("Could not copy text: ", err);
+        }
+    }
+    back() {
+        window.history.back();
+    }
+}

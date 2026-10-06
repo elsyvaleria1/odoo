@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="calendar_event_view_gantt_kanban_popover" model="ir.ui.view">
+        <field name="name">calendar.event.view.gantt.kanban.popover</field>
+        <field name="model">calendar.event</field>
+        <field name="priority">90</field>
+        <!--this view aims to be used in gantt pop-ups, not as a full kanban view.-->
+        <field name="arch" type="xml">
+            <kanban>
+                <templates>
+                <t t-name="card" class="o_appointment_gantt_popover_kanban_card gap-2">
+                    <div class="d-flex align-items-center">
+                        <i
+                            class="fa-regular fa-clock text-400 me-1"
+                            title="Date and time" />
+                        <field
+                            name="start"
+                            widget="daterange"
+                            options="{'end_date_field': 'stop'}" />
+                        <field name="stop" invisible="1" />
+                    </div>
+                    <div class="d-flex align-items-center" invisible="not location">
+                        <i
+                            class="fa-solid fa-location-dot text-400 me-1"
+                            title="Location" />
+                        <field name="location" />
+                    </div>
+                    <div
+                        class="d-flex align-items-center"
+                        invisible="not videocall_location">
+                        <i
+                            class="fa-solid fa-video text-400 me-1"
+                            title="Video Call URL" />
+                        <field name="videocall_location" widget="CopyClipboardChar" />
+                    </div>
+                    <div
+                        class="d-flex align-items-center"
+                        invisible="not appointment_type_manage_capacity">
+                        <i class="fa-solid fa-user text-400 me-1" title="Guests" />
+                        <field name="total_capacity_reserved" class="me-1" />guests
+                    </div>
+                    <div
+                        class="o_field_selection d-flex align-items-center"
+                        invisible="not appointment_status">
+                        <i
+                            class="fa-solid fa-circle text-400 me-1"
+                            title="Appointment Status" />
+                        <field name="appointment_status" widget="selection" />
+                    </div>
+                    <div class="d-flex" invisible="not description">
+                        <i
+                            class="fa-solid fa-sticky-note text-400 mt-1 me-1"
+                            title="Description" />
+                        <field
+                            name="description"
+                            class="d-inline-block w-100 o_appointment_gantt_popover_html_field" />
+                    </div>
+                </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
+    <record id="calendar_event_view_gantt_booking_resource" model="ir.ui.view">
+        <field name="name">calendar.event.view.gantt.booking.resource</field>
+        <field name="model">calendar.event</field>
+        <field name="arch" type="xml">
+            <gantt
+                string="Resources"
+                default_group_by="resource_ids"
+                create="1"
+                delete="1"
+                sample="0"
+                class="o_appointment_ressource_booking_gantt"
+                date_start="start"
+                date_stop="stop"
+                decoration-info="appointment_status == 'request'"
+                default_scale="day"
+                display_unavailability="1"
+                form_view_id="%(calendar.calendar_event_view_form_gantt_booking)d"
+                js_class="resource_booking_gantt"
+                kanban_view_id="%(calendar_gantt.calendar_event_view_gantt_kanban_popover)d"
+                plan="0"
+                precision="{'day': 'hour:quarter', 'week': 'day:half', 'month': 'day:half', 'year': 'day:full'}"
+                total_row="0">
+
+                <field name="active" />
+                <field name="appointment_booker_id" />
+                <field name="resource_ids" />
+                <field name="appointment_type_id" />
+                <field name="appointment_type_manage_capacity" />
+                <field name="appointment_type_schedule_based_on" />
+                <field name="booking_line_ids" />
+                <field name="description" />
+                <field name="total_capacity_reserved" />
+                <field name="start" />
+                <field name="stop" />
+                <field name="user_id" />
+                <field name="partner_id" />
+                <field name="partner_ids" />
+            </gantt>
+        </field>
+    </record>
+
+    <record id="calendar_event_view_gantt_booking_user" model="ir.ui.view">
+        <field name="name">calendar.event.view.gantt.meeting.user</field>
+        <field name="model">calendar.event</field>
+        <field
+            name="inherit_id"
+            ref="calendar_gantt.calendar_event_view_gantt_booking_resource" />
+        <field name="mode">primary</field>
+        <field name="arch" type="xml">
+            <gantt position="attributes">
+                <attribute name="default_group_by">partner_ids</attribute>
+                <attribute name="js_class">appointment_booking_gantt</attribute>
+            </gantt>
+        </field>
+    </record>
+
+    <record
+        id="calendar.calendar_event_action_view_bookings_resources"
+        model="ir.actions.act_window">
+        <field name="view_mode">gantt,calendar,list,form</field>
+    </record>
+
+    <record
+        id="action_view_bookings_resources_gantt"
+        model="ir.actions.act_window.view">
+        <field name="sequence">0</field>
+        <field name="view_mode">gantt</field>
+        <field
+            name="view_id"
+            ref="calendar_gantt.calendar_event_view_gantt_booking_resource" />
+        <field
+            name="act_window_id"
+            ref="calendar.calendar_event_action_view_bookings_resources" />
+    </record>
+
+    <record
+        id="calendar.calendar_event_action_view_bookings_users"
+        model="ir.actions.act_window">
+        <field name="view_mode">gantt,calendar,list,form</field>
+    </record>
+
+    <record id="action_view_bookings_users_gantt" model="ir.actions.act_window.view">
+        <field name="sequence">0</field>
+        <field name="view_mode">gantt</field>
+        <field
+            name="view_id"
+            ref="calendar_gantt.calendar_event_view_gantt_booking_user" />
+        <field
+            name="act_window_id"
+            ref="calendar.calendar_event_action_view_bookings_users" />
+    </record>
+
+</odoo>

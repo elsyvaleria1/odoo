@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="resource_role_view_list" model="ir.ui.view">
+        <field name="name">resource.role.list</field>
+        <field name="model">resource.role</field>
+        <field name="arch" type="xml">
+            <list editable="bottom" multi_edit="1">
+                <field name="sequence" widget="handle" />
+                <field name="name" placeholder="e.g. Developer" />
+                <field name="color" widget="color_picker" optional="show" />
+            </list>
+        </field>
+    </record>
+
+    <record id="resource_role_view_form" model="ir.ui.view">
+        <field name="name">resource.role.form</field>
+        <field name="model">resource.role</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <widget
+                        name="web_ribbon"
+                        title="Archived"
+                        invisible="active"
+                        bg_color="text-bg-danger" />
+                    <group>
+                        <field name="active" invisible="1" />
+                        <field name="name" />
+                        <field name="color" widget="color_picker" />
+                        <field name="resource_ids" widget="many2many_tags" />
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="resource_role_view_kanban" model="ir.ui.view">
+        <field name="name">resource.role.kanban</field>
+        <field name="model">resource.role</field>
+        <field name="arch" type="xml">
+            <kanban highlight_color="color">
+                <templates>
+                    <t t-name="menu">
+                        <a t-if="widget.editable" role="menuitem" type="open" class="dropdown-item">Edit</a>
+                        <a t-if="widget.deletable" role="menuitem" type="delete" class="dropdown-item">Delete</a>
+                        <field name="color" widget="kanban_color_picker" />
+                    </t>
+                    <t t-name="card">
+                        <field name="name" class="fw-bold fs-4 ms-1" />
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
+    <record id="resource_role_view_search" model="ir.ui.view">
+        <field name="name">resource.role.search</field>
+        <field name="model">resource.role</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name" />
+                <filter
+                    name="archived"
+                    string="Archived"
+                    domain="[('active', '=', False)]" />
+            </search>
+        </field>
+    </record>
+
+    <record id="resource_role_action" model="ir.actions.act_window">
+        <field name="name">Roles</field>
+        <field name="res_model">resource.role</field>
+        <field name="view_mode">list,kanban,form</field>
+        <field name="search_view_id" ref="resource_role_view_search" />
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No role found. Let's create one!
+            </p>
+            <p>
+                Roles describe what a resource can do. Assign them to tasks in
+                your project templates, or to shifts when planning who covers
+                what.
+            </p>
+        </field>
+    </record>
+
+    <record id="resource_role_action_list" model="ir.actions.act_window.view">
+        <field name="view_mode">list</field>
+        <field name="view_id" ref="resource.resource_role_view_list" />
+        <field name="act_window_id" ref="resource_role_action" />
+    </record>
+
+    <record id="resource_role_action_kanban" model="ir.actions.act_window.view">
+        <field name="view_mode">kanban</field>
+        <field name="view_id" ref="resource.resource_role_view_kanban" />
+        <field name="act_window_id" ref="resource_role_action" />
+    </record>
+
+</odoo>

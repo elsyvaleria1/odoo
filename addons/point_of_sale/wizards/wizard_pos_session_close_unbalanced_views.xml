@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_form_pos_close_session_wizard" model="ir.ui.view">
+        <field name="name">pos.close.session.wizard.form</field>
+        <field name="model">wizard.pos.session.close.unbalanced</field>
+        <field name="arch" type="xml">
+            <form string="Force Close Session">
+                <p><field name="message" readonly="1" /></p>
+                <group>
+                    <field name="account_readonly" invisible="1" />
+                    <field name="amount_to_balance" readonly="1" />
+                    <field name="account_id" readonly="account_readonly" />
+                </group>
+                <footer>
+                    <button
+                        name="action_close_session"
+                        type="object"
+                        string="Close Session"
+                        class="btn-primary"
+                        data-hotkey="q" />
+                    <button
+                        special="cancel"
+                        string="Cancel"
+                        class="btn-secondary"
+                        data-hotkey="x" />
+                </footer>
+            </form>
+        </field>
+    </record>
+
+</odoo>

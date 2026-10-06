@@ -1,0 +1,319 @@
+// @ts-check
+
+import { beforeEach, expect, getFixture, test } from "@odoo/hoot";
+import { click, press } from "@odoo/hoot-dom";
+import { animationFrame } from "@odoo/hoot-mock";
+import { Component, onWillStart, useProps, xml } from "@odoo/owl";
+import { getService, mountWithCleanup } from "@web/../tests/web_test_helpers";
+import { Deferred } from "@web/core/utils/concurrency";
+import { MainComponentsContainer } from "@web/ui/main_components_container";
+
+let target;
+
+beforeEach(async () => {
+    await mountWithCleanup(MainComponentsContainer);
+    target = getFixture();
+});
+
+test("simple use", async () => {
+    class Comp extends Component {
+        static template = xml`<div id="comp">in popover</div>`;
+        static props = null;
+        props = useProps(this.constructor.props);
+    }
+
+    expect(".o_popover").toHaveCount(0);
+
+    const remove = getService("popover").add(target, Comp);
+    await animationFrame();
+
+    expect(".o_popover").toHaveCount(1);
+    expect(".o_popover #comp").toHaveCount(1);
+
+    remove();
+    await animationFrame();
+
+    expect(".o_popover").toHaveCount(0);
+    expect(".o_popover #comp").toHaveCount(0);
+});
+
+test("close on click away", async () => {
+    class Comp extends Component {
+        static template = xml`<div id="comp">in popover</div>`;
+        static props = null;
+        props = useProps(this.constructor.props);
+    }
+
+    getService("popover").add(target, Comp);
+    await animationFrame();
+
+    expect(".o_popover").toHaveCount(1);
+    expect(".o_popover #comp").toHaveCount(1);
+
+    await click(document.body);
+    await animationFrame();
+
+    expect(".o_popover").toHaveCount(0);
+    expect(".o_popover #comp").toHaveCount(0);
+});
+
+test("close on click away when loading", async () => {
+    const def = new Deferred();
+    class Comp extends Component {
+        static template = xml`<div id="comp">in popover</div>`;
+        static props = null;
+        props = useProps(this.constructor.props);
+        setup() {
+            onWillStart(async () => {
+                await def;
+            });
+        }
+    }
+
+    getService("popover").add(target, Comp);
+    await animationFrame();
+
+    expect(".o_popover").toHaveCount(0);
+    expect(".o_popover #comp").toHaveCount(0);
+
+    click(document.body);
+    await animationFrame();
+
+    expect(".o_popover").toHaveCount(0);
+    expect(".o_popover #comp").toHaveCount(0);
+
+    def.resolve();
+    await animationFrame();
+
+    expect(".o_popover").toHaveCount(0);
+    expect(".o_popover #comp").toHaveCount(0);
+});
+
+test.tags("desktop");
+test("close on 'Escape' keydown", async () => {
+    class Comp extends Component {
+        static template = xml`<div id="comp">in popover</div>`;
+        static props = null;
+        props = useProps(this.constructor.props);
+    }
+
+    getService("popover").add(target, Comp);
+    await animationFrame();
+
+    expect(".o_popover").toHaveCount(1);
+    expect(".o_popover #comp").toHaveCount(1);
+
+    await press("Escape");
+    await animationFrame();
+
+    expect(".o_popover").toHaveCount(0);
+    expect(".o_popover #comp").toHaveCount(0);
+});
+
+test("do not close on click away", async () => {
+    class Comp extends Component {
+        static template = xml`<div id="comp">in popover</div>`;
+        static props = null;
+        props = useProps(this.constructor.props);
+    }
+
+    const remove = getService("popover").add(
+        target,
+        Comp,
+        {},
+        { closeOnClickAway: false },
+    );
+    await animationFrame();
+
+    expect(".o_popover").toHaveCount(1);
+    expect(".o_popover #comp").toHaveCount(1);
+
+    await click(document.body);
+    await animationFrame();
+
+    expect(".o_popover").toHaveCount(1);
+    expect(".o_popover #comp").toHaveCount(1);
+
+    remove();
+    await animationFrame();
+
+    expect(".o_popover").toHaveCount(0);
+    expect(".o_popover #comp").toHaveCount(0);
+});
+
+test("close callback", async () => {
+    class Comp extends Component {
+        static template = xml`<div id="comp">in popover</div>`;
+        static props = null;
+        props = useProps(this.constructor.props);
+    }
+
+    function onClose() {
+        expect.step("close");
+    }
+
+    getService("popover").add(target, Comp, {}, { onClose });
+    await animationFrame();
+
+    await click(document.body);
+    await animationFrame();
+
+    expect.verifySteps(["close"]);
+});
+
+test("sub component triggers close", async () => {
+    class Comp extends Component {
+        static template = xml`<div id="comp" t-on-click="() => this.props.close()">in popover</div>`;
+        static props = null;
+        props = useProps(this.constructor.props);
+    }
+
+    getService("popover").add(target, Comp);
+    await animationFrame();
+
+    expect(".o_popover").toHaveCount(1);
+    expect(".o_popover #comp").toHaveCount(1);
+
+    await click("#comp");
+    await animationFrame();
+
+    expect(".o_popover").toHaveCount(0);
+    expect(".o_popover #comp").toHaveCount(0);
+});
+
+test("close popover if target is removed", async () => {
+    class Comp extends Component {
+        static template = xml`<div id="comp">in popover</div>`;
+        static props = null;
+        props = useProps(this.constructor.props);
+    }
+
+    const popoverTarget = document.createElement("div");
+    target.appendChild(popoverTarget);
+    getService("popover").add(popoverTarget, Comp);
+    await animationFrame();
+
+    expect(".o_popover").toHaveCount(1);
+    expect(".o_popover #comp").toHaveCount(1);
+
+    popoverTarget.remove();
+    await animationFrame();
+
+    expect(".o_popover").toHaveCount(0);
+    expect(".o_popover #comp").toHaveCount(0);
+});
+
+test("close popover if an ancestor of the target is removed", async () => {
+    class Comp extends Component {
+        static template = xml`<div id="comp">in popover</div>`;
+        static props = null;
+        props = useProps(this.constructor.props);
+    }
+
+    const wrapper = document.createElement("div");
+    const popoverTarget = document.createElement("div");
+    wrapper.appendChild(popoverTarget);
+    target.appendChild(wrapper);
+
+    getService("popover").add(popoverTarget, Comp);
+    await animationFrame();
+
+    expect(".o_popover").toHaveCount(1);
+
+    wrapper.remove();
+    await animationFrame();
+
+    expect(popoverTarget.isConnected).toBe(false);
+    expect(".o_popover").toHaveCount(0);
+});
+
+test("close and do not crash if target parent does not exist", async () => {
+    const dissapearedTarget = document.createElement("div");
+
+    class Comp extends Component {
+        static template = xml`<div id="comp">in popover</div>`;
+        static props = null;
+        props = useProps(this.constructor.props);
+    }
+
+    function onClose() {
+        expect.step("close");
+    }
+
+    getService("popover").add(dissapearedTarget, Comp, {}, { onClose });
+    await animationFrame();
+
+    expect.verifySteps(["close"]);
+});
+
+test("keep popover if target sibling is removed", async () => {
+    class Comp extends Component {
+        static template = xml`<div id="comp">in popover</div>`;
+        static props = null;
+        props = useProps(this.constructor.props);
+    }
+
+    class Sibling extends Component {
+        static template = xml`<div id="sibling">Sibling</div>`;
+        static props = null;
+        props = useProps(this.constructor.props);
+    }
+
+    await mountWithCleanup(Sibling, { noMainContainer: true });
+
+    getService("popover").add(target, Comp);
+    await animationFrame();
+
+    expect(".o_popover").toHaveCount(1);
+    expect(".o_popover #comp").toHaveCount(1);
+
+    target.querySelector("#sibling").remove();
+    await animationFrame();
+
+    expect(".o_popover").toHaveCount(1);
+    expect(".o_popover #comp").toHaveCount(1);
+});
+
+test("close params reach onClose, as they do for a dialog", async () => {
+    /** @type {any} */
+    let received = "NEVER CALLED";
+    class Comp extends Component {
+        static template = xml`<div id="comp">in popover</div>`;
+        static props = null;
+        props = useProps(this.constructor.props);
+        setup() {
+            this.props.close({ reason: "picked" });
+        }
+    }
+
+    getService("popover").add(target, Comp, {}, { onClose: (p) => (received = p) });
+    await animationFrame();
+    await animationFrame();
+    expect(received).toEqual({ reason: "picked" });
+});
+
+test("a detached target hosts nothing and still settles onClose", async () => {
+    class Comp extends Component {
+        static template = xml`<div id="comp">in popover</div>`;
+        static props = null;
+        props = useProps(this.constructor.props);
+        setup() {
+            expect.step("setup");
+        }
+    }
+    const detached = document.createElement("div");
+    const remove = getService("popover").add(
+        detached,
+        Comp,
+        {},
+        {
+            onClose: () => expect.step("onClose"),
+        },
+    );
+    await animationFrame();
+
+    expect(".o_popover").toHaveCount(0);
+    expect.verifySteps(["onClose"]);
+    await remove();
+    expect.verifySteps([]);
+});

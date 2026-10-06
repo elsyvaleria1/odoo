@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="group_device_gps_geofence_editor" model="res.groups">
+        <field name="name">Remote GPS Geofence Editor</field>
+        <field name="privilege_id" ref="device.res_groups_privilege_device_device" />
+        <field
+            name="comment">Create and manage geofences (device.geo.fence) without device, IoT, or machine administration rights.</field>
+        <field
+            name="implied_ids"
+            eval="[Command.link(ref('device_gps.group_device_gps_user'))]" />
+    </record>
+
+    <record id="privilege_cache_current_address" model="res.groups">
+        <field
+            name="name">Privilege: the live map caches the address of a device's last position</field>
+        <field name="is_privilege" eval="True" />
+    </record>
+
+    <record id="access_device_device_locate" model="ir.access">
+        <field
+            name="name">device.device: a GPS user asks where a device is now, as a street address</field>
+        <field name="model_id" ref="device.model_device_device" />
+        <field name="group_id" ref="device_gps.group_device_gps_user" />
+        <field name="kind">permission</field>
+        <field name="verbs">locate</field>
+    </record>
+
+</odoo>

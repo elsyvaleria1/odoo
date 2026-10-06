@@ -1,0 +1,61 @@
+{
+    "name": "Manufacturing Work Orders",
+    "version": "1.2",
+    "oldest_upgradable_version": "1.2",
+    "category": "Supply Chain/Manufacturing",
+    "sequence": 51,
+    "summary": "Plan and execute work orders through shop-floor and quality-check interfaces",
+    "description": "Extends manufacturing with work-order planning views, shop-floor interaction and employee session tracking. Connects work orders to quality checks, instructions, components and production completion actions. Available operations depend on configured manufacturing orders, work centers and quality points.",
+    "author": "Odoo S.A.",
+    "license": "OEEL-1",
+    "depends": [
+        "quality",
+        "mrp",
+        "barcodes",
+        "web_gantt",
+        "web_tour",
+        "hr_hourly_cost",
+    ],
+    "data": [
+        "security/ir.access.csv",
+        "security/mrp_workorder_security.xml",
+        "data/mrp_workorder_data.xml",
+        "views/hr_employee_views.xml",
+        "views/quality_views.xml",
+        "views/mrp_bom_views.xml",
+        "views/mrp_workorder_views.xml",
+        "views/mrp_operation_views.xml",
+        "views/mrp_production_views.xml",
+        "views/mrp_workcenter_views.xml",
+        "views/stock_picking_type_views.xml",
+        "views/res_config_settings_view.xml",
+        "wizards/wizard_mrp_production_add_workorder_views.xml",
+        "wizards/wizard_mrp_workorder_update_instruction_views.xml",
+        "views/mrp_workorder_views_menus.xml",
+    ],
+    "demo": [
+        "demo/mrp_production_demo.xml",
+        "demo/mrp_workorder_demo.xml",
+        "demo/mrp_workorder_demo_stool.xml",
+    ],
+    "assets": {
+        "web.assets_backend": [
+            "mrp_workorder/static/src/**/*.scss",
+            "mrp_workorder/static/src/**/*.js",
+            "mrp_workorder/static/src/**/*.xml",
+        ],
+        "web.assets_tests": [
+            "mrp_workorder/static/tests/tours/**/*",
+        ],
+        "web.assets_unit_tests": [
+            "mrp_workorder/static/tests/**/*",
+            (
+                "remove",
+                "mrp_workorder/static/tests/tours/**/*",
+            ),
+        ],
+    },
+    "auto_install": [
+        "mrp",
+    ],
+}

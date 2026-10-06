@@ -1,0 +1,90 @@
+.s_floating_blocks {
+    --floating-boxes-box-ratio-sm: 0.6;
+    --floating-boxes-box-ratio-lg: 2;
+    --floating-boxes-box-ratio-lg-container-small: 1.6;
+    --floating-boxes-box-ratio-xl: 2.3;
+
+    --floating-boxes-box-padding-x-sm: #{map-get($spacers, 4)};
+    --floating-boxes-box-padding-x-lg: #{map-get($spacers, 5)};
+
+    --floating-boxes-grid-rows: 8;
+
+    .s_floating_blocks_block {
+        border-radius: inherit;
+        box-shadow: inherit;
+
+        top: 0;
+        opacity: 0;
+
+        transition: opacity var(--o-duration-normal, 0.2s);
+        will-change: transform;
+        transform-origin: center top;
+        contain: layout paint;
+        backface-visibility: hidden;
+
+        padding-left: var(
+            --floating-boxes-box-padding-x,
+            var(--floating-boxes-box-padding-x-sm)
+        );
+        padding-right: var(
+            --floating-boxes-box-padding-x,
+            var(--floating-boxes-box-padding-x-sm)
+        );
+
+        aspect-ratio: var(
+            --floating-boxes-box-ratio,
+            var(--floating-boxes-box-ratio-sm)
+        );
+
+        max-height: calc(100vh - #{map-get($spacers, 5) * 2}) !important;
+        max-height: calc(100lvh - #{map-get($spacers, 5) * 2}) !important;
+    }
+
+    @include media-breakpoint-up(lg) {
+        > .container,
+        > .container-fluid {
+            --floating-boxes-box-ratio: var(--floating-boxes-box-ratio-lg);
+            --floating-boxes-box-padding-x: var(--floating-boxes-box-padding-x-lg);
+        }
+        > .o_container_small {
+            --floating-boxes-box-ratio: var(
+                --floating-boxes-box-ratio-lg-container-small
+            );
+        }
+        > .container-fluid > div {
+            padding-left: map-get($spacers, 5);
+            padding-right: map-get($spacers, 5);
+        }
+
+        .s_floating_blocks_block {
+            > .container,
+            > .container-fluid,
+            > .o_container_small {
+                height: calc(50px * var(--floating-boxes-grid-rows));
+            }
+        }
+    }
+
+    @include media-breakpoint-up(xl) {
+        > .container,
+        > .container-fluid {
+            --floating-boxes-box-ratio: var(--floating-boxes-box-ratio-xl);
+        }
+
+        > .container-fluid > div {
+            padding-left: map-get($spacers, 5) * 2;
+            padding-right: map-get($spacers, 5) * 2;
+        }
+    }
+
+    @include media-breakpoint-up(xxl) {
+        > .container-fluid > div {
+            padding-left: map-get($spacers, 5) * 3;
+            padding-right: map-get($spacers, 5) * 3;
+        }
+    }
+
+    .s_floating_blocks_wrapper.s_floating_blocks_wrapper_shadow {
+        box-shadow: 0px 1vh 2vh o-token-alpha(--o-black, $black, 0.175);
+    }
+}

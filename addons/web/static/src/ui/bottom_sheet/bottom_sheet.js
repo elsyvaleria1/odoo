@@ -1,0 +1,426 @@
+// @ts-check
+/** @odoo-module native */
+
+import { Component, onMounted, onWillUnmount, proxy, t, useProps } from "@odoo/owl";
+import { browser } from "@web/core/browser/browser";
+import { prefersReducedMotion } from "@web/core/browser/feature_detection";
+import { router, routerBus } from "@web/core/browser/router";
+import { makeLogger } from "@web/core/debug/debug_logger";
+import { useLifecycleLog } from "@web/core/debug/logger_hooks";
+import { RouterEvent } from "@web/core/events";
+import { useHotkey } from "@web/core/hotkeys/hotkey_hook";
+import { getViewportDimensions, useViewportChange } from "@web/core/utils/dom/dvu";
+import { compensateScrollbar } from "@web/core/utils/dom/scrolling";
+import { elementRef } from "@web/core/utils/element_ref";
+import { clamp } from "@web/core/utils/format/numbers";
+import { useBus, useForwardRefToParent } from "@web/core/utils/hooks";
+import { useThrottleForAnimation } from "@web/core/utils/timing";
+import { useActiveElement } from "@web/ui/active_element";
+import { PRESENTED_PROPS } from "@web/ui/overlay/presenter";
+
+const log = makeLogger("web.ui.bottom_sheet");
+
+const DISMISS_ANIMATION_FALLBACK_DELAY = 1000;
+
+const DISMISS_FALLBACK_MARGIN = 250;
+
+const SLIDE_IN_ANIMATION = "bottom-sheet-in";
+const SLIDE_OUT_ANIMATION = "bottom-sheet-out";
+
+/**
+ * @param {string} value
+ * @returns {number}
+ */
+function parseCssDuration(value) {
+    const match = /^\s*(-?[\d.]+)(ms|s)\s*$/.exec(value ?? "");
+    if (!match) {
+        return NaN;
+    }
+    const amount = Number(match[1]);
+    return match[2] === "s" ? amount * 1000 : amount;
+}
+
+/**
+ * @param {HTMLElement | null | undefined} containerEl
+ * @returns {number}
+ */
+function slideOutFallbackDelay(containerEl) {
+    if (!containerEl) {
+        return DISMISS_ANIMATION_FALLBACK_DELAY;
+    }
+    const declared = parseCssDuration(
+        getComputedStyle(containerEl).getPropertyValue(
+            "--BottomSheet-slideOut-duration",
+        ),
+    );
+    if (!Number.isFinite(declared) || declared <= 0) {
+        return DISMISS_ANIMATION_FALLBACK_DELAY;
+    }
+    return declared + DISMISS_FALLBACK_MARGIN;
+}
+
+/**
+ * @param {HTMLElement} sheetEl
+ * @param {string} animationName
+ * @param {(keyof HTMLElementEventMap & ("animationend" | "animationcancel"))[]} types
+ * @param {() => void} callback
+ * @returns {() => void}
+ */
+function onSheetAnimation(sheetEl, animationName, types, callback) {
+    const dispose = () => {
+        for (const type of types) {
+            sheetEl.removeEventListener(type, handler);
+        }
+    };
+    const handler = (/** @type {AnimationEvent} */ ev) => {
+        if (ev.target === sheetEl && ev.animationName === animationName) {
+            dispose();
+            callback();
+        }
+    };
+    for (const type of types) {
+        sheetEl.addEventListener(type, handler);
+    }
+    return dispose;
+}
+
+export class BottomSheet extends Component {
+    static template = "web.BottomSheet";
+
+    static props = {
+        ...PRESENTED_PROPS,
+        component: t.function().optional(),
+        onBack: t.function().optional(),
+        preventDismissOnContentScroll: t.boolean().optional(),
+        slots: t.object().optional(),
+        class: PRESENTED_PROPS.class.optional(""),
+        closeOnClickAway: PRESENTED_PROPS.closeOnClickAway.optional(() => () => true),
+        closeOnEscape: PRESENTED_PROPS.closeOnEscape.optional(true),
+        componentProps: PRESENTED_PROPS.componentProps.optional({}),
+        setActiveElement: PRESENTED_PROPS.setActiveElement.optional(true),
+    };
+    props = useProps(this.constructor.props);
+
+    historyMarker = {};
+    /** @type {any} */
+    closeParams = undefined;
+    /** @type {(() => void)[]} */
+    cleanups = [];
+    /** @type {boolean} */
+    skipsAnimation = false;
+
+    /**
+     * @type {{
+     *     isPositionedReady: boolean,
+     *     isSnappingEnabled: boolean,
+     *     isDismissing: boolean,
+     *     progress: number,
+     * }}
+     */
+    state;
+
+    /**
+     * @type {{
+     *     viewportHeight: number,
+     *     naturalHeight: number,
+     *     initialHeight: number,
+     *     maxHeight: number,
+     *     dismissThreshold: number,
+     * }}
+     */
+    measurements;
+
+    /** @type {import("@odoo/owl").Ref<HTMLElement>} */
+    containerRef;
+
+    /** @type {import("@odoo/owl").Ref<HTMLElement>} */
+    scrollRailRef;
+
+    /** @type {import("@odoo/owl").Ref<HTMLElement>} */
+    sheetRef;
+
+    /** @type {import("@odoo/owl").Ref<HTMLElement>} */
+    sheetBodyRef;
+
+    setup() {
+        useLifecycleLog(log);
+        this.maxHeightPercent = 90;
+
+        this.close = this.close.bind(this);
+        this.back = this.back.bind(this);
+
+        this.sheetBodyRef = elementRef();
+        if (this.props.setActiveElement) {
+            useActiveElement(this.sheetBodyRef);
+        }
+
+        this.state = proxy({
+            isPositionedReady: false,
+            isSnappingEnabled: false,
+            isDismissing: false,
+            progress: 0,
+        });
+
+        this.measurements = {
+            viewportHeight: 0,
+            naturalHeight: 0,
+            initialHeight: 0,
+            maxHeight: 0,
+            dismissThreshold: 0,
+        };
+
+        useForwardRefToParent("ref", this.sheetBodyRef);
+
+        this.containerRef = elementRef();
+        this.scrollRailRef = elementRef();
+        this.sheetRef = elementRef();
+
+        this.throttledOnScroll = useThrottleForAnimation(this.onScroll.bind(this));
+
+        useViewportChange(() => {
+            if (this.state.isPositionedReady && !this.state.isDismissing) {
+                this.updateDimensions();
+            }
+        });
+
+        if (this.props.closeOnEscape) {
+            useHotkey("escape", () => this.slideOut());
+        }
+
+        useBus(routerBus, RouterEvent.EPHEMERAL_POPPED, ({ detail }) => {
+            if (
+                detail.markers.includes(this.historyMarker) &&
+                this.state.isPositionedReady &&
+                !this.state.isDismissing
+            ) {
+                this.slideOut();
+            }
+        });
+        onWillUnmount(() => {
+            for (const cleanup of this.cleanups.splice(0)) {
+                cleanup();
+            }
+            router.releaseEphemeral(this.historyMarker);
+        });
+
+        onMounted(() => {
+            router.pushEphemeral(this.historyMarker);
+
+            this.skipsAnimation =
+                prefersReducedMotion() ||
+                getComputedStyle(this.containerRef.el).animationName === "none";
+
+            this.initializeSheet();
+            compensateScrollbar(this.scrollRailRef.el, true, true, "padding-right");
+        });
+    }
+
+    initializeSheet() {
+        if (!this.containerRef.el || !this.scrollRailRef.el || !this.sheetRef.el) {
+            return;
+        }
+
+        this.measureDimensions();
+        this.applyDimensions();
+        this.positionSheet();
+        this.setupEventHandlers();
+        this.state.isPositionedReady = true;
+        log.logic("initialized", () => ({
+            ...this.measurements,
+            skipsAnimation: this.skipsAnimation,
+        }));
+
+        if (this.skipsAnimation) {
+            this.state.isSnappingEnabled = true;
+        } else {
+            this.cleanups.push(
+                onSheetAnimation(
+                    this.sheetRef.el,
+                    SLIDE_IN_ANIMATION,
+                    ["animationend"],
+                    () => {
+                        this.state.isSnappingEnabled = true;
+                    },
+                ),
+            );
+        }
+    }
+
+    updateDimensions() {
+        const rail = this.scrollRailRef.el;
+        rail.style.setProperty("scroll-snap-type", "none", "important");
+
+        const previousDismissHeight = this.measurements.initialHeight;
+        const openRatio = previousDismissHeight
+            ? rail.scrollTop / previousDismissHeight
+            : 1;
+
+        this.measureDimensions();
+        this.applyDimensions();
+
+        rail.scrollTop = clamp(openRatio, 0, 1) * this.measurements.initialHeight;
+
+        this.updateProgressValue(rail.scrollTop);
+
+        rail.style.removeProperty("scroll-snap-type");
+    }
+
+    measureDimensions() {
+        const viewportHeight = getViewportDimensions().height;
+        const maxHeightPx = (this.maxHeightPercent / 100) * viewportHeight;
+
+        const sheet = this.sheetRef.el;
+        sheet.style.setProperty("min-height", "0", "important");
+        sheet.style.setProperty("max-height", "none", "important");
+        sheet.style.setProperty("height", "auto", "important");
+        const naturalHeight = sheet.offsetHeight;
+        sheet.style.removeProperty("min-height");
+        sheet.style.removeProperty("max-height");
+        sheet.style.removeProperty("height");
+        const initialHeightPx = Math.min(naturalHeight, maxHeightPx);
+
+        this.measurements = {
+            viewportHeight,
+            naturalHeight,
+            initialHeight: initialHeightPx,
+            maxHeight: maxHeightPx,
+            dismissThreshold: Math.min(initialHeightPx * 0.3, 100),
+        };
+    }
+
+    applyDimensions() {
+        const rail = this.scrollRailRef.el;
+        const { initialHeight, viewportHeight } = this.measurements;
+
+        this.containerRef.el?.style.setProperty(
+            "--sheet-viewport-height",
+            `${viewportHeight}px`,
+        );
+        rail.style.setProperty("--sheet-height", `${initialHeight || 0}px`);
+        rail.style.setProperty("--sheet-max-height", `${viewportHeight}px`);
+        rail.style.setProperty("--dismiss-height", `${initialHeight || 0}px`);
+    }
+
+    positionSheet() {
+        const scrollRail = this.scrollRailRef.el;
+        const bodyContent = this.sheetBodyRef.el;
+
+        const scrollValue = this.measurements.maxHeight;
+
+        if (bodyContent) {
+            bodyContent.style.overflowY = "auto";
+        }
+
+        scrollRail.scrollTop = scrollValue || 0;
+        scrollRail.style.containerType = "scroll-state size";
+    }
+
+    setupEventHandlers() {
+        const scrollRail = this.scrollRailRef.el;
+        scrollRail.addEventListener("scroll", this.throttledOnScroll);
+        this.cleanups.push(() =>
+            scrollRail.removeEventListener("scroll", this.throttledOnScroll),
+        );
+    }
+
+    onScroll() {
+        if (!this.scrollRailRef.el) {
+            return;
+        }
+
+        const scrollTop = this.scrollRailRef.el.scrollTop;
+        this.updateProgressValue(scrollTop);
+
+        if (scrollTop < this.measurements.dismissThreshold) {
+            log.logic("dismissByScroll", () => ({
+                scrollTop,
+                dismissThreshold: this.measurements.dismissThreshold,
+            }));
+            this.slideOut();
+        }
+    }
+
+    /** @param {number} scrollTop */
+    updateProgressValue(scrollTop) {
+        const { initialHeight } = this.measurements;
+        if (!initialHeight) {
+            return;
+        }
+        const progress = clamp(scrollTop / initialHeight, 0, 1);
+
+        if (Math.abs(this.state.progress - progress) > 0.01) {
+            this.state.progress = progress;
+        }
+    }
+
+    slideOut() {
+        if (this.state.isDismissing) {
+            return;
+        }
+        log.logic("slideOut", () => ({
+            animated: !this.skipsAnimation && Boolean(this.sheetRef.el),
+            closeParams: this.closeParams,
+        }));
+
+        if (this.skipsAnimation || !this.sheetRef.el) {
+            this.props.close?.(this.closeParams);
+        } else {
+            let closed = false;
+            const onAnimationDone = (
+                /** @type {"animation" | "fallbackTimer"} */ via,
+            ) => {
+                if (closed) {
+                    return;
+                }
+                closed = true;
+                log.logic("slideOutDone", { via });
+                browser.clearTimeout(fallbackTimer);
+                dispose();
+                this.props.close?.(this.closeParams);
+            };
+            const dispose = onSheetAnimation(
+                this.sheetRef.el,
+                SLIDE_OUT_ANIMATION,
+                ["animationend", "animationcancel"],
+                () => onAnimationDone("animation"),
+            );
+            const fallbackTimer = browser.setTimeout(
+                () => onAnimationDone("fallbackTimer"),
+                slideOutFallbackDelay(this.containerRef.el),
+            );
+            this.cleanups.push(() => {
+                browser.clearTimeout(fallbackTimer);
+                dispose();
+            });
+        }
+
+        this.state.isDismissing = true;
+        this.state.isSnappingEnabled = false;
+    }
+
+    /** @returns {boolean} */
+    get isClosing() {
+        return Boolean(this.props.presentation?.isClosing);
+    }
+
+    /** @param {any} [closeParams] */
+    close(closeParams) {
+        this.closeParams = closeParams;
+        this.slideOut();
+    }
+
+    /** @param {PointerEvent} ev */
+    onBackdropClick(ev) {
+        if (this.props.closeOnClickAway(/** @type {any} */ (ev.target))) {
+            this.slideOut();
+        }
+    }
+
+    back() {
+        if (this.props.onBack) {
+            this.props.onBack();
+        } else {
+            this.slideOut();
+        }
+    }
+}

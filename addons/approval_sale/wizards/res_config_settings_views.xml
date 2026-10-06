@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="res_config_settings_view_form_approval_sale" model="ir.ui.view">
+        <field name="name">res.config.settings.view.form.inherit.approval.sale</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="sale.res_config_settings_view_form" />
+        <field name="arch" type="xml">
+
+            <xpath
+                expr="//block[@name='quotation_order_setting_container']"
+                position="after">
+
+                <block
+                    name="so_approval_setting_container"
+                    title="Sales Order Approval">
+                    <setting
+                        id="so_validation_setting"
+                        help="Define how sales orders should be validated and approved"
+                        company_dependent="1">
+                        <div class="content-group">
+                            <div class="row">
+                                <label
+                                    for="so_validation_level"
+                                    string="Validation Level"
+                                    class="col-lg-3 o_light_label" />
+                                <field name="so_validation_level" />
+                            </div>
+                            <div
+                                class="row mt16"
+                                invisible="so_validation_level != 'manager_amount'">
+                                <label
+                                    for="so_validation_amount"
+                                    string="Threshold Amount"
+                                    class="col-lg-3 o_light_label" />
+                                <field name="so_validation_amount" />
+                            </div>
+                            <div
+                                class="row mt16"
+                                invisible="so_validation_level != 'module_approval'">
+                                <button
+                                    name="action_view_so_approval_categories"
+                                    type="object"
+                                    string="Configure Approval Categories"
+                                    icon="fa-arrow-right"
+                                    class="btn-link" />
+                                <button
+                                    name="action_view_pending_so_approvals"
+                                    type="object"
+                                    string="Pending Sales Approvals"
+                                    icon="fa-arrow-right"
+                                    class="btn-link" />
+                            </div>
+                        </div>
+                    </setting>
+
+                    <setting
+                        id="so_rate_limit_setting"
+                        help="Fraud prevention: monitor for suspicious patterns of below-threshold orders"
+                        invisible="so_validation_level != 'manager_amount'"
+                        company_dependent="1">
+                        <field name="so_rate_limit_enabled" />
+                        <div
+                            class="content-group"
+                            invisible="not so_rate_limit_enabled">
+                            <div class="row mt16">
+                                <label
+                                    for="so_rate_limit_hours"
+                                    string="Time Window (Hours)"
+                                    class="col-lg-3 o_light_label" />
+                                <field name="so_rate_limit_hours" />
+                            </div>
+                            <div class="row mt16">
+                                <label
+                                    for="so_rate_limit_count"
+                                    string="Max Orders in Window"
+                                    class="col-lg-3 o_light_label" />
+                                <field name="so_rate_limit_count" />
+                            </div>
+                            <div class="row mt16">
+                                <label
+                                    for="so_rate_limit_amount"
+                                    string="Max Cumulative Amount"
+                                    class="col-lg-3 o_light_label" />
+                                <field name="so_rate_limit_amount" />
+                            </div>
+                        </div>
+                    </setting>
+
+                    <setting
+                        id="o_auto_confirm_setting"
+                        help="Automatically confirm sales orders when all approvals are granted">
+                        <field name="so_auto_confirm_on_approval" />
+                    </setting>
+                </block>
+
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

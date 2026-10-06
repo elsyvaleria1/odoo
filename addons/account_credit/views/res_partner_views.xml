@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_partner_form_credit_type" model="ir.ui.view">
+        <field name="name">res.partner.form.credit</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//div[@name='warning_tax']" position="before">
+                <field name="commercial_partner_id" invisible="1" />
+                <header invisible="commercial_partner_id != id">
+                    <button
+                        name="action_open_credit_profile"
+                        type="object"
+                        string="Credit Profile"
+                        groups="account_credit.group_credit_user" />
+                    <button
+                        name="action_toggle_legal"
+                        type="object"
+                        string="Legal Process Done"
+                        groups="account_credit.group_credit_manager"
+                        invisible="not credit_legal_hold" />
+                    <button
+                        name="action_toggle_legal"
+                        type="object"
+                        string="Send to Legal Process"
+                        groups="account_credit.group_credit_manager"
+                        invisible="credit_legal_hold" />
+                    <field
+                        name="credit_status"
+                        widget="statusbar"
+                        statusbar_visible="cash,review,authorized" />
+                </header>
+                <field name="credit_exception" invisible="1" />
+                <field name="credit_legal_hold" invisible="1" />
+                <field name="user_credit_manager" invisible="1" />
+                <field name="user_credit_user" invisible="1" />
+                <div invisible="commercial_partner_id != id">
+                    <div
+                        class="alert alert-warning"
+                        role="alert"
+                        invisible="not credit_type_warning">
+                        <field name="credit_type_warning" />
+                    </div>
+                </div>
+            </xpath>
+            <xpath expr="//group[@name='credit_limits']" position="attributes">
+                <attribute name="groups">account_credit.group_credit_readonly</attribute>
+            </xpath>
+            <xpath
+                expr="//group[@name='credit_limits']/label[@for='use_partner_credit_limit']"
+                position="attributes">
+                <attribute name="groups">account.group_account_invoice,account.group_account_readonly</attribute>
+            </xpath>
+            <xpath
+                expr="//group[@name='credit_limits']//field[@name='use_partner_credit_limit']"
+                position="attributes">
+                <attribute name="groups">account.group_account_invoice,account.group_account_readonly</attribute>
+            </xpath>
+            <xpath expr="//group[@name='credit_limits']" position="inside">
+                <field
+                    name="credit_grade_id"
+                    string="Credit Grade"
+                    readonly="not user_credit_user" />
+                <label for="credit_trusted_amount" />
+                <div class="o_row">
+                    <field
+                        name="credit_trusted_amount"
+                        readonly="not user_credit_manager" />
+                    <button
+                        name="action_reset_credit_trusted_amount"
+                        type="object"
+                        string="⟳ Reset"
+                        invisible="not user_credit_manager"
+                        class="btn-link" />
+                </div>
+                <field
+                    name="credit_exception"
+                    groups="account_credit.group_credit_manager" />
+                <field name="credit_exception_until" invisible="not credit_exception" />
+                <button
+                    name="action_view_credit_authorizations"
+                    type="object"
+                    string="Credit Facilities"
+                    icon="fa-credit-card"
+                    groups="account_credit.group_credit_readonly"
+                    class="btn-link" />
+            </xpath>
+            <xpath expr="//page[@name='anchor_financial']" position="before">
+                <page
+                    name="credit_documentation"
+                    string="Credit"
+                    groups="account_credit.group_credit_readonly"
+                    invisible="commercial_partner_id != id">
+                    <separator
+                        name="credit_documentation_separator"
+                        string="Credit Documentation"
+                        invisible="not credit_grade_id" />
+                    <field name="credit_root_folder_id" invisible="1" />
+                    <div
+                        class="alert alert-warning"
+                        role="alert"
+                        invisible="credit_root_folder_id or not credit_grade_id">
+                        This company has no credit folder configured yet.
+                        Set <em>Credit Folder</em> under
+                        <em>Settings → Documents</em> before uploading
+                        credit documents.
+                    </div>
+                    <field
+                        name="credit_document_ids"
+                        context="{'default_partner_id': id, 'default_folder_id': credit_root_folder_id, 'default_type': 'binary'}"
+                        invisible="not credit_root_folder_id"
+                        readonly="not user_credit_user">
+                        <list default_order="id asc" editable="bottom">
+                            <field name="name" />
+                            <field name="document_type_id" />
+                            <field name="has_amount" column_invisible="1" />
+                            <field name="has_collateral" column_invisible="1" />
+                            <field name="has_guarantor" column_invisible="1" />
+                            <field
+                                name="amount"
+                                optional="hide"
+                                invisible="not has_amount" />
+                            <field
+                                name="collateral_amount"
+                                optional="hide"
+                                invisible="not has_collateral" />
+                            <field
+                                name="is_guarantor"
+                                optional="hide"
+                                invisible="not has_guarantor" />
+                            <field name="date_expiration" />
+                            <field name="compliance_state" widget="badge" />
+                            <button
+                                name="action_view_document"
+                                type="object"
+                                string="Open"
+                                icon="fa-solid fa-up-right-from-square" />
+                        </list>
+                        <form>
+                            <sheet>
+                                <group name="credit_document_fields">
+                                    <field
+                                        name="name"
+                                        placeholder="Document name..."
+                                        required="1" />
+                                    <field name="datas" filename="name" />
+                                    <field name="document_type_id" />
+                                    <field name="has_amount" invisible="1" />
+                                    <field name="has_collateral" invisible="1" />
+                                    <field name="has_guarantor" invisible="1" />
+                                    <field name="amount" invisible="not has_amount" />
+                                    <field
+                                        name="collateral_amount"
+                                        invisible="not has_collateral" />
+                                    <field
+                                        name="is_guarantor"
+                                        invisible="not has_guarantor" />
+                                    <field name="date_expiration" />
+                                </group>
+                            </sheet>
+                        </form>
+                    </field>
+                </page>
+                <page
+                    name="credit_documentation_disabled"
+                    string="Credit"
+                    groups="account_credit.group_credit_readonly"
+                    invisible="commercial_partner_id == id">
+                    <div>
+                        <p>Credit-related settings are managed on <button name="open_commercial_entity" type="object" string="the parent company" class="oe_link" /></p>
+                    </div>
+                </page>
+            </xpath>
+            <xpath
+                expr="//separator[@name='credit_documentation_separator']"
+                position="before">
+                <xpath expr="//group[@name='credit_limits']" position="move" />
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

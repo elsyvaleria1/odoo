@@ -1,0 +1,327 @@
+// @ts-check
+/** @odoo-module native */
+
+import { Component, onMounted, onWillDestroy, t, useProps } from "@odoo/owl";
+import { prefersReducedMotion } from "@web/core/browser/feature_detection";
+import { makeLogger } from "@web/core/debug/debug_logger";
+import { useLifecycleLog } from "@web/core/debug/logger_hooks";
+import { useHotkey } from "@web/core/hotkeys/hotkey_hook";
+import { usePosition } from "@web/core/position/position_hook";
+import { reverseForRTL } from "@web/core/position/utils";
+import { mergeClasses } from "@web/core/utils/dom/classname";
+import { useClickAway } from "@web/core/utils/dom/click_away";
+import { elementRef } from "@web/core/utils/element_ref";
+import { useForwardRefToParent } from "@web/core/utils/hooks";
+import { useActiveElement } from "@web/ui/active_element";
+import { useOverlayScope } from "@web/ui/overlay/overlay_container";
+import { PRESENTED_PROPS } from "@web/ui/overlay/presenter";
+import { watchForDetachedTarget } from "@web/ui/popover/detached_target_watcher";
+
+const POPOVERS = new WeakMap();
+/**
+ * @param {HTMLElement} target
+ * @returns {HTMLElement | undefined}
+ */
+export function getPopoverForTarget(target) {
+    return POPOVERS.get(target);
+}
+
+const log = makeLogger("web.ui.popover");
+
+export class Popover extends Component {
+    static template = "web.Popover";
+    static props = {
+        ...PRESENTED_PROPS,
+        component: t.function(),
+        target: t.customValidator(
+            t.any(),
+            (/** @type {any} */ target) => target?.nodeType === Node.ELEMENT_NODE,
+        ),
+        animation: t.boolean().optional(true),
+        arrow: t.boolean().optional(true),
+        fixedPosition: t.boolean().optional(false),
+        extendedFlipping: t.boolean().optional(),
+        holdOnHover: t.boolean().optional(),
+        onPositioned: t.function().optional(),
+        position: t
+            .customValidator(t.string(), (/** @type {string} */ p) => {
+                const [d, v = "middle"] = p.split("-");
+                return (
+                    ["top", "bottom", "left", "right"].includes(d) &&
+                    ["start", "middle", "end", "fit"].includes(v)
+                );
+            })
+            .optional("bottom"),
+        class: PRESENTED_PROPS.class.optional(""),
+        closeOnClickAway: PRESENTED_PROPS.closeOnClickAway.optional(() => () => true),
+        closeOnEscape: PRESENTED_PROPS.closeOnEscape.optional(true),
+        componentProps: PRESENTED_PROPS.componentProps.optional({}),
+        setActiveElement: PRESENTED_PROPS.setActiveElement.optional(true),
+    };
+    static animationTime = 200;
+    props = useProps(this.constructor.props);
+
+    isHovered = false;
+    positionLocked = false;
+    animationDone = false;
+    hasTarget = true;
+
+    setup() {
+        // owl 3 accepts props a schema does not declare: content given as
+        // slots would render nothing, so it is refused
+        if (useProps().slots) {
+            throw new Error(
+                "Popover renders props.component with props.componentProps; it takes no slots",
+            );
+        }
+        this.overlayScope = useOverlayScope();
+        useLifecycleLog(log);
+        this.popoverRef = elementRef();
+        if (this.props.setActiveElement) {
+            useActiveElement(this.popoverRef);
+        } else if (this.props.closeOnEscape && odoo.debug) {
+            console.warn(
+                "[popover] closeOnEscape is set with setActiveElement disabled; " +
+                    "escape will reach whatever owns the UI instead. Handle escape " +
+                    "yourself, as Dropdown does, or let the popover claim the UI.",
+            );
+        }
+
+        useForwardRefToParent("ref", this.popoverRef);
+        this.arrowRef = elementRef();
+        this.position = usePosition(
+            this.popoverRef,
+            () => this.props.target,
+            this.positioningOptions,
+        );
+
+        if (!this.props.animation) {
+            this.animationDone = true;
+        }
+
+        // the observer's first delivery reports the size the popover was just
+        // positioned for; only later deliveries are resizes
+        let observedOnce = false;
+        const resizeObserver = new ResizeObserver(() => {
+            if (observedOnce) {
+                this.onResized();
+            }
+            observedOnce = true;
+        });
+
+        onMounted(() => {
+            POPOVERS.set(this.props.target, this.popoverRef.el);
+            resizeObserver.observe(this.popoverRef.el);
+        });
+        onWillDestroy(() => {
+            if (POPOVERS.get(this.props.target) === this.popoverRef.el) {
+                POPOVERS.delete(this.props.target);
+            }
+            resizeObserver.disconnect();
+        });
+
+        if (this.props.target.isConnected) {
+            useClickAway(this.onClickAway.bind(this), {
+                getAnchor: () => this.props.target,
+                getContentEl: () => this.popoverRef.el,
+            });
+
+            if (this.props.closeOnEscape) {
+                useHotkey("escape", () => this.props.close());
+            }
+            const unwatch = watchForDetachedTarget(this.props.target, () =>
+                this.props.close(),
+            );
+            onWillDestroy(unwatch);
+        } else {
+            this.hasTarget = false;
+            this.props.close();
+        }
+    }
+
+    /** @returns {boolean} */
+    get isClosing() {
+        return Boolean(this.props.presentation?.isClosing);
+    }
+
+    /** @returns {Object} */
+    get defaultClassObj() {
+        return mergeClasses(
+            "o_popover popover mw-100 bs-popover-auto",
+            { o_popover_closing: this.isClosing },
+            this.props.class,
+        );
+    }
+
+    /** @returns {Object} */
+    get positioningOptions() {
+        return {
+            extendedFlipping: this.props.extendedFlipping,
+            margin: this.props.arrow ? 8 : 0,
+            onPositioned: (
+                /** @type {HTMLElement} */ el,
+                /** @type {any} */ solution,
+            ) => {
+                this.onPositioned(solution);
+                this.props.onPositioned?.(el, solution);
+            },
+            position: this.props.position,
+            shrink: true,
+        };
+    }
+
+    /**
+     * @param {string} direction
+     * @returns {Animation}
+     */
+    animate(direction) {
+        const transform = {
+            top: ["translateY(-5%)", "translateY(0)"],
+            right: ["translateX(5%)", "translateX(0)"],
+            bottom: ["translateY(5%)", "translateY(0)"],
+            left: ["translateX(-5%)", "translateX(0)"],
+        }[direction];
+        return this.popoverRef.el.animate(
+            { opacity: [0, 1], transform },
+            prefersReducedMotion()
+                ? 0
+                : /** @type {any} */ (this.constructor).animationTime,
+        );
+    }
+
+    /**
+     * @param {EventTarget} target
+     * @returns {boolean}
+     */
+    isInside(target) {
+        return Boolean(this.overlayScope?.contains(target));
+    }
+
+    /** @returns {boolean} */
+    get isPositionFrozen() {
+        return Boolean(
+            this.props.fixedPosition ||
+            (this.props.holdOnHover && this.isHovered) ||
+            !this.animationDone,
+        );
+    }
+
+    reposition() {
+        this.positionLocked = false;
+        this.position.unlock();
+    }
+
+    /** @param {boolean} locked */
+    setPositionLocked(locked) {
+        if (locked) {
+            this.positionLocked = true;
+            this.position.lock();
+        } else {
+            this.reposition();
+        }
+    }
+
+    syncPositionLock() {
+        if (this.isPositionFrozen !== this.positionLocked) {
+            this.setPositionLocked(this.isPositionFrozen);
+        }
+    }
+
+    onResized() {
+        if (!this.isPositionFrozen) {
+            this.reposition();
+        }
+    }
+
+    onPointerEnter() {
+        this.isHovered = true;
+        this.syncPositionLock();
+    }
+
+    onPointerLeave() {
+        this.isHovered = false;
+        this.syncPositionLock();
+    }
+
+    /** @param {Node} target */
+    onClickAway(target) {
+        if (!this.isInside(target) && this.props.closeOnClickAway(target)) {
+            this.props.close();
+        }
+    }
+
+    onPositioned(
+        /** @type {{ direction: any, variant: any, variantOffset: any }} */ {
+            direction,
+            variant,
+            variantOffset,
+        },
+    ) {
+        if (this.props.arrow) {
+            this.updateArrow(direction, variant, variantOffset);
+        }
+
+        const startsAnimation = this.props.animation && !this.animationDone;
+        this.syncPositionLock();
+        if (startsAnimation) {
+            this.animate(direction).finished.then(
+                () => {
+                    this.animationDone = true;
+                    this.syncPositionLock();
+                },
+                () => {},
+            );
+        }
+    }
+
+    /**
+     * @param {string} direction
+     * @param {string} variant
+     * @param {number} variantOffset
+     */
+    updateArrow(direction, variant, variantOffset) {
+        const { el } = this.popoverRef;
+
+        [direction, variant] = reverseForRTL(
+            /** @type {any} */ (direction),
+            /** @type {any} */ (variant),
+        );
+
+        el.dataset.popperPlacement = direction;
+
+        const vertical = ["top", "bottom"].includes(direction);
+        const placementProperty = vertical ? "left" : "top";
+        const placement = {
+            start: "--position-min",
+            middle: "--position-center",
+            fit: "--position-center",
+            end: "--position-max",
+        }[variant];
+        const arrowEl = /** @type {HTMLElement} */ (this.arrowRef.el);
+        if (!arrowEl) {
+            return;
+        }
+        Object.assign(arrowEl.style, {
+            top: "",
+            left: "",
+            [placementProperty]: `clamp(
+                var(--position-min),
+                calc(var(${placement}) - ${variantOffset}px),
+                var(--position-max)
+            )`,
+        });
+
+        const sizeProperty = vertical ? "width" : "height";
+        const { [sizeProperty]: arrowSize, [placementProperty]: arrowPosition } =
+            arrowEl.getBoundingClientRect();
+        const { [sizeProperty]: targetSize, [placementProperty]: targetPosition } =
+            this.props.target.getBoundingClientRect();
+        const arrowCenter = arrowPosition + arrowSize / 2;
+        const margin = arrowSize / 2 - 1;
+        const hasEnoughSpace = arrowSize < targetSize - 2 * margin;
+        const isOutsideSafeEdge =
+            arrowCenter < targetPosition + margin ||
+            arrowCenter > targetPosition + targetSize - margin;
+        arrowEl.classList.toggle("sucked", hasEnoughSpace && isOutsideSafeEdge);
+    }
+}

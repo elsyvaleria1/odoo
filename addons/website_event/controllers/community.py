@@ -1,0 +1,14 @@
+from odoo import http
+from odoo.http import request
+
+
+class EventCommunityController(http.Controller):
+    @http.route(
+        '/event/<model("event.event"):event>/community',
+        type="http",
+        auth="public",
+        website=True,
+        sitemap=False,
+    )
+    def community(self, event, lang=None, **kwargs):
+        return request.render("website.page_404")

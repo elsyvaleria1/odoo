@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="stock_fleet_route.TripScanCodeField" t-inherit="web.CharField" t-inherit-mode="primary">
+        <xpath expr="//div[hasclass('o_field_input_buttons')]" position="inside">
+            <button
+                t-if="this.canScan"
+                type="button"
+                class="btn btn-secondary m-0 py-0 px-2 fa fa-camera"
+                title="Scan with the camera"
+                aria-label="Scan with the camera"
+                t-on-click="this.onClickScan"
+            />
+        </xpath>
+    </t>
+
+</templates>

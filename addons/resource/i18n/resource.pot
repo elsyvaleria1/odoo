@@ -1,0 +1,2001 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* resource
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-10-03 16:33+0000\n"
+"PO-Revision-Date: 2026-10-03 16:33+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: resource
+#: model_terms:ir.ui.view,arch_db:resource.view_resource_calendar_tree
+msgid "# Work Resources"
+msgstr ""
+
+#. module: resource
+#. odoo-python
+#: code:addons/resource/models/resource_assignment.py:0
+msgid "%(assignee)s, %(role)s of %(resource)s"
+msgstr ""
+
+#. module: resource
+#. odoo-python
+#: code:addons/resource/models/resource_assignment.py:0
+msgid "%(name)s is not a human resource and cannot hold an assignment."
+msgstr ""
+
+#. module: resource
+#. odoo-python
+#: code:addons/resource/models/resource_reservation.py:0
+msgid ""
+"%(name)s: %(resource)s exceeds its configured booking ceiling during this "
+"time."
+msgstr ""
+
+#. module: resource
+#. odoo-python
+#: code:addons/resource/models/resource_calendar_attendance.py:0
+msgid "%(name)s: 'Work from' (%(from_)s) must not exceed 'Work to' (%(to)s)."
+msgstr ""
+
+#. module: resource
+#. odoo-python
+#: code:addons/resource/models/resource_calendar_attendance.py:0
+msgid "%(name)s: 'Work from' must be between 0:00 and 23:59."
+msgstr ""
+
+#. module: resource
+#. odoo-python
+#: code:addons/resource/models/resource_calendar_attendance.py:0
+msgid "%(name)s: 'Work to' must be between 0:00 and 24:00."
+msgstr ""
+
+#. module: resource
+#. odoo-python
+#: code:addons/resource/models/mixin_resource_allocation.py:0
+msgid "%(name)s: allocation %% must be between 0 and 100."
+msgstr ""
+
+#. module: resource
+#. odoo-python
+#: code:addons/resource/models/resource_reservation.py:0
+msgid "%(name)s: start date must be before end date."
+msgstr ""
+
+#. module: resource
+#. odoo-python
+#: code:addons/resource/models/resource_calendar.py:0
+msgid "%(names)s: a duration-based schedule has no breaks."
+msgstr ""
+
+#. module: resource
+#. odoo-python
+#: code:addons/resource/models/resource_calendar.py:0
+msgid ""
+"%(names)s: a line on a 2 weeks calendar must belong to the first or the "
+"second week."
+msgstr ""
+
+#. module: resource
+#. odoo-python
+#: code:addons/resource/models/resource_calendar.py:0
+msgid "%(names)s: a schedule with working hours needs a time zone."
+msgstr ""
+
+#. module: resource
+#. odoo-python
+#: code:addons/resource/models/resource_relation.py:0
+msgid "%(parent)s: %(relation)s %(member)s"
+msgstr ""
+
+#. module: resource
+#. odoo-python
+#: code:addons/resource/models/resource_assignment.py:0
+msgid "%(resource)s is assigned to nobody: name who holds it."
+msgstr ""
+
+#. module: resource
+#. odoo-python
+#: code:addons/resource/models/resource_calendar.py:0
+#: code:addons/resource/models/resource_resource.py:0
+#: code:addons/resource/models/resource_role.py:0
+msgid "%s (copy)"
+msgstr ""
+
+#. module: resource
+#: model_terms:ir.ui.view,arch_db:resource.resource_calendar_form
+msgid "2 Week's Calendar"
+msgstr ""
+
+#. module: resource
+#: model_terms:ir.ui.view,arch_db:resource.resource_calendar_form
+msgid "<span class=\"ms-1\">%</span>"
+msgstr ""
+
+#. module: resource
+#: model_terms:ir.ui.view,arch_db:resource.resource_calendar_form
+msgid "<span class=\"ms-2\">hours/day</span>"
+msgstr ""
+
+#. module: resource
+#: model_terms:ir.ui.view,arch_db:resource.resource_calendar_form
+msgid "<span class=\"ms-2\">hours/week</span>"
+msgstr ""
+
+#. module: resource
+#: model_terms:ir.ui.view,arch_db:resource.resource_calendar_form
+msgid "<span class=\"o_stat_text\">Time Off</span>"
+msgstr ""
+
+#. module: resource
+#: model_terms:ir.ui.view,arch_db:resource.resource_calendar_form
+msgid "<span>hours/week</span>"
+msgstr ""
+
+#. module: resource
+#: model:ir.model,name:resource.model_resource_config
+msgid "A company's resource configuration"
+msgstr ""
+
+#. module: resource
+#: model:ir.model.constraint,message:resource.constraint_resource_resource_check_human_has_party
+msgid "A human resource is a person: it needs a party."
+msgstr ""
+
+#. module: resource
+#. odoo-python
+#: code:addons/resource/models/resource_relation.py:0
+msgid ""
+"A member can have only one physical parent at a time, and duplicate "
+"overlapping dependencies are not allowed."
+msgstr ""
+
+#. module: resource
+#: model:ir.model.constraint,message:resource.constraint_resource_resource_party_company_uniq
+msgid "A person is one human resource per company."
+msgstr ""
+
+#. module: resource
+#. odoo-python
+#: code:addons/resource/models/resource_resource.py:0
+msgid "A person needs a name, a party or a user."
+msgstr ""
+
+#. module: resource
+#. odoo-python
+#: code:addons/resource/models/resource_assignment.py:0
+msgid "A resource cannot be assigned to itself."
+msgstr ""
+
+#. module: resource
+#. odoo-python
+#: code:addons/resource/models/resource_relation.py:0
+msgid "A resource cannot contain itself."
+msgstr ""
+
+#. module: resource
+#: model:ir.model.constraint,message:resource.constraint_resource_relation_different_members
+msgid "A resource cannot contain or depend on itself."
+msgstr ""
+
+#. module: resource
+#. odoo-python
+#: code:addons/resource/models/mixin_resource.py:0
+msgid "A resource cannot have several owning records."
+msgstr ""
+
+#. module: resource
+#. odoo-python
+#: code:addons/resource/models/resource_resource.py:0
+msgid "A resource needs a timezone: %s has none."
+msgstr ""
+
+#. module: resource
+#: model:ir.model.constraint,message:resource.constraint_resource_relation_positive_period
+msgid "A resource relation must end after it starts."
+msgstr ""
+
+#. module: resource
+#. odoo-python
+#: code:addons/resource/models/resource_resource.py:0
+msgid "A scheduled hand-over must start in the future."
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,help:resource.field_resource_calendar_attendance__hour_to
+msgid "A value of 24:00 is the end of the day: 23:59:59.999999."
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,field_description:resource.field_resource_assignment__active
+#: model:ir.model.fields,field_description:resource.field_resource_calendar__active
+#: model:ir.model.fields,field_description:resource.field_resource_relation__active
+#: model:ir.model.fields,field_description:resource.field_resource_reservation__active
+#: model:ir.model.fields,field_description:resource.field_resource_resource__active
+#: model:ir.model.fields,field_description:resource.field_resource_role__active
+#: model:ir.model.fields,field_description:resource.field_resource_time_type__active
+#: model:ir.model.fields.selection,name:resource.selection__resource_assignment__state__active
+#: model_terms:ir.ui.view,arch_db:resource.resource_assignment_view_search
+msgid "Active"
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields.selection,name:resource.selection__resource_calendar_attendance__day_period__afternoon
+msgid "Afternoon"
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,field_description:resource.field_mixin_resource_allocation__allocated_hours
+#: model:ir.model.fields,field_description:resource.field_resource_reservation__allocated_hours
+msgid "Allocated Hours"
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,field_description:resource.field_mixin_resource_allocation__allocated_percentage
+#: model:ir.model.fields,field_description:resource.field_resource_reservation__allocated_percentage
+msgid "Allocation %"
+msgstr ""
+
+#. module: resource
+#: model:ir.model.constraint,message:resource.constraint_resource_reservation_check_allocated_percentage
+msgid "Allocation % must be finite and nonnegative."
+msgstr ""
+
+#. module: resource
+#: model:ir.model.constraint,message:resource.constraint_resource_assignment_check_dates
+msgid "An assignment cannot end before it starts."
+msgstr ""
+
+#. module: resource
+#: model_terms:ir.ui.view,arch_db:resource.resource_assignment_view_form
+#: model_terms:ir.ui.view,arch_db:resource.resource_assignment_view_search
+#: model_terms:ir.ui.view,arch_db:resource.resource_calendar_form
+#: model_terms:ir.ui.view,arch_db:resource.resource_relation_view_form
+#: model_terms:ir.ui.view,arch_db:resource.resource_relation_view_search
+#: model_terms:ir.ui.view,arch_db:resource.resource_reservation_view_search
+#: model_terms:ir.ui.view,arch_db:resource.resource_resource_form
+#: model_terms:ir.ui.view,arch_db:resource.resource_role_view_form
+#: model_terms:ir.ui.view,arch_db:resource.resource_role_view_search
+#: model_terms:ir.ui.view,arch_db:resource.view_resource_calendar_search
+#: model_terms:ir.ui.view,arch_db:resource.view_resource_resource_search
+msgid "Archived"
+msgstr ""
+
+#. module: resource
+#: model_terms:ir.ui.view,arch_db:resource.resource_calendar_form
+msgid ""
+"Are you sure you want to switch to a 1-week calendar? All work entries will "
+"be lost."
+msgstr ""
+
+#. module: resource
+#: model_terms:ir.ui.view,arch_db:resource.resource_calendar_form
+msgid ""
+"Are you sure you want to switch to a 2-week calendar? All work entries will "
+"be lost."
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,field_description:resource.field_resource_assignment__assignee_id
+#: model_terms:ir.ui.view,arch_db:resource.resource_assignment_view_search
+msgid "Assignee"
+msgstr ""
+
+#. module: resource
+#: model_terms:ir.ui.view,arch_db:resource.resource_assignment_view_form
+msgid "Assignment"
+msgstr ""
+
+#. module: resource
+#: model:ir.actions.act_window,name:resource.action_resource_assignment
+#: model:ir.model.fields,field_description:resource.field_resource_resource__assignment_ids
+#: model:ir.ui.menu,name:resource.menu_resource_assignment
+#: model_terms:ir.ui.view,arch_db:resource.resource_assignment_view_list
+#: model_terms:ir.ui.view,arch_db:resource.resource_assignment_view_search
+msgid "Assignments"
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,field_description:resource.field_resource_calendar__duration_based
+#: model:ir.model.fields,field_description:resource.field_resource_calendar_attendance__duration_based
+msgid "Attendance based on duration"
+msgstr ""
+
+#. module: resource
+#. odoo-python
+#: code:addons/resource/models/resource_calendar.py:0
+msgid "Attendances can't overlap."
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,field_description:resource.field_resource_resource__avatar_128
+msgid "Avatar 128"
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,field_description:resource.field_resource_calendar__hours_per_day
+msgid "Average Hour per Day"
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,help:resource.field_resource_calendar__hours_per_day
+msgid ""
+"Average hours per day a resource is supposed to work with this calendar."
+msgstr ""
+
+#. module: resource
+#: model_terms:ir.ui.view,arch_db:resource.resource_calendar_form
+msgid "Avg"
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields.selection,name:resource.selection__resource_reservation__enforcement_mode__hard
+msgid "Block"
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,field_description:resource.field_resource_resource__booking_limit_percentage
+msgid "Booking Ceiling %"
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,field_description:resource.field_resource_reservation__booking_state
+msgid "Booking Status"
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields.selection,name:resource.selection__resource_calendar_attendance__day_period__lunch
+msgid "Break"
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,field_description:resource.field_resource_calendar__two_weeks_calendar
+#: model:ir.model.fields,field_description:resource.field_resource_calendar_attendance__two_weeks_calendar
+msgid "Calendar in 2 weeks mode"
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,field_description:resource.field_resource_resource__capacity
+msgid "Capacity"
+msgstr ""
+
+#. module: resource
+#: model:ir.model.constraint,message:resource.constraint_resource_resource_check_capacity
+msgid "Capacity must be strictly positive"
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields.selection,name:resource.selection__resource_reservation__booking_state__exceeded
+msgid "Ceiling Exceeded"
+msgstr ""
+
+#. module: resource
+#: model:ir.actions.act_window,name:resource.resource_calendar_closing_days
+msgid "Closing Days"
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,field_description:resource.field_resource_time_type__code
+msgid "Code"
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,field_description:resource.field_resource_resource__color
+#: model:ir.model.fields,field_description:resource.field_resource_role__color
+msgid "Color"
+msgstr ""
+
+#. module: resource
+#: model:ir.model,name:resource.model_res_company
+msgid "Companies"
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,field_description:resource.field_mixin_resource__company_id
+#: model:ir.model.fields,field_description:resource.field_resource_assignment__company_id
+#: model:ir.model.fields,field_description:resource.field_resource_calendar__company_id
+#: model:ir.model.fields,field_description:resource.field_resource_config__company_id
+#: model:ir.model.fields,field_description:resource.field_resource_relation__company_id
+#: model:ir.model.fields,field_description:resource.field_resource_reservation__company_id
+#: model:ir.model.fields,field_description:resource.field_resource_resource__company_id
+#: model:ir.model.fields,field_description:resource.field_resource_schedule_exception__company_id
+#: model_terms:ir.ui.view,arch_db:resource.view_resource_resource_search
+#: model_terms:ir.ui.view,arch_db:resource.view_resource_schedule_exception_search
+msgid "Company"
+msgstr ""
+
+#. module: resource
+#. odoo-javascript
+#: code:addons/resource/static/src/recurrence/ask_recurrence_update_dialog.xml:0
+#: model_terms:ir.ui.view,arch_db:resource.resource_calendar_form
+msgid "Confirm"
+msgstr ""
+
+#. module: resource
+#: model_terms:ir.ui.view,arch_db:resource.resource_assignment_view_list
+#: model_terms:ir.ui.view,arch_db:resource.resource_reservation_view_list
+msgid "Conflicts"
+msgstr ""
+
+#. module: resource
+#: model:ir.model,name:resource.model_res_partner
+msgid "Contact"
+msgstr ""
+
+#. module: resource
+#: model_terms:ir.ui.view,arch_db:resource.resource_relation_view_search
+msgid "Containment"
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,help:resource.field_resource_relation__relation_type
+msgid ""
+"Containment records physical membership. Dependency records an operational "
+"requirement. Neither reserves capacity automatically."
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields.selection,name:resource.selection__resource_relation__relation_type__contains
+msgid "Contains"
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,field_description:resource.field_resource_time_type__is_work
+msgid "Counts as Working Time"
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,field_description:resource.field_resource_assignment__create_uid
+#: model:ir.model.fields,field_description:resource.field_resource_calendar__create_uid
+#: model:ir.model.fields,field_description:resource.field_resource_calendar_attendance__create_uid
+#: model:ir.model.fields,field_description:resource.field_resource_config__create_uid
+#: model:ir.model.fields,field_description:resource.field_resource_relation__create_uid
+#: model:ir.model.fields,field_description:resource.field_resource_reservation__create_uid
+#: model:ir.model.fields,field_description:resource.field_resource_resource__create_uid
+#: model:ir.model.fields,field_description:resource.field_resource_role__create_uid
+#: model:ir.model.fields,field_description:resource.field_resource_schedule_exception__create_uid
+#: model:ir.model.fields,field_description:resource.field_resource_time_type__create_uid
+msgid "Created by"
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,field_description:resource.field_resource_assignment__create_date
+#: model:ir.model.fields,field_description:resource.field_resource_calendar__create_date
+#: model:ir.model.fields,field_description:resource.field_resource_calendar_attendance__create_date
+#: model:ir.model.fields,field_description:resource.field_resource_config__create_date
+#: model:ir.model.fields,field_description:resource.field_resource_relation__create_date
+#: model:ir.model.fields,field_description:resource.field_resource_reservation__create_date
+#: model:ir.model.fields,field_description:resource.field_resource_resource__create_date
+#: model:ir.model.fields,field_description:resource.field_resource_role__create_date
+#: model:ir.model.fields,field_description:resource.field_resource_schedule_exception__create_date
+#: model:ir.model.fields,field_description:resource.field_resource_time_type__create_date
+msgid "Created on"
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,field_description:resource.field_resource_resource__holder_id
+msgid "Current Holder"
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields.selection,name:resource.selection__resource_assignment__custody_role__custodian
+msgid "Custodian"
+msgstr ""
+
+#. module: resource
+#: model_terms:ir.ui.view,arch_db:resource.resource_resource_form
+msgid "Custody"
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,field_description:resource.field_resource_assignment__custody_role
+msgid "Custody Role"
+msgstr ""
+
+#. module: resource
+#: model_terms:ir.ui.view,arch_db:resource.view_resource_schedule_exception_search
+msgid "Date"
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,field_description:resource.field_resource_assignment__date_end
+#: model:ir.model.fields,field_description:resource.field_resource_relation__date_end
+msgid "Date End"
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,field_description:resource.field_resource_assignment__date_start
+#: model:ir.model.fields,field_description:resource.field_resource_relation__date_start
+msgid "Date Start"
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,field_description:resource.field_resource_calendar_attendance__day_period
+msgid "Day Period"
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,field_description:resource.field_resource_calendar_attendance__dayofweek
+msgid "Day of Week"
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,field_description:resource.field_resource_resource__default_role_id
+msgid "Default Role"
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,field_description:resource.field_res_company__resource_calendar_id
+#: model:ir.model.fields,field_description:resource.field_res_users__resource_calendar_id
+#: model:ir.model.fields,field_description:resource.field_resource_config__resource_calendar_id
+msgid "Default Working Hours"
+msgstr ""
+
+#. module: resource
+#: model_terms:ir.ui.view,arch_db:resource.resource_calendar_form
+msgid "Define Amount of Hours per day"
+msgstr ""
+
+#. module: resource
+#: model_terms:ir.actions.act_window,help:resource.action_resource_calendar_form
+msgid ""
+"Define working hours and time table that could be scheduled to your project "
+"members"
+msgstr ""
+
+#. module: resource
+#: model_terms:ir.ui.view,arch_db:resource.resource_role_view_kanban
+msgid "Delete"
+msgstr ""
+
+#. module: resource
+#: model_terms:ir.ui.view,arch_db:resource.resource_relation_view_search
+msgid "Dependencies"
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields.selection,name:resource.selection__resource_relation__relation_type__depends_on
+msgid "Depends On"
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,field_description:resource.field_mixin_resource__display_name
+#: model:ir.model.fields,field_description:resource.field_mixin_resource_allocation__display_name
+#: model:ir.model.fields,field_description:resource.field_mixin_resource_ledger__display_name
+#: model:ir.model.fields,field_description:resource.field_mixin_resource_scheduling__display_name
+#: model:ir.model.fields,field_description:resource.field_mixin_resource_scheduling_tools__display_name
+#: model:ir.model.fields,field_description:resource.field_res_company__display_name
+#: model:ir.model.fields,field_description:resource.field_res_partner__display_name
+#: model:ir.model.fields,field_description:resource.field_res_users__display_name
+#: model:ir.model.fields,field_description:resource.field_resource_assignment__display_name
+#: model:ir.model.fields,field_description:resource.field_resource_calendar__display_name
+#: model:ir.model.fields,field_description:resource.field_resource_calendar_attendance__display_name
+#: model:ir.model.fields,field_description:resource.field_resource_config__display_name
+#: model:ir.model.fields,field_description:resource.field_resource_relation__display_name
+#: model:ir.model.fields,field_description:resource.field_resource_reservation__display_name
+#: model:ir.model.fields,field_description:resource.field_resource_resource__display_name
+#: model:ir.model.fields,field_description:resource.field_resource_role__display_name
+#: model:ir.model.fields,field_description:resource.field_resource_schedule_exception__display_name
+#: model:ir.model.fields,field_description:resource.field_resource_time_type__display_name
+msgid "Display Name"
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,field_description:resource.field_resource_calendar_attendance__display_type
+msgid "Display Type"
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,field_description:resource.field_resource_calendar_attendance__duration_days
+msgid "Duration (days)"
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,field_description:resource.field_resource_calendar_attendance__duration_hours
+msgid "Duration (hours)"
+msgstr ""
+
+#. module: resource
+#: model_terms:ir.ui.view,arch_db:resource.resource_role_view_kanban
+msgid "Edit"
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,field_description:resource.field_resource_resource__time_efficiency
+msgid "Efficiency Factor"
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,field_description:resource.field_resource_resource__email
+msgid "Email"
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,field_description:resource.field_resource_schedule_exception__date_to
+msgid "End Date"
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,field_description:resource.field_resource_schedule_exception__local_date_to
+msgid "End Day"
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,field_description:resource.field_resource_schedule_exception__local_hour_to
+msgid "End Hour"
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields.selection,name:resource.selection__resource_assignment__state__ended
+#: model_terms:ir.ui.view,arch_db:resource.resource_assignment_view_search
+msgid "Ended"
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,field_description:resource.field_resource_resource__enforce_booking_limit
+msgid "Enforce Booking Ceiling"
+msgstr ""
+
+#. module: resource
+#: model_terms:ir.ui.view,arch_db:resource.resource_reservation_view_search
+msgid "Enforcement"
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,field_description:resource.field_resource_reservation__enforcement_mode
+msgid "Enforcement Mode"
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,help:resource.field_resource_relation__date_end
+msgid "Exclusive UTC end. Empty means the relation remains open."
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,field_description:resource.field_resource_calendar__two_weeks_explanation
+msgid "Explanation"
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,help:resource.field_resource_resource__share
+msgid ""
+"External user with limited access, created only for the purpose of sharing "
+"data."
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields.selection,name:resource.selection__resource_calendar_attendance__week_type__0
+msgid "First"
+msgstr ""
+
+#. module: resource
+#. odoo-python
+#: code:addons/resource/models/resource_calendar_attendance.py:0
+msgid "First week"
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields.selection,name:resource.selection__resource_calendar__schedule_type__flexible
+msgid "Flexible"
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields.selection,name:resource.selection__resource_calendar_attendance__dayofweek__4
+msgid "Friday"
+msgstr ""
+
+#. module: resource
+#. odoo-python
+#: code:addons/resource/models/resource_calendar.py:0
+msgid "Friday Afternoon"
+msgstr ""
+
+#. module: resource
+#. odoo-python
+#: code:addons/resource/models/resource_calendar.py:0
+msgid "Friday Lunch"
+msgstr ""
+
+#. module: resource
+#. odoo-python
+#: code:addons/resource/models/resource_calendar.py:0
+msgid "Friday Morning"
+msgstr ""
+
+#. module: resource
+#: model_terms:ir.ui.view,arch_db:resource.resource_schedule_exception_form
+msgid "From"
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields.selection,name:resource.selection__resource_calendar_attendance__day_period__full_day
+msgid "Full Day"
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,field_description:resource.field_resource_calendar__full_time_required_hours
+msgid "Full Time Equivalent"
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields.selection,name:resource.selection__resource_reservation__booking_state__full
+msgid "Fully Booked"
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields.selection,name:resource.selection__resource_calendar__schedule_type__fully_fixed
+msgid "Fully Fixed"
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields.selection,name:resource.selection__resource_calendar__schedule_type__fully_flexible
+msgid "Fully Flexible"
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,field_description:resource.field_resource_resource__future_operator_id
+msgid "Future Operator"
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,help:resource.field_resource_calendar_attendance__sequence
+msgid "Gives the sequence of this line when displaying the resource calendar."
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,field_description:resource.field_resource_calendar__global_leave_ids
+msgid "Global Time Off"
+msgstr ""
+
+#. module: resource
+#: model_terms:ir.actions.act_window,help:resource.action_resource_assignment
+msgid "Hand a resource to someone"
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,field_description:resource.field_resource_resource__date_future_operator
+msgid "Hand-over Date"
+msgstr ""
+
+#. module: resource
+#: model_terms:ir.ui.view,arch_db:resource.resource_reservation_view_search
+msgid "Hard Enforcement"
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,field_description:resource.field_resource_assignment__assignee_partner_id
+msgid "Holder"
+msgstr ""
+
+#. module: resource
+#: model_terms:ir.ui.view,arch_db:resource.view_resource_calendar_attendance_form
+msgid "Hours"
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,field_description:resource.field_resource_calendar__hours_per_week
+msgid "Hours per Week"
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,help:resource.field_resource_resource__capacity
+msgid ""
+"How many claims the resource can hold at once: seats at a table, concurrent "
+"users of a machine. A reservation's allocated percentage is a share of this."
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,help:resource.field_resource_resource__time_efficiency
+msgid ""
+"How quickly this resource performs work compared with the reference "
+"duration. At 100%, one reference hour requires one hour; at 200%, it "
+"requires 30 minutes."
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,help:resource.field_resource_calendar__schedule_type
+msgid ""
+"How the schedule defines working time:\n"
+"- Fully Fixed: the days, periods and hours of each day.\n"
+"- Flexible: an amount of hours to work in the week.\n"
+"- Fully Flexible: any hour; a day of work counts its hours per day."
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields.selection,name:resource.selection__resource_resource__resource_type__user
+#: model_terms:ir.ui.view,arch_db:resource.view_resource_resource_search
+msgid "Human"
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,field_description:resource.field_mixin_resource__id
+#: model:ir.model.fields,field_description:resource.field_mixin_resource_allocation__id
+#: model:ir.model.fields,field_description:resource.field_mixin_resource_ledger__id
+#: model:ir.model.fields,field_description:resource.field_mixin_resource_scheduling__id
+#: model:ir.model.fields,field_description:resource.field_mixin_resource_scheduling_tools__id
+#: model:ir.model.fields,field_description:resource.field_res_company__id
+#: model:ir.model.fields,field_description:resource.field_res_partner__id
+#: model:ir.model.fields,field_description:resource.field_res_users__id
+#: model:ir.model.fields,field_description:resource.field_resource_assignment__id
+#: model:ir.model.fields,field_description:resource.field_resource_calendar__id
+#: model:ir.model.fields,field_description:resource.field_resource_calendar_attendance__id
+#: model:ir.model.fields,field_description:resource.field_resource_config__id
+#: model:ir.model.fields,field_description:resource.field_resource_relation__id
+#: model:ir.model.fields,field_description:resource.field_resource_reservation__id
+#: model:ir.model.fields,field_description:resource.field_resource_resource__id
+#: model:ir.model.fields,field_description:resource.field_resource_role__id
+#: model:ir.model.fields,field_description:resource.field_resource_schedule_exception__id
+#: model:ir.model.fields,field_description:resource.field_resource_time_type__id
+msgid "ID"
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,help:resource.field_resource_reservation__res_id
+msgid "ID of the record in the source model."
+msgstr ""
+
+#. module: resource
+#: model_terms:ir.ui.view,arch_db:resource.resource_calendar_form
+msgid ""
+"If checked, the working schedule will be based on an amount of hours "
+"(defined for each day) and not a start & end time anymore.Do you confirm ?"
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,help:resource.field_resource_schedule_exception__resource_id
+msgid ""
+"If empty, this is a generic time off for the company. If a resource is set, "
+"the time off is only for this resource"
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,help:resource.field_resource_resource__active
+msgid ""
+"If the active field is set to False, it will allow you to hide the resource "
+"record without removing it."
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,help:resource.field_resource_calendar__active
+msgid ""
+"If the active field is set to false, it will allow you to hide the Working "
+"Time without removing it."
+msgstr ""
+
+#. module: resource
+#: model_terms:ir.ui.view,arch_db:resource.resource_calendar_form
+msgid ""
+"If unchecked, the working schedule will be based on a defined start and end "
+"hours.Do you confirm ?"
+msgstr ""
+
+#. module: resource
+#: model_terms:ir.ui.view,arch_db:resource.resource_reservation_view_search
+msgid "In Conflict"
+msgstr ""
+
+#. module: resource
+#. odoo-python
+#: code:addons/resource/models/resource_calendar.py:0
+msgid ""
+"In a calendar with 2 weeks mode, all periods need to be in the sections."
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,help:resource.field_resource_relation__date_start
+msgid "Inclusive UTC start. Empty means the start is unknown or unbounded."
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,field_description:resource.field_resource_calendar__is_fulltime
+msgid "Is Full Time"
+msgstr ""
+
+#. module: resource
+#: model:ir.model,name:resource.model_resource_time_type
+#: model:ir.model.fields,field_description:resource.field_resource_schedule_exception__time_type_id
+msgid "Kind of Time"
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,field_description:resource.field_resource_assignment__write_uid
+#: model:ir.model.fields,field_description:resource.field_resource_calendar__write_uid
+#: model:ir.model.fields,field_description:resource.field_resource_calendar_attendance__write_uid
+#: model:ir.model.fields,field_description:resource.field_resource_config__write_uid
+#: model:ir.model.fields,field_description:resource.field_resource_relation__write_uid
+#: model:ir.model.fields,field_description:resource.field_resource_reservation__write_uid
+#: model:ir.model.fields,field_description:resource.field_resource_resource__write_uid
+#: model:ir.model.fields,field_description:resource.field_resource_role__write_uid
+#: model:ir.model.fields,field_description:resource.field_resource_schedule_exception__write_uid
+#: model:ir.model.fields,field_description:resource.field_resource_time_type__write_uid
+msgid "Last Updated by"
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,field_description:resource.field_resource_assignment__write_date
+#: model:ir.model.fields,field_description:resource.field_resource_calendar__write_date
+#: model:ir.model.fields,field_description:resource.field_resource_calendar_attendance__write_date
+#: model:ir.model.fields,field_description:resource.field_resource_config__write_date
+#: model:ir.model.fields,field_description:resource.field_resource_relation__write_date
+#: model:ir.model.fields,field_description:resource.field_resource_reservation__write_date
+#: model:ir.model.fields,field_description:resource.field_resource_resource__write_date
+#: model:ir.model.fields,field_description:resource.field_resource_role__write_date
+#: model:ir.model.fields,field_description:resource.field_resource_schedule_exception__write_date
+#: model:ir.model.fields,field_description:resource.field_resource_time_type__write_date
+msgid "Last Updated on"
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,field_description:resource.field_resource_resource__manager_id
+#: model:ir.model.fields.selection,name:resource.selection__resource_assignment__custody_role__manager
+msgid "Manager"
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields.selection,name:resource.selection__resource_resource__resource_type__material
+#: model_terms:ir.ui.view,arch_db:resource.view_resource_resource_search
+msgid "Material"
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,help:resource.field_resource_resource__booking_limit_percentage
+msgid ""
+"Maximum simultaneous allocation for enforced bookings. 100% permits full "
+"booking; 120% permits 20% overbooking. Warning-only reservations can exceed "
+"this ceiling when resource enforcement is disabled."
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,field_description:resource.field_resource_relation__member_id
+msgid "Member"
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,field_description:resource.field_resource_resource__relation_ids
+#: model_terms:ir.ui.view,arch_db:resource.resource_resource_form
+msgid "Members and Dependencies"
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,field_description:resource.field_resource_resource__membership_ids
+#: model_terms:ir.ui.view,arch_db:resource.resource_resource_form
+msgid "Memberships"
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields.selection,name:resource.selection__resource_calendar_attendance__dayofweek__0
+msgid "Monday"
+msgstr ""
+
+#. module: resource
+#. odoo-python
+#: code:addons/resource/models/resource_calendar.py:0
+msgid "Monday Afternoon"
+msgstr ""
+
+#. module: resource
+#. odoo-python
+#: code:addons/resource/models/resource_calendar.py:0
+msgid "Monday Lunch"
+msgstr ""
+
+#. module: resource
+#. odoo-python
+#: code:addons/resource/models/resource_calendar.py:0
+msgid "Monday Morning"
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields.selection,name:resource.selection__resource_calendar_attendance__day_period__morning
+msgid "Morning"
+msgstr ""
+
+#. module: resource
+#: model:ir.actions.act_window,name:resource.action_resource_my_schedule
+#: model:ir.ui.menu,name:resource.menu_resource_my_schedule
+#: model_terms:ir.ui.view,arch_db:resource.resource_reservation_view_search
+msgid "My Schedule"
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,field_description:resource.field_resource_assignment__name
+#: model:ir.model.fields,field_description:resource.field_resource_calendar__name
+#: model:ir.model.fields,field_description:resource.field_resource_calendar_attendance__name
+#: model:ir.model.fields,field_description:resource.field_resource_relation__name
+#: model:ir.model.fields,field_description:resource.field_resource_reservation__name
+#: model:ir.model.fields,field_description:resource.field_resource_resource__name
+#: model:ir.model.fields,field_description:resource.field_resource_role__name
+#: model:ir.model.fields,field_description:resource.field_resource_time_type__name
+msgid "Name"
+msgstr ""
+
+#. module: resource
+#: model_terms:ir.actions.act_window,help:resource.action_resource_reservation
+msgid "No reservations yet"
+msgstr ""
+
+#. module: resource
+#: model_terms:ir.actions.act_window,help:resource.resource_role_action
+msgid "No role found. Let's create one!"
+msgstr ""
+
+#. module: resource
+#: model_terms:ir.actions.act_window,help:resource.action_resource_my_schedule
+msgid "No scheduled reservations for you"
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,field_description:resource.field_resource_assignment__note
+#: model:ir.model.fields,field_description:resource.field_resource_relation__note
+msgid "Note"
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,help:resource.field_resource_calendar__full_time_required_hours
+msgid ""
+"Number of hours to work on the company schedule to be considered as "
+"fulltime."
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,field_description:resource.field_resource_resource__operator_id
+#: model:ir.model.fields.selection,name:resource.selection__resource_assignment__custody_role__operator
+msgid "Operator"
+msgstr ""
+
+#. module: resource
+#: model_terms:ir.ui.view,arch_db:resource.resource_reservation_view_form
+msgid "Origin"
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields.selection,name:resource.selection__resource_reservation__booking_state__over
+msgid "Overbooked"
+msgstr ""
+
+#. module: resource
+#: model_terms:ir.ui.view,arch_db:resource.view_resource_calendar_search
+msgid "Partial working schedules"
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,field_description:resource.field_resource_resource__partner_id
+msgid "Party"
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,field_description:resource.field_resource_reservation__peak_booking_percentage
+msgid "Peak Booking %"
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,help:resource.field_mixin_resource_allocation__allocated_percentage
+msgid "Percentage of the resource's work capacity allocated to this record."
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,help:resource.field_resource_reservation__allocated_percentage
+msgid "Percentage of the resource's work capacity allocated to this schedule."
+msgstr ""
+
+#. module: resource
+#: model_terms:ir.ui.view,arch_db:resource.view_resource_schedule_exception_search
+msgid "Period"
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,field_description:resource.field_resource_resource__phone_ids
+msgid "Phone Numbers"
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields.selection,name:resource.selection__resource_assignment__state__planned
+#: model_terms:ir.ui.view,arch_db:resource.resource_assignment_view_search
+msgid "Planned"
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,help:resource.field_resource_resource__default_role_id
+msgid ""
+"Preferred role when assigning this resource. The default is always included "
+"in its roles."
+msgstr ""
+
+#. module: resource
+#: model_terms:ir.ui.view,arch_db:resource.resource_relation_view_form
+msgid "Purpose of this relationship"
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,field_description:resource.field_resource_schedule_exception__name
+#: model_terms:ir.ui.view,arch_db:resource.resource_schedule_exception_form
+#: model_terms:ir.ui.view,arch_db:resource.resource_schedule_exception_tree
+msgid "Reason"
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,help:resource.field_resource_resource__enforce_booking_limit
+msgid ""
+"Reject any reservation that exceeds this resource's booking ceiling, "
+"including manual meetings and shifts. Individual bookings may enforce the "
+"ceiling even when this option is disabled."
+msgstr ""
+
+#. module: resource
+#: model_terms:ir.ui.view,arch_db:resource.resource_relation_view_search
+msgid "Relation"
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,field_description:resource.field_resource_relation__relation_type
+msgid "Relation Type"
+msgstr ""
+
+#. module: resource
+#: model_terms:ir.ui.view,arch_db:resource.resource_calendar_form
+msgid "Required Full Time"
+msgstr ""
+
+#. module: resource
+#: model_terms:ir.ui.view,arch_db:resource.resource_reservation_view_form
+msgid "Reservation"
+msgstr ""
+
+#. module: resource
+#: model_terms:ir.ui.view,arch_db:resource.resource_reservation_view_form
+msgid "Reservation name"
+msgstr ""
+
+#. module: resource
+#: model:ir.actions.act_window,name:resource.action_resource_reservation
+#: model:ir.model.fields,field_description:resource.field_mixin_resource_allocation__reservation_ids
+#: model:ir.model.fields,field_description:resource.field_mixin_resource_scheduling__reservation_ids
+#: model:ir.model.fields,field_description:resource.field_resource_assignment__reservation_ids
+#: model:ir.model.fields,field_description:resource.field_resource_resource__reservation_ids
+#: model:ir.ui.menu,name:resource.menu_resource_reservation
+#: model_terms:ir.ui.view,arch_db:resource.resource_reservation_view_calendar
+#: model_terms:ir.ui.view,arch_db:resource.resource_reservation_view_list
+#: model_terms:ir.ui.view,arch_db:resource.resource_reservation_view_search
+msgid "Reservations"
+msgstr ""
+
+#. module: resource
+#: model_terms:ir.actions.act_window,help:resource.action_resource_reservation
+msgid ""
+"Reservations are created automatically when scheduling tasks,\n"
+"                booking rooms, or planning manufacturing orders."
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,field_description:resource.field_mixin_resource__resource_id
+#: model:ir.model.fields,field_description:resource.field_resource_assignment__resource_id
+#: model:ir.model.fields,field_description:resource.field_resource_relation__parent_id
+#: model:ir.model.fields,field_description:resource.field_resource_reservation__resource_id
+#: model:ir.model.fields,field_description:resource.field_resource_schedule_exception__resource_id
+#: model:ir.ui.menu,name:resource.menu_resource_config
+#: model_terms:ir.ui.view,arch_db:resource.resource_assignment_view_search
+#: model_terms:ir.ui.view,arch_db:resource.resource_relation_view_search
+#: model_terms:ir.ui.view,arch_db:resource.resource_reservation_view_search
+#: model_terms:ir.ui.view,arch_db:resource.resource_resource_form
+#: model_terms:ir.ui.view,arch_db:resource.view_resource_calendar
+#: model_terms:ir.ui.view,arch_db:resource.view_resource_schedule_exception_search
+msgid "Resource"
+msgstr ""
+
+#. module: resource
+#: model:ir.model,name:resource.model_mixin_resource_allocation
+msgid "Resource Allocation Mixin"
+msgstr ""
+
+#. module: resource
+#: model:ir.model,name:resource.model_resource_assignment
+msgid "Resource Assignment"
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,field_description:resource.field_res_company__resource_config_id
+msgid "Resource Config"
+msgstr ""
+
+#. module: resource
+#: model:ir.model,name:resource.model_mixin_resource_ledger
+msgid "Resource Ledger Mixin"
+msgstr ""
+
+#. module: resource
+#: model:ir.model,name:resource.model_mixin_resource
+msgid "Resource Mixin"
+msgstr ""
+
+#. module: resource
+#: model:ir.model,name:resource.model_resource_relation
+msgid "Resource Relation"
+msgstr ""
+
+#. module: resource
+#: model:ir.actions.act_window,name:resource.resource_relation_action
+#: model:ir.ui.menu,name:resource.resource_relation_menu
+msgid "Resource Relations"
+msgstr ""
+
+#. module: resource
+#: model:ir.model,name:resource.model_resource_reservation
+msgid "Resource Reservation"
+msgstr ""
+
+#. module: resource
+#: model:ir.model,name:resource.model_resource_role
+msgid "Resource Role"
+msgstr ""
+
+#. module: resource
+#: model:ir.model,name:resource.model_mixin_resource_scheduling_tools
+msgid "Resource Scheduling Helpers"
+msgstr ""
+
+#. module: resource
+#: model:ir.model,name:resource.model_mixin_resource_scheduling
+msgid "Resource Scheduling Mixin"
+msgstr ""
+
+#. module: resource
+#: model:ir.actions.act_window,name:resource.action_resource_schedule_exception_tree
+#: model:ir.actions.act_window,name:resource.resource_schedule_exception_action_from_calendar
+#: model:ir.ui.menu,name:resource.menu_view_resource_schedule_exception_search
+msgid "Resource Time Off"
+msgstr ""
+
+#. module: resource
+#: model:ir.model,name:resource.model_resource_calendar
+msgid "Resource Working Time"
+msgstr ""
+
+#. module: resource
+#. odoo-python
+#: code:addons/resource/models/resource_relation.py:0
+msgid "Resource relations cannot form a cycle during an overlapping period."
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,field_description:resource.field_resource_calendar_attendance__calendar_id
+msgid "Resource's Calendar"
+msgstr ""
+
+#. module: resource
+#: model:ir.actions.act_window,name:resource.action_resource_resource_tree
+#: model:ir.actions.act_window,name:resource.resource_resource_action_from_calendar
+#: model:ir.model,name:resource.model_resource_resource
+#: model:ir.model.fields,field_description:resource.field_res_bank__resource_ids
+#: model:ir.model.fields,field_description:resource.field_res_company__resource_ids
+#: model:ir.model.fields,field_description:resource.field_res_partner__resource_ids
+#: model:ir.model.fields,field_description:resource.field_res_users__resource_ids
+#: model:ir.model.fields,field_description:resource.field_resource_role__resource_ids
+#: model:ir.ui.menu,name:resource.menu_resource_resource
+#: model_terms:ir.ui.view,arch_db:resource.resource_resource_tree
+msgid "Resources"
+msgstr ""
+
+#. module: resource
+#: model:ir.actions.act_window,name:resource.resource_calendar_resources_leaves
+msgid "Resources Time Off"
+msgstr ""
+
+#. module: resource
+#: model_terms:ir.actions.act_window,help:resource.action_resource_resource_tree
+#: model_terms:ir.actions.act_window,help:resource.resource_resource_action_from_calendar
+msgid ""
+"Resources allow you to create and manage resources that should be\n"
+"            involved in a specific project phase. You can also set their efficiency level and\n"
+"            workload based on their weekly working hours."
+msgstr ""
+
+#. module: resource
+#: model_terms:ir.ui.view,arch_db:resource.resource_assignment_view_search
+msgid "Role"
+msgstr ""
+
+#. module: resource
+#: model:ir.actions.act_window,name:resource.resource_role_action
+#: model:ir.model.fields,field_description:resource.field_resource_resource__role_ids
+#: model:ir.ui.menu,name:resource.menu_resource_role
+msgid "Roles"
+msgstr ""
+
+#. module: resource
+#: model_terms:ir.actions.act_window,help:resource.resource_role_action
+msgid ""
+"Roles describe what a resource can do. Assign them to tasks in\n"
+"                your project templates, or to shifts when planning who covers\n"
+"                what."
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields.selection,name:resource.selection__resource_calendar_attendance__dayofweek__5
+msgid "Saturday"
+msgstr ""
+
+#. module: resource
+#: model:ir.model,name:resource.model_resource_schedule_exception
+msgid "Schedule Exception"
+msgstr ""
+
+#. module: resource
+#: model_terms:ir.ui.view,arch_db:resource.view_resource_calendar_tree
+msgid "Schedule Total Time"
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,field_description:resource.field_resource_calendar__schedule_type
+#: model_terms:ir.ui.view,arch_db:resource.view_resource_calendar_search
+msgid "Schedule Type"
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,field_description:resource.field_resource_reservation__date_end
+msgid "Scheduled End"
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,field_description:resource.field_resource_reservation__date_start
+msgid "Scheduled Start"
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,field_description:resource.field_mixin_resource_allocation__schedule_overlap_count
+#: model:ir.model.fields,field_description:resource.field_mixin_resource_scheduling__schedule_overlap_count
+#: model:ir.model.fields,field_description:resource.field_resource_assignment__schedule_overlap_count
+#: model:ir.model.fields,field_description:resource.field_resource_reservation__schedule_overlap_count
+msgid "Scheduling Conflicts"
+msgstr ""
+
+#. module: resource
+#: model_terms:ir.ui.view,arch_db:resource.view_resource_resource_search
+msgid "Search Resource"
+msgstr ""
+
+#. module: resource
+#: model_terms:ir.ui.view,arch_db:resource.view_resource_schedule_exception_search
+msgid "Search Working Period Time Off"
+msgstr ""
+
+#. module: resource
+#: model_terms:ir.ui.view,arch_db:resource.view_resource_calendar_search
+msgid "Search Working Time"
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields.selection,name:resource.selection__resource_calendar_attendance__week_type__1
+msgid "Second"
+msgstr ""
+
+#. module: resource
+#. odoo-python
+#: code:addons/resource/models/resource_calendar_attendance.py:0
+msgid "Second week"
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields.selection,name:resource.selection__resource_calendar_attendance__display_type__line_section
+msgid "Section"
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,field_description:resource.field_resource_calendar_attendance__sequence
+#: model:ir.model.fields,field_description:resource.field_resource_time_type__sequence
+msgid "Sequence"
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,field_description:resource.field_resource_resource__share
+msgid "Share User"
+msgstr ""
+
+#. module: resource
+#: model_terms:ir.ui.view,arch_db:resource.resource_reservation_view_search
+msgid "Soft Enforcement"
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,field_description:resource.field_resource_reservation__origin_display
+#: model_terms:ir.ui.view,arch_db:resource.resource_reservation_view_calendar
+#: model_terms:ir.ui.view,arch_db:resource.resource_reservation_view_list
+msgid "Source"
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,field_description:resource.field_resource_reservation__res_model
+#: model_terms:ir.ui.view,arch_db:resource.resource_reservation_view_search
+msgid "Source Model"
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,field_description:resource.field_resource_reservation__res_id
+#: model_terms:ir.ui.view,arch_db:resource.resource_reservation_view_form
+msgid "Source Record"
+msgstr ""
+
+#. module: resource
+#. odoo-python
+#: code:addons/resource/models/res_company.py:0
+msgid "Standard 40 hours/week"
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,field_description:resource.field_resource_schedule_exception__date_from
+#: model_terms:ir.ui.view,arch_db:resource.resource_reservation_view_search
+msgid "Start Date"
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,field_description:resource.field_resource_schedule_exception__local_date_from
+msgid "Start Day"
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,field_description:resource.field_resource_schedule_exception__local_hour_from
+msgid "Start Hour"
+msgstr ""
+
+#. module: resource
+#: model_terms:ir.ui.view,arch_db:resource.view_resource_schedule_exception_search
+msgid "Starting Date of Time Off"
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,field_description:resource.field_resource_assignment__state
+msgid "State"
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields.selection,name:resource.selection__resource_calendar_attendance__dayofweek__6
+msgid "Sunday"
+msgstr ""
+
+#. module: resource
+#: model_terms:ir.ui.view,arch_db:resource.resource_calendar_form
+msgid "Switch"
+msgstr ""
+
+#. module: resource
+#: model_terms:ir.ui.view,arch_db:resource.resource_calendar_form
+msgid "Switch to 1-week calendar"
+msgstr ""
+
+#. module: resource
+#: model_terms:ir.ui.view,arch_db:resource.resource_calendar_form
+msgid "Switch to 2-weeks calendar"
+msgstr ""
+
+#. module: resource
+#: model_terms:ir.ui.view,arch_db:resource.resource_calendar_form
+msgid "Switch to Duration based attendance"
+msgstr ""
+
+#. module: resource
+#: model_terms:ir.ui.view,arch_db:resource.resource_calendar_form
+msgid "Switch to fixed attendance"
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,help:resource.field_resource_calendar_attendance__display_type
+msgid "Technical field for UX purpose."
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,help:resource.field_resource_reservation__res_model
+msgid "Technical name of the model that created this reservation."
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields.selection,name:resource.selection__resource_assignment__custody_role__technician
+msgid "Technician"
+msgstr ""
+
+#. module: resource
+#. odoo-python
+#: code:addons/resource/models/resource_calendar.py:0
+msgid ""
+"The Fully Flexible schedule is what an empty schedule means; it cannot be "
+"deleted."
+msgstr ""
+
+#. module: resource
+#: model:ir.model.constraint,message:resource.constraint_resource_resource_check_booking_limit
+msgid "The booking ceiling must be finite and nonnegative."
+msgstr ""
+
+#. module: resource
+#. odoo-python
+#: code:addons/resource/models/resource_calendar.py:0
+msgid ""
+"The current week (from %(first_day)s to %(last_day)s) is %(number)s week."
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,help:resource.field_resource_calendar__duration_based
+#: model:ir.model.fields,help:resource.field_resource_calendar_attendance__duration_based
+msgid ""
+"The hours will be centered around 12:00 to cover the duration for the day"
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,help:resource.field_resource_schedule_exception__local_hour_to
+msgid "The local hour the exception ends at, 0 meaning the end of the day."
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,help:resource.field_resource_resource__user_id
+msgid ""
+"The login of the person this resource is: their party's internal user. "
+"Choosing another user makes the resource that user's person."
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,help:resource.field_resource_resource__partner_id
+msgid "The person this resource is. A material resource has none."
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,help:resource.field_resource_assignment__assignee_partner_id
+msgid ""
+"The person who holds it. Anyone can: picking a person gives them a human "
+"resource in the company of what they hold."
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,help:resource.field_resource_reservation__resource_id
+msgid "The resource (person, equipment) assigned to this schedule."
+msgstr ""
+
+#. module: resource
+#. odoo-python
+#: code:addons/resource/models/resource_resource.py:0
+msgid "The resource type is incompatible with its representation."
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,help:resource.field_resource_time_type__code
+msgid "The stable name migrations and code refer to this kind by."
+msgstr ""
+
+#. module: resource
+#. odoo-python
+#: code:addons/resource/models/resource_schedule_exception.py:0
+msgid "The start date of the time off must be earlier than the end date."
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,help:resource.field_resource_calendar__tz
+msgid ""
+"The time zone of this schedule's company-level uses: the company working "
+"hours, and the public holidays and closures entered on it. A resource "
+"working this schedule reads its hours in the resource's own time zone, so "
+"one 08:00-17:00 schedule means 08:00-17:00 local time for employees deployed"
+" in other zones."
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,help:resource.field_resource_schedule_exception__tz
+msgid ""
+"The time zone this exception's hours are read in: the resource's work zone, "
+"or the schedule's own zone when it closes the whole company."
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,help:resource.field_mixin_resource__tz
+#: model:ir.model.fields,help:resource.field_resource_resource__tz
+msgid ""
+"The time zone where this resource works. Its working schedule is read in "
+"this zone: an 08:00-17:00 schedule means 08:00-17:00 here, whatever zone the"
+" schedule names. For an employee deployed away from the corporate office, "
+"set the zone of the place of work."
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,help:resource.field_mixin_resource__resource_calendar_id
+#: model:ir.model.fields,help:resource.field_resource_resource__calendar_id
+msgid ""
+"The working schedule of the resource. A Fully Flexible schedule lets it work"
+" any hour."
+msgstr ""
+
+#. module: resource
+#. odoo-python
+#: code:addons/resource/models/mixin_resource.py:0
+msgid "This resource already has an owning record."
+msgstr ""
+
+#. module: resource
+#. odoo-python
+#: code:addons/resource/models/mixin_resource.py:0
+msgid "This resource already has this kind of representation."
+msgstr ""
+
+#. module: resource
+#. odoo-python
+#: code:addons/resource/models/resource_resource.py:0
+msgid ""
+"This resource has operational history. Archive it instead of deleting it."
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields.selection,name:resource.selection__resource_calendar_attendance__dayofweek__3
+msgid "Thursday"
+msgstr ""
+
+#. module: resource
+#. odoo-python
+#: code:addons/resource/models/resource_calendar.py:0
+msgid "Thursday Afternoon"
+msgstr ""
+
+#. module: resource
+#. odoo-python
+#: code:addons/resource/models/resource_calendar.py:0
+msgid "Thursday Lunch"
+msgstr ""
+
+#. module: resource
+#. odoo-python
+#: code:addons/resource/models/resource_calendar.py:0
+msgid "Thursday Morning"
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,field_description:resource.field_resource_calendar__leave_ids
+#: model:resource.time.type,name:resource.time_type_leave
+msgid "Time Off"
+msgstr ""
+
+#. module: resource
+#: model_terms:ir.ui.view,arch_db:resource.resource_schedule_exception_form
+#: model_terms:ir.ui.view,arch_db:resource.resource_schedule_exception_tree
+msgid "Time Off Detail"
+msgstr ""
+
+#. module: resource
+#: model:ir.model.constraint,message:resource.constraint_resource_resource_check_time_efficiency
+msgid "Time efficiency must be strictly positive"
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,help:resource.field_resource_time_type__is_work
+msgid ""
+"Time of this kind stays in the working schedule. Unset, it is an absence and"
+" the schedule subtracts it."
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,field_description:resource.field_mixin_resource__tz
+#: model:ir.model.fields,field_description:resource.field_resource_calendar__tz
+#: model:ir.model.fields,field_description:resource.field_resource_resource__tz
+#: model:ir.model.fields,field_description:resource.field_resource_schedule_exception__tz
+msgid "Timezone"
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,field_description:resource.field_resource_calendar__tz_offset
+msgid "Timezone offset"
+msgstr ""
+
+#. module: resource
+#: model_terms:ir.ui.view,arch_db:resource.resource_schedule_exception_form
+msgid "To"
+msgstr ""
+
+#. module: resource
+#: model_terms:ir.ui.view,arch_db:resource.resource_calendar_form
+msgid "Total"
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields.selection,name:resource.selection__resource_calendar_attendance__dayofweek__1
+msgid "Tuesday"
+msgstr ""
+
+#. module: resource
+#. odoo-python
+#: code:addons/resource/models/resource_calendar.py:0
+msgid "Tuesday Afternoon"
+msgstr ""
+
+#. module: resource
+#. odoo-python
+#: code:addons/resource/models/resource_calendar.py:0
+msgid "Tuesday Lunch"
+msgstr ""
+
+#. module: resource
+#. odoo-python
+#: code:addons/resource/models/resource_calendar.py:0
+msgid "Tuesday Morning"
+msgstr ""
+
+#. module: resource
+#: model:ir.model.constraint,message:resource.constraint_resource_time_type_code_uniq
+msgid "Two kinds of time cannot share a code."
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,field_description:resource.field_resource_resource__resource_type
+#: model_terms:ir.ui.view,arch_db:resource.view_resource_resource_search
+msgid "Type"
+msgstr ""
+
+#. module: resource
+#. odoo-python
+#: code:addons/resource/models/resource_calendar_attendance.py:0
+msgid "Unassigned week"
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields.selection,name:resource.selection__resource_reservation__booking_state__under
+msgid "Underbooked"
+msgstr ""
+
+#. module: resource
+#: model:ir.model,name:resource.model_res_users
+#: model:ir.model.fields,field_description:resource.field_resource_resource__user_id
+#: model_terms:ir.ui.view,arch_db:resource.view_resource_resource_search
+msgid "User"
+msgstr ""
+
+#. module: resource
+#: model_terms:ir.ui.view,arch_db:resource.resource_calendar_form
+#: model_terms:ir.ui.view,arch_db:resource.resource_resource_form
+msgid "Visible to all"
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields.selection,name:resource.selection__resource_reservation__enforcement_mode__soft
+msgid "Warning"
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,help:resource.field_resource_reservation__enforcement_mode
+msgid ""
+"Warning permits excess capacity unless the resource enforces its ceiling. "
+"Block prevents total simultaneous allocation from exceeding the resource "
+"ceiling."
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields.selection,name:resource.selection__resource_calendar_attendance__dayofweek__2
+msgid "Wednesday"
+msgstr ""
+
+#. module: resource
+#. odoo-python
+#: code:addons/resource/models/resource_calendar.py:0
+msgid "Wednesday Afternoon"
+msgstr ""
+
+#. module: resource
+#. odoo-python
+#: code:addons/resource/models/resource_calendar.py:0
+msgid "Wednesday Lunch"
+msgstr ""
+
+#. module: resource
+#. odoo-python
+#: code:addons/resource/models/resource_calendar.py:0
+msgid "Wednesday Morning"
+msgstr ""
+
+#. module: resource
+#: model_terms:ir.ui.view,arch_db:resource.resource_calendar_form
+msgid "Week 1 Working Hours"
+msgstr ""
+
+#. module: resource
+#: model_terms:ir.ui.view,arch_db:resource.resource_calendar_form
+msgid "Week 2 Working Hours"
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,field_description:resource.field_resource_calendar_attendance__week_type
+msgid "Week Number"
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,help:resource.field_resource_assignment__resource_id
+msgid "What is held: a vehicle, a machine, a room, a device."
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,help:resource.field_resource_schedule_exception__time_type_id
+msgid ""
+"What this exception takes out of the schedule. An absence is subtracted from"
+" working time; a kind that counts as working time (a training, say) carves "
+"out the period without shortening the day."
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,help:resource.field_resource_resource__date_future_operator
+msgid ""
+"When the next operator takes over. A hand-over without a date takes effect "
+"in a week unless accepted before."
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,help:resource.field_resource_resource__manager_id
+msgid "Who answers for the resource: the live manager assignment."
+msgstr ""
+
+#. module: resource
+#: model_terms:ir.actions.act_window,help:resource.action_resource_assignment
+msgid ""
+"Who drives the truck, who operates the press, who answers for the laptop: "
+"one record per custody, with its period."
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,help:resource.field_resource_resource__holder_id
+msgid "Who has it now: the live operator, else the live custodian."
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,help:resource.field_resource_assignment__assignee_id
+msgid "Who holds it."
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,help:resource.field_resource_resource__operator_id
+msgid "Who operates the resource now: the live operator assignment."
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,help:resource.field_resource_resource__future_operator_id
+msgid "Who takes the resource over next: the planned operator assignment."
+msgstr ""
+
+#. module: resource
+#: model_terms:ir.ui.view,arch_db:resource.resource_assignment_view_form
+msgid "Why, or under what terms"
+msgstr ""
+
+#. module: resource
+#: model:ir.model,name:resource.model_resource_calendar_attendance
+msgid "Work Detail"
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,field_description:resource.field_resource_calendar__resource_ids
+#: model_terms:ir.ui.view,arch_db:resource.resource_calendar_form
+msgid "Work Resources"
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,field_description:resource.field_resource_calendar__work_resources_count
+msgid "Work Resources count"
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,field_description:resource.field_resource_calendar__work_time_rate
+#: model_terms:ir.ui.view,arch_db:resource.resource_calendar_form
+msgid "Work Time Rate"
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,field_description:resource.field_resource_calendar_attendance__hour_from
+msgid "Work from"
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,help:resource.field_resource_calendar__work_time_rate
+msgid ""
+"Work time rate versus full time working schedule, should be between 0 and "
+"100 %."
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,field_description:resource.field_resource_calendar_attendance__hour_to
+msgid "Work to"
+msgstr ""
+
+#. module: resource
+#: model:resource.time.type,name:resource.time_type_work
+msgid "Worked Time"
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,field_description:resource.field_resource_reservation__resource_calendar_id
+msgid "Working Calendar"
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,field_description:resource.field_mixin_resource__resource_calendar_id
+#: model:ir.model.fields,field_description:resource.field_res_company__resource_calendar_ids
+#: model:ir.model.fields,field_description:resource.field_resource_schedule_exception__calendar_id
+#: model_terms:ir.ui.view,arch_db:resource.resource_calendar_form
+msgid "Working Hours"
+msgstr ""
+
+#. module: resource
+#. odoo-python
+#: code:addons/resource/models/resource_calendar.py:0
+msgid "Working Hours of %s"
+msgstr ""
+
+#. module: resource
+#: model:ir.actions.act_window,name:resource.action_resource_calendar_form
+#: model:ir.ui.menu,name:resource.menu_resource_calendar
+msgid "Working Schedules"
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,field_description:resource.field_resource_calendar__attendance_ids
+#: model:ir.model.fields,field_description:resource.field_resource_resource__calendar_id
+#: model_terms:ir.ui.view,arch_db:resource.resource_calendar_form
+#: model_terms:ir.ui.view,arch_db:resource.view_resource_calendar_attendance_form
+#: model_terms:ir.ui.view,arch_db:resource.view_resource_calendar_attendance_tree
+#: model_terms:ir.ui.view,arch_db:resource.view_resource_calendar_search
+#: model_terms:ir.ui.view,arch_db:resource.view_resource_calendar_tree
+#: model_terms:ir.ui.view,arch_db:resource.view_resource_resource_search
+msgid "Working Time"
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,field_description:resource.field_resource_calendar__attendance_ids_1st_week
+msgid "Working Time 1st Week"
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,field_description:resource.field_resource_calendar__attendance_ids_2nd_week
+msgid "Working Time 2nd Week"
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,help:resource.field_resource_reservation__allocated_hours
+msgid "Working hours between start and end, respecting the resource calendar."
+msgstr ""
+
+#. module: resource
+#: model:ir.model.fields,help:resource.field_mixin_resource_allocation__allocated_hours
+msgid ""
+"Working hours the record's reservations book: none, while it is not "
+"scheduled."
+msgstr ""
+
+#. module: resource
+#. odoo-python
+#: code:addons/resource/models/resource_calendar.py:0
+msgid "You can't delete section between weeks."
+msgstr ""
+
+#. module: resource
+#: model_terms:ir.ui.view,arch_db:resource.resource_role_view_list
+msgid "e.g. Developer"
+msgstr ""
+
+#. module: resource
+#. odoo-python
+#: code:addons/resource/models/resource_calendar_attendance.py:0
+msgid "other week"
+msgstr ""
+
+#. module: resource
+#. odoo-python
+#: code:addons/resource/models/resource_calendar.py:0
+msgid "the first"
+msgstr ""
+
+#. module: resource
+#. odoo-python
+#: code:addons/resource/models/resource_calendar.py:0
+msgid "the second"
+msgstr ""
+
+#. module: resource
+#. odoo-python
+#: code:addons/resource/models/resource_calendar_attendance.py:0
+msgid "this week"
+msgstr ""

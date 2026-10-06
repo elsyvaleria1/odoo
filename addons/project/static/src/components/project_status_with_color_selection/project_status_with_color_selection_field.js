@@ -1,0 +1,52 @@
+/** @odoo-module native */
+import { t } from "@odoo/owl";
+import { registry } from "@web/core/registry";
+import {
+    SelectionField,
+    selectionField,
+} from "@web/fields/selection/selection/selection_field";
+
+import { STATUS_COLOR_PREFIX, STATUS_COLORS } from "../../utils/project_utils.js";
+
+export class ProjectStatusWithColorSelectionField extends SelectionField {
+    static props = {
+        ...SelectionField.props,
+        statusLabel: t.string().optional(),
+        hideStatusName: t.boolean().optional(),
+    };
+
+    static template = "project.ProjectStatusWithColorSelectionField";
+
+    setup() {
+        super.setup();
+        this.colorPrefix = STATUS_COLOR_PREFIX;
+        this.colors = STATUS_COLORS;
+    }
+
+    get currentValue() {
+        return this.props.record.data[this.props.name] || this.options[0][0];
+    }
+
+    statusColor(value) {
+        return this.colors[value] ? this.colorPrefix + this.colors[value] : "";
+    }
+}
+
+export const projectStatusWithColorSelectionField = {
+    ...selectionField,
+    component: ProjectStatusWithColorSelectionField,
+    fieldDependencies: (fieldInfo) =>
+        fieldInfo.attrs.hideStatusName
+            ? [{ name: "update_count", type: "integer" }]
+            : [],
+    extractProps: (fieldInfo, dynamicInfo) => {
+        const props = selectionField.extractProps(fieldInfo, dynamicInfo);
+        props.statusLabel = fieldInfo.attrs.status_label;
+        props.hideStatusName = Boolean(fieldInfo.attrs.hideStatusName);
+        return props;
+    },
+};
+
+registry
+    .category("fields")
+    .add("status_with_color", projectStatusWithColorSelectionField);

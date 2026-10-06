@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="access_review_item_view_list" model="ir.ui.view">
+        <field name="name">access.review.item.list</field>
+        <field name="model">access.review.item</field>
+        <field name="arch" type="xml">
+            <list string="Review Items" editable="bottom" create="0" delete="0">
+                <field name="campaign_id" optional="hide" />
+                <field name="name" />
+                <field name="subject_user_id" />
+                <field name="group_id" optional="show" />
+                <field name="res_model" optional="hide" />
+                <field name="reviewer_ids" widget="many2many_tags" optional="show" />
+                <field name="decision" />
+                <field name="decided_by_id" optional="show" />
+                <field name="note" />
+                <field name="escalated" optional="hide" />
+                <button
+                    name="action_certify"
+                    type="object"
+                    string="Certify"
+                    icon="fa-check"
+                    invisible="decision != 'pending'" />
+                <button
+                    name="action_revoke"
+                    type="object"
+                    string="Revoke"
+                    icon="fa-ban"
+                    invisible="decision != 'pending'" />
+            </list>
+        </field>
+    </record>
+
+    <record id="access_review_item_view_search" model="ir.ui.view">
+        <field name="name">access.review.item.search</field>
+        <field name="model">access.review.item</field>
+        <field name="arch" type="xml">
+            <search string="Review Items">
+                <field name="subject_user_id" />
+                <field name="group_id" />
+                <field name="campaign_id" />
+                <filter
+                    name="pending"
+                    string="Pending"
+                    domain="[('decision', '=', 'pending')]" />
+                <filter
+                    name="mine"
+                    string="Mine to Review"
+                    domain="[('reviewer_ids', 'in', uid)]" />
+                <group>
+                    <filter
+                        name="group_by_campaign"
+                        string="Review"
+                        context="{'group_by': 'campaign_id'}" />
+                    <filter
+                        name="group_by_subject"
+                        string="Person"
+                        context="{'group_by': 'subject_user_id'}" />
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_access_review_item" model="ir.actions.act_window">
+        <field name="name">Access to Review</field>
+        <field name="res_model">access.review.item</field>
+        <field name="view_mode">list</field>
+        <field
+            name="context">{'search_default_pending': 1, 'search_default_mine': 1}</field>
+    </record>
+
+    <record id="access_review_campaign_view_list" model="ir.ui.view">
+        <field name="name">access.review.campaign.list</field>
+        <field name="model">access.review.campaign</field>
+        <field name="arch" type="xml">
+            <list string="Access Reviews">
+                <field name="name" />
+                <field name="kind" />
+                <field name="date_start" />
+                <field name="date_deadline" />
+                <field name="pending_count" />
+                <field name="certified_count" />
+                <field name="revoked_count" />
+                <field name="state" />
+            </list>
+        </field>
+    </record>
+
+    <record id="access_review_campaign_view_form" model="ir.ui.view">
+        <field name="name">access.review.campaign.form</field>
+        <field name="model">access.review.campaign</field>
+        <field name="arch" type="xml">
+            <form string="Access Review">
+                <header>
+                    <button
+                        name="action_start"
+                        type="object"
+                        string="Start"
+                        invisible="state != 'draft'"
+                        class="btn-primary" />
+                    <button
+                        name="action_close"
+                        type="object"
+                        string="Close"
+                        invisible="state != 'running'" />
+                    <field name="state" widget="statusbar" />
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name" />
+                        </h1>
+                    </div>
+                    <field name="description" placeholder="What the review covers" />
+                    <group>
+                        <group>
+                            <field name="kind" readonly="state != 'draft'" />
+                            <field
+                                name="group_ids"
+                                widget="many2many_tags"
+                                invisible="kind not in ('memberships', 'eligibilities')"
+                                readonly="state != 'draft'" />
+                            <field
+                                name="older_than_days"
+                                invisible="kind != 'memberships'"
+                                readonly="state != 'draft'" />
+                            <field
+                                name="ending_within_days"
+                                invisible="kind not in ('exceptions', 'timed_grants')"
+                                readonly="state != 'draft'" />
+                            <field
+                                name="link_domain"
+                                widget="domain"
+                                options="{'model': 'access.link'}"
+                                invisible="kind != 'links'"
+                                readonly="state != 'draft'" />
+                            <field name="reviewer" readonly="state != 'draft'" />
+                            <field
+                                name="reviewer_ids"
+                                widget="many2many_tags"
+                                invisible="reviewer != 'named'"
+                                readonly="state != 'draft'" />
+                        </group>
+                        <group>
+                            <field name="date_planned" readonly="state != 'draft'" />
+                            <field name="date_start" />
+                            <field name="date_deadline" />
+                            <field name="on_deadline" />
+                            <field name="recurrence_months" />
+                        </group>
+                    </group>
+                    <field name="item_ids" readonly="1" />
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_access_review_campaign" model="ir.actions.act_window">
+        <field name="name">Access Reviews</field>
+        <field name="res_model">access.review.campaign</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+</odoo>

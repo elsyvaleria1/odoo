@@ -1,0 +1,1266 @@
+import html as htmllib
+import itertools
+import logging
+import re
+from typing import TYPE_CHECKING, Any, Literal, overload, override
+
+import markupsafe
+from lxml import etree, html
+from lxml.html import (
+    XHTML_NAMESPACE,
+    _contains_block_level_tag,
+    _looks_like_full_html_bytes,
+    _looks_like_full_html_unicode,
+    clean,
+    defs,
+    document_fromstring,
+    html_parser,
+)
+from markupsafe import Markup, escape_silent
+
+from odoo.libs.web.urls import SAFE_LINK_SCHEMES, url_scheme, urljoin
+
+if TYPE_CHECKING:
+    from collections.abc import Callable, Iterable, Iterator
+
+__all__ = [
+    "HTML_TAG_URL_REGEX",
+    "SANITIZE_TAGS",
+    "TEXT_URL_REGEX",
+    "URL_REGEX",
+    "URL_SKIP_PROTOCOL_REGEX",
+    "VOID_ELEMENTS",
+    "add_html_content",
+    "create_link",
+    "escape_str",
+    "html2plaintext",
+    "html_escape",
+    "html_keep_url",
+    "html_nbsp_to_entity",
+    "html_normalize",
+    "html_sanitize",
+    "html_to_inner_content",
+    "is_html_empty",
+    "nl2br",
+    "nl2br_enclose",
+    "normalize_url",
+    "plaintext2html",
+    "plaintext_link_spans",
+    "prepend_html_content",
+    "replace_local_links",
+    "safe_attrs",
+]
+
+
+VOID_ELEMENTS = frozenset(
+    [
+        "area",
+        "base",
+        "br",
+        "col",
+        "embed",
+        "hr",
+        "img",
+        "input",
+        "keygen",
+        "link",
+        "menuitem",
+        "meta",
+        "param",
+        "source",
+        "track",
+        "wbr",
+    ]
+)
+
+html_escape = markupsafe.escape
+
+# escape() answers a Markup, which a renderer joining millions of strings pays
+# for twice (the wrapper, then the instance); the C routine under it answers
+# the escaped str
+try:
+    from markupsafe import _escape_inner as escape_str
+except ImportError:
+
+    def escape_str(value: str) -> str:
+        return str(markupsafe.escape(str(value)))
+
+
+def nl2br(string: str) -> Markup:
+    return escape_silent(string).replace("\n", Markup("<br>\n"))
+
+
+def nl2br_enclose(string: str, enclosure_tag: str = "div") -> Markup:
+    if not _SIMPLE_TAG_RE.match(enclosure_tag):
+        msg = f"Invalid enclosure_tag: {enclosure_tag!r}"
+        raise ValueError(msg)
+    return Markup("<{enclosure_tag}>{converted}</{enclosure_tag}>").format(
+        enclosure_tag=enclosure_tag,
+        converted=nl2br(string),
+    )
+
+
+safe_attrs = defs.safe_attrs | frozenset(
+    [
+        "style",
+        "data-o-mail-quote",
+        "data-o-mail-quote-node",
+        "data-o-mail-quote-container",
+        "data-oe-model",
+        "data-oe-id",
+        "data-oe-field",
+        "data-oe-type",
+        "data-oe-expression",
+        "data-oe-translation-source-sha",
+        "data-oe-nodeid",
+        "data-last-history-steps",
+        "data-oe-protected",
+        "data-embedded",
+        "data-embedded-editable",
+        "data-embedded-props",
+        "data-oe-version",
+        "data-oe-transient-content",
+        "data-behavior-props",
+        "data-prop-name",
+        "data-width",
+        "data-height",
+        "data-scale-x",
+        "data-scale-y",
+        "data-x",
+        "data-y",
+        "data-oe-role",
+        "data-oe-aria-label",
+        "data-publish",
+        "data-id",
+        "data-res_id",
+        "data-interval",
+        "data-member_id",
+        "data-scroll-background-ratio",
+        "data-view-id",
+        "data-class",
+        "data-mimetype",
+        "data-original-src",
+        "data-original-id",
+        "data-gl-filter",
+        "data-quality",
+        "data-resize-width",
+        "data-shape",
+        "data-shape-colors",
+        "data-file-name",
+        "data-original-mimetype",
+        "data-attachment-id",
+        "data-format-mimetype",
+        "data-ai-field",
+        "data-ai-record-id",
+        "data-heading-link-id",
+        "data-mimetype-before-conversion",
+        "data-language-id",
+        "data-bs-toggle",
+    ]
+)
+
+SANITIZE_TAGS = {
+    "allow_tags": defs.tags
+    | frozenset(
+        [
+            "article",
+            "bdi",
+            "section",
+            "header",
+            "footer",
+            "hgroup",
+            "nav",
+            "aside",
+            "figure",
+            "main",
+        ]
+        + [etree.Comment]
+    ),
+    "kill_tags": [
+        "base",
+        "embed",
+        "frame",
+        "head",
+        "iframe",
+        "link",
+        "meta",
+        "noscript",
+        "object",
+        "script",
+        "style",
+        "title",
+    ],
+    "remove_tags": ["html", "body"],
+}
+
+
+class _Cleaner(clean.Cleaner):
+    _style_re = re.compile(r"""([\w-]+)\s*:\s*((?:[^;"']|"[^";]*"|'[^';]*')+)""")
+
+    _style_whitelist_base = (
+        "font-size",
+        "font-family",
+        "font-weight",
+        "font-style",
+        "background-color",
+        "color",
+        "text-align",
+        "line-height",
+        "letter-spacing",
+        "text-transform",
+        "text-decoration",
+        "opacity",
+        "float",
+        "vertical-align",
+        "display",
+        "object-fit",
+        "padding",
+        "padding-top",
+        "padding-left",
+        "padding-bottom",
+        "padding-right",
+        "margin",
+        "margin-top",
+        "margin-left",
+        "margin-bottom",
+        "margin-right",
+        "white-space",
+        "background-image",
+        "background-position",
+        "background-size",
+        "background-repeat",
+        "background-origin",
+        "border",
+        "border-color",
+        "border-radius",
+        "border-style",
+        "border-width",
+        "border-top",
+        "border-bottom",
+        "height",
+        "width",
+        "max-width",
+        "min-width",
+        "min-height",
+        "border-collapse",
+        "border-spacing",
+        "caption-side",
+        "empty-cells",
+        "table-layout",
+    )
+
+    _style_whitelist = frozenset(_style_whitelist_base) | {
+        f"border-{position}-{attribute}"
+        for position in ["top", "bottom", "left", "right"]
+        for attribute in (
+            "style",
+            "color",
+            "width",
+            "left-radius",
+            "right-radius",
+        )
+    }
+
+    strip_classes = False
+    sanitize_style = False
+    conditional_comments = True
+
+    _XML_BASE_ATTRS = ("xml:base", "{http://www.w3.org/XML/1998/namespace}base")
+
+    def __call__(self, doc: etree._Element) -> None:
+        super().__call__(doc)
+
+        for el in doc.iter(tag=etree.Element):
+            for attr in self._XML_BASE_ATTRS:
+                el.attrib.pop(attr, None)
+
+        if not getattr(self, "safe_attrs_only", False) and self.strip_classes:
+            for el in doc.iter(tag=etree.Element):
+                self.strip_class(el)
+
+        if not self.style and self.sanitize_style:
+            for el in doc.iter(tag=etree.Element):
+                self.parse_style(el)
+
+    def strip_class(self, el: etree._Element) -> None:
+        if el.attrib.get("class"):
+            del el.attrib["class"]
+
+    def parse_style(self, el: etree._Element) -> None:
+        attributes = el.attrib
+        styling = attributes.get("style")
+        if styling:
+            valid_styles = {}
+            styles = self._style_re.findall(styling)
+            for style in styles:
+                if style[0].lower() in self._style_whitelist:
+                    valid_styles[style[0].lower()] = style[1]
+            if valid_styles:
+                el.attrib["style"] = "; ".join(
+                    f"{key}:{val}" for (key, val) in valid_styles.items()
+                )
+            else:
+                del el.attrib["style"]
+
+    @override
+    def kill_conditional_comments(self, doc: etree._Element) -> None:
+        if self.conditional_comments:
+            super().kill_conditional_comments(doc)
+
+
+_QUOTE = "data-o-mail-quote"
+_QUOTE_CONTAINER = "data-o-mail-quote-container"
+_QUOTE_NODE = "data-o-mail-quote-node"
+
+
+def _wrap_matches_in_text(
+    regex: re.Pattern[str],
+    node: etree._Element,
+    tag: str = "span",
+    attrs: dict[str, str] | None = None,
+) -> None:
+    text = node.text or ""
+    matches = list(regex.finditer(text))
+    if not matches:
+        return
+
+    previous: etree._Element | None = None
+    idx = 0
+    for position, match in enumerate(matches):
+        wrapper = etree.Element(tag)
+        wrapper.text = text[match.start() : match.end()]
+        wrapper.tail = text[match.end() :]
+        for key, val in (attrs or {}).items():
+            wrapper.set(key, val)
+        if previous is None:
+            node.text = text[idx : match.start()]
+        else:
+            previous.tail = text[idx : match.start()]
+        node.insert(position, wrapper)
+        previous = wrapper
+        idx = match.end()
+
+
+def _mark_quote(el: etree._Element, *, container_on_parent: bool = False) -> None:
+    el.set(_QUOTE, "1")
+    if container_on_parent and (parent := el.getparent()) is not None:
+        parent.set(_QUOTE_CONTAINER, "1")
+
+
+def _quotes_what_follows(el: etree._Element, el_class: str, el_id: str) -> bool:
+    return (
+        el.tag == "hr" and ("stopSpelling" in el_class or "stopSpelling" in el_id)
+    ) or "yahoo_quoted" in el_class
+
+
+def _previous_element(el: etree._Element) -> etree._Element | None:
+    previous = el.getprevious()
+    while previous is not None and not isinstance(previous.tag, str):
+        previous = previous.getprevious()
+    return previous
+
+
+def _next_element(el: etree._Element) -> etree._Element | None:
+    following = el.getnext()
+    while following is not None and not isinstance(following.tag, str):
+        following = following.getnext()
+    return following
+
+
+def _quote_client_markers(el: etree._Element, el_class: str, el_id: str) -> None:
+    if "gmail_extra" in el_class or "SkyDrivePlaceholder" in el_class:
+        _mark_quote(el, container_on_parent=True)
+
+    if _quotes_what_follows(el, el_class, el_id):
+        el.set(_QUOTE, "1")
+        for sibling in el.itersiblings(etree.Element):
+            sibling.set(_QUOTE, "1")
+            if _quotes_what_follows(
+                sibling, sibling.get("class", "") or "", sibling.get("id", "") or ""
+            ):
+                break
+
+    is_signature_wrapper = (
+        "odoo_signature_wrapper" in el_class
+        or "gmail_signature" in el_class
+        or el_id == "Signature"
+    )
+    is_outlook_reply_quote = "divRplyFwdMsg" in el_id
+    if is_signature_wrapper or "gmail_quote" in el_class or is_outlook_reply_quote:
+        el.set(_QUOTE_CONTAINER, "1")
+        el.set(_QUOTE, "1")
+
+    if is_outlook_reply_quote:
+        hr = el.getprevious()
+        if hr is not None and hr.tag == "hr":
+            hr.set(_QUOTE, "1")
+        if (reply_quote := _next_element(el)) is not None:
+            reply_quote.set(_QUOTE_CONTAINER, "1")
+            reply_quote.set(_QUOTE, "1")
+
+    if "appendonsend" in el_id and not (el.text or "").strip():
+        el.set(_QUOTE_CONTAINER, "1")
+        el.set(_QUOTE, "1")
+
+
+def _quote_inherited_from_parent(el: etree._Element) -> None:
+    parent = el.getparent()
+    if parent is None or parent.get(_QUOTE_NODE):
+        return
+    if parent.get(_QUOTE):
+        el.set(_QUOTE, "1")
+        return
+    if not parent.get(_QUOTE_CONTAINER):
+        return
+    previous = _previous_element(el)
+    if previous is not None and previous.get(_QUOTE) is not None:
+        el.set(_QUOTE, "1")
+
+
+_RAW_TEXT_TAGS = frozenset({"script", "style", "textarea", "title"})
+
+
+def _tag_quote(el: etree._Element) -> None:
+    el_class = el.get("class", "") or ""
+    el_id = el.get("id", "") or ""
+
+    _quote_client_markers(el, el_class, el_id)
+
+    if el.text and el.find("br") is not None and _SIGNATURE_BEGIN_RE.search(el.text):
+        _mark_quote(el, container_on_parent=True)
+
+    if not el.get(_QUOTE) and el.tag not in _RAW_TEXT_TAGS:
+        _wrap_matches_in_text(_TEXT_COMPLETE_RE, el, "span", {_QUOTE: "1"})
+
+    if el.tag == "blockquote":
+        el.set(_QUOTE_NODE, "1")
+        el.set(_QUOTE, "1")
+
+    _quote_inherited_from_parent(el)
+
+    previous = el.getprevious()
+    if previous is not None and previous.get(_QUOTE) and not el.text_content().strip():
+        el.set(_QUOTE, "1")
+
+
+def _get_elements_by_tag(doc: etree._Element, tag: str) -> list[etree._Element]:
+    return doc.findall(tag) or doc.findall(f"{{{XHTML_NAMESPACE}}}{tag}")
+
+
+def _merge_into_first(elements: list[etree._Element]) -> etree._Element:
+    survivor = elements[0]
+    for other in elements[1:]:
+        if other.text:
+            if len(survivor):
+                survivor[-1].tail = (survivor[-1].tail or "") + other.text
+            else:
+                survivor.text = (survivor.text or "") + other.text
+        survivor.extend(other)
+        other.drop_tree()
+    return survivor
+
+
+def _wrap_loose_body_text(body: etree._Element) -> None:
+    if not (body.text and body.text.strip()):
+        return
+
+    paragraph = body.makeelement("p", {})
+    paragraph.text = body.text
+    body.text = None
+
+    if len(body) == 0:
+        body.append(paragraph)
+    elif _contains_block_level_tag(body):
+        while len(body) and body[0].tag not in defs.block_tags:
+            paragraph.append(body[0])
+        body.insert(0, paragraph)
+    else:
+        for child in list(body):
+            paragraph.append(child)
+        body.append(paragraph)
+
+
+type _Root = Literal["document", "element", "fragment"]
+
+
+def _fromstring(
+    html_: str | bytes,
+    base_url: str | None = None,
+    parser: Any = None,
+    **kw: Any,
+) -> tuple[etree._Element, _Root]:
+    if parser is None:
+        parser = html_parser
+    looks_full_html = (
+        _looks_like_full_html_bytes
+        if isinstance(html_, bytes)
+        else _looks_like_full_html_unicode
+    )
+    is_full_html = looks_full_html(html_)
+    doc = document_fromstring(html_, parser=parser, base_url=base_url, **kw)
+    if is_full_html:
+        return doc, "document"
+
+    bodies = _get_elements_by_tag(doc, "body")
+    body = _merge_into_first(bodies) if bodies else None
+
+    if heads := _get_elements_by_tag(doc, "head"):
+        _merge_into_first(heads)
+        return doc, "document"
+    if body is None:
+        return doc, "document"
+
+    _wrap_loose_body_text(body)
+
+    if (
+        len(body) == 1
+        and isinstance(body[0].tag, str)
+        and (not body.text or not body.text.strip())
+        and (not body[-1].tail or not body[-1].tail.strip())
+    ):
+        return body[0], "element"
+    body.tag = "div" if _contains_block_level_tag(body) else "span"
+    return body, "fragment"
+
+
+def _is_synthetic(doc: etree._Element, root: _Root) -> bool:
+    # lxml's Cleaner cannot drop the root it was handed, so it renames a
+    # dropped <html> to a bare <div>; a wrapper given attributes by quote
+    # tagging carries them and is kept
+    if doc.attrib:
+        return False
+    return root == "fragment" or (root == "document" and doc.tag == "div")
+
+
+# what the parser drops before the first node of a body, so a second parse
+# of the output starts where the first did
+_HTML_WHITESPACE = " \t\n\r\f"
+
+
+def _escape_text(text: str | None, method: str) -> str:
+    escaped = htmllib.escape(text or "", quote=False)
+    return escaped.replace("\r", "&#13;") if method == "xml" else escaped
+
+
+def _serialize_content(doc: etree._Element, method: str) -> str:
+    # comments with no content around them read as empty on a second parse
+    if not (doc.text or "").strip(_HTML_WHITESPACE) and not any(
+        isinstance(child.tag, str) or (child.tail or "").strip(_HTML_WHITESPACE)
+        for child in doc
+    ):
+        return ""
+    children = "".join(
+        html.tostring(child, encoding="unicode", method=method) for child in doc
+    )
+    text = (doc.text or "").lstrip(_HTML_WHITESPACE)
+    return f"{_escape_text(text, method)}{children}{_escape_text(doc.tail, method)}"
+
+
+# lxml refuses a str that opens on an XML declaration naming an encoding
+_XML_DECLARATION_RE = re.compile(r"\A(\s*)<\?xml\b[^<>]*>?")
+
+
+def html_normalize(
+    src: str,
+    filter_callback: Callable[[etree._Element], etree._Element] | None = None,
+    output_method: str = "html",
+) -> str:
+    if not src:
+        return src
+
+    src = _XML_DECLARATION_RE.sub(r"\1", src, count=1)
+    src = src.replace("--!>", "-->")
+    src = re.sub(r"(<!-->|<!--->)", "<!-- -->", src)
+    src = re.sub(r"</?o:[^<>\n]*>", "", src)
+
+    try:
+        doc, root = _fromstring(src)
+    except etree.ParserError as e:
+        if "empty" in str(e):
+            return ""
+        raise
+
+    for el in doc.iter(tag=etree.Element):
+        el.attrib.pop("encoding", None)
+        _tag_quote(el)
+
+    if filter_callback:
+        doc = filter_callback(doc)
+
+    if _is_synthetic(doc, root):
+        # the cleaner can leave text at the wrapper's top level (a dropped tag
+        # keeps its text); a second parse would wrap it, so this one does
+        _wrap_loose_body_text(doc)
+        src = _serialize_content(doc, output_method)
+    else:
+        src = html.tostring(doc, encoding="unicode", method=output_method)
+
+    return html_nbsp_to_entity(src)
+
+
+# "<script-card>" is a custom element, not raw text: the name ends where a tag's may
+_TAG_NAME_END = r"(?=[\s/>]|$)"
+_RAW_TEXT_OR_COMMENT_RE = re.compile(
+    rf"<!--|<(script|style){_TAG_NAME_END}", re.IGNORECASE
+)
+
+
+def html_nbsp_to_entity(html: str) -> str:
+    # "&nbsp;" is literal text inside <script>/<style>: only text and
+    # attributes get the entity; comments do too, as conditional comments hold HTML
+    if "\xa0" not in html:
+        return html
+    parts: list[str] = []
+    pos = 0
+    while (start := _RAW_TEXT_OR_COMMENT_RE.search(html, pos)) is not None:
+        if start[1] is None:
+            end = _comment_end(html, start.start())
+            parts.append(html[pos:end].replace("\xa0", "&nbsp;"))
+            pos = end
+            continue
+        gt = html.find(">", start.end())
+        if gt < 0:
+            break
+        parts.append(html[pos : gt + 1].replace("\xa0", "&nbsp;"))
+        closer = _RAW_TEXT_CLOSER_RES[start[1].lower()].search(html, gt + 1)
+        pos = len(html) if closer is None else closer.start()
+        parts.append(html[gt + 1 : pos])
+    parts.append(html[pos:].replace("\xa0", "&nbsp;"))
+    return "".join(parts)
+
+
+_sanitize_logger = logging.getLogger(__name__ + ".html_sanitize")
+_LOGGED_SOURCE_CHARS = 200
+
+
+@overload
+def html_sanitize(
+    src: None,
+    silent: bool = True,
+    sanitize_tags: bool = True,
+    sanitize_attributes: bool = False,
+    sanitize_style: bool = False,
+    sanitize_form: bool = True,
+    sanitize_conditional_comments: bool = True,
+    strip_style: bool = False,
+    strip_classes: bool = False,
+    output_method: str = "html",
+) -> None: ...
+
+
+@overload
+def html_sanitize(
+    src: str | markupsafe.Markup,
+    silent: bool = True,
+    sanitize_tags: bool = True,
+    sanitize_attributes: bool = False,
+    sanitize_style: bool = False,
+    sanitize_form: bool = True,
+    sanitize_conditional_comments: bool = True,
+    strip_style: bool = False,
+    strip_classes: bool = False,
+    output_method: str = "html",
+) -> markupsafe.Markup: ...
+
+
+def html_sanitize(
+    src: str | markupsafe.Markup | None,
+    silent: bool = True,
+    sanitize_tags: bool = True,
+    sanitize_attributes: bool = False,
+    sanitize_style: bool = False,
+    sanitize_form: bool = True,
+    sanitize_conditional_comments: bool = True,
+    strip_style: bool = False,
+    strip_classes: bool = False,
+    output_method: str = "html",
+) -> markupsafe.Markup | None:
+    if not src:
+        return src
+    if not isinstance(src, str):
+        msg = f"html_sanitize expects a str, got {type(src).__name__}"
+        raise TypeError(msg)
+
+    def sanitize_handler(doc: etree._Element, prestrip: bool = False) -> etree._Element:
+        if prestrip and sanitize_tags:
+            etree.strip_elements(doc, *SANITIZE_TAGS["kill_tags"], with_tail=False)
+        kwargs = {
+            "scripts": True,
+            "javascript": True,
+            "page_structure": True,
+            "style": strip_style,
+            "sanitize_style": sanitize_style,
+            "forms": sanitize_form,
+            "remove_unknown_tags": False,
+            "comments": False,
+            "conditional_comments": sanitize_conditional_comments,
+            "processing_instructions": False,
+        }
+        if sanitize_tags:
+            kwargs.update(SANITIZE_TAGS)
+
+        if sanitize_attributes:
+            if strip_classes:
+                current_safe_attrs = safe_attrs - frozenset(["class"])
+            else:
+                current_safe_attrs = safe_attrs
+            kwargs.update(
+                {
+                    "safe_attrs_only": True,
+                    "safe_attrs": current_safe_attrs,
+                }
+            )
+        else:
+            kwargs.update(
+                {
+                    "safe_attrs_only": False,
+                    "strip_classes": strip_classes,
+                }
+            )
+
+        cleaner = _Cleaner(**kwargs)
+        cleaner(doc)
+        return doc
+
+    try:
+        sanitized = html_normalize(
+            src, filter_callback=sanitize_handler, output_method=output_method
+        )
+    except etree.ParserError:
+        if not silent:
+            raise
+        _sanitize_logger.warning(
+            "ParserError obtained when sanitizing %r (%d chars)",
+            src[:_LOGGED_SOURCE_CHARS],
+            len(src),
+            exc_info=True,
+        )
+        sanitized = "<p>ParserError when sanitizing</p>"
+    # lxml's Cleaner asserts on a detached element (drop_tree) and raises
+    # ValueError on a comment where it expects an element
+    except etree.LxmlError, ValueError, AssertionError:
+        if not silent:
+            raise
+        sanitized = None
+        if sanitize_tags:
+            try:
+                sanitized = html_normalize(
+                    src,
+                    filter_callback=lambda doc: sanitize_handler(doc, prestrip=True),
+                    output_method=output_method,
+                )
+            except etree.LxmlError, ValueError, AssertionError:
+                sanitized = None
+        if sanitized is None:
+            _sanitize_logger.warning(
+                "unknown error obtained when sanitizing %r (%d chars)",
+                src[:_LOGGED_SOURCE_CHARS],
+                len(src),
+                exc_info=True,
+            )
+            sanitized = "<p>Unknown error when sanitizing</p>"
+
+    return markupsafe.Markup(sanitized)
+
+
+URL_SKIP_PROTOCOL_REGEX = r"mailto:|tel:|sms:"
+
+_HREF_URL_SOURCE = rf"""(\bhref=['"](?!{URL_SKIP_PROTOCOL_REGEX})([^'"]+)['"])"""
+
+URL_REGEX = re.compile(_HREF_URL_SOURCE)
+TEXT_URL_REGEX = re.compile(r"https?://[\w@:%.+&~#=/-]+(?:\?\S+)?")
+HTML_TAG_URL_REGEX = re.compile(_HREF_URL_SOURCE + r"([^<>]*>([^<>]+)<\/)?")
+_NEWLINE_TAG_RE = re.compile(r"<(?:div|p|br|tr)")
+
+_RUNS_OF_SPACE_OR_TAB_RE = re.compile(r" {2,}|\t")
+_CLOSING_BODY_RE = re.compile(r"</body\s*>", re.IGNORECASE)
+_CLOSING_HTML_RE = re.compile(r"</html\s*>", re.IGNORECASE)
+
+# an attribute as HTML writes it: bare, or valued with either quote or none
+_ATTRIBUTE = (
+    r"""(?:\s+[A-Za-z_:-][\w:.-]*(?:\s*=\s*(?:"[^"]*"|'[^']*'|[^\s"'=<>`]+))?)"""
+)
+_ICON_RE = re.compile(
+    rf"""<\s*(?:i|span)\b{_ATTRIBUTE}*?\s+class\s*=\s*["']?[^"'>]*\b(?:fa|fab|fad|far|oi)\b""",
+    re.IGNORECASE,
+)
+_EMPTY_TAG_RE = re.compile(
+    rf"<\s*\/?(?:p|div|section|span|br|b|i|u|s|em|strong|small|font|h[1-6])\b{_ATTRIBUTE}*\s*\/?\s*>",
+    re.IGNORECASE,
+)
+
+_RAW_TEXT_OPENER_RE = re.compile(rf"<(script|style){_TAG_NAME_END}", re.IGNORECASE)
+_RAW_TEXT_CLOSER_RES = {
+    "script": re.compile(r"</script\s*>", re.IGNORECASE),
+    "style": re.compile(r"</style\s*>", re.IGNORECASE),
+}
+
+_DOCUMENT_SHELL_TAG_RE = re.compile(
+    rf"(?i)</?(?:html|body|head){_TAG_NAME_END}|<!\s*DOCTYPE\b"
+)
+_BODY_TAG_RE = re.compile(rf"(?i)<body{_TAG_NAME_END}")
+_HTML_TAG_RE = re.compile(rf"(?i)<html{_TAG_NAME_END}")
+
+_SIGNATURE_BEGIN_RE = re.compile(r"((?:(?:^|\n)[-]{2}[\s]?$))")
+_TEXT_COMPLETE_RE = re.compile(
+    r"((?:\n[>]+[^\n\r]*)+|(?:(?:^|\n)[-]{2}[\s]?[\r\n]{1,2}[\s\S]+))"
+)
+
+_LINK_TAGS_RE = re.compile(
+    r"""(?<!["'])((ftp|http|https):\/\/(\w+(?::\w*)?@)?([^\s<"']++)(:[0-9]+)?(\/|\/([^\s<"']))?)(?![^\s<"']*["']|[^\s<"']*</a>)"""
+)
+
+_SIMPLE_TAG_RE = re.compile(r"^[a-zA-Z][a-zA-Z0-9]*$")
+
+_BR_TAGS_RE = re.compile(r"(([<]\s*[bB][rR]\s*/?[>]\s*){2,})")
+
+
+def normalize_url(url: str) -> str:
+    if url_scheme(url) in ("http", "https", "ftp", "ftps", "mailto", "tel", "sms"):
+        return url
+    if url.startswith("//"):
+        return "http:" + url
+    if url.startswith(("?", "#", "/")):
+        return url
+    return "http://" + url
+
+
+def _comment_end(src: str, start: int) -> int:
+    body = start + 4
+    for abrupt in (">", "->"):
+        if src.startswith(abrupt, body):
+            return body + len(abrupt)
+    end = src.find("-->", body)
+    return len(src) if end < 0 else end + 3
+
+
+def _visible_markup(src: str) -> Iterator[tuple[bool, int, int]]:
+    # Every step moves past what it scanned, and a scan that finds no end
+    # (no ">", no closing comment or raw-text tag) ends the walk: rescanning
+    # to the end of the input from each later "<" made a regex over it quadratic.
+    pos, size = 0, len(src)
+    while pos < size:
+        lt = src.find("<", pos)
+        if lt < 0:
+            yield False, pos, size
+            return
+        if lt > pos:
+            yield False, pos, lt
+        if src.startswith("<!--", lt):
+            pos = _comment_end(src, lt)
+            continue
+        gt = src.find(">", lt + 1)
+        if gt < 0:
+            yield False, lt, size
+            return
+        if opener := _RAW_TEXT_OPENER_RE.match(src, lt):
+            closer = _RAW_TEXT_CLOSER_RES[opener[1].lower()].search(src, gt + 1)
+            if closer is None:
+                return
+            pos = closer.end()
+            continue
+        yield True, lt, gt + 1
+        pos = gt + 1
+
+
+def is_html_empty(
+    html_content: str | markupsafe.Markup | Literal[False] | None,
+) -> bool:
+    if not html_content:
+        return True
+    visible = "".join(
+        html_content[start:end] for _tag, start, end in _visible_markup(html_content)
+    )
+    text_content = htmllib.unescape(_EMPTY_TAG_RE.sub("", visible))
+    return not text_content.strip() and not _ICON_RE.search(visible)
+
+
+_URL_RUN_RE = re.compile(r"""[^\s<"']+""")
+_URL_SCHEME_RE = re.compile(r"(?:ftp|https?)://")
+
+
+def _iter_links(text: str) -> Iterator[re.Match[str]]:
+    # A link's host takes the rest of its run of non-space characters, so the
+    # trailing lookahead of _LINK_TAGS_RE decides once for the whole run:
+    # asked of every scheme in a run, it made "http://" * n quadratic.
+    for run in _URL_RUN_RE.finditer(text):
+        end = run.end()
+        if text[end : end + 1] in ("'", '"') or text.startswith("</a>", end):
+            continue
+        for scheme in _URL_SCHEME_RE.finditer(text, run.start(), end):
+            if link := _LINK_TAGS_RE.match(text, scheme.start()):
+                yield link
+                break
+
+
+# prose around a link is not part of it: sentence punctuation, emphasis, a
+# closing quote, and a bracket closing one opened before the link
+_TRAILING_PROSE = frozenset(".,:;!?*'\u2019\u201d\u00bb\u3002\uff0c\u3001\u2026")
+_CLOSERS = {")": "(", "]": "["}
+
+
+def _link_end(url: str) -> int:
+    end = len(url)
+    surplus = {
+        closer: url.count(closer) - url.count(opener)
+        for closer, opener in _CLOSERS.items()
+    }
+    while end:
+        char = url[end - 1]
+        if char in _TRAILING_PROSE:
+            pass
+        elif surplus.get(char, 0) > 0:
+            surplus[char] -= 1
+        else:
+            return end
+        end -= 1
+        if url.endswith("://", 0, end):
+            return len(url)
+    return end
+
+
+# a scheme starts where its run of scheme characters does ("链接http://" and
+# "_http://" link, "xhttp://" does not), and plain text holds no markup, so a
+# double quote or an angle bracket ends a link rather than opening an attribute
+_PLAINTEXT_URL_RE = re.compile(r"""(?<![A-Za-z0-9+.-])(?:ftp|https?)://[^\s<>"]++""")
+
+
+def plaintext_link_spans(text: str) -> list[tuple[int, int]]:
+    return [
+        (match.start(), match.start() + _link_end(match[0]))
+        for match in _PLAINTEXT_URL_RE.finditer(text)
+    ]
+
+
+def _linked(text: str, spans: Iterable[tuple[int, int]]) -> Markup:
+    idx = 0
+    parts: list[Markup] = []
+    for start, end in spans:
+        parts.append(escape_silent(text[idx:start]))
+        url = text[start:end]
+        parts.append(create_link(url, url))
+        idx = end
+    parts.append(escape_silent(text[idx:]))
+    return Markup("").join(parts)
+
+
+def html_keep_url(text: str | Markup) -> Markup:
+    return _linked(text, (link.span() for link in _iter_links(text)))
+
+
+def html_to_inner_content(source: str | markupsafe.Markup | None) -> str:
+    if is_html_empty(source):
+        return ""
+    if not isinstance(source, markupsafe.Markup):
+        source = html_sanitize(source) or ""
+    parts = []
+    for is_tag, start, end in _visible_markup(source):
+        if not is_tag:
+            parts.append(source[start:end].replace("\n", " "))
+        elif _NEWLINE_TAG_RE.match(source, start):
+            parts.append(" ")
+    processed = _RUNS_OF_SPACE_OR_TAB_RE.sub(" ", "".join(parts))
+    processed = processed.replace("\xa0", " ")
+    processed = htmllib.unescape(processed)
+    return processed.strip()
+
+
+def create_link(url: str, label: str) -> Markup:
+    scheme = url_scheme(url)
+    if scheme and scheme not in SAFE_LINK_SCHEMES:
+        url = "#"
+    return Markup(
+        '<a href="{}" target="_blank" rel="noreferrer noopener">{}</a>'
+    ).format(url, label)
+
+
+def _number_references(tree: etree._Element) -> list[str]:
+    url_index: list[str] = []
+    linkrefs = itertools.count(1)
+
+    for link in tree.findall(".//a"):
+        if url := link.get("href"):
+            link.tag = "span"
+            reference = f"[{next(linkrefs)}]"
+            if len(link):
+                last = link[-1]
+                last.tail = f"{last.tail or ''} {reference}"
+            else:
+                link.text = f"{link.text} {reference}" if link.text else reference
+            url_index.append(url)
+
+    for img in tree.findall(".//img"):
+        if src := img.get("src"):
+            img.tag = "span"
+            if src.startswith("data:"):
+                img_name = None
+            else:
+                img_name = re.search(r"[^/]+(?=\.[a-zA-Z]+(?:\?|$))", src)
+            img.text = f"{img_name[0] if img_name else 'Image'} [{next(linkrefs)}]"
+            url_index.append(src)
+
+    return url_index
+
+
+def _preformatted_text(pre: etree._Element) -> str:
+    for br in pre.iter("br"):
+        br.tail = f"\n{br.tail or ''}"
+    lines = [
+        line.rstrip() for line in "".join(pre.itertext()).replace("\r", "").split("\n")
+    ]
+    while lines and not lines[0]:
+        lines.pop(0)
+    while lines and not lines[-1]:
+        lines.pop()
+    return "\n".join(lines)
+
+
+_PRIVATE_USE_CODEPOINTS = (range(0xE000, 0xF900), range(0xF0000, 0xFFFFE))
+
+
+def _hold_preformatted(tree: etree._Element) -> tuple[str, list[str]]:
+    blocks = tree.xpath("descendant-or-self::pre[not(ancestor::pre)]")
+    if not blocks:
+        return "", []
+    present = set("".join(tree.itertext()))
+    sentinel = next(
+        (
+            char
+            for char in map(chr, itertools.chain(*_PRIVATE_USE_CODEPOINTS))
+            if char not in present
+        ),
+        "",
+    )
+    if not sentinel:
+        return "", []
+    held = []
+    for index, pre in enumerate(blocks):
+        held.append(_preformatted_text(pre))
+        pre.clear(keep_tail=True)
+        pre.text = f"{sentinel}{index}{sentinel}"
+    return sentinel, held
+
+
+def _markup_to_structured_text(tree: etree._Element) -> str:
+    sentinel, held = _hold_preformatted(tree)
+    html_str = etree.tostring(tree, encoding="unicode", with_tail=False)
+    html_str = html_str.replace("&#13;", "")
+
+    for tag, marker in (
+        ("strong", "*"),
+        ("b", "*"),
+        ("h3", "*"),
+        ("h2", "**"),
+        ("h1", "**"),
+        ("em", "/"),
+    ):
+        html_str = re.sub(rf"</?{tag}\b[^>]*>", marker, html_str)
+    html_str = re.sub(r"<tr\b[^>]*>", "\n", html_str)
+    html_str = re.sub(r"</p\s*>", "\n", html_str)
+    html_str = re.sub(r"<br\b[^>]*>", "\n", html_str)
+    html_str = re.sub(r"<[^>]*>", " ", html_str)
+    html_str = re.sub(r" {2,}", " ", html_str)
+    html_str = html_str.replace("&gt;", ">")
+    html_str = html_str.replace("&lt;", "<")
+    html_str = html_str.replace("&amp;", "&")
+
+    html_str = "\n".join([x.strip() for x in html_str.splitlines()])
+    html_str = html_str.replace("\n" * 2, "\n")
+    if held:
+        html_str = _restore_preformatted(html_str, sentinel, held)
+    return html_str
+
+
+def _restore_preformatted(text: str, sentinel: str, held: list[str]) -> str:
+    def own_lines(match: re.Match[str]) -> str:
+        start, end = match.span()
+        before = "" if start == 0 or text[start - 1] == "\n" else "\n"
+        after = "" if end == len(text) or text[end] == "\n" else "\n"
+        if not held[int(match[1])]:
+            return "\n" if before and after else ""
+        return f"{before}{held[int(match[1])]}{after}"
+
+    return re.sub(rf" ?{sentinel}(\d+){sentinel} ?", own_lines, text)
+
+
+def html2plaintext(
+    html_content: str | markupsafe.Markup | Literal[False] | None,
+    body_id: str | None = None,
+    encoding: str = "utf-8",
+    include_references: bool = True,
+) -> str:
+    if not (html_content and html_content.strip()):
+        return ""
+
+    if isinstance(html_content, bytes):
+        html_content = html_content.decode(encoding)
+    else:
+        assert isinstance(html_content, str), (
+            f"expected str got {html_content.__class__.__name__}"
+        )
+
+    tree = etree.fromstring(
+        html_content.encode("utf-8", "replace"),
+        parser=etree.HTMLParser(encoding="utf-8"),
+    )
+    if tree is None:
+        return ""
+    etree.strip_elements(
+        tree, "script", "style", etree.Comment, etree.PI, with_tail=False
+    )
+
+    if body_id is not None:
+        source = tree.xpath("//*[@id=$body_id]", body_id=body_id)
+        if not len(source):
+            return ""
+    else:
+        source = tree.xpath("//body")
+    if len(source):
+        tree = source[0]
+
+    url_index = _number_references(tree) if include_references else []
+    html_str = _markup_to_structured_text(tree)
+
+    if url_index:
+        html_str += "\n\n"
+        for i, url in enumerate(url_index, start=1):
+            html_str += f"[{i}] {url}\n"
+
+    return html_str.lstrip("\n").rstrip()
+
+
+def plaintext2html(
+    text: str, container_tag: str | None = None, with_paragraph: bool = True
+) -> markupsafe.Markup:
+    assert isinstance(text, str)
+    if isinstance(text, Markup):
+        # already HTML: links inside attributes stay as they are
+        text = html_keep_url(Markup(re.sub(r"\r\n|\r|\n", "<br/>", text)))
+    else:
+        linked = _linked(text, plaintext_link_spans(text))
+        text = Markup(re.sub(r"\r\n|\r|\n", "<br/>", linked))
+
+    final = text
+    if with_paragraph:
+        idx = 0
+        paragraphs: list[Markup] = []
+        for item in _BR_TAGS_RE.finditer(text):
+            paragraphs.append(text[idx : item.start()])
+            idx = item.end()
+        paragraphs.append(text[idx:])
+        final = Markup("<p>") + Markup("</p><p>").join(paragraphs) + Markup("</p>")
+
+    if container_tag:
+        if not _SIMPLE_TAG_RE.match(container_tag):
+            e = f"Invalid container_tag: {container_tag!r}"
+            raise ValueError(e)
+        final = Markup("<%s>") % container_tag + final + Markup("</%s>") % container_tag
+    return final
+
+
+def add_html_content(
+    html_body: str,
+    content: str,
+    plaintext: bool = True,
+    preserve: bool = False,
+    container_tag: str | None = None,
+) -> markupsafe.Markup:
+    if plaintext and preserve:
+        content = f"\n<pre>{html_escape(content)}</pre>\n"
+    elif plaintext:
+        content = f"\n{plaintext2html(content, container_tag)}\n"
+    else:
+        content = f"\n{_strip_document_shell(content)}\n"
+    closing = _CLOSING_BODY_RE.search(html_body) or _CLOSING_HTML_RE.search(html_body)
+    if closing is None:
+        return markupsafe.Markup(html_body) + markupsafe.Markup(content)
+    insert_location = closing.start()
+    return (
+        markupsafe.Markup(html_body[:insert_location])
+        + markupsafe.Markup(content)
+        + markupsafe.Markup(html_body[insert_location:])
+    )
+
+
+def _tag_end(start_re: re.Pattern[str], text: str) -> int | None:
+    # the first opening's ">" ends the leftmost match; without one no later
+    # opening has a ">" either, so "<body[^>]*>" would rescan from each
+    if (start := start_re.search(text)) is None:
+        return None
+    end = text.find(">", start.end())
+    return None if end < 0 else end + 1
+
+
+def _strip_document_shell(content: str) -> str:
+    kept: list[str] = []
+    pos = 0
+    for tag in _DOCUMENT_SHELL_TAG_RE.finditer(content):
+        if tag.start() < pos:
+            continue
+        end = content.find(">", tag.end())
+        if end < 0:
+            break
+        kept.append(content[pos : tag.start()])
+        pos = end + 1
+    kept.append(content[pos:])
+    return "".join(kept)
+
+
+def prepend_html_content(html_body: str, html_content: str | markupsafe.Markup) -> str:
+    stripped = _strip_document_shell(html_content).strip()
+    insert_index = _tag_end(_BODY_TAG_RE, html_body)
+    if insert_index is None:
+        insert_index = _tag_end(_HTML_TAG_RE, html_body) or 0
+    joined = f"{html_body[:insert_index]}{stripped}{html_body[insert_index:]}"
+    if isinstance(html_body, markupsafe.Markup) and isinstance(
+        html_content, markupsafe.Markup
+    ):
+        return markupsafe.Markup(joined)
+    return joined
+
+
+_LOCAL_LINK_PATTERNS = tuple(
+    re.compile(
+        rf"""(?P<head><{element}(?=\s)[^<>]*\s{attribute}=(?P<quote>["']))"""
+        r"""(?P<url>/(?!/)(?:(?!(?P=quote))[^<>])*)"""
+    )
+    for element, attribute in (
+        ("(?:img|v:fill|v:image)", "src"),
+        ("a", "href"),
+        (r"[\w-]+", "background"),
+    )
+)
+
+_STYLE_ATTRIBUTE = re.compile(
+    r"""(?P<head><[^<>]*?\sstyle=(?P<quote>["']))(?P<style>(?:(?!(?P=quote))[^<>])*)"""
+)
+
+_STYLE_URL = re.compile(
+    r"""(?P<head>\burl\(\s*(?:&\#34;|&quot;|&\#39;|'|")?)(?P<url>/(?!/)[^'")]*)"""
+)
+
+
+def replace_local_links(html_content: str, resolve_base_url: Callable[[], str]) -> str:
+    if not html_content:
+        return html_content
+
+    wrapper = type(html_content)
+    base_url = None
+
+    def to_absolute(match: re.Match[str]) -> str:
+        nonlocal base_url
+        if base_url is None:
+            base_url = resolve_base_url() or ""
+        try:
+            return match["head"] + urljoin(base_url, match["url"])
+        except ValueError:
+            return match[0]
+
+    def style_to_absolute(match: re.Match[str]) -> str:
+        return match["head"] + _STYLE_URL.sub(to_absolute, match["style"])
+
+    for pattern in _LOCAL_LINK_PATTERNS:
+        html_content = pattern.sub(to_absolute, html_content)
+    html_content = _STYLE_ATTRIBUTE.sub(style_to_absolute, html_content)
+
+    return wrapper(html_content)

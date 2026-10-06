@@ -1,0 +1,305 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="device_gps_stop_view_list" model="ir.ui.view">
+        <field name="name">device.gps.stop.list</field>
+        <field name="model">device.gps.stop</field>
+        <field name="arch" type="xml">
+            <list
+                create="0"
+                edit="0"
+                delete="0"
+                decoration-info="ongoing"
+                decoration-muted="kind == 'no_signal'"
+                decoration-warning="to_mark">
+                <field name="kind" column_invisible="True" />
+                <field name="ongoing" column_invisible="True" />
+                <field name="to_mark" column_invisible="True" />
+                <field name="date" />
+                <field name="asset_id" />
+                <field name="operator_id" />
+                <field name="device_id" optional="hide" />
+                <field
+                    name="arrival"
+                    string="Arrival"
+                    invisible="kind == 'no_signal'" />
+                <field
+                    name="departure"
+                    string="Departure"
+                    invisible="kind == 'no_signal'" />
+                <field
+                    name="duration_hours"
+                    string="Duration"
+                    widget="float_time"
+                    sum="Total"
+                    invisible="kind == 'no_signal'" />
+                <field name="place" />
+                <field name="place_id" optional="hide" />
+                <field name="partner_id" optional="show" />
+                <field name="state_id" optional="hide" />
+                <field
+                    name="last_seen"
+                    optional="show"
+                    invisible="kind != 'no_signal'" />
+                <field name="map_url" widget="url" optional="show" text="Map" />
+                <field
+                    name="company_id"
+                    optional="hide"
+                    groups="base.group_multi_company" />
+                <button
+                    name="action_view_trail"
+                    type="object"
+                    string="View Trail"
+                    icon="fa-map-marker"
+                    invisible="kind == 'no_signal'" />
+            </list>
+        </field>
+    </record>
+
+    <record id="device_gps_stop_view_pivot" model="ir.ui.view">
+        <field name="name">device.gps.stop.pivot</field>
+        <field name="model">device.gps.stop</field>
+        <field name="arch" type="xml">
+            <pivot>
+                <field name="asset_id" type="row" />
+                <field name="date" type="col" interval="day" />
+                <field name="duration_hours" type="measure" />
+            </pivot>
+        </field>
+    </record>
+
+    <record id="device_gps_stop_view_search" model="ir.ui.view">
+        <field name="name">device.gps.stop.search</field>
+        <field name="model">device.gps.stop</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="asset_id" />
+                <field name="operator_id" />
+                <field name="partner_id" />
+                <field name="geofence_id" />
+                <field name="state_id" />
+                <filter name="stops" string="Stops" domain="[('kind', '=', 'stop')]" />
+                <filter
+                    name="no_signal"
+                    string="No Positions"
+                    domain="[('kind', '=', 'no_signal')]" />
+                <separator />
+                <filter
+                    name="at_client"
+                    string="At a Client"
+                    domain="[('partner_id', '!=', False)]" />
+                <filter
+                    name="off_geofence"
+                    string="Outside Geofences"
+                    domain="[('kind', '=', 'stop'), ('geofence_id', '=', False)]" />
+                <separator />
+                <filter
+                    name="to_mark"
+                    string="To Mark"
+                    domain="[('to_mark', '=', True)]" />
+                <filter
+                    name="ongoing"
+                    string="Ongoing"
+                    domain="[('ongoing', '=', True)]" />
+                <separator />
+                <filter
+                    name="today"
+                    string="Today"
+                    domain="[('date', '=', context_today().strftime('%Y-%m-%d'))]" />
+                <filter
+                    name="yesterday"
+                    string="Yesterday"
+                    domain="[('date', '=', (context_today() - relativedelta(days=1)).strftime('%Y-%m-%d'))]" />
+                <filter
+                    name="this_week"
+                    string="This Week"
+                    domain="[('date', '&gt;=', (context_today() - relativedelta(days=context_today().weekday())).strftime('%Y-%m-%d'))]" />
+                <filter name="date" string="Date" date="date" />
+                <group>
+                    <filter
+                        name="group_asset"
+                        string="Vehicle"
+                        context="{'group_by': 'asset_id'}" />
+                    <filter
+                        name="group_operator"
+                        string="Operator"
+                        context="{'group_by': 'operator_id'}" />
+                    <filter
+                        name="group_day"
+                        string="Day"
+                        context="{'group_by': 'date:day'}" />
+                    <filter
+                        name="group_client"
+                        string="Client"
+                        context="{'group_by': 'partner_id'}" />
+                    <filter
+                        name="group_state"
+                        string="State"
+                        context="{'group_by': 'state_id'}" />
+                    <filter
+                        name="group_geofence"
+                        string="Geofence"
+                        context="{'group_by': 'geofence_id'}" />
+                    <filter
+                        name="group_place"
+                        string="Place"
+                        context="{'group_by': 'place_id'}" />
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="device_gps_stop_action" model="ir.actions.act_window">
+        <field name="name">Stops</field>
+        <field name="res_model">device.gps.stop</field>
+        <field name="view_mode">list,pivot,geoengine</field>
+        <field name="search_view_id" ref="device_gps_stop_view_search" />
+        <field
+            name="context">{'search_default_today': 1, 'search_default_group_asset': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">No stops</p>
+            <p>Every place a vehicle stayed still for five minutes or more,
+                on a client's parcel or anywhere else, and every vehicle whose
+                tracker sent no position that day. Refreshed every ten
+                minutes.</p>
+        </field>
+    </record>
+
+    <!--
+        Where the vehicles are parked, and the places to mark: orange, a
+        geofence without a client or a place without a geofence where a
+        vehicle stayed more than 20 min, until someone marks it. A point is
+        green at a marked place and blue for a short stop, with the place
+        (a fonda, a gas station) in its info box.
+    -->
+    <record id="device_gps_stop_view_geoengine" model="ir.ui.view">
+        <field name="name">device.gps.stop.geoengine</field>
+        <field name="model">device.gps.stop</field>
+        <field name="arch" type="xml">
+            <geoengine
+                editable="0"
+                features_list="1"
+                features_list_field="display_name">
+                <field name="display_name" />
+                <field name="the_point" />
+                <field name="map_color" />
+                <field name="asset_id" />
+                <field name="operator_id" />
+                <field name="arrival" />
+                <field name="departure" />
+                <field name="duration_hours" />
+                <field name="place" />
+                <templates>
+                    <t t-name="info_box">
+                        <div class="o_kanban_card">
+                            <strong><t t-out="record.asset_id.value" /></strong>
+                            <div t-if="record.operator_id.value" class="text-muted">
+                                <t t-out="record.operator_id.value" />
+                            </div>
+                            <div>
+                                <t t-out="record.arrival.value" />
+                                <t t-if="record.departure.value"> → <t t-out="record.departure.value" /></t>
+                            </div>
+                            <div>Duration: <t t-out="record.duration_hours.value" /> h</div>
+                            <div t-if="record.place.value"><t t-out="record.place.value" /></div>
+                        </div>
+                    </t>
+                </templates>
+            </geoengine>
+        </field>
+    </record>
+
+    <record id="raster_layer_device_gps_stop_osm" model="geoengine.raster.layer">
+        <field name="name">OpenStreetMap</field>
+        <field name="view_id" ref="device_gps_stop_view_geoengine" />
+        <field name="raster_type">osm</field>
+        <field name="overlay">0</field>
+        <field name="url">https://tile.openstreetmap.org/{z}/{x}/{y}.png</field>
+        <field name="sequence" eval="1" />
+    </record>
+
+    <record
+        id="raster_layer_device_gps_stop_google_hybrid"
+        model="geoengine.raster.layer">
+        <field name="name">Google Hybrid</field>
+        <field name="view_id" ref="device_gps_stop_view_geoengine" />
+        <field name="raster_type">xyz</field>
+        <field name="overlay">0</field>
+        <field
+            name="url">https://mt1.google.com/vt/lyrs=y&amp;x={x}&amp;y={y}&amp;z={z}</field>
+        <field name="sequence" eval="2" />
+    </record>
+
+    <record id="vector_layer_device_gps_stop" model="geoengine.vector.layer">
+        <field name="name">Stops</field>
+        <field name="view_id" ref="device_gps_stop_view_geoengine" />
+        <field name="geo_field_id" ref="field_device_gps_stop__the_point" />
+        <field name="geo_repr">colored_field</field>
+        <field name="color_field_id" ref="field_device_gps_stop__map_color" />
+        <field name="begin_color">#fd7e14</field>
+        <field name="sequence" eval="1" />
+        <field name="active_on_startup" eval="True" />
+        <field name="layer_opacity">1.0</field>
+    </record>
+
+    <record
+        id="vector_layer_device_gps_stop_parked_geofences"
+        model="geoengine.vector.layer">
+        <field name="name">Geofences to Mark</field>
+        <field name="view_id" ref="device_gps_stop_view_geoengine" />
+        <field name="model_id" ref="device_gps_geoengine.model_device_geo_fence" />
+        <field name="model_domain">[('to_mark', '=', True)]</field>
+        <field
+            name="geo_field_id"
+            ref="device_gps_geoengine.field_device_geo_fence__the_geom" />
+        <field name="geo_repr">basic</field>
+        <field name="begin_color">#fd7e14</field>
+        <field name="sequence" eval="0" />
+        <field name="active_on_startup" eval="True" />
+        <field name="layer_opacity">0.6</field>
+    </record>
+
+    <record id="device_gps_stop_map_action" model="ir.actions.act_window">
+        <field name="name">Parked Vehicles and Places to Mark</field>
+        <field name="res_model">device.gps.stop</field>
+        <field name="view_mode">geoengine,list</field>
+        <field name="search_view_id" ref="device_gps_stop_view_search" />
+        <field
+            name="context">{'search_default_ongoing': 1, 'search_default_to_mark': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">No vehicle parked and nothing to mark</p>
+            <p>Orange: a geofence without a client, or a place without a
+                geofence, where a vehicle stayed more than 20 minutes. It stays
+                orange until someone gives the geofence a client or draws one
+                there. Outside every geofence the point says what the place is:
+                a fonda, a gas station, a street.</p>
+        </field>
+        <field
+            name="view_ids"
+            eval="[             Command.clear(),             Command.create({'view_mode': 'geoengine', 'view_id': ref('device_gps_stop_view_geoengine')}),             Command.create({'view_mode': 'list', 'view_id': ref('device_gps_stop_view_list')}),         ]" />
+    </record>
+
+    <!--
+        Next to Client Visits: the stays at places that are not a client's
+        yet. Kept out of device.client.visit, which the agronomists' report
+        reads visit by visit.
+    -->
+    <record id="device_gps_stop_to_mark_action" model="ir.actions.act_window">
+        <field name="name">Places to Mark</field>
+        <field name="res_model">device.gps.stop</field>
+        <field name="view_mode">list,geoengine</field>
+        <field name="search_view_id" ref="device_gps_stop_view_search" />
+        <field name="domain">[('to_mark', '=', True)]</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Nothing to mark</p>
+            <p>Every stay of more than 20 minutes at a geofence without a
+                client or at a place without a geofence. A row leaves this list
+                once the geofence gets a client, or a client or internal
+                geofence is drawn there.</p>
+        </field>
+        <field
+            name="view_ids"
+            eval="[             Command.clear(),             Command.create({'view_mode': 'list', 'view_id': ref('device_gps_stop_view_list')}),             Command.create({'view_mode': 'geoengine', 'view_id': ref('device_gps_stop_view_geoengine')}),         ]" />
+    </record>
+
+</odoo>

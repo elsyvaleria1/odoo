@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="hr_recruitment_sign_view" model="ir.ui.view">
+        <field name="name">hr_recruitment_sign</field>
+        <field name="model">wizard.hr.applicant.send.sign.request</field>
+        <field name="arch" type="xml">
+            <form string="Signature Request">
+                <div
+                    role="alert"
+                    class="alert alert-warning text-center"
+                    invisible="not template_warning"
+                    title="No template available">
+                    <span class="fa-solid fa-exclamation-triangle" />
+                    <field name="template_warning" readonly="1" />
+                </div>
+                <field name="has_both_template" invisible="1" />
+                <field name="sign_template_responsible_ids" invisible="1" />
+                <field name="possible_template_ids" invisible="1" />
+                <group class="o_label_nowrap">
+                    <field
+                        name="sign_template_ids"
+                        widget="many2many_tags"
+                        force_save="1"
+                        context="{'kanban_view_ref': 'sign.sign_template_view_kanban_mobile'}"
+                        options="{'no_create': True}" />
+                    <field
+                        name="applicant_ids"
+                        string="Applicants"
+                        widget="many2many_avatar_employee" />
+                </group>
+                <group string="Sign Request Options" invisible="not sign_template_ids">
+                    <field name="applicant_role_id" options="{'no_create': True}" />
+                    <field
+                        name="responsible_id"
+                        options="{'no_create_edit': True}"
+                        invisible="not has_both_template"
+                        required="has_both_template" />
+                </group>
+                <group string="Mail Options" class="o_label_nowrap">
+                    <field name="subject" placeholder="Signature Request" />
+                    <field
+                        name="cc_partner_ids"
+                        placeholder="Write email or search contact..."
+                        widget="many2many_tags" />
+                </group>
+                <field name="message" placeholder="Optional Message..." widget="html" />
+                <field
+                    name="attachment_ids"
+                    string="Attach a file"
+                    widget="many2many_binary" />
+                <footer>
+                    <button
+                        name="action_confirm_signature"
+                        type="object"
+                        string="Send"
+                        class="oe_highlight"
+                        data-hotkey="q" />
+                    <button
+                        special="cancel"
+                        string="Discard"
+                        class="btn-secondary"
+                        data-hotkey="x" />
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="sign_recruitment_wizard_action" model="ir.actions.act_window">
+        <field name="name">Document Signature</field>
+        <field name="res_model">wizard.hr.applicant.send.sign.request</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+
+</odoo>

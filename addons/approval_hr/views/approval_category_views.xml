@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_approval_category_form_hr" model="ir.ui.view">
+        <field name="name">approval.category.form.hr</field>
+        <field name="model">approval.category</field>
+        <field name="inherit_id" ref="approval.view_approval_category_form" />
+        <field name="arch" type="xml">
+            <xpath
+                expr="//group[@name='approvers_settings']/field[@name='allow_self_approval']"
+                position="before">
+                <field
+                    name="manager_approval"
+                    widget="radio"
+                    options="{'horizontal': true}" />
+            </xpath>
+            <xpath expr="//group[@name='display_settings']" position="inside">
+                <field
+                    name="department_ids"
+                    placeholder="Leave empty to hide from the Approvals dashboard"
+                    widget="many2many_tags"
+                    options="{'no_create': True}"
+                    invisible="not show_on_dashboard" />
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_approval_category_search_hr" model="ir.ui.view">
+        <field name="name">approval.category.search.hr</field>
+        <field name="model">approval.category</field>
+        <field name="inherit_id" ref="approval.view_approval_category_search" />
+        <field name="arch" type="xml">
+            <xpath expr="//filter[@name='archived']" position="after">
+                <separator />
+                <filter
+                    name="group_by_department"
+                    string="Departments"
+                    context="{'group_by': 'department_ids'}" />
+            </xpath>
+        </field>
+    </record>
+
+    <record id="approval.action_approval_category" model="ir.actions.act_window">
+        <field name="context">{'search_default_group_by_department': 1}</field>
+    </record>
+
+    <record id="approval_app.approvals_menu_root" model="ir.ui.menu">
+        <field name="action" ref="action_approval_department_dashboard" />
+    </record>
+
+    <record id="approval_app.approvals_category_menu_new" model="ir.ui.menu">
+        <field name="action" ref="action_approval_department_dashboard" />
+    </record>
+
+</odoo>

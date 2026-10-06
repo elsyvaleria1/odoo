@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<templates xml:space="preserve">
+
+<t t-name="web.SysAdminPanel">
+    <div class="o_sysadmin_message" t-out="this.message"/>
+</t>
+
+</templates>

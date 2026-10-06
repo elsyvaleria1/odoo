@@ -1,0 +1,377 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# * ai_documents
+#
+# "Abe Manyo (abem)" <abem@odoo.com>, 2025, 2026.
+# Weblate <noreply-mt-weblate@weblate.org>, 2025.
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0+e\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-01-30 18:45+0000\n"
+"PO-Revision-Date: 2026-01-06 05:29+0000\n"
+"Last-Translator: \"Abe Manyo (abem)\" <abem@odoo.com>\n"
+"Language-Team: Indonesian <https://translate.odoo.com/projects/odoo-19/"
+"ai_document/id/>\n"
+"Language: id\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"X-Generator: Weblate 5.14.3\n"
+
+#. module: ai_document
+#: model_terms:ir.ui.view,arch_db:ai_document.ai_documents_sort_view_form
+msgid "<strong class=\"mt-3\">What actions can the AI take?</strong>"
+msgstr "<strong class=\"mt-3\">Tindakan apa yang AI dapat ambil?</strong>"
+
+#. module: ai_document
+#: model_terms:ir.ui.view,arch_db:ai_document.ai_documents_sort_view_form
+msgid ""
+"<strong>\n"
+"                            What do you want the AI to do?\n"
+"                        </strong>"
+msgstr ""
+"<strong>\n"
+"                            Apa yang Anda ingin AI lakukan?\n"
+"                        </strong>"
+
+#. module: ai_document
+#: model:ir.actions.server,name:ai_document.ir_cron_ai_documents_sort_ir_actions_server
+msgid "AI Documents: Sort documents with AI"
+msgstr "Dokumen AI: Sortir dokumen dengan AI"
+
+#. module: ai_document
+#: model:ir.model.fields,field_description:ai_document.field_wizard_document_document_setup_ai_sort__ai_sort_prompt
+#: model:ir.model.fields,field_description:ai_document.field_document_document__ai_sort_prompt
+msgid "AI Folder Sort Prompt"
+msgstr "Prompt Sortir Folder AI"
+
+#. module: ai_document
+#: model:ir.actions.act_window,name:ai_document.ai_documents_sort_action
+#: model_terms:ir.ui.view,arch_db:ai_document.ai_documents_sort_view_form
+msgid "AI Sort"
+msgstr "Sortir AI"
+
+#. module: ai_document
+#: model:ir.model.fields,field_description:ai_document.field_document_document__ai_sortable
+msgid "AI Sortable"
+msgstr "AI Sortable"
+
+#. module: ai_document
+#: model:ir.model.fields,field_description:ai_document.field_document_document__ai_to_sort
+#: model_terms:ir.ui.view,arch_db:ai_document.documents_document_view_kanban
+msgid "AI To Sort"
+msgstr "AI Untuk Disortir"
+
+#. module: ai_document
+#: model:ir.actions.server,name:ai_document.ir_actions_server_add_tags
+msgid "AI: Add Tags"
+msgstr "AI: Tambahkan Tag"
+
+#. module: ai_document
+#. odoo-python
+#: code:addons/ai_document/models/ir_actions_server.py:0
+msgid "AI: An error occurred: %s"
+msgstr "AI: Terjadi error: %s"
+
+#. module: ai_document
+#: model:ir.actions.server,name:ai_document.ir_actions_server_move_in_folder
+msgid "AI: Move To Folder"
+msgstr "AI: Pindahkan Ke Folder"
+
+#. module: ai_document
+#: model:ir.actions.server,name:ai_document.ir_actions_server_rename_documents
+msgid "AI: Rename Document"
+msgstr "AI: Namakan Ulang Dokumen"
+
+#. module: ai_document
+#: model:ir.actions.server,ai_tool_description:ai_document.ir_actions_server_add_tags
+msgid "Add the tags on the document"
+msgstr "Tambahkan tag ke dokumen"
+
+#. module: ai_document
+#: model:ir.model.fields,field_description:ai_document.field_wizard_document_document_setup_ai_sort__ai_tool_ids
+msgid "Additional Tools"
+msgstr "Alat-Alat Tambahan"
+
+#. module: ai_document
+#: model:ir.model,name:ai_document.model_wizard_document_document_setup_ai_sort
+msgid "Ai Documents Sort"
+msgstr "Sortir Dokumen AI"
+
+#. module: ai_document
+#: model:ir.model.fields,field_description:ai_document.field_wizard_document_document_setup_ai_sort__allowed_tools_ids
+msgid "Allowed Tools"
+msgstr "Alat-Alat yang Diizinkan"
+
+#. module: ai_document
+#. odoo-python
+#: code:addons/ai_document/models/document_document.py:0
+msgid "Auto sorting has been scheduled"
+msgstr "Sortir otomatis telah dijadwalkan"
+
+#. module: ai_document
+#. odoo-javascript
+#: code:addons/ai_document/static/src/cog_menu/document_cog_menu_item_ai_auto_sort.xml:0
+msgid "Auto-Sort…"
+msgstr "Sortir otomatis…"
+
+#. module: ai_document
+#. odoo-python
+#: code:addons/ai_document/models/document_document.py:0
+msgid "Auto-sort documents in %s"
+msgstr "Sortir otomatis dokumen dalam %s"
+
+#. module: ai_document
+#: model:ir.model,name:ai_document.model_automation_rule
+msgid "Automation Rule"
+msgstr "Peraturan Otomatisasi"
+
+#. module: ai_document
+#. odoo-python
+#: code:addons/ai_document/models/document_document.py:0
+msgid "Cannot move in a non-folder."
+msgstr "Tidak bergerak di dalam non-folder."
+
+#. module: ai_document
+#: model_terms:ir.ui.view,arch_db:ai_document.ai_documents_sort_view_form
+msgid "Close"
+msgstr "Tutup"
+
+#. module: ai_document
+#: model:ir.model.fields,field_description:ai_document.field_wizard_document_document_setup_ai_sort__create_uid
+msgid "Created by"
+msgstr "Dibuat oleh"
+
+#. module: ai_document
+#: model:ir.model.fields,field_description:ai_document.field_wizard_document_document_setup_ai_sort__create_date
+msgid "Created on"
+msgstr "Dibuat pada"
+
+#. module: ai_document
+#: model_terms:ir.ui.view,arch_db:ai_document.ai_documents_sort_view_form
+msgid "Delete"
+msgstr "Hapus"
+
+#. module: ai_document
+#: model_terms:ir.ui.view,arch_db:ai_document.ai_documents_sort_view_form
+msgid "Discard"
+msgstr "Buang"
+
+#. module: ai_document
+#: model:ir.model.fields,field_description:ai_document.field_wizard_document_document_setup_ai_sort__display_name
+#: model:ir.model.fields,field_description:ai_document.field_automation_rule__display_name
+#: model:ir.model.fields,field_description:ai_document.field_document_document__display_name
+#: model:ir.model.fields,field_description:ai_document.field_ir_actions_server__display_name
+#: model:ir.model.fields,field_description:ai_document.field_ir_http__display_name
+msgid "Display Name"
+msgstr "Nama Tampilan"
+
+#. module: ai_document
+#: model:ir.model,name:ai_document.model_document_document
+msgid "Document"
+msgstr "Dokumen"
+
+#. module: ai_document
+#. odoo-python
+#: code:addons/ai_document/models/document_document.py:0
+msgid "Document Content"
+msgstr "Konten Dokumen"
+
+#. module: ai_document
+#: model:ir.model.fields,help:ai_document.field_document_document__ai_to_sort
+msgid "Flag to mark the files as to be sorted with AI"
+msgstr "Berikan bendera untuk menandai file agar disortir dengan AI"
+
+#. module: ai_document
+#: model:ir.model.fields,field_description:ai_document.field_wizard_document_document_setup_ai_sort__folder_id
+msgid "Folder"
+msgstr "Folder"
+
+#. module: ai_document
+#: model:ir.model,name:ai_document.model_ir_http
+msgid "HTTP Routing"
+msgstr ""
+
+#. module: ai_document
+#. odoo-python
+#: code:addons/ai_document/models/document_document.py:0
+msgid ""
+"Here is a document called %(document_name)s and whose content is %(content)s "
+"and tags are %(tags)s. The mimetype of the document is %(mimetype)s."
+msgstr ""
+"Di sini ada dokumen bernama %(document_name)s dan kontennya adalah %"
+"(content)s dan tagnya adalah %(tags)s. Mimetype dokumen adalah %(mimetype)s."
+
+#. module: ai_document
+#: model:ir.model.fields,field_description:ai_document.field_wizard_document_document_setup_ai_sort__id
+#: model:ir.model.fields,field_description:ai_document.field_automation_rule__id
+#: model:ir.model.fields,field_description:ai_document.field_document_document__id
+#: model:ir.model.fields,field_description:ai_document.field_ir_actions_server__id
+#: model:ir.model.fields,field_description:ai_document.field_ir_http__id
+msgid "ID"
+msgstr "ID"
+
+#. module: ai_document
+#. odoo-python
+#: code:addons/ai_document/wizard/ai_document_sort.py:0
+msgid "If the document is an invoice, send it to %s"
+msgstr "Bila dokumen adalah faktur, kirim ke %s"
+
+#. module: ai_document
+#: model:ir.model.fields,field_description:ai_document.field_wizard_document_document_setup_ai_sort__is_ai_sort_prompt_set
+msgid "Is Prompt Set"
+msgstr "Apakah Prompt Ditetapkan"
+
+#. module: ai_document
+#: model:ir.model.fields,field_description:ai_document.field_wizard_document_document_setup_ai_sort__write_uid
+msgid "Last Updated by"
+msgstr "Terakhir Diperbarui oleh"
+
+#. module: ai_document
+#: model:ir.model.fields,field_description:ai_document.field_wizard_document_document_setup_ai_sort__write_date
+msgid "Last Updated on"
+msgstr "Terakhir Diperbarui pada"
+
+#. module: ai_document
+#. odoo-python
+#: code:addons/ai_document/models/document_document.py:0
+msgid "Mimetype"
+msgstr "Mimetype"
+
+#. module: ai_document
+#: model:ir.model.fields,field_description:ai_document.field_wizard_document_document_setup_ai_sort__model
+msgid "Model"
+msgstr "Model"
+
+#. module: ai_document
+#: model:ir.actions.server,ai_tool_description:ai_document.ir_actions_server_move_in_folder
+msgid "Move the documents in the given folder id"
+msgstr "Pindahkan dokumen-dokumen dalam folder dengan ID yang diberikan"
+
+#. module: ai_document
+#. odoo-python
+#: code:addons/ai_document/models/document_document.py:0
+msgid "Moved to \"%(folder)s\"."
+msgstr "Dipindahkan ke \"%(folder)s\"."
+
+#. module: ai_document
+#. odoo-python
+#: code:addons/ai_document/models/document_document.py:0
+msgid "Name"
+msgstr "Nama"
+
+#. module: ai_document
+#. odoo-python
+#: code:addons/ai_document/models/document_document.py:0
+msgid "No document suitable for AI sorting."
+msgstr "Tidak ada dokumen yang sesuai untuk sortir AI."
+
+#. module: ai_document
+#: model:ir.model.constraint,message:ai_document.constraint_documents_document_check_ai_sort_prompt
+msgid "Only folders can be auto-sorted."
+msgstr "Hanya folder yang dapat disortir otomatis."
+
+#. module: ai_document
+#: model:ir.model.constraint,message:ai_document.constraint_automation_rule_unique_ai_autosort_folder_id
+msgid "Only one automation rule can be used to sort with AI a given folder"
+msgstr ""
+"Hanya satu peraturan otomatisasi dapat digunakan untuk menyortir dengan AI "
+"untuk folder"
+
+#. module: ai_document
+#: model:ir.model.fields,help:ai_document.field_document_document__ai_sort_prompt
+msgid "Prompt used to automatically sort files moved in this folder"
+msgstr ""
+"Prompt digunakan untuk secara otomatis menyortir file yang dipindahkan ke "
+"folder ini"
+
+#. module: ai_document
+#: model:ir.model.fields,field_description:ai_document.field_wizard_document_document_setup_ai_sort__relation
+msgid "Relation"
+msgstr "Hubungan"
+
+#. module: ai_document
+#: model:ir.actions.server,ai_tool_description:ai_document.ir_actions_server_rename_documents
+msgid "Rename Document"
+msgstr "Namakan Ulang Dokumen"
+
+#. module: ai_document
+#: model_terms:ir.ui.view,arch_db:ai_document.ai_documents_sort_view_form
+msgid "Save"
+msgstr "Simpan"
+
+#. module: ai_document
+#: model:ir.model,name:ai_document.model_ir_actions_server
+msgid "Server Action"
+msgstr "Tindakan Server"
+
+#. module: ai_document
+#. odoo-javascript
+#: code:addons/ai_document/static/src/views/document_controller_mixin.js:0
+msgid "Sort with AI"
+msgstr "Sortir Dengan AI"
+
+#. module: ai_document
+#: model:ir.model.fields,field_description:ai_document.field_automation_rule__ai_autosort_folder_id
+#: model:ir.model.fields,field_description:ai_document.field_ir_actions_server__ai_autosort_folder_id
+#: model:ir.model.fields,field_description:ai_document.field_ir_cron__ai_autosort_folder_id
+msgid "Sorted Folder"
+msgstr "Folder yang Disortir"
+
+#. module: ai_document
+#. odoo-python
+#: code:addons/ai_document/models/document_document.py:0
+msgid "Tag(s) %s added"
+msgstr "Tag %s ditambahkan"
+
+#. module: ai_document
+#. odoo-python
+#: code:addons/ai_document/models/document_document.py:0
+msgid "Tags > Name"
+msgstr "Tag > Nama"
+
+#. module: ai_document
+#. odoo-python
+#: code:addons/ai_document/models/document_document.py:0
+msgid "Tags not found: %s"
+msgstr "Tag tidak ditemukan: %s"
+
+#. module: ai_document
+#. odoo-python
+#: code:addons/ai_document/models/document_document.py:0
+msgid "This document cannot be auto-sorted."
+msgstr "Dokumen ini tidak dapat disortir otomatis."
+
+#. module: ai_document
+#. odoo-python
+#: code:addons/ai_document/models/document_document.py:0
+msgid "This folder isn't specified in the prompt and cannot be used as target."
+msgstr ""
+"Folder ini tidak ditentukan di prompt dan tidak dapat digunakan sebagai "
+"target."
+
+#. module: ai_document
+#. odoo-python
+#: code:addons/ai_document/models/ir_actions_server.py:0
+msgid "You can move the document in one of those folders:"
+msgstr "Anda dapat menggerakkan dokumen di salah satu folder tersebut:"
+
+#. module: ai_document
+#: model_terms:ir.ui.view,arch_db:ai_document.ai_documents_sort_view_form
+msgid ""
+"eg:                                     If the documents is an invoice, move "
+"it to Finance,                                     if it's an image, move it "
+"to Photos,                                     otherwise, create an activity "
+"'Document to sort' for Admin"
+msgstr ""
+
+#. module: ai_document
+#. odoo-javascript
+#: code:addons/ai_document/static/src/ai_sort_documents_prompt.js:0
+msgid "⚠️ Tell the AI where to sort your documents with /record."
+msgstr "⚠️ Beritahu AI di mana untuk mensortir dokumen Anda dengan /record."
+
+#~ msgid "The AI Sort Prompt can only be set on folder."
+#~ msgstr "Prompt AI Sort hanya dapat ditetapkan di folder."

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<templates xml:space="preserve">
+
+<t t-name="mail.MessagingMenuEmpty">
+    <div class="o-mail-MessagingMenuEmpty d-flex flex-column align-items-center justify-content-center text-center" t-att-class="this.props.padding">
+        <span class="fw-bold" t-out="this.props.title"/>
+        <span t-if="this.props.subtitle" class="text-muted small mt-2 mx-2" t-out="this.props.subtitle"/>
+        <t t-if="this.props.slots?.default" t-call-slot="default"/>
+    </div>
+</t>
+
+</templates>

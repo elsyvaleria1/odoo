@@ -1,0 +1,1 @@
+from . import wizard_account_depreciation_board_update

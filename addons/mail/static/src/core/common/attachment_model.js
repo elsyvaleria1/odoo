@@ -1,0 +1,142 @@
+// @ts-check
+/** @odoo-module native */
+import { fields, Record } from "@mail/core/common/record";
+import { assignDefined } from "@mail/utils/common/misc";
+import { generatePdfThumbnail } from "@mail/utils/common/pdf_thumbnail";
+import { FileModelMixin } from "@web/components/file_viewer";
+import { makeLogger } from "@web/core/debug/debug_logger";
+import { toLocaleString } from "@web/core/l10n/dates";
+import { rpc } from "@web/core/network";
+import { _t } from "@web/core/translation";
+import { imageUrl, url } from "@web/core/utils/urls";
+
+const log = makeLogger("mail.attachment");
+export class Attachment extends FileModelMixin(Record) {
+    static _name = "ir.attachment";
+    static id = "id";
+    extension = fields.Attr(undefined, {
+        /** @this {import("models").Attachment} */
+        compute() {
+            if (this.extension || typeof this.name !== "string") {
+                return this.extension;
+            }
+            return this.name.split(".").pop();
+        },
+    });
+    composer = fields.One("Composer", { inverse: "attachments" });
+    thread = fields.One("Thread", { inverse: "attachments" });
+    /** @type {string} */
+    raw_access_token;
+    /** @type {string} */
+    res_name;
+    /** @type {string} */
+    thumbnail_access_token;
+    message = fields.One("mail.message", { inverse: "attachment_ids" });
+    /** @type {string} */
+    ownership_token;
+    create_date = fields.Datetime();
+    has_thumbnail = fields.Attr(undefined, {
+        /** @this {import("models").Attachment} */
+        onUpdate() {
+            if (
+                this.isPdf &&
+                !this.has_thumbnail &&
+                (this.ownership_token ||
+                    ((!this.thread || this.thread.hasWriteAccess) &&
+                        this.store.selfIsInternalUser))
+            ) {
+                this.setPdfThumbnail();
+            }
+        },
+    });
+
+    get thumbnailUrl() {
+        return imageUrl(
+            "ir.attachment",
+            this.id,
+            "thumbnail",
+            assignDefined(
+                {},
+                {
+                    access_token: this.thumbnail_access_token,
+                    crop: "top",
+                    height: 110,
+                    unique: this.checksum,
+                    width: 180,
+                },
+            ),
+        );
+    }
+
+    get gifPaused() {
+        return this.thread ? !this.thread.isFocused : !this.composer?.isFocused;
+    }
+
+    get isDeletable() {
+        if (this.message && !this.store.selfIsInternalUser) {
+            return this.message.editable;
+        }
+        return true;
+    }
+
+    get monthYear() {
+        if (!this.create_date) {
+            return undefined;
+        }
+        return `${toLocaleString(this.create_date, { month: "long" })}, ${this.create_date.year}`;
+    }
+
+    get uploading() {
+        return this.id < 0;
+    }
+
+    delete() {
+        if (this.tmpUrl) {
+            URL.revokeObjectURL(this.tmpUrl);
+        }
+        super.delete();
+    }
+
+    async remove() {
+        log.logic("remove", () => ({
+            id: this.id,
+            persisted: this.id > 0,
+            message: this.message?.id,
+        }));
+        if (this.id > 0) {
+            await rpc(
+                "/mail/attachment/delete",
+                assignDefined(
+                    { attachment_id: this.id },
+                    { access_token: this.ownership_token },
+                ),
+            );
+        }
+        this.delete();
+    }
+
+    get previewName() {
+        return this.voice ? _t("Voice Message") : this.name || "";
+    }
+
+    async setPdfThumbnail() {
+        const { isPdfValid, thumbnail } = await generatePdfThumbnail(
+            url(
+                `/mail/attachment/pdf_first_page/${this.id}`,
+                assignDefined({}, { access_token: this.ownership_token }),
+            ),
+        );
+        log.logic("setPdfThumbnail", () => ({ id: this.id, isPdfValid }));
+        if (isPdfValid) {
+            rpc(
+                `/mail/attachment/update_thumbnail`,
+                assignDefined(
+                    { attachment_id: this.id, thumbnail },
+                    { access_token: this.ownership_token },
+                ),
+            );
+        }
+    }
+}
+
+Attachment.register();

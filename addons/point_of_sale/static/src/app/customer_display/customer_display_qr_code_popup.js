@@ -1,0 +1,61 @@
+/** @odoo-module native */
+import { Component, t, useProps, xml } from "@odoo/owl";
+import { generateQRCodeDataUrl } from "@point_of_sale/utils";
+import { CopyButton } from "@web/components/copy_button";
+import { _t } from "@web/core/translation";
+import { useService } from "@web/core/utils/hooks";
+import { Dialog } from "@web/ui/dialog";
+export class QrCodeCustomerDisplay extends Component {
+    static template = "point_of_sale.QrCodeCustomerDisplay";
+    static components = { Dialog, CopyButton };
+    static props = { close: t.any(), customerDisplayURL: t.any() };
+    props = useProps(this.constructor.props);
+
+    setup() {
+        this.ui = useService("ui");
+        this.notification = useService("notification");
+        this.dialogService = useService("dialog");
+    }
+
+    getQrCode() {
+        return generateQRCodeDataUrl(this.props.customerDisplayURL);
+    }
+
+    openOnThisDevice() {
+        window.open(
+            this.props.customerDisplayURL,
+            "newWindow",
+            "width=800,height=600,left=200,top=200",
+        );
+        this.notification.add(_t("PoS Customer Display opened in a new window"));
+    }
+
+    showQr() {
+        const qr = this.getQrCode();
+        this.dialogService.add(QrDialog, {
+            qrData: qr,
+            parentClose: this.props.close,
+        });
+    }
+}
+
+class QrDialog extends Component {
+    static props = { close: t.any(), qrData: t.any(), parentClose: t.any() };
+    static components = { Dialog };
+    static template = xml`
+        <Dialog header="false" footer="false" size="'sm'">
+            <div class="d-flex flex-column align-items-center">
+                <img id="CustomerDisplayqrCode" t-att-src="this.props.qrData" alt="Customer QR Code" class="img-fluid mb-3 square w-100"/>
+                <button t-on-click="this.close" class="button btn btn-secondary h1 mb-3 rounded-3">
+                    Close
+                </button>
+            </div>
+        </Dialog>
+    `;
+    props = useProps(this.constructor.props);
+
+    close() {
+        this.props.close();
+        this.props.parentClose();
+    }
+}

@@ -1,0 +1,48 @@
+/** @odoo-module native */
+// Import odoo_pivot to trigger the pivotRegistry.add("ODOO", ...) side effect,
+// required before PivotUIPlugin.setupPivot() looks up the "ODOO" pivot type.
+import "./odoo_pivot.js";
+
+import * as spreadsheet from "@odoo/o-spreadsheet";
+import { _t } from "@web/core/translation";
+
+import { SEE_RECORDS_PIVOT, SEE_RECORDS_PIVOT_VISIBLE } from "./pivot_actions.js";
+import { PivotCoreViewGlobalFilterPlugin } from "./plugins/pivot_core_view_global_filter_plugin.js";
+import { PivotOdooCorePlugin } from "./plugins/pivot_odoo_core_plugin.js";
+import { PivotUIGlobalFilterPlugin } from "./plugins/pivot_ui_global_filter_plugin.js";
+
+const { coreTypes, invalidateEvaluationCommands } = spreadsheet;
+
+const { cellMenuRegistry } = spreadsheet.registries;
+
+const { inverseCommandRegistry } = spreadsheet.registries;
+
+function identity(cmd) {
+    return [cmd];
+}
+
+coreTypes.add("UPDATE_ODOO_PIVOT_DOMAIN");
+
+invalidateEvaluationCommands.add("UPDATE_ODOO_PIVOT_DOMAIN");
+
+cellMenuRegistry.add("pivot_see_records", {
+    name: _t("See records"),
+    sequence: 175,
+    execute: async (env, isMiddleClick) => {
+        const position = env.model.getters.getActivePosition();
+        await SEE_RECORDS_PIVOT(position, env, isMiddleClick);
+    },
+    isVisible: (env) => {
+        const position = env.model.getters.getActivePosition();
+        return SEE_RECORDS_PIVOT_VISIBLE(position, env.model.getters);
+    },
+    icon: "o-spreadsheet-Icon.SEE_RECORDS",
+});
+
+inverseCommandRegistry.add("UPDATE_ODOO_PIVOT_DOMAIN", identity);
+
+export {
+    PivotCoreViewGlobalFilterPlugin,
+    PivotOdooCorePlugin,
+    PivotUIGlobalFilterPlugin,
+};

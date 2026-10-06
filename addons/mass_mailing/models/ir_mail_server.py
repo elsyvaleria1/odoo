@@ -1,0 +1,39 @@
+from odoo import fields, models
+from odoo.tools.misc import format_date
+
+
+class IrMail_Server(models.Model):
+    _inherit = "ir.mail_server"
+
+    active_mailing_ids = fields.One2many(
+        comodel_name="mailing.mailing",
+        inverse_name="mail_server_id",
+        string="Active mailing using this mail server",
+        readonly=True,
+        domain=[("state", "!=", "done"), ("active", "=", True)],
+    )
+
+    def _get_active_usages(self):
+        def format_usage(mailing_id):
+            base = self.env._('Mass Mailing "%s"', mailing_id.display_name)
+            if not mailing_id.schedule_date:
+                return base
+            details = self.env._(
+                "(scheduled for %s)", format_date(self.env, mailing_id.schedule_date)
+            )
+            return f"{base} {details}"
+
+        usages_super = super()._get_active_usages()
+        default_mail_server_id = self.env["mailing.mailing"]._default_mail_server_id()
+        for record in self:
+            usages = []
+            if default_mail_server_id == record.id:
+                usages.append(
+                    self.env._(
+                        "Email Marketing uses it as its default mail server to send mass mailings"
+                    )
+                )
+            usages.extend(map(format_usage, record.active_mailing_ids))
+            if usages:
+                usages_super.setdefault(record.id, []).extend(usages)
+        return usages_super

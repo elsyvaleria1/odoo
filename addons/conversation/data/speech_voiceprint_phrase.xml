@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+
+    <record id="param_voiceprint_phrase" model="ir.config_parameter">
+        <field name="key">speech_voiceprint.phrase</field>
+        <field
+            name="value">Buenos días, soy parte del equipo de AgroMarin. Esta grabación sirve para que el sistema reconozca mi voz en las llamadas y reuniones de trabajo. Esta semana revisamos parcelas de papa en Zinacantepec y San Miguel Balderas. Para el tizón tardío recomendamos clorotalonil, mancozeb y azoxistrobina; para gusano y trips, espinosad y clorantraniliprol; para la maleza, glifosato y paraquat. Llevamos Proxity, Asanit, Captacol, Benzimid y Outstay, y cotizamos el monopropilenglicol para la próxima formulación.</field>
+    </record>
+
+</odoo>

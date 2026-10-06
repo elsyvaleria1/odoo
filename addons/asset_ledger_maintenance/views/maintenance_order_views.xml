@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="maintenance_order_view_list_asset" model="ir.ui.view">
+        <field name="name">maintenance.order.list.product.asset</field>
+        <field name="model">maintenance.order</field>
+        <field name="inherit_id" ref="maintenance.maintenance_order_view_list" />
+        <field name="arch" type="xml">
+            <xpath expr="//list" position="inside">
+                <field name="trace_ids" widget="many2many_tags" optional="show" />
+                <field name="vendor_id" optional="hide" />
+                <field name="date_returned" optional="hide" />
+            </xpath>
+        </field>
+    </record>
+
+    <record id="maintenance_order_view_search_kind_code" model="ir.ui.view">
+        <field name="name">maintenance.order.search.product.asset</field>
+        <field name="model">maintenance.order</field>
+        <field name="inherit_id" ref="maintenance.maintenance_order_view_search" />
+        <field name="arch" type="xml">
+            <xpath expr="//search" position="inside">
+                <field name="trace_ids" />
+                <field name="vendor_id" />
+            </xpath>
+        </field>
+    </record>
+
+    <record id="action_maintenance_order" model="ir.actions.act_window">
+        <field name="name">Maintenance Orders</field>
+        <field name="res_model">maintenance.order</field>
+        <field name="view_mode">kanban,list,form,calendar</field>
+        <field name="domain">[('asset_ids', '!=', False)]</field>
+    </record>
+
+    <record id="action_maintenance_order_equipment" model="ir.actions.act_window">
+        <field name="name">Maintenance Orders</field>
+        <field name="res_model">maintenance.order</field>
+        <field name="view_mode">kanban,list,form,calendar</field>
+        <field name="domain">[('asset_ids.kind_code', '=', 'equipment')]</field>
+    </record>
+
+    <record id="action_maintenance_order_machinery" model="ir.actions.act_window">
+        <field name="name">Maintenance Orders</field>
+        <field name="res_model">maintenance.order</field>
+        <field name="view_mode">kanban,list,form,calendar</field>
+        <field name="domain">[('asset_ids.kind_code', '=', 'machinery')]</field>
+    </record>
+
+    <record id="action_maintenance_order_vehicle" model="ir.actions.act_window">
+        <field name="name">Maintenance Orders</field>
+        <field name="res_model">maintenance.order</field>
+        <field name="view_mode">kanban,list,form,calendar</field>
+        <field name="domain">[('asset_ids.kind_code', '=', 'vehicle')]</field>
+    </record>
+
+    <record id="action_maintenance_order_assets" model="ir.actions.act_window">
+        <field name="name">Maintenance Orders</field>
+        <field name="res_model">maintenance.order</field>
+        <field name="view_mode">kanban,list,form,calendar</field>
+        <field
+            name="domain">[('asset_ids.kind_code', 'not in', [False, 'product'])]</field>
+    </record>
+
+</odoo>

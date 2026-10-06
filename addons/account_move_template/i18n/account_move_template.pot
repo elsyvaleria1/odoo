@@ -1,0 +1,1121 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* account_move_template
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-10-02 02:51+0000\n"
+"PO-Revision-Date: 2026-10-02 02:51+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: account_move_template
+#. odoo-python
+#: code:addons/account_move_template/models/account_move_template.py:0
+msgid "%(name)s (copy %(index)s)"
+msgstr ""
+
+#. module: account_move_template
+#. odoo-python
+#: code:addons/account_move_template/models/account_move_template.py:0
+msgid "%(name)s (copy)"
+msgstr ""
+
+#. module: account_move_template
+#: model_terms:ir.ui.view,arch_db:account_move_template.account_move_template_form
+msgid ""
+"<strong>Payment Template:</strong> This template will create payments\n"
+"                        directly. Template lines are not used for payment templates."
+msgstr ""
+
+#. module: account_move_template
+#: model:ir.model.fields,field_description:account_move_template.field_account_move_template_line__account_id
+#: model:ir.model.fields,field_description:account_move_template.field_wizard_account_move_template_create_move_line__account_id
+msgid "Account"
+msgstr ""
+
+#. module: account_move_template
+#: model_terms:ir.ui.view,arch_db:account_move_template.account_move_template_form
+msgid "Account Configuration"
+msgstr ""
+
+#. module: account_move_template
+#: model_terms:ir.ui.view,arch_db:account_move_template.account_move_template_form
+msgid "Account code or prefix to use"
+msgstr ""
+
+#. module: account_move_template
+#: model:ir.model.fields,field_description:account_move_template.field_account_move_template_line__account_code
+msgid "Accounts Prefix"
+msgstr ""
+
+#. module: account_move_template
+#: model:ir.model.fields,field_description:account_move_template.field_account_move_template__message_needaction
+msgid "Action Needed"
+msgstr ""
+
+#. module: account_move_template
+#: model:ir.model.fields,field_description:account_move_template.field_account_move_template__active
+msgid "Active"
+msgstr ""
+
+#. module: account_move_template
+#: model:ir.model.fields,field_description:account_move_template.field_account_move_template__activity_ids
+msgid "Activities"
+msgstr ""
+
+#. module: account_move_template
+#: model:ir.model.fields,field_description:account_move_template.field_account_move_template__activity_exception_decoration
+msgid "Activity Exception Decoration"
+msgstr ""
+
+#. module: account_move_template
+#: model:ir.model.fields,field_description:account_move_template.field_account_move_template__activity_state
+msgid "Activity State"
+msgstr ""
+
+#. module: account_move_template
+#: model:ir.model.fields,field_description:account_move_template.field_account_move_template__activity_type_icon
+msgid "Activity Type Icon"
+msgstr ""
+
+#. module: account_move_template
+#: model_terms:ir.ui.view,arch_db:account_move_template.account_move_template_form
+msgid "Add a line"
+msgstr ""
+
+#. module: account_move_template
+#: model_terms:ir.ui.view,arch_db:account_move_template.account_move_template_form
+msgid "Add a note"
+msgstr ""
+
+#. module: account_move_template
+#: model_terms:ir.ui.view,arch_db:account_move_template.account_move_template_form
+msgid "Add a section"
+msgstr ""
+
+#. module: account_move_template
+#: model_terms:ir.ui.view,arch_db:account_move_template.account_move_template_form
+msgid "Additional Settings"
+msgstr ""
+
+#. module: account_move_template
+#: model_terms:ir.ui.view,arch_db:account_move_template.account_move_template_run_form
+msgid "Advanced Options"
+msgstr ""
+
+#. module: account_move_template
+#: model:ir.model.fields,field_description:account_move_template.field_wizard_account_move_template_create_move__amount
+msgid "Amount"
+msgstr ""
+
+#. module: account_move_template
+#: model:ir.model.fields,field_description:account_move_template.field_account_move_template_line__analytic_distribution
+#: model:ir.model.fields,field_description:account_move_template.field_wizard_account_move_template_create_move_line__analytic_distribution
+msgid "Analytic Distribution"
+msgstr ""
+
+#. module: account_move_template
+#: model:ir.model.fields,field_description:account_move_template.field_account_move_template_line__analytic_precision
+#: model:ir.model.fields,field_description:account_move_template.field_wizard_account_move_template_create_move_line__analytic_precision
+msgid "Analytic Precision"
+msgstr ""
+
+#. module: account_move_template
+#: model_terms:ir.ui.view,arch_db:account_move_template.account_move_template_form
+msgid "Analytics"
+msgstr ""
+
+#. module: account_move_template
+#: model_terms:ir.ui.view,arch_db:account_move_template.account_move_template_form
+#: model_terms:ir.ui.view,arch_db:account_move_template.account_move_template_search
+msgid "Archived"
+msgstr ""
+
+#. module: account_move_template
+#: model:ir.model.fields,field_description:account_move_template.field_account_move_template__message_attachment_count
+msgid "Attachment Count"
+msgstr ""
+
+#. module: account_move_template
+#: model:ir.model.fields,field_description:account_move_template.field_account_move_template_line__balance
+#: model:ir.model.fields,field_description:account_move_template.field_wizard_account_move_template_create_move_line__balance
+msgid "Balance"
+msgstr ""
+
+#. module: account_move_template
+#: model_terms:ir.ui.view,arch_db:account_move_template.account_move_template_form
+msgid "Basic Configuration"
+msgstr ""
+
+#. module: account_move_template
+#: model_terms:ir.ui.view,arch_db:account_move_template.account_move_template_run_form
+msgid "Basic Information"
+msgstr ""
+
+#. module: account_move_template
+#: model_terms:ir.ui.view,arch_db:account_move_template.account_move_template_run_form
+msgid "Cancel"
+msgstr ""
+
+#. module: account_move_template
+#: model_terms:ir.ui.view,arch_db:account_move_template.account_move_template_form
+msgid "Check if this template creates payments instead of journal entries"
+msgstr ""
+
+#. module: account_move_template
+#: model_terms:ir.ui.view,arch_db:account_move_template.account_move_template_form
+msgid ""
+"Check to issue the document to the run's third party, when it names one, "
+"instead of the partner the operation is about"
+msgstr ""
+
+#. module: account_move_template
+#: model:ir.model.fields.selection,name:account_move_template.selection__account_move_template_line__distribution_method__collapse
+msgid "Collapse (one line, full amount)"
+msgstr ""
+
+#. module: account_move_template
+#: model:ir.model.fields,field_description:account_move_template.field_account_move_template__company_id
+#: model:ir.model.fields,field_description:account_move_template.field_account_move_template_line__company_id
+#: model_terms:ir.ui.view,arch_db:account_move_template.account_move_template_search
+msgid "Company"
+msgstr ""
+
+#. module: account_move_template
+#: model_terms:ir.ui.view,arch_db:account_move_template.account_move_template_run_form
+msgid "Create Entry"
+msgstr ""
+
+#. module: account_move_template
+#. odoo-python
+#: code:addons/account_move_template/models/account_move_template.py:0
+#: model:ir.actions.act_window,name:account_move_template.account_move_template_run_action
+#: model:ir.ui.menu,name:account_move_template.account_move_template_run_menu
+#: model_terms:ir.ui.view,arch_db:account_move_template.account_move_template_run_form
+msgid "Create Entry from Template"
+msgstr ""
+
+#. module: account_move_template
+#: model_terms:ir.ui.view,arch_db:account_move_template.account_move_template_run_form
+msgid "Create Payment"
+msgstr ""
+
+#. module: account_move_template
+#: model_terms:ir.ui.view,arch_db:account_move_template.account_move_template_form
+msgid "Create a journal entry from this template"
+msgstr ""
+
+#. module: account_move_template
+#: model_terms:ir.actions.act_window,help:account_move_template.account_move_template_action
+msgid "Create your first journal entry template"
+msgstr ""
+
+#. module: account_move_template
+#: model:ir.model.fields,field_description:account_move_template.field_account_move_template__create_uid
+#: model:ir.model.fields,field_description:account_move_template.field_account_move_template_line__create_uid
+#: model:ir.model.fields,field_description:account_move_template.field_wizard_account_move_template_create_move__create_uid
+#: model:ir.model.fields,field_description:account_move_template.field_wizard_account_move_template_create_move_line__create_uid
+msgid "Created by"
+msgstr ""
+
+#. module: account_move_template
+#: model:ir.model.fields,field_description:account_move_template.field_account_move_template__create_date
+#: model:ir.model.fields,field_description:account_move_template.field_account_move_template_line__create_date
+#: model:ir.model.fields,field_description:account_move_template.field_wizard_account_move_template_create_move__create_date
+#: model:ir.model.fields,field_description:account_move_template.field_wizard_account_move_template_create_move_line__create_date
+msgid "Created on"
+msgstr ""
+
+#. module: account_move_template
+#: model:ir.model.fields.selection,name:account_move_template.selection__account_move_template__partner_type__customer
+msgid "Customer"
+msgstr ""
+
+#. module: account_move_template
+#: model:ir.model.fields.selection,name:account_move_template.selection__account_move_template__move_type__out_refund
+msgid "Customer Credit Note"
+msgstr ""
+
+#. module: account_move_template
+#: model:ir.model.fields.selection,name:account_move_template.selection__account_move_template__move_type__out_invoice
+msgid "Customer Invoice"
+msgstr ""
+
+#. module: account_move_template
+#: model_terms:ir.ui.view,arch_db:account_move_template.account_move_template_search
+msgid "Customer Invoices"
+msgstr ""
+
+#. module: account_move_template
+#: model:ir.model.fields,field_description:account_move_template.field_wizard_account_move_template_create_move__customize_lines
+msgid "Customize Lines"
+msgstr ""
+
+#. module: account_move_template
+#: model:ir.model.fields,field_description:account_move_template.field_wizard_account_move_template_create_move__date
+msgid "Date"
+msgstr ""
+
+#. module: account_move_template
+#: model_terms:ir.ui.view,arch_db:account_move_template.account_move_template_form
+msgid "Default partner for entries created from this template"
+msgstr ""
+
+#. module: account_move_template
+#: model_terms:ir.ui.view,arch_db:account_move_template.account_move_template_form
+msgid "Default reference text for entries"
+msgstr ""
+
+#. module: account_move_template
+#: model:ir.model.fields,help:account_move_template.field_account_move_template__payment_type
+#: model:ir.model.fields,help:account_move_template.field_wizard_account_move_template_create_move__payment_type
+msgid "Determines the flow of the payment (outbound or inbound)"
+msgstr ""
+
+#. module: account_move_template
+#: model:ir.model.fields,help:account_move_template.field_account_move_template__partner_type
+#: model:ir.model.fields,help:account_move_template.field_wizard_account_move_template_create_move__partner_type
+msgid "Determines whether the payment is for a customer or vendor"
+msgstr ""
+
+#. module: account_move_template
+#: model_terms:ir.ui.view,arch_db:account_move_template.account_move_template_run_form
+msgid "Disc.%"
+msgstr ""
+
+#. module: account_move_template
+#: model:ir.model.fields,field_description:account_move_template.field_account_move_template_line__discount
+#: model:ir.model.fields,field_description:account_move_template.field_wizard_account_move_template_create_move_line__discount
+msgid "Discount (%)"
+msgstr ""
+
+#. module: account_move_template
+#: model:ir.model.fields,field_description:account_move_template.field_account_move_template__display_name
+#: model:ir.model.fields,field_description:account_move_template.field_account_move_template_line__display_name
+#: model:ir.model.fields,field_description:account_move_template.field_wizard_account_move_template_create_move__display_name
+#: model:ir.model.fields,field_description:account_move_template.field_wizard_account_move_template_create_move_line__display_name
+msgid "Display Name"
+msgstr ""
+
+#. module: account_move_template
+#: model:ir.model.fields,field_description:account_move_template.field_account_move_template_line__display_type
+#: model:ir.model.fields,field_description:account_move_template.field_wizard_account_move_template_create_move_line__display_type
+msgid "Display Type"
+msgstr ""
+
+#. module: account_move_template
+#: model:ir.model.fields,field_description:account_move_template.field_account_move_template_line__distribution_analytic_account_ids
+#: model:ir.model.fields,field_description:account_move_template.field_wizard_account_move_template_create_move_line__distribution_analytic_account_ids
+msgid "Distribution Analytic Account"
+msgstr ""
+
+#. module: account_move_template
+#: model:ir.model.fields,field_description:account_move_template.field_account_move_template_line__distribution_method
+msgid "Distribution Method"
+msgstr ""
+
+#. module: account_move_template
+#: model_terms:ir.ui.view,arch_db:account_move_template.account_move_template_run_form
+msgid "Enable to manually customize journal entry lines"
+msgstr ""
+
+#. module: account_move_template
+#: model:ir.model.fields,help:account_move_template.field_wizard_account_move_template_create_move__customize_lines
+msgid "Enable to manually edit journal entry lines before creation"
+msgstr ""
+
+#. module: account_move_template
+#: model_terms:ir.ui.view,arch_db:account_move_template.account_move_template_run_form
+msgid "Entry Lines"
+msgstr ""
+
+#. module: account_move_template
+#: model:ir.model.fields,field_description:account_move_template.field_account_move_template__message_follower_ids
+msgid "Followers"
+msgstr ""
+
+#. module: account_move_template
+#: model:ir.model.fields,field_description:account_move_template.field_account_move_template__message_partner_ids
+msgid "Followers (Partners)"
+msgstr ""
+
+#. module: account_move_template
+#: model:ir.model.fields,field_description:account_move_template.field_account_move_template__has_message
+msgid "Has Message"
+msgstr ""
+
+#. module: account_move_template
+#: model:ir.model.fields,help:account_move_template.field_account_move_template_line__distribution_method
+msgid ""
+"How the wizard distributes the runtime amount across move lines.\n"
+"- Collapse: produce a single line with quantity=1 and price=amount. Use for discount, fee, single-item credit-note templates where price_unit on the template line is just a placeholder.\n"
+"- Split: decompose the amount into N units priced at price_unit each, with an adjustment line for the fractional remainder. Use for bills expressed as 'N units at price_unit'."
+msgstr ""
+
+#. module: account_move_template
+#: model:ir.model.fields,field_description:account_move_template.field_account_move_template__id
+#: model:ir.model.fields,field_description:account_move_template.field_account_move_template_line__id
+#: model:ir.model.fields,field_description:account_move_template.field_wizard_account_move_template_create_move__id
+#: model:ir.model.fields,field_description:account_move_template.field_wizard_account_move_template_create_move_line__id
+msgid "ID"
+msgstr ""
+
+#. module: account_move_template
+#: model:ir.model.fields,field_description:account_move_template.field_account_move_template__activity_exception_icon
+msgid "Icon"
+msgstr ""
+
+#. module: account_move_template
+#: model:ir.model.fields,help:account_move_template.field_account_move_template__activity_exception_icon
+msgid "Icon to indicate an exception activity."
+msgstr ""
+
+#. module: account_move_template
+#: model:ir.model.fields,help:account_move_template.field_account_move_template__message_needaction
+msgid "If checked, new messages require your attention."
+msgstr ""
+
+#. module: account_move_template
+#: model:ir.model.fields,help:account_move_template.field_account_move_template__message_has_error
+#: model:ir.model.fields,help:account_move_template.field_account_move_template__message_has_sms_error
+msgid "If checked, some messages have a delivery error."
+msgstr ""
+
+#. module: account_move_template
+#: model:ir.model.fields,help:account_move_template.field_account_move_template__use_third_party
+msgid ""
+"If checked, the generated document is issued to the run's third party when "
+"it names one -- the party a document is made out to in place of the partner,"
+" such as the generic public for a customer who takes no fiscal invoice -- "
+"instead of the partner the operation is about. Leave it off wherever the "
+"partner himself has to be on the document: the credit note that reduces his "
+"debt is one of those."
+msgstr ""
+
+#. module: account_move_template
+#: model:ir.model.fields,help:account_move_template.field_account_move_template__is_payment
+#: model:ir.model.fields,help:account_move_template.field_wizard_account_move_template_create_move__is_payment
+msgid ""
+"If checked, this template will generate a payment instead of a journal entry"
+msgstr ""
+
+#. module: account_move_template
+#: model_terms:ir.ui.view,arch_db:account_move_template.account_move_template_form
+msgid "Information"
+msgstr ""
+
+#. module: account_move_template
+#: model:ir.model.fields,help:account_move_template.field_account_move_template__ref
+msgid "Internal reference or note"
+msgstr ""
+
+#. module: account_move_template
+#: model_terms:ir.ui.view,arch_db:account_move_template.account_move_template_form
+msgid "Invoicing"
+msgstr ""
+
+#. module: account_move_template
+#: model:ir.model.fields,field_description:account_move_template.field_account_move_template__message_is_follower
+msgid "Is Follower"
+msgstr ""
+
+#. module: account_move_template
+#: model:ir.model.fields,field_description:account_move_template.field_account_move_template__is_payment
+#: model:ir.model.fields,field_description:account_move_template.field_wizard_account_move_template_create_move__is_payment
+msgid "Is Payment"
+msgstr ""
+
+#. module: account_move_template
+#: model:ir.model.fields,field_description:account_move_template.field_account_move_template__use_third_party
+msgid "Issue to the Third Party"
+msgstr ""
+
+#. module: account_move_template
+#: model:ir.model.fields,field_description:account_move_template.field_account_move_template__journal_id
+msgid "Journal"
+msgstr ""
+
+#. module: account_move_template
+#: model_terms:ir.ui.view,arch_db:account_move_template.account_move_template_form
+msgid "Journal & Partner"
+msgstr ""
+
+#. module: account_move_template
+#: model:ir.model.fields,field_description:account_move_template.field_account_move_template__journal_code
+#: model_terms:ir.ui.view,arch_db:account_move_template.account_move_template_search
+msgid "Journal Code"
+msgstr ""
+
+#. module: account_move_template
+#: model_terms:ir.ui.view,arch_db:account_move_template.account_move_template_search
+msgid "Journal Entries"
+msgstr ""
+
+#. module: account_move_template
+#: model:ir.model.fields.selection,name:account_move_template.selection__account_move_template__move_type__entry
+msgid "Journal Entry"
+msgstr ""
+
+#. module: account_move_template
+#: model_terms:ir.ui.view,arch_db:account_move_template.account_move_template_form
+msgid "Journal Entry Details"
+msgstr ""
+
+#. module: account_move_template
+#: model:ir.model,name:account_move_template.model_account_move_template
+#: model_terms:ir.ui.view,arch_db:account_move_template.account_move_template_form
+msgid "Journal Entry Template"
+msgstr ""
+
+#. module: account_move_template
+#: model:ir.actions.act_window,name:account_move_template.account_move_template_action
+#: model:ir.ui.menu,name:account_move_template.account_move_template_menu
+#: model_terms:ir.ui.view,arch_db:account_move_template.account_move_template_list
+msgid "Journal Entry Templates"
+msgstr ""
+
+#. module: account_move_template
+#: model:ir.model,name:account_move_template.model_account_move_template_line
+msgid "Journal Item Template"
+msgstr ""
+
+#. module: account_move_template
+#. odoo-python
+#: code:addons/account_move_template/models/account_move_template.py:0
+msgid ""
+"Journal with code '%(code)s' not found in %(company)s. Please verify the "
+"journal code is correct."
+msgstr ""
+
+#. module: account_move_template
+#: model:ir.model.fields,field_description:account_move_template.field_account_move_template_line__name
+#: model:ir.model.fields,field_description:account_move_template.field_wizard_account_move_template_create_move_line__name
+msgid "Label"
+msgstr ""
+
+#. module: account_move_template
+#: model:ir.model.fields,field_description:account_move_template.field_account_move_template__write_uid
+#: model:ir.model.fields,field_description:account_move_template.field_account_move_template_line__write_uid
+#: model:ir.model.fields,field_description:account_move_template.field_wizard_account_move_template_create_move__write_uid
+#: model:ir.model.fields,field_description:account_move_template.field_wizard_account_move_template_create_move_line__write_uid
+msgid "Last Updated by"
+msgstr ""
+
+#. module: account_move_template
+#: model:ir.model.fields,field_description:account_move_template.field_account_move_template__write_date
+#: model:ir.model.fields,field_description:account_move_template.field_account_move_template_line__write_date
+#: model:ir.model.fields,field_description:account_move_template.field_wizard_account_move_template_create_move__write_date
+#: model:ir.model.fields,field_description:account_move_template.field_wizard_account_move_template_create_move_line__write_date
+msgid "Last Updated on"
+msgstr ""
+
+#. module: account_move_template
+#: model_terms:ir.ui.view,arch_db:account_move_template.account_move_template_run_form
+msgid "Leave empty to issue to the partner"
+msgstr ""
+
+#. module: account_move_template
+#: model:ir.model.fields,field_description:account_move_template.field_wizard_account_move_template_create_move__line_ids
+msgid "Line"
+msgstr ""
+
+#. module: account_move_template
+#: model:ir.model.fields,field_description:account_move_template.field_account_move_template__line_ids
+msgid "Lines"
+msgstr ""
+
+#. module: account_move_template
+#: model:ir.model.fields,field_description:account_move_template.field_account_move_template__message_has_error
+msgid "Message Delivery error"
+msgstr ""
+
+#. module: account_move_template
+#: model:ir.model.fields,field_description:account_move_template.field_account_move_template__message_ids
+msgid "Messages"
+msgstr ""
+
+#. module: account_move_template
+#: model:ir.model.fields,field_description:account_move_template.field_account_move_template_line__template_id
+msgid "Move Template"
+msgstr ""
+
+#. module: account_move_template
+#: model:ir.model.fields,field_description:account_move_template.field_account_move_template__move_type
+#: model:ir.model.fields,field_description:account_move_template.field_wizard_account_move_template_create_move__move_type
+#: model_terms:ir.ui.view,arch_db:account_move_template.account_move_template_search
+msgid "Move Type"
+msgstr ""
+
+#. module: account_move_template
+#: model:ir.model.fields,field_description:account_move_template.field_wizard_account_move_template_create_move__multicompany_id
+msgid "Multicompany"
+msgstr ""
+
+#. module: account_move_template
+#: model:ir.model.fields,field_description:account_move_template.field_account_move_template__my_activity_date_deadline
+msgid "My Activity Deadline"
+msgstr ""
+
+#. module: account_move_template
+#: model:ir.model.fields,field_description:account_move_template.field_account_move_template__name
+msgid "Name"
+msgstr ""
+
+#. module: account_move_template
+#: model:ir.model.fields,field_description:account_move_template.field_account_move_template__activity_date_deadline
+msgid "Next Activity Deadline"
+msgstr ""
+
+#. module: account_move_template
+#: model:ir.model.fields,field_description:account_move_template.field_account_move_template__activity_summary
+msgid "Next Activity Summary"
+msgstr ""
+
+#. module: account_move_template
+#: model:ir.model.fields,field_description:account_move_template.field_account_move_template__activity_type_id
+msgid "Next Activity Type"
+msgstr ""
+
+#. module: account_move_template
+#. odoo-python
+#: code:addons/account_move_template/wizards/wizard_account_move_template_create_move.py:0
+msgid "No account found with code '%(code)s' for company '%(company)s'"
+msgstr ""
+
+#. module: account_move_template
+#. odoo-python
+#: code:addons/account_move_template/models/account_move_template_line.py:0
+msgid ""
+"No active account found matching code '%(code)s' for line '%(line)s'. Please"
+" verify the account code."
+msgstr ""
+
+#. module: account_move_template
+#. odoo-python
+#: code:addons/account_move_template/wizards/wizard_account_move_template_create_move.py:0
+msgid ""
+"No active journal with code '%(code)s' in %(company)s can hold what "
+"template '%(template)s' creates."
+msgstr ""
+
+#. module: account_move_template
+#: model:ir.model.fields.selection,name:account_move_template.selection__account_move_template_line__display_type__line_note
+#: model:ir.model.fields.selection,name:account_move_template.selection__wizard_account_move_template_create_move_line__display_type__line_note
+msgid "Note"
+msgstr ""
+
+#. module: account_move_template
+#: model:ir.model.fields,field_description:account_move_template.field_account_move_template__message_needaction_counter
+msgid "Number of Actions"
+msgstr ""
+
+#. module: account_move_template
+#: model:ir.model.fields,field_description:account_move_template.field_account_move_template__message_has_error_counter
+msgid "Number of errors"
+msgstr ""
+
+#. module: account_move_template
+#: model:ir.model.fields,help:account_move_template.field_account_move_template__message_needaction_counter
+msgid "Number of messages requiring action"
+msgstr ""
+
+#. module: account_move_template
+#: model:ir.model.fields,help:account_move_template.field_account_move_template__message_has_error_counter
+msgid "Number of messages with delivery error"
+msgstr ""
+
+#. module: account_move_template
+#: model_terms:ir.ui.view,arch_db:account_move_template.account_move_template_list
+msgid "Open wizard to create entry with advanced options"
+msgstr ""
+
+#. module: account_move_template
+#: model_terms:ir.ui.view,arch_db:account_move_template.account_move_template_form
+msgid "Optional default partner..."
+msgstr ""
+
+#. module: account_move_template
+#: model_terms:ir.ui.view,arch_db:account_move_template.account_move_template_run_form
+msgid "Optional reference or note"
+msgstr ""
+
+#. module: account_move_template
+#: model_terms:ir.ui.view,arch_db:account_move_template.account_move_template_form
+msgid "Optional reference..."
+msgstr ""
+
+#. module: account_move_template
+#: model_terms:ir.ui.view,arch_db:account_move_template.account_move_template_run_form
+msgid "Optional: Create entry in a different company"
+msgstr ""
+
+#. module: account_move_template
+#: model_terms:ir.ui.view,arch_db:account_move_template.account_move_template_form
+msgid "Optional: Select to auto-fill code"
+msgstr ""
+
+#. module: account_move_template
+#: model_terms:ir.ui.view,arch_db:account_move_template.account_move_template_run_form
+msgid "Optional: the party this entry is made out to in place of the partner"
+msgstr ""
+
+#. module: account_move_template
+#: model:ir.model.fields,field_description:account_move_template.field_account_move_template__partner_id
+#: model:ir.model.fields,field_description:account_move_template.field_account_move_template_line__partner_id
+#: model:ir.model.fields,field_description:account_move_template.field_wizard_account_move_template_create_move__partner_id
+#: model:ir.model.fields,field_description:account_move_template.field_wizard_account_move_template_create_move_line__partner_id
+msgid "Partner"
+msgstr ""
+
+#. module: account_move_template
+#: model:ir.model.fields,field_description:account_move_template.field_account_move_template__partner_type
+#: model:ir.model.fields,field_description:account_move_template.field_wizard_account_move_template_create_move__partner_type
+msgid "Partner Type"
+msgstr ""
+
+#. module: account_move_template
+#. odoo-python
+#: code:addons/account_move_template/models/account_move_template.py:0
+#: model_terms:ir.ui.view,arch_db:account_move_template.account_move_template_list
+msgid "Payment"
+msgstr ""
+
+#. module: account_move_template
+#: model_terms:ir.ui.view,arch_db:account_move_template.account_move_template_run_form
+msgid "Payment Amount"
+msgstr ""
+
+#. module: account_move_template
+#: model_terms:ir.ui.view,arch_db:account_move_template.account_move_template_form
+msgid "Payment Configuration"
+msgstr ""
+
+#. module: account_move_template
+#: model_terms:ir.ui.view,arch_db:account_move_template.account_move_template_run_form
+msgid "Payment Information"
+msgstr ""
+
+#. module: account_move_template
+#: model:ir.model.fields,field_description:account_move_template.field_account_move_template__invoice_payment_term_id
+msgid "Payment Terms"
+msgstr ""
+
+#. module: account_move_template
+#: model:ir.model.fields,field_description:account_move_template.field_account_move_template__payment_type
+#: model:ir.model.fields,field_description:account_move_template.field_wizard_account_move_template_create_move__payment_type
+msgid "Payment Type"
+msgstr ""
+
+#. module: account_move_template
+#: model_terms:ir.ui.view,arch_db:account_move_template.account_move_template_form
+msgid "Payment terms for invoices created from this template"
+msgstr ""
+
+#. module: account_move_template
+#: model_terms:ir.ui.view,arch_db:account_move_template.account_move_template_search
+msgid "Payments"
+msgstr ""
+
+#. module: account_move_template
+#: model:ir.model.fields,field_description:account_move_template.field_account_move_template__website_message_ids
+msgid "Portal Messages"
+msgstr ""
+
+#. module: account_move_template
+#: model:ir.model.fields,help:account_move_template.field_account_move_template__website_message_ids
+msgid "Portal communication history for this record."
+msgstr ""
+
+#. module: account_move_template
+#: model_terms:ir.ui.view,arch_db:account_move_template.account_move_template_run_form
+msgid "Price"
+msgstr ""
+
+#. module: account_move_template
+#: model:ir.model.fields,field_description:account_move_template.field_account_move_template_line__product_id
+#: model:ir.model.fields,field_description:account_move_template.field_wizard_account_move_template_create_move_line__product_id
+#: model:ir.model.fields.selection,name:account_move_template.selection__account_move_template_line__display_type__product
+#: model:ir.model.fields.selection,name:account_move_template.selection__wizard_account_move_template_create_move_line__display_type__product
+msgid "Product"
+msgstr ""
+
+#. module: account_move_template
+#: model_terms:ir.ui.view,arch_db:account_move_template.account_move_template_form
+msgid "Product Details"
+msgstr ""
+
+#. module: account_move_template
+#: model_terms:ir.ui.view,arch_db:account_move_template.account_move_template_run_form
+msgid "Qty"
+msgstr ""
+
+#. module: account_move_template
+#: model:ir.model.fields,field_description:account_move_template.field_account_move_template_line__quantity
+#: model:ir.model.fields,field_description:account_move_template.field_wizard_account_move_template_create_move_line__quantity
+msgid "Quantity"
+msgstr ""
+
+#. module: account_move_template
+#: model:ir.model.fields.selection,name:account_move_template.selection__account_move_template__payment_type__inbound
+msgid "Receive Money"
+msgstr ""
+
+#. module: account_move_template
+#: model:ir.model.fields,field_description:account_move_template.field_wizard_account_move_template_create_move__ref
+msgid "Ref"
+msgstr ""
+
+#. module: account_move_template
+#: model:ir.model.fields,field_description:account_move_template.field_account_move_template__ref
+msgid "Reference"
+msgstr ""
+
+#. module: account_move_template
+#: model:ir.model.fields,help:account_move_template.field_wizard_account_move_template_create_move_line__template_line_id
+msgid "Reference to the original template line"
+msgstr ""
+
+#. module: account_move_template
+#: model_terms:ir.ui.view,arch_db:account_move_template.account_move_template_form
+msgid "Required: Journal code to use when creating entries"
+msgstr ""
+
+#. module: account_move_template
+#: model:ir.model.fields,field_description:account_move_template.field_account_move_template__activity_user_id
+msgid "Responsible User"
+msgstr ""
+
+#. module: account_move_template
+#: model:ir.model.fields,field_description:account_move_template.field_account_move_template__message_has_sms_error
+msgid "SMS Delivery error"
+msgstr ""
+
+#. module: account_move_template
+#: model_terms:ir.ui.view,arch_db:account_move_template.account_move_template_search
+msgid "Search Templates"
+msgstr ""
+
+#. module: account_move_template
+#: model:ir.model.fields.selection,name:account_move_template.selection__account_move_template_line__display_type__line_section
+#: model:ir.model.fields.selection,name:account_move_template.selection__wizard_account_move_template_create_move_line__display_type__line_section
+msgid "Section"
+msgstr ""
+
+#. module: account_move_template
+#: model:ir.model.fields,help:account_move_template.field_account_move_template_line__display_type
+msgid ""
+"Section and note lines carry no accounting value: they are written to the "
+"generated document as display lines, in sequence with the product lines "
+"around them."
+msgstr ""
+
+#. module: account_move_template
+#: model_terms:ir.ui.view,arch_db:account_move_template.account_move_template_form
+msgid "Section title or note content..."
+msgstr ""
+
+#. module: account_move_template
+#: model_terms:ir.ui.view,arch_db:account_move_template.account_move_template_form
+msgid "Select a journal..."
+msgstr ""
+
+#. module: account_move_template
+#: model_terms:ir.ui.view,arch_db:account_move_template.account_move_template_run_form
+msgid "Select a template..."
+msgstr ""
+
+#. module: account_move_template
+#: model_terms:ir.ui.view,arch_db:account_move_template.account_move_template_run_form
+msgid "Select partner..."
+msgstr ""
+
+#. module: account_move_template
+#: model:ir.model.fields.selection,name:account_move_template.selection__account_move_template__payment_type__outbound
+msgid "Send Money"
+msgstr ""
+
+#. module: account_move_template
+#: model:ir.model.fields,field_description:account_move_template.field_account_move_template_line__sequence
+#: model:ir.model.fields,field_description:account_move_template.field_wizard_account_move_template_create_move_line__sequence
+msgid "Sequence"
+msgstr ""
+
+#. module: account_move_template
+#: model_terms:ir.ui.view,arch_db:account_move_template.account_move_template_form
+msgid "Shows the account the prefix resolves to; pick one to fill it"
+msgstr ""
+
+#. module: account_move_template
+#: model_terms:ir.ui.view,arch_db:account_move_template.account_move_template_form
+msgid "Shows the journal the code resolves to; pick one to fill the code"
+msgstr ""
+
+#. module: account_move_template
+#: model:ir.model.fields.selection,name:account_move_template.selection__account_move_template_line__distribution_method__split
+msgid "Split (decompose into units of price_unit)"
+msgstr ""
+
+#. module: account_move_template
+#: model:ir.model.fields,help:account_move_template.field_account_move_template__activity_state
+msgid ""
+"Status based on activities\n"
+"Overdue: Due date is already passed\n"
+"Today: Activity date is today\n"
+"Planned: Future activities."
+msgstr ""
+
+#. module: account_move_template
+#: model:ir.model.fields,help:account_move_template.field_wizard_account_move_template_create_move__multicompany_id
+msgid "Target company to use when creating the journal entry, if different."
+msgstr ""
+
+#. module: account_move_template
+#: model:ir.model.fields,field_description:account_move_template.field_account_move_template_line__tax_ids
+#: model:ir.model.fields,field_description:account_move_template.field_wizard_account_move_template_create_move_line__tax_ids
+msgid "Taxes"
+msgstr ""
+
+#. module: account_move_template
+#: model:ir.model.fields,field_description:account_move_template.field_wizard_account_move_template_create_move__template_id
+#: model_terms:ir.ui.view,arch_db:account_move_template.account_move_template_search
+msgid "Template"
+msgstr ""
+
+#. module: account_move_template
+#. odoo-python
+#: code:addons/account_move_template/models/account_move_template.py:0
+msgid ""
+"Template '%(name)s' creates a %(document)s, which needs a %(allowed)s "
+"journal, but '%(code)s' is a %(type)s journal in %(company)s."
+msgstr ""
+
+#. module: account_move_template
+#. odoo-python
+#: code:addons/account_move_template/models/account_move_template.py:0
+msgid ""
+"Template '%(name)s' creates a payment, so it needs both a payment type and a"
+" partner type. Without them the run fails on the database's own not-null "
+"constraint."
+msgstr ""
+
+#. module: account_move_template
+#. odoo-python
+#: code:addons/account_move_template/models/account_move_template.py:0
+msgid ""
+"Template '%(name)s' must have at least one product line. Please add one "
+"before saving."
+msgstr ""
+
+#. module: account_move_template
+#. odoo-python
+#: code:addons/account_move_template/wizards/wizard_account_move_template_create_move.py:0
+msgid ""
+"Template '%(template)s' cannot run for a negative amount (%(amount)s). "
+"Use a credit note or an outbound payment template for money going the "
+"other way."
+msgstr ""
+
+#. module: account_move_template
+#. odoo-python
+#: code:addons/account_move_template/wizards/wizard_account_move_template_create_move.py:0
+msgid ""
+"Template '%(template)s' creates a journal entry, which books the balances "
+"stored on its lines, so it cannot honour the amount %(amount)s this run "
+"carries. Clear the amount, or use a template with an invoice move type."
+msgstr ""
+
+#. module: account_move_template
+#. odoo-python
+#: code:addons/account_move_template/wizards/wizard_account_move_template_create_move.py:0
+msgid ""
+"Template '%(template)s' creates a payment, so this run needs an amount."
+msgstr ""
+
+#. module: account_move_template
+#. odoo-python
+#: code:addons/account_move_template/wizards/wizard_account_move_template_create_move.py:0
+msgid ""
+"Template '%(template)s' produced no accounting line, so there is nothing to "
+"create. Check that it has at least one product line."
+msgstr ""
+
+#. module: account_move_template
+#: model:ir.model.fields,field_description:account_move_template.field_wizard_account_move_template_create_move_line__template_line_id
+#: model_terms:ir.ui.view,arch_db:account_move_template.account_move_template_form
+msgid "Template Line"
+msgstr ""
+
+#. module: account_move_template
+#: model_terms:ir.ui.view,arch_db:account_move_template.account_move_template_form
+msgid "Template Lines"
+msgstr ""
+
+#. module: account_move_template
+#: model_terms:ir.ui.view,arch_db:account_move_template.account_move_template_form
+msgid "Template Name"
+msgstr ""
+
+#. module: account_move_template
+#. odoo-python
+#: code:addons/account_move_template/models/account_move_template_line.py:0
+msgid "Template line '%(line)s' must have an account code."
+msgstr ""
+
+#. module: account_move_template
+#: model_terms:ir.actions.act_window,help:account_move_template.account_move_template_action
+msgid ""
+"Templates allow you to quickly create recurring journal entries,\n"
+"                invoices, or payments with predefined configurations."
+msgstr ""
+
+#. module: account_move_template
+#: model:ir.model.fields,help:account_move_template.field_account_move_template_line__account_id
+msgid "The account `account_code` resolves to. Pick one to fill the prefix."
+msgstr ""
+
+#. module: account_move_template
+#: model:ir.model.fields,help:account_move_template.field_account_move_template__journal_id
+msgid "The journal `journal_code` resolves to. Pick one to fill the code."
+msgstr ""
+
+#. module: account_move_template
+#: model:ir.model.fields,help:account_move_template.field_wizard_account_move_template_create_move__third_party_id
+msgid ""
+"The party a document is made out to in place of the partner, such as the "
+"generic public for a customer who takes no fiscal invoice. Informational by "
+"default: partner_id stays on the generated document (task t22217). Only a "
+"template that ticks 'Issue to the Third Party' is issued to this one "
+"instead."
+msgstr ""
+
+#. module: account_move_template
+#: model:ir.model.constraint,message:account_move_template.constraint_account_move_template_line_unique_template_sequence
+msgid "The sequence of the line must be unique per template!"
+msgstr ""
+
+#. module: account_move_template
+#: model:ir.model.fields,field_description:account_move_template.field_wizard_account_move_template_create_move__third_party_id
+msgid "Third Party"
+msgstr ""
+
+#. module: account_move_template
+#: model:ir.model.constraint,message:account_move_template.constraint_account_move_template_name_src_uniq
+msgid "This name is already used by another template!"
+msgstr ""
+
+#. module: account_move_template
+#: model_terms:ir.ui.view,arch_db:account_move_template.account_move_template_form
+msgid ""
+"This reference will be used as default when creating\n"
+"                                            entries from this template."
+msgstr ""
+
+#. module: account_move_template
+#: model_terms:ir.ui.view,arch_db:account_move_template.account_move_template_run_form
+msgid "Total amount - lines will be automatically calculated"
+msgstr ""
+
+#. module: account_move_template
+#: model:ir.model.fields,help:account_move_template.field_account_move_template__move_type
+#: model:ir.model.fields,help:account_move_template.field_wizard_account_move_template_create_move__move_type
+msgid "Type of journal entry this template will create"
+msgstr ""
+
+#. module: account_move_template
+#: model:ir.model.fields,help:account_move_template.field_account_move_template__activity_exception_decoration
+msgid "Type of the exception activity on record."
+msgstr ""
+
+#. module: account_move_template
+#: model:ir.model.fields,field_description:account_move_template.field_account_move_template_line__price_unit
+#: model:ir.model.fields,field_description:account_move_template.field_wizard_account_move_template_create_move_line__price_unit
+msgid "Unit Price"
+msgstr ""
+
+#. module: account_move_template
+#: model:ir.model.fields,field_description:account_move_template.field_account_move_template_line__product_uom_id
+#: model:ir.model.fields,field_description:account_move_template.field_wizard_account_move_template_create_move_line__product_uom_id
+msgid "Unit of Measure"
+msgstr ""
+
+#. module: account_move_template
+#: model_terms:ir.ui.view,arch_db:account_move_template.account_move_template_form
+#: model_terms:ir.ui.view,arch_db:account_move_template.account_move_template_list
+msgid "Use Template"
+msgstr ""
+
+#. module: account_move_template
+#: model:ir.model.fields,help:account_move_template.field_account_move_template__invoice_payment_term_id
+msgid "Used to compute the due date of the journal item."
+msgstr ""
+
+#. module: account_move_template
+#: model:ir.model.fields.selection,name:account_move_template.selection__account_move_template__partner_type__supplier
+msgid "Vendor"
+msgstr ""
+
+#. module: account_move_template
+#: model:ir.model.fields.selection,name:account_move_template.selection__account_move_template__move_type__in_invoice
+msgid "Vendor Bill"
+msgstr ""
+
+#. module: account_move_template
+#: model_terms:ir.ui.view,arch_db:account_move_template.account_move_template_search
+msgid "Vendor Bills"
+msgstr ""
+
+#. module: account_move_template
+#: model:ir.model.fields.selection,name:account_move_template.selection__account_move_template__move_type__in_refund
+msgid "Vendor Credit Note"
+msgstr ""
+
+#. module: account_move_template
+#: model:ir.model.fields,help:account_move_template.field_account_move_template__journal_code
+msgid ""
+"When creating a new journal entry a journal having this code will be looked "
+"for"
+msgstr ""
+
+#. module: account_move_template
+#: model:ir.model.fields,help:account_move_template.field_account_move_template_line__account_code
+msgid ""
+"When creating a new journal item an account having this prefix will be "
+"looked for. Required for product lines; ignored for section/note lines."
+msgstr ""
+
+#. module: account_move_template
+#: model:ir.model.fields,field_description:account_move_template.field_wizard_account_move_template_create_move_line__wizard_id
+msgid "Wizard"
+msgstr ""
+
+#. module: account_move_template
+#: model:ir.model,name:account_move_template.model_wizard_account_move_template_create_move_line
+msgid "Wizard Lines to generate move from template"
+msgstr ""
+
+#. module: account_move_template
+#: model:ir.model,name:account_move_template.model_wizard_account_move_template_create_move
+msgid "Wizard to generate move from template"
+msgstr ""
+
+#. module: account_move_template
+#: model_terms:ir.ui.view,arch_db:account_move_template.account_move_template_form
+msgid "e.g., 400.01"
+msgstr ""
+
+#. module: account_move_template
+#: model_terms:ir.ui.view,arch_db:account_move_template.account_move_template_form
+msgid "e.g., MISC, BNK1, CSH1"
+msgstr ""
+
+#. module: account_move_template
+#: model_terms:ir.ui.view,arch_db:account_move_template.account_move_template_form
+msgid "e.g., Monthly Rent Payment"
+msgstr ""

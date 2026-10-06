@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="applicant_send_mail_view_form" model="ir.ui.view">
+        <field name="model">wizard.hr.applicant.send.mail</field>
+        <field name="arch" type="xml">
+            <form>
+                <field name="author_id" invisible="1" />
+                <field name="lang" invisible="1" />
+                <field name="render_model" invisible="1" />
+                <field name="template_id" invisible="1" />
+                <group>
+                    <field name="subject" required="1" />
+                    <field
+                        name="applicant_ids"
+                        widget="many2many_tags"
+                        context="{'show_partner_name': 1}" />
+                </group>
+                <field
+                    name="body"
+                    placeholder="Write your message here..."
+                    widget="html_mail"
+                    force_save="1"
+                    options="{'codeview': true, 'dynamic_placeholder': true}"
+                    class="oe-bordered-editor" />
+                <group>
+                    <field
+                        name="attachment_ids"
+                        string="Attach a file"
+                        widget="many2many_binary"
+                        colspan="2"
+                        nolabel="1" />
+                    <field
+                        name="template_id"
+                        string="Load template"
+                        options="{'no_create': True}" />
+                </group>
+                <footer>
+                    <button
+                        name="action_send"
+                        type="object"
+                        string="Send"
+                        class="btn-primary"
+                        data-hotkey="q" />
+                    <button
+                        special="cancel"
+                        string="Cancel"
+                        class="btn-secondary"
+                        data-hotkey="x" />
+                </footer>
+            </form>
+        </field>
+    </record>
+
+</odoo>

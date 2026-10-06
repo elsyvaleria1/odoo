@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <menuitem
+        id="fsm_menu_settings_product"
+        name="Products"
+        parent="industry_fsm.fsm_menu_settings"
+        action="product_action_fsm"
+        sequence="30"
+        groups="sale.group_sale_salesman" />
+
+    <menuitem
+        id="fsm_menu_all_tasks_invoice"
+        name="To Invoice"
+        parent="industry_fsm.fsm_menu_all_tasks_root"
+        action="project_task_to_invoice_fsm_server_action"
+        sequence="30"
+        groups="sale.group_sale_salesman" />
+
+</odoo>

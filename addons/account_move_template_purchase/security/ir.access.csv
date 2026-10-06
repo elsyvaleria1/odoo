@@ -1,0 +1,2 @@
+id,name,model_id/id,group_id/id,kind,operation,reach,anchor,domain
+purchase_bill_match_templates,purchase.bill.match: the bill templates every buyer is offered,purchase.model_purchase_bill_match,purchase.group_purchase_user,permission,r,,,"[('template_id', '!=', False)]"

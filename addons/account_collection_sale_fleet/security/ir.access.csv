@@ -1,0 +1,2 @@
+id,name,model_id/id,group_id/id,kind,operation,reach,anchor,domain
+privilege_hand_over_cash_sale_batch,stock.picking.batch: a collector reserving the goods of their cash sale reads whether they are on a delivery batch,stock_picking_batch.model_stock_picking_batch,account_collection_sale.privilege_hand_over_cash_sale,permission,r,,,"[('picking_type_id.code', '=', 'outgoing')]"

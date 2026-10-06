@@ -1,0 +1,236 @@
+import unittest
+
+from odoo.tests import TransactionCase, can_import, loaded_demo_data, tagged
+from odoo.tools import mute_logger
+from odoo.tools.misc import file_open
+
+
+@tagged("post_install", "-at_install")
+class TestImportFiles(TransactionCase):
+    def import_product_xls(self, model, filepath=None):
+        if filepath is None:
+            model_str = model.replace(".", "_")
+            filepath = f"product/static/xls/{model_str}.xls"
+        file_content = file_open(filepath, "rb").read()
+        import_wizard = self.env["base_import.import"].create(
+            {
+                "res_model": model,
+                "file": file_content,
+                "file_type": "application/vnd.ms-excel",
+            }
+        )
+
+        result = import_wizard.parse_preview(
+            {
+                "has_headers": True,
+            }
+        )
+        self.assertIsNone(result.get("error"))
+        field_names = ["/".join(v) for v in result["matches"].values()]
+        return import_wizard.execute_import(
+            field_names,
+            [r.lower() for r in result["headers"]],
+            {
+                "import_skip_records": [],
+                "import_set_empty_fields": [],
+                "fallback_values": {},
+                "name_create_enabled_fields": {},
+                "encoding": "",
+                "separator": "",
+                "quoting": '"',
+                "date_format": "",
+                "datetime_format": "",
+                "float_thousand_separator": ",",
+                "float_decimal_separator": ".",
+                "advanced": True,
+                "has_headers": True,
+                "keep_matches": False,
+                "limit": 2000,
+                "skip": 0,
+                "tracking_disable": True,
+            },
+        )
+
+    @unittest.skipUnless(can_import("openpyxl"), "openpyxl not available")
+    def test_import_create_product_demo_xls(self):
+        if not loaded_demo_data(self.env):
+            self.skipTest("Needs demo data to be able to import those files")
+
+        for model in ("product.pricelist", "product.supplierinfo", "product.template"):
+            with self.subTest(model):
+                results = self.import_product_xls(model)
+                self.assertFalse(
+                    results["messages"],
+                    "results should be empty on successful import of ",
+                )
+
+        with self.subTest("product.product"):
+            results = self.import_product_xls("product.product")
+            results = self.assertFalse(
+                results["messages"],
+                "results should be empty on successful import of ",
+            )
+
+            template = self.env.ref("__import__.product_template_BB")
+            self.assertEqual(
+                self.env.ref("__import__.product_product_1").list_price, 110
+            )
+            self.assertEqual(len(template.product_variant_ids), 8)
+            self.assertEqual(
+                [p.import_attribute_values for p in template.product_variant_ids],
+                [
+                    "Color:Red,Size:S",
+                    "Color:Red,Size:M",
+                    "Color:Red,Size:L",
+                    "Color:Blue,Size:XL",
+                    "Color:Blue,Size:S",
+                    "Color:Blue,Size:M",
+                    "Color:Blue,Size:L",
+                    "Color:Red,Size:XL",
+                ],
+            )
+
+    def test_import_write_product_demo_xls(self):
+        self.import_product_xls("product.product")
+        template = self.env.ref("__import__.product_template_BB")
+        self.assertEqual(len(template.product_variant_ids), 8)
+        self.assertEqual(
+            self.env.ref("__import__.product_product_1").standard_price, 40
+        )
+        self.assertEqual(
+            self.env.ref("__import__.product_tshirt_SW_red_m").standard_price, 45
+        )
+        self.assertEqual(
+            self.env.ref("__import__.product_tshirt_SW_red_l").standard_price, 50
+        )
+        self.assertEqual(
+            self.env.ref("__import__.product_tshirt_SW_blue_xl").standard_price, 55
+        )
+        self.assertEqual(self.env.ref("__import__.product_product_1").lst_price, 110)
+        self.assertEqual(self.env.ref("__import__.product_product_6").lst_price, 110)
+
+        self.import_product_xls(
+            "product.product",
+            filepath="product/static/xls/test_import_update_product_price.xls",
+        )
+
+        self.assertEqual(len(template.product_variant_ids), 8)
+
+        self.assertEqual(
+            self.env.ref("__import__.product_product_1").standard_price, 1000
+        )
+        self.assertEqual(
+            self.env.ref("__import__.product_product_2").standard_price, 40
+        )
+        self.assertEqual(
+            self.env.ref("__import__.product_product_6").standard_price, 1001
+        )
+        self.assertEqual(
+            self.env.ref("__import__.product_tshirt_SW_red_m").standard_price, 45
+        )
+        self.assertEqual(
+            self.env.ref("__import__.product_tshirt_SW_red_l").standard_price, 1002
+        )
+        self.assertEqual(
+            self.env.ref("__import__.product_tshirt_SW_blue_xl").standard_price, 55
+        )
+        self.assertEqual(self.env.ref("__import__.product_product_6").lst_price, 2001)
+        self.assertEqual(
+            self.env.ref("__import__.product_tshirt_SW_red_l").lst_price, 2002
+        )
+
+    @mute_logger("odoo.db.cursor")
+    def test_import_write_product_xls_error(self):
+        results = self.import_product_xls("product.product")
+        self.assertFalse(
+            results["messages"],
+            "results should be empty on successful import of ",
+        )
+
+        results = self.import_product_xls(
+            "product.product",
+            filepath="product/static/xls/test_import_update_error.xls",
+        )
+        self.assertIn(
+            'The existing product has different attribute values. "Color:Yellow,Size:M" is not equivalent to "Color:Blue,Size:M" for "__import__.product_product_6"',
+            results["messages"][0]["message"],
+        )
+        self.assertIn(
+            'The existing product has different attribute values. "Color:Black,Size:L" is not equivalent to "Color:Red,Size:L" for "__import__.product_tshirt_SW_red_l"',
+            results["messages"][-1]["message"],
+        )
+
+        results = self.import_product_xls(
+            "product.product",
+            filepath="product/static/xls/test_import_update_error_2.xls",
+        )
+        self.assertIn("already exists", results["messages"][0]["message"])
+
+    def test_import_product_without_values_xls(self):
+
+        prod_ids = self.env["product.product"].search([]).ids
+        attr_ids = self.env["product.attribute"].search([]).ids
+        val_ids = self.env["product.attribute.value"].search([]).ids
+
+        test_file = "product/static/xls/test_import_product_without_values.xls"
+        addons = tuple(self.env.registry.loaded_modules) + (
+            self.env.context.get("install_module"),
+        )
+        if "stock" in addons:
+            test_file = (
+                "product/static/xls/test_import_product_without_values_stock.xls"
+            )
+
+        self.import_product_xls("product.product", filepath=test_file)
+
+        products = self.env["product.product"].search([("id", "not in", prod_ids)])
+        self.assertEqual(
+            products.mapped("name"),
+            [
+                "Apple juice",
+                "Ananas juice",
+                "Orange juice",
+                "Orange juice",
+                "Lemon juice",
+                "Lemon juice",
+            ],
+        )
+        self.assertEqual(
+            products.mapped("display_name"),
+            [
+                "[JUICE-1] Apple juice",
+                "[JUICE-2] Ananas juice",
+                "[JUICE-3] Orange juice (Orange)",
+                "[JUICE-4] Orange juice (Red)",
+                "[JUICE-5] Lemon juice (Orange)",
+                "[JUICE-6] Lemon juice (Red)",
+            ],
+        )
+
+        attributes = self.env["product.attribute"].search([("id", "not in", attr_ids)])
+        self.assertEqual(attributes.mapped("name"), ["ColorTest"])
+
+        values = self.env["product.attribute.value"].search([("id", "not in", val_ids)])
+        self.assertEqual(values.mapped("name"), ["Orange", "Red"])
+        self.assertEqual(
+            values.mapped("display_name"), ["ColorTest: Orange", "ColorTest: Red"]
+        )
+
+        if "stock" in addons:
+            self.assertEqual(
+                self.env.ref("__import__.product_template_1").qty_available, 3.0
+            )
+            self.assertEqual(
+                self.env.ref("__import__.product_product_1").qty_available, 100.0
+            )
+
+    def test_import_create_product_template_xls(self):
+        results = self.import_product_xls(
+            "product.template", filepath="product/static/xls/test_import_template.xls"
+        )
+
+        self.assertFalse(results["messages"])
+
+        product = self.env["product.product"].search([("default_code", "=", "CERT20")])
+        self.assertEqual(product.list_price, 200)
+        self.assertEqual(product.standard_price, 5)

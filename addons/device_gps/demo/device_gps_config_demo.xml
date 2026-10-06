@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="demo_gps_config_standard_vehicle" model="device.profile">
+        <field name="name">Standard Vehicle Tracking</field>
+        <field
+            name="description">Default configuration for general vehicle tracking with 30-second updates</field>
+        <field name="manufacturer">Teltonika</field>
+        <field name="model">FMB920</field>
+        <field name="protocol">http</field>
+        <field name="gps_protocol">teltonika</field>
+        <field name="gps_tracking_enabled" eval="True" />
+        <field name="stationary_interval">300</field>
+        <field name="motion_threshold_speed">5.0</field>
+        <field name="motion_threshold_distance">50.0</field>
+        <field name="alert_overspeeding" eval="True" />
+        <field name="speed_limit_warning">80.0</field>
+        <field name="speed_limit_alert">100.0</field>
+        <field name="speed_limit_critical">120.0</field>
+        <field name="alert_idle" eval="True" />
+        <field name="idle_threshold">30</field>
+        <field name="alert_battery" eval="True" />
+        <field name="battery_threshold">20.0</field>
+        <field name="alert_on_disconnect" eval="True" />
+        <field name="disconnect_timeout">300</field>
+        <field name="data_retention_days">90</field>
+        <field name="reports_odometer" eval="True" />
+        <field name="odometer_correction_factor">1.0</field>
+        <field name="fuel_reports_percentage" eval="True" />
+    </record>
+
+    <record id="demo_gps_config_fleet_truck" model="device.profile">
+        <field name="name">Fleet Truck - Heavy Duty</field>
+        <field
+            name="description">Configuration for fleet trucks with longer retention and diesel fuel monitoring</field>
+        <field name="manufacturer">Queclink</field>
+        <field name="model">GV75</field>
+        <field name="protocol">http</field>
+        <field name="gps_protocol">queclink</field>
+        <field name="gps_tracking_enabled" eval="True" />
+        <field name="stationary_interval">600</field>
+        <field name="motion_threshold_speed">3.0</field>
+        <field name="motion_threshold_distance">100.0</field>
+        <field name="alert_overspeeding" eval="True" />
+        <field name="speed_limit_warning">60.0</field>
+        <field name="speed_limit_alert">75.0</field>
+        <field name="speed_limit_critical">90.0</field>
+        <field name="alert_idle" eval="True" />
+        <field name="idle_threshold">15</field>
+        <field name="alert_battery" eval="True" />
+        <field name="battery_threshold">25.0</field>
+        <field name="alert_on_disconnect" eval="True" />
+        <field name="disconnect_timeout">600</field>
+        <field name="data_retention_days">180</field>
+        <field name="reports_odometer" eval="True" />
+        <field name="odometer_correction_factor">1.0</field>
+        <field name="fuel_reports_percentage" eval="True" />
+    </record>
+
+    <record id="demo_gps_config_asset_tracking" model="device.profile">
+        <field name="name">Asset Tracking - Low Power</field>
+        <field
+            name="description">Battery-optimized configuration for assets with infrequent movement</field>
+        <field name="manufacturer">Concox</field>
+        <field name="model">AT4</field>
+        <field name="protocol">http</field>
+        <field name="gps_protocol">concox</field>
+        <field name="gps_tracking_enabled" eval="True" />
+        <field name="stationary_interval">3600</field>
+        <field name="motion_threshold_speed">1.0</field>
+        <field name="motion_threshold_distance">25.0</field>
+        <field name="alert_overspeeding" eval="False" />
+        <field name="speed_limit_warning">30.0</field>
+        <field name="speed_limit_alert">40.0</field>
+        <field name="speed_limit_critical">50.0</field>
+        <field name="alert_idle" eval="False" />
+        <field name="idle_threshold">60</field>
+        <field name="alert_battery" eval="True" />
+        <field name="battery_threshold">30.0</field>
+        <field name="alert_on_disconnect" eval="True" />
+        <field name="disconnect_timeout">1800</field>
+        <field name="data_retention_days">60</field>
+        <field name="reports_odometer" eval="False" />
+        <field name="odometer_correction_factor">1.0</field>
+        <field name="fuel_reports_percentage" eval="False" />
+    </record>
+
+</odoo>

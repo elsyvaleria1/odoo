@@ -1,0 +1,27 @@
+from odoo import api, models
+
+
+class ProductPricelistItem(models.Model):
+    _inherit = "product.pricelist.item"
+
+    @api.onchange("applied_on", "product_id", "product_tmpl_id", "min_quantity")
+    def _onchange_event_sale_warning(self) -> dict | None:
+        if self.min_quantity > 0:
+            msg = ""
+            if self.applied_on in ("3_global", "2_product_category"):
+                msg = self.env._(
+                    "A pricelist item with a positive min. quantity will not be applied to the event tickets products."
+                )
+            elif (
+                self.applied_on == "1_product"
+                and self.product_tmpl_id.service_tracking == "event"
+            ) or (
+                self.applied_on == "0_product_variant"
+                and self.product_id.service_tracking == "event"
+            ):
+                msg = self.env._(
+                    "A pricelist item with a positive min. quantity cannot be applied to this event tickets product."
+                )
+            if msg:
+                return {"warning": {"title": self.env._("Warning"), "message": msg}}
+        return None

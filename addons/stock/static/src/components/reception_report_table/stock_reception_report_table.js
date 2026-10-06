@@ -1,0 +1,90 @@
+/** @odoo-module native */
+import { Component, t, useProps } from "@odoo/owl";
+import { useOperationGuard } from "@stock/utils/use_operation_guard";
+import { useEventBus, useService } from "@web/core/utils/hooks";
+
+import { ReceptionReportLine } from "../reception_report_line/stock_reception_report_line.js";
+import {
+    assignMoves,
+    collectAssignable,
+    collectAssignedLabels,
+    isLineAssignable,
+    prepareLabelAction,
+} from "../reception_report_utils.js";
+
+export class ReceptionReportTable extends Component {
+    static template = "stock.ReceptionReportTable";
+    static components = {
+        ReceptionReportLine,
+    };
+    static props = {
+        index: t.string(),
+        scheduledDate: t.or([t.string(), t.boolean()]).optional(),
+        lines: t.array(),
+        source: t.array(),
+        labelReport: t.object(),
+        showUom: t.boolean(),
+        precision: t.number(),
+        busyState: t.object().optional(),
+    };
+    props = useProps(this.constructor.props);
+
+    setup() {
+        this.bus = useEventBus();
+        this.actionService = useService("action");
+        this.ormService = useService("orm");
+        this.opGuard = useOperationGuard(this.props.busyState);
+        this.onClickAssignAll = this.opGuard.guard(this.onClickAssignAll.bind(this));
+    }
+
+    async onClickAssignAll() {
+        const { moveIds, quantities, inIds } = collectAssignable(this.props.lines);
+        if (!moveIds.length) {
+            return;
+        }
+        await assignMoves(this.ormService, moveIds, quantities, inIds);
+        this.bus.trigger("update-assign-state", {
+            isAssigned: true,
+            tableIndex: this.props.index,
+        });
+    }
+
+    async onClickLink(resModel, resId, viewType) {
+        return this.actionService.doAction({
+            type: "ir.actions.act_window",
+            res_model: resModel,
+            res_id: resId,
+            views: [[false, viewType]],
+            target: "current",
+        });
+    }
+
+    async onClickPrintLabels() {
+        const { docids, quantities } = collectAssignedLabels(this.props.lines);
+        const action = prepareLabelAction(this.props.labelReport, docids, quantities);
+        if (action) {
+            return this.actionService.doAction(action);
+        }
+    }
+
+    get hasMovesIn() {
+        return this.props.lines.some(
+            (line) => line.move_ins && line.move_ins.length > 0,
+        );
+    }
+
+    get hasAssignAllButton() {
+        return this.props.lines.some((line) => line.is_qty_assignable);
+    }
+
+    get isAssignAllDisabled() {
+        return (
+            this.opGuard.busy ||
+            this.props.lines.every((line) => !isLineAssignable(line))
+        );
+    }
+
+    get isPrintLabelDisabled() {
+        return this.props.lines.every((line) => !line.is_assigned);
+    }
+}

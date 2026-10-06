@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="access_ir_access_explain_others" model="ir.access">
+        <field
+            name="name">wizard.base.explain.access: the access administrators explain someone else and list who can</field>
+        <field name="model_id" ref="model_wizard_base_explain_access" />
+        <field name="group_id" ref="group_erp_manager" />
+        <field name="kind">permission</field>
+        <field name="anchor">creator</field>
+        <field name="reach">own</field>
+        <field name="verbs">explain_others</field>
+    </record>
+
+    <record id="access_res_users_eligibility_activate" model="ir.access">
+        <field
+            name="name">res.users.eligibility: a person activates and stops what they are eligible for</field>
+        <field name="model_id" ref="model_res_users_eligibility" />
+        <field name="group_id" ref="group_user" />
+        <field name="kind">permission</field>
+        <field name="reach">own</field>
+        <field name="verbs">activate</field>
+    </record>
+
+    <record id="access_res_users_grant_privilege_activate" model="ir.access">
+        <field
+            name="name">res.users.grant: an activation grants its person the group for its hours, and ends it</field>
+        <field name="model_id" ref="model_res_users_grant" />
+        <field name="group_id" ref="privilege_activate_eligibility" />
+        <field name="kind">permission</field>
+        <field name="operation">cru</field>
+        <field name="domain">[('cause', 'in', ('activation', 'break_glass'))]</field>
+        <field name="reach">own</field>
+    </record>
+
+    <record id="access_res_users_grant_privilege_end_activation" model="ir.access">
+        <field
+            name="name">res.users.grant: revoking an eligibility ends the activation it has running</field>
+        <field name="model_id" ref="model_res_users_grant" />
+        <field name="group_id" ref="privilege_end_activation" />
+        <field name="kind">permission</field>
+        <field name="operation">ru</field>
+        <field name="domain">[('cause', 'in', ('activation', 'break_glass'))]</field>
+        <field name="reach">all</field>
+    </record>
+
+    <record id="access_access_review_item_decide" model="ir.access">
+        <field
+            name="name">access.review.item: a reviewer certifies or revokes the items they review</field>
+        <field name="model_id" ref="model_access_review_item" />
+        <field name="group_id" ref="group_user" />
+        <field name="kind">permission</field>
+        <field name="reach">own</field>
+        <field name="verbs">decide</field>
+    </record>
+
+    <record id="access_res_users_grant_privilege_apply_review" model="ir.access">
+        <field
+            name="name">res.users.grant: a review revokes what its reviewers decided to revoke</field>
+        <field name="model_id" ref="model_res_users_grant" />
+        <field name="group_id" ref="privilege_apply_review" />
+        <field name="kind">permission</field>
+        <field name="operation">ru</field>
+        <field name="anchor">review</field>
+        <field name="reach">own</field>
+    </record>
+
+    <record id="access_res_users_eligibility_privilege_apply_review" model="ir.access">
+        <field
+            name="name">res.users.eligibility: a review revokes what its reviewers decided to revoke</field>
+        <field name="model_id" ref="model_res_users_eligibility" />
+        <field name="group_id" ref="privilege_apply_review" />
+        <field name="kind">permission</field>
+        <field name="operation">ru</field>
+        <field name="anchor">review</field>
+        <field name="reach">own</field>
+    </record>
+
+    <record id="access_access_link_privilege_apply_review" model="ir.access">
+        <field
+            name="name">access.link: a review revokes what its reviewers decided to revoke</field>
+        <field name="model_id" ref="model_access_link" />
+        <field name="group_id" ref="privilege_apply_review" />
+        <field name="kind">permission</field>
+        <field name="operation">ru</field>
+        <field name="anchor">review</field>
+        <field name="reach">own</field>
+    </record>
+
+    <record id="access_ir_access_exception_privilege_apply_review" model="ir.access">
+        <field
+            name="name">ir.access.exception: a review revokes what its reviewers decided to revoke</field>
+        <field name="model_id" ref="model_ir_access_exception" />
+        <field name="group_id" ref="privilege_apply_review" />
+        <field name="kind">permission</field>
+        <field name="operation">ru</field>
+        <field name="anchor">review</field>
+        <field name="reach">own</field>
+    </record>
+
+    <record id="access_ir_access_changeset_activate" model="ir.access">
+        <field
+            name="name">ir.access.changeset: the access administrators activate a change set</field>
+        <field name="model_id" ref="model_ir_access_changeset" />
+        <field name="group_id" ref="group_erp_manager" />
+        <field name="kind">permission</field>
+        <field name="reach">all</field>
+        <field name="verbs">activate</field>
+    </record>
+
+    <record id="access_ir_access_changeset_activate_own" model="ir.access">
+        <field
+            name="name">ir.access.changeset: an author activates the change set they staged, whatever they hold by then</field>
+        <field name="model_id" ref="model_ir_access_changeset" />
+        <field name="group_id" ref="group_user" />
+        <field name="kind">permission</field>
+        <field name="reach">own</field>
+        <field name="verbs">activate</field>
+    </record>
+
+</odoo>

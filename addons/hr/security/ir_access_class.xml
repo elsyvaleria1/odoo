@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="access_class_employee_private" model="ir.access.class">
+        <field name="name">hr.employee_private</field>
+        <field
+            name="description">An employee's party fields that are not public, read and written by HR officers.</field>
+    </record>
+
+    <record id="access_employee_private_officer" model="ir.access">
+        <field name="name">hr.employee_private: HR officers</field>
+        <field name="group_id" ref="hr.group_hr_user" />
+        <field name="kind">permission</field>
+        <field name="operation">ru</field>
+        <field name="class_id" ref="access_class_employee_private" />
+    </record>
+
+    <record id="access_class_private" model="ir.access.class">
+        <field name="name">hr.private</field>
+        <field
+            name="description">An employee's private data: identity documents, private address, family, bank, personal numbers.</field>
+    </record>
+
+    <record id="access_private_officer" model="ir.access">
+        <field name="name">hr.private: HR officers</field>
+        <field name="group_id" ref="hr.group_hr_user" />
+        <field name="kind">permission</field>
+        <field name="operation">ru</field>
+        <field name="class_id" ref="access_class_private" />
+    </record>
+
+    <record id="access_class_compensation" model="ir.access.class">
+        <field name="name">hr.compensation</field>
+        <field
+            name="description">An employee's pay and contract terms. A field of the class keeps its own groups too, so it is read by those and no wider.</field>
+    </record>
+
+    <record id="access_compensation_manager" model="ir.access">
+        <field name="name">hr.compensation: HR administrators</field>
+        <field name="group_id" ref="hr.group_hr_manager" />
+        <field name="kind">permission</field>
+        <field name="operation">ru</field>
+        <field name="class_id" ref="access_class_compensation" />
+    </record>
+
+</odoo>

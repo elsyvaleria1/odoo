@@ -1,0 +1,933 @@
+import base64
+import pathlib
+from datetime import UTC, datetime, timedelta
+from http import HTTPStatus
+from unittest.mock import patch
+from urllib.parse import urlsplit
+
+from freezegun import freeze_time
+from werkzeug.http import http_date
+
+from odoo import api, http
+from odoo.exceptions import UserError
+from odoo.tests import RecordCapturer, new_test_user, tagged
+from odoo.tools import config, file_open
+from odoo.tools.image import image_process
+from odoo.tools.misc import submap
+
+from .test_common import TestHttpBase
+
+
+class TestHttpStaticCommon(TestHttpBase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.classPatch(config, "options", {**config.options, "x_sendfile": False})
+
+        with file_open("test_http/static/src/img/gizeh.png", "rb") as file:
+            cls.gizeh_data = file.read()
+
+        with file_open("web/static/img/placeholder.png", "rb") as file:
+            cls.placeholder_data = file.read()
+
+    def assertDownload(
+        self,
+        url,
+        headers,
+        assert_status_code,
+        assert_headers,
+        assert_content=None,
+    ):
+        res = self.db_url_open(url, headers=headers)
+        res.raise_for_status()
+        self.assertEqual(res.status_code, assert_status_code)
+        self.assertEqual(submap(res.headers, assert_headers), assert_headers)
+        if assert_content:
+            self.assertEqual(res.content, assert_content)
+        return res
+
+    def assertXSendfileWithheld(self, res, absolute_path):
+        self.assertNotIn(
+            "X-Sendfile",
+            res.headers,
+            "the absolute filestore path is being disclosed to the client",
+        )
+        self.assertNotIn(
+            absolute_path,
+            "\n".join(f"{k}: {v}" for k, v in res.headers.items()),
+            "the absolute filestore path leaked through another header",
+        )
+
+    def assertDownloadGizeh(self, url, x_sendfile=None, assert_filename="gizeh.png"):
+        headers = {
+            "Content-Length": "814",
+            "Content-Type": "image/png",
+            "Content-Disposition": f"inline; filename={assert_filename}",
+        }
+
+        if x_sendfile:
+            key = pathlib.Path(x_sendfile).relative_to(
+                config.filestore(self.env.cr.dbname)
+            )
+            headers["X-Accel-Redirect"] = (
+                f"/web/filestore/{self.cr.dbname}/{key.as_posix()}"
+            )
+            headers["Content-Length"] = "0"
+
+        res = self.assertDownload(
+            url, {}, 200, headers, b"" if x_sendfile else self.gizeh_data
+        )
+        if x_sendfile:
+            self.assertXSendfileWithheld(res, x_sendfile)
+        return res
+
+    def _inline_checksumless_attachment(self, vals):
+        attachment = self.env["ir.attachment"].create(vals)
+        attachment.flush_recordset()
+        self.env.cr.execute(
+            """UPDATE ir_attachment
+                  SET db_datas = %s, store_fname = NULL, checksum = NULL
+                WHERE id = %s""",
+            [attachment.raw, attachment.id],
+        )
+        attachment.invalidate_recordset()
+        self.assertFalse(attachment.checksum)
+        self.assertFalse(attachment.store_fname)
+        self.assertTrue(attachment.db_datas)
+        self.assertEqual(attachment._to_http_stream().type, "data")
+        return attachment
+
+    def assertDownloadPlaceholder(self, url):
+        headers = {
+            "Content-Length": "6078",
+            "Content-Type": "image/png",
+            "Content-Disposition": "inline; filename=placeholder.png",
+        }
+        return self.assertDownload(url, {}, 200, headers, self.placeholder_data)
+
+
+@tagged("post_install", "-at_install")
+class TestHttpStatic(TestHttpStaticCommon):
+    def setUp(self):
+        super().setUp()
+        self.authenticate("demo", "demo")
+
+    def test_static00_static(self):
+        with self.subTest(x_sendfile=False):
+            res = self.assertDownloadGizeh("/test_http/static/src/img/gizeh.png")
+            self.assertCacheControl(res, "public, max-age=604800")
+
+        with (
+            self.subTest(x_sendfile=True),
+            patch.object(config, "options", {**config.options, "x_sendfile": True}),
+        ):
+            res = self.assertDownloadGizeh(
+                "/test_http/static/src/img/gizeh.png", x_sendfile=False
+            )
+            self.assertCacheControl(res, "public, max-age=604800")
+
+    def test_static01_debug_assets(self):
+        session = self.authenticate(None, None)
+        session.debug = "assets"
+        http.root.session_store.save(session)
+
+        res = self.assertDownloadGizeh("/test_http/static/src/img/gizeh.png")
+        self.assertCacheControl(res, "no-cache, max-age=0")
+
+    def test_static01_module_sources_revalidate(self):
+        # the per-file ESM fallback loads these by bare URL: a stale cached
+        # module would mix two deploys on one page
+        res = self.url_open("/web/static/src/core/registry.js")
+        res.raise_for_status()
+        self.assertCacheControl(res, "no-cache, max-age=0")
+        self.assertTrue(res.headers.get("ETag") or res.headers.get("Last-Modified"))
+
+    def test_static02_not_found(self):
+        session = self.authenticate(None, None)
+        session.db = None
+        http.root.session_store.save(session)
+        res = self.nodb_url_open("/test_http/static/i-dont-exist")
+        self.assertEqual(res.status_code, 404)
+
+    def test_static02b_traversal_out_of_static_dir_is_404(self):
+        root = http.root
+        for resource in (
+            "../__manifest__.py",
+            "../controllers/__init__.py",
+            "../../web/__manifest__.py",
+        ):
+            with self.subTest(resource=resource):
+                self.assertIsNone(
+                    root.get_static_file_path(f"/test_http/static/{resource}"),
+                    f"{resource!r} escaped the static/ directory",
+                )
+
+    def test_static03_attachment_fallback(self):
+        attachment = self.env.ref("test_http.gizeh_png")
+
+        with self.subTest(x_sendfile=False):
+            self.assertDownloadGizeh(attachment.url)
+
+        with (
+            self.subTest(x_sendfile=True),
+            patch.object(config, "options", {**config.options, "x_sendfile": True}),
+        ):
+            self.assertDownloadGizeh(
+                attachment.url,
+                x_sendfile=str(
+                    pathlib.Path(
+                        config.filestore(self.env.cr.dbname), attachment.store_fname
+                    )
+                ),
+            )
+
+    def test_static04_web_content(self):
+        attachment = self.env.ref("test_http.gizeh_png")
+
+        with self.subTest(x_sendfile=False):
+            self.assertDownloadGizeh("/web/content/test_http.gizeh_png")
+
+        with (
+            self.subTest(x_sendfile=True),
+            patch.object(config, "options", {**config.options, "x_sendfile": True}),
+        ):
+            self.assertDownloadGizeh(
+                "/web/content/test_http.gizeh_png",
+                x_sendfile=str(
+                    pathlib.Path(
+                        config.filestore(self.env.cr.dbname), attachment.store_fname
+                    )
+                ),
+            )
+
+    def test_static05_web_image(self):
+        attachment = self.env.ref("test_http.gizeh_png")
+
+        with self.subTest(x_sendfile=False):
+            self.assertDownloadGizeh("/web/image/test_http.gizeh_png")
+
+        with (
+            self.subTest(x_sendfile=True),
+            patch.object(config, "options", {**config.options, "x_sendfile": True}),
+        ):
+            self.assertDownloadGizeh(
+                "/web/image/test_http.gizeh_png",
+                x_sendfile=str(
+                    pathlib.Path(
+                        config.filestore(self.env.cr.dbname), attachment.store_fname
+                    )
+                ),
+            )
+
+    def test_static06_attachment_internal_url(self):
+        with self.subTest(x_sendfile=False):
+            self.assertDownloadGizeh("/web/image/test_http.gizeh_url")
+
+        with (
+            self.subTest(x_sendfile=True),
+            patch.object(config, "options", {**config.options, "x_sendfile": True}),
+        ):
+            self.assertDownloadGizeh("/web/image/test_http.gizeh_url", x_sendfile=False)
+
+    def test_static07_attachment_external_url(self):
+        res = self.db_url_open("/web/content/test_http.rickroll")
+        res.raise_for_status()
+        self.assertEqual(
+            res.status_code, 302, "an editable url is no permanent redirect"
+        )
+        self.assertEqual(
+            res.headers.get("Cache-Control"), f"max-age={http.STATIC_CACHE}"
+        )
+        self.assertURLEqual(
+            res.headers.get("Location"),
+            "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+        )
+
+    def test_static07_attachment_url_with_a_foreign_scheme_is_not_followed(self):
+        attachment = self.env.ref("test_http.rickroll").sudo()
+        attachment.url = "javascript:alert(1)"
+        res = self.db_url_open(f"/web/content/{attachment.id}")
+        self.assertEqual(res.status_code, 404)
+
+    def test_static08_binary_field(self):
+        earth = self.env.ref("test_http.earth")
+        attachment = self.env["ir.attachment"].search(
+            [
+                ("res_model", "=", "test_http.stargate"),
+                ("res_id", "=", earth.id),
+                ("res_field", "=", "glyph_attach"),
+            ],
+            limit=1,
+        )
+        attachment_path = str(
+            pathlib.Path(config.filestore(self.env.cr.dbname), attachment.store_fname)
+        )
+
+        for field, is_attachment in (
+            ("glyph_attach", True),
+            ("glyph_inline", False),
+            ("glyph_related", True),
+            ("glyph_compute", False),
+        ):
+            with self.subTest(x_sendfile=False):
+                self.assertDownloadGizeh(
+                    f"/web/content/test_http.earth?field={field}",
+                    assert_filename="Earth.png",
+                )
+
+            if is_attachment:
+                with (
+                    self.subTest(x_sendfile=True),
+                    patch.object(
+                        config,
+                        "options",
+                        {**config.options, "x_sendfile": True},
+                    ),
+                ):
+                    self.assertDownloadGizeh(
+                        f"/web/content/test_http.earth?field={field}",
+                        x_sendfile=is_attachment and attachment_path,
+                        assert_filename="Earth.png",
+                    )
+
+    def test_static10_filename(self):
+        with self.subTest("record name"):
+            self.assertDownloadGizeh(
+                "/web/content/test_http.gizeh_png",
+                assert_filename="gizeh.png",
+            )
+
+        with self.subTest("forced name"):
+            self.assertDownloadGizeh(
+                "/web/content/test_http.gizeh_png?filename=pyramid.png",
+                assert_filename="pyramid.png",
+            )
+
+        with self.subTest("filename field"):
+            self.assertDownloadGizeh(
+                "/web/content/test_http.earth?field=glyph_inline&filename_field=address",
+                assert_filename="sq5Abt.png",
+            )
+
+    def test_static11_bad_filenames(self):
+        with self.subTest("missing record name"):
+            gizeh = self.env.ref("test_http.gizeh_png")
+            realname = gizeh.name
+            gizeh.name = ""
+            try:
+                self.assertDownloadGizeh(
+                    "/web/content/test_http.gizeh_png",
+                    assert_filename=f"ir_attachment-{gizeh.id}-raw.png",
+                )
+            finally:
+                gizeh.name = realname
+
+        with self.subTest("missing file extension"):
+            self.assertDownloadGizeh(
+                "/web/content/test_http.gizeh_png?filename=pyramid",
+                assert_filename="pyramid.png",
+            )
+
+        with self.subTest("wrong file extension"):
+            res = self.assertDownloadGizeh(
+                "/web/content/test_http.gizeh_png?filename=pyramid.jpg",
+                assert_filename="pyramid.jpg",
+            )
+            self.assertEqual(res.headers["Content-Type"], "image/png")
+
+        with self.subTest("dotted name"):
+            res = self.assertDownloadGizeh(
+                "/web/content/test_http.gizeh_png?filename=pyramid.of.gizeh",
+                assert_filename="pyramid.of.gizeh.png",
+            )
+
+    def test_static12_not_found_to_placeholder(self):
+        with self.subTest(x_sendfile=False):
+            self.assertDownloadPlaceholder("/web/image/idontexist")
+
+        with (
+            self.subTest(x_sendfile=True),
+            patch.object(config, "options", {**config.options, "x_sendfile": True}),
+        ):
+            self.assertDownloadPlaceholder("/web/image/idontexist")
+
+    def test_static13_empty_to_placeholder(self):
+        att = self.env["ir.attachment"].create(
+            [
+                {
+                    "name": "empty.png",
+                    "type": "binary",
+                    "raw": b"",
+                    "public": True,
+                }
+            ]
+        )
+
+        with self.subTest(x_sendfile=False):
+            self.assertDownloadPlaceholder(f"/web/image/{att.id}")
+
+        with (
+            self.subTest(x_sendfile=True),
+            patch.object(config, "options", {**config.options, "x_sendfile": True}),
+        ):
+            self.assertDownloadPlaceholder(f"/web/image/{att.id}")
+
+    def test_static14_download_not_found(self):
+        res = self.url_open("/web/image/idontexist?download=True")
+        self.assertEqual(res.status_code, 404)
+
+    def test_static15_range(self):
+        self.assertDownload(
+            url="/web/content/test_http.gizeh_png",
+            headers={"Range": "bytes=100-199"},
+            assert_status_code=206,
+            assert_headers={
+                "Content-Length": "100",
+                "Content-Range": "bytes 100-199/814",
+                "Content-Type": "image/png",
+                "Content-Disposition": "inline; filename=gizeh.png",
+            },
+            assert_content=self.gizeh_data[100:200],
+        )
+
+    def test_static16_public_access_rights(self):
+        self.authenticate(None, None)
+        user_template = self.env.ref("base.template_portal_user_id")
+
+        with self.subTest("model access rights"):
+            res = self.url_open(f"/web/content/res.users/{user_template.id}/image_128")
+            self.assertEqual(res.status_code, 404)
+
+        with self.subTest("attachment + field access rights"):
+            res = self.url_open("/web/content/test_http.pegasus?field=picture")
+            self.assertEqual(res.status_code, 404)
+
+        with self.subTest("related attachment + field access rights"):
+            res = self.url_open("/web/content/test_http.earth?field=galaxy_picture")
+            self.assertEqual(res.status_code, 404)
+
+    def test_static17_content_missing_checksum(self):
+        att = self._inline_checksumless_attachment(
+            {"name": "testhttp.txt", "raw": b"some data", "public": True}
+        )
+        self.assertDownload(
+            url=f"/web/content/{att.id}",
+            headers={},
+            assert_status_code=200,
+            assert_headers={
+                "Content-Length": "9",
+                "Content-Type": "text/plain; charset=utf-8",
+                "Content-Disposition": "inline; filename=testhttp.txt",
+            },
+            assert_content=b"some data",
+        )
+
+    def test_static18_image_missing_checksum(self):
+        with file_open("test_http/static/src/img/gizeh.png", "rb") as file:
+            att = self._inline_checksumless_attachment(
+                {
+                    "name": "gizeh.png",
+                    "raw": file.read(),
+                    "mimetype": "image/png",
+                    "public": True,
+                }
+            )
+        self.assertDownloadGizeh(f"/web/image/{att.id}")
+
+    def test_static19_fallback_redirection_loop(self):
+        bad_path = "/test_http/static/idontexist.png"
+        self.assertRaises(FileNotFoundError, file_open, bad_path[1:])
+
+        self.env["ir.attachment"].create(
+            {
+                "name": "idontexist.png",
+                "mimetype": "image/png",
+                "url": bad_path,
+                "public": True,
+            }
+        )
+
+        res = self.url_open(bad_path, allow_redirects=False)
+        location = urlsplit(res.headers.get("Location", ""))
+        self.assertNotEqual(location.path, bad_path, "loop detected")
+        self.assertEqual(res.status_code, 404)
+
+    def test_static20_web_assets(self):
+        attachment = self.env["ir.attachment"].search(
+            [("url", "like", "%/web.assets_web.min.js")], limit=1
+        )
+        x_sendfile = str(
+            pathlib.Path(config.filestore(self.env.cr.dbname), attachment.store_fname)
+        )
+        x_accel_redirect = (
+            f"/web/filestore/{self.env.cr.dbname}/{attachment.store_fname}"
+        )
+
+        with self.subTest(x_sendfile=False):
+            self.assertDownload(
+                attachment.url,
+                headers={},
+                assert_status_code=200,
+                assert_headers={
+                    "Content-Length": str(attachment.file_size),
+                    "Content-Type": "text/javascript; charset=utf-8",
+                    "Content-Disposition": "inline; filename=web.assets_web.min.js",
+                },
+                assert_content=attachment.raw,
+            )
+
+        with (
+            self.subTest(x_sendfile=True),
+            patch.object(config, "options", {**config.options, "x_sendfile": True}),
+        ):
+            res = self.assertDownload(
+                attachment.url,
+                headers={},
+                assert_status_code=200,
+                assert_headers={
+                    "X-Accel-Redirect": x_accel_redirect,
+                    "Content-Length": "0",
+                    "Content-Type": "text/javascript; charset=utf-8",
+                    "Content-Disposition": "inline; filename=web.assets_web.min.js",
+                },
+            )
+            self.assertXSendfileWithheld(res, x_sendfile)
+
+    def test_static21_download_false(self):
+        self.assertDownloadGizeh("/web/content/test_http.gizeh_png?download=0")
+        self.assertDownloadGizeh("/web/image/test_http.gizeh_png?download=0")
+
+    def test_static21_web_assets(self):
+        attachment = self.env["ir.attachment"].search(
+            [("url", "like", "%/web.assets_web.min.js")], limit=1
+        )
+        x_sendfile = str(
+            pathlib.Path(config.filestore(self.env.cr.dbname), attachment.store_fname)
+        )
+        x_accel_redirect = (
+            f"/web/filestore/{self.env.cr.dbname}/{attachment.store_fname}"
+        )
+
+        with self.subTest(x_sendfile=False):
+            self.assertDownload(
+                attachment.url,
+                headers={},
+                assert_status_code=200,
+                assert_headers={
+                    "Content-Length": str(attachment.file_size),
+                    "Content-Type": "text/javascript; charset=utf-8",
+                    "Content-Disposition": "inline; filename=web.assets_web.min.js",
+                },
+                assert_content=attachment.raw,
+            )
+
+        with (
+            self.subTest(x_sendfile=True),
+            patch.object(config, "options", {**config.options, "x_sendfile": True}),
+        ):
+            res = self.assertDownload(
+                attachment.url,
+                headers={},
+                assert_status_code=200,
+                assert_headers={
+                    "X-Accel-Redirect": x_accel_redirect,
+                    "Content-Length": "0",
+                    "Content-Type": "text/javascript; charset=utf-8",
+                    "Content-Disposition": "inline; filename=web.assets_web.min.js",
+                },
+            )
+            self.assertXSendfileWithheld(res, x_sendfile)
+
+    def test_static22_image_field_csp(self):
+        test_user = new_test_user(self.env, "test user")
+        env = self.env(user=test_user)
+        self.authenticate("test user", "test user")
+        earth = env.ref("test_http.earth")
+
+        data = base64.b64encode(b"<html><body><div>Hello World</div></body></html>")
+        for field in ("glyph_attach", "glyph_inline"):
+            with self.subTest(field=field), self.assertRaises(UserError):
+                earth[field] = data
+                earth.flush_recordset()
+        # what an older version stored, or a direct import, is still served
+        # inert: the bytes are planted beneath the image validation
+        for field in ("glyph_attach", "glyph_related"):
+            self.env["ir.attachment"].sudo().search(
+                [
+                    ("res_model", "=", "test_http.stargate"),
+                    ("res_id", "=", earth.id),
+                    ("res_field", "=", field),
+                ]
+            ).unlink()
+            self.env["ir.attachment"].sudo().create(
+                {
+                    "name": field,
+                    "res_model": "test_http.stargate",
+                    "res_id": earth.id,
+                    "res_field": field,
+                    "datas": data,
+                    "mimetype": "application/octet-stream",
+                }
+            )
+        self.env.cr.execute(
+            "UPDATE test_http_stargate SET glyph_inline = %s WHERE id = %s",
+            [data, earth.id],
+        )
+        earth.invalidate_recordset()
+        for field in (
+            "glyph_attach",
+            "glyph_inline",
+            "glyph_related",
+            "glyph_compute",
+        ):
+            res = self.url_open(f"/web/image/test_http.stargate/{earth.id}/{field}")
+            res.raise_for_status()
+            self.assertEqual(res.headers["Content-Type"], "application/octet-stream")
+            self.assertEqual(
+                res.headers["Content-Security-Policy"], "default-src 'none'"
+            )
+
+
+@tagged("post_install", "-at_install")
+class TestHttpStaticLogo(TestHttpStaticCommon):
+    @staticmethod
+    def img_data_to_web_data(img_base_64):
+        return image_process(img_base_64, size=(180, 0))
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        ResCompany = cls.env["res.company"]
+        cls.default_logo_data = cls.img_data_to_web_data(
+            base64.b64decode(ResCompany._default_logo())
+        )
+        cls.gizeh_data_b64 = base64.encodebytes(cls.gizeh_data)
+        cls.logo_gizeh_data = cls.img_data_to_web_data(cls.gizeh_data)
+        with file_open("web/static/img/nologo.png", "rb") as file:
+            cls.logo_no_logo_data = file.read()
+        cls.headers_default_logo = {
+            "Content-Length": f"{len(cls.default_logo_data)}",
+            "Content-Type": "image/png",
+            "Content-Disposition": "inline; filename=logo.png",
+        }
+        cls.headers_logo_gizeh = {
+            "Content-Length": f"{len(cls.logo_gizeh_data)}",
+            "Content-Type": "image/png",
+            "Content-Disposition": "inline; filename=logo.png",
+        }
+        cls.headers_logo_no_logo = {
+            "Content-Length": f"{len(cls.logo_no_logo_data)}",
+            "Content-Type": "image/png",
+            "Content-Disposition": "inline; filename=nologo.png",
+        }
+        super_user = cls.env["res.users"].browse([api.SUPERUSER_ID])
+        companies = ResCompany.browse([super_user.company_id.id]) | ResCompany.create(
+            {
+                "name": "Company 2",
+                "email": "company.2@test.example.com",
+                "country_id": cls.env.ref("base.fr").id,
+            }
+        )
+        cls.company_of_superuser, cls.company2 = companies
+        cls.password = "Pl1bhD@2!kXZ"
+        cls.user_of_company_of_superuser, cls.user_company2 = [
+            new_test_user(
+                cls.env,
+                f"user_{company.id}",
+                company_id=company.id,
+                password=cls.password,
+            )
+            for company in companies
+        ]
+
+    def assertDownloadLogo(
+        self, assert_headers, assert_content, user=None, company=None
+    ):
+        url_suffix = f"?company={company.id}" if company else ""
+        if user:
+            self.authenticate(user.login, self.password)
+        else:
+            self.authenticate(None, None)
+        self.assertDownload(
+            f"/logo.png{url_suffix}",
+            {},
+            assert_status_code=200,
+            assert_headers=assert_headers,
+            assert_content=assert_content,
+        )
+
+    def assertDownloadLogoDefault(self, user=None, company=None):
+        self.assertDownloadLogo(
+            self.headers_default_logo, self.default_logo_data, user, company
+        )
+
+    def assertDownloadLogoGizeh(self, user=None, company=None):
+        self.assertDownloadLogo(
+            self.headers_logo_gizeh, self.logo_gizeh_data, user, company
+        )
+
+    def assertDownloadLogoNoLogo(self, user=None, company=None):
+        self.assertDownloadLogo(
+            self.headers_logo_no_logo, self.logo_no_logo_data, user, company
+        )
+
+    def test_default_logo(self):
+        self.assertDownloadLogoDefault()
+        self.assertDownloadLogoDefault(company=self.company_of_superuser)
+        self.assertDownloadLogoDefault(user=self.user_of_company_of_superuser)
+        self.assertDownloadLogoDefault(company=self.company2)
+        self.assertDownloadLogoDefault(user=self.user_company2)
+
+    def test_set_logo_company_of_superuser(self):
+        self.company_of_superuser.image_1920 = self.gizeh_data_b64
+        self.assertDownloadLogoGizeh()
+        self.assertDownloadLogoGizeh(company=self.company_of_superuser)
+        self.assertDownloadLogoGizeh(user=self.user_of_company_of_superuser)
+        self.assertDownloadLogoDefault(company=self.company2)
+        self.assertDownloadLogoDefault(user=self.user_company2)
+
+    def test_set_logo_other_company(self):
+        self.company2.image_1920 = self.gizeh_data_b64
+        self.assertDownloadLogoDefault()
+        self.assertDownloadLogoGizeh(company=self.company2)
+        self.assertDownloadLogoGizeh(user=self.user_company2)
+        self.assertDownloadLogoDefault(company=self.company_of_superuser)
+        self.assertDownloadLogoDefault(user=self.user_of_company_of_superuser)
+
+    def test_set_no_logo_company_of_superuser(self):
+        self.company_of_superuser.image_1920 = None
+        self.assertDownloadLogoNoLogo()
+        self.assertDownloadLogoNoLogo(company=self.company_of_superuser)
+        self.assertDownloadLogoNoLogo(user=self.user_of_company_of_superuser)
+        self.assertDownloadLogoDefault(company=self.company2)
+        self.assertDownloadLogoDefault(user=self.user_company2)
+
+    def test_set_no_logo_other_company(self):
+        self.company2.image_1920 = None
+        self.assertDownloadLogoDefault()
+        self.assertDownloadLogoNoLogo(company=self.company2)
+        self.assertDownloadLogoNoLogo(user=self.user_company2)
+        self.assertDownloadLogoDefault(company=self.company_of_superuser)
+        self.assertDownloadLogoDefault(user=self.user_of_company_of_superuser)
+
+    def test_company_param_win_on_current_user(self):
+        self.company_of_superuser.image_1920 = self.gizeh_data_b64
+        self.assertDownloadLogoGizeh(
+            company=self.company_of_superuser, user=self.user_company2
+        )
+        self.assertDownloadLogoDefault(
+            company=self.company2, user=self.user_of_company_of_superuser
+        )
+
+
+@tagged("post_install", "-at_install")
+class TestHttpStaticCache(TestHttpStaticCommon):
+    @freeze_time(datetime.now(UTC))
+    def test_static_cache0_standard(self):
+        one_week_away = int((datetime.now(UTC) + timedelta(weeks=1)).timestamp())
+
+        res1 = self.nodb_url_open("/test_http/static/src/img/gizeh.png")
+        res1.raise_for_status()
+        self.assertEqual(res1.status_code, 200)
+        self.assertCacheControl(res1, "public, max-age=604800")
+        expires = self.parse_http_expires(res1.headers["Expires"]).timestamp()
+        self.assertIn(expires, range(one_week_away, one_week_away + 60))
+        self.assertIn("ETag", res1.headers)
+
+        res_etag = self.nodb_url_open(
+            "/test_http/static/src/img/gizeh.png",
+            headers={"If-None-Match": res1.headers["ETag"]},
+        )
+        res_etag.raise_for_status()
+        self.assertEqual(
+            res_etag.status_code, 304, "We should not download the file again."
+        )
+
+        res_last_modified = self.nodb_url_open(
+            "/test_http/static/src/img/gizeh.png",
+            headers={
+                "If-Modified-Since": http_date(datetime.now(UTC)),
+            },
+        )
+        res_last_modified.raise_for_status()
+        self.assertEqual(
+            res_last_modified.status_code,
+            304,
+            "We should not download the file again.",
+        )
+
+    @freeze_time(datetime.now(UTC))
+    def test_static_cache1_unique(self):
+        now = datetime.now(UTC)
+        one_year_away = int((now + timedelta(days=365)).timestamp())
+
+        res1 = self.assertDownloadGizeh("/web/image/test_http.gizeh_png?unique=1")
+        self.assertCacheControl(res1, "public, max-age=31536000, immutable")
+        expires = self.parse_http_expires(res1.headers["Expires"]).timestamp()
+        self.assertIn(expires, range(one_year_away, one_year_away + 60))
+        self.assertIn("ETag", res1.headers)
+
+        res_etag = self.db_url_open(
+            "/web/image/test_http.gizeh_png?unique=1",
+            headers={"If-None-Match": res1.headers["ETag"]},
+        )
+        res_etag.raise_for_status()
+        self.assertEqual(
+            res_etag.status_code, 304, "We should not download the file again."
+        )
+
+        res_last_modified = self.db_url_open(
+            "/web/image/test_http.gizeh_png?unique=1",
+            headers={
+                "If-Modified-Since": http_date(now),
+            },
+        )
+        res_last_modified.raise_for_status()
+        self.assertEqual(
+            res_last_modified.status_code,
+            304,
+            "We should not download the file again.",
+        )
+
+    @freeze_time(datetime.now(UTC))
+    def test_static_cache2_nocache(self):
+        res1 = self.assertDownloadGizeh("/web/content/test_http.gizeh_png?nocache=1")
+        self.assertCacheControl(res1, "no-cache")
+        self.assertNotIn("Expires", res1.headers)
+        self.assertIn("ETag", res1.headers)
+
+        res_etag = self.db_url_open(
+            "/web/content/test_http.gizeh_png?nocache=1",
+            headers={"If-None-Match": res1.headers["ETag"]},
+        )
+        res_etag.raise_for_status()
+        self.assertEqual(
+            res_etag.status_code, 304, "We should not download the file again."
+        )
+
+    @freeze_time(datetime.now(UTC))
+    def test_static_cache3_private(self):
+        gizeh_png = self.env.ref("test_http.gizeh_png")
+        gizeh_png.public = False
+        url = "/web/image/test_http.gizeh_png"
+
+        self.authenticate(None, None)
+        res_visitor = self.assertDownloadPlaceholder(url)
+        self.assertEqual(
+            res_visitor.headers.get("Cache-Control", ""), "no-cache, private"
+        )
+        self.assertTrue(res_visitor.headers.get("ETag"))
+        res_visitor_etag = self.db_url_open(
+            url, headers={"If-None-Match": res_visitor.headers["ETag"]}
+        )
+        self.assertEqual(
+            res_visitor_etag.status_code,
+            304,
+            "The visitor should use its cache",
+        )
+
+        self.authenticate("admin", "admin")
+        res = self.assertDownloadGizeh(url)
+        self.assertCacheControl(res, "no-cache, private")
+        res_etag = self.db_url_open(url, headers={"If-None-Match": res.headers["ETag"]})
+        res_etag.raise_for_status()
+        self.assertEqual(res_etag.status_code, 304, "The admin should use its cache")
+
+
+@tagged("post_install", "-at_install")
+class TestHttpStaticUpload(TestHttpStaticCommon):
+    def _test_upload_small_file(self):
+        new_test_user(self.env, "jackoneill")
+        self.authenticate("jackoneill", "jackoneill")
+
+        with (
+            RecordCapturer(self.env["ir.attachment"]) as capture,
+            file_open("test_http/static/src/img/gizeh.png", "rb") as file,
+        ):
+            file_content = file.read()
+            file_size = len(file_content)
+            file.seek(0)
+            res = self.url_open(
+                f"{self.base_url()}/web/binary/upload_attachment",
+                files={"ufile": file},
+                data={
+                    "csrf_token": http.Request.csrf_token(self),
+                    "model": "test_http.stargate",
+                    "id": self.env.ref("test_http.earth").id,
+                },
+            )
+        res.raise_for_status()
+
+        self.assertEqual(
+            len(capture.records), 1, "An attachment should have been created"
+        )
+        self.assertEqual(capture.records.name, "gizeh.png")
+        self.assertEqual(capture.records.raw, file_content)
+        self.assertEqual(capture.records.mimetype, "image/png")
+
+        self.assertEqual(
+            res.json(),
+            [
+                {
+                    "filename": "gizeh.png",
+                    "mimetype": "image/png",
+                    "id": capture.records.id,
+                    "size": file_size,
+                }
+            ],
+        )
+
+    def test_upload_small_file_without_icp(self):
+        self.env["ir.config_parameter"].sudo().set_param(
+            "web.max_file_upload_size",
+            False,
+        )
+        self._test_upload_small_file()
+
+    def test_upload_small_file_with_icp(self):
+        self.env["ir.config_parameter"].sudo().set_param(
+            "web.max_file_upload_size",
+            16386,
+        )
+        self._test_upload_small_file()
+
+    def test_upload_large_file_on_an_unmatched_path(self):
+        with file_open("test_http/static/src/img/gizeh.png", "rb") as file:
+            file_size = file.seek(0, 2)
+            file.seek(0)
+            self.env["ir.config_parameter"].sudo().set_param(
+                "web.max_file_upload_size",
+                file_size - 1,
+            )
+            res = self.url_open(
+                f"{self.base_url()}/test_http/no-such-route-exists",
+                files={"ufile": file},
+            )
+        self.assertEqual(res.status_code, HTTPStatus.REQUEST_ENTITY_TOO_LARGE)
+
+    def test_upload_large_file(self):
+        new_test_user(self.env, "jackoneill")
+        self.authenticate("jackoneill", "jackoneill")
+
+        with (
+            RecordCapturer(self.env["ir.attachment"]) as capture,
+            file_open("test_http/static/src/img/gizeh.png", "rb") as file,
+        ):
+            file_size = file.seek(0, 2)
+            file.seek(0)
+            self.env["ir.config_parameter"].sudo().set_param(
+                "web.max_file_upload_size",
+                file_size - 1,
+            )
+            res = self.url_open(
+                f"{self.base_url()}/web/binary/upload_attachment",
+                files={"ufile": file},
+                data={
+                    "csrf_token": http.Request.csrf_token(self),
+                    "model": "test_http.stargate",
+                    "id": self.env.ref("test_http.earth").id,
+                    "callback": "callmemaybe",
+                },
+            )
+        self.assertFalse(capture.records, "No attachment should have been created")
+        self.assertEqual(res.status_code, HTTPStatus.REQUEST_ENTITY_TOO_LARGE)

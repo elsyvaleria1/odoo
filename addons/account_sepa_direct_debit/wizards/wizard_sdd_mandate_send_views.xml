@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <data>
+        <record id="account_sepa_direct_debit_mandate_send_form" model="ir.ui.view">
+            <field name="name">sdd.mandate.send.form</field>
+            <field name="model">wizard.sdd.mandate.send</field>
+            <field name="arch" type="xml">
+                <form string="Send &amp; Print">
+                    <div class="m-0" name="warnings" invisible="not warnings">
+                        <field
+                            name="warnings"
+                            widget="actionable_errors"
+                            class="o_field_html" />
+                    </div>
+                    <group col="1">
+                        <field name="author_id" invisible="1" />
+                        <field name="lang" invisible="1" />
+                        <field name="render_model" invisible="1" />
+                        <field name="mandate_id" invisible="1" />
+                        <field name="template_id" invisible="1" />
+                    </group>
+                    <group col="2">
+                        <field name="checkbox_download" />
+                        <field name="checkbox_send_mail" />
+                        <field
+                            name="template_id"
+                            invisible="not checkbox_send_mail"
+                            can_create="True" />
+                    </group>
+                    <group col="2" invisible="not checkbox_send_mail">
+                        <field
+                            name="recipient_ids"
+                            widget="many2many_tags_email"
+                            context="{'show_email': True, 'form_view_ref': 'base.view_partner_simple_form'}"
+                            options="{'no_quick_create': True}" />
+                    </group>
+                    <group col="2" invisible="not checkbox_send_mail">
+                        <field name="subject" placeholder="Subject" />
+                    </group>
+                    <field
+                        name="body"
+                        widget="html_mail"
+                        invisible="not checkbox_send_mail"
+                        class="oe-bordered-editor" />
+                    <footer>
+                        <button
+                            name="action_send_and_print"
+                            type="object"
+                            string="Send &amp; Print"
+                            class="print btn-primary o_mail_send"
+                            data-hotkey="q">
+                        </button>
+                        <button
+                            special="cancel"
+                            string="Cancel"
+                            class="btn-secondary"
+                            data-hotkey="x" />
+                    </footer>
+                </form>
+            </field>
+        </record>
+    </data>
+
+</odoo>

@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <menuitem
+        id="marketing_automation_menu"
+        name="Marketing Automation"
+        sequence="110"
+        groups="marketing_automation.group_marketing_automation_user"
+        web_icon="marketing_automation,static/description/icon.png" />
+
+    <!-- Marketing Automation / Reporting -->
+    <menuitem
+        id="marketing_automation_reporting_menu"
+        name="Reporting"
+        parent="marketing_automation_menu"
+        sequence="2"
+        groups="marketing_automation.group_marketing_automation_user" />
+
+    <!-- Marketing Automation / Configuration -->
+    <menuitem
+        id="marketing_automation_menu_configuration"
+        name="Configuration"
+        parent="marketing_automation_menu"
+        sequence="3"
+        groups="marketing_automation.group_marketing_automation_user" />
+
+    <!-- Marketing Automation / Configuration / Favorite Filters -->
+    <menuitem
+        id="mailing_filter_menu_action_marketing_automaion"
+        parent="marketing_automation_menu_configuration"
+        action="mass_mailing.mailing_filter_action"
+        sequence="4"
+        groups="marketing_automation.group_marketing_automation_user" />
+
+    <!-- MENUS -->
+    <menuitem
+        id="link_tracker_menu_reporting_marketing_automation"
+        name="Link Tracker"
+        parent="marketing_automation_reporting_menu"
+        action="link_tracker_action_marketing_campaign"
+        groups="marketing_automation.group_marketing_automation_user" />
+
+    <!-- Reporting menu -->
+    <menuitem
+        id="marketing_participants_menu"
+        parent="marketing_automation_reporting_menu"
+        action="marketing_participants_action_reporting"
+        sequence="32"
+        groups="marketing_automation.group_marketing_automation_user" />
+
+    <menuitem
+        id="marketing_trace_menu"
+        parent="marketing_automation_reporting_menu"
+        action="marketing_trace_action"
+        sequence="16"
+        groups="marketing_automation.group_marketing_automation_user" />
+
+    <menuitem
+        id="marketing_campaign_menu"
+        name="Campaigns"
+        parent="marketing_automation_menu"
+        action="marketing_campaign_action"
+        sequence="1" />
+
+</odoo>

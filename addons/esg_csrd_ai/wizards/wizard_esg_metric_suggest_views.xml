@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="metrics_ai_generation_wizard_action" model="ir.actions.act_window">
+        <field name="name">About Your Company</field>
+        <field name="res_model">wizard.esg.metric.suggest</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+
+    <record id="metrics_ai_generation_wizard_form_view" model="ir.ui.view">
+        <field name="name">metrics.ai.generation.wizard.form</field>
+        <field name="model">wizard.esg.metric.suggest</field>
+        <field name="arch" type="xml">
+            <form string="About Your Company">
+                <group>
+                    <group>
+                        <field name="company_id" groups="base.group_multi_company" />
+                        <field
+                            name="nace_id"
+                            string="Industry Sector"
+                            options="{'no_create': True}" />
+                        <field name="company_size" />
+                        <field name="revenues_value" string="Revenues" />
+                        <field name="assets_value" string="Assets" />
+                    </group>
+                    <label
+                        for="core_business_description"
+                        string="Business Description"
+                        class="fw-bold" />
+                    <field
+                        name="core_business_description"
+                        placeholder="Describe the activities of your core business in a paragraphs..." />
+                </group>
+                <footer>
+                    <button
+                        name="action_generate_metrics"
+                        type="object"
+                        string="Generate Metrics"
+                        class="btn btn-primary"
+                        data-hotkey="q" />
+                    <button
+                        special="cancel"
+                        string="Discard"
+                        class="btn-secondary"
+                        data-hotkey="x" />
+                </footer>
+            </form>
+        </field>
+    </record>
+
+</odoo>

@@ -1,0 +1,38 @@
+/** @odoo-module native */
+import { ProductConfiguratorDialog } from "@sale/js/product_configurator_dialog/product_configurator_dialog";
+import { patch } from "@web/core/utils/patch";
+import { provideWebsiteSaleStockContext } from "@website_sale_stock/js/product_configurator_dialog/website_sale_stock_context";
+
+patch(ProductConfiguratorDialog.prototype, {
+    setup() {
+        super.setup(...arguments);
+
+        provideWebsiteSaleStockContext({
+            isQuantityAllowed: this._isQuantityAllowed.bind(this),
+        });
+    },
+
+    async _setQuantity(productTmplId, quantity) {
+        const product = this._findProduct(productTmplId);
+        if (!this._isQuantityAllowed(product, quantity)) {
+            quantity = product.qty_free;
+        }
+        return super._setQuantity(productTmplId, quantity);
+    },
+
+    /**
+     * @param {Object} product
+     * @param {Number} quantity
+     * @return {Boolean}
+     */
+    _isQuantityAllowed(product, quantity) {
+        return product.qty_free === undefined || product.qty_free >= quantity;
+    },
+
+    /**
+     * @return {Boolean}
+     */
+    areQuantitiesAllowed() {
+        return this.state.products.every((p) => this._isQuantityAllowed(p, p.quantity));
+    },
+});

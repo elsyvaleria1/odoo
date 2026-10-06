@@ -1,0 +1,37 @@
+{
+    "name": "AvaTax Invoice Taxes",
+    "version": "1.2",
+    "oldest_upgradable_version": "1.2",
+    "category": "Accounting/Accounting",
+    "summary": "Calculate invoice taxes through configured Avalara AvaTax accounts",
+    "description": "Add AvaTax product tax categories, exemptions and service configuration to invoice tax calculation. Requires an Avalara account and configured company credentials.",
+    "author": "Odoo S.A.",
+    "license": "OEEL-1",
+    "depends": [
+        "credential",
+        "payment",
+        "account_external_tax",
+    ],
+    "countries": [
+        "us",
+        "ca",
+    ],
+    "data": [
+        "security/ir.access.csv",
+        "data/product.avatax.category.csv",
+        "views/account_fiscal_position_views.xml",
+        "views/account_move_views.xml",
+        "views/avatax_category_views.xml",
+        "views/avatax_exemption_views.xml",
+        "views/res_config_settings_views.xml",
+        "views/res_partner_views.xml",
+        "views/product_views.xml",
+        "wizards/wizard_res_partner_update_address_views.xml",
+        "wizards/wizard_res_company_view_avatax_connection_views.xml",
+        "reports/account_invoice.xml",
+    ],
+    "auto_install": [
+        "payment",
+    ],
+    "post_init_hook": "_post_init_hook",
+}

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="web.HomeTileRecordLink">
+        <a t-att-href="this.href" t-att-class="this.props.className" t-on-click="this.onClick"><t t-call-slot="default"/></a>
+    </t>
+
+</templates>

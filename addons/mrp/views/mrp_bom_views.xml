@@ -1,0 +1,539 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <data>
+        <record id="action_report_mrp_bom" model="ir.actions.client">
+            <field name="name">BoM Overview</field>
+            <field name="tag">account_report</field>
+            <field
+                name="context"
+                eval="{'report_id': ref('mrp.bom_overview_report')}" />
+        </record>
+        <record id="mrp_bom_byproduct_form_view" model="ir.ui.view">
+            <field name="name">mrp.bom.byproduct.form</field>
+            <field name="model">mrp.bom.byproduct</field>
+            <field name="arch" type="xml">
+                <form string="Byproduct">
+                    <group>
+                        <field name="allowed_operation_ids" invisible="1" />
+                        <field name="company_id" />
+                        <field name="product_id" />
+                        <label for="product_qty" />
+                        <div class="o_row">
+                            <field name="product_qty" />
+                            <field
+                                name="product_uom_id"
+                                widget="many2one_uom"
+                                groups="uom.group_uom" />
+                        </div>
+                        <field
+                            name="operation_id"
+                            options="{'no_quick_create':True,'no_create_edit':True}"
+                            groups="mrp.group_mrp_routings" />
+                        <field
+                            name="possible_bom_product_template_attribute_value_ids"
+                            invisible="1" />
+                        <field
+                            name="bom_product_template_attribute_value_ids"
+                            widget="many2many_tags"
+                            options="{'no_create': True}"
+                            groups="product.group_product_variant" />
+                    </group>
+                </form>
+            </field>
+        </record>
+        <record id="mrp_bom_form_view" model="ir.ui.view">
+            <field name="name">mrp.bom.form</field>
+            <field name="model">mrp.bom</field>
+            <field name="priority">100</field>
+            <field name="arch" type="xml">
+                <form string="Bill of Material">
+                    <sheet>
+                        <div
+                            class="oe_button_box"
+                            name="button_box"
+                            invisible="context.get('parent_production_id')">
+                            <button
+                                name="%(action_mrp_routing_time)d"
+                                type="action"
+                                icon="fa-regular fa-clock"
+                                groups="mrp.group_mrp_routings"
+                                class="oe_stat_button">
+                                <div class="o_field_widget o_stat_info">
+                                    <span class="o_stat_text">Operations<br />Performance</span>
+                                </div>
+                            </button>
+                            <button
+                                name="%(action_report_mrp_bom)d"
+                                type="action"
+                                icon="fa-bars"
+                                class="oe_stat_button">
+                                <div class="o_stat_info">
+                                    <span class="o_stat_text">BoM Overview</span>
+                                </div>
+                            </button>
+                        </div>
+                        <widget
+                            name="web_ribbon"
+                            title="Archived"
+                            invisible="active"
+                            bg_color="text-bg-danger" />
+                    <group>
+                        <group>
+                            <field name="active" invisible="1" />
+                            <field name="company_id" invisible="1" />
+                            <field
+                                name="product_tmpl_id"
+                                context="{'default_is_storable': True}" />
+                            <field name="allow_operation_dependencies" invisible="1" />
+                            <field
+                                name="product_id"
+                                context="{'default_is_storable': True}"
+                                options="{'no_create': True}"
+                                groups="product.group_product_variant" />
+                            <field
+                                name="product_id"
+                                groups="!product.group_product_variant"
+                                invisible="1" />
+                            <label for="product_qty" string="Quantity" />
+                            <div class="o_row">
+                                <field name="product_qty" class="mw-25" />
+                                <field
+                                    name="product_uom_id"
+                                    widget="many2one_uom"
+                                    options="{'no_open':True, 'no_create':True, 'product_field': 'product_tmpl_id', 'quantity_field': 'product_qty'}"
+                                    groups="uom.group_uom" />
+                            </div>
+                        </group>
+                        <group>
+                            <field name="code" />
+                            <field
+                                name="type"
+                                widget="radio"
+                                invisible="context.get('parent_production_id')" />
+                            <p
+                                colspan="2"
+                                class="opacity-50 oe_edit_only"
+                                invisible="type != 'phantom'">
+                            <ul>
+                                A BoM of type Kit is not produced with a manufacturing order.<br />
+                                Instead, it is used to decompose a BoM into its components when:
+                                <li>
+                                    it is added as a component in a manufacturing order
+                                </li>
+                                <li>
+                                    it is moved via a transfer, such as a receipt or a delivery order for instance.
+                                </li>
+                            </ul>
+                            </p>
+                            <field
+                                name="company_id"
+                                placeholder="Visible to all"
+                                options="{'no_create': True, 'no_open': True}"
+                                groups="base.group_multi_company"
+                                invisible="context.get('parent_production_id')" />
+                        </group>
+                    </group>
+                    <notebook>
+                        <page name="components" string="Components">
+                            <field
+                                name="bom_line_ids"
+                                widget="one2many"
+                                context="{'default_parent_product_tmpl_id': product_tmpl_id, 'default_product_id': False, 'default_bom_id': id}">
+                                <list string="Components" editable="bottom">
+                                    <control>
+                                        <create string="Add a line" />
+                                        <button
+                                            name="action_add_from_catalog"
+                                            type="object"
+                                            string="Catalog"
+                                            context="{'order_id': parent.id}"
+                                            groups="mrp.group_mrp_user"
+                                            class="px-4 btn-link" />
+                                    </control>
+                                    <field name="company_id" column_invisible="True" />
+                                    <field name="sequence" widget="handle" />
+                                    <field
+                                        name="product_id"
+                                        context="{'default_is_storable': True}" />
+                                    <field
+                                        name="product_tmpl_id"
+                                        column_invisible="True" />
+                                    <button
+                                        name="action_see_attachments"
+                                        type="object"
+                                        title="Product Attachments"
+                                        icon="fa-regular fa-copy"
+                                        column_invisible="context.get('parent_production_id')"
+                                        class="float-end"
+                                        aria-label="Product Attachments" />
+                                    <field
+                                        name="attachments_count"
+                                        string=" "
+                                        column_invisible="context.get('parent_production_id')"
+                                        class="text-start" />
+                                    <field name="product_qty" />
+                                    <field
+                                        name="parent_product_tmpl_id"
+                                        column_invisible="True" />
+                                    <field
+                                        name="product_uom_id"
+                                        widget="many2one_uom"
+                                        options="{'no_open': True, 'no_create': True, 'quantity_field': 'product_qty'}"
+                                        groups="uom.group_uom" />
+                                    <field
+                                        name="possible_bom_product_template_attribute_value_ids"
+                                        column_invisible="True" />
+                                    <field
+                                        name="bom_product_template_attribute_value_ids"
+                                        widget="many2many_tags"
+                                        optional="hide"
+                                        options="{'no_create': True}"
+                                        groups="product.group_product_variant"
+                                        column_invisible="parent.product_id" />
+                                    <field
+                                        name="allowed_operation_ids"
+                                        column_invisible="True" />
+                                    <field
+                                        name="operation_id"
+                                        optional="hide"
+                                        options="{'no_quick_create':True,'no_create_edit':True}"
+                                        groups="mrp.group_mrp_routings"
+                                        column_invisible="parent.type not in ('normal', 'phantom')" />
+                                </list>
+                            </field>
+                        </page>
+                        <page
+                            name="operations"
+                            string="Operations"
+                            groups="mrp.group_mrp_routings"
+                            invisible="type not in ('normal', 'phantom')">
+                            <field
+                                name="operation_ids"
+                                context="{'bom_id_invisible': True, 'default_bom_id': id, 'list_view_ref': 'mrp.mrp_routing_workcenter_bom_tree_view', 'target': 'new'}"
+                                invisible="operation_ids.length == 0" />
+                            <div invisible="operation_ids.length != 0">
+                                <div
+                                    class="o_mrp_routing_image bill_of_material position-relative">
+                                    <img
+                                        class="position-absolute"
+                                        src="/mrp/static/img/routing_shopfloor.png"
+                                        alt="Shop Floor" />
+                                    <div class="separator position-relative" />
+                                    <span class="o_annotation o_annotation_1 o_annotation_end position-absolute">Time Clock</span>
+                                    <span class="o_annotation o_annotation_2 o_annotation_end position-absolute">Quality Control</span>
+                                    <span class="o_annotation o_annotation_3 o_annotation_start position-absolute">Feedback Loop</span>
+                                    <span class="o_annotation o_annotation_4 o_annotation_start position-absolute">Register Materials</span>
+                                    <span class="o_annotation o_annotation_5 o_annotation_start position-absolute">Select Operator</span>
+                                    <div class="o_text position-absolute">
+                                        <p>
+                                            No Operations Yet !
+                                        </p>
+                                        <p>
+                                            Run your Shop Floor with work orders for each operation defined on your bill of material.
+                                        </p>
+                                        <p>
+                                            Each operation can have multiple steps (scan products, view instructions) or even quality checks.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div
+                                class="d-flex justify-content-center gap-1"
+                                invisible="operation_ids.length != 0">
+                                <button
+                                    name="action_view_operation_form"
+                                    type="object"
+                                    class="btn btn-primary">
+                                    <span class="o_stat_text">Add Operation</span>
+                                </button>
+                                <button
+                                    name="action_copy_existing_operations"
+                                    type="object"
+                                    invisible="not show_copy_operations_button">
+                                    <span class="o_stat_text">Copy Existing Operations</span>
+                                </button>
+                            </div>
+                        </page>
+                        <page
+                            name="by_products"
+                            string="By-products"
+                            groups="mrp.group_mrp_byproducts"
+                            invisible="type != 'normal'">
+                            <field
+                                name="byproduct_ids"
+                                context="{'form_view_ref' : 'mrp.mrp_bom_byproduct_form_view', 'default_bom_id': id}">
+                                <list string="By-products" editable="bottom">
+                                    <control>
+                                        <create string="Add a line" />
+                                        <button
+                                            name="action_add_from_catalog"
+                                            type="object"
+                                            string="Catalog"
+                                            context="{'order_id': parent.id}"
+                                            groups="mrp.group_mrp_user"
+                                            class="px-4 btn-link" />
+                                    </control>
+                                    <field name="company_id" column_invisible="True" />
+                                    <field name="sequence" widget="handle" />
+                                    <field
+                                        name="product_id"
+                                        context="{'default_is_storable': True}" />
+                                    <field name="product_qty" />
+                                    <field
+                                        name="product_uom_id"
+                                        widget="many2one_uom"
+                                        options="{'quantity_field': 'product_qty'}"
+                                        groups="uom.group_uom" />
+                                    <field name="cost_share" optional="hide" />
+                                    <field
+                                        name="allowed_operation_ids"
+                                        column_invisible="True" />
+                                    <field
+                                        name="operation_id"
+                                        options="{'no_quick_create':True,'no_create_edit':True}"
+                                        groups="mrp.group_mrp_routings" />
+                                    <field
+                                        name="possible_bom_product_template_attribute_value_ids"
+                                        column_invisible="True" />
+                                    <field
+                                        name="bom_product_template_attribute_value_ids"
+                                        widget="many2many_tags"
+                                        optional="hide"
+                                        options="{'no_create': True}"
+                                        groups="product.group_product_variant"
+                                        column_invisible="parent.product_id" />
+                                </list>
+                            </field>
+                        </page>
+                            <page name="miscellaneous" string="Miscellaneous">
+                                <group>
+                                    <group>
+                                        <field
+                                            name="ready_to_produce"
+                                            string="Manufacturing Readiness"
+                                            widget="radio"
+                                            groups="mrp.group_mrp_routings"
+                                            invisible="type == 'phantom'" />
+                                        <field
+                                            name="consumption"
+                                            widget="radio"
+                                            invisible="type == 'phantom'" />
+                                        <field
+                                            name="allow_operation_dependencies"
+                                            groups="mrp.group_mrp_workorder_dependencies" />
+                                    </group>
+                                    <group>
+                                        <field
+                                            name="picking_type_id"
+                                            groups="stock.group_adv_location"
+                                            invisible="type == 'phantom'" />
+                                        <label
+                                            for="produce_delay"
+                                            string="Manuf. Lead Time" />
+                                        <div>
+                                            <field name="produce_delay" class="oe_inline" /> days
+                                        </div>
+                                        <label for="days_to_prepare_mo" />
+                                        <div>
+                                            <field name="days_to_prepare_mo" class="oe_inline" /> days
+                                            <button
+                                                name="action_compute_bom_days"
+                                                type="object"
+                                                string="Compute"
+                                                help="Compute the days required to resupply all components from BoM, by either buying or manufacturing the components and/or subassemblies."
+                                                groups="mrp.group_mrp_user"
+                                                class="oe_link pt-0" />
+                                        </div>
+                                        <label
+                                            for="batch_size"
+                                            invisible="type != 'normal'" />
+                                        <div class="o_row" invisible="type != 'normal'">
+                                            <field name="enable_batch_size" />
+                                            <field
+                                                name="batch_size"
+                                                invisible="not enable_batch_size"
+                                                class="w-50"
+                                                decoration-danger="batch_size &lt;= 0.0" />
+                                            <field
+                                                name="product_uom_id"
+                                                groups="uom.group_uom"
+                                                invisible="not enable_batch_size"
+                                                readonly="1" />
+                                        </div>
+                                    </group>
+                                </group>
+                            </page>
+                    </notebook>
+                    </sheet>
+                    <chatter />
+                </form>
+            </field>
+        </record>
+        <record id="mrp_bom_tree_view" model="ir.ui.view">
+            <field name="name">mrp.bom.list</field>
+            <field name="model">mrp.bom</field>
+            <field name="arch" type="xml">
+                <list string="Bill of Materials" multi_edit="1" sample="1">
+                    <field name="active" column_invisible="True" />
+                    <field name="sequence" widget="handle" />
+                    <field name="company_id" column_invisible="True" />
+                    <field name="product_tmpl_id" />
+                    <field name="code" optional="show" />
+                    <field name="type" />
+                    <field
+                        name="product_id"
+                        optional="hide"
+                        groups="product.group_product_variant" />
+                    <field
+                        name="product_id"
+                        groups="!product.group_product_variant"
+                        column_invisible="1" />
+                    <field
+                        name="company_id"
+                        optional="show"
+                        groups="base.group_multi_company" />
+                    <field name="product_qty" optional="hide" />
+                    <field
+                        name="product_uom_id"
+                        widget="many2one_uom"
+                        optional="hide"
+                        groups="uom.group_uom" />
+                </list>
+            </field>
+        </record>
+        <record id="mrp_bom_kanban_view" model="ir.ui.view">
+            <field name="name">mrp.bom.kanban</field>
+            <field name="model">mrp.bom</field>
+            <field name="arch" type="xml">
+                <kanban sample="1" class="o_kanban_mobile">
+                    <templates>
+                        <t t-name="card">
+                            <div>
+                                <field name="product_tmpl_id" class="fw-medium fs-5" />
+                                <span class="float-end badge rounded-pill"><field name="product_qty" /> <field name="product_uom_id" groups="uom.group_uom" class="small" /></span>
+                            </div>
+                            <footer class="pt-1">
+                                <field name="code" />
+                            </footer>
+                        </t>
+                    </templates>
+                </kanban>
+            </field>
+        </record>
+        <record id="view_mrp_bom_filter" model="ir.ui.view">
+            <field name="name">mrp.bom.select</field>
+            <field name="model">mrp.bom</field>
+            <field name="arch" type="xml">
+                <search string="Search Bill Of Material">
+                    <field
+                        name="code"
+                        string="Bill of Materials"
+                        filter_domain="['|', ('code', 'ilike', self), ('product_tmpl_id', 'ilike', self)]" />
+                    <field name="product_tmpl_id" string="Product" />
+                    <field name="bom_line_ids" string="Component" />
+                    <filter
+                        name="normal"
+                        string="Manufacturing"
+                        domain="[('type', '=', 'normal')]" />
+                    <filter
+                        name="phantom"
+                        string="Kit"
+                        domain="[('type', '=', 'phantom')]" />
+                    <separator />
+                    <filter
+                        name="inactive"
+                        string="Archived"
+                        domain="[('active', '=', False)]" />
+                    <group>
+                        <filter
+                            name="product"
+                            string="Product"
+                            context="{'group_by': 'product_tmpl_id'}" />
+                        <filter
+                            name="group_by_type"
+                            string="BoM Type"
+                            context="{'group_by' : 'type'}" />
+                        <filter
+                            name="default_unit_of_measure"
+                            string="Unit"
+                            context="{'group_by' : 'product_uom_id'}" />
+                    </group>
+                </search>
+            </field>
+        </record>
+        <record id="mrp_bom_form_action" model="ir.actions.act_window">
+            <field name="name">Bills of Materials</field>
+            <field name="res_model">mrp.bom</field>
+            <field name="path">boms</field>
+            <field name="view_mode">list,kanban,form</field>
+            <field name="search_view_id" ref="view_mrp_bom_filter" />
+            <field name="domain">[]</field>
+            <field name="context">{'default_company_id': allowed_company_ids[0]}</field>
+            <field name="help" type="html">
+                <p class="o_view_nocontent_smiling_face">
+                    No bill of materials found. Let's create one!
+                </p><p>
+                    Bills of materials allow you to define the list of required raw
+                    materials used to make a finished product; through a manufacturing
+                    order or a pack of products.
+                </p>
+            </field>
+        </record>
+        <record id="mrp_bom_line_view_form" model="ir.ui.view">
+            <field name="name">mrp.bom.line.view.form</field>
+            <field name="model">mrp.bom.line</field>
+            <field name="arch" type="xml">
+                <form string="Bill of Material line" create="0" edit="0">
+                    <sheet>
+                        <group>
+                            <group string="Component">
+                                <field name="product_id" />
+                                <field name="parent_product_tmpl_id" invisible="1" />
+                                <label for="product_qty" string="Quantity" />
+                                <div class="o_row">
+                                    <field name="product_qty" />
+                                    <field
+                                        name="product_uom_id"
+                                        widget="many2one_uom"
+                                        options="{'no_open':True,'no_create':True, 'quantity_field': 'product_qty'}"
+                                        groups="uom.group_uom" />
+                                </div>
+                                <field
+                                    name="possible_bom_product_template_attribute_value_ids"
+                                    invisible="1" />
+                                <field
+                                    name="bom_product_template_attribute_value_ids"
+                                    widget="many2many_tags"
+                                    options="{'no_create': True}"
+                                    groups="product.group_product_variant" />
+                            </group>
+                            <group string="Operation">
+                                <field name="company_id" invisible="1" />
+                                <field name="sequence" groups="base.group_no_one" />
+                                <field name="allowed_operation_ids" invisible="1" />
+                                <field
+                                    name="operation_id"
+                                    groups="mrp.group_mrp_routings" />
+                            </group>
+                        </group>
+                    </sheet>
+                </form>
+            </field>
+        </record>
+        <record id="template_open_bom" model="ir.actions.act_window">
+            <field name="name">Bill of Materials</field>
+            <field name="res_model">mrp.bom</field>
+            <field
+                name="domain">['|', ('product_tmpl_id', '=', active_id), ('byproduct_ids.product_id.product_tmpl_id', '=', active_id)]</field>
+            <field name="context">{'default_product_tmpl_id': active_id}</field>
+        </record>
+        <record id="product_open_bom" model="ir.actions.act_window">
+            <field name="name">Bill of Materials</field>
+            <field name="res_model">mrp.bom</field>
+            <field name="domain">[]</field>
+            <field name="context">{'default_product_id': active_id}</field>
+        </record>
+    </data>
+
+</odoo>

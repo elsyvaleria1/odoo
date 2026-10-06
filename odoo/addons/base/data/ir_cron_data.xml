@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="autovacuum_job" model="ir.cron">
+        <field name="name">Base: Auto-vacuum internal data</field>
+        <field name="model_id" ref="model_ir_autovacuum" />
+        <field name="state">code</field>
+        <field name="code">model._run_vacuum_cleaner()</field>
+        <field name="repeat_interval">1</field>
+        <field name="repeat_unit">day</field>
+        <field name="priority">3</field>
+    </record>
+
+    <record id="ir_cron_res_users_deletion" model="ir.cron">
+        <field name="name">Base: Portal Users Deletion</field>
+        <field name="model_id" ref="base.model_res_users_deletion" />
+        <field name="state">code</field>
+        <field name="code">model._gc_portal_users(batch_size=50)</field>
+        <field name="repeat_interval">1</field>
+        <field name="repeat_unit">day</field>
+        <field name="priority">8</field>
+    </record>
+
+    <record id="ir_cron_res_users_grant_boundaries" model="ir.cron">
+        <field name="name">Base: Start and end timed grants</field>
+        <field name="model_id" ref="base.model_res_users_grant" />
+        <field name="state">code</field>
+        <field name="code">model._cron_cross_boundaries()</field>
+        <field name="repeat_interval">1</field>
+        <field name="repeat_unit">day</field>
+        <field name="priority">5</field>
+    </record>
+
+    <record id="ir_cron_access_review_deadline" model="ir.cron">
+        <field name="name">Base: Start planned access reviews and close due ones</field>
+        <field name="model_id" ref="base.model_access_review_campaign" />
+        <field name="state">code</field>
+        <field name="code">model._cron_close_due()</field>
+        <field name="repeat_interval">1</field>
+        <field name="repeat_unit">day</field>
+        <field name="priority">5</field>
+    </record>
+
+    <record id="ir_cron_access_log_seal" model="ir.cron">
+        <field name="name">Base: Seal the new authorization log rows</field>
+        <field name="model_id" ref="base.model_ir_access_log" />
+        <field name="state">code</field>
+        <field name="code">model._cron_seal()</field>
+        <field name="repeat_interval">1</field>
+        <field name="repeat_unit">hour</field>
+        <field name="priority">10</field>
+    </record>
+
+    <record id="ir_cron_access_log_verify" model="ir.cron">
+        <field name="name">Base: Verify the authorization log's seals</field>
+        <field name="model_id" ref="base.model_ir_access_log" />
+        <field name="state">code</field>
+        <field name="code">model._cron_check_seal_chain()</field>
+        <field name="repeat_interval">1</field>
+        <field name="repeat_unit">day</field>
+        <field name="priority">20</field>
+    </record>
+
+    <record id="ir_cron_access_drift" model="ir.cron">
+        <field name="name">Base: Report where access drifts from its files</field>
+        <field name="model_id" ref="base.model_ir_access_drift" />
+        <field name="state">code</field>
+        <field name="code">model._cron_scan()</field>
+        <field name="repeat_interval">1</field>
+        <field name="repeat_unit">day</field>
+        <field name="priority">20</field>
+    </record>
+
+</odoo>

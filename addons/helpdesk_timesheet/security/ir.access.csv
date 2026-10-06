@@ -1,0 +1,10 @@
+id,name,model_id/id,group_id/id,kind,operation,reach,anchor,predicate_id/id,predicate_args,domain
+project_public_members_rule_group_helpdesk_user,Project: internal users: projects they can access,project.model_project_project,helpdesk.group_helpdesk_user,permission,r,predicate,,base.access_predicate_user_has_access,"{""at"": """"}",
+task_visibility_rule_group_helpdesk_user,"Project/Task: employees: tasks of accessible projects, followed or assigned tasks",project.model_project_task,helpdesk.group_helpdesk_user,permission,r,predicate,,base.access_predicate_user_has_access,"{""at"": ""project_id.""}","[('project_id', '!=', False)]"
+task_visibility_rule_group_helpdesk_user_2,"Project/Task: employees: tasks of accessible projects, followed or assigned tasks (2)",project.model_project_task,helpdesk.group_helpdesk_user,permission,r,predicate,,mail.access_predicate_follows,"{""at"": """"}",
+task_visibility_rule_group_helpdesk_user_3,"Project/Task: employees: tasks of accessible projects, followed or assigned tasks (3)",project.model_project_task,helpdesk.group_helpdesk_user,permission,r,own,,,,
+access_analytic_account_heldpdesk_user,analytic.account.helpdesk.user,analytic.model_account_analytic_account,helpdesk.group_helpdesk_user,permission,ru,,,,,
+access_analytic_plan_heldpdesk_user,analytic.plan.helpdesk.user,analytic.model_account_analytic_plan,helpdesk.group_helpdesk_user,permission,r,,,,,
+access_analytic_line_heldpdesk_user,analytic.line.helpdesk.user,analytic.model_account_analytic_line,helpdesk.group_helpdesk_user,permission,r,,,,,
+timesheet_line_rule_helpdesk_user,account.analytic.line.helpdesk.user,analytic.model_account_analytic_line,helpdesk.group_helpdesk_user,permission,cud,own,,,,"[('helpdesk_ticket_id', '!=', False)]"
+timesheet_line_rule_helpdesk_manager,account.analytic.line.timesheet.manager,analytic.model_account_analytic_line,helpdesk.group_helpdesk_manager,permission,cud,all,,,,"[('helpdesk_ticket_id', '!=', False)]"

@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <menuitem
+        id="menu_resource_config"
+        name="Resource"
+        parent="base.menu_custom"
+        sequence="30" />
+
+    <menuitem
+        id="menu_resource_calendar"
+        parent="menu_resource_config"
+        action="action_resource_calendar_form"
+        sequence="1" />
+
+    <menuitem
+        id="menu_view_resource_schedule_exception_search"
+        parent="menu_resource_config"
+        action="action_resource_schedule_exception_tree"
+        sequence="2" />
+
+    <menuitem
+        id="menu_resource_resource"
+        parent="menu_resource_config"
+        action="action_resource_resource_tree"
+        sequence="3" />
+
+    <menuitem
+        id="menu_resource_role"
+        parent="menu_resource_config"
+        action="resource_role_action"
+        sequence="4" />
+
+    <menuitem
+        id="menu_resource_reservation"
+        parent="menu_resource_config"
+        action="action_resource_reservation"
+        sequence="5" />
+
+    <menuitem
+        id="menu_resource_assignment"
+        parent="menu_resource_config"
+        action="action_resource_assignment"
+        sequence="7" />
+
+    <menuitem
+        id="menu_resource_my_schedule"
+        parent="menu_resource_config"
+        action="action_resource_my_schedule"
+        sequence="6" />
+
+    <menuitem
+        id="menu_resource_meter"
+        parent="menu_resource_config"
+        action="action_resource_meter"
+        sequence="9" />
+
+    <menuitem
+        id="menu_resource_identifier_type"
+        parent="menu_resource_config"
+        action="action_resource_identifier_type"
+        sequence="10" />
+
+    <menuitem
+        id="resource_relation_menu"
+        parent="menu_resource_config"
+        action="resource_relation_action"
+        sequence="8" />
+
+</odoo>

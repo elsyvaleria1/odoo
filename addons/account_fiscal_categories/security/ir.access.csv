@@ -1,0 +1,6 @@
+id,name,model_id/id,group_id/id,kind,operation,reach,anchor,domain
+access_account_fiscal_category,access.account.fiscal.category,model_account_fiscal_category,account.group_account_manager,permission,cud,,,
+access_account_fiscal_category_readonly,access.account.fiscal.category.readonly,model_account_fiscal_category,account.group_account_readonly,permission,r,,,
+access_account_account_fiscal_rate,access.account.account.fiscal.rate,model_account_account_fiscal_rate,account.group_account_manager,permission,cud,,,
+access_account_account_fiscal_rate_readonly,access.account.account.fiscal.rate.readonly,model_account_account_fiscal_rate,account.group_account_readonly,permission,r,,,
+account_fiscal_categories_comp_rule,Account fiscal categories multi-country,model_account_fiscal_category,base.group_everyone,guard,crud,company,,

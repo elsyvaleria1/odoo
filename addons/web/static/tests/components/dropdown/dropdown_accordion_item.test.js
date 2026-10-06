@@ -1,0 +1,130 @@
+// @ts-check
+
+import { expect, test } from "@odoo/hoot";
+import { click, press, queryOne } from "@odoo/hoot-dom";
+import { animationFrame, runAllTimers } from "@odoo/hoot-mock";
+import { Component, proxy, useProps, xml } from "@odoo/owl";
+import { mountWithCleanup } from "@web/../tests/web_test_helpers";
+import {
+    AccordionItem,
+    provideChildAccordion,
+} from "@web/components/dropdown/accordion_item";
+import { Dropdown } from "@web/components/dropdown/dropdown";
+import { DropdownItem } from "@web/components/dropdown/dropdown_item";
+
+test("accordion can be rendered", async () => {
+    class Parent extends Component {
+        static template = xml`<AccordionItem description="'Test'" class="'text-primary'" selected="false"><h5>In accordion</h5></AccordionItem>`;
+        static components = { AccordionItem };
+        static props = null;
+        props = useProps(this.constructor.props);
+    }
+
+    await mountWithCleanup(Parent);
+    expect("div.o_accordion").toHaveCount(1);
+    expect(".o_accordion button.o_accordion_toggle").toHaveCount(1);
+    expect(".o_accordion_values").toHaveCount(0);
+
+    await click("button.o_accordion_toggle");
+    await animationFrame();
+    expect(".o_accordion_values").toHaveCount(1);
+    expect(queryOne(".o_accordion_values").innerHTML).toBe(`<h5>In accordion</h5>`);
+});
+
+test("dropdown with accordion keyboard navigation", async () => {
+    class Parent extends Component {
+        static template = xml`
+            <Dropdown>
+                <button>dropdown</button>
+                <t t-set-slot="content">
+                    <DropdownItem>item 1</DropdownItem>
+                    <AccordionItem description="'item 2'" selected="false">
+                        <DropdownItem>item 2-1</DropdownItem>
+                        <DropdownItem>item 2-2</DropdownItem>
+                    </AccordionItem>
+                    <DropdownItem>item 3</DropdownItem>
+                </t>
+            </Dropdown>
+        `;
+        static components = { Dropdown, DropdownItem, AccordionItem };
+        static props = null;
+        props = useProps(this.constructor.props);
+    }
+
+    await mountWithCleanup(Parent);
+    await click(".o-dropdown.dropdown-toggle");
+    await animationFrame();
+
+    expect(".dropdown-menu > .focus").toHaveCount(0);
+
+    const scenarioSteps = [
+        { key: "arrowdown", expected: "item 1" },
+        { key: "arrowdown", expected: "item 2" },
+        { key: "arrowdown", expected: "item 3" },
+        { key: "arrowdown", expected: "item 1" },
+        { key: "tab", expected: "item 2" },
+        { key: "enter", expected: "item 2" },
+        { key: "tab", expected: "item 2-1" },
+        { key: "tab", expected: "item 2-2" },
+        { key: "tab", expected: "item 3" },
+        { key: "tab", expected: "item 1" },
+        { key: "arrowup", expected: "item 3" },
+        { key: "arrowup", expected: "item 2-2" },
+        { key: "arrowup", expected: "item 2-1" },
+        { key: "arrowup", expected: "item 2" },
+        { key: "enter", expected: "item 2" },
+        { key: "arrowup", expected: "item 1" },
+        { key: "shift+tab", expected: "item 3" },
+        { key: "shift+tab", expected: "item 2" },
+        { key: "shift+tab", expected: "item 1" },
+        { key: "end", expected: "item 3" },
+        { key: "home", expected: "item 1" },
+    ];
+
+    for (let i = 0; i < scenarioSteps.length; i++) {
+        const step = scenarioSteps[i];
+        await press(step.key);
+        await animationFrame();
+        await runAllTimers();
+        expect(`.dropdown-menu .focus:contains(${step.expected})`).toBeFocused();
+    }
+});
+
+test("the parent hears an accordion state change only when the state changed", async () => {
+    class Parent extends Component {
+        static template = xml`
+            <t t-out="this.state.tick"/>
+            <AccordionItem description="'item'" selected="false">
+                <span>content</span>
+            </AccordionItem>`;
+        static components = { AccordionItem };
+        static props = null;
+        props = useProps(this.constructor.props);
+        setup() {
+            this.state = proxy({ tick: 0 });
+            provideChildAccordion({
+                accordionStateChanged: (/** @type {any} */ isOpen) =>
+                    expect.step(`changed:${isOpen}`),
+            });
+        }
+    }
+
+    const parent = /** @type {any} */ (await mountWithCleanup(Parent));
+    expect.verifySteps([]);
+
+    parent.state.tick++;
+    await animationFrame();
+    expect.verifySteps([]);
+
+    await click("button.o_accordion_toggle");
+    await animationFrame();
+    expect.verifySteps(["changed:true"]);
+
+    parent.state.tick++;
+    await animationFrame();
+    expect.verifySteps([]);
+
+    await click("button.o_accordion_toggle");
+    await animationFrame();
+    expect.verifySteps(["changed:false"]);
+});

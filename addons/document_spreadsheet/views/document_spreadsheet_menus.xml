@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Add in Documents/Configuration -->
+    <menuitem
+        id="menu_technical_spreadsheet_template"
+        name="Spreadsheet Templates"
+        parent="document.Config"
+        action="spreadsheet_template_action"
+        sequence="20"
+        groups="document.group_documents_manager" />
+
+    <!-- Add in Technical/Spreadsheet -->
+    <menuitem
+        id="menu_technical_spreadsheet_contributor"
+        name="Contributors"
+        parent="spreadsheet_edition.menu_technical_spreadsheet"
+        action="spreadsheet_contributor_action"
+        sequence="1" />
+
+</odoo>

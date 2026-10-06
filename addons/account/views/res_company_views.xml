@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_company_form" model="ir.ui.view">
+        <field name="name">res.company.form.inherit.account</field>
+        <field name="model">res.company</field>
+        <field name="inherit_id" ref="base.view_company_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='country_id']" position="after">
+                <field name="account_enabled_tax_country_ids" invisible="1" />
+            </xpath>
+            <xpath expr="//sheet" position="after">
+                <chatter />
+            </xpath>
+            <field name="vat" position="before">
+                <field name="company_vat_placeholder" invisible="1" />            </field>
+            <field name="vat" position="attributes">
+                <attribute name="options">{'placeholder_field': 'company_vat_placeholder'}</attribute>
+            </field>
+
+            <field name="company_registry" position="before">
+                <field name="company_registry_placeholder" invisible="1" />            </field>
+            <field name="company_registry" position="attributes">
+                <attribute name="options">{'placeholder_field': 'company_registry_placeholder'}</attribute>
+            </field>
+        </field>
+    </record>
+
+    <record id="res_company_view_form_terms" model="ir.ui.view">
+        <field name="name">account.config.view.form.terms</field>
+        <field name="model">account.config</field>
+        <field name="priority">1000</field>
+        <field name="arch" type="xml">
+            <form>
+                <field name="invoice_terms_html" class="oe_account_terms" />
+                <footer>
+                    <button special="save" string="Save" class="btn-primary" />
+                    <button special="cancel" string="Discard" class="btn-secondary" />
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="res_company_form_view_onboarding" model="ir.ui.view">
+        <field name="name">res.company.form.view.onboarding</field>
+        <field name="model">res.company</field>
+        <field name="priority">1000</field>
+        <field name="arch" type="xml">
+            <form string="Company" duplicate="0">
+                <sheet>
+                    <field name="image_1920" widget="image" class="oe_avatar" />
+                    <div class="oe_title">
+                        <label for="name" />
+                        <h1>
+                            <field name="name" placeholder="e.g. My Company" />
+                        </h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="vat" />
+                            <label for="street" string="Address" />
+                            <div class="o_address_format">
+                                <field
+                                    name="street"
+                                    placeholder="Street..."
+                                    class="o_address_street" />
+                                <field
+                                    name="street2"
+                                    placeholder="Street 2..."
+                                    class="o_address_street" />
+                                <field
+                                    name="city"
+                                    placeholder="City"
+                                    class="o_address_city" />
+                                <field
+                                    name="state_id"
+                                    placeholder="State"
+                                    options="{&quot;no_open&quot;: True}"
+                                    class="o_address_state" />
+                                <field
+                                    name="zip"
+                                    placeholder="ZIP"
+                                    class="o_address_zip" />
+                                <field
+                                    name="country_id"
+                                    placeholder="Country"
+                                    options="{&quot;no_open&quot;: True, &quot;no_create&quot;: True}"
+                                    class="o_address_country" />
+                            </div>
+                            <field name="company_registry" />
+                            <field
+                                name="currency_id"
+                                id="company_currency"
+                                context="{'active_test': False}"
+                                options="{'no_create': True, 'no_open': True}" />
+                        </group>
+                        <group>
+                            <field name="phone_ids" widget="many2many_tags" />
+                            <field name="email" />
+                            <field
+                                name="website"
+                                string="Website"
+                                placeholder="e.g. https://www.odoo.com"
+                                widget="url" />
+                        </group>
+                    </group>
+                </sheet>
+                <footer>
+                    <button
+                        name="action_save_onboarding_company_data"
+                        type="object"
+                        string="Save"
+                        class="oe_highlight"
+                        data-hotkey="S" />
+                    <button special="cancel" string="Discard" data-hotkey="J" />
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="res_company_form_view_onboarding_sale_tax" model="ir.ui.view">
+        <field name="name">tax.config.form.view.onboarding.sale.tax</field>
+        <field name="model">tax.config</field>
+        <field name="priority">1000</field>
+        <field name="arch" type="xml">
+            <form>
+                <div class="mb16">Choose a default sales tax for your products.</div>
+                <label for="account_sale_tax_id" string="Sales Tax" />
+                <field name="account_sale_tax_id" />
+                <footer>
+                    <button
+                        name="action_save_onboarding_sale_tax"
+                        type="object"
+                        string="Apply"
+                        class="btn btn-primary"
+                        data-hotkey="q" />
+                    <button
+                        special="cancel"
+                        string="Cancel"
+                        class="btn-secondary"
+                        data-hotkey="x" />
+                </footer>
+            </form>
+        </field>
+    </record>
+
+</odoo>

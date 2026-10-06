@@ -1,0 +1,5 @@
+from . import wizard_hr_employee_register_departure
+from . import wizard_mail_activity_schedule
+from . import wizard_hr_employee_update_contract
+from . import wizard_hr_employee_update_bank_allocation_line
+from . import wizard_hr_employee_update_bank_allocation

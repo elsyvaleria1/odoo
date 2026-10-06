@@ -1,0 +1,95 @@
+// @ts-check
+/** @odoo-module native */
+
+import { Component, useProps } from "@odoo/owl";
+import { toISODate } from "@web/core/l10n/dates";
+
+import { baseEventClassNames, paintMountedEvent } from "./calendar_utils.js";
+import {
+    decorateFcViewMount,
+    fromFcDate,
+    withDayCellClassNames,
+} from "./hooks/full_calendar_hook.js";
+
+export class CalendarRendererBase extends Component {
+    props = useProps(this.constructor.props);
+
+    /** @param {{ el: HTMLElement, options: Record<string, any> }} params */
+    viewDidMount({ el, options }) {
+        decorateFcViewMount({
+            el,
+            fcOptions: options,
+            weekNumbers: this.options.weekNumbers,
+            weekNumbersWithinDays: this.customOptions.weekNumbersWithinDays,
+        });
+    }
+
+    /**
+     * @param {{ date: any }} info
+     * @returns {string[]}
+     */
+    getDayCellClassNames(info) {
+        const date = toISODate(fromFcDate(info.date));
+        if (this.model.unusualDays.includes(date)) {
+            return ["o_calendar_disabled"];
+        }
+        return [];
+    }
+
+    /** @param {{ date: any }} info */
+    dayCellClass(info) {
+        return withDayCellClassNames(info, this.getDayCellClassNames(info));
+    }
+
+    /**
+     * The objects the fullcalendar events are derived from. The calendar hook
+     * refetches events only when one of them changes identity, so a renderer
+     * that maps more than the records into events lists its extra sources here.
+     *
+     * @returns {unknown[]}
+     */
+    eventSources() {
+        return [this.model.records];
+    }
+
+    /** @returns {Object[]} */
+    mapRecordsToEvents() {
+        return Object.values(this.model.records).map((r) =>
+            this.convertRecordToEvent(r),
+        );
+    }
+
+    /**
+     * @abstract
+     * @param {Object} _record
+     * @returns {Object}
+     */
+    convertRecordToEvent(_record) {
+        throw new Error(
+            `${this.constructor.name} must implement convertRecordToEvent()`,
+        );
+    }
+
+    /**
+     * @param {{ event: { id: string } }} info
+     * @returns {string[]}
+     */
+    eventClassNames({ event }) {
+        return baseEventClassNames(this.model.records[event.id]);
+    }
+
+    /** @param {{ el?: HTMLElement, date: any }} info */
+    onDayCellDidMount(info) {
+        const classes = this.getDayCellClassNames(info);
+        if (classes.length && info.el) {
+            info.el.classList.add(...classes);
+        }
+    }
+
+    /** @param {{ el: HTMLElement, event: { id: string } }} info */
+    onEventDidMount(info) {
+        const { el, event } = info;
+        const record = this.model.records[event.id];
+        paintMountedEvent(el, event, record, this.eventClassNames(info));
+    }
+}

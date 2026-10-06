@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_stock_replenishment_info" model="ir.ui.view">
+        <field name="name">Stock Replenishment Information</field>
+        <field
+            name="model">wizard.stock.warehouse.orderpoint.update.replenishment</field>
+        <field name="arch" type="xml">
+            <form class="o_stock_replenishment_info">
+                <field name="orderpoint_id" invisible="1" />
+                <field name="qty_to_order" invisible="1" />
+                <div class="alert alert-info" role="alert">
+                    <span>When the stock level at the forecasted date is below the minimum (<field name="product_min_qty" readonly="True" /> <field name="product_uom_name" />),
+                        a replenishment must be done to reach the maximum level of stock (<field name="product_max_qty" readonly="True" /> <field name="product_uom_name" />
+                        ).</span>
+                </div>
+                <group>
+                    <group>
+                        <field
+                            name="json_lead_days"
+                            widget="lead_days_widget"
+                            colspan="2"
+                            nolabel="1" />
+                    </group>
+                    <group>
+                        <div>
+                            <h2>Min - Max</h2>
+                            <hr />
+                            <div>
+                                <label for="based_on" />
+                                <field name="based_on" widget="time_period_selection" class="oe_inline" /> x <field name="percent_factor" class="o_small" /> % </div>
+                            <div>
+                                <label
+                                    for="product_min_qty"
+                                    class="o_form_label col-3" />
+                                <field name="product_min_qty" class="oe_inline" />
+                                <field name="product_uom_name" class="oe_inline" />
+                            </div>
+                            <div>
+                                <label
+                                    for="product_max_qty"
+                                    class="o_form_label col-3" />
+                                <field name="product_max_qty" class="oe_inline" />
+                                <field name="product_uom_name" class="oe_inline" />
+                            </div>
+                            <field
+                                name="json_replenishment_graph"
+                                widget="replenishment_graph_widget"
+                                colspan="2" />
+                        </div>
+                    </group>
+                </group>
+                <notebook>
+                    <field name="warehouseinfo_ids" invisible="1" />
+                    <page
+                        name="page_warehouses"
+                        string="Warehouses"
+                        invisible="not warehouseinfo_ids">
+                        <field name="wh_replenishment_option_ids" readonly="1" />
+                    </page>
+                </notebook>
+                <footer>
+                    <button
+                        special="save"
+                        string="Save"
+                        class="btn btn-primary"
+                        data-hotkey="q" />
+                    <button
+                        special="cancel"
+                        string="Close"
+                        class="btn-secondary"
+                        data-hotkey="x" />
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_stock_replenishment_info" model="ir.actions.act_window">
+        <field name="name">Replenishment Information</field>
+        <field
+            name="res_model">wizard.stock.warehouse.orderpoint.update.replenishment</field>
+        <field name="view_mode">form</field>
+        <field name="view_id" ref="view_stock_replenishment_info" />
+        <field name="target">new</field>
+        <field name="context">{'default_orderpoint_id': active_id}</field>
+    </record>
+
+    <record id="replenishment_option_tree_view" model="ir.ui.view">
+        <field name="name">stock.replenishment.option.list.view</field>
+        <field
+            name="model">wizard.stock.warehouse.orderpoint.update.replenishment.option</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="qty_to_order" column_invisible="True" />
+                <field name="warehouse_id" string="Warehouse" />
+                <field name="location_id" string="Warehouse Location" />
+                <field
+                    name="qty_free"
+                    string="Available Quantity"
+                    decoration-danger="qty_free &lt; qty_to_order" />
+                <field name="uom" />
+                <field name="route_id" />
+                <field name="lead_time" />
+                <button
+                    name="action_select_route"
+                    type="object"
+                    string="Select Route"
+                    class="btn btn-link" />
+            </list>
+        </field>
+    </record>
+
+    <record id="replenishment_option_warning_view" model="ir.ui.view">
+        <field name="name">stock.replenishment.warning.view</field>
+        <field
+            name="model">wizard.stock.warehouse.orderpoint.update.replenishment.option</field>
+        <field name="priority">100</field>
+        <field name="arch" type="xml">
+            <form>
+                <div>
+                    <field name="warning_message" />
+                </div>
+                <footer>
+                    <button name="action_order_available_quantity" type="object" invisible="qty_free &lt;= 0.0" class="btn-primary"> Order <field name="qty_free" />
+                    </button>
+                    <button name="action_order_full_quantity" type="object"> Order <field name="qty_to_order" />
+                    </button>
+                    <button special="cancel" string="Cancel" class="btn-secondary" />
+                </footer>
+            </form>
+        </field>
+    </record>
+
+</odoo>

@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <data>
+        <record id="request_appraisal_view_form" model="ir.ui.view">
+            <field name="name">request.appraisal.form</field>
+            <field name="model">wizard.hr.appraisal.send</field>
+            <field name="arch" type="xml">
+                <form string="Compose Email">
+                    <sheet>
+                        <group col="1">
+                            <group>
+                                <field name="appraisal_id" invisible="1" />
+                                <field name="author_id" invisible="1" />
+                                <field name="employee_id" invisible="1" />
+                                <field name="lang" invisible="1" />
+                                <field name="render_model" invisible="1" />
+                                <field name="template_id" invisible="1" />
+                                <field
+                                    name="recipient_ids"
+                                    placeholder="Add existing contacts..."
+                                    widget="many2many_tags"
+                                    context="{'show_email': True, 'form_view_ref': 'base.view_partner_simple_form'}"
+                                    options="{'no_quick_create': True}" />
+                                <field
+                                    name="subject"
+                                    placeholder="Subject..."
+                                    class="w-100" />
+                            </group>
+                        </group>
+                        <group>
+                            <field name="body" invisible="1" />
+                            <field
+                                name="user_body"
+                                placeholder="Optional comment..."
+                                nolabel="1"
+                                class="note-wizard" />
+                        </group>
+                    </sheet>
+                    <footer>
+                        <button
+                            name="action_invite"
+                            type="object"
+                            string="Send"
+                            class="btn-primary"
+                            data-hotkey="q" />
+                        <button
+                            special="cancel"
+                            string="Cancel"
+                            class="btn-secondary"
+                            data-hotkey="x" />
+                    </footer>
+                </form>
+            </field>
+        </record>
+    </data>
+
+</odoo>

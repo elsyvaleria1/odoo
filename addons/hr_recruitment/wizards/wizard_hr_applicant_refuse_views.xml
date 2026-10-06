@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="applicant_get_refuse_reason_view_form" model="ir.ui.view">
+        <field name="name">applicant.get.refuse.reason.form</field>
+        <field name="model">wizard.hr.applicant.refuse</field>
+        <field name="arch" type="xml">
+            <form string="Refuse Reason" disable_autofocus="true">
+                <group col="1">
+                    <field
+                        name="refuse_reason_id"
+                        string="Reason"
+                        widget="selection_badge"
+                        options="{'horizontal': true, 'no_create': True, 'no_open': True}" />
+                    <group invisible="not refuse_reason_id">
+                        <field
+                            name="duplicates"
+                            widget="boolean_toggle"
+                            options="{'autosave': False}"
+                            invisible="duplicates_count == 0" />
+                        <field
+                            name="duplicate_applicant_ids"
+                            widget="applicant_line_many2many"
+                            domain="duplicate_applicant_ids_domain"
+                            invisible="not duplicates" />
+                        <field
+                            name="send_mail"
+                            widget="boolean_toggle"
+                            options="{'autosave': False}" />
+                    </group>
+                    <group col="1" invisible="not send_mail">
+                        <group col="2">
+                            <field
+                                name="applicant_ids"
+                                placeholder="Specify Refused Applicants..."
+                                widget="many2many_tags"
+                                options="{'no_create': True}"
+                                required="send_mail" />
+                        </group>
+                        <group col="2">
+                            <field name="lang" invisible="1" />
+                            <field name="render_model" invisible="1" />
+                            <field
+                                name="subject"
+                                placeholder="Subject..."
+                                required="send_mail" />
+                        </group>
+                        <field name="can_edit_body" invisible="1" />
+                        <field
+                            name="body"
+                            placeholder="Email Body..."
+                            widget="html_mail"
+                            nolabel="1"
+                            force_save="1"
+                            readonly="not can_edit_body"
+                            class="oe-bordered-editor" />
+                        <field
+                            name="attachment_ids"
+                            widget="many2many_binary"
+                            invisible="not can_edit_body" />
+                    </group>
+                </group>
+                <div
+                    class="alert alert-danger"
+                    role="alert"
+                    invisible="not applicant_without_email or not send_mail">
+                    <field name="applicant_without_email" class="mr4" />
+                </div>
+                <footer>
+                    <button
+                        name="action_refuse_reason_apply"
+                        type="object"
+                        string="Refuse"
+                        class="btn-primary"
+                        data-hotkey="q" />
+                    <button
+                        special="cancel"
+                        string="Cancel"
+                        class="btn-secondary"
+                        data-hotkey="x" />
+                    <div class="d-flex" invisible="not send_mail">
+                        <div invisible="not can_edit_body">
+                            <field
+                                name="template_id"
+                                widget="mail_composer_template_selector" />
+                        </div>
+                        <field name="scheduled_date" widget="text_scheduled_date" />
+                    </div>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="applicant_get_refuse_reason_action" model="ir.actions.act_window">
+        <field name="name">Refuse Reason</field>
+        <field name="res_model">wizard.hr.applicant.refuse</field>
+        <field name="view_mode">form</field>
+        <field name="view_id" ref="applicant_get_refuse_reason_view_form" />
+        <field name="target">new</field>
+    </record>
+
+</odoo>

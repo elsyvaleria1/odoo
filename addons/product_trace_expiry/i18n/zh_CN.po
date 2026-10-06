@@ -1,0 +1,258 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# * product_expiry
+#
+# Translators:
+# Martin Trigaux, 2022
+# Jeffery CHEN <jeffery9@gmail.com>, 2022
+# 稀饭~~ <wangwhai@qq.com>, 2022
+# Raymond Yu <cl_yu@hotmail.com>, 2022
+# "Tiffany Chang (tic)" <tic@odoo.com>, 2025.
+# "Chloe Wang (chwa)" <chwa@odoo.com>, 2025.
+# Weblate <noreply-mt-weblate@weblate.org>, 2025.
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 15.5alpha1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-01-25 18:36+0000\n"
+"PO-Revision-Date: 2025-12-20 09:36+0000\n"
+"Last-Translator: \"Chloe Wang (chwa)\" <chwa@odoo.com>\n"
+"Language-Team: Chinese (Simplified Han script) <https://translate.odoo.com/projects/odoo-19/product_expiry/zh_Hans/>\n"
+"Language: zh_CN\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"X-Generator: Weblate 5.14.3\n"
+
+#. module: product_trace_expiry
+#. odoo-python
+#: code:addons/product_trace_expiry/models/product_trace.py:0
+msgid "\t--Expire on %(date)s--"
+msgstr "\t-- 到期日：%(date)s --"
+
+#. module: product_trace_expiry
+#. odoo-python
+#: code:addons/product_trace_expiry/models/product_trace.py:0
+msgid "\t--Expired--"
+msgstr "\t-- 已到期 --"
+
+#. module: product_trace_expiry
+#: model_terms:ir.ui.view,arch_db:product_trace_expiry.view_product_trace_form
+msgid ""
+"<span class=\"badge rounded-pill float-end text-bg-warning\" invisible=\"not use_expiration_date or not (alert_date &lt;= time.strftime('%Y-%m-%d %H:%M:%S') &lt; expiration_date)\">Expiring</span>\n"
+"                <span class=\"badge rounded-pill float-end text-bg-danger\" invisible=\"not use_expiration_date or not product_expiry_alert\">Expired</span>"
+msgstr ""
+
+#. module: product_trace_expiry
+#. odoo-python
+#: code:addons/product_trace_expiry/models/product_template.py:0
+#: model:ir.model.fields,field_description:product_trace_expiry.field_product_product__alert_time
+#: model:ir.model.fields,field_description:product_trace_expiry.field_product_template__alert_time
+#: model:ir.model.fields,field_description:product_trace_expiry.field_product_trace__alert_date
+msgid "Alert Date"
+msgstr "警报日期"
+
+#. module: product_trace_expiry
+#: model_terms:ir.ui.view,arch_db:product_trace_expiry.view_product_trace_form
+msgid "Alert from"
+msgstr ""
+
+#. module: product_trace_expiry
+#. odoo-python
+#: code:addons/product_trace_expiry/models/product_template.py:0
+#: model:ir.model.fields,field_description:product_trace_expiry.field_product_product__use_time
+#: model:ir.model.fields,field_description:product_trace_expiry.field_product_template__use_time
+msgid "Best Before Date"
+msgstr "在此日期前"
+
+#. module: product_trace_expiry
+#: model_terms:ir.ui.view,arch_db:product_trace_expiry.view_product_trace_form
+msgid "Best before"
+msgstr ""
+
+#. module: product_trace_expiry
+#: model:ir.model.fields,field_description:product_trace_expiry.field_product_trace__use_date
+msgid "Best before Date"
+msgstr "在此日期前食用"
+
+#. module: product_trace_expiry
+#: model:ir.model.fields,help:product_trace_expiry.field_product_trace__alert_date
+msgid ""
+"Date to determine the expired lots and serial numbers using the filter "
+"\"Expiration Alerts\"."
+msgstr "使用到期“到期警报”确定到期批次和序列号的日期。"
+
+#. module: product_trace_expiry
+#: model_terms:ir.ui.view,arch_db:product_trace_expiry.view_product_trace_form
+msgid "Dates"
+msgstr "日期"
+
+#. module: product_trace_expiry
+#: model:ir.model.fields,field_description:product_trace_expiry.field_product_category__display_name
+#: model:ir.model.fields,field_description:product_trace_expiry.field_product_product__display_name
+#: model:ir.model.fields,field_description:product_trace_expiry.field_product_template__display_name
+#: model:ir.model.fields,field_description:product_trace_expiry.field_product_trace__display_name
+msgid "Display Name"
+msgstr "显示名称"
+
+#. module: product_trace_expiry
+#: model_terms:ir.ui.view,arch_db:product_trace_expiry.view_product_trace_form
+msgid "Expiration"
+msgstr "到期"
+
+#. module: product_trace_expiry
+#. odoo-python
+#: code:addons/product_trace_expiry/models/product_template.py:0
+#: model:ir.model.fields,field_description:product_trace_expiry.field_product_product__expiration_time
+#: model:ir.model.fields,field_description:product_trace_expiry.field_product_template__expiration_time
+#: model:ir.model.fields,field_description:product_trace_expiry.field_product_trace__expiration_date
+msgid "Expiration Date"
+msgstr "有效期"
+
+#. module: product_trace_expiry
+#: model:ir.model.fields,field_description:product_trace_expiry.field_product_trace__product_expiry_reminded
+msgid "Expiry has been reminded"
+msgstr "已提醒过期时间"
+
+#. module: product_trace_expiry
+#: model:ir.model.fields,field_description:product_trace_expiry.field_product_category__id
+#: model:ir.model.fields,field_description:product_trace_expiry.field_product_product__id
+#: model:ir.model.fields,field_description:product_trace_expiry.field_product_template__id
+#: model:ir.model.fields,field_description:product_trace_expiry.field_product_trace__id
+msgid "ID"
+msgstr "ID"
+
+#. module: product_trace_expiry
+#: model:ir.model,name:product_trace_expiry.model_product_trace
+msgid "Lot/Serial Number"
+msgstr "批次/序列号码"
+
+#. module: product_trace_expiry
+#: model:ir.model.fields,help:product_trace_expiry.field_product_product__expiration_time
+#: model:ir.model.fields,help:product_trace_expiry.field_product_template__expiration_time
+msgid ""
+"Number of days after the receipt of the products (from the vendor or in "
+"stock after production) after which the goods may become dangerous and must "
+"not be consumed. It will be computed on the lot/serial number."
+msgstr "产品收到后天数(从供应商处或生产后入库)，货物可能变危险且不得食用。它将在批号/序列号上计算。"
+
+#. module: product_trace_expiry
+#: model:ir.model.fields,help:product_trace_expiry.field_product_product__alert_time
+#: model:ir.model.fields,help:product_trace_expiry.field_product_template__alert_time
+msgid ""
+"Number of days before the Expiration Date after which an alert should be "
+"raised on the lot/serial number. It will be computed on the lot/serial "
+"number."
+msgstr "到期前的天数，会在批号/序列号上发出警告。将在批号/序列号上计算。"
+
+#. module: product_trace_expiry
+#: model:ir.model.fields,help:product_trace_expiry.field_product_product__removal_time
+#: model:ir.model.fields,help:product_trace_expiry.field_product_template__removal_time
+msgid ""
+"Number of days before the Expiration Date after which the goods should be "
+"removed from the stock and not be counted in the Fresh On Hand Stock "
+"anymore.It will be computed on the lot/serial number."
+msgstr ""
+
+#. module: product_trace_expiry
+#: model:ir.model.fields,help:product_trace_expiry.field_product_product__use_time
+#: model:ir.model.fields,help:product_trace_expiry.field_product_template__use_time
+msgid ""
+"Number of days before the Expiration Date after which the goods starts "
+"deteriorating, without being dangerous yet. It will be computed on the "
+"lot/serial number."
+msgstr "产品开始变质至到期日期之间的天数。将在批号/序列号上计算。"
+
+#. module: product_trace_expiry
+#: model:ir.model,name:product_trace_expiry.model_product_template
+msgid "Product"
+msgstr "产品"
+
+#. module: product_trace_expiry
+#: model:ir.model,name:product_trace_expiry.model_product_category
+msgid "Product Category"
+msgstr "产品类别"
+
+#. module: product_trace_expiry
+#: model:ir.model.fields,field_description:product_trace_expiry.field_product_trace__product_expiry_alert
+msgid "Product Expiry Alert"
+msgstr "过期警报"
+
+#. module: product_trace_expiry
+#: model:ir.model,name:product_trace_expiry.model_product_product
+msgid "Product Variant"
+msgstr "产品变体"
+
+#. module: product_trace_expiry
+#. odoo-python
+#: code:addons/product_trace_expiry/models/product_template.py:0
+#: model:ir.model.fields,field_description:product_trace_expiry.field_product_product__removal_time
+#: model:ir.model.fields,field_description:product_trace_expiry.field_product_template__removal_time
+#: model:ir.model.fields,field_description:product_trace_expiry.field_product_trace__removal_date
+#: model_terms:ir.ui.view,arch_db:product_trace_expiry.view_product_trace_form
+msgid "Removal Date"
+msgstr "下架日期"
+
+#. module: product_trace_expiry
+#: model:ir.model.fields,help:product_trace_expiry.field_product_trace__product_expiry_alert
+msgid "The Expiration Date has been reached."
+msgstr "已到达到期日期。"
+
+#. module: product_trace_expiry
+#. odoo-python
+#: code:addons/product_trace_expiry/models/product_template.py:0
+msgid ""
+"The expiry delays of %(product)s are numbers of days and cannot be negative:"
+" %(fields)s. A negative delay puts a lot's removal date after its expiration"
+" date, which leaves expired goods reservable and blocks the transfer that "
+"would clear them."
+msgstr ""
+
+#. module: product_trace_expiry
+#: model:ir.model.fields,help:product_trace_expiry.field_product_trace__expiration_date
+msgid ""
+"This is the date on which the goods with this Serial Number may become "
+"dangerous and must not be consumed."
+msgstr "该批次/序列号的产品的保质期过期日期，包含产品将不能使用。"
+
+#. module: product_trace_expiry
+#: model:ir.model.fields,help:product_trace_expiry.field_product_trace__removal_date
+msgid ""
+"This is the date on which the goods with this Serial Number should be "
+"removed from the stock and not be counted in the Fresh On Hand Stock "
+"anymore. This date will be used in FEFO removal strategy."
+msgstr ""
+
+#. module: product_trace_expiry
+#: model:ir.model.fields,help:product_trace_expiry.field_product_trace__use_date
+msgid ""
+"This is the date on which the goods with this Serial Number start "
+"deteriorating, without being dangerous yet."
+msgstr "该批次/序列号的产品的最佳食用日期，此日期后将开始变坏，但没有过期，仍在质保期内。"
+
+#. module: product_trace_expiry
+#: model:ir.model.fields,field_description:product_trace_expiry.field_product_category__use_expiration_date
+#: model:ir.model.fields,field_description:product_trace_expiry.field_product_product__use_expiration_date
+#: model:ir.model.fields,field_description:product_trace_expiry.field_product_template__use_expiration_date
+#: model:ir.model.fields,field_description:product_trace_expiry.field_product_trace__use_expiration_date
+msgid "Use Expiration Date"
+msgstr "使用到期日"
+
+#. module: product_trace_expiry
+#: model:ir.model.fields,help:product_trace_expiry.field_product_category__use_expiration_date
+msgid ""
+"When this box is ticked, products in this category default to managing "
+"product expiration, with dates on the product and on the corresponding "
+"lot/serial numbers"
+msgstr ""
+
+#. module: product_trace_expiry
+#: model:ir.model.fields,help:product_trace_expiry.field_product_product__use_expiration_date
+#: model:ir.model.fields,help:product_trace_expiry.field_product_template__use_expiration_date
+#: model:ir.model.fields,help:product_trace_expiry.field_product_trace__use_expiration_date
+msgid ""
+"When this box is ticked, you have the possibility to specify dates to manage"
+" product expiration, on the product and on the corresponding lot/serial "
+"numbers. Defaults to the product category setting."
+msgstr ""

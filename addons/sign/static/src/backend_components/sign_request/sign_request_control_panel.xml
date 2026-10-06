@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="sign.SignRequestControlPanel">
+        <ControlPanel display="this.controlPanelDisplay">
+            <t t-set-slot="control-panel-always-buttons">
+                <button t-if="this.signInfo.get('needToSign')" type="button" class="btn btn-primary me-2 o_sign_sign_directly" t-on-click="this.signDocument">Sign Now</button>
+                <button t-if="this.nextTemplate &amp;&amp; this.nextTemplate.template" type="button" class="btn btn-primary me-2" t-on-click="this.goToNextDocument">Next Document</button>
+                <SignRequestDocumentsDropdown t-if="this.shouldShowDownloadDropdown"/>
+            </t>
+            <t t-if="this.allowCancel" t-set-slot="control-panel-additional-actions">
+                <div class="o_sign_request_cog_menu d-flex align-items-center ms-1 lh-1">
+                    <Dropdown menuClass="'lh-base'">
+                        <t t-call="web.CogMenuToggler"/>
+                        <t t-set-slot="content">
+                            <CogMenuItem icon="'fa-solid fa-ban'" description.translate="Cancel Request" danger="true" onSelected.bind="this.cancelDocument"/>
+                        </t>
+                    </Dropdown>
+                </div>
+            </t>
+            <t t-set-slot="control-panel-navigation-additional">
+                <div class="signer-status">
+                    <t t-out="this.markupSignerStatus"/>
+                </div>
+            </t>
+        </ControlPanel>
+    </t>
+</templates>

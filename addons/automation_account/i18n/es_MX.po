@@ -1,0 +1,693 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* automation_account
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Language: es_MX\n"
+"Plural-Forms: \n"
+
+#. module: automation_account
+#: model:ir.actions.act_window,name:automation_account.action_automation_runtime_accounting
+#: model:ir.ui.menu,name:automation_account.menu_automation_runtime_accounting
+#: model_terms:ir.ui.view,arch_db:automation_account.view_company_form
+msgid "Accounting Workflows"
+msgstr "Flujos de trabajo contables"
+
+#. module: automation_account
+#: model:ir.actions.server,name:automation_account.action_cash_bank_bsl
+#: model:ir.actions.server,name:automation_account.action_undeduc_bsl
+#: model:ir.model.fields,field_description:automation_account.field_wizard_account_bank_statement_line_start_automation__st_line_id
+#: model_terms:ir.ui.view,arch_db:automation_account.view_automation_runtime_search
+msgid "Bank Statement Line"
+msgstr "Línea de estado de cuenta"
+
+#. module: automation_account
+#: model_terms:ir.ui.view,arch_db:automation_account.view_automation_runtime_create_form
+msgid "Cancel"
+msgstr "Cancelar"
+
+#. module: automation_account
+#: model_terms:ir.ui.view,arch_db:automation_account.view_automation_runtime_create_form
+msgid "Create and Start Workflow"
+msgstr "Crear e iniciar flujo de trabajo"
+
+#. module: automation_account
+#: model_terms:ir.ui.view,arch_db:automation_account.view_automation_runtime_search
+msgid "With Bank Statement"
+msgstr "Con estado de cuenta"
+
+#. module: automation_account
+#. odoo-javascript
+#: code:addons/automation_account/static/src/components/bank_reconciliation/automation_wizard_button.js:0
+msgid "Create Automation Workflow"
+msgstr "Crear flujo de trabajo automatizado"
+
+#. module: automation_account
+#. odoo-javascript
+#: code:addons/automation_account/static/src/components/bank_reconciliation/automation_wizard_button.js:0
+msgid "Start Automation"
+msgstr "Iniciar automatización"
+
+#. module: automation_account
+#. odoo-javascript
+#: code:addons/automation_account/static/src/components/bank_reconciliation/automation_wizard_button.js:0
+msgid "View Automation"
+msgstr "Ver automatización"
+
+#. module: automation_account
+#. odoo-javascript
+#: code:addons/automation_account/static/src/components/bank_reconciliation/automation_wizard_button.js:0
+msgid "View Automation Summary"
+msgstr "Ver resumen de la automatización"
+
+#. module: automation_account
+#: model:ir.model.fields,field_description:automation_account.field_account_bank_statement_line__automation_runtime_ids
+msgid "Automation Workflows"
+msgstr "Flujos de trabajo automatizados"
+
+#. module: automation_account
+#: model:ir.model.fields,field_description:automation_account.field_account_bank_statement_line__automation_runtime_state
+msgid "Automation Workflow State"
+msgstr "Estado del flujo de trabajo automatizado"
+
+#. module: automation_account
+#: model:ir.model.fields,help:automation_account.field_account_bank_statement_line__automation_runtime_id
+msgid "Latest workflow started from this line, ignoring cancelled ones."
+msgstr "Último flujo de trabajo iniciado desde esta línea, sin contar los cancelados."
+
+#. module: automation_account
+#: model:ir.model.fields,field_description:automation_account.field_ir_actions_server__run_at_start
+msgid "Run at Start"
+msgstr "Ejecutar al iniciar"
+
+#. module: automation_account
+#: model:ir.model.fields,help:automation_account.field_ir_actions_server__run_at_start
+msgid ""
+"Execute this step as soon as a workflow started from a bank statement line "
+"begins, if the step is ready by then. Only for steps that create no "
+"document, such as registering the statement line."
+msgstr ""
+"Ejecuta este paso en cuanto inicia un flujo de trabajo creado desde una "
+"línea de estado de cuenta, si para entonces el paso está listo. Solo para "
+"pasos que no crean documentos, como registrar la línea del estado de cuenta."
+
+#. module: automation_account
+#: model:ir.model.fields,field_description:automation_account.field_res_company__automation_intercompany_journal_id
+msgid "Intercompany Collection Journal"
+msgstr "Diario de cobranza intercompañía"
+
+#. module: automation_account
+#: model:ir.model.fields,help:automation_account.field_res_company__automation_intercompany_journal_id
+msgid ""
+"Journal this company books a collection in when another company's bank "
+"received the money: the customer's receivable is settled against what the "
+"receiving company owes this one."
+msgstr ""
+"Diario en el que esta compañía registra un cobro cuando el dinero entró al "
+"banco de otra compañía: la cuenta por cobrar del cliente se salda contra lo "
+"que la compañía que recibió le debe a esta."
+
+#: model:ir.model.fields.selection,name:automation_account.selection__ir_actions_server__state__workflow_register_statement
+msgid "Register Bank Statement Line"
+msgstr "Registrar línea de estado de cuenta"
+
+#. module: automation_account
+#: model:ir.model.fields.selection,name:automation_account.selection__ir_actions_server__state__workflow_create_document
+msgid "Create Document from Template"
+msgstr "Crear documento desde plantilla"
+
+#. module: automation_account
+#: model:ir.model.fields.selection,name:automation_account.selection__ir_actions_server__state__workflow_reconcile_statement
+msgid "Reconcile Bank Statement Line"
+msgstr "Conciliar línea de estado de cuenta"
+
+#. module: automation_account
+#: model:ir.model.fields.selection,name:automation_account.selection__ir_actions_server__state__workflow_apply_credit_note
+msgid "Apply Credit Note to Open Invoices"
+msgstr "Aplicar nota de crédito a facturas abiertas"
+
+#. module: automation_account
+#: model:ir.model.fields,field_description:automation_account.field_ir_actions_server__workflow_template_id
+#: model:ir.model.fields,field_description:automation_account.field_ir_cron__workflow_template_id
+msgid "Document Template"
+msgstr "Plantilla del documento"
+
+#. module: automation_account
+#: model:ir.model.fields,help:automation_account.field_ir_actions_server__workflow_template_id
+#: model:ir.model.fields,help:automation_account.field_ir_cron__workflow_template_id
+msgid ""
+"The template a Create Document step fills in with the run's partner, amount,"
+" date and reference."
+msgstr ""
+"La plantilla que un paso de crear documento llena con el contacto, el "
+"importe, la fecha y la referencia de la ejecución."
+
+#. module: automation_account
+#: model:ir.model.fields,field_description:automation_account.field_ir_actions_server__workflow_company_source
+#: model:ir.model.fields,field_description:automation_account.field_ir_cron__workflow_company_source
+msgid "Create In"
+msgstr "Crear en"
+
+#. module: automation_account
+#: model:ir.model.fields.selection,name:automation_account.selection__ir_actions_server__workflow_company_source__template
+msgid "Template's Company"
+msgstr "Compañía de la plantilla"
+
+#. module: automation_account
+#: model:ir.model.fields,field_description:automation_account.field_ir_actions_server__workflow_partner_source
+#: model:ir.model.fields,field_description:automation_account.field_ir_cron__workflow_partner_source
+msgid "Issue To"
+msgstr "Emitir a"
+
+#. module: automation_account
+#: model:ir.model.fields.selection,name:automation_account.selection__ir_actions_server__workflow_partner_source__partner
+msgid "Run's Partner"
+msgstr "Contacto de la ejecución"
+
+#. module: automation_account
+#: model:ir.model.fields,field_description:automation_account.field_ir_actions_server__workflow_date_source
+#: model:ir.model.fields,field_description:automation_account.field_ir_cron__workflow_date_source
+msgid "Dated"
+msgstr "Fecha"
+
+#. module: automation_account
+#: model:ir.model.fields.selection,name:automation_account.selection__ir_actions_server__workflow_date_source__run
+msgid "Run's Date"
+msgstr "Fecha de la ejecución"
+
+#. module: automation_account
+#: model:ir.model.fields.selection,name:automation_account.selection__ir_actions_server__workflow_date_source__document
+msgid "Latest Document of the Run"
+msgstr "Último documento de la ejecución"
+
+#. module: automation_account
+#: model:ir.model.fields.selection,name:automation_account.selection__ir_actions_server__workflow_date_source__today
+msgid "Day the Step Runs"
+msgstr "Día en que se ejecuta el paso"
+
+#. module: automation_account
+#: model:ir.model.fields,field_description:automation_account.field_ir_actions_server__workflow_tax_ids
+#: model:ir.model.fields,field_description:automation_account.field_ir_cron__workflow_tax_ids
+msgid "Replace Taxes With"
+msgstr "Reemplazar impuestos por"
+
+#. module: automation_account
+#: model:ir.model.fields,help:automation_account.field_ir_actions_server__workflow_tax_ids
+#: model:ir.model.fields,help:automation_account.field_ir_cron__workflow_tax_ids
+msgid ""
+"When set, every line of the document carries these taxes instead of its "
+"product's. In another company, the tax of the same name and use is taken."
+msgstr ""
+"Si se indica, todas las líneas del documento llevan estos impuestos en lugar"
+" de los de su producto. En otra compañía se toma el impuesto del mismo "
+"nombre y uso."
+
+#. module: automation_account
+#: model:ir.model.fields,field_description:automation_account.field_ir_actions_server__workflow_auto_post
+#: model:ir.model.fields,field_description:automation_account.field_ir_cron__workflow_auto_post
+msgid "Post the Document"
+msgstr "Publicar el documento"
+
+#. module: automation_account
+#: model:ir.model.fields,help:automation_account.field_ir_actions_server__workflow_auto_post
+#: model:ir.model.fields,help:automation_account.field_ir_cron__workflow_auto_post
+msgid ""
+"Post the document as soon as it is created. Leave it off to review the draft"
+" first."
+msgstr ""
+"Publica el documento en cuanto se crea. Desactívelo para revisar primero el "
+"borrador."
+
+#. module: automation_account
+#: model:ir.model.fields,field_description:automation_account.field_automation_runtime__problem_message
+#: model:ir.model.fields,field_description:automation_account.field_wizard_account_bank_statement_line_start_automation__problem_message
+msgid "What Would Stop This Run"
+msgstr "Qué detendría esta ejecución"
+
+#. module: automation_account
+#: model:ir.model.fields,help:automation_account.field_automation_runtime__problem_message
+msgid ""
+"What the steps still to run are missing, read from the steps that declare "
+"what they do."
+msgstr ""
+"Lo que les falta a los pasos pendientes, según los pasos que declaran lo que"
+" hacen."
+
+#. module: automation_account
+#: model:ir.model.fields,field_description:automation_account.field_wizard_account_bank_statement_line_start_automation__plan_preview
+#: model_terms:ir.ui.view,arch_db:automation_account.view_automation_runtime_create_form
+msgid "What This Run Does"
+msgstr "Qué hace esta ejecución"
+
+#. module: automation_account
+#: model:ir.model.fields,help:automation_account.field_wizard_account_bank_statement_line_start_automation__plan_preview
+msgid ""
+"What each step of the workflow does with the values above, for the steps "
+"that declare it."
+msgstr ""
+"Lo que hace cada paso del flujo de trabajo con los valores de arriba, para "
+"los pasos que lo declaran."
+
+#. module: automation_account
+#: model_terms:ir.ui.view,arch_db:automation_account.view_automation_runtime_create_form
+#: model_terms:ir.ui.view,arch_db:automation_account.view_automation_runtime_form
+msgid "<strong>This run cannot complete as it stands:</strong>"
+msgstr "<strong>Esta ejecución no puede terminar como está:</strong>"
+
+#. module: automation_account
+#: model_terms:ir.ui.view,arch_db:automation_account.ir_actions_server_view_form_workflow_steps
+msgid "Links the journal entry of the run's bank statement line to this step."
+msgstr ""
+"Vincula a este paso el asiento de la línea de estado de cuenta de la "
+"ejecución."
+
+#. module: automation_account
+#: model_terms:ir.ui.view,arch_db:automation_account.ir_actions_server_view_form_workflow_steps
+msgid ""
+"Reconciles the run's bank statement line with the nearest document a "
+"previous step created."
+msgstr ""
+"Concilia la línea de estado de cuenta de la ejecución con el documento más "
+"cercano creado por un paso anterior."
+
+#. module: automation_account
+#: model_terms:ir.ui.view,arch_db:automation_account.ir_actions_server_view_form_workflow_steps
+msgid ""
+"Applies the nearest credit note a previous step created to its partner's "
+"open invoices, oldest first."
+msgstr ""
+"Aplica la nota de crédito más cercana creada por un paso anterior a las "
+"facturas abiertas de su contacto, de la más antigua a la más reciente."
+
+#. module: automation_account
+#. odoo-python
+#: code:addons/automation_account/models/ir_actions_server.py:0
+msgid "%(document)s in %(journal)s of %(company)s, issued to %(partner)s"
+msgstr "%(document)s en %(journal)s de %(company)s, emitido a %(partner)s"
+
+#. module: automation_account
+#. odoo-python
+#: code:addons/automation_account/models/ir_actions_server.py:0
+msgid "%(template)s. In: %(company)s. To: %(partner)s"
+msgstr "%(template)s. En: %(company)s. A: %(partner)s"
+
+#. module: automation_account
+#. odoo-python
+#: code:addons/automation_account/models/ir_actions_server.py:0
+msgid "Payment"
+msgstr "Pago"
+
+#. module: automation_account
+#. odoo-python
+#: code:addons/automation_account/models/ir_actions_server.py:0
+msgid "nobody"
+msgstr "nadie"
+
+#. module: automation_account
+#. odoo-python
+#: code:addons/automation_account/models/ir_actions_server.py:0
+msgid "'%(step)s' creates a payment, and this run has no amount."
+msgstr "'%(step)s' crea un pago, y esta ejecución no tiene importe."
+
+#. module: automation_account
+#. odoo-python
+#: code:addons/automation_account/models/ir_actions_server.py:0
+msgid ""
+"'%(step)s' creates its document in journal %(journal)s, which %(company)s "
+"does not have."
+msgstr ""
+"'%(step)s' crea su documento en el diario %(journal)s, que %(company)s no "
+"tiene."
+
+#. module: automation_account
+#. odoo-python
+#: code:addons/automation_account/models/ir_actions_server.py:0
+msgid "'%(step)s' issues its document to a partner, and this run names none."
+msgstr ""
+"'%(step)s' emite su documento a un contacto, y esta ejecución no indica "
+"ninguno."
+
+#. module: automation_account
+#. odoo-python
+#: code:addons/automation_account/models/ir_actions_server.py:0
+msgid "'%(step)s' needs a bank statement line, and this run names none."
+msgstr ""
+"'%(step)s' necesita una línea de estado de cuenta, y esta ejecución no "
+"indica ninguna."
+
+#. module: automation_account
+#. odoo-python
+#: code:addons/automation_account/models/ir_actions_server.py:0
+msgid ""
+"'%(step)s' settles a bank statement line of %(line_company)s against the "
+"document '%(document)s' creates in %(company)s, and %(company)s has no "
+"Intercompany Collection Journal."
+msgstr ""
+"'%(step)s' salda una línea de estado de cuenta de %(line_company)s contra el"
+" documento que '%(document)s' crea en %(company)s, y %(company)s no tiene "
+"diario de cobranza intercompañía."
+
+#. module: automation_account
+#. odoo-python
+#: code:addons/automation_account/models/ir_actions_server.py:0
+msgid "Bank statement line %(line)s has no journal entry yet."
+msgstr "La línea de estado de cuenta %(line)s aún no tiene asiento contable."
+
+#. module: automation_account
+#. odoo-python
+#: code:addons/automation_account/models/ir_actions_server.py:0
+msgid "Step '%(step)s' creates a document from a template but names none."
+msgstr ""
+"El paso '%(step)s' crea un documento desde una plantilla, pero no indica "
+"ninguna."
+
+#. module: automation_account
+#. odoo-python
+#: code:addons/automation_account/models/ir_actions_server.py:0
+msgid "Step '%(step)s' only runs as part of a workflow run."
+msgstr ""
+"El paso '%(step)s' solo se ejecuta como parte de una ejecución de flujo de "
+"trabajo."
+
+#. module: automation_account
+#. odoo-python
+#: code:addons/automation_account/models/ir_actions_server.py:0
+msgid ""
+"Step '%(step)s' replaces the taxes with '%(tax)s', which %(company)s does "
+"not have."
+msgstr ""
+"El paso '%(step)s' reemplaza los impuestos por '%(tax)s', que %(company)s no"
+" tiene."
+
+#. module: automation_account
+#: model:ir.model,name:automation_account.model_res_company
+#: model:ir.model.fields,field_description:automation_account.field_automation_runtime__company_ids
+#: model:ir.model.fields,field_description:automation_account.field_wizard_account_bank_statement_line_start_automation__company_ids
+msgid "Companies"
+msgstr "Compañías"
+
+#. module: automation_account
+#: model:ir.model.fields.selection,name:automation_account.selection__ir_actions_server__workflow_company_source__statement
+msgid "Bank Statement Line's Company"
+msgstr "Compañía de la línea de estado de cuenta"
+
+#. module: automation_account
+#: model:ir.model.fields.selection,name:automation_account.selection__ir_actions_server__workflow_date_source__statement
+msgid "Bank Statement Line's Date"
+msgstr "Fecha de la línea de estado de cuenta"
+
+#. module: automation_account
+#: model:ir.model.fields.selection,name:automation_account.selection__ir_actions_server__workflow_company_source__transaction
+msgid "Company that Holds the Transaction"
+msgstr "Compañía titular de la operación"
+
+#. module: automation_account
+#: model:ir.model.fields,help:automation_account.field_wizard_account_bank_statement_line_start_automation__company_ids
+msgid ""
+"Every company the run creates documents in. It starts with the company of "
+"the bank statement line; add the company that holds the transaction with the"
+" partner when another one's bank received the money."
+msgstr ""
+"Todas las compañías en las que la ejecución crea documentos. Empieza con la "
+"compañía de la línea de estado de cuenta; agregue la compañía titular de la "
+"operación con el contacto cuando el dinero entró al banco de otra."
+
+#. module: automation_account
+#: model:ir.model.fields,help:automation_account.field_automation_runtime__company_ids
+msgid ""
+"Every company this run creates documents in; the run is listed in each of "
+"them. With two, the one that owns the bank statement line is the vehicle "
+"that received the money and the other holds the transaction with the "
+"partner."
+msgstr ""
+"Todas las compañías en las que esta ejecución crea documentos; la ejecución "
+"aparece en cada una. Cuando son dos, la dueña de la línea de estado de "
+"cuenta es el vehículo que recibió el dinero y la otra es la titular de la "
+"operación con el contacto."
+
+#. module: automation_account
+#: model:ir.model.fields.selection,name:automation_account.selection__ir_actions_server__workflow_partner_source__third_party
+msgid "Run's Third Party"
+msgstr "Tercero de la ejecución"
+
+#. module: automation_account
+#. odoo-python
+#: code:addons/automation_account/models/automation_runtime.py:0
+msgid ""
+"The bank statement line belongs to %(company)s, which is not one of this "
+"run's companies."
+msgstr ""
+"La línea de estado de cuenta pertenece a %(company)s, que no es una de las "
+"compañías de esta ejecución."
+
+#. module: automation_account
+#: model:ir.model.fields,help:automation_account.field_ir_actions_server__workflow_company_source
+#: model:ir.model.fields,help:automation_account.field_ir_cron__workflow_company_source
+msgid ""
+"The company the document is created in. When another company's bank received"
+" the money, that company is the bank statement line's and the other one "
+"holds the transaction with the partner; a run of one company has only that "
+"one. A template that belongs to no company is created in the one that holds "
+"the transaction."
+msgstr ""
+"La compañía en la que se crea el documento. Cuando el dinero entró al banco "
+"de otra compañía, esa es la de la línea de estado de cuenta y la otra es la "
+"titular de la operación con el contacto; una ejecución de una sola compañía "
+"solo tiene esa. Una plantilla que no pertenece a ninguna compañía se crea en"
+" la titular de la operación."
+
+#. module: automation_account
+#: model:ir.model.fields,help:automation_account.field_ir_actions_server__workflow_date_source
+#: model:ir.model.fields,help:automation_account.field_ir_cron__workflow_date_source
+msgid ""
+"The date the document carries. The bank statement line's date is the day the"
+" money came in, whatever date the run was given; a run without one uses its "
+"own date. An invoice stamped days after the date it carries is refused by "
+"the tax authority, which is what the day the step runs avoids."
+msgstr ""
+"La fecha que lleva el documento. La fecha de la línea de estado de cuenta es"
+" el día en que entró el dinero, sea cual sea la fecha que se le dio a la "
+"ejecución; una ejecución sin línea usa su propia fecha. La autoridad fiscal "
+"rechaza una factura timbrada días después de la fecha que lleva; usar el día"
+" en que se ejecuta el paso lo evita."
+
+#. module: automation_account
+#: model:ir.model.fields,help:automation_account.field_automation_runtime__partner_id
+msgid ""
+"The partner the operation is about: the customer whose debt a collection "
+"reduces, whoever a document is made out to."
+msgstr ""
+"El contacto de quien trata la operación: el cliente cuya deuda reduce un "
+"cobro, sin importar a nombre de quién se emita un documento."
+
+#. module: automation_account
+#: model:ir.model.fields,help:automation_account.field_automation_runtime__third_party_id
+#: model:ir.model.fields,help:automation_account.field_wizard_account_bank_statement_line_start_automation__third_party_id
+msgid ""
+"The party a fiscal document is made out to when it is not the partner, such "
+"as the generic public for a customer who takes no invoice. Leave it empty "
+"when the partner is invoiced himself."
+msgstr ""
+"A quien se emite un documento fiscal cuando no es el contacto, como el "
+"público en general para un cliente que no pide factura. Déjelo vacío cuando "
+"se le factura al propio contacto."
+
+#. module: automation_account
+#: model:ir.model.fields,field_description:automation_account.field_automation_runtime__third_party_id
+#: model:ir.model.fields,field_description:automation_account.field_wizard_account_bank_statement_line_start_automation__third_party_id
+msgid "Third Party"
+msgstr "Tercero"
+
+#. module: automation_account
+#. odoo-python
+#: code:addons/automation_account/models/automation_runtime.py:0
+msgid ""
+"This run names %(count)s companies. A step tells the company that received "
+"the money from the one that holds the transaction, so a run works in two at "
+"most."
+msgstr ""
+"Esta ejecución indica %(count)s compañías. Un paso distingue la compañía que"
+" recibió el dinero de la titular de la operación, así que una ejecución "
+"trabaja en dos como máximo."
+
+#. module: automation_account
+#. odoo-python
+#: code:addons/automation_account/models/automation_runtime.py:0
+msgid ""
+"This run names two companies and no bank statement line, so nothing says "
+"which of them received the money."
+msgstr ""
+"Esta ejecución indica dos compañías y ninguna línea de estado de cuenta, así"
+" que nada dice cuál de ellas recibió el dinero."
+
+#. module: automation_account
+#: model:ir.model.fields,help:automation_account.field_ir_actions_server__workflow_partner_source
+#: model:ir.model.fields,help:automation_account.field_ir_cron__workflow_partner_source
+msgid ""
+"Who the document is issued to. A run that names no third party issues it to "
+"its partner."
+msgstr ""
+"A quién se emite el documento. Si la ejecución no indica un tercero, se "
+"emite a su contacto."
+
+#. module: automation_account
+#: model_terms:ir.ui.view,arch_db:automation_account.view_automation_runtime_search
+msgid "With Third Party"
+msgstr "Con tercero"
+
+#. module: automation_account
+#. odoo-python
+#: code:addons/automation_account/models/automation_runtime.py:0
+msgid ""
+"Workflow %(run)s works in a company your user does not belong to. Ask an "
+"administrator to give you every company of the run."
+msgstr ""
+"El flujo de trabajo %(run)s trabaja en una compañía a la que su usuario no "
+"pertenece. Pida a un administrador acceso a todas las compañías de la "
+"ejecución."
+
+#. module: automation_account
+#: model:ir.model.fields.selection,name:automation_account.selection__ir_actions_server__state__workflow_change_partner
+msgid "Change Partner of a Document"
+msgstr "Cambiar contacto de un documento"
+
+#. module: automation_account
+#. odoo-python
+#: code:addons/automation_account/models/ir_actions_server.py:0
+msgid "The document before it, issued again to %(partner)s"
+msgstr "El documento anterior, emitido de nuevo a %(partner)s"
+
+#. module: automation_account
+#. odoo-python
+#: code:addons/automation_account/models/ir_actions_server.py:0
+msgid ""
+"'%(step)s' issues a document again to a partner, and this run names none."
+msgstr ""
+"'%(step)s' emite de nuevo un documento a un contacto, y esta ejecución no "
+"indica ninguno."
+
+#. module: automation_account
+#. odoo-python
+#: code:addons/automation_account/models/ir_actions_server.py:0
+msgid "To: %(partner)s"
+msgstr "A: %(partner)s"
+
+#. module: automation_account
+#. odoo-python
+#: code:addons/automation_account/models/ir_actions_server.py:0
+msgid "'%(step)s' found no document of an earlier step to issue again."
+msgstr ""
+"'%(step)s' no encontró un documento de un paso anterior para emitirlo de "
+"nuevo."
+
+#. module: automation_account
+#. odoo-python
+#: code:addons/automation_account/models/ir_actions_server.py:0
+msgid ""
+"'%(step)s' issues %(document)s again to a partner, and the run names none."
+msgstr ""
+"'%(step)s' emite de nuevo %(document)s a un contacto, y la ejecución no "
+"indica ninguno."
+
+#. module: automation_account
+#. odoo-python
+#: code:addons/automation_account/models/ir_actions_server.py:0
+msgid ""
+"%(document)s is already applied to other documents. Remove what it settles "
+"before issuing it to %(partner)s."
+msgstr ""
+"%(document)s ya está aplicado a otros documentos. Quite lo que salda antes "
+"de emitirlo a %(partner)s."
+
+#. module: automation_account
+#: model_terms:ir.ui.view,arch_db:automation_account.ir_actions_server_view_form_workflow_steps
+msgid ""
+"Issues the nearest document a previous step created to this partner "
+"instead, keeping its number and date. It refuses a document already applied "
+"to others, or one whose electronic invoice the tax authority must cancel "
+"first."
+msgstr ""
+"Emite a este contacto, en su lugar, el documento más cercano que creó un "
+"paso anterior, conservando su número y fecha. Rechaza un documento ya "
+"aplicado a otros, o uno cuya factura electrónica deba cancelarse primero "
+"ante el SAT."
+
+#. module: automation_account
+#. odoo-python
+#: code:addons/automation_account/models/ir_actions_server.py:0
+msgid "%(amount)s received on %(date)s"
+msgstr "%(amount)s recibidos el %(date)s"
+
+#. module: automation_account
+#. odoo-python
+#: code:addons/automation_account/models/ir_actions_server.py:0
+msgid "%(document)s for %(amount)s, issued to %(partner)s"
+msgstr "%(document)s por %(amount)s, emitido a %(partner)s"
+
+#. module: automation_account
+#. odoo-python
+#: code:addons/automation_account/models/ir_actions_server.py:0
+msgid "%(document)s issued to %(partner)s"
+msgstr "%(document)s emitido a %(partner)s"
+
+#. module: automation_account
+#. odoo-python
+#: code:addons/automation_account/models/ir_actions_server.py:0
+msgid "%(document)s was already issued to %(partner)s"
+msgstr "%(document)s ya estaba emitido a %(partner)s"
+
+#. module: automation_account
+#. odoo-python
+#: code:addons/automation_account/models/ir_actions_server.py:0
+msgid "Settled %(amount)s of %(document)s"
+msgstr "Se saldaron %(amount)s de %(document)s"
+
+#. module: automation_account
+#. odoo-python
+#: code:addons/automation_account/models/ir_actions_server.py:0
+msgid "Applied %(amount)s to %(invoices)s; open credit %(credit)s"
+msgstr "Se aplicaron %(amount)s a %(invoices)s; saldo a favor %(credit)s"
+
+#. module: automation_account
+#. odoo-python
+#: code:addons/automation_account/models/ir_actions_server.py:0
+msgid "Nothing to apply; open credit %(credit)s"
+msgstr "Nada por aplicar; saldo a favor %(credit)s"
+
+#. module: automation_account
+#: model_terms:ir.ui.view,arch_db:automation_account.account_bank_statement_line_view_search_bank_rec_widget
+msgid "To Automate"
+msgstr "Por automatizar"
+
+#. module: automation_account
+#: model_terms:ir.ui.view,arch_db:automation_account.account_bank_statement_line_view_search_bank_rec_widget
+msgid "With Automation"
+msgstr "Con automatización"
+
+#. module: automation_account
+#. odoo-python
+#: code:addons/automation_account/models/automation_runtime.py:0
+msgid ""
+"%(line)s already started '%(workflow)s' as %(run)s. A bank statement line "
+"starts each workflow once; cancel %(run)s to start it again."
+msgstr ""
+"%(line)s ya inició '%(workflow)s' como %(run)s. Una línea de estado de cuenta "
+"inicia cada flujo de trabajo una sola vez; cancele %(run)s para iniciarlo de "
+"nuevo."
+
+#. module: automation_account
+#: model:ir.model.fields,help:automation_account.field_wizard_account_bank_statement_line_start_automation__started_automation_ids
+msgid ""
+"The workflows this bank statement line has already started and not "
+"cancelled, which it cannot start again"
+msgstr ""
+"Los flujos de trabajo que esta línea de estado de cuenta ya inició y no se "
+"cancelaron, que no puede volver a iniciar"

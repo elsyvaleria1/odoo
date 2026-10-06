@@ -1,0 +1,87 @@
+.o_searchview {
+    --SearchBar-background-color: #{$input-focus-bg};
+
+    border: $input-border-width solid o-token(--border-color, $border-color);
+    border-radius: $o-border-radius-full;
+    background-color: var(--SearchBar-background-color);
+    transition: all $o-duration-fast $o-easing-standard;
+
+    &:focus-within {
+        background: var(--o-white);
+        border-color: o-token(--o-brand, $input-focus-border-color);
+        box-shadow: $o-shadow-sm;
+        color: $input-focus-color;
+
+        + .o_searchview_dropdown_toggler {
+            border-top-color: o-token(--o-brand, $input-focus-border-color);
+            border-right-color: o-token(--o-brand, $input-focus-border-color);
+            border-bottom-color: o-token(--o-brand, $input-focus-border-color);
+        }
+    }
+
+    &:has(.o_searchview_input:focus-visible) {
+        @include o-focus-ring();
+    }
+
+    .o_searchview_input {
+        appearance: none;
+
+        &:focus-visible {
+            outline: 0;
+        }
+    }
+}
+
+// an input's automatic minimum is its intrinsic width (about 20 characters),
+// which wrapped it under the facets while the row still had room
+.o_searchview_input {
+    flex-basis: $o-search-bar-input-min-width;
+    min-width: $o-search-bar-input-min-width;
+}
+
+.o_searchview_facet {
+    @keyframes o_searchview_facet_in {
+        from {
+            opacity: 0.5;
+            transform: translateY(20%);
+        }
+    }
+
+    animation: o_searchview_facet_in $o-duration-normal $o-easing-enter;
+
+    .btn,
+    .btn:focus {
+        z-index: 0;
+    }
+
+    .o_facet_value {
+        max-width: $o-search-bar-facet-value-width;
+
+        @include media-breakpoint-down(md) {
+            max-width: calc($o-search-bar-facet-value-width / 2);
+        }
+    }
+}
+
+.o_searchview_autocomplete {
+    .o-dropdown-item {
+        align-items: center;
+        display: flex;
+        padding-left: 25px;
+
+        &.o_indent {
+            padding-left: 50px;
+        }
+
+        a {
+            color: inherit;
+
+            &.o_expand {
+                display: flex;
+                justify-content: center;
+                width: 25px;
+                @include o-position-absolute($left: 0);
+            }
+        }
+    }
+}

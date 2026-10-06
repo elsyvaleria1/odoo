@@ -1,0 +1,188 @@
+// @ts-check
+/** @odoo-module native */
+import { Action } from "@mail/core/common/action";
+import { ActionList } from "@mail/core/common/action_list";
+import { CHAT_HUB_COMPACT_LS } from "@mail/core/common/chat_hub_model";
+import { ChatWindow } from "@mail/core/common/chat_window";
+import { useHover, useMovable } from "@mail/utils/common/hooks";
+import { removeLocalStorageItem } from "@mail/utils/common/local_storage";
+import { Component, proxy, useListener, useProps } from "@odoo/owl";
+import { Dropdown, useDropdownState } from "@web/components/dropdown";
+import { browser } from "@web/core/browser/browser";
+import { isMobileOS } from "@web/core/browser/feature_detection";
+import { makeLogger } from "@web/core/debug/debug_logger";
+import { useLifecycleLog } from "@web/core/debug/logger_hooks";
+import { registry } from "@web/core/registry";
+import { _t } from "@web/core/translation";
+import { elementRef } from "@web/core/utils/element_ref";
+import { useBus, useEventBus, useService } from "@web/core/utils/hooks";
+
+import { ChatBubble } from "./chat_bubble.js";
+const log = makeLogger("mail.chat_hub");
+
+export class ChatHub extends Component {
+    static components = { ActionList, ChatBubble, ChatWindow, Dropdown };
+    static props = {};
+    static template = "mail.ChatHub";
+    props = useProps(this.constructor.props);
+
+    get chatHub() {
+        return this.store.chatHub;
+    }
+
+    setup() {
+        useLifecycleLog(log);
+        super.setup();
+        this.bus = useEventBus();
+        this.store = useService("mail.store");
+        this.ui = useService("ui");
+        this.busMonitoring = useService("bus.monitoring_service");
+        this.ref = elementRef();
+        this.bubblesHover = useHover(this.ref);
+        this.moreMenuRef = elementRef();
+        this.moreButtonRef = elementRef();
+        this.moreHover = useHover([this.moreButtonRef, this.moreMenuRef], {
+            onHover: () => (this.more.isOpen = true),
+            onAway: () => (this.more.isOpen = false),
+        });
+        this.options = useDropdownState();
+        this.more = useDropdownState();
+        this.position = proxy({
+            dragged: false,
+            isDragging: false,
+            top: "unset",
+            left: "unset",
+            bottom: `${this.chatHub.BUBBLE_OUTER}px`,
+            right: `${this.chatHub.BUBBLE_OUTER + this.chatHub.BUBBLE_START}px`,
+        });
+        this.onResize();
+        useListener(browser, "resize", this.onResize.bind(this));
+        useMovable({
+            enable: () => this.chatHub.compact || !this.chatHub.opened.length,
+            cursor: "grabbing",
+            ref: this.ref,
+            elements: ".o-mail-ChatHub-bubbles",
+            onDragStart: () => {
+                this.more.close();
+                this.options.close();
+                this.position.isDragging = true;
+                this.position.dragged = true;
+            },
+            onDragEnd: () => (this.position.isDragging = false),
+            onDrop: this.onDrop.bind(this),
+        });
+        useBus(this.bus, "ChatWindow:will-open", () => {
+            this.resetPosition();
+        });
+    }
+
+    get optionActions() {
+        const actions = [];
+        if (this.chatHub.showConversations && !this.chatHub.compact) {
+            actions.push(
+                new Action({
+                    owner: this,
+                    id: "hide-all",
+                    definition: {
+                        name: _t("Hide all conversations"),
+                        icon: "fa-regular fa-eye-slash",
+                        onSelected: () => this.chatHub.hideAll(),
+                    },
+                    store: this.store,
+                }),
+                new Action({
+                    owner: this,
+                    id: "close-all",
+                    definition: {
+                        name: _t("Close all conversations"),
+                        icon: "oi oi-close",
+                        onSelected: () => this.chatHub.closeAll(),
+                    },
+                    store: this.store,
+                }),
+            );
+        }
+        if (this.position.dragged) {
+            actions.push(
+                new Action({
+                    owner: this,
+                    id: "reset-position",
+                    definition: {
+                        name: _t("Reset initial position"),
+                        icon: "fa-solid fa-undo",
+                        onSelected: () => this.resetPosition(),
+                    },
+                    store: this.store,
+                }),
+            );
+        }
+        return actions;
+    }
+
+    get isMobileOS() {
+        return isMobileOS();
+    }
+
+    /**
+     * @param {Object} position
+     * @param {number} position.top
+     * @param {number} position.left
+     */
+    onDrop({ top, left }) {
+        log.logic("onDrop", () => ({ top, left }));
+        this.position.bottom = "unset";
+        this.position.right = "unset";
+        this.position.top = `${top}px`;
+        this.position.left = `${left}px`;
+    }
+
+    onResize() {
+        this.chatHub.onRecompute();
+    }
+
+    resetPosition() {
+        this.position.top = "unset";
+        this.position.left = "unset";
+        this.position.bottom = `${this.chatHub.BUBBLE_OUTER}px`;
+        this.position.right = `${this.chatHub.BUBBLE_OUTER + this.chatHub.BUBBLE_START}px`;
+        this.position.dragged = false;
+        this.options.close();
+    }
+
+    /** @param {import("models").ChatWindow[]} chatWindows */
+    countImportant(chatWindows) {
+        return chatWindows.filter(
+            (chatWindow) => chatWindow.thread.importantCounter > 0,
+        ).length;
+    }
+
+    get compactCounter() {
+        return this.countImportant(this.chatHub.opened.concat(this.chatHub.folded));
+    }
+
+    get hiddenCounter() {
+        return this.countImportant(this.chatHub.folded.slice(this.chatHub.maxFolded));
+    }
+
+    expand() {
+        log.logic("expand", () => ({
+            opened: this.chatHub.opened.length,
+            folded: this.chatHub.folded.length,
+        }));
+        removeLocalStorageItem(this.store, CHAT_HUB_COMPACT_LS);
+        this.more.isOpen = this.chatHub.folded.length > this.chatHub.maxFolded;
+        if (this.chatHub.opened.length > 0) {
+            this.resetPosition();
+        }
+    }
+}
+
+export const chatHubService = {
+    dependencies: ["bus.monitoring_service", "mail.store", "ui"],
+    start() {
+        registry
+            .category("main_components")
+            .add("mail.ChatHub", { Component: ChatHub });
+    },
+};
+registry.category("services").add("mail.chat_hub", chatHubService);

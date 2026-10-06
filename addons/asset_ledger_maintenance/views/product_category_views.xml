@@ -1,0 +1,215 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_product_category_form_inherit_maintenance" model="ir.ui.view">
+        <field name="name">product.category.form.inherit.maintenance</field>
+        <field name="model">product.category</field>
+        <field name="inherit_id" ref="product.view_product_category_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='parent_id']" position="after">
+                <field name="is_maintenance_team" />
+                <field
+                    name="color"
+                    widget="color_picker"
+                    invisible="not is_maintenance_team" />
+            </xpath>
+        </field>
+    </record>
+
+    <record id="product_category_maintenance_team_kanban_view" model="ir.ui.view">
+        <field name="name">product.category.maintenance.team.kanban</field>
+        <field name="model">product.category</field>
+        <field name="arch" type="xml">
+            <kanban
+                create="0"
+                sample="1"
+                class="o_kanban_dashboard o_maintenance_team_kanban"
+                can_open="0"
+                highlight_color="color">
+                <field name="id" />
+                <field name="name" />
+                <field name="color" />
+                <field name="maintenance_order_count" />
+                <field name="maintenance_plan_count" />
+                <templates>
+                    <t t-name="menu">
+                        <div class="container">
+                            <div class="row">
+                                <div class="col-6">
+                                    <h5
+                                        role="menuitem"
+                                        class="o_kanban_card_manage_title">
+                                        <span>View</span>
+                                    </h5>
+                                    <div role="menuitem">
+                                        <a name="action_view_maintenance_orders" type="object">Orders</a>
+                                    </div>
+                                    <div role="menuitem">
+                                        <a name="action_view_maintenance_plans" type="object">Plans</a>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <h5
+                                        role="menuitem"
+                                        class="o_kanban_card_manage_title">
+                                        <span>Manage</span>
+                                    </h5>
+                                    <div role="menuitem">
+                                        <a type="open">Edit Team</a>
+                                    </div>
+                                </div>
+                            </div>
+                            <div
+                                t-if="widget.editable"
+                                class="o_kanban_card_manage_settings row">
+                                <div class="col-8" role="menuitem" aria-haspopup="true">
+                                    <field name="color" widget="kanban_color_picker" />
+                                </div>
+                            </div>
+                        </div>
+                    </t>
+                    <t t-name="card">
+                        <a name="action_view_maintenance_orders" type="object">
+                            <field name="name" class="fw-bold fs-4 ms-2" />
+                        </a>
+                        <div class="row g-0 mt-3 ms-2 pb-4">
+                            <div class="col-6">
+                                <button
+                                    name="action_view_maintenance_orders"
+                                    type="object"
+                                    class="btn btn-primary">
+                                    <field name="maintenance_order_count" /> Orders
+                                </button>
+                            </div>
+                            <div class="col-6">
+                                <a
+                                    t-if="record.maintenance_plan_count.raw_value &gt; 0"
+                                    name="action_view_maintenance_plans"
+                                    type="object"
+                                    class="d-block">
+                                    <field name="maintenance_plan_count" />
+                                    Active Plans
+                                </a>
+                            </div>
+                        </div>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
+    <record id="product_category_maintenance_team_list_view" model="ir.ui.view">
+        <field name="name">product.category.maintenance.team.list</field>
+        <field name="model">product.category</field>
+        <field name="arch" type="xml">
+            <list string="Maintenance Teams">
+                <field name="name" />
+                <field name="maintenance_order_count" />
+                <field name="maintenance_plan_count" />
+            </list>
+        </field>
+    </record>
+
+    <record id="product_category_maintenance_team_form_view" model="ir.ui.view">
+        <field name="name">product.category.maintenance.team.form</field>
+        <field name="model">product.category</field>
+        <field name="arch" type="xml">
+            <form string="Maintenance Team">
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button
+                            name="action_view_maintenance_orders"
+                            type="object"
+                            icon="fa-wrench"
+                            class="oe_stat_button">
+                            <field
+                                name="maintenance_order_count"
+                                string="Orders"
+                                widget="statinfo" />
+                        </button>
+                        <button
+                            name="action_view_maintenance_plans"
+                            type="object"
+                            icon="fa-calendar"
+                            class="oe_stat_button">
+                            <field
+                                name="maintenance_plan_count"
+                                string="Plans"
+                                widget="statinfo" />
+                        </button>
+                    </div>
+                    <widget
+                        name="web_ribbon"
+                        title="Archived"
+                        invisible="maintenance_team_active"
+                        bg_color="text-bg-danger" />
+                    <group>
+                        <group>
+                            <field name="name" />
+                            <field name="is_maintenance_team" />
+                            <field name="maintenance_team_active" invisible="1" />
+                        </group>
+                        <group>
+                            <field name="color" widget="color_picker" />
+                        </group>
+                    </group>
+                </sheet>
+                <chatter />
+            </form>
+        </field>
+    </record>
+
+    <record id="product_category_maintenance_team_search_view" model="ir.ui.view">
+        <field name="name">product.category.maintenance.team.search</field>
+        <field name="model">product.category</field>
+        <field name="arch" type="xml">
+            <search string="Maintenance Teams">
+                <field name="name" />
+                <filter
+                    name="is_maintenance_team"
+                    string="Maintenance Teams"
+                    domain="[('is_maintenance_team', '=', True)]" />
+                <filter
+                    name="inactive"
+                    string="Archived"
+                    domain="[('maintenance_team_active', '=', False)]" />
+            </search>
+        </field>
+    </record>
+
+    <record id="action_maintenance_team_dashboard" model="ir.actions.act_window">
+        <field name="name">Dashboard</field>
+        <field name="res_model">product.category</field>
+        <field name="view_mode">kanban,list,form</field>
+        <field name="domain">[('is_maintenance_team', '=', True)]</field>
+        <field name="context">{'default_is_maintenance_team': True}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Create your first Maintenance Team
+            </p>
+            <p>
+                Organize your maintenance operations by creating teams.
+                Each team can manage maintenance orders and plans for specific equipment categories.
+            </p>
+        </field>
+    </record>
+
+    <record id="action_maintenance_team_config" model="ir.actions.act_window">
+        <field name="name">Maintenance Teams</field>
+        <field name="res_model">product.category</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[]</field>
+        <field
+            name="context">{'default_is_maintenance_team': True, 'search_default_is_maintenance_team': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Create a Maintenance Team
+            </p>
+            <p>
+                Teams help organize maintenance work by equipment categories.
+                Enable "Is Maintenance Team" on any product category to start using it as a team.
+            </p>
+        </field>
+    </record>
+
+</odoo>

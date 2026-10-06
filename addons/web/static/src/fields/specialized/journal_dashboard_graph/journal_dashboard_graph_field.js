@@ -1,0 +1,220 @@
+// @ts-check
+/** @odoo-module native */
+
+import { t } from "@odoo/owl";
+import { getColor, getCustomColor, withOpacity } from "@web/core/colors/colors";
+import { Chart } from "@web/core/lib/chartjs";
+import { _t } from "@web/core/translation";
+import { elementRef } from "@web/core/utils/element_ref";
+import { registerField } from "@web/fields/_registry";
+import { useChartCanvas } from "@web/fields/chart_canvas_hook";
+import { FieldComponent } from "@web/fields/field_component";
+import { archAttribute } from "@web/fields/field_options";
+import { standardFieldProps } from "@web/fields/standard_field_props";
+
+export class JournalDashboardGraphField extends FieldComponent {
+    static template = "web.JournalDashboardGraphField";
+    static GRAPH_TYPES = ["line", "bar"];
+    static props = {
+        ...standardFieldProps,
+        graphType: t
+            .customValidator(t.string(), (t) =>
+                JournalDashboardGraphField.GRAPH_TYPES.includes(t),
+            )
+            .optional("bar"),
+    };
+
+    /** @type {any} */
+    data;
+
+    /** @type {any} */
+    chart;
+
+    /** @type {ReturnType<typeof useChartCanvas>} */
+    canvasRef;
+
+    setup() {
+        this.canvasRef = elementRef();
+        this.canvasRef = useChartCanvas(this, () => [this.field.value], this.canvasRef);
+    }
+
+    /** @returns {any[] | null} */
+    parseSeries() {
+        let data;
+        try {
+            data = JSON.parse(this.field.value || "[]");
+        } catch (error) {
+            console.error(
+                `[dashboard_graph] "${this.props.name}" does not hold valid JSON; ` +
+                    `rendering no graph:`,
+                error,
+            );
+            return null;
+        }
+        if (!Array.isArray(data) || !data.length) {
+            return null;
+        }
+        if (!Array.isArray(data[0]?.values)) {
+            console.error(
+                `[dashboard_graph] "${this.props.name}" parsed, but its first ` +
+                    `series carries no "values" array; rendering no graph.`,
+            );
+            return null;
+        }
+        return data;
+    }
+
+    renderChart() {
+        this.data = this.parseSeries();
+        if (!this.data) {
+            return;
+        }
+        const config =
+            this.props.graphType === "line"
+                ? this.getLineChartConfig()
+                : this.getBarChartConfig();
+        if (!this.canvasRef.el) {
+            return;
+        }
+        this.chart = new Chart(this.canvasRef.el, config);
+    }
+    /** @returns {Object} */
+    getLineChartConfig() {
+        const labels = this.data[0].values.map((pt) => pt.x);
+        const color10 = getColor(3, "odoo");
+        const borderColor = this.data[0].is_sample_data
+            ? withOpacity(color10, 0.1)
+            : color10;
+        const backgroundColor = this.data[0].is_sample_data
+            ? withOpacity(color10, 0.05)
+            : withOpacity(color10, 0.2);
+        return {
+            type: "line",
+            data: {
+                labels,
+                datasets: [
+                    {
+                        backgroundColor,
+                        borderColor,
+                        data: this.data[0].values,
+                        fill: "start",
+                        label: this.data[0].key,
+                        borderWidth: 2,
+                    },
+                ],
+            },
+            options: {
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        enabled: !this.data[0].is_sample_data,
+                        intersect: false,
+                        position: "nearest",
+                        caretSize: 0,
+                    },
+                },
+                scales: {
+                    y: {
+                        display: false,
+                    },
+                    x: {
+                        display: false,
+                    },
+                },
+                maintainAspectRatio: false,
+                elements: {
+                    line: {
+                        tension: 0.000001,
+                    },
+                },
+            },
+        };
+    }
+
+    getBarChartConfig() {
+        const data = [];
+        const labels = [];
+        const backgroundColor = [];
+
+        const gridColor = getCustomColor("#d8dadd", "#3C3E4B");
+        const labelColor = getCustomColor("#111827", "#E4E4E4");
+        const color13 = getColor(2, "odoo");
+        const color19 = getColor(1, "odoo");
+        this.data[0].values.forEach((pt) => {
+            data.push(pt.value);
+            labels.push(pt.label);
+            if (pt.type === "past") {
+                backgroundColor.push(color13);
+            } else if (pt.type === "future") {
+                backgroundColor.push(color19);
+            } else {
+                backgroundColor.push(getCustomColor("#ebebeb", "#3C3E4B"));
+            }
+        });
+        return {
+            type: "bar",
+            data: {
+                labels,
+                datasets: [
+                    {
+                        backgroundColor,
+                        data,
+                        fill: "start",
+                        label: this.data[0].key,
+                    },
+                ],
+            },
+            options: {
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        enabled: !this.data[0].is_sample_data,
+                        intersect: false,
+                        position: "nearest",
+                        caretSize: 0,
+                    },
+                },
+                scales: {
+                    y: {
+                        display: false,
+                    },
+                    x: {
+                        grid: {
+                            color: gridColor,
+                        },
+                        ticks: {
+                            color: labelColor,
+                        },
+                        border: {
+                            color: gridColor,
+                        },
+                    },
+                },
+                maintainAspectRatio: false,
+                elements: {
+                    line: {
+                        tension: 0.000001,
+                    },
+                },
+            },
+        };
+    }
+}
+
+/** @type {import("registries").FieldsRegistryItemShape} */
+const journalDashboardGraphField = {
+    component: JournalDashboardGraphField,
+    displayName: _t("Dashboard Graph"),
+    supportedAttributes: [
+        archAttribute("graph_type", _t("Graph type"), {
+            type: "selection",
+            help: _t("`bar` or `line`."),
+        }),
+    ],
+    supportedTypes: ["text"],
+    extractProps: ({ attrs }) => ({
+        graphType: attrs.graph_type,
+    }),
+};
+
+registerField("dashboard_graph", journalDashboardGraphField);

@@ -1,0 +1,72 @@
+from odoo.exceptions import ValidationError
+from odoo.tests import TransactionCase, new_test_user, tagged
+
+
+@tagged("post_install", "-at_install")
+class TestHrGamificationBadges(TransactionCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.user = cls.env["res.users"].create(
+            {"name": "Badge User", "login": "hr_badge_user"}
+        )
+        cls.employee = cls.env["hr.employee"].create(
+            {"name": "Badge Employee", "user_id": cls.user.id}
+        )
+        cls.badge = cls.env["gamification.badge"].create({"name": "Star"})
+        cls.badge_user = cls.env["gamification.badge.user"].create(
+            {
+                "badge_id": cls.badge.id,
+                "user_id": cls.user.id,
+                "employee_id": cls.employee.id,
+            }
+        )
+
+    def test_granted_employees_count(self):
+        self.assertEqual(self.badge.granted_employees_count, 1)
+
+    def test_get_granted_employees_action(self):
+        action = self.badge.get_granted_employees()
+        self.assertEqual(action["res_model"], "hr.employee")
+        self.assertIn(self.employee.id, action["domain"][0][2])
+
+    def test_action_view_badge(self):
+        action = self.badge_user.action_view_badge()
+        self.assertEqual(action["res_model"], "gamification.badge.user")
+        self.assertEqual(action["res_id"], self.badge_user.id)
+
+    def test_hr_user_has_edit_delete_access(self):
+        self.assertTrue(self.badge_user.has_edit_delete_access)
+
+    def test_edit_access_follows_each_badge_granter_in_a_batch(self):
+        granter = new_test_user(
+            self.env,
+            login="hr_badge_granter",
+            groups="base.group_user,gamification.group_gamification_user",
+        )
+        granted = (
+            self.env["gamification.badge.user"]
+            .with_user(granter)
+            .sudo()
+            .create({"badge_id": self.badge.id, "user_id": self.user.id})
+        )
+
+        batch = (granted | self.badge_user).with_user(granter).sudo()
+
+        self.assertEqual(batch.mapped("has_edit_delete_access"), [True, False])
+
+    def test_employee_user_mismatch_is_rejected(self):
+        other_user = self.env["res.users"].create(
+            {"name": "Other", "login": "hr_badge_other"}
+        )
+        other_employee = self.env["hr.employee"].create(
+            {"name": "Other Employee", "user_id": other_user.id}
+        )
+        with self.assertRaises(ValidationError):
+            self.env["gamification.badge.user"].create(
+                {
+                    "badge_id": self.badge.id,
+                    "user_id": self.user.id,
+                    "employee_id": other_employee.id,
+                }
+            )

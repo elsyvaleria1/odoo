@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="access_class_partner_ownership" model="ir.access.class">
+        <field name="name">equity.partner_ownership</field>
+        <field
+            name="description">What a contact owns or is owned by in the cap table: shareholder counts, valuations and beneficial-owner links, read by equity viewers as the records behind them.</field>
+    </record>
+
+    <record id="access_partner_ownership_viewer" model="ir.access">
+        <field name="name">equity.partner_ownership: equity viewers</field>
+        <field name="group_id" ref="equity.group_equity_viewer" />
+        <field name="kind">permission</field>
+        <field name="operation">r</field>
+        <field name="class_id" ref="access_class_partner_ownership" />
+    </record>
+
+</odoo>

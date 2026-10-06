@@ -1,0 +1,3 @@
+id,name,model_id/id,group_id/id,kind,operation,domain
+access_starshipit_shipping_wizard_stock,access.starshipit.shipping.wizard.stock,model_wizard_delivery_carrier_update_starshipit_service,stock.group_stock_manager,permission,crud,
+access_starshipit_shipping_wizard_sale,access.starshipit.shipping.wizard.sale,model_wizard_delivery_carrier_update_starshipit_service,sale.group_sale_manager,permission,crud,

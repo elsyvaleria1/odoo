@@ -1,0 +1,4113 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* account_credit
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-09-21 17:17+0000\n"
+"PO-Revision-Date: 2026-09-21 17:17+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: es_MX\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#. module: account_credit
+#. odoo-python
+#: code:addons/account_credit/models/credit_profile.py:0
+msgid " (Guarantor)"
+msgstr " (Aval)"
+
+#. module: account_credit
+#. odoo-python
+#: code:addons/account_credit/models/credit_profile.py:0
+msgid "%(old)s -> %(new)s"
+msgstr "%(old)s -> %(new)s"
+
+#. module: account_credit
+#. odoo-python
+#: code:addons/account_credit/models/credit_profile.py:0
+msgid "- '%(name)s': %(details)s"
+msgstr "- '%(name)s': %(details)s"
+
+#. module: account_credit
+#. odoo-python
+#: code:addons/account_credit/models/credit_profile.py:0
+msgid "- Missing %(type)s%(guarantor)s [Minimum %(quantity)s required]"
+msgstr "- Falta %(type)s%(guarantor)s [Mínimo %(quantity)s requerido(s)]"
+
+#. module: account_credit
+#. odoo-python
+#: code:addons/account_credit/models/credit_profile.py:0
+msgid "- Too many %(type)s documents [Maximum %(quantity)s allowed]"
+msgstr ""
+"- Demasiados documentos de %(type)s [Máximo %(quantity)s permitido(s)]"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_portfolio_report__amount_b1_30
+#: model:ir.model.fields.selection,name:account_credit.selection__credit_provision_matrix_line__bucket__b1_30
+#: model:ir.model.fields.selection,name:account_credit.selection__credit_provision_run_line__bucket__b1_30
+msgid "1-30 days"
+msgstr "1-30 días"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_portfolio_report__amount_b31_60
+#: model:ir.model.fields.selection,name:account_credit.selection__credit_provision_matrix_line__bucket__b31_60
+#: model:ir.model.fields.selection,name:account_credit.selection__credit_provision_run_line__bucket__b31_60
+msgid "31-60 days"
+msgstr "31-60 días"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_portfolio_report__amount_b61_90
+#: model:ir.model.fields.selection,name:account_credit.selection__credit_provision_matrix_line__bucket__b61_90
+#: model:ir.model.fields.selection,name:account_credit.selection__credit_provision_run_line__bucket__b61_90
+msgid "61-90 days"
+msgstr "61-90 días"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_portfolio_report__amount_b91_180
+#: model:ir.model.fields.selection,name:account_credit.selection__credit_provision_matrix_line__bucket__b91_180
+#: model:ir.model.fields.selection,name:account_credit.selection__credit_provision_run_line__bucket__b91_180
+msgid "91-180 days"
+msgstr "91-180 días"
+
+#. module: account_credit
+#: model_terms:ir.ui.view,arch_db:account_credit.view_credit_grade_form
+msgid "<span>to</span>"
+msgstr "<span>a</span>"
+
+#. module: account_credit
+#: model_terms:ir.ui.view,arch_db:account_credit.view_order_form_credit_confirm
+#: model_terms:ir.ui.view,arch_db:account_credit.view_stock_picking_form_inherit_credit
+msgid "<strong>Credit blocked.</strong>"
+msgstr "<strong>Crédito bloqueado.</strong>"
+
+#. module: account_credit
+#: model_terms:ir.ui.view,arch_db:account_credit.view_order_form_credit_confirm
+msgid "<strong>Credit needs a manager's authorization.</strong>"
+msgstr ""
+"<strong>El crédito requiere autorización de un gerente de crédito.</strong>"
+
+#. module: account_credit
+#: model_terms:ir.ui.view,arch_db:account_credit.view_stock_picking_form_inherit_credit
+msgid "<strong>Credit warning.</strong>"
+msgstr "<strong>Advertencia de crédito.</strong>"
+
+#. module: account_credit
+#. odoo-python
+#: code:addons/account_credit/models/credit_profile.py:0
+msgid "A credit profile belongs to the commercial partner; record it on '%s'."
+msgstr ""
+"Un perfil de crédito pertenece al contacto comercial; regístrelo en '%s'."
+
+#. module: account_credit
+#: model:ir.model.constraint,message:account_credit.constraint_credit_profile_partner_company_uniq
+msgid "A customer has one credit profile per company."
+msgstr "Un cliente tiene un perfil de crédito por compañía."
+
+#. module: account_credit
+#: model:ir.model.fields.selection,name:account_credit.selection__credit_policy_rule__condition__exception_active
+msgid "A dated exception is running"
+msgstr "Hay una excepción con vigencia en curso"
+
+#. module: account_credit
+#: model:ir.model.fields,help:account_credit.field_res_bank__credit_exception
+#: model:ir.model.fields,help:account_credit.field_res_company__credit_exception
+#: model:ir.model.fields,help:account_credit.field_res_partner__credit_exception
+#: model:ir.model.fields,help:account_credit.field_res_users__credit_exception
+msgid ""
+"A dated exception is running on the profile. Setting it grants an exception "
+"for the company's maximum; clearing it ends the exception."
+msgstr ""
+"Hay una excepción con vigencia en curso en el perfil. Marcarla otorga una "
+"excepción por el máximo de la compañía; desmarcarla la termina."
+
+#. module: account_credit
+#: model:ir.model.fields,help:account_credit.field_credit_profile__exception_until
+msgid ""
+"A dated exception lets the partner buy on credit regardless of grade and "
+"policy until this day. It is never indefinite."
+msgstr ""
+"Una excepción con vigencia permite al cliente comprar a crédito sin importar"
+" el grado ni la política hasta este día. Nunca es indefinida."
+
+#. module: account_credit
+#. odoo-python
+#: code:addons/account_credit/models/credit_facility.py:0
+msgid "A facility cannot end before it starts."
+msgstr "Una línea de crédito no puede terminar antes de empezar."
+
+#. module: account_credit
+#: model:ir.model.constraint,message:account_credit.constraint_credit_facility_positive_amount
+msgid "A facility grants a positive amount."
+msgstr "Una línea de crédito otorga un monto positivo."
+
+#. module: account_credit
+#: model_terms:ir.actions.act_window,help:account_credit.action_credit_facility
+msgid ""
+"A facility grants an amount of credit for a period. The credit\n"
+"                limit of a profile is its valid collateral plus every facility\n"
+"                granting today."
+msgstr ""
+"Una línea otorga un monto de crédito por un periodo. El límite de\n"
+"                crédito de un perfil es su colateral vigente más cada línea\n"
+"                que otorga hoy."
+
+#. module: account_credit
+#. odoo-python
+#: code:addons/account_credit/models/credit_grade.py:0
+msgid "A grade's score range must lie within 0 and 100."
+msgstr "El rango de puntaje de un grado debe estar entre 0 y 100."
+
+#. module: account_credit
+#: model:ir.model.fields.selection,name:account_credit.selection__credit_policy_rule__condition__hold_active
+msgid "A hold is open on the profile"
+msgstr "Hay un bloqueo abierto en el perfil"
+
+#. module: account_credit
+#. odoo-python
+#: code:addons/account_credit/models/credit_provision_matrix.py:0
+msgid "A loss rate lies between 0 and 100."
+msgstr "Una tasa de pérdida está entre 0 y 100."
+
+#. module: account_credit
+#: model:credit.grade,description:account_credit.credit_grade_default
+msgid ""
+"A material receivable past due beyond the company's default threshold, or in"
+" legal process. Every credit sale needs a manager's authorization."
+msgstr ""
+"Una cuenta por cobrar material vencida más allá del umbral de incumplimiento"
+" de la compañía, o en proceso legal. Toda venta a crédito requiere "
+"autorización de un gerente."
+
+#. module: account_credit
+#. odoo-python
+#: code:addons/account_credit/models/credit_provision_run.py:0
+msgid "A posted run is not recomputed."
+msgstr "Una corrida publicada no se recalcula."
+
+#. module: account_credit
+#: model_terms:ir.actions.act_window,help:account_credit.action_credit_profile
+msgid ""
+"A profile is created the first time a customer is graded or buys on\n"
+"                credit. It carries the grade, the measured payment behaviour, the\n"
+"                exposure, the facilities and every decision taken."
+msgstr ""
+"Un perfil se crea la primera vez que un cliente recibe grado o compra a\n"
+"                crédito. Lleva el grado, el comportamiento de pago medido, la\n"
+"                exposición, las líneas y cada decisión tomada."
+
+#. module: account_credit
+#: model:ir.model.fields,help:account_credit.field_credit_config__default_days
+#: model:ir.model.fields,help:account_credit.field_res_config_settings__credit_default_days
+msgid ""
+"A profile whose oldest open receivable is past due by this many days is in "
+"default (Basel CRE36.69 uses 90)."
+msgstr ""
+"Un perfil cuya cuenta por cobrar abierta más antigua supera estos días de "
+"vencimiento está en incumplimiento (Basilea CRE36.69 usa 90)."
+
+#. module: account_credit
+#: model:ir.model.fields,help:account_credit.field_credit_config__watch_days
+#: model:ir.model.fields,help:account_credit.field_res_config_settings__credit_watch_days
+msgid ""
+"A profile whose oldest open receivable is past due by this many days is put "
+"under watch."
+msgstr ""
+"Un perfil cuya cuenta por cobrar abierta más antigua supera estos días de "
+"vencimiento pasa a vigilancia."
+
+#. module: account_credit
+#: model_terms:ir.actions.act_window,help:account_credit.action_credit_review
+msgid ""
+"A review snapshots a profile's metrics and score, proposes a grade\n"
+"                and a facility, and a credit manager decides."
+msgstr ""
+"Una revisión toma una instantánea de las métricas y el puntaje del perfil,\n"
+"                propone un grado y una línea, y un gerente de crédito decide."
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_event__message_needaction
+#: model:ir.model.fields,field_description:account_credit.field_credit_facility__message_needaction
+#: model:ir.model.fields,field_description:account_credit.field_credit_profile__message_needaction
+#: model:ir.model.fields,field_description:account_credit.field_credit_provision_run__message_needaction
+#: model:ir.model.fields,field_description:account_credit.field_credit_review__message_needaction
+msgid "Action Needed"
+msgstr "Requiere acción"
+
+#. module: account_credit
+#: model_terms:ir.ui.view,arch_db:account_credit.view_credit_facility_form
+msgid "Activate"
+msgstr "Activar"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_event_type__active
+#: model:ir.model.fields,field_description:account_credit.field_credit_facility__active
+#: model:ir.model.fields,field_description:account_credit.field_credit_grade__active
+#: model:ir.model.fields,field_description:account_credit.field_credit_policy_rule__active
+#: model:ir.model.fields,field_description:account_credit.field_credit_profile__active
+#: model:ir.model.fields,field_description:account_credit.field_credit_provision_matrix__active
+#: model:ir.model.fields.selection,name:account_credit.selection__credit_facility__state__active
+#: model:ir.model.fields.selection,name:account_credit.selection__credit_policy_rule__state__active
+#: model:ir.model.fields.selection,name:account_credit.selection__credit_profile__state__active
+msgid "Active"
+msgstr "Activo"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_profile__activity_ids
+#: model:ir.model.fields,field_description:account_credit.field_credit_review__activity_ids
+msgid "Activities"
+msgstr "Actividades"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_profile__activity_exception_decoration
+#: model:ir.model.fields,field_description:account_credit.field_credit_review__activity_exception_decoration
+msgid "Activity Exception Decoration"
+msgstr "Decoración de excepción de actividad"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_profile__activity_state
+#: model:ir.model.fields,field_description:account_credit.field_credit_review__activity_state
+msgid "Activity State"
+msgstr "Estado de la actividad"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_profile__activity_type_icon
+#: model:ir.model.fields,field_description:account_credit.field_credit_review__activity_type_icon
+msgid "Activity Type Icon"
+msgstr "Icono del tipo de actividad"
+
+#. module: account_credit
+#: model:res.groups,name:account_credit.group_credit_manager
+msgid "Administrator"
+msgstr "Administrador"
+
+#. module: account_credit
+#: model:ir.model.fields.selection,name:account_credit.selection__credit_policy_rule__outcome__allow
+msgid "Allow"
+msgstr "Permitir"
+
+#. module: account_credit
+#: model:ir.model.fields.selection,name:account_credit.selection__credit_policy_rule__outcome__warn
+msgid "Allow with a warning"
+msgstr "Permitir con advertencia"
+
+#. module: account_credit
+#: model:ir.model.fields,help:account_credit.field_credit_config__provision_allowance_account_id
+#: model:ir.model.fields,help:account_credit.field_res_config_settings__credit_provision_allowance_account_id
+msgid ""
+"Allowance for doubtful accounts, the contra-asset the provision accumulates "
+"in."
+msgstr ""
+"Estimación para cuentas incobrables, la cuenta complementaria de activo "
+"donde se acumula la provisión."
+
+#. module: account_credit
+#: model:ir.model.fields.selection,name:account_credit.selection__sale_order__credit_verdict_outcome__allow
+#: model:ir.model.fields.selection,name:account_credit.selection__stock_picking__credit_verdict_outcome__allow
+msgid "Allowed"
+msgstr "Permitido"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_profile__z_score
+msgid "Altman Z''"
+msgstr "Z'' de Altman"
+
+#. module: account_credit
+#: model:scorecard.dimension,name:account_credit.scorecard_dimension_z_score
+msgid "Altman Z'' Score"
+msgstr "Puntaje Z'' de Altman"
+
+#. module: account_credit
+#: model:ir.model.fields.selection,name:account_credit.selection__scorecard_dimension__code__z_score
+msgid "Altman Z'' score from the last financial statements"
+msgstr "Z'' de Altman de los últimos estados financieros"
+
+#. module: account_credit
+#: model:ir.model.fields,help:account_credit.field_credit_profile__z_score
+msgid ""
+"Altman's four-ratio model for private, non-manufacturing firms: 6.56 X1 + "
+"3.26 X2 + 6.72 X3 + 1.05 X4. Safe above 2.6, distress below 1.1."
+msgstr ""
+"Modelo de cuatro razones de Altman para empresas privadas no manufactureras:"
+" 6.56 X1 + 3.26 X2 + 6.72 X3 + 1.05 X4. Seguro arriba de 2.6, riesgo debajo "
+"de 1.1."
+
+#. module: account_credit
+#: model:ir.model.fields.selection,name:account_credit.selection__credit_policy_rule__condition__always
+msgid "Always"
+msgstr "Siempre"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_event__amount
+#: model:ir.model.fields,field_description:account_credit.field_credit_facility__amount
+#: model:ir.model.fields,field_description:account_credit.field_credit_provision_run_line__amount
+#: model:ir.model.fields,field_description:account_credit.field_document_document__amount
+msgid "Amount"
+msgstr "Monto"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_wizard_sale_order_confirm_credit_override__amount_authorized
+msgid "Amount Authorized"
+msgstr "Monto Autorizado"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_wizard_sale_order_confirm_credit_override__amount_available
+msgid "Amount Available"
+msgstr "Monto Disponible"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_portfolio_report__amount_current
+msgid "Amount Current"
+msgstr "Monto al corriente"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_portfolio_report__amount_open
+msgid "Amount Open"
+msgstr "Monto abierto"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_wizard_sale_order_confirm_credit_override__amount_order
+msgid "Amount Order"
+msgstr "Monto del Pedido"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_portfolio_report__amount_overdue
+msgid "Amount Overdue"
+msgstr "Monto vencido"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_provision_run__amount_to_book
+msgid "Amount To Book"
+msgstr "Monto a registrar"
+
+#. module: account_credit
+#: model:ir.model.fields,help:account_credit.field_document_document__amount
+msgid "Amount for promissory notes, guarantees, contracts, etc."
+msgstr "Monto para pagarés, garantías, contratos, etc."
+
+#. module: account_credit
+#: model:ir.model.fields,help:account_credit.field_credit_policy_rule__threshold
+msgid "Amount or days the condition compares against."
+msgstr "Monto o días contra los que compara la condición."
+
+#. module: account_credit
+#: model_terms:ir.ui.view,arch_db:account_credit.credit_exceeded_authorization_form
+msgid "Amount to Authorize"
+msgstr "Monto a Autorizar"
+
+#. module: account_credit
+#: model:ir.model.fields,help:account_credit.field_credit_event__is_hold
+#: model:ir.model.fields,help:account_credit.field_credit_event_type__is_hold
+msgid ""
+"An event of this type blocks every credit operation of the profile until it "
+"is lifted."
+msgstr ""
+"Un evento de este tipo bloquea toda operación de crédito del perfil hasta "
+"que se levanta."
+
+#. module: account_credit
+#: model_terms:ir.ui.view,arch_db:account_credit.res_config_settings_view_form
+msgid ""
+"An exception always ends; the scorecard reads this many months of paid "
+"invoices; a worse proposed grade may be applied without a review"
+msgstr ""
+"Una excepción siempre termina; el scorecard lee estos meses de facturas "
+"pagadas; un grado propuesto peor puede aplicarse sin revisión"
+
+#. module: account_credit
+#: model_terms:ir.ui.view,arch_db:account_credit.view_credit_exception_wizard_form
+msgid ""
+"An exception lets the customer buy on credit regardless of grade\n"
+"                    and policy, and it always ends. A reclassification review is\n"
+"                    opened so the customer gets a grade before it does."
+msgstr ""
+"Una excepción permite al cliente comprar a crédito sin importar el grado\n"
+"                    ni la política, y siempre termina. Se abre una revisión de\n"
+"                    reclasificación para que el cliente reciba un grado antes."
+
+#. module: account_credit
+#. odoo-python
+#: code:addons/account_credit/models/credit_profile.py:0
+msgid "An exception may run at most %(days)s days, until %(date)s."
+msgstr "Una excepción dura como máximo %(days)s días, hasta el %(date)s."
+
+#. module: account_credit
+#. odoo-python
+#: code:addons/account_credit/models/credit_config.py:0
+msgid "An exception must be allowed to last at least a day."
+msgstr "Una excepción debe poder durar al menos un día."
+
+#. module: account_credit
+#: model:ir.model.fields.selection,name:account_credit.selection__credit_policy_rule__payment_kind__any
+msgid "Any payment term"
+msgstr "Cualquier plazo de pago"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_review_line__applicable
+#: model:ir.model.fields,field_description:account_credit.field_credit_score_line__applicable
+msgid "Applicable"
+msgstr "Aplicable"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_review_line__applied
+#: model:ir.model.fields,field_description:account_credit.field_credit_score_line__applied
+msgid "Applied"
+msgstr "Aplicado"
+
+#. module: account_credit
+#: model:ir.model,name:account_credit.model_approval_request
+msgid "Approval Request"
+msgstr "Solicitud de aprobación"
+
+#. module: account_credit
+#. odoo-python
+#: code:addons/account_credit/models/sale_order.py:0
+msgid ""
+"Approval granted. Credit limit exceeded for '%s' — a credit manager must "
+"authorize the excess to confirm this order."
+msgstr ""
+"Aprobación otorgada. Límite de crédito excedido para '%s': un gerente de "
+"crédito debe autorizar el exceso para confirmar este pedido."
+
+#. module: account_credit
+#: model_terms:ir.ui.view,arch_db:account_credit.view_credit_review_form
+msgid "Approve"
+msgstr "Aprobar"
+
+#. module: account_credit
+#: model_terms:ir.ui.view,arch_db:account_credit.view_credit_review_form
+msgid "Approve as Proposed"
+msgstr "Aprobar como se propone"
+
+#. module: account_credit
+#: model_terms:ir.ui.view,arch_db:account_credit.view_credit_review_list
+msgid "Approve as proposed"
+msgstr "Aprobar como se propone"
+
+#. module: account_credit
+#: model:ir.model.fields.selection,name:account_credit.selection__credit_review__state__approved
+msgid "Approved"
+msgstr "Aprobada"
+
+#. module: account_credit
+#: model_terms:ir.ui.view,arch_db:account_credit.view_credit_grade_form
+#: model_terms:ir.ui.view,arch_db:account_credit.view_credit_profile_form
+msgid "Archived"
+msgstr "Archivado"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_event__message_attachment_count
+#: model:ir.model.fields,field_description:account_credit.field_credit_facility__message_attachment_count
+#: model:ir.model.fields,field_description:account_credit.field_credit_profile__message_attachment_count
+#: model:ir.model.fields,field_description:account_credit.field_credit_provision_run__message_attachment_count
+#: model:ir.model.fields,field_description:account_credit.field_credit_review__message_attachment_count
+msgid "Attachment Count"
+msgstr "Número de adjuntos"
+
+#. module: account_credit
+#: model_terms:ir.ui.view,arch_db:account_credit.credit_exceeded_authorization_form
+msgid "Authorization"
+msgstr "Autorización"
+
+#. module: account_credit
+#. odoo-python
+#: code:addons/account_credit/wizards/credit_exceeded_authorization.py:0
+msgid "Authorization amount cannot be negative."
+msgstr "El monto de la autorización no puede ser negativo."
+
+#. module: account_credit
+#: model:ir.model.fields.selection,name:account_credit.selection__credit_facility__source__authorization
+msgid "Authorization of an excess on orders"
+msgstr "Autorización de un exceso en pedidos"
+
+#. module: account_credit
+#: model_terms:ir.ui.view,arch_db:account_credit.credit_exceeded_authorization_form
+msgid "Authorize"
+msgstr "Autorizar"
+
+#. module: account_credit
+#: model_terms:ir.ui.view,arch_db:account_credit.credit_exceeded_authorization_form
+msgid "Authorize & Confirm"
+msgstr "Autorizar y Confirmar"
+
+#. module: account_credit
+#. odoo-python
+#: code:addons/account_credit/models/sale_order.py:0
+msgid "Authorize Credit"
+msgstr ""
+
+#. module: account_credit
+#: model:document.type,name:account_credit.doc_type_authorized_signatures
+msgid "Authorized Signatures"
+msgstr "Firmas autorizadas"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_config__auto_downgrade
+#: model:ir.model.fields,field_description:account_credit.field_res_config_settings__credit_auto_downgrade
+msgid "Auto Downgrade"
+msgstr "Baja automática de grado"
+
+#. module: account_credit
+#: model:ir.model.fields,help:account_credit.field_credit_config__provision_expense_account_id
+#: model:ir.model.fields,help:account_credit.field_res_config_settings__credit_provision_expense_account_id
+msgid "Bad-debt expense account."
+msgstr "Cuenta de gasto por incobrables."
+
+#. module: account_credit
+#: model:ir.model.fields.selection,name:account_credit.selection__credit_policy_rule__outcome__block
+msgid "Block"
+msgstr "Bloquear"
+
+#. module: account_credit
+#: model:ir.model.fields.selection,name:account_credit.selection__sale_order__credit_verdict_outcome__block
+#: model:ir.model.fields.selection,name:account_credit.selection__stock_picking__credit_verdict_outcome__block
+msgid "Blocked"
+msgstr "Bloqueado"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_profile__fin_equity_book
+msgid "Book Equity"
+msgstr "Capital contable"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_provision_matrix_line__bucket
+#: model:ir.model.fields,field_description:account_credit.field_credit_provision_run_line__bucket
+msgid "Bucket"
+msgstr "Tramo"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_profile__bureau_date
+msgid "Bureau Date"
+msgstr "Fecha del buró"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_profile__bureau_score
+#: model:scorecard.dimension,name:account_credit.scorecard_dimension_bureau_score
+msgid "Bureau Score"
+msgstr "Puntaje de buró"
+
+#. module: account_credit
+#: model_terms:ir.ui.view,arch_db:account_credit.view_credit_profile_form
+msgid "Bureau and Financials"
+msgstr "Buró y estados financieros"
+
+#. module: account_credit
+#: model_terms:ir.ui.view,arch_db:account_credit.credit_exceeded_authorization_form
+#: model_terms:ir.ui.view,arch_db:account_credit.view_credit_exception_wizard_form
+#: model_terms:ir.ui.view,arch_db:account_credit.view_credit_provision_run_form
+#: model_terms:ir.ui.view,arch_db:account_credit.view_credit_review_form
+msgid "Cancel"
+msgstr "Cancelar"
+
+#. module: account_credit
+#: model:ir.model.fields.selection,name:account_credit.selection__credit_provision_run__state__cancel
+#: model:ir.model.fields.selection,name:account_credit.selection__credit_review__state__cancel
+msgid "Cancelled"
+msgstr "Cancelada"
+
+#. module: account_credit
+#. odoo-python
+#: code:addons/account_credit/models/credit_profile.py:0
+msgid "Cannot grant an exception to '%s': a hold is open."
+msgstr "No se puede otorgar una excepción a '%s': hay un bloqueo abierto."
+
+#. module: account_credit
+#: model:credit.grade,name:account_credit.credit_grade_cash
+#: model:ir.model.fields.selection,name:account_credit.selection__credit_grade__kind__entry
+#: model:ir.model.fields.selection,name:account_credit.selection__credit_policy_rule__state__cash
+#: model:ir.model.fields.selection,name:account_credit.selection__credit_profile__state__cash
+#: model:ir.model.fields.selection,name:account_credit.selection__res_partner__credit_status__cash
+msgid "Cash Only"
+msgstr "Solo contado"
+
+#. module: account_credit
+#: model:ir.model.fields,help:account_credit.field_credit_review_line__max_points
+#: model:ir.model.fields,help:account_credit.field_credit_score_line__max_points
+msgid ""
+"Ceiling of the group this row belongs to: the attribute's, or the measured "
+"dimension's weight."
+msgstr ""
+"Techo del grupo al que pertenece esta fila: el del atributo, o el peso de la"
+" dimensión medida."
+
+#. module: account_credit
+#: model:ir.model.fields,help:account_credit.field_document_document__has_amount
+#: model:ir.model.fields,help:account_credit.field_document_type__has_amount
+msgid "Check if documents of this type carry a monetary amount"
+msgstr "Marque si los documentos de este tipo llevan un monto monetario"
+
+#. module: account_credit
+#: model:ir.model.fields,help:account_credit.field_document_document__has_collateral
+#: model:ir.model.fields,help:account_credit.field_document_type__has_collateral
+msgid "Check if documents of this type require a collateral amount field"
+msgstr ""
+"Indica si los documentos de este tipo requieren un campo de monto de "
+"garantía"
+
+#. module: account_credit
+#: model:ir.model.fields,help:account_credit.field_document_document__has_guarantor
+#: model:ir.model.fields,help:account_credit.field_document_type__has_guarantor
+msgid "Check if documents of this type show the guarantor flag"
+msgstr "Indica si los documentos de este tipo muestran el indicador de aval"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_event__code
+#: model:ir.model.fields,field_description:account_credit.field_credit_event_type__code
+#: model:ir.model.fields,field_description:account_credit.field_credit_grade__code
+#: model:ir.model.fields,field_description:account_credit.field_credit_review_line__dimension_code
+#: model:ir.model.fields,field_description:account_credit.field_credit_score_line__dimension_code
+#: model:ir.model.fields,field_description:account_credit.field_scorecard_dimension__code
+msgid "Code"
+msgstr "Código"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_profile__collateral_amount
+#: model:ir.model.fields,field_description:account_credit.field_document_document__collateral_amount
+msgid "Collateral Amount"
+msgstr "Monto de Garantía"
+
+#. module: account_credit
+#: model:scorecard.dimension,name:account_credit.scorecard_dimension_collateral_coverage
+msgid "Collateral Coverage"
+msgstr "Cobertura de garantías"
+
+#. module: account_credit
+#: model:ir.model.fields,help:account_credit.field_document_document__collateral_amount
+msgid "Collateral amount for guarantees"
+msgstr "Monto de garantía para avales"
+
+#. module: account_credit
+#: model:ir.model.fields,help:account_credit.field_credit_profile__limit_amount
+msgid ""
+"Collateral of the valid documents the grade requires, plus every facility "
+"granting today."
+msgstr ""
+"Colateral de los documentos vigentes que exige el grado, más cada línea que "
+"otorga hoy."
+
+#. module: account_credit
+#: model:ir.model.fields.selection,name:account_credit.selection__scorecard_dimension__code__collateral_coverage
+msgid "Collateral over exposure, percent"
+msgstr "Colateral sobre exposición, porcentaje"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_grade__color
+msgid "Color"
+msgstr "Color"
+
+#. module: account_credit
+#: model:ir.model,name:account_credit.model_res_company
+msgid "Companies"
+msgstr "Empresas"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_config__company_id
+#: model:ir.model.fields,field_description:account_credit.field_credit_event__company_id
+#: model:ir.model.fields,field_description:account_credit.field_wizard_sale_order_confirm_credit_override__company_id
+#: model:ir.model.fields,field_description:account_credit.field_credit_facility__company_id
+#: model:ir.model.fields,field_description:account_credit.field_credit_grade__company_id
+#: model:ir.model.fields,field_description:account_credit.field_credit_policy_rule__company_id
+#: model:ir.model.fields,field_description:account_credit.field_credit_portfolio_report__company_id
+#: model:ir.model.fields,field_description:account_credit.field_credit_profile__company_id
+#: model:ir.model.fields,field_description:account_credit.field_credit_provision_matrix__company_id
+#: model:ir.model.fields,field_description:account_credit.field_credit_provision_run__company_id
+#: model:ir.model.fields,field_description:account_credit.field_credit_provision_run_line__company_id
+#: model:ir.model.fields,field_description:account_credit.field_credit_review__company_id
+#: model_terms:ir.ui.view,arch_db:account_credit.view_credit_portfolio_report_search
+#: model_terms:ir.ui.view,arch_db:account_credit.view_credit_profile_search
+msgid "Company"
+msgstr "Compañía"
+
+#. module: account_credit
+#. odoo-python
+#: code:addons/account_credit/models/credit_profile.py:0
+msgid "Compliance issues found:\n"
+msgstr "Se encontraron problemas de cumplimiento:\n"
+
+#. module: account_credit
+#: model_terms:ir.ui.view,arch_db:account_credit.view_credit_provision_run_form
+msgid "Compute"
+msgstr "Calcular"
+
+#. module: account_credit
+#. odoo-python
+#: code:addons/account_credit/models/credit_provision_run.py:0
+msgid "Compute the run before posting it."
+msgstr "Calcule la corrida antes de publicarla."
+
+#. module: account_credit
+#: model:ir.model.fields.selection,name:account_credit.selection__credit_provision_run__state__computed
+msgid "Computed"
+msgstr "Calculada"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_policy_rule__condition
+msgid "Condition"
+msgstr "Condición"
+
+#. module: account_credit
+#: model:ir.model,name:account_credit.model_res_config_settings
+msgid "Config Settings"
+msgstr "Ajustes de configuración"
+
+#. module: account_credit
+#. odoo-python
+#: code:addons/account_credit/models/credit_provision_run.py:0
+msgid ""
+"Configure the provision journal, expense account and allowance account of %s"
+" before posting."
+msgstr ""
+"Configure el diario, la cuenta de gasto y la cuenta de estimación de %s "
+"antes de publicar."
+
+#. module: account_credit
+#: model:ir.model,name:account_credit.model_res_partner
+msgid "Contact"
+msgstr "Contacto"
+
+#. module: account_credit
+#: model:document.type,name:account_credit.doc_type_contract
+msgid "Contract"
+msgstr "Contrato"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_config__create_uid
+#: model:ir.model.fields,field_description:account_credit.field_credit_event__create_uid
+#: model:ir.model.fields,field_description:account_credit.field_credit_event_type__create_uid
+#: model:ir.model.fields,field_description:account_credit.field_wizard_sale_order_confirm_credit_override__create_uid
+#: model:ir.model.fields,field_description:account_credit.field_wizard_credit_profile_grant_exception__create_uid
+#: model:ir.model.fields,field_description:account_credit.field_credit_facility__create_uid
+#: model:ir.model.fields,field_description:account_credit.field_credit_grade__create_uid
+#: model:ir.model.fields,field_description:account_credit.field_credit_grade_rule__create_uid
+#: model:ir.model.fields,field_description:account_credit.field_credit_policy_rule__create_uid
+#: model:ir.model.fields,field_description:account_credit.field_credit_profile__create_uid
+#: model:ir.model.fields,field_description:account_credit.field_credit_provision_matrix__create_uid
+#: model:ir.model.fields,field_description:account_credit.field_credit_provision_matrix_line__create_uid
+#: model:ir.model.fields,field_description:account_credit.field_credit_provision_run__create_uid
+#: model:ir.model.fields,field_description:account_credit.field_credit_provision_run_line__create_uid
+#: model:ir.model.fields,field_description:account_credit.field_credit_review__create_uid
+#: model:ir.model.fields,field_description:account_credit.field_credit_review_line__create_uid
+#: model:ir.model.fields,field_description:account_credit.field_credit_score_line__create_uid
+msgid "Created by"
+msgstr "Creado por"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_config__create_date
+#: model:ir.model.fields,field_description:account_credit.field_credit_event__create_date
+#: model:ir.model.fields,field_description:account_credit.field_credit_event_type__create_date
+#: model:ir.model.fields,field_description:account_credit.field_wizard_sale_order_confirm_credit_override__create_date
+#: model:ir.model.fields,field_description:account_credit.field_wizard_credit_profile_grant_exception__create_date
+#: model:ir.model.fields,field_description:account_credit.field_credit_facility__create_date
+#: model:ir.model.fields,field_description:account_credit.field_credit_grade__create_date
+#: model:ir.model.fields,field_description:account_credit.field_credit_grade_rule__create_date
+#: model:ir.model.fields,field_description:account_credit.field_credit_policy_rule__create_date
+#: model:ir.model.fields,field_description:account_credit.field_credit_profile__create_date
+#: model:ir.model.fields,field_description:account_credit.field_credit_provision_matrix__create_date
+#: model:ir.model.fields,field_description:account_credit.field_credit_provision_matrix_line__create_date
+#: model:ir.model.fields,field_description:account_credit.field_credit_provision_run__create_date
+#: model:ir.model.fields,field_description:account_credit.field_credit_provision_run_line__create_date
+#: model:ir.model.fields,field_description:account_credit.field_credit_review__create_date
+#: model:ir.model.fields,field_description:account_credit.field_credit_review_line__create_date
+#: model:ir.model.fields,field_description:account_credit.field_credit_score_line__create_date
+msgid "Created on"
+msgstr "Creado el"
+
+#. module: account_credit
+#: model:ir.ui.menu,name:account_credit.menu_credit_root
+#: model_terms:ir.ui.view,arch_db:account_credit.res_config_settings_view_form
+#: model_terms:ir.ui.view,arch_db:account_credit.view_partner_form_credit_type
+msgid "Credit"
+msgstr "Crédito"
+
+#. module: account_credit
+#: model:document.type,name:account_credit.doc_type_credit_application
+msgid "Credit Application"
+msgstr "Solicitud de crédito"
+
+#. module: account_credit
+#. odoo-python
+#: code:addons/account_credit/models/sale_order.py:0
+#: model_terms:ir.ui.view,arch_db:account_credit.credit_exceeded_authorization_form
+msgid "Credit Authorization"
+msgstr "Autorización de crédito"
+
+#. module: account_credit
+#: model:ir.model,name:account_credit.model_wizard_sale_order_confirm_credit_override
+msgid "Credit Authorization of an Order"
+msgstr "Autorización de crédito de un pedido"
+
+#. module: account_credit
+#: model:ir.model.fields.selection,name:account_credit.selection__res_partner__credit_status__authorized
+msgid "Credit Authorized"
+msgstr "Crédito Autorizado"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_res_company__credit_config_id
+msgid "Credit Config"
+msgstr "Configuración de crédito"
+
+#. module: account_credit
+#: model:ir.ui.menu,name:account_credit.menu_credit_config
+msgid "Credit Configuration"
+msgstr "Configuración de crédito"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_res_bank__credit_document_ids
+#: model:ir.model.fields,field_description:account_credit.field_res_company__credit_document_ids
+#: model:ir.model.fields,field_description:account_credit.field_res_partner__credit_document_ids
+#: model:ir.model.fields,field_description:account_credit.field_res_users__credit_document_ids
+msgid "Credit Document"
+msgstr "Documento de Crédito"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_res_bank__credit_document_compliant
+#: model:ir.model.fields,field_description:account_credit.field_res_company__credit_document_compliant
+#: model:ir.model.fields,field_description:account_credit.field_res_partner__credit_document_compliant
+#: model:ir.model.fields,field_description:account_credit.field_res_users__credit_document_compliant
+msgid "Credit Document Compliant"
+msgstr "Documentación de crédito completa"
+
+#. module: account_credit
+#: model_terms:ir.ui.view,arch_db:account_credit.view_partner_form_credit_type
+msgid "Credit Documentation"
+msgstr "Documentación crediticia"
+
+#. module: account_credit
+#: model:ir.model,name:account_credit.model_credit_event
+msgid "Credit Event"
+msgstr "Evento de crédito"
+
+#. module: account_credit
+#: model:ir.model,name:account_credit.model_credit_event_type
+msgid "Credit Event Type"
+msgstr "Tipo de evento de crédito"
+
+#. module: account_credit
+#. odoo-python
+#: code:addons/account_credit/models/credit_profile.py:0
+#: model:ir.actions.act_window,name:account_credit.action_credit_event
+msgid "Credit Events"
+msgstr "Eventos de crédito"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_res_bank__credit_exception
+#: model:ir.model.fields,field_description:account_credit.field_res_company__credit_exception
+#: model:ir.model.fields,field_description:account_credit.field_res_partner__credit_exception
+#: model:ir.model.fields,field_description:account_credit.field_res_users__credit_exception
+msgid "Credit Exception"
+msgstr "Excepción de Crédito"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_res_bank__credit_exception_until
+#: model:ir.model.fields,field_description:account_credit.field_res_company__credit_exception_until
+#: model:ir.model.fields,field_description:account_credit.field_res_partner__credit_exception_until
+#: model:ir.model.fields,field_description:account_credit.field_res_users__credit_exception_until
+msgid "Credit Exception Until"
+msgstr "Excepción de crédito hasta"
+
+#. module: account_credit
+#. odoo-python
+#: code:addons/account_credit/models/credit_profile.py:0
+#: code:addons/account_credit/models/res_partner.py:0
+#: model:ir.actions.act_window,name:account_credit.action_credit_facility
+#: model_terms:ir.ui.view,arch_db:account_credit.view_partner_form_credit_type
+msgid "Credit Facilities"
+msgstr "Líneas de crédito"
+
+#. module: account_credit
+#: model:ir.model,name:account_credit.model_credit_facility
+msgid "Credit Facility"
+msgstr "Línea de crédito"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_config__credit_folder_id
+#: model:ir.model.fields,field_description:account_credit.field_res_bank__credit_root_folder_id
+#: model:ir.model.fields,field_description:account_credit.field_res_company__credit_folder_id
+#: model:ir.model.fields,field_description:account_credit.field_res_company__credit_root_folder_id
+#: model:ir.model.fields,field_description:account_credit.field_res_config_settings__credit_folder_id
+msgid "Credit Folder"
+msgstr "Carpeta de crédito"
+
+#. module: account_credit
+#: model:ir.model,name:account_credit.model_credit_grade
+#: model:ir.model.fields,field_description:account_credit.field_res_bank__credit_grade_id
+#: model:ir.model.fields,field_description:account_credit.field_res_company__credit_grade_id
+#: model:ir.model.fields,field_description:account_credit.field_res_partner__credit_grade_id
+#: model:ir.model.fields,field_description:account_credit.field_res_users__credit_grade_id
+#: model_terms:ir.ui.view,arch_db:account_credit.view_partner_form_credit_type
+msgid "Credit Grade"
+msgstr "Grado de crédito"
+
+#. module: account_credit
+#: model:ir.actions.act_window,name:account_credit.action_credit_grade
+msgid "Credit Grades"
+msgstr "Grados de crédito"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_res_bank__credit_legal_hold
+#: model:ir.model.fields,field_description:account_credit.field_res_company__credit_legal_hold
+#: model:ir.model.fields,field_description:account_credit.field_res_partner__credit_legal_hold
+#: model:ir.model.fields,field_description:account_credit.field_res_users__credit_legal_hold
+msgid "Credit Legal Hold"
+msgstr "Retención legal de crédito"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_wizard_sale_order_confirm_credit_override__credit_limit
+#: model:ir.model.fields,field_description:account_credit.field_res_bank__credit_limit
+#: model:ir.model.fields,field_description:account_credit.field_res_company__credit_limit
+#: model:ir.model.fields,field_description:account_credit.field_res_partner__credit_limit
+#: model:ir.model.fields,field_description:account_credit.field_res_users__credit_limit
+#: model:res.groups.privilege,name:account_credit.privilege_credit_limit
+msgid "Credit Limit"
+msgstr "Límite de crédito"
+
+#. module: account_credit
+#: model:ir.actions.act_window,name:account_credit.action_credit_policy_rule
+msgid "Credit Policy"
+msgstr "Política de crédito"
+
+#. module: account_credit
+#: model:ir.model,name:account_credit.model_credit_policy_rule
+msgid "Credit Policy Rule"
+msgstr "Regla de política de crédito"
+
+#. module: account_credit
+#: model:ir.actions.act_window,name:account_credit.action_credit_portfolio_report
+#: model_terms:ir.ui.view,arch_db:account_credit.view_credit_portfolio_report_graph
+#: model_terms:ir.ui.view,arch_db:account_credit.view_credit_portfolio_report_pivot
+msgid "Credit Portfolio"
+msgstr "Cartera de crédito"
+
+#. module: account_credit
+#: model:ir.model,name:account_credit.model_credit_portfolio_report
+msgid "Credit Portfolio by Grade and Aging"
+msgstr "Cartera de crédito por grado y antigüedad"
+
+#. module: account_credit
+#: model:ir.model,name:account_credit.model_credit_profile
+#: model:ir.model.fields,field_description:account_credit.field_res_bank__credit_profile_id
+#: model:ir.model.fields,field_description:account_credit.field_res_company__credit_profile_id
+#: model:ir.model.fields,field_description:account_credit.field_res_partner__credit_profile_id
+#: model:ir.model.fields,field_description:account_credit.field_res_users__credit_profile_id
+#: model_terms:ir.ui.view,arch_db:account_credit.view_partner_form_credit_type
+msgid "Credit Profile"
+msgstr "Perfil de crédito"
+
+#. module: account_credit
+#: model:ir.actions.act_window,name:account_credit.action_credit_profile
+msgid "Credit Profiles"
+msgstr "Perfiles de crédito"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_res_bank__credit_profile_ids
+#: model:ir.model.fields,field_description:account_credit.field_res_company__credit_profile_ids
+#: model:ir.model.fields,field_description:account_credit.field_res_partner__credit_profile_ids
+#: model:ir.model.fields,field_description:account_credit.field_res_users__credit_profile_ids
+msgid "Credit Profiles per Company"
+msgstr "Perfiles de crédito por compañía"
+
+#. module: account_credit
+#: model:ir.model,name:account_credit.model_credit_review
+msgid "Credit Review"
+msgstr "Revisión de crédito"
+
+#. module: account_credit
+#: model:ir.model,name:account_credit.model_credit_review_line
+msgid "Credit Review Score Line"
+msgstr "Línea de puntaje de la revisión"
+
+#. module: account_credit
+#. odoo-python
+#: code:addons/account_credit/models/credit_profile.py:0
+#: model:ir.actions.act_window,name:account_credit.action_credit_review
+msgid "Credit Reviews"
+msgstr "Revisiones de crédito"
+
+#. module: account_credit
+#: model_terms:ir.ui.view,arch_db:account_credit.res_config_settings_view_form
+msgid "Credit Risk"
+msgstr "Riesgo de crédito"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_res_partner__credit_root_folder_id
+#: model:ir.model.fields,field_description:account_credit.field_res_users__credit_root_folder_id
+msgid "Credit Root Folder"
+msgstr "Carpeta raíz de crédito"
+
+#. module: account_credit
+#: model:ir.model,name:account_credit.model_credit_score_line
+msgid "Credit Score Line"
+msgstr "Línea de puntaje de crédito"
+
+#. module: account_credit
+#: model:ir.actions.act_window,name:account_credit.action_credit_scorecard
+#: model:scorecard,name:account_credit.scorecard_credit
+msgid "Credit Scorecard"
+msgstr "Scorecard de crédito"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_res_bank__credit_status
+#: model:ir.model.fields,field_description:account_credit.field_res_company__credit_status
+#: model:ir.model.fields,field_description:account_credit.field_res_partner__credit_status
+#: model:ir.model.fields,field_description:account_credit.field_res_users__credit_status
+msgid "Credit Status"
+msgstr "Estado de Crédito"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_res_bank__credit_trusted_amount
+#: model:ir.model.fields,field_description:account_credit.field_res_company__credit_trusted_amount
+#: model:ir.model.fields,field_description:account_credit.field_res_partner__credit_trusted_amount
+#: model:ir.model.fields,field_description:account_credit.field_res_users__credit_trusted_amount
+msgid "Credit Trusted Amount"
+msgstr "Monto de Confianza de Crédito"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_res_bank__credit_type_warning
+#: model:ir.model.fields,field_description:account_credit.field_res_company__credit_type_warning
+#: model:ir.model.fields,field_description:account_credit.field_res_partner__credit_type_warning
+#: model:ir.model.fields,field_description:account_credit.field_res_users__credit_type_warning
+msgid "Credit Type Warning"
+msgstr "Advertencia de Condición Crediticia"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_sale_order__credit_verdict_message
+#: model:ir.model.fields,field_description:account_credit.field_stock_picking__credit_verdict_message
+msgid "Credit Verdict Message"
+msgstr "Mensaje del veredicto de crédito"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_sale_order__credit_verdict_outcome
+#: model:ir.model.fields,field_description:account_credit.field_stock_picking__credit_verdict_outcome
+msgid "Credit Verdict Outcome"
+msgstr "Resultado del veredicto de crédito"
+
+#. module: account_credit
+#: model:ir.model,name:account_credit.model_credit_config
+msgid "Credit and risk configuration per company"
+msgstr "Configuración de crédito y riesgo por compañía"
+
+#. module: account_credit
+#: model:ir.model.fields.selection,name:account_credit.selection__scorecard_dimension__code__bureau_score
+msgid "Credit bureau score, as reported"
+msgstr "Score de buró de crédito, tal como se reporta"
+
+#. module: account_credit
+#: model:credit.policy.rule,message:account_credit.policy_rule_exception
+msgid "Credit exception running for '%(partner)s'."
+msgstr "Excepción de crédito vigente para '%(partner)s'."
+
+#. module: account_credit
+#. odoo-python
+#: code:addons/account_credit/models/credit_config.py:0
+msgid ""
+"Credit folder cannot be linked to another company.\n"
+"- %s"
+msgstr ""
+"La carpeta de crédito no puede vincularse a otra compañía.\n"
+"- %s"
+
+#. module: account_credit
+#. odoo-python
+#: code:addons/account_credit/models/sale_order.py:0
+msgid ""
+"Credit for '%(partner)s' needs a credit manager's authorization before this order can be confirmed:\n"
+"%(reasons)s"
+msgstr ""
+"El crédito de '%(partner)s' requiere autorización de un gerente de crédito antes de confirmar este pedido:\n"
+"%(reasons)s"
+
+#. module: account_credit
+#. odoo-python
+#: code:addons/account_credit/models/credit_profile.py:0
+msgid ""
+"Credit for '%(partner)s' needs a credit manager's authorization:\n"
+"%(reasons)s"
+msgstr ""
+"El crédito de '%(partner)s' requiere autorización de un gerente de crédito:\n"
+"%(reasons)s"
+
+#. module: account_credit
+#. odoo-python
+#: code:addons/account_credit/models/sale_order.py:0
+msgid ""
+"Credit for '%(partner)s' needs an authorization before %(orders)s can be confirmed:\n"
+"%(reasons)s"
+msgstr ""
+
+#. module: account_credit
+#: model:ir.model.fields.selection,name:account_credit.selection__credit_facility__source__insurance
+msgid "Credit insurance"
+msgstr "Seguro de crédito"
+
+#. module: account_credit
+#: model:credit.policy.rule,message:account_credit.policy_rule_limit
+msgid ""
+"Credit limit exceeded for '%(partner)s': exposure %(exposure)s plus "
+"%(amount)s against a limit of %(limit)s."
+msgstr ""
+"Límite de crédito excedido para '%(partner)s': exposición %(exposure)s más "
+"%(amount)s contra un límite de %(limit)s."
+
+#. module: account_credit
+#. odoo-python
+#: code:addons/account_credit/models/credit_profile.py:0
+#: code:addons/account_credit/models/res_partner.py:0
+msgid ""
+"Credit refused for '%(partner)s':\n"
+"%(reasons)s"
+msgstr ""
+"Crédito rechazado para '%(partner)s':\n"
+"%(reasons)s"
+
+#. module: account_credit
+#: model:ir.model.fields.selection,name:account_credit.selection__credit_policy_rule__payment_kind__credit
+msgid "Credit terms only"
+msgstr "Solo plazos a crédito"
+
+#. module: account_credit
+#: model_terms:ir.ui.view,arch_db:account_credit.view_partner_form_credit_type
+msgid "Credit-related settings are managed on"
+msgstr "Los ajustes de crédito se administran en"
+
+#. module: account_credit
+#: model:ir.actions.server,name:account_credit.ir_cron_credit_facility_expire_ir_actions_server
+msgid "Credit: expire facilities"
+msgstr "Crédito: vencer líneas"
+
+#. module: account_credit
+#: model:ir.actions.server,name:account_credit.ir_cron_credit_profile_refresh_ir_actions_server
+msgid "Credit: refresh profiles, detect events, expire exceptions"
+msgstr "Crédito: actualizar perfiles, detectar eventos, vencer excepciones"
+
+#. module: account_credit
+#: model:ir.actions.server,name:account_credit.ir_cron_credit_portfolio_report_refresh_ir_actions_server
+msgid "Credit: refresh the portfolio report"
+msgstr "Crédito: actualizar el reporte de cartera"
+
+#. module: account_credit
+#: model:ir.model.fields.selection,name:account_credit.selection__credit_event_type__severity__critical
+#: model_terms:ir.ui.view,arch_db:account_credit.view_credit_event_search
+msgid "Critical"
+msgstr "Crítico"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_event__currency_id
+#: model:ir.model.fields,field_description:account_credit.field_wizard_sale_order_confirm_credit_override__company_currency_id
+#: model:ir.model.fields,field_description:account_credit.field_credit_facility__currency_id
+#: model:ir.model.fields,field_description:account_credit.field_credit_portfolio_report__currency_id
+#: model:ir.model.fields,field_description:account_credit.field_credit_profile__currency_id
+#: model:ir.model.fields,field_description:account_credit.field_credit_provision_run__currency_id
+#: model:ir.model.fields,field_description:account_credit.field_credit_provision_run_line__currency_id
+#: model:ir.model.fields,field_description:account_credit.field_credit_review__currency_id
+msgid "Currency"
+msgstr "Moneda"
+
+#. module: account_credit
+#: model_terms:ir.ui.view,arch_db:account_credit.credit_exceeded_authorization_form
+msgid "Current Receivables"
+msgstr "Cuentas por Cobrar Actuales"
+
+#. module: account_credit
+#: model_terms:ir.ui.view,arch_db:account_credit.view_credit_event_search
+#: model_terms:ir.ui.view,arch_db:account_credit.view_credit_facility_search
+#: model_terms:ir.ui.view,arch_db:account_credit.view_credit_profile_form
+msgid "Customer"
+msgstr "Cliente"
+
+#. module: account_credit
+#: model:ir.model.fields.selection,name:account_credit.selection__credit_policy_rule__document_kind__invoice
+msgid "Customer invoice"
+msgstr "Factura de cliente"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_event__date
+#: model:ir.model.fields,field_description:account_credit.field_credit_provision_run__date
+msgid "Date"
+msgstr "Fecha"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_facility__date_end
+msgid "Date End"
+msgstr "Fecha de fin"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_facility__date_start
+msgid "Date Start"
+msgstr "Fecha de inicio"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_portfolio_report__dbt_weighted
+#: model:ir.model.fields,field_description:account_credit.field_credit_profile__dbt_weighted
+#: model:scorecard.dimension,name:account_credit.scorecard_dimension_dbt
+msgid "Days Beyond Terms"
+msgstr "Días más allá del plazo"
+
+#. module: account_credit
+#: model:ir.model.fields,help:account_credit.field_credit_profile__dbt_weighted
+msgid ""
+"Days between due date and payment, weighted by amount paid, over the metrics"
+" window. Negative means paid early."
+msgstr ""
+"Días entre vencimiento y pago, ponderados por monto pagado, en la ventana de"
+" métricas. Negativo significa pago anticipado."
+
+#. module: account_credit
+#: model:ir.model.fields.selection,name:account_credit.selection__scorecard_dimension__code__dbt
+msgid "Days beyond terms, amount-weighted"
+msgstr "Días de atraso, ponderados por monto"
+
+#. module: account_credit
+#: model:ir.model.fields,help:account_credit.field_credit_profile__oldest_open_days
+msgid "Days past due of the oldest open receivable at the last refresh."
+msgstr ""
+"Días de vencimiento de la cuenta por cobrar abierta más antigua en la última"
+" actualización."
+
+#. module: account_credit
+#: model_terms:ir.ui.view,arch_db:account_credit.res_config_settings_view_form
+msgid ""
+"Days past due that put a profile under watch and in default, and the overdue"
+" amount below which no default is declared"
+msgstr ""
+"Días de vencimiento que ponen un perfil en vigilancia y en incumplimiento, y"
+" el monto vencido debajo del cual no se declara incumplimiento"
+
+#. module: account_credit
+#. odoo-python
+#: code:addons/account_credit/models/credit_review.py:0
+msgid "Decide a grade before approving."
+msgstr "Decida un grado antes de aprobar."
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_review__decided_by_id
+msgid "Decided By"
+msgstr "Decidido por"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_review__decided_on
+msgid "Decided On"
+msgstr "Decidido el"
+
+#. module: account_credit
+#: model:ir.model.fields,help:account_credit.field_credit_profile__grade_id
+msgid ""
+"Decided grade. Changed by a review, or lowered automatically by an event "
+"when the configuration allows."
+msgstr ""
+"Grado decidido. Lo cambia una revisión, o lo baja automáticamente un evento "
+"cuando la configuración lo permite."
+
+#. module: account_credit
+#: model_terms:ir.ui.view,arch_db:account_credit.view_credit_review_form
+msgid "Decision"
+msgstr "Decisión"
+
+#. module: account_credit
+#: model:credit.grade,name:account_credit.credit_grade_default
+#: model:ir.model.fields.selection,name:account_credit.selection__credit_grade__kind__default
+#: model:ir.model.fields.selection,name:account_credit.selection__credit_policy_rule__state__default
+#: model:ir.model.fields.selection,name:account_credit.selection__credit_profile__state__default
+#: model:ir.model.fields.selection,name:account_credit.selection__res_partner__credit_status__default
+msgid "Default"
+msgstr "Incumplimiento"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_config__default_days
+#: model:ir.model.fields,field_description:account_credit.field_res_config_settings__credit_default_days
+msgid "Default Days"
+msgstr "Días para incumplimiento"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_config__default_grade_id
+msgid "Default Grade"
+msgstr "Grado de incumplimiento"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_config__default_materiality_amount
+#: model:ir.model.fields,field_description:account_credit.field_res_config_settings__credit_default_materiality_amount
+msgid "Default Materiality Amount"
+msgstr "Monto de materialidad del incumplimiento"
+
+#. module: account_credit
+#: model:credit.event.type,name:account_credit.event_type_payment_recovered
+msgid "Default cleared"
+msgstr "Incumplimiento resuelto"
+
+#. module: account_credit
+#. odoo-python
+#: code:addons/account_credit/models/credit_config.py:0
+msgid "Default days must be greater than watch days, both positive."
+msgstr ""
+"Los días de incumplimiento deben ser mayores que los de vigilancia, ambos "
+"positivos."
+
+#. module: account_credit
+#: model:credit.provision.matrix,name:account_credit.provision_matrix_default
+msgid "Default matrix (aging only)"
+msgstr "Matriz predeterminada (solo antigüedad)"
+
+#. module: account_credit
+#: model_terms:ir.actions.act_window,help:account_credit.action_credit_grade
+msgid "Define the grades customers are rated in"
+msgstr "Defina los grados con los que se califica a los clientes"
+
+#. module: account_credit
+#: model:ir.model.fields.selection,name:account_credit.selection__credit_policy_rule__document_kind__picking
+msgid "Delivery"
+msgstr "Entrega"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_grade__description
+msgid "Description"
+msgstr "Descripción"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_review_line__dimension_id
+#: model:ir.model.fields,field_description:account_credit.field_credit_score_line__dimension_id
+msgid "Dimension"
+msgstr "Dimensión"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_account_move__display_name
+#: model:ir.model.fields,field_description:account_credit.field_approval_request__display_name
+#: model:ir.model.fields,field_description:account_credit.field_credit_config__display_name
+#: model:ir.model.fields,field_description:account_credit.field_credit_event__display_name
+#: model:ir.model.fields,field_description:account_credit.field_credit_event_type__display_name
+#: model:ir.model.fields,field_description:account_credit.field_wizard_sale_order_confirm_credit_override__display_name
+#: model:ir.model.fields,field_description:account_credit.field_wizard_credit_profile_grant_exception__display_name
+#: model:ir.model.fields,field_description:account_credit.field_credit_facility__display_name
+#: model:ir.model.fields,field_description:account_credit.field_credit_grade__display_name
+#: model:ir.model.fields,field_description:account_credit.field_credit_grade_rule__display_name
+#: model:ir.model.fields,field_description:account_credit.field_credit_policy_rule__display_name
+#: model:ir.model.fields,field_description:account_credit.field_credit_portfolio_report__display_name
+#: model:ir.model.fields,field_description:account_credit.field_credit_profile__display_name
+#: model:ir.model.fields,field_description:account_credit.field_credit_provision_matrix__display_name
+#: model:ir.model.fields,field_description:account_credit.field_credit_provision_matrix_line__display_name
+#: model:ir.model.fields,field_description:account_credit.field_credit_provision_run__display_name
+#: model:ir.model.fields,field_description:account_credit.field_credit_provision_run_line__display_name
+#: model:ir.model.fields,field_description:account_credit.field_credit_review__display_name
+#: model:ir.model.fields,field_description:account_credit.field_credit_review_line__display_name
+#: model:ir.model.fields,field_description:account_credit.field_credit_score_line__display_name
+#: model:ir.model.fields,field_description:account_credit.field_document_document__display_name
+#: model:ir.model.fields,field_description:account_credit.field_document_type__display_name
+#: model:ir.model.fields,field_description:account_credit.field_res_company__display_name
+#: model:ir.model.fields,field_description:account_credit.field_res_config_settings__display_name
+#: model:ir.model.fields,field_description:account_credit.field_res_partner__display_name
+#: model:ir.model.fields,field_description:account_credit.field_sale_order__display_name
+#: model:ir.model.fields,field_description:account_credit.field_scorecard_dimension__display_name
+#: model:ir.model.fields,field_description:account_credit.field_stock_picking__display_name
+msgid "Display Name"
+msgstr "Nombre mostrado"
+
+#. module: account_credit
+#: model:ir.model,name:account_credit.model_document_document
+msgid "Document"
+msgstr "Documento"
+
+#. module: account_credit
+#: model:scorecard.dimension,name:account_credit.scorecard_dimension_document_compliance
+msgid "Document Compliance"
+msgstr "Cumplimiento documental"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_profile__document_compliant
+msgid "Document Compliant"
+msgstr "Documentación en regla"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_policy_rule__document_kind
+msgid "Document Kind"
+msgstr "Tipo de documento"
+
+#. module: account_credit
+#: model:ir.model,name:account_credit.model_document_type
+#: model:ir.model.fields,field_description:account_credit.field_credit_grade_rule__document_type_id
+msgid "Document Type"
+msgstr "Tipo de Documento"
+
+#. module: account_credit
+#: model_terms:ir.ui.view,arch_db:account_credit.view_partner_form_credit_type
+msgid "Document name..."
+msgstr "Nombre del documento..."
+
+#. module: account_credit
+#: model:ir.model,name:account_credit.model_credit_grade_rule
+msgid "Documents a Credit Grade Requires"
+msgstr "Documentos que exige un grado de crédito"
+
+#. module: account_credit
+#: model:ir.model.fields.selection,name:account_credit.selection__scorecard_dimension__code__document_compliance
+msgid "Documents compliant (100) or not (0)"
+msgstr "Documentación en regla (100) o no (0)"
+
+#. module: account_credit
+#: model:ir.model.fields,help:account_credit.field_res_bank__credit_document_ids
+#: model:ir.model.fields,help:account_credit.field_res_company__credit_document_ids
+#: model:ir.model.fields,help:account_credit.field_res_partner__credit_document_ids
+#: model:ir.model.fields,help:account_credit.field_res_users__credit_document_ids
+msgid ""
+"Documents submitted for credit evaluation: this partner's own documents that"
+" live under the company's credit folder. Derived from the documents "
+"themselves, so it is never stale."
+msgstr ""
+
+#. module: account_credit
+#: model:ir.model.fields.selection,name:account_credit.selection__credit_facility__state__draft
+#: model:ir.model.fields.selection,name:account_credit.selection__credit_provision_run__state__draft
+#: model:ir.model.fields.selection,name:account_credit.selection__credit_review__state__draft
+msgid "Draft"
+msgstr "Borrador"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_profile__fin_ebit
+msgid "EBIT"
+msgstr "Utilidad de operación (EBIT)"
+
+#. module: account_credit
+#: model:res.groups,comment:account_credit.group_credit_user
+msgid "Edit credit documents for partners"
+msgstr "Editar documentos de crédito de contactos"
+
+#. module: account_credit
+#: model:ir.model.fields,help:account_credit.field_credit_policy_rule__company_id
+msgid "Empty applies to every company."
+msgstr "Vacío aplica a todas las compañías."
+
+#. module: account_credit
+#: model:ir.model.fields,help:account_credit.field_credit_provision_matrix_line__grade_id
+msgid "Empty applies to every grade the matrix names no specific rate for."
+msgstr ""
+"Vacío aplica a todo grado para el que la matriz no nombra una tasa "
+"específica."
+
+#. module: account_credit
+#: model:ir.model.fields,help:account_credit.field_credit_policy_rule__grade_ids
+msgid "Empty applies to every grade."
+msgstr "Vacío aplica a todos los grados."
+
+#. module: account_credit
+#: model:ir.model.fields,help:account_credit.field_credit_provision_matrix__company_id
+msgid "Empty makes the matrix available to every company."
+msgstr "Vacío pone la matriz a disposición de todas las compañías."
+
+#. module: account_credit
+#: model_terms:ir.ui.view,arch_db:account_credit.view_credit_profile_form
+msgid "End Exception"
+msgstr "Terminar excepción"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_config__entry_grade_id
+msgid "Entry Grade"
+msgstr "Grado de entrada"
+
+#. module: account_credit
+#: model:credit.grade,description:account_credit.credit_grade_cash
+msgid ""
+"Entry grade of every customer. Immediate payment terms only until a review "
+"grants credit."
+msgstr ""
+"Grado de entrada de todo cliente. Solo plazos de pago inmediato hasta que "
+"una revisión otorgue crédito."
+
+#. module: account_credit
+#: model:ir.model.fields,help:account_credit.field_credit_grade__regulatory_code
+msgid "Equivalent grade in the regulator's scale (CNBV: A-1 to E)."
+msgstr "Grado equivalente en la escala del regulador (CNBV: A-1 a E)."
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_profile__event_ids
+msgid "Event"
+msgstr "Evento"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_profile__event_count
+msgid "Event Count"
+msgstr "Número de eventos"
+
+#. module: account_credit
+#: model:ir.actions.act_window,name:account_credit.action_credit_event_type
+#: model:ir.ui.menu,name:account_credit.menu_credit_event_type
+msgid "Event Types"
+msgstr "Tipos de evento"
+
+#. module: account_credit
+#: model:ir.ui.menu,name:account_credit.menu_credit_event
+#: model_terms:ir.ui.view,arch_db:account_credit.view_credit_profile_form
+msgid "Events"
+msgstr "Eventos"
+
+#. module: account_credit
+#: model_terms:ir.ui.view,arch_db:account_credit.view_credit_profile_form
+msgid "Exception"
+msgstr "Excepción"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_profile__exception_active
+msgid "Exception Active"
+msgstr "Excepción activa"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_config__exception_max_days
+#: model:ir.model.fields,field_description:account_credit.field_res_config_settings__credit_exception_max_days
+msgid "Exception Max Days"
+msgstr "Días máximos de excepción"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_profile__exception_reason
+msgid "Exception Reason"
+msgstr "Motivo de la excepción"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_wizard_credit_profile_grant_exception__exception_until
+#: model:ir.model.fields,field_description:account_credit.field_credit_portfolio_report__exception_until
+#: model:ir.model.fields,field_description:account_credit.field_credit_profile__exception_until
+msgid "Exception Until"
+msgstr "Excepción hasta"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_profile__exception_user_id
+msgid "Exception User"
+msgstr "Usuario de la excepción"
+
+#. module: account_credit
+#: model:credit.event.type,name:account_credit.event_type_exception_ended
+msgid "Exception ended"
+msgstr "Excepción terminada"
+
+#. module: account_credit
+#: model:credit.event.type,name:account_credit.event_type_exception_expired
+msgid "Exception expired"
+msgstr "Excepción vencida"
+
+#. module: account_credit
+#: model:credit.event.type,name:account_credit.event_type_exception_granted
+msgid "Exception granted"
+msgstr "Excepción otorgada"
+
+#. module: account_credit
+#: model_terms:ir.ui.view,arch_db:account_credit.view_credit_review_search
+msgid "Exception reclassification"
+msgstr "Reclasificación de excepción"
+
+#. module: account_credit
+#: model_terms:ir.ui.view,arch_db:account_credit.res_config_settings_view_form
+msgid "Exceptions and reviews"
+msgstr "Excepciones y revisiones"
+
+#. module: account_credit
+#: model:ir.actions.act_window,name:account_credit.action_credit_provision_run
+#: model:ir.ui.menu,name:account_credit.menu_credit_provision_run
+msgid "Expected Credit Loss"
+msgstr "Pérdida crediticia esperada"
+
+#. module: account_credit
+#: model:ir.model,name:account_credit.model_credit_provision_matrix
+msgid "Expected Credit Loss Matrix"
+msgstr "Matriz de pérdida crediticia esperada"
+
+#. module: account_credit
+#: model:ir.model,name:account_credit.model_credit_provision_matrix_line
+msgid "Expected Credit Loss Matrix Line"
+msgstr "Línea de la matriz de pérdida crediticia esperada"
+
+#. module: account_credit
+#: model:ir.model,name:account_credit.model_credit_provision_run
+msgid "Expected Credit Loss Run"
+msgstr "Corrida de pérdida crediticia esperada"
+
+#. module: account_credit
+#: model:ir.model,name:account_credit.model_credit_provision_run_line
+msgid "Expected Credit Loss Run Line"
+msgstr "Línea de la corrida de pérdida crediticia esperada"
+
+#. module: account_credit
+#: model:ir.actions.act_window,name:account_credit.action_credit_provision_run_line
+msgid "Expected Credit Loss by Grade and Aging"
+msgstr "Pérdida crediticia esperada por grado y antigüedad"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_portfolio_report__expected_loss
+#: model:ir.model.fields,field_description:account_credit.field_credit_provision_run_line__expected_loss
+msgid "Expected Loss"
+msgstr "Pérdida esperada"
+
+#. module: account_credit
+#: model:ir.actions.act_window,name:account_credit.action_credit_provision_matrix
+#: model:ir.ui.menu,name:account_credit.menu_credit_provision_matrix
+msgid "Expected Loss Matrices"
+msgstr "Matrices de pérdida esperada"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_grade__expected_loss_rate
+msgid "Expected Loss Rate"
+msgstr "Tasa de pérdida esperada"
+
+#. module: account_credit
+#: model_terms:ir.ui.view,arch_db:account_credit.res_config_settings_view_form
+msgid "Expected credit loss"
+msgstr "Pérdida crediticia esperada"
+
+#. module: account_credit
+#. odoo-python
+#: code:addons/account_credit/models/credit_provision_run.py:0
+msgid "Expected credit loss %(company)s %(date)s"
+msgstr "Pérdida crediticia esperada %(company)s %(date)s"
+
+#. module: account_credit
+#: model:ir.model.fields,help:account_credit.field_credit_grade__expected_loss_rate
+msgid ""
+"Expected credit loss, percent of exposure, for provisioning (NIF C-16 / IFRS"
+" 9)."
+msgstr ""
+"Pérdida crediticia esperada, porcentaje de la exposición, para la estimación"
+" (NIF C-16 / IFRS 9)."
+
+#. module: account_credit
+#: model:ir.model.fields,help:account_credit.field_credit_provision_matrix_line__rate
+msgid "Expected loss as a percent of the open amount in this bucket."
+msgstr "Pérdida esperada como porcentaje del monto abierto en este tramo."
+
+#. module: account_credit
+#. odoo-python
+#: code:addons/account_credit/models/documents_document.py:0
+#: model:ir.model.fields.selection,name:account_credit.selection__credit_facility__state__expired
+msgid "Expired"
+msgstr "Vencido"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_profile__exposure_draft
+msgid "Exposure Draft"
+msgstr "Exposición en borrador"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_profile__exposure_open
+msgid "Exposure Open"
+msgstr "Exposición abierta"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_profile__exposure_overdue
+msgid "Exposure Overdue"
+msgstr "Exposición vencida"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_profile__exposure_overdue_days
+msgid "Exposure Overdue Days"
+msgstr "Días de exposición vencida"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_profile__exposure_total
+#: model:ir.model.fields,field_description:account_credit.field_credit_review__exposure_total
+msgid "Exposure Total"
+msgstr "Exposición total"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_profile__exposure_uninvoiced
+msgid "Exposure Uninvoiced"
+msgstr "Exposición sin facturar"
+
+#. module: account_credit
+#: model_terms:ir.ui.view,arch_db:account_credit.view_credit_profile_form
+msgid "Exposure and Limit"
+msgstr "Exposición y límite"
+
+#. module: account_credit
+#: model:ir.model.fields.selection,name:account_credit.selection__credit_policy_rule__condition__limit_exceeded
+msgid "Exposure plus the document exceeds the credit limit"
+msgstr "La exposición más el documento excede el límite de crédito"
+
+#. module: account_credit
+#: model:ir.ui.menu,name:account_credit.menu_credit_facility
+#: model_terms:ir.ui.view,arch_db:account_credit.view_credit_profile_form
+msgid "Facilities"
+msgstr "Líneas de crédito"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_profile__facility_ids
+msgid "Facility"
+msgstr "Línea de crédito"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_profile__facility_amount
+msgid "Facility Amount"
+msgstr "Monto de líneas"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_profile__facility_count
+msgid "Facility Count"
+msgstr "Número de líneas"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_review__facility_months
+msgid "Facility Months"
+msgstr "Meses de la línea"
+
+#. module: account_credit
+#: model:credit.event.type,name:account_credit.event_type_facility_expired
+msgid "Facility expired"
+msgstr "Línea vencida"
+
+#. module: account_credit
+#: model:ir.model.fields,help:account_credit.field_credit_review__limit_decided
+msgid ""
+"Facility granted on approval, replacing the profile's manual lines. Zero "
+"grants no line beyond the collateral."
+msgstr ""
+"Línea otorgada al aprobar, que reemplaza las líneas manuales del perfil. "
+"Cero no otorga línea más allá del colateral."
+
+#. module: account_credit
+#: model:ir.model.fields,help:account_credit.field_wizard_sale_order_confirm_credit_override__amount_authorized
+msgid ""
+"Facility granted to cover the excess over the limit. Zero when the "
+"authorization is not about the limit."
+msgstr ""
+"Línea otorgada para cubrir el exceso sobre el límite. Cero cuando la "
+"autorización no es por el límite."
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_profile__fin_current_assets
+msgid "Fin Current Assets"
+msgstr "Activo circulante"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_profile__fin_current_liabilities
+msgid "Fin Current Liabilities"
+msgstr "Pasivo circulante"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_profile__fin_retained_earnings
+msgid "Fin Retained Earnings"
+msgstr "Utilidades retenidas"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_profile__fin_total_assets
+msgid "Fin Total Assets"
+msgstr "Activo total"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_profile__fin_total_liabilities
+msgid "Fin Total Liabilities"
+msgstr "Pasivo total"
+
+#. module: account_credit
+#: model_terms:ir.ui.view,arch_db:account_credit.view_credit_profile_form
+msgid "Financial Statements"
+msgstr "Estados financieros"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_profile__fin_date
+msgid "Financial Statements Date"
+msgstr "Fecha de los estados financieros"
+
+#. module: account_credit
+#: model_terms:ir.ui.view,arch_db:account_credit.res_config_settings_view_form
+msgid "Folder"
+msgstr "Carpeta"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_event__message_follower_ids
+#: model:ir.model.fields,field_description:account_credit.field_credit_facility__message_follower_ids
+#: model:ir.model.fields,field_description:account_credit.field_credit_profile__message_follower_ids
+#: model:ir.model.fields,field_description:account_credit.field_credit_provision_run__message_follower_ids
+#: model:ir.model.fields,field_description:account_credit.field_credit_review__message_follower_ids
+msgid "Followers"
+msgstr "Seguidores"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_event__message_partner_ids
+#: model:ir.model.fields,field_description:account_credit.field_credit_facility__message_partner_ids
+#: model:ir.model.fields,field_description:account_credit.field_credit_profile__message_partner_ids
+#: model:ir.model.fields,field_description:account_credit.field_credit_provision_run__message_partner_ids
+#: model:ir.model.fields,field_description:account_credit.field_credit_review__message_partner_ids
+msgid "Followers (Partners)"
+msgstr "Seguidores (contactos)"
+
+#. module: account_credit
+#: model:ir.model.fields,help:account_credit.field_credit_policy_rule__state
+msgid "For the 'Profile state is the one named' condition."
+msgstr "Para la condición 'El estado del perfil es el indicado'."
+
+#. module: account_credit
+#: model:res.groups,comment:account_credit.group_credit_manager
+msgid ""
+"Full credit control: edit limits, toggle exceptions, assign credit types, "
+"authorize debt"
+msgstr ""
+"Control total de crédito: editar límites, alternar excepciones, asignar "
+"condiciones crediticias, autorizar deuda"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_grade_rule__grade_id
+#: model:ir.model.fields,field_description:account_credit.field_credit_policy_rule__grade_ids
+#: model:ir.model.fields,field_description:account_credit.field_credit_portfolio_report__grade_id
+#: model:ir.model.fields,field_description:account_credit.field_credit_profile__grade_id
+#: model:ir.model.fields,field_description:account_credit.field_credit_provision_matrix_line__grade_id
+#: model:ir.model.fields,field_description:account_credit.field_credit_provision_run_line__grade_id
+#: model_terms:ir.ui.view,arch_db:account_credit.view_credit_portfolio_report_search
+#: model_terms:ir.ui.view,arch_db:account_credit.view_credit_profile_search
+msgid "Grade"
+msgstr "Grado"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_event_type__grade_cap_id
+msgid "Grade Cap"
+msgstr "Tope de grado"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_review__grade_current_id
+msgid "Grade Current"
+msgstr "Grado actual"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_review__grade_decided_id
+msgid "Grade Decided"
+msgstr "Grado decidido"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_profile__grade_effective_id
+msgid "Grade Effective"
+msgstr "Grado efectivo"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_event__grade_from_id
+msgid "Grade From"
+msgstr "Grado de origen"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_profile__grade_proposed_id
+#: model:ir.model.fields,field_description:account_credit.field_credit_review__grade_proposed_id
+msgid "Grade Proposed"
+msgstr "Grado propuesto"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_event__grade_to_id
+msgid "Grade To"
+msgstr "Grado de destino"
+
+#. module: account_credit
+#: model:ir.actions.act_window,name:account_credit.action_credit_grade_transitions
+#: model:ir.ui.menu,name:account_credit.menu_credit_grade_transitions
+#: model_terms:ir.ui.view,arch_db:account_credit.view_credit_event_pivot_transitions
+msgid "Grade Transitions"
+msgstr "Transiciones de grado"
+
+#. module: account_credit
+#: model:ir.model.fields,help:account_credit.field_credit_config__default_grade_id
+msgid "Grade a profile is capped at while in default."
+msgstr "Grado al que se topa un perfil mientras está en incumplimiento."
+
+#. module: account_credit
+#: model:credit.event.type,name:account_credit.event_type_grade_changed
+msgid "Grade changed"
+msgstr "Cambio de grado"
+
+#. module: account_credit
+#: model:ir.model.fields,help:account_credit.field_credit_config__entry_grade_id
+msgid "Grade every new profile starts in."
+msgstr "Grado con el que empieza todo perfil nuevo."
+
+#. module: account_credit
+#: model_terms:ir.ui.view,arch_db:account_credit.view_credit_grade_form
+msgid "Grade name"
+msgstr "Nombre del grado"
+
+#. module: account_credit
+#: model:ir.model.fields,help:account_credit.field_res_bank__credit_grade_id
+#: model:ir.model.fields,help:account_credit.field_res_company__credit_grade_id
+#: model:ir.model.fields,help:account_credit.field_res_partner__credit_grade_id
+#: model:ir.model.fields,help:account_credit.field_res_users__credit_grade_id
+msgid "Grade of this partner's credit profile in the current company."
+msgstr "Grado del perfil de crédito de este contacto en la compañía actual."
+
+#. module: account_credit
+#: model:ir.model.fields,help:account_credit.field_credit_event__grade_to_id
+msgid "Grade the profile entered, on a grade change."
+msgstr "Grado al que entró el perfil, en un cambio de grado."
+
+#. module: account_credit
+#: model:ir.model.fields,help:account_credit.field_credit_event__grade_from_id
+msgid "Grade the profile left, on a grade change."
+msgstr "Grado que dejó el perfil, en un cambio de grado."
+
+#. module: account_credit
+#: model:ir.model.fields,help:account_credit.field_credit_profile__grade_proposed_id
+msgid "Grade the scorecard proposes from the last metrics refresh."
+msgstr ""
+"Grado que propone el scorecard a partir de la última actualización de "
+"métricas."
+
+#. module: account_credit
+#: model:ir.model.fields.selection,name:account_credit.selection__credit_facility__source__grade
+msgid "Grade-based line"
+msgstr "Línea por grado"
+
+#. module: account_credit
+#: model:ir.ui.menu,name:account_credit.menu_credit_grade
+msgid "Grades"
+msgstr "Grados"
+
+#. module: account_credit
+#: model_terms:ir.ui.view,arch_db:account_credit.view_credit_exception_wizard_form
+msgid "Grant"
+msgstr "Otorgar"
+
+#. module: account_credit
+#: model_terms:ir.ui.view,arch_db:account_credit.view_credit_profile_form
+msgid "Grant Exception"
+msgstr "Otorgar excepción"
+
+#. module: account_credit
+#. odoo-python
+#: code:addons/account_credit/models/credit_profile.py:0
+msgid "Grant a Dated Exception"
+msgstr "Otorgar una excepción con vigencia"
+
+#. module: account_credit
+#: model:ir.model,name:account_credit.model_wizard_credit_profile_grant_exception
+msgid "Grant a dated credit exception"
+msgstr "Otorgar una excepción de crédito con vigencia"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_facility__user_id
+msgid "Granted by"
+msgstr "Otorgada por"
+
+#. module: account_credit
+#. odoo-python
+#: code:addons/account_credit/models/res_partner.py:0
+msgid "Granted from the partner form"
+msgstr "Otorgada desde el formulario del contacto"
+
+#. module: account_credit
+#: model_terms:ir.ui.view,arch_db:account_credit.view_credit_facility_search
+msgid "Granting"
+msgstr "Vigentes"
+
+#. module: account_credit
+#: model:ir.model.fields,help:account_credit.field_credit_facility__active
+msgid ""
+"Granting or waiting to grant. Clearing it revokes the line; the record stays"
+" so the decision remains auditable."
+msgstr ""
+"Vigente o por entrar en vigor. Desmarcarlo revoca la línea; el registro se "
+"conserva para que la decisión sea auditable."
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_review_line__grouping_key
+#: model:ir.model.fields,field_description:account_credit.field_credit_score_line__grouping_key
+msgid "Grouping Key"
+msgstr "Clave de agrupación"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_document_document__has_amount
+#: model:ir.model.fields,field_description:account_credit.field_document_type__has_amount
+msgid "Has Amount"
+msgstr "Lleva monto"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_document_document__has_collateral
+#: model:ir.model.fields,field_description:account_credit.field_document_type__has_collateral
+msgid "Has Collateral"
+msgstr "Tiene Garantía"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_document_document__has_guarantor
+#: model:ir.model.fields,field_description:account_credit.field_document_type__has_guarantor
+msgid "Has Guarantor"
+msgstr "Tiene Aval"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_event__has_message
+#: model:ir.model.fields,field_description:account_credit.field_credit_facility__has_message
+#: model:ir.model.fields,field_description:account_credit.field_credit_profile__has_message
+#: model:ir.model.fields,field_description:account_credit.field_credit_provision_run__has_message
+#: model:ir.model.fields,field_description:account_credit.field_credit_review__has_message
+msgid "Has Message"
+msgstr "Tiene mensaje"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_profile__hold_active
+msgid "Hold Active"
+msgstr "Bloqueo activo"
+
+#. module: account_credit
+#: model_terms:ir.ui.view,arch_db:account_credit.view_credit_event_search
+msgid "Holds"
+msgstr "Bloqueos"
+
+#. module: account_credit
+#: model:ir.model.fields,help:account_credit.field_credit_review_line__source_ref
+#: model:ir.model.fields,help:account_credit.field_credit_score_line__source_ref
+msgid ""
+"Human-readable source of the points, resolved from source_key in the "
+"reader's language: the crop, bucket, band or attribute value that produced "
+"them."
+msgstr ""
+"Origen legible de los puntos, resuelto desde source_key en el idioma del "
+"lector: el cultivo, el rango, la banda o el valor de atributo que los "
+"produjo."
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_account_move__id
+#: model:ir.model.fields,field_description:account_credit.field_approval_request__id
+#: model:ir.model.fields,field_description:account_credit.field_credit_config__id
+#: model:ir.model.fields,field_description:account_credit.field_credit_event__id
+#: model:ir.model.fields,field_description:account_credit.field_credit_event_type__id
+#: model:ir.model.fields,field_description:account_credit.field_wizard_sale_order_confirm_credit_override__id
+#: model:ir.model.fields,field_description:account_credit.field_wizard_credit_profile_grant_exception__id
+#: model:ir.model.fields,field_description:account_credit.field_credit_facility__id
+#: model:ir.model.fields,field_description:account_credit.field_credit_grade__id
+#: model:ir.model.fields,field_description:account_credit.field_credit_grade_rule__id
+#: model:ir.model.fields,field_description:account_credit.field_credit_policy_rule__id
+#: model:ir.model.fields,field_description:account_credit.field_credit_portfolio_report__id
+#: model:ir.model.fields,field_description:account_credit.field_credit_profile__id
+#: model:ir.model.fields,field_description:account_credit.field_credit_provision_matrix__id
+#: model:ir.model.fields,field_description:account_credit.field_credit_provision_matrix_line__id
+#: model:ir.model.fields,field_description:account_credit.field_credit_provision_run__id
+#: model:ir.model.fields,field_description:account_credit.field_credit_provision_run_line__id
+#: model:ir.model.fields,field_description:account_credit.field_credit_review__id
+#: model:ir.model.fields,field_description:account_credit.field_credit_review_line__id
+#: model:ir.model.fields,field_description:account_credit.field_credit_score_line__id
+#: model:ir.model.fields,field_description:account_credit.field_document_document__id
+#: model:ir.model.fields,field_description:account_credit.field_document_type__id
+#: model:ir.model.fields,field_description:account_credit.field_res_company__id
+#: model:ir.model.fields,field_description:account_credit.field_res_config_settings__id
+#: model:ir.model.fields,field_description:account_credit.field_res_partner__id
+#: model:ir.model.fields,field_description:account_credit.field_sale_order__id
+#: model:ir.model.fields,field_description:account_credit.field_scorecard_dimension__id
+#: model:ir.model.fields,field_description:account_credit.field_stock_picking__id
+msgid "ID"
+msgstr "ID"
+
+#. module: account_credit
+#: model:document.type,name:account_credit.doc_type_id_document
+msgid "ID Document"
+msgstr "Identificación oficial"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_profile__activity_exception_icon
+#: model:ir.model.fields,field_description:account_credit.field_credit_review__activity_exception_icon
+msgid "Icon"
+msgstr "Icono"
+
+#. module: account_credit
+#: model:ir.model.fields,help:account_credit.field_credit_profile__activity_exception_icon
+#: model:ir.model.fields,help:account_credit.field_credit_review__activity_exception_icon
+msgid "Icon to indicate an exception activity."
+msgstr "Icono que indica una actividad de excepción."
+
+#. module: account_credit
+#: model:ir.model.fields,help:account_credit.field_credit_event__message_needaction
+#: model:ir.model.fields,help:account_credit.field_credit_facility__message_needaction
+#: model:ir.model.fields,help:account_credit.field_credit_profile__message_needaction
+#: model:ir.model.fields,help:account_credit.field_credit_provision_run__message_needaction
+#: model:ir.model.fields,help:account_credit.field_credit_review__message_needaction
+msgid "If checked, new messages require your attention."
+msgstr "Si está marcado, hay mensajes nuevos que requieren su atención."
+
+#. module: account_credit
+#: model:ir.model.fields,help:account_credit.field_credit_event__message_has_error
+#: model:ir.model.fields,help:account_credit.field_credit_event__message_has_sms_error
+#: model:ir.model.fields,help:account_credit.field_credit_facility__message_has_error
+#: model:ir.model.fields,help:account_credit.field_credit_facility__message_has_sms_error
+#: model:ir.model.fields,help:account_credit.field_credit_profile__message_has_error
+#: model:ir.model.fields,help:account_credit.field_credit_profile__message_has_sms_error
+#: model:ir.model.fields,help:account_credit.field_credit_provision_run__message_has_error
+#: model:ir.model.fields,help:account_credit.field_credit_provision_run__message_has_sms_error
+#: model:ir.model.fields,help:account_credit.field_credit_review__message_has_error
+#: model:ir.model.fields,help:account_credit.field_credit_review__message_has_sms_error
+msgid "If checked, some messages have a delivery error."
+msgstr "Si está marcado, algunos mensajes tienen error de entrega."
+
+#. module: account_credit
+#: model:ir.model.fields.selection,name:account_credit.selection__credit_policy_rule__payment_kind__immediate
+msgid "Immediate payment only"
+msgstr "Solo pago inmediato"
+
+#. module: account_credit
+#: model:ir.model.fields.selection,name:account_credit.selection__credit_review__state__in_progress
+msgid "In Progress"
+msgstr "En proceso"
+
+#. module: account_credit
+#: model_terms:ir.ui.view,arch_db:account_credit.view_credit_profile_search
+msgid "In default"
+msgstr "En incumplimiento"
+
+#. module: account_credit
+#: model:ir.model.fields,help:account_credit.field_document_document__is_guarantor
+msgid "Indicates if this document acts as a guarantee"
+msgstr "Indica si este documento pertenece a un aval"
+
+#. module: account_credit
+#: model:ir.model.fields,help:account_credit.field_credit_grade_rule__is_guarantor
+msgid "Indicates if this rule is for guarantor documents"
+msgstr "Indica si esta regla es para documentos de aval"
+
+#. module: account_credit
+#: model:ir.model.fields.selection,name:account_credit.selection__credit_event_type__severity__info
+msgid "Information"
+msgstr "Información"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_event__message_is_follower
+#: model:ir.model.fields,field_description:account_credit.field_credit_facility__message_is_follower
+#: model:ir.model.fields,field_description:account_credit.field_credit_profile__message_is_follower
+#: model:ir.model.fields,field_description:account_credit.field_credit_provision_run__message_is_follower
+#: model:ir.model.fields,field_description:account_credit.field_credit_review__message_is_follower
+msgid "Is Follower"
+msgstr "Es seguidor"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_grade_rule__is_guarantor
+#: model:ir.model.fields,field_description:account_credit.field_document_document__is_guarantor
+msgid "Is Guarantor"
+msgstr "Es Aval"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_event__is_hold
+#: model:ir.model.fields,field_description:account_credit.field_credit_event_type__is_hold
+msgid "Is Hold"
+msgstr "Es bloqueo"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_event__is_open
+msgid "Is Open"
+msgstr "Está abierto"
+
+#. module: account_credit
+#: model:ir.model,name:account_credit.model_account_move
+#: model_terms:ir.ui.view,arch_db:account_credit.view_credit_provision_run_form
+msgid "Journal Entry"
+msgstr "Asiento contable"
+
+#. module: account_credit
+#: model_terms:ir.ui.view,arch_db:account_credit.res_config_settings_view_form
+msgid ""
+"Journal and accounts the provision runs book against, and the matrix they "
+"read"
+msgstr ""
+"Diario y cuentas contra los que se registran las corridas de estimación, y "
+"la matriz que leen"
+
+#. module: account_credit
+#: model:ir.model.fields,help:account_credit.field_credit_config__provision_journal_id
+#: model:ir.model.fields,help:account_credit.field_res_config_settings__credit_provision_journal_id
+msgid "Journal the expected credit loss entries are booked in."
+msgstr ""
+"Diario en el que se registran los asientos de pérdida crediticia esperada."
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_grade__kind
+#: model:ir.model.fields,field_description:account_credit.field_credit_review__kind
+#: model_terms:ir.ui.view,arch_db:account_credit.view_credit_review_search
+msgid "Kind"
+msgstr "Tipo"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_config__write_uid
+#: model:ir.model.fields,field_description:account_credit.field_credit_event__write_uid
+#: model:ir.model.fields,field_description:account_credit.field_credit_event_type__write_uid
+#: model:ir.model.fields,field_description:account_credit.field_wizard_sale_order_confirm_credit_override__write_uid
+#: model:ir.model.fields,field_description:account_credit.field_wizard_credit_profile_grant_exception__write_uid
+#: model:ir.model.fields,field_description:account_credit.field_credit_facility__write_uid
+#: model:ir.model.fields,field_description:account_credit.field_credit_grade__write_uid
+#: model:ir.model.fields,field_description:account_credit.field_credit_grade_rule__write_uid
+#: model:ir.model.fields,field_description:account_credit.field_credit_policy_rule__write_uid
+#: model:ir.model.fields,field_description:account_credit.field_credit_profile__write_uid
+#: model:ir.model.fields,field_description:account_credit.field_credit_provision_matrix__write_uid
+#: model:ir.model.fields,field_description:account_credit.field_credit_provision_matrix_line__write_uid
+#: model:ir.model.fields,field_description:account_credit.field_credit_provision_run__write_uid
+#: model:ir.model.fields,field_description:account_credit.field_credit_provision_run_line__write_uid
+#: model:ir.model.fields,field_description:account_credit.field_credit_review__write_uid
+#: model:ir.model.fields,field_description:account_credit.field_credit_review_line__write_uid
+#: model:ir.model.fields,field_description:account_credit.field_credit_score_line__write_uid
+msgid "Last Updated by"
+msgstr "Última actualización por"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_config__write_date
+#: model:ir.model.fields,field_description:account_credit.field_credit_event__write_date
+#: model:ir.model.fields,field_description:account_credit.field_credit_event_type__write_date
+#: model:ir.model.fields,field_description:account_credit.field_wizard_sale_order_confirm_credit_override__write_date
+#: model:ir.model.fields,field_description:account_credit.field_wizard_credit_profile_grant_exception__write_date
+#: model:ir.model.fields,field_description:account_credit.field_credit_facility__write_date
+#: model:ir.model.fields,field_description:account_credit.field_credit_grade__write_date
+#: model:ir.model.fields,field_description:account_credit.field_credit_grade_rule__write_date
+#: model:ir.model.fields,field_description:account_credit.field_credit_policy_rule__write_date
+#: model:ir.model.fields,field_description:account_credit.field_credit_profile__write_date
+#: model:ir.model.fields,field_description:account_credit.field_credit_provision_matrix__write_date
+#: model:ir.model.fields,field_description:account_credit.field_credit_provision_matrix_line__write_date
+#: model:ir.model.fields,field_description:account_credit.field_credit_provision_run__write_date
+#: model:ir.model.fields,field_description:account_credit.field_credit_provision_run_line__write_date
+#: model:ir.model.fields,field_description:account_credit.field_credit_review__write_date
+#: model:ir.model.fields,field_description:account_credit.field_credit_review_line__write_date
+#: model:ir.model.fields,field_description:account_credit.field_credit_score_line__write_date
+msgid "Last Updated on"
+msgstr "Última actualización el"
+
+#. module: account_credit
+#: model:ir.model.fields,help:account_credit.field_credit_facility__date_end
+msgid "Last day the line is granted. Empty means until revoked."
+msgstr ""
+"Último día en que la línea está vigente. Vacío significa hasta que se "
+"revoque."
+
+#. module: account_credit
+#: model:ir.model.fields,help:account_credit.field_credit_provision_run__previous_run_id
+msgid "Last posted run of the company; the entry books the difference."
+msgstr ""
+"Última corrida publicada de la compañía; el asiento registra la diferencia."
+
+#. module: account_credit
+#: model:scorecard.dimension,name:account_credit.scorecard_dimension_late_ratio
+msgid "Late Payment Share"
+msgstr "Proporción pagada tarde"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_profile__late_ratio
+msgid "Late Ratio"
+msgstr "Proporción pagada tarde"
+
+#. module: account_credit
+#: model:ir.model.fields,help:account_credit.field_credit_grade__company_id
+msgid ""
+"Leave empty for a scale every subject is measured against. Setting it "
+"narrows the scale to that company's subjects -- and to *only* those: a "
+"subject with no company of its own resolves against company-less bands, so a"
+" scale that is scoped by accident classifies nobody."
+msgstr ""
+"Déjelo vacío para una escala contra la que se mide todo sujeto. Fijarlo "
+"restringe la escala a los sujetos de esa compañía -- y *sólo* a ellos: un "
+"sujeto sin compañía propia se resuelve contra bandas sin compañía, así que "
+"una escala acotada por accidente no clasifica a nadie."
+
+#. module: account_credit
+#: model:credit.event.type,name:account_credit.event_type_legal_hold
+#: model:ir.model.fields.selection,name:account_credit.selection__credit_policy_rule__state__legal
+#: model:ir.model.fields.selection,name:account_credit.selection__credit_profile__state__legal
+#: model:ir.model.fields.selection,name:account_credit.selection__res_partner__credit_status__legal
+msgid "Legal Process"
+msgstr "Proceso Legal"
+
+#. module: account_credit
+#: model_terms:ir.ui.view,arch_db:account_credit.view_credit_profile_form
+#: model_terms:ir.ui.view,arch_db:account_credit.view_partner_form_credit_type
+msgid "Legal Process Done"
+msgstr "Finalizar Proceso Legal"
+
+#. module: account_credit
+#: model_terms:ir.ui.view,arch_db:account_credit.view_credit_event_form
+#: model_terms:ir.ui.view,arch_db:account_credit.view_credit_event_list
+msgid "Lift"
+msgstr "Levantar"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_event__lifted_by_id
+msgid "Lifted By"
+msgstr "Levantado por"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_event__lifted_on
+msgid "Lifted On"
+msgstr "Levantado el"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_portfolio_report__limit_amount
+#: model:ir.model.fields,field_description:account_credit.field_credit_profile__limit_amount
+msgid "Limit Amount"
+msgstr "Monto del límite"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_profile__limit_available
+msgid "Limit Available"
+msgstr "Límite disponible"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_review__limit_current
+msgid "Limit Current"
+msgstr "Límite actual"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_review__limit_decided
+msgid "Limit Decided"
+msgstr "Límite decidido"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_grade__limit_pct_annual_purchases
+msgid "Limit Pct Annual Purchases"
+msgstr "Límite, % de compras anuales"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_profile__limit_suggested
+#: model:ir.model.fields,field_description:account_credit.field_credit_review__limit_suggested
+msgid "Limit Suggested"
+msgstr "Límite sugerido"
+
+#. module: account_credit
+#: model:ir.model.fields.selection,name:account_credit.selection__credit_review__kind__limit_request
+msgid "Limit request"
+msgstr "Solicitud de límite"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_provision_matrix__line_ids
+#: model:ir.model.fields,field_description:account_credit.field_credit_provision_run__line_ids
+#: model:ir.model.fields,field_description:account_credit.field_credit_review__line_ids
+msgid "Line"
+msgstr "Línea"
+
+#. module: account_credit
+#: model:ir.model.fields,help:account_credit.field_credit_config__exception_max_days
+#: model:ir.model.fields,help:account_credit.field_res_config_settings__credit_exception_max_days
+msgid ""
+"Longest a credit exception may run. An exception always carries an end date;"
+" when it ends the profile falls back to its grade and the policy."
+msgstr ""
+"Duración máxima de una excepción de crédito. Una excepción siempre lleva "
+"fecha de fin; al terminar, el perfil vuelve a su grado y a la política."
+
+#. module: account_credit
+#: model:ir.model.fields,help:account_credit.field_credit_grade__max_payment_term_days
+msgid "Longest payment term the grade allows. 0 means cash only."
+msgstr ""
+"Plazo de pago más largo que permite el grado. 0 significa solo contado."
+
+#. module: account_credit
+#: model:ir.model.fields,help:account_credit.field_credit_config__auto_downgrade
+#: model:ir.model.fields,help:account_credit.field_res_config_settings__credit_auto_downgrade
+msgid ""
+"Lower a profile's grade automatically when the scorecard proposes a worse "
+"one. Raising a grade always takes an approved review."
+msgstr ""
+"Bajar automáticamente el grado de un perfil cuando el scorecard propone uno "
+"peor. Subir un grado siempre requiere una revisión aprobada."
+
+#. module: account_credit
+#: model:ir.model.fields,help:account_credit.field_credit_grade__min_value
+msgid "Lowest scorecard score that proposes this grade, inclusive."
+msgstr "Puntaje mínimo del scorecard que propone este grado, inclusive."
+
+#. module: account_credit
+#: model:credit.event.type,name:account_credit.event_type_override
+msgid "Manager authorization"
+msgstr "Autorización de gerente"
+
+#. module: account_credit
+#: model:ir.model.fields.selection,name:account_credit.selection__credit_review__kind__manual
+msgid "Manual"
+msgstr "Manual"
+
+#. module: account_credit
+#: model:ir.model.fields,help:account_credit.field_res_bank__credit_trusted_amount
+#: model:ir.model.fields,help:account_credit.field_res_company__credit_trusted_amount
+#: model:ir.model.fields,help:account_credit.field_res_partner__credit_trusted_amount
+#: model:ir.model.fields,help:account_credit.field_res_users__credit_trusted_amount
+msgid "Manually granted facilities in the current company, in total."
+msgstr "Total de líneas otorgadas manualmente en la compañía actual."
+
+#. module: account_credit
+#: model:ir.model.fields.selection,name:account_credit.selection__credit_facility__source__manual
+msgid "Manually granted line"
+msgstr "Línea otorgada manualmente"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_provision_matrix_line__matrix_id
+#: model:ir.model.fields,field_description:account_credit.field_credit_provision_run__matrix_id
+msgid "Matrix"
+msgstr "Matriz"
+
+#. module: account_credit
+#: model_terms:ir.ui.view,arch_db:account_credit.view_credit_provision_matrix_form
+msgid "Matrix name"
+msgstr "Nombre de la matriz"
+
+#. module: account_credit
+#: model:ir.model.fields,help:account_credit.field_credit_config__provision_matrix_id
+#: model:ir.model.fields,help:account_credit.field_res_config_settings__credit_provision_matrix_id
+msgid ""
+"Matrix the expected credit loss runs read. Empty falls back to the global "
+"matrix."
+msgstr ""
+"Matriz que leen las corridas de pérdida crediticia esperada. Vacío usa la "
+"matriz global."
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_wizard_credit_profile_grant_exception__max_days
+msgid "Max Days"
+msgstr "Días máximos"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_profile__max_days_late
+msgid "Max Days Late"
+msgstr "Atraso máximo en días"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_grade__max_payment_term_days
+msgid "Max Payment Term Days"
+msgstr "Días máximos de plazo de pago"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_review_line__max_points
+#: model:ir.model.fields,field_description:account_credit.field_credit_score_line__max_points
+msgid "Max Points"
+msgstr "Puntos máximos"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_grade_rule__max_quantity
+msgid "Max Quantity"
+msgstr "Cantidad Máxima"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_grade__max_value
+msgid "Maximum Score"
+msgstr "Puntaje máximo"
+
+#. module: account_credit
+#: model:ir.model.fields,help:account_credit.field_credit_grade_rule__max_quantity
+msgid "Maximum number of allowed documents (0 means unlimited)"
+msgstr "Número máximo de documentos permitidos (0 significa ilimitado)"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_policy_rule__message
+msgid "Message"
+msgstr "Mensaje"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_event__message_has_error
+#: model:ir.model.fields,field_description:account_credit.field_credit_facility__message_has_error
+#: model:ir.model.fields,field_description:account_credit.field_credit_profile__message_has_error
+#: model:ir.model.fields,field_description:account_credit.field_credit_provision_run__message_has_error
+#: model:ir.model.fields,field_description:account_credit.field_credit_review__message_has_error
+msgid "Message Delivery error"
+msgstr "Error de entrega del mensaje"
+
+#. module: account_credit
+#: model_terms:ir.ui.view,arch_db:account_credit.view_credit_policy_rule_form
+msgid "Message shown to the user"
+msgstr "Mensaje que se muestra al usuario"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_event__message_ids
+#: model:ir.model.fields,field_description:account_credit.field_credit_facility__message_ids
+#: model:ir.model.fields,field_description:account_credit.field_credit_profile__message_ids
+#: model:ir.model.fields,field_description:account_credit.field_credit_provision_run__message_ids
+#: model:ir.model.fields,field_description:account_credit.field_credit_review__message_ids
+msgid "Messages"
+msgstr "Mensajes"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_profile__metrics_date
+msgid "Metrics Date"
+msgstr "Fecha de las métricas"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_config__metrics_window_months
+#: model:ir.model.fields,field_description:account_credit.field_res_config_settings__credit_metrics_window_months
+msgid "Metrics Window Months"
+msgstr "Meses de la ventana de métricas"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_grade_rule__min_quantity
+msgid "Min Quantity"
+msgstr "Cantidad Mínima"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_grade__min_value
+msgid "Minimum Score"
+msgstr "Puntaje mínimo"
+
+#. module: account_credit
+#: model:ir.model.fields,help:account_credit.field_credit_grade_rule__min_quantity
+msgid "Minimum number of required documents (0 means not required)"
+msgstr "Número mínimo de documentos requeridos (0 significa no requerido)"
+
+#. module: account_credit
+#. odoo-python
+#: code:addons/account_credit/models/credit_grade_rule.py:0
+msgid "Minimum quantity cannot be greater than maximum quantity"
+msgstr "La cantidad mínima no puede ser mayor que la cantidad máxima"
+
+#. module: account_credit
+#. odoo-python
+#: code:addons/account_credit/models/documents_document.py:0
+msgid "Missing amount"
+msgstr "Falta el monto"
+
+#. module: account_credit
+#. odoo-python
+#: code:addons/account_credit/models/documents_document.py:0
+msgid "Missing collateral amount"
+msgstr "Falta el monto de la garantía"
+
+#. module: account_credit
+#: model:ir.model.fields.selection,name:account_credit.selection__scorecard_dimension__code__tenure_months
+msgid "Months as a customer"
+msgstr "Meses como cliente"
+
+#. module: account_credit
+#: model:ir.model.fields,help:account_credit.field_credit_grade__review_interval_months
+msgid "Months between periodic reviews of a profile in this grade."
+msgstr "Meses entre revisiones periódicas de un perfil en este grado."
+
+#. module: account_credit
+#: model:ir.model.fields,help:account_credit.field_credit_config__metrics_window_months
+#: model:ir.model.fields,help:account_credit.field_res_config_settings__credit_metrics_window_months
+msgid "Months of paid invoices the payment-behaviour metrics read."
+msgstr ""
+"Meses de facturas pagadas que leen las métricas de comportamiento de pago."
+
+#. module: account_credit
+#: model:ir.model.fields,help:account_credit.field_credit_review__facility_months
+msgid "Months the granted facility runs before it expires."
+msgstr "Meses que dura la línea otorgada antes de vencer."
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_provision_run__move_id
+msgid "Move"
+msgstr "Asiento"
+
+#. module: account_credit
+#. odoo-python
+#: code:addons/account_credit/models/sale_order.py:0
+msgid ""
+"Multiple partners need a credit authorization. Please confirm orders "
+"separately per partner."
+msgstr ""
+"Varios contactos requieren autorización de crédito. Confirme los pedidos por"
+" separado, por contacto."
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_profile__my_activity_date_deadline
+#: model:ir.model.fields,field_description:account_credit.field_credit_review__my_activity_date_deadline
+msgid "My Activity Deadline"
+msgstr "Fecha límite de mi actividad"
+
+#. module: account_credit
+#: model_terms:ir.ui.view,arch_db:account_credit.view_credit_review_search
+msgid "My reviews"
+msgstr "Mis revisiones"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_event_type__name
+#: model:ir.model.fields,field_description:account_credit.field_credit_facility__name
+#: model:ir.model.fields,field_description:account_credit.field_credit_grade__name
+#: model:ir.model.fields,field_description:account_credit.field_credit_grade_rule__name
+#: model:ir.model.fields,field_description:account_credit.field_credit_policy_rule__name
+#: model:ir.model.fields,field_description:account_credit.field_credit_provision_matrix__name
+#: model:ir.model.fields,field_description:account_credit.field_credit_provision_run__name
+#: model:ir.model.fields,field_description:account_credit.field_credit_review__name
+msgid "Name"
+msgstr "Nombre"
+
+#. module: account_credit
+#: model:ir.model.fields.selection,name:account_credit.selection__sale_order__credit_verdict_outcome__approve
+#: model:ir.model.fields.selection,name:account_credit.selection__stock_picking__credit_verdict_outcome__approve
+msgid "Needs authorization"
+msgstr "Requiere autorización"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_profile__activity_date_deadline
+#: model:ir.model.fields,field_description:account_credit.field_credit_review__activity_date_deadline
+msgid "Next Activity Deadline"
+msgstr "Fecha límite de la siguiente actividad"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_profile__activity_summary
+#: model:ir.model.fields,field_description:account_credit.field_credit_review__activity_summary
+msgid "Next Activity Summary"
+msgstr "Resumen de la siguiente actividad"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_profile__activity_type_id
+#: model:ir.model.fields,field_description:account_credit.field_credit_review__activity_type_id
+msgid "Next Activity Type"
+msgstr "Tipo de la siguiente actividad"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_profile__next_review_date
+msgid "Next Review Date"
+msgstr "Fecha de la siguiente revisión"
+
+#. module: account_credit
+#: model_terms:ir.actions.act_window,help:account_credit.action_credit_facility
+msgid "No credit facility yet"
+msgstr "Aún no hay líneas de crédito"
+
+#. module: account_credit
+#: model_terms:ir.actions.act_window,help:account_credit.action_credit_profile
+msgid "No credit profile yet"
+msgstr "Aún no hay perfiles de crédito"
+
+#. module: account_credit
+#. odoo-python
+#: code:addons/account_credit/models/credit_provision_run.py:0
+msgid "No expected credit loss matrix is configured for %s."
+msgstr "No hay una matriz de pérdida crediticia esperada configurada para %s."
+
+#. module: account_credit
+#: model:ir.model.fields.selection,name:account_credit.selection__credit_policy_rule__condition__no_grade
+msgid "No grade assigned"
+msgstr "Sin grado asignado"
+
+#. module: account_credit
+#. odoo-python
+#: code:addons/account_credit/models/credit_review.py:0
+msgid "No grade is proposed for '%s'; decide it by hand."
+msgstr "No hay grado propuesto para '%s'; decídalo a mano."
+
+#. module: account_credit
+#: model_terms:ir.actions.act_window,help:account_credit.action_credit_review
+msgid "No review to decide"
+msgstr "No hay revisiones por decidir"
+
+#. module: account_credit
+#: model:ir.model.fields,help:account_credit.field_credit_profile__score_max_points
+msgid ""
+"Normalization denominator: each applicable group of the audit rows counted "
+"once. Equal to the scorecard's ceiling when every dimension scores a missing"
+" observation as zero."
+msgstr ""
+"Denominador de normalización: cada grupo aplicable de las filas de auditoría"
+" contado una vez. Igual al techo del scorecard cuando toda dimensión puntúa "
+"cero una observación ausente."
+
+#. module: account_credit
+#: model:ir.model.fields,help:account_credit.field_credit_profile__score
+msgid ""
+"Normalized score (0-100): the applied points over the ceiling of every "
+"applicable group of the audit rows."
+msgstr ""
+"Puntaje normalizado (0-100): los puntos aplicados sobre el techo de cada "
+"grupo aplicable de las filas de auditoría."
+
+#. module: account_credit
+#: model:ir.model.fields.selection,name:account_credit.selection__credit_provision_matrix_line__bucket__current
+#: model:ir.model.fields.selection,name:account_credit.selection__credit_provision_run_line__bucket__current
+msgid "Not due"
+msgstr "Al corriente"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_event__note
+#: model:ir.model.fields,field_description:account_credit.field_credit_review_line__note
+#: model:ir.model.fields,field_description:account_credit.field_credit_score_line__note
+msgid "Note"
+msgstr "Nota"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_review__notes
+#: model_terms:ir.ui.view,arch_db:account_credit.view_credit_review_form
+msgid "Notes"
+msgstr "Notas"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_event__message_needaction_counter
+#: model:ir.model.fields,field_description:account_credit.field_credit_facility__message_needaction_counter
+#: model:ir.model.fields,field_description:account_credit.field_credit_profile__message_needaction_counter
+#: model:ir.model.fields,field_description:account_credit.field_credit_provision_run__message_needaction_counter
+#: model:ir.model.fields,field_description:account_credit.field_credit_review__message_needaction_counter
+msgid "Number of Actions"
+msgstr "Número de acciones"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_event__message_has_error_counter
+#: model:ir.model.fields,field_description:account_credit.field_credit_facility__message_has_error_counter
+#: model:ir.model.fields,field_description:account_credit.field_credit_profile__message_has_error_counter
+#: model:ir.model.fields,field_description:account_credit.field_credit_provision_run__message_has_error_counter
+#: model:ir.model.fields,field_description:account_credit.field_credit_review__message_has_error_counter
+msgid "Number of errors"
+msgstr "Número de errores"
+
+#. module: account_credit
+#: model:ir.model.fields,help:account_credit.field_credit_event__message_needaction_counter
+#: model:ir.model.fields,help:account_credit.field_credit_facility__message_needaction_counter
+#: model:ir.model.fields,help:account_credit.field_credit_profile__message_needaction_counter
+#: model:ir.model.fields,help:account_credit.field_credit_provision_run__message_needaction_counter
+#: model:ir.model.fields,help:account_credit.field_credit_review__message_needaction_counter
+msgid "Number of messages requiring action"
+msgstr "Número de mensajes que requieren acción"
+
+#. module: account_credit
+#: model:ir.model.fields,help:account_credit.field_credit_event__message_has_error_counter
+#: model:ir.model.fields,help:account_credit.field_credit_facility__message_has_error_counter
+#: model:ir.model.fields,help:account_credit.field_credit_profile__message_has_error_counter
+#: model:ir.model.fields,help:account_credit.field_credit_provision_run__message_has_error_counter
+#: model:ir.model.fields,help:account_credit.field_credit_review__message_has_error_counter
+msgid "Number of messages with delivery error"
+msgstr "Número de mensajes con error de entrega"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_portfolio_report__oldest_due_days
+msgid "Oldest Due Days"
+msgstr "Días del vencido más antiguo"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_profile__oldest_open_days
+msgid "Oldest Open Days"
+msgstr "Días del abierto más antiguo"
+
+#. module: account_credit
+#: model:scorecard.dimension,name:account_credit.scorecard_dimension_oldest_open_days
+msgid "Oldest Open Receivable"
+msgstr "Cuenta por cobrar abierta más antigua"
+
+#. module: account_credit
+#: model:ir.model.fields.selection,name:account_credit.selection__scorecard_dimension__code__oldest_open_days
+msgid "Oldest open receivable, days past due"
+msgstr "Cuenta por cobrar abierta más antigua, días de vencimiento"
+
+#. module: account_credit
+#: model:ir.model.fields.selection,name:account_credit.selection__credit_policy_rule__condition__overdue_days_over
+msgid "Oldest overdue past the threshold in days"
+msgstr "Vencido más antiguo por encima del umbral en días"
+
+#. module: account_credit
+#: model:ir.model.fields.selection,name:account_credit.selection__credit_review__kind__onboarding
+msgid "Onboarding"
+msgstr "Alta"
+
+#. module: account_credit
+#. odoo-python
+#: code:addons/account_credit/models/credit_provision_run.py:0
+msgid "One expected credit loss run is posted per day."
+msgstr "Se publica una corrida de pérdida crediticia esperada por día."
+
+#. module: account_credit
+#: model:ir.model.constraint,message:account_credit.constraint_credit_provision_matrix_line_unique_cell
+msgid "One rate per matrix, grade and aging bucket."
+msgstr "Una tasa por matriz, grado y tramo de antigüedad."
+
+#. module: account_credit
+#. odoo-python
+#: code:addons/account_credit/models/res_partner.py:0
+msgid "Only a credit manager can change a partner's credit standing."
+msgstr ""
+"Solo un gerente de crédito puede cambiar la situación crediticia de un "
+"contacto."
+
+#. module: account_credit
+#. odoo-python
+#: code:addons/account_credit/models/credit_review.py:0
+msgid "Only a credit manager can decide a review."
+msgstr "Solo un gerente de crédito puede decidir una revisión."
+
+#. module: account_credit
+#. odoo-python
+#: code:addons/account_credit/models/credit_profile.py:0
+msgid "Only a credit manager can grant or end an exception."
+msgstr "Solo un gerente de crédito puede otorgar o terminar una excepción."
+
+#. module: account_credit
+#. odoo-python
+#: code:addons/account_credit/models/credit_event.py:0
+msgid "Only a credit manager can lift a credit event."
+msgstr "Solo un gerente de crédito puede levantar un evento de crédito."
+
+#. module: account_credit
+#. odoo-python
+#: code:addons/account_credit/models/credit_profile.py:0
+#: code:addons/account_credit/models/res_partner.py:0
+msgid "Only a credit manager can send a partner to legal process."
+msgstr "Solo un gerente de crédito puede enviar un contacto a proceso legal."
+
+#. module: account_credit
+#. odoo-python
+#: code:addons/account_credit/models/res_partner.py:0
+msgid "Only a credit user can assign a partner's credit grade."
+msgstr ""
+"Solo un usuario de crédito puede asignar el grado de crédito de un contacto."
+
+#. module: account_credit
+#. odoo-python
+#: code:addons/account_credit/models/credit_profile.py:0
+msgid "Only a credit user can change a partner's grade."
+msgstr "Solo un usuario de crédito puede cambiar el grado de un contacto."
+
+#. module: account_credit
+#. odoo-python
+#: code:addons/account_credit/wizards/credit_exceeded_authorization.py:0
+msgid ""
+"Only credit managers can authorize credit on an order. Contact a credit "
+"manager to authorize this transaction."
+msgstr ""
+"Solo los gerentes de crédito pueden autorizar crédito en un pedido. Contacte"
+" a un gerente de crédito para autorizar esta operación."
+
+#. module: account_credit
+#: model:ir.model.constraint,message:account_credit.constraint_credit_grade_rule_unique_rule_per_grade
+msgid "Only one rule per (grade, document type, guarantor) combination."
+msgstr "Solo una regla por combinación (grado, tipo de documento, aval)."
+
+#. module: account_credit
+#: model_terms:ir.ui.view,arch_db:account_credit.view_credit_event_search
+#: model_terms:ir.ui.view,arch_db:account_credit.view_partner_form_credit_type
+msgid "Open"
+msgstr "Abrir"
+
+#. module: account_credit
+#: model:ir.model.fields,help:account_credit.field_credit_portfolio_report__expected_loss
+msgid "Open receivable times the grade's expected loss rate."
+msgstr "Cuenta por cobrar abierta por la tasa de pérdida esperada del grado."
+
+#. module: account_credit
+#: model:ir.model.fields,help:account_credit.field_res_bank__credit_status
+#: model:ir.model.fields,help:account_credit.field_res_company__credit_status
+#: model:ir.model.fields,help:account_credit.field_res_partner__credit_status
+#: model:ir.model.fields,help:account_credit.field_res_users__credit_status
+msgid ""
+"Operational standing of the credit profile in the current company. Writing "
+"it is a shortcut: cash assigns the entry grade, legal opens a hold, review "
+"assigns a grade whose documents are missing, authorized a performing grade "
+"without document rules."
+msgstr ""
+"Situación operativa del perfil de crédito en la compañía actual. Escribirlo "
+"es un atajo: contado asigna el grado de entrada, legal abre un bloqueo, "
+"revisión asigna un grado con documentos faltantes, autorizado un grado "
+"vigente sin reglas documentales."
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_wizard_sale_order_confirm_credit_override__order_ids
+#: model:ir.model.fields,field_description:account_credit.field_credit_facility__order_ids
+#: model_terms:ir.ui.view,arch_db:account_credit.credit_exceeded_authorization_form
+msgid "Order"
+msgstr "Pedido"
+
+#. module: account_credit
+#: model_terms:ir.ui.view,arch_db:account_credit.view_credit_facility_search
+msgid "Order authorizations"
+msgstr "Autorizaciones de pedidos"
+
+#. module: account_credit
+#: model:ir.model.fields.selection,name:account_credit.selection__credit_policy_rule__document_kind__any
+msgid "Orders and invoices"
+msgstr "Pedidos y facturas"
+
+#. module: account_credit
+#: model:ir.model.fields,help:account_credit.field_wizard_sale_order_confirm_credit_override__safe_order_ids
+msgid "Orders in the same batch that need no authorization."
+msgstr "Pedidos del mismo lote que no requieren autorización."
+
+#. module: account_credit
+#. odoo-python
+#: code:addons/account_credit/models/sale_order.py:0
+msgid ""
+"Orders of multiple companies need a credit authorization. Please confirm "
+"orders separately per company."
+msgstr ""
+"Pedidos de varias compañías requieren autorización de crédito. Confirme los "
+"pedidos por separado, por compañía."
+
+#. module: account_credit
+#: model:ir.model.fields,help:account_credit.field_credit_facility__order_ids
+msgid ""
+"Orders whose excess over the limit this authorization covered. It grants "
+"while any of them is still open."
+msgstr ""
+"Pedidos cuyo exceso sobre el límite cubrió esta autorización. Otorga "
+"mientras alguno siga abierto."
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_policy_rule__outcome
+msgid "Outcome"
+msgstr "Resultado"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_portfolio_report__amount_b180_plus
+#: model:ir.model.fields.selection,name:account_credit.selection__credit_provision_matrix_line__bucket__b180_plus
+#: model:ir.model.fields.selection,name:account_credit.selection__credit_provision_run_line__bucket__b180_plus
+msgid "Over 180 days"
+msgstr "Más de 180 días"
+
+#. module: account_credit
+#: model_terms:ir.ui.view,arch_db:account_credit.view_credit_portfolio_report_search
+msgid "Overdue"
+msgstr "Vencido"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_profile__overdue_amount
+msgid "Overdue Amount"
+msgstr "Monto vencido"
+
+#. module: account_credit
+#: model:ir.model.fields,help:account_credit.field_credit_config__default_materiality_amount
+#: model:ir.model.fields,help:account_credit.field_res_config_settings__credit_default_materiality_amount
+msgid "Overdue below this amount does not put a profile in default."
+msgstr "Un vencido menor a este monto no pone al perfil en incumplimiento."
+
+#. module: account_credit
+#: model:ir.model.fields.selection,name:account_credit.selection__credit_policy_rule__condition__overdue_amount_over
+msgid "Overdue receivable above the threshold"
+msgstr "Cuenta por cobrar vencida por encima del umbral"
+
+#. module: account_credit
+#: model:ir.model.fields,help:account_credit.field_credit_profile__overdue_amount
+msgid "Overdue receivable at the last refresh."
+msgstr "Cuenta por cobrar vencida en la última actualización."
+
+#. module: account_credit
+#. odoo-python
+#: code:addons/account_credit/models/credit_profile.py:0
+#: code:addons/account_credit/models/res_partner.py:0
+msgid "Overdue receivables: %s"
+msgstr "Cuentas por cobrar vencidas: %s"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_profile__paid_12m
+msgid "Paid 12M"
+msgstr "Pagado en la ventana"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_event__partner_id
+#: model:ir.model.fields,field_description:account_credit.field_wizard_sale_order_confirm_credit_override__partner_id
+#: model:ir.model.fields,field_description:account_credit.field_credit_facility__partner_id
+#: model:ir.model.fields,field_description:account_credit.field_credit_portfolio_report__partner_id
+#: model:ir.model.fields,field_description:account_credit.field_credit_profile__partner_id
+#: model:ir.model.fields,field_description:account_credit.field_credit_provision_run_line__partner_id
+#: model:ir.model.fields,field_description:account_credit.field_credit_review__partner_id
+msgid "Partner"
+msgstr "Contacto"
+
+#. module: account_credit
+#: model:credit.policy.rule,message:account_credit.policy_rule_overdue
+msgid "Partner '%(partner)s' has %(overdue)s of overdue receivables."
+msgstr ""
+"El contacto '%(partner)s' tiene %(overdue)s de cuentas por cobrar vencidas."
+
+#. module: account_credit
+#: model:credit.policy.rule,message:account_credit.policy_rule_cash
+msgid ""
+"Partner '%(partner)s' has cash-only status. Only immediate payment terms are"
+" allowed."
+msgstr ""
+"El contacto '%(partner)s' está en estatus de solo contado. Solo se permiten "
+"plazos de pago inmediato."
+
+#. module: account_credit
+#: model:credit.policy.rule,message:account_credit.policy_rule_default
+msgid ""
+"Partner '%(partner)s' is in default: %(overdue)s overdue for %(days)s days."
+msgstr ""
+"El contacto '%(partner)s' está en incumplimiento: %(overdue)s vencidos desde"
+" hace %(days)s días."
+
+#. module: account_credit
+#: model:credit.policy.rule,message:account_credit.policy_rule_picking_default
+msgid ""
+"Partner '%(partner)s' is in default: %(overdue)s overdue for %(days)s days. "
+"This delivery is on credit terms."
+msgstr ""
+"El contacto '%(partner)s' está en incumplimiento: %(overdue)s vencidos desde"
+" hace %(days)s días. Esta entrega es a crédito."
+
+#. module: account_credit
+#: model:credit.policy.rule,message:account_credit.policy_rule_hold
+#: model:credit.policy.rule,message:account_credit.policy_rule_picking_hold
+msgid "Partner '%(partner)s' is in legal process. All operations are blocked."
+msgstr ""
+"El contacto '%(partner)s' está en proceso legal. Todas las operaciones están"
+" bloqueadas."
+
+#. module: account_credit
+#: model:credit.policy.rule,message:account_credit.policy_rule_documents
+msgid ""
+"Partner '%(partner)s' is under credit review: documents are missing or "
+"expired."
+msgstr ""
+"El contacto '%(partner)s' está en revisión de crédito: faltan documentos o "
+"están vencidos."
+
+#. module: account_credit
+#. odoo-python
+#: code:addons/account_credit/models/sale_order.py:0
+msgid ""
+"Partner '%(partner)s' has credit restrictions but no approval category "
+"covers this amount (%(amount)s). Consider using immediate payment terms for "
+"this order."
+msgstr ""
+"El contacto '%(partner)s' tiene restricciones de crédito pero ninguna "
+"categoría de aprobación cubre este monto (%(amount)s). Considere un plazo de pago inmediato para "
+"este pedido."
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_wizard_sale_order_confirm_credit_override__partner_credit
+#: model_terms:ir.ui.view,arch_db:account_credit.credit_exceeded_authorization_form
+msgid "Partner Credit"
+msgstr "Crédito del Contacto"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_res_bank__use_partner_credit_limit
+#: model:ir.model.fields,field_description:account_credit.field_res_company__use_partner_credit_limit
+#: model:ir.model.fields,field_description:account_credit.field_res_partner__use_partner_credit_limit
+#: model:ir.model.fields,field_description:account_credit.field_res_users__use_partner_credit_limit
+msgid "Partner Limit"
+msgstr "Límite del contacto"
+
+#. module: account_credit
+#: model_terms:ir.ui.view,arch_db:account_credit.view_credit_profile_form
+msgid "Payment Behaviour"
+msgstr "Comportamiento de pago"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_policy_rule__payment_kind
+msgid "Payment Kind"
+msgstr "Tipo de pago"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_facility__payment_term_ids
+msgid "Payment Term"
+msgstr "Plazo de pago"
+
+#. module: account_credit
+#: model:ir.model.fields.selection,name:account_credit.selection__credit_policy_rule__condition__term_over_max
+msgid "Payment term longer than the grade allows"
+msgstr "Plazo de pago mayor al que permite el grado"
+
+#. module: account_credit
+#: model:ir.model.fields,help:account_credit.field_credit_facility__payment_term_ids
+msgid "Payment terms this line allows. Empty means the grade decides."
+msgstr ""
+"Plazos de pago que permite esta línea. Vacío significa que decide el grado."
+
+#. module: account_credit
+#: model:credit.grade,description:account_credit.credit_grade_preferred
+msgid ""
+"Pays on or before its due dates, long-standing relationship, documents in "
+"order. Widest limits and longest terms."
+msgstr ""
+"Paga en o antes de sus vencimientos, relación de larga data, documentos en "
+"regla. Los límites más amplios y los plazos más largos."
+
+#. module: account_credit
+#: model:credit.grade,description:account_credit.credit_grade_reliable
+msgid ""
+"Pays with modest delays, documentation complete. Standard limits and terms, "
+"reviewed twice a year."
+msgstr ""
+"Paga con atrasos moderados, documentación completa. Límites y plazos "
+"estándar, revisados dos veces al año."
+
+#. module: account_credit
+#: model:ir.model.fields,help:account_credit.field_credit_profile__late_ratio
+msgid "Percent of the amount paid after its due date."
+msgstr "Porcentaje del monto pagado después de su vencimiento."
+
+#. module: account_credit
+#: model:ir.model.fields.selection,name:account_credit.selection__credit_grade__kind__performing
+msgid "Performing"
+msgstr "Vigente"
+
+#. module: account_credit
+#: model:ir.model.fields.selection,name:account_credit.selection__credit_review__kind__periodic
+msgid "Periodic"
+msgstr "Periódica"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_review_line__points
+#: model:ir.model.fields,field_description:account_credit.field_credit_score_line__points
+msgid "Points"
+msgstr "Puntos"
+
+#. module: account_credit
+#: model:ir.model.fields,help:account_credit.field_credit_review_line__points
+#: model:ir.model.fields,help:account_credit.field_credit_score_line__points
+msgid "Points contributed by this source."
+msgstr "Puntos que aporta esta fuente."
+
+#. module: account_credit
+#: model:ir.ui.menu,name:account_credit.menu_credit_policy_rule
+msgid "Policy Rules"
+msgstr "Reglas de política"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_event__website_message_ids
+#: model:ir.model.fields,field_description:account_credit.field_credit_facility__website_message_ids
+#: model:ir.model.fields,field_description:account_credit.field_credit_profile__website_message_ids
+#: model:ir.model.fields,field_description:account_credit.field_credit_provision_run__website_message_ids
+#: model:ir.model.fields,field_description:account_credit.field_credit_review__website_message_ids
+msgid "Portal Messages"
+msgstr "Mensajes del portal"
+
+#. module: account_credit
+#: model:ir.model.fields,help:account_credit.field_credit_event__website_message_ids
+#: model:ir.model.fields,help:account_credit.field_credit_facility__website_message_ids
+#: model:ir.model.fields,help:account_credit.field_credit_profile__website_message_ids
+#: model:ir.model.fields,help:account_credit.field_credit_provision_run__website_message_ids
+#: model:ir.model.fields,help:account_credit.field_credit_review__website_message_ids
+msgid "Portal communication history for this record."
+msgstr "Historial de comunicación del portal para este registro."
+
+#. module: account_credit
+#: model:ir.ui.menu,name:account_credit.menu_credit_portfolio_report
+msgid "Portfolio"
+msgstr "Cartera"
+
+#. module: account_credit
+#: model_terms:ir.ui.view,arch_db:account_credit.view_credit_provision_run_form
+msgid "Post"
+msgstr "Publicar"
+
+#. module: account_credit
+#: model:ir.model.fields.selection,name:account_credit.selection__credit_provision_run__state__posted
+msgid "Posted"
+msgstr "Publicada"
+
+#. module: account_credit
+#: model:ir.model.fields,help:account_credit.field_credit_profile__purchases_12m
+msgid "Posted customer invoices, net of refunds, over the metrics window."
+msgstr ""
+"Facturas de cliente publicadas, netas de notas de crédito, en la ventana de "
+"métricas."
+
+#. module: account_credit
+#: model:credit.grade,name:account_credit.credit_grade_preferred
+msgid "Preferred"
+msgstr "Preferente"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_provision_run__previous_expected_loss
+msgid "Previous Expected Loss"
+msgstr "Pérdida esperada anterior"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_provision_run__previous_run_id
+msgid "Previous Run"
+msgstr "Corrida anterior"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_event__profile_id
+#: model:ir.model.fields,field_description:account_credit.field_wizard_sale_order_confirm_credit_override__profile_id
+#: model:ir.model.fields,field_description:account_credit.field_wizard_credit_profile_grant_exception__profile_id
+#: model:ir.model.fields,field_description:account_credit.field_credit_facility__profile_id
+#: model:ir.model.fields,field_description:account_credit.field_credit_portfolio_report__profile_id
+#: model:ir.model.fields,field_description:account_credit.field_credit_provision_run_line__profile_id
+#: model:ir.model.fields,field_description:account_credit.field_credit_review__profile_id
+#: model:ir.model.fields,field_description:account_credit.field_credit_score_line__subject_id
+msgid "Profile"
+msgstr "Perfil"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_grade__profile_count
+msgid "Profile Count"
+msgstr "Número de perfiles"
+
+#. module: account_credit
+#: model:ir.model.fields.selection,name:account_credit.selection__credit_policy_rule__condition__state_is
+msgid "Profile state is the one named"
+msgstr "El estado del perfil es el indicado"
+
+#. module: account_credit
+#: model:ir.ui.menu,name:account_credit.menu_credit_profile
+#: model_terms:ir.ui.view,arch_db:account_credit.view_credit_grade_form
+msgid "Profiles"
+msgstr "Perfiles"
+
+#. module: account_credit
+#. odoo-python
+#: code:addons/account_credit/models/credit_grade.py:0
+msgid "Profiles in %s"
+msgstr "Perfiles en %s"
+
+#. module: account_credit
+#: model:document.type,name:account_credit.doc_type_promissory_note
+msgid "Promissory Note"
+msgstr "Pagaré"
+
+#. module: account_credit
+#: model:document.type,name:account_credit.doc_type_proof_of_address
+msgid "Proof of Address"
+msgstr "Comprobante de domicilio"
+
+#. module: account_credit
+#: model_terms:ir.ui.view,arch_db:account_credit.view_credit_review_search
+msgid "Proposed grade"
+msgstr "Grado propuesto"
+
+#. module: account_credit
+#: model_terms:ir.ui.view,arch_db:account_credit.view_credit_profile_search
+msgid "Proposed lower"
+msgstr "Propuesta a la baja"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_config__provision_allowance_account_id
+#: model:ir.model.fields,field_description:account_credit.field_res_config_settings__credit_provision_allowance_account_id
+msgid "Provision Allowance Account"
+msgstr "Cuenta de estimación"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_config__provision_expense_account_id
+#: model:ir.model.fields,field_description:account_credit.field_res_config_settings__credit_provision_expense_account_id
+msgid "Provision Expense Account"
+msgstr "Cuenta de gasto de la estimación"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_config__provision_journal_id
+#: model:ir.model.fields,field_description:account_credit.field_res_config_settings__credit_provision_journal_id
+msgid "Provision Journal"
+msgstr "Diario de la estimación"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_config__provision_matrix_id
+#: model:ir.model.fields,field_description:account_credit.field_res_config_settings__credit_provision_matrix_id
+msgid "Provision Matrix"
+msgstr "Matriz de estimación"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_profile__purchases_12m
+msgid "Purchases 12M"
+msgstr "Compras en la ventana"
+
+#. module: account_credit
+#: model:ir.model.fields,help:account_credit.field_credit_profile__limit_suggested
+msgid "Purchases over the window times the grade's percentage."
+msgstr "Compras en la ventana por el porcentaje del grado."
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_provision_matrix_line__rate
+#: model:ir.model.fields,field_description:account_credit.field_credit_provision_run_line__rate
+msgid "Rate"
+msgstr "Tasa"
+
+#. module: account_credit
+#: model_terms:ir.ui.view,arch_db:account_credit.view_credit_profile_form
+msgid "Rating"
+msgstr "Calificación"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_wizard_sale_order_confirm_credit_override__reason
+#: model:ir.model.fields,field_description:account_credit.field_wizard_credit_profile_grant_exception__reason
+#: model:ir.model.fields,field_description:account_credit.field_credit_facility__reason
+msgid "Reason"
+msgstr "Motivo"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_wizard_sale_order_confirm_credit_override__reasons
+msgid "Reasons"
+msgstr "Motivos"
+
+#. module: account_credit
+#: model:ir.model.fields,help:account_credit.field_credit_profile__paid_12m
+msgid ""
+"Receivable amount settled over the metrics window; the payment behaviour "
+"measures read nothing when it is zero."
+msgstr ""
+"Monto de cuentas por cobrar liquidado en la ventana de métricas; las medidas"
+" de comportamiento de pago no leen nada cuando es cero."
+
+#. module: account_credit
+#: model:credit.event.type,name:account_credit.event_type_overdue_default
+msgid "Receivable in default"
+msgstr "Cuenta por cobrar en incumplimiento"
+
+#. module: account_credit
+#: model:ir.model.fields,help:account_credit.field_res_bank__credit_limit
+#: model:ir.model.fields,help:account_credit.field_res_company__credit_limit
+#: model:ir.model.fields,help:account_credit.field_res_partner__credit_limit
+#: model:ir.model.fields,help:account_credit.field_res_users__credit_limit
+msgid ""
+"Receivable limit specific to this partner: the collateral of the valid "
+"documents its grade requires, plus every facility granting today."
+msgstr ""
+"Límite de cuentas por cobrar propio de este contacto: el colateral de los "
+"documentos vigentes que exige su grado, más cada línea que otorga hoy."
+
+#. module: account_credit
+#: model:ir.model.fields,help:account_credit.field_credit_provision_run__date
+msgid "Receivables open on this day are aged against it."
+msgstr "Las cuentas por cobrar abiertas en este día se envejecen contra él."
+
+#. module: account_credit
+#: model:ir.model.fields.selection,name:account_credit.selection__credit_review__kind__exception
+msgid "Reclassification of an exception"
+msgstr "Reclasificación de una excepción"
+
+#. module: account_credit
+#: model:ir.model.fields,help:account_credit.field_credit_event_type__requires_review
+msgid "Recording this event opens a review of the profile."
+msgstr "Registrar este evento abre una revisión del perfil."
+
+#. module: account_credit
+#: model:credit.grade,description:account_credit.credit_grade_watch
+msgid ""
+"Recurrent delays or a recent incident. Limits frozen, shorter terms, "
+"quarterly review."
+msgstr ""
+"Atrasos recurrentes o una incidencia reciente. Límites congelados, plazos "
+"más cortos, revisión trimestral."
+
+#. module: account_credit
+#: model_terms:ir.ui.view,arch_db:account_credit.view_credit_profile_form
+#: model_terms:ir.ui.view,arch_db:account_credit.view_credit_review_form
+msgid "Refresh Metrics"
+msgstr "Actualizar métricas"
+
+#. module: account_credit
+#: model_terms:ir.ui.view,arch_db:account_credit.view_credit_review_form
+#: model_terms:ir.ui.view,arch_db:account_credit.view_credit_review_list
+msgid "Refuse"
+msgstr "Rechazar"
+
+#. module: account_credit
+#: model:ir.model.fields.selection,name:account_credit.selection__credit_review__state__refused
+msgid "Refused"
+msgstr "Rechazada"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_grade__regulatory_code
+msgid "Regulatory Code"
+msgstr "Código regulatorio"
+
+#. module: account_credit
+#: model:credit.grade,name:account_credit.credit_grade_reliable
+msgid "Reliable"
+msgstr "Confiable"
+
+#. module: account_credit
+#: model_terms:ir.ui.view,arch_db:account_credit.view_credit_grade_form
+msgid "Required Documents"
+msgstr "Documentos requeridos"
+
+#. module: account_credit
+#: model:ir.model.fields.selection,name:account_credit.selection__credit_policy_rule__condition__documents_noncompliant
+msgid "Required documents missing or expired"
+msgstr "Documentos requeridos faltantes o vencidos"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_event_type__requires_review
+msgid "Requires Review"
+msgstr "Requiere revisión"
+
+#. module: account_credit
+#: model:ir.model.fields.selection,name:account_credit.selection__credit_policy_rule__outcome__approve
+msgid "Requires a credit manager's authorization"
+msgstr "Requiere autorización de un gerente de crédito"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_event__res_id
+msgid "Res"
+msgstr "Registro"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_event__res_model
+msgid "Res Model"
+msgstr "Modelo del registro"
+
+#. module: account_credit
+#: model_terms:ir.ui.view,arch_db:account_credit.view_credit_provision_run_form
+msgid "Reset to Draft"
+msgstr "Regresar a borrador"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_profile__activity_user_id
+#: model:ir.model.fields,field_description:account_credit.field_credit_review__activity_user_id
+msgid "Responsible User"
+msgstr "Usuario responsable"
+
+#. module: account_credit
+#: model:credit.grade,name:account_credit.credit_grade_restricted
+msgid "Restricted"
+msgstr "Restringido"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_facility__review_id
+#: model:ir.model.fields,field_description:account_credit.field_credit_profile__review_ids
+#: model:ir.model.fields,field_description:account_credit.field_credit_review_line__review_id
+#: model_terms:ir.ui.view,arch_db:account_credit.view_credit_profile_form
+msgid "Review"
+msgstr "Revisión"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_profile__review_count
+msgid "Review Count"
+msgstr "Número de revisiones"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_grade__review_interval_months
+msgid "Review Interval Months"
+msgstr "Meses entre revisiones"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_config__review_user_id
+#: model:ir.model.fields,field_description:account_credit.field_res_config_settings__credit_review_user_id
+msgid "Review User"
+msgstr "Usuario revisor"
+
+#. module: account_credit
+#. odoo-python
+#: code:addons/account_credit/models/credit_review.py:0
+msgid "Review approved: grade %(grade)s, facility %(limit)s."
+msgstr "Revisión aprobada: grado %(grade)s, línea %(limit)s."
+
+#. module: account_credit
+#: model_terms:ir.ui.view,arch_db:account_credit.view_credit_profile_search
+msgid "Review due"
+msgstr "Revisión pendiente"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_review__user_id
+msgid "Reviewer"
+msgstr "Revisor"
+
+#. module: account_credit
+#: model:ir.ui.menu,name:account_credit.menu_credit_review
+#: model_terms:ir.ui.view,arch_db:account_credit.view_credit_profile_form
+msgid "Reviews"
+msgstr "Revisiones"
+
+#. module: account_credit
+#: model_terms:ir.ui.view,arch_db:account_credit.view_credit_facility_form
+#: model_terms:ir.ui.view,arch_db:account_credit.view_credit_facility_list
+msgid "Revoke"
+msgstr "Revocar"
+
+#. module: account_credit
+#: model:ir.model.fields.selection,name:account_credit.selection__credit_facility__state__revoked
+msgid "Revoked"
+msgstr "Revocada"
+
+#. module: account_credit
+#: model_terms:ir.ui.view,arch_db:account_credit.res_config_settings_view_form
+msgid "Root folder for credit-related documentation"
+msgstr "Carpeta raíz de la documentación de crédito"
+
+#. module: account_credit
+#: model:ir.model.fields,help:account_credit.field_credit_config__credit_folder_id
+#: model:ir.model.fields,help:account_credit.field_res_company__credit_folder_id
+#: model:ir.model.fields,help:account_credit.field_res_config_settings__credit_folder_id
+msgid ""
+"Root folder of credit-related documentation. Users in the credit groups gain"
+" read or read/write access to the tree under this folder."
+msgstr ""
+"Carpeta raíz de la documentación de crédito. Los usuarios de los grupos de "
+"crédito obtienen acceso de lectura o de lectura y escritura al árbol bajo "
+"esta carpeta."
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_grade__rule_ids
+msgid "Rule"
+msgstr "Regla"
+
+#. module: account_credit
+#: model_terms:ir.ui.view,arch_db:account_credit.view_credit_policy_rule_form
+msgid "Rule name"
+msgstr "Nombre de la regla"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_provision_run_line__run_id
+msgid "Run"
+msgstr "Corrida"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_event__message_has_sms_error
+#: model:ir.model.fields,field_description:account_credit.field_credit_facility__message_has_sms_error
+#: model:ir.model.fields,field_description:account_credit.field_credit_profile__message_has_sms_error
+#: model:ir.model.fields,field_description:account_credit.field_credit_provision_run__message_has_sms_error
+#: model:ir.model.fields,field_description:account_credit.field_credit_review__message_has_sms_error
+msgid "SMS Delivery error"
+msgstr "Error de entrega de SMS"
+
+#. module: account_credit
+#: model_terms:ir.ui.view,arch_db:account_credit.credit_exceeded_authorization_form
+msgid "SO Amount"
+msgstr "Monto del Pedido"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_wizard_sale_order_confirm_credit_override__safe_order_ids
+msgid "Safe Order"
+msgstr "Pedido dentro del límite"
+
+#. module: account_credit
+#: model:ir.model,name:account_credit.model_sale_order
+msgid "Sale Order"
+msgstr "Orden de venta"
+
+#. module: account_credit
+#: model:ir.model.fields.selection,name:account_credit.selection__credit_policy_rule__document_kind__order
+msgid "Sale order"
+msgstr "Pedido de venta"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_portfolio_report__score
+#: model:ir.model.fields,field_description:account_credit.field_credit_review__score
+#: model_terms:ir.ui.view,arch_db:account_credit.view_credit_profile_form
+#: model_terms:ir.ui.view,arch_db:account_credit.view_credit_review_form
+msgid "Score"
+msgstr "Puntaje"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_profile__score
+msgid "Score (%)"
+msgstr "Puntaje (%)"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_profile__score_date
+msgid "Score Last Updated"
+msgstr "Última actualización del puntaje"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_profile__score_line_ids
+msgid "Score Line"
+msgstr "Línea de puntaje"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_profile__score_max_points
+msgid "Score Max Points"
+msgstr "Puntos máximos del puntaje"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_profile__score_points
+msgid "Score Points"
+msgstr "Puntos del puntaje"
+
+#. module: account_credit
+#: model_terms:ir.ui.view,arch_db:account_credit.view_credit_grade_form
+msgid "Score range"
+msgstr "Rango de puntaje"
+
+#. module: account_credit
+#: model:ir.model.fields,help:account_credit.field_credit_profile__bureau_score
+msgid ""
+"Score reported by the credit bureau (Buró de Crédito, Círculo de Crédito), "
+"on the bureau's own scale."
+msgstr ""
+"Score reportado por la sociedad de información crediticia (Buró de Crédito, "
+"Círculo de Crédito), en su propia escala."
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_profile__scorecard_id
+#: model:ir.ui.menu,name:account_credit.menu_credit_scorecard
+msgid "Scorecard"
+msgstr "Scorecard"
+
+#. module: account_credit
+#: model:ir.model,name:account_credit.model_scorecard_dimension
+msgid "Scorecard Dimension"
+msgstr "Dimensión del scorecard"
+
+#. module: account_credit
+#: model:ir.model.fields,help:account_credit.field_credit_grade__max_value
+msgid ""
+"Scorecard score from which the next grade starts, exclusive. 0 on the best "
+"grade leaves it open-ended, so a perfect score still proposes it. A grade "
+"with no range at all, like the entry grade, is never proposed by the "
+"scorecard."
+msgstr ""
+"Puntaje del scorecard en el que empieza el siguiente grado, exclusivo. 0 en "
+"el mejor grado lo deja abierto, así que un puntaje perfecto también lo "
+"propone. Un grado sin rango, como el de entrada, nunca es propuesto por el "
+"scorecard."
+
+#. module: account_credit
+#: model_terms:ir.ui.view,arch_db:account_credit.view_credit_profile_form
+#: model_terms:ir.ui.view,arch_db:account_credit.view_partner_form_credit_type
+msgid "Send to Legal Process"
+msgstr "Enviar a Proceso Legal"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_event_type__sequence
+#: model:ir.model.fields,field_description:account_credit.field_credit_grade__sequence
+#: model:ir.model.fields,field_description:account_credit.field_credit_policy_rule__sequence
+msgid "Sequence"
+msgstr "Secuencia"
+
+#. module: account_credit
+#: model:credit.grade,description:account_credit.credit_grade_restricted
+msgid ""
+"Serious delays or missing guarantees. Credit only against additional "
+"collateral and a manager's authorization."
+msgstr ""
+"Atrasos graves o garantías faltantes. Crédito solo contra colateral "
+"adicional y autorización de un gerente."
+
+#. module: account_credit
+#: model:ir.model.fields,help:account_credit.field_res_bank__use_partner_credit_limit
+#: model:ir.model.fields,help:account_credit.field_res_company__use_partner_credit_limit
+#: model:ir.model.fields,help:account_credit.field_res_partner__use_partner_credit_limit
+#: model:ir.model.fields,help:account_credit.field_res_users__use_partner_credit_limit
+msgid "Set a value greater than 0.0 to activate a credit limit check"
+msgstr ""
+"Establezca un valor mayor a 0.0 para activar la verificación del límite de "
+"crédito"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_event__severity
+#: model:ir.model.fields,field_description:account_credit.field_credit_event_type__severity
+msgid "Severity"
+msgstr "Severidad"
+
+#. module: account_credit
+#: model:ir.model.fields,help:account_credit.field_credit_grade__sequence
+msgid "Severity: a lower sequence is a better grade."
+msgstr "Severidad: una secuencia menor es un grado mejor."
+
+#. module: account_credit
+#: model:ir.model.fields.selection,name:account_credit.selection__scorecard_dimension__code__late_ratio
+msgid "Share of amount paid late"
+msgstr "Proporción del monto pagado tarde"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_res_bank__show_credit_limit
+#: model:ir.model.fields,field_description:account_credit.field_res_company__show_credit_limit
+#: model:ir.model.fields,field_description:account_credit.field_res_partner__show_credit_limit
+#: model:ir.model.fields,field_description:account_credit.field_res_users__show_credit_limit
+msgid "Show Credit Limit"
+msgstr "Mostrar límite de crédito"
+
+#. module: account_credit
+#: model:ir.model.fields,help:account_credit.field_credit_policy_rule__message
+msgid ""
+"Shown to the user; %(partner)s, %(amount)s, %(days)s, %(limit)s, "
+"%(exposure)s are substituted."
+msgstr ""
+"Se muestra al usuario; se sustituyen %(partner)s, %(amount)s, %(days)s, "
+"%(limit)s y %(exposure)s."
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_facility__source
+#: model_terms:ir.ui.view,arch_db:account_credit.view_credit_facility_search
+msgid "Source"
+msgstr "Origen"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_review_line__source_key
+#: model:ir.model.fields,field_description:account_credit.field_credit_score_line__source_key
+msgid "Source Key"
+msgstr "Clave de origen"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_review_line__source_ref
+#: model:ir.model.fields,field_description:account_credit.field_credit_score_line__source_ref
+msgid "Source Ref"
+msgstr "Origen"
+
+#. module: account_credit
+#: model:ir.model.fields,help:account_credit.field_credit_review_line__source_key
+#: model:ir.model.fields,help:account_credit.field_credit_score_line__source_key
+msgid ""
+"Stable identity of the row's source, as record ids -- e.g. 'crop:12' or "
+"'partner_attr:5:19'. This is what the refresh matches on, so a row survives "
+"a rename, a translation and a rescore from a session in another language."
+msgstr ""
+"Identidad estable del origen de la fila, como ids de registro -- p. ej. "
+"'crop:12' o 'partner_attr:5:19'. Es lo que el refresco empareja, así que una"
+" fila sobrevive a un cambio de nombre, una traducción y un recálculo desde "
+"una sesión en otro idioma."
+
+#. module: account_credit
+#. odoo-python
+#: code:addons/account_credit/models/res_partner.py:0
+msgid "Standing allowance"
+msgstr "Monto de confianza"
+
+#. module: account_credit
+#: model_terms:ir.ui.view,arch_db:account_credit.view_credit_review_form
+msgid "Start"
+msgstr "Iniciar"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_facility__state
+#: model:ir.model.fields,field_description:account_credit.field_credit_policy_rule__state
+#: model:ir.model.fields,field_description:account_credit.field_credit_portfolio_report__state
+#: model:ir.model.fields,field_description:account_credit.field_credit_profile__state
+#: model:ir.model.fields,field_description:account_credit.field_credit_provision_run__state
+#: model:ir.model.fields,field_description:account_credit.field_credit_review__state
+#: model_terms:ir.ui.view,arch_db:account_credit.view_credit_facility_search
+#: model_terms:ir.ui.view,arch_db:account_credit.view_credit_portfolio_report_search
+#: model_terms:ir.ui.view,arch_db:account_credit.view_credit_profile_search
+#: model_terms:ir.ui.view,arch_db:account_credit.view_credit_review_search
+msgid "State"
+msgstr "Estado"
+
+#. module: account_credit
+#: model:ir.model.fields,help:account_credit.field_credit_profile__activity_state
+#: model:ir.model.fields,help:account_credit.field_credit_review__activity_state
+msgid ""
+"Status based on activities\n"
+"Overdue: Due date is already passed\n"
+"Today: Activity date is today\n"
+"Planned: Future activities."
+msgstr ""
+"Estado según las actividades\n"
+"Vencida: la fecha límite ya pasó\n"
+"Hoy: la actividad es hoy\n"
+"Planeada: actividades futuras."
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_policy_rule__stop
+msgid "Stop"
+msgstr "Detener"
+
+#. module: account_credit
+#: model:ir.model.fields,help:account_credit.field_credit_grade__limit_pct_annual_purchases
+msgid ""
+"Suggested credit limit as a percent of the last twelve months of purchases."
+msgstr ""
+"Límite de crédito sugerido como porcentaje de los últimos doce meses de "
+"compras."
+
+#. module: account_credit
+#: model:ir.model.fields,help:account_credit.field_credit_profile__score_points
+msgid "Sum of the applied audit rows (see the score breakdown)."
+msgstr ""
+"Suma de las filas de auditoría aplicadas (ver el desglose del puntaje)."
+
+#. module: account_credit
+#: model:scorecard.dimension,name:account_credit.scorecard_dimension_tenure_months
+msgid "Tenure"
+msgstr "Antigüedad"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_profile__tenure_months
+msgid "Tenure Months"
+msgstr "Meses de antigüedad"
+
+#. module: account_credit
+#: model:ir.model.fields,help:account_credit.field_res_bank__credit_root_folder_id
+#: model:ir.model.fields,help:account_credit.field_res_company__credit_root_folder_id
+#: model:ir.model.fields,help:account_credit.field_res_partner__credit_root_folder_id
+#: model:ir.model.fields,help:account_credit.field_res_users__credit_root_folder_id
+msgid ""
+"The active company's root credit folder, mirrored from Settings so the "
+"Credit tab can file a new document into it. There is no folder per partner: "
+"which partner a document belongs to is ``partner_id``, not where it was "
+"dropped."
+msgstr ""
+
+#. module: account_credit
+#: model:ir.model.fields,help:account_credit.field_credit_profile__scorecard_id
+msgid "The active scorecard for the subject's company, or the shared one."
+msgstr "El scorecard activo de la compañía del sujeto, o el compartido."
+
+#. module: account_credit
+#. odoo-python
+#: code:addons/account_credit/wizards/credit_exceeded_authorization.py:0
+msgid ""
+"The authorized amount does not cover the excess over %(partner)s's credit "
+"limit: %(authorized)s against %(required)s required."
+msgstr ""
+"El monto autorizado no cubre el excedente sobre el límite de crédito de "
+"%(partner)s: %(authorized)s contra %(required)s requeridos."
+
+#. module: account_credit
+#: model:ir.model.fields,help:account_credit.field_credit_profile__grade_effective_id
+msgid "The decided grade, capped by any open event that caps it."
+msgstr "El grado decidido, topado por cualquier evento abierto que lo tope."
+
+#. module: account_credit
+#: model:ir.model.fields,help:account_credit.field_credit_review_line__grouping_key
+#: model:ir.model.fields,help:account_credit.field_credit_score_line__grouping_key
+msgid ""
+"The group whose ceiling max_points is: one attribute of a catalog dimension,"
+" or the measured dimension itself. The denominator counts each group once, "
+"however many rows it has."
+msgstr ""
+"El grupo cuyo techo es max_points: un atributo de una dimensión de catálogo,"
+" o la dimensión medida misma. El denominador cuenta cada grupo una vez, "
+"tenga las filas que tenga."
+
+#. module: account_credit
+#: model:ir.model.fields,help:account_credit.field_credit_review_line__value
+#: model:ir.model.fields,help:account_credit.field_credit_score_line__value
+msgid "The observation a measured dimension banded; empty for a catalog row."
+msgstr ""
+"La observación que una dimensión medida ubicó en una banda; vacío en una "
+"fila de catálogo."
+
+#. module: account_credit
+#: model:credit.policy.rule,message:account_credit.policy_rule_term
+msgid "The payment term is longer than the grade of '%(partner)s' allows."
+msgstr "El plazo de pago es mayor al que permite el grado de '%(partner)s'."
+
+#. module: account_credit
+#: model_terms:ir.ui.view,arch_db:account_credit.view_partner_form_credit_type
+msgid ""
+"This company has no credit folder configured yet.\n"
+"                        Set <em>Credit Folder</em> under\n"
+"                        <em>Settings → Documents</em> before uploading\n"
+"                        credit documents."
+msgstr ""
+
+#. module: account_credit
+#. odoo-python
+#: code:addons/account_credit/models/credit_review.py:0
+msgid "This review is already decided."
+msgstr "Esta revisión ya está decidida."
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_policy_rule__threshold
+msgid "Threshold"
+msgstr "Umbral"
+
+#. module: account_credit
+#: model_terms:ir.ui.view,arch_db:account_credit.res_config_settings_view_form
+msgid "Thresholds"
+msgstr "Umbrales"
+
+#. module: account_credit
+#: model_terms:ir.ui.view,arch_db:account_credit.view_credit_review_search
+msgid "To decide"
+msgstr "Por decidir"
+
+#. module: account_credit
+#: model_terms:ir.ui.view,arch_db:account_credit.credit_exceeded_authorization_form
+#: model_terms:ir.ui.view,arch_db:account_credit.view_credit_facility_list
+#: model_terms:ir.ui.view,arch_db:account_credit.view_credit_portfolio_report_list
+#: model_terms:ir.ui.view,arch_db:account_credit.view_credit_profile_form
+#: model_terms:ir.ui.view,arch_db:account_credit.view_credit_provision_run_form
+#: model_terms:ir.ui.view,arch_db:account_credit.view_credit_provision_run_list
+#: model_terms:ir.ui.view,arch_db:account_credit.view_credit_review_form
+msgid "Total"
+msgstr "Total"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_provision_run__total_expected_loss
+msgid "Total Expected Loss"
+msgstr "Pérdida esperada total"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_provision_run__total_exposure
+msgid "Total Exposure"
+msgstr "Exposición total"
+
+#. module: account_credit
+#: model:ir.model,name:account_credit.model_stock_picking
+msgid "Transfer"
+msgstr "Transferencia"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_review__trigger_event_id
+msgid "Trigger Event"
+msgstr "Evento detonante"
+
+#. module: account_credit
+#: model:ir.model.fields.selection,name:account_credit.selection__credit_review__kind__event
+msgid "Triggered by an event"
+msgstr "Detonada por un evento"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_event__type_id
+#: model_terms:ir.ui.view,arch_db:account_credit.view_credit_event_search
+msgid "Type"
+msgstr "Tipo"
+
+#. module: account_credit
+#: model:ir.model.fields,help:account_credit.field_credit_profile__activity_exception_decoration
+#: model:ir.model.fields,help:account_credit.field_credit_review__activity_exception_decoration
+msgid "Type of the exception activity on record."
+msgstr "Tipo de la actividad de excepción registrada."
+
+#. module: account_credit
+#: model:ir.model.fields,help:account_credit.field_credit_review_line__applicable
+#: model:ir.model.fields,help:account_credit.field_credit_score_line__applicable
+msgid ""
+"Unchecked when a dimension that skips missing observations had nothing to "
+"measure: the row explains the absence and its group leaves the denominator."
+msgstr ""
+"Desmarcado cuando una dimensión que omite observaciones ausentes no tuvo "
+"nada que medir: la fila explica la ausencia y su grupo sale del denominador."
+
+#. module: account_credit
+#: model:ir.model.fields,help:account_credit.field_credit_review_line__applied
+#: model:ir.model.fields,help:account_credit.field_credit_score_line__applied
+msgid ""
+"Unchecked when the aggregation mode discarded this contribution (e.g. not "
+"the highest value under 'max'). A discarded row is still part of its group's"
+" ceiling."
+msgstr ""
+"Desmarcado cuando el modo de agregación descartó esta contribución (p. ej. "
+"no es el valor más alto bajo 'max'). Una fila descartada sigue formando "
+"parte del techo de su grupo."
+
+#. module: account_credit
+#: model:ir.model.fields.selection,name:account_credit.selection__res_partner__credit_status__review
+msgid "Under Review"
+msgstr "En Revisión"
+
+#. module: account_credit
+#: model_terms:ir.ui.view,arch_db:account_credit.view_credit_portfolio_report_search
+#: model_terms:ir.ui.view,arch_db:account_credit.view_credit_profile_search
+msgid "Under exception"
+msgstr "Con excepción"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_event__user_id
+#: model:res.groups,name:account_credit.group_credit_user
+msgid "User"
+msgstr "Usuario"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_res_bank__user_credit_manager
+#: model:ir.model.fields,field_description:account_credit.field_res_company__user_credit_manager
+#: model:ir.model.fields,field_description:account_credit.field_res_partner__user_credit_manager
+#: model:ir.model.fields,field_description:account_credit.field_res_users__user_credit_manager
+msgid "User Credit Manager"
+msgstr "Usuario Administrador de Crédito"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_res_bank__user_credit_user
+#: model:ir.model.fields,field_description:account_credit.field_res_company__user_credit_user
+#: model:ir.model.fields,field_description:account_credit.field_res_partner__user_credit_user
+#: model:ir.model.fields,field_description:account_credit.field_res_users__user_credit_user
+msgid "User Credit User"
+msgstr "Usuario de Crédito"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_review_line__value
+#: model:ir.model.fields,field_description:account_credit.field_credit_score_line__value
+msgid "Value"
+msgstr "Valor"
+
+#. module: account_credit
+#: model:res.groups,name:account_credit.group_credit_readonly
+msgid "View"
+msgstr "Ver"
+
+#. module: account_credit
+#: model:res.groups,comment:account_credit.group_credit_readonly
+msgid ""
+"View credit status, credit types, credit limits, and documents (read-only)"
+msgstr ""
+"Ver estado de crédito, condiciones crediticias, límites de crédito y "
+"documentos (solo lectura)"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_profile__warning
+#: model:ir.model.fields.selection,name:account_credit.selection__credit_event_type__severity__warning
+#: model:ir.model.fields.selection,name:account_credit.selection__sale_order__credit_verdict_outcome__warn
+#: model:ir.model.fields.selection,name:account_credit.selection__stock_picking__credit_verdict_outcome__warn
+msgid "Warning"
+msgstr "Advertencia"
+
+#. module: account_credit
+#: model:document.type,name:account_credit.doc_type_warranty
+msgid "Warranty"
+msgstr "Garantía"
+
+#. module: account_credit
+#: model:credit.grade,name:account_credit.credit_grade_watch
+#: model:ir.model.fields.selection,name:account_credit.selection__credit_grade__kind__watch
+#: model:ir.model.fields.selection,name:account_credit.selection__credit_policy_rule__state__watch
+#: model:ir.model.fields.selection,name:account_credit.selection__credit_profile__state__watch
+#: model:ir.model.fields.selection,name:account_credit.selection__res_partner__credit_status__watch
+#: model_terms:ir.ui.view,arch_db:account_credit.view_credit_profile_search
+msgid "Watch"
+msgstr "Vigilancia"
+
+#. module: account_credit
+#: model:ir.model.fields,field_description:account_credit.field_credit_config__watch_days
+#: model:ir.model.fields,field_description:account_credit.field_res_config_settings__credit_watch_days
+msgid "Watch Days"
+msgstr "Días para vigilancia"
+
+#. module: account_credit
+#: model:ir.model.fields,help:account_credit.field_credit_review_line__dimension_code
+#: model:ir.model.fields,help:account_credit.field_credit_score_line__dimension_code
+#: model:ir.model.fields,help:account_credit.field_scorecard_dimension__code
+msgid ""
+"What the subject is scored on; the host answers it with "
+"_score_observe_<code>. A module adds a code with selection_add."
+msgstr ""
+"Sobre qué se puntúa al sujeto; el modelo anfitrión lo responde con "
+"_score_observe_<code>. Un módulo añade un código con selection_add."
+
+#. module: account_credit
+#: model:ir.model.fields,help:account_credit.field_credit_profile__score_date
+msgid ""
+"When the audit rows were last regenerated. A catalog or scorecard change "
+"queues an async refresh -- this timestamp is how to tell the score is "
+"current versus still pending that background job."
+msgstr ""
+"Cuándo se regeneraron por última vez las filas de auditoría. Un cambio de "
+"catálogo o de scorecard encola un refresco asíncrono -- esta marca de tiempo"
+" es cómo saber si el puntaje está al día o aún espera ese trabajo en segundo"
+" plano."
+
+#. module: account_credit
+#: model:ir.model.fields,help:account_credit.field_credit_policy_rule__stop
+msgid ""
+"When this rule applies, no later rule is read. Used for an explicit "
+"allowance such as a running exception."
+msgstr ""
+"Cuando esta regla aplica, no se lee ninguna posterior. Se usa para un "
+"permiso explícito, como una excepción vigente."
+
+#. module: account_credit
+#: model:ir.model.fields,help:account_credit.field_credit_event_type__grade_cap_id
+msgid ""
+"While an event of this type is open, the profile's grade is no better than "
+"this one."
+msgstr ""
+"Mientras un evento de este tipo esté abierto, el grado del perfil no es "
+"mejor que este."
+
+#. module: account_credit
+#: model_terms:ir.ui.view,arch_db:account_credit.view_credit_grade_form
+msgid "Who belongs in this grade..."
+msgstr "Quién pertenece a este grado..."
+
+#. module: account_credit
+#: model:ir.model.fields,help:account_credit.field_credit_config__review_user_id
+#: model:ir.model.fields,help:account_credit.field_res_config_settings__credit_review_user_id
+msgid "Who is assigned the reviews the system schedules."
+msgstr "A quién se asignan las revisiones que el sistema programa."
+
+#. module: account_credit
+#: model_terms:ir.ui.view,arch_db:account_credit.credit_exceeded_authorization_form
+msgid "Why this credit is authorized..."
+msgstr "Por qué se autoriza este crédito..."
+
+#. module: account_credit
+#: model_terms:ir.ui.view,arch_db:account_credit.view_credit_event_form
+msgid "Why..."
+msgstr "Por qué..."
+
+#. module: account_credit
+#: model_terms:ir.ui.view,arch_db:account_credit.view_credit_portfolio_report_search
+msgid "With open receivable"
+msgstr "Con cuentas por cobrar abiertas"
+
+#. module: account_credit
+#: model_terms:ir.ui.view,arch_db:account_credit.view_credit_facility_search
+msgid "Withdrawn"
+msgstr "Retirada"
+
+#. module: account_credit
+#: model:ir.model.fields.selection,name:account_credit.selection__scorecard_dimension__code__max_days_late
+msgid "Worst delay in the window"
+msgstr "Peor atraso en la ventana"
+
+#. module: account_credit
+#: model_terms:ir.ui.view,arch_db:account_credit.view_partner_form_credit_type
+msgid "the parent company"
+msgstr "la empresa matriz"
+
+#. module: account_credit
+#: model_terms:ir.ui.view,arch_db:account_credit.view_partner_form_credit_type
+msgid "⟳ Reset"
+msgstr "⟳ Restablecer"
+
+#. module: account_credit
+#. odoo-python
+#: code:addons/account_credit/models/home_tile.py:0
+msgid "Credit reviews"
+msgstr "Revisiones de crédito"
+
+#. module: account_credit
+#: model:ir.model,name:account_credit.model_home_tile
+msgid "Home Dashboard Tile"
+msgstr "Tarjeta del tablero de inicio"
+
+#. module: account_credit
+#. odoo-javascript
+#: code:addons/account_credit/static/src/home_tile/credit_reviews_tile.xml:0
+msgid "No credit review is waiting for you."
+msgstr "No hay ninguna revisión de crédito esperándolo."
+
+#. module: account_credit
+#. odoo-javascript
+#: code:addons/account_credit/static/src/home_tile/credit_reviews_tile.xml:0
+msgid "to review"
+msgstr "por revisar"

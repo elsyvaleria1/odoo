@@ -1,0 +1,28 @@
+// @ts-check
+/** @odoo-module native */
+
+import { Component, useProps } from "@odoo/owl";
+import { useDebugMode } from "@web/core/debug/debug_context";
+import { _t } from "@web/core/translation";
+import { registerField } from "@web/fields/_registry";
+import { standardFieldProps } from "@web/fields/standard_field_props";
+
+export class AttachmentImageField extends Component {
+    static template = "web.AttachmentImageField";
+    static props = { ...standardFieldProps };
+    props = useProps(this.constructor.props);
+
+    setup() {
+        super.setup();
+        this.debug = useDebugMode();
+    }
+}
+
+/** @type {import("registries").FieldsRegistryItemShape} */
+const attachmentImageField = {
+    component: AttachmentImageField,
+    displayName: _t("Attachment Image"),
+    supportedTypes: ["many2one"],
+};
+
+registerField("attachment_image", attachmentImageField);

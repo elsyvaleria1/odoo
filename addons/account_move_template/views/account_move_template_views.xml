@@ -1,0 +1,384 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="account_move_template_search" model="ir.ui.view">
+        <field name="name">account.move.template.search</field>
+        <field name="model">account.move.template</field>
+        <field name="arch" type="xml">
+            <search string="Search Templates">
+                <field
+                    name="name"
+                    string="Template"
+                    filter_domain="['|', ('name', 'ilike', self), ('ref', 'ilike', self)]" />
+                <field name="journal_code" />
+                <field name="partner_id" />
+                <field name="move_type" />
+
+                <separator />
+                <filter
+                    name="filter_journal_entries"
+                    string="Journal Entries"
+                    domain="[('move_type', '=', 'entry')]" />
+                <filter
+                    name="filter_customer_invoices"
+                    string="Customer Invoices"
+                    domain="[('move_type', '=', 'out_invoice')]" />
+                <filter
+                    name="filter_vendor_bills"
+                    string="Vendor Bills"
+                    domain="[('move_type', '=', 'in_invoice')]" />
+                <filter
+                    name="filter_payments"
+                    string="Payments"
+                    domain="[('is_payment', '=', True)]" />
+
+                <separator />
+                <filter
+                    name="filter_inactive"
+                    string="Archived"
+                    domain="[('active', '=', False)]" />
+                <group>
+                    <filter
+                        name="group_move_type"
+                        string="Move Type"
+                        context="{'group_by': 'move_type'}" />
+                    <filter
+                        name="group_journal"
+                        string="Journal Code"
+                        context="{'group_by': 'journal_code'}" />
+                    <filter
+                        name="group_company"
+                        string="Company"
+                        context="{'group_by': 'company_id'}"
+                        groups="base.group_multi_company" />
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="account_move_template_list" model="ir.ui.view">
+        <field name="name">account.move.template.list</field>
+        <field name="model">account.move.template</field>
+        <field name="arch" type="xml">
+            <list string="Journal Entry Templates" default_order="name">
+                <field name="name" />
+                <field name="move_type" />
+                <field name="journal_code" />
+                <field
+                    name="is_payment"
+                    string="Payment"
+                    widget="boolean_toggle"
+                    optional="show" />
+                <field name="partner_id" optional="hide" />
+                <field
+                    name="company_id"
+                    optional="show"
+                    groups="base.group_multi_company" />
+                <field name="active" widget="boolean_toggle" optional="show" />
+
+                <button
+                    name="action_move_template_run"
+                    type="object"
+                    string="Use Template"
+                    help="Open wizard to create entry with advanced options"
+                    icon="fa-magic"
+                    class="btn-primary" />
+            </list>
+        </field>
+    </record>
+
+    <record id="account_move_template_form" model="ir.ui.view">
+        <field name="name">account.move.template.form</field>
+        <field name="model">account.move.template</field>
+        <field name="arch" type="xml">
+            <form string="Journal Entry Template">
+                <header>
+                    <button
+                        name="action_move_template_run"
+                        type="object"
+                        string="Use Template"
+                        help="Create a journal entry from this template"
+                        class="oe_highlight" />
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                    </div>
+
+                    <widget
+                        name="web_ribbon"
+                        title="Archived"
+                        invisible="active"
+                        bg_color="text-bg-danger" />
+                    <div class="oe_title">
+                        <label for="name" string="Template Name" />
+                        <h1>
+                            <field
+                                name="name"
+                                placeholder="e.g., Monthly Rent Payment" />
+                        </h1>
+                    </div>
+
+                    <group name="main_config">
+                        <group name="main_left" string="Basic Configuration">
+                            <field name="active" invisible="1" />
+                            <field
+                                name="move_type"
+                                widget="radio"
+                                options="{'horizontal': false}" />
+                            <field
+                                name="is_payment"
+                                help="Check if this template creates payments instead of journal entries"
+                                widget="boolean_toggle" />
+                            <field
+                                name="use_third_party"
+                                help="Check to issue the document to the run's third party, when it names one, instead of the partner the operation is about"
+                                widget="boolean_toggle" />
+                            <field
+                                name="company_id"
+                                options="{'no_create': True}"
+                                groups="base.group_multi_company" />
+                        </group>
+                        <group name="main_right" string="Journal &amp; Partner">
+                            <field
+                                name="journal_id"
+                                placeholder="Select a journal..."
+                                help="Shows the journal the code resolves to; pick one to fill the code"
+                                options="{'no_create': True}" />
+                            <field
+                                name="journal_code"
+                                placeholder="e.g., MISC, BNK1, CSH1"
+                                help="Required: Journal code to use when creating entries" />
+                            <field
+                                name="partner_id"
+                                placeholder="Optional default partner..."
+                                help="Default partner for entries created from this template" />
+                            <field
+                                name="ref"
+                                placeholder="Optional reference..."
+                                help="Default reference text for entries" />
+                        </group>
+                    </group>
+
+                    <group
+                        name="payment_config"
+                        string="Payment Configuration"
+                        invisible="not is_payment">
+                        <field name="payment_type" required="is_payment" />
+                        <field name="partner_type" required="is_payment" />
+                    </group>
+
+                    <notebook invisible="is_payment">
+                        <page name="lines" string="Template Lines">
+                            <field name="line_ids">
+                                <list default_order="sequence" editable="bottom">
+                                    <control>
+                                        <create string="Add a line" />
+                                        <create
+                                            string="Add a section"
+                                            context="{'default_display_type': 'line_section'}" />
+                                        <create
+                                            string="Add a note"
+                                            context="{'default_display_type': 'line_note'}" />
+                                    </control>
+
+                                    <field name="sequence" widget="handle" />
+                                    <field name="display_type" column_invisible="1" />
+
+                                    <field
+                                        name="name"
+                                        widget="section_and_note_text"
+                                        optional="show" />
+
+                                    <field
+                                        name="product_id"
+                                        optional="show"
+                                        context="{'default_type': 'service'}"
+                                        invisible="display_type != 'product' or parent.move_type == 'entry'" />
+
+                                    <field
+                                        name="account_id"
+                                        help="Shows the account the prefix resolves to; pick one to fill it"
+                                        optional="hide"
+                                        invisible="display_type != 'product'" />
+                                    <field
+                                        name="account_code"
+                                        placeholder="e.g., 400.01"
+                                        help="Account code or prefix to use"
+                                        invisible="display_type != 'product'"
+                                        required="display_type == 'product'" />
+
+                                    <field
+                                        name="partner_id"
+                                        optional="hide"
+                                        invisible="display_type != 'product' or (parent.partner_id and parent.move_type != 'entry')" />
+
+                                    <field
+                                        name="distribution_method"
+                                        optional="show"
+                                        invisible="display_type != 'product' or parent.move_type == 'entry'" />
+                                    <field
+                                        name="quantity"
+                                        optional="show"
+                                        invisible="display_type != 'product' or parent.move_type == 'entry'" />
+                                    <field
+                                        name="product_uom_id"
+                                        optional="hide"
+                                        groups="uom.group_uom"
+                                        invisible="display_type != 'product' or parent.move_type == 'entry'" />
+                                    <field
+                                        name="price_unit"
+                                        optional="show"
+                                        invisible="display_type != 'product' or parent.move_type == 'entry'" />
+
+                                    <field
+                                        name="tax_ids"
+                                        widget="many2many_tags"
+                                        optional="show"
+                                        domain="[('type_tax_use', '=', 'purchase' if parent.move_type in ('in_invoice', 'in_refund') else 'sale'), ('company_ids', 'parent_of', parent.company_id)]"
+                                        invisible="display_type != 'product' or parent.move_type == 'entry'" />
+                                    <field
+                                        name="discount"
+                                        optional="hide"
+                                        invisible="display_type != 'product' or parent.move_type == 'entry'" />
+
+                                    <field
+                                        name="balance"
+                                        optional="show"
+                                        invisible="display_type != 'product' or parent.move_type != 'entry'" />
+
+                                    <field
+                                        name="analytic_distribution"
+                                        widget="analytic_distribution"
+                                        optional="hide"
+                                        groups="analytic.group_analytic_accounting"
+                                        invisible="display_type != 'product'" />
+                                </list>
+
+                                <form string="Template Line">
+                                    <sheet>
+                                        <group>
+                                            <group>
+                                                <field name="display_type" />
+                                                <field name="sequence" />
+                                                <field
+                                                    name="name"
+                                                    invisible="display_type in ('line_section', 'line_note')" />
+                                            </group>
+                                            <group
+                                                invisible="display_type != 'product'">
+                                                <field
+                                                    name="product_id"
+                                                    invisible="parent.move_type == 'entry'" />
+                                                <field name="partner_id" />
+                                            </group>
+                                        </group>
+
+                                        <group
+                                            string="Account Configuration"
+                                            invisible="display_type != 'product'">
+                                            <group>
+                                                <field
+                                                    name="account_id"
+                                                    help="Optional: Select to auto-fill code" />
+                                                <field
+                                                    name="account_code"
+                                                    required="display_type == 'product'" />
+                                            </group>
+                                        </group>
+
+                                        <group
+                                            string="Product Details"
+                                            invisible="display_type != 'product' or parent.move_type == 'entry'">
+                                            <group>
+                                                <field name="quantity" />
+                                                <field
+                                                    name="product_uom_id"
+                                                    groups="uom.group_uom" />
+                                                <field name="price_unit" />
+                                            </group>
+                                            <group>
+                                                <field
+                                                    name="tax_ids"
+                                                    widget="many2many_tags"
+                                                    domain="[('type_tax_use', '=', 'purchase' if parent.move_type in ('in_invoice', 'in_refund') else 'sale'), ('company_ids', 'parent_of', parent.company_id)]" />
+                                                <field name="discount" />
+                                            </group>
+                                        </group>
+
+                                        <group
+                                            string="Journal Entry Details"
+                                            invisible="display_type != 'product' or parent.move_type != 'entry'">
+                                            <field name="balance" />
+                                        </group>
+
+                                        <group
+                                            string="Analytics"
+                                            groups="analytic.group_analytic_accounting"
+                                            invisible="display_type != 'product'">
+                                            <field
+                                                name="analytic_distribution"
+                                                widget="analytic_distribution" />
+                                        </group>
+
+                                        <group invisible="display_type == 'product'">
+                                            <field
+                                                name="name"
+                                                placeholder="Section title or note content..."
+                                                nolabel="1" />
+                                        </group>
+                                    </sheet>
+                                </form>
+                            </field>
+                        </page>
+
+                        <page name="settings" string="Additional Settings">
+                            <group>
+                                <group string="Invoicing">
+                                    <field
+                                        name="invoice_payment_term_id"
+                                        help="Payment terms for invoices created from this template"
+                                        invisible="move_type == 'entry'" />
+                                </group>
+                                <group string="Information">
+                                    <label for="ref" />
+                                    <div>
+                                        <field name="ref" class="oe_inline" />
+                                        <p class="text-muted">
+                                            This reference will be used as default when creating
+                                            entries from this template.
+                                        </p>
+                                    </div>
+                                </group>
+                            </group>
+                        </page>
+                    </notebook>
+
+                    <div
+                        invisible="not is_payment"
+                        class="alert alert-info"
+                        role="alert">
+                        <strong>Payment Template:</strong> This template will create payments
+                        directly. Template lines are not used for payment templates. </div>
+                </sheet>
+
+                <chatter />
+            </form>
+        </field>
+    </record>
+
+    <record id="account_move_template_action" model="ir.actions.act_window">
+        <field name="name">Journal Entry Templates</field>
+        <field name="res_model">account.move.template</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Create your first journal entry template
+            </p>
+            <p>
+                Templates allow you to quickly create recurring journal entries,
+                invoices, or payments with predefined configurations.
+            </p>
+        </field>
+    </record>
+
+</odoo>

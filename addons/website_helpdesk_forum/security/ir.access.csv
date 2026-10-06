@@ -1,0 +1,2 @@
+id,name,model_id/id,group_id/id,kind,operation,domain
+access_helpdesk_ticket_select_forum_wizard,wizard.helpdesk.ticket.create.forum.post,model_wizard_helpdesk_ticket_create_forum_post,helpdesk.group_helpdesk_user,permission,cru,

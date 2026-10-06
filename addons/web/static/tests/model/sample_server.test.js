@@ -1,0 +1,553 @@
+// @ts-check
+
+import { describe, expect, test } from "@odoo/hoot";
+import {
+    MAIN_RECORDSET_SIZE,
+    MAX_COLOR_INT,
+    MAX_FLOAT,
+    MAX_INTEGER,
+    MAX_MONETARY,
+    SAMPLE_COUNTRIES,
+    SAMPLE_PEOPLE,
+    SAMPLE_TEXTS,
+    SEARCH_READ_LIMIT,
+    SUB_RECORDSET_SIZE,
+} from "@web/model/sample_data";
+import { SampleServer } from "@web/model/sample_server";
+
+class DeterministicSampleServer extends SampleServer {
+    constructor(modelName, fields, relatedModels) {
+        super(modelName, fields, relatedModels);
+        this.arrayElCpt = 0;
+        this.boolCpt = 0;
+        this.subRecordIdCpt = 0;
+    }
+    _getRandomArrayEl(array) {
+        return array[this.arrayElCpt++ % array.length];
+    }
+    _getRandomBool() {
+        return Boolean(this.boolCpt++ % 2);
+    }
+    _getRandomSubRecordId() {
+        return (this.subRecordIdCpt++ % SUB_RECORDSET_SIZE) + 1;
+    }
+}
+
+const fields = {
+    "res.users": {
+        display_name: { string: "Name", type: "char" },
+        name: { string: "Reference", type: "char" },
+        email: { string: "Email", type: "char" },
+        phone_number: { string: "Phone number", type: "char" },
+        website_url: { string: "URL", type: "char" },
+        urlemailphone: { string: "Whatever", type: "char" },
+        active: { string: "Active", type: "boolean" },
+        is_alive: { string: "Is alive", type: "boolean" },
+        description: { string: "Description", type: "text" },
+        birthday: { string: "Birthday", type: "date" },
+        arrival_date: { string: "Date of arrival", type: "datetime" },
+        height: { string: "Height", type: "float" },
+        color: { string: "Color", type: "integer" },
+        age: { string: "Age", type: "integer" },
+        salary: { string: "Salary", type: "monetary" },
+        currency: {
+            string: "Currency",
+            type: "many2one",
+            relation: "res.currency",
+        },
+        manager_id: {
+            string: "Manager",
+            type: "many2one",
+            relation: "res.users",
+        },
+        cover_image_id: {
+            string: "Cover Image",
+            type: "many2one",
+            relation: "ir.attachment",
+        },
+        managed_ids: {
+            string: "Managing",
+            type: "one2many",
+            relation: "res.users",
+        },
+        tag_ids: { string: "Tags", type: "many2many", relation: "tag" },
+        type: {
+            string: "Type",
+            type: "selection",
+            selection: [
+                ["client", "Client"],
+                ["partner", "Partner"],
+                ["employee", "Employee"],
+            ],
+        },
+    },
+    "res.country": {
+        display_name: { string: "Name", type: "char" },
+    },
+    hobbit: {
+        display_name: { string: "Name", type: "char" },
+        profession: {
+            string: "Profession",
+            type: "selection",
+            selection: [
+                ["gardener", "Gardener"],
+                ["brewer", "Brewer"],
+                ["adventurer", "Adventurer"],
+            ],
+        },
+        age: { string: "Age", type: "integer" },
+    },
+    "ir.attachment": {
+        display_name: { string: "Name", type: "char" },
+    },
+};
+
+describe.current.tags("headless");
+
+describe("Sample data", () => {
+    test("people type + all field names", async () => {
+        const specification = {};
+        for (const fieldName in fields["res.users"]) {
+            specification[fieldName] = {};
+            if (fields["res.users"][fieldName].type === "many2one") {
+                specification[fieldName] = {
+                    fields: { display_name: {} },
+                };
+            }
+        }
+        const server = new DeterministicSampleServer("res.users", fields["res.users"]);
+        const { records } = await server.mockRpc({
+            method: "web_search_read",
+            model: "res.users",
+            specification,
+        });
+        const rec = records[0];
+        expect(SAMPLE_PEOPLE).toInclude(rec.display_name);
+        expect(SAMPLE_PEOPLE).toInclude(rec.name);
+        expect(rec.email).toBe(
+            `${rec.display_name.replace(/ /, ".").toLowerCase()}@sample.demo`,
+        );
+        expect(rec.phone_number).toMatch(/\+1 555 754 000\d/);
+        expect(rec.website_url).toMatch(/http:\/\/sample\d\.com/);
+        expect(rec.urlemailphone).toBe(false);
+        expect(rec.active).toBe(true);
+        expect(rec.is_alive).toBeOfType("boolean");
+        expect(SAMPLE_TEXTS).toInclude(rec.description);
+        expect(rec.birthday).toMatch(/\d{4}-\d{2}-\d{2}/);
+        expect(rec.arrival_date).toMatch(/\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}/);
+        expect(rec.height).toBeWithin(0, MAX_FLOAT);
+        expect(rec.color).toBeWithin(0, MAX_COLOR_INT - 1);
+        expect(rec.age).toBeWithin(0, MAX_INTEGER - 1);
+        expect(rec.salary).toBeWithin(0, MAX_MONETARY - 1);
+        expect(rec.height).toBe(parseFloat(parseFloat(rec.height).toFixed(2)));
+        const selectionValues = fields["res.users"].type.selection.map((sel) => sel[0]);
+        expect(selectionValues).toInclude(rec.type);
+        expect(rec.currency.id).toBe(1);
+        expect(SAMPLE_TEXTS).toInclude(rec.currency.display_name);
+        expect(rec.manager_id.id).toBeOfType("number");
+        expect(SAMPLE_PEOPLE).toInclude(rec.manager_id.display_name);
+        expect(rec.cover_image_id).toBe(false);
+        expect(rec.managed_ids).toHaveLength(2);
+        expect(rec.managed_ids.every((id) => typeof id === "number")).toBe(true);
+        expect(rec.tag_ids).toHaveLength(2);
+        expect(rec.tag_ids.every((id) => typeof id === "number")).toBe(true);
+    });
+
+    test("country type", async () => {
+        const server = new DeterministicSampleServer(
+            "res.country",
+            fields["res.country"],
+        );
+        const { records } = await server.mockRpc({
+            method: "web_search_read",
+            model: "res.country",
+            specification: { display_name: {} },
+        });
+        expect(SAMPLE_COUNTRIES).toInclude(records[0].display_name);
+    });
+
+    test("any type", async () => {
+        const server = new DeterministicSampleServer("hobbit", fields.hobbit);
+        const { records } = await server.mockRpc({
+            method: "web_search_read",
+            model: "hobbit",
+            specification: { display_name: {} },
+        });
+        expect(SAMPLE_TEXTS).toInclude(records[0].display_name);
+    });
+});
+
+describe("RPC calls", () => {
+    test("'search_read': valid field names", async () => {
+        const server = new DeterministicSampleServer("hobbit", fields.hobbit);
+        const result = await server.mockRpc({
+            method: "web_search_read",
+            model: "hobbit",
+            specification: { display_name: {} },
+        });
+        expect(Object.keys(result.records[0])).toEqual(["id", "display_name"]);
+        expect(result.length).toBe(SEARCH_READ_LIMIT);
+        expect(result.records[0].display_name).toMatch(/\w+/, {
+            message: "Display name has been mocked",
+        });
+    });
+
+    test("'search_read': many2one fields", async () => {
+        const server = new DeterministicSampleServer("res.users", fields["res.users"]);
+        const result = await server.mockRpc({
+            method: "web_search_read",
+            model: "res.users",
+            specification: {
+                manager_id: {
+                    fields: { display_name: {} },
+                },
+            },
+        });
+        expect(Object.keys(result.records[0])).toEqual(["id", "manager_id"]);
+        expect(result.records[0].manager_id.id).toBe(1);
+        expect(result.records[0].manager_id.display_name).toMatch(/\w+/);
+    });
+
+    test("'web_read_group': no group", async () => {
+        const server = new DeterministicSampleServer("hobbit", fields.hobbit);
+        server.setExistingGroups(null);
+        const result = await server.mockRpc({
+            method: "web_read_group",
+            model: "hobbit",
+            groupBy: ["profession"],
+            aggregates: ["__count"],
+            auto_unfold: true,
+            unfold_read_specification: { display_name: {}, age: {}, profession: {} },
+        });
+        expect(result).toEqual({
+            groups: [
+                {
+                    __extra_domain: [],
+                    profession: "adventurer",
+                    __count: 5,
+                    __records: server.data.hobbit.records.filter(
+                        (r) => r.profession === "adventurer",
+                    ),
+                },
+                {
+                    __extra_domain: [],
+                    profession: "brewer",
+                    __count: 5,
+                    __records: server.data.hobbit.records.filter(
+                        (r) => r.profession === "brewer",
+                    ),
+                },
+                {
+                    __extra_domain: [],
+                    profession: "gardener",
+                    __count: 6,
+                    __records: server.data.hobbit.records.filter(
+                        (r) => r.profession === "gardener",
+                    ),
+                },
+            ],
+            length: 3,
+        });
+    });
+
+    test("'web_read_group': 2 groups", async () => {
+        const server = new DeterministicSampleServer("hobbit", fields.hobbit);
+        const existingGroups = [
+            { profession: "gardener", count: 0, __records: [] },
+            { profession: "adventurer", count: 0, __records: [] },
+        ];
+        server.setExistingGroups(existingGroups);
+        const result = await server.mockRpc({
+            method: "web_read_group",
+            model: "hobbit",
+            groupBy: ["profession"],
+            aggregates: ["__count"],
+            auto_unfold: true,
+            unfold_read_specification: { display_name: {}, age: {} },
+        });
+        expect(result).toHaveLength(2);
+        expect(result.groups).toHaveLength(2);
+        expect(result.groups.map((g) => g.profession)).toEqual([
+            "gardener",
+            "adventurer",
+        ]);
+        expect(result.groups.reduce((acc, g) => acc + g.__count, 0)).toBe(
+            MAIN_RECORDSET_SIZE,
+        );
+        expect(result.groups.every((g) => g.__count === g.__records.length)).toBe(true);
+    });
+
+    test("'web_read_group': all groups", async () => {
+        const server = new DeterministicSampleServer("hobbit", fields.hobbit);
+        const existingGroups = [
+            { profession: "gardener", count: 0, __records: [] },
+            { profession: "brewer", count: 0, __records: [] },
+            { profession: "adventurer", count: 0, __records: [] },
+        ];
+        server.setExistingGroups(existingGroups);
+        const result = await server.mockRpc({
+            method: "web_read_group",
+            model: "hobbit",
+            groupBy: ["profession"],
+            aggregates: ["__count"],
+            auto_unfold: true,
+            unfold_read_specification: { display_name: {}, age: {} },
+        });
+        expect(result.length).toBe(3);
+        expect(result.groups).toHaveLength(3);
+        expect(result.groups.map((g) => g.profession)).toEqual([
+            "gardener",
+            "brewer",
+            "adventurer",
+        ]);
+        expect(result.groups.reduce((acc, g) => acc + g.__count, 0)).toBe(
+            MAIN_RECORDSET_SIZE,
+        );
+        expect(result.groups.every((g) => g.__count === g.__records.length)).toBe(true);
+    });
+
+    test("'web_read_group': many2one groups including a falsy (no-record) group", async () => {
+        const server = new DeterministicSampleServer("res.users", fields["res.users"]);
+        const existingGroups = [
+            { cover_image_id: [1, "cover.png"], count: 0, __records: [] },
+            { cover_image_id: false, count: 0, __records: [] },
+        ];
+        server.setExistingGroups(existingGroups);
+        const result = await server.mockRpc({
+            method: "web_read_group",
+            model: "res.users",
+            groupBy: ["cover_image_id"],
+            aggregates: ["__count"],
+            auto_unfold: true,
+            unfold_read_specification: { display_name: {} },
+        });
+        expect(result.groups).toHaveLength(2);
+        expect(result.groups.reduce((acc, g) => acc + g.__count, 0)).toBe(
+            MAIN_RECORDSET_SIZE,
+        );
+    });
+
+    test("'web_read_group': 'max' aggregator", async () => {
+        const server = new DeterministicSampleServer("res.users", fields["res.users"]);
+        const result = await server.mockRpc({
+            method: "web_read_group",
+            model: "res.users",
+            groupBy: ["name"],
+            aggregates: ["age:max", "height:min"],
+        });
+        expect(result.length).toEqual(5);
+    });
+
+    test("'formatted_read_group': groupBy", async () => {
+        const server = new DeterministicSampleServer("hobbit", fields.hobbit);
+        const result = await server.mockRpc({
+            method: "formatted_read_group",
+            model: "hobbit",
+            groupBy: ["profession"],
+            aggregates: ["__count"],
+        });
+        expect(result).toHaveLength(3);
+        expect(result.map((g) => g.profession)).toEqual([
+            "adventurer",
+            "brewer",
+            "gardener",
+        ]);
+        expect(result.reduce((acc, g) => acc + g.__count, 0)).toBe(MAIN_RECORDSET_SIZE);
+    });
+
+    test("'formatted_read_group': groupBy and field", async () => {
+        const server = new DeterministicSampleServer("hobbit", fields.hobbit);
+        const result = await server.mockRpc({
+            method: "formatted_read_group",
+            model: "hobbit",
+            groupBy: ["profession"],
+            aggregates: ["__count", "age:sum"],
+        });
+        expect(result).toHaveLength(3);
+        expect(result.map((g) => g.profession)).toEqual([
+            "adventurer",
+            "brewer",
+            "gardener",
+        ]);
+        expect(result.reduce((acc, g) => acc + g.__count, 0)).toBe(MAIN_RECORDSET_SIZE);
+        expect(result.reduce((acc, g) => acc + g["age:sum"], 0)).toBe(
+            server.data.hobbit.records.reduce((acc, rec) => acc + rec.age, 0),
+        );
+    });
+
+    test("'formatted_read_group': multiple groupBys", async () => {
+        const server = new DeterministicSampleServer("hobbit", fields.hobbit);
+        const result = await server.mockRpc({
+            method: "formatted_read_group",
+            model: "hobbit",
+            groupBy: ["profession", "age"],
+        });
+        expect(result[0]).toInclude("profession");
+        expect(result[0]).toInclude("age");
+    });
+
+    test("'formatted_read_group': multiple groupBys among which a many2many", async () => {
+        const server = new DeterministicSampleServer("res.users", fields["res.users"]);
+        const result = await server.mockRpc({
+            method: "formatted_read_group",
+            model: "res.users",
+            groupBy: ["height", "tag_ids"],
+        });
+        expect(result[0].tag_ids[0]).toBeOfType("number");
+        expect(result[0].tag_ids[1]).toBeOfType("string");
+    });
+
+    test("'read': no id", async () => {
+        const server = new DeterministicSampleServer("hobbit", fields.hobbit);
+        const result = await server.mockRpc({
+            method: "read",
+            model: "hobbit",
+            args: [[], ["display_name"]],
+        });
+        expect(result).toEqual([]);
+    });
+
+    test("'read': one id", async () => {
+        const server = new DeterministicSampleServer("hobbit", fields.hobbit);
+        const result = await server.mockRpc({
+            method: "read",
+            model: "hobbit",
+            args: [[1], ["display_name"]],
+        });
+        expect(result).toHaveLength(1);
+        expect(result[0].display_name).toMatch(/\w+/);
+        expect(result[0].id).toBe(1);
+    });
+
+    test("'read': more than all available ids", async () => {
+        const server = new DeterministicSampleServer("hobbit", fields.hobbit);
+        const amount = MAIN_RECORDSET_SIZE + 3;
+        const ids = new Array(amount).fill(undefined).map((_, i) => i + 1);
+        const result = await server.mockRpc({
+            method: "read",
+            model: "hobbit",
+            args: [ids, ["display_name"]],
+        });
+        expect(result).toHaveLength(MAIN_RECORDSET_SIZE);
+    });
+
+    test("'formatted_read_group': partial support of array_agg", async () => {
+        fields["res.users"].id = { type: "integer", name: "ID" };
+        const server = new DeterministicSampleServer("res.users", fields["res.users"]);
+        const result = await server.mockRpc({
+            method: "formatted_read_group",
+            model: "res.users",
+            aggregates: ["id:array_agg"],
+            groupBy: [],
+        });
+        expect(result).toHaveLength(1);
+        const ids = new Array(16).fill(0).map((_, index) => index + 1);
+        expect(result[0]["id:array_agg"]).toEqual(ids);
+    });
+});
+
+describe("read_progress_bar", () => {
+    test("never produces NaN buckets for values outside progress_bar.colors", async () => {
+        const flds = {
+            display_name: { string: "Name", type: "char" },
+            flag: { string: "Flag", type: "boolean" },
+            state: {
+                string: "State",
+                type: "selection",
+                selection: [
+                    ["a", "A"],
+                    ["b", "B"],
+                    ["c", "C"],
+                ],
+            },
+        };
+        const server = new DeterministicSampleServer("task", flds);
+        const data = await server.mockRpc({
+            method: "read_progress_bar",
+            model: "task",
+            domain: [],
+            group_by: "flag",
+            progress_bar: {
+                field: "state",
+                colors: { none1: "success", none2: "warning" },
+            },
+        });
+        expect(Object.keys(data).length > 0).toBe(true);
+        for (const buckets of Object.values(data)) {
+            for (const [key, count] of Object.entries(buckets)) {
+                expect(["none1", "none2"]).toInclude(key);
+                expect(Number.isFinite(count)).toBe(true);
+            }
+        }
+    });
+});
+
+describe("many2one specification", () => {
+    test("the subfields a many2one was asked for are answered", async () => {
+        const server = new DeterministicSampleServer("res.users", fields["res.users"], {
+            "res.currency": {
+                display_name: { string: "Name", type: "char" },
+                rate: { string: "Rate", type: "float" },
+                active: { string: "Active", type: "boolean" },
+            },
+        });
+        const { records } = await server.mockRpc({
+            method: "web_search_read",
+            model: "res.users",
+            specification: {
+                display_name: {},
+                currency: { fields: { display_name: {}, rate: {}, active: {} } },
+            },
+        });
+
+        const currency = records[0].currency;
+        expect(Object.keys(currency).sort()).toEqual([
+            "active",
+            "display_name",
+            "id",
+            "rate",
+        ]);
+        expect(currency.rate).toBeWithin(0, MAX_FLOAT);
+        expect(currency.active).toBeOfType("boolean");
+    });
+
+    test("a many2one asked for nothing but its name is unchanged", async () => {
+        const server = new DeterministicSampleServer("res.users", fields["res.users"]);
+        const { records } = await server.mockRpc({
+            method: "web_search_read",
+            model: "res.users",
+            specification: {
+                display_name: {},
+                manager_id: { fields: { display_name: {} } },
+            },
+        });
+
+        expect(Object.keys(records[0].manager_id).sort()).toEqual([
+            "display_name",
+            "id",
+        ]);
+    });
+
+    test("a relation's own relations are not sampled, and do not throw", async () => {
+        const server = new DeterministicSampleServer("res.users", fields["res.users"], {
+            "res.currency": {
+                display_name: { string: "Name", type: "char" },
+                country_id: {
+                    string: "Country",
+                    type: "many2one",
+                    relation: "res.country",
+                },
+            },
+        });
+        const { records } = await server.mockRpc({
+            method: "web_search_read",
+            model: "res.users",
+            specification: {
+                display_name: {},
+                currency: { fields: { display_name: {}, country_id: {} } },
+            },
+        });
+
+        expect(records[0].currency.country_id).toBe(false);
+    });
+});

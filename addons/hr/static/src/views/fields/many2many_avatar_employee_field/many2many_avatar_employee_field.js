@@ -1,0 +1,108 @@
+/** @odoo-module native */
+import { EmployeeFieldRelationMixin } from "@hr/views/fields/employee_field_relation_mixin";
+import {
+    KanbanMany2ManyTagsAvatarUserField,
+    kanbanMany2ManyTagsAvatarUserField,
+    ListMany2ManyTagsAvatarUserField,
+    listMany2ManyTagsAvatarUserField,
+    Many2ManyTagsAvatarUserField,
+    many2ManyTagsAvatarUserField,
+} from "@mail/views/web/fields/many2many_avatar_user_field/many2many_avatar_user_field";
+import { registry } from "@web/core/registry";
+import { useService } from "@web/core/utils/hooks";
+
+export class Many2ManyTagsAvatarEmployeeField extends EmployeeFieldRelationMixin(
+    Many2ManyTagsAvatarUserField,
+) {
+    setup() {
+        super.setup();
+        this.ui = useService("ui");
+    }
+
+    displayAvatarCard(record) {
+        return (
+            (!this.ui.isSmall && this.relation === "hr.employee") ||
+            super.displayAvatarCard(record)
+        );
+    }
+}
+
+export const many2ManyTagsAvatarEmployeeField = {
+    ...many2ManyTagsAvatarUserField,
+    component: Many2ManyTagsAvatarEmployeeField,
+    additionalClasses: [
+        ...many2ManyTagsAvatarUserField.additionalClasses,
+        "o_field_many2many_avatar_user",
+    ],
+    extractProps: (fieldInfo, dynamicInfo) => ({
+        ...many2ManyTagsAvatarUserField.extractProps(fieldInfo, dynamicInfo),
+        canQuickCreate: false,
+        relation: fieldInfo.options?.relation,
+    }),
+};
+
+registry
+    .category("fields")
+    .add("many2many_avatar_employee", many2ManyTagsAvatarEmployeeField);
+
+export class KanbanMany2ManyTagsAvatarEmployeeField extends EmployeeFieldRelationMixin(
+    KanbanMany2ManyTagsAvatarUserField,
+) {
+    setup() {
+        super.setup();
+        this.ui = useService("ui");
+    }
+
+    displayAvatarCard(record) {
+        return (
+            (!this.ui.isSmall && this.relation === "hr.employee") ||
+            super.displayAvatarCard(record)
+        );
+    }
+}
+
+export const kanbanMany2ManyTagsAvatarEmployeeField = {
+    ...kanbanMany2ManyTagsAvatarUserField,
+    component: KanbanMany2ManyTagsAvatarEmployeeField,
+    additionalClasses: [
+        ...kanbanMany2ManyTagsAvatarUserField.additionalClasses,
+        "o_field_many2many_avatar_user",
+    ],
+    extractProps: (fieldInfo, dynamicInfo) => ({
+        ...kanbanMany2ManyTagsAvatarUserField.extractProps(fieldInfo, dynamicInfo),
+        relation: fieldInfo.options?.relation,
+    }),
+};
+
+registry
+    .category("fields")
+    .add("kanban.many2many_avatar_employee", kanbanMany2ManyTagsAvatarEmployeeField)
+    .add("activity.many2many_avatar_employee", kanbanMany2ManyTagsAvatarEmployeeField);
+
+export class ListMany2ManyTagsAvatarEmployeeField extends EmployeeFieldRelationMixin(
+    ListMany2ManyTagsAvatarUserField,
+) {
+    setup() {
+        super.setup();
+        this.ui = useService("ui");
+    }
+
+    displayAvatarCard(record) {
+        return (
+            (!this.ui.isSmall && this.relation === "hr.employee") ||
+            super.displayAvatarCard(record)
+        );
+    }
+}
+
+export const listMany2ManyTagsAvatarEmployeeField = {
+    ...listMany2ManyTagsAvatarUserField,
+    component: ListMany2ManyTagsAvatarEmployeeField,
+    additionalClasses: [
+        ...listMany2ManyTagsAvatarUserField.additionalClasses,
+        "o_field_many2many_avatar_user",
+    ],
+};
+registry
+    .category("fields")
+    .add("list.many2many_avatar_employee", listMany2ManyTagsAvatarEmployeeField);

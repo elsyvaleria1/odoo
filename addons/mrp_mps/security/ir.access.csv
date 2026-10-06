@@ -1,0 +1,8 @@
+id,name,model_id/id,group_id/id,kind,operation,reach,anchor,domain
+access_mrp_product_forecast,access_mrp_product_forecast,model_mrp_product_forecast,mrp.group_mrp_user,permission,r,none,,
+access_mrp_product_forecast_manager,access_mrp_product_forecast_manager,model_mrp_product_forecast,mrp.group_mrp_manager,permission,crud,,,
+access_mrp_production_schedule,access_mrp_production_schedule,model_mrp_production_schedule,mrp.group_mrp_user,permission,r,none,,
+access_mrp_production_schedule_manager,access_mrp_production_schedule_manager,model_mrp_production_schedule,mrp.group_mrp_manager,permission,crud,,,
+access_mrp_mps_forecast_details,access.mrp.mps.forecast.details,model_wizard_mrp_production_schedule_view_replenishment,mrp.group_mrp_user,permission,cru,,,
+access_mrp_mps_forecast_suggestion,access.mrp.mps.forecast.suggestion,model_wizard_mrp_production_schedule_update_forecast,mrp.group_mrp_manager,permission,crud,,,
+mrp_mps_company_rule,MPS multi-company,model_mrp_production_schedule,base.group_everyone,guard,crud,company,,

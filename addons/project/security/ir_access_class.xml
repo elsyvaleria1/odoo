@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="access_class_task_portal_hidden" model="ir.access.class">
+        <field name="name">project.task_portal_hidden</field>
+        <field
+            name="description">A task's fields a portal collaborator neither reads nor writes.</field>
+    </record>
+
+    <record id="access_class_task_portal_readonly" model="ir.access.class">
+        <field name="name">project.task_portal_readonly</field>
+        <field
+            name="description">A task's fields a portal collaborator reads but does not write.</field>
+    </record>
+
+    <record id="access_task_portal_hidden_everyone" model="ir.access">
+        <field name="name">project.task_portal_hidden: everyone</field>
+        <field name="group_id" ref="base.group_everyone" />
+        <field name="kind">permission</field>
+        <field name="operation">ru</field>
+        <field name="class_id" ref="access_class_task_portal_hidden" />
+    </record>
+
+    <record id="access_task_portal_hidden_portal" model="ir.access">
+        <field name="name">project.task_portal_hidden: not portal</field>
+        <field name="group_id" ref="base.group_portal" />
+        <field name="kind">guard</field>
+        <field name="guard_scope">members</field>
+        <field name="operation">ru</field>
+        <field name="class_id" ref="access_class_task_portal_hidden" />
+        <field name="reach">none</field>
+    </record>
+
+    <record id="access_task_portal_readonly_everyone" model="ir.access">
+        <field name="name">project.task_portal_readonly: everyone</field>
+        <field name="group_id" ref="base.group_everyone" />
+        <field name="kind">permission</field>
+        <field name="operation">ru</field>
+        <field name="class_id" ref="access_class_task_portal_readonly" />
+    </record>
+
+    <record id="access_task_portal_readonly_portal" model="ir.access">
+        <field name="name">project.task_portal_readonly: portal reads only</field>
+        <field name="group_id" ref="base.group_portal" />
+        <field name="kind">guard</field>
+        <field name="guard_scope">members</field>
+        <field name="operation">u</field>
+        <field name="class_id" ref="access_class_task_portal_readonly" />
+        <field name="reach">none</field>
+    </record>
+
+</odoo>

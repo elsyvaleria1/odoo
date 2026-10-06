@@ -1,0 +1,255 @@
+import re
+
+from odoo import api, fields, models
+from odoo.exceptions import ValidationError
+from odoo.fields import Command
+from odoo.libs.debug_log import DebugLog
+
+from odoo.addons.sale_pdf_quote_builder import utils
+
+_debug = DebugLog(__name__)
+
+
+class SalePdfFormField(models.Model):
+    _name = "sale.pdf.form.field"
+    _description = "Form fields of inside quotation documents."
+    _order = "name"
+
+    name = fields.Char(
+        string="Form Field Name",
+        readonly=True,
+        required=True,
+        help="The form field name as written in the PDF.",
+    )
+    document_type = fields.Selection(
+        selection=[
+            ("quotation_document", "Header/Footer"),
+            ("product_document", "Product Document"),
+        ],
+        readonly=True,
+        required=True,
+    )
+    path = fields.Char(
+        help="The path to follow to dynamically fill the form field. \n"
+        "Leave empty to be able to customized it in the quotation form."
+    )
+    product_document_ids = fields.Many2many(
+        comodel_name="document.document",
+        string="Product Documents",
+    )
+    quotation_document_ids = fields.Many2many(
+        comodel_name="quotation.document",
+        string="Quotation Documents",
+    )
+
+    _unique_name_per_doc_type = models.Constraint(
+        "UNIQUE(name, document_type)",
+        "Form field name must be unique for a given document type.",
+    )
+
+    @api.constrains("name")
+    def _check_form_field_name_follows_pattern(self) -> None:
+        name_pattern = re.compile(r"^(\w|-)+$")
+        for form_field in self:
+            if not re.match(name_pattern, form_field.name):
+                _debug.logic(
+                    "form_field_name_rejected",
+                    field=form_field,
+                    reason="bad_characters",
+                )
+                raise ValidationError(
+                    self.env._(
+                        "Invalid form field name %(field_name)s. It should only contain alphanumerics,"
+                        " hyphens or underscores.",
+                        field_name=form_field.name,
+                    )
+                )
+            if form_field.name.startswith("sol_id_"):
+                _debug.logic(
+                    "form_field_name_rejected",
+                    field=form_field,
+                    reason="reserved_prefix",
+                )
+                raise ValidationError(
+                    self.env._(
+                        "Invalid form field name %(field_name)s. A form field name in a header or a"
+                        ' footer can not start with "sol_id_".',
+                        field_name=form_field.name,
+                    )
+                )
+
+    @api.constrains("path")
+    def _check_valid_and_existing_paths(self) -> None:
+        name_pattern = re.compile(r"^(\w|-|\.)+$")
+        for form_field in self.filtered("path"):
+            if not re.match(name_pattern, form_field.path):
+                _debug.logic(
+                    "form_field_path_rejected",
+                    field=form_field,
+                    reason="bad_characters",
+                )
+                raise ValidationError(
+                    self.env._(
+                        "Invalid path %(path)s. It should only contain alphanumerics, hyphens,"
+                        " underscores or points.",
+                        path=form_field.path,
+                    )
+                )
+
+            path = form_field.path.split(".")
+            is_header_footer = form_field.document_type == "quotation_document"
+            Model = (
+                self.env["sale.order"]
+                if is_header_footer
+                else self.env["sale.order.line"]
+            )
+            for i in range(len(path)):
+                field_name = path[i]
+                if Model == []:
+                    raise ValidationError(
+                        self.env._(
+                            "Please use only relational fields until the last value of your path."
+                        )
+                    )
+                if field_name not in Model._fields:
+                    _debug.logic(
+                        "form_field_path_rejected",
+                        field=form_field,
+                        reason="unknown_field",
+                        model=Model._name,
+                    )
+                    raise ValidationError(
+                        self.env._(
+                            "The field %(field_name)s doesn't exist on model %(model_name)s",
+                            field_name=field_name,
+                            model_name=Model._name,
+                        )
+                    )
+                if i != len(path) - 1:
+                    Model = Model.mapped(field_name)
+
+    @api.constrains("document_type", "product_document_ids", "quotation_document_ids")
+    def _check_document_type_and_document_linked_compatibility(self) -> None:
+        for form_field in self:
+            doc_type = form_field.document_type
+            if doc_type == "quotation_document" and form_field.product_document_ids:
+                raise ValidationError(
+                    self.env._(
+                        "A form field set as used in product documents can't be linked to a quotation"
+                        " document."
+                    )
+                )
+            if doc_type == "product_document" and form_field.quotation_document_ids:
+                raise ValidationError(
+                    self.env._(
+                        "A form field set as used in quotation documents can't be linked to a product"
+                        " document."
+                    )
+                )
+
+    @api.model
+    def _add_basic_mapped_form_fields(self) -> None:
+        mapped_form_fields = {
+            "quotation_document": {
+                "amount_total": "amount_total",
+                "amount_untaxed": "amount_untaxed",
+                "client_order_ref": "client_order_ref",
+                "delivery_date": "date_commitment",
+                "order_date": "date_order",
+                "name": "name",
+                "partner_id__name": "partner_id.name",
+                "user_id__email": "user_id.login",
+                "user_id__name": "user_id.name",
+                "date_validity": "date_validity",
+            },
+            "product_document": {
+                "amount_total": "order_id.amount_total",
+                "amount_untaxed": "order_id.amount_untaxed",
+                "client_order_ref": "order_id.client_order_ref",
+                "delivery_date": "order_id.date_commitment",
+                "description": "name",
+                "discount": "discount",
+                "name": "order_id.name",
+                "partner_id__name": "partner_id.name",
+                "price_unit": "price_unit",
+                "product_sale_price": "product_id.lst_price",
+                "quantity": "product_uom_qty",
+                "tax_excl_price": "price_subtotal",
+                "tax_incl_price": "price_total",
+                "taxes": "tax_ids",
+                "uom": "product_uom_id.name",
+                "user_id__name": "user_id.name",
+                "date_validity": "order_id.date_validity",
+            },
+        }
+        quote_doc = list(mapped_form_fields["quotation_document"])
+        product_doc = list(mapped_form_fields["product_document"])
+        existing_mapping = self.env["sale.pdf.form.field"].search(
+            [
+                "|",
+                "&",
+                ("document_type", "=", "quotation_document"),
+                ("name", "in", quote_doc),
+                "&",
+                ("document_type", "=", "product_document"),
+                ("name", "in", product_doc),
+            ]
+        )
+        if existing_mapping:
+            existing_keys = {(ff.document_type, ff.name) for ff in existing_mapping}
+            form_fields_to_add = {
+                doc_type: {
+                    name: path
+                    for name, path in mapping.items()
+                    if (doc_type, name) not in existing_keys
+                }
+                for doc_type, mapping in mapped_form_fields.items()
+            }
+        else:
+            form_fields_to_add = mapped_form_fields
+        self.env["sale.pdf.form.field"].create(
+            [
+                {"name": name, "document_type": doc_type, "path": path}
+                for doc_type, mapping in form_fields_to_add.items()
+                for name, path in mapping.items()
+            ]
+        )
+
+    @api.model
+    def _cron_post_upgrade_update_missing_form_fields(self) -> None:
+        product_documents = self.env["document.document"].search(
+            [("attached_on_sale", "=", "inside")]
+        )
+        quote_documents = self.env["quotation.document"].search([])
+        self._create_or_update_form_fields_on_pdf_records(
+            product_documents, "product_document"
+        )
+        self._create_or_update_form_fields_on_pdf_records(
+            quote_documents, "quotation_document"
+        )
+
+    @api.model
+    def _create_or_update_form_fields_on_pdf_records(self, records, doc_type) -> None:
+        form_field_by_name = {
+            ff.name: ff
+            for ff in self.env["sale.pdf.form.field"].search(
+                [("document_type", "=", doc_type)]
+            )
+        }
+        return_bin_size = self.env.context.get("bin_size")
+        if return_bin_size:
+            records = records.with_context(bin_size=False)
+
+        for document in records:
+            if document.datas:
+                form_fields = utils._get_form_fields_from_pdf(document.datas)
+                for field in form_fields:
+                    if field not in form_field_by_name:
+                        document.form_field_ids = [
+                            Command.create({"name": field, "document_type": doc_type})
+                        ]
+                        form_field_by_name[field] = document.form_field_ids[-1]
+                    else:
+                        document.form_field_ids = [
+                            Command.link(form_field_by_name[field].id)
+                        ]

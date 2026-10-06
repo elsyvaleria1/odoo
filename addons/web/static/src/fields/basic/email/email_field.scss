@@ -1,0 +1,7 @@
+html:not([data-input-modality="touch"]) .o_field_email {
+    &:not(:hover):not(:focus-within) {
+        & input:not(:hover) ~ a {
+            display: none !important;
+        }
+    }
+}

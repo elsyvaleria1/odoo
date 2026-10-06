@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+
+    <record id="ir_cron_expire_commands" model="ir.cron">
+        <field name="name">Access Device: Expire Stale Commands</field>
+        <field name="model_id" ref="model_access_command" />
+        <field name="state">code</field>
+        <field name="code">model._cron_expire_commands()</field>
+        <field name="repeat_interval" eval="5" />
+        <field name="repeat_unit">minute</field>
+        <field name="active" eval="True" />
+    </record>
+
+    <record id="ir_cron_check_ehome_status" model="ir.cron">
+        <field name="name">Access Device: Check EHOME Device Status</field>
+        <field name="model_id" ref="device.model_device_device" />
+        <field name="state">code</field>
+        <field name="code">model._cron_check_ehome_status()</field>
+        <field name="repeat_interval" eval="2" />
+        <field name="repeat_unit">minute</field>
+        <field name="active" eval="True" />
+    </record>
+
+    <record id="ir_cron_retry_sync_users" model="ir.cron">
+        <field name="name">Access Device: Retry Sync Device Users</field>
+        <field name="model_id" ref="model_access_device_user" />
+        <field name="state">code</field>
+        <field name="code">model._cron_retry_sync()</field>
+        <field name="repeat_interval" eval="5" />
+        <field name="repeat_unit">minute</field>
+        <field name="active" eval="True" />
+    </record>
+
+</odoo>

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="telegram_bot_guard_company" model="ir.access">
+        <field
+            name="name">Telegram Bot: an internal user reaches the bots of the companies they belong to</field>
+        <field name="model_id" ref="model_telegram_bot" />
+        <field name="group_id" ref="base.group_user" />
+        <field name="kind">guard</field>
+        <field name="guard_scope">members</field>
+        <field name="operation">crud</field>
+        <field name="domain">[('company_id', 'in', user.company_ids.ids)]</field>
+    </record>
+
+</odoo>

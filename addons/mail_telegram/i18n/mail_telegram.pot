@@ -1,0 +1,748 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* mail_telegram
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-09-29 16:20+0000\n"
+"PO-Revision-Date: 2026-09-29 16:20+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: mail_telegram
+#. odoo-python
+#: code:addons/mail_telegram/models/telegram_handler_mail.py:0
+msgid ""
+"%(thread)s has %(count)s external follower(s): post your reply as an "
+"internal note, or as a message they receive?"
+msgstr ""
+
+#. module: mail_telegram
+#. odoo-python
+#: code:addons/mail_telegram/models/telegram_handler_mail.py:0
+msgid "/bandeja - Open your Odoo notifications and chats here."
+msgstr ""
+
+#. module: mail_telegram
+#. odoo-python
+#: code:addons/mail_telegram/wizards/wizard_telegram_group_link.py:0
+msgid ""
+"A Telegram group mirrors a Telegram channel of Discuss; a Telegram channel "
+"publishes a Discuss channel."
+msgstr ""
+
+#. module: mail_telegram
+#: model:ir.model.constraint,message:mail_telegram.constraint_telegram_mirror_chat_topic_uniq
+msgid "A Telegram group or topic is mirrored on one thread at a time."
+msgstr ""
+
+#. module: mail_telegram
+#: model:ir.model.fields,field_description:mail_telegram.field_telegram_mirror__active
+msgid "Active"
+msgstr ""
+
+#. module: mail_telegram
+#: model:ir.model.fields.selection,name:mail_telegram.selection__res_users_settings__telegram_notify_chats__always
+#: model:ir.model.fields.selection,name:mail_telegram.selection__res_users_settings__telegram_notify_inbox__always
+msgid "Always"
+msgstr ""
+
+#. module: mail_telegram
+#: model_terms:ir.ui.view,arch_db:mail_telegram.telegram_mirror_view_search
+msgid "Archived"
+msgstr ""
+
+#. module: mail_telegram
+#: model:ir.model.fields,field_description:mail_telegram.field_telegram_mirror__bot_id
+#: model:ir.model.fields,field_description:mail_telegram.field_wizard_telegram_group_link__bot_id
+msgid "Bot"
+msgstr ""
+
+#. module: mail_telegram
+#. odoo-python
+#: code:addons/mail_telegram/models/telegram_handler_mail.py:0
+msgid "Cancel"
+msgstr ""
+
+#. module: mail_telegram
+#: model:ir.model.fields,field_description:mail_telegram.field_wizard_telegram_group_link__channel_id
+#: model:ir.model.fields.selection,name:mail_telegram.selection__telegram_mirror__kind__broadcast
+msgid "Channel"
+msgstr ""
+
+#. module: mail_telegram
+#: model:ir.model.fields,field_description:mail_telegram.field_discuss_channel__channel_type
+msgid "Channel Type"
+msgstr ""
+
+#. module: mail_telegram
+#: model:ir.model.fields,field_description:mail_telegram.field_telegram_mirror__chat_id
+msgid "Chat"
+msgstr ""
+
+#. module: mail_telegram
+#: model:ir.model.fields,help:mail_telegram.field_discuss_channel__channel_type
+msgid ""
+"Chat is private and unique between 2 persons. Group is private among invited"
+" persons. Channel can be freely joined (depending on its configuration)."
+msgstr ""
+
+#. module: mail_telegram
+#. odoo-python
+#: code:addons/mail_telegram/models/telegram_inbox.py:0
+msgid "Chats"
+msgstr ""
+
+#. module: mail_telegram
+#. odoo-python
+#: code:addons/mail_telegram/wizards/wizard_telegram_group_link.py:0
+msgid "Choose the channel to publish."
+msgstr ""
+
+#. module: mail_telegram
+#: model_terms:ir.ui.view,arch_db:mail_telegram.wizard_telegram_group_link_view_form
+msgid "Close"
+msgstr ""
+
+#. module: mail_telegram
+#: model:ir.model.fields,field_description:mail_telegram.field_wizard_telegram_group_link__command
+msgid "Command"
+msgstr ""
+
+#. module: mail_telegram
+#: model:ir.model.fields,help:mail_telegram.field_telegram_message__display_name
+msgid "Computed display name with message preview"
+msgstr ""
+
+#. module: mail_telegram
+#. odoo-python
+#: code:addons/mail_telegram/models/telegram_handler_mail.py:0
+msgid "Connect Telegram to Odoo first."
+msgstr ""
+
+#. module: mail_telegram
+#. odoo-javascript
+#. odoo-python
+#: code:addons/mail_telegram/models/mixin_mail_thread.py:0
+#: code:addons/mail_telegram/static/src/discuss/core/public_web/thread_actions.js:0
+#: model:ir.actions.act_window,name:mail_telegram.action_wizard_telegram_group_link
+#: model:ir.model,name:mail_telegram.model_wizard_telegram_group_link
+#: model:ir.ui.menu,name:mail_telegram.menu_telegram_group_link
+msgid "Connect a Telegram Group"
+msgstr ""
+
+#. module: mail_telegram
+#: model_terms:ir.actions.act_window,help:mail_telegram.action_telegram_mirror
+msgid "Connect one from Discuss or with Connect a Telegram Group."
+msgstr ""
+
+#. module: mail_telegram
+#. odoo-python
+#: code:addons/mail_telegram/models/telegram_inbox.py:0
+msgid "Connect this Telegram account to your Odoo user first."
+msgstr ""
+
+#. module: mail_telegram
+#. odoo-python
+#: code:addons/mail_telegram/wizards/wizard_telegram_group_link.py:0
+msgid ""
+"Connect your own Telegram to %(bot)s first (My Preferences): the group is "
+"connected by you, from that account."
+msgstr ""
+
+#. module: mail_telegram
+#. odoo-python
+#: code:addons/mail_telegram/models/telegram_handler_mirror.py:0
+msgid "Connected to the Telegram group %(title)s by %(user)s."
+msgstr ""
+
+#. module: mail_telegram
+#: model:ir.model.fields,help:mail_telegram.field_telegram_bot__notify_mail
+msgid ""
+"Connected users receive their Odoo notifications and chats through this bot,"
+" and their replies are posted back."
+msgstr ""
+
+#. module: mail_telegram
+#. odoo-python
+#: code:addons/mail_telegram/models/telegram_handler_mirror.py:0
+msgid "Connected: this group is %(name)s in Odoo."
+msgstr ""
+
+#. module: mail_telegram
+#. odoo-python
+#: code:addons/mail_telegram/models/telegram_handler_mirror.py:0
+msgid ""
+"Connected: what is posted in %(name)s in Odoo is now published in the "
+"channel %(title)s."
+msgstr ""
+
+#. module: mail_telegram
+#: model_terms:ir.ui.view,arch_db:mail_telegram.wizard_telegram_group_link_view_form
+msgid "Create Link"
+msgstr ""
+
+#. module: mail_telegram
+#: model:ir.model.fields,field_description:mail_telegram.field_telegram_mirror__create_uid
+#: model:ir.model.fields,field_description:mail_telegram.field_wizard_telegram_group_link__create_uid
+msgid "Created by"
+msgstr ""
+
+#. module: mail_telegram
+#: model:ir.model.fields,field_description:mail_telegram.field_telegram_mirror__create_date
+#: model:ir.model.fields,field_description:mail_telegram.field_wizard_telegram_group_link__create_date
+msgid "Created on"
+msgstr ""
+
+#. module: mail_telegram
+#: model:ir.model.fields,field_description:mail_telegram.field_telegram_bot__notify_mail
+msgid "Deliver Odoo Notifications"
+msgstr ""
+
+#. module: mail_telegram
+#: model:ir.model.fields,help:mail_telegram.field_res_users__telegram_notify_chats
+#: model:ir.model.fields,help:mail_telegram.field_res_users_settings__telegram_notify_chats
+msgid "Direct messages and group chats."
+msgstr ""
+
+#. module: mail_telegram
+#: model:ir.model.fields,help:mail_telegram.field_res_users__telegram_notify_channels
+#: model:ir.model.fields,help:mail_telegram.field_res_users_settings__telegram_notify_channels
+msgid "Discuss channels. A muted channel sends nothing."
+msgstr ""
+
+#. module: mail_telegram
+#: model:ir.model,name:mail_telegram.model_discuss_channel
+msgid "Discussion Channel"
+msgstr ""
+
+#. module: mail_telegram
+#: model:ir.model.fields,field_description:mail_telegram.field_discuss_channel__display_name
+#: model:ir.model.fields,field_description:mail_telegram.field_mail_message__display_name
+#: model:ir.model.fields,field_description:mail_telegram.field_mixin_mail_thread__display_name
+#: model:ir.model.fields,field_description:mail_telegram.field_mixin_telegram_handler__display_name
+#: model:ir.model.fields,field_description:mail_telegram.field_res_users__display_name
+#: model:ir.model.fields,field_description:mail_telegram.field_res_users_settings__display_name
+#: model:ir.model.fields,field_description:mail_telegram.field_telegram_bot__display_name
+#: model:ir.model.fields,field_description:mail_telegram.field_telegram_handler_mail__display_name
+#: model:ir.model.fields,field_description:mail_telegram.field_telegram_handler_mirror__display_name
+#: model:ir.model.fields,field_description:mail_telegram.field_telegram_inbox__display_name
+#: model:ir.model.fields,field_description:mail_telegram.field_telegram_message__display_name
+#: model:ir.model.fields,field_description:mail_telegram.field_telegram_mirror__display_name
+#: model:ir.model.fields,field_description:mail_telegram.field_wizard_telegram_group_link__display_name
+msgid "Display Name"
+msgstr ""
+
+#. module: mail_telegram
+#: model:ir.model,name:mail_telegram.model_mixin_mail_thread
+msgid "Email Thread"
+msgstr ""
+
+#. module: mail_telegram
+#: model:ir.model.fields.selection,name:mail_telegram.selection__res_users_settings__telegram_notify_channels__all
+msgid "Every message"
+msgstr ""
+
+#. module: mail_telegram
+#: model:ir.model.fields.selection,name:mail_telegram.selection__telegram_mirror__kind__topic
+msgid "Forum Topic"
+msgstr ""
+
+#. module: mail_telegram
+#: model:ir.model.fields.selection,name:mail_telegram.selection__telegram_mirror__kind__group
+msgid "Group"
+msgstr ""
+
+#. module: mail_telegram
+#: model:ir.model.fields,help:mail_telegram.field_res_users__telegram_grace_seconds
+#: model:ir.model.fields,help:mail_telegram.field_res_users_settings__telegram_grace_seconds
+msgid ""
+"How long a message waits before it goes to Telegram. Read in Odoo meanwhile,"
+" or while you are online, it is not sent."
+msgstr ""
+
+#. module: mail_telegram
+#. odoo-python
+#: code:addons/mail_telegram/models/telegram_handler_mail.py:0
+msgid "I cannot turn voice notes into text here: please type it."
+msgstr ""
+
+#. module: mail_telegram
+#: model:ir.model.fields,field_description:mail_telegram.field_discuss_channel__id
+#: model:ir.model.fields,field_description:mail_telegram.field_mail_message__id
+#: model:ir.model.fields,field_description:mail_telegram.field_mixin_mail_thread__id
+#: model:ir.model.fields,field_description:mail_telegram.field_mixin_telegram_handler__id
+#: model:ir.model.fields,field_description:mail_telegram.field_res_users__id
+#: model:ir.model.fields,field_description:mail_telegram.field_res_users_settings__id
+#: model:ir.model.fields,field_description:mail_telegram.field_telegram_bot__id
+#: model:ir.model.fields,field_description:mail_telegram.field_telegram_handler_mail__id
+#: model:ir.model.fields,field_description:mail_telegram.field_telegram_handler_mirror__id
+#: model:ir.model.fields,field_description:mail_telegram.field_telegram_inbox__id
+#: model:ir.model.fields,field_description:mail_telegram.field_telegram_message__id
+#: model:ir.model.fields,field_description:mail_telegram.field_telegram_mirror__id
+#: model:ir.model.fields,field_description:mail_telegram.field_wizard_telegram_group_link__id
+msgid "ID"
+msgstr ""
+
+#. module: mail_telegram
+#: model:ir.model.fields,field_description:mail_telegram.field_telegram_mirror__kind
+msgid "Kind"
+msgstr ""
+
+#. module: mail_telegram
+#: model:ir.model.fields,field_description:mail_telegram.field_telegram_mirror__write_uid
+#: model:ir.model.fields,field_description:mail_telegram.field_wizard_telegram_group_link__write_uid
+msgid "Last Updated by"
+msgstr ""
+
+#. module: mail_telegram
+#: model:ir.model.fields,field_description:mail_telegram.field_telegram_mirror__write_date
+#: model:ir.model.fields,field_description:mail_telegram.field_wizard_telegram_group_link__write_date
+msgid "Last Updated on"
+msgstr ""
+
+#. module: mail_telegram
+#: model:ir.model.fields,field_description:mail_telegram.field_wizard_telegram_group_link__link
+msgid "Link"
+msgstr ""
+
+#. module: mail_telegram
+#. odoo-python
+#: code:addons/mail_telegram/models/telegram_inbox.py:0
+msgid "Log note"
+msgstr ""
+
+#. module: mail_telegram
+#: model:ir.model.fields,field_description:mail_telegram.field_telegram_message__mail_message_id
+msgid "Mail Message"
+msgstr ""
+
+#. module: mail_telegram
+#. odoo-python
+#: code:addons/mail_telegram/models/telegram_handler_mirror.py:0
+msgid ""
+"Make the bot an administrator of the group, or turn its privacy mode off "
+"with @BotFather, or it only sees commands and replies to it."
+msgstr ""
+
+#. module: mail_telegram
+#: model:ir.model,name:mail_telegram.model_mail_message
+msgid "Message"
+msgstr ""
+
+#. module: mail_telegram
+#: model:ir.model.fields.selection,name:mail_telegram.selection__wizard_telegram_group_link__purpose__group
+msgid "Mirror a Telegram group"
+msgstr ""
+
+#. module: mail_telegram
+#: model:ir.actions.act_window,name:mail_telegram.action_telegram_mirror
+#: model:ir.ui.menu,name:mail_telegram.menu_telegram_mirrors
+msgid "Mirrored Groups"
+msgstr ""
+
+#. module: mail_telegram
+#: model:ir.model.fields,field_description:mail_telegram.field_telegram_mirror__res_model
+#: model:ir.model.fields,field_description:mail_telegram.field_wizard_telegram_group_link__res_model
+msgid "Model"
+msgstr ""
+
+#. module: mail_telegram
+#. odoo-python
+#: code:addons/mail_telegram/wizards/wizard_telegram_group_link.py:0
+msgid "Name the new channel."
+msgstr ""
+
+#. module: mail_telegram
+#: model:ir.model.fields.selection,name:mail_telegram.selection__res_users_settings__telegram_notify_channels__never
+#: model:ir.model.fields.selection,name:mail_telegram.selection__res_users_settings__telegram_notify_chats__never
+#: model:ir.model.fields.selection,name:mail_telegram.selection__res_users_settings__telegram_notify_inbox__never
+msgid "Never"
+msgstr ""
+
+#. module: mail_telegram
+#: model:ir.model.fields,field_description:mail_telegram.field_wizard_telegram_group_link__name
+msgid "New Channel"
+msgstr ""
+
+#. module: mail_telegram
+#. odoo-javascript
+#: code:addons/mail_telegram/static/src/core/public_web/messaging_menu_model_patch.js:0
+msgid "No Telegram group is connected yet."
+msgstr ""
+
+#. module: mail_telegram
+#: model_terms:ir.actions.act_window,help:mail_telegram.action_telegram_mirror
+msgid "No Telegram group is mirrored in Odoo yet"
+msgstr ""
+
+#. module: mail_telegram
+#. odoo-python
+#: code:addons/mail_telegram/models/telegram_inbox.py:0
+msgid "No unread chats."
+msgstr ""
+
+#. module: mail_telegram
+#. odoo-python
+#: code:addons/mail_telegram/models/telegram_inbox.py:0
+msgid "No unread notifications."
+msgstr ""
+
+#. module: mail_telegram
+#. odoo-python
+#: code:addons/mail_telegram/models/telegram_inbox.py:0
+msgid "Notifications"
+msgstr ""
+
+#. module: mail_telegram
+#: model:ir.model.fields,help:mail_telegram.field_res_users__telegram_notify_inbox
+#: model:ir.model.fields,help:mail_telegram.field_res_users_settings__telegram_notify_inbox
+msgid "Notifications of records you follow or are mentioned on."
+msgstr ""
+
+#. module: mail_telegram
+#. odoo-python
+#: code:addons/mail_telegram/models/telegram_handler_mail.py:0
+msgid "Odoo Notifications"
+msgstr ""
+
+#. module: mail_telegram
+#: model:ir.model.fields,field_description:mail_telegram.field_telegram_message__mail_away_only
+msgid "Only While Away"
+msgstr ""
+
+#. module: mail_telegram
+#. odoo-python
+#: code:addons/mail_telegram/wizards/wizard_telegram_group_link.py:0
+msgid "Only a member of %(channel)s can connect it."
+msgstr ""
+
+#. module: mail_telegram
+#. odoo-python
+#: code:addons/mail_telegram/models/telegram_handler_mail.py:0
+msgid "Only text, photos and documents can be posted to Odoo."
+msgstr ""
+
+#. module: mail_telegram
+#: model:ir.model.fields.selection,name:mail_telegram.selection__res_users_settings__telegram_notify_channels__mentions
+msgid "Only when I am mentioned"
+msgstr ""
+
+#. module: mail_telegram
+#. odoo-python
+#: code:addons/mail_telegram/models/mixin_mail_thread.py:0
+#: code:addons/mail_telegram/models/telegram_inbox.py:0
+msgid "Open in Odoo"
+msgstr ""
+
+#. module: mail_telegram
+#: model_terms:ir.ui.view,arch_db:mail_telegram.wizard_telegram_group_link_view_form
+msgid ""
+"Open this link in Telegram and choose the group. Add the bot\n"
+"                        from your own connected Telegram account, as an administrator\n"
+"                        of the group. The link works once, for the next 30 minutes."
+msgstr ""
+
+#. module: mail_telegram
+#: model_terms:ir.ui.view,arch_db:mail_telegram.wizard_telegram_group_link_view_form
+msgid ""
+"Open this link in Telegram to add the bot to your channel as an\n"
+"                        administrator that may post, edit and delete messages:"
+msgstr ""
+
+#. module: mail_telegram
+#: model:ir.model.fields.selection,name:mail_telegram.selection__wizard_telegram_group_link__purpose__broadcast
+msgid "Publish to a Telegram channel"
+msgstr ""
+
+#. module: mail_telegram
+#. odoo-python
+#: code:addons/mail_telegram/models/telegram_handler_mirror.py:0
+msgid "Published to the Telegram channel %(title)s by %(user)s."
+msgstr ""
+
+#. module: mail_telegram
+#: model:ir.model.fields,field_description:mail_telegram.field_wizard_telegram_group_link__purpose
+msgid "Purpose"
+msgstr ""
+
+#. module: mail_telegram
+#: model:ir.model.fields,field_description:mail_telegram.field_telegram_message__recipient_partner_id
+msgid "Recipient Partner"
+msgstr ""
+
+#. module: mail_telegram
+#: model:ir.model.fields,field_description:mail_telegram.field_telegram_mirror__res_id
+#: model:ir.model.fields,field_description:mail_telegram.field_wizard_telegram_group_link__res_id
+#: model:ir.model.fields.selection,name:mail_telegram.selection__telegram_mirror__kind__record
+#: model_terms:ir.ui.view,arch_db:mail_telegram.wizard_telegram_group_link_view_form
+msgid "Record"
+msgstr ""
+
+#. module: mail_telegram
+#: model:ir.model.fields,field_description:mail_telegram.field_wizard_telegram_group_link__record_name
+msgid "Record Name"
+msgstr ""
+
+#. module: mail_telegram
+#. odoo-python
+#: code:addons/mail_telegram/wizards/wizard_telegram_group_link.py:0
+msgid ""
+"Register the bot's webhook first: Telegram then tells Odoo the bot's "
+"username, which the link needs."
+msgstr ""
+
+#. module: mail_telegram
+#. odoo-python
+#: code:addons/mail_telegram/models/telegram_inbox.py:0
+msgid "Send"
+msgstr ""
+
+#. module: mail_telegram
+#: model:ir.model.fields,help:mail_telegram.field_telegram_message__mail_away_only
+msgid "Sent only if its recipient is not online in Odoo when it is due."
+msgstr ""
+
+#. module: mail_telegram
+#. odoo-python
+#: code:addons/mail_telegram/models/telegram_inbox.py:0
+msgid "Something went wrong. Try again."
+msgstr ""
+
+#. module: mail_telegram
+#. odoo-javascript
+#: code:addons/mail_telegram/static/src/core/common/thread_icon_patch.xml:0
+#: code:addons/mail_telegram/static/src/core/public_web/messaging_menu_model_patch.js:0
+msgid "Telegram"
+msgstr ""
+
+#. module: mail_telegram
+#: model:ir.model,name:mail_telegram.model_telegram_bot
+msgid "Telegram Bot Configuration"
+msgstr ""
+
+#. module: mail_telegram
+#: model:ir.model.fields.selection,name:mail_telegram.selection__discuss_channel__channel_type__telegram
+msgid "Telegram Group"
+msgstr ""
+
+#. module: mail_telegram
+#: model:ir.model,name:mail_telegram.model_mixin_telegram_handler
+msgid "Telegram Handler"
+msgstr ""
+
+#. module: mail_telegram
+#: model:ir.model,name:mail_telegram.model_telegram_inbox
+msgid "Telegram Inbox"
+msgstr ""
+
+#. module: mail_telegram
+#: model:ir.model,name:mail_telegram.model_telegram_message
+#: model:ir.model.fields,field_description:mail_telegram.field_mail_mail__telegram_message_ids
+#: model:ir.model.fields,field_description:mail_telegram.field_mail_message__telegram_message_ids
+msgid "Telegram Message"
+msgstr ""
+
+#. module: mail_telegram
+#: model:ir.model,name:mail_telegram.model_telegram_mirror
+msgid "Telegram Mirror"
+msgstr ""
+
+#. module: mail_telegram
+#: model:ir.model.fields,field_description:mail_telegram.field_res_users__telegram_notify_channels
+#: model:ir.model.fields,field_description:mail_telegram.field_res_users_settings__telegram_notify_channels
+msgid "Telegram: Channels"
+msgstr ""
+
+#. module: mail_telegram
+#: model:ir.model.fields,field_description:mail_telegram.field_res_users__telegram_notify_chats
+#: model:ir.model.fields,field_description:mail_telegram.field_res_users_settings__telegram_notify_chats
+msgid "Telegram: Chats"
+msgstr ""
+
+#. module: mail_telegram
+#: model:ir.model,name:mail_telegram.model_telegram_handler_mirror
+msgid "Telegram: Mirrored Groups"
+msgstr ""
+
+#. module: mail_telegram
+#: model:ir.model.fields,field_description:mail_telegram.field_res_users__telegram_notify_inbox
+#: model:ir.model.fields,field_description:mail_telegram.field_res_users_settings__telegram_notify_inbox
+msgid "Telegram: Notifications"
+msgstr ""
+
+#. module: mail_telegram
+#: model:ir.model,name:mail_telegram.model_telegram_handler_mail
+msgid "Telegram: Odoo Notifications and Replies"
+msgstr ""
+
+#. module: mail_telegram
+#: model:ir.model.fields,field_description:mail_telegram.field_res_users__telegram_grace_seconds
+#: model:ir.model.fields,field_description:mail_telegram.field_res_users_settings__telegram_grace_seconds
+msgid "Telegram: Wait Before Sending (seconds)"
+msgstr ""
+
+#. module: mail_telegram
+#: model:ir.model.fields,help:mail_telegram.field_wizard_telegram_group_link__channel_id
+msgid ""
+"The Discuss channel connected. Empty for a group: a new one, named below."
+msgstr ""
+
+#. module: mail_telegram
+#: model:ir.model.fields,help:mail_telegram.field_telegram_message__mail_message_id
+msgid ""
+"The Odoo message this Telegram message carries: sent as a notification, or "
+"posted from a reply."
+msgstr ""
+
+#. module: mail_telegram
+#. odoo-python
+#: code:addons/mail_telegram/models/telegram_handler_mirror.py:0
+msgid ""
+"The bot was removed from the Telegram group %(title)s: messages no longer "
+"reach it."
+msgstr ""
+
+#. module: mail_telegram
+#: model:ir.model.fields,help:mail_telegram.field_telegram_mirror__thread_uid
+msgid ""
+"The forum topic mirrored, empty for the group itself (in a forum, its "
+"General topic)."
+msgstr ""
+
+#. module: mail_telegram
+#. odoo-python
+#: code:addons/mail_telegram/models/telegram_handler_mail.py:0
+msgid ""
+"The inbox opens inside Telegram only while Odoo is served over https. Ask "
+"your administrator."
+msgstr ""
+
+#. module: mail_telegram
+#: model_terms:ir.ui.view,arch_db:mail_telegram.wizard_telegram_group_link_view_form
+msgid ""
+"Then post this in the channel, from your own connected\n"
+"                        Telegram account. The bot deletes it at once. It works once,\n"
+"                        for the next 30 minutes."
+msgstr ""
+
+#. module: mail_telegram
+#: model:ir.model.fields,field_description:mail_telegram.field_telegram_mirror__thread_uid
+msgid "Topic"
+msgstr ""
+
+#. module: mail_telegram
+#. odoo-python
+#: code:addons/mail_telegram/models/telegram_handler_mirror.py:0
+msgid "Topic %s"
+msgstr ""
+
+#. module: mail_telegram
+#. odoo-javascript
+#: code:addons/mail_telegram/static/src/core/public_web/messaging_menu_model_patch.js:0
+msgid "Unread"
+msgstr ""
+
+#. module: mail_telegram
+#: model:ir.model,name:mail_telegram.model_res_users
+msgid "User"
+msgstr ""
+
+#. module: mail_telegram
+#: model:ir.model,name:mail_telegram.model_res_users_settings
+msgid "User Settings"
+msgstr ""
+
+#. module: mail_telegram
+#. odoo-python
+#: code:addons/mail_telegram/models/telegram_handler_mirror.py:0
+msgid "What this link connected no longer exists in Odoo."
+msgstr ""
+
+#. module: mail_telegram
+#: model:ir.model.fields,help:mail_telegram.field_wizard_telegram_group_link__command
+msgid "What to post in the Telegram channel to connect it."
+msgstr ""
+
+#. module: mail_telegram
+#. odoo-python
+#: code:addons/mail_telegram/models/telegram_handler_mail.py:0
+msgid "Where should I post it? Reply to a notification to skip this."
+msgstr ""
+
+#. module: mail_telegram
+#: model:ir.model.fields.selection,name:mail_telegram.selection__res_users_settings__telegram_notify_chats__away
+#: model:ir.model.fields.selection,name:mail_telegram.selection__res_users_settings__telegram_notify_inbox__away
+msgid "While I am away from Odoo"
+msgstr ""
+
+#. module: mail_telegram
+#: model:ir.model.fields,help:mail_telegram.field_telegram_message__recipient_partner_id
+msgid "Whose notification it is."
+msgstr ""
+
+#. module: mail_telegram
+#. odoo-python
+#: code:addons/mail_telegram/models/telegram_inbox.py:0
+msgid "Write a message…"
+msgstr ""
+
+#. module: mail_telegram
+#. odoo-python
+#: code:addons/mail_telegram/models/telegram_handler_mail.py:0
+msgid "You can no longer write on that conversation in Odoo."
+msgstr ""
+
+#. module: mail_telegram
+#. odoo-python
+#: code:addons/mail_telegram/models/telegram_handler_mail.py:0
+msgid "You may read that conversation in Odoo but not write on it."
+msgstr ""
+
+#. module: mail_telegram
+#. odoo-python
+#: code:addons/mail_telegram/models/telegram_handler_mail.py:0
+msgid "Your Odoo notifications and chats, inside Telegram:"
+msgstr ""
+
+#. module: mail_telegram
+#. odoo-python
+#: code:addons/mail_telegram/models/telegram_handler_mail.py:0
+msgid "✉️ Message to followers"
+msgstr ""
+
+#. module: mail_telegram
+#. odoo-python
+#: code:addons/mail_telegram/models/mixin_mail_thread.py:0
+msgid "✓ Mark as read"
+msgstr ""
+
+#. module: mail_telegram
+#. odoo-python
+#: code:addons/mail_telegram/models/telegram_handler_mail.py:0
+msgid "✓ Posted on %(thread)s"
+msgstr ""
+
+#. module: mail_telegram
+#. odoo-python
+#: code:addons/mail_telegram/models/telegram_handler_mail.py:0
+msgid "✓ Read"
+msgstr ""
+
+#. module: mail_telegram
+#. odoo-python
+#: code:addons/mail_telegram/models/telegram_handler_mail.py:0
+msgid "📝 Internal note"
+msgstr ""
+
+#. module: mail_telegram
+#. odoo-python
+#: code:addons/mail_telegram/models/telegram_handler_mail.py:0
+msgid "📥 Inbox"
+msgstr ""

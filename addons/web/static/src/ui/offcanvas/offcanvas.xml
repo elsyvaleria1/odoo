@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="web.Offcanvas">
+        <div t-ref="this.panelRef" popover="auto" tabindex="-1"
+            t-att-id="this.props.id"
+            t-att-role="this.props.role or undefined"
+            t-att-aria-label="this.props.ariaLabel"
+            t-att-aria-labelledby="this.props.ariaLabelledBy"
+            t-att-class="this.classObj">
+            <t t-call-slot="default"/>
+        </div>
+    </t>
+
+</templates>

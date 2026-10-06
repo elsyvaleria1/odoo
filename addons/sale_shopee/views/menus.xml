@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <menuitem
+        id="root_menu"
+        name="Shopee"
+        parent="sale.menu_sale_config"
+        sequence="43"
+        groups="sale.group_sale_manager">
+        <menuitem
+            id="accounts_menu"
+            name="Accounts"
+            action="action_shopee_account_list"
+            sequence="10" />
+        <menuitem
+            id="items_menu"
+            name="Shopee Items"
+            action="sale_shopee_item_action"
+            sequence="20" />
+    </menuitem>
+
+</odoo>

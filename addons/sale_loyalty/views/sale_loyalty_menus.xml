@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <menuitem
+        id="menu_discount_loyalty_type_config"
+        parent="sale.product_menu_catalog"
+        action="loyalty.loyalty_program_discount_loyalty_action"
+        sequence="40"
+        groups="sale.group_sale_manager" />
+
+    <menuitem
+        id="menu_gift_ewallet_type_config"
+        parent="sale.product_menu_catalog"
+        action="loyalty.loyalty_program_gift_ewallet_action"
+        sequence="50"
+        groups="sale.group_sale_manager" />
+
+</odoo>

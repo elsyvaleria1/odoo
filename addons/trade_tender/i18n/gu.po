@@ -1,0 +1,488 @@
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-09-26 23:11+0000\n"
+"PO-Revision-Date: 2026-09-26 23:11+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: gu\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: trade_tender
+#: model:ir.model.fields,field_description:trade_tender.field_mixin_tender__message_needaction
+msgid "Action Needed"
+msgstr "Action Needed"
+
+#. module: trade_tender
+#: model:ir.model.fields,field_description:trade_tender.field_mixin_tender__activity_ids
+msgid "Activities"
+msgstr "Activities"
+
+#. module: trade_tender
+#: model:ir.model.fields,field_description:trade_tender.field_mixin_tender__activity_exception_decoration
+msgid "Activity Exception Decoration"
+msgstr "Activity Exception Decoration"
+
+#. module: trade_tender
+#: model:ir.model.fields,field_description:trade_tender.field_mixin_tender__activity_state
+msgid "Activity State"
+msgstr "Activity State"
+
+#. module: trade_tender
+#: model:ir.model.fields,field_description:trade_tender.field_mixin_tender__activity_type_icon
+msgid "Activity Type Icon"
+msgstr "Activity Type Icon"
+
+#. module: trade_tender
+#. odoo-python
+#: code:addons/trade_tender/wizards/mixin_tender_warning.py:0
+msgid "Another offer of %(tender)s was confirmed."
+msgstr ""
+
+#. module: trade_tender
+#: model:ir.model.fields,field_description:trade_tender.field_mixin_tender__message_attachment_count
+msgid "Attachment Count"
+msgstr "Attachment Count"
+
+#. module: trade_tender
+#. odoo-python
+#: code:addons/trade_tender/models/mixin_tender.py:0
+msgid ""
+"Award at least one line before awarding the tender: choose it in the "
+"comparison, or set its awarded quantity."
+msgstr ""
+
+#. module: trade_tender
+#: model:ir.model.fields,field_description:trade_tender.field_mixin_order_line_tender__qty_awarded
+#: model:ir.model.fields,field_description:trade_tender.field_mixin_tender_line__qty_awarded
+#: model:ir.model.fields.selection,name:trade_tender.selection__mixin_tender__state__awarded
+#: model:ir.model.fields.selection,name:trade_tender.selection__purchase_tender__state__awarded
+#: model:ir.model.fields.selection,name:trade_tender.selection__sale_tender__state__awarded
+msgid "Awarded"
+msgstr ""
+
+#. module: trade_tender
+#: model:ir.model.fields,field_description:trade_tender.field_mixin_order_line_tender__is_best_date
+msgid "Best Date"
+msgstr ""
+
+#. module: trade_tender
+#: model:ir.model.fields,field_description:trade_tender.field_mixin_order_line_tender__is_best_total
+msgid "Best Total"
+msgstr ""
+
+#. module: trade_tender
+#: model:ir.model.fields,field_description:trade_tender.field_mixin_order_line_tender__is_best_unit
+msgid "Best Unit Price"
+msgstr ""
+
+#. module: trade_tender
+#: model:ir.model.fields.selection,name:trade_tender.selection__mixin_tender__state__cancel
+#: model:ir.model.fields.selection,name:trade_tender.selection__purchase_tender__state__cancel
+#: model:ir.model.fields.selection,name:trade_tender.selection__sale_tender__state__cancel
+msgid "Cancelled"
+msgstr "Cancelled"
+
+#. module: trade_tender
+#: model:ir.model.fields,field_description:trade_tender.field_mixin_tender__company_id
+#: model:ir.model.fields,field_description:trade_tender.field_mixin_tender_line__company_id
+msgid "Company"
+msgstr "Company"
+
+#. module: trade_tender
+#: model:ir.model,name:trade_tender.model_mixin_tender_warning
+msgid "Confirming one offer of a tender while others are open"
+msgstr ""
+
+#. module: trade_tender
+#: model:ir.model.fields,field_description:trade_tender.field_mixin_tender_invite__copy_products
+msgid "Copy Products"
+msgstr ""
+
+#. module: trade_tender
+#: model:ir.model.fields,field_description:trade_tender.field_mixin_tender__description
+#: model:ir.model.fields,field_description:trade_tender.field_mixin_tender_line__description
+msgid "Description"
+msgstr "Description"
+
+#. module: trade_tender
+#: model:ir.model.fields,field_description:trade_tender.field_mixin_order_line_tender__display_name
+#: model:ir.model.fields,field_description:trade_tender.field_mixin_order_tender__display_name
+#: model:ir.model.fields,field_description:trade_tender.field_mixin_tender__display_name
+#: model:ir.model.fields,field_description:trade_tender.field_mixin_tender_invite__display_name
+#: model:ir.model.fields,field_description:trade_tender.field_mixin_tender_line__display_name
+#: model:ir.model.fields,field_description:trade_tender.field_mixin_tender_warning__display_name
+msgid "Display Name"
+msgstr "Display Name"
+
+#. module: trade_tender
+#: model:ir.model.fields,help:trade_tender.field_mixin_tender_invite__partner_ids
+msgid "Each invited counterparty receives its own offer to fill in."
+msgstr ""
+
+#. module: trade_tender
+#: model:ir.model.fields,field_description:trade_tender.field_mixin_tender__message_follower_ids
+msgid "Followers"
+msgstr "Followers"
+
+#. module: trade_tender
+#: model:ir.model.fields,field_description:trade_tender.field_mixin_tender__message_partner_ids
+msgid "Followers (Partners)"
+msgstr "Followers (Partners)"
+
+#. module: trade_tender
+#: model:ir.model.fields,field_description:trade_tender.field_mixin_tender__has_message
+msgid "Has Message"
+msgstr "Has Message"
+
+#. module: trade_tender
+#: model:ir.model.fields,field_description:trade_tender.field_mixin_order_line_tender__id
+#: model:ir.model.fields,field_description:trade_tender.field_mixin_order_tender__id
+#: model:ir.model.fields,field_description:trade_tender.field_mixin_tender__id
+#: model:ir.model.fields,field_description:trade_tender.field_mixin_tender_invite__id
+#: model:ir.model.fields,field_description:trade_tender.field_mixin_tender_line__id
+#: model:ir.model.fields,field_description:trade_tender.field_mixin_tender_warning__id
+msgid "ID"
+msgstr "ID"
+
+#. module: trade_tender
+#: model:ir.model.fields,field_description:trade_tender.field_mixin_tender__activity_exception_icon
+msgid "Icon"
+msgstr "Icon"
+
+#. module: trade_tender
+#: model:ir.model.fields,help:trade_tender.field_mixin_tender__activity_exception_icon
+msgid "Icon to indicate an exception activity."
+msgstr "Icon to indicate an exception activity."
+
+#. module: trade_tender
+#: model:ir.model.fields,help:trade_tender.field_mixin_tender__message_needaction
+msgid "If checked, new messages require your attention."
+msgstr "If checked, new messages require your attention."
+
+#. module: trade_tender
+#: model:ir.model.fields,help:trade_tender.field_mixin_tender__message_has_error
+#: model:ir.model.fields,help:trade_tender.field_mixin_tender__message_has_sms_error
+msgid "If checked, some messages have a delivery error."
+msgstr "If checked, some messages have a delivery error."
+
+#. module: trade_tender
+#: model:ir.model,name:trade_tender.model_mixin_tender_invite
+msgid "Invite counterparties to a tender"
+msgstr ""
+
+#. module: trade_tender
+#. odoo-python
+#: code:addons/trade_tender/models/mixin_tender.py:0
+msgid "Invite to %(tender)s"
+msgstr ""
+
+#. module: trade_tender
+#. odoo-python
+#: code:addons/trade_tender/models/mixin_tender.py:0
+msgid "Invite to the tender"
+msgstr ""
+
+#. module: trade_tender
+#: model:ir.model.fields,field_description:trade_tender.field_mixin_tender_invite__partner_ids
+msgid "Invited"
+msgstr ""
+
+#. module: trade_tender
+#. odoo-python
+#: code:addons/trade_tender/wizards/mixin_tender_invite.py:0
+msgid "Invited Offers"
+msgstr ""
+
+#. module: trade_tender
+#: model:ir.model.fields,field_description:trade_tender.field_mixin_tender__message_is_follower
+msgid "Is Follower"
+msgstr "Is Follower"
+
+#. module: trade_tender
+#: model:ir.model.fields,field_description:trade_tender.field_mixin_tender__is_overdue
+msgid "Is Overdue"
+msgstr ""
+
+#. module: trade_tender
+#: model:ir.model.fields,field_description:trade_tender.field_mixin_tender__message_has_error
+msgid "Message Delivery error"
+msgstr "Message Delivery error"
+
+#. module: trade_tender
+#: model:ir.model.fields,field_description:trade_tender.field_mixin_tender__message_ids
+msgid "Messages"
+msgstr "Messages"
+
+#. module: trade_tender
+#: model:ir.model.fields,field_description:trade_tender.field_mixin_tender__my_activity_date_deadline
+msgid "My Activity Deadline"
+msgstr "My Activity Deadline"
+
+#. module: trade_tender
+#: model:ir.model.fields,field_description:trade_tender.field_mixin_tender_line__product_qty
+msgid "Needed"
+msgstr ""
+
+#. module: trade_tender
+#: model:ir.model.fields,field_description:trade_tender.field_mixin_tender_line__date_needed
+msgid "Needed By"
+msgstr ""
+
+#. module: trade_tender
+#: model:ir.model.fields,field_description:trade_tender.field_mixin_tender__line_ids
+msgid "Needs"
+msgstr ""
+
+#. module: trade_tender
+#. odoo-python
+#: code:addons/trade_tender/models/mixin_tender.py:0
+msgid "New"
+msgstr "નવું"
+
+#. module: trade_tender
+#: model:ir.model.fields,field_description:trade_tender.field_mixin_tender__activity_date_deadline
+msgid "Next Activity Deadline"
+msgstr "Next Activity Deadline"
+
+#. module: trade_tender
+#: model:ir.model.fields,field_description:trade_tender.field_mixin_tender__activity_summary
+msgid "Next Activity Summary"
+msgstr "Next Activity Summary"
+
+#. module: trade_tender
+#: model:ir.model.fields,field_description:trade_tender.field_mixin_tender__activity_type_id
+msgid "Next Activity Type"
+msgstr "Next Activity Type"
+
+#. module: trade_tender
+#. odoo-python
+#: code:addons/trade_tender/models/mixin_tender.py:0
+msgid "Not awarded in %(tender)s."
+msgstr ""
+
+#. module: trade_tender
+#: model:ir.model.fields,field_description:trade_tender.field_mixin_tender__message_needaction_counter
+msgid "Number of Actions"
+msgstr "Number of Actions"
+
+#. module: trade_tender
+#: model:ir.model.fields,field_description:trade_tender.field_mixin_tender__message_has_error_counter
+msgid "Number of errors"
+msgstr "Number of errors"
+
+#. module: trade_tender
+#: model:ir.model.fields,help:trade_tender.field_mixin_tender__message_needaction_counter
+msgid "Number of messages requiring action"
+msgstr ""
+
+#. module: trade_tender
+#: model:ir.model.fields,help:trade_tender.field_mixin_tender__message_has_error_counter
+msgid "Number of messages with delivery error"
+msgstr "Number of messages with delivery error"
+
+#. module: trade_tender
+#: model:ir.model.fields,field_description:trade_tender.field_mixin_tender__order_count
+msgid "Offer Count"
+msgstr ""
+
+#. module: trade_tender
+#: model:ir.model.fields,field_description:trade_tender.field_mixin_tender__order_ids
+#: model:ir.model.fields,field_description:trade_tender.field_mixin_tender_line__offer_count
+msgid "Offers"
+msgstr ""
+
+#. module: trade_tender
+#: model:ir.model.fields,field_description:trade_tender.field_mixin_tender__date_deadline
+msgid "Offers Due"
+msgstr ""
+
+#. module: trade_tender
+#: model:ir.model.fields,field_description:trade_tender.field_mixin_tender_warning__order_ids
+msgid "Offers to Confirm"
+msgstr ""
+
+#. module: trade_tender
+#. odoo-python
+#: code:addons/trade_tender/models/mixin_tender.py:0
+msgid "Only an open tender can be awarded."
+msgstr ""
+
+#. module: trade_tender
+#: model:ir.model.fields.selection,name:trade_tender.selection__mixin_tender__state__open
+#: model:ir.model.fields.selection,name:trade_tender.selection__purchase_tender__state__open
+#: model:ir.model.fields.selection,name:trade_tender.selection__sale_tender__state__open
+msgid "Open"
+msgstr ""
+
+#. module: trade_tender
+#: model:ir.model,name:trade_tender.model_mixin_order_line_tender
+msgid "Order Line Offered in a Tender"
+msgstr ""
+
+#. module: trade_tender
+#: model:ir.model,name:trade_tender.model_mixin_order_tender
+msgid "Order Offered in a Tender"
+msgstr ""
+
+#. module: trade_tender
+#: model:ir.model.fields,field_description:trade_tender.field_mixin_tender_invite__origin_order_id
+msgid "Origin"
+msgstr ""
+
+#. module: trade_tender
+#: model:ir.model.fields,field_description:trade_tender.field_mixin_tender_warning__rival_ids
+msgid "Other Open Offers"
+msgstr ""
+
+#. module: trade_tender
+#: model:ir.model.fields,field_description:trade_tender.field_mixin_tender__website_message_ids
+msgid "Portal Messages"
+msgstr ""
+
+#. module: trade_tender
+#: model:ir.model.fields,help:trade_tender.field_mixin_tender__website_message_ids
+msgid "Portal communication history for this record."
+msgstr ""
+
+#. module: trade_tender
+#: model:ir.model.fields,field_description:trade_tender.field_mixin_tender_line__product_id
+msgid "Product"
+msgstr "Product"
+
+#. module: trade_tender
+#: model:ir.model.fields,field_description:trade_tender.field_mixin_tender__user_id
+msgid "Responsible"
+msgstr ""
+
+#. module: trade_tender
+#: model:ir.model.fields,field_description:trade_tender.field_mixin_tender__activity_user_id
+msgid "Responsible User"
+msgstr "Responsible User"
+
+#. module: trade_tender
+#: model:ir.model.fields,field_description:trade_tender.field_mixin_tender__message_has_sms_error
+msgid "SMS Delivery error"
+msgstr "SMS Delivery error"
+
+#. module: trade_tender
+#: model:ir.model.fields,field_description:trade_tender.field_mixin_tender_line__sequence
+msgid "Sequence"
+msgstr "Sequence"
+
+#. module: trade_tender
+#: model:ir.model.fields,help:trade_tender.field_mixin_tender_invite__copy_products
+msgid ""
+"Start every invited offer from the origin's lines, or from the tender's "
+"needs."
+msgstr ""
+
+#. module: trade_tender
+#: model:ir.model.fields,field_description:trade_tender.field_mixin_tender__state
+msgid "Status"
+msgstr "Status"
+
+#. module: trade_tender
+#: model:ir.model.fields,help:trade_tender.field_mixin_tender__activity_state
+msgid ""
+"Status based on activities\n"
+"Overdue: Due date is already passed\n"
+"Today: Activity date is today\n"
+"Planned: Future activities."
+msgstr ""
+"Status based on activities\n"
+"Overdue: Due date is already passed\n"
+"Today: Activity date is today\n"
+"Planned: Future activities."
+
+#. module: trade_tender
+#: model:ir.model,name:trade_tender.model_mixin_tender
+#: model:ir.model.fields,field_description:trade_tender.field_mixin_order_tender__tender_id
+#: model:ir.model.fields,field_description:trade_tender.field_mixin_tender__name
+#: model:ir.model.fields,field_description:trade_tender.field_mixin_tender_invite__tender_id
+#: model:ir.model.fields,field_description:trade_tender.field_mixin_tender_line__tender_id
+msgid "Tender"
+msgstr ""
+
+#. module: trade_tender
+#: model:ir.model,name:trade_tender.model_mixin_tender_line
+msgid "Tender Need"
+msgstr ""
+
+#. module: trade_tender
+#: model:ir.model.fields,help:trade_tender.field_mixin_tender_line__date_needed
+msgid ""
+"The date the counterparty must meet: delivery when we buy, collection when "
+"we sell."
+msgstr ""
+
+#. module: trade_tender
+#: model:ir.model.fields,help:trade_tender.field_mixin_tender_invite__origin_order_id
+msgid "The offer the invited counterparties are asked to match."
+msgstr ""
+
+#. module: trade_tender
+#: model:ir.model.fields,help:trade_tender.field_mixin_tender_line__offer_count
+msgid "The open offers that quote this product."
+msgstr ""
+
+#. module: trade_tender
+#: model:ir.model.fields,help:trade_tender.field_mixin_order_line_tender__qty_awarded
+msgid ""
+"The quantity of this offer the tender awards. Awarding the tender confirms "
+"the offers with an award at these quantities and rejects the others."
+msgstr ""
+
+#. module: trade_tender
+#: model:ir.model.fields,help:trade_tender.field_mixin_tender_invite__tender_id
+msgid ""
+"The tender whose needs the invited counterparties are asked to offer on."
+msgstr ""
+
+#. module: trade_tender
+#: model:ir.model.fields,field_description:trade_tender.field_mixin_tender_line__qty_to_award
+msgid "To Award"
+msgstr ""
+
+#. module: trade_tender
+#: model:ir.model.fields,help:trade_tender.field_mixin_tender__activity_exception_decoration
+msgid "Type of the exception activity on record."
+msgstr "Type of the exception activity on record."
+
+#. module: trade_tender
+#: model:ir.model.fields,field_description:trade_tender.field_mixin_tender_line__product_uom_id
+msgid "Unit"
+msgstr ""
+
+#. module: trade_tender
+#. odoo-python
+#: code:addons/trade_tender/models/mixin_tender.py:0
+msgid "What about the other offers of the tender?"
+msgstr ""
+
+#. module: trade_tender
+#: model:ir.model.fields,help:trade_tender.field_mixin_tender_line__description
+msgid "What the offers must match beyond the product: grade, packing, origin."
+msgstr ""
+
+#. module: trade_tender
+#: model:ir.model.fields,help:trade_tender.field_mixin_tender_line__qty_awarded
+msgid "What the offers' awarded lines give of this need, in its unit."
+msgstr ""
+
+#. module: trade_tender
+#: model:ir.model.fields,help:trade_tender.field_mixin_tender__line_ids
+msgid ""
+"What the tender asks for. Invited counterparties' offers start from these "
+"lines."
+msgstr ""
+
+#. module: trade_tender
+#: model:ir.model.fields,help:trade_tender.field_mixin_tender__date_deadline
+msgid "When the offers are due. Past it, the tender waits for its award."
+msgstr ""

@@ -1,0 +1,93 @@
+/** @odoo-module native */
+import { Component, proxy, t, useProps } from "@odoo/owl";
+import { NumericInput } from "@point_of_sale/app/components/inputs/numeric_input/numeric_input";
+import { usePos } from "@point_of_sale/app/hooks/pos_hook";
+import { compareDates, formatDate, formatValue, now } from "@web/core/l10n/dates";
+import { localization } from "@web/core/l10n/localization";
+import { _t } from "@web/core/translation";
+import { useService } from "@web/core/utils/hooks";
+import { AlertDialog, Dialog } from "@web/ui/dialog";
+
+export class EventSlotSelectionPopup extends Component {
+    static template = "pos_event.EventSlotSelectionPopup";
+    static props = {
+        getPayload: t.any(),
+        close: t.any(),
+        event: t.any(),
+        availabilityPerSlot: t.any(),
+    };
+    static components = {
+        Dialog,
+        NumericInput,
+    };
+    props = useProps(this.constructor.props);
+    setup() {
+        this.pos = usePos();
+        this.dialog = useService("dialog");
+        this.slotId = false;
+        this.state = proxy({
+            selectedSlotDisplay: "",
+        });
+    }
+    get dialogTitle() {
+        return _t("Select a slot for %(event)s", {
+            event: this.props.event.name,
+        });
+    }
+    get slots() {
+        const slots = {};
+        this.props.event.event_slot_ids.forEach((slot) => {
+            if (compareDates(slot.start_datetime, now()) < 0) {
+                return false;
+            }
+            const date = formatDate(slot.date, { format: "MMM dd yyyy, EEEE" });
+            if (!slots[date]) {
+                slots[date] = [];
+            }
+            slots[date].push({
+                availability: this.props.availabilityPerSlot[slot.id],
+                slotId: slot.id,
+                startDatetime: formatValue(
+                    slot.start_datetime,
+                    localization.timeFormat.replace(":ss", ""),
+                ),
+            });
+        });
+        return slots;
+    }
+    select(ev) {
+        this.slotId = parseInt(ev.currentTarget.dataset.slotId);
+        const selectedSlot = this.pos.models["event.slot"].get(this.slotId);
+        // Return if not available
+        if (!selectedSlot || !this.props.availabilityPerSlot[this.slotId]) {
+            return;
+        }
+        // Visually select the button and update displayed datetime
+        document.querySelectorAll(".o_event_slot_btn").forEach((btn) => {
+            btn.classList.replace("btn-primary", "btn-secondary");
+        });
+        ev.currentTarget.classList.replace("btn-secondary", "btn-primary");
+        this.state.selectedSlotDisplay = formatValue(
+            selectedSlot.start_datetime,
+            "MMM dd yyyy, EEEE, h:mm a",
+        );
+    }
+    confirm() {
+        if (!this.slotId) {
+            this.dialog.add(AlertDialog, {
+                title: "Error",
+                body: "Please select a slot.",
+            });
+            return;
+        }
+        this.props.getPayload({
+            slotAvailability: this.props.availabilityPerSlot[this.slotId],
+            slotId: this.slotId,
+            slotName: this.state.selectedSlotDisplay,
+        });
+        this.props.close();
+    }
+    cancel() {
+        this.props.close();
+    }
+}

@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="web_gantt.GanttPopover">
+        <div t-ref="this.rootRef" class="o_gantt_popover">
+            <div t-if="this.displayPopoverHeader" class="popover-header d-flex justify-content-between py-2 pe-2">
+                <h4 class="p-0 pt-1">
+                    <t t-out="this.props.title" />
+                </h4>
+                <span class="o_gantt_popover_close ms-4 mt-1 me-2 cursor-pointer" role="button" tabindex="0" t-on-click.stop="this.props.close" t-on-keydown="this.onCloseKeydown">
+                    <i class="fa-solid fa-xmark" />
+                </span>
+            </div>
+            <div class="popover-body">
+                <t t-if="this.templates.body">
+                    <t t-call="{{ this.templates.body }}" t-call-context="this.renderingContext" />
+                </t>
+                <t t-else="">
+                    <Record t-props="this.recordProps" t-slot-scope="data">
+                        <t t-component="this.props.KanbanRecord" t-props="this.kanbanRecordProps" record="data.record"/>
+                    </Record>
+                </t>
+            </div>
+            <div class="popover-footer d-flex justify-content-between">
+                <div t-if="(this.props.displayGenericButtons and this.props.buttons) or this.templates.footer" class="p-3 pt-0 d-flex gap-1">
+                    <t t-if="this.props.displayGenericButtons and this.props.buttons">
+                        <t t-foreach="this.props.buttons" t-as="button" t-key="button_index">
+                            <button t-att-class="button.class" t-on-click="() => this.onClick(button)" t-out="button.text" />
+                        </t>
+                    </t>
+                    <t t-if="this.templates.footer">
+                        <t t-call="{{ this.templates.footer }}" t-call-context="this.renderingContext" />
+                    </t>
+                </div>
+                <span t-if="!this.displayPopoverHeader" class="o_gantt_popover_close p-3 pt-0 mt-1 ms-auto cursor-pointer" role="button" tabindex="0" t-on-click.stop="this.props.close" t-on-keydown="this.onCloseKeydown">
+                    <i class="fa-solid fa-xmark" />
+                </span>
+            </div>
+        </div>
+    </t>
+
+</templates>

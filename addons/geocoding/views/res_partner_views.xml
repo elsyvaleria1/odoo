@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_crm_partner_geo_form" model="ir.ui.view">
+        <field name="name">res.partner.geolocation.inherit</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//group[@name='misc']" position="inside">
+                <label for="date_localization" string="Geo Location" />
+                <div>
+                    <span>Lat : <field name="partner_latitude" nolabel="1" class="oe_inline" /></span>
+                    <br />
+                    <span>Long: <field name="partner_longitude" nolabel="1" class="oe_inline" /></span>
+                    <br />
+                    <span invisible="not date_localization">Updated on:
+                        <field
+                            name="date_localization"
+                            nolabel="1"
+                            readonly="1"
+                            class="oe_inline" />
+                        <br />
+                    </span>
+                    <div name="geo_localize_button">
+                        <button
+                            name="geo_localize"
+                            type="object"
+                            string="Compute based on address"
+                            title="Compute Localization"
+                            icon="fa-gear"
+                            invisible="partner_latitude != 0 or partner_longitude != 0"
+                            class="btn btn-link p-0" />
+                        <button
+                            name="geo_localize"
+                            type="object"
+                            string="Refresh"
+                            title="Refresh Localization"
+                            icon="fa-refresh"
+                            invisible="partner_latitude == 0 and partner_longitude == 0"
+                            class="btn btn-link p-0" />
+                    </div>
+                </div>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

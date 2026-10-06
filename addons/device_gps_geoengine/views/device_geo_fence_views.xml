@@ -1,0 +1,473 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_device_geo_fence_search" model="ir.ui.view">
+        <field name="name">device.geo.fence.search</field>
+        <field name="model">device.geo.fence</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name" />
+                <field name="geofence_type" />
+                <field name="area_type" />
+                <field name="usage" />
+                <field name="partner_id" />
+                <filter
+                    name="active"
+                    string="Active"
+                    domain="[('active', '=', True)]" />
+                <filter
+                    name="inactive"
+                    string="Inactive"
+                    domain="[('active', '=', False)]" />
+                <separator />
+                <filter
+                    name="properties"
+                    string="Properties"
+                    domain="[('area_type', '=', 'property')]" />
+                <filter
+                    name="parcels"
+                    string="Parcels"
+                    domain="[('area_type', '=', 'parcel')]" />
+                <filter
+                    name="structures"
+                    string="Structures"
+                    domain="[('area_type', '=', 'structure')]" />
+                <separator />
+                <filter
+                    name="circle"
+                    string="Circle"
+                    domain="[('geofence_type', '=', 'circle')]" />
+                <filter
+                    name="polygon"
+                    string="Polygon"
+                    domain="[('geofence_type', '=', 'polygon')]" />
+                <filter
+                    name="rectangle"
+                    string="Rectangle"
+                    domain="[('geofence_type', '=', 'rectangle')]" />
+                <separator />
+                <filter
+                    name="alert_enter"
+                    string="Alert on Enter"
+                    domain="[('alert_on_enter', '=', True)]" />
+                <filter
+                    name="alert_exit"
+                    string="Alert on Exit"
+                    domain="[('alert_on_exit', '=', True)]" />
+                <filter
+                    name="alert_dwell"
+                    string="Alert on Dwell"
+                    domain="[('alert_on_dwell', '=', True)]" />
+                <group>
+                    <filter
+                        name="group_area_type"
+                        string="Area Type"
+                        context="{'group_by': 'area_type'}" />
+                    <filter
+                        name="group_usage"
+                        string="Usage"
+                        context="{'group_by': 'usage'}" />
+                    <filter
+                        name="group_partner"
+                        string="Contact"
+                        context="{'group_by': 'partner_id'}" />
+                    <filter
+                        name="group_type"
+                        string="Type"
+                        context="{'group_by': 'geofence_type'}" />
+                    <filter
+                        name="group_schedule"
+                        string="Schedule"
+                        context="{'group_by': 'schedule_type'}" />
+                    <filter
+                        name="group_active"
+                        string="Active"
+                        context="{'group_by': 'active'}" />
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="view_device_geo_fence_tree" model="ir.ui.view">
+        <field name="name">device.geo.fence.tree</field>
+        <field name="model">device.geo.fence</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name" />
+                <field name="area_type" optional="show" />
+                <field name="usage" optional="hide" />
+                <field name="surface" string="Ha" optional="show" />
+                <field name="partner_id" optional="show" />
+                <field name="parent_id" optional="hide" />
+                <field name="geofence_type" optional="hide" />
+                <field name="active" widget="boolean_toggle" />
+                <field name="device_count" optional="hide" />
+                <field name="devices_inside_count" optional="hide" />
+                <field name="alert_on_enter" optional="hide" />
+                <field name="alert_on_exit" optional="hide" />
+                <field name="schedule_type" optional="hide" />
+                <button
+                    name="action_view_on_map"
+                    type="object"
+                    title="View on Map"
+                    icon="fa-map-marker" />
+            </list>
+        </field>
+    </record>
+
+    <record id="view_device_geo_fence_map" model="ir.ui.view">
+        <field name="name">device.geo.fence.map</field>
+        <field name="model">device.geo.fence</field>
+        <field name="arch" type="xml">
+            <geoengine
+                editable="1"
+                limit="5000"
+                features_list="1"
+                features_list_field="name"
+                features_list_group_by="state_id">
+                <field name="name" />
+                <field name="the_geom" />
+                <field name="geofence_type" />
+                <field name="area_type" />
+                <field name="surface" />
+                <field name="device_count" />
+                <field name="devices_inside_count" />
+                <field name="color" />
+                <field name="state_id" />
+                <field name="city" />
+                <templates>
+                    <t t-name="info_box">
+                        <div class="o_kanban_card">
+                            <strong><t t-out="record.name.value" /></strong>
+                            <div><t t-out="record.area_type.value" /> - <t t-out="record.geofence_type.value" /></div>
+                            <div t-if="record.surface.raw_value"><t t-out="record.surface.value" /> ha</div>
+                            <div><t t-out="record.device_count.value" /> devices</div>
+                            <div
+                                t-if="record.devices_inside_count.raw_value &gt; 0"
+                                class="text-success">
+                                <t t-out="record.devices_inside_count.value" /> inside
+                            </div>
+                        </div>
+                    </t>
+                </templates>
+            </geoengine>
+        </field>
+    </record>
+
+    <record id="raster_layer_device_geo_fence_osm" model="geoengine.raster.layer">
+        <field name="name">OpenStreetMap</field>
+        <field name="view_id" ref="view_device_geo_fence_map" />
+        <field name="raster_type">osm</field>
+        <field name="overlay">0</field>
+        <field name="url">https://tile.openstreetmap.org/{z}/{x}/{y}.png</field>
+        <field name="sequence" eval="1" />
+    </record>
+
+    <record
+        id="raster_layer_device_geo_fence_google_sat"
+        model="geoengine.raster.layer">
+        <field name="name">Google Satellite</field>
+        <field name="view_id" ref="view_device_geo_fence_map" />
+        <field name="raster_type">xyz</field>
+        <field name="overlay">0</field>
+        <field
+            name="url">https://mt1.google.com/vt/lyrs=s&amp;x={x}&amp;y={y}&amp;z={z}</field>
+        <field name="sequence" eval="2" />
+    </record>
+
+    <record
+        id="raster_layer_device_geo_fence_google_hybrid"
+        model="geoengine.raster.layer">
+        <field name="name">Google Hybrid</field>
+        <field name="view_id" ref="view_device_geo_fence_map" />
+        <field name="raster_type">xyz</field>
+        <field name="overlay">0</field>
+        <field
+            name="url">https://mt1.google.com/vt/lyrs=y&amp;x={x}&amp;y={y}&amp;z={z}</field>
+        <field name="sequence" eval="3" />
+    </record>
+
+    <record
+        id="raster_layer_device_geo_fence_google_terrain"
+        model="geoengine.raster.layer">
+        <field name="name">Google Terrain</field>
+        <field name="view_id" ref="view_device_geo_fence_map" />
+        <field name="raster_type">xyz</field>
+        <field name="overlay">0</field>
+        <field
+            name="url">https://mt1.google.com/vt/lyrs=p&amp;x={x}&amp;y={y}&amp;z={z}</field>
+        <field name="sequence" eval="4" />
+    </record>
+
+    <record
+        id="raster_layer_device_geo_fence_esri_satellite"
+        model="geoengine.raster.layer">
+        <field name="name">ESRI Satellite</field>
+        <field name="view_id" ref="view_device_geo_fence_map" />
+        <field name="raster_type">xyz</field>
+        <field name="overlay">0</field>
+        <field
+            name="url">https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}</field>
+        <field name="sequence" eval="5" />
+    </record>
+
+    <record
+        id="raster_layer_device_geo_fence_carto_light"
+        model="geoengine.raster.layer">
+        <field name="name">CartoDB Light</field>
+        <field name="view_id" ref="view_device_geo_fence_map" />
+        <field name="raster_type">xyz</field>
+        <field name="overlay">0</field>
+        <field
+            name="url">https://cartodb-basemaps-a.global.ssl.fastly.net/light_all/{z}/{x}/{y}.png</field>
+        <field name="sequence" eval="6" />
+    </record>
+
+    <record
+        id="raster_layer_device_geo_fence_carto_dark"
+        model="geoengine.raster.layer">
+        <field name="name">CartoDB Dark</field>
+        <field name="view_id" ref="view_device_geo_fence_map" />
+        <field name="raster_type">xyz</field>
+        <field name="overlay">0</field>
+        <field
+            name="url">https://cartodb-basemaps-a.global.ssl.fastly.net/dark_all/{z}/{x}/{y}.png</field>
+        <field name="sequence" eval="7" />
+    </record>
+
+    <record id="raster_layer_device_geo_fence_topo" model="geoengine.raster.layer">
+        <field name="name">OpenTopoMap</field>
+        <field name="view_id" ref="view_device_geo_fence_map" />
+        <field name="raster_type">xyz</field>
+        <field name="overlay">0</field>
+        <field name="url">https://tile.opentopomap.org/{z}/{x}/{y}.png</field>
+        <field name="sequence" eval="8" />
+    </record>
+
+    <record
+        id="vector_layer_device_geo_fence_boundaries"
+        model="geoengine.vector.layer">
+        <field name="name">Geofence Boundaries</field>
+        <field name="view_id" ref="view_device_geo_fence_map" />
+        <field
+            name="geo_field_id"
+            ref="device_gps_geoengine.field_device_geo_fence__the_geom" />
+        <field name="geo_repr">basic</field>
+        <field name="nb_class">1</field>
+        <field name="begin_color">#22AA44</field>
+        <field name="sequence" eval="1" />
+        <field name="active_on_startup" eval="True" />
+        <field name="layer_opacity">0.6</field>
+    </record>
+
+    <record id="view_device_geo_fence_kanban" model="ir.ui.view">
+        <field name="name">device.geo.fence.kanban</field>
+        <field name="model">device.geo.fence</field>
+        <field name="arch" type="xml">
+            <kanban>
+                <field name="name" />
+                <field name="geofence_type" />
+                <field name="area_type" />
+                <field name="surface" />
+                <field name="active" />
+                <field name="device_count" />
+                <field name="devices_inside_count" />
+                <field name="color" />
+                <templates>
+                    <t t-name="card">
+                        <field name="name" class="fw-bold fs-5" />
+                        <div class="text-muted">
+                            <span class="fa-solid fa-shapes me-1" title="Type" />
+                            <field name="area_type" /> -
+                            <field name="geofence_type" />
+                        </div>
+                        <div t-if="record.surface.raw_value">
+                            <span class="fa-solid fa-map me-1" title="Surface" />
+                            <field name="surface" /> ha
+                        </div>
+                        <div>
+                            <span class="fa-solid fa-car me-1" title="Devices" />
+                            <field name="device_count" /> devices
+                        </div>
+                        <div
+                            t-if="record.devices_inside_count.raw_value &gt; 0"
+                            class="text-success">
+                            <span
+                                class="fa-solid fa-location-dot me-1"
+                                title="Inside" />
+                            <field name="devices_inside_count" /> inside
+                        </div>
+                        <footer>
+                            <field name="active" widget="boolean_toggle" />
+                            <div
+                                t-attf-style="width: 20px; height: 20px; background-color: #{record.color.raw_value}; border-radius: 3px;" />
+                        </footer>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
+    <record id="view_device_geo_fence_form" model="ir.ui.view">
+        <field name="name">device.geo.fence.form</field>
+        <field name="model">device.geo.fence</field>
+        <field name="arch" type="xml">
+            <form string="GPS Geofence">
+                <header>
+                    <button
+                        name="action_view_on_map"
+                        type="object"
+                        string="View on Map"
+                        icon="fa-map-marker"
+                        invisible="not the_geom" />
+                    <button
+                        name="action_view_devices"
+                        type="object"
+                        string="View Devices"
+                        class="btn-primary" />
+                    <button
+                        name="action_view_devices_inside"
+                        type="object"
+                        string="View Devices Inside"
+                        invisible="devices_inside_count == 0" />
+                </header>
+                <sheet>
+                    <widget
+                        name="web_ribbon"
+                        title="Inactive"
+                        invisible="active"
+                        bg_color="text-bg-danger" />
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name" placeholder="Geofence Name" />
+                        </h1>
+                    </div>
+                    <group>
+                        <group string="Geofence Definition">
+                            <field name="geofence_type" />
+                            <field name="active" />
+                            <field name="color" widget="color" />
+                        </group>
+                        <group string="Location Details">
+                            <field name="area_type" />
+                            <field name="usage" />
+                            <field
+                                name="parent_id"
+                                domain="[('area_type', '=', 'property')]" />
+                            <field
+                                name="surface"
+                                invisible="not the_geom"
+                                readonly="1" />
+                            <field name="partner_id" />
+                        </group>
+                    </group>
+                    <group>
+                        <group string="Statistics" invisible="not id">
+                            <field name="device_count" />
+                            <field name="devices_inside_count" />
+                        </group>
+                        <group string="Child Areas" invisible="area_type != 'property'">
+                            <field name="child_ids" nolabel="1">
+                                <list editable="bottom">
+                                    <field name="name" />
+                                    <field name="area_type" />
+                                    <field name="surface" readonly="1" />
+                                </list>
+                            </field>
+                        </group>
+                    </group>
+                    <group string="Shape Parameters">
+                        <group invisible="geofence_type != 'circle'">
+                            <field
+                                name="center_latitude"
+                                required="geofence_type == 'circle'" />
+                            <field
+                                name="center_longitude"
+                                required="geofence_type == 'circle'" />
+                            <field name="radius" required="geofence_type == 'circle'" />
+                        </group>
+                        <group invisible="geofence_type == 'circle'">
+                            <field
+                                name="polygon_points"
+                                widget="polygon_draw"
+                                nolabel="1"
+                                required="geofence_type != 'circle'" />
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Alert Settings">
+                            <group>
+                                <group string="Alert Triggers">
+                                    <field name="alert_on_enter" />
+                                    <field name="alert_on_exit" />
+                                    <field name="alert_on_dwell" />
+                                    <field
+                                        name="dwell_time"
+                                        invisible="not alert_on_dwell" />
+                                </group>
+                                <group string="Schedule">
+                                    <field name="schedule_type" />
+                                    <field
+                                        name="schedule_weekday_ids"
+                                        widget="many2many_tags"
+                                        options="{'no_create': true}"
+                                        invisible="schedule_type != 'custom'" />
+                                    <field
+                                        name="schedule_time_from"
+                                        widget="float_time"
+                                        invisible="schedule_type not in ['business_hours', 'custom']" />
+                                    <field
+                                        name="schedule_time_to"
+                                        widget="float_time"
+                                        invisible="schedule_type not in ['business_hours', 'custom']" />
+                                </group>
+                            </group>
+                        </page>
+                        <page string="Monitored Devices">
+                            <field name="device_ids">
+                                <list>
+                                    <field name="name" />
+                                    <field name="imei" />
+                                    <field name="date_last_data_received" />
+                                    <field name="gps_tracking_enabled" />
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Devices Inside">
+                            <field name="devices_inside_ids" readonly="1">
+                                <list>
+                                    <field name="name" />
+                                    <field name="imei" />
+                                    <field name="date_last_data_received" />
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Description">
+                            <field
+                                name="description"
+                                placeholder="Enter geofence description..." />
+                        </page>
+                    </notebook>
+                    <field name="the_geom" invisible="1" />
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_iot_gps_geofence" model="ir.actions.act_window">
+        <field name="name">GPS Geofences</field>
+        <field name="res_model">device.geo.fence</field>
+        <field name="view_mode">geoengine,kanban,list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Create a geofence zone
+            </p>
+            <p>
+                Define geographical boundaries to monitor when vehicles
+                enter or exit specific areas. Set up alerts for
+                unauthorized movements or dwell time violations.
+            </p>
+        </field>
+    </record>
+
+</odoo>

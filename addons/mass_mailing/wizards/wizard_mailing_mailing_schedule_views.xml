@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="mailing_mailing_schedule_date_view_form" model="ir.ui.view">
+        <field name="name">mailing.mailing.schedule.date.view.form</field>
+        <field name="model">wizard.mailing.mailing.schedule</field>
+        <field name="arch" type="xml">
+            <form string="Take Future Schedule Date">
+                <group>
+                    <group>
+                        <field
+                            name="schedule_date"
+                            string="Send on"
+                            placeholder="Choose a date"
+                            required="1" />
+                    </group>
+                </group>
+                <footer>
+                    <button
+                        name="action_schedule_date"
+                        type="object"
+                        string="Schedule"
+                        class="btn-primary"
+                        data-hotkey="q" />
+                    <button
+                        special="cancel"
+                        string="Discard "
+                        class="btn-secondary"
+                        data-hotkey="x" />
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="mailing_mailing_schedule_date_action" model="ir.actions.act_window">
+        <field name="name">When do you want to send your mailing?</field>
+        <field name="res_model">wizard.mailing.mailing.schedule</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+
+</odoo>

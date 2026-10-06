@@ -1,0 +1,27 @@
+.o-mail-MessageSeenIndicator {
+    &.o-hasEveryoneSeen {
+        color: var(
+            --mail-MessageSeenIndicator-hasEveryoneSeenColor,
+            #{o-token-lighten(--primary, $primary, 20%)}
+        );
+    }
+
+    i {
+        line-height: 1.5;
+
+        &.o-second {
+            top: -3px;
+        }
+    }
+}
+
+@include media-only(screen) {
+    :root[data-color-scheme="dark"] {
+        .o-mail-MessageSeenIndicator {
+            --mail-MessageSeenIndicator-hasEveryoneSeenColor: #{lighten(
+                    $o-dark-bs-primary,
+                    15%
+                )};
+        }
+    }
+}

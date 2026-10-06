@@ -1,0 +1,6 @@
+id,name,model_id/id,group_id/id,kind,operation,reach,anchor,domain
+approval_request_sale_manager,Approval Request: Sale manager,approval.model_approval_request,sale.group_sale_manager,permission,cru,all,,"[('category_id.approval_type', '=', 'sale')]"
+approval_request_sale_manager_unlink,Approval Request: Sale manager unlink draft only,approval.model_approval_request,sale.group_sale_manager,permission,d,all,,"['&', ('category_id.approval_type', '=', 'sale'), ('state', '=', 'new')]"
+approval_approver_sale_manager,Approval Approver: Sale manager,approval.model_approval_approver,sale.group_sale_manager,permission,crud,all,,"[('request_id.category_id.approval_type', '=', 'sale')]"
+approval_category_sale_manager,Approval Category: Sale manager writes sale types,approval.model_approval_category,sale.group_sale_manager,permission,cud,all,,"[('approval_type', '=', 'sale')]"
+access_sale_order_approver_reach,"Sale Order: an approver reads what they are asked to decide, while they decide",sale.model_sale_order,approval.group_approval_decider,permission,r,own,,

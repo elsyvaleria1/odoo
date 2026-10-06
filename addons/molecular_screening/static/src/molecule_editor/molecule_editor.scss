@@ -1,0 +1,188 @@
+.o_molecule_editor {
+    --MoleculeEditor-paper: #{$o-view-background-color};
+    --MoleculeEditor-ink: #{$o-main-text-color};
+    --MoleculeEditor-accent: #{$o-brand-primary};
+    --MoleculeEditor-alert: #{$o-danger};
+    --MoleculeEditor-grid: #{rgba($o-main-text-color, 0.06)};
+
+    width: 100%;
+
+    .o_molecule_editor_board {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        align-items: flex-start;
+    }
+
+    .o_molecule_editor_sketch {
+        flex: 1 1 420px;
+        min-width: 0;
+        border: 1px solid $border-color;
+        border-radius: 6px;
+        background: var(--MoleculeEditor-paper);
+        overflow: hidden;
+    }
+
+    .o_molecule_editor_rail {
+        flex: 0 1 280px;
+        min-width: 240px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .o_molecule_editor_toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        padding: 8px 10px;
+        border-bottom: 1px solid $border-color;
+    }
+
+    .o_molecule_editor_group {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+
+        > span {
+            font-size: 10px;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: $text-muted;
+        }
+    }
+
+    .o_molecule_editor_row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+    }
+
+    .o_molecule_editor_el {
+        font-family: $o-font-family-monospace;
+        min-width: 34px;
+    }
+
+    .o_molecule_editor_canvas_shell {
+        position: relative;
+    }
+
+    .o_molecule_editor_canvas {
+        display: block;
+        width: 100%;
+        height: 420px;
+        touch-action: none;
+        cursor: crosshair;
+    }
+
+    .o_molecule_editor_hint {
+        position: absolute;
+        left: 10px;
+        bottom: 10px;
+        right: 10px;
+        font-size: 11px;
+        color: $text-muted;
+        background: rgba($o-view-background-color, 0.88);
+        border: 1px solid $border-color;
+        border-radius: 4px;
+        padding: 3px 7px;
+        pointer-events: none;
+    }
+
+    .o_molecule_editor_card {
+        border: 1px solid $border-color;
+        border-radius: 6px;
+        background: var(--MoleculeEditor-paper);
+
+        > h6 {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+            margin: 0;
+            padding: 8px 10px;
+            border-bottom: 1px solid $border-color;
+            font-size: 11px;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: $text-muted;
+        }
+
+        dl {
+            margin: 0;
+            padding: 2px 0;
+        }
+
+        dl > div {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            gap: 10px;
+            padding: 4px 10px;
+
+            + div {
+                border-top: 1px solid rgba($border-color, 0.6);
+            }
+        }
+
+        dt {
+            font-weight: 400;
+            color: $text-muted;
+            font-size: 12px;
+        }
+
+        dd {
+            margin: 0;
+            font-family: $o-font-family-monospace;
+            font-variant-numeric: tabular-nums;
+            font-size: 12px;
+            text-align: right;
+        }
+    }
+
+    .o_molecule_editor_actions {
+        display: flex;
+        gap: 4px;
+    }
+
+    .o_molecule_editor_warning {
+        display: flex;
+        gap: 6px;
+        margin: 0 10px 8px;
+        padding: 5px 8px;
+        font-size: 11.5px;
+        color: var(--MoleculeEditor-alert);
+        border-left: 3px solid var(--MoleculeEditor-alert);
+        background: rgba($o-danger, 0.1);
+        border-radius: 0 4px 4px 0;
+
+        strong {
+            font-family: $o-font-family-monospace;
+            font-weight: 500;
+        }
+    }
+
+    .o_molecule_editor_note {
+        margin: 0;
+        padding: 7px 10px 0;
+        font-size: 11.5px;
+        color: $text-muted;
+    }
+
+    .o_molecule_editor_viewer {
+        position: relative;
+        width: 100%;
+        height: 300px;
+        overflow: hidden;
+    }
+
+    @include media-breakpoint-down(md) {
+        .o_molecule_editor_canvas {
+            height: 340px;
+        }
+
+        .o_molecule_editor_rail {
+            flex: 1 1 100%;
+        }
+    }
+}

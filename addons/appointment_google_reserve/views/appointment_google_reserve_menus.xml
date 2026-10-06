@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <menuitem
+        id="menu_appointment_google_reserve_merchants"
+        name="Google Reserve"
+        parent="calendar.appointment_menu_config"
+        action="appointment_google_reserve.google_reserve_merchant_action"
+        groups="calendar.group_appointment_manager" />
+
+</odoo>

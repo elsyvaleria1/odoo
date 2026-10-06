@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <data>
+        <record id="hr_expense.hr_expense_post_wizard_view" model="ir.ui.view">
+            <field name="name">Post Expenses</field>
+            <field name="model">wizard.hr.expense.post</field>
+            <field name="arch" type="xml">
+                <form>
+                    <group>
+                        <field name="employee_journal_id" string="Journal" />
+                        <field name="accounting_date" string="Accounting date" />
+                    </group>
+                    <footer>
+                        <button
+                            name="action_post_entry"
+                            type="object"
+                            string="Post Expenses"
+                            class="oe_highlight"
+                            data-hotkey="q" />
+                        <button
+                            special="cancel"
+                            string="Cancel"
+                            class="btn-secondary"
+                            data-hotkey="x" />
+                    </footer>
+                </form>
+            </field>
+        </record>
+    </data>
+
+</odoo>

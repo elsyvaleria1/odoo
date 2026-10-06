@@ -1,0 +1,26 @@
+[package]
+name = "odoo_lint"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+description = "Parallel source scanning for the test_lint gates"
+
+[lib]
+name = "odoo_lint"
+
+crate-type = ["cdylib", "rlib"]
+
+doctest = false
+
+[dependencies]
+
+pyo3.workspace = true
+memchr = "2"
+regex = "1"
+ignore = "0.4"
+
+[build-dependencies]
+odoo_build = { path = "../odoo_build" }
+
+[features]
+extension-module = ["pyo3/extension-module"]

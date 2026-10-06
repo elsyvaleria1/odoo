@@ -1,0 +1,202 @@
+// @ts-check
+/** @odoo-module native */
+import { getMentionsFromText } from "@mail/core/common/message_post";
+import { fields, OR, Record } from "@mail/core/common/record";
+import {
+    convertBrToLineBreak,
+    generatePartnerMentionElement,
+    getNonEditableMentions,
+    prettifyMessageText,
+} from "@mail/utils/common/format";
+import { markup } from "@odoo/owl";
+import { makeLogger } from "@web/core/debug/debug_logger";
+import {
+    createDocumentFragmentFromContent,
+    isHtmlEmpty,
+} from "@web/core/utils/dom/html";
+import { nbsp } from "@web/core/utils/format/strings";
+
+const log = makeLogger("mail.composer");
+export class Composer extends Record {
+    static id = OR("thread", "message");
+
+    clear() {
+        log.logic("clear", () => ({
+            thread: this.thread?.localId,
+            message: this.message?.id,
+            attachments: this.attachments.length,
+        }));
+        this.attachments.length = 0;
+        this.replyToMessage = undefined;
+        this.restoredFromFullComposer = false;
+        this.composerHtml = markup("<div class='o-paragraph'><br></div>");
+        Object.assign(this.selection, {
+            start: 0,
+            end: 0,
+            direction: "none",
+        });
+    }
+
+    /**
+     * @param {string} text
+     * @param {number} position
+     * @param {Object} [options]
+     * @param {boolean} [options.moveCursorToEnd=false]
+     */
+    insertText(text, position, { moveCursorToEnd = false } = {}) {
+        const before = this.composerText.substring(0, position);
+        const after = this.composerText.substring(position);
+        this.composerText = before + text + after;
+        this.selection.start = before.length + text.length;
+        if (moveCursorToEnd) {
+            this.selection.start = this.composerText.length;
+        }
+        this.selection.end = this.selection.start;
+        this.forceCursorMove = true;
+    }
+
+    attachments = fields.Many("ir.attachment");
+    /** @type {boolean} */
+    emailAddSignature = true;
+    message = fields.One("mail.message");
+    mentionedPartners = fields.Many("res.partner");
+    mentionedRoles = fields.Many("res.role");
+    mentionedChannels = fields.Many("Thread");
+    cannedResponses = fields.Many("mail.canned.response");
+    isDirty = false;
+    composerText = fields.Attr("", {
+        /** @this {import("models").Composer} */
+        onUpdate() {
+            if (this.updateFrom === "html") {
+                this.updateFrom = undefined;
+                return;
+            }
+            const validMentions = getMentionsFromText(this.store, this.composerText, {
+                mentionedChannels: this.mentionedChannels,
+                mentionedPartners: this.mentionedPartners,
+                mentionedRoles: this.mentionedRoles,
+                thread: this.targetThread,
+            });
+            const prettifiedHtml = prettifyMessageText(this.composerText, {
+                validMentions,
+                thread: this.targetThread,
+            });
+            if (this.composerHtml.toString() !== prettifiedHtml.toString()) {
+                log.pipeline("sync text -> html", () => ({
+                    thread: this.thread?.localId,
+                    length: this.composerText.length,
+                }));
+                this.updateFrom = "text";
+                this.composerHtml = prettifiedHtml;
+            }
+        },
+    });
+    composerHtml = fields.Html(markup("<div class='o-paragraph'><br></div>"), {
+        /** @this {import("models").Composer} */
+        compute() {
+            if (this.syncHtmlWithMessage) {
+                return (
+                    getNonEditableMentions(this.message.body) ||
+                    markup("<div class='o-paragraph'><br></div>")
+                );
+            }
+            return this.composerHtml;
+        },
+        /** @this {import("models").Composer} */
+        onUpdate() {
+            if (this.updateFrom === "text") {
+                this.updateFrom = undefined;
+                return;
+            }
+            const prettifiedText = isHtmlEmpty(this.composerHtml)
+                ? ""
+                : convertBrToLineBreak(this.composerHtml);
+            if (this.composerText !== prettifiedText) {
+                log.pipeline("sync html -> text", () => ({
+                    thread: this.thread?.localId,
+                    length: prettifiedText.length,
+                }));
+                this.updateFrom = "html";
+                this.composerText = prettifiedText;
+            }
+        },
+    });
+    thread = fields.One("Thread");
+    /** @type {{ start: number, end: number, direction: "forward" | "backward" | "none"}} */
+    selection = {
+        start: 0,
+        end: 0,
+        direction: "none",
+    };
+    /** @type {boolean} */
+    forceCursorMove;
+    isFocused = fields.Attr(false, {
+        /** @this {import("models").Composer} */
+        onUpdate() {
+            if (this.thread) {
+                if (this.isFocused) {
+                    this.thread.isFocusedCounter++;
+                } else {
+                    this.thread.isFocusedCounter--;
+                }
+            }
+        },
+    });
+    autofocus = 0;
+    restoredFromFullComposer = false;
+    replyToMessage = fields.One("mail.message", {
+        inverse: "composerAsReplyToMessage",
+    });
+    /** @type {"text" | "html" | undefined} */
+    updateFrom = undefined;
+
+    get syncHtmlWithMessage() {
+        return this.message && !this.isDirty;
+    }
+
+    get targetThread() {
+        return (
+            this.replyToMessage?.thread ?? this.thread ?? this.message?.thread ?? null
+        );
+    }
+
+    /** @param {import("models").Message} message */
+    insertReplyFromNote(message) {
+        // Notes mention partners; guests do not have partner mention identities.
+        const author = message.author_id;
+        if (!author) {
+            log.logic("insertReplyFromNote skipped: no partner author", () => ({
+                messageId: message.id,
+            }));
+            return;
+        }
+        log.logic("insertReplyFromNote", () => ({
+            messageId: message.id,
+            authorId: author.id,
+            html: this.store.env.services["mail.composer"].htmlEnabled,
+        }));
+        this.mentionedPartners.add(author);
+        if (!this.store.env.services["mail.composer"].htmlEnabled) {
+            const mentionText = `@${message.authorName} `;
+            if (!this.composerText.includes(mentionText)) {
+                this.insertText(mentionText, 0, { moveCursorToEnd: true });
+            }
+            return;
+        }
+        const composerBody = createDocumentFragmentFromContent(this.composerHtml).body;
+        if (
+            composerBody.querySelector(
+                `a.o_mail_redirect[data-oe-model="res.partner"][data-oe-id="${message.author.id}"]`,
+            )
+        ) {
+            return;
+        }
+        composerBody.firstElementChild.prepend(
+            generatePartnerMentionElement(author, this.thread),
+            nbsp,
+        );
+        this.composerHtml = markup(composerBody.innerHTML);
+    }
+}
+
+Composer.register();

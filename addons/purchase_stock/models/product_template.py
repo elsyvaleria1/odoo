@@ -1,0 +1,21 @@
+from odoo import api, models
+
+
+class ProductTemplate(models.Model):
+    _inherit = "product.template"
+
+    @api.onchange("route_ids", "purchase_ok")
+    def _onchange_buy_route(self) -> dict | None:
+        if self.purchase_ok:
+            return None
+        buy_routes = self.env["stock.rule"]._get_buy_routes(picking_code="incoming")
+        if any(route in self.route_ids._origin for route in buy_routes):
+            return {
+                "warning": {
+                    "title": self.env._("Warning!"),
+                    "message": self.env._(
+                        'This product has the "Buy" route checked but is not purchasable.',
+                    ),
+                },
+            }
+        return None

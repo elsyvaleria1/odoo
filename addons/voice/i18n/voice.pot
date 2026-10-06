@@ -1,0 +1,739 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* voice
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-09-28 17:44+0000\n"
+"PO-Revision-Date: 2026-09-28 17:44+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: voice
+#. odoo-javascript
+#: code:addons/voice/static/src/interpreter/interpreter.js:0
+msgid "%(button)s on %(record)s"
+msgstr ""
+
+#. module: voice
+#. odoo-javascript
+#: code:addons/voice/static/src/interpreter/interpreter.js:0
+msgid "%(field)s: %(value)s"
+msgstr ""
+
+#. module: voice
+#. odoo-javascript
+#: code:addons/voice/static/src/interpreter/interpreter.js:0
+msgid "%(number)s: %(label)s"
+msgstr ""
+
+#. module: voice
+#. odoo-javascript
+#: code:addons/voice/static/src/hud/voice_hud.js:0
+msgid "%s view"
+msgstr ""
+
+#. module: voice
+#. odoo-javascript
+#: code:addons/voice/static/src/hud/voice_hud.js:0
+msgid "%s …"
+msgstr ""
+
+#. module: voice
+#: model:res.groups,comment:voice.privilege_record_sentence
+msgid ""
+"A user who chose to share what they say keeps a sentence the grammar did not"
+" understand, with no author on it; reading them stays with administrators."
+msgstr ""
+
+#. module: voice
+#: model:res.groups,comment:voice.privilege_learn_term
+msgid ""
+"A user who chose to share what they say keeps the reading they picked from a"
+" list as a learned voice term, inactive until an administrator approves it."
+msgstr ""
+
+#. module: voice
+#. odoo-python
+#: code:addons/voice/tools/utterance.py:0
+msgid "A voice command lasts at most %(seconds)s seconds."
+msgstr ""
+
+#. module: voice
+#: model:ir.model.fields.selection,name:voice.selection__voice_sentence__answered_by__model
+msgid "AI model"
+msgstr ""
+
+#. module: voice
+#: model_terms:ir.ui.view,arch_db:voice.speech_vocabulary_form_view_search_voice
+msgid "Acronyms"
+msgstr ""
+
+#. module: voice
+#: model_terms:ir.actions.act_window,help:voice.voice_spoken_form_action
+msgid ""
+"An English word, an acronym or a local word, and the word the screens use "
+"for it: \"checa\" means \"revisa\", \"PO\" means \"órdenes de compra\". The "
+"word joins the speech vocabulary, so transcribers expect it too."
+msgstr ""
+
+#. module: voice
+#: model:ir.model.fields,field_description:voice.field_voice_sentence__answered_by
+msgid "Answered By"
+msgstr ""
+
+#. module: voice
+#: model_terms:ir.ui.view,arch_db:voice.voice_sentence_view_search
+msgid "Answered by"
+msgstr ""
+
+#. module: voice
+#: model_terms:ir.ui.view,arch_db:voice.speech_vocabulary_form_view_list_voice
+msgid "Approve"
+msgstr ""
+
+#. module: voice
+#: model_terms:ir.ui.view,arch_db:voice.speech_vocabulary_form_view_search_voice
+msgid "Archived"
+msgstr ""
+
+#. module: voice
+#. odoo-javascript
+#: code:addons/voice/static/src/interpreter/interpreter.js:0
+msgid "Back"
+msgstr ""
+
+#. module: voice
+#. odoo-javascript
+#: code:addons/voice/static/src/hud/voice_hud.xml:0
+msgid "Cancel"
+msgstr ""
+
+#. module: voice
+#. odoo-javascript
+#: code:addons/voice/static/src/interpreter/interpreter.js:0
+msgid "Clear the search"
+msgstr ""
+
+#. module: voice
+#. odoo-javascript
+#: code:addons/voice/static/src/hud/voice_hud.xml:0
+msgid "Close"
+msgstr ""
+
+#. module: voice
+#: model:ir.model.fields,field_description:voice.field_voice_sentence__company_id
+msgid "Company"
+msgstr ""
+
+#. module: voice
+#. odoo-javascript
+#: code:addons/voice/static/src/hud/voice_hud.xml:0
+msgid "Confirm"
+msgstr ""
+
+#. module: voice
+#: model:ir.model.fields.selection,name:voice.selection__voice_sentence__answered_by__correction
+msgid "Context correction"
+msgstr ""
+
+#. module: voice
+#. odoo-javascript
+#: code:addons/voice/static/src/hud/voice_hud.xml:0
+msgid "Continue"
+msgstr ""
+
+#. module: voice
+#: model:ir.model.fields,field_description:voice.field_voice_sentence__day
+#: model_terms:ir.ui.view,arch_db:voice.voice_sentence_view_search
+msgid "Day"
+msgstr ""
+
+#. module: voice
+#. odoo-javascript
+#: code:addons/voice/static/src/interpreter/interpreter.js:0
+msgid "Dictating into %s"
+msgstr ""
+
+#. module: voice
+#. odoo-javascript
+#: code:addons/voice/static/src/interpreter/interpreter.js:0
+msgid "Discard changes"
+msgstr ""
+
+#. module: voice
+#: model:ir.model.fields,field_description:voice.field_res_users_settings__display_name
+#: model:ir.model.fields,field_description:voice.field_speech_vocabulary_form__display_name
+#: model:ir.model.fields,field_description:voice.field_voice_labels__display_name
+#: model:ir.model.fields,field_description:voice.field_voice_sentence__display_name
+msgid "Display Name"
+msgstr ""
+
+#. module: voice
+#: model:ir.model.fields,help:voice.field_res_users_settings__voice_share_sentences
+msgid ""
+"Each command is counted, without the user's name, and the words of one the "
+"grammar did not understand are kept, so the grammar can learn them."
+msgstr ""
+
+#. module: voice
+#: model:ir.model.fields.selection,name:voice.selection__voice_sentence__answered_by__english
+msgid "English second pass"
+msgstr ""
+
+#. module: voice
+#. odoo-javascript
+#: code:addons/voice/static/src/interpreter/interpreter.js:0
+msgid "Export these records"
+msgstr ""
+
+#. module: voice
+#. odoo-javascript
+#: code:addons/voice/static/src/hud/voice_hud.xml:0
+msgid "Finishing…"
+msgstr ""
+
+#. module: voice
+#: model:ir.model.fields.selection,name:voice.selection__voice_sentence__answered_by__grammar
+msgid "Grammar"
+msgstr ""
+
+#. module: voice
+#. odoo-javascript
+#: code:addons/voice/static/src/interpreter/interpreter.js:0
+msgid "Group by %s"
+msgstr ""
+
+#. module: voice
+#. odoo-javascript
+#: code:addons/voice/static/src/interpreter/interpreter.js:0
+msgid "Hide numbers"
+msgstr ""
+
+#. module: voice
+#. odoo-javascript
+#: code:addons/voice/static/src/interpreter/interpreter.js:0
+msgid "Home"
+msgstr ""
+
+#. module: voice
+#. odoo-javascript
+#: code:addons/voice/static/src/voice_service.js:0
+msgid "I did not understand “%s”."
+msgstr ""
+
+#. module: voice
+#: model:ir.model.fields,field_description:voice.field_res_users_settings__id
+#: model:ir.model.fields,field_description:voice.field_speech_vocabulary_form__id
+#: model:ir.model.fields,field_description:voice.field_voice_labels__id
+#: model:ir.model.fields,field_description:voice.field_voice_sentence__id
+msgid "ID"
+msgstr ""
+
+#. module: voice
+#: model:ir.model.fields,help:voice.field_voice_sentence__text
+msgid "Kept only when the grammar did not understand the sentence."
+msgstr ""
+
+#. module: voice
+#: model:ir.model.fields,field_description:voice.field_voice_sentence__language
+msgid "Language"
+msgstr ""
+
+#. module: voice
+#: model:res.groups,name:voice.privilege_learn_term
+msgid "Learn Voice Terms From Choices"
+msgstr ""
+
+#. module: voice
+#. odoo-javascript
+#: code:addons/voice/static/src/hud/voice_hud.js:0
+msgid "Listening…"
+msgstr ""
+
+#. module: voice
+#. odoo-javascript
+#: code:addons/voice/static/src/interpreter/interpreter.js:0
+msgid "Message: %s"
+msgstr ""
+
+#. module: voice
+#: model:ir.model.fields,field_description:voice.field_voice_sentence__res_model
+msgid "Model"
+msgstr ""
+
+#. module: voice
+#. odoo-javascript
+#: code:addons/voice/static/src/interpreter/interpreter.js:0
+msgid "New"
+msgstr ""
+
+#. module: voice
+#. odoo-javascript
+#: code:addons/voice/static/src/interpreter/interpreter.js:0
+msgid "Next"
+msgstr ""
+
+#. module: voice
+#: model_terms:ir.actions.act_window,help:voice.voice_sentence_action
+msgid "No sentence shared yet"
+msgstr ""
+
+#. module: voice
+#. odoo-javascript
+#: code:addons/voice/static/src/voice_service.js:0
+msgid ""
+"No speech engine is available here. You can still type what you would say in"
+" the command palette, after “>”."
+msgstr ""
+
+#. module: voice
+#. odoo-python
+#: code:addons/voice/tools/utterance.py:0
+msgid "No speech engine may hear voice commands here."
+msgstr ""
+
+#. module: voice
+#: model:ir.model.fields.selection,name:voice.selection__voice_sentence__answered_by__none
+msgid "Nobody"
+msgstr ""
+
+#. module: voice
+#. odoo-javascript
+#: code:addons/voice/static/src/hud/voice_hud.xml:0
+msgid "Not now"
+msgstr ""
+
+#. module: voice
+#: model_terms:ir.ui.view,arch_db:voice.voice_sentence_view_search
+msgid "Not understood by the grammar"
+msgstr ""
+
+#. module: voice
+#. odoo-javascript
+#: code:addons/voice/static/src/palette/voice_command_provider.js:0
+msgid "Not understood. Try a filter, a field or a menu name."
+msgstr ""
+
+#. module: voice
+#. odoo-javascript
+#: code:addons/voice/static/src/interpreter/interpreter.js:0
+msgid "Note: %s"
+msgstr ""
+
+#. module: voice
+#. odoo-javascript
+#: code:addons/voice/static/src/voice_service.js:0
+msgid "Nothing matches “%s”."
+msgstr ""
+
+#. module: voice
+#. odoo-javascript
+#: code:addons/voice/static/src/voice_service.js:0
+msgid "Nothing was heard."
+msgstr ""
+
+#. module: voice
+#. odoo-javascript
+#: code:addons/voice/static/src/interpreter/interpreter.js:0
+msgid "Open %s"
+msgstr ""
+
+#. module: voice
+#. odoo-javascript
+#: code:addons/voice/static/src/interpreter/interpreter.js:0
+msgid "Open record %s"
+msgstr ""
+
+#. module: voice
+#. odoo-javascript
+#: code:addons/voice/static/src/interpreter/interpreter.js:0
+msgid "Previous"
+msgstr ""
+
+#. module: voice
+#. odoo-javascript
+#: code:addons/voice/static/src/interpreter/interpreter.js:0
+msgid "Print %(report)s of %(record)s"
+msgstr ""
+
+#. module: voice
+#. odoo-javascript
+#: code:addons/voice/static/src/interpreter/interpreter.js:0
+msgid "Print %s"
+msgstr ""
+
+#. module: voice
+#: model_terms:ir.ui.view,arch_db:voice.speech_vocabulary_form_view_search_voice
+msgid "Pronunciation"
+msgstr ""
+
+#. module: voice
+#: model:res.groups,name:voice.privilege_read_english_pass
+msgid "Read Whether Voice Commands Are Heard Again in English"
+msgstr ""
+
+#. module: voice
+#: model:res.groups,name:voice.privilege_record_sentence
+msgid "Record Shared Voice Sentences"
+msgstr ""
+
+#. module: voice
+#. odoo-javascript
+#: code:addons/voice/static/src/interpreter/interpreter.js:0
+msgid "Save"
+msgstr ""
+
+#. module: voice
+#. odoo-javascript
+#: code:addons/voice/static/src/palette/voice_command_provider.js:0
+msgid "Say it in words: unpaid, group by salesperson…"
+msgstr ""
+
+#. module: voice
+#. odoo-javascript
+#: code:addons/voice/static/src/hud/voice_hud.js:0
+msgid "Say or type a command"
+msgstr ""
+
+#. module: voice
+#: model_terms:ir.ui.view,arch_db:voice.speech_vocabulary_form_view_search_voice
+msgid "Seeded"
+msgstr ""
+
+#. module: voice
+#: model:ir.model.fields,field_description:voice.field_res_users_settings__voice_share_sentences
+msgid "Share Voice Sentences"
+msgstr ""
+
+#. module: voice
+#. odoo-javascript
+#: code:addons/voice/static/src/hud/voice_hud.xml:0
+msgid ""
+"Share the sentences it does not understand, as text and without your name, "
+"so it can learn them"
+msgstr ""
+
+#. module: voice
+#. odoo-javascript
+#: code:addons/voice/static/src/interpreter/interpreter.js:0
+msgid "Show numbers"
+msgstr ""
+
+#. module: voice
+#. odoo-javascript
+#: code:addons/voice/static/src/interpreter/interpreter.js:0
+msgid "Show the %s view"
+msgstr ""
+
+#. module: voice
+#. odoo-javascript
+#: code:addons/voice/static/src/systray/voice_systray.js:0
+msgid "Speak a command (Alt+Shift+V)"
+msgstr ""
+
+#. module: voice
+#: model:ir.model.fields,field_description:voice.field_voice_sentence__spoken
+#: model_terms:ir.ui.view,arch_db:voice.voice_sentence_view_search
+msgid "Spoken"
+msgstr ""
+
+#. module: voice
+#: model:ir.model,name:voice.model_speech_vocabulary_form
+msgid "Spoken Form of a Vocabulary Word"
+msgstr ""
+
+#. module: voice
+#: model:ir.actions.act_window,name:voice.voice_spoken_form_action
+#: model:ir.ui.menu,name:voice.voice_spoken_form_menu
+#: model_terms:ir.ui.view,arch_db:voice.speech_vocabulary_form_view_list_voice
+#: model_terms:ir.ui.view,arch_db:voice.speech_vocabulary_form_view_search_voice
+msgid "Spoken Forms"
+msgstr ""
+
+#. module: voice
+#. odoo-javascript
+#: code:addons/voice/static/src/hud/voice_hud.xml:0
+msgid "Stop"
+msgstr ""
+
+#. module: voice
+#. odoo-javascript
+#: code:addons/voice/static/src/systray/voice_systray.js:0
+msgid "Stop listening (Alt+Shift+V)"
+msgstr ""
+
+#. module: voice
+#: model_terms:ir.actions.act_window,help:voice.voice_spoken_form_action
+msgid "Teach voice the words people use"
+msgstr ""
+
+#. module: voice
+#: model:ir.model.fields,field_description:voice.field_voice_sentence__text
+msgid "Text"
+msgstr ""
+
+#. module: voice
+#. odoo-javascript
+#: code:addons/voice/static/src/executor.js:0
+msgid "That is no longer on screen."
+msgstr ""
+
+#. module: voice
+#. odoo-javascript
+#: code:addons/voice/static/src/voice_service.js:0
+msgid "That sounded like a “no”: %s was not done."
+msgstr ""
+
+#. module: voice
+#. odoo-javascript
+#: code:addons/voice/static/src/hud/voice_hud.xml:0
+msgid ""
+"The microphone listens only while it is on, and what you say is not stored "
+"unless you choose to share it."
+msgstr ""
+
+#. module: voice
+#. odoo-python
+#: code:addons/voice/controllers/utterance.py:0
+msgid "The recording is not readable."
+msgstr ""
+
+#. module: voice
+#: model:ir.model.fields,help:voice.field_res_users_settings__voice_notice_acknowledged
+msgid ""
+"The user has read what the microphone hears and where it is processed, which"
+" is shown before it first listens."
+msgstr ""
+
+#. module: voice
+#. odoo-javascript
+#: code:addons/voice/static/src/executor.js:0
+msgid "The view this was said to is no longer open."
+msgstr ""
+
+#. module: voice
+#: model:res.groups,comment:voice.privilege_read_english_pass
+msgid ""
+"The voice client asks whether a command nothing understood may be decoded "
+"once more in English; the answer is one system parameter, and only that one."
+msgstr ""
+
+#. module: voice
+#. odoo-javascript
+#: code:addons/voice/static/src/voice_service.js:0
+msgid "There is nothing to undo."
+msgstr ""
+
+#. module: voice
+#: model_terms:ir.ui.view,arch_db:voice.speech_vocabulary_form_view_search_voice
+msgid "To approve"
+msgstr ""
+
+#. module: voice
+#. odoo-python
+#: code:addons/voice/controllers/utterance.py:0
+msgid "Too many voice commands; wait a moment."
+msgstr ""
+
+#. module: voice
+#. odoo-javascript
+#: code:addons/voice/static/src/engines/server_engine.js:0
+msgid "Transcribing…"
+msgstr ""
+
+#. module: voice
+#. odoo-javascript
+#: code:addons/voice/static/src/hud/voice_hud.xml:0
+msgid "Understood by an AI model"
+msgstr ""
+
+#. module: voice
+#. odoo-javascript
+#: code:addons/voice/static/src/hud/voice_hud.js:0
+msgid "Understood “%(as)s” (heard “%(heard)s”)"
+msgstr ""
+
+#. module: voice
+#. odoo-javascript
+#: code:addons/voice/static/src/hud/voice_hud.xml:0
+#: code:addons/voice/static/src/interpreter/interpreter.js:0
+msgid "Undo"
+msgstr ""
+
+#. module: voice
+#: model:ir.model,name:voice.model_res_users_settings
+msgid "User Settings"
+msgstr ""
+
+#. module: voice
+#: model_terms:ir.actions.act_window,help:voice.voice_sentence_action
+msgid ""
+"Users who choose to share what they say add one row per command. The words "
+"are kept only when the grammar did not understand them; no row names who "
+"spoke."
+msgstr ""
+
+#. module: voice
+#: model:ir.model.fields,field_description:voice.field_voice_sentence__view_type
+msgid "View Type"
+msgstr ""
+
+#. module: voice
+#: model:ir.model.fields,field_description:voice.field_res_users_settings__voice_notice_acknowledged
+msgid "Voice Notice Acknowledged"
+msgstr ""
+
+#. module: voice
+#: model:ir.model,name:voice.model_voice_sentence
+msgid "Voice Sentence"
+msgstr ""
+
+#. module: voice
+#: model:ir.actions.act_window,name:voice.voice_sentence_action
+#: model:ir.ui.menu,name:voice.voice_sentence_menu
+#: model_terms:ir.ui.view,arch_db:voice.voice_sentence_view_list
+#: model_terms:ir.ui.view,arch_db:voice.voice_sentence_view_search
+msgid "Voice Sentences"
+msgstr ""
+
+#. module: voice
+#. odoo-javascript
+#: code:addons/voice/static/src/hud/voice_hud.xml:0
+msgid "Voice commands"
+msgstr ""
+
+#. module: voice
+#. odoo-python
+#: code:addons/voice/controllers/utterance.py:0
+msgid "Voice commands are for internal users."
+msgstr ""
+
+#. module: voice
+#: model:ir.model,name:voice.model_voice_labels
+msgid "Voice: labels in the user's other languages"
+msgstr ""
+
+#. module: voice
+#. odoo-javascript
+#: code:addons/voice/static/src/interpreter/interpreter.js:0
+msgid "What can I say?"
+msgstr ""
+
+#. module: voice
+#. odoo-javascript
+#: code:addons/voice/static/src/engines/server_engine.js:0
+msgid ""
+"What you say is sent to this Odoo server and transcribed there, or by the "
+"speech service your administrator allowed for voice commands. Neither the "
+"audio nor the words are kept."
+msgstr ""
+
+#. module: voice
+#. odoo-javascript
+#: code:addons/voice/static/src/hud/voice_hud.xml:0
+msgid "Which one?"
+msgstr ""
+
+#. module: voice
+#: model_terms:ir.ui.view,arch_db:voice.speech_vocabulary_form_view_search_voice
+msgid "Word"
+msgstr ""
+
+#. module: voice
+#. odoo-javascript
+#: code:addons/voice/static/src/hud/voice_hud.xml:0
+msgid "Working…"
+msgstr ""
+
+#. module: voice
+#. odoo-javascript
+#: code:addons/voice/static/src/hud/voice_hud.xml:0
+msgid "You can say:"
+msgstr ""
+
+#. module: voice
+#. odoo-javascript
+#: code:addons/voice/static/src/engines/browser_engine.js:0
+msgid ""
+"Your browser recognises what you say on this device; the audio does not "
+"leave it."
+msgstr ""
+
+#. module: voice
+#. odoo-javascript
+#: code:addons/voice/static/src/hud/voice_hud.js:0
+msgid "discard changes"
+msgstr ""
+
+#. module: voice
+#. odoo-javascript
+#: code:addons/voice/static/src/hud/voice_hud.js:0
+msgid "group by %s"
+msgstr ""
+
+#. module: voice
+#. odoo-javascript
+#: code:addons/voice/static/src/hud/voice_hud.js:0
+msgid "group by month"
+msgstr ""
+
+#. module: voice
+#. odoo-javascript
+#: code:addons/voice/static/src/hud/voice_hud.js:0
+msgid "home"
+msgstr ""
+
+#. module: voice
+#. odoo-javascript
+#: code:addons/voice/static/src/hud/voice_hud.js:0
+msgid "last month"
+msgstr ""
+
+#. module: voice
+#. odoo-javascript
+#: code:addons/voice/static/src/hud/voice_hud.js:0
+msgid "new record"
+msgstr ""
+
+#. module: voice
+#. odoo-javascript
+#: code:addons/voice/static/src/hud/voice_hud.js:0
+msgid "next"
+msgstr ""
+
+#. module: voice
+#. odoo-javascript
+#: code:addons/voice/static/src/hud/voice_hud.js:0
+msgid "open %s"
+msgstr ""
+
+#. module: voice
+#. odoo-javascript
+#: code:addons/voice/static/src/hud/voice_hud.js:0
+msgid "save"
+msgstr ""
+
+#. module: voice
+#. odoo-javascript
+#: code:addons/voice/static/src/palette/voice_command_provider.js:0
+msgid "sentences"
+msgstr ""
+
+#. module: voice
+#. odoo-javascript
+#: code:addons/voice/static/src/hud/voice_hud.js:0
+msgid "show numbers"
+msgstr ""
+
+#. module: voice
+#. odoo-javascript
+#: code:addons/voice/static/src/hud/voice_hud.js:0
+msgid "undo"
+msgstr ""

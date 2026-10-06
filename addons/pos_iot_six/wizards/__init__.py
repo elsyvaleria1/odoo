@@ -1,0 +1,1 @@
+from . import wizard_pos_payment_method_update_six_terminal

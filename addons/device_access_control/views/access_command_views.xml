@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_access_command_search" model="ir.ui.view">
+        <field name="name">access.command.search</field>
+        <field name="model">access.command</field>
+        <field name="arch" type="xml">
+            <search string="Search Commands">
+                <field name="device_id" />
+                <field name="command_type" />
+                <separator />
+                <filter
+                    name="filter_pending"
+                    string="Pending"
+                    domain="[('state', '=', 'pending')]" />
+                <filter
+                    name="filter_executed"
+                    string="Executed"
+                    domain="[('state', '=', 'executed')]" />
+                <filter
+                    name="filter_error"
+                    string="Error"
+                    domain="[('state', '=', 'error')]" />
+                <separator />
+                <group>
+                    <filter
+                        name="groupby_device"
+                        string="Device"
+                        context="{'group_by': 'device_id'}" />
+                    <filter
+                        name="groupby_type"
+                        string="Command Type"
+                        context="{'group_by': 'command_type'}" />
+                    <filter
+                        name="groupby_state"
+                        string="State"
+                        context="{'group_by': 'state'}" />
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="view_access_command_list" model="ir.ui.view">
+        <field name="name">access.command.list</field>
+        <field name="model">access.command</field>
+        <field name="arch" type="xml">
+            <list
+                string="Commands"
+                decoration-danger="state == 'error'"
+                decoration-muted="state == 'expired'"
+                decoration-success="state == 'executed'">
+                <field name="create_date" string="Created" />
+                <field name="device_id" />
+                <field name="command_type" />
+                <field
+                    name="state"
+                    widget="badge"
+                    decoration-danger="state == 'error'"
+                    decoration-info="state in ('pending', 'sent')"
+                    decoration-muted="state == 'expired'"
+                    decoration-success="state == 'executed'" />
+                <field name="sent_date" optional="show" />
+                <field name="execute_date" optional="show" />
+                <field name="error_message" optional="hide" />
+            </list>
+        </field>
+    </record>
+
+    <record id="view_access_command_form" model="ir.ui.view">
+        <field name="name">access.command.form</field>
+        <field name="model">access.command</field>
+        <field name="arch" type="xml">
+            <form string="Command">
+                <header>
+                    <field
+                        name="state"
+                        widget="statusbar"
+                        statusbar_visible="pending,sent,executed" />
+                </header>
+                <sheet>
+                    <group>
+                        <group string="Command">
+                            <field name="device_id" />
+                            <field name="command_type" />
+                            <field name="payload" />
+                        </group>
+                        <group string="Execution">
+                            <field name="sent_date" />
+                            <field name="execute_date" />
+                            <field name="error_message" invisible="state != 'error'" />
+                        </group>
+                    </group>
+                    <group string="Result" invisible="not result and not result_image">
+                        <field name="result" invisible="not result" />
+                        <field
+                            name="result_image"
+                            widget="image"
+                            invisible="not result_image" />
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_access_command" model="ir.actions.act_window">
+        <field name="name">Commands</field>
+        <field name="res_model">access.command</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+</odoo>

@@ -1,0 +1,3 @@
+id,name,model_id/id,group_id/id,kind,operation,reach,anchor,domain
+ir_rule_worksheet_template_quality_group_quality_manager,Worksheet Template: Quality Only,worksheet.model_worksheet_template,quality.group_quality_manager,permission,crud,all,,"[('res_model', '=', 'quality.check')]"
+ir_rule_worksheet_template_quality_group_quality_user,Worksheet Template: Quality Only,worksheet.model_worksheet_template,quality.group_quality_user,permission,r,all,,"[('res_model', '=', 'quality.check')]"

@@ -1,0 +1,372 @@
+from odoo import Command
+from odoo.http import Request
+from odoo.libs.web import urls
+from odoo.tests import HttpCase, tagged
+from odoo.tests.common import JsonRpcException
+from odoo.tools import mute_logger
+
+from odoo.addons.base.tests.common import BaseCommon
+from odoo.addons.portal.controllers.portal import CustomerPortal
+
+
+@tagged("-at_install", "post_install")
+class TestPortalAddresses(BaseCommon, HttpCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.country_be = cls.quick_ref("base.be")
+        cls.env.company.country_id = cls.country_be
+        cls.portal_user = cls._create_new_portal_user()
+        cls.internal_user = cls._create_new_internal_user()
+        cls.default_address_values = {
+            "name": "Odoo Farm 3",
+            "email": "o@d.oo",
+            "street": "Rue de Ramillies 1",
+            "city": "Ramillies",
+            "zip": "1367",
+            "country_id": cls.country_be.id,
+            "phone": "+323333333333333",
+        }
+        cls.record_address_values = {
+            **{
+                key: value
+                for key, value in cls.default_address_values.items()
+                if key != "phone"
+            },
+            "phone_ids": [
+                Command.create({"number": "+323333333333333", "type": "mobile"})
+            ],
+        }
+        cls.expected_address_values = {
+            key: value
+            for key, value in cls.default_address_values.items()
+            if key != "phone"
+        }
+        base_url = cls.base_url()
+        cls.submit_url = urls.urljoin(base_url, "/my/address/submit")
+        cls.archive_url = urls.urljoin(base_url, "/my/address/archive")
+
+        cls.account_a = cls._create_new_portal_user(login="portal_a")
+        cls.account_b = cls._create_new_portal_user(login="portal_b")
+        cls.company_partner = cls.env["res.partner"].create(
+            {
+                "name": "Test Odoo SA",
+                "is_company": True,
+                "email": "odoo@odoo.com",
+                "street": "Chau. de Namur 40",
+                "city": "Ramillies",
+                "zip": "1367",
+                "country_id": cls.country_be.id,
+                "phone_ids": [
+                    Command.create({"number": "+3200000000000", "type": "landline"})
+                ],
+            }
+        )
+        (cls.account_a.partner_id + cls.account_b.partner_id).write(
+            {
+                "parent_id": cls.company_partner.id,
+            }
+        )
+
+    def _make_http_post_request(self, url, data=None):
+        formatted_data = self._format_http_request_payload(payload=data)
+        return self.url_open(url, data=formatted_data)
+
+    def _format_http_request_payload(self, payload=None):
+        formatted_payload = {}
+        if payload is not None:
+            for k, v in payload.items():
+                formatted_payload[k] = str(v) if isinstance(v, float) else v
+        return formatted_payload
+
+    def _submit_address_values(self, values):
+        return self._make_http_post_request(self.submit_url, values).json()
+
+    def test_country_info_includes_state_required(self):
+        self.authenticate(self.portal_user.login, self.portal_user.login)
+        country = self.quick_ref("base.us")
+        result = self.call_jsonrpc(
+            f"/my/address/country_info/{country.id}",
+            params={"address_type": "billing"},
+        )
+        self.assertIn("state_required", result)
+        self.assertEqual(result["state_required"], country.state_required)
+
+    def test_required_values(self):
+        self.authenticate(self.portal_user.login, self.portal_user.login)
+        csrf_token = Request.csrf_token(self)
+        for fname in ("name", "email", "street", "city", "country_id", "phone"):
+            res = self._submit_address_values(
+                {
+                    **self.default_address_values,
+                    "csrf_token": csrf_token,
+                    "partner_id": self.portal_user.partner_id.id,
+                    fname: "",
+                }
+            )
+            self.assertIn(fname, res["invalid_fields"])
+
+    def test_email_validation(self):
+        self.authenticate(self.portal_user.login, self.portal_user.login)
+        csrf_token = Request.csrf_token(self)
+        res = self._submit_address_values(
+            {
+                **self.default_address_values,
+                "csrf_token": csrf_token,
+                "email": "hello",
+                "street": False,
+            }
+        )
+        self.assertIn("email", res["invalid_fields"])
+        res = self._submit_address_values(
+            {
+                **self.default_address_values,
+                "csrf_token": csrf_token,
+                "email": "hello@.com",
+                "street": False,
+            }
+        )
+        self.assertIn("email", res["invalid_fields"])
+        res = self._submit_address_values(
+            {
+                **self.default_address_values,
+                "csrf_token": csrf_token,
+                "email": "hello@oo.",
+                "street": False,
+            }
+        )
+        self.assertIn("email", res["invalid_fields"])
+
+    def test_internal_user_cannot_update_name(self):
+        self.authenticate(self.internal_user.login, self.internal_user.login)
+        csrf_token = Request.csrf_token(self)
+
+        internal_partner = self.internal_user.partner_id
+        internal_partner.write(self.record_address_values)
+
+        res = self._submit_address_values(
+            {
+                **self.default_address_values,
+                "name": "My name is nobody",
+                "csrf_token": csrf_token,
+                "partner_id": internal_partner.id,
+            }
+        )
+        self.assertIn("name", res["invalid_fields"])
+
+    def test_internal_user_cannot_update_email(self):
+        self.authenticate(self.internal_user.login, self.internal_user.login)
+        csrf_token = Request.csrf_token(self)
+
+        internal_partner = self.internal_user.partner_id
+        internal_partner.write(self.record_address_values)
+
+        res = self._submit_address_values(
+            {
+                **self.default_address_values,
+                "email": "new_email@hohoho.com",
+                "csrf_token": csrf_token,
+                "partner_id": internal_partner.id,
+            }
+        )
+        self.assertIn("email", res["invalid_fields"])
+
+    def test_vat_update(self):
+        self.authenticate(self.portal_user.login, self.portal_user.login)
+        csrf_token = Request.csrf_token(self)
+
+        res = self._submit_address_values(
+            {
+                **self.default_address_values,
+                "vat": "BE0926372368",
+                "csrf_token": csrf_token,
+                "partner_id": self.portal_user.partner_id.id,
+            }
+        )
+        self.assertEqual(res, {"redirectUrl": "/my/addresses"})
+        self.assertRecordValues(
+            self.portal_user.partner_id,
+            [{**self.expected_address_values, "vat": "BE0926372368"}],
+        )
+
+    def test_cannot_update_vat_on_child_addresses(self):
+        self.authenticate(self.account_a.login, self.account_a.login)
+        csrf_token = Request.csrf_token(self)
+
+        res = self._submit_address_values(
+            {
+                **self.default_address_values,
+                "vat": "BE0926372368",
+                "csrf_token": csrf_token,
+                "partner_id": self.account_a.partner_id.id,
+            }
+        )
+        self.assertIn("vat", res["invalid_fields"])
+
+    def test_main_address_update(self):
+        self.authenticate(self.portal_user.login, self.portal_user.login)
+        csrf_token = Request.csrf_token(self)
+
+        res = self._submit_address_values(
+            {
+                **self.default_address_values,
+                "csrf_token": csrf_token,
+                "partner_id": self.portal_user.partner_id.id,
+            }
+        )
+        self.assertEqual(res, {"redirectUrl": "/my/addresses"})
+        self.assertRecordValues(
+            self.portal_user.partner_id,
+            [self.expected_address_values],
+        )
+
+    def test_success_url(self):
+        self.authenticate(self.portal_user.login, self.portal_user.login)
+        csrf_token = Request.csrf_token(self)
+
+        res = self._submit_address_values(
+            {
+                **self.default_address_values,
+                "csrf_token": csrf_token,
+                "partner_id": self.portal_user.partner_id.id,
+                "callback": "/my/beautiful/url",
+            }
+        )
+        self.assertEqual(res, {"redirectUrl": "/my/beautiful/url"})
+        self.assertRecordValues(
+            self.portal_user.partner_id,
+            [self.expected_address_values],
+        )
+
+    def test_billing_address_creation(self):
+        self.authenticate(self.portal_user.login, self.portal_user.login)
+        csrf_token = Request.csrf_token(self)
+
+        res = self._submit_address_values(
+            {
+                **self.default_address_values,
+                "csrf_token": csrf_token,
+                "address_type": "billing",
+            }
+        )
+        self.assertEqual(res, {"redirectUrl": "/my/addresses"})
+        billing_address = self.portal_user.partner_id.child_ids
+        self.assertTrue(len(billing_address) == 1)
+        self.assertEqual(billing_address.type, "invoice")
+        self.assertRecordValues(
+            self.portal_user.partner_id.child_ids,
+            [self.expected_address_values],
+        )
+
+    def test_delivery_address_creation(self):
+        self.authenticate(self.portal_user.login, self.portal_user.login)
+        csrf_token = Request.csrf_token(self)
+
+        res = self._submit_address_values(
+            {
+                **self.default_address_values,
+                "csrf_token": csrf_token,
+                "address_type": "delivery",
+            }
+        )
+        self.assertEqual(res, {"redirectUrl": "/my/addresses"})
+        delivery_address = self.portal_user.partner_id.child_ids
+        self.assertTrue(len(delivery_address) == 1)
+        self.assertEqual(delivery_address.type, "delivery")
+        self.assertRecordValues(
+            self.portal_user.partner_id.child_ids,
+            [self.expected_address_values],
+        )
+
+    def test_delivery_use_as_billing_address_creation(self):
+        self.authenticate(self.portal_user.login, self.portal_user.login)
+        csrf_token = Request.csrf_token(self)
+
+        res = self._submit_address_values(
+            {
+                **self.default_address_values,
+                "csrf_token": csrf_token,
+                "address_type": "delivery",
+                "use_delivery_as_billing": "1",
+            }
+        )
+        self.assertEqual(res, {"redirectUrl": "/my/addresses"})
+        delivery_address = self.portal_user.partner_id.child_ids
+        self.assertTrue(len(delivery_address) == 1)
+        self.assertEqual(delivery_address.type, "other")
+        self.assertRecordValues(
+            self.portal_user.partner_id.child_ids,
+            [self.expected_address_values],
+        )
+
+    def test_address_archiving(self):
+        self.authenticate(self.account_a.login, self.account_a.login)
+
+        with self.assertRaises(JsonRpcException):
+            self.call_jsonrpc(
+                self.archive_url,
+                params={"partner_id": self.portal_user.partner_id.id},
+            )
+
+        with self.assertRaises(JsonRpcException), mute_logger("odoo.http"):
+            self.call_jsonrpc(
+                self.archive_url,
+                params={"partner_id": self.account_a.partner_id.id},
+            )
+
+        with self.assertRaises(JsonRpcException):
+            self.call_jsonrpc(
+                self.archive_url,
+                params={"partner_id": self.account_b.partner_id.id},
+            )
+
+        child_partner = self.env["res.partner"].create(
+            {
+                "parent_id": self.account_a.partner_id.id,
+                "type": "delivery",
+                "street": "Nowhere",
+                "name": "Nobody",
+            }
+        )
+        self.assertTrue(child_partner.active)
+        self.call_jsonrpc(
+            self.archive_url,
+            params={"partner_id": child_partner.id},
+        )
+        self.assertFalse(child_partner.active)
+
+    def test_zipcode_alias_is_consumed_from_extra_form_data(self):
+        captured = {}
+
+        original = CustomerPortal._handle_extra_form_data
+
+        def spy(controller_self, extra_form_data, address_values):
+            captured["extra"] = dict(extra_form_data)
+            captured["address"] = dict(address_values)
+            return original(controller_self, extra_form_data, address_values)
+
+        self.patch(CustomerPortal, "_handle_extra_form_data", spy)
+
+        self.authenticate(self.portal_user.login, self.portal_user.login)
+        csrf_token = Request.csrf_token(self)
+        values = {**self.default_address_values}
+        values.pop("zip")
+        values["zipcode"] = "9999"
+
+        res = self._submit_address_values(
+            {
+                **values,
+                "csrf_token": csrf_token,
+                "partner_id": self.portal_user.partner_id.id,
+            }
+        )
+
+        self.assertEqual(res, {"redirectUrl": "/my/addresses"})
+        self.assertEqual(self.portal_user.partner_id.zip, "9999")
+        self.assertIn("zip", captured["address"])
+        self.assertNotIn(
+            "zipcode",
+            captured["extra"],
+            "zipcode was already aliased to zip and should not be reported "
+            "as an unmapped extra form field",
+        )

@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="res_groups_privilege_website" model="res.groups.privilege">
+        <field name="name">Website</field>
+        <field name="sequence">23</field>
+        <field name="category_id" ref="base.module_category_website" />
+    </record>
+
+    <record id="group_website_restricted_editor" model="res.groups">
+        <field name="name">Restricted Editor</field>
+        <field name="sequence">10</field>
+        <field name="privilege_id" ref="res_groups_privilege_website" />
+    </record>
+
+    <record id="group_website_designer" model="res.groups">
+        <field name="name">Editor and Designer</field>
+        <field name="sequence">20</field>
+        <field name="privilege_id" ref="res_groups_privilege_website" />
+        <field
+            name="implied_ids"
+            eval="[Command.link(ref('group_website_restricted_editor')), Command.link(ref('base.group_sanitize_override'))]" />
+        <field name="implied_by_ids" eval="[Command.link(ref('base.group_system'))]" />
+        <field
+            name="user_ids"
+            eval="[Command.link(ref('base.user_root')), Command.link(ref('base.user_admin'))]" />
+    </record>
+
+    <record id="privilege_read_asset_twin" model="res.groups">
+        <field
+            name="name">Privilege: read what makes two websites build their assets alike</field>
+        <field
+            name="comment">Whoever renders a page needs the websites and their own asset rows to learn which website's builds the page shares, whether or not they may read them.</field>
+        <field name="is_privilege" eval="True" />
+    </record>
+
+    <record id="website_page_controller_expose" model="res.groups">
+        <field name="name">Public access to arbitrary exposed model</field>
+    </record>
+
+    <record id="base.group_public" model="res.groups">
+        <field
+            name="implied_ids"
+            eval="[Command.link(ref('website.website_page_controller_expose'))]" />
+    </record>
+
+    <record id="base.group_portal" model="res.groups">
+        <field
+            name="implied_ids"
+            eval="[Command.link(ref('website.website_page_controller_expose'))]" />
+    </record>
+
+    <record id="access_ir_ui_view_controller_page_public" model="ir.access">
+        <field
+            name="name">Website: visitors read the visible views of exposed pages</field>
+        <field name="model_id" ref="base.model_ir_ui_view" />
+        <field name="group_id" ref="base.group_public" />
+        <field name="kind">permission</field>
+        <field name="operation">r</field>
+        <field
+            name="domain">['&amp;', ('controller_page_ids', '!=', False), '|', ('type', '!=', 'qweb'), ('visibility', 'in', ('public', False))]</field>
+        <field name="reach">all</field>
+    </record>
+
+    <record id="access_ir_ui_view_controller_page_portal" model="ir.access">
+        <field
+            name="name">Website: portal users read the visible views of exposed pages</field>
+        <field name="model_id" ref="base.model_ir_ui_view" />
+        <field name="group_id" ref="base.group_portal" />
+        <field name="kind">permission</field>
+        <field name="operation">r</field>
+        <field
+            name="domain">['&amp;', ('controller_page_ids', '!=', False), '|', ('type', '!=', 'qweb'), ('visibility', 'in', ('public', 'connected', False))]</field>
+        <field name="reach">all</field>
+    </record>
+
+</odoo>

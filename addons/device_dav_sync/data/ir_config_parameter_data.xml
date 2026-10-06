@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="config_param_dav_sync_window_days" model="ir.config_parameter">
+        <field name="key">dav_sync.sync_window_days</field>
+        <field name="value">90</field>
+    </record>
+
+    <record id="config_param_dav_max_items_per_sync" model="ir.config_parameter">
+        <field name="key">dav_sync.max_items_per_sync</field>
+        <field name="value">1000</field>
+    </record>
+
+</odoo>

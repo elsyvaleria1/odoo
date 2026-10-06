@@ -1,0 +1,108 @@
+/** @odoo-module native */
+import { Component, t, useProps } from "@odoo/owl";
+import { evaluateExpr } from "@web/core/py_js/py";
+import { registry } from "@web/core/registry";
+import { _t } from "@web/core/translation";
+import { useService } from "@web/core/utils/hooks";
+import { FloatField, floatField } from "@web/fields/basic/float/float_field";
+import {
+    MonetaryField,
+    monetaryField,
+} from "@web/fields/basic/monetary/monetary_field";
+
+const fieldRegistry = registry.category("fields");
+
+class StockActionField extends Component {
+    static props = {
+        ...FloatField.props,
+        ...MonetaryField.props,
+        actionName: t.string(),
+        actionContext: t.string().optional(),
+        disabled: t.string().optional(),
+    };
+    static components = {
+        FloatField,
+        MonetaryField,
+    };
+    static template = "stock.actionField";
+    props = useProps(this.constructor.props);
+
+    setup() {
+        super.setup();
+        this.actionService = useService("action");
+        this.fieldType = this.props.record.fields[this.props.name].type;
+    }
+
+    extractProps() {
+        const keysToRemove = ["actionName", "actionContext", "disabled"];
+        return Object.fromEntries(
+            Object.entries(this.props).filter(([prop]) => !keysToRemove.includes(prop)),
+        );
+    }
+
+    get disabled() {
+        return this.props.disabled
+            ? evaluateExpr(this.props.disabled, this.props.record.evalContext)
+            : false;
+    }
+
+    _onClick(ev) {
+        ev.stopPropagation();
+        ev.preventDefault();
+
+        const actionName = this.props.actionName;
+        const actionContext = this.props.actionContext
+            ? evaluateExpr(this.props.actionContext, this.props.record.evalContext)
+            : {};
+
+        this.actionService.doAction(actionName, {
+            additionalContext: { ...actionContext, ...this.props.record.context },
+        });
+    }
+}
+
+const stockActionField = {
+    ...floatField,
+    ...monetaryField,
+    component: StockActionField,
+    supportedTypes: ["monetary", "float"],
+    supportedOptions: [
+        ...Object.values(
+            Object.fromEntries(
+                [...floatField.supportedOptions, ...monetaryField.supportedOptions].map(
+                    (option) => [option.name, option],
+                ),
+            ),
+        ),
+        {
+            label: _t("Action Name"),
+            name: "action_name",
+            type: "string",
+        },
+        {
+            label: _t("Disabled"),
+            name: "disabled",
+            type: "string",
+            help: _t(
+                "Python expression evaluated against the record to disable the field.",
+            ),
+        },
+    ],
+    extractProps: (...args) => {
+        const [{ context, type: fieldType, options }] = args;
+        const action_props = {
+            actionName: options.action_name,
+            disabled: options.disabled,
+            actionContext: context,
+        };
+        let props = { ...action_props };
+        if (fieldType === "monetary") {
+            props = { ...action_props, ...monetaryField.extractProps(...args) };
+        } else if (fieldType === "float") {
+            props = { ...action_props, ...floatField.extractProps(...args) };
+        }
+        return props;
+    },
+};
+
+fieldRegistry.add("stock_action_field", stockActionField);

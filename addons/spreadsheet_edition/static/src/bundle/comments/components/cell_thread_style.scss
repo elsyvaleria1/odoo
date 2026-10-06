@@ -1,0 +1,93 @@
+.o-cell-thread {
+    display: flex;
+    flex-direction: column;
+    border-radius: 2px;
+
+    .o-mail-Thread {
+        display: inline-block;
+        padding-left: 5px;
+        padding-right: 5px;
+    }
+
+    .o-cell-thread-body {
+        overflow-y: auto;
+    }
+
+    .o-mail-Composer {
+        padding: 3px 10px 0 10px;
+    }
+}
+
+.o-thread-start-composer {
+    padding: 5px 10px 0 10px;
+}
+
+.o-spreadsheet .o-selfAuthored {
+    .o-mail-Message-core {
+        flex-direction: row-reverse;
+    }
+    .o-mail-Message-header {
+        justify-content: flex-end;
+    }
+}
+
+.o-thread-popover {
+    width: $o-mail-ChatWindow-width;
+    overflow-y: auto;
+
+    .o-thread-highlight,
+    .o-cell-thread,
+    .o-thread-start-composer {
+        min-width: 270px;
+        width: 100%;
+    }
+
+    .o-cell-thread,
+    .o-thread-start-composer {
+        background-color: white;
+    }
+
+    .o-thread-highlight {
+        background-color: #e8edff;
+    }
+}
+
+// The dark half, folded in from `cell_thread_style.dark.scss`.
+@include media-only(screen) {
+    :root[data-color-scheme="dark"] {
+        /** Shame css to counteract dark mode */
+        .o-spreadsheet .o-thread-popover {
+            .text-primary {
+                color: #714b67 !important;
+            }
+
+            .text-body {
+                color: #374151 !important;
+            }
+
+            .border,
+            .border-top {
+                border-color: #d8dadd !important;
+            }
+
+            .o-mail-Composer-bg {
+                background-color: white !important;
+                color: #374151 !important;
+            }
+
+            .o-mail-Composer .btn {
+                color: white;
+            }
+
+            .o-mail-Composer-actions button,
+            .o-mail-Message-actions button {
+                color: #374151 !important;
+
+                &:hover,
+                &:focus {
+                    color: black !important;
+                }
+            }
+        }
+    }
+}

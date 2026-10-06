@@ -1,0 +1,101 @@
+/** @odoo-module native */
+import { onWillUnmount, proxy } from "@odoo/owl";
+import { pick } from "@web/core/utils/collections/objects";
+import { makeNativeDraggableHook } from "@web/core/utils/dnd";
+import { useLayoutEffect } from "@web/core/utils/layout_effect";
+import { useThrottleForAnimation } from "@web/core/utils/timing";
+
+const hookParams = {
+    name: "useHierarchyNodeDraggable",
+    acceptedParams: {
+        rows: [String],
+    },
+    defaultParams: {
+        edgeScrolling: { speed: 20, threshold: 60 },
+        rows: null,
+    },
+    onComputeParams({ ctx, params }) {
+        ctx.rowSelector = params.rows || null;
+        if (ctx.rowSelector) {
+            ctx.fullSelector = `${ctx.rowSelector} ${ctx.fullSelector}`;
+        }
+    },
+    onDragStart(params) {
+        const { ctx, addListener, callHandler } = params;
+
+        const onElementPointerEnter = (ev) => {
+            const element = ev.currentTarget;
+            current.hierarchyElement = element;
+            callHandler("onElementEnter", { element });
+        };
+
+        const onElementPointerLeave = (ev) => {
+            const element = ev.currentTarget;
+            current.hierarchyElement = null;
+            callHandler("onElementLeave", { element });
+        };
+
+        const onRowPointerEnter = (ev) => {
+            const row = ev.currentTarget;
+            current.hierarchyRow = row;
+            callHandler("onRowEnter", { row });
+        };
+
+        const onRowPointerLeave = (ev) => {
+            const row = ev.currentTarget;
+            current.hierarchyRow = null;
+            callHandler("onRowLeave", { row });
+        };
+
+        const { ref, current, elementSelector, rowSelector } = ctx;
+
+        for (const rowEl of ref.el.querySelectorAll(rowSelector)) {
+            addListener(rowEl, "pointerenter", onRowPointerEnter);
+            addListener(rowEl, "pointerleave", onRowPointerLeave);
+        }
+
+        for (const siblingEl of ref.el.querySelectorAll(elementSelector)) {
+            if (siblingEl !== current.element) {
+                addListener(siblingEl, "pointerenter", onElementPointerEnter);
+                addListener(siblingEl, "pointerleave", onElementPointerLeave);
+            }
+        }
+
+        return pick(current, "element", "row");
+    },
+    onDragEnd({ ctx }) {
+        return pick(ctx.current, "element", "row", "hierarchyRow");
+    },
+    onDrop({ ctx }) {
+        const { current } = ctx;
+        const rowElement = current.hierarchyRow;
+        const element = current.hierarchyElement;
+        if ((rowElement && rowElement !== current.row) || element) {
+            return {
+                element: current.element,
+                row: current.row,
+                nextRow: rowElement && current.row !== rowElement ? rowElement : null,
+                newParentNode: element,
+            };
+        }
+    },
+    onWillStartDrag({ ctx }) {
+        const { current, rowSelector } = ctx;
+
+        if (rowSelector) {
+            current.row = current.element.closest(rowSelector);
+        }
+
+        return pick(current, "element", "row");
+    },
+};
+
+export function useHierarchyNodeDraggable(params) {
+    const setupHooks = {
+        setup: useLayoutEffect,
+        teardown: onWillUnmount,
+        throttle: useThrottleForAnimation,
+        wrapState: proxy,
+    };
+    return makeNativeDraggableHook({ ...hookParams, setupHooks })(params);
+}

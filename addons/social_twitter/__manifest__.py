@@ -1,0 +1,47 @@
+{
+    "name": "X Social Publishing",
+    "version": "1.3",
+    "oldest_upgradable_version": "1.3",
+    "category": "Marketing/Social Marketing",
+    "summary": "Publish and track content on connected X accounts",
+    "description": "Adds X account authorization, publishing and stream synchronization to Social Publishing. Requires provider credentials and permissions for the selected accounts; available operations depend on the provider API and account access.",
+    "author": "Odoo S.A.",
+    "license": "OEEL-1",
+    "depends": [
+        "social",
+        "iap",
+    ],
+    "data": [
+        "security/ir.access.csv",
+        "data/social_media_data.xml",
+        "views/social_post_template_views.xml",
+        "views/social_stream_views.xml",
+        "views/social_stream_post_views.xml",
+        "views/social_twitter_templates.xml",
+        "views/res_config_settings_views.xml",
+    ],
+    "assets": {
+        "web.assets_backend": [
+            "social_twitter/static/src/scss/social_twitter.scss",
+            "social_twitter/static/src/js/stream_post_comment.js",
+            "social_twitter/static/src/js/stream_post_comment_list.js",
+            "social_twitter/static/src/js/stream_post_comments.js",
+            "social_twitter/static/src/js/stream_post_comments_reply.js",
+            "social_twitter/static/src/js/stream_post_comments_reply_quote.js",
+            "social_twitter/static/src/js/stream_post_kanban_record.js",
+            "social_twitter/static/src/js/stream_post_twitter_quote.js",
+            "social_twitter/static/src/js/twitter_users_autocomplete.js",
+            (
+                "after",
+                "social/static/src/js/social_post_formatter_mixin.js",
+                "social_twitter/static/src/js/social_post_formatter_mixin.js",
+            ),
+            "social_twitter/static/src/xml/**/*",
+        ],
+        "web.assets_web_dark": [],
+        "web.assets_tests": [
+            "social_twitter/static/tests/tours/tour_social_twitter_spam.js",
+        ],
+    },
+    "auto_install": True,
+}

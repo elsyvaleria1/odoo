@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_approval_request_form_inherit_sale" model="ir.ui.view">
+        <field name="name">approval.request.form.inherit.sale</field>
+        <field name="model">approval.request</field>
+        <field name="inherit_id" ref="approval.view_approval_request_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//button[@name='action_view_attachment']" position="after">
+                <button
+                    name="action_view_sale_order"
+                    type="object"
+                    string="Sale Orders"
+                    icon="fa-usd"
+                    groups="sale.group_sale_salesman"
+                    invisible="count_sale_order == 0"
+                    class="oe_stat_button">
+                    <field name="count_sale_order" widget="statinfo" />
+                </button>
+            </xpath>
+
+            <xpath expr="//button[@name='action_confirm']" position="after">
+                <button
+                    name="action_create_sale_orders"
+                    type="object"
+                    string="Create Sale Orders"
+                    groups="sale.group_sale_salesman"
+                    invisible="target_model != 'sale.order' or state != 'approved'"
+                    class="btn-primary" />
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

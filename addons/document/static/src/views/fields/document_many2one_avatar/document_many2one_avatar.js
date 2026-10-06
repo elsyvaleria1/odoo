@@ -1,0 +1,33 @@
+/** @odoo-module native */
+import { Avatar } from "@mail/views/web/fields/avatar/avatar";
+import { Component, useProps } from "@odoo/owl";
+import { registry } from "@web/core/registry";
+import { user } from "@web/core/user";
+import { standardFieldProps } from "@web/fields/standard_field_props";
+
+export class DocumentsMany2OneAvatarField extends Component {
+    static template = "document.DocumentsMany2OneAvatarField";
+    static props = { ...standardFieldProps };
+    static components = {
+        Avatar,
+    };
+    props = useProps(this.constructor.props);
+
+    get user() {
+        return user;
+    }
+}
+
+export const documentsMany2OneAvatarField = {
+    component: DocumentsMany2OneAvatarField,
+    supportedTypes: ["many2one"],
+    relatedFields: [
+        { name: "active", type: "boolean" },
+        { name: "email", type: "char" },
+        { name: "name", type: "char" },
+    ],
+};
+
+registry
+    .category("fields")
+    .add("documents_many2one_avatar", documentsMany2OneAvatarField);

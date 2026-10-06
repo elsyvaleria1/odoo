@@ -1,0 +1,2 @@
+id,name,model_id/id,group_id/id,kind,operation,domain
+access_data_cleaning_test_model_group_system,access_data_cleaning_test_model_group_system,model_data_cleaning_test_model,base.group_system,permission,crud,

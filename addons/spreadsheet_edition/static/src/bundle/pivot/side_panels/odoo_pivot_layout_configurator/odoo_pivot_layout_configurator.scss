@@ -1,0 +1,55 @@
+// The pivot field selector stays *light* in dark mode: the spreadsheet does not
+// answer the colour scheme yet, so its popover is pinned rather than recoloured.
+// Every value here is a literal for that reason -- reading the dark palette
+// would defeat the point.
+//
+// This was `odoo_pivot_layout_configurator.dark.scss`, which existed only to
+// ride the dark bundle. Scoped, it belongs beside the component it styles.
+@include media-only(screen) {
+    :root[data-color-scheme="dark"] {
+        .o_spreadsheet_pivot_field_selector {
+            /* For light scroll bar */
+            color-scheme: light;
+
+            &.popover {
+                --popover-bg: #ffffff;
+                --popover-border-color: #d8dadd;
+                --border-color: #d8dadd;
+            }
+
+            .text-dark {
+                color: #111827 !important;
+            }
+
+            .btn-light {
+                --btn-color: #111827;
+                --btn-bg: #fff;
+                --btn-active-color: #000;
+                --btn-active-bg: #e6f2f3;
+                --btn-active-border-color: #017e84;
+                --btn-hover-color: #000;
+                --btn-hover-bg: #e7e9ed;
+                --btn-hover-border-color: #e7e9ed;
+                --btn-focus-shadow-rgb: 219, 220, 223;
+                --btn-disabled-color: #000;
+                --btn-disabled-bg: #fff;
+                --btn-disabled-border-color: #fff;
+            }
+
+            .o_model_field_selector_popover
+                .o_model_field_selector_popover_body
+                .o_model_field_selector_popover_page
+                > .o_model_field_selector_popover_item {
+                background: #f9fafb;
+
+                &.active button {
+                    background: rgba(0, 0, 0, 0.08);
+                }
+            }
+
+            .bg-view {
+                --background-color: #fff;
+            }
+        }
+    }
+}

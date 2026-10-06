@@ -1,0 +1,274 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* hr_attendance_telegram
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: es\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: hr_attendance_telegram
+#. odoo-python
+#: code:addons/hr_attendance_telegram/models/telegram_handler.py:0
+#, python-format
+msgid "\n"
+"\n"
+"%(count)s active work orders were paused automatically."
+msgstr "\n"
+"\n"
+"Se han pausado automáticamente %(count)s órdenes de trabajo activas."
+
+#. module: hr_attendance_telegram
+#. odoo-python
+#: code:addons/hr_attendance_telegram/models/hr_attendance.py:0
+msgid "\"Lunch In\" time cannot be earlier than \"Lunch Out\" time."
+msgstr "La hora de \"Regreso de comida\" no puede ser anterior a la de \"Salida a comer\"."
+
+#. module: hr_attendance_telegram
+#. odoo-python
+#: code:addons/hr_attendance_telegram/models/hr_attendance.py:0
+msgid "\"Lunch In\" time cannot be later than \"Check Out\" time."
+msgstr "La hora de \"Regreso de comida\" no puede ser posterior a la de \"Salida\"."
+
+#. module: hr_attendance_telegram
+#. odoo-python
+#: code:addons/hr_attendance_telegram/models/hr_attendance.py:0
+msgid "\"Lunch Out\" time cannot be earlier than \"Check In\" time."
+msgstr "La hora de \"Salida a comer\" no puede ser anterior a la de \"Entrada\"."
+
+#. module: hr_attendance_telegram
+#. odoo-python
+#: code:addons/hr_attendance_telegram/models/hr_attendance.py:0
+msgid "\"Lunch Out\" time cannot be later than \"Check Out\" time."
+msgstr "La hora de \"Salida a comer\" no puede ser posterior a la de \"Salida\"."
+
+#. module: hr_attendance_telegram
+#. odoo-python
+#: code:addons/hr_attendance_telegram/models/telegram_handler.py:0
+msgid "/comida [HH:MM] - Record the start of your lunch. The time is optional."
+msgstr "/comida [HH:MM] - Registra el inicio de tu comida. Opcionalmente puedes especificar la hora."
+
+#. module: hr_attendance_telegram
+#. odoo-python
+#: code:addons/hr_attendance_telegram/models/telegram_handler.py:0
+msgid "/entrada [HH:MM] - Record your arrival. The time is optional."
+msgstr "/entrada [HH:MM] - Registra tu llegada. Opcionalmente puedes especificar la hora."
+
+#. module: hr_attendance_telegram
+#. odoo-python
+#: code:addons/hr_attendance_telegram/models/telegram_handler.py:0
+msgid "/regresocomida [HH:MM] - Record your return from lunch. The time is optional."
+msgstr "/regresocomida [HH:MM] - Registra tu regreso de la comida. Opcionalmente puedes especificar la hora."
+
+#. module: hr_attendance_telegram
+#. odoo-python
+#: code:addons/hr_attendance_telegram/models/telegram_handler.py:0
+msgid "/salida [HH:MM] - Record your departure. The time is optional."
+msgstr "/salida [HH:MM] - Registra tu salida. Opcionalmente puedes especificar la hora."
+
+#. module: hr_attendance_telegram
+#: model:ir.model,name:hr_attendance_telegram.model_hr_attendance
+msgid "Attendance"
+msgstr "Asistencia"
+
+#. module: hr_attendance_telegram
+#. odoo-python
+#: code:addons/hr_attendance_telegram/models/telegram_handler.py:0
+msgid "Attendance Commands"
+msgstr "Comandos de Asistencia"
+
+#. module: hr_attendance_telegram
+#: model:ir.actions.server,name:hr_attendance_telegram.ir_cron_automatic_checkout_attendances_ir_actions_server
+msgid "Auto Checkout Attendances"
+msgstr "Salida automática de asistencias"
+
+#. module: hr_attendance_telegram
+#. odoo-python
+#: code:addons/hr_attendance_telegram/models/hr_attendance.py:0
+msgid "Cannot have a \"Lunch In\" time without a \"Lunch Out\" time."
+msgstr "No puede haber una hora de \"Regreso de comida\" sin una de \"Salida a comer\"."
+
+#. module: hr_attendance_telegram
+#: model:ir.model.fields,field_description:hr_attendance_telegram.field_hr_attendance__display_name
+#: model:ir.model.fields,field_description:hr_attendance_telegram.field_telegram_chat__display_name
+#: model:ir.model.fields,field_description:hr_attendance_telegram.field_telegram_handler_attendance__display_name
+msgid "Display Name"
+msgstr "Nombre mostrado"
+
+#. module: hr_attendance_telegram
+#. odoo-python
+#: code:addons/hr_attendance_telegram/models/telegram_handler.py:0
+#, python-format
+msgid "Error: %(error)s"
+msgstr "Error: %(error)s"
+
+#. module: hr_attendance_telegram
+#. odoo-python
+#: code:addons/hr_attendance_telegram/models/telegram_handler.py:0
+#, python-format
+msgid "Hello %(name)s! Your check-in was recorded at %(time)s. Have a great day!"
+msgstr "¡Hola %(name)s! Se ha registrado tu entrada a las %(time)s. ¡Que tengas un excelente día!"
+
+#. module: hr_attendance_telegram
+#: model:ir.model.fields,field_description:hr_attendance_telegram.field_hr_attendance__id
+#: model:ir.model.fields,field_description:hr_attendance_telegram.field_telegram_chat__id
+#: model:ir.model.fields,field_description:hr_attendance_telegram.field_telegram_handler_attendance__id
+msgid "ID"
+msgstr "ID"
+
+#. module: hr_attendance_telegram
+#: model:ir.model.fields,field_description:hr_attendance_telegram.field_hr_attendance__lunch_hours
+msgid "Lunch Hours"
+msgstr "Horas de comida"
+
+#. module: hr_attendance_telegram
+#: model:ir.model.fields,field_description:hr_attendance_telegram.field_hr_attendance__lunch_in
+msgid "Lunch In"
+msgstr "Regreso de comida"
+
+#. module: hr_attendance_telegram
+#: model:ir.model.fields,field_description:hr_attendance_telegram.field_hr_attendance__lunch_out
+msgid "Lunch Out"
+msgstr "Salida a comer"
+
+#. module: hr_attendance_telegram
+#. odoo-python
+#: code:addons/hr_attendance_telegram/models/telegram_handler.py:0
+msgid "Only employees can use attendance commands."
+msgstr "Solo los empleados pueden usar comandos de asistencia."
+
+#. module: hr_attendance_telegram
+#. odoo-python
+#: code:addons/hr_attendance_telegram/models/telegram_handler.py:0
+msgid "Something went wrong. Please try again with /entrada"
+msgstr "Ocurrió un error. Por favor, intenta de nuevo con /entrada"
+
+#. module: hr_attendance_telegram
+#: model:ir.model,name:hr_attendance_telegram.model_telegram_handler_attendance
+msgid "Telegram: Attendance"
+msgstr "Telegram: asistencia"
+
+#. module: hr_attendance_telegram
+#. odoo-python
+#: code:addons/hr_attendance_telegram/models/telegram_handler.py:0
+msgid "That attendance is already closed. Use /entrada to record a new one."
+msgstr "La asistencia ya fue cerrada. Usa /entrada para registrar una nueva."
+
+#. module: hr_attendance_telegram
+#. odoo-python
+#: code:addons/hr_attendance_telegram/models/telegram_handler.py:0
+#, python-format
+msgid "The time format '%(value)s' is invalid. Please use HH:MM (e.g. 17:00)."
+msgstr "El formato de hora '%(value)s' es inválido. Por favor, usa el formato HH:MM (ej. 17:00)."
+
+#. module: hr_attendance_telegram
+#. odoo-python
+#: code:addons/hr_attendance_telegram/models/hr_attendance.py:0
+msgid "This attendance was automatically closed by the system at the end of the day."
+msgstr "Esta asistencia fue cerrada automáticamente por el sistema al final del día."
+
+#. module: hr_attendance_telegram
+#: model:ir.model.fields,help:hr_attendance_telegram.field_hr_attendance__lunch_in
+msgid "Time the employee clocked back in from lunch."
+msgstr "Hora en que el empleado registró su regreso de la comida."
+
+#. module: hr_attendance_telegram
+#: model:ir.model.fields,help:hr_attendance_telegram.field_hr_attendance__lunch_out
+msgid "Time the employee clocked out for lunch."
+msgstr "Hora en que el empleado registró su salida a comer."
+
+#. module: hr_attendance_telegram
+#. odoo-python
+#: code:addons/hr_attendance_telegram/models/telegram_handler.py:0
+msgid "You already have a check-in today with no check-out."
+msgstr "Ya tienes una entrada registrada sin salida el día de hoy."
+
+#. module: hr_attendance_telegram
+#. odoo-python
+#: code:addons/hr_attendance_telegram/models/telegram_handler.py:0
+msgid "You already recorded your lunch break."
+msgstr "Ya has registrado tu salida a comer."
+
+#. module: hr_attendance_telegram
+#. odoo-python
+#: code:addons/hr_attendance_telegram/models/telegram_handler.py:0
+msgid "You already recorded your return from lunch."
+msgstr "Ya has registrado tu regreso de la comida."
+
+#. module: hr_attendance_telegram
+#. odoo-python
+#: code:addons/hr_attendance_telegram/models/telegram_handler.py:0
+#, python-format
+msgid "You have an open check-in from %(date)s.\n"
+"What time did you clock out that day? (HH:MM format)"
+msgstr "Tienes una entrada del %(date)s sin cerrar.\n"
+"¿A qué hora saliste ese día? (formato HH:MM)"
+
+#. module: hr_attendance_telegram
+#. odoo-python
+#: code:addons/hr_attendance_telegram/models/telegram_handler.py:0
+msgid "You have no open check-in to close with a check-out."
+msgstr "No tienes una entrada abierta para registrar una salida."
+
+#. module: hr_attendance_telegram
+#. odoo-python
+#: code:addons/hr_attendance_telegram/models/telegram_handler.py:0
+msgid "You have not recorded a lunch break, so you cannot record a return."
+msgstr "No has registrado una salida a comer, por lo que no puedes registrar tu regreso."
+
+#. module: hr_attendance_telegram
+#. odoo-python
+#: code:addons/hr_attendance_telegram/models/telegram_handler.py:0
+msgid "You need an active check-in to record a lunch break."
+msgstr "Debes tener una entrada activa para registrar tu salida a comer."
+
+#. module: hr_attendance_telegram
+#. odoo-python
+#: code:addons/hr_attendance_telegram/models/telegram_handler.py:0
+msgid "Your chat must be linked to a contact to use attendance commands."
+msgstr "Tu chat debe estar vinculado a un contacto para usar comandos de asistencia."
+
+#. module: hr_attendance_telegram
+#. odoo-python
+#: code:addons/hr_attendance_telegram/models/telegram_handler.py:0
+#, python-format
+msgid "Your check-out was recorded at %(time)s. See you later, %(name)s!"
+msgstr "Se ha registrado tu salida a las %(time)s. ¡Hasta luego, %(name)s!"
+
+#. module: hr_attendance_telegram
+#. odoo-python
+#: code:addons/hr_attendance_telegram/models/telegram_handler.py:0
+#, python-format
+msgid "Your lunch break was recorded at %(time)s. Enjoy your meal!"
+msgstr "Se ha registrado tu salida a comer a las %(time)s. ¡Buen provecho!"
+
+#. module: hr_attendance_telegram
+#. odoo-python
+#: code:addons/hr_attendance_telegram/models/telegram_handler.py:0
+#, python-format
+msgid "Your return from lunch was recorded at %(time)s."
+msgstr "Se ha registrado tu regreso de la comida a las %(time)s."
+
+#. module: hr_attendance_telegram
+#. odoo-python
+#: code:addons/hr_attendance_telegram/models/telegram_chat.py:0
+msgid "an attendance record"
+msgstr "un registro de asistencia"
+
+#. module: hr_attendance_telegram
+#. odoo-python
+#: code:addons/hr_attendance_telegram/models/telegram_handler.py:0
+#, python-format
+msgid "✅ Your check-out for %(date)s was recorded at %(out_time)s.\n"
+"\n"
+"Hello %(name)s! Your check-in for today was recorded at %(in_time)s. Have a great day!"
+msgstr "✅ Se registró tu salida del %(date)s a las %(out_time)s.\n"
+"\n"
+"¡Hola %(name)s! Se ha registrado tu entrada de hoy a las %(in_time)s. ¡Que tengas un excelente día!"

@@ -1,0 +1,118 @@
+/** @odoo-module native */
+import { EventBus } from "@odoo/owl";
+import { browser } from "@web/core/browser/browser";
+import { registry } from "@web/core/registry";
+
+/**
+ * Despite the name, this is NOT a main-tab election service (that is
+ * `multi_tab` / multi_tab_service.js): it is a cross-tab key/value store on
+ * localStorage (get/set/removeSharedValue + a "shared_value_updated" bus),
+ * used e.g. for the bus notification watermark, composer preferences and RTC
+ * device choices. The name is a historical leftover from when election and
+ * storage lived in one service; the registry id "legacy_multi_tab" is kept
+ * because consumers across addons depend on it.
+ */
+export const legacyMultiTabService = {
+    start() {
+        const bus = new EventBus();
+
+        // PROPERTIES
+        const sanitizedOrigin = location.origin.replace(/:\/{0,2}/g, "_");
+        const localStoragePrefix = `bus.${sanitizedOrigin}.`;
+        // Historical accident: the prefix used to be built from `this.name`,
+        // which is undefined on a service value, yielding literal
+        // "undefined.<origin>." keys. Consumers persist real user
+        // preferences under it (e.g. mail.html_composer.enabled, RTC device
+        // choices), so migrate them once instead of silently resetting.
+        try {
+            const legacyPrefix = `undefined.${sanitizedOrigin}.`;
+            for (let i = browser.localStorage.length - 1; i >= 0; i--) {
+                const key = browser.localStorage.key(i);
+                if (!key || !key.startsWith(legacyPrefix)) {
+                    continue;
+                }
+                const newKey = localStoragePrefix + key.slice(legacyPrefix.length);
+                if (browser.localStorage.getItem(newKey) === null) {
+                    browser.localStorage.setItem(
+                        newKey,
+                        browser.localStorage.getItem(key),
+                    );
+                }
+                browser.localStorage.removeItem(key);
+            }
+        } catch {
+            // localStorage can be unavailable (privacy mode) — the service
+            // degrades the same way it always has, no migration needed.
+        }
+
+        function generateLocalStorageKey(baseKey) {
+            return localStoragePrefix + baseKey;
+        }
+
+        function getItemFromStorage(key, defaultValue) {
+            const item = browser.localStorage.getItem(generateLocalStorageKey(key));
+            try {
+                return item ? JSON.parse(item) : defaultValue;
+            } catch {
+                return item;
+            }
+        }
+
+        function setItemInStorage(key, value) {
+            browser.localStorage.setItem(
+                generateLocalStorageKey(key),
+                JSON.stringify(value),
+            );
+        }
+
+        function onStorage({ key, newValue }) {
+            if (key && key.includes(localStoragePrefix)) {
+                // Only trigger the shared_value_updated event if the key is
+                // related to this service/origin.
+                const baseKey = key.replace(localStoragePrefix, "");
+                bus.trigger("shared_value_updated", { key: baseKey, newValue });
+            }
+        }
+
+        browser.addEventListener("storage", onStorage);
+
+        return {
+            bus,
+            generateLocalStorageKey,
+            getItemFromStorage,
+            setItemInStorage,
+            /**
+             * Get value shared between all the tabs.
+             *
+             * @param {string} key
+             * @param {any} defaultValue Value to be returned if this
+             * key does not exist.
+             */
+            getSharedValue(key, defaultValue) {
+                return getItemFromStorage(key, defaultValue);
+            },
+            /**
+             * Set value shared between all the tabs.
+             *
+             * @param {string} key
+             * @param {any} value
+             */
+            setSharedValue(key, value) {
+                if (value === undefined) {
+                    return this.removeSharedValue(key);
+                }
+                setItemInStorage(key, value);
+            },
+            /**
+             * Remove value shared between all the tabs.
+             *
+             * @param {string} key
+             */
+            removeSharedValue(key) {
+                browser.localStorage.removeItem(generateLocalStorageKey(key));
+            },
+        };
+    },
+};
+
+registry.category("services").add("legacy_multi_tab", legacyMultiTabService);

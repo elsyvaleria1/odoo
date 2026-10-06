@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="account_analytic_account_view_form_purchase" model="ir.ui.view">
+        <field name="name">account.analytic.account.form.purchase</field>
+        <field name="model">account.analytic.account</field>
+        <field name="inherit_id" ref="analytic.view_account_analytic_account_form" />
+        <field name="priority" eval="10" />
+        <field name="arch" type="xml">
+            <div name="button_box" position="inside">
+                <button
+                    name="action_view_purchase_orders"
+                    type="object"
+                    icon="fa-credit-card"
+                    groups="purchase.group_purchase_user"
+                    invisible="purchase_order_count == 0"
+                    class="oe_stat_button">
+                    <field
+                        name="purchase_order_count"
+                        string="Purchase Orders"
+                        widget="statinfo" />
+                </button>
+            </div>
+        </field>
+    </record>
+
+</odoo>

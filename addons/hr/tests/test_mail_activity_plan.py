@@ -1,0 +1,447 @@
+from freezegun import freeze_time
+
+from odoo import Command, fields
+from odoo.exceptions import UserError
+from odoo.tests import tagged, users
+
+from odoo.addons.mail.tests.common import mail_new_test_user
+from odoo.addons.mail.tests.common_activity import ActivityScheduleCase
+
+
+class ActivityScheduleHRCase(ActivityScheduleCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+
+        cls.plan_onboarding = cls.env["mail.activity.plan"].create(
+            {
+                "name": "Test Onboarding",
+                "res_model": "hr.employee",
+                "template_ids": [
+                    Command.create(
+                        {
+                            "activity_type_id": cls.activity_type_todo.id,
+                            "responsible_id": cls.user_admin.id,
+                            "responsible_type": "other",
+                            "sequence": 10,
+                            "summary": "Plan training",
+                        }
+                    ),
+                    Command.create(
+                        {
+                            "activity_type_id": cls.activity_type_todo.id,
+                            "responsible_id": False,
+                            "responsible_type": "coach",
+                            "sequence": 20,
+                            "summary": "Training",
+                        }
+                    ),
+                ],
+            }
+        )
+        cls.plan_party = cls.env["mail.activity.plan"].create(
+            {
+                "name": "Test Party Plan",
+                "res_model": "res.partner",
+                "template_ids": [
+                    Command.create(
+                        {
+                            "activity_type_id": cls.activity_type_todo.id,
+                            "responsible_id": cls.user_admin.id,
+                            "responsible_type": "on_demand",
+                            "sequence": 10,
+                            "summary": "Party",
+                        }
+                    ),
+                ],
+            }
+        )
+
+        cls.user_manager = mail_new_test_user(
+            cls.env,
+            email="test.manager@test.mycompany.com",
+            groups="base.group_user,hr.group_hr_manager",
+            login="test_manager",
+            name="Test Manager",
+        )
+        cls.user_coach = mail_new_test_user(
+            cls.env,
+            email="test.coach@test.mycompany.com",
+            groups="base.group_user,hr.group_hr_manager",
+            login="test_coach",
+            name="Test Coach",
+        )
+        cls.user_employee_1 = mail_new_test_user(
+            cls.env,
+            email="test.employee1@test.mycompany.com",
+            groups="base.group_user,hr.group_hr_manager",
+            login="test_employee1",
+            name="Test Employee 1",
+        )
+        cls.user_employee_2 = mail_new_test_user(
+            cls.env,
+            email="test.employee2@test.mycompany.com",
+            groups="base.group_user,hr.group_hr_manager",
+            login="test_employee2",
+            name="Test Employee 2",
+        )
+        cls.user_employee_dep_b = mail_new_test_user(
+            cls.env,
+            email="test.employeedepb@test.mycompany.com",
+            groups="base.group_user,hr.group_hr_manager",
+            login="test_employee_dep_b",
+            name="Test Employee DepB",
+        )
+        cls.users = (
+            cls.user_manager
+            + cls.user_coach
+            + cls.user_employee_1
+            + cls.user_employee_2
+            + cls.user_employee_dep_b
+        )
+
+        cls.user_internal_basic = mail_new_test_user(
+            cls.env,
+            email="non.employee@test.mycompany.com",
+            groups="base.group_user",
+            login="non_employee",
+            name="Non Employee",
+        )
+
+        cls.employees = cls.env["hr.employee"].create(
+            [
+                {
+                    "name": user.name,
+                    "user_id": user.id,
+                    "work_email": user.email,
+                }
+                for user in cls.users
+            ]
+        )
+        (
+            cls.employee_manager,
+            cls.employee_coach,
+            cls.employee_1,
+            cls.employee_2,
+            cls.employee_dep_b,
+        ) = cls.employees
+        cls.department_a = cls.env["hr.department"].create(
+            {
+                "name": "Test Department A",
+                "member_ids": [
+                    Command.link(employee.id)
+                    for employee in cls.employees - cls.employee_dep_b
+                ],
+            }
+        )
+        cls.department_b = cls.env["hr.department"].create(
+            {
+                "name": "Test Department B",
+                "member_ids": [Command.link(cls.employee_dep_b.id)],
+            }
+        )
+        cls.employee_1.coach_id = cls.employee_coach
+        cls.employee_1.parent_id = cls.employee_manager
+        cls.employee_2.coach_id = cls.employee_coach
+        cls.employee_2.parent_id = cls.employee_manager
+        cls.employee_coach.parent_id = cls.employee_manager
+        cls.employee_dep_b.coach_id = cls.employee_coach
+
+        cls.employee_3 = cls.employee_coach
+        cls.employee_4 = cls.employee_manager
+        cls.employee_4.coach_id = cls.employee_coach
+        for employee, date_start in (
+            (cls.employee_1, "2023-08-01"),
+            (cls.employee_2, "2023-09-01"),
+            (cls.employee_3, "2023-12-01"),
+            (cls.employee_4, "2024-01-01"),
+        ):
+            employee.version_id.write(
+                {
+                    "contract_date_end": fields.Date.from_string("2025-12-31"),
+                    "contract_date_start": fields.Date.from_string(date_start),
+                    "date_version": fields.Date.from_string(date_start),
+                    "name": "Contract",
+                    "wage": 1,
+                }
+            )
+
+
+@tagged("mail_activity", "mail_activity_plan")
+class TestActivitySchedule(ActivityScheduleHRCase):
+    @users("admin")
+    def test_department(self):
+        no_plan = self.env["mail.activity.plan"]
+        plan_department_a, plan_department_b = self.env["mail.activity.plan"].create(
+            [
+                {
+                    "department_id": department.id,
+                    "name": f"plan {department.name}",
+                    "res_model": "hr.employee",
+                    "template_ids": [
+                        (0, 0, {"activity_type_id": self.activity_type_todo.id})
+                    ],
+                }
+                for department in self.department_a + self.department_b
+            ]
+        )
+        for employees, expected_department, authorized_plans, non_authorized_plans in (
+            (
+                self.employee_1 + self.employee_dep_b,
+                False,
+                self.plan_onboarding,
+                no_plan,
+            ),
+            (
+                self.employee_1 + self.employee_2,
+                self.department_a,
+                self.plan_onboarding + plan_department_a,
+                plan_department_b,
+            ),
+            (
+                self.employee_1,
+                self.department_a,
+                self.plan_onboarding + plan_department_a,
+                plan_department_b,
+            ),
+            (
+                self.employee_dep_b,
+                self.department_b,
+                self.plan_onboarding + plan_department_b,
+                plan_department_a,
+            ),
+        ):
+            with self._instantiate_activity_schedule_wizard(employees) as form:
+                if expected_department:
+                    self.assertEqual(form.department_id, expected_department)
+                else:
+                    self.assertFalse(form.department_id)
+            for plan in non_authorized_plans:
+                self.assertNotIn(plan, form.plan_available_ids)
+            for plan in authorized_plans:
+                with self._instantiate_activity_schedule_wizard(employees) as form:
+                    form.plan_id = plan
+
+    def test_res_model_compatibility(self):
+        with self.assertRaises(
+            UserError,
+            msg="Coach, manager or employee can only be chosen as template responsible with employee plan.",
+        ):
+            self.plan_onboarding.res_model = "res.partner"
+        self.plan_onboarding.template_ids[1].responsible_type = "on_demand"
+        self.plan_onboarding.res_model = "res.partner"
+        self.plan_onboarding.res_model = "hr.employee"
+        self.plan_onboarding.template_ids[1].responsible_type = "manager"
+        with self.assertRaises(
+            UserError,
+            msg="Coach, manager or employee can only be chosen as template responsible with employee plan.",
+        ):
+            self.plan_onboarding.res_model = "res.partner"
+        self.plan_onboarding.template_ids[1].responsible_type = "employee"
+        with self.assertRaises(
+            UserError,
+            msg="Coach, manager or employee can only be chosen as template responsible with employee plan.",
+        ):
+            self.plan_onboarding.res_model = "res.partner"
+        self.plan_onboarding.template_ids[1].responsible_type = "on_demand"
+        self.plan_onboarding.res_model = "res.partner"
+        self.plan_onboarding.res_model = "hr.employee"
+        self.plan_onboarding.department_id = self.department_a
+        self.plan_onboarding.res_model = "res.partner"
+        self.assertFalse(self.plan_onboarding.department_id)
+
+    def test_responsible(self):
+        self.plan_onboarding.template_ids[0].write(
+            {
+                "responsible_type": "manager",
+                "responsible_id": False,
+            }
+        )
+        self.plan_onboarding.write(
+            {
+                "template_ids": [
+                    (
+                        0,
+                        0,
+                        {
+                            "activity_type_id": self.activity_type_todo.id,
+                            "summary": "Send feedback to the manager",
+                            "responsible_type": "employee",
+                            "sequence": 30,
+                        },
+                    )
+                ],
+            }
+        )
+        for employees in (self.employee_1, self.employee_1 + self.employee_2):
+            form = self._instantiate_activity_schedule_wizard(employees)
+            form.plan_id = self.plan_onboarding
+            expected_summary_lines = [
+                (
+                    "Plan training",
+                    self.user_manager.id if len(employees) == 1 else False,
+                ),
+                ("Training", self.user_coach.id if len(employees) == 1 else False),
+                (
+                    "Send feedback to the manager",
+                    employees.user_id.id if len(employees) == 1 else False,
+                ),
+            ]
+            for summary_line, (expected_description, expected_responsible_id) in zip(
+                form.plan_schedule_line_ids._records,
+                expected_summary_lines,
+                strict=True,
+            ):
+                self.assertEqual(summary_line["line_description"], expected_description)
+                self.assertEqual(
+                    summary_line["responsible_user_id"], expected_responsible_id
+                )
+            self.assertFalse(form.has_error)
+            wizard = form.save()
+            wizard.action_schedule_plan()
+            for employee in employees:
+                activities = self.get_last_activities(employee, 3)
+                self.assertEqual(len(activities), 3)
+                self.assertEqual(activities[0].user_id, self.user_manager)
+                self.assertEqual(activities[1].user_id, self.user_coach)
+                self.assertEqual(activities[2].user_id, employee.user_id)
+
+            self.employee_1.parent_id = False
+            self.employee_1.coach_id = False
+            # An employee whose manager and coach are not set yet: the plan
+            # still launches, and says who the activities went to instead.
+            form = self._instantiate_activity_schedule_wizard(employees)
+            form.plan_id = self.plan_onboarding
+            self.assertFalse(form.has_error)
+            self.assertTrue(form.has_warning)
+            n_warning = form.warning.count("<li>")
+            self.assertEqual(n_warning, 2)
+            self.assertIn(
+                f"Manager of employee {self.employee_1.name} is not set.", form.warning
+            )
+            self.assertIn(
+                f"Coach of employee {self.employee_1.name} is not set.", form.warning
+            )
+            form.save()
+            self.employee_1.parent_id = self.employee_manager
+            self.employee_1.coach_id = self.employee_coach
+            self.employee_coach.user_id = False
+            self.employee_manager.user_id = False
+            form = self._instantiate_activity_schedule_wizard(employees)
+            form.plan_id = self.plan_onboarding
+            self.assertTrue(form.has_warning)
+            n_warning = form.warning.count("<li>")
+            self.assertEqual(n_warning, 2 * len(employees))
+            self.assertIn(
+                f"The user of {self.employee_1.name}'s coach is not set.", form.warning
+            )
+            self.assertIn(
+                f"The manager of {self.employee_1.name} should be linked to a user.",
+                form.warning,
+            )
+            if len(employees) > 1:
+                self.assertIn(
+                    f"The user of {self.employee_2.name}'s coach is not set.",
+                    form.warning,
+                )
+                self.assertIn(
+                    f"The manager of {self.employee_2.name} should be linked to a user.",
+                    form.warning,
+                )
+            form.save()
+            self.employee_coach.user_id = self.user_coach
+            self.employee_manager.user_id = self.user_manager
+
+    @freeze_time("2023-08-31 12:00:00")
+    @users("admin")
+    def test_default_due_date(self):
+        for employees, plan_date in (
+            (self.employee_1, "2023-09-30"),
+            (self.employee_2, "2023-09-30"),
+            (self.employee_3, "2023-12-01"),
+            (self.employee_4, "2024-01-01"),
+            (self.employee_1 + self.employee_2 + self.employee_3, "2023-09-30"),
+            (self.employee_2 + self.employee_3, "2023-09-30"),
+            (self.employee_1 + self.employee_3, "2023-09-30"),
+            (self.employee_3 + self.employee_4, "2023-12-01"),
+            (self.employee_4 + self.employee_3, "2023-12-01"),
+        ):
+            with self._instantiate_activity_schedule_wizard(employees) as form:
+                form.plan_id = self.plan_onboarding
+                self.assertEqual(form.plan_date, fields.Date.from_string(plan_date))
+
+        customers = self.env["res.partner"].create(
+            [
+                {"name": "Customer1"},
+                {"name": "Customer2"},
+            ]
+        )
+        with self._instantiate_activity_schedule_wizard(customers) as form:
+            form.plan_id = self.plan_party
+            self.assertEqual(form.plan_date, fields.Date.from_string("2023-08-31"))
+
+
+@tagged("post_install", "-at_install")
+class TestPlanResponsibleWithoutOrgChart(ActivityScheduleHRCase):
+    """An onboarding plan is exactly what you run for an employee who is still
+    being set up -- so a blank org chart must not be what stops it. When nobody
+    up the chain has a user the walk already falls back to the current user and
+    downgrades the complaint to a warning; it just was not reached when the
+    coach or the manager was missing outright.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        # Created bare on purpose: no coach, no manager -- the org chart a
+        # brand-new hire has before anyone fills it in.
+        cls.fresh_hire = cls.env["hr.employee"].create({"name": "Fresh Hire"})
+
+    def _template(self, responsible_type):
+        return self.env["mail.activity.plan.template"].create(
+            {
+                "plan_id": self.plan_onboarding.id,
+                "activity_type_id": self.activity_type_todo.id,
+                "responsible_type": responsible_type,
+                "summary": f"Step for {responsible_type}",
+            }
+        )
+
+    def test_a_missing_coach_no_longer_blocks_the_plan(self):
+        result = self._template("coach")._get_responsible_and_complaints(
+            False, self.fresh_hire
+        )
+
+        self.assertFalse(
+            result["error"],
+            "a blank coach must not be a blocking error on an onboarding plan",
+        )
+        self.assertEqual(
+            result["responsible"],
+            self.env.user,
+            "with nobody up the chain the step falls to whoever launches it",
+        )
+        self.assertIn(
+            "Coach",
+            result["warning"],
+            "and the user is told why, instead of the plan simply refusing",
+        )
+
+    def test_a_missing_manager_no_longer_blocks_the_plan(self):
+        result = self._template("manager")._get_responsible_and_complaints(
+            False, self.fresh_hire
+        )
+
+        self.assertFalse(result["error"])
+        self.assertEqual(result["responsible"], self.env.user)
+        self.assertIn("Manager", result["warning"])
+
+    def test_a_configured_coach_is_still_the_responsible(self):
+        """The control: where the org chart is filled in, nothing changes."""
+        result = self._template("coach")._get_responsible_and_complaints(
+            False, self.employee_1
+        )
+
+        self.assertFalse(result["error"])
+        self.assertFalse(result["warning"])
+        self.assertEqual(result["responsible"], self.employee_coach.user_id)

@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_device_device_search_hr" model="ir.ui.view">
+        <field name="name">device.device.search.gps.hr</field>
+        <field name="model">device.device</field>
+        <field name="inherit_id" ref="device_gps.view_device_device_search" />
+        <field name="arch" type="xml">
+            <!-- One Enter covers every name a device is asked for. Operations
+                looks for a truck by its plate ("PET3908") or its model
+                ("Hilux"), not for a GPS by its serial, and the dedicated
+                fields below only help someone who knows to pick them from the
+                dropdown first. stock.lot.name already carries brand, model and
+                plate, so ilike on asset_id answers all three. -->
+            <xpath expr="//field[@name='name']" position="attributes">
+                <attribute name="string">Device, Vehicle, Plate or Driver</attribute>
+                <attribute name="filter_domain">['|', '|', '|', '|', ('name', 'ilike', self), ('identifier', 'ilike', self), ('asset_id', 'ilike', self), ('asset_license_plate', 'ilike', self), ('asset_operator_id', 'ilike', self)]</attribute>
+            </xpath>
+            <xpath expr="//field[@name='gps_receiver_key']" position="after">
+                <field name="asset_operator_id" string="Operator" />
+                <field name="asset_license_plate" string="License Plate" />
+            </xpath>
+            <xpath expr="//group" position="inside">
+                <filter
+                    name="group_operator"
+                    string="Operator"
+                    context="{'group_by': 'asset_operator_id'}" />
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_device_device_list_hr" model="ir.ui.view">
+        <field name="name">device.device.list.gps.hr</field>
+        <field name="model">device.device</field>
+        <field name="inherit_id" ref="device_gps.view_device_device_list" />
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='gps_battery_level']" position="after">
+                <field
+                    name="asset_license_plate"
+                    string="Plate"
+                    optional="show"
+                    column_invisible="not context.get('gps_columns')" />
+                <field
+                    name="asset_operator_id"
+                    string="Operator"
+                    optional="show"
+                    column_invisible="not context.get('gps_columns')" />
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_device_device_kanban_gps_dashboard_hr" model="ir.ui.view">
+        <field name="name">device.device.kanban.gps.dashboard.hr</field>
+        <field name="model">device.device</field>
+        <field
+            name="inherit_id"
+            ref="asset_gps.view_device_device_kanban_gps_dashboard_asset" />
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='asset_id']" position="after">
+                <field name="asset_operator_id" />
+                <field name="asset_license_plate" />
+            </xpath>
+            <xpath
+                expr="//t[@t-if='record.asset_id.raw_value.length']"
+                position="after">
+                <t t-if="record.asset_operator_id.raw_value">
+                    <div class="text-muted small">
+                        <i class="fa-solid fa-user" />
+                        <span class="ms-1">Operator: </span>
+                        <strong>
+                            <field name="asset_operator_id" />
+                        </strong>
+                    </div>
+                </t>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_device_device_form_hr" model="ir.ui.view">
+        <field name="name">device.device.form.gps.hr</field>
+        <field name="model">device.device</field>
+        <field name="inherit_id" ref="device_gps.view_device_device_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='gps_tracking_enabled']/.." position="before">
+                <group string="Asset &amp; Operator" invisible="not asset_id">
+                    <field name="asset_id" readonly="1" />
+                    <field name="asset_license_plate" />
+                    <field name="asset_operator_id" />
+                </group>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

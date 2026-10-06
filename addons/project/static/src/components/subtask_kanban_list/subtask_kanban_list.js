@@ -1,0 +1,115 @@
+/** @odoo-module native */
+import { Component, proxy, useProps } from "@odoo/owl";
+import { registry } from "@web/core/registry";
+import { _t } from "@web/core/translation";
+import { useService } from "@web/core/utils/hooks";
+import { Field, getPropertyFieldInfo } from "@web/fields/field";
+import { standardWidgetProps } from "@web/views/widgets";
+
+import { SubtaskCreate } from "./subtask_kanban_create/subtask_kanban_create.js";
+
+export class SubtaskKanbanList extends Component {
+    static components = {
+        Field,
+        SubtaskCreate,
+    };
+    static props = { ...standardWidgetProps };
+    static template = "project.SubtaskKanbanList";
+    props = useProps(this.constructor.props);
+
+    setup() {
+        this.actionService = useService("action");
+        this.orm = useService("orm");
+        this.notification = useService("notification");
+        this.subtaskCreate = proxy({
+            open: false,
+            name: "",
+        });
+    }
+
+    get list() {
+        return this.props.record.data.child_ids;
+    }
+
+    get openSubtasks() {
+        return this.list.records.filter(
+            (subtask) => !["done", "canceled"].includes(subtask.data.state),
+        );
+    }
+
+    get fieldInfo() {
+        return {
+            state: getPropertyFieldInfo(
+                {
+                    name: "state",
+                    type: "selection",
+                    widget: "project_task_state_selection",
+                },
+                "kanban",
+            ),
+        };
+    }
+
+    async goToSubtask(subtask_id) {
+        return this.actionService.doAction({
+            type: "ir.actions.act_window",
+            res_model: this.list.resModel,
+            res_id: subtask_id,
+            views: [[false, "form"]],
+            target: "current",
+            context: {
+                active_id: subtask_id,
+            },
+        });
+    }
+
+    openSubtaskCreate() {
+        this.subtaskCreate.open = true;
+    }
+
+    async _onBlur() {
+        this.subtaskCreate.open = false;
+    }
+
+    async _onSubtaskCreateNameChanged(name) {
+        if (this._createInFlight) {
+            return;
+        }
+        if (name.trim() === "") {
+            this.notification.add(_t("Invalid Display Name"), {
+                type: "danger",
+            });
+        } else {
+            this._createInFlight = true;
+            try {
+                await this._createSubtask(name);
+            } finally {
+                this._createInFlight = false;
+            }
+        }
+    }
+
+    async _createSubtask(name) {
+        const sequences = this.list.records.map((r) => r.data.sequence);
+        const nextSequence = (sequences.length ? Math.max(...sequences) : 0) + 1;
+
+        await this.orm.create("project.task", [
+            {
+                display_name: name,
+                parent_id: this.props.record.resId,
+                project_id: this.props.record.data.project_id?.id ?? false,
+                user_ids: this.props.record.data.user_ids.resIds,
+                sequence: nextSequence,
+            },
+        ]);
+        this.subtaskCreate.open = false;
+        this.subtaskCreate.name = "";
+        await this.props.record.load();
+    }
+}
+
+const subtaskKanbanList = {
+    component: SubtaskKanbanList,
+};
+
+registry.category("view_widgets").add("subtask_kanban_list", subtaskKanbanList);

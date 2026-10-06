@@ -1,0 +1,105 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* resource_asset_stock
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-09-27 05:12+0000\n"
+"PO-Revision-Date: 2026-09-27 05:12+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: resource_asset_stock
+#. odoo-python
+#: code:addons/resource_asset_stock/models/product_template.py:0
+msgid ""
+"%(name)s: a storable product whose units are assets must be tracked by "
+"unique serial number, so that each unit is one asset."
+msgstr ""
+
+#. module: resource_asset_stock
+#: model:ir.model.constraint,message:resource_asset_stock.constraint_stock_lot_asset_uniq
+msgid "A lot is one asset at most."
+msgstr ""
+
+#. module: resource_asset_stock
+#: model:ir.model.fields,field_description:resource_asset_stock.field_product_trace__asset_id
+#: model_terms:ir.ui.view,arch_db:resource_asset_stock.stock_lot_view_form_asset
+msgid "Asset"
+msgstr ""
+
+#. module: resource_asset_stock
+#: model:ir.model.fields,field_description:resource_asset_stock.field_stock_location__asset_count
+msgid "Asset Count"
+msgstr ""
+
+#. module: resource_asset_stock
+#: model_terms:ir.ui.view,arch_db:resource_asset_stock.stock_location_view_form_asset
+msgid "Assets"
+msgstr ""
+
+#. module: resource_asset_stock
+#: model:ir.model.fields,field_description:resource_asset_stock.field_account_depreciation_board__trace_id
+#: model:ir.model.fields,field_description:resource_asset_stock.field_resource_asset__trace_id
+#: model:ir.model.fields,field_description:resource_asset_stock.field_resource_asset_device__trace_id
+#: model:ir.model.fields,field_description:resource_asset_stock.field_resource_asset_equipment__trace_id
+#: model:ir.model.fields,field_description:resource_asset_stock.field_resource_asset_furniture__trace_id
+#: model:ir.model.fields,field_description:resource_asset_stock.field_resource_asset_it__trace_id
+#: model:ir.model.fields,field_description:resource_asset_stock.field_resource_asset_machinery__trace_id
+#: model:ir.model.fields,field_description:resource_asset_stock.field_resource_asset_property__trace_id
+#: model:ir.model.fields,field_description:resource_asset_stock.field_resource_asset_telecom__trace_id
+#: model:ir.model.fields,field_description:resource_asset_stock.field_resource_asset_vehicle__trace_id
+msgid "Serial"
+msgstr ""
+
+#. module: resource_asset_stock
+#: model:ir.model.fields,field_description:resource_asset_stock.field_account_depreciation_board__location_id
+#: model:ir.model.fields,field_description:resource_asset_stock.field_resource_asset__location_id
+#: model:ir.model.fields,field_description:resource_asset_stock.field_resource_asset_device__location_id
+#: model:ir.model.fields,field_description:resource_asset_stock.field_resource_asset_equipment__location_id
+#: model:ir.model.fields,field_description:resource_asset_stock.field_resource_asset_furniture__location_id
+#: model:ir.model.fields,field_description:resource_asset_stock.field_resource_asset_it__location_id
+#: model:ir.model.fields,field_description:resource_asset_stock.field_resource_asset_machinery__location_id
+#: model:ir.model.fields,field_description:resource_asset_stock.field_resource_asset_property__location_id
+#: model:ir.model.fields,field_description:resource_asset_stock.field_resource_asset_telecom__location_id
+#: model:ir.model.fields,field_description:resource_asset_stock.field_resource_asset_vehicle__location_id
+msgid "Stock Location"
+msgstr ""
+
+#. module: resource_asset_stock
+#: model:ir.model.fields,help:resource_asset_stock.field_account_depreciation_board__trace_id
+#: model:ir.model.fields,help:resource_asset_stock.field_resource_asset__trace_id
+#: model:ir.model.fields,help:resource_asset_stock.field_resource_asset_device__trace_id
+#: model:ir.model.fields,help:resource_asset_stock.field_resource_asset_equipment__trace_id
+#: model:ir.model.fields,help:resource_asset_stock.field_resource_asset_furniture__trace_id
+#: model:ir.model.fields,help:resource_asset_stock.field_resource_asset_it__trace_id
+#: model:ir.model.fields,help:resource_asset_stock.field_resource_asset_machinery__trace_id
+#: model:ir.model.fields,help:resource_asset_stock.field_resource_asset_property__trace_id
+#: model:ir.model.fields,help:resource_asset_stock.field_resource_asset_telecom__trace_id
+#: model:ir.model.fields,help:resource_asset_stock.field_resource_asset_vehicle__trace_id
+msgid ""
+"The inventory identity of this unit, when it entered through a receipt or a "
+"manufacturing order."
+msgstr ""
+
+#. module: resource_asset_stock
+#: model:ir.model.fields,help:resource_asset_stock.field_account_depreciation_board__location_id
+#: model:ir.model.fields,help:resource_asset_stock.field_resource_asset__location_id
+#: model:ir.model.fields,help:resource_asset_stock.field_resource_asset_device__location_id
+#: model:ir.model.fields,help:resource_asset_stock.field_resource_asset_equipment__location_id
+#: model:ir.model.fields,help:resource_asset_stock.field_resource_asset_furniture__location_id
+#: model:ir.model.fields,help:resource_asset_stock.field_resource_asset_it__location_id
+#: model:ir.model.fields,help:resource_asset_stock.field_resource_asset_machinery__location_id
+#: model:ir.model.fields,help:resource_asset_stock.field_resource_asset_property__location_id
+#: model:ir.model.fields,help:resource_asset_stock.field_resource_asset_telecom__location_id
+#: model:ir.model.fields,help:resource_asset_stock.field_resource_asset_vehicle__location_id
+msgid ""
+"Where the asset is kept: its serial's location when it has one, set by hand "
+"otherwise."
+msgstr ""

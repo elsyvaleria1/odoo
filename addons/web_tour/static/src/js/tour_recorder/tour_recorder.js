@@ -1,0 +1,285 @@
+/** @odoo-module native */
+import { queryAll, queryFirst, queryOne } from "@odoo/hoot-dom";
+import { Component, proxy, t, useListener, useProps } from "@odoo/owl";
+import { Dropdown, DropdownItem } from "@web/components/dropdown";
+import { browser } from "@web/core/browser/browser";
+import { x2ManyCommands } from "@web/core/network";
+import { _t } from "@web/core/translation";
+import { useService } from "@web/core/utils/hooks";
+
+import { tourRecorderState } from "./tour_recorder_state.js";
+
+const PRECISE_IDENTIFIERS = ["data-menu-xmlid", "name", "contenteditable"];
+const ODOO_CLASS_REGEX = /^oe?(-|_)[\w-]+$/;
+const VALIDATING_KEYS = ["Enter", "Tab"];
+
+/**
+ * @param {EventTarget[]} paths
+ * @returns {string}
+ */
+const getShortestSelector = (paths) => {
+    paths.reverse();
+    let filteredPath = [];
+    let hasOdooClass = false;
+    for (
+        let currentElem = paths.pop();
+        (currentElem && queryAll(filteredPath.join(" > ")).length !== 1) ||
+        !hasOdooClass;
+        currentElem = paths.pop()
+    ) {
+        if (currentElem.parentElement.contentEditable === "true") {
+            continue;
+        }
+
+        let currentPredicate = currentElem.tagName.toLowerCase();
+        const odooClass = [...currentElem.classList].find((c) =>
+            c.match(ODOO_CLASS_REGEX),
+        );
+        if (odooClass) {
+            currentPredicate = `.${odooClass}`;
+            hasOdooClass = true;
+        }
+
+        if (["BUTTON", "A"].includes(currentElem.tagName)) {
+            filteredPath = [];
+        }
+
+        for (const identifier of PRECISE_IDENTIFIERS) {
+            const identifierValue = currentElem.getAttribute(identifier);
+            if (identifierValue) {
+                currentPredicate += `[${identifier}='${CSS.escape(identifierValue)}']`;
+            }
+        }
+
+        const siblingNodes = queryAll(":scope > " + currentPredicate, {
+            root: currentElem.parentElement,
+        });
+        if (siblingNodes.length > 1) {
+            currentPredicate += `:nth-child(${
+                [...currentElem.parentElement.children].indexOf(currentElem) + 1
+            })`;
+        }
+
+        filteredPath.unshift(currentPredicate);
+    }
+
+    if (filteredPath.length > 2) {
+        return reducePath(filteredPath);
+    }
+
+    return filteredPath.join(" > ");
+};
+
+/**
+ * @param {string[]} paths
+ * @returns {string}
+ */
+const reducePath = (paths) => {
+    const numberOfElement = paths.length - 2;
+    let currentElement;
+    let hasReduced = false;
+    let path = paths.shift();
+    for (let i = 0; i < numberOfElement; i++) {
+        currentElement = paths.shift();
+        if (queryAll(`${path} ${paths.join(" > ")}`).length === 1) {
+            hasReduced = true;
+        } else {
+            path += `${hasReduced ? " " : " > "}${currentElement}`;
+            hasReduced = false;
+        }
+    }
+    path += `${hasReduced ? " " : " > "}${paths.shift()}`;
+    return path;
+};
+
+export class TourRecorder extends Component {
+    static template = "web_tour.TourRecorder";
+    static components = { Dropdown, DropdownItem };
+    static props = { onClose: t.function() };
+    static defaultState = {
+        recording: false,
+        url: "",
+        editedElement: undefined,
+        tourName: "",
+    };
+    props = useProps(this.constructor.props);
+
+    setup() {
+        this.originClickEvent = false;
+        this.notification = useService("notification");
+        this.orm = useService("orm");
+        this.state = proxy({
+            ...TourRecorder.defaultState,
+            steps: [],
+        });
+
+        this.state.steps = tourRecorderState.getCurrentTourRecorder();
+        this.state.recording = tourRecorderState.isRecording() === "1";
+        useListener(document, "pointerdown", this.setStartingEvent.bind(this), {
+            capture: true,
+        });
+        useListener(document, "pointerup", this.recordClickEvent.bind(this), {
+            capture: true,
+        });
+        useListener(
+            document,
+            "keydown",
+            this.recordConfirmationKeyboardEvent.bind(this),
+            {
+                capture: true,
+            },
+        );
+        useListener(document, "keyup", this.recordKeyboardEvent.bind(this), {
+            capture: true,
+        });
+    }
+
+    /** @param {PointerEvent} ev */
+    setStartingEvent(ev) {
+        if (!this.state.recording || ev.target.closest(".o_tour_recorder")) {
+            return;
+        }
+        this.originClickEvent = ev.composedPath().filter((p) => p instanceof Element);
+    }
+
+    /** @param {PointerEvent} ev */
+    recordClickEvent(ev) {
+        if (!this.state.recording || ev.target.closest(".o_tour_recorder")) {
+            return;
+        }
+        const pathElements = ev.composedPath().filter((p) => p instanceof Element);
+        this.addTourStep([...pathElements]);
+
+        const lastStepInput = this.state.steps.at(-1);
+        if (
+            JSON.stringify(pathElements.map((e) => e.tagName)) !==
+            JSON.stringify(this.originClickEvent.map((e) => e.tagName))
+        ) {
+            lastStepInput.run = `drag_and_drop ${lastStepInput.trigger}`;
+            lastStepInput.trigger = getShortestSelector(this.originClickEvent);
+        } else {
+            const lastStepInput = this.state.steps.at(-1);
+            lastStepInput.run = "click";
+        }
+
+        tourRecorderState.setCurrentTourRecorder(this.state.steps);
+    }
+
+    /** @param {KeyboardEvent} ev */
+    recordConfirmationKeyboardEvent(ev) {
+        if (
+            !this.state.recording ||
+            !this.state.editedElement ||
+            ev.target.closest(".o_tour_recorder")
+        ) {
+            return;
+        }
+
+        if (
+            [...this.state.editedElement.classList].includes("o-autocomplete--input") &&
+            VALIDATING_KEYS.includes(ev.key)
+        ) {
+            const selectedRow = queryFirst(".ui-state-active", {
+                root: this.state.editedElement.parentElement,
+            });
+            this.state.steps.push({
+                trigger: `.o-autocomplete--dropdown-item > a:contains('${selectedRow.textContent}'), .fa-circle-notch`,
+                run: "click",
+            });
+            this.state.editedElement = undefined;
+        }
+        tourRecorderState.setCurrentTourRecorder(this.state.steps);
+    }
+
+    /** @param {KeyboardEvent} ev */
+    recordKeyboardEvent(ev) {
+        if (
+            !this.state.recording ||
+            VALIDATING_KEYS.includes(ev.key) ||
+            ev.target.closest(".o_tour_recorder")
+        ) {
+            return;
+        }
+
+        if (!this.state.editedElement) {
+            if (
+                ev.target.matches(
+                    "input:not(:disabled), textarea:not(:disabled), [contenteditable=true]",
+                )
+            ) {
+                this.state.editedElement = ev.target;
+                this.state.steps.push({
+                    trigger: getShortestSelector(ev.composedPath()),
+                });
+            } else {
+                return;
+            }
+        }
+
+        if (!this.state.editedElement) {
+            return;
+        }
+
+        const lastStep = this.state.steps.at(-1);
+        if (this.state.editedElement.contentEditable === "true") {
+            lastStep.run = `editor ${this.state.editedElement.textContent}`;
+        } else {
+            lastStep.run = `edit ${this.state.editedElement.value}`;
+        }
+        tourRecorderState.setCurrentTourRecorder(this.state.steps);
+    }
+
+    toggleRecording() {
+        this.state.recording = !this.state.recording;
+        tourRecorderState.setIsRecording(this.state.recording);
+        this.state.editedElement = undefined;
+        if (this.state.recording && !this.state.url) {
+            this.state.url = browser.location.pathname + browser.location.search;
+        }
+    }
+
+    async saveTour() {
+        const newTour = {
+            name: this.state.tourName.replaceAll(" ", "_"),
+            url: this.state.url,
+            step_ids: this.state.steps.map((s) => x2ManyCommands.create(undefined, s)),
+            custom: true,
+        };
+
+        const result = await this.orm.create("web_tour.tour", [newTour]);
+        if (result) {
+            this.notification.add(
+                _t("Custom tour '%s' has been added.", newTour.name),
+                {
+                    type: "success",
+                },
+            );
+            this.resetTourRecorderState();
+        } else {
+            this.notification.add(
+                _t("Custom tour '%s' couldn't be saved!", newTour.name),
+                {
+                    type: "danger",
+                },
+            );
+        }
+    }
+
+    resetTourRecorderState() {
+        Object.assign(this.state, { ...TourRecorder.defaultState, steps: [] });
+        tourRecorderState.clear();
+    }
+
+    /** @param {Element[]} path */
+    addTourStep(path) {
+        const shortestPath = getShortestSelector(path);
+        const target = queryOne(shortestPath);
+        this.state.editedElement =
+            target.matches(
+                "input:not(:disabled), textarea:not(:disabled), [contenteditable=true]",
+            ) && target;
+        this.state.steps.push({
+            trigger: shortestPath,
+        });
+    }
+}

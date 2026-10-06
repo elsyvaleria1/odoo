@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+
+    <record id="sale_agreement_remind" model="ir.cron" forcecreate="True">
+        <field name="name">Sale agreements: expiry and consumption reminders</field>
+        <field name="model_id" ref="model_sale_agreement" />
+        <field name="state">code</field>
+        <field name="code">model._cron_remind()</field>
+        <field name="user_id" ref="base.user_root" />
+        <field name="repeat_interval">1</field>
+        <field name="repeat_unit">day</field>
+    </record>
+
+</odoo>

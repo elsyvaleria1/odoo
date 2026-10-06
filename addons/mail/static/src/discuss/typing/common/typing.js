@@ -1,0 +1,42 @@
+// @ts-check
+/** @odoo-module native */
+import { Component, t, useProps } from "@odoo/owl";
+import { _t } from "@web/core/translation";
+/**
+ * @typedef {Object} Props
+ * @property {import("models").Thread} [channel]
+ * @property {import("models").ChannelMember} [member]
+ * @property {string} [size]
+ * @property {boolean} [displayText]
+ * @extends {Component<Props, import("@web/env").OdooEnv>}
+ */
+export class Typing extends Component {
+    static props = {
+        channel: t.any().optional(),
+        size: t.any().optional("small"),
+        displayText: t.any().optional(true),
+        member: t.any().optional(),
+    };
+    static template = "discuss.Typing";
+    props = useProps(this.constructor.props);
+
+    /** @returns {string} */
+    get text() {
+        const typingMemberNames = this.props.member
+            ? [this.props.member.name]
+            : this.props.channel.otherTypingMembers.map(({ name }) => name);
+        if (typingMemberNames.length === 1) {
+            return _t("%s is typing...", typingMemberNames[0]);
+        }
+        if (typingMemberNames.length === 2) {
+            return _t("%(user1)s and %(user2)s are typing...", {
+                user1: typingMemberNames[0],
+                user2: typingMemberNames[1],
+            });
+        }
+        return _t("%(user1)s, %(user2)s and more are typing...", {
+            user1: typingMemberNames[0],
+            user2: typingMemberNames[1],
+        });
+    }
+}

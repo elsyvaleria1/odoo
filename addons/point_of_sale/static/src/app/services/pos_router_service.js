@@ -1,0 +1,189 @@
+/** @odoo-module native */
+import { browser } from "@web/core/browser/browser";
+import { makeLogger } from "@web/core/debug/debug_logger";
+import { registry } from "@web/core/registry";
+import { zip } from "@web/core/utils/collections/arrays";
+import { SignalStore } from "@web/core/utils/reactive";
+const parseParams = (matches, paramSpecs) =>
+    Object.fromEntries(
+        zip(matches, paramSpecs).map(([match, paramSpec]) => {
+            const { type, name } = paramSpec;
+            switch (type) {
+                case "int":
+                    return [name, parseInt(match)];
+                case "string":
+                    return [name, match];
+                default:
+                    throw new Error(`Unknown type ${type}`);
+            }
+        }),
+    );
+
+const log = makeLogger("pos.router");
+
+export class PosRouter extends SignalStore {
+    static serviceDependencies = [];
+
+    constructor(...args) {
+        super(...args);
+        this.setup(...args);
+    }
+
+    setup(env) {
+        this.path = window.location.pathname;
+        this.registeredRoutes = {};
+        this.popStateCallback = null;
+        this.state = {
+            params: {},
+            current: null,
+            previous: null,
+        };
+
+        window.addEventListener("popstate", (event) => {
+            this.path = window.location.pathname;
+            log.lifecycle("[popstate]", () => ({ path: this.path }));
+            this.matchURL();
+            this.popStateCallback && this.popStateCallback(event);
+        });
+
+        this.initRegisteredRoutes();
+        this.matchURL();
+        log.lifecycle("setup", () => ({
+            path: this.path,
+            routes: Object.keys(this.registeredRoutes),
+            current: this.state.current,
+            params: this.state.params,
+        }));
+    }
+
+    get page() {
+        const page = registry.category("pos_pages").get(this.state.current);
+        const params = this.state.params;
+        return {
+            name: page.name,
+            component: page.component,
+            params,
+        };
+    }
+
+    initRegisteredRoutes() {
+        const pages = registry.category("pos_pages").getAll();
+        for (const { name, route } of pages) {
+            const paramStrings = route.match(/\{\w+:\w+\}/g);
+
+            if (!paramStrings) {
+                this.registeredRoutes[name] = {
+                    route,
+                    paramSpecs: [],
+                    regex: new RegExp(`^${route}$`),
+                };
+                continue;
+            }
+
+            const paramSpecs = paramStrings.map((paramString) => {
+                const [, type, name] = paramString.match(/(\w+):(\w+)/);
+                return { type, name };
+            });
+
+            const regex = new RegExp(
+                `^${route
+                    .split(/\{\w+:\w+\}/)
+                    .map((part) => RegExp.escape(part))
+                    .join("([^/]+)")}$`,
+            );
+
+            this.registeredRoutes[name] = { route, regex, paramSpecs };
+        }
+    }
+
+    back() {
+        log.logic("back", () => ({
+            historyPage: this.historyPage,
+            toLogin: !this.historyPage?.length,
+        }));
+        if (!this.historyPage?.length) {
+            this.navigate("LoginScreen", {
+                configId: odoo.pos_config_id,
+            });
+            return;
+        }
+
+        history.back();
+    }
+
+    close() {
+        log.lifecycle("close", () => ({ config: odoo.pos_config_id }));
+        window.location.href = `/pos/ui/${odoo.pos_config_id}`;
+    }
+
+    matchURL(props = {}) {
+        const path = this.path;
+
+        for (const [routeName, { regex, paramSpecs }] of Object.entries(
+            this.registeredRoutes,
+        )) {
+            const match = path.match(regex);
+            if (match) {
+                const parsedParams = parseParams(match.slice(1), paramSpecs);
+                log.logic("matchURL", () => ({
+                    path,
+                    routeName,
+                    params: parsedParams,
+                    previous: this.state.current,
+                }));
+                this.state.current = routeName;
+                this.state.params = { ...props, ...parsedParams };
+                return;
+            }
+        }
+
+        log.logic("matchURL: no route, LoginScreen", () => ({ path }));
+        this.state.current = "LoginScreen";
+    }
+
+    getRoute(routeName) {
+        try {
+            const { route } = this.registeredRoutes[routeName];
+            return route;
+        } catch {
+            log.logic("getRoute: unknown route, ProductScreen", () => ({ routeName }));
+            const { route } = this.registeredRoutes["ProductScreen"];
+            return route;
+        }
+    }
+
+    navigate(routeName, routeParams = {}) {
+        const route = this.getRoute(routeName);
+        const url = new URL(browser.location.href);
+        log.lifecycle("navigate", () => ({
+            routeName,
+            routeParams,
+            route,
+            from: this.path,
+        }));
+
+        url.pathname = route.replace(
+            /\{\w+:(\w+)\}/g,
+            (match, paramName) => routeParams[paramName],
+        );
+
+        history.pushState({}, "", url);
+        this.path = window.location.pathname;
+        this.historyPage = this.path;
+        this.matchURL(routeParams);
+    }
+
+    registerRoutes(routes) {
+        log.lifecycle("registerRoutes", () => ({ routes: Object.keys(routes) }));
+        Object.assign(this.registeredRoutes, routes);
+    }
+}
+
+export const PosRouterService = {
+    dependencies: PosRouter.serviceDependencies,
+    async start(env, deps) {
+        return new PosRouter(env, deps);
+    },
+};
+
+registry.category("services").add("pos_router", PosRouterService);

@@ -1,0 +1,133 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* exchange
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Language: es\n"
+"Plural-Forms: \n"
+
+#. module: exchange
+#: model_terms:ir.ui.view,arch_db:exchange.exchange_transmission_view_search
+msgid "Annulments"
+msgstr "Anulaciones"
+
+#. module: exchange
+#: model_terms:ir.ui.view,arch_db:exchange.exchange_channel_view_search
+msgid "Archived"
+msgstr "Archivado"
+
+#. module: exchange
+#: model_terms:ir.ui.view,arch_db:exchange.exchange_transmission_view_search
+msgid "Awaiting a Verdict"
+msgstr "En espera de veredicto"
+
+#. module: exchange
+#: model:ir.model.fields,field_description:exchange.field_exchange_transmission__channel_id
+#: model_terms:ir.ui.view,arch_db:exchange.exchange_transmission_view_search
+msgid "Channel"
+msgstr "Canal"
+
+#. module: exchange
+#: model:ir.ui.menu,name:exchange.menu_exchange_channel
+msgid "Channels"
+msgstr "Canales"
+
+#. module: exchange
+#: model:ir.model.fields,field_description:exchange.field_exchange_channel__counterparty
+#: model_terms:ir.ui.view,arch_db:exchange.exchange_channel_view_search
+msgid "Counterparty"
+msgstr "Contraparte"
+
+#. module: exchange
+#: model:ir.ui.menu,name:exchange.menu_exchange_root
+msgid "Exchange"
+msgstr "Intercambio"
+
+#. module: exchange
+#: model:ir.model.fields,field_description:exchange.field_exchange_transmission__intent
+#: model_terms:ir.ui.view,arch_db:exchange.exchange_transmission_view_search
+msgid "Intent"
+msgstr "Intención"
+
+#. module: exchange
+#: model_terms:ir.ui.view,arch_db:exchange.exchange_channel_view_list
+#: model_terms:ir.ui.view,arch_db:exchange.exchange_transmission_view_search
+msgid "Open"
+msgstr "Abrir"
+
+#. module: exchange
+#: model_terms:ir.ui.view,arch_db:exchange.exchange_channel_view_search
+msgid "Production"
+msgstr "Producción"
+
+#. module: exchange
+#: model:ir.model.fields,field_description:exchange.field_exchange_channel__protocol
+#: model:ir.model.fields,field_description:exchange.field_exchange_transmission__protocol
+#: model_terms:ir.ui.view,arch_db:exchange.exchange_channel_view_search
+msgid "Protocol"
+msgstr "Protocolo"
+
+#. module: exchange
+#: model_terms:ir.ui.view,arch_db:exchange.exchange_channel_view_form
+msgid "Read Inbox"
+msgstr "Leer bandeja de entrada"
+
+#. module: exchange
+#: model_terms:ir.ui.view,arch_db:exchange.exchange_transmission_view_form
+msgid "Read Verdict"
+msgstr "Leer veredicto"
+
+#. module: exchange
+#: model:ir.model.fields.selection,name:exchange.selection__exchange_transmission__state__rejected
+#: model:ir.model.fields.selection,name:exchange.selection__mixin_exchange_subject__exchange_state__rejected
+#: model:ir.model.fields.selection,name:exchange.selection__mixin_syngenta_report__exchange_state__rejected
+#: model:ir.model.fields.selection,name:exchange.selection__syngenta_sale_report__exchange_state__rejected
+#: model:ir.model.fields.selection,name:exchange.selection__syngenta_stock_report__exchange_state__rejected
+#: model_terms:ir.ui.view,arch_db:exchange.exchange_transmission_view_search
+msgid "Rejected"
+msgstr "Rechazado"
+
+#. module: exchange
+#: model_terms:ir.ui.view,arch_db:exchange.exchange_transmission_view_form
+msgid "Send"
+msgstr "Enviar"
+
+#. module: exchange
+#: model:ir.model.fields,field_description:exchange.field_exchange_transmission__state
+#: model_terms:ir.ui.view,arch_db:exchange.exchange_transmission_view_search
+msgid "State"
+msgstr "Estado"
+
+#. module: exchange
+#: model:ir.model.fields,field_description:exchange.field_exchange_transmission__subject_id
+#: model_terms:ir.ui.view,arch_db:exchange.exchange_transmission_view_form
+msgid "Subject"
+msgstr "Asunto"
+
+#. module: exchange
+#: model_terms:ir.ui.view,arch_db:exchange.exchange_channel_view_form
+msgid "Test Connection"
+msgstr "Probar conexión"
+
+#. module: exchange
+#. odoo-python
+#: code:addons/exchange/models/exchange_channel.py:0
+#: code:addons/exchange/models/mixin_exchange_subject.py:0
+#: model:ir.actions.act_window,name:exchange.exchange_transmission_action
+#: model:ir.ui.menu,name:exchange.menu_exchange_transmission
+#: model_terms:ir.ui.view,arch_db:exchange.exchange_channel_view_form
+msgid "Transmissions"
+msgstr "Transmisiones"
+
+#. module: exchange
+#: model_terms:ir.ui.view,arch_db:exchange.exchange_channel_view_search
+msgid "With Inbox"
+msgstr "Con bandeja de entrada"

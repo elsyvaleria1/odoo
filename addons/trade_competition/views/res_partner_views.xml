@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="res_partner_view_form_competitor" model="ir.ui.view">
+        <field name="name">res.partner.form.competitor</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_form" />
+        <field name="arch" type="xml">
+            <div name="button_box" position="inside">
+                <button
+                    name="action_view_competitor_offers"
+                    type="object"
+                    icon="fa-crosshairs"
+                    invisible="not is_competitor"
+                    class="oe_stat_button">
+                    <field name="competitor_offer_count" widget="statinfo" />
+                </button>
+            </div>
+            <xpath expr="//notebook" position="inside">
+                <page name="competitor" string="Competitor">
+                    <group>
+                        <field name="is_competitor" />
+                        <field
+                            name="competitor_category_ids"
+                            widget="many2many_tags"
+                            invisible="not is_competitor" />
+                    </group>
+                    <group
+                        name="competitor_record"
+                        string="Record Against Them"
+                        invisible="not is_competitor">
+                        <group>
+                            <field name="competitor_deal_count" />
+                            <field name="competitor_won_count" />
+                            <field name="competitor_lost_count" />
+                        </group>
+                        <group>
+                            <field name="competitor_win_rate" />
+                            <field name="competitor_price_gap" />
+                        </group>
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

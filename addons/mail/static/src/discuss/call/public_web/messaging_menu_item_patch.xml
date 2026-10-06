@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<templates xml:space="preserve">
+
+<t t-inherit="mail.MessagingMenuItem" t-inherit-mode="extension">
+    <xpath expr="//t[@name='itemIcon']" position="inside">
+        <span t-if="this.hasOngoingCall" title="Ongoing call" class="o-mail-MessagingMenuItem-callIndicator position-absolute top-0 start-100 translate-middle badge rounded-pill fa-solid fa-volume-high" t-att-class="{ 'o-discuss-inCallIconColor': this.channel.eq(this.rtc.channel), 'bg-secondary opacity-75': this.channel.notEq(this.rtc.channel) }"/>
+    </xpath>
+    <xpath expr="//t[@name='itemAfter']" position="inside">
+        <CallParticipants t-if="this.hasOngoingCall" thread="this.channel" compact="false"/>
+    </xpath>
+</t>
+
+</templates>

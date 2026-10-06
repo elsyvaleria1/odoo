@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_credit_profile_form_inherit_partner_scoring" model="ir.ui.view">
+        <field name="name">credit.profile.form.inherit.partner.scoring</field>
+        <field name="model">credit.profile</field>
+        <field name="inherit_id" ref="account_credit.view_credit_profile_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//group[@name='rating']/field[@name='score']" position="after">
+                <field name="tier_id" invisible="not tier_id" />
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

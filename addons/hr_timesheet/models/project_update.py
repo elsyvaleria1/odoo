@@ -1,0 +1,55 @@
+from odoo import api, fields, models
+from odoo.libs.debug_log import DebugLog
+
+_debug = DebugLog(__name__)
+
+
+class ProjectUpdate(models.Model):
+    _inherit = "project.update"
+
+    display_timesheet_stats = fields.Boolean(
+        export_string_translation=False,
+        compute="_compute_display_timesheet_stats",
+    )
+    allocated_time = fields.Integer(readonly=True)
+    timesheet_time = fields.Integer(readonly=True)
+    timesheet_percentage = fields.Integer(
+        export_string_translation=False,
+        compute="_compute_timesheet_percentage",
+    )
+    uom_id = fields.Many2one(
+        comodel_name="uom.uom",
+        string="Unit",
+        export_string_translation=False,
+        readonly=True,
+    )
+
+    @api.depends("allocated_time", "timesheet_time")
+    def _compute_timesheet_percentage(self) -> None:
+        for update in self:
+            update.timesheet_percentage = update.allocated_time and round(
+                update.timesheet_time * 100 / update.allocated_time
+            )
+
+    @api.depends("project_id.allow_timesheets")
+    def _compute_display_timesheet_stats(self) -> None:
+        for update in self:
+            update.display_timesheet_stats = update.project_id.allow_timesheets
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        updates = super().create(vals_list)
+        encode_uom = self.env.company.hr_timesheet_config_id.timesheet_encode_uom_id
+        ratio = self.env.ref("uom.product_uom_hour").factor / encode_uom.factor
+        _debug.lifecycle("project_updates_created", updates=updates, uom=encode_uom)
+        for update in updates:
+            project = update.project_id
+            project.sudo().last_update_id = update
+            update.write(
+                {
+                    "uom_id": encode_uom,
+                    "allocated_time": round(project.allocated_hours * ratio),
+                    "timesheet_time": round(project.sudo().total_timesheet_time),
+                }
+            )
+        return updates

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_sale_order_form_inherit_agreement" model="ir.ui.view">
+        <field name="name">sale.order.form.inherit.agreement</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_sale_order_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//sheet" position="before">
+                <div
+                    class="alert alert-warning"
+                    role="alert"
+                    invisible="not agreement_warning">
+                    <field name="agreement_warning" class="fw-bold" />
+                </div>
+            </xpath>
+            <field name="payment_term_id" position="after">
+                <field name="commercial_partner_id" invisible="1" />
+                <field
+                    name="agreement_id"
+                    options="{'no_create': True}"
+                    readonly="state in ['done', 'cancel']" />
+            </field>
+        </field>
+    </record>
+
+</odoo>

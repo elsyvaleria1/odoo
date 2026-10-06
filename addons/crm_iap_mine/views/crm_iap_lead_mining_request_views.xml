@@ -1,0 +1,313 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="crm_iap_lead_mining_request_view_form" model="ir.ui.view">
+        <field name="name">crm.iap.lead.mining.request.view.form</field>
+        <field name="model">crm.iap.lead.mining.request</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button
+                        name="action_submit"
+                        type="object"
+                        string="Submit"
+                        invisible="context.get('is_modal') or state != 'draft'"
+                        class="oe_highlight" />
+                    <button
+                        name="action_submit"
+                        type="object"
+                        string="Retry"
+                        invisible="context.get('is_modal') or state != 'error'"
+                        class="oe_highlight" />
+                    <field
+                        name="state"
+                        widget="statusbar"
+                        invisible="context.get('is_modal')"
+                        statusbar_visible="draft,done" />
+                </header>
+                <div
+                    class="alert alert-danger text-center"
+                    role="alert"
+                    invisible="not error_type">
+                    <field name="error_type" invisible="1" />
+                    <field name="lead_type" invisible="1" />
+                    <span invisible="error_type != 'credits'">
+                        <span>You do not have enough credits to submit this request.
+                            <button name="action_buy_credits" type="object" class="oe_inline p-0 border-0 align-top text-primary">Buy credits.</button>
+                        </span>
+                    </span>
+                    <span invisible="error_type != 'no_result'">Your request did not return any result (no credits were used). Try removing some filters.</span>
+                </div>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button
+                            name="action_get_opportunity_action"
+                            type="object"
+                            icon="fa-star"
+                            context="{'create': False}"
+                            invisible="lead_type != 'opportunity' or state != 'done'"
+                            class="oe_stat_button">
+                            <div class="o_stat_info">
+                                <field name="lead_count" />
+                                <span class="o_stat_text">Opportunities</span>
+                            </div>
+                        </button>
+                        <button
+                            name="action_get_lead_action"
+                            type="object"
+                            icon="fa-star"
+                            context="{'create': False}"
+                            groups="crm.group_use_lead"
+                            invisible="lead_type != 'lead' or state != 'done'"
+                            class="oe_stat_button">
+                            <div class="o_stat_info">
+                                <field name="lead_count" />
+                                <span class="o_stat_text">Leads</span>
+                            </div>
+                        </button>
+                    </div>
+                    <span invisible="context.get('is_modal')">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="oe_title">
+                                    <h1>
+                                        <field name="name" />
+                                    </h1>
+                                </div>
+                            </div>
+                        </div>
+                    </span>
+
+                    <h2>How many leads would you like?</h2>
+
+                    <group name="requests">
+                        <group>
+                            <div class="o_row py-3">
+                                <field
+                                    name="lead_number"
+                                    readonly="state == 'done'"
+                                    class="oe_inline pe-2 o_input_3ch o_field_highlight" />
+                                <field
+                                    name="search_type"
+                                    widget="selection"
+                                    readonly="state == 'done'"
+                                    class="oe_inline o_field_highlight" />
+                            </div>
+                        </group>
+                    </group>
+
+                    <group>
+                        <group name="companies">
+                            <field
+                                name="country_ids"
+                                widget="many2many_tags"
+                                options="{'no_create': True, 'no_open': True}"
+                                readonly="state == 'done'"
+                                required="True" />
+                            <field name="available_state_ids" invisible="1" />
+                            <field
+                                name="state_ids"
+                                placeholder="Pick States..."
+                                widget="many2many_tags"
+                                domain="[('id', 'in', available_state_ids)]"
+                                options="{'no_create': True, 'no_open': True}"
+                                invisible="not country_ids or not available_state_ids"
+                                readonly="state == 'done'" />
+                            <field
+                                name="industry_ids"
+                                widget="many2many_tags"
+                                options="{'no_create': True, 'no_open': True}"
+                                readonly="state == 'done'"
+                                required="1"
+                                class="o_industry o_field_highlight" />
+                            <field name="filter_on_size" readonly="state == 'done'" />
+                            <label
+                                for="company_size_min"
+                                invisible="not filter_on_size" />
+                            <div invisible="not filter_on_size">
+                                From
+                                <field
+                                    name="company_size_min"
+                                    readonly="state == 'done'"
+                                    required="filter_on_size"
+                                    class="oe_inline px-2 o_input_5ch" />
+                                to
+                                <field
+                                    name="company_size_max"
+                                    readonly="state == 'done'"
+                                    required="filter_on_size"
+                                    class="oe_inline px-2 o_input_7ch" />
+                                employees
+                            </div>
+
+                        </group>
+                        <group name="lead_info">
+                            <field
+                                name="lead_type"
+                                groups="crm.group_use_lead"
+                                invisible="context.get('is_modal')"
+                                readonly="state == 'done'" />
+                            <field
+                                name="team_id"
+                                context="{'kanban_view_ref': 'team.team_view_kanban'}"
+                                readonly="state == 'done'"
+                                no_create="1"
+                                no_open="1" />
+                            <field
+                                name="user_id"
+                                widget="many2one_avatar_user"
+                                readonly="state == 'done'"
+                                no_create="1"
+                                no_open="1" />
+                            <field
+                                name="tag_ids"
+                                string="Default Tags"
+                                widget="many2many_tags"
+                                options="{'color_field': 'color', 'no_create_edit': True}"
+                                readonly="state == 'done'" />
+                        </group>
+                    </group>
+
+                    <group name="contacts" invisible="search_type != 'people'">
+                        <div colspan="2" class="py-3">
+                            <field
+                                name="contact_number"
+                                readonly="state == 'done'"
+                                required="search_type == 'people'"
+                                class="oe_inline pe-2 col-md-1 o_input_2ch" />
+                            <span class="col-md-6">Extra contacts per Company</span>
+                        </div>
+                    </group>
+                    <group invisible="search_type != 'people'">
+                        <group>
+                            <field
+                                name="contact_filter_type"
+                                widget="radio"
+                                options="{'horizontal': true}"
+                                readonly="state == 'done'" />
+                            <field
+                                name="preferred_role_id"
+                                options="{'no_create_edit': True, 'no_quick_create': True, 'no_open': True}"
+                                invisible="contact_filter_type != 'role'"
+                                readonly="state == 'done'"
+                                required="search_type == 'people' and contact_filter_type == 'role'" />
+                            <field
+                                name="role_ids"
+                                widget="many2many_tags"
+                                options="{'color_field': 'color', 'no_create_edit': True, 'no_quick_create': True}"
+                                invisible="not preferred_role_id or contact_filter_type != 'role'"
+                                readonly="state == 'done'" />
+                            <field
+                                name="seniority_id"
+                                options="{'no_create_edit': True, 'no_quick_create': True, 'no_open': True}"
+                                invisible="contact_filter_type != 'seniority'"
+                                readonly="state == 'done'"
+                                required="search_type == 'people' and contact_filter_type == 'seniority'" />
+                        </group>
+                    </group>
+                    <footer>
+                        <button
+                            name="action_submit"
+                            type="object"
+                            string="Generate Leads"
+                            default_focus="1"
+                            invisible="not context.get('is_modal')"
+                            class="btn-primary"
+                            data-hotkey="q" />
+                        <button
+                            special="cancel"
+                            string="Cancel"
+                            invisible="not context.get('is_modal')"
+                            class="btn-secondary"
+                            data-hotkey="x" />
+                    </footer>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="crm_iap_lead_mining_request_view_tree" model="ir.ui.view">
+        <field name="name">crm.iap.lead.mining.request.view.list</field>
+        <field name="model">crm.iap.lead.mining.request</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name" decoration-bf="1" />
+                <field name="lead_number" string="Number of Leads" />
+                <field name="search_type" />
+                <field name="country_ids" widget="many2many_tags" />
+                <field name="industry_ids" widget="many2many_tags" />
+                <field name="team_id" optional="hide" />
+                <field name="user_id" widget="many2one_avatar_user" optional="hide" />
+                <field
+                    name="tag_ids"
+                    widget="many2many_tags"
+                    optional="hide"
+                    options="{'color_field': 'color'}" />
+                <field
+                    name="state"
+                    widget="badge"
+                    readonly="1"
+                    decoration-danger="state == 'error'"
+                    decoration-info="state == 'draft'"
+                    decoration-success="state == 'done'" />
+            </list>
+        </field>
+    </record>
+
+    <record id="crm_iap_lead_mining_request_view_search" model="ir.ui.view">
+        <field name="name">crm.iap.lead.mining.request.view.search</field>
+        <field name="model">crm.iap.lead.mining.request</field>
+        <field name="arch" type="xml">
+            <search string="Lead Mining Request">
+                <field name="name" />
+                <field name="industry_ids" />
+                <field name="country_ids" />
+                <field name="team_id" />
+                <field name="user_id" />
+                <field name="tag_ids" />
+                <filter
+                    name="state_is_draft"
+                    string="Draft"
+                    domain="[('state', '=', 'draft')]" />
+                <filter
+                    name="state_is_done"
+                    string="Done"
+                    domain="[('state', '=', 'done')]" />
+                <filter
+                    name="state_is_error"
+                    string="Error"
+                    domain="[('state', '=', 'error')]" />
+                <separator />
+                <filter
+                    name="type_is_lead"
+                    string="Leads"
+                    domain="[('lead_type', '=', 'lead')]" />
+                <filter
+                    name="type_is_opportunity"
+                    string="Opportunities"
+                    domain="[('lead_type', '=', 'opportunity')]" />
+                <group>
+                    <filter
+                        name="groupby_lead_type"
+                        string="Type"
+                        context="{'group_by':'lead_type'}" />
+                    <filter
+                        name="groupby_team_id"
+                        string="Sales Team"
+                        context="{'group_by':'team_id'}" />
+                    <filter
+                        name="groupby_user_id"
+                        string="Salesperson"
+                        context="{'group_by':'user_id'}" />
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="crm_iap_lead_mining_request_action" model="ir.actions.act_window">
+        <field name="name">Lead Mining Requests</field>
+        <field name="res_model">crm.iap.lead.mining.request</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+</odoo>

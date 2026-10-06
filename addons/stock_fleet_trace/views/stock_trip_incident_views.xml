@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="stock_trip_incident_view_form" model="ir.ui.view">
+        <field name="name">stock.trip.incident.form</field>
+        <field name="model">stock.trip.incident</field>
+        <field name="arch" type="xml">
+            <form string="Trip Incident">
+                <header>
+                    <button
+                        name="action_approve"
+                        type="object"
+                        string="Approve"
+                        invisible="state != 'reported' or not id"
+                        class="oe_highlight" />
+                    <button
+                        name="action_reject"
+                        type="object"
+                        string="Reject"
+                        invisible="state != 'reported' or not id" />
+                    <field name="state" widget="statusbar" />
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name" readonly="1" /></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="batch_id" readonly="id" />
+                            <field name="vehicle_id" />
+                            <field
+                                name="incident_type"
+                                readonly="state != 'reported'" />
+                            <field name="date" readonly="state != 'reported'" />
+                        </group>
+                        <group>
+                            <field name="odometer" readonly="state != 'reported'" />
+                            <field name="latitude" readonly="state != 'reported'" />
+                            <field name="longitude" readonly="state != 'reported'" />
+                            <field
+                                name="employee_id"
+                                invisible="incident_type != 'driver_change'"
+                                required="incident_type == 'driver_change'" />
+                            <field
+                                name="fuel_liters"
+                                invisible="incident_type != 'fuel'" />
+                            <field
+                                name="fuel_amount"
+                                invisible="incident_type != 'fuel'" />
+                            <field name="currency_id" invisible="1" />
+                        </group>
+                    </group>
+                    <field
+                        name="description"
+                        placeholder="What happened, where, and what was done"
+                        readonly="state != 'reported'" />
+                    <field name="is_loss" invisible="1" />
+                    <separator string="Goods Lost" invisible="not is_loss" />
+                    <field
+                        name="line_ids"
+                        invisible="not is_loss"
+                        readonly="state != 'reported'">
+                        <list editable="bottom">
+                            <field name="batch_id" column_invisible="1" />
+                            <field name="picking_id" />
+                            <field name="product_id" />
+                            <field name="trace_id" />
+                            <field name="quantity" />
+                            <field name="uom_id" groups="uom.group_uom" />
+                        </list>
+                    </field>
+                    <group invisible="state == 'reported' and not id">
+                        <field name="negligence" invisible="not is_loss" />
+                        <field name="review_note" />
+                        <field name="reviewed_uid" invisible="not reviewed_uid" />
+                        <field
+                            name="scrap_ids"
+                            widget="many2many_tags"
+                            invisible="not scrap_ids" />
+                    </group>
+                </sheet>
+                <chatter />
+            </form>
+        </field>
+    </record>
+
+    <record id="stock_trip_incident_view_list" model="ir.ui.view">
+        <field name="name">stock.trip.incident.list</field>
+        <field name="model">stock.trip.incident</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name" />
+                <field name="date" />
+                <field name="batch_id" />
+                <field name="vehicle_id" optional="show" />
+                <field name="incident_type" />
+                <field name="description" optional="hide" />
+                <field name="negligence" optional="hide" />
+                <field
+                    name="state"
+                    widget="badge"
+                    decoration-success="state == 'approved'"
+                    decoration-warning="state == 'reported'" />
+            </list>
+        </field>
+    </record>
+
+    <record id="stock_trip_incident_view_search" model="ir.ui.view">
+        <field name="name">stock.trip.incident.search</field>
+        <field name="model">stock.trip.incident</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name" />
+                <field name="batch_id" />
+                <filter
+                    name="to_review"
+                    string="To Review"
+                    domain="[('state', '=', 'reported')]" />
+                <filter
+                    name="losses"
+                    string="Losses"
+                    domain="[('incident_type', 'in', ('spill', 'damage', 'theft'))]" />
+                <group>
+                    <filter
+                        name="group_type"
+                        string="Type"
+                        context="{'group_by': 'incident_type'}" />
+                    <filter
+                        name="group_vehicle"
+                        string="Vehicle"
+                        context="{'group_by': 'vehicle_id'}" />
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_stock_trip_incident" model="ir.actions.act_window">
+        <field name="name">Trip Incidents</field>
+        <field name="res_model">stock.trip.incident</field>
+        <field name="path">trip-incidents</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{'search_default_to_review': 1}</field>
+    </record>
+
+</odoo>

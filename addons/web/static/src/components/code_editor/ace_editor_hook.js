@@ -1,0 +1,226 @@
+// @ts-check
+/** @odoo-module native */
+
+import { onMounted } from "@odoo/owl";
+import { browser } from "@web/core/browser/browser";
+import { makeLogger } from "@web/core/debug/debug_logger";
+import { ace } from "@web/core/lib/ace";
+import { useIsDestroyed } from "@web/core/utils/hooks";
+import { useLayoutEffect } from "@web/core/utils/layout_effect";
+
+const log = makeLogger("web.components.code_editor");
+
+/** @type {Record<string, any>} one instance per mode, as ace kept by id */
+const modeInstances = Object.create(null);
+
+/**
+ * The mode object for a name; ace no longer resolves "ace/mode/<name>" itself.
+ *
+ * @param {string | undefined} name
+ * @returns {any} a mode, or "" for plain text when the name is unknown
+ */
+function getMode(name) {
+    const ModeClass = name && ace.modes[name];
+    if (!ModeClass) {
+        return "";
+    }
+    modeInstances[name] ??= new ModeClass();
+    return modeInstances[name];
+}
+
+/**
+ * @typedef {{ row: number, column: number }} CursorPosition
+ * @typedef AceEditorParams
+ * @property {{ el: HTMLElement | null }} ref
+ * @property {() => string} getValue
+ * @property {() => string | number} getSessionId
+ * @property {() => string | undefined} getMode
+ * @property {() => string | undefined} getTheme
+ * @property {() => boolean} isReadonly
+ * @property {() => boolean} showLineNumbers
+ * @property {() => number | undefined} getMaxLines
+ * @property {(value: string, cursor: CursorPosition) => void} onChange
+ * @property {() => void} [onBlur]
+ * @property {(modeId: string | undefined) => void} [onModeChanged]
+ * @property {CursorPosition} [initialCursorPosition]
+ */
+
+export class AceEditorController {
+    /** @param {AceEditorParams} params */
+    constructor(params) {
+        this.params = params;
+        /** @type {Record<string | number, any>} */
+        this.sessions = Object.create(null);
+        /** @type {any} */
+        this.editor = null;
+        this.ignoreAceChange = false;
+        this.onSessionChange = () => {
+            if (!this.ignoreAceChange && this.editor) {
+                this.params.onChange(
+                    this.editor.getValue(),
+                    this.editor.getCursorPosition(),
+                );
+            }
+        };
+    }
+
+    /**
+     * @param {HTMLElement} el
+     * @returns {() => void}
+     */
+    attach(el) {
+        const editor = ace.edit(el);
+        this.editor = editor;
+        editor.setOptions({ showPrintMargin: false, useWorker: false });
+        editor.$blockScrolling = true;
+        editor.on("changeMode", () =>
+            this.params.onModeChanged?.(editor.getSession().$modeId.split("/").at(-1)),
+        );
+        editor.on("blur", () => this.params.onBlur?.());
+
+        const session = editor.getSession();
+        this.sessions[this.params.getSessionId()] ??= session;
+        session.setValue(this.params.getValue());
+        session.on("change", this.onSessionChange);
+
+        return () => this.detach();
+    }
+
+    detach() {
+        this.editor?.destroy();
+        this.editor = null;
+        for (const sessionId of Object.keys(this.sessions)) {
+            this.sessions[sessionId].destroy?.();
+            delete this.sessions[sessionId];
+        }
+    }
+
+    /** @param {string | undefined} theme */
+    applyTheme(theme) {
+        this.editor?.setTheme((theme && ace.themes[theme]) || "");
+    }
+
+    /**
+     * @param {boolean} readonly
+     * @param {boolean} showLineNumbers
+     * @param {number | undefined} maxLines
+     */
+    applyOptions(readonly, showLineNumbers, maxLines) {
+        if (!this.editor) {
+            return;
+        }
+        this.editor.setOptions({
+            readOnly: readonly,
+            highlightActiveLine: !readonly,
+            highlightGutterLine: !readonly,
+            maxLines,
+        });
+        this.editor.renderer.setOptions({
+            displayIndentGuides: !readonly,
+            showGutter: !readonly && showLineNumbers,
+        });
+        this.editor.renderer.$cursorLayer.element.style.display = readonly
+            ? "none"
+            : "block";
+    }
+
+    /**
+     * @param {string | number} sessionId
+     * @returns {any}
+     */
+    acquireSession(sessionId) {
+        log.logic("acquire session", () => ({
+            cached: Object.hasOwn(this.sessions, sessionId),
+        }));
+        if (!this.sessions[sessionId]) {
+            const session = new ace.EditSession(this.params.getValue());
+            session.setUndoManager(new ace.UndoManager());
+            session.setOptions({ useWorker: false, tabSize: 2, useSoftTabs: true });
+            session.on("change", this.onSessionChange);
+            this.sessions[sessionId] = session;
+        }
+        return this.sessions[sessionId];
+    }
+
+    /**
+     * @param {string | number} sessionId
+     * @param {string | undefined} mode
+     */
+    showSession(sessionId, mode) {
+        if (!this.editor) {
+            return;
+        }
+        const session = this.acquireSession(sessionId);
+        session.setMode(getMode(mode));
+        this.editor.setSession(session);
+    }
+
+    /**
+     * @param {string | number} sessionId
+     * @param {string} value
+     */
+    syncValue(sessionId, value) {
+        const session = this.sessions[sessionId];
+        if (!session || session.getValue() === value) {
+            return;
+        }
+        this.ignoreAceChange = true;
+        session.setValue(value);
+        this.ignoreAceChange = false;
+    }
+
+    /** @param {CursorPosition} position */
+    placeCursor(position) {
+        if (!this.editor) {
+            return;
+        }
+        this.editor.focus();
+        const pos = { row: position.row || 0, column: position.column || 0 };
+        this.editor.selection.moveToPosition(pos);
+        this.editor.renderer.scrollCursorIntoView(pos, 0.5);
+    }
+}
+
+/**
+ * @param {AceEditorParams} params
+ * @returns {AceEditorController}
+ */
+export function useAceEditor(params) {
+    const isDestroyed = useIsDestroyed();
+    const controller = new AceEditorController(params);
+
+    useLayoutEffect(
+        (el) => (el ? controller.attach(el) : undefined),
+        () => [params.ref.el],
+    );
+    useLayoutEffect(
+        (theme) => controller.applyTheme(theme),
+        () => [params.getTheme()],
+    );
+    useLayoutEffect(
+        (readonly, lineNumbers, maxLines) =>
+            controller.applyOptions(readonly, lineNumbers, maxLines),
+        () => [params.isReadonly(), params.showLineNumbers(), params.getMaxLines()],
+    );
+    useLayoutEffect(
+        (sessionId, mode) => controller.showSession(sessionId, mode),
+        () => [params.getSessionId(), params.getMode()],
+    );
+    useLayoutEffect(
+        (sessionId, value) => controller.syncValue(sessionId, value),
+        () => [params.getSessionId(), params.getValue()],
+    );
+
+    const { initialCursorPosition } = params;
+    if (initialCursorPosition) {
+        onMounted(() => {
+            browser.requestAnimationFrame(() => {
+                if (!isDestroyed()) {
+                    controller.placeCursor(initialCursorPosition);
+                }
+            });
+        });
+    }
+
+    return controller;
+}

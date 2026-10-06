@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="product_public_category_vehicles" model="product.public.category">
+        <field name="name">Vehículos</field>
+        <field name="sequence" eval="10" />
+    </record>
+
+</odoo>

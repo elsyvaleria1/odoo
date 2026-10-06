@@ -1,0 +1,15 @@
+from odoo import models
+from odoo.exceptions import UserError
+
+
+class MrpProduction(models.Model):
+    _inherit = "mrp.production"
+
+    def button_unbuild(self) -> dict:
+        if self.subcontractor_id:
+            raise UserError(
+                self.env._(
+                    "You can't unbuild a subcontracted Manufacturing Order.",
+                )
+            )
+        return super().button_unbuild()

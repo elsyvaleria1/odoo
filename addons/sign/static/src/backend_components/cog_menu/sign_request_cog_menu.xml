@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="sign.SignRequestCogMenu">
+        <CogMenuItem class="'o_sign_request'" icon="'fa-solid fa-signature'" description.translate="Request Signature…" onSelected.bind="this.signRequest"/>
+    </t>
+
+</templates>

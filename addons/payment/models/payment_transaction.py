@@ -1,0 +1,1567 @@
+import re
+import unicodedata
+from datetime import datetime
+from typing import Self
+
+import psycopg
+from dateutil import relativedelta
+from markupsafe import Markup
+
+from odoo import api, fields, models
+from odoo.api import ValuesType
+from odoo.exceptions import UserError, ValidationError
+from odoo.fields import Domain
+from odoo.http import request
+from odoo.tools import email_normalize_all, float_round, frozendict
+
+from odoo.addons.payment import utils as payment_utils
+from odoo.addons.payment.const import CURRENCY_MINOR_UNITS, SENSITIVE_KEYS
+from odoo.addons.payment.logging import get_payment_logger
+
+_logger = get_payment_logger(__name__, sensitive_keys=SENSITIVE_KEYS)
+
+
+class PaymentTransaction(models.Model):
+    _name = "payment.transaction"
+    _description = "Payment Transaction"
+    _order = "id desc"
+    _rec_name = "reference"
+    _access_anchors = frozendict(
+        {
+            "company": models.Anchor("company_id", shared=False),
+        }
+    )
+
+    @api.model
+    def _selection_installed_langs(self):
+        return self.env["res.lang"].get_installed()
+
+    provider_id = fields.Many2one(
+        comodel_name="payment.provider",
+        readonly=True,
+        required=True,
+    )
+    provider_code = fields.Selection(
+        related="provider_id.code",
+        string="Provider Code",
+    )
+    company_id = fields.Many2one(
+        # Indexed to speed-up ORM searches (from ir.access or others)
+        related="provider_id.company_id",
+    )
+    payment_method_id = fields.Many2one(
+        comodel_name="payment.method",
+        readonly=True,
+        required=True,
+    )
+    payment_method_code = fields.Char(
+        related="payment_method_id.code",
+        string="Payment Method Code",
+    )
+    primary_payment_method_id = fields.Many2one(
+        comodel_name="payment.method",
+        compute="_compute_primary_payment_method_id",
+    )
+    reference = fields.Char(
+        readonly=True,
+        required=True,
+        help="The internal reference of the transaction",
+    )  # Already has an index from the UNIQUE SQL constraint.
+    provider_reference = fields.Char(
+        readonly=True,
+        help="The provider reference of the transaction",
+    )  # This is not the same thing as the provider reference of the token.
+    amount = fields.Monetary(
+        currency_field="currency_id",
+        readonly=True,
+        required=True,
+    )
+    currency_id = fields.Many2one(
+        comodel_name="res.currency",
+        readonly=True,
+        required=True,
+    )
+    token_id = fields.Many2one(
+        comodel_name="payment.token",
+        string="Payment Token",
+        index="btree_not_null",
+        readonly=True,
+        domain='[("provider_id", "=", "provider_id")]',
+        ondelete="restrict",
+    )
+    state = fields.Selection(
+        selection=[
+            ("draft", "Draft"),
+            ("pending", "Pending"),
+            ("authorized", "Authorized"),
+            ("done", "Confirmed"),
+            ("cancel", "Canceled"),
+            ("error", "Error"),
+        ],
+        string="Status",
+        default="draft",
+        index=True,
+        copy=False,
+        readonly=True,
+        required=True,
+    )
+    state_message = fields.Text(
+        string="Message",
+        readonly=True,
+        help="The complementary information message about the state",
+    )
+    last_state_change = fields.Datetime(
+        string="Last State Change Date",
+        default=fields.Datetime.now,
+        readonly=True,
+    )
+
+    # Fields used for traceability.
+    operation = fields.Selection(
+        # This should not be trusted if the state is draft or pending.
+        selection=[
+            ("online_redirect", "Online payment with redirection"),
+            ("online_direct", "Online direct payment"),
+            ("online_token", "Online payment by token"),
+            ("validation", "Validation of the payment method"),
+            ("offline", "Offline payment by token"),
+            ("refund", "Refund"),
+        ],
+        index=True,
+        readonly=True,
+    )
+    is_live = fields.Boolean(
+        string="Production Environment",
+        help="Whether the transaction happened in a production environment. False for transactions"
+        " created before this tracking was implemented.",
+    )
+    source_transaction_id = fields.Many2one(
+        comodel_name="payment.transaction",
+        index="btree_not_null",
+        readonly=True,
+        help="The source transaction of the related child transactions",
+    )
+    child_transaction_ids = fields.One2many(
+        comodel_name="payment.transaction",
+        inverse_name="source_transaction_id",
+        string="Child Transactions",
+        readonly=True,
+        help="The child transactions of the transaction.",
+    )
+    refunds_count = fields.Integer(compute="_compute_refunds_count")
+
+    # Fields used for user redirection & payment post-processing
+    is_post_processed = fields.Boolean(
+        string="Is Post-processed",
+        help="Has the payment been post-processed",
+    )
+    tokenize = fields.Boolean(
+        string="Create Token",
+        help="Whether a payment token should be created when post-processing the transaction",
+    )
+    landing_route = fields.Char(
+        help="The route the user is redirected to after the transaction"
+    )
+
+    # Duplicated partner values allowing to keep a record of them, should they be later updated.
+    partner_id = fields.Many2one(
+        comodel_name="res.partner",
+        string="Customer",
+        readonly=True,
+        required=True,
+        ondelete="restrict",
+    )
+    partner_name = fields.Char()
+    partner_lang = fields.Selection(
+        selection=_selection_installed_langs,
+        string="Language",
+    )
+    partner_email = fields.Char(string="Email")
+    partner_address = fields.Char(string="Address")
+    partner_zip = fields.Char(string="Zip")
+    partner_city = fields.Char(string="City")
+    partner_state_id = fields.Many2one(
+        comodel_name="res.country.state",
+        string="State",
+    )
+    partner_country_id = fields.Many2one(
+        comodel_name="res.country",
+        string="Country",
+    )
+    partner_phone = fields.Char(
+        string="Phone",
+        compute="_compute_partner_phone",
+        store=True,
+        readonly=False,
+    )
+
+    _reference_uniq = models.Constraint(
+        "unique(reference)",
+        "Reference must be unique!",
+    )
+
+    # === COMPUTE METHODS === #
+
+    @api.depends("partner_id")
+    def _compute_partner_phone(self) -> None:
+        for tx in self:
+            tx.partner_phone = tx.partner_id._phone_get_number().number or False
+
+    def _compute_primary_payment_method_id(self) -> None:
+        for pm, txs in self.grouped("payment_method_id").items():
+            txs.primary_payment_method_id = pm.primary_payment_method_id or pm
+
+    def _compute_refunds_count(self) -> None:
+        rg_data = self.env["payment.transaction"]._read_group(
+            domain=[
+                ("source_transaction_id", "in", self.ids),
+                ("operation", "=", "refund"),
+            ],
+            groupby=["source_transaction_id"],
+            aggregates=["__count"],
+        )
+        data = {source_transaction.id: count for source_transaction, count in rg_data}
+        for record in self:
+            record.refunds_count = data.get(record.id, 0)
+
+    # === CONSTRAINT METHODS === #
+
+    @api.constrains("state")
+    def _check_state_authorized_supported(self) -> None:
+        """Check that authorization is supported for a transaction in the `authorized` state."""
+        illegal_authorize_state_txs = self.filtered(
+            lambda tx: (
+                tx.state == "authorized" and not tx.provider_id.support_manual_capture
+            )
+        )
+        if illegal_authorize_state_txs:
+            raise ValidationError(
+                self.env._(
+                    "Transaction authorization is not supported by the following payment providers: %s",
+                    ", ".join(
+                        set(illegal_authorize_state_txs.mapped("provider_id.name"))
+                    ),
+                )
+            )
+
+    @api.constrains("token_id")
+    def _check_token_is_active(self) -> None:
+        """Check that the token used to create the transaction is active."""
+        if self.token_id and not self.token_id.active:
+            raise ValidationError(
+                self.env._(
+                    "Creating a transaction from an archived token is forbidden."
+                )
+            )
+
+    # === CRUD METHODS === #
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        # Browse the providers and partners of the whole batch at once so that reading their fields
+        # below prefetches across all transactions instead of issuing one query per transaction.
+        providers = self.env["payment.provider"].browse(
+            [values.get("provider_id") for values in vals_list]
+        )
+        partners = self.env["res.partner"].browse(
+            [values.get("partner_id") for values in vals_list]
+        )
+
+        # Track the references assigned within this batch so that two transactions created together
+        # with the same computed prefix don't collide on the `reference` unique constraint (their
+        # siblings are not yet persisted and would otherwise be invisible to `_compute_reference`).
+        references_in_use = set()
+        for values, provider, partner in zip(
+            vals_list, providers, partners, strict=True
+        ):
+            if not values.get("reference"):
+                values["reference"] = self._get_unique_reference(
+                    provider.code, references_in_use=references_in_use, **values
+                )
+            references_in_use.add(values["reference"])
+
+            values["is_live"] = provider.state == "enabled"
+
+            # Duplicate partner values.
+            partner_emails = email_normalize_all(partner.email)
+            values.update(
+                {
+                    # Use the parent partner as fallback if the invoicing address has no name.
+                    "partner_name": partner.name or partner.parent_id.name,
+                    "partner_lang": partner.lang,
+                    "partner_email": partner_emails[0] if partner_emails else None,
+                    "partner_address": payment_utils.format_partner_address(
+                        partner.street, partner.street2
+                    ),
+                    "partner_zip": partner.zip,
+                    "partner_city": partner.city,
+                    "partner_state_id": partner.state_id.id,
+                    "partner_country_id": partner.country_id.id,
+                }
+            )
+
+            # Include provider-specific create values
+            values.update(self._prepare_provider_create_vals(provider.code, values))
+
+        txs = super().create(vals_list)
+
+        # Monetary fields are rounded with the currency at creation time by the ORM. Sometimes, this
+        # can lead to inconsistent string representation of the amounts sent to the providers.
+        # E.g., tx.create(amount=1111.11) -> tx.amount == 1111.1100000000001
+        # To ensure a proper string representation, we invalidate this request's cache values of the
+        # `amount` field for the created transactions. This forces the ORM to read the values from
+        # the DB where there were stored using `float_repr`, which produces a result consistent with
+        # the format expected by providers.
+        # E.g., tx.create(amount=1111.11) ; tx.invalidate_recordset() -> tx.amount == 1111.11
+        txs.invalidate_recordset(["amount"])
+
+        return txs
+
+    @api.model
+    def _prepare_provider_create_vals(
+        self, provider_code: str, values: ValuesType
+    ) -> ValuesType:
+        """Complete the values of the `create` method with provider-specific values.
+
+        For a provider to add its own create values, it must overwrite this method and return a dict
+        of values. Provider-specific values take precedence over those of the dict of generic create
+        values.
+
+        :param str provider_code: The code of the provider that handled the transaction.
+        :param ValuesType values: The original create values.
+        :return: The dict of provider-specific create values.
+        :rtype: ValuesType
+        """
+        return {}
+
+    # === ACTION METHODS === #
+
+    def action_view_refunds(self):
+        """Return the windows action to browse the refund transactions linked to the transaction.
+
+        Note: `self.check_singleton()`
+
+        :return: The window action to browse the refund transactions.
+        :rtype: dict
+        """
+        self.check_singleton()
+
+        action = {
+            "name": self.env._("Refund"),
+            "res_model": "payment.transaction",
+            "type": "ir.actions.act_window",
+        }
+        if self.refunds_count == 1:
+            # Filter on the `refund` operation: a source transaction can also have capture/void
+            # children, and relying on the default `id desc` order would otherwise open one of those
+            # instead of the refund.
+            refund_tx = self.env["payment.transaction"].search(
+                [("source_transaction_id", "=", self.id), ("operation", "=", "refund")],
+                limit=1,
+            )
+            action["res_id"] = refund_tx.id
+            action["view_mode"] = "form"
+        else:
+            action["view_mode"] = "list,form"
+            action["domain"] = [("source_transaction_id", "=", self.id)]
+        return action
+
+    def action_capture(self):
+        """Open the partial capture wizard if it is supported by the related providers, otherwise
+        capture the transactions immediately.
+
+        :return: The action to open the partial capture wizard, if supported.
+        :rtype: dict
+        """
+        payment_utils.check_rights_on_recordset(self)
+
+        if any(
+            tx.provider_id.sudo().support_manual_capture == "partial" for tx in self
+        ):
+            return {
+                "name": self.env._("Capture"),
+                "type": "ir.actions.act_window",
+                "view_mode": "form",
+                "res_model": "wizard.payment.transaction.capture",
+                "target": "new",
+                "context": {
+                    "active_model": "payment.transaction",
+                    # Consider also confirmed transactions to calculate the total authorized amount.
+                    "active_ids": self.filtered(
+                        lambda tx: tx.state in ["authorized", "done"]
+                    ).ids,
+                    "payment_backend_action": True,
+                },
+            }
+        else:
+            captured_txs_sudo = self.env["payment.transaction"].sudo()
+            for tx in self.filtered(lambda tx: tx.state == "authorized"):
+                # In sudo mode to read on provider fields.
+                captured_txs_sudo |= (
+                    tx.sudo().with_context(payment_backend_action=True)._capture()
+                )
+            return captured_txs_sudo._prepare_action_feedback_notification()
+
+    def action_void(self):
+        """Check the state of the transaction and request to have them voided.
+
+        :return: The client notification.
+        :rtype: dict
+        :raise ValidationError: If a transaction is not authorized.
+        """
+        payment_utils.check_rights_on_recordset(self)
+
+        if any(tx.state != "authorized" for tx in self):
+            raise ValidationError(
+                self.env._("Only authorized transactions can be voided.")
+            )
+
+        voided_txs_sudo = self.env["payment.transaction"].sudo()
+        for tx in self:
+            # Consider all the confirmed partial capture (same operation as parent) child txs.
+            captured_amount = sum(
+                child_tx.amount
+                for child_tx in tx.child_transaction_ids.filtered(
+                    lambda t, tx=tx: t.state == "done" and t.operation == tx.operation
+                )
+            )
+            # In sudo mode to read on provider fields.
+            voided_txs_sudo |= (
+                tx.sudo()
+                .with_context(payment_backend_action=True)
+                ._void(amount_to_void=tx.amount - captured_amount)
+            )
+        return voided_txs_sudo._prepare_action_feedback_notification()
+
+    def action_refund(self, amount_to_refund=None):
+        """Check the state of the transactions and request their refund.
+
+        :param float amount_to_refund: The amount to be refunded.
+        :return: The client notification.
+        :rtype: dict
+        """
+        payment_utils.check_rights_on_recordset(self)
+
+        if any(tx.state != "done" for tx in self):
+            raise ValidationError(
+                self.env._("Only confirmed transactions can be refunded.")
+            )
+
+        refunded_txs_sudo = self.env["payment.transaction"].sudo()
+        for tx in self:
+            # In sudo mode to read on provider fields.
+            refunded_txs_sudo |= (
+                tx.sudo()
+                .with_context(payment_backend_action=True)
+                ._refund(amount_to_refund=amount_to_refund)
+            )
+        return refunded_txs_sudo._prepare_action_feedback_notification()
+
+    def _prepare_action_feedback_notification(self) -> dict:
+        """Build a client notification to display the result of an action.
+
+        :return: The client notification.
+        :rtype: dict
+        """
+        if not (failed_txs := self.filtered(lambda tx: tx.state == "error")):
+            notification_type = "success"
+            msg = self.env._("Your payment operation has been successfully submitted.")
+        else:
+            notification_type = "danger"
+            msg = self.env._(
+                "Your payment operation could not be completed for following transactions:"
+                " %(tx_refs)s",
+                tx_refs=", ".join(failed_txs.mapped("reference")),
+            )
+        return {
+            "type": "ir.actions.client",
+            "tag": "display_notification",
+            "params": {
+                "type": notification_type,
+                "message": msg,
+                "next": {
+                    "type": "ir.actions.act_window_close"
+                },  # Close any open wizard.
+            },
+        }
+
+    def action_post_process(self) -> dict:
+        """Trigger the post-processing of the transactions.
+
+        :return: A client action to soft-reload the view.
+        :rtype: dict
+        """
+        self._post_process()
+        return {
+            "type": "ir.actions.client",
+            "tag": "soft_reload",
+        }
+
+    # === BUSINESS METHODS - PRE-PROCESSING === #
+
+    @api.model
+    def _get_unique_reference(
+        self,
+        provider_code,
+        prefix=None,
+        separator="-",
+        references_in_use: set[str] | None = None,
+        **kwargs,
+    ) -> str:
+        """Compute a unique reference for the transaction.
+
+        The reference corresponds to the prefix if no other transaction with that prefix already
+        exists. Otherwise, it follows the pattern `{computed_prefix}{separator}{sequence_number}`
+        where:
+
+        - `{computed_prefix}` is:
+
+          - The provided custom prefix, if any.
+          - The computation result of :meth:`_get_reference_prefix` if the custom prefix is not
+            filled, but the kwargs are.
+          - `'tx-{datetime}'` if neither the custom prefix nor the kwargs are filled.
+
+        - `{separator}` is the string that separates the prefix from the sequence number.
+        - `{sequence_number}` is the next integer in the sequence of references sharing the same
+          prefix. The sequence starts with `1` if there is only one matching reference.
+
+        .. example::
+
+           - Given the custom prefix `'example'` which has no match with an existing reference, the
+             full reference will be `'example'`.
+           - Given the custom prefix `'example'` which matches the existing reference `'example'`,
+             and the custom separator `'-'`, the full reference will be `'example-1'`.
+           - Given the kwargs `{'invoice_ids': [1, 2]}`, the custom separator `'-'` and no custom
+             prefix, the full reference will be `'INV1-INV2'` (or similar) if no existing reference
+             has the same prefix, or `'INV1-INV2-n'` if `n` existing references have the same
+             prefix.
+
+        :param str provider_code: The code of the provider handling the transaction.
+        :param str prefix: The custom prefix used to compute the full reference.
+        :param str separator: The custom separator used to separate the prefix from the suffix.
+        :param set[str] | None references_in_use: References already assigned to sibling
+                                                  transactions in the same create batch and not
+                                                  yet persisted; treated as existing to avoid
+                                                  collisions.
+        :param dict kwargs: Optional values passed to :meth:`_get_reference_prefix` if no custom
+                            prefix is provided.
+        :return: The unique reference for the transaction.
+        :rtype: str
+        """
+        references_in_use = references_in_use or set()
+
+        # Compute the prefix.
+        if prefix:
+            # Replace special characters by their ASCII alternative (é -> e ; ä -> a ; ...)
+            prefix = (
+                unicodedata.normalize("NFKD", prefix)
+                .encode("ascii", "ignore")
+                .decode("utf-8")
+            )
+        if (
+            not prefix
+        ):  # Prefix not provided or voided above, compute it based on the kwargs.
+            prefix = self.sudo()._get_reference_prefix(separator, **kwargs)
+        if (
+            not prefix
+        ):  # Prefix not computed from the kwargs, fallback on time-based value
+            prefix = payment_utils.singularize_reference_prefix()
+
+        # Compute the sequence number.
+        reference = prefix  # The first reference of a sequence has no sequence number.
+        if prefix in references_in_use or self.sudo().search_count(
+            [("reference", "=", prefix)], limit=1
+        ):  # The reference already has a match
+            # We now execute a second search on `payment.transaction` to fetch all the references
+            # starting with the given prefix. The load of these two searches is mitigated by the
+            # index on `reference`. Although not ideal, this solution allows for quickly knowing
+            # whether the sequence for a given prefix is already started or not, usually not. An SQL
+            # query wouldn't help either as the selector is arbitrary and doing that would be an
+            # open-door to SQL injections.
+            same_prefix_references = set(
+                self.sudo()
+                .search([("reference", "=like", f"{prefix}{separator}%")])
+                .with_context(prefetch_fields=False)
+                .mapped("reference")
+            )
+            # Account for references already assigned earlier in the same create batch; they are not
+            # persisted yet and would otherwise be invisible to the search above.
+            same_prefix_references |= {
+                ref
+                for ref in references_in_use
+                if ref.startswith(f"{prefix}{separator}")
+            }
+
+            # A final regex search is necessary to figure out the next sequence number. The previous
+            # search could not rely on alphabetically sorting the reference to infer the largest
+            # sequence number because both the prefix and the separator are arbitrary. A given
+            # prefix could happen to be a substring of the reference from a different sequence.
+            # For instance, the prefix 'example' is a valid match for the existing references
+            # 'example', 'example-1' and 'example-ref', in that order. Trusting the order to infer
+            # the sequence number would lead to a collision with 'example-1'.
+            search_pattern = re.compile(
+                rf"^{re.escape(prefix)}{re.escape(separator)}(\d+)$"
+            )
+            max_sequence_number = (
+                0  # If no match is found, start the sequence with this reference.
+            )
+            for existing_reference in same_prefix_references:
+                search_result = re.search(search_pattern, existing_reference)
+                if (
+                    search_result
+                ):  # The reference has the same prefix and is from the same sequence
+                    # Find the largest sequence number, if any.
+                    current_sequence = int(search_result.group(1))
+                    max_sequence_number = max(max_sequence_number, current_sequence)
+
+            # Compute the full reference.
+            reference = f"{prefix}{separator}{max_sequence_number + 1}"
+        return reference
+
+    @api.model
+    def _get_reference_prefix(self, separator, **values):
+        """Compute the reference prefix from the transaction values.
+
+        Note: This method should be called in sudo mode to give access to the documents (invoices,
+        sales orders) referenced in the transaction values.
+
+        :param str separator: The custom separator used to separate parts of the computed
+                              reference prefix.
+        :param dict values: The transaction values used to compute the reference prefix.
+        :return: The computed reference prefix.
+        :rtype: str
+        """
+        return ""
+
+    def _prepare_processing_values(self):
+        """Return the values used to process the transaction.
+
+        The values are returned as a dict containing entries with the following keys:
+
+        - `provider_id`: The provider handling the transaction, as a `payment.provider` id.
+        - `provider_code`: The code of the provider.
+        - `reference`: The reference of the transaction.
+        - `amount`: The rounded amount of the transaction.
+        - `currency_id`: The currency of the transaction, as a `res.currency` id.
+        - `partner_id`: The partner making the transaction, as a `res.partner` id.
+        - `should_tokenize`: Whether this transaction should be tokenized.
+        - Additional provider-specific entries.
+
+        Note: `self.check_singleton()`
+
+        :return: The processing values.
+        :rtype: dict
+        """
+        self.check_singleton()
+
+        processing_values = {
+            "provider_id": self.provider_id.id,
+            "provider_code": self.provider_code,
+            "reference": self.reference,
+            "amount": self.amount,
+            "currency_id": self.currency_id.id,
+            "partner_id": self.partner_id.id,
+            "should_tokenize": self.tokenize,
+        }
+
+        # Complete generic processing values with provider-specific values.
+        processing_values.update(
+            self._prepare_provider_processing_values(processing_values)
+        )
+
+        # Render the HTML form for the redirect flow if available.
+        if self.operation in ("online_redirect", "validation"):
+            redirect_form_view = self.provider_id._get_redirect_form_view(
+                is_validation=self.operation == "validation"
+            )
+            if redirect_form_view:  # Some providers don't need a redirect form.
+                rendering_values = self._prepare_redirect_form_values(processing_values)
+                redirect_form_html = self.env["ir.qweb"]._render(
+                    redirect_form_view.id, rendering_values
+                )
+                processing_values.update(redirect_form_html=redirect_form_html)
+
+        # Include the state and state message only after they might have been updated by calling the
+        # `_prepare_redirect_form_values / _prepare_provider_processing_values` methods (due to possible external requests).
+        processing_values.update(
+            {
+                "state": self.state,
+                "state_message": self.state_message,
+            }
+        )
+
+        return processing_values
+
+    def _prepare_provider_processing_values(self, processing_values):
+        """Return a dict of provider-specific values used to process the transaction.
+
+        For a provider to add its own processing values, it must overwrite this method and return a
+        dict of provider-specific values based on the generic values returned by this method.
+        Provider-specific values take precedence over those of the dict of generic processing
+        values.
+
+        :param dict processing_values: The generic processing values of the transaction.
+        :return: The dict of provider-specific processing values.
+        :rtype: dict
+        """
+        return {}
+
+    def _prepare_redirect_form_values(self, processing_values):
+        """Return a dict of provider-specific values used to render the redirect form.
+
+        For a provider to add its own rendering values, it must overwrite this method and return a
+        dict of provider-specific values based on the processing values (provider-specific
+        processing values included).
+
+        :param dict processing_values: The processing values of the transaction.
+        :return: The dict of provider-specific rendering values.
+        :rtype: dict
+        """
+        return {}
+
+    def _prepare_mandate_data(self):
+        """Return a dict of module-specific values used to create a mandate.
+
+        For a module to add its own mandate values, it must overwrite this method and return a dict
+        of module-specific values.
+
+        Note: `self.check_singleton()`
+
+        :return: The dict of module-specific mandate values.
+        :rtype: dict
+        """
+        self.check_singleton()
+        return {}
+
+    def _charge_with_token(self) -> None:
+        """Pay the transaction with the given token.
+
+        Note: `self.check_singleton()`
+
+        :return: None
+        """
+        self.check_singleton()
+        self._check_provider_is_not_disabled()
+        self._log_sent_message()
+        try:
+            self._send_payment_request()
+        except ValidationError as e:
+            self._set_error(str(e))
+
+    def _send_payment_request(self):
+        """Request the provider handling the transaction to send a token payment request.
+
+        This method is exclusively used to make payments by token, which correspond to both the
+        `online_token` and the `offline` transaction's `operation` field.
+
+        For a provider to support tokenization, it must override this method and send an API request
+        to make a payment.
+
+        Note: `self.check_singleton()` from :meth:`_charge_with_token`
+
+        :return: None
+        """
+        return
+
+    def _capture(self, amount_to_capture=None):
+        """Capture the authorized amount.
+
+        Note: `self.check_singleton()`
+
+        :param float amount_to_capture: The amount to capture.
+        :return: The capture transaction created to process the capture request.
+        :rtype: payment.transaction
+        """
+        self.check_singleton()
+        self._check_provider_is_not_disabled()
+
+        capture_tx = self._create_child_transaction(amount_to_capture or self.amount)
+        capture_tx._log_sent_message()
+        try:
+            capture_tx._send_capture_request()
+        except ValidationError as e:
+            capture_tx._set_error(str(e))
+        return capture_tx
+
+    def _send_capture_request(self):
+        """Request the provider handling the transaction to send a capture request.
+
+        For a provider to support authorization, it must override this method and send an API
+        request to capture the payment.
+
+        Note: `self.check_singleton()` from :meth:`_capture`
+
+        :return: None
+        """
+        return
+
+    def _void(self, amount_to_void=None):
+        """Void the authorized amount.
+
+        Note: `self.check_singleton()`
+
+        :param float amount_to_void: The amount to be voided.
+        :return: The void transaction created to process the void request.
+        :rtype: payment.transaction
+        """
+        self.check_singleton()
+        self._check_provider_is_not_disabled()
+
+        void_tx = self._create_child_transaction(amount_to_void or self.amount)
+        void_tx._log_sent_message()
+        try:
+            void_tx._send_void_request()
+        except ValidationError as e:
+            void_tx._set_error(str(e))
+        return void_tx
+
+    def _send_void_request(self):
+        """Request the provider handling the transaction to send a void request.
+
+        For a provider to support authorization, it must override this method and send an API
+        request to void the payment.
+
+        Note: `self.check_singleton()` from :meth:`_void`
+
+        :return: None
+        """
+        return
+
+    def _refund(self, amount_to_refund=None):
+        """Refund the transaction.
+
+        Note: `self.check_singleton()`
+
+        :param float amount_to_refund: The amount to be refunded.
+        :return: The refund transaction created to process the refund request.
+        :rtype: payment.transaction
+        """
+        self.check_singleton()
+        self._check_provider_is_not_disabled()
+
+        refund_tx = self._create_child_transaction(
+            amount_to_refund or self.amount, is_refund=True
+        )
+        refund_tx._log_sent_message()
+        try:
+            refund_tx._send_refund_request()
+        except ValidationError as e:
+            refund_tx._set_error(str(e))
+        return refund_tx
+
+    def _send_refund_request(self):
+        """Request the provider handling the transaction to send a refund request.
+
+        For a provider to support refunds, it must override this method and send an API request to
+        make a refund.
+
+        Note: `self.check_singleton()` from :meth:`_refund`
+
+        :return: None
+        """
+        return
+
+    def _check_provider_is_not_disabled(self) -> None:
+        """Ensure that the provider's state is not `disabled` before sending a request to its
+        provider.
+
+        :return: None
+        :raise UserError: If the provider's state is `disabled`.
+        """
+        if self.provider_id.state == "disabled":
+            raise UserError(
+                self.env._(
+                    "Making a request to the provider is not possible because the provider is disabled."
+                )
+            )
+
+    def _create_child_transaction(
+        self, amount, is_refund=False, **custom_create_values
+    ) -> Self:
+        """Create a new transaction with the current transaction as its parent transaction.
+
+        This happens only in case of a refund or a partial capture (where the initial transaction is
+        split between smaller transactions, either captured or voided).
+
+        Note: self.check_singleton()
+
+        :param float amount: The strictly positive amount of the child transaction, in the same
+                             currency as the source transaction.
+        :param bool is_refund: Whether the child transaction is a refund.
+        :return: The created child ``payment.transaction``.
+        :rtype: Self
+        """
+        self.check_singleton()
+
+        if is_refund:
+            reference_prefix = f"R-{self.reference}"
+            amount = -amount
+            operation = "refund"
+        else:  # Partial capture or void.
+            reference_prefix = f"P-{self.reference}"
+            operation = self.operation
+
+        return self.create(
+            {
+                "provider_id": self.provider_id.id,
+                "payment_method_id": self.payment_method_id.id,
+                "reference": self._get_unique_reference(
+                    self.provider_code, prefix=reference_prefix
+                ),
+                "amount": amount,
+                "currency_id": self.currency_id.id,
+                "token_id": self.token_id.id,
+                "operation": operation,
+                "source_transaction_id": self.id,
+                "partner_id": self.partner_id.id,
+                **custom_create_values,
+            }
+        )
+
+    # === BUSINESS METHODS - PROCESSING === #
+
+    def _process(self, provider_code, payment_data):
+        """Process the payment data received from the provider and update the transaction.
+
+        :param str provider_code: The code of the provider handling the transaction.
+        :param dict payment_data: The payment data sent by the provider.
+        :return: The updated transaction.
+        :rtype: payment.transaction
+        """
+        tx = self or self._search_by_reference(provider_code, payment_data)
+        if tx:
+            tx.check_singleton()
+            previous_state = tx.state
+            tx._check_amount(payment_data)
+            if tx.state == "error" and tx.state != previous_state:
+                return tx
+            tx._apply_updates(payment_data)
+            if tx.tokenize and tx.state in {"authorized", "done"}:
+                tx._tokenize(payment_data)
+        return tx
+
+    @api.model
+    def _inbound_gate_owner(self):
+        return self.provider_id
+
+    @api.model
+    def _resolve_notification(self, provider_code, payment_data, acknowledged) -> tuple:
+        """The route's receiver: the transaction the notification names, or
+        the answer to give when it names none we know (a provider that retries
+        on anything but a 2xx must not be told 404)."""
+        tx = self.sudo()._search_notification_subject(provider_code, payment_data)
+        if not tx:
+            raise acknowledged
+        return tx, {"data": payment_data}
+
+    @api.model
+    def _search_notification_subject(self, provider_code, payment_data):
+        """Search the transaction a notification is admitted against, before it is verified.
+
+        Nothing may be written before the notification is verified: a provider whose
+        `_search_by_reference` creates transactions overrides this with a read-only search.
+
+        :param str provider_code: The code of the provider handling the transaction.
+        :param dict payment_data: The payment data sent by the provider.
+        :return: The transaction, if found.
+        :rtype: payment.transaction
+        """
+        return self._search_by_reference(provider_code, payment_data)
+
+    def _is_inbound_request_authentic(self, headers, body) -> bool:
+        """Whether the notification that resolved this transaction is the
+        provider's: by default its signature over the data it sent."""
+        self.check_singleton()
+        return self._is_notification_signature_valid(
+            self._inbound_notification_data(headers, body)
+        )
+
+    def _inbound_notification_data(self, headers, body):
+        return request.get_http_params() if request else {}
+
+    def _is_notification_signature_valid(self, payment_data) -> bool:
+        """Each provider verifies its own; an unverifiable notification is refused."""
+        self.check_singleton()
+        return False
+
+    def _search_by_reference(self, provider_code, payment_data):
+        """Search the transaction based on the payment data.
+
+        :param str provider_code: The code of the provider handling the transaction.
+        :param dict payment_data: The payment data sent by the provider.
+        :return: The transaction, if found.
+        :rtype: payment.transaction
+        """
+        reference = self._extract_reference(provider_code, payment_data)
+        if not reference:
+            _logger.warning(
+                "Received payment data from provider %s with missing reference",
+                provider_code,
+            )
+            return self
+
+        tx = self._search_by_notified_value(provider_code, "reference", reference)
+        if not tx:
+            _logger.warning("No transaction found matching reference %s.", reference)
+        return tx
+
+    @api.model
+    def _search_by_notified_value(self, provider_code, field_name, value):
+        """Search the provider's transactions whose field equals a value read from payment data.
+
+        A value that is not a non-empty string matches nothing: a JSON list would turn the equality
+        into an inclusion and match several transactions.
+
+        :param str provider_code: The code of the provider handling the transactions.
+        :param str field_name: The field to match, e.g. `reference` or `provider_reference`.
+        :param value: The value read from the payment data.
+        :return: The matching transactions.
+        :rtype: payment.transaction
+        """
+        if not value or not isinstance(value, str):
+            return self.browse()
+        return self.search(
+            Domain(field_name, "=", value) & Domain("provider_code", "=", provider_code)
+        )
+
+    @api.model
+    def _extract_reference(self, provider_code, payment_data):
+        """Extract the transaction reference from the payment data.
+
+        This method must be overridden by providers to extract the reference from the payment data.
+
+        :param str provider_code: The code of the provider handling the transaction.
+        :param dict payment_data: The payment data sent by the provider.
+        :return: The transaction reference.
+        :rtype: str
+        """
+        return payment_data.get("reference")
+
+    def _check_amount(self, payment_data) -> None:
+        """Ensure that the transaction's amount and currency match the ones from the payment data.
+
+        Validation transactions and transactions for which providers opt out of the amount check are
+        skipped.
+
+        :param dict payment_data: The payment data sent by the provider.
+        :return: None
+        """
+        self.check_singleton()
+
+        if self.operation == "validation":
+            return  # Skip validation for $0-auth transactions.
+
+        amount_data = self._extract_amount_data(payment_data)
+        if not amount_data:
+            # Skip validation for transactions where the provider opts out of the amount check
+            # (returns `None`) or where no provider claims the payment data (base returns `{}`).
+            return
+
+        amount = amount_data["amount"]
+        currency_code = amount_data["currency_code"]
+        precision_digits = amount_data.get("precision_digits")
+
+        if not amount or not currency_code:
+            error_message = self.env._(
+                "The amount or currency is missing from the payment data."
+            )
+            self._set_error(error_message)
+            return
+
+        # Negate the amount for refunds, as refunds have a negative amount in Odoo, but all
+        # providers send a positive one.
+        if self.operation == "refund":
+            amount = -amount
+        if precision_digits is None:
+            precision_digits = CURRENCY_MINOR_UNITS.get(
+                self.currency_id.name, self.currency_id.decimal_places
+            )
+        tx_amount = float_round(
+            self.amount, precision_digits=precision_digits, rounding_method="DOWN"
+        )
+        if self.currency_id.compare_amounts(amount, tx_amount) != 0:
+            error_message = self.env._(
+                "The amount from the payment data doesn't match the one from the transaction."
+            )
+            self._set_error(error_message)
+            return
+
+        if currency_code != self.currency_id.name:
+            error_message = self.env._(
+                "The currency from the payment data doesn't match the one from the transaction."
+            )
+            self._set_error(error_message)
+
+    def _extract_amount_data(self, payment_data) -> dict | None:
+        """Extract the amount, currency and rounding precision from the payment data.
+
+        This method must be overridden by providers to parse the amount data from the payment data.
+        If the provider returns `None`, the amount validation is skipped.
+
+        :param dict payment_data: The payment data sent by the provider.
+        :return: The amount data, in the {amount: float, currency_code: str, precision_digits: int}
+                 format, or `None`/an empty dict to skip the amount validation.
+        :rtype: dict|None
+        """
+        return {}
+
+    def _apply_updates(self, payment_data):
+        """Update the transaction based on the payment data received from the provider.
+
+        The updates typically include the payment's state, the provider reference, and the selected
+        payment method.
+
+        This method should not be called directly; payment data should go through :meth:`_process`.
+
+        This method must be overridden by providers to update the transaction based on the payment
+        data.
+
+        Note: `self.check_singleton()` from :meth:`_process`
+
+        :param dict payment_data: The payment data sent by the provider.
+        :return: None
+        """
+        return
+
+    def _tokenize(self, payment_data):
+        """Create a new token based on the payment data.
+
+        :param dict payment_data: The payment data sent by the provider.
+        :return: None
+        """
+        self.check_singleton()
+
+        if not (token_values := self._extract_token_values(payment_data)):
+            return
+
+        token = self.env["payment.token"].create(
+            {
+                "provider_id": self.provider_id.id,
+                "payment_method_id": self.payment_method_id.id,
+                "partner_id": self.partner_id.id,
+                **token_values,
+            }
+        )
+        self.write(
+            {
+                "token_id": token,
+                "tokenize": False,
+            }
+        )
+        _logger.info(
+            "Token %(token_id)s created for partner %(partner_id)s from transaction %(ref)s.",
+            {
+                "token_id": token.id,
+                "partner_id": self.partner_id.id,
+                "ref": self.reference,
+            },
+        )
+
+    def _extract_token_values(self, payment_data) -> dict:
+        """Extract the create values of a token from the payment data.
+
+        Providers can override this to supply their own token data based on the payment data.
+
+        Note: self.check_singleton() from :meth: `_tokenize`
+
+        :param dict payment_data: Data sent by the provider.
+        :return: Data to create a payment token.
+        :rtype: dict
+        """
+        return {}
+
+    def _set_pending(self, *, state_message=None, extra_allowed_states=()):
+        """Update the transactions' state to `pending`.
+
+        :param str state_message: The reason for setting the transactions in the state `pending`.
+        :param tuple[str] extra_allowed_states: The extra source states allowed to transition to
+                                                the target state 'pending'.
+        :return: The updated transactions.
+        :rtype: recordset of `payment.transaction`
+        """
+        allowed_states = ("draft",)
+        target_state = "pending"
+        txs_to_process = self._update_state(
+            allowed_states + extra_allowed_states, target_state, state_message
+        )
+        txs_to_process._log_received_message()
+        return txs_to_process
+
+    def _set_authorized(self, *, state_message=None, extra_allowed_states=()):
+        """Update the transactions' state to `authorized`.
+
+        :param str state_message: The reason for setting the transactions in the state `authorized`.
+        :param tuple[str] extra_allowed_states: The extra source states allowed to transition to
+                                                the target state 'authorized'.
+        :return: The updated transactions.
+        :rtype: recordset of `payment.transaction`
+        """
+        allowed_states = ("draft", "pending")
+        target_state = "authorized"
+        txs_to_process = self._update_state(
+            allowed_states + extra_allowed_states, target_state, state_message
+        )
+        txs_to_process._log_received_message()
+        return txs_to_process
+
+    def _set_done(self, *, state_message=None, extra_allowed_states=()):
+        """Update the transactions' state to `done`.
+
+        :param str state_message: The reason for setting the transactions in the state `done`.
+        :param tuple[str] extra_allowed_states: The extra source states allowed to transition to
+                                                the target state 'done'.
+        :return: The updated transactions.
+        :rtype: recordset of `payment.transaction`
+        """
+        allowed_states = ("draft", "pending", "authorized", "error")
+        target_state = "done"
+        txs_to_process = self._update_state(
+            allowed_states + extra_allowed_states, target_state, state_message
+        )
+        txs_to_process._log_received_message()
+        txs_to_process._update_source_transaction_state()
+        return txs_to_process
+
+    def _set_canceled(self, state_message=None, extra_allowed_states=()):
+        """Update the transactions' state to `cancel`.
+
+        :param str state_message: The reason for setting the transactions in the state `cancel`.
+        :param tuple[str] extra_allowed_states: The extra source states allowed to transition to
+                                                the target state 'canceled'.
+        :return: The updated transactions.
+        :rtype: recordset of `payment.transaction`
+        """
+        allowed_states = ("draft", "pending", "authorized")
+        target_state = "cancel"
+        txs_to_process = self._update_state(
+            allowed_states + extra_allowed_states, target_state, state_message
+        )
+        txs_to_process._log_received_message()
+        txs_to_process._update_source_transaction_state()
+        return txs_to_process
+
+    def _set_error(self, state_message, extra_allowed_states=()):
+        """Update the transactions' state to `error`.
+
+        :param str state_message: The reason for setting the transactions in the state `error`.
+        :param tuple[str] extra_allowed_states: The extra source states allowed to transition to
+                                                the target state 'error'.
+        :return: The updated transactions.
+        :rtype: recordset of `payment.transaction`
+        """
+        allowed_states = ("draft", "pending", "authorized")
+        target_state = "error"
+        txs_to_process = self._update_state(
+            allowed_states + extra_allowed_states, target_state, state_message
+        )
+        txs_to_process._log_received_message()
+        return txs_to_process
+
+    def _update_state(self, allowed_states, target_state, state_message):
+        """Update the transactions' state to the target state if the current state allows it.
+
+        If the current state is the same as the target state, the transaction is skipped and a log
+        with level INFO is created.
+
+        :param tuple[str] allowed_states: The allowed source states for the target state.
+        :param str target_state: The target state.
+        :param str state_message: The message to set as `state_message`.
+        :return: The recordset of transactions whose state was updated.
+        :rtype: recordset of `payment.transaction`
+        """
+
+        def classify_by_state(transactions_):
+            """Classify the transactions according to their current state.
+
+            For each transaction of the current recordset, if:
+
+            - The state is an allowed state: the transaction is flagged as `to process`.
+            - The state is equal to the target state: the transaction is flagged as `processed`.
+            - The state matches none of above: the transaction is flagged as `in wrong state`.
+
+            :param recordset transactions_: The transactions to classify, as a `payment.transaction`
+                                            recordset.
+            :return: A 3-items tuple of recordsets of classified transactions, in this order:
+                     transactions `to process`, `processed`, and `in wrong state`.
+            :rtype: tuple(recordset)
+            """
+            txs_to_process_ = transactions_.filtered(
+                lambda _tx: _tx.state in allowed_states
+            )
+            txs_already_processed_ = transactions_.filtered(
+                lambda _tx: _tx.state == target_state
+            )
+            txs_wrong_state_ = transactions_ - txs_to_process_ - txs_already_processed_
+
+            return txs_to_process_, txs_already_processed_, txs_wrong_state_
+
+        txs_to_process, txs_already_processed, txs_wrong_state = classify_by_state(self)
+        for tx in txs_already_processed:
+            _logger.info(
+                "Skipped the update of transaction %(ref)s as it is already in state %(state)s.",
+                {"ref": tx.reference, "state": tx.state},
+            )
+        for tx in txs_wrong_state:
+            _logger.warning(
+                "Refused to update transaction %(ref)s from state %(tx_state)s to state"
+                " %(target_state)s; allowed source states are: %(allowed_states)s.",
+                {
+                    "ref": tx.reference,
+                    "tx_state": tx.state,
+                    "target_state": target_state,
+                    "allowed_states": allowed_states,
+                },
+            )
+        txs_to_process.write(
+            {
+                "state": target_state,
+                "state_message": state_message,
+                "last_state_change": fields.Datetime.now(),
+                "is_post_processed": False,  # Reset to allow post-processing again for other states.
+            }
+        )
+        return txs_to_process
+
+    def _update_source_transaction_state(self) -> None:
+        """Update the state of the source transactions whose children of the same operation now
+        cover the full amount.
+
+        :return: None
+        """
+        for child_tx in self.filtered("source_transaction_id"):
+            sibling_txs = (
+                child_tx.source_transaction_id.child_transaction_ids.filtered_domain(
+                    [
+                        ("state", "in", ["done", "cancel"]),
+                        ("operation", "=", child_tx.operation),
+                    ]
+                )
+            )
+            processed_amount = sum(tx.amount for tx in sibling_txs)
+            if (
+                child_tx.currency_id.compare_amounts(
+                    child_tx.source_transaction_id.amount, processed_amount
+                )
+                == 0
+            ):
+                fully_voided = all(tx.state == "cancel" for tx in sibling_txs)
+                target_state = "cancel" if fully_voided else "done"
+                # Call `_update_state` directly instead of `_set_authorized` to avoid looping.
+                child_tx.source_transaction_id._update_state(
+                    ("authorized",), target_state, ""
+                )
+                child_tx.source_transaction_id._log_received_message()
+
+    # === BUSINESS METHODS - POST-PROCESSING === #
+
+    def _cron_post_process(self) -> None:
+        """Trigger the post-processing of the transactions that were not handled by the client in
+        the `poll_status` controller method.
+
+        :return: None
+        """
+        txs_to_post_process = self
+        if not txs_to_post_process:
+            # Don't try forever to post-process a transaction that doesn't go through. Set the limit
+            # to 4 days because some providers (PayPal) need that much for the payment verification.
+            retry_limit_date = datetime.now() - relativedelta.relativedelta(days=4)
+            # Retrieve all transactions matching the criteria for post-processing
+            txs_to_post_process = self.search(
+                [
+                    ("is_post_processed", "=", False),
+                    ("last_state_change", ">=", retry_limit_date),
+                ]
+            )
+        for tx in txs_to_post_process:
+            try:
+                tx._post_process()
+                self.env["ir.cron"]._commit_progress(1)
+            except psycopg.OperationalError:
+                self.env.cr.rollback()  # Rollback and try later.
+            except Exception:
+                _logger.exception(
+                    "An error occurred while post-processing transaction %s:",
+                    tx.reference,
+                )
+                self.env.cr.rollback()
+
+    def _post_process(self):
+        """Post-process the transactions.
+
+        The generic post-processing only consists in flagging the transactions as post-processed.
+        For a module to add its own logic to the post-processing, it must overwrite this method and
+        apply its specific logic to the transactions, optionally after filtering them based on their
+        state.
+
+        :return: None
+        """
+        self.is_post_processed = True
+
+    # === REQUEST HELPERS === #
+
+    def _send_api_request(
+        self, method, endpoint, *, params=None, data=None, json=None, **kwargs
+    ):
+        """Send a request to the API.
+
+        This method serves as a helper to:
+
+        1. Pass the transaction reference to the provider's
+           :meth:`~odoo.addons.payment.models.payment_provider.PaymentProvider._send_api_request`
+           method.
+        2. Set the transaction's state to `error` if the request fails, with the exception's message
+           as the `state_message`.
+
+        Note: `self.check_singleton()`
+
+        :param str method: The HTTP method of the request.
+        :param str endpoint: The endpoint of the API to reach with the request.
+        :param dict params: The query string parameters of the request.
+        :param dict|str data: The body of the request.
+        :param dict json: The JSON-formatted body of the request.
+        :param dict kwargs: Provider-specific data forwarded to the specialized helper methods.
+        :return: The formatted content of the response.
+        :rtype: dict|str
+        :raise ValidationError: If an HTTP error occurs.
+        """
+        self.check_singleton()
+        return self.provider_id._send_api_request(
+            method,
+            endpoint,
+            params=params,
+            data=data,
+            json=json,
+            reference=self.reference,
+            **kwargs,
+        )
+
+    # === LOGGING HELPERS === #
+
+    def _log_sent_message(self) -> None:
+        """Log that the transactions have been created in the chatter of relevant documents.
+
+        :return: None
+        """
+        for tx in self:
+            if message := tx._get_sent_message():
+                tx._log_message_on_linked_documents(message)
+
+    def _log_received_message(self) -> None:
+        """Log that the transactions have been processed in the chatter of relevant documents.
+
+        :return: None
+        """
+        for tx in self:
+            if message := tx._get_received_message():
+                tx._log_message_on_linked_documents(message)
+
+    def _log_message_on_linked_documents(self, message) -> None:
+        """Log a message on the records linked to the transaction.
+
+        For a module to implement payments and link documents to a transaction, it must override
+        this method and call it, then log the message on documents linked to the transaction.
+
+        Note: `self.check_singleton()`
+
+        :param str message: The message to log.
+        :return: None
+        """
+        self.check_singleton()
+
+    # === GETTERS === #
+
+    def _get_sent_message(self):
+        """Return the message to log to state that the transaction has been created.
+
+        Note: `self.check_singleton()`
+
+        :return: The message to log.
+        :rtype: str|None
+        """
+        self.check_singleton()
+
+        # Choose the message based on the payment flow.
+        if self.operation in {
+            "online_redirect",
+            "online_direct",
+            "online_token",
+            "offline",
+        }:
+            sent_message = self.env._(
+                "The transaction %(ref)s of %(formatted_amount)s has been initiated.",
+                ref=self._get_html_link(),
+                formatted_amount=self.currency_id.format(self.amount),
+            )
+        elif self.operation == "refund":
+            sent_message = self.env._(
+                "The refund %(ref)s of %(formatted_amount)s has been initiated.",
+                ref=self._get_html_link(),
+                formatted_amount=self.currency_id.format(-self.amount),
+            )
+        else:  # 'validation'
+            sent_message = (
+                None  # No message to log for initiating validation transactions.
+            )
+        return sent_message
+
+    def _get_received_message(self):
+        """Return the message to log to state that the transaction has been processed.
+
+        Note: `self.check_singleton()`
+
+        :return: The message to log.
+        :rtype: str|None
+        """
+        self.check_singleton()
+
+        if self.operation == "validation":
+            return None  # Don't log anything as the token is not yet created.
+
+        # Choose the message based on the transaction's state.
+        msg_values = {
+            "tx_label": "refund" if self.operation == "refund" else "transaction",
+            "ref": self._get_html_link(),
+            "formatted_amount": self.currency_id.format(self.amount),
+        }
+        match self.state:
+            case "pending":
+                received_message = self.env._(
+                    "The %(tx_label)s %(ref)s of %(formatted_amount)s is pending.",
+                    **msg_values,
+                )
+            case "authorized":
+                received_message = self.env._(
+                    "The %(tx_label)s %(ref)s of %(formatted_amount)s has been authorized.",
+                    **msg_values,
+                )
+            case "done":
+                received_message = self.env._(
+                    "The %(tx_label)s %(ref)s of %(formatted_amount)s has been confirmed.",
+                    **msg_values,
+                )
+            case "cancel":
+                received_message = self.env._(
+                    "The %(tx_label)s %(ref)s of %(formatted_amount)s has been canceled.",
+                    **msg_values,
+                )
+            case "error":
+                received_message = self.env._(
+                    "The %(tx_label)s %(ref)s of %(formatted_amount)s encountered an error.",
+                    **msg_values,
+                )
+            case _:
+                received_message = None
+
+        # Append any state_message for cancel or error.
+        if self.state in {"cancel", "error"} and self.state_message:
+            received_message += Markup("<br/>") + self.state_message
+
+        return received_message
+
+    def _get_last(self):
+        """Return the last transaction of the recordset.
+
+        :return: The most recent non-draft transaction of the recordset.
+        :rtype: recordset of `payment.transaction`
+        """
+        return self.filtered(lambda t: t.state != "draft").sorted()[:1]

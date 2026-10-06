@@ -1,0 +1,44 @@
+{
+    "name": "Restaurant Point of Sale",
+    "version": "1.0",
+    "category": "Sales/Point of Sale",
+    "sequence": 6,
+    "summary": "Manage restaurant tables, order courses and bill splitting",
+    "description": "Extends Point of Sale with floors, tables, guest counts and course records. Adds restaurant screens and configurable bill printing, splitting and tip handling. Printing requires a suitable printer connection and configuration.",
+    "author": "Odoo S.A.",
+    "website": "https://www.odoo.com/app/point-of-sale-restaurant",
+    "license": "LGPL-3",
+    "depends": [
+        "point_of_sale",
+    ],
+    "data": [
+        "security/ir.access.csv",
+        "data/scenarios/restaurant_preset.xml",
+        "views/pos_order_views.xml",
+        "views/pos_restaurant_views.xml",
+        "views/pos_preset_views.xml",
+        "views/res_config_settings_views.xml",
+        "views/pos_restaurant_menus.xml",
+    ],
+    "demo": [
+        "demo/demo_data.xml",
+    ],
+    "assets": {
+        "point_of_sale._assets_pos": [
+            "pos_restaurant/static/src/**/*",
+        ],
+        "web.assets_backend": [
+            "point_of_sale/static/src/scss/pos_dashboard.scss",
+        ],
+        "web.assets_tests": [
+            "pos_restaurant/static/tests/tours/**/*",
+        ],
+        "web.assets_unit_tests": [
+            "pos_restaurant/static/tests/unit/**/*",
+        ],
+        "point_of_sale.assets_debug": [
+            "pos_restaurant/static/tests/tours/**/*",
+        ],
+    },
+    "application": True,
+}

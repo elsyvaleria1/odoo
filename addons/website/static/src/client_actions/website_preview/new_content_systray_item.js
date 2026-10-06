@@ -1,0 +1,346 @@
+/** @odoo-module native */
+import { Component, proxy, t, useProps, xml } from "@odoo/owl";
+import { Dropdown, DropdownItem, useDropdownState } from "@web/components/dropdown";
+import { makeLogger } from "@web/core/debug/debug_logger";
+import { useLifecycleLog } from "@web/core/debug/logger_hooks";
+import { useHotkey } from "@web/core/hotkeys/hotkey_hook";
+import { rpc } from "@web/core/network";
+import { _t } from "@web/core/translation";
+import { user } from "@web/core/user";
+import { sprintf } from "@web/core/utils/format/strings";
+import { useService } from "@web/core/utils/hooks";
+import { redirect } from "@web/core/utils/urls";
+
+import { InstallModuleDialog } from "./install_module_dialog.js";
+
+const log = makeLogger("website.systray.new_content");
+
+export const MODULE_STATUS = {
+    NOT_INSTALLED: "NOT_INSTALLED",
+    INSTALLING: "INSTALLING",
+    FAILED_TO_INSTALL: "FAILED_TO_INSTALL",
+    INSTALLED: "INSTALLED",
+};
+
+export class NewContentSystrayItem extends Component {
+    static template = "website.NewContentSystrayItem";
+    static components = { Dropdown, DropdownItem };
+    static props = { onNewPage: t.function() };
+    props = useProps(this.constructor.props);
+
+    setup() {
+        useLifecycleLog(log);
+        this.orm = useService("orm");
+        this.dialogs = useService("dialog");
+        this.website = useService("website");
+        this.action = useService("action");
+
+        this.isDesigner = this.website.isDesigner;
+        this.dropdown = useDropdownState();
+
+        this.newContentText = {
+            failed: _t('Failed to install "%s"'),
+            installInProgress: _t("The installation of an App is already in progress."),
+            installNeeded: _t('Do you want to install the "%s" App?'),
+            installPleaseWait: _t('Installing "%s"'),
+        };
+
+        this.state = proxy({
+            newContentElements: [
+                {
+                    moduleName: "website_blog",
+                    moduleXmlId: "base.module_website_blog",
+                    status: MODULE_STATUS.NOT_INSTALLED,
+                    icon: "/website_blog/static/description/icon.png",
+                    title: _t("Blog Post"),
+                    description: _t("Write a new article"),
+                },
+                {
+                    moduleName: "website_event",
+                    moduleXmlId: "base.module_website_event",
+                    status: MODULE_STATUS.NOT_INSTALLED,
+                    icon: "/website_event/static/description/icon.png",
+                    title: _t("Event"),
+                    description: _t("Launch an event, start registrations"),
+                },
+                {
+                    moduleName: "website_forum",
+                    moduleXmlId: "base.module_website_forum",
+                    status: MODULE_STATUS.NOT_INSTALLED,
+                    icon: "/website_forum/static/description/icon.png",
+                    redirectUrl: "/forum",
+                    title: _t("Forum"),
+                    description: _t("Set up a new forum"),
+                },
+                {
+                    moduleName: "website_hr_recruitment",
+                    moduleXmlId: "base.module_website_hr_recruitment",
+                    status: MODULE_STATUS.NOT_INSTALLED,
+                    icon: "/website_hr_recruitment/static/description/icon.png",
+                    title: _t("Job Position"),
+                    description: _t("Post a new job offer"),
+                },
+                {
+                    moduleName: "website_sale",
+                    moduleXmlId: "base.module_website_sale",
+                    status: MODULE_STATUS.NOT_INSTALLED,
+                    icon: "/website_sale/static/description/icon.png",
+                    title: _t("Product"),
+                    description: _t("Sell online"),
+                },
+                {
+                    moduleName: "website_slides",
+                    moduleXmlId: "base.module_website_slides",
+                    status: MODULE_STATUS.NOT_INSTALLED,
+                    icon: "/website_slides/static/description/icon.png",
+                    title: _t("Course"),
+                    description: _t("Teach with videos, slides and PDF"),
+                },
+                {
+                    moduleName: "website_livechat",
+                    moduleXmlId: "base.module_website_livechat",
+                    status: MODULE_STATUS.NOT_INSTALLED,
+                    icon: "/website_livechat/static/description/icon.png",
+                    title: _t("Livechat Widget"),
+                    description: _t("Add a livechat widget"),
+                },
+            ],
+        });
+
+        useHotkey("escape", () => this.dropdown.close(), {
+            isAvailable: () => this.dropdown.isOpen,
+        });
+    }
+
+    get newPageAttrs() {
+        return {
+            "aria-label": _t("New Page"),
+            style: "width: 300px",
+        };
+    }
+
+    swapDescription(element) {
+        if (element.status !== MODULE_STATUS.NOT_INSTALLED) {
+            return;
+        }
+        if (!element.description2) {
+            element.description2 = sprintf(
+                _t('Install "%s"'),
+                this.modulesInfo[element.moduleName].name,
+            );
+        }
+        const tmp = element.description;
+        element.description = element.description2;
+        element.description2 = tmp;
+    }
+
+    async toggleDropdown() {
+        if (this.dropdownWasAlreadyOpened) {
+            log.logic("toggleDropdown: cached, toggle only", () => ({
+                open: !this.dropdown.isOpen,
+            }));
+            this.dropdown.isOpen = !this.dropdown.isOpen;
+            return;
+        }
+        this.dropdownWasAlreadyOpened = true;
+        const endToggle = log.perf("toggleDropdown first open");
+
+        const proms = [];
+
+        proms.push(
+            (async () => {
+                this.canInstall = user.isAdmin;
+                log.logic("toggleDropdown canInstall", () => ({
+                    canInstall: this.canInstall,
+                }));
+                if (this.canInstall) {
+                    const moduleNames = this.state.newContentElements
+                        .filter(({ status }) => status === MODULE_STATUS.NOT_INSTALLED)
+                        .map(({ moduleName }) => moduleName);
+                    this.modulesInfo = {};
+                    const endModules = log.perf("searchRead ir.module.module", () => ({
+                        modules: moduleNames.length,
+                    }));
+                    for (const record of await this.orm
+                        .cache()
+                        .searchRead(
+                            "ir.module.module",
+                            [["name", "in", moduleNames]],
+                            ["id", "name", "shortdesc"],
+                        )) {
+                        this.modulesInfo[record.name] = {
+                            id: record.id,
+                            name: record.shortdesc,
+                        };
+                    }
+                    endModules(() => ({ found: Object.keys(this.modulesInfo).length }));
+                }
+            })(),
+        );
+
+        proms.push(
+            (async () => {
+                const modelsToCheck = [];
+                const elementsToUpdate = {};
+                for (const element of this.state.newContentElements) {
+                    if (element.model) {
+                        modelsToCheck.push(element.model);
+                        elementsToUpdate[element.model] = element;
+                    }
+                }
+                const endAccess = log.perf("check_new_content_access_rights", () => ({
+                    models: modelsToCheck.length,
+                }));
+                const accesses = await rpc(
+                    "/website/check_new_content_access_rights",
+                    {
+                        models: modelsToCheck,
+                    },
+                    { cache: true },
+                );
+                endAccess(() => ({ accesses }));
+                for (const [model, access] of Object.entries(accesses)) {
+                    elementsToUpdate[model].isDisplayed = access;
+                }
+            })(),
+        );
+
+        await Promise.all(proms);
+        endToggle();
+        this.dropdown.open();
+        log.pipeline("toggleDropdown prefetch get_new_page_templates");
+
+        rpc(
+            "/website/get_new_page_templates",
+            { context: { website_id: this.website.currentWebsiteId } },
+            { cache: true, silent: true },
+        );
+    }
+
+    get sortedNewContentElements() {
+        return this.state.newContentElements
+            .filter(({ status }) => status !== MODULE_STATUS.NOT_INSTALLED)
+            .concat(
+                this.state.newContentElements.filter(
+                    ({ status }) => status === MODULE_STATUS.NOT_INSTALLED,
+                ),
+            )
+            .filter((el) => ("isDisplayed" in el ? el.isDisplayed : user.isSystem));
+    }
+
+    async installModule(id, redirectUrl) {
+        const endInstall = log.perf("button_immediate_install", { id });
+        await this.orm.silent.call("ir.module.module", "button_immediate_install", [
+            id,
+        ]);
+        endInstall();
+        log.logic("installModule redirect", { id, redirectUrl });
+        if (redirectUrl) {
+            this.website.prepareOutLoader();
+            redirect(redirectUrl);
+        } else {
+            const {
+                id,
+                metadata: { path, viewXmlid },
+            } = this.website.currentWebsite;
+            const url = new URL(path);
+            if (viewXmlid === "website.page_404") {
+                log.logic("installModule: from 404 page, redirect to root");
+                url.pathname = "";
+            }
+            this.website.prepareOutLoader();
+            const encodedPath = encodeURIComponent(url.toString());
+            redirect(
+                `/odoo/action-website.website_preview?website_id=${id}&path=${encodedPath}`,
+            );
+        }
+    }
+
+    onClickNewContent(element) {
+        if (element.createNewContent) {
+            log.logic("onClickNewContent: createNewContent", () => ({
+                module: element.moduleName,
+            }));
+            return element.createNewContent();
+        }
+
+        const { id, name } = this.modulesInfo[element.moduleName];
+        log.logic("onClickNewContent: install dialog", () => ({
+            module: element.moduleName,
+            id,
+            status: element.status,
+        }));
+        const dialogProps = {
+            title: element.title,
+            installationText: sprintf(this.newContentText.installNeeded, name),
+            installModule: async () => {
+                log.pipeline("install module: mark installing", () => ({
+                    module: element.moduleName,
+                }));
+                this.state.newContentElements = this.state.newContentElements.map(
+                    (el) => {
+                        if (el.moduleXmlId === element.moduleXmlId) {
+                            el.status = MODULE_STATUS.INSTALLING;
+                            el.icon = xml`<i class="fa-solid fa-circle-notch fa-spin"/>`;
+                            el.title = sprintf(
+                                this.newContentText.installPleaseWait,
+                                name,
+                            );
+                        }
+                        return el;
+                    },
+                );
+                this.website.showLoader({ title: _t("Building your %s", name) });
+                try {
+                    await this.installModule(id, element.redirectUrl);
+                } catch (error) {
+                    log.logic("install module failed", () => ({
+                        module: element.moduleName,
+                        message: error?.message,
+                    }));
+                    this.website.hideLoader();
+                    this.state.newContentElements = this.state.newContentElements.map(
+                        (el) => {
+                            if (el.moduleXmlId === element.moduleXmlId) {
+                                el.status = MODULE_STATUS.FAILED_TO_INSTALL;
+                                el.icon = xml`<i class="fa-solid fa-exclamation-triangle"/>`;
+                                el.title = sprintf(this.newContentText.failed, name);
+                            }
+                            return el;
+                        },
+                    );
+                    console.error(error);
+                }
+            },
+        };
+        this.dialogs.add(InstallModuleDialog, dialogProps);
+    }
+
+    async onAddContent(action, edition = false, context = null) {
+        log.logic("onAddContent", () => ({ action, edition, context }));
+        this.action.doAction(action, {
+            additionalContext: context ? context : {},
+            onClose: (infos) => {
+                if (infos && !infos.dismiss) {
+                    log.logic("onAddContent closed: go to new content", () => ({
+                        path: infos.path,
+                        edition,
+                    }));
+                    this.website.goToWebsite({ path: infos.path, edition: edition });
+                    this.dropdown.close();
+                }
+            },
+            props: {
+                onSave: (record, params) => {
+                    if (record.resId) {
+                        const path = params.computePath();
+                        this.action.doAction({
+                            type: "ir.actions.act_window_close",
+                            infos: { path },
+                        });
+                    }
+                },
+            },
+        });
+    }
+}

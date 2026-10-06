@@ -1,0 +1,444 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* documents_product_asset
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0+e\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-08-27 21:51+0000\n"
+"PO-Revision-Date: 2026-08-27 21:51+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: es\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#. module: document_product_asset
+#: model_terms:ir.ui.view,arch_db:document_product_asset.document_view_search
+msgid "Asset"
+msgstr "Activo"
+
+#. module: document_product_asset
+#: model:document.tag,name:document_product_asset.documents_tag_building_permit
+#: model:ir.model.fields,field_description:document_product_asset.field_product_trace__building_permit_id
+msgid "Building Permit"
+msgstr "Permiso de construcción"
+
+#. module: document_product_asset
+#: model:ir.model.fields,field_description:document_product_asset.field_product_trace__building_permit_name
+msgid "Building Permit Name"
+msgstr "Nombre del permiso de construcción"
+
+#. module: document_product_asset
+#: model:ir.model.fields,help:document_product_asset.field_product_trace__building_permit_id
+msgid "Building or construction permit"
+msgstr "Permiso de obra o construcción"
+
+#. module: document_product_asset
+#: model:document.tag,name:document_product_asset.documents_tag_calibration
+msgid "Calibration Certificate"
+msgstr "Certificado de calibración"
+
+#. module: document_product_asset
+#: model:ir.model.fields,field_description:document_product_asset.field_product_trace__documents_settings_asset
+msgid "Centralize Asset's Documents"
+msgstr "Centralizar los documentos del activo"
+
+#. module: document_product_asset
+#: model_terms:ir.ui.view,arch_db:document_product_asset.res_config_settings_view_form
+msgid "Centralize your Equipment's documents (warranties, manuals, etc.)"
+msgstr "Centralice los documentos de su equipo (garantías, manuales, etc.)"
+
+#. module: document_product_asset
+#: model_terms:ir.ui.view,arch_db:document_product_asset.res_config_settings_view_form
+msgid "Centralize your Fleet's documents (fines, etc.)"
+msgstr "Centralice los documentos de su flotilla (multas, etc.)"
+
+#. module: document_product_asset
+#: model_terms:ir.ui.view,arch_db:document_product_asset.res_config_settings_view_form
+msgid ""
+"Centralize your Machinery's documents (maintenance logs, calibration, etc.)"
+msgstr ""
+"Centralice los documentos de su maquinaria (bitácoras de mantenimiento, "
+"calibración, etc.)"
+
+#. module: document_product_asset
+#: model_terms:ir.ui.view,arch_db:document_product_asset.res_config_settings_view_form
+msgid "Centralize your Property's documents (deeds, leases, permits, etc.)"
+msgstr ""
+"Centralice los documentos de sus inmuebles (escrituras, arrendamientos, "
+"permisos, etc.)"
+
+#. module: document_product_asset
+#: model:ir.model,name:document_product_asset.model_res_company
+msgid "Companies"
+msgstr "Compañías"
+
+#. module: document_product_asset
+#: model:ir.model,name:document_product_asset.model_res_config_settings
+msgid "Config Settings"
+msgstr "Ajustes de configuración"
+
+#. module: document_product_asset
+#: model:ir.model.fields,help:document_product_asset.field_product_trace__lease_agreement_id
+msgid "Current lease or rental agreement"
+msgstr "Contrato de arrendamiento vigente"
+
+#. module: document_product_asset
+#: model:ir.model.fields,field_description:document_product_asset.field_document_document__display_name
+#: model:ir.model.fields,field_description:document_product_asset.field_res_company__display_name
+#: model:ir.model.fields,field_description:document_product_asset.field_res_config_settings__display_name
+#: model:ir.model.fields,field_description:document_product_asset.field_product_trace__display_name
+msgid "Display Name"
+msgstr "Nombre a mostrar"
+
+#. module: document_product_asset
+#: model:ir.model,name:document_product_asset.model_document_document
+msgid "Document"
+msgstr "Documento"
+
+#. module: document_product_asset
+#: model:ir.model.fields,field_description:document_product_asset.field_product_trace__count_document
+#: model:ir.model.fields,field_description:document_product_asset.field_product_trace__document_ids
+#: model_terms:ir.ui.view,arch_db:document_product_asset.view_product_trace_form
+msgid "Documents"
+msgstr "Documentos"
+
+#. module: document_product_asset
+#: model:ir.model.fields,field_description:document_product_asset.field_res_company__documents_settings_equipment
+msgid "Documents Settings Equipment"
+msgstr "Configuración de documentos de equipo"
+
+#. module: document_product_asset
+#: model:ir.model.fields,field_description:document_product_asset.field_res_company__documents_settings_fleet
+msgid "Documents Settings Fleet"
+msgstr "Configuración de documentos de flotilla"
+
+#. module: document_product_asset
+#: model:ir.model.fields,field_description:document_product_asset.field_res_company__documents_settings_machinery
+msgid "Documents Settings Machinery"
+msgstr "Configuración de documentos de maquinaria"
+
+#. module: document_product_asset
+#: model:ir.model.fields,field_description:document_product_asset.field_res_company__documents_settings_property
+msgid "Documents Settings Property"
+msgstr "Configuración de documentos de inmuebles"
+
+#. module: document_product_asset
+#: model:ir.model.fields,field_description:document_product_asset.field_res_company__documents_tags_equipment
+msgid "Documents Tags Equipment"
+msgstr "Etiquetas de documentos de equipo"
+
+#. module: document_product_asset
+#: model:ir.model.fields,field_description:document_product_asset.field_res_company__documents_tags_fleet
+msgid "Documents Tags Fleet"
+msgstr "Etiquetas de documentos de flotilla"
+
+#. module: document_product_asset
+#: model:ir.model.fields,field_description:document_product_asset.field_res_company__documents_tags_machinery
+msgid "Documents Tags Machinery"
+msgstr "Etiquetas de documentos de maquinaria"
+
+#. module: document_product_asset
+#: model:ir.model.fields,field_description:document_product_asset.field_res_company__documents_tags_property
+msgid "Documents Tags Property"
+msgstr "Etiquetas de documentos de inmuebles"
+
+#. module: document_product_asset
+#: model:document.tag,name:document_product_asset.documents_tag_drivers_licence
+msgid "Driver Licence"
+msgstr "Licencia de conducir"
+
+#. module: document_product_asset
+#: model:document.tag,name:document_product_asset.documents_tag_environmental_verification
+msgid "Environmental verification"
+msgstr "Verificación ambiental"
+
+#. module: document_product_asset
+#: model:document.document,name:document_product_asset.document_folder_equipment
+msgid "Equipment"
+msgstr "Equipo"
+
+#. module: document_product_asset
+#: model:ir.model.fields,field_description:document_product_asset.field_res_config_settings__documents_settings_equipment
+msgid "Equipment Assets"
+msgstr "Activos de equipo"
+
+#. module: document_product_asset
+#: model:ir.model.fields,field_description:document_product_asset.field_res_config_settings__documents_tags_equipment
+msgid "Equipment Assets Default Tags"
+msgstr "Etiquetas predeterminadas de activos de equipo"
+
+#. module: document_product_asset
+#: model:ir.model.fields,field_description:document_product_asset.field_res_company__documents_folder_equipment_id
+msgid "Equipment Assets Folder"
+msgstr "Carpeta de activos de equipo"
+
+#. module: document_product_asset
+#: model:ir.model.fields,field_description:document_product_asset.field_res_config_settings__documents_folder_equipment_id
+msgid "Equipment Assets Workspace"
+msgstr "Espacio de trabajo de activos de equipo"
+
+#. module: document_product_asset
+#: model:document.tag,name:document_product_asset.documents_tag_equipment_doc
+msgid "Equipment Documents"
+msgstr "Documentos de equipo"
+
+#. module: document_product_asset
+#: model:document.tag,name:document_product_asset.documents_tag_fine
+msgid "Fine"
+msgstr "Multa"
+
+#. module: document_product_asset
+#: model:document.document,name:document_product_asset.document_folder_fleet
+msgid "Fleet"
+msgstr "Flotilla"
+
+#. module: document_product_asset
+#: model:ir.model.fields,field_description:document_product_asset.field_res_config_settings__documents_settings_fleet
+msgid "Fleet Assets"
+msgstr "Activos de flotilla"
+
+#. module: document_product_asset
+#: model:ir.model.fields,field_description:document_product_asset.field_res_config_settings__documents_tags_fleet
+msgid "Fleet Assets Default Tags"
+msgstr "Etiquetas predeterminadas de activos de flotilla"
+
+#. module: document_product_asset
+#: model:ir.model.fields,field_description:document_product_asset.field_res_company__documents_folder_fleet_id
+msgid "Fleet Assets Folder"
+msgstr "Carpeta de activos de flotilla"
+
+#. module: document_product_asset
+#: model:ir.model.fields,field_description:document_product_asset.field_res_config_settings__documents_folder_fleet_id
+msgid "Fleet Assets Workspace"
+msgstr "Espacio de trabajo de activos de flotilla"
+
+#. module: document_product_asset
+#: model:document.tag,name:document_product_asset.documents_tag_fleet_doc
+msgid "Fleet Documents"
+msgstr "Documentos de flotilla"
+
+#. module: document_product_asset
+#: model_terms:ir.ui.view,arch_db:document_product_asset.res_config_settings_view_form
+msgid "Folder"
+msgstr "Carpeta"
+
+#. module: document_product_asset
+#: model:document.tag,name:document_product_asset.documents_tag_fuel_card
+#: model:ir.model.fields,field_description:document_product_asset.field_product_trace__fuel_card_id
+msgid "Fuel Card"
+msgstr "Tarjeta de combustible"
+
+#. module: document_product_asset
+#: model:ir.model.fields,field_description:document_product_asset.field_product_trace__fuel_card_name
+msgid "Fuel Card Name"
+msgstr "Nombre de la tarjeta de combustible"
+
+#. module: document_product_asset
+#: model:document.tag,name:document_product_asset.documents_tag_gps
+msgid "GPS"
+msgstr ""
+
+#. module: document_product_asset
+#: model:document.tag,name:document_product_asset.documents_tag_highway_pass
+#: model:ir.model.fields,field_description:document_product_asset.field_product_trace__highway_pass_id
+msgid "Highway Pass"
+msgstr "Pase carretero"
+
+#. module: document_product_asset
+#: model:ir.model.fields,field_description:document_product_asset.field_product_trace__highway_pass_name
+msgid "Highway Pass Name"
+msgstr "Nombre del pase carretero"
+
+#. module: document_product_asset
+#: model:ir.model.fields,field_description:document_product_asset.field_document_document__id
+#: model:ir.model.fields,field_description:document_product_asset.field_res_company__id
+#: model:ir.model.fields,field_description:document_product_asset.field_res_config_settings__id
+#: model:ir.model.fields,field_description:document_product_asset.field_product_trace__id
+msgid "ID"
+msgstr ""
+
+#. module: document_product_asset
+#: model:document.tag,name:document_product_asset.documents_tag_inspection_report
+msgid "Inspection Report"
+msgstr "Reporte de inspección"
+
+#. module: document_product_asset
+#: model:document.tag,name:document_product_asset.documents_tag_insurance_policy
+msgid "Insurance policy"
+msgstr "Póliza de seguro"
+
+#. module: document_product_asset
+#: model:document.tag,name:document_product_asset.documents_tag_lease_agreement
+#: model:ir.model.fields,field_description:document_product_asset.field_product_trace__lease_agreement_id
+msgid "Lease Agreement"
+msgstr "Contrato de arrendamiento"
+
+#. module: document_product_asset
+#: model:ir.model.fields,field_description:document_product_asset.field_product_trace__lease_agreement_name
+msgid "Lease Agreement Name"
+msgstr "Nombre del contrato de arrendamiento"
+
+#. module: document_product_asset
+#: model:ir.actions.server,name:document_product_asset.ir_actions_server_link_to_vehicule
+msgid "Link to an asset"
+msgstr "Vincular a un activo"
+
+#. module: document_product_asset
+#: model:ir.model.fields,help:document_product_asset.field_document_document__trace_id
+msgid "Link to asset serial/lot number"
+msgstr "Vínculo al número de serie/lote del activo"
+
+#. module: document_product_asset
+#: model:ir.model,name:document_product_asset.model_stock_lot
+msgid "Lot/Serial"
+msgstr "Lote/Serie"
+
+#. module: document_product_asset
+#: model:document.document,name:document_product_asset.document_folder_machinery
+msgid "Machinery"
+msgstr "Maquinaria"
+
+#. module: document_product_asset
+#: model:ir.model.fields,field_description:document_product_asset.field_res_config_settings__documents_settings_machinery
+msgid "Machinery Assets"
+msgstr "Activos de maquinaria"
+
+#. module: document_product_asset
+#: model:ir.model.fields,field_description:document_product_asset.field_res_config_settings__documents_tags_machinery
+msgid "Machinery Assets Default Tags"
+msgstr "Etiquetas predeterminadas de activos de maquinaria"
+
+#. module: document_product_asset
+#: model:ir.model.fields,field_description:document_product_asset.field_res_company__documents_folder_machinery_id
+msgid "Machinery Assets Folder"
+msgstr "Carpeta de activos de maquinaria"
+
+#. module: document_product_asset
+#: model:ir.model.fields,field_description:document_product_asset.field_res_config_settings__documents_folder_machinery_id
+msgid "Machinery Assets Workspace"
+msgstr "Espacio de trabajo de activos de maquinaria"
+
+#. module: document_product_asset
+#: model:document.tag,name:document_product_asset.documents_tag_machinery_doc
+msgid "Machinery Documents"
+msgstr "Documentos de maquinaria"
+
+#. module: document_product_asset
+#: model:document.tag,name:document_product_asset.documents_tag_maintenance_log
+msgid "Maintenance Log"
+msgstr "Bitácora de mantenimiento"
+
+#. module: document_product_asset
+#: model:document.document,name:document_product_asset.document_folder_property
+msgid "Properties"
+msgstr "Inmuebles"
+
+#. module: document_product_asset
+#: model:document.tag,name:document_product_asset.documents_tag_property_doc
+msgid "Properties Documents"
+msgstr "Documentos de inmuebles"
+
+#. module: document_product_asset
+#: model:ir.model.fields,field_description:document_product_asset.field_res_config_settings__documents_settings_property
+msgid "Property Assets"
+msgstr "Activos inmobiliarios"
+
+#. module: document_product_asset
+#: model:ir.model.fields,field_description:document_product_asset.field_res_config_settings__documents_tags_property
+msgid "Property Assets Default Tags"
+msgstr "Etiquetas predeterminadas de activos inmobiliarios"
+
+#. module: document_product_asset
+#: model:ir.model.fields,field_description:document_product_asset.field_res_company__documents_folder_property_id
+msgid "Property Assets Folder"
+msgstr "Carpeta de activos inmobiliarios"
+
+#. module: document_product_asset
+#: model:ir.model.fields,field_description:document_product_asset.field_res_config_settings__documents_folder_property_id
+msgid "Property Assets Workspace"
+msgstr "Espacio de trabajo de activos inmobiliarios"
+
+#. module: document_product_asset
+#: model:document.tag,name:document_product_asset.documents_tag_property_deed
+#: model:ir.model.fields,field_description:document_product_asset.field_product_trace__property_deed_id
+msgid "Property Deed"
+msgstr "Escritura de propiedad"
+
+#. module: document_product_asset
+#: model:ir.model.fields,field_description:document_product_asset.field_product_trace__property_deed_name
+msgid "Property Deed Name"
+msgstr "Nombre de la escritura de propiedad"
+
+#. module: document_product_asset
+#: model_terms:ir.ui.view,arch_db:document_product_asset.view_stock_lot_form_property_documents
+msgid "Property Documents"
+msgstr "Documentos de inmuebles"
+
+#. module: document_product_asset
+#: model:document.tag,name:document_product_asset.documents_tag_property_tax
+msgid "Property Tax Document"
+msgstr "Documento del impuesto predial"
+
+#. module: document_product_asset
+#: model:document.tag,name:document_product_asset.documents_tag_property_title
+msgid "Property Title"
+msgstr "Título de propiedad"
+
+#. module: document_product_asset
+#: model:ir.model.fields,help:document_product_asset.field_product_trace__property_deed_id
+msgid "Property deed or title document"
+msgstr "Escritura o título de propiedad"
+
+#. module: document_product_asset
+#: model:document.tag,name:document_product_asset.documents_tag_safety_cert
+msgid "Safety Certificate"
+msgstr "Certificado de seguridad"
+
+#. module: document_product_asset
+#: model:ir.model.fields,field_description:document_product_asset.field_document_document__trace_id
+msgid "Serial/Lot Number"
+msgstr "Número de serie/lote"
+
+#. module: document_product_asset
+#: model:document.tag,name:document_product_asset.documents_tag_software_license
+msgid "Software License"
+msgstr "Licencia de software"
+
+#. module: document_product_asset
+#: model_terms:ir.ui.view,arch_db:document_product_asset.res_config_settings_view_form
+msgid "Tags"
+msgstr "Etiquetas"
+
+#. module: document_product_asset
+#: model:document.tag,name:document_product_asset.documents_tag_technical_specs
+msgid "Technical Specifications"
+msgstr "Especificaciones técnicas"
+
+#. module: document_product_asset
+#: model:document.tag,name:document_product_asset.documents_tag_user_manual
+msgid "User Manual"
+msgstr "Manual de usuario"
+
+#. module: document_product_asset
+#: model:document.tag,name:document_product_asset.documents_tag_plate
+msgid "Vehicle plate"
+msgstr "Placa del vehículo"
+
+#. module: document_product_asset
+#: model:document.tag,name:document_product_asset.documents_tag_warranty
+msgid "Warranty"
+msgstr "Garantía"
+
+#. module: document_product_asset
+#: model:ir.model.fields,help:document_product_asset.field_product_trace__documents_settings_asset
+msgid ""
+"When enabled for this asset type, opening attachments uses the configured "
+"folder and tags."
+msgstr ""
+"Cuando se habilita para este tipo de activo, abrir los adjuntos usa la "
+"carpeta y las etiquetas configuradas."

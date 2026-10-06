@@ -1,0 +1,137 @@
+// @ts-check
+/** @odoo-module native */
+import { Component, onWillStart, proxy, useProps } from "@odoo/owl";
+import { Dropdown, DropdownItem } from "@web/components/dropdown";
+import { makeLogger } from "@web/core/debug/debug_logger";
+import { registry } from "@web/core/registry";
+import { _t } from "@web/core/translation";
+import { user } from "@web/core/user";
+import { useService } from "@web/core/utils/hooks";
+import { standardFieldProps } from "@web/fields/standard_field_props";
+import { SelectCreateDialog } from "@web/views/view_dialogs";
+
+const log = makeLogger("mail.composer.template");
+export class MailComposerTemplateSelector extends Component {
+    static template = "mail.MailComposerTemplateSelector";
+    static components = { Dropdown, DropdownItem };
+    static props = { ...standardFieldProps };
+    props = useProps(this.constructor.props);
+
+    setup() {
+        this.dialog = useService("dialog");
+        this.action = useService("action");
+        this.orm = useService("orm");
+        this.limit = 80;
+
+        const { context } = this.props.record.evalContext;
+        this.state = proxy({
+            /** @type {Object[]} */
+            templates: undefined,
+            hideMailTemplateManagementOptions:
+                context?.hide_mail_template_management_options,
+        });
+
+        onWillStart(() => {
+            this.fetchTemplates();
+        });
+    }
+
+    async fetchTemplates() {
+        const fields = ["display_name"];
+        const endFetch = log.perf("fetchTemplates");
+        const templates = await this.orm.searchRead(
+            "mail.template",
+            [
+                ["model", "=", this.props.record.data.render_model],
+                ["user_id", "=", user.userId],
+            ],
+            fields,
+            { limit: this.limit },
+        );
+        if (templates.length < this.limit) {
+            templates.push(
+                ...(await this.orm.searchRead(
+                    "mail.template",
+                    [
+                        ["model", "=", this.props.record.data.render_model],
+                        ["user_id", "=", false],
+                    ],
+                    fields,
+                    { limit: this.limit - templates.length },
+                )),
+            );
+        }
+        endFetch({
+            model: this.props.record.data.render_model,
+            templates: templates.length,
+        });
+        this.state.templates = templates;
+    }
+
+    /**
+     * @param {Object} template
+     * @param {integer} template.id
+     * @param {string} template.display_name
+     */
+    async onLoadTemplate(template) {
+        log.logic("onLoadTemplate", () => ({ templateId: template.id }));
+        await this.props.record.update({
+            template_id: { id: template.id },
+        });
+    }
+
+    async onSaveTemplate() {
+        if (!(await this.props.record.save())) {
+            log.logic("onSaveTemplate aborted: record save failed");
+            return;
+        }
+        log.logic("onSaveTemplate", () => ({ resId: this.props.record.resId }));
+        await this.action.doActionButton({
+            type: "object",
+            name: "open_template_creation_wizard",
+            resId: this.props.record.resId,
+            resModel: this.props.record.resModel,
+        });
+    }
+
+    async onManageTemplateBtnClick() {
+        const action = await this.action.loadAction(
+            "mail.action_email_template_tree_all",
+        );
+        action.context = {
+            search_default_my_templates: 1,
+            search_default_model: this.props.record.data.model,
+            default_model: this.props.record.data.model,
+            default_user_id: user.userId,
+        };
+        this.action.doAction(action);
+    }
+
+    onSelectTemplateSearchMoreBtnClick() {
+        this.dialog.add(SelectCreateDialog, {
+            resModel: "mail.template",
+            title: _t("Select a Template"),
+            multiSelect: false,
+            noCreate: true,
+            domain: [["model", "=", this.props.record.data.render_model]],
+            /** @param {number[]} templateIds */
+            onSelected: async (templateIds) => {
+                await this.props.record.update({
+                    template_id: { id: templateIds[0] },
+                });
+            },
+        });
+    }
+}
+
+export const mailComposerTemplateSelector = {
+    component: MailComposerTemplateSelector,
+    fieldDependencies: [
+        { name: "can_edit_body", type: "boolean" },
+        { name: "render_model", type: "string" },
+    ],
+};
+
+registry
+    .category("fields")
+    .add("mail_composer_template_selector", mailComposerTemplateSelector);

@@ -1,0 +1,44 @@
+@mixin hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+
+    &::-webkit-scrollbar {
+        display: none;
+    }
+}
+
+.accordion.disabled {
+    pointer-events: none;
+    opacity: 0.5;
+}
+
+.accordion-header {
+    margin-left: 1px;
+
+    &:not(.no-caret) {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+
+        &:before {
+            content: "\f0d7";
+            font-family: "Font Awesome 7 Pro";
+            font-weight: 900;
+            display: inline-block;
+
+            transform: rotate(-90deg);
+            transition: 0.25s ease-in-out;
+        }
+
+        &.open:before {
+            transform: rotate(0deg);
+        }
+    }
+}
+
+.accordion-content-container {
+    overflow: auto;
+    transition: max-height 0.25s ease-in-out;
+
+    @include hide-scrollbar;
+}

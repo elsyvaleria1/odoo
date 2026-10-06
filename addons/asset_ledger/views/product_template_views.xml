@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_product_template_search_asset" model="ir.ui.view">
+        <field name="name">product.template.search.asset</field>
+        <field name="model">product.template</field>
+        <field name="inherit_id" ref="product.view_product_template_search" />
+        <field name="arch" type="xml">
+            <field name="name" position="after">
+                <field name="asset_kind_code" />
+            </field>
+            <filter name="filter_to_sell" position="after">
+                <separator />
+                <filter
+                    name="filter_vehicles"
+                    string="Vehicles"
+                    domain="[('asset_kind_code', '=', 'vehicle')]" />
+                <filter
+                    name="filter_equipment"
+                    string="Equipment"
+                    domain="[('asset_kind_code', '=', 'equipment')]" />
+                <filter
+                    name="filter_machinery"
+                    string="Machinery"
+                    domain="[('asset_kind_code', '=', 'machinery')]" />
+                <filter
+                    name="filter_property"
+                    string="Property"
+                    domain="[('asset_kind_code', '=', 'property')]" />
+                <separator />
+            </filter>
+            <group position="inside">
+                <filter
+                    name="group_asset_kind_code"
+                    string="Asset Type"
+                    context="{'group_by': 'asset_kind_code'}" />
+            </group>
+        </field>
+    </record>
+
+    <record id="view_product_template_list_asset" model="ir.ui.view">
+        <field name="name">product.template.tree.asset</field>
+        <field name="model">product.template</field>
+        <field name="inherit_id" ref="product.view_product_template_list" />
+        <field name="arch" type="xml">
+            <field name="categ_id" position="after">
+                <field name="asset_kind_code" optional="show" />
+            </field>
+        </field>
+    </record>
+
+    <record id="view_product_template_list_vehicle" model="ir.ui.view">
+        <field name="name">product.template.list.vehicle</field>
+        <field name="model">product.template</field>
+        <field name="arch" type="xml">
+            <list string="Product" multi_edit="1" sample="1">
+                <field name="name" />
+                <field name="manufacturer_id" optional="show" />
+                <field name="categ_id" />
+                <field name="asset_kind_code" optional="show" />
+            </list>
+        </field>
+    </record>
+
+    <record id="view_product_template_form_asset" model="ir.ui.view">
+        <field name="name">product.template.form.asset</field>
+        <field name="model">product.template</field>
+        <field name="inherit_id" ref="product.view_product_template_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='categ_id'][1]" position="after">
+                <field name="asset_kind_code" />
+            </xpath>
+
+            <xpath expr="//notebook" position="inside">
+                <page
+                    name="asset_info"
+                    string="Asset Information"
+                    invisible="not asset_kind_code">
+                    <group
+                        name="power_group"
+                        string="Power Specifications"
+                        invisible="asset_kind_code == 'property'">
+                        <group>
+                            <label for="power" />
+                            <div class="o_row">
+                                <field name="power" class="oe_inline" />
+                                <field name="power_unit" class="oe_inline" />
+                            </div>
+                            <field name="horsepower" />
+                        </group>
+                    </group>
+
+                    <group name="capacity_group" string="Capacity Specifications">
+                        <group>
+                            <field name="weight_capacity" />
+                            <field name="weight_capacity_uom_name" readonly="1" />
+                        </group>
+                        <group>
+                            <field name="volume_capacity" />
+                            <field name="volume_capacity_uom_name" readonly="1" />
+                        </group>
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="action_product_template_asset" model="ir.actions.act_window">
+        <field name="name">Assets</field>
+        <field name="res_model">product.template</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('asset_kind_id', '!=', False)]</field>
+        <field
+            name="context"
+            eval="{'default_asset_kind_id': ref('resource_asset.kind_equipment')}" />
+    </record>
+
+    <record id="action_product_template_property" model="ir.actions.act_window">
+        <field name="name">Property Types</field>
+        <field name="res_model">product.template</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('asset_kind_code', '=', 'property')]</field>
+        <field
+            name="context"
+            eval="{'default_asset_kind_id': ref('resource_asset.kind_property')}" />
+    </record>
+
+</odoo>

@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="digest_digest_view_form_inherit_telegram" model="ir.ui.view">
+        <field name="name">digest.digest.form.inherit.telegram</field>
+        <field name="model">digest.digest</field>
+        <field name="inherit_id" ref="digest.digest_digest_view_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//notebook" position="inside">
+                <page name="telegram" string="Telegram">
+                    <group>
+                        <group name="telegram_config">
+                            <field name="telegram_enabled" />
+                            <field
+                                name="telegram_bot_id"
+                                context="{'tree_view_ref': 'telegram.view_telegram_bot_list'}"
+                                invisible="not telegram_enabled" />
+                            <field
+                                name="telegram_send_mode"
+                                invisible="not telegram_enabled" />
+                        </group>
+                    </group>
+
+                    <group invisible="not telegram_enabled">
+                        <group>
+                            <button
+                                name="action_test_telegram_send"
+                                type="object"
+                                string="Send Test Message to Me"
+                                help="Send a test digest message to your Telegram"
+                                class="btn-primary" />
+                        </group>
+                    </group>
+
+                    <group string="Setup Instructions" invisible="not telegram_enabled">
+                        <div class="alert alert-info" role="alert">
+                            <h4>How to send digests via Telegram:</h4>
+                            <ol>
+                                <li><strong>Configure Telegram Bot:</strong> Go to Telegram Bot menu
+                                    and create/configure a bot</li>
+                                <li><strong>Link User to Telegram:</strong> Each user must be linked
+                                    to a Telegram chat via the Telegram Bot menu</li>
+                                <li><strong>Select Bot (optional):</strong> Leave empty to use
+                                    each user's registered chat bot automatically, or choose an
+                                    explicit override bot for this digest</li>
+                                <li><strong>Choose Send Mode:</strong> Replace email entirely or
+                                    send both Telegram + Email</li>
+                                <li><strong>Test:</strong> Click "Send Test Message to Me" to verify
+                                    your configuration</li>
+                            </ol>
+                            <p><strong>Note:</strong> This module uses the existing <code>
+                                telegram</code> infrastructure. Users are linked to Telegram
+                                chats via <code>telegram.chat</code> records that reference their <code>
+                                res.partner</code>.</p>
+                            <p><strong>Linking Users:</strong> Go to Telegram Bot → Chats to manage
+                                user-chat associations.</p>
+                        </div>
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

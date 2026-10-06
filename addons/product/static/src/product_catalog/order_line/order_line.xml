@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<templates xml:space="preserve">
+    <t t-name="product.ProductCatalogOrderLine">
+        <!-- Replace the element found using the css selector by the content of the portalled
+             template.  -->
+        <Portal target="`#product-${this.props.productId}-price`">
+            <div class="d-inline-flex align-items-baseline">
+                <span t-if="this.showPrice" t-out="this.price" class="o_product_catalog_price fw-bold me-4"/>
+                <span t-if="this.props.code" t-out="this.props.code" class="text-muted"/>
+            </div>
+        </Portal>
+        <div 
+            t-if="this.props.readOnly and this.props.warning"
+            class="text-danger text-truncate my-2 pt-3 border-top">
+            <i class="fa-solid fa-triangle-exclamation" t-att-title="this.props.warning"/>
+            <span 
+                class="px-1" 
+                t-att-title="this.props.warning"
+                t-out="this.props.warning"/>
+        </div>
+        <span t-elif="this.props.readOnly" class="m-2 pt-3 border-top" t-out="this.props.warning">
+            You can't edit this product in the catalog.
+        </span>
+        <div t-else="" class="d-flex justify-content-end align-items-center m-2">
+            <div t-if="this.isInOrder()"
+                    class="input-group o_product_catalog_quantity o_product_catalog_cancel_global_click w-50">
+                <div class="d-flex">
+                    <button class="btn btn-primary border"
+                            t-on-click.stop="this.catalogContext.decreaseQuantity"
+                            t-att-disabled="this.disableRemove"
+                            t-att-data-tooltip="this.disabledButtonTooltip">
+                        <i class="fa-solid fa-minus center"/>
+                    </button>
+                    <div class="d-flex w-100">
+                        <input class="o_input text-center text-bg-light rounded-0 border border-end-0"
+                                type="number"
+                                t-att-class="this.catalogContext.displayUoM ? 'w-50' : 'w-100'"
+                                t-att-value="this.quantity"
+                                t-on-change="this.catalogContext.setQuantity"
+                                t-on-focus="this._onFocus"/>
+                        <span class="fst-italic text-muted text-bg-light text-truncate w-50 border border-start-0 py-1" t-if="this.catalogContext.displayUoM" t-out="this.props.uomDisplayName"/>
+                    </div>
+                    <button class="btn btn-primary border"
+                            t-on-click.stop="(ev) => this.catalogContext.increaseQuantity()">
+                        <i class="fa-solid fa-plus"/>
+                    </button>
+                </div>
+            </div>
+            <t t-elif="this.props.warning">
+                <i class="fa-solid fa-triangle-exclamation text-warning" t-att-title="this.props.warning"/>
+                <span 
+                    class="text-truncate text-warning px-1" 
+                    t-att-title="this.props.warning"
+                    t-out="this.props.warning"/>
+            </t>
+            <div 
+                class="ms-auto o_product_catalog_buttons o_product_catalog_cancel_global_click"
+                style="min-width: max-content;">
+                <button t-if="!this.isInOrder()"
+                        t-on-click.stop="() => this.catalogContext.addProduct()"
+                        class="btn btn-secondary">
+                    <i class="fa-solid fa-shopping-cart"/>
+                    Add
+                </button>
+                <div t-else="" class="o_tooltip_div_remove" t-att-data-tooltip="this.disabledButtonTooltip">
+                    <button t-on-click.stop="this.catalogContext.removeProduct"
+                            t-att-disabled="this.disableRemove"
+                            class="btn btn-light border">
+                        <i class="fa-solid fa-trash-can"/>
+                        Remove
+                    </button>
+                </div>
+            </div>
+        </div>
+    </t>
+</templates>

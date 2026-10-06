@@ -1,0 +1,1013 @@
+// @ts-check
+
+import { mockDate } from "@odoo/hoot-mock";
+import {
+    App,
+    onError,
+    onMounted,
+    onPatched,
+    onWillDestroy,
+    onWillPatch,
+    onWillStart,
+    onWillUnmount,
+    onWillUpdateProps,
+    useScope,
+} from "@odoo/owl";
+import { AppContextPlugin } from "@web/core/app_context";
+import { browser } from "@web/core/browser/browser";
+import { isMacOS } from "@web/core/browser/feature_detection";
+import { dateSettings } from "@web/core/l10n/date_settings";
+import { download } from "@web/core/network/download";
+import { getTemplate } from "@web/core/templates";
+import { _t } from "@web/core/translation";
+import { Deferred } from "@web/core/utils/concurrency";
+import { isVisible } from "@web/core/utils/dom/ui";
+import { patch } from "@web/core/utils/patch";
+import { onRendered, onWillRender } from "@web/core/utils/render_hooks";
+import { customDirectives, globalValues } from "@web/env";
+import { getPopoverForTarget } from "@web/ui/popover/popover";
+
+import { registerCleanup } from "./cleanup.js";
+
+/**
+ * @typedef {keyof HTMLElementEventMap | keyof WindowEventMap} EventType
+ * @typedef {Side | `${Side}-${Side}` | { x?: number, y?: number }} Position
+ * @typedef {"bottom" | "left" | "right" | "top"} Side
+ * @typedef {PointerEventInit & KeyboardEventInit & DragEventInit & InputEventInit & CompositionEventInit & FocusEventInit & ClipboardEventInit & { pageX?: number, pageY?: number, touches?: TouchInit[] }} TestEventInit
+ * @typedef TriggerEventOptions
+ * @property {boolean} [skipVisibilityCheck=false]
+ * @property {boolean} [sync=false]
+ */
+
+const R_OFFSET_TIME_ZONE = /^[+-]\d{2}:\d{2}$/;
+
+/**
+ * @param {number} [year]
+ * @param {number} [month]
+ * @param {number} [day]
+ * @param {number} [hours]
+ * @param {number} [minutes]
+ * @param {number} [seconds]
+ * @param {number} [ms=0]
+ */
+export function patchDate(year, month, day, hours, minutes, seconds, ms = 0) {
+    const zone = dateSettings.timeZone;
+    if (!zone || !R_OFFSET_TIME_ZONE.test(zone)) {
+        throw new Error("dateSettings.timeZone must be a fixed offset (patchTimeZone)");
+    }
+    const offset =
+        Temporal.Now.zonedDateTimeISO(zone).offsetNanoseconds / 60_000_000_000;
+    const date = new Date(
+        Date.UTC(year, month, day, hours, minutes, seconds, ms) - offset * 60000,
+    );
+    mockDate({
+        year: date.getUTCFullYear(),
+        month: date.getUTCMonth() + 1,
+        day: date.getUTCDate(),
+        hour: date.getUTCHours(),
+        minute: date.getUTCMinutes(),
+        second: date.getUTCSeconds(),
+        millisecond: date.getUTCMilliseconds(),
+    });
+}
+
+/** @param {number} offset */
+export function patchTimeZone(offset) {
+    const sign = offset < 0 ? "-" : "+";
+    const minutes = Math.abs(offset);
+    const pad = (/** @type {number} */ n) => String(n).padStart(2, "0");
+    patchWithCleanup(dateSettings, {
+        timeZone: `${sign}${pad(Math.floor(minutes / 60))}:${pad(minutes % 60)}`,
+    });
+}
+
+/**
+ * @param {Object} obj
+ * @param {Object} patchValue
+ */
+export function patchWithCleanup(obj, patchValue) {
+    const unpatch = patch(obj, patchValue);
+    registerCleanup(() => {
+        unpatch();
+    });
+}
+
+/** @returns {Document} */
+export function getFixture() {
+    return document;
+}
+
+export async function nextTick() {
+    await new Promise((resolve) => window.requestAnimationFrame(resolve));
+    await new Promise((resolve) => setTimeout(resolve));
+}
+
+export function makeDeferred() {
+    return new Deferred();
+}
+
+export function findElement(el, selector) {
+    let target = el;
+    if (selector) {
+        const els = el.querySelectorAll(selector);
+        if (els.length === 0) {
+            throw new Error(`No element found (selector: ${selector})`);
+        }
+        if (els.length > 1) {
+            throw new Error(
+                `Found ${els.length} elements, instead of 1 (selector: ${selector})`,
+            );
+        }
+        target = els[0];
+    }
+    return target;
+}
+
+/** @param {TestEventInit} [args] */
+const mapBubblingEvent = (args) => ({ ...args, bubbles: true });
+
+/** @param {TestEventInit} [args] */
+const mapNonBubblingEvent = (args) => ({ ...args, bubbles: false });
+
+/** @param {TestEventInit} [args={}] */
+const mapBubblingPointerEvent = (args = {}) => ({
+    clientX: args.pageX,
+    clientY: args.pageY,
+    ...args,
+    bubbles: true,
+    cancelable: true,
+    view: window,
+});
+
+/** @param {TestEventInit} [args] */
+const mapNonBubblingPointerEvent = (args) => ({
+    ...mapBubblingPointerEvent(args),
+    bubbles: false,
+    cancelable: false,
+});
+
+/** @param {TestEventInit} [args={}] */
+const mapCancelableTouchEvent = (args = {}) => ({
+    ...args,
+    bubbles: true,
+    cancelable: true,
+    composed: true,
+    rotation: 0.0,
+    touches: args.touches ? [...args.touches.map((e) => new Touch(e))] : undefined,
+    view: window,
+    zoom: 1.0,
+});
+
+/** @param {TestEventInit} [args] */
+const mapNonCancelableTouchEvent = (args) => ({
+    ...mapCancelableTouchEvent(args),
+    cancelable: false,
+});
+
+/** @param {TestEventInit} [args] */
+const mapKeyboardEvent = (args) => ({
+    ...args,
+    bubbles: true,
+    cancelable: true,
+});
+
+/**
+ * @param {EventType} eventType
+ * @returns {[new (type: string, attrs?: EventInit) => Event, (attrs?: TestEventInit) => EventInit]}
+ */
+const getEventConstructor = (eventType) => {
+    switch (eventType) {
+        case "auxclick":
+        case "click":
+        case "contextmenu":
+        case "dblclick":
+        case "mousedown":
+        case "mouseup":
+        case "mousemove":
+        case "mouseover":
+        case "mouseout": {
+            return [MouseEvent, mapBubblingPointerEvent];
+        }
+        case "mouseenter":
+        case "mouseleave": {
+            return [MouseEvent, mapNonBubblingPointerEvent];
+        }
+        case "pointerdown":
+        case "pointerup":
+        case "pointermove":
+        case "pointerover":
+        case "pointerout": {
+            return [PointerEvent, mapBubblingPointerEvent];
+        }
+        case "pointerenter":
+        case "pointerleave": {
+            return [PointerEvent, mapNonBubblingPointerEvent];
+        }
+        case "focusin": {
+            return [FocusEvent, mapBubblingEvent];
+        }
+        case "focus":
+        case "blur": {
+            return [FocusEvent, mapNonBubblingEvent];
+        }
+        case "cut":
+        case "copy":
+        case "paste": {
+            return [ClipboardEvent, mapBubblingEvent];
+        }
+        case "keydown":
+        case "keypress":
+        case "keyup": {
+            return [KeyboardEvent, mapKeyboardEvent];
+        }
+        case "drag":
+        case "dragend":
+        case "dragenter":
+        case "dragstart":
+        case "dragleave":
+        case "dragover":
+        case "drop": {
+            return [DragEvent, mapBubblingEvent];
+        }
+        case "input": {
+            return [InputEvent, mapBubblingEvent];
+        }
+        case "compositionstart":
+        case "compositionend": {
+            return [CompositionEvent, mapBubblingEvent];
+        }
+        case "scroll": {
+            return [UIEvent, mapNonBubblingEvent];
+        }
+        case "touchstart":
+        case "touchend":
+        case "touchmove": {
+            return [TouchEvent, mapCancelableTouchEvent];
+        }
+        case "touchcancel": {
+            return [TouchEvent, mapNonCancelableTouchEvent];
+        }
+        default: {
+            return [Event, mapBubblingEvent];
+        }
+    }
+};
+
+/**
+ * @template {EventType} T
+ * @param {Node | Window} el
+ * @param {string | null | undefined | false} selector
+ * @param {T} eventType
+ * @param {TestEventInit} [eventInit]
+ * @param {TriggerEventOptions} [options={}]
+ * @returns {Event | Promise<Event>}
+ */
+export function triggerEvent(el, selector, eventType, eventInit, options = {}) {
+    const errors = [];
+    const target = findElement(el, selector);
+
+    if (typeof eventType !== "string") {
+        errors.push("event type must be a string");
+    }
+    if (!target) {
+        errors.push("cannot find target");
+    } else if (!options.skipVisibilityCheck && !isVisible(target)) {
+        errors.push("target is not visible");
+    }
+    if (errors.length) {
+        throw new Error(
+            `Cannot trigger event${eventType ? ` "${eventType}"` : ""}${
+                selector ? ` (with selector "${selector}")` : ""
+            }: ${errors.join(" and ")}`,
+        );
+    }
+
+    const [Constructor, processParams] = getEventConstructor(eventType);
+    const event = new Constructor(eventType, processParams(eventInit));
+    target.dispatchEvent(event);
+
+    if (options.sync) {
+        return event;
+    } else {
+        return nextTick().then(() => event);
+    }
+}
+
+/**
+ * @param {Node | Window} el
+ * @param {string | null | undefined | false} selector
+ * @param {(EventType | [EventType, TestEventInit])[]} [eventDefs]
+ * @param {TriggerEventOptions} [options={}]
+ */
+export function triggerEvents(el, selector, eventDefs, options = {}) {
+    const events = [...eventDefs].map((eventDef) => {
+        const [eventType, eventInit] = Array.isArray(eventDef)
+            ? eventDef
+            : [eventDef, {}];
+        return triggerEvent(el, selector, eventType, eventInit, options);
+    });
+    if (options.sync) {
+        return events;
+    } else {
+        return nextTick().then(() => events);
+    }
+}
+
+/**
+ * @param {Element} target
+ * @param {Object} coordinates
+ * @param {number} coordinates.left
+ * @param {number} coordinates.top
+ * @param {boolean} canPropagate
+ */
+export async function triggerScroll(
+    target,
+    coordinates = { left: null, top: null },
+    canPropagate = true,
+) {
+    const isScrollable =
+        (target.scrollHeight > target.clientHeight && target.clientHeight > 0) ||
+        (target.scrollWidth > target.clientWidth && target.clientWidth > 0);
+    if (!isScrollable && !canPropagate) {
+        return;
+    }
+    if (isScrollable) {
+        const canScrollFrom = {
+            left:
+                coordinates.left > target.scrollLeft
+                    ? target.scrollLeft + target.clientWidth < target.scrollWidth
+                    : target.scrollLeft > 0,
+            top:
+                coordinates.top > target.scrollTop
+                    ? target.scrollTop + target.clientHeight < target.scrollHeight
+                    : target.scrollTop > 0,
+        };
+        const scrollCoordinates = {};
+        Object.entries(coordinates).forEach(([key, value]) => {
+            if (value !== null && canScrollFrom[key]) {
+                scrollCoordinates[key] = value;
+                delete coordinates[key];
+            }
+        });
+        target.scrollTo(scrollCoordinates);
+        await triggerEvent(target, null, "scroll");
+        if (!canPropagate || !Object.entries(coordinates).length) {
+            return;
+        }
+    }
+    target.parentElement
+        ? triggerScroll(target.parentElement, coordinates)
+        : triggerEvent(window, null, "scroll");
+    await nextTick();
+}
+
+export function click(
+    el,
+    selector,
+    {
+        mouseEventInit = {},
+        skipDisabledCheck = false,
+        skipVisibilityCheck = false,
+    } = {},
+) {
+    if (!skipDisabledCheck && el.disabled) {
+        throw new Error("Can't click on a disabled button");
+    }
+    return triggerEvents(
+        el,
+        selector,
+        [
+            "pointerdown",
+            "mousedown",
+            "focus",
+            "focusin",
+            "pointerup",
+            "mouseup",
+            ["click", mouseEventInit],
+        ],
+        { skipVisibilityCheck },
+    );
+}
+
+export function clickCreate(htmlElement) {
+    if (
+        htmlElement.querySelectorAll(
+            ".o_control_panel_main_buttons .o_form_button_create",
+        ).length
+    ) {
+        return click(
+            htmlElement,
+            ".o_control_panel_main_buttons .o_form_button_create",
+        );
+    } else if (
+        htmlElement.querySelectorAll(
+            ".o_control_panel_main_buttons .o_list_button_create",
+        ).length
+    ) {
+        return click(
+            htmlElement,
+            ".o_control_panel_main_buttons .o_list_button_create",
+        );
+    } else {
+        throw new Error("No edit button found to be clicked.");
+    }
+}
+
+export function clickEdit(htmlElement) {
+    if (htmlElement.querySelectorAll(".o_list_button_edit").length) {
+        return click(htmlElement, ".o_list_button_edit");
+    } else {
+        throw new Error("No edit button found to be clicked.");
+    }
+}
+
+export async function clickSave(htmlElement) {
+    if (htmlElement.querySelectorAll(".o_form_status_indicator").length) {
+        await mouseEnter(htmlElement, ".o_form_status_indicator");
+    }
+    if (htmlElement.querySelectorAll(".o_form_button_save").length) {
+        return click(htmlElement, ".o_form_button_save");
+    }
+    const listSaveButtons = htmlElement.querySelectorAll(".o_list_button_save");
+    if (listSaveButtons.length) {
+        return listSaveButtons.length >= 2
+            ? click(listSaveButtons[1])
+            : click(listSaveButtons[0]);
+    } else {
+        throw new Error("No save button found to be clicked.");
+    }
+}
+
+export async function clickDiscard(htmlElement) {
+    if (htmlElement.querySelectorAll(".o_form_status_indicator").length) {
+        await mouseEnter(htmlElement, ".o_form_status_indicator");
+    }
+    if (htmlElement.querySelectorAll(".o_form_button_cancel").length) {
+        return click(htmlElement, ".o_form_button_cancel");
+    } else if (
+        [...htmlElement.querySelectorAll(".o_list_button_discard")].find(
+            (el) => el.offsetWidth > 0 || el.offsetHeight > 0,
+        )
+    ) {
+        return click(
+            [...htmlElement.querySelectorAll(".o_list_button_discard")].find(
+                (el) => el.offsetWidth > 0 || el.offsetHeight > 0,
+            ),
+        );
+    } else {
+        throw new Error("No discard button found to be clicked.");
+    }
+}
+
+/**
+ * @param {Element} el
+ * @param {string} selector
+ * @param {{ clientX: number, clientY: number }} [coordinates]
+ */
+export async function mouseEnter(el, selector, coordinates) {
+    const target = el.querySelector(selector) || el;
+    const atPos = coordinates || {
+        clientX:
+            target.getBoundingClientRect().left +
+            target.getBoundingClientRect().width / 2,
+        clientY:
+            target.getBoundingClientRect().top +
+            target.getBoundingClientRect().height / 2,
+    };
+    return triggerEvents(target, null, [
+        ["pointerenter", atPos],
+        ["mouseenter", atPos],
+    ]);
+}
+
+/**
+ * @param {Element} el
+ * @param {string} selector
+ */
+export async function mouseLeave(el, selector) {
+    const target = el.querySelector(selector) || el;
+    return triggerEvents(target, null, ["pointerleave", "mouseleave"]);
+}
+
+export async function editInput(el, selector, value) {
+    const input = findElement(el, selector);
+    if (!(input instanceof HTMLInputElement || input instanceof HTMLTextAreaElement)) {
+        throw new Error(
+            "Only 'input' and 'textarea' elements can be edited with 'editInput'.",
+        );
+    }
+    if (
+        ![
+            "text",
+            "textarea",
+            "email",
+            "search",
+            "color",
+            "number",
+            "file",
+            "tel",
+        ].includes(input.type)
+    ) {
+        throw new Error(`Type "${input.type}" not supported by 'editInput'.`);
+    }
+
+    const eventOpts = {};
+    if (input instanceof HTMLInputElement && input.type === "file") {
+        const files = Array.isArray(value) ? value : [value];
+        const dataTransfer = new DataTransfer();
+        for (const file of files) {
+            if (!(file instanceof File)) {
+                throw new Error(
+                    `File input value should be one or several File objects.`,
+                );
+            }
+            dataTransfer.items.add(file);
+        }
+        input.files = dataTransfer.files;
+        eventOpts.skipVisibilityCheck = true;
+    } else {
+        input.value = value;
+    }
+
+    await triggerEvents(input, null, ["input", "change"], eventOpts);
+
+    if (input instanceof HTMLInputElement && input.type === "file") {
+        await nextTick();
+        await nextTick();
+    }
+}
+
+export function editSelect(el, selector, value) {
+    const select = findElement(el, selector);
+    if (select.tagName !== "SELECT") {
+        throw new Error("Only select tag can be edited with selectInput.");
+    }
+    select.value = value;
+    return triggerEvent(select, null, "change");
+}
+
+export async function editSelectMenu(el, selector, value) {
+    const dropdown = el.querySelector(selector);
+    await click(dropdown.querySelector(".dropdown-toggle"));
+    for (const item of Array.from(
+        el.querySelectorAll(".o_select_menu_menu .dropdown-item"),
+    )) {
+        if (item.textContent === value) {
+            return click(item);
+        }
+    }
+}
+
+/**
+ * @param {string} hotkey
+ * @param {boolean} addOverlayModParts
+ * @param {KeyboardEventInit} eventAttrs
+ */
+export async function triggerHotkey(
+    hotkey,
+    addOverlayModParts = false,
+    eventAttrs = {},
+) {
+    eventAttrs.key = hotkey.split("+").pop();
+
+    if (/shift/i.test(hotkey)) {
+        eventAttrs.shiftKey = true;
+    }
+
+    if (/control/i.test(hotkey)) {
+        if (isMacOS()) {
+            eventAttrs.metaKey = true;
+        } else {
+            eventAttrs.ctrlKey = true;
+        }
+    }
+
+    if (/alt/i.test(hotkey) || addOverlayModParts) {
+        if (isMacOS()) {
+            eventAttrs.ctrlKey = true;
+        } else {
+            eventAttrs.altKey = true;
+        }
+    }
+
+    if (!("bubbles" in eventAttrs)) {
+        eventAttrs.bubbles = true;
+    }
+
+    const [keydownEvent, keyupEvent] = await triggerEvents(
+        document.activeElement,
+        null,
+        [
+            ["keydown", eventAttrs],
+            ["keyup", eventAttrs],
+        ],
+        { skipVisibilityCheck: true },
+    );
+
+    return { keydownEvent, keyupEvent };
+}
+
+export function mockDownload(cb) {
+    patchWithCleanup(download, { _download: cb });
+}
+
+export const hushConsole = Object.create(null);
+for (const propName of Object.keys(window.console)) {
+    hushConsole[propName] = () => {};
+}
+
+export function mockSendBeacon(mock) {
+    patchWithCleanup(navigator, {
+        sendBeacon: (url, blob) => mock(url, blob) !== false,
+    });
+}
+
+export function mockTimeout() {
+    const timeouts = new Map();
+    let currentTime = 0;
+    let id = 1;
+    patchWithCleanup(browser, {
+        setTimeout(fn, delay = 0) {
+            timeouts.set(id, { fn, scheduledFor: delay + currentTime, id });
+            return id++;
+        },
+        clearTimeout(id) {
+            timeouts.delete(id);
+        },
+    });
+    return {
+        execRegisteredTimeouts() {
+            for (const { fn } of timeouts.values()) {
+                fn();
+            }
+            timeouts.clear();
+        },
+        async advanceTime(duration) {
+            await nextTick();
+            currentTime += duration;
+            for (const { fn, scheduledFor, id } of timeouts.values()) {
+                if (scheduledFor <= currentTime) {
+                    fn();
+                    timeouts.delete(id);
+                }
+            }
+            await nextTick();
+        },
+    };
+}
+
+export function mockAnimationFrame() {
+    const callbacks = new Map();
+    let currentTime = 0;
+    let id = 1;
+    patchWithCleanup(browser, {
+        requestAnimationFrame(fn) {
+            callbacks.set(id, { fn, scheduledFor: 16 + currentTime, id });
+            return id++;
+        },
+        cancelAnimationFrame(id) {
+            callbacks.delete(id);
+        },
+        performance: { now: () => currentTime },
+    });
+    return {
+        execRegisteredAnimationFrames() {
+            for (const { fn } of callbacks.values()) {
+                fn(currentTime);
+            }
+            callbacks.clear();
+        },
+        async advanceFrame(count = 1) {
+            await nextTick();
+            currentTime += 16 * count;
+            for (const { fn, scheduledFor, id } of callbacks.values()) {
+                if (scheduledFor <= currentTime) {
+                    fn(currentTime);
+                    callbacks.delete(id);
+                }
+            }
+            await nextTick();
+        },
+    };
+}
+
+export async function mount(Comp, target, config = {}) {
+    let { props, env } = config;
+    env = env || {};
+    const configuration = {
+        getTemplate,
+        test: true,
+        customDirectives,
+        globalValues,
+    };
+    if (env.services && "localization" in env.services) {
+        configuration.translateFn = _t;
+    }
+    const app = new App({
+        ...configuration,
+        plugins: [AppContextPlugin],
+        config: { appContext: env },
+    });
+    registerCleanup(() => app.destroy());
+    return app.createRoot(Comp, { props }).mount(target);
+}
+
+export function destroy(comp) {
+    comp.__owl__.app.destroy();
+}
+
+export function findChildren(comp, predicate = (e) => e) {
+    const queue = [];
+    [].unshift.apply(queue, Object.values(comp.__owl__.children));
+
+    while (queue.length > 0) {
+        const curNode = queue.pop();
+        if (predicate(curNode)) {
+            return curNode;
+        }
+        [].unshift.apply(queue, Object.values(curNode.component.__owl__.children));
+    }
+}
+
+export function useChild() {
+    const node = useScope();
+    const setChild = () => {
+        const componentNode = Object.values(node.children)[0];
+        node.component.child = componentNode.component;
+    };
+    onMounted(setChild);
+    onPatched(setChild);
+}
+
+export function useLogLifeCycle(logFn, name = "") {
+    const component = useScope().component;
+    let loggedName = `${component.constructor.name}`;
+    if (name) {
+        loggedName = `${component.constructor.name} ${name}`;
+    }
+    onError(() => {
+        logFn(`onError ${loggedName}`);
+    });
+    onMounted(() => {
+        logFn(`onMounted ${loggedName}`);
+    });
+    onPatched(() => {
+        logFn(`onPatched ${loggedName}`);
+    });
+    onRendered(() => {
+        logFn(`onRendered ${loggedName}`);
+    });
+    onWillDestroy(() => {
+        logFn(`onWillDestroy ${loggedName}`);
+    });
+    onWillPatch(() => {
+        logFn(`onWillPatch ${loggedName}`);
+    });
+    onWillRender(() => {
+        logFn(`onWillRender ${loggedName}`);
+    });
+    onWillStart(() => {
+        logFn(`onWillStart ${loggedName}`);
+    });
+    onWillUnmount(() => {
+        logFn(`onWillUnmount ${loggedName}`);
+    });
+    onWillUpdateProps(() => {
+        logFn(`onWillUpdateProps ${loggedName}`);
+    });
+}
+
+/**
+ * @param {Node} n1
+ * @param {Node} n2
+ * @returns {Node[]}
+ */
+function getDifferentParents(n1, n2) {
+    const parents = [n2];
+    while (parents[0].parentNode) {
+        const parent = parents[0].parentNode;
+        if (parent.contains(n1)) {
+            break;
+        }
+        parents.unshift(parent);
+    }
+    return parents;
+}
+
+/**
+ * @param {Element | string} from
+ * @param {Element | string} to
+ * @param {Position} [position]
+ */
+export async function dragAndDrop(from, to, position) {
+    const { drop } = await drag(from);
+    await drop(to, position);
+}
+
+/** @param {Element | string} from */
+export async function drag(from, pointerType = "mouse") {
+    const assertIsDragging = (fn, endDrag) =>
+        ({
+            async [fn.name](...args) {
+                if (dragEndReason) {
+                    throw new Error(
+                        `Cannot execute drag helper '${fn.name}': drag sequence has been ended by '${dragEndReason}'.`,
+                    );
+                }
+                await fn(...args);
+                if (endDrag) {
+                    dragEndReason = fn.name;
+                }
+            },
+        })[fn.name];
+
+    const cancel = assertIsDragging(async function cancel() {
+        await triggerEvent(window, null, "keydown", { key: "Escape" });
+    }, true);
+
+    /**
+     * @param {Element | string} [to]
+     * @param {Position} [position]
+     */
+    const drop = assertIsDragging(async function drop(to, position) {
+        if (to) {
+            await moveTo(to, position);
+        }
+        await triggerEvent(target || source, null, "pointerup", targetPosition);
+    }, true);
+
+    /** @param {Element | string} selector */
+    const getEl = (selector) =>
+        selector instanceof Element ? selector : fixture.querySelector(selector);
+
+    /** @param {Position} [position] */
+    const getTargetPosition = (position) => {
+        const tRect = target.getBoundingClientRect();
+        const tPos = {
+            clientX: Math.floor(tRect.x),
+            clientY: Math.floor(tRect.y),
+        };
+        if (position && typeof position === "object") {
+            tPos.clientX += position.x || 0;
+            tPos.clientY += position.y || 0;
+        } else {
+            const positions = typeof position === "string" ? position.split("-") : [];
+
+            if (positions.includes("left")) {
+                tPos.clientX -= 1;
+            } else if (positions.includes("right")) {
+                tPos.clientX += Math.ceil(tRect.width) + 1;
+            } else {
+                tPos.clientX += Math.floor(tRect.width / 2);
+            }
+
+            if (positions.includes("top")) {
+                tPos.clientY -= 1;
+            } else if (positions.includes("bottom")) {
+                tPos.clientY += Math.ceil(tRect.height) + 1;
+            } else {
+                tPos.clientY += Math.floor(tRect.height / 2);
+            }
+        }
+        return tPos;
+    };
+
+    /**
+     * @param {Element | string} [to]
+     * @param {Position} [position]
+     */
+    const moveTo = assertIsDragging(async function moveTo(to, position) {
+        target = getEl(to);
+        if (!target) {
+            return;
+        }
+
+        targetPosition = getTargetPosition(position);
+
+        await triggerEvent(source, null, "pointermove", {
+            ...targetPosition,
+            button: -1,
+        });
+
+        for (const parent of getDifferentParents(source, target)) {
+            triggerEvent(parent, null, "pointerenter", targetPosition);
+        }
+        await nextTick();
+
+        return dragHelpers;
+    }, false);
+
+    const dragHelpers = { cancel, drop, moveTo };
+    const fixture = getFixture();
+
+    const source = getEl(from instanceof Element ? from : fixture.querySelector(from));
+    const sourceRect = source.getBoundingClientRect();
+
+    let dragEndReason = null;
+    let target;
+    let targetPosition;
+
+    await triggerEvent(source, null, "pointerdown", {
+        pointerType,
+        clientX: sourceRect.x + sourceRect.width / 2,
+        clientY: sourceRect.y + sourceRect.height / 2,
+    });
+
+    return dragHelpers;
+}
+
+/**
+ * @param {HTMLElement} target
+ * @param {String|HTMLElement} togglerSelector
+ * @returns {HTMLElement|undefined}
+ */
+export function getDropdownMenu(target, togglerSelector) {
+    if (!(target instanceof HTMLElement)) {
+        throw new Error(`getDropdownMenu: target is not an HTMLElement.`);
+    }
+    let el =
+        togglerSelector instanceof HTMLElement
+            ? togglerSelector
+            : target.querySelector(togglerSelector);
+
+    if (el && !el.classList.contains("o-dropdown")) {
+        el = el.querySelector(".o-dropdown");
+    }
+    if (!el) {
+        throw new Error(
+            `getDropdownMenu: Could not find element "${togglerSelector}".`,
+        );
+    }
+    return getPopoverForTarget(el);
+}
+
+export async function clickDropdown(target, fieldName) {
+    const dropdownInput = target.querySelector(`[name='${fieldName}'] .dropdown input`);
+    dropdownInput.focus();
+    await nextTick();
+    await click(dropdownInput);
+}
+
+export async function clickOpenedDropdownItem(target, fieldName, itemContent) {
+    const dropdowns = target.querySelectorAll(
+        `[name='${fieldName}'] .dropdown .dropdown-menu`,
+    );
+    if (dropdowns.length === 0) {
+        throw new Error(`No dropdown found for field ${fieldName}`);
+    } else if (dropdowns.length > 1) {
+        throw new Error(`Found ${dropdowns.length} dropdowns for field ${fieldName}`);
+    }
+    const dropdownItems = dropdowns[0].querySelectorAll("li");
+    const indexToClick = Array.from(dropdownItems)
+        .map((html) => html.textContent)
+        .indexOf(itemContent);
+    if (indexToClick === -1) {
+        throw new Error(`The element '${itemContent}' does not exist in the dropdown`);
+    }
+    await click(dropdownItems[indexToClick]);
+}
+
+export async function selectDropdownItem(target, fieldName, itemContent) {
+    await clickDropdown(target, fieldName);
+    await clickOpenedDropdownItem(target, fieldName, itemContent);
+}
+
+export function getNodesTextContent(nodes) {
+    return Array.from(nodes).map((n) => n.textContent);
+}
+
+export async function clickOpenM2ODropdown(el, fieldName, selector) {
+    const m2oSelector = `${selector || ""} .o_field_many2one[name=${fieldName}] input`;
+    const matches = el.querySelectorAll(m2oSelector);
+    if (matches.length !== 1) {
+        throw new Error(
+            `cannot open m2o: selector ${selector} has been found ${matches.length} instead of 1`,
+        );
+    }
+
+    await click(matches[0]);
+    return matches[0];
+}
+
+export async function clickM2OHighlightedItem(el, fieldName, selector) {
+    const m2oSelector = `${selector || ""} .o_field_many2one[name=${fieldName}] input`;
+    const matches = el.querySelectorAll(m2oSelector);
+    if (matches.length !== 1) {
+        throw new Error(
+            `cannot open m2o: selector ${selector} has been found ${matches.length} instead of 1`,
+        );
+    }
+    return click(matches[0].parentElement.querySelector("li"));
+}
+
+export async function addRow(target, selector) {
+    await click(
+        target.querySelector(
+            `${selector ? selector : ""} .o_field_x2many_list_row_add a`,
+        ),
+    );
+}
+
+export async function removeRow(target, index) {
+    await click(target.querySelectorAll(".o_list_record_remove")[index]);
+}

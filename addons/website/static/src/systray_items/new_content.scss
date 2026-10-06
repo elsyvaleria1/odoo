@@ -1,0 +1,47 @@
+@mixin o-website-btn-custo-secondary($-background, $-entry-color, $-scheme) {
+    @include o-scheme-button-variant(
+        darken($-background, 5%),
+        darken($-background, 5%),
+        $-scheme,
+        $-color: $-entry-color,
+        $-hover-background: darken($-background, 10%)
+    );
+}
+
+.o-website-btn-custo-secondary {
+    @include o-website-btn-custo-secondary(
+        $o-navbar-background,
+        $o-navbar-entry-color,
+        o-light-scheme()
+    );
+}
+
+@include media-only(screen) {
+    :root[data-color-scheme="dark"] .o-website-btn-custo-secondary {
+        @include o-website-btn-custo-secondary(
+            $o-dark-navbar-background,
+            $o-dark-navbar-entry-color,
+            o-dark-scheme()
+        );
+    }
+}
+
+.o_new_content_menu_choices {
+    grid-auto-flow: column;
+    grid-template-rows: repeat(5, auto);
+
+    .o_new_content_element_tile {
+        background: o-token(--o-popover-bg, $popover-bg);
+        width: 2.5rem;
+        min-width: 2.5rem;
+        aspect-ratio: 1;
+
+        img {
+            width: 1.5rem;
+        }
+    }
+
+    .o_new_content_element:where(:not(:hover, :focus)) .o_uninstalled_module {
+        filter: grayscale(1);
+    }
+}

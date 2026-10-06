@@ -1,0 +1,192 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <data>
+        <record id="module_category_master_data" model="ir.module.category">
+            <field name="name">Master Data</field>
+            <field name="sequence">1</field>
+        </record>
+        <record id="res_groups_privilege_export" model="res.groups.privilege">
+            <field name="name">Export</field>
+            <field name="category_id" ref="module_category_master_data" />
+        </record>
+        <record id="res_groups_privilege_contact" model="res.groups.privilege">
+            <field name="name">Contact</field>
+            <field name="category_id" ref="module_category_master_data" />
+        </record>
+        <record id="group_access_change_approver" model="res.groups">
+            <field name="name">Security Change Approver</field>
+            <field
+                name="comment">Decides the security change sets the access administrators stage, never their own. Deciding needs no administration: an approved change set applies itself.</field>
+            <field name="implied_ids" eval="[Command.link(ref('group_user'))]" />
+        </record>
+        <record id="group_erp_manager" model="res.groups">
+            <field name="name">Access Rights</field>
+            <field
+                name="implied_ids"
+                eval="[Command.link(ref('group_user')), Command.link(ref('group_access_change_approver'))]" />
+        </record>
+        <record id="group_sanitize_override" model="res.groups">
+            <field name="name">Bypass HTML Field Sanitize</field>
+        </record>
+        <record id="group_system" model="res.groups">
+            <field name="name">Role / Administrator</field>
+            <field name="comment">Access to the settings to configure the apps</field>
+            <field
+                name="implied_ids"
+                eval="[Command.link(ref('group_erp_manager')), Command.link(ref('group_sanitize_override'))]" />
+            <field
+                name="user_ids"
+                eval="[Command.link(ref('base.user_root')), Command.link(ref('base.user_admin'))]" />
+        </record>
+        <record id="group_user" model="res.groups">
+            <field name="name">Role / User</field>
+            <field name="comment">Access to the home menu</field>
+            <field name="api_key_duration">90.0</field>
+        </record>
+        <record id="group_multi_company" model="res.groups">
+            <field name="name">Multi Companies</field>
+        </record>
+        <record id="group_multi_currency" model="res.groups">
+            <field name="name">Multi Currencies</field>
+        </record>
+        <record id="group_no_one" model="res.groups">
+            <field name="name">Technical Features</field>
+            <field
+                name="implied_by_ids"
+                eval="[Command.link(ref('group_user')), Command.link(ref('group_system'))]" />
+        </record>
+        <record id="group_allow_export" model="res.groups">
+            <field name="name">Allowed</field>
+            <field name="privilege_id" ref="res_groups_privilege_export" />
+            <field name="implied_by_ids" eval="[Command.link(ref('group_system'))]" />
+            <field name="user_ids" eval="[Command.link(ref('base.user_root'))]" />
+        </record>
+        <record id="group_partner_manager" model="res.groups">
+            <field name="name">Creation</field>
+            <field name="privilege_id" ref="res_groups_privilege_contact" />
+            <field
+                name="implied_by_ids"
+                eval="[Command.link(ref('base.group_system'))]" />
+            <field name="user_ids" eval="[Command.link(ref('base.user_root'))]" />
+        </record>
+        <record id="group_portal" model="res.groups">
+            <field name="name">Role / Portal</field>
+            <field
+                name="comment">Portal members have specific access rights (such as record rules and restricted menus).
+                They usually do not belong to the usual Odoo groups.</field>
+        </record>
+        <record id="group_public" model="res.groups">
+            <field name="name">Role / Public</field>
+            <field
+                name="comment">Public users have specific access rights (such as record rules and restricted menus).
+                They usually do not belong to the usual Odoo groups.</field>
+        </record>
+        <record id="group_everyone" model="res.groups">
+            <field name="name">Role / Everyone</field>
+            <field
+                name="comment">Every user, internal, portal or public: an access given to it is given to all.</field>
+            <field
+                name="implied_by_ids"
+                eval="[Command.link(ref('group_user')), Command.link(ref('group_portal')), Command.link(ref('group_public'))]" />
+        </record>
+        <record id="public_user" model="res.users">
+            <field name="group_ids" eval="[Command.link(ref('base.group_public'))]" />
+        </record>
+        <record id="template_portal_user_id" model="res.users">
+            <field name="name">Portal User Template</field>
+            <field name="login">portaltemplate</field>
+            <field name="signature" />
+            <field name="group_ids" eval="[Command.set([ref('base.group_portal')])]" />
+            <field name="active" eval="False" />
+        </record>
+        <record id="default_template_user_config" model="ir.config_parameter">
+            <field name="key">base.template_portal_user_id</field>
+            <field name="value" ref="template_portal_user_id" />
+        </record>
+    </data>
+
+    <data noupdate="1">
+        <record id="default_user_group" model="res.groups">
+            <field name="name">Default access for new users</field>
+        </record>
+    </data>
+
+    <record id="privilege_check_duties" model="res.groups">
+        <field name="name">Check Duties</field>
+        <field
+            name="comment">Every grant, whoever makes it, is checked against the separation of duties: the check reads the rules and the duties they name.</field>
+        <field name="is_privilege" eval="True" />
+    </record>
+
+    <record id="privilege_activate_eligibility" model="res.groups">
+        <field name="name">Activate an Eligibility</field>
+        <field
+            name="comment">A person eligible for a group grants it to themselves for a few hours, with a justification, and ends it early; nobody grants themselves anything else.</field>
+        <field name="is_privilege" eval="True" />
+    </record>
+
+    <record id="privilege_end_activation" model="res.groups">
+        <field name="name">End an Activation</field>
+        <field
+            name="comment">Revoking an eligibility ends the activation it has running, whoever revokes it: ending an elevation early is never a widening.</field>
+        <field name="is_privilege" eval="True" />
+    </record>
+
+    <record id="privilege_apply_review" model="res.groups">
+        <field name="name">Apply an Access Review</field>
+        <field
+            name="comment">A reviewer's decision to revoke is applied to exactly the grants, eligibilities, links and exceptions they decided on, whether or not the reviewer administers them.</field>
+        <field name="is_privilege" eval="True" />
+    </record>
+
+    <record id="group_break_glass" model="res.groups">
+        <field name="name">Break-Glass</field>
+        <field
+            name="comment">Held for a few hours through an eligibility: a guard that names it as exempt does not bind its holder. Its opening is announced and its closing reviewed.</field>
+        <field name="is_break_glass" eval="True" />
+    </record>
+
+    <record id="privilege_keep_readings" model="res.groups">
+        <field name="name">Keep File Readings</field>
+        <field
+            name="comment">What a file's bytes were read as — its text, the words of a recording — is kept by whoever may read the file, and shared with its copies.</field>
+        <field name="is_privilege" eval="True" />
+    </record>
+
+    <record id="privilege_write_user_settings" model="res.groups">
+        <field name="name">Write User Settings</field>
+        <field
+            name="comment">A preference stored on a user's settings is written with the user: whoever may write that user writes the settings row it lands on, and creates the row when there is none.</field>
+        <field name="is_privilege" eval="True" />
+    </record>
+
+    <record id="privilege_read_company_hierarchy" model="res.groups">
+        <field name="name">Read Company Hierarchy</field>
+        <field
+            name="comment">A root company's configuration reaches every branch below it, whether or not the writer can see those branches.</field>
+        <field name="is_privilege" eval="True" />
+    </record>
+
+    <record id="privilege_manage_links" model="res.groups">
+        <field name="name">Manage External Links</field>
+        <field
+            name="comment">A link is issued, extended and revoked by the record it opens: the code checks the sharer's right on the record, then writes the link, its hash and its expiry, which nobody writes by hand.</field>
+        <field name="is_privilege" eval="True" />
+    </record>
+
+    <record id="privilege_resolve_links" model="res.groups">
+        <field name="name">Resolve External Links</field>
+        <field
+            name="comment">Whoever presents a token, signed in or not, has it looked up: the resolver reads the link the token's hash names, and nothing else.</field>
+        <field name="is_privilege" eval="True" />
+    </record>
+
+    <record id="privilege_read_access_exceptions" model="res.groups">
+        <field name="name">Read Access Exceptions</field>
+        <field
+            name="comment">Code that asks whether a strict rule lets someone through reads every exception, whoever runs it.</field>
+        <field name="is_privilege" eval="True" />
+    </record>
+
+</odoo>

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<templates>
+    <div t-name="account_online_payment.RefreshButton" class="w-100 d-sm-contents">
+        <div class="o_field_widget o_readonly_modifier o_field_char d-flex gap-2">
+            <span class="w-25" t-out="this.state.status"/>
+            <t t-if="this.state.isFetching">
+                <div>
+                    <i class="fa-solid fa-circle-notch fa-spin"/>
+                </div>
+            </t>
+            <t t-else="">
+                <div name="check_online_payment_status" t-on-click="this.onClickFetchStatus">
+                    <i class="fa-solid fa-arrows-rotate"/>
+                </div>
+            </t>
+        </div>
+    </div>
+</templates>

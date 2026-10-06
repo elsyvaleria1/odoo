@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="privilege_answer_in_channel" model="res.groups">
+        <field name="name">Privilege: an AI agent answers in its channel</field>
+        <field
+            name="comment">Held by whoever asks an agent for an answer -- a visitor through the AI route, the livechat reply job -- for that answer only: it reads which agent serves the channel, the agent, the channel's history, and posts the agent's reply. An agent's tools still run with the caller's own rights.</field>
+        <field name="is_privilege" eval="True" />
+    </record>
+
+    <record id="access_class_channel_agent" model="ir.access.class">
+        <field name="name">ai.channel_agent</field>
+        <field
+            name="description">Which AI agent serves a channel. Read by an agent's answer only; written by the flows that open an AI chat or hand a session to an agent, never by a client.</field>
+    </record>
+
+    <record id="access_channel_agent_answer" model="ir.access">
+        <field
+            name="name">ai.channel_agent: an agent's answer reads which agent serves the channel</field>
+        <field name="group_id" ref="privilege_answer_in_channel" />
+        <field name="kind">permission</field>
+        <field name="operation">r</field>
+        <field name="class_id" ref="access_class_channel_agent" />
+    </record>
+
+    <record id="access_ai_agent_answer" model="ir.access">
+        <field name="name">ai.agent: an agent's answer reads the agent</field>
+        <field name="model_id" ref="model_ai_agent" />
+        <field name="group_id" ref="privilege_answer_in_channel" />
+        <field name="kind">permission</field>
+        <field name="operation">r</field>
+    </record>
+
+    <record id="access_ai_topic_answer" model="ir.access">
+        <field
+            name="name">ai.topic: an agent's answer reads the agent's topics, which shape its instructions</field>
+        <field name="model_id" ref="model_ai_topic" />
+        <field name="group_id" ref="privilege_answer_in_channel" />
+        <field name="kind">permission</field>
+        <field name="operation">r</field>
+    </record>
+
+    <record id="access_mail_message_answer" model="ir.access">
+        <field
+            name="name">mail.message: an agent's answer posts the agent's reply in a channel</field>
+        <field name="model_id" ref="mail.model_mail_message" />
+        <field name="group_id" ref="privilege_answer_in_channel" />
+        <field name="kind">permission</field>
+        <field name="operation">c</field>
+        <field
+            name="domain">[('model', '=', 'discuss.channel'), ('message_type', '=', 'comment')]</field>
+    </record>
+
+    <record id="access_ai_agent_source_answer" model="ir.access">
+        <field
+            name="name">ai.agent.source: an agent's answer reads the agent's knowledge sources</field>
+        <field name="model_id" ref="model_ai_agent_source" />
+        <field name="group_id" ref="privilege_answer_in_channel" />
+        <field name="kind">permission</field>
+        <field name="operation">r</field>
+    </record>
+
+    <record id="access_ai_embedding_answer" model="ir.access">
+        <field
+            name="name">ai.embedding: an agent's answer reads the passages of its sources</field>
+        <field name="model_id" ref="model_ai_embedding" />
+        <field name="group_id" ref="privilege_answer_in_channel" />
+        <field name="kind">permission</field>
+        <field name="operation">r</field>
+    </record>
+
+    <record id="access_res_partner_answer" model="ir.access">
+        <field
+            name="name">res.partner: an agent's answer reads the agents' partners, as whom it posts</field>
+        <field name="model_id" ref="base.model_res_partner" />
+        <field name="group_id" ref="privilege_answer_in_channel" />
+        <field name="kind">permission</field>
+        <field name="operation">r</field>
+        <field name="domain">[('agent_ids', '!=', False)]</field>
+    </record>
+
+    <record id="access_discuss_channel_answer" model="ir.access">
+        <field
+            name="name">discuss.channel: an agent's answer reads a channel an agent serves</field>
+        <field name="model_id" ref="mail.model_discuss_channel" />
+        <field name="group_id" ref="privilege_answer_in_channel" />
+        <field name="kind">permission</field>
+        <field name="operation">r</field>
+        <field name="domain">[('ai_agent_id', '!=', False)]</field>
+    </record>
+
+</odoo>

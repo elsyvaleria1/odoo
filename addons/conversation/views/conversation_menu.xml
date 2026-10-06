@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <menuitem
+        id="menu_conversation_root"
+        name="Conversations"
+        sequence="60"
+        groups="conversation.group_user"
+        web_icon="conversation,static/description/icon.png" />
+
+    <menuitem
+        id="menu_conversation_records"
+        name="Conversations"
+        parent="menu_conversation_root"
+        action="action_conversation_conversation"
+        sequence="10" />
+
+    <menuitem
+        id="menu_conversation_my_actions"
+        name="My actions"
+        parent="menu_conversation_root"
+        action="action_conversation_my_tool_calls"
+        sequence="15" />
+
+    <menuitem
+        id="menu_conversation_actions"
+        name="All proposed actions"
+        parent="menu_conversation_root"
+        action="action_conversation_tool_calls"
+        sequence="20"
+        groups="conversation.group_leader" />
+
+    <menuitem
+        id="menu_conversation_reporting"
+        name="Reporting"
+        parent="menu_conversation_root"
+        sequence="80"
+        groups="conversation.group_leader" />
+
+    <menuitem
+        id="menu_conversation_reporting_analysis"
+        name="Conversations"
+        parent="menu_conversation_reporting"
+        action="action_conversation_reporting"
+        sequence="10" />
+
+    <menuitem
+        id="menu_conversation_reporting_talk_time"
+        name="Talk time"
+        parent="menu_conversation_reporting"
+        action="action_conversation_talk_time"
+        sequence="20" />
+
+    <menuitem
+        id="menu_conversation_configuration"
+        name="Configuration"
+        parent="menu_conversation_root"
+        sequence="90"
+        groups="conversation.group_manager" />
+
+    <menuitem
+        id="menu_conversation_vocabulary"
+        name="Vocabulary"
+        parent="menu_conversation_configuration"
+        action="speech.speech_vocabulary_action"
+        sequence="10" />
+
+    <menuitem
+        id="menu_conversation_retention_policy"
+        name="Audio retention"
+        parent="menu_conversation_configuration"
+        action="action_conversation_retention_policy"
+        sequence="20" />
+
+    <menuitem
+        id="menu_conversation_config"
+        name="Analysis context"
+        parent="menu_conversation_configuration"
+        action="action_conversation_config"
+        sequence="25" />
+
+    <menuitem
+        id="menu_conversation_tools"
+        name="Action tools"
+        parent="menu_conversation_configuration"
+        action="action_conversation_tools"
+        sequence="30" />
+
+    <menuitem
+        id="menu_conversation_allowed_models"
+        name="Models tools may write"
+        parent="menu_conversation_configuration"
+        action="ai_tool_approval.ai_tool_model_access_action"
+        sequence="40" />
+
+</odoo>

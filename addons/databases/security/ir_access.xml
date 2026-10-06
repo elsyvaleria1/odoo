@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="project.project_project_manager_rule" model="ir.access">
+        <field name="name">Project: project manager: see all but databases</field>
+        <field name="domain">[('database_hosting', '=', False)]</field>
+    </record>
+
+</odoo>

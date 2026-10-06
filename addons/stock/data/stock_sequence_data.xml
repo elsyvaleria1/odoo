@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+
+    <record id="sequence_mrp_op" model="ir.sequence">
+        <field name="name">Stock orderpoint</field>
+        <field name="code">stock.orderpoint</field>
+        <field name="prefix">OP/</field>
+        <field name="padding">5</field>
+        <field name="number_next">1</field>
+        <field name="number_increment">1</field>
+        <field name="company_id" />
+    </record>
+
+    <record id="seq_picking_internal" model="ir.sequence">
+        <field name="name">Picking INT</field>
+        <field name="code">stock.picking</field>
+        <field name="prefix">INT/</field>
+        <field name="padding">5</field>
+        <field name="company_id" eval="False" />
+    </record>
+
+    <record id="seq_package" model="ir.sequence">
+        <field name="name">Packages</field>
+        <field name="code">stock.package</field>
+        <field name="prefix">PACK</field>
+        <field name="padding">7</field>
+        <field name="company_id" eval="False" />
+    </record>
+
+    <record id="ir_cron_scheduler_action" model="ir.cron" forcecreate="True">
+        <field name="name">Procurement: run scheduler</field>
+        <field name="model_id" ref="model_stock_scheduler" />
+        <field name="state">code</field>
+        <field name="code">model.run(True)</field>
+        <field name="user_id" ref="base.user_root" />
+        <field name="repeat_interval">1</field>
+        <field name="repeat_unit">day</field>
+        <field name="active" eval="True" />
+    </record>
+
+</odoo>

@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+
+    <record id="sod_function_post_bills" model="ir.access.sod.function">
+        <field name="name">post invoices and bills</field>
+        <field
+            name="group_ids"
+            eval="[Command.link(ref('account.group_account_invoice'))]" />
+        <field
+            name="excluded_group_ids"
+            eval="[Command.link(ref('account.group_account_manager'))]" />
+    </record>
+
+    <record id="sod_function_approve_accounting" model="ir.access.sod.function">
+        <field name="name">approve accounting requests</field>
+        <field name="approval_types">accounting</field>
+    </record>
+
+    <record id="sod_function_manage_accounting" model="ir.access.sod.function">
+        <field name="name">manage the accounting</field>
+        <field
+            name="group_ids"
+            eval="[Command.link(ref('account.group_account_manager'))]" />
+    </record>
+
+    <record id="sod_function_release_payments" model="ir.access.sod.function">
+        <field name="name">release payments</field>
+        <field name="group_ids" eval="[Command.link(ref('group_treasury_payment'))]" />
+    </record>
+
+    <record id="sod_function_approve_payments" model="ir.access.sod.function">
+        <field name="name">approve payments</field>
+        <field name="approval_types">payment,accounting</field>
+    </record>
+
+    <record id="sod_rule_post_and_approve_bills" model="ir.access.sod.rule">
+        <field name="name">post and approve bills</field>
+        <field name="function_a_id" ref="sod_function_post_bills" />
+        <field name="function_b_id" ref="sod_function_approve_accounting" />
+        <field name="action">block</field>
+    </record>
+
+    <record id="sod_rule_manage_accounting_and_release" model="ir.access.sod.rule">
+        <field name="name">manage the accounting and release payments</field>
+        <field name="function_a_id" ref="sod_function_manage_accounting" />
+        <field name="function_b_id" ref="sod_function_release_payments" />
+        <field name="action">block</field>
+    </record>
+
+    <record id="sod_rule_release_and_approve_payments" model="ir.access.sod.rule">
+        <field name="name">release and approve payments</field>
+        <field name="function_a_id" ref="sod_function_release_payments" />
+        <field name="function_b_id" ref="sod_function_approve_payments" />
+        <field name="action">block</field>
+    </record>
+
+</odoo>

@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<templates>
+
+<t t-name="web_studio.StudioHomeMenu" t-inherit="web.HomeMenu" t-inherit-mode="primary" t-translation="off">
+    <xpath expr="//div[hasclass('o_home_menu')]" position="attributes">
+        <attribute name="class" add="o_studio_home_menu" separator=" " />
+        <attribute name="t-attf-style">
+        {{ this.backgroundImageUrl ? "background-image: radial-gradient(circle, rgba(0,0,0, 0) 0%, rgba(0,0,0, 1) 100%), repeating-linear-gradient(45deg, rgba(255,255,255, .05), rgba(255,255,255, .05) 30px, rgba(0,0,0, .05) 30px, rgba(0,0,0, .05) 60px), url(" + this.backgroundImageUrl + ");" : '' }}
+      </attribute>
+    </xpath>
+    <!-- New App button -->
+    <xpath expr="//div[hasclass('o_apps')]//div[hasclass('o_draggable')]" position="attributes">
+        <attribute name="t-attf-class" add="{{ app.isNewAppButton ? 'order-first' : '' }}" />
+    </xpath>
+</t>
+
+<t t-name="web_studio.StudioHomeMenu.App" t-inherit="web.HomeMenu.App" t-inherit-mode="primary" t-translation="off">
+    <xpath expr="//a[hasclass('o_app')]" position="attributes">
+        <attribute name="t-att-class">{
+            o_focused: gridIndex !== undefined and this.keyboard.focusedIndex === gridIndex,
+            'o_web_studio_new_app': app.isNewAppButton
+        }</attribute>
+    </xpath>
+    <!-- Edit icons -->
+    <xpath expr="//a[hasclass('o_app')]" position="after">
+        <button type="button" title="Edit icon" aria-label="Edit icon" t-if="!app.isNewAppButton" class="o_web_studio_edit_icon btn p-0 border-0 lh-1" t-on-click.stop.prevent="() => this.onEditIconClick(app)">
+            <i class="fa-solid fa-square-pen" />
+        </button>
+    </xpath>
+</t>
+
+</templates>

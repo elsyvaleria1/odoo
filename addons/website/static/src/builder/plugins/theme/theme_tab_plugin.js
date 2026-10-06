@@ -1,0 +1,386 @@
+/** @odoo-module native */
+import { BuilderAction } from "@html_builder/core/builder_action";
+import { BaseOptionComponent } from "@html_builder/core/utils";
+import { setBuilderCSSVariables } from "@html_builder/utils/utils_css";
+import { Plugin } from "@html_editor/plugin";
+import { getCSSVariableValue, getHtmlStyle } from "@html_editor/utils/formatting";
+import { withSequence } from "@html_editor/utils/resource";
+import { proxy } from "@odoo/owl";
+import { makeLogger } from "@web/core/debug/debug_logger";
+import { registry } from "@web/core/registry";
+import { _t } from "@web/core/translation";
+import {
+    convertCSSColorToRgba,
+    convertHslToRgb,
+    convertRgbaToCSSColor,
+    convertRgbToHsl,
+} from "@web/core/utils/format/colors";
+import { ConfirmationDialog } from "@web/ui/dialog";
+import { EditHeadBodyDialog } from "@website/components/edit_head_body_dialog/edit_head_body_dialog";
+
+import { CustomizeWebsiteVariableAction } from "../customize_website_plugin.js";
+import { ThemeAdvancedOption } from "./theme_advanced_option.js";
+import { ThemeButtonOption } from "./theme_button_option.js";
+import { ThemeColorsOption } from "./theme_colors_option.js";
+import { ThemeHeadingsOption } from "./theme_headings_option.js";
+
+const log = makeLogger("website.builder.plugin.theme_tab");
+
+/**
+ * @typedef { Object } ThemeTabShared
+ * @property { ThemeTabPlugin['buildGray'] } buildGray
+ * @property { ThemeTabPlugin['getGrays'] } getGrays
+ * @property { ThemeTabPlugin['getGrayParams'] } getGrayParams
+ * @property { ThemeTabPlugin['setGrays'] } setGrays
+ * @property { ThemeTabPlugin['setGrayParams'] } setGrayParams
+ */
+
+/**
+ * @typedef {import("@html_builder/core/builder_options_plugin").BuilderOptionContainer[]} theme_options
+ */
+
+export const GRAY_PARAMS = {
+    EXTRA_SATURATION: "gray-extra-saturation",
+    HUE: "gray-hue",
+};
+
+export const OPTION_POSITIONS = {
+    COLORS: 10,
+    SETTINGS: 20,
+    PARAGRAPH: 30,
+    HEADINGS: 40,
+    BUTTON: 50,
+    LINK: 60,
+    INPUT: 70,
+    ADVANCED: 80,
+};
+
+export class ThemeTabPlugin extends Plugin {
+    static id = "themeTab";
+    static shared = [
+        "getGrayParams",
+        "getGrays",
+        "setGrays",
+        "setGrayParams",
+        "buildGray",
+    ];
+    grayParams = {};
+    grays = proxy({});
+
+    /** @type {import("plugins").WebsiteResources} */
+    resources = {
+        builder_actions: {
+            CustomizeGrayAction,
+            ChangeColorPaletteAction,
+            EditCustomCodeAction,
+            ConfigureApiKeyAction,
+            CustomizePageLayout,
+        },
+        theme_options: [
+            withSequence(
+                OPTION_POSITIONS.COLORS,
+                this.getThemeOptionBlock(
+                    "theme-colors",
+                    _t("Colors"),
+                    ThemeColorsOption,
+                ),
+            ),
+            withSequence(
+                OPTION_POSITIONS.SETTINGS,
+                this.getThemeOptionBlock(
+                    "website-settings",
+                    _t("Website"),
+                    class ThemeWebsiteSettingsOption extends BaseOptionComponent {
+                        static template = "website.ThemeWebsiteSettingsOption";
+                    },
+                ),
+            ),
+            withSequence(
+                OPTION_POSITIONS.PARAGRAPH,
+                this.getThemeOptionBlock(
+                    "theme-paragraph",
+                    _t("Paragraph"),
+                    class ThemeParagraphOption extends BaseOptionComponent {
+                        static template = "website.ThemeParagraphOption";
+                    },
+                ),
+            ),
+            withSequence(
+                OPTION_POSITIONS.HEADINGS,
+                this.getThemeOptionBlock(
+                    "theme-headings",
+                    _t("Headings"),
+                    ThemeHeadingsOption,
+                ),
+            ),
+            withSequence(
+                OPTION_POSITIONS.BUTTON,
+                this.getThemeOptionBlock(
+                    "theme-button",
+                    _t("Button"),
+                    ThemeButtonOption,
+                ),
+            ),
+            withSequence(
+                OPTION_POSITIONS.LINK,
+                this.getThemeOptionBlock(
+                    "theme-link",
+                    _t("Link"),
+                    class ThemeLinkOption extends BaseOptionComponent {
+                        static template = "website.ThemeLinkOption";
+                    },
+                ),
+            ),
+            withSequence(
+                OPTION_POSITIONS.INPUT,
+                this.getThemeOptionBlock(
+                    "theme-input",
+                    _t("Input Fields"),
+                    class ThemeInputOption extends BaseOptionComponent {
+                        static template = "website.ThemeInputOption";
+                    },
+                ),
+            ),
+            withSequence(
+                OPTION_POSITIONS.ADVANCED,
+                this.getThemeOptionBlock(
+                    "theme-advanced",
+                    _t("Advanced"),
+                    ThemeAdvancedOption,
+                ),
+            ),
+        ],
+    };
+
+    setup() {
+        const hues = [];
+        const saturationDiffs = [];
+        let oneHasNoSaturation = false;
+        const style = this.window.getComputedStyle(this.document.body);
+        const baseStyle = getComputedStyle(document.body);
+        const endGrayScan = log.perf("setup gray scan");
+        for (let id = 100; id <= 900; id += 100) {
+            const gray = getCSSVariableValue(`${id}`, style);
+            this.grays[id] = gray;
+            const grayRGB = convertCSSColorToRgba(gray);
+            const grayHSL = convertRgbToHsl(grayRGB.red, grayRGB.green, grayRGB.blue);
+
+            const baseGray = getCSSVariableValue(`base-${id}`, baseStyle);
+            const baseGrayRGB = convertCSSColorToRgba(baseGray);
+            const baseGrayHSL = convertRgbToHsl(
+                baseGrayRGB.red,
+                baseGrayRGB.green,
+                baseGrayRGB.blue,
+            );
+
+            if (grayHSL.saturation > 0.01) {
+                if (grayHSL.lightness > 0.01 && grayHSL.lightness < 99.99) {
+                    hues.push(grayHSL.hue);
+                }
+                if (grayHSL.saturation < 99.99) {
+                    saturationDiffs.push(grayHSL.saturation - baseGrayHSL.saturation);
+                }
+            } else {
+                oneHasNoSaturation = true;
+            }
+        }
+        endGrayScan(() => ({
+            hues: hues.length,
+            saturationDiffs: saturationDiffs.length,
+        }));
+        this.grayHueIsDefined = !!hues.length;
+
+        this.grayParams[GRAY_PARAMS.HUE] = !hues.length
+            ? 0
+            : Math.round(
+                  (Math.atan2(
+                      hues
+                          .map((hue) => Math.sin((hue * Math.PI) / 180))
+                          .reduce((memo, value) => memo + value, 0) / hues.length,
+                      hues
+                          .map((hue) => Math.cos((hue * Math.PI) / 180))
+                          .reduce((memo, value) => memo + value, 0) / hues.length,
+                  ) *
+                      180) /
+                      Math.PI +
+                      360,
+              ) % 360;
+
+        this.grayParams[GRAY_PARAMS.EXTRA_SATURATION] = saturationDiffs.length
+            ? saturationDiffs.reduce((memo, value) => memo + value, 0) /
+              saturationDiffs.length
+            : oneHasNoSaturation
+              ? -100
+              : 100;
+        log.lifecycle("setup", () => ({
+            grayHueIsDefined: this.grayHueIsDefined,
+            hue: this.grayParams[GRAY_PARAMS.HUE],
+            extraSaturation: this.grayParams[GRAY_PARAMS.EXTRA_SATURATION],
+            oneHasNoSaturation,
+        }));
+    }
+    getGrayParams() {
+        return this.grayParams;
+    }
+    getGrays() {
+        return this.grays;
+    }
+    setGrayParams(key, value) {
+        this.grayParams[key] = value;
+    }
+    setGrays(key, value) {
+        this.grays[key] = value;
+    }
+    buildGray(id) {
+        const gray = getCSSVariableValue(
+            `base-${id}`,
+            getComputedStyle(document.documentElement),
+        );
+        const grayRGB = convertCSSColorToRgba(gray);
+        const hsl = convertRgbToHsl(grayRGB.red, grayRGB.green, grayRGB.blue);
+        const adjustedGrayRGB = convertHslToRgb(
+            this.grayParams[GRAY_PARAMS.HUE],
+            Math.min(
+                Math.max(
+                    hsl.saturation + this.grayParams[GRAY_PARAMS.EXTRA_SATURATION],
+                    0,
+                ),
+                100,
+            ),
+            hsl.lightness,
+        );
+        return convertRgbaToCSSColor(
+            adjustedGrayRGB.red,
+            adjustedGrayRGB.green,
+            adjustedGrayRGB.blue,
+        );
+    }
+
+    getThemeOptionBlock(id, name, options) {
+        const el = this.document.createElement("div");
+        el.dataset.name = name;
+        this.document.body.appendChild(el);
+        this._cleanups.push(() => el.remove());
+        log.lifecycle("getThemeOptionBlock element attached", () => ({ id }));
+
+        options.selector = "*";
+
+        return {
+            id: id,
+            element: el,
+            hasOverlayOptions: false,
+            headerMiddleButton: false,
+            isClonable: false,
+            isRemovable: false,
+            options: [options],
+            optionsContainerTopButtons: [],
+            snippetModel: {},
+        };
+    }
+}
+
+export class CustomizeGrayAction extends BuilderAction {
+    static id = "customizeGray";
+    static dependencies = ["customizeWebsite", "themeTab"];
+    setup() {
+        this.preview = false;
+        this.dependencies.customizeWebsite.withCustomHistory(this);
+    }
+    getValue({ params: { mainParam: grayParamName } }) {
+        return this.dependencies.themeTab.getGrayParams()[grayParamName];
+    }
+    async apply({ params: { mainParam: grayParamName }, value }) {
+        log.pipeline("CustomizeGrayAction apply", () => ({ grayParamName, value }));
+        this.dependencies.themeTab.setGrayParams(grayParamName, parseInt(value));
+        for (let i = 1; i < 10; i++) {
+            const key = (100 * i).toString();
+            this.dependencies.themeTab.setGrays(
+                key,
+                this.dependencies.themeTab.buildGray(key),
+            );
+        }
+
+        await this.dependencies.customizeWebsite.customizeWebsiteColors(
+            this.dependencies.themeTab.getGrays(),
+            {
+                colorType: "gray",
+            },
+        );
+        setBuilderCSSVariables(getHtmlStyle(this.document));
+    }
+}
+export class ChangeColorPaletteAction extends CustomizeWebsiteVariableAction {
+    static id = "changeColorPalette";
+    static dependencies = ["customizeWebsite"];
+    setup() {
+        this.preview = false;
+        this.dependencies.customizeWebsite.withCustomHistory(this);
+    }
+    async load() {
+        const style = this.window.getComputedStyle(this.document.body);
+        const hasCustomizedColors = getCSSVariableValue("has-customized-colors", style);
+        log.logic("ChangeColorPaletteAction load", () => ({ hasCustomizedColors }));
+        if (hasCustomizedColors && hasCustomizedColors !== "false") {
+            return new Promise((resolve) => {
+                this.services.dialog.add(ConfirmationDialog, {
+                    body: _t(
+                        "Changing the color palette will reset all your color customizations, are you sure you want to proceed?",
+                    ),
+                    confirm: () => {
+                        log.logic(
+                            "ChangeColorPaletteAction load: user confirmed reset",
+                        );
+                        resolve(true);
+                    },
+                    cancel: () => {
+                        log.logic("ChangeColorPaletteAction load: user cancelled");
+                        resolve(false);
+                    },
+                });
+            });
+        }
+        return true;
+    }
+    async apply(context) {
+        if (!context.loadResult) {
+            log.logic("ChangeColorPaletteAction apply skip: palette change refused");
+            return;
+        }
+        await super.apply(context);
+        setBuilderCSSVariables(getHtmlStyle(this.document));
+    }
+}
+
+export class EditCustomCodeAction extends BuilderAction {
+    static id = "editCustomCode";
+    setup() {
+        this.canTimeout = false;
+    }
+    apply() {
+        log.lifecycle("EditCustomCodeAction apply: open EditHeadBodyDialog");
+        this.services.dialog.add(EditHeadBodyDialog);
+    }
+}
+
+export class ConfigureApiKeyAction extends BuilderAction {
+    static id = "configureApiKey";
+    static dependencies = ["googleMapsOption"];
+    setup() {
+        this.canTimeout = false;
+    }
+    apply() {
+        this.dependencies.googleMapsOption.configureGMapsAPI("");
+    }
+}
+
+export class CustomizePageLayout extends CustomizeWebsiteVariableAction {
+    static id = "customizePageLayout";
+
+    async apply(...args) {
+        await super.apply(...args);
+        log.pipeline("CustomizePageLayout apply: dispatch resize");
+        this.window.dispatchEvent(new Event("resize"));
+    }
+}
+
+registry.category("website-plugins").add(ThemeTabPlugin.id, ThemeTabPlugin);

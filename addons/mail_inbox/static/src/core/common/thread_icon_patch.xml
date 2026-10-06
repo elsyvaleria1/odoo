@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates>
+    <t t-name="mail_inbox.ThreadIcon" t-inherit="mail.ThreadIcon" t-inherit-mode="extension">
+        <xpath expr="//*[hasclass('o-mail-ThreadIcon')]" position="inside">
+            <t t-if="this.props.thread.channel_type === 'email'">
+                <div class="fa-solid fa-envelope text-muted" title="Email" />
+            </t>
+        </xpath>
+    </t>
+</templates>

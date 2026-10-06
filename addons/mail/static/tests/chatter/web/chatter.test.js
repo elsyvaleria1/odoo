@@ -1,0 +1,1113 @@
+// @ts-check
+import {
+    click,
+    contains,
+    defineMailModels,
+    dragenterFiles,
+    dropFiles,
+    insertText,
+    listenStoreFetch,
+    onRpcBefore,
+    openFormView,
+    patchUiSize,
+    registerArchs,
+    scroll,
+    SIZES,
+    start,
+    startServer,
+    STORE_FETCH_ROUTES,
+    triggerHotkey,
+    waitStoreFetch,
+} from "@mail/../tests/mail_test_helpers";
+import { DELAY_FOR_SPINNER, WebChatter } from "@mail/chatter/web/web_chatter";
+import { Chatter } from "@mail/chatter/web_portal/chatter";
+import { describe, expect, test } from "@odoo/hoot";
+import { queryFirst } from "@odoo/hoot-dom";
+import { advanceTime, Deferred } from "@odoo/hoot-mock";
+import { Component, getDefault, proxy, useProps, xml } from "@odoo/owl";
+import {
+    asyncStep,
+    clickFieldDropdown,
+    clickFieldDropdownItem,
+    defineActions,
+    getService,
+    makeServerError,
+    mockService,
+    mountWithCleanup,
+    onRpc,
+    patchWithCleanup,
+    serverState,
+    waitForSteps,
+} from "@web/../tests/web_test_helpers";
+import { browser } from "@web/core/browser/browser";
+
+describe.current.tags("desktop");
+defineMailModels();
+
+test("simple chatter on a record", async () => {
+    const pyEnv = await startServer();
+    onRpcBefore((route, args) => {
+        if (
+            (route.startsWith("/mail") || route.startsWith("/discuss")) &&
+            !STORE_FETCH_ROUTES.includes(route)
+        ) {
+            asyncStep(`${route} - ${JSON.stringify(args)}`);
+        }
+    });
+    listenStoreFetch(undefined, { logParams: ["mixin.mail.thread"] });
+    await start();
+    await waitStoreFetch([
+        "failures",
+        "systray_get_activities",
+        "init_messaging",
+        "/mail/messaging_menu/initialize_counters",
+    ]);
+    const partnerId = pyEnv["res.partner"].create({ name: "John Doe" });
+    await openFormView("res.partner", partnerId);
+    await contains(".o-mail-Chatter-topbar");
+    await contains(".o-mail-Thread");
+    await waitStoreFetch(
+        [
+            [
+                "mixin.mail.thread",
+                {
+                    access_params: {},
+                    request_list: [
+                        "activities",
+                        "attachments",
+                        "contact_fields",
+                        "followers",
+                        "scheduledMessages",
+                        "suggestedRecipients",
+                    ],
+                    thread_id: partnerId,
+                    thread_model: "res.partner",
+                },
+            ],
+        ],
+        {
+            ignoreOrder: true,
+            stepsAfter: [
+                `/mail/thread/messages - {"thread_id":${partnerId},"thread_model":"res.partner","fetch_params":{"limit":30}}`,
+            ],
+        },
+    );
+});
+
+test("can post a message on a record thread", async () => {
+    const pyEnv = await startServer();
+    const partnerId = pyEnv["res.partner"].create({ name: "John Doe" });
+    onRpcBefore("/mail/message/post", (args) => {
+        asyncStep("/mail/message/post");
+        const expected = {
+            context: args.context,
+            post_data: {
+                body: "hey",
+                email_add_signature: true,
+                message_type: "comment",
+                subtype_xmlid: "mail.mt_comment",
+            },
+            thread_id: partnerId,
+            thread_model: "res.partner",
+        };
+        expect(args).toEqual(expected);
+    });
+    await start();
+    await openFormView("res.partner", partnerId);
+    await contains("button", { text: "Send message" });
+    await contains(".o-mail-Composer", { count: 0 });
+    await click("button", { text: "Send message" });
+    await contains(".o-mail-Composer");
+    await insertText(".o-mail-Composer-input", "hey");
+    await contains(".o-mail-Message", { count: 0 });
+    await click(".o-mail-Composer button[aria-label='Send']:enabled");
+    await contains(".o-mail-Message");
+    await waitForSteps(["/mail/message/post"]);
+});
+
+test("composer stays usable after a failed message post (not bricked)", async () => {
+    const pyEnv = await startServer();
+    const partnerId = pyEnv["res.partner"].create({ name: "John Doe" });
+    onRpc("/mail/message/post", () => {
+        throw makeServerError({ message: "post boom" });
+    });
+    await start();
+    await openFormView("res.partner", partnerId);
+    await click("button", { text: "Send message" });
+    await insertText(".o-mail-Composer-input", "hey");
+    expect.errors(1);
+    await click(".o-mail-Composer button[aria-label='Send']:enabled");
+    await contains(".o-mail-Composer button[aria-label='Send']:enabled");
+    await contains(".o-mail-Composer-input", { value: "hey" });
+    await expect.waitForErrors([/post boom/]);
+});
+
+test("can post a note on a record thread", async () => {
+    const pyEnv = await startServer();
+    const partnerId = pyEnv["res.partner"].create({ name: "John Doe" });
+    onRpcBefore("/mail/message/post", (args) => {
+        asyncStep("/mail/message/post");
+        const expected = {
+            context: args.context,
+            post_data: {
+                body: "hey",
+                email_add_signature: true,
+                message_type: "comment",
+                subtype_xmlid: "mail.mt_note",
+            },
+            thread_id: partnerId,
+            thread_model: "res.partner",
+        };
+        expect(args).toEqual(expected);
+    });
+    await start();
+    await openFormView("res.partner", partnerId);
+    await contains("button", { text: "Log note" });
+    await contains(".o-mail-Composer", { count: 0 });
+    await click("button", { text: "Log note" });
+    await contains(".o-mail-Composer");
+    await insertText(".o-mail-Composer-input", "hey");
+    await contains(".o-mail-Message", { count: 0 });
+    await click(".o-mail-Composer button:enabled", { text: "Log" });
+    await contains(".o-mail-Message");
+    await waitForSteps(["/mail/message/post"]);
+});
+
+test("No attachment loading spinner when creating records", async () => {
+    await start();
+    await openFormView("res.partner");
+    await contains("button[aria-label='Attach files']");
+    await contains("button[aria-label='Attach files'] .fa-spin", { count: 0 });
+});
+
+test("No attachment loading spinner when switching from loading record to creation of record", async () => {
+    const def = new Deferred();
+    const pyEnv = await startServer();
+    listenStoreFetch("mixin.mail.thread", {
+        async onRpc() {
+            asyncStep("before mixin.mail.thread");
+            await def;
+        },
+    });
+    await start();
+    const partnerId = pyEnv["res.partner"].create({ name: "John" });
+    await openFormView("res.partner", partnerId);
+    await contains("button[aria-label='Attach files']");
+    await advanceTime(DELAY_FOR_SPINNER);
+    await contains("button[aria-label='Attach files'] .fa-spin");
+    await click(".o_control_panel_main_buttons .o_form_button_create");
+    await contains("button[aria-label='Attach files'] .fa-spin", { count: 0 });
+    await waitForSteps(["before mixin.mail.thread"]);
+    def.resolve();
+    await waitStoreFetch("mixin.mail.thread");
+});
+
+test("Composer toggle state is kept when switching from aside to bottom", async () => {
+    await patchUiSize({ size: SIZES.XXL });
+    const pyEnv = await startServer();
+    await start();
+    const partnerId = pyEnv["res.partner"].create({ name: "John Doe" });
+    await openFormView("res.partner", partnerId);
+    await click("button", { text: "Send message" });
+    await contains(".o-mail-Form-chatter.o-aside .o-mail-Composer-input");
+    await patchUiSize({ size: SIZES.LG });
+    await contains(".o-mail-Form-chatter:not(.o-aside) .o-mail-Composer-input");
+});
+
+test("Textarea content is kept when switching from aside to bottom", async () => {
+    await patchUiSize({ size: SIZES.XXL });
+    const pyEnv = await startServer();
+    await start();
+    const partnerId = pyEnv["res.partner"].create({ name: "John Doe" });
+    await openFormView("res.partner", partnerId);
+    await click("button", { text: "Send message" });
+    await contains(".o-mail-Form-chatter.o-aside .o-mail-Composer-input");
+    await insertText(".o-mail-Composer-input", "Hello world !");
+    await patchUiSize({ size: SIZES.LG });
+    await contains(".o-mail-Form-chatter:not(.o-aside) .o-mail-Composer-input");
+    await contains(".o-mail-Composer-input", { value: "Hello world !" });
+});
+
+test("Composer type is kept when switching from aside to bottom", async () => {
+    await patchUiSize({ size: SIZES.XXL });
+    const pyEnv = await startServer();
+    await start();
+    const partnerId = pyEnv["res.partner"].create({ name: "John Doe" });
+    await openFormView("res.partner", partnerId);
+    await click("button", { text: "Log note" });
+    await patchUiSize({ size: SIZES.LG });
+    await contains(".o-mail-Form-chatter:not(.o-aside) .o-mail-Composer-input");
+    await contains("button.btn-primary", { text: "Log note" });
+    await contains("button:not(.btn-primary)", { text: "Send message" });
+});
+
+test("chatter: drop attachments", async () => {
+    const pyEnv = await startServer();
+    const partnerId = pyEnv["res.partner"].create({});
+    const text = new File(["hello, world"], "text.txt", { type: "text/plain" });
+    const text2 = new File(["hello, worldub"], "text2.txt", { type: "text/plain" });
+    const text3 = new File(["hello, world"], "text3.txt", { type: "text/plain" });
+    await start();
+    await openFormView("res.partner", partnerId);
+    await contains("button[aria-label='Attach files']:enabled");
+    const files = [text, text2];
+    await dragenterFiles(".o-mail-Chatter", files);
+    await contains(".o-Dropzone");
+    await contains(".o-mail-AttachmentContainer", { count: 0 });
+    await dropFiles(".o-Dropzone", files);
+    await contains(".o-mail-AttachmentContainer:not(.o-isUploading)", { count: 2 });
+    const extraFiles = [text3];
+    await dragenterFiles(".o-mail-Chatter", extraFiles);
+    await contains(".o-Dropzone");
+    await dropFiles(".o-Dropzone", extraFiles);
+    await contains(".o-mail-AttachmentContainer:not(.o-isUploading)", { count: 3 });
+});
+
+test("chatter: drop attachment should refresh thread data with hasParentReloadOnAttachmentsChange prop", async () => {
+    await patchUiSize({ size: SIZES.XXL });
+    const pyEnv = await startServer();
+    const partnerId = pyEnv["res.partner"].create({});
+    const textPdf = new File([new Uint8Array(1)], "text.pdf", {
+        type: "application/pdf",
+    });
+
+    await start();
+    await openFormView("res.partner", partnerId, {
+        arch: `
+            <form>
+                <sheet>
+                    <field name="name"/>
+                </sheet>
+                <div class="o_attachment_preview" />
+                <chatter reload_on_post="True" reload_on_attachment="True"/>
+            </form>`,
+    });
+    await contains("button[aria-label='Attach files']:enabled");
+    await dragenterFiles(".o-mail-Chatter", [textPdf]);
+    await contains(".o-Dropzone");
+    await dropFiles(".o-Dropzone", [textPdf]);
+    await contains(".o-mail-Attachment iframe", { count: 1 });
+});
+
+test("chatter: only a writable record registers its default main attachment", async () => {
+    await patchUiSize({ size: SIZES.XXL });
+    const pyEnv = await startServer();
+    const [readonlyId, writableId] = pyEnv["res.partner"].create([
+        { hasWriteAccess: false, name: "Read only" },
+        { name: "Writable" },
+    ]);
+    const [, writableAttachmentId] = pyEnv["ir.attachment"].create([
+        {
+            mimetype: "application/pdf",
+            name: "readonly.pdf",
+            res_id: readonlyId,
+            res_model: "res.partner",
+        },
+        {
+            mimetype: "application/pdf",
+            name: "writable.pdf",
+            res_id: writableId,
+            res_model: "res.partner",
+        },
+    ]);
+    onRpc("ir.attachment", "register_as_main_attachment", ({ args }) => {
+        asyncStep(`register_as_main_attachment ${args[0]}`);
+    });
+    const arch = `
+        <form>
+            <sheet>
+                <field name="name"/>
+            </sheet>
+            <div class="o_attachment_preview" />
+            <chatter/>
+        </form>`;
+    await start();
+    await openFormView("res.partner", readonlyId, { arch });
+    await contains(".o-mail-Attachment iframe");
+    await openFormView("res.partner", writableId, { arch });
+    await waitForSteps([`register_as_main_attachment ${writableAttachmentId}`]);
+});
+
+test("should display subject when subject isn't infered from the record", async () => {
+    const pyEnv = await startServer();
+    const partnerId = pyEnv["res.partner"].create({ name: "Demo" });
+    pyEnv["mail.message"].create({
+        body: "not empty",
+        model: "res.partner",
+        res_id: partnerId,
+        subject: "Salutations, voyageur",
+    });
+    await start();
+    await openFormView("res.partner", partnerId);
+    await contains(".o-mail-Message", {
+        text: "Subject: Salutations, voyageurnot empty",
+    });
+});
+
+test("should not display user notification messages in chatter", async () => {
+    const pyEnv = await startServer();
+    const partnerId = pyEnv["res.partner"].create({});
+    pyEnv["mail.message"].create({
+        message_type: "user_notification",
+        model: "res.partner",
+        res_id: partnerId,
+    });
+    await start();
+    await openFormView("res.partner", partnerId);
+    await contains(".o-mail-Thread", { text: "The conversation is empty." });
+    await contains(".o-mail-Message", { count: 0 });
+});
+
+test('post message with "CTRL-Enter" keyboard shortcut in chatter', async () => {
+    const pyEnv = await startServer();
+    const partnerId = pyEnv["res.partner"].create({});
+    await start();
+    await openFormView("res.partner", partnerId);
+    await click("button", { text: "Send message" });
+    await contains(".o-mail-Message", { count: 0 });
+    await insertText(".o-mail-Composer-input", "Test");
+    triggerHotkey("control+Enter");
+    await contains(".o-mail-Message");
+});
+
+test("base rendering when chatter has no attachment", async () => {
+    const pyEnv = await startServer();
+    const partnerId = pyEnv["res.partner"].create({});
+    for (let i = 0; i < 60; i++) {
+        pyEnv["mail.message"].create({
+            body: "not empty",
+            model: "res.partner",
+            res_id: partnerId,
+        });
+    }
+    await start();
+    await openFormView("res.partner", partnerId);
+    await contains(".o-mail-Chatter");
+    await contains(".o-mail-Chatter-topbar");
+    await contains(".o-mail-AttachmentBox", { count: 0 });
+    await contains(".o-mail-Thread");
+    await contains(".o-mail-Message", { count: 30 });
+});
+
+test("base rendering when chatter has no record", async () => {
+    await start();
+    await openFormView("res.partner");
+    await contains(".o-mail-Chatter");
+    await contains(".o-mail-Chatter-topbar");
+    await contains(".o-mail-AttachmentBox", { count: 0 });
+    await contains(".o-mail-Chatter .o-mail-Thread");
+    await contains(".o-mail-Message");
+    await contains(".o-mail-Message-author", { text: "Mitchell Admin" });
+    await contains(".o-mail-Message-body", { text: "Creating a new record..." });
+    await contains("button", { count: 0, text: "Load More" });
+});
+
+test("base rendering when chatter has attachments", async () => {
+    const pyEnv = await startServer();
+    const partnerId = pyEnv["res.partner"].create({});
+    pyEnv["ir.attachment"].create([
+        {
+            mimetype: "text/plain",
+            name: "Blah.txt",
+            res_id: partnerId,
+            res_model: "res.partner",
+        },
+        {
+            mimetype: "text/plain",
+            name: "Blu.txt",
+            res_id: partnerId,
+            res_model: "res.partner",
+        },
+    ]);
+    await start();
+    await openFormView("res.partner", partnerId);
+    await contains(".o-mail-Chatter");
+    await contains(".o-mail-Chatter-topbar");
+    await contains(".o-mail-AttachmentBox", { count: 0 });
+});
+
+test("show attachment box", async () => {
+    const pyEnv = await startServer();
+    const partnerId = pyEnv["res.partner"].create({});
+    pyEnv["ir.attachment"].create([
+        {
+            mimetype: "text/plain",
+            name: "Blah.txt",
+            res_id: partnerId,
+            res_model: "res.partner",
+        },
+        {
+            mimetype: "text/plain",
+            name: "Blu.txt",
+            res_id: partnerId,
+            res_model: "res.partner",
+        },
+    ]);
+    await start();
+    await openFormView("res.partner", partnerId);
+    await contains(".o-mail-Chatter");
+    await contains(".o-mail-Chatter-topbar");
+    await contains("button[aria-label='Attach files']");
+    await contains("button[aria-label='Attach files']", { text: "2" });
+    await contains(".o-mail-AttachmentBox", { count: 0 });
+    await click("button[aria-label='Attach files']");
+    await contains(".o-mail-AttachmentBox");
+});
+
+test("composer show/hide on log note/send message", async () => {
+    const pyEnv = await startServer();
+    const partnerId = pyEnv["res.partner"].create({});
+    await start();
+    await openFormView("res.partner", partnerId);
+    await contains("button", { text: "Send message" });
+    await contains("button", { text: "Log note" });
+    await contains(".o-mail-Composer", { count: 0 });
+    await click("button", { text: "Send message" });
+    await contains(".o-mail-Composer");
+    expect(".o-mail-Composer-input").toBeFocused();
+    await click("button", { text: "Log note" });
+    await contains(".o-mail-Composer");
+    expect(".o-mail-Composer-input").toBeFocused();
+    await click("button", { text: "Log note" });
+    await contains(".o-mail-Composer", { count: 0 });
+    await click("button", { text: "Send message" });
+    await contains(".o-mail-Composer");
+    await click("button", { text: "Send message" });
+    await contains(".o-mail-Composer", { count: 0 });
+});
+
+test('do not post message with "Enter" keyboard shortcut', async () => {
+    const pyEnv = await startServer();
+    const partnerId = pyEnv["res.partner"].create({});
+    await start();
+    await openFormView("res.partner", partnerId);
+    await click("button", { text: "Send message" });
+    await contains(".o-mail-Message", { count: 0 });
+    await insertText(".o-mail-Composer-input", "Test");
+    triggerHotkey("Enter");
+    await contains(".o-mail-Message", { count: 0 });
+});
+
+test("should not display subject when subject is the same as the thread name", async () => {
+    const pyEnv = await startServer();
+    const partnerId = pyEnv["res.partner"].create({
+        name: "Salutations, voyageur",
+    });
+    pyEnv["mail.message"].create({
+        body: "not empty",
+        model: "res.partner",
+        res_id: partnerId,
+        subject: "Salutations, voyageur",
+    });
+    await start();
+    await openFormView("res.partner", partnerId);
+    await contains(".o-mail-Message", { text: "not empty" });
+    await contains(".o-mail-Message", {
+        count: 0,
+        text: "Subject: Salutations, voyageurnot empty",
+    });
+});
+
+// Beside a form whose control panel is laid over it, the chatter's top padding is
+// the panel's height, which grows with the breadcrumbs; a kept position is the
+// messages' offset under that padding, not the raw scrollTop.
+function chatterPaddingTop() {
+    return parseFloat(getComputedStyle(queryFirst(".o-mail-Chatter:first")).paddingTop);
+}
+
+test("scroll position is kept when navigating from one record to another", async () => {
+    await patchUiSize({ size: SIZES.XXL });
+    const pyEnv = await startServer();
+    const partnerId_1 = pyEnv["res.partner"].create({ name: "Harry Potter" });
+    const partnerId_2 = pyEnv["res.partner"].create({ name: "Ron Weasley" });
+    pyEnv["mail.message"].create(
+        Array(50)
+            .fill(0)
+            .map((_, index) => ({
+                body: "Non Empty Body ".repeat(25),
+                model: "res.partner",
+                res_id: index < 20 ? partnerId_1 : partnerId_2,
+            })),
+    );
+    await start();
+    await openFormView("res.partner", partnerId_1);
+    await contains(".o-mail-Message", { count: 20 });
+    const clientHeight1 = queryFirst(".o-mail-Chatter:first").clientHeight;
+    const padding1 = chatterPaddingTop();
+    const scrollValue1 = queryFirst(".o-mail-Chatter:first").scrollHeight / 2;
+    await contains(".o-mail-Chatter", { scroll: 0 });
+    await scroll(".o-mail-Chatter", scrollValue1);
+    await openFormView("res.partner", partnerId_2);
+    await contains(".o-mail-Message", { count: 30 });
+    const clientHeight2 = queryFirst(".o-mail-Chatter:first").clientHeight;
+    const padding2 = chatterPaddingTop();
+    const scrollValue2 = queryFirst(".o-mail-Chatter:first").scrollHeight / 3;
+    await scroll(".o-mail-Chatter", scrollValue2);
+    await openFormView("res.partner", partnerId_1);
+    await contains(".o-mail-Message", { count: 20 });
+    const clientHeight3 = queryFirst(".o-mail-Chatter:first").clientHeight;
+    await contains(".o-mail-Chatter", {
+        scroll:
+            scrollValue1 -
+            (clientHeight3 - clientHeight1) +
+            chatterPaddingTop() -
+            padding1,
+    });
+    await openFormView("res.partner", partnerId_2);
+    await contains(".o-mail-Message", { count: 30 });
+    const clientHeight4 = queryFirst(".o-mail-Chatter:first").clientHeight;
+    await contains(".o-mail-Chatter", {
+        scroll:
+            scrollValue2 -
+            (clientHeight4 - clientHeight2) +
+            chatterPaddingTop() -
+            padding2,
+    });
+});
+
+test("the aside chatter starts below an overlaid control panel and scrolls under it", async () => {
+    await patchUiSize({ size: SIZES.XXL });
+    const pyEnv = await startServer();
+    const partnerId = pyEnv["res.partner"].create({ name: "Harry Potter" });
+    pyEnv["mail.message"].create(
+        Array(20)
+            .fill(0)
+            .map(() => ({
+                body: "Non Empty Body ".repeat(25),
+                model: "res.partner",
+                res_id: partnerId,
+            })),
+    );
+    await start();
+    await openFormView("res.partner", partnerId);
+    await contains(".o-mail-Message", { count: 20 });
+    expect(".o_content.o_chrome_overlay .o-mail-Form-chatter.o-aside").toHaveCount(1);
+    const panelHeight = queryFirst(".o_control_panel").offsetHeight;
+    expect(panelHeight).toBeGreaterThan(0);
+    expect(chatterPaddingTop()).toBe(panelHeight);
+    expect(queryFirst(".o-mail-Form-chatter.o-aside")).toHaveStyle({
+        paddingTop: "0px",
+    });
+});
+
+test("basic chatter rendering", async () => {
+    const pyEnv = await startServer();
+    const partnerId = pyEnv["res.partner"].create({ display_name: "second partner" });
+    await start();
+    await openFormView("res.partner", partnerId, {
+        arch: `
+            <form string="Partners">
+                <sheet>
+                    <field name="name"/>
+                </sheet>
+                <chatter/>
+            </form>`,
+    });
+    await contains(".o-mail-Chatter");
+});
+
+test('chatter just contains "creating a new record" message during the creation of a new record after having displayed a chatter for an existing record', async () => {
+    const pyEnv = await startServer();
+    const partnerId = pyEnv["res.partner"].create({});
+    const views = {
+        "res.partner,false,form": `
+                <form string="Partners">
+                    <sheet>
+                        <field name="name"/>
+                    </sheet>
+                    <chatter/>
+                </form>`,
+    };
+    registerArchs(views);
+    await start();
+    await openFormView("res.partner", partnerId);
+    await click(".o_control_panel_main_buttons .o_form_button_create");
+    await contains(".o-mail-Message");
+    await contains(".o-mail-Message-body", { text: "Creating a new record..." });
+});
+
+test("should display subject when subject is not the same as the default subject", async () => {
+    const pyEnv = await startServer();
+    const fakeId = pyEnv["res.fake"].create({ name: "Salutations, voyageur" });
+    pyEnv["mail.message"].create({
+        body: "not empty",
+        model: "res.fake",
+        res_id: fakeId,
+        subject: "Another Subject",
+    });
+    await start();
+    await openFormView("res.fake", fakeId);
+    await contains(".o-mail-Message", { text: "Subject: Another Subjectnot empty" });
+});
+
+test("should not display subject when subject is the same as the default subject", async () => {
+    const pyEnv = await startServer();
+    const fakeId = pyEnv["res.fake"].create({ name: "Salutations, voyageur" });
+    pyEnv["mail.message"].create({
+        body: "not empty",
+        model: "res.fake",
+        res_id: fakeId,
+        subject: "Custom Default Subject",
+    });
+    await start();
+    await openFormView("res.fake", fakeId);
+    await contains(".o-mail-Message", { text: "not empty" });
+    await contains(".o-mail-Message", {
+        count: 0,
+        text: "Subject: Custom Default Subjectnot empty",
+    });
+});
+
+test("should not display subject when subject is the same as the thread name with custom default subject", async () => {
+    const pyEnv = await startServer();
+    const fakeId = pyEnv["res.fake"].create({ name: "Salutations, voyageur" });
+    pyEnv["mail.message"].create({
+        body: "not empty",
+        model: "res.fake",
+        res_id: fakeId,
+        subject: "Salutations, voyageur",
+    });
+    await start();
+    await openFormView("res.fake", fakeId);
+    await contains(".o-mail-Message", { text: "not empty" });
+    await contains(".o-mail-Message", {
+        count: 0,
+        text: "Subject: Custom Default Subjectnot empty",
+    });
+});
+
+test("chatter updating", async () => {
+    const pyEnv = await startServer();
+    const [partnerId_1, partnerId_2] = pyEnv["res.partner"].create([
+        { display_name: "first partner" },
+        { display_name: "second partner" },
+    ]);
+    pyEnv["mail.message"].create({
+        body: "not empty",
+        model: "res.partner",
+        res_id: partnerId_2,
+    });
+    await start();
+    await openFormView("res.partner", partnerId_1, {
+        arch: `
+            <form string="Partners">
+                <sheet>
+                    <field name="name"/>
+                </sheet>
+                <chatter/>
+            </form>`,
+        resIds: [partnerId_1, partnerId_2],
+    });
+    await click(".o_pager_next");
+    await contains(".o-mail-Message");
+});
+
+test("chatter message actions appear only after saving the form", async () => {
+    await start();
+    await openFormView("res.partner");
+    await contains(".o-mail-Message");
+    await contains(".o-mail-Message-actions", { count: 0 });
+    await click(".o_form_button_save");
+    await click("button", { text: "Send message" });
+    await insertText(".o-mail-Composer-input", "hey");
+    await click(".o-mail-Composer-send:enabled");
+    await contains(".o-mail-Message-actions");
+});
+
+test("post message on draft record", async () => {
+    await start();
+    await openFormView("res.partner", undefined, {
+        arch: `
+            <form string="Partners">
+                <sheet>
+                    <field name="name"/>
+                </sheet>
+                <chatter/>
+            </form>`,
+    });
+    await click("button", { text: "Send message" });
+    await insertText(".o-mail-Composer-input", "Test");
+    await click(".o-mail-Composer button[aria-label='Send']:enabled");
+    await contains(".o-mail-Message");
+    await contains(".o-mail-Message-content", { text: "Test" });
+});
+
+test("schedule activities on draft record should prompt with scheduling an activity (proceed with action)", async () => {
+    const wizardOpened = new Deferred();
+    mockService("action", {
+        doAction(action, options) {
+            if (typeof action !== "object" || action.res_model === "res.partner") {
+                return super.doAction(...arguments);
+            } else if (action.res_model === "wizard.mail.activity.schedule") {
+                asyncStep("wizard.mail.activity.schedule");
+                expect(action.context.active_model).toBe("res.partner");
+                expect(Number(action.context.active_id)).toBeGreaterThan(0);
+                options.onClose();
+                wizardOpened.resolve();
+            } else {
+                asyncStep("Unexpected action" + action.res_model);
+            }
+        },
+    });
+    await start();
+    await openFormView("res.partner", undefined, {
+        arch: `
+            <form string="Partners">
+                <sheet>
+                    <field name="name"/>
+                </sheet>
+                <chatter/>
+            </form>`,
+    });
+    await click("button", { text: "Activity" });
+    await wizardOpened;
+    await waitForSteps(["wizard.mail.activity.schedule"]);
+});
+
+test("upload attachment on draft record", async () => {
+    const text = new File(["hello, world"], "text.text", { type: "text/plain" });
+    await start();
+    await openFormView("res.partner", undefined, {
+        arch: `
+            <form string="Partners">
+                <sheet>
+                    <field name="name"/>
+                </sheet>
+                <chatter/>
+            </form>`,
+    });
+    await contains("button[aria-label='Attach files']");
+    await contains("button[aria-label='Attach files']", { count: 0, text: "1" });
+    await dragenterFiles(".o-mail-Chatter", [text]);
+    await dropFiles(".o-Dropzone", [text]);
+    await contains("button[aria-label='Attach files']", { text: "1" });
+});
+
+test("Follower count of draft record is set to 0", async () => {
+    await start();
+    await openFormView("res.partner");
+    await contains(".o-mail-Followers", { text: "0" });
+});
+
+test("Mentions in composer should still work when using pager", async () => {
+    const pyEnv = await startServer();
+    const [partnerId_1, partnerId_2] = pyEnv["res.partner"].create([
+        { display_name: "Partner 1" },
+        { display_name: "Partner 2" },
+    ]);
+    await patchUiSize({ size: SIZES.LG });
+    await start();
+    await openFormView("res.partner", partnerId_1, {
+        resIds: [partnerId_1, partnerId_2],
+    });
+    await click("button", { text: "Log note" });
+    await click(".o_pager_next");
+    await insertText(".o-mail-Composer-input", "@");
+    await contains(".o-mail-Composer-suggestion", { count: 3 });
+});
+
+test("form views in dialogs do not have chatter", async () => {
+    defineActions([
+        {
+            id: 1,
+            name: "Partner",
+            res_model: "res.partner",
+            views: [[false, "form"]],
+            target: "new",
+        },
+    ]);
+    await start();
+    await getService("action").doAction(1);
+    await contains(".o_dialog .o_form_view");
+    await contains(".o-mail-Form-Chatter", { count: 0 });
+});
+
+test("should display the subject even if the record name is false", async () => {
+    const pyEnv = await startServer();
+    const fakeId = pyEnv["res.fake"].create({ name: false });
+    pyEnv["mail.message"].create({
+        body: "not empty",
+        model: "res.fake",
+        res_id: fakeId,
+        subject: "Salutations, voyageur",
+    });
+    await start();
+    await openFormView("res.fake", fakeId);
+    await contains(".o-mail-Message", {
+        text: "Subject: Salutations, voyageurnot empty",
+    });
+});
+
+test("Update message recipients without saving", async () => {
+    const pyEnv = await startServer();
+    pyEnv["res.partner"].write([serverState.partnerId], { email: "mitchell@odoo.com" });
+    const partnerId = pyEnv["res.partner"].create({
+        name: "John Doe",
+        email: "john@doe.be",
+    });
+    const fakeId = pyEnv["res.fake"].create({
+        name: "John Doe",
+        partner_id: partnerId,
+    });
+    await start();
+    await openFormView("res.fake", fakeId);
+    await click("button", { text: "Send message" });
+    await contains(".o-mail-RecipientsInput .o_tag_badge_text", { text: "John Doe" });
+    await click(".o_field_many2one_selection input");
+    await click(".o-autocomplete--dropdown-item", { text: "Mitchell Admin" });
+    await contains(".o-mail-RecipientsInput .o_tag_badge_text", {
+        text: "Mitchell Admin",
+    });
+});
+
+test("Update primary email in recipient without saving", async () => {
+    const pyEnv = await startServer();
+    pyEnv["res.partner"].write([serverState.partnerId], { email: "mitchell@odoo.com" });
+    const partnerId = pyEnv["res.partner"].create({
+        name: "John Doe",
+        email: "john@doe.be",
+    });
+    const fakeId = pyEnv["res.fake"].create({
+        name: "Fake record",
+        partner_id: partnerId,
+    });
+    await start();
+    await openFormView("res.fake", fakeId);
+    await click("button", { text: "Send message" });
+    await insertText("div[name='email_cc'] input", "test@test.be");
+    /** @type {HTMLElement} */ (
+        document.querySelector("div[name='email_cc'] input")
+    ).blur();
+    await contains(".o-mail-RecipientsInput .o_tag_badge_text", {
+        text: "test@test.be",
+    });
+});
+
+test("form view mounts WebChatter; base Chatter statics stay portal-clean", async () => {
+    expect(Object.getPrototypeOf(WebChatter)).toBe(Chatter);
+    expect("record" in Chatter.props).toBe(false);
+    expect("Activity" in Chatter.components).toBe(false);
+    expect("isInFormSheetBg" in Chatter.props).toBe(false);
+    expect("record" in WebChatter.props).toBe(true);
+    expect("Activity" in WebChatter.components).toBe(true);
+    expect(getDefault(WebChatter.props.isInFormSheetBg)?.()).toBe(true);
+    const setupClasses = new Set();
+    patchWithCleanup(Chatter.prototype, {
+        setup() {
+            setupClasses.add(this.constructor);
+            super.setup(...arguments);
+        },
+    });
+    const pyEnv = await startServer();
+    const partnerId = pyEnv["res.partner"].create({ name: "John Doe" });
+    await start();
+    await openFormView("res.partner", partnerId);
+    await contains(".o-mail-Chatter-topbar");
+    expect(setupClasses.size).toBe(1);
+    expect(setupClasses.has(WebChatter)).toBe(true);
+});
+
+test("failed implicit save from a chatter action keeps the user's dirty edits", async () => {
+    const pyEnv = await startServer();
+    const partnerId = pyEnv["res.partner"].create({ name: "John Doe" });
+    onRpc("res.partner", "web_read", () => asyncStep("web_read"));
+    await start();
+    await openFormView("res.partner", partnerId, {
+        arch: `
+            <form>
+                <sheet>
+                    <field name="name" required="1"/>
+                </sheet>
+                <chatter/>
+            </form>`,
+    });
+    await waitForSteps(["web_read"]);
+    await insertText(".o_field_widget[name='name'] input", "", { replace: true });
+    await click("[title='Show Followers']");
+    await click(".o-dropdown-item", { text: "Follow" });
+    await contains(".o_notification", { text: "Missing required fields" });
+    await waitForSteps([]);
+    await contains(".o_field_widget[name='name'] input", { value: "" });
+});
+
+test("files dropped on an unsaved record are attached to the saved record", async () => {
+    const pyEnv = await startServer();
+    await start();
+    await openFormView("res.partner", undefined, {
+        arch: `
+            <form>
+                <sheet>
+                    <field name="name"/>
+                </sheet>
+                <chatter/>
+            </form>`,
+    });
+    await insertText(".o_field_widget[name='name'] input", "John Doe");
+    const files = [new File(["hello"], "text.txt", { type: "text/plain" })];
+    await dragenterFiles(".o-mail-Chatter", files);
+    await contains(".o-Dropzone");
+    await dropFiles(".o-Dropzone", files);
+    await contains(".o-mail-AttachmentContainer:not(.o-isUploading)");
+    await contains(".o-mail-AttachmentContainer", { text: "text.txt" });
+    const [attachment] = pyEnv["ir.attachment"].search_read([
+        ["name", "=", "text.txt"],
+    ]);
+    const [partnerId] = pyEnv["res.partner"].search([["name", "=", "John Doe"]]);
+    expect(attachment.res_model).toBe("res.partner");
+    expect(attachment.res_id).toBe(partnerId);
+});
+
+test("a log note asked for while the record loads opens once it has loaded", async () => {
+    const pyEnv = await startServer();
+    const partnerId = pyEnv["res.partner"].create({ name: "John Doe" });
+    await start();
+    class Parent extends Component {
+        static components = { WebChatter };
+        static props = {};
+        static template = xml`<WebChatter threadModel="'res.partner'" threadId="this.state.threadId"/>`;
+        props = useProps(this.constructor.props);
+
+        setup() {
+            this.state = proxy({ threadId: /** @type {number|false} */ (false) });
+        }
+    }
+    const parent = await mountWithCleanup(Parent);
+    await click(".o-mail-Chatter-logNote");
+    await contains(".o-mail-Composer", { count: 0 });
+    parent.state.threadId = partnerId;
+    await contains(".o-mail-Composer-input");
+});
+
+test("composer does not pop up from an earlier failed save", async () => {
+    await start();
+    await openFormView("res.partner", undefined, {
+        arch: `
+            <form>
+                <sheet>
+                    <field name="name" required="1"/>
+                </sheet>
+                <chatter/>
+            </form>`,
+    });
+    await click("button", { text: "Send message" });
+    await contains(".o_notification", { text: "Missing required fields" });
+    await contains(".o-mail-Composer", { count: 0 });
+    await insertText(".o_field_widget[name='name'] input", "John Doe");
+    await click(".o_form_button_save");
+    await contains("button[aria-label='Attach files']:enabled");
+    await contains(".o-mail-Composer", { count: 0 });
+});
+
+test("leaving a record does not re-fetch the record being left", async () => {
+    const pyEnv = await startServer();
+    const partnerId = pyEnv["res.partner"].create({ name: "John" });
+    /** @type {number[]} */
+    const fetchedThreadIds = [];
+    onRpcBefore((route, args) => {
+        if (!STORE_FETCH_ROUTES.includes(route)) {
+            return;
+        }
+        for (const [name, params] of args.fetch_params ?? []) {
+            if (name === "mixin.mail.thread") {
+                fetchedThreadIds.push(params.thread_id);
+            }
+        }
+    });
+    await start();
+    await openFormView("res.partner", partnerId);
+    await contains("button[aria-label='Attach files']");
+    await advanceTime(1000);
+    expect(fetchedThreadIds).toEqual([partnerId]);
+
+    await click(".o_control_panel_main_buttons .o_form_button_create");
+    await advanceTime(1000);
+    expect(fetchedThreadIds).toEqual([partnerId]);
+});
+
+test("saving a record still refreshes its chatter data", async () => {
+    const pyEnv = await startServer();
+    const partnerId = pyEnv["res.partner"].create({ name: "John" });
+    /** @type {number[]} */
+    const fetchedThreadIds = [];
+    onRpcBefore((route, args) => {
+        if (!STORE_FETCH_ROUTES.includes(route)) {
+            return;
+        }
+        for (const [name, params] of args.fetch_params ?? []) {
+            if (name === "mixin.mail.thread") {
+                fetchedThreadIds.push(params.thread_id);
+            }
+        }
+    });
+    await start();
+    await openFormView("res.partner", partnerId, {
+        arch: `
+            <form string="Partners">
+                <sheet>
+                    <field name="name"/>
+                </sheet>
+                <chatter/>
+            </form>`,
+    });
+    await contains("button[aria-label='Attach files']");
+    await advanceTime(1000);
+    expect(fetchedThreadIds).toEqual([partnerId]);
+    await insertText(".o_field_widget[name='name'] input", "ny", { replace: true });
+    await click(".o_form_button_save");
+    await advanceTime(1000);
+    expect(fetchedThreadIds).toEqual([partnerId, partnerId]);
+});
+
+test("the message composer shows before the suggested recipients have been fetched", async () => {
+    const pyEnv = await startServer();
+    pyEnv["res.partner"].create({ name: "Peter Johnson", email: "peter@johnson.be" });
+    const fakeId = pyEnv["res.fake"].create({});
+    const recipientsFetched = new Deferred();
+    onRpc("/mail/thread/recipients/get_suggested_recipients", async () => {
+        asyncStep("get_suggested_recipients");
+        await recipientsFetched;
+    });
+    await start();
+    await openFormView("res.fake", fakeId, {
+        arch: `
+            <form>
+                <sheet>
+                    <field name="partner_id"/>
+                </sheet>
+                <chatter/>
+            </form>`,
+    });
+    await clickFieldDropdown("partner_id");
+    await clickFieldDropdownItem("partner_id", "Peter Johnson");
+    await click("button", { text: "Send message" });
+    await waitForSteps(["get_suggested_recipients"]);
+    await contains(".o-mail-Composer");
+    await contains(".o-mail-RecipientsInput");
+    recipientsFetched.resolve();
+    await contains(".o-mail-Composer");
+});
+
+test("the aside chatter's collapsed state is stored and follows another tab", async () => {
+    patchUiSize({ size: SIZES.XXL });
+    const pyEnv = await startServer();
+    const partnerId = pyEnv["res.partner"].create({ name: "John Doe" });
+    await start();
+    await openFormView("res.partner", partnerId);
+    await contains(".o-mail-Form-chatter.o-aside");
+    await contains(".o-mail-Chatter-collapsed", { count: 0 });
+    await click(".o-mail-Chatter-collapse");
+    await contains(".o-mail-Chatter-collapsed");
+    expect(browser.localStorage.getItem("chatter_aside_collapsed")).toBe("true");
+    window.dispatchEvent(
+        new StorageEvent("storage", {
+            key: "chatter_aside_collapsed",
+            newValue: "false",
+        }),
+    );
+    await contains(".o-mail-Chatter-collapsed", { count: 0 });
+    await click(".o-mail-Chatter-collapse");
+    await contains(".o-mail-Chatter-collapsed");
+    await click(".o-mail-Chatter-collapsed");
+    await contains(".o-mail-Chatter-collapsed", { count: 0 });
+    expect(browser.localStorage.getItem("chatter_aside_collapsed")).toBe("false");
+});

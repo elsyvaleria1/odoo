@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Root Menus -->
+    <menuitem
+        id="menu_hr_payroll_root"
+        name="Payroll"
+        sequence="190"
+        groups="hr.group_hr_manager"
+        web_icon="hr_payroll,static/description/icon.png" />
+
+    <menuitem
+        id="menu_hr_payroll_work_entries_root"
+        name="Work Entries"
+        parent="menu_hr_payroll_root"
+        sequence="60"
+        groups="hr.group_hr_manager" />
+
+    <menuitem
+        id="menu_hr_payroll_configuration"
+        name="Configuration"
+        parent="menu_hr_payroll_root"
+        sequence="100"
+        groups="hr.group_hr_manager" />
+
+    <!-- **** Work Entries **** -->
+    <menuitem
+        id="menu_work_entry"
+        name="Work Entries"
+        parent="menu_hr_payroll_work_entries_root"
+        action="hr_work_entry.hr_work_entry_action"
+        sequence="25" />
+
+    <!-- Work entries Configuration -->
+    <menuitem
+        id="menu_hr_work_entry_configuration"
+        name="Work Entries"
+        parent="menu_hr_payroll_configuration"
+        sequence="50" />
+
+    <menuitem
+        id="menu_hr_work_entry_type_view"
+        parent="menu_hr_work_entry_configuration"
+        action="hr_work_entry.hr_work_entry_type_action" />
+
+    <menuitem
+        id="menu_resource_calendar_view"
+        parent="menu_hr_work_entry_configuration"
+        action="resource.action_resource_calendar_form"
+        sequence="20" />
+
+</odoo>

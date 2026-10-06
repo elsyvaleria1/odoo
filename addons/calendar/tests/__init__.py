@@ -1,0 +1,29 @@
+from . import test_access_rights
+from . import test_attendees
+from . import test_calendar
+from . import test_calendar_activity
+from . import test_calendar_controller
+from . import test_calendar_reservation
+from . import test_calendar_recurrence_legacy
+from . import test_calendar_tour
+from . import test_event_recurrence
+from . import test_event_notifications
+from . import test_mail_activity_mixin
+from . import test_privacy_delegation
+from . import test_res_partner
+from . import test_recurrence_rule
+from . import test_res_users
+from . import test_regressions
+from . import test_calendar_stop_create
+from . import test_discuss_meetings
+
+from .booking import *
+
+from . import test_booking_consolidation
+
+from . import test_booking_migration
+from . import test_base_signature_calls
+from . import test_invitation_links
+from . import test_home_tile_agenda
+from . import test_sealed_tokens
+from . import test_recurrence_owner

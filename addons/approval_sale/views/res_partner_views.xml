@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_res_partner_filter_sale_approval" model="ir.ui.view">
+        <field name="name">res.partner.filter.sale.approval</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_res_partner_filter" />
+        <field name="arch" type="xml">
+
+            <xpath expr="//filter[@name='customer']" position="after">
+                <filter
+                    name="so_approval_required"
+                    string="Requires SO Approval"
+                    help="Customers that require sales order approval"
+                    domain="[('so_approval_required', '=', True), ('customer_rank', '&gt;', 0)]"
+                    groups="sale.group_sale_manager" />
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_partner_list_sale_approval" model="ir.ui.view">
+        <field name="name">res.partner.list.sale.approval</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_tree" />
+        <field name="arch" type="xml">
+
+            <xpath expr="//field[@name='complete_name']" position="after">
+                <field
+                    name="so_approval_required"
+                    string="SO Approval"
+                    widget="boolean_toggle"
+                    optional="hide" />
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_partner_form_sale_approval" model="ir.ui.view">
+        <field name="name">res.partner.form.sale.approval</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_form" />
+        <field name="arch" type="xml">
+
+            <group name="sale" position="inside">
+                <field
+                    name="so_approval_required"
+                    string="Requires Approval"
+                    widget="boolean_toggle"
+                    groups="sale.group_sale_manager"
+                    invisible="not customer_rank" />
+                <div
+                    class="text-muted"
+                    colspan="2"
+                    invisible="not customer_rank or not so_approval_required"
+                    groups="sale.group_sale_manager">
+                    When enabled, all sales orders for this customer
+                    will require approval regardless of amount.
+                </div>
+                <field
+                    name="so_approval_notes"
+                    string="Approval Notes"
+                    placeholder="Add special instructions or notes for approvers regarding sales orders for this customer...&#10;&#10;Example: 'New customer - verify credit limit and payment terms before approving first order'"
+                    colspan="2"
+                    groups="sale.group_sale_manager"
+                    invisible="not customer_rank" />
+                <div
+                    class="alert alert-info"
+                    colspan="2"
+                    invisible="not customer_rank or not so_approval_required"
+                    groups="sale.group_sale_manager"
+                    role="alert">
+                    <strong>Approval Required:</strong> This customer is flagged for sales order
+                    approval. All sales orders for this customer will require approval through
+                    the configured approval workflow. </div>
+            </group>
+        </field>
+    </record>
+
+</odoo>

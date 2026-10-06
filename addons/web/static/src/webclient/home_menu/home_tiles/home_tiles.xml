@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="web.HomeTiles">
+        <div t-if="this.tiles.length or this.props.editing" class="o_home_data_tiles" t-ref="this.rootRef">
+        <div class="visually-hidden" role="status" t-out="this.state.announcement"/>
+        <section t-foreach="this.tiles" t-as="tile" t-key="tile.id"
+                 class="o_home_tile o_home_data_tile"
+                 t-att-class="{ o_home_tile_wide: tile.size === '2x1', o_draggable: this.props.editing }"
+                 t-att-data-tile-id="tile.id"
+                 t-att-data-tile-type="tile.type"
+                 t-att-aria-busy="this.isLoading(tile) ? 'true' : undefined"
+                 t-att-aria-label="this.titleOf(tile)">
+            <div class="o_home_tile_header">
+                <span class="o_home_tile_heading">
+                    <span class="o_home_tile_title text-truncate" t-out="this.titleOf(tile)"/>
+                </span>
+                <t t-if="this.props.editing">
+                    <button type="button" class="btn btn-link o_home_data_tile_move_earlier"
+                            t-att-disabled="this.saving or tile_index === 0" t-att-title="this.moveTitle(tile, -1)" t-att-aria-label="this.moveTitle(tile, -1)"
+                            t-on-click="() => this.move(tile, -1)">
+                        <i class="fa fa-chevron-left" aria-hidden="true"/>
+                    </button>
+                    <button type="button" class="btn btn-link o_home_data_tile_move_later"
+                            t-att-disabled="this.saving or tile_index === this.tiles.length - 1" t-att-title="this.moveTitle(tile, 1)" t-att-aria-label="this.moveTitle(tile, 1)"
+                            t-on-click="() => this.move(tile, 1)">
+                        <i class="fa fa-chevron-right" aria-hidden="true"/>
+                    </button>
+                    <button t-if="this.settingsOf(tile)" type="button" class="btn btn-link o_home_data_tile_configure"
+                            t-att-disabled="this.saving" title="Choose what it shows" aria-label="Choose what it shows"
+                            t-att-aria-expanded="this.state.configuring === tile.id ? 'true' : 'false'"
+                            t-on-click="() => this.toggleSettings(tile)">
+                        <i class="fa fa-sliders" aria-hidden="true"/>
+                    </button>
+                    <button t-if="this.canResize(tile)" type="button" class="btn btn-link o_home_data_tile_resize"
+                            t-att-disabled="this.saving" title="Change size" aria-label="Change size"
+                            t-on-click="() => this.resize(tile)">
+                        <i class="fa fa-arrows-h" aria-hidden="true"/>
+                    </button>
+                    <button type="button" class="btn btn-link o_home_data_tile_remove"
+                            t-att-disabled="this.saving" title="Remove tile" aria-label="Remove tile"
+                            t-on-click="() => this.remove(tile)">
+                        <i class="fa fa-times" aria-hidden="true"/>
+                    </button>
+                </t>
+            </div>
+            <div class="o_home_tile_body">
+                <t t-if="this.props.editing and this.state.configuring === tile.id"
+                   t-component="this.settingsOf(tile)" settings="tile.settings || {}"
+                   onSave="(settings) => this.configure(tile, settings)"
+                   onCancel="() => this.toggleSettings(tile)"/>
+                <div t-elif="this.isLoading(tile)" class="o_home_data_tile_skeleton d-flex flex-column gap-2" aria-hidden="true">
+                    <span class="o_skeleton rounded" style="width: 80%; height: 12px;"/>
+                    <span class="o_skeleton rounded" style="width: 60%; height: 12px;"/>
+                    <span class="o_skeleton rounded" style="width: 70%; height: 12px;"/>
+                </div>
+                <div t-elif="this.errorOf(tile)" class="o_home_data_tile_error text-muted small" role="status" t-out="this.errorOf(tile)"/>
+                <HomeTileBoundary t-elif="this.componentOf(tile)">
+                    <t t-set-slot="fallback">
+                        <div class="o_home_data_tile_error text-muted small" role="status">This tile could not be loaded.</div>
+                    </t>
+                    <t t-component="this.componentOf(tile)" data="this.dataOf(tile)" size="tile.size"/>
+                </HomeTileBoundary>
+            </div>
+        </section>
+        <div t-if="this.props.editing" class="o_home_tile o_home_data_tile_add">
+            <button type="button" class="btn o_home_data_tile_add_button" t-att-disabled="this.saving"
+                    t-att-aria-expanded="this.state.picking ? 'true' : 'false'" t-on-click="() => this.togglePicker()">
+                <i class="fa fa-plus me-2" aria-hidden="true"/>Add tile
+            </button>
+            <ul t-if="this.state.picking" class="list-unstyled mb-0 o_home_data_tile_picker">
+                <li t-foreach="this.addableTypes" t-as="entry" t-key="entry.type">
+                    <button type="button" class="btn btn-link o_home_data_tile_pick" t-on-click="() => this.add(entry.type)" t-out="entry.name"/>
+                </li>
+            </ul>
+        </div>
+        </div>
+    </t>
+
+</templates>

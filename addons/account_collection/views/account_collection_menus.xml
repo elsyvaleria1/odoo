@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <menuitem
+        id="menu_account_collection_receivables"
+        name="Field Collections"
+        parent="account.menu_finance_receivables"
+        sequence="16"
+        groups="account.group_account_invoice,account.group_account_readonly">
+        <menuitem
+            id="menu_account_payment_custody"
+            action="action_account_payment_custody"
+            sequence="1" />
+        <menuitem
+            id="menu_account_collection_remittance"
+            action="action_account_collection_remittance"
+            sequence="2" />
+        <menuitem
+            id="menu_account_collection_custody_report"
+            action="action_account_collection_custody_report"
+            sequence="3" />
+    </menuitem>
+
+    <menuitem
+        id="menu_account_collection_root"
+        name="Collections"
+        sequence="56"
+        groups="group_collection_collector"
+        web_icon="account,static/description/icon.png">
+        <menuitem
+            id="menu_account_collection_my_custody"
+            name="My Custody"
+            action="action_account_payment_custody"
+            sequence="1" />
+        <menuitem
+            id="menu_account_collection_my_remittances"
+            name="My Remittances"
+            action="action_account_collection_remittance"
+            sequence="2" />
+    </menuitem>
+
+</odoo>

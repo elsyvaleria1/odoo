@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="project_gantt.MilestonesPopover">
+        <div class="popover-body">
+            <ul class="mb-0 list-unstyled">
+                <li t-foreach="Object.values(this.props.projects)" t-as="project" t-key="project.id">
+                    <t t-if="this.props.displayProjectName">
+                        <div><u><t t-out="project.name"/></u></div>
+                    </t>
+                    <em t-if="project.isStartDate">Project start</em>
+                    <em t-if="project.isDeadline">Project due</em>
+                    <ul class="mb-0 list-unstyled">
+                        <li t-foreach="project.milestones" t-as="milestone" t-key="milestone_index">
+                            <t t-if="milestone.is_deadline_exceeded">
+                                <i t-attf-class="fa-regular fa-square text-start o_unreached_milestones"></i>
+                            </t>
+                            <t t-else="">
+                                <i class="fa-fw text-start" t-attf-class="{{milestone.is_reached ? 'fa-regular fa-square-check o_milestones_reached' : 'fa-regular fa-square'}}"></i>
+                            </t>
+                            <strong><t t-out="milestone.name"/></strong>
+                            <span t-if="this.props.displayMilestoneDates"><br/><t t-out="this.getDeadline(milestone)"/></span>
+                        </li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+    </t>
+
+</templates>

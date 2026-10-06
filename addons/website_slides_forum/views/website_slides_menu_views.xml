@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <menuitem
+        id="website_slides_menu_forum"
+        name="Forum"
+        parent="website_slides.website_slides_menu_root"
+        sequence="2" />
+
+    <menuitem
+        id="website_slides_menu_forum_forum"
+        name="Forums"
+        parent="website_slides_menu_forum"
+        action="forum_forum_action_channel"
+        sequence="1" />
+
+    <menuitem
+        id="website_slides_menu_forum_post"
+        name="Posts"
+        parent="website_slides_menu_forum"
+        action="forum_post_action_channel"
+        sequence="2" />
+
+</odoo>

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<templates xml:space="preserve">
+    <t t-name="purchase.ProductCatalogKanbanRenderer" t-inherit="ProductCatalogKanbanRenderer" t-inherit-mode="primary">
+        <xpath expr="//div[hasclass('o_nocontent_help')]" position="replace">
+            <div class="o_nocontent_help">
+                <p class="o_view_nocontent_smiling_face">
+                    No Products for the selected Vendor.
+                </p>
+                <p>
+                    Try removing the top filter to broaden your search
+                    <br/>
+                    <button class="mt-2 btn btn-primary" t-on-click="this.createProduct">Create a product</button>
+                </p>
+            </div>
+        </xpath>
+    </t>
+</templates>

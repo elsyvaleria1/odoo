@@ -1,0 +1,1 @@
+from . import wizard_res_partner_bank_account_create

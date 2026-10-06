@@ -1,0 +1,5 @@
+id,name,model_id/id,group_id/id,kind,operation,reach,anchor,domain
+rule_speech_voiceprint_own,Voiceprint: own,model_speech_voiceprint,base.group_user,permission,r,own,,
+rule_speech_voiceprint_hr,Voiceprint: the officer's companies,model_speech_voiceprint,hr.group_hr_user,permission,crud,company,,
+rule_speech_voiceprint_own_group_hr_user,Voiceprint: own,model_speech_voiceprint,hr.group_hr_user,permission,crud,own,,
+rule_speech_voiceprint_own_group_system,Voiceprint: own,model_speech_voiceprint,base.group_system,permission,crud,own,,

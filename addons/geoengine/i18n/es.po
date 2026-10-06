@@ -1,0 +1,3825 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* base_geoengine
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 16.0\n"
+"Report-Msgid-Bugs-To: \n"
+"PO-Revision-Date: 2023-08-08 11:10+0000\n"
+"Last-Translator: Ivorra78 <informatica@totmaterial.es>\n"
+"Language-Team: none\n"
+"Language: es\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: nplurals=2; plural=n != 1;\n"
+"X-Generator: Weblate 4.17\n"
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/models/ir_ui_view.py:0
+msgid ""
+"%(attribute)s='%(field)s' in the geoengine view for '%(model)s' names a field that does not exist.\n"
+"\n"
+"Did you mean: %(suggestions)s"
+msgstr ""
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/models/ir_ui_view.py:0
+msgid ""
+"%(attribute)s='%(field)s' is set on the geoengine view for '%(model)s' but the field is not declared in it.\n"
+"\n"
+"Add this to your view XML:\n"
+"    <field name='%(field)s'/>"
+msgstr ""
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/models/base.py:0
+msgid "%(count)d shapes are merged into %(name)s; the others are archived."
+msgstr "%(count)d formas se unieron en %(name)s; las demás se archivaron."
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/models/ir_ui_view.py:0
+msgid ""
+"%(field)s must be four comma-separated numbers 'min_x, min_y, max_x, max_y',"
+" with min_x/min_y smaller than max_x/max_y. Got: %(value)s"
+msgstr ""
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/wizard/geo_io_wizard.py:0
+msgid "%(geo_type)s has no GeoPackage equivalent."
+msgstr ""
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/wizard/geo_io_wizard.py:0
+msgid "%(geo_type)s has no Shapefile equivalent."
+msgstr ""
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/wizard/geo_io_wizard.py:0
+msgid "%(geom_type)s has no Shapefile equivalent."
+msgstr ""
+
+#. module: geoengine
+#. odoo-javascript
+#: code:addons/geoengine/static/src/geoengine/geoengine_model.js:0
+msgid "%(model)s has no geoengine view, so this layer cannot be drawn."
+msgstr ""
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/models/base.py:0
+msgid ""
+"%(model)s records cannot be archived, so their shapes are not merged into "
+"one."
+msgstr ""
+"Los registros de %(model)s no se pueden archivar, así que sus formas no "
+"se unen en una."
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/models/geo_domain.py:0
+msgid ""
+"%(model)s.%(field)s is not a geometry field and cannot be used as the right "
+"operand of a spatial operator."
+msgstr ""
+
+#. module: geoengine
+#. odoo-javascript
+#: code:addons/geoengine/static/src/geoengine/geoengine_controller.js:0
+msgid ""
+"%(shown)s of %(total)s records are on the map. Anything you draw may overlap"
+" a record you cannot see."
+msgstr ""
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/models/geoengine_view_settings.py:0
+msgid ""
+"%(value)s is not a coordinate system the map can draw: PostGIS has no "
+"EPSG definition for it."
+msgstr ""
+"%(value)s no es un sistema de coordenadas que el mapa pueda dibujar: "
+"PostGIS no tiene una definición EPSG para él."
+
+#. module: geoengine
+#. odoo-javascript
+#: code:addons/geoengine/static/src/geoengine/renderer/geoengine_map_tools.js:0
+msgid "%s features selected"
+msgstr ""
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/models/vector_tiles.py:0
+msgid "%s is not a map cell."
+msgstr "%s no es una celda del mapa."
+
+#. module: geoengine
+#. odoo-javascript
+#: code:addons/geoengine/static/src/geoengine/geoengine_renderer.js:0
+msgid "%s records at this spot"
+msgstr "%s registros en este punto"
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/models/geoengine_raster_layer.py:0
+msgid "'%(url)s' is not a valid URL."
+msgstr ""
+
+#. module: geoengine
+#: model_terms:ir.ui.view,arch_db:geoengine.view_geo_trail_result_geoengine
+msgid "<strong>Length:</strong>"
+msgstr ""
+
+#. module: geoengine
+#: model_terms:ir.ui.view,arch_db:geoengine.view_geo_trail_result_geoengine
+msgid "<strong>Points:</strong>"
+msgstr ""
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/models/geoengine_raster_layer.py:0
+msgid "A '%(type)s' layer needs a URL template."
+msgstr ""
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/models/geoengine_raster_layer.py:0
+msgid ""
+"A WMS layer needs params, including a LAYERS key, e.g. {\"LAYERS\": "
+"\"topp:states\"}."
+msgstr ""
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/models/geo_domain.py:0
+msgid ""
+"A dict operand must reference another model's geometry field, e.g. "
+"{'res.partner.location': [('active', '=', True)]}; got '%(key)s'."
+msgstr ""
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/models/vector_tiles.py:0
+msgid "A heatmap view is an extent and a zoom."
+msgstr "Una vista de mapa de calor es una extensión y un nivel de zoom."
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/models/geometry_check.py:0
+msgid "A hole reaches outside the outline here."
+msgstr "Un hueco sale del contorno aquí."
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/models/geometry_edit.py:0
+msgid "A shape is split along a drawn line."
+msgstr "Una forma se divide a lo largo de una línea dibujada."
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/models/geoengine_raster_layer.py:0
+msgid ""
+"A tile URL must contain the {x}, {y} and {z} placeholders. Got: %(url)s"
+msgstr ""
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/models/vector_tiles.py:0
+msgid "A tile is addressed by integer z, x and y."
+msgstr "Una tesela se identifica con los enteros z, x e y."
+
+#. module: geoengine
+#: model:ir.model,name:geoengine.model_ir_actions_act_window_view
+msgid "Action Window View"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,field_description:geoengine.field_geoengine_vector_layer__active_on_startup
+msgid "Active On Startup"
+msgstr "Activo en el arranque"
+
+#. module: geoengine
+#. odoo-javascript
+#: code:addons/geoengine/static/src/geoengine/renderer/geoengine_renderer_interactions.js:0
+msgid "Add an area to the shape"
+msgstr "Agregar un área a la forma"
+
+#. module: geoengine
+#. odoo-javascript
+#: code:addons/geoengine/static/src/geoengine/panels/layers_panel.xml:0
+msgid "Add raster layer"
+msgstr ""
+
+#. module: geoengine
+#: model_terms:ir.ui.view,arch_db:geoengine.view_geo_trail_wizard_form
+msgid "Additional Filters"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,help:geoengine.field_wizard_base_view_trail__domain
+msgid "Additional filter criteria (e.g., [('status', '=', 'active')])"
+msgstr ""
+
+#. module: geoengine
+#: model:res.groups,name:geoengine.group_geoengine_admin
+msgid "Admin"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,field_description:geoengine.field_geoengine_vector_layer__attribute_field_id
+msgid "Attribute Field"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,field_description:geoengine.field_geoengine_raster_layer__attribution
+msgid "Attribution"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields.selection,name:geoengine.selection__geoengine_vector_layer__render_engine__auto
+msgid "Auto"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields.selection,name:geoengine.selection__ir_ui_view__render_engine__auto
+msgid "Auto (recommended)"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,field_description:geoengine.field_geo_setup_wizard__auto_repair_geometry
+#: model:ir.model.fields,field_description:geoengine.field_res_config_settings__auto_repair_geometry
+msgid "Auto Repair Geometry"
+msgstr ""
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/wizard/geo_setup_wizard.py:0
+msgid "Auto-repair invalid geometries"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model,name:geoengine.model_base
+msgid "Base"
+msgstr "Base/Fuente"
+
+#. module: geoengine
+#: model:ir.model.fields.selection,name:geoengine.selection__geoengine_vector_layer__geo_repr__basic
+msgid "Basic"
+msgstr "Básico"
+
+#. module: geoengine
+#: model:ir.model.fields,help:geoengine.field_geoengine_vector_layer__geo_repr
+msgid ""
+"Basic: Single color for all features.\n"
+"Proportional Symbol: Size based on numeric attribute.\n"
+"Colored range: Color gradient based on classification.\n"
+"Color from Field: Read hex color directly from a Char field.\n"
+"Heatmap: Density surface. Point geometry only.\n"
+"Clustered Points: Nearby points collapse into one counted marker. Point geometry only."
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,field_description:geoengine.field_geoengine_vector_layer__begin_color
+msgid "Begin Color"
+msgstr ""
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/models/geoengine_vector_layer.py:0
+msgid "Begin color must be a valid hex color (e.g., #FF0000)"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,help:geoengine.field_geoengine_vector_layer__heatmap_blur
+msgid ""
+"Blur applied to the density surface, in pixels. Larger values smooth the "
+"result; smaller ones keep individual points distinct."
+msgstr ""
+
+#. module: geoengine
+#: model_terms:ir.ui.view,arch_db:geoengine.view_geo_trail_wizard_form
+msgid "Cancel"
+msgstr "Cancelar"
+
+#. module: geoengine
+#: model:ir.model.fields.selection,name:geoengine.selection__geoengine_vector_layer__render_engine__canvas
+msgid "Canvas"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields.selection,name:geoengine.selection__ir_ui_view__render_engine__canvas
+msgid "Canvas (editing)"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,help:geoengine.field_geoengine_vector_layer__color_field_id
+msgid ""
+"Char field containing hex color values (e.g., '#FF5733') for 'Color from "
+"Field' mode."
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,help:geoengine.field_geo_setup_wizard__validate_geometries
+#: model:ir.model.fields,help:geoengine.field_res_config_settings__enable_geometry_validation
+msgid ""
+"Check geometries before saving. When disabled, invalid geometry reaches "
+"PostGIS unchecked and fails there instead."
+msgstr ""
+
+#. module: geoengine
+#: model_terms:ir.ui.view,arch_db:geoengine.res_config_settings_view_form
+msgid ""
+"Check geometries before saving. With this off, invalid geometry reaches "
+"PostGIS unchecked and fails there instead, with a database-level error "
+"rather than a readable one."
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,field_description:geoengine.field_geoengine_vector_layer__classification
+#: model_terms:ir.ui.view,arch_db:geoengine.geo_vector_geoengine_view_form
+#: model_terms:ir.ui.view,arch_db:geoengine.geo_vector_view_form
+msgid "Classification"
+msgstr "Clasificación"
+
+#. module: geoengine
+#. odoo-javascript
+#: code:addons/geoengine/static/src/geoengine/panels/features_list.xml:0
+msgid "Clear search"
+msgstr ""
+
+#. module: geoengine
+#: model_terms:ir.ui.view,arch_db:geoengine.view_geo_export_wizard_form
+#: model_terms:ir.ui.view,arch_db:geoengine.view_geo_import_wizard_form
+msgid "Close"
+msgstr "Cerrar"
+
+#. module: geoengine
+#. odoo-javascript
+#: code:addons/geoengine/static/src/geoengine/geoengine_renderer.xml:0
+msgid "Close popup"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,field_description:geoengine.field_geoengine_vector_layer__cluster_distance
+msgid "Cluster Distance"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,field_description:geoengine.field_geoengine_vector_layer__cluster_min_distance
+msgid "Cluster Min Distance"
+msgstr ""
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/models/geoengine_vector_layer.py:0
+msgid "Cluster distances cannot be negative."
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields.selection,name:geoengine.selection__geoengine_vector_layer__geo_repr__cluster
+msgid "Clustered Points"
+msgstr ""
+
+#. module: geoengine
+#: model_terms:ir.ui.view,arch_db:geoengine.geo_vector_geoengine_view_form
+#: model_terms:ir.ui.view,arch_db:geoengine.geo_vector_view_form
+msgid "Clustering"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,field_description:geoengine.field_geoengine_vector_layer__color_field_id
+msgid "Color Field"
+msgstr ""
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/models/geoengine_vector_layer.py:0
+msgid "Color field is required for 'Color from Field' representation mode."
+msgstr ""
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/models/geoengine_vector_layer.py:0
+msgid "Color field must belong to the same model as the geo field (%s)"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields.selection,name:geoengine.selection__geoengine_vector_layer__geo_repr__colored_field
+msgid "Color from Field"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields.selection,name:geoengine.selection__geoengine_vector_layer__geo_repr__colored
+msgid "Colored range/Chroma.js"
+msgstr "Gama de colores/Chroma.js"
+
+#. module: geoengine
+#: model_terms:ir.ui.view,arch_db:geoengine.geo_vector_geoengine_view_form
+#: model_terms:ir.ui.view,arch_db:geoengine.geo_vector_view_form
+msgid "Colors"
+msgstr "Colores"
+
+#. module: geoengine
+#: model:ir.model,name:geoengine.model_res_config_settings
+msgid "Config Settings"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,help:geoengine.field_wizard_base_export_geodata__output_srid
+msgid "Coordinate Reference System for output file"
+msgstr ""
+
+#. module: geoengine
+#. odoo-javascript
+#: code:addons/geoengine/static/src/geoengine/renderer/geoengine_map_tools.js:0
+msgid "Could not determine your position: %s"
+msgstr ""
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/wizard/geo_io_wizard.py:0
+msgid "Could not parse the uploaded file: %s"
+msgstr ""
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/wizard/geo_io_wizard.py:0
+msgid "Could not read the GeoPackage: %s"
+msgstr ""
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/wizard/geo_io_wizard.py:0
+msgid "Could not read the shapefile: %s"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,field_description:geoengine.field_geo_setup_wizard__create_spatial_indexes
+msgid "Create Spatial Indexes"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,help:geoengine.field_geo_setup_wizard__create_spatial_indexes
+msgid ""
+"Create the GIST index for every existing geometry column now. New columns "
+"are indexed automatically when their module installs."
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,field_description:geoengine.field_wizard_base_export_geodata__create_uid
+#: model:ir.model.fields,field_description:geoengine.field_wizard_base_import_geodata__create_uid
+#: model:ir.model.fields,field_description:geoengine.field_wizard_base_import_geodata_mapping__create_uid
+#: model:ir.model.fields,field_description:geoengine.field_geo_setup_wizard__create_uid
+#: model:ir.model.fields,field_description:geoengine.field_wizard_base_view_trail_result__create_uid
+#: model:ir.model.fields,field_description:geoengine.field_wizard_base_view_trail__create_uid
+#: model:ir.model.fields,field_description:geoengine.field_geoengine_raster_layer__create_uid
+#: model:ir.model.fields,field_description:geoengine.field_geoengine_vector_layer__create_uid
+msgid "Created by"
+msgstr "Creado por"
+
+#. module: geoengine
+#: model:ir.model.fields,field_description:geoengine.field_wizard_base_export_geodata__create_date
+#: model:ir.model.fields,field_description:geoengine.field_wizard_base_import_geodata__create_date
+#: model:ir.model.fields,field_description:geoengine.field_wizard_base_import_geodata_mapping__create_date
+#: model:ir.model.fields,field_description:geoengine.field_geo_setup_wizard__create_date
+#: model:ir.model.fields,field_description:geoengine.field_wizard_base_view_trail_result__create_date
+#: model:ir.model.fields,field_description:geoengine.field_wizard_base_view_trail__create_date
+#: model:ir.model.fields,field_description:geoengine.field_geoengine_raster_layer__create_date
+#: model:ir.model.fields,field_description:geoengine.field_geoengine_vector_layer__create_date
+msgid "Created on"
+msgstr "Creado el"
+
+#. module: geoengine
+#: model:ir.model.fields,help:geoengine.field_geoengine_raster_layer__attribution
+msgid ""
+"Credit shown on the map for this tile source, e.g. '© OpenStreetMap "
+"contributors'. Most tile providers require it."
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,field_description:geoengine.field_geo_setup_wizard__current_step
+msgid "Current Step"
+msgstr ""
+
+#. module: geoengine
+#. odoo-javascript
+#: code:addons/geoengine/static/src/geoengine/renderer/geoengine_renderer_interactions.js:0
+msgid "Cut an area out of the shape"
+msgstr "Recortar un área de la forma"
+
+#. module: geoengine
+#: model_terms:ir.ui.view,arch_db:geoengine.view_geo_setup_wizard_form
+msgid "Database"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,field_description:geoengine.field_wizard_base_view_trail__date_field
+#: model:ir.model.fields,field_description:geoengine.field_wizard_base_view_trail__date_field_id
+msgid "Date Field"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,field_description:geoengine.field_wizard_base_view_trail__date_from
+msgid "Date From"
+msgstr ""
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/wizard/geo_trail_wizard.py:0
+msgid "Date From must be before Date To"
+msgstr ""
+
+#. module: geoengine
+#: model_terms:ir.ui.view,arch_db:geoengine.view_geo_trail_wizard_form
+msgid "Date Range"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,field_description:geoengine.field_wizard_base_view_trail__date_to
+msgid "Date To"
+msgstr ""
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/wizard/geo_trail_wizard.py:0
+msgid ""
+"Date field '%(field)s' does not exist on model '%(model)s'. Please select a "
+"different date field."
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,help:geoengine.field_wizard_base_view_trail__date_field_id
+msgid ""
+"Datetime field to order and filter positions by. For GPS data this should be"
+" the field holding the position's own timestamp, not the record's audit "
+"dates."
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,field_description:geoengine.field_ir_ui_view__default_map_extent
+msgid "Default Map Extent"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,field_description:geoengine.field_ir_ui_view__default_map_zoom
+msgid "Default Map Zoom"
+msgstr ""
+
+#. module: geoengine
+#: model_terms:ir.ui.view,arch_db:geoengine.res_config_settings_view_form
+msgid "Default map extent"
+msgstr "Extensión predeterminada del mapa"
+
+#. module: geoengine
+#: model:ir.model.fields,help:geoengine.field_res_config_settings__geoengine_map_extent
+msgid ""
+"Default map extent as: min_x, min_y, max_x, max_y in Web Mercator (EPSG:3857).\n"
+"Leave empty to fall back to the company country, then to Europe.\n"
+"Common values:\n"
+"- Mexico: -13173896.503, 1632778.928, -9633272.717, 3910375.796\n"
+"- USA: -14764617.394, 2273030.926, -6679169.448, 7074326.998\n"
+"- World: -20037508.34, -20037508.34, 20037508.34, 20037508.34"
+msgstr ""
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/wizard/res_config_settings.py:0
+msgid ""
+"Default map extent must be four comma-separated numbers 'min_x, min_y, "
+"max_x, max_y', with min_x/min_y smaller than max_x/max_y. Got: %(value)s"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,help:geoengine.field_ir_ui_view__render_engine
+msgid ""
+"Default rendering engine for all layers in this view.\n"
+"Auto: Automatically selects based on feature count and requirements.\n"
+"WebGL: GPU-accelerated, best for large datasets (>1000 features). Draws labels too, since OpenLayers 10.10.\n"
+"Canvas: required for on-map geometry editing."
+msgstr ""
+
+#. module: geoengine
+#. odoo-javascript
+#: code:addons/geoengine/static/src/geoengine/geoengine_controller.xml:0
+msgid "Discard"
+msgstr "Descartar"
+
+#. module: geoengine
+#: model:ir.model.fields,field_description:geoengine.field_wizard_base_export_geodata__display_name
+#: model:ir.model.fields,field_description:geoengine.field_wizard_base_import_geodata__display_name
+#: model:ir.model.fields,field_description:geoengine.field_wizard_base_import_geodata_mapping__display_name
+#: model:ir.model.fields,field_description:geoengine.field_geo_setup_wizard__display_name
+#: model:ir.model.fields,field_description:geoengine.field_wizard_base_view_trail_result__display_name
+#: model:ir.model.fields,field_description:geoengine.field_wizard_base_view_trail__display_name
+#: model:ir.model.fields,field_description:geoengine.field_geoengine_raster_layer__display_name
+#: model:ir.model.fields,field_description:geoengine.field_geoengine_vector_layer__display_name
+#: model:ir.model.fields,field_description:geoengine.field_ir_actions_act_window_view__display_name
+#: model:ir.model.fields,field_description:geoengine.field_ir_model_fields__display_name
+#: model:ir.model.fields,field_description:geoengine.field_ir_ui_view__display_name
+#: model:ir.model.fields,field_description:geoengine.field_res_config_settings__display_name
+msgid "Display Name"
+msgstr "Mostrar Nombre"
+
+#. module: geoengine
+#: model:ir.model.fields,field_description:geoengine.field_geoengine_vector_layer__display_polygon_labels
+msgid "Display Polygon Labels"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,help:geoengine.field_geoengine_vector_layer__cluster_distance
+msgid "Distance in pixels within which points are clustered together."
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields.selection,name:geoengine.selection__geoengine_raster_layer__raster_type__d_wms
+msgid "Distant WMS"
+msgstr "Sistema de gestión de almacenes (SGA) a distancia"
+
+#. module: geoengine
+#: model:ir.model.fields,field_description:geoengine.field_wizard_base_export_geodata__domain
+#: model:ir.model.fields,field_description:geoengine.field_wizard_base_view_trail__domain
+msgid "Domain"
+msgstr ""
+
+#. module: geoengine
+#. odoo-javascript
+#: code:addons/geoengine/static/src/geoengine/geoengine_model.js:0
+msgid "Domain Error"
+msgstr ""
+
+#. module: geoengine
+#. odoo-javascript
+#: code:addons/geoengine/static/src/geoengine/panels/layers_panel.js:0
+msgid "Domain editing"
+msgstr "Editando Dominio"
+
+#. module: geoengine
+#: model:ir.model.fields,help:geoengine.field_wizard_base_export_geodata__domain
+msgid "Domain to filter exported records"
+msgstr ""
+
+#. module: geoengine
+#: model_terms:ir.ui.view,arch_db:geoengine.view_geo_export_wizard_form
+msgid "Download"
+msgstr ""
+
+#. module: geoengine
+#: model_terms:ir.ui.view,arch_db:geoengine.res_config_settings_view_form
+msgid ""
+"Drop and recreate the GIST index on every stored geometry column. Non-stored"
+" geo fields are skipped; failures are reported rather than counted as "
+"successes."
+msgstr ""
+
+#. module: geoengine
+#. odoo-javascript
+#: code:addons/geoengine/static/src/geoengine/panels/time_slider.xml:0
+msgid "Duration:"
+msgstr ""
+
+#. module: geoengine
+#. odoo-javascript
+#: code:addons/geoengine/static/src/geoengine/panels/layers_panel.xml:0
+msgid "Edit layer"
+msgstr ""
+
+#. module: geoengine
+#. odoo-javascript
+#: code:addons/geoengine/static/src/geoengine/panels/layers_panel.xml:0
+msgid "Edit layer filter"
+msgstr ""
+
+#. module: geoengine
+#. odoo-javascript
+#: code:addons/geoengine/static/src/geoengine/panels/layers_panel.xml:0
+msgid "Edit raster layer"
+msgstr ""
+
+#. module: geoengine
+#. odoo-javascript
+#: code:addons/geoengine/static/src/geoengine/panels/layers_panel.js:0
+msgid "Editing Raster Layer"
+msgstr ""
+
+#. module: geoengine
+#. odoo-javascript
+#: code:addons/geoengine/static/src/geoengine/panels/layers_panel.js:0
+msgid "Editing vector layer"
+msgstr "Edición de capas vectoriales"
+
+#. module: geoengine
+#: model:ir.model.fields,field_description:geoengine.field_res_config_settings__enable_geometry_validation
+msgid "Enable Geometry Validation"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,field_description:geoengine.field_geoengine_vector_layer__end_color
+msgid "End Color"
+msgstr ""
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/models/geoengine_vector_layer.py:0
+msgid "End color must be a valid hex color (e.g., #FF0000)"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,help:geoengine.field_wizard_base_view_trail__date_to
+msgid "End date for trail generation (empty = now)"
+msgstr ""
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/wizard/geo_io_wizard.py:0
+msgid "Error importing feature %(index)d: %(error)s"
+msgstr ""
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/__init__.py:0
+msgid ""
+"Error, can not automatically initialize spatial postgis support. Database user may have to be superuser and postgres/postgis extensions with their devel header have to be installed. If you do not want Odoo to connect with a super user you can manually prepare your database. To do this, open a client to your database using a super user and run:\n"
+"CREATE EXTENSION postgis;\n"
+msgstr ""
+
+#. module: geoengine
+#: model_terms:ir.ui.view,arch_db:geoengine.view_geo_export_wizard_form
+msgid "Export"
+msgstr "Exportar"
+
+#. module: geoengine
+#: model:ir.actions.act_window,name:geoengine.action_geo_export_wizard
+#: model:ir.ui.menu,name:geoengine.geoengine_export_menu
+#: model_terms:ir.ui.view,arch_db:geoengine.view_geo_export_wizard_form
+msgid "Export Geodata"
+msgstr "Exportar datos geográficos"
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/wizard/geo_io_wizard.py:0
+msgid ""
+"Export contains more than %(maximum)d records. Please apply a filter to "
+"reduce the result set."
+msgstr ""
+
+#. module: geoengine
+#. odoo-javascript
+#: code:addons/geoengine/static/src/geoengine/renderer/geoengine_map_tools.js:0
+msgid "Export map as image"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,field_description:geoengine.field_wizard_base_import_geodata__feature_count
+msgid "Feature Count"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,help:geoengine.field_ir_ui_view__webgl_threshold
+msgid ""
+"Feature count above which 'Auto' mode switches to WebGL rendering. Lower "
+"values = more aggressive WebGL usage (better performance). Higher values = "
+"more Canvas usage (better compatibility)."
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,help:geoengine.field_geoengine_vector_layer__webgl_threshold
+msgid ""
+"Feature count above which 'Auto' switches this layer to WebGL. Leave at 0 to"
+" use the view's threshold."
+msgstr ""
+
+#. module: geoengine
+#. odoo-javascript
+#: code:addons/geoengine/static/src/geoengine/panels/features_list.xml:0
+msgid "Features"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,field_description:geoengine.field_wizard_base_import_geodata_mapping__field_id
+msgid "Field"
+msgstr ""
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/models/geoengine_vector_layer.py:0
+msgid ""
+"Field '%(field)s' is a %(type)s. Interval and quantile classification, and "
+"proportional symbols, need a numeric field."
+msgstr ""
+
+#. module: geoengine
+#: model_terms:ir.ui.view,arch_db:geoengine.view_geo_import_wizard_form
+msgid "Field Mapping"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,help:geoengine.field_geoengine_vector_layer__attribute_field_id
+msgid "Field used for classification in colored/proportional modes."
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model,name:geoengine.model_ir_model_fields
+msgid "Fields"
+msgstr "Campos"
+
+#. module: geoengine
+#: model:ir.model.fields,help:geoengine.field_wizard_base_export_geodata__property_field_ids
+msgid "Fields to include as GeoJSON properties"
+msgstr ""
+
+#. module: geoengine
+#: model_terms:ir.ui.view,arch_db:geoengine.view_geo_import_wizard_form
+msgid "File"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,field_description:geoengine.field_wizard_base_import_geodata__file_data
+msgid "File Data"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,field_description:geoengine.field_wizard_base_import_geodata__file_name
+msgid "File Name"
+msgstr ""
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/wizard/geo_io_wizard.py:0
+msgid "File contains %(count)d features. Maximum allowed is %(maximum)d."
+msgstr ""
+
+#. module: geoengine
+#: model_terms:ir.ui.view,arch_db:geoengine.view_geo_export_wizard_form
+msgid "Filter"
+msgstr ""
+
+#. module: geoengine
+#. odoo-javascript
+#: code:addons/geoengine/static/src/geoengine/renderer/geoengine_spatial_filter.js:0
+msgid "Filter by place"
+msgstr "Filtrar por lugar"
+
+#. module: geoengine
+#: model_terms:ir.ui.view,arch_db:geoengine.view_geo_setup_wizard_form
+msgid "Finish"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,field_description:geoengine.field_geoengine_raster_layer__format_suffix
+msgid "Format Suffix"
+msgstr ""
+
+#. module: geoengine
+#: model_terms:ir.ui.view,arch_db:geoengine.res_config_settings_view_form
+msgid ""
+"Format: min_x, min_y, max_x, max_y in Web Mercator (EPSG:3857). Leave empty "
+"to fall back to the company's country, then to Europe."
+msgstr ""
+
+#. module: geoengine
+#: model_terms:ir.ui.view,arch_db:geoengine.geo_raster_view_form
+#: model_terms:ir.ui.view,arch_db:geoengine.geo_vector_geoengine_view_form
+#: model_terms:ir.ui.view,arch_db:geoengine.geo_vector_view_form
+msgid "General"
+msgstr ""
+
+#. module: geoengine
+#: model_terms:ir.ui.view,arch_db:geoengine.view_geo_trail_wizard_form
+msgid "Generate Historical Trails"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.actions.act_window,name:geoengine.action_geo_trail_wizard
+#: model_terms:ir.ui.view,arch_db:geoengine.view_geo_trail_wizard_form
+msgid "Generate Trails"
+msgstr "Generar trayectos"
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/wizard/geo_trail_wizard.py:0
+#: model:geoengine.vector.layer,name:geoengine.vector_layer_trail_result
+#: model_terms:ir.ui.view,arch_db:geoengine.view_geo_trail_result_list
+msgid "Generated Trails"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model,name:geoengine.model_wizard_base_export_geodata
+msgid "Geo Export Wizard"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,field_description:geoengine.field_wizard_base_export_geodata__geo_field_id
+#: model:ir.model.fields,field_description:geoengine.field_wizard_base_import_geodata__geo_field_id
+#: model:ir.model.fields,field_description:geoengine.field_geoengine_vector_layer__geo_field_id
+msgid "Geo Field"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model,name:geoengine.model_wizard_base_import_geodata
+msgid "Geo Import Wizard"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,field_description:geoengine.field_geoengine_vector_layer__geo_repr
+msgid "Geo Repr"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields.selection,name:geoengine.selection__ir_ui_view__type__geoengine
+#: model_terms:ir.ui.view,arch_db:geoengine.res_config_settings_view_form
+msgid "GeoEngine"
+msgstr "GeoIngeniería"
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/wizard/geo_setup_wizard.py:0
+msgid "GeoEngine Configuration"
+msgstr ""
+
+#. module: geoengine
+#: model_terms:ir.ui.view,arch_db:geoengine.geoengine_view_form
+msgid "GeoEngine Data"
+msgstr "Fecha de Geoingeniería"
+
+#. module: geoengine
+#: model:ir.ui.menu,name:geoengine.geoengine_base_view_menu
+msgid "GeoEngine Services"
+msgstr "Servicios de GeoEngine"
+
+#. module: geoengine
+#: model:ir.actions.act_window,name:geoengine.action_geo_setup_wizard
+#: model_terms:ir.ui.view,arch_db:geoengine.view_geo_setup_wizard_form
+msgid "GeoEngine Setup"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model,name:geoengine.model_geo_setup_wizard
+msgid "GeoEngine Setup Wizard"
+msgstr ""
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/wizard/geo_setup_wizard.py:0
+msgid "GeoEngine is configured and ready to use."
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields.selection,name:geoengine.selection__wizard_base_export_geodata__output_format__geojson
+msgid "GeoJSON"
+msgstr ""
+
+#. module: geoengine
+#: model_terms:ir.ui.view,arch_db:geoengine.view_geo_import_wizard_form
+msgid ""
+"GeoJSON (.geojson/.json), a zipped Shapefile (.zip) or a\n"
+"                            GeoPackage (.gpkg) -- the format is detected automatically."
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model,name:geoengine.model_wizard_base_import_geodata_mapping
+msgid "GeoJSON Import Field Mapping"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,help:geoengine.field_wizard_base_import_geodata__file_data
+msgid ""
+"GeoJSON file (.geojson or .json), a zipped Shapefile (.zip) containing .shp,"
+" .shx and .dbf (optionally a .prj), or a GeoPackage (.gpkg). The format is "
+"detected automatically from the file's contents."
+msgstr ""
+
+#. module: geoengine
+#: model_terms:ir.ui.view,arch_db:geoengine.view_geo_import_wizard_form
+msgid "GeoJSON property name"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,help:geoengine.field_wizard_base_import_geodata__name_property
+msgid "GeoJSON property to use as record name (leave empty to auto-generate)"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields.selection,name:geoengine.selection__wizard_base_export_geodata__output_format__geopackage
+msgid "GeoPackage (.gpkg)"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,help:geoengine.field_wizard_base_view_trail_result__length_km
+msgid "Geodesic trail length in kilometers (accurate for WGS84)"
+msgstr ""
+
+#. module: geoengine
+#. odoo-javascript
+#: code:addons/geoengine/static/src/geoengine/geoengine_view.js:0
+#: model:ir.model.fields.selection,name:geoengine.selection__ir_actions_act_window_view__view_mode__geoengine
+#: model:res.groups.privilege,name:geoengine.res_groups_privilege_geoengine
+msgid "Geoengine"
+msgstr "Geoingeniería"
+
+#. module: geoengine
+#: model:ir.model.fields,field_description:geoengine.field_res_config_settings__geoengine_map_extent
+msgid "Geoengine Map Extent"
+msgstr ""
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/models/ir_ui_view.py:0
+msgid ""
+"Geoengine view for model '%(model)s' requires a template with t-name='info_box' to display feature popups.\n"
+"\n"
+"Add this to your view XML:\n"
+"<templates>\n"
+"    <t t-name='info_box'>\n"
+"        <div>\n"
+"            <strong><t t-out='record.display_name'/></strong>\n"
+"        </div>\n"
+"    </t>\n"
+"</templates>"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields.selection,name:geoengine.selection__geo_setup_wizard__current_step__geometry
+#: model_terms:ir.ui.view,arch_db:geoengine.view_geo_setup_wizard_form
+msgid "Geometry Handling"
+msgstr ""
+
+#. module: geoengine
+#: model_terms:ir.ui.view,arch_db:geoengine.res_config_settings_view_form
+msgid "Geometry Validation"
+msgstr ""
+
+#. module: geoengine
+#: model_terms:ir.ui.view,arch_db:geoengine.res_config_settings_view_form
+msgid ""
+"Geometry columns are indexed automatically when their module installs. "
+"Rebuild only after a bulk load or a restore."
+msgstr ""
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/models/fields.py:0
+msgid "Geometry could not be repaired: %s"
+msgstr ""
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/models/fields.py:0
+msgid ""
+"Geometry dimension modification is not implemented. Cannot change dimension "
+"%(current)s to %(new)s"
+msgstr ""
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/models/fields.py:0
+msgid ""
+"Geometry size (%(actual)d bytes) exceeds maximum allowed (%(maximum)d bytes)"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,help:geoengine.field_ir_model_fields__geo_type
+msgid "Geometry type for PostGIS fields"
+msgstr ""
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/models/fields.py:0
+msgid ""
+"Geometry type modification is not implemented. Cannot change type "
+"%(current)s to %(new)s"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields.selection,name:geoengine.selection__geoengine_raster_layer__raster_type__google
+msgid "Google Maps"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,field_description:geoengine.field_wizard_base_view_trail__group_by
+msgid "Group By"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields.selection,name:geoengine.selection__wizard_base_view_trail__group_by__day
+msgid "Group by Day"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields.selection,name:geoengine.selection__wizard_base_view_trail__group_by__device_id
+msgid "Group by Device"
+msgstr ""
+
+#. module: geoengine
+#: model_terms:ir.ui.view,arch_db:geoengine.view_geo_trail_wizard_form
+msgid "Grouping Options"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields.selection,name:geoengine.selection__geoengine_vector_layer__geo_repr__heatmap
+#: model_terms:ir.ui.view,arch_db:geoengine.geo_vector_geoengine_view_form
+#: model_terms:ir.ui.view,arch_db:geoengine.geo_vector_view_form
+msgid "Heatmap"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,field_description:geoengine.field_geoengine_vector_layer__heatmap_blur
+msgid "Heatmap Blur"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,field_description:geoengine.field_geoengine_vector_layer__heatmap_radius
+msgid "Heatmap Radius"
+msgstr ""
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/models/geoengine_vector_layer.py:0
+msgid "Heatmap blur cannot be negative."
+msgstr ""
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/models/geoengine_vector_layer.py:0
+msgid "Heatmap radius must be greater than zero."
+msgstr ""
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/models/geoengine_vector_layer.py:0
+msgid ""
+"Heatmap weight field '%(field)s' is a %(type)s. Weighting needs a numeric "
+"field."
+msgstr ""
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/models/geoengine_vector_layer.py:0
+msgid ""
+"Heatmap weight field must belong to the same model as the geo field (%s)"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,help:geoengine.field_wizard_base_view_trail_result__trail_color
+msgid "Hex color for trail line"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,help:geoengine.field_wizard_base_view_trail__trail_color
+msgid "Hex color for trail line (e.g., #FF0000 for red)"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,help:geoengine.field_geoengine_raster_layer__max_zoom
+msgid ""
+"Highest zoom level this tile source serves. Beyond it the provider returns "
+"blank tiles."
+msgstr ""
+
+#. module: geoengine
+#: model_terms:ir.ui.view,arch_db:geoengine.res_config_settings_view_form
+msgid "How geometry is checked on the way into PostGIS."
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,help:geoengine.field_wizard_base_view_trail__group_by
+msgid "How to group positions into trail segments"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,field_description:geoengine.field_wizard_base_export_geodata__id
+#: model:ir.model.fields,field_description:geoengine.field_wizard_base_import_geodata__id
+#: model:ir.model.fields,field_description:geoengine.field_wizard_base_import_geodata_mapping__id
+#: model:ir.model.fields,field_description:geoengine.field_geo_setup_wizard__id
+#: model:ir.model.fields,field_description:geoengine.field_wizard_base_view_trail_result__id
+#: model:ir.model.fields,field_description:geoengine.field_wizard_base_view_trail__id
+#: model:ir.model.fields,field_description:geoengine.field_geoengine_raster_layer__id
+#: model:ir.model.fields,field_description:geoengine.field_geoengine_vector_layer__id
+#: model:ir.model.fields,field_description:geoengine.field_ir_actions_act_window_view__id
+#: model:ir.model.fields,field_description:geoengine.field_ir_model_fields__id
+#: model:ir.model.fields,field_description:geoengine.field_ir_ui_view__id
+#: model:ir.model.fields,field_description:geoengine.field_res_config_settings__id
+msgid "ID"
+msgstr "ID (identificación)"
+
+#. module: geoengine
+#: model_terms:ir.ui.view,arch_db:geoengine.view_geo_import_wizard_form
+msgid "Import"
+msgstr "Importar"
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/wizard/geo_io_wizard.py:0
+msgid "Import Complete"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.actions.act_window,name:geoengine.action_geo_import_wizard
+#: model:ir.ui.menu,name:geoengine.geoengine_import_menu
+#: model_terms:ir.ui.view,arch_db:geoengine.view_geo_import_wizard_form
+msgid "Import Geodata"
+msgstr "Importar datos geográficos"
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/wizard/geo_io_wizard.py:0
+msgid "Import failed: %(error)s"
+msgstr ""
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/wizard/geo_io_wizard.py:0
+msgid "Imported %(imported)d of %(total)d features."
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,field_description:geoengine.field_wizard_base_import_geodata__imported_count
+msgid "Imported Count"
+msgstr ""
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/models/ir_ui_view.py:0
+msgid ""
+"Incomplete lat/lon configuration for model '%(model)s'. Both latitude_field and longitude_field must be specified together.\n"
+"\n"
+"Found: %(lat)s, %(lon)s"
+msgstr ""
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/wizard/res_config_settings.py:0
+msgid "Info"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,help:geoengine.field_ir_ui_view__default_map_zoom
+msgid ""
+"Initial zoom level for the map. Range: 0 (world view) to 21 (street level). "
+"Common values: 2-4 (country), 5-8 (region/state), 9-12 (city), 13-16 "
+"(neighborhood), 17+ (building/street)."
+msgstr ""
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/models/ir_ui_view.py:0
+msgid ""
+"Initial zoom must be between 0 (world) and %(maximum)d (street level). Got: "
+"%(value)d"
+msgstr ""
+
+#. module: geoengine
+#. odoo-javascript
+#: code:addons/geoengine/static/src/geoengine/renderer/geoengine_spatial_filter.js:0
+msgid "Inside an area I draw"
+msgstr "Dentro de un área que dibujo"
+
+#. module: geoengine
+#. odoo-javascript
+#: code:addons/geoengine/static/src/geoengine/renderer/geoengine_spatial_filter.js:0
+msgid "Inside the drawn area"
+msgstr "Dentro del área dibujada"
+
+#. module: geoengine
+#: model:ir.model.fields.selection,name:geoengine.selection__geoengine_vector_layer__classification__interval
+msgid "Interval"
+msgstr "Intervalo"
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/wizard/geo_io_wizard.py:0
+msgid "Invalid File"
+msgstr ""
+
+#. module: geoengine
+#. odoo-javascript
+#: code:addons/geoengine/static/src/geoengine/geoengine_model.js:0
+msgid "Invalid domain expression in layer configuration: %s"
+msgstr ""
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/wizard/geo_io_wizard.py:0
+msgid "Invalid domain: %s"
+msgstr ""
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/wizard/geo_io_wizard.py:0
+msgid "Invalid file: %s"
+msgstr ""
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/wizard/geo_trail_wizard.py:0
+msgid "Invalid filter: %(error)s"
+msgstr ""
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/models/geo_domain.py:0
+msgid "Invalid geometry for '%(operator)s' on %(model)s.%(field)s: %(error)s"
+msgstr ""
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/models/fields.py:0
+#: code:addons/geoengine/wizard/geo_io_wizard.py:0
+msgid "Invalid geometry: %s"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,field_description:geoengine.field_ir_model_fields__is_geo_field
+msgid "Is Geometry Field"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,field_description:geoengine.field_geoengine_raster_layer__is_wms
+msgid "Is Wms"
+msgstr "Es Wms"
+
+#. module: geoengine
+#: model:ir.model.fields,field_description:geoengine.field_geoengine_raster_layer__is_wmts
+msgid "Is Wmts"
+msgstr "Es Wmts"
+
+#. module: geoengine
+#: model:ir.model.fields,field_description:geoengine.field_geoengine_raster_layer__overlay
+msgid "Is overlay layer?"
+msgstr "¿Es una capa de superposición?"
+
+#. module: geoengine
+#. odoo-javascript
+#: code:addons/geoengine/static/src/geoengine/panels/time_slider.xml:0
+msgid "Jump to end"
+msgstr ""
+
+#. module: geoengine
+#. odoo-javascript
+#: code:addons/geoengine/static/src/geoengine/panels/time_slider.xml:0
+msgid "Jump to start"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,help:geoengine.field_res_config_settings__max_geometry_size
+#: model_terms:ir.ui.view,arch_db:geoengine.res_config_settings_view_form
+msgid "Largest single geometry accepted, in bytes of WKT."
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,help:geoengine.field_geo_setup_wizard__max_geometry_size
+msgid "Largest single geometry accepted, in megabytes of WKT."
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,field_description:geoengine.field_wizard_base_export_geodata__write_uid
+#: model:ir.model.fields,field_description:geoengine.field_wizard_base_import_geodata__write_uid
+#: model:ir.model.fields,field_description:geoengine.field_wizard_base_import_geodata_mapping__write_uid
+#: model:ir.model.fields,field_description:geoengine.field_geo_setup_wizard__write_uid
+#: model:ir.model.fields,field_description:geoengine.field_wizard_base_view_trail_result__write_uid
+#: model:ir.model.fields,field_description:geoengine.field_wizard_base_view_trail__write_uid
+#: model:ir.model.fields,field_description:geoengine.field_geoengine_raster_layer__write_uid
+#: model:ir.model.fields,field_description:geoengine.field_geoengine_vector_layer__write_uid
+msgid "Last Updated by"
+msgstr "Última actualización por"
+
+#. module: geoengine
+#: model:ir.model.fields,field_description:geoengine.field_wizard_base_export_geodata__write_date
+#: model:ir.model.fields,field_description:geoengine.field_wizard_base_import_geodata__write_date
+#: model:ir.model.fields,field_description:geoengine.field_wizard_base_import_geodata_mapping__write_date
+#: model:ir.model.fields,field_description:geoengine.field_geo_setup_wizard__write_date
+#: model:ir.model.fields,field_description:geoengine.field_wizard_base_view_trail_result__write_date
+#: model:ir.model.fields,field_description:geoengine.field_wizard_base_view_trail__write_date
+#: model:ir.model.fields,field_description:geoengine.field_geoengine_raster_layer__write_date
+#: model:ir.model.fields,field_description:geoengine.field_geoengine_vector_layer__write_date
+msgid "Last Updated on"
+msgstr "Última Actualización el"
+
+#. module: geoengine
+#: model:ir.model.fields,field_description:geoengine.field_geoengine_vector_layer__layer_opacity
+msgid "Layer Opacity"
+msgstr "Opacidad de la capa"
+
+#. module: geoengine
+#. odoo-javascript
+#: code:addons/geoengine/static/src/geoengine/panels/layers_panel.js:0
+msgid "Layer filter"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.constraint,message:geoengine.constraint_geoengine_vector_layer_opacity_range
+msgid "Layer opacity must be between 0 and 1"
+msgstr ""
+
+#. module: geoengine
+#. odoo-javascript
+#: code:addons/geoengine/static/src/geoengine/panels/layers_panel.js:0
+msgid "Layer order"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,help:geoengine.field_geoengine_raster_layer__opacity
+#: model:ir.model.fields,help:geoengine.field_geoengine_vector_layer__layer_opacity
+msgid "Layer transparency (0=transparent, 1=opaque)"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,help:geoengine.field_geoengine_vector_layer__active_on_startup
+msgid "Layer will be shown on startup if checked."
+msgstr "La capa se mostrará al inicio si está marcada."
+
+#. module: geoengine
+#. odoo-javascript
+#: code:addons/geoengine/static/src/geoengine/panels/layers_panel.xml:0
+msgid "Layers ("
+msgstr "Capas ("
+
+#. module: geoengine
+#: model:ir.model.fields,field_description:geoengine.field_wizard_base_view_trail_result__length_km
+msgid "Length Km"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,help:geoengine.field_ir_ui_view__restricted_extent
+msgid ""
+"Limits map panning/zooming to this extent. Format: min_x, min_y, max_x, "
+"max_y (Web Mercator EPSG:3857). Leave empty for unrestricted navigation."
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,help:geoengine.field_wizard_base_view_trail_result__trail_width
+#: model:ir.model.fields,help:geoengine.field_wizard_base_view_trail__trail_width
+msgid "Line width in pixels"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields.selection,name:geoengine.selection__ir_model_fields__geo_type__linestring
+msgid "LineString"
+msgstr ""
+
+#. module: geoengine
+#: model_terms:ir.ui.view,arch_db:geoengine.res_config_settings_view_form
+msgid "Maintenance"
+msgstr ""
+
+#. module: geoengine
+#. odoo-javascript
+#: code:addons/geoengine/static/src/geoengine/panels/layers_panel.js:0
+msgid ""
+"Map Configuration Error\n"
+"\n"
+"%s\n"
+"\n"
+"The map may not function correctly. Please fix these issues in Settings → Technical → User Interface → Views."
+msgstr ""
+
+#. module: geoengine
+#. odoo-javascript
+#: code:addons/geoengine/static/src/geoengine/panels/layers_panel.js:0
+msgid ""
+"Map Configuration Info\n"
+"\n"
+"%s"
+msgstr ""
+
+#. module: geoengine
+#. odoo-javascript
+#: code:addons/geoengine/static/src/geoengine/panels/layers_panel.js:0
+msgid ""
+"Map Configuration Warning\n"
+"\n"
+"%s\n"
+"\n"
+"The map will work but some features may be suboptimal."
+msgstr ""
+
+#. module: geoengine
+#: model_terms:ir.ui.view,arch_db:geoengine.geoengine_view_form
+msgid "Map Controls"
+msgstr ""
+
+#. module: geoengine
+#: model_terms:ir.ui.view,arch_db:geoengine.res_config_settings_view_form
+msgid "Map Display"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,help:geoengine.field_wizard_base_import_geodata__mapping_lines
+msgid "Map GeoJSON properties to model fields"
+msgstr ""
+
+#. module: geoengine
+#: model_terms:ir.ui.view,arch_db:geoengine.geoengine_view_form
+msgid "Map Settings"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,help:geoengine.field_ir_ui_view__default_map_extent
+msgid ""
+"Map extent in format: min_x, min_y, max_x, max_y (Web Mercator EPSG:3857). "
+"Leave empty to use automatic detection based on system/company settings."
+msgstr ""
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/wizard/res_config_settings.py:0
+msgid "Map extent set for %(country)s: %(extent)s"
+msgstr ""
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/models/ir_ui_view.py:0
+msgid ""
+"Map view for model '%(model)s' requires coordinate configuration.\n"
+"\n"
+"Choose ONE of these options:\n"
+"\n"
+"1. Latitude/Longitude fields:\n"
+"   <geoengine latitude_field='lat' longitude_field='lon'>\n"
+"       <field name='lat'/>\n"
+"       <field name='lon'/>\n"
+"   </geoengine>\n"
+"\n"
+"2. GeoJSON field:\n"
+"   <geoengine geojson_field='geom'>\n"
+"       <field name='geom'/>\n"
+"   </geoengine>\n"
+"\n"
+"3. Partner coordinates:\n"
+"   <geoengine res_partner='partner_id'>\n"
+"       <field name='partner_id'/>\n"
+"   </geoengine>\n"
+"\n"
+"4. PostGIS geometry fields:\n"
+"   <geoengine>\n"
+"       <field name='the_geom'/>  <!-- geo_point, geo_polygon, etc. -->\n"
+"   </geoengine>"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,field_description:geoengine.field_wizard_base_import_geodata__mapping_lines
+msgid "Mapping Lines"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,field_description:geoengine.field_geoengine_raster_layer__matrix_set
+msgid "Matrix set"
+msgstr "Conjunto matriz"
+
+#. module: geoengine
+#: model:ir.model.fields,field_description:geoengine.field_geo_setup_wizard__max_geometry_size
+#: model:ir.model.fields,field_description:geoengine.field_res_config_settings__max_geometry_size
+msgid "Max Geometry Size"
+msgstr ""
+
+#. module: geoengine
+#: model_terms:ir.ui.view,arch_db:geoengine.geo_vector_geoengine_view_form
+#: model_terms:ir.ui.view,arch_db:geoengine.geo_vector_view_form
+msgid "Max Safe Classes (based on data)"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,field_description:geoengine.field_geoengine_vector_layer__max_size
+msgid "Max Size"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,field_description:geoengine.field_geoengine_raster_layer__max_zoom
+msgid "Max Zoom"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,field_description:geoengine.field_geoengine_raster_layer__max_extent
+msgid "Max extent"
+msgstr "Extensión máxima"
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/models/geoengine_raster_layer.py:0
+msgid ""
+"Max extent must be four comma-separated numbers 'min_x, min_y, max_x, "
+"max_y', with min_x/min_y smaller than max_x/max_y. Got: %(value)s"
+msgstr ""
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/wizard/geo_setup_wizard.py:0
+#: code:addons/geoengine/wizard/res_config_settings.py:0
+#: model:ir.model.constraint,message:geoengine.constraint_geo_setup_wizard_max_geometry_size_positive
+msgid "Max geometry size must be positive"
+msgstr ""
+
+#. module: geoengine
+#: model_terms:ir.ui.view,arch_db:geoengine.view_geo_setup_wizard_form
+msgid "Max size (MB)"
+msgstr ""
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/wizard/geo_setup_wizard.py:0
+#: model_terms:ir.ui.view,arch_db:geoengine.res_config_settings_view_form
+msgid "Maximum geometry size"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,help:geoengine.field_geoengine_vector_layer__nb_class_recommended
+msgid "Maximum number of classes based on distinct values in your data"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.constraint,message:geoengine.constraint_geoengine_vector_layer_symbol_sizes_sane
+msgid ""
+"Maximum symbol size must be greater than or equal to the minimum, and "
+"neither can be negative"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.constraint,message:geoengine.constraint_geoengine_raster_layer_max_zoom_range
+msgid "Maximum zoom must be between 0 and 24"
+msgstr ""
+
+#. module: geoengine
+#. odoo-javascript
+#: code:addons/geoengine/static/src/geoengine/renderer/geoengine_map_tools.js:0
+msgid "Measure area"
+msgstr ""
+
+#. module: geoengine
+#. odoo-javascript
+#: code:addons/geoengine/static/src/geoengine/renderer/geoengine_map_tools.js:0
+msgid "Measure distance"
+msgstr ""
+
+#. module: geoengine
+#. odoo-javascript
+#: code:addons/geoengine/static/src/geoengine/renderer/geoengine_renderer_interactions.js:0
+msgid "Merge the selected shapes into the first one selected"
+msgstr "Unir las formas seleccionadas en la primera seleccionada"
+
+#. module: geoengine
+#: model:ir.model.fields,field_description:geoengine.field_geoengine_vector_layer__min_size
+msgid "Min Size"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,help:geoengine.field_geoengine_vector_layer__cluster_min_distance
+msgid ""
+"Minimum distance in pixels between two cluster markers. Keeps clusters from "
+"overlapping as you zoom. Must not exceed the clustering distance."
+msgstr ""
+
+#. module: geoengine
+#. odoo-javascript
+#: code:addons/geoengine/static/src/geoengine/renderer/geoengine_renderer_utils.js:0
+msgid "Missing Map Configuration"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,field_description:geoengine.field_wizard_base_export_geodata__model_id
+#: model:ir.model.fields,field_description:geoengine.field_wizard_base_import_geodata__model_id
+#: model:ir.model.fields,field_description:geoengine.field_wizard_base_view_trail__model_id
+#: model:ir.model.fields,field_description:geoengine.field_geoengine_vector_layer__model_id
+msgid "Model"
+msgstr "Modelo"
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/models/ir_ui_view.py:0
+msgid ""
+"Model '%(model)s' does not exist.\n"
+"\n"
+"Ensure the model is defined before creating views for it."
+msgstr ""
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/wizard/geo_trail_wizard.py:0
+msgid ""
+"Model '%(model)s' has no device_id field, so positions cannot be grouped by "
+"device."
+msgstr ""
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/wizard/geo_trail_wizard.py:0
+msgid "Model '%s' has no geo fields for trail generation"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,field_description:geoengine.field_geoengine_vector_layer__model_domain
+msgid "Model Domain"
+msgstr "Dominio del modelo"
+
+#. module: geoengine
+#: model:ir.model.fields,field_description:geoengine.field_geoengine_vector_layer__model_view_id
+msgid "Model View"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,help:geoengine.field_wizard_base_view_trail__model_id
+msgid "Model containing position records (must have geo fields)"
+msgstr ""
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/models/geoengine_vector_layer.py:0
+msgid ""
+"Model domain must be a valid Odoo domain (e.g. [('field', '=', value)]). "
+"Error: %s"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,help:geoengine.field_wizard_base_export_geodata__model_id
+msgid "Model to export records from"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,help:geoengine.field_wizard_base_import_geodata__model_id
+msgid "Model to import records into (must have geo fields)"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields.selection,name:geoengine.selection__ir_model_fields__geo_type__multilinestring
+msgid "MultiLineString"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields.selection,name:geoengine.selection__ir_model_fields__geo_type__multipoint
+msgid "MultiPoint"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields.selection,name:geoengine.selection__ir_model_fields__geo_type__multipolygon
+msgid "MultiPolygon"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,field_description:geoengine.field_wizard_base_view_trail_result__name
+#: model:ir.model.fields,field_description:geoengine.field_geoengine_raster_layer__name
+#: model:ir.model.fields,field_description:geoengine.field_geoengine_vector_layer__name
+msgid "Name"
+msgstr "Nombre"
+
+#. module: geoengine
+#: model:ir.model.fields,field_description:geoengine.field_wizard_base_import_geodata__name_property
+msgid "Name Property"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,field_description:geoengine.field_geoengine_vector_layer__nb_class
+msgid "Nb Class"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,field_description:geoengine.field_geoengine_vector_layer__nb_class_recommended
+msgid "Nb Class Recommended"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,help:geoengine.field_geoengine_raster_layer__params_wms
+msgid "Need to provide at least a LAYERS param"
+msgstr "Necesidad de proporcionar al menos un parámetro de CAPAS"
+
+#. module: geoengine
+#. odoo-javascript
+#: code:addons/geoengine/static/src/geoengine/geoengine_controller.js:0
+msgid "New record"
+msgstr "Nuevo récord"
+
+#. module: geoengine
+#: model_terms:ir.ui.view,arch_db:geoengine.view_geo_setup_wizard_form
+msgid "Next"
+msgstr ""
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/wizard/geo_setup_wizard.py:0
+msgid "No"
+msgstr ""
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/controllers/ogc_features.py:0
+msgid "No collection %s."
+msgstr "No existe la colección %s."
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/wizard/res_config_settings.py:0
+msgid "No country set for the current company."
+msgstr ""
+
+#. module: geoengine
+#. odoo-javascript
+#: code:addons/geoengine/static/src/geoengine/panels/features_list.xml:0
+msgid "No data"
+msgstr ""
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/controllers/ogc_features.py:0
+msgid "No feature %s in this collection."
+msgstr "No existe el elemento %s en esta colección."
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/wizard/geo_io_wizard.py:0
+msgid "No features found in the uploaded file."
+msgstr ""
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/models/base.py:0
+msgid ""
+"No geoengine view defined for the model %s.\n"
+"Please create a view or modify view mode."
+msgstr ""
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/models/base.py:0
+msgid ""
+"No info_box template defined. Popup information will not be displayed when "
+"clicking on map features."
+msgstr ""
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/wizard/res_config_settings.py:0
+msgid "No predefined extent for %(country)s. Please set the extent manually."
+msgstr ""
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/models/base.py:0
+msgid ""
+"No raster layers configured. At least one raster layer (e.g., OpenStreetMap)"
+" is required for map background."
+msgstr ""
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/wizard/geo_trail_wizard.py:0
+msgid "No records found in the specified date range"
+msgstr ""
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/wizard/geo_io_wizard.py:0
+msgid "No records found matching the criteria."
+msgstr ""
+
+#. module: geoengine
+#. odoo-javascript
+#: code:addons/geoengine/static/src/geoengine/panels/features_list.xml:0
+msgid "No results found"
+msgstr ""
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/models/base.py:0
+msgid ""
+"No vector layers configured. At least one vector layer is required to "
+"display data on the map."
+msgstr ""
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/wizard/geo_io_wizard.py:0
+msgid "Not a valid GeoJSON file, nor a valid .zip archive."
+msgstr ""
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/wizard/geo_io_wizard.py:0
+msgid "Not a valid GeoPackage: %s"
+msgstr ""
+
+#. module: geoengine
+#. odoo-javascript
+#: code:addons/geoengine/static/src/geoengine/geoengine_controller.js:0
+msgid "Not all records are displayed"
+msgstr ""
+
+#. module: geoengine
+#. odoo-javascript
+#: code:addons/geoengine/static/src/geoengine/geoengine_controller.js:0
+msgid "Not all records are on the map"
+msgstr ""
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/models/geometry_edit.py:0
+msgid ""
+"Nothing of the shape would remain. To remove it, delete the record or "
+"clear its geometry."
+msgstr ""
+"No quedaría nada de la forma. Para quitarla, elimine el registro o borre "
+"su geometría."
+
+#. module: geoengine
+#: model:ir.model.constraint,message:geoengine.constraint_geoengine_vector_layer_nb_class_positive
+msgid "Number of classes must be at least 1"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,help:geoengine.field_geoengine_vector_layer__nb_class
+msgid "Number of classification categories for data visualization"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,help:geoengine.field_geoengine_vector_layer__heatmap_weight_field_id
+msgid ""
+"Numeric field weighting each point's contribution. Values are normalised "
+"against the layer's maximum, so the field's unit does not matter. Leave "
+"empty to weight every point equally."
+msgstr ""
+
+#. module: geoengine
+#. odoo-javascript
+#: code:addons/geoengine/static/src/geoengine/geoengine_renderer.xml:0
+msgid "OPEN"
+msgstr "ABRIR"
+
+#. module: geoengine
+#: model:ir.model.fields,help:geoengine.field_wizard_base_import_geodata_mapping__field_id
+msgid "Odoo field to map this property to"
+msgstr ""
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/models/ogc_features.py:0
+msgid "Odoo map data"
+msgstr "Datos de mapas de Odoo"
+
+#. module: geoengine
+#. odoo-javascript
+#: code:addons/geoengine/static/src/geoengine/renderer/geoengine_spatial_filter.js:0
+msgid "On the visible map"
+msgstr "En el mapa visible"
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/wizard/geo_setup_wizard.py:0
+msgid "Only GeoEngine administrators can run the GeoEngine setup wizard."
+msgstr ""
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/models/geometry_edit.py:0
+msgid "Only an area can be added to or cut out of an area."
+msgstr "Solo se puede agregar o recortar un área en un área."
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/models/geometry_edit.py:0
+msgid "Only an area can be split."
+msgstr "Solo se puede dividir un área."
+
+#. module: geoengine
+#. odoo-javascript
+#: code:addons/geoengine/static/src/geoengine/geoengine_renderer.js:0
+msgid "Only the first %s are listed. Narrow the search to see the others."
+msgstr "Solo se listan los primeros %s. Acote la búsqueda para ver los demás."
+
+#. module: geoengine
+#: model:ir.model.fields,field_description:geoengine.field_geoengine_raster_layer__opacity
+msgid "Opacity"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.constraint,message:geoengine.constraint_geoengine_raster_layer_opacity_range
+msgid "Opacity must be between 0 and 1"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields.selection,name:geoengine.selection__geoengine_raster_layer__raster_type__osm
+msgid "OpenStreetMap"
+msgstr ""
+
+#. module: geoengine
+#: model:geoengine.raster.layer,name:geoengine.raster_layer_trail_result
+msgid "OpenStreetMap - Trail Results"
+msgstr ""
+
+#. module: geoengine
+#: model_terms:ir.ui.view,arch_db:geoengine.view_geo_import_wizard_form
+msgid "Options"
+msgstr ""
+
+#. module: geoengine
+#: model_terms:ir.ui.view,arch_db:geoengine.view_geo_export_wizard_form
+msgid "Output"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,field_description:geoengine.field_wizard_base_export_geodata__output_file
+msgid "Output File"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,field_description:geoengine.field_wizard_base_export_geodata__output_filename
+msgid "Output Filename"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,field_description:geoengine.field_wizard_base_export_geodata__output_format
+msgid "Output Format"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,field_description:geoengine.field_wizard_base_export_geodata__output_srid
+msgid "Output Srid"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,help:geoengine.field_geoengine_vector_layer__render_engine
+msgid ""
+"Override the view's default render engine for this layer only.\n"
+"'Use View Default' inherits from the parent geoengine view.\n"
+"Auto: Automatically selects based on feature count.\n"
+"WebGL: GPU-accelerated, best for large datasets. Draws labels too.\n"
+"Canvas: required for on-map geometry editing."
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,field_description:geoengine.field_geoengine_raster_layer__params
+msgid "Params"
+msgstr "Parámetros"
+
+#. module: geoengine
+#: model:ir.model.fields,field_description:geoengine.field_geoengine_raster_layer__params_wms
+msgid "Params Wms"
+msgstr ""
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/models/geoengine_raster_layer.py:0
+msgid "Params must be valid JSON format"
+msgstr ""
+
+#. module: geoengine
+#. odoo-javascript
+#: code:addons/geoengine/static/src/geoengine/geoengine_model.js:0
+msgid ""
+"Part of this layer holds too many records to draw in time. Zoom in, or "
+"narrow the search."
+msgstr ""
+"Parte de esta capa contiene demasiados registros para dibujarlos a "
+"tiempo. Acerque el mapa o acote la búsqueda."
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/wizard/res_config_settings.py:0
+msgid "Partial"
+msgstr ""
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/wizard/geo_io_wizard.py:0
+msgid "Please select a geometry field."
+msgstr ""
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/wizard/geo_trail_wizard.py:0
+msgid "Please select a model"
+msgstr ""
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/wizard/geo_io_wizard.py:0
+msgid "Please select a source model."
+msgstr ""
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/wizard/geo_io_wizard.py:0
+msgid "Please select a target model."
+msgstr ""
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/wizard/geo_io_wizard.py:0
+msgid "Please upload a file first."
+msgstr ""
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/wizard/geo_io_wizard.py:0
+msgid "Please upload a file."
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields.selection,name:geoengine.selection__ir_model_fields__geo_type__point
+msgid "Point"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields.selection,name:geoengine.selection__ir_model_fields__geo_type__polygon
+msgid "Polygon"
+msgstr ""
+
+#. module: geoengine
+#. odoo-javascript
+#: code:addons/geoengine/static/src/geoengine/renderer/geoengine_map_tools.js:0
+msgid "Position found, accurate to about %s m"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,field_description:geoengine.field_ir_model_fields__dim
+msgid "PostGIS Dimension"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,field_description:geoengine.field_ir_model_fields__geo_type
+msgid "PostGIS Type"
+msgstr ""
+
+#. module: geoengine
+#: model_terms:ir.ui.view,arch_db:geoengine.view_geo_import_wizard_form
+msgid "Preview"
+msgstr "Vista previa"
+
+#. module: geoengine
+#: model:ir.model.fields,field_description:geoengine.field_wizard_base_import_geodata__preview_properties
+msgid "Preview Properties"
+msgstr ""
+
+#. module: geoengine
+#: model_terms:ir.ui.view,arch_db:geoengine.view_geo_setup_wizard_form
+msgid "Previous"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,field_description:geoengine.field_geoengine_raster_layer__projection
+#: model:ir.model.fields,field_description:geoengine.field_ir_ui_view__projection
+msgid "Projection"
+msgstr "Proyección"
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/models/ir_ui_view.py:0
+msgid ""
+"Projection must be written 'EPSG:<code>', e.g. EPSG:3857. Got: %(value)s"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,help:geoengine.field_wizard_base_import_geodata__preview_properties
+msgid "Properties found in the GeoJSON file"
+msgstr ""
+
+#. module: geoengine
+#: model_terms:ir.ui.view,arch_db:geoengine.view_geo_export_wizard_form
+msgid "Properties to Include"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,field_description:geoengine.field_wizard_base_export_geodata__property_field_ids
+msgid "Property Field"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,field_description:geoengine.field_wizard_base_import_geodata_mapping__property_name
+msgid "Property Name"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,help:geoengine.field_wizard_base_import_geodata_mapping__property_name
+msgid "Property name from GeoJSON features"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields.selection,name:geoengine.selection__geoengine_vector_layer__geo_repr__proportion
+msgid "Proportional Symbol"
+msgstr "Símbolo proporcional"
+
+#. module: geoengine
+#: model:ir.model.fields.selection,name:geoengine.selection__geoengine_vector_layer__classification__quantile
+msgid "Quantile"
+msgstr "Cuantil"
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/models/geoengine_vector_layer.py:0
+msgid ""
+"Quantile classification needs more values than classes.\n"
+"\n"
+"Field '%(field)s' has %(values)d value(s) to classify, so at most %(max)d class(es) can be computed; %(requested)d were requested.\n"
+"\n"
+"Reduce 'Number of classes' to %(max)d or less."
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,help:geoengine.field_geoengine_vector_layer__max_size
+msgid "Radius in pixels for the largest value, in 'Proportional Symbol' mode."
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,help:geoengine.field_geoengine_vector_layer__min_size
+msgid ""
+"Radius in pixels for the smallest value, in 'Proportional Symbol' mode."
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,help:geoengine.field_geoengine_vector_layer__heatmap_radius
+msgid "Radius of each point's contribution, in pixels."
+msgstr ""
+
+#. module: geoengine
+#: model_terms:ir.ui.view,arch_db:geoengine.geoengine_view_form
+msgid "Raster (Background layers)"
+msgstr "Ráster (capas de fondo)"
+
+#. module: geoengine
+#: model:ir.actions.act_window,name:geoengine.geo_engine_form_view_raster_action
+#: model:ir.actions.act_window,name:geoengine.geo_raster_layer_list_action
+#: model:ir.model,name:geoengine.model_geoengine_raster_layer
+#: model:ir.model.fields,field_description:geoengine.field_ir_ui_view__raster_layer_ids
+msgid "Raster Layer"
+msgstr "Capa Ráster"
+
+#. module: geoengine
+#: model:ir.ui.menu,name:geoengine.geoengine_raster_layer_menu
+msgid "Raster Layer Management"
+msgstr "Gestión de capas rasterizadas"
+
+#. module: geoengine
+#: model_terms:ir.ui.view,arch_db:geoengine.geo_raster_view_form
+msgid "Raster Layer View"
+msgstr "Vista de capa rasterizada"
+
+#. module: geoengine
+#: model:ir.model.fields,field_description:geoengine.field_geoengine_raster_layer__raster_type
+msgid "Raster Type"
+msgstr ""
+
+#. module: geoengine
+#. odoo-javascript
+#: code:addons/geoengine/static/src/geoengine/panels/layers_panel.xml:0
+msgid "Rasters"
+msgstr "Rásteres"
+
+#. module: geoengine
+#: model:ir.model.fields,field_description:geoengine.field_geoengine_vector_layer__readonly
+msgid "Readonly"
+msgstr ""
+
+#. module: geoengine
+#: model_terms:ir.ui.view,arch_db:geoengine.res_config_settings_view_form
+msgid "Rebuild spatial indexes"
+msgstr "Reconstruir los índices espaciales"
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/wizard/res_config_settings.py:0
+msgid "Rebuilt %(rebuilt)d spatial index(es)."
+msgstr ""
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/wizard/res_config_settings.py:0
+msgid ""
+"Rebuilt %(rebuilt)d spatial index(es). %(failed)d failed: %(names)s — see "
+"the server log."
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,field_description:geoengine.field_wizard_base_view_trail_result__record_count
+msgid "Record Count"
+msgstr ""
+
+#. module: geoengine
+#. odoo-javascript
+#: code:addons/geoengine/static/src/geoengine/renderer/geoengine_renderer_interactions.js:0
+msgid "Redo (Ctrl+Y)"
+msgstr "Rehacer (Ctrl+Y)"
+
+#. module: geoengine
+#: model_terms:ir.ui.view,arch_db:geoengine.geo_vector_view_form
+msgid "Related Model"
+msgstr "Modelo relacionado"
+
+#. module: geoengine
+#. odoo-javascript
+#: code:addons/geoengine/static/src/geoengine/renderer/geoengine_renderer_interactions.js:0
+msgid "Remove one part of the shape"
+msgstr "Quitar una parte de la forma"
+
+#. module: geoengine
+#: model:ir.model.fields,field_description:geoengine.field_geoengine_vector_layer__render_engine
+#: model:ir.model.fields,field_description:geoengine.field_ir_ui_view__render_engine
+#: model_terms:ir.ui.view,arch_db:geoengine.geoengine_view_form
+msgid "Render Engine"
+msgstr ""
+
+#. module: geoengine
+#: model_terms:ir.ui.view,arch_db:geoengine.res_config_settings_view_form
+msgid "Repair invalid geometries"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,help:geoengine.field_res_config_settings__auto_repair_geometry
+msgid ""
+"Repair invalid geometry with ST_MakeValid instead of rejecting it. Only "
+"applies while geometry validation is enabled."
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,help:geoengine.field_geo_setup_wizard__auto_repair_geometry
+msgid ""
+"Repair invalid geometry with ST_MakeValid rather than rejecting it. Only "
+"applies while validation is enabled."
+msgstr ""
+
+#. module: geoengine
+#: model_terms:ir.ui.view,arch_db:geoengine.geo_vector_geoengine_view_form
+#: model_terms:ir.ui.view,arch_db:geoengine.geo_vector_view_form
+msgid "Representation"
+msgstr "Representación"
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/models/fields.py:0
+msgid ""
+"Reprojection of column is not implemented. Cannot change SRID %(current)s to"
+" %(new)s"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,field_description:geoengine.field_geoengine_raster_layer__request_encoding
+msgid "Request Encoding"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,field_description:geoengine.field_geoengine_raster_layer__resolutions
+msgid "Resolutions"
+msgstr "Resoluciones"
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/models/geoengine_raster_layer.py:0
+msgid ""
+"Resolutions must be a comma-separated list of positive numbers, largest "
+"first. Got: %(value)s"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,field_description:geoengine.field_ir_ui_view__restricted_extent
+msgid "Restricted Extent"
+msgstr ""
+
+#. module: geoengine
+#: model_terms:ir.ui.view,arch_db:geoengine.view_geo_import_wizard_form
+#: model_terms:ir.ui.view,arch_db:geoengine.view_geo_trail_wizard_form
+msgid "Results"
+msgstr ""
+
+#. module: geoengine
+#: model_terms:ir.ui.view,arch_db:geoengine.res_config_settings_view_form
+msgid "Run ST_MakeValid on invalid geometry instead of rejecting it."
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,field_description:geoengine.field_ir_model_fields__srid
+msgid "SRID"
+msgstr ""
+
+#. module: geoengine
+#. odoo-javascript
+#: code:addons/geoengine/static/src/geoengine/geoengine_controller.xml:0
+msgid "Save"
+msgstr "Guardar"
+
+#. module: geoengine
+#. odoo-javascript
+#: code:addons/geoengine/static/src/geoengine/panels/features_list.xml:0
+msgid "Search..."
+msgstr "Buscar..."
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/models/base.py:0
+msgid "Select two or more shapes to merge."
+msgstr "Seleccione dos o más formas para unir."
+
+#. module: geoengine
+#: model:ir.model.fields,field_description:geoengine.field_geoengine_raster_layer__sequence
+#: model:ir.model.fields,field_description:geoengine.field_geoengine_vector_layer__sequence
+msgid "Sequence"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.constraint,message:geoengine.constraint_geoengine_raster_layer_sequence_positive
+#: model:ir.model.constraint,message:geoengine.constraint_geoengine_vector_layer_sequence_positive
+msgid "Sequence must be positive"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,field_description:geoengine.field_geoengine_raster_layer__server_type
+msgid "Server Type"
+msgstr "Tipo de servidor"
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/wizard/geo_setup_wizard.py:0
+#: model:ir.model.fields,field_description:geoengine.field_geo_setup_wizard__setup_complete
+#: model:ir.model.fields.selection,name:geoengine.selection__geo_setup_wizard__current_step__completion
+#: model_terms:ir.ui.view,arch_db:geoengine.view_geo_setup_wizard_form
+msgid "Setup Complete"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,field_description:geoengine.field_geo_setup_wizard__setup_summary
+msgid "Setup Summary"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields.selection,name:geoengine.selection__wizard_base_export_geodata__output_format__shapefile
+msgid "Shapefile (.zip)"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,help:geoengine.field_wizard_base_export_geodata__output_format
+msgid ""
+"Shapefile is the format most GIS tools and field equipment accept; "
+"GeoPackage is the modern OGC standard (one file, no 10-character field-name "
+"limit, real Multi* geometry types); GeoJSON keeps full property-type "
+"fidelity."
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,field_description:geoengine.field_ir_ui_view__show_attribution
+msgid "Show Attribution"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,field_description:geoengine.field_ir_ui_view__show_fullscreen
+msgid "Show Fullscreen"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,field_description:geoengine.field_ir_ui_view__show_mouse_position
+msgid "Show Mouse Position"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,field_description:geoengine.field_ir_ui_view__show_overview_map
+msgid "Show Overview Map"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,field_description:geoengine.field_ir_ui_view__show_zoom_slider
+msgid "Show Zoom Slider"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,help:geoengine.field_ir_ui_view__show_fullscreen
+msgid "Show a button that expands the map to the full screen."
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,help:geoengine.field_ir_ui_view__show_overview_map
+msgid "Show a small locator map in the corner."
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,help:geoengine.field_ir_ui_view__show_zoom_slider
+msgid "Show a zoom slider beside the zoom buttons."
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,help:geoengine.field_ir_ui_view__show_attribution
+msgid ""
+"Show data-source credits on the map. OpenStreetMap, Esri and CARTO all "
+"require attribution to be displayed, so turn this off only for a map whose "
+"sources do not."
+msgstr ""
+
+#. module: geoengine
+#. odoo-javascript
+#: code:addons/geoengine/static/src/geoengine/renderer/geoengine_map_tools.js:0
+msgid "Show my position"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,help:geoengine.field_ir_ui_view__show_mouse_position
+msgid "Show the coordinates under the pointer, in the view projection."
+msgstr ""
+
+#. module: geoengine
+#. odoo-javascript
+#: code:addons/geoengine/static/src/geoengine/panels/features_list.xml:0
+msgid "Showing"
+msgstr ""
+
+#. module: geoengine
+#. odoo-javascript
+#: code:addons/geoengine/static/src/geoengine/geoengine_model.js:0
+msgid ""
+"Showing the first %(limit)s features. Narrow this layer's filter to see them"
+" all."
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields.selection,name:geoengine.selection__wizard_base_view_trail__group_by__none
+msgid "Single Trail"
+msgstr ""
+
+#. module: geoengine
+#: model_terms:ir.ui.view,arch_db:geoengine.view_geo_setup_wizard_form
+msgid "Skip"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,field_description:geoengine.field_wizard_base_import_geodata__skip_invalid
+msgid "Skip Invalid"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,help:geoengine.field_wizard_base_import_geodata__skip_invalid
+msgid "Skip features with invalid geometries instead of aborting"
+msgstr ""
+
+#. module: geoengine
+#: model_terms:ir.ui.view,arch_db:geoengine.view_geo_setup_wizard_form
+msgid ""
+"Skipping keeps the shipped defaults: geometry is validated,\n"
+"                            invalid geometry is repaired automatically, and the size limit\n"
+"                            is 1 MB."
+msgstr ""
+
+#. module: geoengine
+#: model_terms:ir.ui.view,arch_db:geoengine.view_geo_export_wizard_form
+msgid "Source"
+msgstr ""
+
+#. module: geoengine
+#: model_terms:ir.ui.view,arch_db:geoengine.view_geo_trail_wizard_form
+msgid "Source Data"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,help:geoengine.field_ir_model_fields__srid
+msgid "Spatial Reference System Identifier for geometry fields"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,help:geoengine.field_ir_model_fields__dim
+msgid "Spatial dimension for geometry fields (2D, 3D, or 4D)"
+msgstr ""
+
+#. module: geoengine
+#: model_terms:ir.ui.view,arch_db:geoengine.res_config_settings_view_form
+msgid "Spatial indexes"
+msgstr ""
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/wizard/geo_setup_wizard.py:0
+msgid "Spatial indexes created"
+msgstr ""
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/models/geo_domain.py:0
+msgid ""
+"Spatial operator '%(operator)s' cannot be used on %(model)s.%(field)s, which "
+"is not a geometry field."
+msgstr ""
+
+#. module: geoengine
+#. odoo-javascript
+#: code:addons/geoengine/static/src/geoengine/renderer/geoengine_renderer_interactions.js:0
+msgid "Split the shape along a line into records"
+msgstr "Dividir la forma en registros a lo largo de una línea"
+
+#. module: geoengine
+#: model:ir.model.fields,help:geoengine.field_wizard_base_view_trail__date_from
+msgid "Start date for trail generation"
+msgstr ""
+
+#. module: geoengine
+#. odoo-javascript
+#: code:addons/geoengine/static/src/geoengine/panels/time_slider.xml:0
+msgid "Step backward (1/8)"
+msgstr ""
+
+#. module: geoengine
+#. odoo-javascript
+#: code:addons/geoengine/static/src/geoengine/panels/time_slider.xml:0
+msgid "Step forward (1/8)"
+msgstr ""
+
+#. module: geoengine
+#: model_terms:ir.ui.view,arch_db:geoengine.view_geo_trail_result_form
+msgid "Styling"
+msgstr ""
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/wizard/res_config_settings.py:0
+msgid "Success"
+msgstr ""
+
+#. module: geoengine
+#: model_terms:ir.ui.view,arch_db:geoengine.view_geo_import_wizard_form
+msgid "Target"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,help:geoengine.field_wizard_base_import_geodata__geo_field_id
+msgid "Target field for imported geometries"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,field_description:geoengine.field_wizard_base_export_geodata__model_name
+#: model:ir.model.fields,field_description:geoengine.field_wizard_base_import_geodata__model_name
+#: model:ir.model.fields,field_description:geoengine.field_wizard_base_view_trail__model_name
+#: model:ir.model.fields,field_description:geoengine.field_geoengine_vector_layer__model_name
+msgid "Technical Name"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,help:geoengine.field_geoengine_raster_layer__is_wms
+msgid "Technical field to display or not wms options"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,help:geoengine.field_geoengine_raster_layer__is_wmts
+msgid "Technical field to display or not wmts options"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,help:geoengine.field_ir_model_fields__is_geo_field
+msgid "Technical field: whether ttype is one of the PostGIS geometry types."
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,help:geoengine.field_wizard_base_view_trail__date_field
+msgid "Technical name of the datetime field, taken from Date Field."
+msgstr ""
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/models/geoengine_vector_layer.py:0
+msgid ""
+"The '%(repr)s' representation needs an attribute field to read its values "
+"from."
+msgstr ""
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/models/geoengine_vector_layer.py:0
+msgid ""
+"The '%(repr)s' representation needs point geometry, but '%(field)s' is a "
+"%(type)s. OpenLayers would draw an empty layer without reporting an error."
+msgstr ""
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/wizard/geo_io_wizard.py:0
+msgid "The GeoPackage has no feature table to import."
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,field_description:geoengine.field_wizard_base_view_trail_result__the_trail
+msgid "The Trail"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.constraint,message:geoengine.constraint_geoengine_vector_layer_webgl_threshold_positive
+msgid "The WebGL threshold is a feature count and cannot be negative"
+msgstr ""
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/models/ir_ui_view.py:0
+msgid ""
+"The WebGL threshold is a feature count and cannot be negative. Got: "
+"%(value)d"
+msgstr ""
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/models/geometry_edit.py:0
+msgid "The drawn outline crosses itself; draw it again without crossing."
+msgstr ""
+"El contorno dibujado se cruza a sí mismo; dibújelo de nuevo sin cruzarlo."
+
+#. module: geoengine
+#. odoo-javascript
+#: code:addons/geoengine/static/src/geoengine/panels/layers_panel.js:0
+msgid "The filter could not be saved: %s"
+msgstr ""
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/models/geoengine_vector_layer.py:0
+msgid "The geo_field_id must be a field in %s model"
+msgstr "El geo_field_id debe ser un campo del modelo %s"
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/models/ogc_features.py:0
+msgid ""
+"The geometries the geoengine maps of this database draw, as OGC API - "
+"Features collections."
+msgstr ""
+"Las geometrías que dibujan los mapas de geoengine de esta base de datos, "
+"como colecciones de OGC API - Features."
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/models/geometry_check.py:0
+msgid "The holes cut the area in two here."
+msgstr "Los huecos parten el área en dos aquí."
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/models/geometry_edit.py:0
+msgid "The line does not cut the shape: draw it across the shape."
+msgstr "La línea no corta la forma: dibújela atravesando la forma."
+
+#. module: geoengine
+#. odoo-javascript
+#: code:addons/geoengine/static/src/geoengine/renderer/geoengine_map_tools.js:0
+msgid "The map could not be exported."
+msgstr ""
+
+#. module: geoengine
+#. odoo-javascript
+#: code:addons/geoengine/static/src/geoengine/renderer/geoengine_map_tools.js:0
+msgid "The map could not be exported: %s"
+msgstr ""
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/models/geoengine_vector_layer.py:0
+msgid ""
+"The minimum distance between clusters (%(min)s px) cannot exceed the "
+"clustering distance (%(dist)s px)."
+msgstr ""
+
+#. module: geoengine
+#. odoo-javascript
+#: code:addons/geoengine/static/src/geoengine/panels/layers_panel.js:0
+msgid "The new layer order could not be saved: %s"
+msgstr ""
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/models/geometry_check.py:0
+msgid "The outline crosses itself here."
+msgstr "El contorno se cruza a sí mismo aquí."
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/controllers/ogc_features.py:0
+msgid ""
+"The query did not finish in time. Narrow it with bbox or a smaller limit."
+msgstr "La consulta no terminó a tiempo. Acótela con bbox o un límite menor."
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/models/geometry_check.py:0
+msgid "The shape has too few points to enclose an area."
+msgstr "La forma tiene muy pocos puntos para encerrar un área."
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/models/geometry_check.py:0
+msgid ""
+"The shape has too many points to store (%(size)d bytes, at most "
+"%(maximum)d)."
+msgstr ""
+"La forma tiene demasiados puntos para guardarse (%(size)d bytes, como "
+"máximo %(maximum)d)."
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/models/geometry_check.py:0
+msgid "The shape is not valid: %s"
+msgstr "La forma no es válida: %s"
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/models/base.py:0
+msgid "The shape is now %(count)d records."
+msgstr "La forma ahora son %(count)d registros."
+
+#. module: geoengine
+#. odoo-javascript
+#: code:addons/geoengine/static/src/geoengine/renderer/geoengine_renderer_interactions.js:0
+msgid "The shape was not changed"
+msgstr "La forma no se modificó"
+
+#. module: geoengine
+#. odoo-javascript
+#: code:addons/geoengine/static/src/geoengine/renderer/geoengine_renderer_interactions.js:0
+msgid "The shapes were not changed"
+msgstr "Las formas no se modificaron"
+
+#. module: geoengine
+#: model:ir.model.fields,help:geoengine.field_geoengine_raster_layer__server_type
+msgid ""
+"The type of the remote WMS server: mapserver,             geoserver, "
+"carmentaserver, or qgis"
+msgstr ""
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/wizard/geo_io_wizard.py:0
+msgid ""
+"The uploaded .zip is missing %(missing)s. A shapefile upload needs .shp, "
+".shx and .dbf together in one archive."
+msgstr ""
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/wizard/geo_io_wizard.py:0
+msgid "This file is larger than the %(maximum)d MB import limit."
+msgstr ""
+
+#. module: geoengine
+#. odoo-javascript
+#: code:addons/geoengine/static/src/geoengine/renderer/geoengine_renderer_utils.js:0
+msgid ""
+"This geoengine view is missing vector layer configuration. Please configure "
+"at least one vector layer for this view to display data on the map."
+msgstr ""
+
+#. module: geoengine
+#. odoo-javascript
+#: code:addons/geoengine/static/src/geoengine/renderer/geoengine_spatial_filter.js:0
+msgid "This map draws no geometry of its own records to filter by."
+msgstr ""
+"Este mapa no dibuja ninguna geometría de sus propios registros por la "
+"cual filtrar."
+
+#. module: geoengine
+#. odoo-javascript
+#: code:addons/geoengine/static/src/geoengine/geoengine_controller.js:0
+msgid ""
+"This map is showing %(shown)s of %(total)s records. Raise the view's limit, "
+"or narrow the search, to see them all."
+msgstr ""
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/wizard/geo_trail_wizard.py:0
+msgid ""
+"This range covers more than %(maximum)d records. Narrow the dates or add a "
+"filter."
+msgstr ""
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/models/base.py:0
+msgid "This record has no shape to split."
+msgstr "Este registro no tiene una forma que dividir."
+
+#. module: geoengine
+#. odoo-javascript
+#: code:addons/geoengine/static/src/geoengine/renderer/geoengine_renderer_interactions.js:0
+msgid "This shape cannot be stored as drawn"
+msgstr "Esta forma no se puede guardar tal como se dibujó"
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/models/geometry_edit.py:0
+msgid ""
+"This shape has a single part. To remove it, delete the record or clear "
+"its geometry."
+msgstr ""
+"Esta forma tiene una sola parte. Para quitarla, elimine el registro o "
+"borre su geometría."
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/models/vector_tiles.py:0
+msgid "Tile %(z)s/%(x)s/%(y)s does not exist."
+msgstr "La tesela %(z)s/%(x)s/%(y)s no existe."
+
+#. module: geoengine
+#: model:ir.model.fields,help:geoengine.field_geoengine_raster_layer__projection
+msgid ""
+"Tile matrix projection, e.g. EPSG:3857. Only CRS OpenLayers resolves "
+"natively work here (EPSG:4326, EPSG:3857 and the UTM zones); anything else "
+"is used untransformed and misplaces the tiles."
+msgstr ""
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/models/geoengine_raster_layer.py:0
+msgid ""
+"Tile projection must be written 'EPSG:<code>' and name a coordinate "
+"system PostGIS has an EPSG definition for. Got: %(value)s"
+msgstr ""
+"La proyección de las teselas debe escribirse 'EPSG:<código>' y nombrar un "
+"sistema de coordenadas para el que PostGIS tenga una definición EPSG. Se "
+"recibió: %(value)s"
+
+#. module: geoengine
+#. odoo-javascript
+#: code:addons/geoengine/static/src/geoengine/panels/layers_panel.xml:0
+msgid "Toggle layers panel"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,field_description:geoengine.field_wizard_base_view_trail__trail_ids
+msgid "Trail"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,field_description:geoengine.field_wizard_base_view_trail_result__trail_color
+#: model:ir.model.fields,field_description:geoengine.field_wizard_base_view_trail__trail_color
+msgid "Trail Color"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,field_description:geoengine.field_wizard_base_view_trail__trail_count
+msgid "Trail Count"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model,name:geoengine.model_wizard_base_view_trail_result
+msgid "Trail Generation Result"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model,name:geoengine.model_wizard_base_view_trail
+msgid "Trail Generation Wizard"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,field_description:geoengine.field_wizard_base_view_trail_result__trail_opacity
+#: model:ir.model.fields,field_description:geoengine.field_wizard_base_view_trail__trail_opacity
+msgid "Trail Opacity"
+msgstr ""
+
+#. module: geoengine
+#: model_terms:ir.ui.view,arch_db:geoengine.view_geo_trail_result_form
+msgid "Trail Result"
+msgstr ""
+
+#. module: geoengine
+#: model_terms:ir.ui.view,arch_db:geoengine.view_geo_trail_wizard_form
+msgid "Trail Styling"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,field_description:geoengine.field_wizard_base_view_trail_result__trail_width
+#: model:ir.model.fields,field_description:geoengine.field_wizard_base_view_trail__trail_width
+msgid "Trail Width"
+msgstr ""
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/wizard/geo_trail_wizard.py:0
+msgid "Trail color must be a valid hex color (e.g., #FF0000)"
+msgstr ""
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/wizard/geo_trail_wizard.py:0
+msgid "Trail opacity must be between 0.0 and 1.0"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,help:geoengine.field_wizard_base_view_trail_result__trail_opacity
+#: model:ir.model.fields,help:geoengine.field_wizard_base_view_trail__trail_opacity
+msgid "Trail transparency (0.0 = transparent, 1.0 = opaque)"
+msgstr ""
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/wizard/geo_trail_wizard.py:0
+msgid "Trail width must be between 1 and 20 pixels"
+msgstr ""
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/models/geometry_check.py:0
+msgid "Two outlines overlap here."
+msgstr "Dos contornos se traslapan aquí."
+
+#. module: geoengine
+#: model_terms:ir.ui.view,arch_db:geoengine.view_geo_setup_wizard_form
+msgid ""
+"Two things are worth setting before you start: how invalid\n"
+"                                geometry is handled, and whether to index the geometry columns\n"
+"                                that already exist. Everything else has a working default."
+msgstr ""
+
+#. module: geoengine
+#. odoo-javascript
+#: code:addons/geoengine/static/src/geoengine/renderer/geoengine_renderer_interactions.js:0
+msgid "Undo (Ctrl+Z)"
+msgstr "Deshacer (Ctrl+Z)"
+
+#. module: geoengine
+#. odoo-javascript
+#: code:addons/geoengine/static/src/geoengine/panels/features_list.js:0
+msgid "Ungrouped"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields.selection,name:geoengine.selection__geoengine_vector_layer__classification__unique
+msgid "Unique value"
+msgstr "Valor único"
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/models/geo_domain.py:0
+msgid "Unknown spatial operator '%(operator)s'."
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,field_description:geoengine.field_geoengine_raster_layer__url
+msgid "Url"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields.selection,name:geoengine.selection__geoengine_vector_layer__render_engine__inherit
+msgid "Use View Default"
+msgstr ""
+
+#. module: geoengine
+#: model_terms:ir.ui.view,arch_db:geoengine.res_config_settings_view_form
+msgid "Use company country"
+msgstr "Usar el país de la empresa"
+
+#. module: geoengine
+#: model:res.groups,name:geoengine.group_geoengine_user
+msgid "User"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,field_description:geoengine.field_geo_setup_wizard__validate_geometries
+msgid "Validate Geometries"
+msgstr ""
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/wizard/geo_setup_wizard.py:0
+#: model_terms:ir.ui.view,arch_db:geoengine.res_config_settings_view_form
+msgid "Validate geometries"
+msgstr ""
+
+#. module: geoengine
+#: model_terms:ir.ui.view,arch_db:geoengine.view_geo_setup_wizard_form
+msgid "Validation"
+msgstr ""
+
+#. module: geoengine
+#: model_terms:ir.ui.view,arch_db:geoengine.geo_vector_view_form
+msgid "Vector"
+msgstr ""
+
+#. module: geoengine
+#: model_terms:ir.ui.view,arch_db:geoengine.geoengine_view_form
+msgid "Vector (Active layers)"
+msgstr "Vector (capas activas)"
+
+#. module: geoengine
+#: model:ir.actions.act_window,name:geoengine.geo_vector_geoengine_view_action
+#: model:ir.actions.act_window,name:geoengine.geo_vector_layer_list_action
+#: model:ir.model,name:geoengine.model_geoengine_vector_layer
+#: model:ir.model.fields,field_description:geoengine.field_ir_ui_view__vector_layer_ids
+msgid "Vector Layer"
+msgstr "Capa vectorial"
+
+#. module: geoengine
+#: model:ir.ui.menu,name:geoengine.geoengine_vector_layer_menu
+msgid "Vector Layer Management"
+msgstr "Gestión de capas vectoriales"
+
+#. module: geoengine
+#: model:ir.model.fields.selection,name:geoengine.selection__geoengine_raster_layer__raster_type__mvt
+msgid "Vector Tiles (MVT)"
+msgstr ""
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/models/base.py:0
+msgid ""
+"Vector layer '%(layer)s' reads %(model)s, which has no geoengine view. The "
+"map cannot load another model's records without one, so this layer will not "
+"be drawn. Create a geoengine view for %(model)s."
+msgstr ""
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/models/base.py:0
+msgid "Vector layer '%s' has no model configured and view has no model."
+msgstr ""
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/models/base.py:0
+msgid "Vector layer '%s' is missing geometry field configuration."
+msgstr ""
+
+#. module: geoengine
+#. odoo-javascript
+#: code:addons/geoengine/static/src/geoengine/panels/layers_panel.xml:0
+msgid "Vectors"
+msgstr "Vectores"
+
+#. module: geoengine
+#: model:ir.model,name:geoengine.model_ir_ui_view
+#: model:ir.model.fields,field_description:geoengine.field_geoengine_raster_layer__view_id
+#: model:ir.model.fields,field_description:geoengine.field_geoengine_vector_layer__view_id
+msgid "View"
+msgstr "Vista"
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/models/base.py:0
+msgid "View %(view_id)s is not a geoengine view of %(model)s."
+msgstr ""
+
+#. module: geoengine
+#: model:ir.ui.menu,name:geoengine.geoengine_view_menu
+msgid "View Management"
+msgstr "Gestión de visualización"
+
+#. module: geoengine
+#: model:ir.model.fields,field_description:geoengine.field_ir_actions_act_window_view__view_mode
+#: model:ir.model.fields,field_description:geoengine.field_ir_ui_view__type
+msgid "View Type"
+msgstr "Tipo de vista"
+
+#. module: geoengine
+#: model:ir.actions.act_window,name:geoengine.geo_engine_view_action
+msgid "Views"
+msgstr "Vistas"
+
+#. module: geoengine
+#: model:ir.model.fields.selection,name:geoengine.selection__wizard_base_export_geodata__output_srid__4326
+msgid "WGS84 (EPSG:4326) - Standard GPS"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields.selection,name:geoengine.selection__geoengine_raster_layer__raster_type__i_wms
+msgid "WMS (single image)"
+msgstr ""
+
+#. module: geoengine
+#: model_terms:ir.ui.view,arch_db:geoengine.geo_raster_view_form
+msgid "WMS options"
+msgstr "Opciones WMS"
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/models/geoengine_raster_layer.py:0
+msgid "WMS params must be valid JSON."
+msgstr ""
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/models/geoengine_raster_layer.py:0
+msgid "WMS params must include a LAYERS key, e.g. {\"LAYERS\": \"topp:states\"}."
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields.selection,name:geoengine.selection__geoengine_raster_layer__raster_type__wmts
+msgid "WMTS"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,help:geoengine.field_geoengine_raster_layer__params
+msgid "WMTS dimension values, as a JSON object."
+msgstr ""
+
+#. module: geoengine
+#: model_terms:ir.ui.view,arch_db:geoengine.geo_raster_view_form
+msgid "WMTS options"
+msgstr "Opciones WMTS"
+
+#. module: geoengine
+#: model:ir.model.fields.selection,name:geoengine.selection__wizard_base_export_geodata__output_srid__3857
+msgid "Web Mercator (EPSG:3857)"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields.selection,name:geoengine.selection__geoengine_vector_layer__render_engine__webgl
+msgid "WebGL"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields.selection,name:geoengine.selection__ir_ui_view__render_engine__webgl
+msgid "WebGL (best performance)"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,field_description:geoengine.field_geoengine_vector_layer__webgl_threshold
+#: model:ir.model.fields,field_description:geoengine.field_ir_ui_view__webgl_threshold
+msgid "Webgl Threshold"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,field_description:geoengine.field_geoengine_vector_layer__heatmap_weight_field_id
+msgid "Weight Field"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields.selection,name:geoengine.selection__geo_setup_wizard__current_step__welcome
+msgid "Welcome"
+msgstr ""
+
+#. module: geoengine
+#: model_terms:ir.ui.view,arch_db:geoengine.res_config_settings_view_form
+msgid "Where the map opens when a view does not set its own extent."
+msgstr ""
+
+#. module: geoengine
+#: model_terms:ir.ui.view,arch_db:geoengine.view_geo_setup_wizard_form
+msgid ""
+"With validation off, self-intersecting polygons and malformed\n"
+"                            rings reach PostGIS unchecked and fail there instead, with a\n"
+"                            database-level error rather than a readable one."
+msgstr ""
+
+#. module: geoengine
+#. odoo-javascript
+#: code:addons/geoengine/static/src/geoengine/renderer/geoengine_spatial_filter.js:0
+msgid "Within %s km of a point"
+msgstr "A menos de %s km de un punto"
+
+#. module: geoengine
+#. odoo-javascript
+#: code:addons/geoengine/static/src/geoengine/renderer/geoengine_spatial_filter.js:0
+msgid "Within %s km of a point I click"
+msgstr "A menos de %s km de un punto que marco"
+
+#. module: geoengine
+#: model:ir.model.fields,field_description:geoengine.field_wizard_base_import_geodata_mapping__wizard_id
+#: model:ir.model.fields,field_description:geoengine.field_wizard_base_view_trail_result__wizard_id
+msgid "Wizard"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields.selection,name:geoengine.selection__geoengine_raster_layer__raster_type__xyz
+msgid "XYZ Tiles"
+msgstr ""
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/wizard/geo_setup_wizard.py:0
+msgid "Yes"
+msgstr ""
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/models/geoengine_vector_layer.py:0
+msgid "You need to provide an attribute that exists in %s model"
+msgstr "Necesita proporcionar un atributo que existe en el modelo %s"
+
+#. module: geoengine
+#. odoo-javascript
+#: code:addons/geoengine/static/src/geoengine/panels/features_list.xml:0
+msgid "Zoom to this group"
+msgstr ""
+
+#. module: geoengine
+#: model_terms:ir.ui.view,arch_db:geoengine.view_geo_export_wizard_form
+msgid "[('active', '=', True)]"
+msgstr ""
+
+#. module: geoengine
+#: model_terms:ir.ui.view,arch_db:geoengine.view_geo_trail_wizard_form
+msgid "[('status', '=', 'active')]"
+msgstr ""
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/models/ogc_features.py:0
+msgid "bbox is four comma-separated CRS84 numbers: minx,miny,maxx,maxy."
+msgstr ""
+"bbox son cuatro números CRS84 separados por comas: minx,miny,maxx,maxy."
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/models/ogc_features.py:0
+msgid "bbox must have minx below maxx and miny below maxy."
+msgstr "bbox debe tener minx menor que maxx y miny menor que maxy."
+
+#. module: geoengine
+#: model_terms:ir.ui.view,arch_db:geoengine.res_config_settings_view_form
+msgid "bytes"
+msgstr ""
+
+#. module: geoengine
+#: model_terms:ir.ui.view,arch_db:geoengine.view_geo_import_wizard_form
+msgid "e.g., NAME, title, label"
+msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,help:geoengine.field_geoengine_raster_layer__request_encoding
+msgid "eg. REST"
+msgstr "ej. REST"
+
+#. module: geoengine
+#: model:ir.model.fields,help:geoengine.field_geoengine_raster_layer__format_suffix
+msgid "eg. png"
+msgstr "ej. png"
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/models/geo_domain.py:0
+msgid "geo_dwithin 'distance' must be a number."
+msgstr ""
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/models/geo_domain.py:0
+msgid "geo_dwithin 'unit' must be 'm' or 'srid', got '%(unit)s'."
+msgstr ""
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/models/geo_domain.py:0
+msgid ""
+"geo_dwithin requires a dict with 'geometry' and 'distance' keys, e.g. "
+"[('%(field)s', 'geo_dwithin', {'geometry': geom, 'distance': 1000})]."
+msgstr ""
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/models/fields.py:0
+msgid ""
+"geometry_columns table seems to be corrupted. SRID check is not possible"
+msgstr ""
+"La tabla geometry_columns parece estar dañada. No es posible comprobar el "
+"SRID"
+
+#. module: geoengine
+#: model:ir.model.fields,help:geoengine.field_geoengine_vector_layer__begin_color
+#: model:ir.model.fields,help:geoengine.field_geoengine_vector_layer__end_color
+msgid "hex value"
+msgstr "valor hexadecimal"
+
+#. module: geoengine
+#. odoo-javascript
+#: code:addons/geoengine/static/src/domain/geo_domain_selector.js:0
+msgid "in active records"
+msgstr ""
+
+#. module: geoengine
+#: model_terms:ir.ui.view,arch_db:geoengine.view_geo_trail_result_geoengine
+msgid "km"
+msgstr ""
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/models/ogc_features.py:0
+msgid "limit and offset are whole numbers."
+msgstr "limit y offset son números enteros."
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/models/ogc_features.py:0
+msgid "limit must be at least 1 and offset at least 0."
+msgstr "limit debe ser al menos 1 y offset al menos 0."
+
+#. module: geoengine
+#: model_terms:ir.ui.view,arch_db:geoengine.res_config_settings_view_form
+msgid "min_x, min_y, max_x, max_y"
+msgstr ""
+
+#. module: geoengine
+#. odoo-javascript
+#: code:addons/geoengine/static/src/domain/geo_domain_selector.js:0
+msgid "not in active records"
+msgstr ""
+
+#. module: geoengine
+#. odoo-javascript
+#: code:addons/geoengine/static/src/geoengine/panels/features_list.xml:0
+msgid "of"
+msgstr ""
+
+#. module: geoengine
+#: model_terms:ir.ui.view,arch_db:geoengine.res_config_settings_view_form
+msgid "Create missing spatial indexes"
+msgstr "Crear los índices espaciales faltantes"
+
+#, python-format
+#~ msgid "%s column does not exists or is not a geo field"
+#~ msgstr "La columna %s no existe o no es un campo geográfico"
+
+#~ msgid "Attribute field"
+#~ msgstr "Campo de atributo"
+
+#~ msgid "Begin color class"
+#~ msgstr "Iniciar clase de color"
+
+#~ msgid "Classification mode"
+#~ msgstr "Modo de clasificación"
+
+#~ msgid "Code"
+#~ msgstr "Código"
+
+#~ msgid "Configuration"
+#~ msgstr "Configuración"
+
+#~ msgid "Create gist index"
+#~ msgstr "Crear un índice gist"
+
+#~ msgid "Custom"
+#~ msgstr "Personalizar"
+
+#~ msgid "Default map zoom"
+#~ msgstr "Zoom predeterminado del mapa"
+
+#~ msgid "Dictiorary of values for dimensions as JSON"
+#~ msgstr "Diccionario de valores de las dimensiones en formato JSON"
+
+#~ msgid "Dimensions"
+#~ msgstr "Dimensiones"
+
+#~ msgid "Display Labels on Polygon"
+#~ msgstr "Mostrar etiquetas en el polígono"
+
+#~ msgid "End color class"
+#~ msgstr "Fin de la clase de color"
+
+#, python-format
+#~ msgid ""
+#~ "Error, can not automatically initialize spatial postgis support. Database user may have to be superuser and postgres/postgis extensions with their devel header have to be installed. If you do not want Odoo to connect with a super user you can manually prepare your database. To do this, open a client to your database using a super user and run:\n"
+#~ "CREATE EXTENSION postgis;\n"
+#~ "CREATE EXTENSION postgis_topology;\n"
+#~ msgstr ""
+#~ "Error, no se puede inicializar automáticamente el soporte espacial postgis. El usuario de la base de datos debe ser superusuario y las extensiones postgres/postgis con su cabecera devel deben estar instaladas. Si no quieres que Odoo se conecte con un superusuario puedes preparar manualmente tu base de datos. Para hacer esto, abre un cliente a tu base de datos usando un superusuario y ejecuta\n"
+#~ "CREAR EXTENSIÓN postgis;\n"
+#~ "CREAR EXTENSIÓN postgis_topología;\n"
+
+#~ msgid "Field Type"
+#~ msgstr "Tipo de campo"
+
+#~ msgid "Format"
+#~ msgstr "Formato"
+
+#, python-format
+#~ msgid ""
+#~ "Geo Value %(geom_type)s must be of the same type %(geo_type)s as fields"
+#~ msgstr ""
+#~ "Los valores geográficos %(geom_type)s deben ser del mismo tipo %(geo_type)s "
+#~ "que los campos"
+
+#, python-format
+#~ msgid ""
+#~ "Geo dimention modification is not implemented. We can not change dimention "
+#~ "%(data)s to %(dim)s"
+#~ msgstr ""
+#~ "La modificación de la dimensión geográfica no está implementada. No podemos "
+#~ "cambiar la dimensión %(data)s a %(dim)s"
+
+#~ msgid "Geo field"
+#~ msgstr "Campo geográfico"
+
+#, python-format
+#~ msgid ""
+#~ "Geo type modification is not implemented. We can not change type %(data)s to"
+#~ " %(geo_type)s"
+#~ msgstr ""
+#~ "La modificación del geotipo no está implementada. No podemos cambiar el tipo"
+#~ " %(data)s a %(geo_type)s"
+
+#~ msgid "GeoEngine Backend"
+#~ msgstr "Servidor de Geoingeniería"
+
+#~ msgid "Geoengine Admin"
+#~ msgstr "Administración de Geoingeniería"
+
+#~ msgid "Geoengine User"
+#~ msgstr "Usuario de Geoingeniería"
+
+#~ msgid "Has Type"
+#~ msgstr "Tiene Tipo"
+
+#~ msgid "LINESTRING"
+#~ msgstr "SECUENCIA DE LÍNEAS"
+
+#~ msgid "Last Modified on"
+#~ msgstr "Última Modificación el"
+
+#~ msgid "Layer"
+#~ msgstr "Capa"
+
+#~ msgid "Layer Name"
+#~ msgstr "nombre de Capa"
+
+#~ msgid "Layer Priority"
+#~ msgstr "Prioridad de Capa"
+
+#~ msgid "Layer data"
+#~ msgstr "Fecha de Capa"
+
+#~ msgid "Layer is read only"
+#~ msgstr "La capa es de sólo lectura"
+
+#~ msgid "Layer priority"
+#~ msgstr "Prioridad de Capa"
+
+#~ msgid "List of dimensions separated by ','"
+#~ msgstr "Lista de dimensiones separadas por ','"
+
+#~ msgid "MULTILINESTRING"
+#~ msgstr "CADENA MULTILÍNEA"
+
+#~ msgid "MULTIPOINT"
+#~ msgstr "PUNTO MÚLTIPLE"
+
+#~ msgid "MULTIPOLYGON"
+#~ msgstr "MULTIPOLÍGONO"
+
+#, python-format
+#~ msgid "Missing ${INFO_BOX_ATTRIBUTE} template."
+#~ msgstr "Falta la plantilla ${INFO_BOX_ATTRIBUTE}."
+
+#~ msgid "Model to use"
+#~ msgstr "Modelo a utilizar"
+
+#~ msgid "Model view"
+#~ msgstr "Vista del modelo"
+
+#, python-format
+#~ msgid "No GeoEngine view defined for the model %s"
+#~ msgstr "No se definió una vista de GeoIngeniería para el modelo %s"
+
+#, python-format
+#~ msgid "No raster layer for view %s"
+#~ msgstr "No hay capa ráster para la vista %s"
+
+#~ msgid "Number of class"
+#~ msgstr "Número de clase"
+
+#~ msgid "Odoo field"
+#~ msgstr "Campo de odoo"
+
+#~ msgid "Odoo layer data (Not implemented)"
+#~ msgstr "Datos de la capa Odoo (No implementado)"
+
+#~ msgid "Odoo layer field to use"
+#~ msgstr "Campo de capa de Odoo a utilizar"
+
+#~ msgid "POINT"
+#~ msgstr "PUNTO"
+
+#~ msgid "POLYGON"
+#~ msgstr "POLÍGONO"
+
+#, python-format
+#~ msgid "Please create a view or modify view mode"
+#~ msgstr "Por favor, cree una vista o modifique el modo de vista"
+
+#~ msgid "PostGIs Dimension"
+#~ msgstr "Dimensión PostGIs"
+
+#~ msgid "PostGIs type"
+#~ msgstr "Tipo PostGIs"
+
+#~ msgid "Raster Layer Type"
+#~ msgstr "Tipo de capa rasterizada"
+
+#~ msgid "Raster layer type"
+#~ msgstr "Tipo de capa rasterizada"
+
+#~ msgid "Raster layers"
+#~ msgstr "Capas Ráster"
+
+#, python-format
+#~ msgid "Records ("
+#~ msgstr "Registros ("
+
+#~ msgid "Related View"
+#~ msgstr "Vista relacionada"
+
+#~ msgid "Representation mode"
+#~ msgstr "Modo de representación"
+
+#, python-format
+#~ msgid ""
+#~ "Reprojection of column is not implemented. We can not change srid %(srid)s "
+#~ "to %(data)s"
+#~ msgstr ""
+#~ "La reproyección de columna no está implementada. No podemos cambiar srid "
+#~ "%(srid)s por %(data)s"
+
+#~ msgid "Request encoding"
+#~ msgstr "Solicitar codificación"
+
+#~ msgid "Restricted map extent"
+#~ msgstr "Extensión de mapa restringida"
+
+#~ msgid "Service"
+#~ msgstr "Servicio"
+
+#~ msgid "Service URL"
+#~ msgstr "URL de servicio"
+
+#, python-format
+#~ msgid "Shapely or geojson are not available in the sys path"
+#~ msgstr "Shapely o geojson no están disponibles en la ruta del sistema"
+
+#, python-format
+#~ msgid "Subdomain"
+#~ msgstr "Subdominio"
+
+#~ msgid ""
+#~ "The type of the remote WMS server: mapserver, geoserver, carmentaserver, or "
+#~ "qgis"
+#~ msgstr ""
+#~ "Tipo de servidor WMS remoto: mapserver, geoserver, carmentaserver o qgis"
+
+#~ msgid "Units"
+#~ msgstr "Unidades"
+
+#~ msgid "Use to edit"
+#~ msgstr "Utilizar para editar"
+
+#~ msgid "Vector layers"
+#~ msgstr "Capas vectoriales"
+
+#, python-format
+#~ msgid "Warning"
+#~ msgstr "Aviso"
+
+#, python-format
+#~ msgid ""
+#~ "Write/create/search geo type must be wkt/geojson string or must respond to "
+#~ "wkt"
+#~ msgstr ""
+#~ "Write/create/search geo type debe ser wkt/geojson string o debe responder a "
+#~ "wkt"
+
+#, python-format
+#~ msgid ""
+#~ "You are about to create a new record without having displayed all the "
+#~ "others. A risk of overlap could occur. Would you like to continue ?"
+#~ msgstr ""
+#~ "Está a punto de crear un nuevo registro sin haber visualizado todos los "
+#~ "demás. Podría producirse un riesgo de solapamiento. ¿Desea continuar?"
+
+#, python-format
+#~ msgid "You must at least provide one of domain or geo_domain"
+#~ msgstr "Debe proporcionar al menos uno de los dominios o geo_domain"
+
+#, python-format
+#~ msgid "You need to select a numeric field"
+#~ msgstr "Debe seleccionar un campo numérico"
+
+#~ msgid "eg. EPSG:21781"
+#~ msgstr "ej. EPSG:21781"
+
+#~ msgid "eg. m"
+#~ msgstr "ej. m"
+
+#, python-format
+#~ msgid "geo_contains"
+#~ msgstr "geo_contains (geo_contenedores)"
+
+#, python-format
+#~ msgid "geo_equal"
+#~ msgstr "geo_equal (geo_igual)"
+
+#, python-format
+#~ msgid "geo_greater"
+#~ msgstr "geo_greater (geo_mayor)"
+
+#, python-format
+#~ msgid "geo_intersect"
+#~ msgstr "geo_intersect (geo_intersección)"
+
+#, python-format
+#~ msgid "geo_lesser"
+#~ msgstr "geo_lesser (geo_menor)"
+
+#~ msgid "geo_line"
+#~ msgstr "geo_line (geo_línea)"
+
+#~ msgid "geo_multi_line"
+#~ msgstr "geo_multi_line (geo_multi_línea)"
+
+#~ msgid "geo_multi_point"
+#~ msgstr "geo_multi_point (geo_multi_punto)"
+
+#~ msgid "geo_multi_polygon"
+#~ msgstr "geo_multi_polygon (geo_multi_polígono)"
+
+#~ msgid "geo_point"
+#~ msgstr "geo_point (geo_punto)"
+
+#~ msgid "geo_polygon"
+#~ msgstr "geo_polygon (geo_polígono)"
+
+#, python-format
+#~ msgid "geo_touch"
+#~ msgstr "geo_touch (geo_táctil)"
+
+#, python-format
+#~ msgid "geo_within"
+#~ msgstr "geo_within (geo_interior)"
+
+#, python-format
+#~ msgid "in active_ids"
+#~ msgstr "En active_ids"
+
+#, python-format
+#~ msgid "not in active_ids"
+#~ msgstr "No en active_ids"
+
+#~ msgid "srid"
+#~ msgstr ""
+
+#. module: geoengine
+#: model:ir.model.fields,field_description:geoengine.field_wizard_base_view_trail__date_field
+msgid "Date Field Name"
+msgstr "Nombre del campo de fecha"
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/wizard/geo_io_wizard.py:0
+msgid "The file names no coordinate system; WGS 84 (EPSG:4326) was assumed."
+msgstr "El archivo no indica ningún sistema de coordenadas; se asumió WGS 84 (EPSG:4326)."
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/wizard/geo_io_wizard.py:0
+msgid "%(field)s: no %(model)s is named '%(value)s'."
+msgstr "%(field)s: ningún %(model)s se llama '%(value)s'."
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/wizard/res_config_settings.py:0
+msgid "%(verb)s %(built)d spatial index(es)."
+msgstr "%(verb)s %(built)d índice(s) espacial(es)."
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/wizard/res_config_settings.py:0
+msgid "%(verb)s %(built)d spatial index(es). %(failed)d failed: %(names)s — see the server log."
+msgstr "%(verb)s %(built)d índice(s) espacial(es). %(failed)d fallaron: %(names)s — vea el registro del servidor."
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/wizard/res_config_settings.py:0
+msgid "Created"
+msgstr "Creados"
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/wizard/res_config_settings.py:0
+msgid "Rebuilt"
+msgstr "Reconstruidos"
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/models/ir_ui_view.py:0
+msgid "default_order='%(order)s' on the geoengine view for '%(model)s' names '%(field)s', which is not a field. Did you mean: %(suggestions)s"
+msgstr "default_order='%(order)s' en la vista geoengine de '%(model)s' nombra '%(field)s', que no es un campo. ¿Quiso decir: %(suggestions)s?"
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/models/geoengine_view_settings.py:0
+msgid "Map settings belong to a geoengine view; '%(view)s' is a %(type)s view."
+msgstr "La configuración del mapa pertenece a una vista geoengine; '%(view)s' es una vista de tipo %(type)s."
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/models/geoengine_view_settings.py:0
+msgid "A geoengine view has one set of map settings."
+msgstr "Una vista geoengine tiene una única configuración de mapa."
+
+#. module: geoengine
+#: model_terms:ir.ui.view,arch_db:geoengine.view_geo_setup_wizard_form
+msgid "Max size (bytes)"
+msgstr "Tamaño máximo (bytes)"
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/wizard/geo_trail_wizard.py:0
+msgid "Trail %(date)s"
+msgstr "Recorrido %(date)s"
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/wizard/geo_trail_wizard.py:0
+msgid "Trail: %(device)s"
+msgstr "Recorrido: %(device)s"
+
+#. module: geoengine
+#. odoo-python
+#: code:addons/geoengine/wizard/geo_trail_wizard.py:0
+msgid "none"
+msgstr "ninguno"

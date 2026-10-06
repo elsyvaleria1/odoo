@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <menuitem
+        id="menu_esg_employee_commuting"
+        name="Employee Commuting"
+        parent="esg.menu_esg_environment"
+        action="action_employee_commuting_report_views"
+        sequence="5"
+        groups="resource_asset_vehicle.fleet_group_user" />
+
+    <!-- TODO: [XBO] replace mrp into esg in master -->
+    <menuitem
+        id="menu_mrp_config"
+        name="Settings"
+        parent="esg.menu_esg_configuration"
+        action="action_esg_configuration"
+        sequence="0"
+        groups="base.group_system" />
+
+</odoo>

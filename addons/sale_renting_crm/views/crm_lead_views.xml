@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="crm_case_form_view_oppor" model="ir.ui.view">
+        <field name="name">crm.lead.oppor.inherited.crm</field>
+        <field name="model">crm.lead</field>
+        <field name="inherit_id" ref="crm.crm_lead_view_form" />
+        <field name="priority">20</field>
+        <field name="arch" type="xml">
+            <xpath expr="//button[@name='action_set_won_rainbowman']" position="before">
+                <button
+                    name="action_rental_quotations_new"
+                    type="object"
+                    string="New Rental"
+                    title="Create new rental"
+                    invisible="type == 'lead' or probability == 0 and not active"
+                    class="oe_highlight"
+                    data-hotkey="k" />
+            </xpath>
+            <button name="action_set_won_rainbowman" position="attributes">
+                <attribute name="class" remove="oe_highlight" />
+            </button>
+            <button name="action_view_sale_order" position="after">
+                <button
+                    name="action_view_rental_quotation"
+                    type="object"
+                    icon="fa-pencil-square-o"
+                    invisible="type == 'lead'"
+                    class="oe_stat_button">
+                    <field
+                        name="rental_quotation_count"
+                        string="Rentals"
+                        widget="statinfo" />
+                </button>
+                <button
+                    name="action_view_rental_quotation"
+                    type="object"
+                    icon="fa-usd"
+                    context="{'is_rental_order': True}"
+                    invisible="rental_order_count == 0 or type == 'lead'"
+                    class="oe_stat_button">
+                    <div class="o_field_widget o_stat_info">
+                        <span class="o_stat_value"><field name="rental_amount_total" widget="monetary" options="{'currency_field': 'company_currency'}" /></span>
+                        <span class="o_stat_text"> Rental Orders</span>
+                        <field name="rental_order_count" invisible="1" />
+                    </div>
+                </button>
+            </button>
+        </field>
+    </record>
+
+</odoo>

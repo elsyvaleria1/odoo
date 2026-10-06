@@ -1,0 +1,114 @@
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-09-27 00:35+0000\n"
+"PO-Revision-Date: 2026-09-27 00:35+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: fi\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: purchase_tender_agreement
+#: model_terms:ir.ui.view,arch_db:purchase_tender_agreement.purchase_tender_view_form_agreement
+msgid "<i class=\"fa fa-long-arrow-right mx-2\" title=\"to\"/>"
+msgstr ""
+
+#. module: purchase_tender_agreement
+#: model:ir.model.fields,field_description:purchase_tender_agreement.field_purchase_tender__agreement_count
+msgid "Agreement Count"
+msgstr ""
+
+#. module: purchase_tender_agreement
+#: model:ir.model.fields,field_description:purchase_tender_agreement.field_purchase_tender__agreement_ids
+#: model_terms:ir.ui.view,arch_db:purchase_tender_agreement.purchase_tender_view_form_agreement
+msgid "Agreements"
+msgstr ""
+
+#. module: purchase_tender_agreement
+#: model:ir.model.fields,field_description:purchase_tender_agreement.field_purchase_tender__award_as
+msgid "Award As"
+msgstr ""
+
+#. module: purchase_tender_agreement
+#: model:ir.model.fields,field_description:purchase_tender_agreement.field_purchase_order__awarded_agreement_id
+msgid "Awarded Into"
+msgstr ""
+
+#. module: purchase_tender_agreement
+#: model:ir.model,name:purchase_tender_agreement.model_purchase_tender
+msgid "Call for Tenders"
+msgstr ""
+
+#. module: purchase_tender_agreement
+#: model:ir.model.fields,field_description:purchase_tender_agreement.field_purchase_tender__agreement_commitment
+msgid "Commitment"
+msgstr ""
+
+#. module: purchase_tender_agreement
+#: model:ir.model.fields,field_description:purchase_tender_agreement.field_purchase_order__display_name
+#: model:ir.model.fields,field_description:purchase_tender_agreement.field_purchase_tender__display_name
+msgid "Display Name"
+msgstr "Näyttönimi"
+
+#. module: purchase_tender_agreement
+#: model:ir.model.fields,field_description:purchase_tender_agreement.field_purchase_order__id
+#: model:ir.model.fields,field_description:purchase_tender_agreement.field_purchase_tender__id
+msgid "ID"
+msgstr "ID"
+
+#. module: purchase_tender_agreement
+#: model:ir.model.fields,help:purchase_tender_agreement.field_purchase_tender__award_as
+msgid ""
+"Orders: the award confirms each winning offer. Agreements: the award opens a"
+" blanket agreement with each winner for the period, and orders are released "
+"from it later."
+msgstr ""
+
+#. module: purchase_tender_agreement
+#: model:ir.model,name:purchase_tender_agreement.model_purchase_order
+msgid "Purchase Order"
+msgstr "Ostotilaus"
+
+#. module: purchase_tender_agreement
+#: model:ir.model.fields,field_description:purchase_tender_agreement.field_purchase_tender__date_start
+msgid "Supply From"
+msgstr ""
+
+#. module: purchase_tender_agreement
+#: model_terms:ir.ui.view,arch_db:purchase_tender_agreement.purchase_tender_view_form_agreement
+msgid "Supply Period"
+msgstr ""
+
+#. module: purchase_tender_agreement
+#: model:ir.model.fields,field_description:purchase_tender_agreement.field_purchase_tender__date_end
+msgid "Supply Until"
+msgstr ""
+
+#. module: purchase_tender_agreement
+#: model:ir.model.fields,help:purchase_tender_agreement.field_purchase_order__awarded_agreement_id
+msgid ""
+"The agreement this offer's award opened. The offer itself closes as won; "
+"orders are released from the agreement."
+msgstr ""
+
+#. module: purchase_tender_agreement
+#: model:ir.model.fields,help:purchase_tender_agreement.field_purchase_tender__date_start
+msgid "The first day of the agreements the award opens."
+msgstr ""
+
+#. module: purchase_tender_agreement
+#: model:ir.model.fields,help:purchase_tender_agreement.field_purchase_tender__date_end
+msgid "The last day of the agreements the award opens."
+msgstr ""
+
+#. module: purchase_tender_agreement
+#: model:ir.model.fields,help:purchase_tender_agreement.field_purchase_tender__agreement_commitment
+msgid ""
+"What the agreements the award opens commit: the prices only, each awarded "
+"quantity, or the awarded total."
+msgstr ""

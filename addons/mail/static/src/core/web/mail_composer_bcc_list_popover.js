@@ -1,0 +1,20 @@
+// @ts-check
+/** @odoo-module native */
+import { Component, t, useProps } from "@odoo/owl";
+import { _t } from "@web/core/translation";
+export class MailComposerBccPopover extends Component {
+    static template = "mail.MailComposerBccPopover";
+    static props = { records: t.any(), close: t.any().optional() };
+    props = useProps(this.constructor.props);
+
+    /**
+     * @param {import("@web/model/relational_model/record").RelationalRecord} record
+     * @returns {string}
+     */
+    getRecipientText(record) {
+        return _t("%(name)s <%(email)s>", {
+            name: record.data.name,
+            email: record.data.email_normalized,
+        });
+    }
+}

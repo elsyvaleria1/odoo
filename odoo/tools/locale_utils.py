@@ -1,0 +1,139 @@
+import csv
+import functools
+import locale
+import logging
+import re
+import typing
+from collections.abc import Iterator
+from operator import itemgetter
+
+import babel
+
+from odoo.libs.debug_log import DebugLog
+from odoo.libs.locale import py_to_js_locale
+
+from .files import file_open
+
+if typing.TYPE_CHECKING:
+    from odoo.api import Environment
+
+    from odoo.addons.base.models.res_lang import LangData
+else:
+    Environment = typing.Any
+    LangData = typing.Any
+
+_logger = logging.getLogger(__name__)
+_debug = DebugLog(__name__)
+
+
+def get_iso_codes(lang: str) -> str:
+    if lang.find("_") != -1:
+        lang_items = lang.split("_")
+        if lang_items[0] == lang_items[1].lower():
+            lang = lang_items[0]
+    return lang
+
+
+@functools.cache
+def _read_lang_csv() -> tuple[tuple[str, str], ...]:
+    with file_open("base/data/res.lang.csv") as csvfile:
+        reader = csv.reader(csvfile, delimiter=",", quotechar='"')
+        fields = next(reader)
+        code_index = fields.index("code")
+        name_index = fields.index("name")
+        result = [(row[code_index], row[name_index]) for row in reader]
+
+    return tuple(sorted(result or [("en_US", "English")], key=itemgetter(1)))
+
+
+def get_locales(lang: str) -> Iterator[str]:
+    encodings = ["utf8"]
+    if prefenc := locale.getpreferredencoding():
+        encodings.append(prefenc)
+        if aliased := {
+            "latin1": "latin9",
+            "iso-8859-1": "iso8859-15",
+            "cp1252": "1252",
+        }.get(prefenc.lower()):
+            encodings.append(aliased)
+
+    seen = set()
+    for enc in encodings:
+        ln = locale._build_localename((lang, enc))  # type: ignore[attr-defined]
+        for name in (ln, locale.normalize(ln)):
+            if name not in seen:
+                seen.add(name)
+                yield name
+    if lang not in seen:
+        yield lang
+
+
+def resetlocale() -> str:
+    try:
+        return locale.setlocale(locale.LC_ALL, "")
+    except locale.Error:
+        _debug.logic("locale.env_unusable")
+        return locale.setlocale(locale.LC_ALL, "C")
+
+
+def get_languages() -> list[tuple[str, str]]:
+    try:
+        return list(_read_lang_csv())
+    except Exception as exc:
+        _logger.exception("Could not read res.lang.csv")
+        _debug.logic("locale.lang_csv_unreadable", error=type(exc).__name__)
+        return [("en_US", "English")]
+
+
+def _company_lang(env: Environment) -> str | None:
+    if "res.users" not in env.registry:
+        return None
+    try:
+        return env.user.with_context(lang="en_US").company_id.partner_id.lang
+    except AttributeError:
+        # a DB-free registry whose user or company stub carries no partner
+        return None
+
+
+def get_lang(env: Environment, lang_code: str | None = None) -> LangData:
+    locale = env.registry.locale
+    langs = locale.installed_langs(env)
+    lang = "en_US" if "en_US" in langs else langs[0]
+    source = "default"  # debuglog
+    if lang_code and lang_code in langs:
+        lang = lang_code
+        source = "argument"  # debuglog
+    elif (context_lang := env.context.get("lang")) in langs:
+        lang = context_lang
+        source = "context"  # debuglog
+    elif (company_lang := _company_lang(env)) in langs:
+        lang = company_lang
+        source = "company"  # debuglog
+    _debug.logic(
+        "locale.lang_chosen",
+        lang=lang,
+        source=source,
+        requested=lang_code,
+        installed=len(langs),
+    )
+    return locale.lang_data(env, lang)
+
+
+_CODESET_RE = re.compile(r"\.[^@]*")
+
+
+@functools.cache
+def babel_locale_parse(lang_code: str | None) -> babel.Locale:
+    if lang_code:
+        try:
+            # a POSIX code set (`fr_FR.UTF-8`, `sr_RS.UTF-8@latin`) says how
+            # text is encoded, not which locale formats it
+            code = _CODESET_RE.sub("", lang_code)
+            return babel.Locale.parse(py_to_js_locale(code), sep="-")
+        except (ValueError, TypeError, babel.UnknownLocaleError) as exc:
+            _debug.logic(
+                "locale.babel_fallback_en_US",
+                requested=lang_code,
+                error=type(exc).__name__,
+            )
+    return babel.Locale.parse("en_US")

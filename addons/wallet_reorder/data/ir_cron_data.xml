@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+
+    <record id="ir_cron_wallet_reorder" model="ir.cron">
+        <field
+            name="name">Wallets: order the top-ups the reordering rules ask for</field>
+        <field name="model_id" ref="model_wallet_reorder_rule" />
+        <field name="state">code</field>
+        <field name="code">model._cron_procure()</field>
+        <field name="repeat_interval" eval="1" />
+        <field name="repeat_unit">day</field>
+        <field name="active" eval="True" />
+    </record>
+
+</odoo>

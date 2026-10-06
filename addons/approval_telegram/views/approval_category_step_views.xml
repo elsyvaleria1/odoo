@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="approval_category_step_view_form_telegram" model="ir.ui.view">
+        <field name="name">approval.category.step.form.telegram</field>
+        <field name="model">approval.category.step</field>
+        <field name="inherit_id" ref="approval.approval_category_step_view_form" />
+        <field name="arch" type="xml">
+            <xpath
+                expr="//field[@name='member_ids']/list/field[@name='required']"
+                position="after">
+                <field name="notify_telegram" widget="boolean_toggle" optional="show" />
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

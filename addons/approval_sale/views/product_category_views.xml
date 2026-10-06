@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_product_category_form_sale_approval" model="ir.ui.view">
+        <field name="name">product.category.form.sale.approval</field>
+        <field name="model">product.category</field>
+        <field name="inherit_id" ref="product.view_product_category_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//group[@name='first']" position="after">
+                <group
+                    name="sale_approval"
+                    string="Sales Approval"
+                    groups="sale.group_sale_manager">
+                    <group>
+                        <field name="so_approval_required" widget="boolean_toggle" />
+                        <div
+                            class="text-muted"
+                            invisible="not so_approval_required"
+                            groups="sale.group_sale_manager">
+                            When enabled, all sales orders containing products
+                            from this category will require approval.
+                        </div>
+                    </group>
+                </group>
+                <group
+                    name="so_approval_notes"
+                    string="Approval Notes"
+                    groups="sale.group_sale_manager"
+                    invisible="not so_approval_required">
+                    <field
+                        name="so_approval_notes"
+                        placeholder="Add special instructions or notes for approvers regarding products in this category...&#10;&#10;Example: 'High-value products - verify customer payment terms and credit limit before approving'"
+                        nolabel="1" />
+                </group>
+                <div
+                    class="alert alert-warning"
+                    invisible="not so_approval_required"
+                    groups="sale.group_sale_manager"
+                    role="alert">
+                    <strong>Approval Required:</strong> This category is flagged for sales order
+                    approval. All sales orders containing products from this category will require
+                    approval through the configured approval workflow. </div>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_product_category_list_sale_approval" model="ir.ui.view">
+        <field name="name">product.category.list.sale.approval</field>
+        <field name="model">product.category</field>
+        <field name="inherit_id" ref="product.view_product_category_list" />
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='display_name']" position="after">
+                <field
+                    name="so_approval_required"
+                    string="SO Approval"
+                    widget="boolean_toggle"
+                    optional="hide" />
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_product_category_search_sale_approval" model="ir.ui.view">
+        <field name="name">product.category.search.sale.approval</field>
+        <field name="model">product.category</field>
+        <field name="inherit_id" ref="product.view_product_category_search" />
+        <field name="arch" type="xml">
+            <xpath expr="//search" position="inside">
+                <filter
+                    name="so_approval_required"
+                    string="Requires SO Approval"
+                    help="Categories that require sales order approval"
+                    domain="[('so_approval_required', '=', True)]"
+                    groups="sale.group_sale_manager" />
+                <group groups="sale.group_sale_manager">
+                    <filter
+                        name="group_by_so_approval"
+                        string="SO Approval Required"
+                        context="{'group_by': 'so_approval_required'}" />
+                </group>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

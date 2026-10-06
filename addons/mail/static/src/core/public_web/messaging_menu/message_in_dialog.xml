@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<templates xml:space="preserve">
+
+<t t-name="mail.MessageInDialog">
+    <Dialog size="'md'" title="this.title" contentClass="'o-bg-body'">
+        <blockquote class="mx-3 mb-3 fst-normal">
+            <t t-component="this.messageComponent" message="this.props.message" isReadOnly="true" hasActions="false"/>
+        </blockquote>
+    </Dialog>
+</t>
+
+</templates>

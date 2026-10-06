@@ -1,0 +1,68 @@
+# sphinx build directories
+_build/
+
+# dotfiles
+.*
+!.gitignore
+!.gitkeep
+!.github
+!.mailmap
+!.weblate.json
+# oxfmt options and scope: untracked, oxfmt silently falls back to its
+# defaults (2-space, 100 cols), which contradict the project style.
+!.oxfmtrc.jsonc
+# compiled python files
+*.py[co]
+__pycache__/
+# setup.py egg_info
+*.egg-info
+# emacs backup files
+*~
+# hg stuff
+*.orig
+status
+# odoo filestore
+odoo/filestore
+# maintenance migration scripts
+odoo/addons/base/maintenance
+# windows installation config file
+/odoo.conf
+/odoo.log
+
+# generated for windows installer?
+install/win32/*.bat
+install/win32/meta.py
+
+# needed only when building for win32
+setup/win32/static/less/
+setup/win32/static/wkhtmltopdf/
+setup/win32/static/postgresql*.exe
+
+# js tooling
+node_modules
+jsconfig.json
+# tsconfig.json — intentionally tracked (canonical config used by CI typecheck workflow,
+# see knowledge/agromarin-knowledge/plans/2026-04-28-typecheck-ci-gate-plan.md). Diverges
+# from upstream convention which gitignores both; jsconfig.json stays ignored so devs
+# can keep personal IDE configs that `extends: ./tsconfig.json`.
+.husky
+
+# Rust build artifacts (platform-specific, must be compiled per environment)
+crates/*/target/
+
+# various virtualenv
+/bin/
+/build/
+/dist/
+/include/
+/lib/
+/man/
+/share/
+/src/
+
+# cargo's build directory. `crates/` is a workspace, so there is ONE target/
+# for all members — not one per crate. The old per-crate rule stopped matching
+# the moment odoo_lint was split out, and a `git add -A` then staged 1100 build
+# artifacts including two multi-megabyte .so files.
+/crates/target/
+

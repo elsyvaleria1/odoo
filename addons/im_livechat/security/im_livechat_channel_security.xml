@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="res_groups_privilege_live_chat" model="res.groups.privilege">
+        <field name="name">Live Chat</field>
+        <field name="sequence">20</field>
+        <field name="category_id" ref="base.module_category_website" />
+    </record>
+
+    <record id="im_livechat_group_user" model="res.groups">
+        <field name="name">User</field>
+        <field name="sequence">10</field>
+        <field name="privilege_id" ref="res_groups_privilege_live_chat" />
+        <field name="comment">The user will be able to join support channels.</field>
+        <field name="implied_ids" eval="[Command.link(ref('base.group_user'))]" />
+    </record>
+
+    <record id="im_livechat_group_manager" model="res.groups">
+        <field name="name">Administrator</field>
+        <field name="sequence">20</field>
+        <field name="privilege_id" ref="res_groups_privilege_live_chat" />
+        <field name="comment">The user will be able to delete support channels.</field>
+        <field
+            name="implied_ids"
+            eval="[Command.link(ref('im_livechat.im_livechat_group_user')), Command.link(ref('mail.group_mail_canned_response_admin'))]" />
+        <field
+            name="user_ids"
+            eval="[Command.link(ref('base.user_root')), Command.link(ref('base.user_admin'))]" />
+    </record>
+
+    <record id="privilege_count_livechat_history" model="res.groups">
+        <field
+            name="name">Privilege: count the live chats a contact took part in</field>
+        <field name="is_privilege" eval="True" />
+    </record>
+
+    <record id="privilege_open_session" model="res.groups">
+        <field
+            name="name">Privilege: a live chat session opens for a visitor, on an operator its channel picks</field>
+        <field
+            name="comment">Held by whoever opens a session for a visitor -- the web route for a page's visitor, a messaging bridge for its customer -- and by a session forwarded to a person, for that call only: it reads the live chat channel and its rules, which internal users are online, in a call and how busy, and in what languages and expertise they answer; it creates the session with its operator and visitor members, posts its chatbot's welcome and marks it looking for help. It reads no message, no note and no channel but live chat sessions, and removes nothing.</field>
+        <field name="is_privilege" eval="True" />
+    </record>
+
+</odoo>

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="demo_device_davx5" model="device.device">
+        <field name="name">DAVx5 Demo Client</field>
+        <field name="identifier">demo-davx5-client</field>
+        <field name="comm_protocol">https</field>
+        <field name="endpoint">davx5-demo</field>
+        <field name="config_id" ref="demo_config_dav_sync" />
+        <field name="device_category_id" ref="device_category_dav_client" />
+        <field name="dav_sync_enabled" eval="True" />
+        <field name="dav_user_id" ref="base.user_admin" />
+        <field name="dav_addressbook_enabled" eval="True" />
+        <field name="dav_calendar_enabled" eval="True" />
+    </record>
+
+</odoo>

@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="hr_attendance_gantt_create_view_form" model="ir.ui.view">
+        <field name="name">hr.attendance.form</field>
+        <field name="model">hr.attendance</field>
+        <field name="inherit_id" ref="hr_attendance.hr_attendance_view_form" />
+        <field name="mode">primary</field>
+        <field name="arch" type="xml">
+            <xpath expr="//separator" position="attributes">
+                <attribute name="invisible">True</attribute>
+            </xpath>
+            <xpath
+                expr="//separator[@name='check_out_separator']"
+                position="attributes">
+                <attribute name="invisible">True</attribute>
+            </xpath>
+            <xpath expr="//group[@name='check_in_group']" position="attributes">
+                <attribute name="invisible">True</attribute>
+            </xpath>
+            <xpath expr="//group[@name='check_out_group']" position="attributes">
+                <attribute name="invisible">True</attribute>
+            </xpath>
+            <notebook position="attributes">
+                <attribute name="invisible">True</attribute>
+            </notebook>
+            <form position="inside">
+                <footer>
+                    <button
+                        special="save"
+                        string="Save &amp; Close"
+                        invisible="not is_manager"
+                        class="btn btn-primary"
+                        close="1"
+                        data-hotkey="s" />
+                    <button
+                        special="cancel"
+                        string="Discard"
+                        invisible="not is_manager"
+                        class="btn-secondary"
+                        close="1"
+                        data-hotkey="j" />
+                    <button
+                        name="unlink"
+                        type="object"
+                        string="Delete"
+                        invisible="not id or not is_manager"
+                        class="btn btn-danger ms-auto"
+                        close="1"
+                        data-hotkey="x" />
+                    <button
+                        special="cancel"
+                        string="Close"
+                        invisible="is_manager"
+                        class="btn-secondary"
+                        close="1"
+                        data-hotkey="j" />
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <!-- Gantt view -->
+    <record id="hr_attendance_gantt_view" model="ir.ui.view">
+        <field name="name">hr.attendance.gantt</field>
+        <field name="model">hr.attendance</field>
+        <field name="arch" type="xml">
+            <gantt
+                string="Days"
+                default_group_by="employee_id"
+                color="color"
+                date_start="check_in"
+                date_stop="check_out"
+                default_range="day"
+                default_scale="day"
+                display_unavailability="1"
+                form_view_id="%(hr_attendance_gantt.hr_attendance_gantt_create_view_form)d"
+                js_class="attendance_gantt"
+                plan="0"
+                precision="{'day': 'hour:quarter', 'week': 'day:half', 'month': 'day:half'}"
+                progress="overtime_progress"
+                progress_bar="employee_id">
+            </gantt>
+        </field>
+    </record>
+
+    <record id="hr_attendance.hr_attendance_action" model="ir.actions.act_window">
+        <field name="view_mode">gantt,list,form</field>
+    </record>
+
+</odoo>

@@ -1,0 +1,61 @@
+# YTI FIXME: This module should be named timesheet_enterprise
+{
+    "name": "Timesheet Grid and Validation",
+    "version": "1.2",
+    "oldest_upgradable_version": "1.2",
+    "category": "Services/Timesheets",
+    "sequence": 65,
+    "summary": "Enter timesheets in a grid and validate recorded employee time",
+    "description": "Extends timesheet records with validation status, manager actions, grid views and timers. Adds configurable entry and validation reminders and time-rounding settings. Uses the underlying timesheet and project records for employee time and cost information.",
+    "author": "Odoo S.A.",
+    "website": "https://www.odoo.com/app/timesheet",
+    "license": "OEEL-1",
+    "depends": [
+        "project_gantt",
+        "web_grid",
+        "hr_timesheet",
+        "timer",
+        "hr_org_chart",
+    ],
+    "data": [
+        "data/ir_cron_data.xml",
+        "data/ir_config_parameter_data.xml",
+        "data/mail_template_data.xml",
+        "data/web_tour_data.xml",
+        "security/ir.access.csv",
+        "security/ir_access.xml",
+        "views/account_analytic_line_views.xml",
+        "views/project_task_views.xml",
+        "views/hr_employee.xml",
+        "views/timesheet_grid_menus.xml",
+        "views/project_views.xml",
+        "views/res_config_settings_views.xml",
+        "reports/timesheets_analysis_report_views.xml",
+        "wizards/wizard_account_analytic_line_merge_views.xml",
+        "wizards/hr_timesheet_stop_timer_confirmation_wizard_views.xml",
+    ],
+    "demo": [
+        "demo/account_analytic_line_demo.xml",
+    ],
+    "assets": {
+        "web.assets_backend": [
+            "timesheet_grid/static/src/**",
+        ],
+        "web.assets_tests": [
+            "timesheet_grid/static/tests/tours/**",
+        ],
+        "web.assets_unit_tests": [
+            "timesheet_grid/static/tests/**/*.test.js",
+            "timesheet_grid/static/tests/hr_timesheet_models.js",
+            "timesheet_grid/static/tests/timesheet_grid_timer_helpers.js",
+        ],
+    },
+    "application": True,
+    "auto_install": [
+        "web_grid",
+        "hr_timesheet",
+    ],
+    "pre_init_hook": "pre_init_hook",
+    "post_init_hook": "post_init_hook",
+    "uninstall_hook": "uninstall_hook",
+}

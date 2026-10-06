@@ -1,0 +1,28 @@
+<templates>
+	<t t-name="web_studio.AddButtonAction">
+		<button class="o-web-studio-editor--add-button-action btn btn-link" t-on-click="this.onClick">
+			Add a button
+		</button>
+	</t>
+
+	<t t-name="web_studio.SelectionHeaderButtons">
+		<div class="d-flex justify-content-between m-2">
+			<div class="d-flex align-items-center align-content-around flex-wrap gap-1">
+				<t t-foreach="this.buttons" t-as="button" t-key="button.id">
+					<button
+						t-attf-class="btn o-web-studio-editor--element-clickable {{this.getClassName(button)}}"
+						t-att-studioxpath="button.studioXpath"
+						t-att-data-studio-xpath="button.studioXpath"
+						t-att-data-tooltip-template="this.debug ? 'views.ViewButtonTooltip' : false"
+						t-att-data-tooltip-info="this.debug ? this.makeTooltipButton(button) : false"
+						t-att-data-tooltip="button.title"
+						data-tooltip-delay="1000"
+						t-on-click="() => this.config.onNodeClicked(button.studioXpath)"
+						t-out="button.string"
+					/>
+				</t>
+				<AddButtonAction/>
+			</div>
+		</div>
+	</t>
+</templates>

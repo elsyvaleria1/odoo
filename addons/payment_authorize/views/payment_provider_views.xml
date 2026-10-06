@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="payment_provider_form" model="ir.ui.view">
+        <field name="name">Authorize.Net Provider Form</field>
+        <field name="model">payment.provider</field>
+        <field name="inherit_id" ref="payment.payment_provider_form" />
+        <field name="arch" type="xml">
+            <group name="provider_credentials" position="inside">
+                <group invisible="code != 'authorize'">
+                    <field
+                        name="authorize_login"
+                        required="code == 'authorize' and state != 'disabled'" />
+                    <field
+                        name="authorize_transaction_key"
+                        password="True"
+                        required="code == 'authorize' and state != 'disabled'" />
+                    <field
+                        name="authorize_signature_key"
+                        password="True"
+                        required="code == 'authorize' and state != 'disabled'" />
+                    <label for="authorize_client_key" />
+                    <div class="o_row" col="2">
+                        <field name="authorize_client_key" />
+                        <button
+                            name="action_update_merchant_details"
+                            type="object"
+                            string="Generate Client Key"
+                            icon="fa-refresh"
+                            class="oe_link" />
+                    </div>
+                    <widget
+                        name="documentation_link"
+                        colspan="2"
+                        label="How to get paid with Authorize.Net"
+                        path="/applications/finance/payment_providers/authorize.html" />
+                </group>
+            </group>
+            <div name="available_currencies" position="inside">
+                <button
+                    name="action_update_merchant_details"
+                    type="object"
+                    string="Set Account Currency"
+                    icon="fa-refresh"
+                    invisible="code != 'authorize'"
+                    class="oe_link" />
+            </div>
+        </field>
+    </record>
+
+</odoo>

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <data noupdate="1">
+        <!-- Maintenance Order-related subtypes for messaging / Chatter -->
+        <record id="mt_order_created" model="mail.message.subtype">
+            <field name="name">Order Created</field>
+            <field name="description">Maintenance Order created</field>
+            <field name="res_model">maintenance.order</field>
+            <field name="default" eval="False" />
+            <field name="hidden" eval="True" />
+        </record>
+        <record id="mt_order_state" model="mail.message.subtype">
+            <field name="name">Status Changed</field>
+            <field name="description">Status changed</field>
+            <field name="res_model">maintenance.order</field>
+            <field name="default" eval="True" />
+        </record>
+        <record id="equipment_team_maintenance" model="team.team">
+            <field name="use_maintenance" eval="True" />
+            <field name="name">Internal Maintenance</field>
+        </record>
+    </data>
+
+</odoo>

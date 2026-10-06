@@ -1,0 +1,278 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# * product_expiry
+#
+# Translators:
+# Martin Trigaux, 2022
+# Pedro M. Baeza <pedro.baeza@tecnativa.com>, 2022
+# "Dylan Kiss (dyki)" <dyki@odoo.com>, 2025.
+# Weblate <noreply-mt-weblate@weblate.org>, 2025.
+# "Noemi Pla Garcia (nopl)" <nopl@odoo.com>, 2026.
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 15.5alpha1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-01-25 18:36+0000\n"
+"PO-Revision-Date: 2026-02-11 16:32+0000\n"
+"Last-Translator: \"Noemi Pla Garcia (nopl)\" <nopl@odoo.com>\n"
+"Language-Team: Spanish <https://translate.odoo.com/projects/odoo-19/product_expiry/es/>\n"
+"Language: es\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: nplurals=3; plural=(n == 1) ? 0 : ((n != 0 && n % 1000000 == 0) ? 1 : 2);\n"
+"X-Generator: Weblate 5.14.3\n"
+
+#. module: product_trace_expiry
+#. odoo-python
+#: code:addons/product_trace_expiry/models/product_trace.py:0
+msgid "\t--Expire on %(date)s--"
+msgstr "\t--Caduca el %(date)s--"
+
+#. module: product_trace_expiry
+#. odoo-python
+#: code:addons/product_trace_expiry/models/product_trace.py:0
+msgid "\t--Expired--"
+msgstr "\t--Caducado--"
+
+#. module: product_trace_expiry
+#: model_terms:ir.ui.view,arch_db:product_trace_expiry.view_product_trace_form
+msgid ""
+"<span class=\"badge rounded-pill float-end text-bg-warning\" invisible=\"not use_expiration_date or not (alert_date &lt;= time.strftime('%Y-%m-%d %H:%M:%S') &lt; expiration_date)\">Expiring</span>\n"
+"                <span class=\"badge rounded-pill float-end text-bg-danger\" invisible=\"not use_expiration_date or not product_expiry_alert\">Expired</span>"
+msgstr ""
+
+#. module: product_trace_expiry
+#. odoo-python
+#: code:addons/product_trace_expiry/models/product_template.py:0
+#: model:ir.model.fields,field_description:product_trace_expiry.field_product_product__alert_time
+#: model:ir.model.fields,field_description:product_trace_expiry.field_product_template__alert_time
+#: model:ir.model.fields,field_description:product_trace_expiry.field_product_trace__alert_date
+msgid "Alert Date"
+msgstr "Fecha de alerta"
+
+#. module: product_trace_expiry
+#: model_terms:ir.ui.view,arch_db:product_trace_expiry.view_product_trace_form
+msgid "Alert from"
+msgstr "Alerta de"
+
+#. module: product_trace_expiry
+#. odoo-python
+#: code:addons/product_trace_expiry/models/product_template.py:0
+#: model:ir.model.fields,field_description:product_trace_expiry.field_product_product__use_time
+#: model:ir.model.fields,field_description:product_trace_expiry.field_product_template__use_time
+msgid "Best Before Date"
+msgstr "Fecha de consumo preferente"
+
+#. module: product_trace_expiry
+#: model_terms:ir.ui.view,arch_db:product_trace_expiry.view_product_trace_form
+msgid "Best before"
+msgstr "Consumir preferentemente antes del"
+
+#. module: product_trace_expiry
+#: model:ir.model.fields,field_description:product_trace_expiry.field_product_trace__use_date
+msgid "Best before Date"
+msgstr "Fecha de consumo preferente"
+
+#. module: product_trace_expiry
+#: model:ir.model.fields,help:product_trace_expiry.field_product_trace__alert_date
+msgid ""
+"Date to determine the expired lots and serial numbers using the filter "
+"\"Expiration Alerts\"."
+msgstr ""
+"Fecha para determinar los lotes caducados y los números de serie utilizando "
+"el filtro de \"Alertas de caducidad\"."
+
+#. module: product_trace_expiry
+#: model_terms:ir.ui.view,arch_db:product_trace_expiry.view_product_trace_form
+msgid "Dates"
+msgstr "Fechas"
+
+#. module: product_trace_expiry
+#: model:ir.model.fields,field_description:product_trace_expiry.field_product_category__display_name
+#: model:ir.model.fields,field_description:product_trace_expiry.field_product_product__display_name
+#: model:ir.model.fields,field_description:product_trace_expiry.field_product_template__display_name
+#: model:ir.model.fields,field_description:product_trace_expiry.field_product_trace__display_name
+msgid "Display Name"
+msgstr "Nombre para mostrar"
+
+#. module: product_trace_expiry
+#: model_terms:ir.ui.view,arch_db:product_trace_expiry.view_product_trace_form
+msgid "Expiration"
+msgstr "Vencimiento"
+
+#. module: product_trace_expiry
+#. odoo-python
+#: code:addons/product_trace_expiry/models/product_template.py:0
+#: model:ir.model.fields,field_description:product_trace_expiry.field_product_product__expiration_time
+#: model:ir.model.fields,field_description:product_trace_expiry.field_product_template__expiration_time
+#: model:ir.model.fields,field_description:product_trace_expiry.field_product_trace__expiration_date
+msgid "Expiration Date"
+msgstr "Fecha de caducidad"
+
+#. module: product_trace_expiry
+#: model:ir.model.fields,field_description:product_trace_expiry.field_product_trace__product_expiry_reminded
+msgid "Expiry has been reminded"
+msgstr "Se recordó la fecha de caducidad"
+
+#. module: product_trace_expiry
+#: model:ir.model.fields,field_description:product_trace_expiry.field_product_category__id
+#: model:ir.model.fields,field_description:product_trace_expiry.field_product_product__id
+#: model:ir.model.fields,field_description:product_trace_expiry.field_product_template__id
+#: model:ir.model.fields,field_description:product_trace_expiry.field_product_trace__id
+msgid "ID"
+msgstr "ID"
+
+#. module: product_trace_expiry
+#: model:ir.model,name:product_trace_expiry.model_product_trace
+msgid "Lot/Serial Number"
+msgstr "Número de lote/serie"
+
+#. module: product_trace_expiry
+#: model:ir.model.fields,help:product_trace_expiry.field_product_product__expiration_time
+#: model:ir.model.fields,help:product_trace_expiry.field_product_template__expiration_time
+msgid ""
+"Number of days after the receipt of the products (from the vendor or in "
+"stock after production) after which the goods may become dangerous and must "
+"not be consumed. It will be computed on the lot/serial number."
+msgstr ""
+"Número de días después de la recepción de los productos (del proveedor o del"
+" stock después de la producción) después de los cuales los bienes pueden "
+"representar un riesgo y no se deben consumir. Se registrará sobre el número "
+"de lote/serie."
+
+#. module: product_trace_expiry
+#: model:ir.model.fields,help:product_trace_expiry.field_product_product__alert_time
+#: model:ir.model.fields,help:product_trace_expiry.field_product_template__alert_time
+msgid ""
+"Number of days before the Expiration Date after which an alert should be "
+"raised on the lot/serial number. It will be computed on the lot/serial "
+"number."
+msgstr ""
+"Número de días antes de la fecha de caducidad después de los cuales se debe "
+"emitir una alerta para el número de lote/serie. Se registrará sobre el "
+"número de lote/serie."
+
+#. module: product_trace_expiry
+#: model:ir.model.fields,help:product_trace_expiry.field_product_product__removal_time
+#: model:ir.model.fields,help:product_trace_expiry.field_product_template__removal_time
+msgid ""
+"Number of days before the Expiration Date after which the goods should be "
+"removed from the stock and not be counted in the Fresh On Hand Stock "
+"anymore.It will be computed on the lot/serial number."
+msgstr ""
+"Número de días antes de la fecha de caducidad tras los cuales los productos "
+"deben retirarse del stock y dejar de contabilizarse como stock disponible no"
+" caducado. Se calcula por lote o número de serie."
+
+#. module: product_trace_expiry
+#: model:ir.model.fields,help:product_trace_expiry.field_product_product__use_time
+#: model:ir.model.fields,help:product_trace_expiry.field_product_template__use_time
+msgid ""
+"Number of days before the Expiration Date after which the goods starts "
+"deteriorating, without being dangerous yet. It will be computed on the "
+"lot/serial number."
+msgstr ""
+"Número de días antes de la fecha de caducidad después de los cuales los "
+"bienes se empiezan a deteriorar sin llegar a representar un peligro. Se "
+"registrará sobre el número de lote/serie."
+
+#. module: product_trace_expiry
+#: model:ir.model,name:product_trace_expiry.model_product_template
+msgid "Product"
+msgstr "Producto"
+
+#. module: product_trace_expiry
+#: model:ir.model,name:product_trace_expiry.model_product_category
+msgid "Product Category"
+msgstr "Categoría de producto"
+
+#. module: product_trace_expiry
+#: model:ir.model.fields,field_description:product_trace_expiry.field_product_trace__product_expiry_alert
+msgid "Product Expiry Alert"
+msgstr "Alerta de caducidad del producto"
+
+#. module: product_trace_expiry
+#: model:ir.model,name:product_trace_expiry.model_product_product
+msgid "Product Variant"
+msgstr "Variante de producto"
+
+#. module: product_trace_expiry
+#. odoo-python
+#: code:addons/product_trace_expiry/models/product_template.py:0
+#: model:ir.model.fields,field_description:product_trace_expiry.field_product_product__removal_time
+#: model:ir.model.fields,field_description:product_trace_expiry.field_product_template__removal_time
+#: model:ir.model.fields,field_description:product_trace_expiry.field_product_trace__removal_date
+#: model_terms:ir.ui.view,arch_db:product_trace_expiry.view_product_trace_form
+msgid "Removal Date"
+msgstr "Fecha de eliminación"
+
+#. module: product_trace_expiry
+#: model:ir.model.fields,help:product_trace_expiry.field_product_trace__product_expiry_alert
+msgid "The Expiration Date has been reached."
+msgstr "Se ha llegado a la fecha de caducidad."
+
+#. module: product_trace_expiry
+#. odoo-python
+#: code:addons/product_trace_expiry/models/product_template.py:0
+msgid ""
+"The expiry delays of %(product)s are numbers of days and cannot be negative:"
+" %(fields)s. A negative delay puts a lot's removal date after its expiration"
+" date, which leaves expired goods reservable and blocks the transfer that "
+"would clear them."
+msgstr ""
+
+#. module: product_trace_expiry
+#: model:ir.model.fields,help:product_trace_expiry.field_product_trace__expiration_date
+msgid ""
+"This is the date on which the goods with this Serial Number may become "
+"dangerous and must not be consumed."
+msgstr ""
+"Esta fecha indica que los bienes con este número de serie pueden representar"
+" un riesgo y no se deben consumir."
+
+#. module: product_trace_expiry
+#: model:ir.model.fields,help:product_trace_expiry.field_product_trace__removal_date
+msgid ""
+"This is the date on which the goods with this Serial Number should be "
+"removed from the stock and not be counted in the Fresh On Hand Stock "
+"anymore. This date will be used in FEFO removal strategy."
+msgstr ""
+"Esta es la fecha en la que los productos con este número de serie deben "
+"retirarse del stock y dejar de contabilizarse en el stock disponible no "
+"caducado. Esta fecha se utilizará en la estrategia de retirada FEFO."
+
+#. module: product_trace_expiry
+#: model:ir.model.fields,help:product_trace_expiry.field_product_trace__use_date
+msgid ""
+"This is the date on which the goods with this Serial Number start "
+"deteriorating, without being dangerous yet."
+msgstr ""
+"Esta fecha indica que los bienes con este número de serie empiezan a "
+"deteriorarse, pero todavía no representan un peligro."
+
+#. module: product_trace_expiry
+#: model:ir.model.fields,field_description:product_trace_expiry.field_product_category__use_expiration_date
+#: model:ir.model.fields,field_description:product_trace_expiry.field_product_product__use_expiration_date
+#: model:ir.model.fields,field_description:product_trace_expiry.field_product_template__use_expiration_date
+#: model:ir.model.fields,field_description:product_trace_expiry.field_product_trace__use_expiration_date
+msgid "Use Expiration Date"
+msgstr "Usar fecha de caducidad"
+
+#. module: product_trace_expiry
+#: model:ir.model.fields,help:product_trace_expiry.field_product_category__use_expiration_date
+msgid ""
+"When this box is ticked, products in this category default to managing "
+"product expiration, with dates on the product and on the corresponding "
+"lot/serial numbers"
+msgstr ""
+
+#. module: product_trace_expiry
+#: model:ir.model.fields,help:product_trace_expiry.field_product_product__use_expiration_date
+#: model:ir.model.fields,help:product_trace_expiry.field_product_template__use_expiration_date
+#: model:ir.model.fields,help:product_trace_expiry.field_product_trace__use_expiration_date
+msgid ""
+"When this box is ticked, you have the possibility to specify dates to manage"
+" product expiration, on the product and on the corresponding lot/serial "
+"numbers. Defaults to the product category setting."
+msgstr ""

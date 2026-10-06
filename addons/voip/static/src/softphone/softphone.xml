@@ -1,0 +1,65 @@
+<?xml version="1.0"?>
+<templates>
+<t t-name="voip.Softphone">
+    <article class="o-voip-Softphone position-absolute bottom-0 d-flex flex-column border d-print-none overflow-hidden shadow" t-att-class="{ 'o-mobile w-100 h-100': this.isOnSmallDevice, 'mb-2 ms-2 rounded': !this.isOnSmallDevice }" t-attf-class="{{ this.pendingCall ? 'o-calling' : 'bg-view' }}">
+        <header t-attf-class="d-flex align-items-center justify-content-between gap-1 p-2 {{ this.pendingCall ? 'border-bottom' : 'shadow-sm' }} z-1">
+            <div t-if="this.pendingCall" class="d-flex align-items-center">
+                <i t-attf-class="me-1 p-2 {{ this.topBarIcon }}" t-att-class="{ 'o-voip-RingingAnimation': this.userAgent.hasCallInvitation }" aria-hidden="true"/>
+                <!-- If recording call -->
+                <!-- <i class="oi oi-voice-record me-1 p-2 text-info" aria-hidden="true"/> -->
+                <p class="mb-0 fw-bolder" t-out="this.topBarText"/>
+            </div>
+            <t t-elif="this.voip.mode === 'demo'">
+                <p class="d-flex align-items-center p-2 m-0">
+                    <i class="fa-solid fa-circle o-yellow" aria-hidden="true"/>
+                    <span class="ms-2 fw-bold">Demo Mode</span>
+                </p>
+            </t>
+            <t t-else="">
+                <DndSelector/>
+            </t>
+            <button class="btn btn-light d-flex p-2 opacity-25 opacity-100-hover" title="Hide" t-on-click="this.onClickClose">
+                <i class="fa-solid fa-window-minimize" aria-hidden="true"/>
+            </button>
+        </header>
+        <div class="position-relative d-flex flex-column flex-grow-1 overflow-y-auto z-0">
+            <CallBanner call="this.bannerCall" t-if="this.shouldShowCallBanner"/>
+            <t t-if="this.voip.error">
+                <ErrorScreen
+                    title="this.voip.error.title"
+                    message="this.voip.error.text"
+                    isNonBlocking="this.voip.error.isNonBlocking"
+                    button="this.voip.error.button"
+                />
+            </t>
+            <t t-if="this.userAgent.hasCallInvitation">
+                <CallInvitation call="this.pendingCall"/>
+            </t>
+            <t t-elif="this.pendingCall">
+                <InCallView call="this.pendingCall"/>
+            </t>
+            <t t-else="">
+                <t t-if="this.softphone.callSummary.call">
+                    <div class="flex-grow-1 overflow-hidden">
+                        <CallSummary call="this.softphone.callSummary.call"/>
+                    </div>
+                </t>
+                <t t-else="">
+                    <div class="d-flex flex-grow-1 overflow-hidden">
+                        <AddressBook t-if="this.activeTab === 'contacts'" extraClass="'flex-grow-1'"/>
+                        <Agenda t-elif="this.activeTab === 'activities'" extraClass="'flex-grow-1'"/>
+                        <Dialer t-elif="this.activeTab === 'dialer'"/>
+                        <History t-elif="this.activeTab === 'recent'" extraClass="'flex-grow-1'"/>
+                    </div>
+                </t>
+                <nav class="o-voip-Softphone-nav d-flex gap-2 p-2 z-1">
+                    <button t-foreach="this.tabs" t-as="tab" t-key="tab.id" class="o-voip-Softphone-navItem btn btn-link w-100 d-flex flex-column align-items-stretch rounded border-0 p-2" t-attf-class="{{  this.activeTab === tab.id and !this.softphone.callSummary.isShown ? 'active' : 'text-reset' }}" t-on-click="() => this.onClickTab(tab.id)">
+                        <i t-attf-class="{{ tab.id === 'dialer' ? 'oi' : 'fa' }} {{ tab.icon or '' }} rounded-pill p-2" aria-hidden="true"/>
+                        <span t-out="tab.name" class="mt-auto text-break smaller"/>
+                    </button>
+                </nav>
+            </t>
+        </div>
+    </article>
+</t>
+</templates>

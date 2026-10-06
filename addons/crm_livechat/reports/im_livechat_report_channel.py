@@ -1,0 +1,35 @@
+from odoo import fields, models
+from odoo.tools import SQL, frozendict
+
+
+class Im_LivechatReportChannel(models.Model):
+    _inherit = "im_livechat.report.channel"
+    _depends = frozendict(
+        {
+            "crm.lead": ["origin_channel_id"],
+        }
+    )
+
+    leads_created = fields.Integer(
+        string="Leads created",
+        readonly=True,
+        aggregator="sum",
+    )
+
+    def _select(self) -> SQL:
+        return SQL(
+            "%s, crm_lead_data.leads_created AS leads_created", super()._select()
+        )
+
+    def _from(self) -> SQL:
+        return SQL(
+            """%s
+            LEFT JOIN LATERAL
+                (
+                    SELECT count(*) AS leads_created
+                      FROM crm_lead
+                     WHERE crm_lead.origin_channel_id = C.id
+                ) AS crm_lead_data ON TRUE
+            """,
+            super()._from(),
+        )

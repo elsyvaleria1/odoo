@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <data>
+        <record id="view_data_cleaning_record_list" model="ir.ui.view">
+            <field name="name">Field Cleaning Record List</field>
+            <field name="model">data_cleaning.record</field>
+            <field name="arch" type="xml">
+                <list
+                    create="0"
+                    export_xlsx="0"
+                    sample="1"
+                    js_class="data_cleaning_list">
+                    <field name="active" column_invisible="True" />
+                    <field name="res_model_name" column_invisible="True" />
+                    <field name="res_id" />
+                    <field
+                        name="cleaning_model_id"
+                        string="Cleaning Rule"
+                        optional="hide" />
+                    <field name="name" />
+                    <field name="field_id" options="{'no_create': True}" />
+                    <field name="action" string="Action" optional="hide" />
+                    <field name="current_value" />
+                    <field name="suggested_value_display" />
+
+                    <button
+                        name="action_validate"
+                        type="object"
+                        string="Validate"
+                        icon="fa-check" />
+                    <button
+                        name="action_discard"
+                        type="object"
+                        string="Discard"
+                        icon="fa-times"
+                        invisible="not active" />
+                </list>
+            </field>
+        </record>
+        <record id="view_data_cleaning_record_search" model="ir.ui.view">
+            <field name="name">Field Cleaning Record Search</field>
+            <field name="model">data_cleaning.record</field>
+            <field name="arch" type="xml">
+                <search string="Records">
+                    <filter
+                        name="active"
+                        string="Discarded"
+                        domain="[('active', '=', False)]" />
+                    <searchpanel>
+                        <field
+                            name="cleaning_model_id"
+                            string="Cleaning Rules"
+                            icon="fa-bars" />
+                    </searchpanel>
+                </search>
+            </field>
+        </record>
+        <record id="action_data_cleaning_record" model="ir.actions.act_window">
+            <field name="name">Field Cleaning Records</field>
+            <field name="res_model">data_cleaning.record</field>
+            <field name="view_mode">list,form</field>
+            <field name="search_view_id" ref="view_data_cleaning_record_search" />
+            <field name="domain" />
+            <field name="help" type="html">
+                <p class="o_view_nocontent_smiling_face">
+                    No cleaning suggestions
+                </p>
+                <p>
+                Configure rules to identify records to clean
+                </p>
+            </field>
+        </record>
+        <record
+            id="action_data_cleaning_record_notification"
+            model="ir.actions.act_window">
+            <field name="name">Field Cleaning Records</field>
+            <field name="res_model">data_cleaning.record</field>
+            <field name="view_mode">list,form</field>
+            <field name="search_view_id" ref="view_data_cleaning_record_search" />
+            <field
+                name="context">{ 'searchpanel_default_cleaning_model_id': active_id }</field>
+            <field name="help" type="html">
+                <p class="o_view_nocontent_smiling_face">
+                    No cleaning suggestions
+                </p>
+                <p>
+                Configure rules to identify records to clean
+                </p>
+            </field>
+        </record>
+    </data>
+
+</odoo>

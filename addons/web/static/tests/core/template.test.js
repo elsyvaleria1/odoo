@@ -1,0 +1,780 @@
+// @ts-check
+
+import { after, expect, test } from "@odoo/hoot";
+import { Component, useProps, xml } from "@odoo/owl";
+import { mountWithCleanup, patchTranslations } from "@web/../tests/web_test_helpers";
+import {
+    registerTemplate,
+    registerTemplateExtension,
+    setUrlFilters,
+    TemplateRegistry,
+    templates,
+} from "@web/core/templates";
+import { elementRef } from "@web/core/utils/element_ref";
+
+function makeTemplate({ name, content, inheritFrom }) {
+    return `<t t-name="${name}" ${inheritFrom ? `t-inherit="${inheritFrom}"` : ``}>${content}</t>`;
+}
+
+function makeTemplateExtension({ content, inheritFrom }) {
+    return `<t t-inherit="${inheritFrom}" t-inherit-mode="extension">${content}</t>`;
+}
+
+function visit(node, addon, terms) {
+    for (const { value } of node.attributes) {
+        terms[value] = `${value} (${addon})`;
+    }
+    for (const childNode of node.childNodes) {
+        if (childNode.nodeType === Node.TEXT_NODE) {
+            const text = childNode.data.trim();
+            terms[text] = `${text} (${addon})`;
+        } else {
+            visit(childNode, addon, terms);
+        }
+    }
+}
+
+const parser = new DOMParser();
+function extractTranslations(template, addon) {
+    const doc = parser.parseFromString(template, "text/xml");
+    const root = doc.firstChild;
+    /** @type {Record<string, string>} */
+    const terms = {};
+    visit(root, addon, terms);
+    return terms;
+}
+
+function registerTemplates(...templates) {
+    /** @type {Record<string, Record<string, string>>} */
+    const translations = {};
+
+    for (const { name, content, inheritFrom, inheritMode } of templates) {
+        const template =
+            inheritMode === "extension"
+                ? makeTemplateExtension({ content, inheritFrom })
+                : makeTemplate({ name, content, inheritFrom });
+        const addon = `addon_${name}`;
+        const terms = extractTranslations(template, addon);
+        translations[addon] = terms;
+        after(
+            inheritMode === "extension"
+                ? registerTemplateExtension(inheritFrom, `/${addon}`, template)
+                : registerTemplate(name, `/${addon}`, template),
+        );
+    }
+    patchTranslations(translations);
+}
+
+async function mountTestComponentWithTemplate(name) {
+    class TestComponent extends Component {
+        static props = null;
+        static template = xml`<div t-ref="this.rootRef"><t t-call="${name}"/></div>`;
+        props = useProps(this.constructor.props);
+        setup() {
+            this.rootRef = elementRef();
+        }
+    }
+    const component = await mountWithCleanup(TestComponent);
+    return component.rootRef.el;
+}
+
+test("translation-context: single template", async () => {
+    registerTemplates({
+        name: "A",
+        content: `
+            <div class="o_test_component" title="title">
+                text
+            </div>
+        `,
+    });
+    const el = await mountTestComponentWithTemplate("A");
+    expect(el).toHaveInnerHTML(`
+        <div class="o_test_component" title="title (addon_A)">
+            text (addon_A)
+        </div>
+    `);
+});
+
+test("translation-context: xpath position replace (outer)", async () => {
+    registerTemplates(
+        {
+            name: "A",
+            content: `<div class="o_test_component" title="title"> text </div>`,
+        },
+        {
+            name: "B",
+            content: `
+                <xpath expr="div" position="replace">
+                    <div class="o_test_component" title="title"> text </div>
+                </xpath>
+            `,
+            inheritFrom: "A",
+        },
+    );
+    const el = await mountTestComponentWithTemplate("B");
+    expect(el).toHaveInnerHTML(`
+        <div class="o_test_component" title="title (addon_B)">
+            text (addon_B)
+        </div>
+    `);
+});
+
+test("translation-context: xpath position replace (outer) with $0", async () => {
+    registerTemplates(
+        {
+            name: "A",
+            content: `<div class="o_test_component" title="title"> text </div>`,
+        },
+        {
+            name: "B",
+            content: `
+                <xpath expr="div" position="replace">
+                    <div class="o_test_component" title="title">
+                        text
+                        <div title="title2">$0</div>
+                    </div>
+                </xpath>
+            `,
+            inheritFrom: "A",
+        },
+    );
+    const el = await mountTestComponentWithTemplate("B");
+    expect(el).toHaveInnerHTML(`
+        <div class="o_test_component" title="title (addon_B)">
+            text (addon_B)
+            <div title="title2 (addon_B)">
+                <div class="o_test_component" title="title (addon_A)">
+                    text (addon_A)
+                </div>
+            </div>
+        </div>
+    `);
+});
+
+test("translation-context: xpath position replace (inner)", async () => {
+    registerTemplates(
+        {
+            name: "A",
+            content: `
+                <div class="o_test_component" title="title">
+                    text
+                    <span> text </span>
+                </div>
+            `,
+        },
+        {
+            name: "B",
+            content: `
+                <xpath expr="div" position="replace" mode="inner">
+                    <span>
+                        text
+                        <div title="title"> text </div>
+                    </span>
+                </xpath>
+            `,
+            inheritFrom: "A",
+        },
+    );
+    const el = await mountTestComponentWithTemplate("B");
+    expect(el).toHaveInnerHTML(`
+        <div class="o_test_component" title="title (addon_A)">
+            <span>
+                text (addon_B)
+                <div title="title (addon_B)">
+                    text (addon_B)
+                </div>
+            </span>
+        </div>
+    `);
+});
+
+test("translation-context: xpath position attributes", async () => {
+    registerTemplates(
+        {
+            name: "A",
+            content: `<div class="o_test_component" title="title"> text </div>`,
+        },
+        {
+            name: "B",
+            content: `
+                <xpath expr="div" position="attributes">
+                    <attribute name="title">title</attribute>
+                    <attribute name="label">label</attribute>
+                </xpath>
+            `,
+            inheritFrom: "A",
+        },
+    );
+    const el = await mountTestComponentWithTemplate("B");
+    expect(el).toHaveInnerHTML(`
+        <div class="o_test_component" title="title (addon_B)" label="label (addon_B)">
+            text (addon_A)
+        </div>
+    `);
+});
+
+test("translation-context: xpath position inside", async () => {
+    registerTemplates(
+        {
+            name: "A",
+            content: `<div class="o_test_component" title="title"> text </div>`,
+        },
+        {
+            name: "B",
+            content: `
+                <xpath expr="div" position="inside">
+                    text
+                    <span title="title"> text </span>
+                    text
+                </xpath>
+            `,
+            inheritFrom: "A",
+        },
+    );
+    const el = await mountTestComponentWithTemplate("B");
+    expect(el).toHaveInnerHTML(`
+        <div class="o_test_component" title="title (addon_A)">
+            text (addon_A) text (addon_B)
+            <span title="title (addon_B)">
+                text (addon_B)
+            </span>
+            text (addon_B)
+        </div>
+    `);
+});
+
+test("translation-context: xpath position inside: moved element", async () => {
+    registerTemplates(
+        {
+            name: "A",
+            content: `
+                <div class="o_test_component">
+                    <span>Hello</span>
+                    <span>World</span>
+                </div>
+            `,
+        },
+        {
+            name: "B",
+            content: `
+                <xpath expr="div/span" position="before">
+                    <xpath expr="div/span[2]" position="move"/>
+                </xpath>`,
+            inheritFrom: "A",
+        },
+    );
+    const el = await mountTestComponentWithTemplate("B");
+    expect(el).toHaveInnerHTML(`
+        <div class="o_test_component">
+            <span>World (addon_A)</span>
+            <span>Hello (addon_A)</span>
+        </div>
+    `);
+});
+
+test("translation-context: xpath position after with some text", async () => {
+    registerTemplates(
+        {
+            name: "A",
+            content: `
+                <div class="o_test_component" title="title">
+                    <span>text1</span>
+                    <span>text2</span>
+                </div>
+            `,
+        },
+        {
+            name: "B",
+            content: `
+                <xpath expr="div/span" position="after">
+                    <div title="title">
+                        text1
+                    </div>
+                    text2
+                </xpath>
+            `,
+            inheritFrom: "A",
+        },
+    );
+    const el = await mountTestComponentWithTemplate("B");
+    expect(el).toHaveInnerHTML(`
+        <div class="o_test_component" title="title (addon_A)">
+            <span>
+                text1 (addon_A)
+            </span>
+            <div title="title (addon_B)">
+                text1 (addon_B)
+            </div>
+            text2 (addon_B)
+            <span>
+                text2 (addon_A)
+            </span>
+        </div>
+    `);
+});
+
+test("translation-context: xpath position before with some text", async () => {
+    registerTemplates(
+        {
+            name: "A",
+            content: `
+                <div class="o_test_component" title="title">
+                    <span>text1</span>
+                    <span>text2</span>
+                </div>
+            `,
+        },
+        {
+            name: "B",
+            content: `
+                <xpath expr="div/span" position="before">
+                    <div title="title">
+                        text1
+                    </div>
+                    text2
+                </xpath>
+            `,
+            inheritFrom: "A",
+        },
+    );
+    const el = await mountTestComponentWithTemplate("B");
+    expect(el).toHaveInnerHTML(`
+        <div class="o_test_component" title="title (addon_A)">
+            <div title="title (addon_B)">
+                text1 (addon_B)
+            </div>
+            text2 (addon_B)
+            <span>
+                text1 (addon_A)
+            </span>
+            <span>
+                text2 (addon_A)
+            </span>
+        </div>
+    `);
+});
+
+test("translation-context: wrappers texts in t tags", async () => {
+    registerTemplates(
+        {
+            name: "A",
+            content: `
+                <div class="o_test_component">
+                    Hello
+                </div>
+            `,
+        },
+        {
+            name: "B",
+            content: `
+                <xpath expr="div" position="inside">
+                    World
+                </xpath>`,
+            inheritFrom: "A",
+        },
+    );
+    const el = await mountTestComponentWithTemplate("B");
+    expect(el).toHaveInnerHTML(`
+        <div class="o_test_component">
+            Hello (addon_A) World (addon_B)
+        </div>
+    `);
+});
+
+test("translation-context: wrappers texts in t tags (2)", async () => {
+    after(setUrlFilters([]));
+    registerTemplates(
+        {
+            name: "A",
+            content: `
+                <div class="o_test_component">
+                    Hello
+                </div>
+            `,
+        },
+        {
+            name: "B",
+            content: `
+                <xpath expr="div" position="inside">
+                    World
+                </xpath>`,
+            inheritFrom: "A",
+            inheritMode: "extension",
+        },
+    );
+    const el = await mountTestComponentWithTemplate("A");
+    expect(el).toHaveInnerHTML(`
+        <div class="o_test_component">
+            Hello (addon_A) World (addon_B)
+        </div>
+    `);
+});
+
+test("translation-context: wrappers texts in t tags (3)", async () => {
+    after(setUrlFilters([]));
+    registerTemplates(
+        {
+            name: "A",
+            content: `
+                <div class="o_test_component" title="title">
+                    text
+                </div>
+            `,
+        },
+        {
+            name: "B",
+            content: `
+                <xpath expr="div" position="inside">
+                    text
+                </xpath>`,
+            inheritFrom: "A",
+            inheritMode: "extension",
+        },
+        {
+            name: "C",
+            content: `
+                <xpath expr="div" position="replace">
+                    <div class="o_test_component" title="title">
+                        text
+                        <div title="title2">$0</div>
+                    </div>
+                </xpath>
+            `,
+            inheritFrom: "A",
+        },
+    );
+    const el = await mountTestComponentWithTemplate("C");
+    expect(el).toHaveInnerHTML(`
+        <div class="o_test_component" title="title (addon_C)">
+            text (addon_C)
+            <div title="title2 (addon_C)">
+                <div class="o_test_component" title="title (addon_A)">
+                    text (addon_A) text (addon_B)
+                </div>
+            </div>
+        </div>
+    `);
+});
+
+test("translation-context: wrappers around texts do not affect xpaths (1)", async () => {
+    registerTemplates(
+        {
+            name: "A",
+            content: `
+                <div class="o_test_component">
+                    Hello
+                    <t t-if="true">
+                        Janet
+                    </t>
+                </div>
+            `,
+        },
+        {
+            name: "B",
+            content: `
+                <xpath expr="div/t" position="before">
+                    World
+                </xpath>`,
+            inheritFrom: "A",
+        },
+        {
+            name: "C",
+            content: `
+                <xpath expr="div/t" position="replace" mode="inner">
+                    Jamie
+                </xpath>`,
+            inheritFrom: "B",
+        },
+    );
+    const el = await mountTestComponentWithTemplate("C");
+    expect(el).toHaveInnerHTML(`
+        <div class="o_test_component">
+            Hello (addon_A) World (addon_B) Jamie (addon_C)
+        </div>
+    `);
+});
+
+test("TemplateRegistry: fresh instance has independent state from singleton", () => {
+    const scoped = new TemplateRegistry();
+    scoped.registerTemplate(
+        "tr-iso-1",
+        "/scoped_addon",
+        `<t t-name="tr-iso-1"><div>scoped</div></t>`,
+    );
+    expect("tr-iso-1" in scoped.templates).toBe(true);
+    expect("tr-iso-1" in templates.templates).toBe(false);
+});
+
+test("TemplateRegistry: module-level wrappers see the canonical singleton", () => {
+    const unreg = registerTemplate(
+        "tr-canon-1",
+        "/canon_addon",
+        `<t t-name="tr-canon-1"/>`,
+    );
+    after(unreg);
+    expect("tr-canon-1" in templates.templates).toBe(true);
+});
+
+test("TemplateRegistry: unregister callback removes scoped entry", () => {
+    const scoped = new TemplateRegistry();
+    const unreg = scoped.registerTemplate(
+        "tr-unreg-1",
+        "/scoped_addon",
+        `<t t-name="tr-unreg-1"/>`,
+    );
+    expect("tr-unreg-1" in scoped.templates).toBe(true);
+    expect(typeof unreg).toBe("function");
+    unreg();
+    expect("tr-unreg-1" in scoped.templates).toBe(false);
+});
+
+test("TemplateRegistry: primary unregister leaves other owners' extensions intact", () => {
+    const scoped = new TemplateRegistry();
+    const primary = `<t t-name="tr-shared"><div class="base"/></t>`;
+    const makeExt = (attr) =>
+        `<t t-inherit="tr-shared" t-inherit-mode="extension">` +
+        `<xpath expr="div" position="attributes">` +
+        `<attribute name="${attr}">1</attribute>` +
+        `</xpath></t>`;
+    const unregPrimary = scoped.registerTemplate("tr-shared", "/addon_a", primary);
+    const unregExtB = scoped.registerTemplateExtension(
+        "tr-shared",
+        "/addon_b",
+        makeExt("data-b"),
+    );
+    scoped.registerTemplateExtension("tr-shared", "/addon_c", makeExt("data-c"));
+    let div = scoped.getTemplate("tr-shared").querySelector("div");
+    expect(div.hasAttribute("data-b")).toBe(true);
+    expect(div.hasAttribute("data-c")).toBe(true);
+
+    unregPrimary();
+    scoped.registerTemplate("tr-shared", "/addon_a", primary);
+    div = scoped.getTemplate("tr-shared").querySelector("div");
+    expect(div.hasAttribute("data-b")).toBe(true);
+    expect(div.hasAttribute("data-c")).toBe(true);
+
+    unregExtB();
+    div = scoped.getTemplate("tr-shared").querySelector("div");
+    expect(div.hasAttribute("data-b")).toBe(false);
+    expect(div.hasAttribute("data-c")).toBe(true);
+});
+
+test("TemplateRegistry: re-registering a key with different content throws", () => {
+    const scoped = new TemplateRegistry();
+    scoped.registerTemplate(
+        "tr-conflict",
+        "/addon_a",
+        `<t t-name="tr-conflict"><div/></t>`,
+    );
+    expect(() =>
+        scoped.registerTemplate(
+            "tr-conflict",
+            "/addon_b",
+            `<t t-name="tr-conflict"><span/></t>`,
+        ),
+    ).toThrow(/already exists/);
+});
+
+test("TemplateRegistry: re-registering the same key+content is idempotent", () => {
+    const scoped = new TemplateRegistry();
+    scoped.registerTemplate("tr-idem", "/addon_a", `<t t-name="tr-idem"/>`);
+    const sizeBefore = scoped.registered.size;
+    scoped.registerTemplate("tr-idem", "/addon_a", `<t t-name="tr-idem"/>`);
+    expect(scoped.registered.size).toBe(sizeBefore);
+});
+
+test("TemplateRegistry: dedup hit returns a callable no-op unregister", () => {
+    const scoped = new TemplateRegistry();
+    const first = scoped.registerTemplate(
+        "tr-noop",
+        "/addon_a",
+        `<t t-name="tr-noop"/>`,
+    );
+    const second = scoped.registerTemplate(
+        "tr-noop",
+        "/addon_a",
+        `<t t-name="tr-noop"/>`,
+    );
+    expect(typeof second).toBe("function");
+    second();
+    expect("tr-noop" in scoped.templates).toBe(true);
+    first();
+    expect("tr-noop" in scoped.templates).toBe(false);
+});
+
+test("TemplateRegistry: dedup hit is verified against the stored registration", () => {
+    const scoped = new TemplateRegistry();
+    const name = "tr-collision";
+    const url = "/addon_a";
+    const templateString = `<t t-name="tr-collision"/>`;
+    const probe = new TemplateRegistry();
+    probe.registerTemplate(name, url, templateString);
+    const [key] = [...probe.registered];
+    scoped.registered.add(key);
+    const unregister = scoped.registerTemplate(name, url, templateString);
+    expect("tr-collision" in scoped.templates).toBe(true);
+    expect(typeof unregister).toBe("function");
+    unregister();
+    expect("tr-collision" in scoped.templates).toBe(false);
+});
+
+test("TemplateRegistry: extension dedup hit returns a callable no-op unregister", () => {
+    const scoped = new TemplateRegistry();
+    scoped.registerTemplate("tr-ext-base", "/addon_a", `<t t-name="tr-ext-base"/>`);
+    const ext = `<t t-inherit="tr-ext-base" t-inherit-mode="extension"/>`;
+    const first = scoped.registerTemplateExtension("tr-ext-base", "/addon_b", ext);
+    const second = scoped.registerTemplateExtension("tr-ext-base", "/addon_b", ext);
+    expect(typeof first).toBe("function");
+    expect(typeof second).toBe("function");
+    second();
+    const blocks = Object.values(scoped.templateExtensions["tr-ext-base"]);
+    expect(blocks.some((block) => block.length > 0)).toBe(true);
+});
+
+test("TemplateRegistry: setUrlFilters returns a restore callback", () => {
+    const scoped = new TemplateRegistry();
+    const before = scoped.urlFilters;
+    const restore = scoped.setUrlFilters([() => true]);
+    expect(scoped.urlFilters).not.toBe(before);
+    expect(scoped.urlFilters.length).toBe(1);
+    expect(typeof restore).toBe("function");
+    restore();
+    expect(scoped.urlFilters).toBe(before);
+});
+
+test("TemplateRegistry: blockId cursor advances when register type alternates", () => {
+    const scoped = new TemplateRegistry();
+    scoped.registerTemplate("tr-cur-1", "/a", `<t t-name="tr-cur-1"/>`);
+    const after1 = scoped.blockId;
+    scoped.registerTemplateExtension("tr-cur-1", "/b", `<t/>`);
+    const after2 = scoped.blockId;
+    expect(after2).toBeGreaterThan(after1);
+    scoped.registerTemplate("tr-cur-2", "/c", `<t t-name="tr-cur-2"/>`);
+    expect(scoped.blockId).toBeGreaterThan(after2);
+});
+
+test("TemplateRegistry: registering after a negative-lookup probe serves the real template", () => {
+    const scoped = new TemplateRegistry();
+    expect(scoped.getTemplate("tr-probe")).toBe(null);
+    scoped.registerTemplate(
+        "tr-probe",
+        "/addon_probe",
+        `<t t-name="tr-probe"><div class="real">real</div></t>`,
+    );
+    const tmpl = scoped.getTemplate("tr-probe");
+    expect(tmpl).not.toBe(null);
+    expect(tmpl.textContent).toMatch(/real/);
+});
+
+test("TemplateRegistry: an extension registered after the first get is applied on re-get", () => {
+    const scoped = new TemplateRegistry();
+    scoped.registerTemplate(
+        "tr-late-ext",
+        "/addon_base",
+        `<t t-name="tr-late-ext"><div class="base">base</div></t>`,
+    );
+    expect(scoped.getTemplate("tr-late-ext").textContent).toMatch(/base/);
+    expect(scoped.getTemplate("tr-late-ext").textContent).not.toMatch(/ext/);
+
+    scoped.registerTemplateExtension(
+        "tr-late-ext",
+        "/addon_ext",
+        `<t t-inherit="tr-late-ext" t-inherit-mode="extension"><xpath expr="div" position="inside"><span class="ext">ext</span></xpath></t>`,
+    );
+    expect(scoped.getTemplate("tr-late-ext").textContent).toMatch(/ext/);
+});
+
+test("TemplateRegistry: unregistering an extension does not re-apply it on re-get", () => {
+    const scoped = new TemplateRegistry();
+    scoped.registerTemplate(
+        "tr-ext-base",
+        "/addon_base",
+        `<t t-name="tr-ext-base"><div class="base">base</div></t>`,
+    );
+    const unregExt = scoped.registerTemplateExtension(
+        "tr-ext-base",
+        "/addon_ext",
+        `<t t-inherit="tr-ext-base" t-inherit-mode="extension"><xpath expr="div" position="inside"><span class="ext">ext</span></xpath></t>`,
+    );
+    expect(scoped.getTemplate("tr-ext-base").textContent).toMatch(/ext/);
+    unregExt();
+    const rebuilt = scoped.getTemplate("tr-ext-base");
+    expect(rebuilt.textContent).toMatch(/base/);
+    expect(rebuilt.textContent).not.toMatch(/ext/);
+});
+
+test("TemplateRegistry: extensions apply in registration order", () => {
+    const scoped = new TemplateRegistry();
+    const makeExt = (word) =>
+        `<t t-inherit="tr-order" t-inherit-mode="extension">` +
+        `<xpath expr="div" position="inside"><span>${word}</span></xpath></t>`;
+    scoped.registerTemplate("tr-order", "/addon_a", `<t t-name="tr-order"><div/></t>`);
+    scoped.registerTemplateExtension("tr-order", "/addon_b", makeExt("one"));
+    scoped.registerTemplate("tr-order-sep", "/addon_a", `<t t-name="tr-order-sep"/>`);
+    scoped.registerTemplateExtension("tr-order", "/addon_c", makeExt("two"));
+
+    expect(
+        [...scoped.getTemplate("tr-order").querySelectorAll("span")].map(
+            (el) => el.textContent,
+        ),
+    ).toEqual(["one", "two"]);
+});
+
+test("TemplateRegistry: inheriting child only sees extensions registered before it", () => {
+    const scoped = new TemplateRegistry();
+    for (let i = 0; i < 5; i++) {
+        scoped.registerTemplate(`tr-fill-${i}`, "/f", `<t t-name="tr-fill-${i}"/>`);
+        scoped.registerTemplateExtension(
+            `tr-fill-${i}`,
+            "/f",
+            `<t t-inherit="tr-fill-${i}" t-inherit-mode="extension"/>`,
+        );
+    }
+    const makeExt = (word) =>
+        `<t t-inherit="tr-cut" t-inherit-mode="extension">` +
+        `<xpath expr="div" position="inside"><span>${word}</span></xpath></t>`;
+    scoped.registerTemplate("tr-cut", "/addon_a", `<t t-name="tr-cut"><div/></t>`);
+    scoped.registerTemplateExtension("tr-cut", "/addon_b", makeExt("before"));
+    scoped.registerTemplate(
+        "tr-cut-child",
+        "/addon_c",
+        `<t t-name="tr-cut-child" t-inherit="tr-cut"/>`,
+    );
+    scoped.registerTemplateExtension("tr-cut", "/addon_d", makeExt("after"));
+
+    expect(scoped.blockId).toBeGreaterThan(9);
+    const words = [...scoped.getTemplate("tr-cut-child").querySelectorAll("span")].map(
+        (el) => el.textContent,
+    );
+    expect(words).toEqual(["before"]);
+    expect(
+        [...scoped.getTemplate("tr-cut").querySelectorAll("span")].map(
+            (el) => el.textContent,
+        ),
+    ).toEqual(["before", "after"]);
+});
+
+test("a template build that throws does not leak its text nodes into the next one", async () => {
+    registerTemplates(
+        { name: "Broken", content: `<div>broken text</div>` },
+        {
+            name: "BrokenChild",
+            inheritFrom: "Broken",
+            content: `
+                <xpath expr="//div" position="inside">leaked text</xpath>
+                <xpath expr="//nowhere" position="inside">unreachable</xpath>
+            `,
+        },
+        { name: "Sound", content: `<div class="sound">sound text</div>` },
+    );
+
+    expect(() => templates.getTemplate("BrokenChild")).toThrow();
+
+    const el = await mountTestComponentWithTemplate("Sound");
+    expect(el).toHaveInnerHTML(`
+        <div class="sound">
+            sound text (addon_Sound)
+        </div>
+    `);
+    expect(el.textContent).not.toInclude("leaked text");
+});

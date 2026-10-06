@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+
+    <record id="access_res_partner_erp_manager_users" model="ir.access">
+        <field
+            name="name">res.partner: access rights managers edit the partners of users</field>
+        <field name="model_id" ref="base.model_res_partner" />
+        <field name="group_id" ref="base.group_erp_manager" />
+        <field name="kind">permission</field>
+        <field name="operation">cud</field>
+        <field name="domain">[('user_ids', '!=', False)]</field>
+        <field name="reach">all</field>
+    </record>
+
+</odoo>

@@ -1,0 +1,26 @@
+/** @odoo-module native */
+import { _t } from "@web/core/translation";
+import { patch } from "@web/core/utils/patch";
+import { SlideUploadDialog } from "@website_slides/js/public/components/slide_upload_dialog/slide_upload_dialog";
+
+patch(SlideUploadDialog.prototype, {
+    setup() {
+        super.setup();
+        this.pagesTemplates["certification"] =
+            "website_slides_survey.SlideCategoryTutorial.Certification";
+        this.slideCategoryData["certification"] = {
+            icon: "fa-trophy",
+            label: _t("Certification"),
+        };
+    },
+
+    /**
+     * @param {String} slideCategory
+     */
+    onClickSlideCategoryIcon(slideCategory) {
+        super.onClickSlideCategoryIcon(slideCategory);
+        if (slideCategory === "certification") {
+            this.state.title = _t("Add Certification");
+        }
+    },
+});

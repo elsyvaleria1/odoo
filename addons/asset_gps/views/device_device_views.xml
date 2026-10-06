@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_device_device_kanban_gps_dashboard_asset" model="ir.ui.view">
+        <field name="name">device.device.kanban.gps.dashboard.asset</field>
+        <field name="model">device.device</field>
+        <field
+            name="inherit_id"
+            ref="device_gps.view_device_device_kanban_gps_dashboard" />
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='activity_state']" position="after">
+                <field name="asset_id" widget="many2many_tags" />
+            </xpath>
+            <xpath
+                expr="//div[hasclass('o_kanban_card_header_title')]/div[hasclass('text-muted')]"
+                position="after">
+                <t t-if="record.asset_id.raw_value.length">
+                    <div class="text-muted small">
+                        <i class="fa-solid fa-truck" />
+                        <span class="ms-1">Asset: </span>
+                        <strong><field name="asset_id" widget="many2many_tags" /></strong>
+                    </div>
+                </t>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_device_device_form_asset" model="ir.ui.view">
+        <field name="name">device.device.form.asset</field>
+        <field name="model">device.device</field>
+        <field name="inherit_id" ref="device_gps.view_device_device_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//button[@name='action_view_logs_gps']" position="after">
+                <button
+                    name="action_view_tracked_asset"
+                    type="object"
+                    icon="fa-truck"
+                    invisible="not is_gps_device or not asset_id"
+                    class="oe_stat_button">
+                    <div class="o_field_widget o_stat_info">
+                        <span class="o_stat_text">View</span>
+                        <span class="o_stat_text">Asset</span>
+                    </div>
+                </button>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

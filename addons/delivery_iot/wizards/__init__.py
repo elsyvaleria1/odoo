@@ -1,0 +1,1 @@
+from . import wizard_stock_move_line_put_in_pack

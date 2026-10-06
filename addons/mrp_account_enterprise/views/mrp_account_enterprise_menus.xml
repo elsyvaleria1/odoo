@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <menuitem
+        id="mrp_dashboard_menuitem"
+        name="Production Analysis"
+        parent="mrp.menu_mrp_reporting"
+        action="mrp_report_dashboard_action"
+        sequence="20"
+        groups="mrp.group_mrp_manager" />
+
+</odoo>

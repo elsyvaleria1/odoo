@@ -1,0 +1,754 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_device_data_log_gps_report_search" model="ir.ui.view">
+        <field name="name">device.data.log.gps.report.search</field>
+        <field name="model">device.data.log.gps.report</field>
+        <field name="arch" type="xml">
+            <search string="GPS Daily Report">
+                <field name="device_id" />
+                <field name="date" />
+                <separator />
+                <filter
+                    name="filter_today"
+                    string="Today"
+                    domain="[('date', '=', context_today().strftime('%Y-%m-%d'))]" />
+                <filter
+                    name="filter_yesterday"
+                    string="Yesterday"
+                    domain="[('date', '=', (context_today() - datetime.timedelta(days=1)).strftime('%Y-%m-%d'))]" />
+                <filter
+                    name="filter_this_week"
+                    string="This Week"
+                    domain="[('date', '&gt;=', (context_today() - datetime.timedelta(days=context_today().weekday())).strftime('%Y-%m-%d'))]" />
+                <filter
+                    name="filter_last_7_days"
+                    string="Last 7 Days"
+                    domain="[('date', '&gt;=', (context_today() - datetime.timedelta(days=7)).strftime('%Y-%m-%d'))]" />
+                <filter
+                    name="filter_last_30_days"
+                    string="Last 30 Days"
+                    domain="[('date', '&gt;=', (context_today() - datetime.timedelta(days=30)).strftime('%Y-%m-%d'))]" />
+                <filter
+                    name="filter_this_month"
+                    string="This Month"
+                    domain="[('month', '=', context_today().strftime('%Y-%m'))]" />
+                <filter
+                    name="filter_last_month"
+                    string="Last Month"
+                    domain="[('month', '=', (context_today().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m'))]" />
+                <separator />
+                <filter
+                    name="filter_has_distance"
+                    string="With Distance Data"
+                    domain="[('distance_best', '&gt;', 0)]" />
+                <filter
+                    name="filter_has_fuel"
+                    string="With Fuel Data"
+                    domain="[('fuel_consumed_total', '&gt;', 0)]" />
+                <filter
+                    name="filter_has_movement"
+                    string="With Movement"
+                    domain="[('movement_count', '&gt;', 0)]" />
+                <separator />
+                <filter
+                    name="filter_speed_warning"
+                    string="Speed Warning"
+                    domain="[('speed_over_warning_events', '&gt;', 0)]" />
+                <filter
+                    name="filter_speed_alert"
+                    string="Speed Alert"
+                    domain="[('speed_over_alert_events', '&gt;', 0)]" />
+                <filter
+                    name="filter_speed_critical"
+                    string="Speed Critical"
+                    domain="[('speed_over_critical_events', '&gt;', 0)]" />
+                <separator />
+                <group>
+                    <filter
+                        name="group_by_device"
+                        string="Device"
+                        context="{'group_by': 'device_id'}" />
+                    <separator />
+                    <filter
+                        name="group_by_date"
+                        string="Date"
+                        context="{'group_by': 'date'}" />
+                    <filter
+                        name="group_by_week"
+                        string="Week"
+                        context="{'group_by': 'week'}" />
+                    <filter
+                        name="group_by_month"
+                        string="Month"
+                        context="{'group_by': 'month'}" />
+                    <filter
+                        name="group_by_dow"
+                        string="Day of Week"
+                        context="{'group_by': 'day_of_week'}" />
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="view_device_data_log_gps_report_search_by_vehicle" model="ir.ui.view">
+        <field name="name">device.data.log.gps.report.search.by_vehicle</field>
+        <field name="model">device.data.log.gps.report</field>
+        <field name="arch" type="xml">
+            <search string="GPS Daily Report">
+                <field name="device_id" />
+                <field name="date" />
+                <separator />
+                <filter
+                    name="filter_today"
+                    string="Today"
+                    domain="[('date', '=', context_today().strftime('%Y-%m-%d'))]" />
+                <filter
+                    name="filter_yesterday"
+                    string="Yesterday"
+                    domain="[('date', '=', (context_today() - datetime.timedelta(days=1)).strftime('%Y-%m-%d'))]" />
+                <filter
+                    name="filter_this_week"
+                    string="This Week"
+                    domain="[('date', '&gt;=', (context_today() - datetime.timedelta(days=context_today().weekday())).strftime('%Y-%m-%d'))]" />
+                <filter
+                    name="filter_last_7_days"
+                    string="Last 7 Days"
+                    domain="[('date', '&gt;=', (context_today() - datetime.timedelta(days=7)).strftime('%Y-%m-%d'))]" />
+                <filter
+                    name="filter_this_month"
+                    string="This Month"
+                    domain="[('month', '=', context_today().strftime('%Y-%m'))]" />
+                <separator />
+                <filter
+                    name="filter_has_distance"
+                    string="With Distance Data"
+                    domain="[('distance_best', '&gt;', 0)]" />
+                <filter
+                    name="filter_has_fuel"
+                    string="With Fuel Data"
+                    domain="[('fuel_consumed_total', '&gt;', 0)]" />
+                <filter
+                    name="filter_has_movement"
+                    string="With Movement"
+                    domain="[('movement_count', '&gt;', 0)]" />
+                <separator />
+                <filter
+                    name="filter_speed_warning"
+                    string="Speed Warning"
+                    domain="[('speed_over_warning_events', '&gt;', 0)]" />
+                <filter
+                    name="filter_speed_alert"
+                    string="Speed Alert"
+                    domain="[('speed_over_alert_events', '&gt;', 0)]" />
+                <filter
+                    name="filter_speed_critical"
+                    string="Speed Critical"
+                    domain="[('speed_over_critical_events', '&gt;', 0)]" />
+                <separator />
+                <group>
+                    <filter
+                        name="group_by_device"
+                        string="Device"
+                        context="{'group_by': 'device_id'}" />
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="view_device_data_log_gps_report_search_activity" model="ir.ui.view">
+        <field name="name">device.data.log.gps.report.search.activity</field>
+        <field name="model">device.data.log.gps.report</field>
+        <field name="arch" type="xml">
+            <search string="GPS Daily Report">
+                <field name="device_id" />
+                <field name="date" />
+                <separator />
+                <filter
+                    name="filter_today"
+                    string="Today"
+                    domain="[('date', '=', context_today().strftime('%Y-%m-%d'))]" />
+                <filter
+                    name="filter_yesterday"
+                    string="Yesterday"
+                    domain="[('date', '=', (context_today() - datetime.timedelta(days=1)).strftime('%Y-%m-%d'))]" />
+                <filter
+                    name="filter_this_week"
+                    string="This Week"
+                    domain="[('date', '&gt;=', (context_today() - datetime.timedelta(days=context_today().weekday())).strftime('%Y-%m-%d'))]" />
+                <filter
+                    name="filter_last_7_days"
+                    string="Last 7 Days"
+                    domain="[('date', '&gt;=', (context_today() - datetime.timedelta(days=7)).strftime('%Y-%m-%d'))]" />
+                <filter
+                    name="filter_this_month"
+                    string="This Month"
+                    domain="[('month', '=', context_today().strftime('%Y-%m'))]" />
+                <separator />
+                <filter
+                    name="filter_has_distance"
+                    string="With Distance Data"
+                    domain="[('distance_best', '&gt;', 0)]" />
+                <filter
+                    name="filter_has_movement"
+                    string="With Movement"
+                    domain="[('movement_count', '&gt;', 0)]" />
+                <separator />
+                <group>
+                    <filter
+                        name="group_by_device"
+                        string="Device"
+                        context="{'group_by': 'device_id'}" />
+                    <filter
+                        name="group_by_dow"
+                        string="Day of Week"
+                        context="{'group_by': 'day_of_week'}" />
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="view_device_data_log_gps_report_list" model="ir.ui.view">
+        <field name="name">device.data.log.gps.report.list</field>
+        <field name="model">device.data.log.gps.report</field>
+        <field name="arch" type="xml">
+            <list
+                string="GPS Daily Report"
+                default_order="date desc"
+                create="false"
+                delete="false">
+                <field name="date" />
+                <field name="device_id" />
+                <field name="distance_best" string="Distance (km)" sum="Total" />
+                <field name="driving_hours" string="Driving (hrs)" sum="Total" />
+                <field name="fuel_consumed_total" string="Fuel (L)" sum="Total" />
+                <field
+                    name="idling_hours"
+                    string="Idling (hrs)"
+                    optional="show"
+                    sum="Total"
+                    decoration-danger="idling_hours &gt; 1" />
+                <field
+                    name="parked_hours"
+                    string="Parked (hrs)"
+                    optional="hide"
+                    sum="Total" />
+                <field
+                    name="tracked_hours"
+                    string="Tracked (hrs)"
+                    optional="hide"
+                    sum="Total" />
+                <field
+                    name="driving_pct"
+                    string="Driving %"
+                    optional="show"
+                    decoration-muted="driving_pct &lt; 20"
+                    decoration-success="driving_pct &gt;= 50"
+                    decoration-warning="driving_pct &gt;= 20 and driving_pct &lt; 50" />
+                <field
+                    name="idling_pct"
+                    string="Idling %"
+                    optional="hide"
+                    decoration-danger="idling_pct &gt; 20" />
+                <field
+                    name="fuel_efficiency"
+                    string="Efficiency (km/L)"
+                    optional="show"
+                    decoration-danger="fuel_efficiency &lt; 5 and fuel_efficiency &gt; 0"
+                    decoration-success="fuel_efficiency &gt;= 8"
+                    decoration-warning="fuel_efficiency &gt;= 5 and fuel_efficiency &lt; 8" />
+                <field name="speed_avg" string="Avg Speed" optional="show" />
+                <field
+                    name="speed_max"
+                    string="Max Speed"
+                    optional="show"
+                    decoration-danger="speed_max &gt; 120" />
+                <field
+                    name="speed_over_warning_events"
+                    string="⚠ Warning"
+                    optional="show"
+                    sum="Total"
+                    decoration-warning="speed_over_warning_events &gt; 0" />
+                <field
+                    name="speed_over_alert_events"
+                    string="⚡ Alert"
+                    optional="show"
+                    sum="Total"
+                    decoration-danger="speed_over_alert_events &gt; 0" />
+                <field
+                    name="speed_over_critical_events"
+                    string="🔴 Critical"
+                    optional="show"
+                    sum="Total"
+                    decoration-danger="speed_over_critical_events &gt; 0" />
+                <field
+                    name="speed_wheel_discrepancy_avg"
+                    string="GPS/Wheel Δ"
+                    optional="hide"
+                    decoration-danger="speed_wheel_discrepancy_avg &gt; 10"
+                    decoration-warning="speed_wheel_discrepancy_avg &gt; 5" />
+                <field
+                    name="quality_pct"
+                    string="GPS Quality %"
+                    optional="hide"
+                    decoration-danger="quality_pct &lt; 50"
+                    decoration-success="quality_pct &gt;= 80"
+                    decoration-warning="quality_pct &gt;= 50 and quality_pct &lt; 80" />
+                <field
+                    name="log_count"
+                    string="GPS Points"
+                    optional="hide"
+                    sum="Total" />
+                <field
+                    name="movement_count"
+                    string="Moving Points"
+                    optional="hide"
+                    sum="Total" />
+                <field
+                    name="ignition_on_count"
+                    string="Ignition On"
+                    optional="hide"
+                    sum="Total" />
+                <field
+                    name="engine_temp_max"
+                    string="Max Temp (°C)"
+                    optional="hide"
+                    decoration-danger="engine_temp_max &gt; 100" />
+                <field
+                    name="battery_voltage_min"
+                    string="Min Battery (V)"
+                    optional="hide"
+                    decoration-danger="battery_voltage_min &lt; 11.5" />
+                <field name="distance_source" string="Dist. Source" optional="hide" />
+            </list>
+        </field>
+    </record>
+
+    <record id="view_device_data_log_gps_report_pivot" model="ir.ui.view">
+        <field name="name">device.data.log.gps.report.pivot</field>
+        <field name="model">device.data.log.gps.report</field>
+        <field name="arch" type="xml">
+            <pivot string="GPS Overview" sample="1" disable_linking="1">
+                <field name="device_id" type="row" />
+                <field name="distance_best" type="measure" />
+                <field name="driving_hours" type="measure" />
+                <field name="fuel_consumed_total" type="measure" />
+                <field name="log_count" type="measure" />
+                <field name="speed_over_warning_events" type="measure" />
+                <field name="speed_over_alert_events" type="measure" />
+                <field name="speed_over_critical_events" type="measure" />
+            </pivot>
+        </field>
+    </record>
+
+    <record id="view_device_data_log_gps_report_graph_distance" model="ir.ui.view">
+        <field name="name">device.data.log.gps.report.graph.distance</field>
+        <field name="model">device.data.log.gps.report</field>
+        <field name="arch" type="xml">
+            <graph
+                type="bar"
+                string="Distance by Vehicle"
+                sample="1"
+                disable_linking="1"
+                order="DESC">
+                <field name="device_id" />
+                <field name="distance_best" type="measure" string="Distance (km)" />
+                <field name="distance_odo" type="measure" />
+                <field name="distance_gps" type="measure" />
+                <field name="log_count" invisible="1" />
+                <field name="driving_hours" invisible="1" />
+                <field name="fuel_consumed_total" invisible="1" />
+                <field name="fuel_refilled_total" invisible="1" />
+                <field name="engine_hours_total" invisible="1" />
+                <field name="speed_sum" invisible="1" />
+                <field name="speed_count" invisible="1" />
+                <field name="fuel_level_sum" invisible="1" />
+                <field name="fuel_level_count" invisible="1" />
+                <field name="engine_temp_sum" invisible="1" />
+                <field name="engine_temp_count" invisible="1" />
+                <field name="battery_voltage_sum" invisible="1" />
+                <field name="battery_voltage_count" invisible="1" />
+                <field name="quality_ok_sum" invisible="1" />
+                <field name="wheel_speed_sum" invisible="1" />
+                <field name="wheel_speed_count" invisible="1" />
+                <field name="speed_wheel_diff_sum" invisible="1" />
+                <field name="speed_wheel_diff_count" invisible="1" />
+                <field name="speed_max" invisible="1" />
+                <field name="speed_min" invisible="1" />
+                <field name="engine_temp_max" invisible="1" />
+                <field name="battery_voltage_min" invisible="1" />
+                <field name="external_voltage_min" invisible="1" />
+                <field name="engine_rpm_max" invisible="1" />
+                <field name="odometer_start" invisible="1" />
+                <field name="odometer_end" invisible="1" />
+                <field name="speed_over_warning_events" invisible="1" />
+                <field name="speed_over_alert_events" invisible="1" />
+                <field name="speed_over_critical_events" invisible="1" />
+                <field name="ignition_on_count" invisible="1" />
+                <field name="movement_count" invisible="1" />
+            </graph>
+        </field>
+    </record>
+
+    <record id="view_device_data_log_gps_report_graph_fuel" model="ir.ui.view">
+        <field name="name">device.data.log.gps.report.graph.fuel</field>
+        <field name="model">device.data.log.gps.report</field>
+        <field name="arch" type="xml">
+            <graph
+                type="bar"
+                string="Fuel Consumed by Vehicle"
+                sample="1"
+                disable_linking="1"
+                order="DESC">
+                <field name="device_id" />
+                <field
+                    name="fuel_consumed_total"
+                    type="measure"
+                    string="Fuel Consumed (L)" />
+                <field name="fuel_refilled_total" type="measure" />
+                <field name="distance_best" invisible="1" />
+                <field name="log_count" invisible="1" />
+                <field name="distance_odo" invisible="1" />
+                <field name="distance_gps" invisible="1" />
+                <field name="driving_hours" invisible="1" />
+                <field name="engine_hours_total" invisible="1" />
+                <field name="speed_sum" invisible="1" />
+                <field name="speed_count" invisible="1" />
+                <field name="fuel_level_sum" invisible="1" />
+                <field name="fuel_level_count" invisible="1" />
+                <field name="engine_temp_sum" invisible="1" />
+                <field name="engine_temp_count" invisible="1" />
+                <field name="battery_voltage_sum" invisible="1" />
+                <field name="battery_voltage_count" invisible="1" />
+                <field name="quality_ok_sum" invisible="1" />
+                <field name="wheel_speed_sum" invisible="1" />
+                <field name="wheel_speed_count" invisible="1" />
+                <field name="speed_wheel_diff_sum" invisible="1" />
+                <field name="speed_wheel_diff_count" invisible="1" />
+                <field name="speed_max" invisible="1" />
+                <field name="speed_min" invisible="1" />
+                <field name="engine_temp_max" invisible="1" />
+                <field name="battery_voltage_min" invisible="1" />
+                <field name="external_voltage_min" invisible="1" />
+                <field name="engine_rpm_max" invisible="1" />
+                <field name="odometer_start" invisible="1" />
+                <field name="odometer_end" invisible="1" />
+                <field name="speed_over_warning_events" invisible="1" />
+                <field name="speed_over_alert_events" invisible="1" />
+                <field name="speed_over_critical_events" invisible="1" />
+                <field name="ignition_on_count" invisible="1" />
+                <field name="movement_count" invisible="1" />
+            </graph>
+        </field>
+    </record>
+
+    <record id="view_device_data_log_gps_report_graph_activity" model="ir.ui.view">
+        <field name="name">device.data.log.gps.report.graph.activity</field>
+        <field name="model">device.data.log.gps.report</field>
+        <field name="arch" type="xml">
+            <graph
+                type="bar"
+                string="Vehicle Activity"
+                sample="1"
+                disable_linking="1"
+                order="DESC">
+                <field name="device_id" />
+                <field
+                    name="movement_count"
+                    type="measure"
+                    string="Moving GPS Points" />
+                <field name="driving_hours" type="measure" string="Driving Hours" />
+                <field name="distance_best" type="measure" string="Distance (km)" />
+                <field name="ignition_on_count" type="measure" />
+                <field name="log_count" type="measure" />
+                <field name="distance_odo" invisible="1" />
+                <field name="distance_gps" invisible="1" />
+                <field name="fuel_consumed_total" invisible="1" />
+                <field name="fuel_refilled_total" invisible="1" />
+                <field name="engine_hours_total" invisible="1" />
+                <field name="speed_sum" invisible="1" />
+                <field name="speed_count" invisible="1" />
+                <field name="fuel_level_sum" invisible="1" />
+                <field name="fuel_level_count" invisible="1" />
+                <field name="engine_temp_sum" invisible="1" />
+                <field name="engine_temp_count" invisible="1" />
+                <field name="battery_voltage_sum" invisible="1" />
+                <field name="battery_voltage_count" invisible="1" />
+                <field name="quality_ok_sum" invisible="1" />
+                <field name="wheel_speed_sum" invisible="1" />
+                <field name="wheel_speed_count" invisible="1" />
+                <field name="speed_wheel_diff_sum" invisible="1" />
+                <field name="speed_wheel_diff_count" invisible="1" />
+                <field name="speed_max" invisible="1" />
+                <field name="speed_min" invisible="1" />
+                <field name="engine_temp_max" invisible="1" />
+                <field name="battery_voltage_min" invisible="1" />
+                <field name="external_voltage_min" invisible="1" />
+                <field name="engine_rpm_max" invisible="1" />
+                <field name="odometer_start" invisible="1" />
+                <field name="odometer_end" invisible="1" />
+                <field name="speed_over_warning_events" invisible="1" />
+                <field name="speed_over_alert_events" invisible="1" />
+                <field name="speed_over_critical_events" invisible="1" />
+            </graph>
+        </field>
+    </record>
+
+    <record id="view_device_data_log_gps_report_graph_speed" model="ir.ui.view">
+        <field name="name">device.data.log.gps.report.graph.speed</field>
+        <field name="model">device.data.log.gps.report</field>
+        <field name="arch" type="xml">
+            <graph
+                type="bar"
+                string="Speed Violations by Vehicle"
+                sample="1"
+                disable_linking="1"
+                order="DESC">
+                <field name="device_id" />
+                <field
+                    name="speed_over_warning_events"
+                    type="measure"
+                    string="⚠ Warning" />
+                <field name="speed_over_alert_events" type="measure" string="⚡ Alert" />
+                <field
+                    name="speed_over_critical_events"
+                    type="measure"
+                    string="🔴 Critical" />
+                <field name="speed_max" type="measure" string="Max Speed (km/h)" />
+                <field name="engine_rpm_max" type="measure" />
+                <field name="distance_best" invisible="1" />
+                <field name="distance_odo" invisible="1" />
+                <field name="distance_gps" invisible="1" />
+                <field name="driving_hours" invisible="1" />
+                <field name="fuel_consumed_total" invisible="1" />
+                <field name="fuel_refilled_total" invisible="1" />
+                <field name="log_count" invisible="1" />
+                <field name="engine_hours_total" invisible="1" />
+                <field name="speed_sum" invisible="1" />
+                <field name="speed_count" invisible="1" />
+                <field name="fuel_level_sum" invisible="1" />
+                <field name="fuel_level_count" invisible="1" />
+                <field name="engine_temp_sum" invisible="1" />
+                <field name="engine_temp_count" invisible="1" />
+                <field name="battery_voltage_sum" invisible="1" />
+                <field name="battery_voltage_count" invisible="1" />
+                <field name="quality_ok_sum" invisible="1" />
+                <field name="wheel_speed_sum" invisible="1" />
+                <field name="wheel_speed_count" invisible="1" />
+                <field name="speed_wheel_diff_sum" invisible="1" />
+                <field name="speed_wheel_diff_count" invisible="1" />
+                <field name="speed_min" invisible="1" />
+                <field name="engine_temp_max" invisible="1" />
+                <field name="battery_voltage_min" invisible="1" />
+                <field name="external_voltage_min" invisible="1" />
+                <field name="odometer_start" invisible="1" />
+                <field name="odometer_end" invisible="1" />
+                <field name="ignition_on_count" invisible="1" />
+                <field name="movement_count" invisible="1" />
+            </graph>
+        </field>
+    </record>
+
+    <record id="action_device_data_log_gps_report" model="ir.actions.act_window">
+        <field name="name">GPS Overview</field>
+        <field name="res_model">device.data.log.gps.report</field>
+        <field name="view_mode">pivot,list</field>
+        <field name="search_view_id" ref="view_device_data_log_gps_report_search" />
+        <field
+            name="context">{
+            'search_default_filter_today': 1,
+            'search_default_group_by_device': 1,
+            }</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No GPS data available
+            </p>
+            <p>
+                <strong>GPS Overview</strong>
+            </p>
+            <p> Real-time summary of your fleet's daily performance. <br /><br />
+                <strong>Key
+                Question:</strong> "How is my fleet performing today?" <br /><br />
+                <strong>Shows:</strong>
+                <ul>
+                    <li>Total kilometers traveled per vehicle</li>
+                    <li>Total active hours per vehicle</li>
+                    <li>Fuel consumed and efficiency (km/L)</li>
+                    <li>Speed violations and safety events</li>
+                    <li>Fleet utilization percentage</li>
+                </ul>
+                <br />
+                <strong>Note:</strong>
+                Data updates as GPS points are received. Use "Yesterday" filter for complete day
+                comparison. </p>
+        </field>
+    </record>
+
+    <record
+        id="action_device_data_log_gps_report_distance"
+        model="ir.actions.act_window">
+        <field name="name">Distance Analysis</field>
+        <field name="res_model">device.data.log.gps.report</field>
+        <field name="view_mode">graph,list</field>
+        <field name="view_id" ref="view_device_data_log_gps_report_graph_distance" />
+        <field
+            name="search_view_id"
+            ref="view_device_data_log_gps_report_search_by_vehicle" />
+        <field
+            name="context">{
+            'search_default_filter_today': 1,
+            'search_default_group_by_device': 1,
+            }</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No distance data available
+            </p>
+            <p>
+                <strong>Distance Analysis</strong>
+            </p>
+            <p> Compare kilometers traveled by each vehicle today. <br /><br />
+                <strong>Key Question:</strong>
+                "Which vehicles traveled the most today?" <br /><br />
+                <strong>Value:</strong>
+                <ul>
+                    <li>Identify high-mileage vehicles for maintenance</li>
+                    <li>Compare vehicle usage across fleet</li>
+                    <li>Spot underutilized vehicles</li>
+                </ul>
+                <br />
+                <strong>Data
+                Source:</strong> Uses odometer when available, GPS otherwise. Check "Dist. Source"
+                column in list view for details. </p>
+        </field>
+    </record>
+
+    <record id="action_device_data_log_gps_report_fuel" model="ir.actions.act_window">
+        <field name="name">Fuel Consumption</field>
+        <field name="res_model">device.data.log.gps.report</field>
+        <field name="view_mode">graph,list</field>
+        <field name="view_id" ref="view_device_data_log_gps_report_graph_fuel" />
+        <field
+            name="search_view_id"
+            ref="view_device_data_log_gps_report_search_by_vehicle" />
+        <field
+            name="context">{
+            'search_default_filter_today': 1,
+            'search_default_group_by_device': 1,
+            }</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No fuel data available
+            </p>
+            <p>
+                <strong>Fuel Consumption Analysis</strong>
+            </p>
+            <p> Track total liters of fuel consumed by each vehicle. <br /><br />
+                <strong>Key
+                Question:</strong> "How many liters were consumed?" <br /><br />
+                <strong>Value:</strong>
+                <ul>
+                    <li>Track fuel costs per vehicle</li>
+                    <li>Identify fuel-hungry vehicles</li>
+                    <li>Detect anomalies (potential fuel theft)</li>
+                </ul>
+                <br />
+                <strong>
+                Note:</strong> Requires devices that report fuel consumption in liters. Devices
+                reporting only fuel percentage require tank capacity configuration. </p>
+        </field>
+    </record>
+
+    <record
+        id="action_device_data_log_gps_report_activity"
+        model="ir.actions.act_window">
+        <field name="name">Vehicle Activity</field>
+        <field name="res_model">device.data.log.gps.report</field>
+        <field name="view_mode">graph,list</field>
+        <field name="view_id" ref="view_device_data_log_gps_report_graph_activity" />
+        <field
+            name="search_view_id"
+            ref="view_device_data_log_gps_report_search_activity" />
+        <field
+            name="context">{
+            'search_default_filter_today': 1,
+            'search_default_group_by_device': 1,
+            }</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No activity data available
+            </p>
+            <p>
+                <strong>Vehicle Activity Analysis</strong>
+            </p>
+            <p> See how active each vehicle was based on GPS movement data. <br /><br />
+                <strong>Key
+                Questions:</strong>
+                <ul>
+                    <li>"How much is each vehicle actually being used?"</li>
+                    <li>"Which days of the week are busiest?"</li>
+                </ul>
+                <strong>
+                Shows:</strong>
+                <ul>
+                    <li><strong>Moving GPS Points:</strong> GPS readings where vehicle was in motion</li>
+                    <li><strong>Driving Hours:</strong> Time with engine ON and vehicle moving</li>
+                    <li><strong>Distance:</strong> Total kilometers traveled</li>
+                </ul>
+                <br />
+                <strong>
+                Value:</strong>
+                <ul>
+                    <li>Identify underutilized vehicles</li>
+                    <li>Optimize fleet allocation</li>
+                    <li>Discover weekly patterns (use "Day of Week" grouping)</li>
+                </ul>
+                <br />
+                <strong>
+                Tip:</strong> Change filter to "This Month" and group by "Day of Week" to see which
+                days have the most fleet activity. </p>
+        </field>
+    </record>
+
+    <record id="action_device_data_log_gps_report_speed" model="ir.actions.act_window">
+        <field name="name">Speed &amp; Safety</field>
+        <field name="res_model">device.data.log.gps.report</field>
+        <field name="view_mode">graph,list</field>
+        <field name="view_id" ref="view_device_data_log_gps_report_graph_speed" />
+        <field
+            name="search_view_id"
+            ref="view_device_data_log_gps_report_search_by_vehicle" />
+        <field
+            name="context">{
+            'search_default_filter_today': 1,
+            'search_default_group_by_device': 1,
+            }</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No speed data available
+            </p>
+            <p>
+                <strong>Speed &amp; Safety Analysis</strong>
+            </p>
+            <p> Monitor speeding events across your fleet with configurable 3-level thresholds. <br /><br />
+                <strong>Key
+                Question:</strong> "Are drivers exceeding speed limits?" <br /><br />
+                <strong>Shows (configurable per device profile):</strong>
+                <ul>
+                    <li><strong>⚠ Warning:</strong> Level 1 - Minor speeding (default: 80 km/h)</li>
+                    <li><strong>⚡ Alert:</strong> Level 2 - Moderate speeding (default: 100 km/h)</li>
+                    <li><strong>🔴 Critical:</strong> Level 3 - Severe speeding (default: 120 km/h)</li>
+                    <li><strong>Max Speed:</strong> Highest speed recorded per vehicle/day</li>
+                </ul>
+                <br />
+                <strong>
+                Value:</strong>
+                <ul>
+                    <li>Identify drivers needing safety coaching</li>
+                    <li>Reduce accident risk</li>
+                    <li>Lower insurance premiums</li>
+                </ul>
+            </p>
+        </field>
+    </record>
+
+</odoo>

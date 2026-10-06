@@ -1,0 +1,401 @@
+import logging
+
+from odoo import models
+from odoo.exceptions import AccessError, UserError
+
+from odoo.addons.telegram.tools import format as tg
+from odoo.addons.telegram.tools import keyboard as kb
+from odoo.addons.telegram.tools.dispatch import (
+    TelegramCommand,
+    log_command_execution,
+    message_kind,
+    translation_env,
+)
+
+_logger = logging.getLogger(__name__)
+
+_DRAFT_KEY = "mail_draft"
+_REPLY_KEY = "mail_reply"
+_RECENT_THREADS = 5
+
+
+class TelegramHandlerMail(models.AbstractModel):
+    """Replies from Telegram to the Odoo messages the bot delivered.
+
+    A reply to a delivered message is posted on its record or conversation
+    as the person's user, under that user's access rights. A reply to an
+    internal note stays a note; a reply to a public message that would email
+    external followers asks first. Text sent without replying offers the
+    person's recent conversations to post it to.
+    """
+
+    _name = "telegram.handler.mail"
+    _inherit = "mixin.telegram.handler"
+    _description = "Telegram: Odoo Notifications and Replies"
+    _telegram_intake_priority = 150
+
+    def _telegram_callback_prefixes(self):
+        return ("mt:",)
+
+    def _telegram_intakes(self):
+        return frozenset({"text"})
+
+    def _feature_enabled(self, bot):
+        return bot.notify_mail
+
+    def _telegram_commands(self) -> dict:
+        return {
+            "/bandeja": TelegramCommand(
+                "_handle_inbox_command", "internal", builtin=True
+            )
+        }
+
+    def _get_help_sections(self, bot, partner, internal_user, chat=None):
+        if not bot.notify_mail or not internal_user:
+            return []
+        tr = translation_env(bot, chat)
+        return [
+            (
+                tr._("Odoo Notifications"),
+                [tr._("/bandeja - Open your Odoo notifications and chats here.")],
+            )
+        ]
+
+    # -- the inbox Mini App ---------------------------------------------------
+
+    @log_command_execution
+    def _handle_inbox_command(
+        self, bot, chat, args, partner=False, internal_user=False
+    ) -> None:
+        """The inbox, as a button now and as the chat's menu button from now
+        on."""
+        if not bot.notify_mail:
+            return
+        tr = translation_env(bot, chat)
+        url = bot._mini_app_url(f"/telegram/inbox/{bot.id}")
+        if not url:
+            bot._queue_text(
+                chat,
+                tr._(
+                    "The inbox opens inside Telegram only while Odoo is served "
+                    "over https. Ask your administrator."
+                ),
+                html=False,
+            )
+            return
+        inbox = kb.web_app_button(tr._("📥 Inbox"), url)
+        bot._queue_text(
+            chat,
+            tr._("Your Odoo notifications and chats, inside Telegram:"),
+            html=False,
+            reply_markup=kb.keyboard([inbox]),
+        )
+        self.env["telegram.message"]._queue(
+            bot,
+            chat,
+            "setChatMenuButton",
+            {"menu_button": {"type": "web_app", **inbox}},
+        )
+
+    # -- replies --------------------------------------------------------------
+
+    def _delivered(self, bot, chat, telegram_message_id):
+        """The mail message a Telegram message of this chat carried."""
+        if not telegram_message_id:
+            return self.env["mail.message"]
+        ledger = self.env["telegram.message"].search(
+            [
+                ("bot_id", "=", bot.id),
+                ("chat_id", "=", chat.id),
+                ("msg_uid", "=", str(telegram_message_id)),
+                ("mail_message_id", "!=", False),
+            ],
+            limit=1,
+        )
+        return ledger.mail_message_id
+
+    def _claims_message(self, bot, chat, message, partner, internal_user) -> bool:
+        if not internal_user or chat.chat_type != "private":
+            return False
+        replied = (message.get("reply_to_message") or {}).get("message_id")
+        return bool(self._delivered(bot, chat, replied))
+
+    def _on_message(self, bot, chat, message, partner, internal_user):
+        replied = (message.get("reply_to_message") or {}).get("message_id")
+        parent = self._delivered(bot, chat, replied)
+        if parent:
+            self._reply(bot, chat, message, parent, internal_user)
+            return True
+        return self._offer_threads(bot, chat, message, internal_user)
+
+    def _reply(self, bot, chat, message, parent, user, visibility=None) -> None:
+        tr = self._tr(bot, chat)
+        body = self._body_of(message)
+        if not body and message_kind(message) == "voice":
+            heard = self._voice_text(bot, chat, message, user)
+            if heard is None:
+                bot.send_message(
+                    chat.chat_id,
+                    tr._("I cannot turn voice notes into text here: please type it."),
+                    parse_mode=None,
+                )
+                return
+            # the transcript stands for the note from here on, a pending
+            # visibility question included
+            message = {**message, "text": f"🎤 {heard}"}
+            body = self._body_of(message)
+        if not body and not self._files_of(message):
+            bot.send_message(
+                chat.chat_id,
+                tr._("Only text, photos and documents can be posted to Odoo."),
+                parse_mode=None,
+            )
+            return
+        thread = self._thread_of(parent, user)
+        if thread is None:
+            bot.send_message(
+                chat.chat_id,
+                tr._("You can no longer write on that conversation in Odoo."),
+                parse_mode=None,
+            )
+            return
+        if visibility is None:
+            visibility = self._visibility(thread, parent)
+            if visibility == "ask":
+                self._ask_visibility(bot, chat, message, parent, thread)
+                return
+        subtype = "mail.mt_note" if visibility == "note" else "mail.mt_comment"
+        try:
+            with self.env.cr.savepoint():
+                posted = thread.message_post(
+                    body=body,
+                    parent_id=parent.id,
+                    message_type="comment",
+                    subtype_xmlid=subtype,
+                    attachments=self._download(bot, message),
+                )
+        except AccessError:
+            bot.send_message(
+                chat.chat_id,
+                tr._("You may read that conversation in Odoo but not write on it."),
+                parse_mode=None,
+            )
+            return
+        self._link_inbound(bot, chat, message, posted)
+        bot.send_message(
+            chat.chat_id,
+            tr._("✓ Posted on %(thread)s") % {"thread": tg.escape(thread.display_name)},
+        )
+
+    def _thread_of(self, parent, user):
+        """The record or conversation `parent` is on, as `user` may write it."""
+        if not parent.model or not parent.res_id:
+            return None
+        thread = self.env[parent.model].with_user(user).browse(parent.res_id).exists()
+        if not thread or not thread.has_access("read"):
+            return None
+        return thread
+
+    @staticmethod
+    def _visibility(thread, parent) -> str:
+        """A conversation takes a message; on a record, a reply keeps its
+        parent's visibility -- a note stays a note -- and asks before it
+        reaches external followers."""
+        if thread._name == "discuss.channel":
+            return "comment"
+        if not parent.subtype_id or parent.subtype_id.internal:
+            return "note"
+        followers = thread.message_follower_ids.partner_id
+        return "ask" if followers.filtered("partner_share") else "comment"
+
+    def _ask_visibility(self, bot, chat, message, parent, thread) -> None:
+        tr = self._tr(bot, chat)
+        external = len(thread.message_follower_ids.partner_id.filtered("partner_share"))
+        chat._set_context(
+            _REPLY_KEY,
+            {
+                "parent_id": parent.id,
+                "message": {
+                    key: message[key]
+                    for key in ("message_id", "text", "caption", "photo", "document")
+                    if key in message
+                },
+            },
+        )
+        bot.send_message(
+            chat.chat_id,
+            tr._(
+                "%(thread)s has %(count)s external follower(s): post your reply as "
+                "an internal note, or as a message they receive?"
+            )
+            % {"thread": thread.display_name, "count": external},
+            parse_mode=None,
+            reply_markup=kb.keyboard(
+                [
+                    kb.button(tr._("📝 Internal note"), "mt:vis:note"),
+                    kb.button(tr._("✉️ Message to followers"), "mt:vis:comment"),
+                ]
+            ),
+        )
+
+    def _on_edited_message(
+        self, bot, chat, message, ledger, partner, internal_user
+    ) -> bool:
+        """Editing a reply in Telegram edits what it posted in Odoo, as its
+        author and within Odoo's own rule on who may edit a message."""
+        posted = ledger.mail_message_id
+        if (
+            not posted
+            or not internal_user
+            or posted.author_id != internal_user.partner_id
+        ):
+            return False
+        thread = self._thread_of(posted, internal_user)
+        body = self._body_of(message)
+        if thread is None or not body:
+            return False
+        try:
+            with self.env.cr.savepoint():
+                thread._message_update_content(
+                    posted.with_user(internal_user), body=body
+                )
+        except (AccessError, UserError) as error:
+            _logger.info(
+                "Telegram edit of message %s not applied to Odoo message %s: %s",
+                message.get("message_id"),
+                posted.id,
+                error,
+            )
+            return False
+        return True
+
+    def _on_reaction(self, bot, chat, ledger, account, *, added, removed) -> bool:
+        """A reaction to a delivered notification is the user's reaction to
+        the Odoo message, where they may read it."""
+        posted = ledger.mail_message_id
+        user = account._acting_user("internal")
+        if chat.chat_type != "private" or not posted or not user:
+            return False
+        thread = self._thread_of(posted, user)
+        if thread is None:
+            return False
+        self._react(posted.with_env(thread.env), user.partner_id, added, removed)
+        return True
+
+    # -- text without a reply -------------------------------------------------
+
+    def _accepts_idle(self, bot, chat, kind, message, partner, internal_user):
+        return (
+            kind == "text"
+            and bool(internal_user)
+            and chat.chat_type == "private"
+            and bool(self._recent_threads(bot, chat))
+        )
+
+    def _recent_threads(self, bot, chat):
+        ledgers = self.env["telegram.message"].search(
+            [
+                ("bot_id", "=", bot.id),
+                ("chat_id", "=", chat.id),
+                ("mail_message_id", "!=", False),
+                ("message_type", "=", "outbound"),
+            ],
+            order="id desc",
+            limit=50,
+        )
+        seen, recent = set(), []
+        for ledger in ledgers:
+            key = (ledger.mail_message_id.model, ledger.mail_message_id.res_id)
+            if key in seen or not all(key):
+                continue
+            seen.add(key)
+            recent.append(ledger.mail_message_id)
+            if len(recent) == _RECENT_THREADS:
+                break
+        return recent
+
+    def _offer_threads(self, bot, chat, message, user) -> bool:
+        tr = self._tr(bot, chat)
+        recent = self._recent_threads(bot, chat)
+        if not recent:
+            return False
+        chat._set_context(_DRAFT_KEY, {"text": message.get("text") or ""})
+        bot.send_message(
+            chat.chat_id,
+            tr._("Where should I post it? Reply to a notification to skip this."),
+            parse_mode=None,
+            reply_markup=kb.record_list(
+                recent,
+                lambda parent: (self._thread_of(parent, user) or parent).display_name,
+                lambda parent: f"mt:to:{parent.id}",
+                width=60,
+                trailing=[kb.button(tr._("Cancel"), "mt:to:0")],
+            ),
+        )
+        return True
+
+    # -- buttons --------------------------------------------------------------
+
+    def _on_callback(self, bot, chat, callback_query, partner, internal_user):
+        data = callback_query.get("data") or ""
+        tr = self._tr(bot, chat)
+        if not internal_user:
+            bot.answer_callback_query(
+                callback_query.get("id"), tr._("Connect Telegram to Odoo first.")
+            )
+            return True
+        _prefix, action, argument = (data.split(":", 2) + ["", ""])[:3]
+        if action == "read":
+            self._mark_read(internal_user, int(argument or 0))
+            bot.answer_callback_query(callback_query.get("id"), tr._("✓ Read"))
+            return True
+        if action == "vis":
+            pending = chat._get_context(_REPLY_KEY) or {}
+            chat._set_context(_REPLY_KEY, False)
+            parent = self.env["mail.message"].browse(pending.get("parent_id") or 0)
+            bot.answer_callback_query(callback_query.get("id"))
+            self._clear_keyboard(bot, chat, callback_query)
+            if parent.exists() and argument in ("note", "comment"):
+                self._reply(
+                    bot,
+                    chat,
+                    pending["message"],
+                    parent,
+                    internal_user,
+                    visibility=argument,
+                )
+            return True
+        if action == "to":
+            draft = chat._get_context(_DRAFT_KEY) or {}
+            chat._set_context(_DRAFT_KEY, False)
+            bot.answer_callback_query(callback_query.get("id"))
+            self._clear_keyboard(bot, chat, callback_query)
+            parent = self.env["mail.message"].browse(int(argument or 0)).exists()
+            if parent and draft.get("text"):
+                self._reply(bot, chat, {"text": draft["text"]}, parent, internal_user)
+            return True
+        return False
+
+    def _mark_read(self, user, mail_message_id) -> None:
+        message = self.env["mail.message"].browse(mail_message_id).exists()
+        if not message:
+            return
+        if message.model == "discuss.channel":
+            member = self.env["discuss.channel.member"].search(
+                [
+                    ("channel_id", "=", message.res_id),
+                    ("partner_id", "=", user.partner_id.id),
+                ],
+                limit=1,
+            )
+            if member:
+                member._mark_as_read(message.id)
+            return
+        message.with_user(user).set_message_done()
+
+    # -- content --------------------------------------------------------------
+
+    def _voice_text(self, bot, chat, message, user):
+        """What a voice reply says, or None where voice notes cannot be heard
+        (mail_speech_telegram hears them)."""
+        return

@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="demo_gps_device_delivery_van_01" model="device.device">
+        <field name="name">Delivery Van - VAN-001</field>
+        <field name="identifier">GPS-VAN-001</field>
+        <field name="device_category_id" ref="device.device_category_gps" />
+        <field name="config_id" ref="demo_gps_config_standard_vehicle" />
+        <field name="comm_protocol">http</field>
+        <field name="endpoint">gps-gateway.local</field>
+        <field name="port">8080</field>
+        <field name="http_endpoint_path">/api/v1/vehicles/van001/gps</field>
+        <field name="connection_state">disconnected</field>
+        <field name="location">Mexico City - Central Depot</field>
+        <field name="serial_number">FMB-2024-VAN001</field>
+        <field name="firmware_version">03.28.17</field>
+        <field name="hardware_version">HW-02</field>
+        <field name="auto_reconnect_override">on</field>
+        <field name="is_demo" eval="True" />
+        <field name="gps_receiver_key">356307042441895</field>
+        <field name="gps_tracking_enabled" eval="True" />
+        <field name="fuel_tank_capacity">60.0</field>
+        <field
+            name="description">Primary delivery van for Mexico City central zone with real-time GPS tracking (Teltonika FMB920)</field>
+    </record>
+
+    <record id="demo_gps_device_fleet_truck_01" model="device.device">
+        <field name="name">Fleet Truck - TRK-042</field>
+        <field name="identifier">GPS-TRK-042</field>
+        <field name="device_category_id" ref="device.device_category_gps" />
+        <field name="config_id" ref="demo_gps_config_fleet_truck" />
+        <field name="comm_protocol">http</field>
+        <field name="endpoint">gps-gateway.local</field>
+        <field name="port">8080</field>
+        <field name="http_endpoint_path">/api/v1/fleet/truck042/gps</field>
+        <field name="connection_state">connected</field>
+        <field name="location">Highway Mexico-Querétaro Km 45</field>
+        <field name="serial_number">GV75-2024-TRK042</field>
+        <field name="firmware_version">4.12.5</field>
+        <field name="hardware_version">V2.3</field>
+        <field name="auto_reconnect_override">on</field>
+        <field name="is_demo" eval="True" />
+        <field name="gps_receiver_key">862104022345678</field>
+        <field name="gps_tracking_enabled" eval="True" />
+        <field name="fuel_tank_capacity">200.0</field>
+        <field
+            name="description">Heavy-duty fleet truck for inter-city cargo transport with full telemetry (Queclink GV75)</field>
+    </record>
+
+    <record id="demo_gps_device_forklift_01" model="device.device">
+        <field name="name">Forklift - FLT-WH-05</field>
+        <field name="identifier">GPS-FLT-WH05</field>
+        <field name="device_category_id" ref="device.device_category_gps" />
+        <field name="config_id" ref="demo_gps_config_asset_tracking" />
+        <field name="comm_protocol">http</field>
+        <field name="endpoint">gps-gateway.local</field>
+        <field name="port">8080</field>
+        <field name="http_endpoint_path">/api/v1/gps/position</field>
+        <field
+            name="http_headers">{"Content-Type": "application/json", "X-Device-Type": "asset-tracker"}</field>
+        <field name="connection_state">disconnected</field>
+        <field name="location">Warehouse - Zone A</field>
+        <field name="serial_number">AT4-2024-WH005</field>
+        <field name="firmware_version">2.5.8</field>
+        <field name="hardware_version">V1.0</field>
+        <field name="auto_reconnect_override">on</field>
+        <field name="is_demo" eval="True" />
+        <field name="gps_receiver_key">123456789012345</field>
+        <field name="gps_tracking_enabled" eval="True" />
+        <field
+            name="description">Indoor/outdoor forklift asset tracker with battery-optimized GPS (Concox AT4)</field>
+    </record>
+
+    <record id="demo_gps_device_reefer_01" model="device.device">
+        <field name="name">Refrigerated Truck - REEFER-12</field>
+        <field name="identifier">GPS-REEFER-012</field>
+        <field name="device_category_id" ref="device.device_category_gps" />
+        <field name="config_id" ref="demo_gps_config_fleet_truck" />
+        <field name="comm_protocol">http</field>
+        <field name="endpoint">gps-gateway.local</field>
+        <field name="port">8080</field>
+        <field name="http_endpoint_path">/api/v1/cold-chain/reefer012/gps</field>
+        <field name="connection_state">connected</field>
+        <field name="location">Guadalajara - Cold Storage Facility</field>
+        <field name="serial_number">FMB-2024-REEF012</field>
+        <field name="firmware_version">03.28.17</field>
+        <field name="hardware_version">HW-02</field>
+        <field name="auto_reconnect_override">on</field>
+        <field name="is_demo" eval="True" />
+        <field name="gps_receiver_key">359072067890123</field>
+        <field name="gps_tracking_enabled" eval="True" />
+        <field name="fuel_tank_capacity">180.0</field>
+        <field
+            name="description">Cold chain refrigerated truck with GPS and temperature monitoring (Teltonika FMB920)</field>
+    </record>
+
+    <record id="demo_gps_device_company_car_01" model="device.device">
+        <field name="name">Company Car - CAR-A15</field>
+        <field name="identifier">GPS-CAR-A15</field>
+        <field name="device_category_id" ref="device.device_category_gps" />
+        <field name="config_id" ref="demo_gps_config_standard_vehicle" />
+        <field name="comm_protocol">http</field>
+        <field name="endpoint">gps-gateway.local</field>
+        <field name="port">8080</field>
+        <field name="http_endpoint_path">/api/v1/fleet/car_a15/gps</field>
+        <field name="connection_state">connected</field>
+        <field name="location">Monterrey - Office Parking</field>
+        <field name="serial_number">T355-2024-CARA15</field>
+        <field name="firmware_version">5.20.4</field>
+        <field name="hardware_version">V3.0</field>
+        <field name="auto_reconnect_override">on</field>
+        <field name="is_demo" eval="True" />
+        <field name="gps_receiver_key">867148023456789</field>
+        <field name="gps_tracking_enabled" eval="True" />
+        <field name="fuel_tank_capacity">50.0</field>
+        <field
+            name="description">Executive company car with GPS tracking and driver behavior monitoring (Meitrack T355G)</field>
+    </record>
+
+</odoo>

@@ -1,0 +1,72 @@
+/** @odoo-module native */
+import { browser } from "@web/core/browser/browser";
+import { registry } from "@web/core/registry";
+import { _t } from "@web/core/translation";
+import { session } from "@web/session";
+
+export const assetsWatchdogService = {
+    dependencies: ["bus_service", "notification"],
+
+    start(env, { bus_service, notification }) {
+        let isNotificationDisplayed = false;
+        let bundleNotifTimerID = null;
+
+        bus_service.subscribe("bundle_changed", ({ server_version }) => {
+            if (server_version !== session.server_version) {
+                displayBundleChangedNotification();
+            }
+        });
+        bus_service.start();
+
+        /**
+         * Displays one notification on user's screen when assets have changed
+         */
+        function displayBundleChangedNotification() {
+            // Start the delayed notification on the FIRST change and let it run
+            // to completion. Previously each incoming `bundle_changed` cleared
+            // and rescheduled the timer, so a steady stream of changes (e.g.
+            // repeated asset recompiles) kept pushing the notification back and
+            // it could never appear. A pending timer (id !== null) is left
+            // alone; further changes are ignored until it fires or is closed.
+            if (!isNotificationDisplayed && bundleNotifTimerID === null) {
+                // Wrap the notification inside a delay.
+                // The server may be overwhelmed with recomputing assets
+                // We wait until things settle down
+                bundleNotifTimerID = browser.setTimeout(() => {
+                    bundleNotifTimerID = null;
+                    notification.add(_t("The page appears to be out of date."), {
+                        title: _t("Refresh"),
+                        type: "warning",
+                        sticky: true,
+                        buttons: [
+                            {
+                                name: _t("Refresh"),
+                                primary: true,
+                                onClick: () => {
+                                    browser.location.reload();
+                                },
+                            },
+                        ],
+                        onClose: () => {
+                            isNotificationDisplayed = false;
+                        },
+                    });
+                    isNotificationDisplayed = true;
+                }, getBundleNotificationDelay());
+            }
+        }
+
+        /**
+         * Computes a random delay to avoid hammering the server
+         * when bundles change with all the users reloading
+         * at the same time
+         *
+         * @return {number} delay in milliseconds
+         */
+        function getBundleNotificationDelay() {
+            return 10000 + Math.floor(Math.random() * 50) * 1000;
+        }
+    },
+};
+
+registry.category("services").add("bus.assets_watchdog", assetsWatchdogService);

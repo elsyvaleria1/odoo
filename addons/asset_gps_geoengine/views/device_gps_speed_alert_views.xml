@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_device_gps_speed_alert_list" model="ir.ui.view">
+        <field name="name">device.gps.speed.alert.list</field>
+        <field name="model">device.gps.speed.alert</field>
+        <field name="arch" type="xml">
+            <list create="0" edit="0" decoration-danger="1">
+                <field name="start" />
+                <field name="operator_id" />
+                <field name="asset_id" />
+                <field name="speed_max" string="Max Speed" decoration-bf="1" />
+                <field name="speed_limit" string="Critical Limit" />
+                <field name="duration_min" string="Minutes" />
+                <field name="place" string="Where" />
+                <field name="user_id" string="Notified" />
+                <field
+                    name="company_id"
+                    optional="hide"
+                    groups="base.group_multi_company" />
+            </list>
+        </field>
+    </record>
+
+    <record id="view_device_gps_speed_alert_search" model="ir.ui.view">
+        <field name="name">device.gps.speed.alert.search</field>
+        <field name="model">device.gps.speed.alert</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="operator_id" />
+                <field name="asset_id" />
+                <field name="user_id" />
+                <filter
+                    name="today"
+                    string="Today"
+                    domain="[('start', '&gt;=', context_today().strftime('%Y-%m-%d 00:00:00'))]" />
+                <filter name="start" string="Date" date="start" />
+                <group>
+                    <filter
+                        name="group_operator"
+                        string="Operator"
+                        context="{'group_by': 'operator_id'}" />
+                    <filter
+                        name="group_day"
+                        string="Day"
+                        context="{'group_by': 'start:day'}" />
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_device_gps_speed_alert" model="ir.actions.act_window">
+        <field name="name">Speed Alerts</field>
+        <field name="res_model">device.gps.speed.alert</field>
+        <field name="view_mode">list</field>
+        <field name="search_view_id" ref="view_device_gps_speed_alert_search" />
+        <field name="context">{'search_default_group_day': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">No alerts</p>
+            <p>Every 5 minutes the stretches that passed the device's critical
+                limit are reviewed. Each one schedules an activity for the
+                operator's manager and is recorded here.</p>
+        </field>
+    </record>
+
+</odoo>

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="hr_referral.CopyButtonReferral">
+        <a
+            role="button"
+            class="btn btn-secondary d-flex flex-column"
+            t-on-click.stop="this.onClick">
+            <span>
+                <i role="img" class="fa-solid fa-link fa-2x" aria-label="Link to share"/>
+            </span>
+            <div t-if="this.props.record.data.directclicks" class="text-primary py-2">            
+                <span><t t-out="this.props.record.data.directclicks"/> Click(s)</span>
+            </div>
+            <div t-else="" class="text-primary py-2"> 
+                Share Now
+            </div>
+        </a>
+    </t>
+</templates>

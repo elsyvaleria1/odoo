@@ -1,0 +1,5 @@
+id,name,model_id/id,group_id/id,kind,operation,domain
+access_sendcloud_shipping_product_stock,access.sendcloud.shipping.product.stock,model_sendcloud_shipping_product,stock.group_stock_manager,permission,crud,
+access_sendcloud_shipping_product_sale,access.sendcloud.shipping.product.sale,model_sendcloud_shipping_product,sale.group_sale_manager,permission,crud,
+access_sendcloud_shipping_wizard_stock,access.sendcloud.shipping.wizard.stock,model_wizard_delivery_carrier_update_sendcloud_product,stock.group_stock_manager,permission,crud,
+access_sendcloud_shipping_wizard_sale,access.sendcloud.shipping.wizard.sale,model_wizard_delivery_carrier_update_sendcloud_product,sale.group_sale_manager,permission,crud,

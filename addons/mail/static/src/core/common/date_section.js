@@ -1,0 +1,18 @@
+// @ts-check
+/** @odoo-module native */
+import { Component, t, useProps } from "@odoo/owl";
+import { isMobileOS } from "@web/core/browser/feature_detection";
+/**
+ * @typedef {Object} Props
+ * @property {string} date
+ * @property {string} [className]
+ */
+export class DateSection extends Component {
+    static template = "mail.DateSection";
+    static props = { date: t.any(), className: t.any().optional() };
+    props = useProps(this.constructor.props);
+
+    get isMobileOS() {
+        return isMobileOS();
+    }
+}

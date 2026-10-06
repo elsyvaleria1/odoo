@@ -1,0 +1,24 @@
+from odoo import api, fields, models
+
+
+class WizardAccountMoveSendBatch(models.TransientModel):
+    _inherit = "wizard.account.move.send.batch"
+
+    send_by_post_stamps = fields.Integer(compute="_compute_send_by_post_stamps")
+
+    @api.depends("move_ids")
+    def _compute_send_by_post_stamps(self) -> None:
+        for wizard in self:
+            partner_with_valid_address = wizard.move_ids.partner_id.filtered(
+                self.env["snailmail.letter"]._is_valid_address
+            )
+            wizard.send_by_post_stamps = len(partner_with_valid_address)
+
+    def _compute_summary_data(self) -> None:
+        # EXTENDS 'account'
+        super()._compute_summary_data()
+        for wizard in self:
+            if wizard.summary_data and "snailmail" in wizard.summary_data:
+                wizard.summary_data["snailmail"].update(
+                    {"extra": self.env._("(Stamps: %s)", wizard.send_by_post_stamps)}
+                )

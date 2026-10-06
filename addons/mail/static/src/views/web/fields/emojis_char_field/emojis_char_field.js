@@ -1,0 +1,24 @@
+// @ts-check
+/** @odoo-module native */
+import { EmojisFieldCommon } from "@mail/views/web/fields/emojis_field_common/emojis_field_common";
+import { registry } from "@web/core/registry";
+import { CharField, charField } from "@web/fields/basic/char/char_field";
+export class EmojisCharField extends EmojisFieldCommon(CharField) {
+    static template = "mail.EmojisCharField";
+    static components = { ...CharField.components };
+    setup() {
+        super.setup();
+        this.targetEditElement = this.input;
+        this._setupOverride();
+    }
+}
+
+export const emojisCharField = {
+    ...charField,
+    component: EmojisCharField,
+    additionalClasses: [...(charField.additionalClasses || []), "o_field_text"],
+    /** @param {Parameters<typeof charField.extractProps>} args */
+    extractProps: (...args) => ({ ...charField.extractProps(...args), trim: false }),
+};
+
+registry.category("fields").add("char_emojis", emojisCharField);

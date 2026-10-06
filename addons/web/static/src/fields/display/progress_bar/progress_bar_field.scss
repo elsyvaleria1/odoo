@@ -1,0 +1,49 @@
+.o_progressbar {
+    .o_progress {
+        width: 100px;
+        height: 15px;
+        border: 1px solid var(--o-gray-300);
+        background-color: var(--o-bg-view);
+    }
+
+    .o_progressbar_value input {
+        width: 45px;
+        min-width: 45px;
+        transition: width var(--o-duration-normal, 0.2s);
+    }
+}
+
+.o_form_view {
+    .o_progressbar_value input {
+        &:focus-within {
+            width: 100%;
+        }
+    }
+}
+
+.o_list_view .o_data_cell {
+    .o_progressbar {
+        display: table-row;
+        justify-content: end;
+        .o_rtl & {
+            justify-content: flex-start;
+            text-align: right;
+        }
+        .o_progressbar_value {
+            span {
+                min-width: 1.5rem;
+            }
+            span:last-child {
+                text-align: left;
+            }
+        }
+    }
+}
+
+.o_kanban_renderer {
+    .o_progressbar:not(:hover):not(:focus-within) {
+        input {
+            border-color: transparent;
+        }
+    }
+}

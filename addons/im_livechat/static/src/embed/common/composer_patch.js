@@ -1,0 +1,13 @@
+/** @odoo-module native */
+import { Composer } from "@mail/core/common/composer";
+import { _t } from "@web/core/translation";
+import { patch } from "@web/core/utils/patch";
+
+patch(Composer.prototype, {
+    get placeholder() {
+        if (!this.thread?.isLivechat) {
+            return super.placeholder;
+        }
+        return _t("Say something...");
+    },
+});

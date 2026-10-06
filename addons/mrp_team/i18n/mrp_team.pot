@@ -1,0 +1,110 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* mrp_team
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-09-27 05:12+0000\n"
+"PO-Revision-Date: 2026-09-27 05:12+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: mrp_team
+#: model_terms:ir.actions.act_window,help:mrp_team.team_action_mrp
+msgid "Create a manufacturing team"
+msgstr ""
+
+#. module: mrp_team
+#: model:ir.model.fields,field_description:mrp_team.field_mrp_production__display_name
+msgid "Display Name"
+msgstr ""
+
+#. module: mrp_team
+#: model_terms:ir.actions.act_window,help:mrp_team.team_action_mrp
+msgid ""
+"Give each manufacturing operation type a team: its members see and run its "
+"orders."
+msgstr ""
+
+#. module: mrp_team
+#: model:ir.model.fields,field_description:mrp_team.field_mrp_production__id
+msgid "ID"
+msgstr ""
+
+#. module: mrp_team
+#. odoo-python
+#: code:addons/mrp_team/models/team_team.py:0
+#: model:ir.model.fields,field_description:mrp_team.field_team_team__use_mrp
+#: model_terms:ir.ui.view,arch_db:mrp_team.team_view_search_mrp
+msgid "Manufacturing"
+msgstr ""
+
+#. module: mrp_team
+#: model:res.groups.privilege,name:mrp_team.res_groups_privilege_mrp_documents
+msgid "Manufacturing Documents"
+msgstr ""
+
+#. module: mrp_team
+#: model:ir.model,name:mrp_team.model_mrp_production
+msgid "Manufacturing Order"
+msgstr ""
+
+#. module: mrp_team
+#: model:ir.model.fields,field_description:mrp_team.field_team_team__mrp_production_ids
+msgid "Manufacturing Orders"
+msgstr ""
+
+#. module: mrp_team
+#: model:ir.actions.act_window,name:mrp_team.team_action_mrp
+#: model:ir.model.fields,field_description:mrp_team.field_res_users__mrp_team_ids
+msgid "Manufacturing Teams"
+msgstr ""
+
+#. module: mrp_team
+#: model_terms:ir.ui.view,arch_db:mrp_team.view_mrp_production_filter_team
+msgid "My Teams' Orders"
+msgstr ""
+
+#. module: mrp_team
+#: model:res.groups,name:mrp_team.group_mrp_user_own
+msgid "Own Documents Only"
+msgstr ""
+
+#. module: mrp_team
+#: model:ir.model.fields,field_description:mrp_team.field_mrp_production__team_id
+msgid "Team"
+msgstr ""
+
+#. module: mrp_team
+#: model:res.groups,name:mrp_team.group_mrp_user_team
+msgid "Team Documents"
+msgstr ""
+
+#. module: mrp_team
+#: model:ir.ui.menu,name:mrp_team.menu_mrp_team_config
+msgid "Teams"
+msgstr ""
+
+#. module: mrp_team
+#: model:ir.model.fields,help:mrp_team.field_team_team__use_mrp
+msgid "The team manufactures: the orders of its operation types belong to it."
+msgstr ""
+
+#. module: mrp_team
+#: model:res.groups,comment:mrp_team.group_mrp_user_team
+msgid ""
+"The user also sees the manufacturing orders of their manufacturing teams."
+msgstr ""
+
+#. module: mrp_team
+#: model:res.groups,comment:mrp_team.group_mrp_user_own
+msgid ""
+"The user sees the manufacturing orders they are responsible for, and the "
+"ones nobody is."
+msgstr ""

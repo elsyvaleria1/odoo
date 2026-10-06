@@ -1,0 +1,89 @@
+// @ts-check
+/** @odoo-module native */
+import { fields } from "@mail/core/common/record";
+import { Store } from "@mail/core/common/store_service";
+import { router } from "@web/core/browser/router";
+import { patch } from "@web/core/utils/patch";
+/** @type {Partial<import("models").Store> & ThisType<import("models").Store>} */
+const StorePatch = {
+    setup() {
+        super.setup();
+        this.rtc = fields.One("Rtc", {
+            /** @this {import("models").Store} */
+            compute() {
+                return {};
+            },
+        });
+        this.ringingThreads = fields.Many("Thread", {
+            /** @this {import("models").Store} */
+            onUpdate() {
+                if (this.ringingThreads.length > 0) {
+                    this.env.services["mail.sound_effects"].play("call-invitation", {
+                        loop: true,
+                    });
+                } else {
+                    this.env.services["mail.sound_effects"].stop("call-invitation");
+                }
+            },
+        });
+        this.allActiveRtcSessions = fields.Many("discuss.channel.rtc.session");
+        this.nextTalkingTime = 1;
+        this.fullscreenChannel = fields.One("Thread");
+        this._hasFullscreenUrl = fields.Attr(false, {
+            /** @this {import("models").Store} */
+            compute() {
+                return this.discuss?.thread?.eq(this.fullscreenChannel);
+            },
+            /** @this {import("models").Store} */
+            onUpdate() {
+                if (!this.discuss?.hasRestoredThread) {
+                    return;
+                }
+                this._hasFullscreenUrlOnUpdate();
+            },
+        });
+        this.meetingViewOpened = false;
+    },
+    _hasFullscreenUrlOnUpdate() {
+        router.pushState({
+            fullscreen: this._hasFullscreenUrl ? true : undefined,
+        });
+    },
+    onStarted() {
+        super.onStarted(...arguments);
+        this.rtc.start();
+    },
+    async startMeeting() {
+        const thread = await this.createGroupChat({
+            default_display_mode: "video_full_screen",
+            partners_to: [this.self.id],
+        });
+        await this.store.chatHub.initPromise;
+        this.ChatWindow.get(thread)?.update({ autofocus: 0 });
+        await this.env.services["discuss.rtc"].toggleCall(thread, { camera: true });
+        if (this.rtc.selfSession) {
+            this.rtc.enterFullscreen({ autoOpenAction: "invite-people" });
+        }
+    },
+    /**
+     * @param {import("models").ChannelMember} m1
+     * @param {import("models").ChannelMember} m2
+     * @returns {number}
+     */
+    sortMembers(m1, m2) {
+        const m1HasRtc = Boolean(m1.rtcSession);
+        const m2HasRtc = Boolean(m2.rtcSession);
+        if (m1HasRtc === m2HasRtc) {
+            const m1RaisingValue = m1.rtcSession?.raisingHand || Infinity;
+            const m2RaisingValue = m2.rtcSession?.raisingHand || Infinity;
+            if (m1HasRtc && m1RaisingValue !== m2RaisingValue) {
+                return Number(m1RaisingValue) - Number(m2RaisingValue);
+            } else {
+                return super.sortMembers(m1, m2);
+            }
+        } else {
+            return Number(m2HasRtc) - Number(m1HasRtc);
+        }
+    },
+};
+patch(Store.prototype, StorePatch);

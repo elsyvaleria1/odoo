@@ -1,0 +1,112 @@
+from odoo.tests.common import TransactionCase, tagged
+from odoo.tools import convert_file
+from odoo.tools.misc import file_path
+
+from odoo.addons.base.models.assetsbundle.assets import ScssStylesheetAsset
+
+
+@tagged("-at_install", "post_install")
+class TestAsset(TransactionCase):
+    def test_asset_tag(self):
+        convert_file(
+            self.env,
+            "base",
+            file_path("base/tests/asset_tag.xml"),
+            {},
+            "init",
+            False,
+        )
+        active_keep_asset = self.env.ref("base.test_asset_tag_aaa")
+        inactive_keep_asset = self.env.ref("base.test_asset_tag_iii")
+        active_switch_asset_reset = self.env.ref("base.test_asset_tag_aia")
+        active_switch_asset_ignore = self.env.ref("base.test_asset_tag_aii")
+        inactive_switch_asset = self.env.ref("base.test_asset_tag_iaa")
+        prepend_asset = self.env.ref("base.test_asset_tag_prepend")
+        asset_with_extra_field = self.env.ref("base.test_asset_tag_extra")
+
+        self.assertEqual(prepend_asset._name, "ir.asset", "Model should be ir.asset")
+        self.assertEqual(
+            prepend_asset.name,
+            "Test asset tag with directive",
+            "Name not loaded",
+        )
+        self.assertEqual(prepend_asset.directive, "prepend", "Directive not loaded")
+        self.assertEqual(prepend_asset.bundle, "test_asset_bundle", "Bundle not loaded")
+        self.assertEqual(
+            prepend_asset.path, "base/tests/something.scss", "Path not loaded"
+        )
+        self.assertEqual(asset_with_extra_field.sequence, 17, "Sequence not loaded")
+        self.assertTrue(active_keep_asset.active, "Should be active")
+        self.assertTrue(active_switch_asset_reset.active, "Should be active")
+        self.assertTrue(active_switch_asset_ignore.active, "Should be active")
+        self.assertFalse(inactive_keep_asset.active, "Should be inactive")
+        self.assertFalse(inactive_switch_asset.active, "Should be inactive")
+
+        prepend_asset.name = "changed"
+        prepend_asset.directive = "append"
+        prepend_asset.bundle = "changed"
+        prepend_asset.path = "base/tests/changed.scss"
+        asset_with_extra_field.sequence = 3
+        active_switch_asset_reset.active = False
+        active_switch_asset_ignore.active = False
+        inactive_switch_asset.active = True
+
+        convert_file(
+            self.env,
+            "base",
+            file_path("base/tests/asset_tag.xml"),
+            {
+                "base.test_asset_tag_aaa": active_keep_asset.id,
+                "base.test_asset_tag_iii": inactive_keep_asset.id,
+                "base.test_asset_tag_aia": active_switch_asset_reset.id,
+                "base.test_asset_tag_aii": active_switch_asset_ignore.id,
+                "base.test_asset_tag_iaa": inactive_switch_asset.id,
+                "base.test_asset_tag_prepend": prepend_asset.id,
+                "base.test_asset_tag_extra": asset_with_extra_field.id,
+            },
+            "update",
+            False,
+        )
+
+        self.assertEqual(
+            prepend_asset.name,
+            "Test asset tag with directive",
+            "Name not restored",
+        )
+        self.assertEqual(prepend_asset.directive, "prepend", "Directive not restored")
+        self.assertEqual(
+            prepend_asset.bundle, "test_asset_bundle", "Bundle not restored"
+        )
+        self.assertEqual(
+            prepend_asset.path, "base/tests/something.scss", "Path not restored"
+        )
+        self.assertEqual(asset_with_extra_field.sequence, 17, "Sequence not restored")
+        self.assertTrue(active_keep_asset.active, "Should be active")
+        self.assertTrue(active_switch_asset_reset.active, "Should be reset to active")
+        self.assertFalse(active_switch_asset_ignore.active, "Should be kept inactive")
+        self.assertFalse(inactive_keep_asset.active, "Should be inactive")
+        self.assertTrue(inactive_switch_asset.active, "Should be kept active")
+
+
+@tagged("-at_install", "post_install")
+class TestAssetDescriptor(TransactionCase):
+    def _stylesheet(self, **kw):
+        bundle = self.env["ir.qweb"]._get_asset_bundle("web.assets_frontend", js=False)
+        return ScssStylesheetAsset(bundle, last_modified=1.0, **kw)
+
+    def test_a_file_with_inline_content_versions_by_that_content(self):
+        url = "/web/static/src/scss/test.scss"
+        first = self._stylesheet(url=url, inline="$a: 1;")
+        second = self._stylesheet(url=url, inline="$a: 2;")
+        self.assertNotEqual(first.unique_descriptor, second.unique_descriptor)
+        self.assertEqual(
+            first.unique_descriptor,
+            self._stylesheet(url=url, inline="$a: 1;").unique_descriptor,
+        )
+
+    def test_a_plain_file_or_inline_asset_keeps_its_descriptor(self):
+        url = "/web/static/src/scss/test.scss"
+        self.assertEqual(self._stylesheet(url=url).unique_descriptor, f"{url},1.0,ltr,")
+        self.assertEqual(
+            self._stylesheet(inline="$a: 1;").unique_descriptor, "$a: 1;,1.0,ltr,"
+        )

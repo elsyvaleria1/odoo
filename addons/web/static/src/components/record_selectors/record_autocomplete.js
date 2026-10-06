@@ -1,0 +1,210 @@
+// @ts-check
+/** @odoo-module native */
+
+import { Component, t, useProps } from "@odoo/owl";
+import { AutoComplete } from "@web/components/autocomplete/autocomplete";
+import {
+    normalizeSelectedIds,
+    quickSearchFilter,
+    SEARCH_LIMIT,
+    SEARCH_MORE_LIMIT,
+    searchMoreLabel,
+    searchMoreTitle,
+    splitOverflow,
+    webNameSearch,
+} from "@web/components/autocomplete/name_search";
+import {
+    avatarUrl,
+    isAvatarModel,
+} from "@web/components/record_selectors/avatar_models";
+import { makeLogger } from "@web/core/debug/debug_logger";
+import { Domain } from "@web/core/domain";
+import { ConnectionAbortedError } from "@web/core/network/rpc";
+import { getSelectCreateDialog } from "@web/core/record_dialog_port";
+import { _t } from "@web/core/translation";
+import { useOwnedDialogs, useService } from "@web/core/utils/hooks";
+
+const log = makeLogger("web.components.record_autocomplete");
+
+export class RecordAutocomplete extends Component {
+    static props = {
+        resModel: t.string(),
+        update: t.function(),
+        multiSelect: t.boolean(),
+        getIds: t.function(),
+        value: t.string(),
+        domain: t.array().optional(),
+        context: t.object().optional(),
+        className: t.string().optional(),
+        fieldString: t.string().optional(),
+        placeholder: t.string().optional(),
+    };
+    static components = { AutoComplete };
+    static template = "web.RecordAutocomplete";
+    props = useProps(this.constructor.props);
+
+    /** @type {ReturnType<typeof useOwnedDialogs>} */
+    addDialog;
+    /** @type {import("services").ServiceFactories["name"]} */
+    nameService;
+    /** @type {import("services").ServiceFactories["orm"]} */
+    orm;
+    /** @type {any} */
+    lastProm = null;
+
+    setup() {
+        this.orm = useService("orm");
+        this.nameService = useService("name");
+        this.addDialog = useOwnedDialogs();
+        this.sources = [
+            {
+                placeholder: _t("Loading..."),
+                options: this.loadOptionsSource.bind(this),
+                optionSlot: "option",
+            },
+        ];
+    }
+
+    /** @returns {boolean} */
+    get isAvatarModel() {
+        return isAvatarModel(this.props.resModel);
+    }
+
+    /**
+     * @param {number} resId
+     * @returns {string}
+     */
+    avatarUrl(resId) {
+        return avatarUrl(this.props.resModel, resId);
+    }
+
+    /** @param {Array<{ id: number, display_name: any }>} records */
+    addNames(records) {
+        const displayNames = Object.fromEntries(
+            records.map(({ id, display_name }) => [id, display_name]),
+        );
+        this.nameService.addDisplayNames(this.props.resModel, displayNames);
+    }
+
+    getIds() {
+        return this.props.getIds();
+    }
+
+    /** @param {string} name */
+    async loadOptionsSource(name) {
+        this.lastProm?.abort(true);
+        const end = log.perf("search", () => ({ resModel: this.props.resModel, name }));
+        const prom = (this.lastProm = this.search(name, SEARCH_LIMIT + 1));
+        let fetched;
+        try {
+            fetched = this.cleanRecords(await prom);
+            end({ records: fetched.length });
+        } catch (error) {
+            if (error instanceof ConnectionAbortedError) {
+                end({ aborted: true });
+                return [];
+            }
+            throw error;
+        } finally {
+            if (this.lastProm === prom) {
+                this.lastProm = null;
+            }
+        }
+        this.addNames(fetched);
+        const { records, hasMore } = splitOverflow(fetched, SEARCH_LIMIT);
+        /** @type {Array<Record<string, any>>} */
+        const options = records.map((record) => ({
+            data: { record },
+            label: record.display_name,
+            onSelect: () => this.props.update([record.id]),
+        }));
+        if (hasMore) {
+            options.push({
+                cssClass: "o_m2o_dropdown_option o_m2o_dropdown_option_search_more",
+                label: searchMoreLabel(),
+                onSelect: this.onSearchMore.bind(this, name),
+            });
+        }
+        if (!options.length) {
+            options.push({ label: _t("(no result)") });
+        }
+        return options;
+    }
+
+    /** @param {string} name */
+    async onSearchMore(name) {
+        const { fieldString, multiSelect, resModel } = this.props;
+        let dynamicFilters;
+        if (name) {
+            const records = this.cleanRecords(
+                await this.search(name, SEARCH_MORE_LIMIT),
+            );
+            this.addNames(records);
+            log.logic("search more quick search", () => ({
+                name,
+                found: records.length,
+            }));
+            if (records.length) {
+                dynamicFilters = [
+                    quickSearchFilter(
+                        name,
+                        records.map((record) => record.id),
+                    ),
+                ];
+            }
+        }
+        const SelectCreateDialog = getSelectCreateDialog();
+        this.addDialog(SelectCreateDialog, {
+            title: searchMoreTitle(fieldString),
+            dynamicFilters,
+            domain: this.getDomain(),
+            resModel,
+            noCreate: true,
+            multiSelect,
+            context: this.props.context || {},
+            onSelected: (/** @type {number|number[]} */ resId) => {
+                this.props.update(normalizeSelectedIds(resId));
+            },
+        });
+    }
+
+    getDomain() {
+        const domainIds = Domain.not([["id", "in", this.getIds()]]);
+        if (this.props.domain) {
+            return Domain.and([this.props.domain, domainIds]).toList();
+        }
+        return domainIds.toList();
+    }
+
+    /**
+     * @param {string} name
+     * @param {number} limit
+     * @returns {Promise<Array<Record<string, any>>>}
+     */
+    search(name, limit) {
+        return webNameSearch(this.orm, this.props.resModel, {
+            name,
+            domain: this.getDomain(),
+            limit,
+            context: this.props.context || {},
+        });
+    }
+
+    /**
+     * @param {Array<Record<string, any>>} records
+     * @returns {Array<{ id: number, display_name: any }>}
+     */
+    cleanRecords(records) {
+        return records.map(({ id, display_name }) => ({
+            id,
+            display_name: display_name ? display_name.split("\n")[0] : _t("Unnamed"),
+        }));
+    }
+
+    /** @param {{ inputValue: string }} param0 */
+    onChange({ inputValue }) {
+        if (!inputValue.length) {
+            this.props.update([]);
+        }
+    }
+}

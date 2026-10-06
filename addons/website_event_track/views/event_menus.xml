@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <data>
+        <menuitem
+            id="menu_event_track"
+            name="Tracks"
+            parent="event.event_main_menu"
+            action="action_event_track"
+            sequence="40"
+            groups="base.group_no_one" />
+        <menuitem
+            id="event_track_stage_menu"
+            name="Track Stages"
+            parent="event.menu_event_configuration"
+            action="event_track_stage_action"
+            sequence="30"
+            groups="base.group_no_one" />
+        <menuitem
+            id="menu_event_track_location"
+            name="Track Locations"
+            parent="event.menu_event_configuration"
+            action="action_event_track_location"
+            sequence="32" />
+        <menuitem
+            id="event_track_tag_category_menu"
+            name="Track Tag Categories"
+            parent="event.menu_event_configuration"
+            action="event_track_tag_category_action"
+            sequence="33"
+            groups="base.group_no_one" />
+        <menuitem
+            id="menu_event_track_tag"
+            name="Track Tags"
+            parent="event.menu_event_configuration"
+            action="action_event_track_tag"
+            sequence="34"
+            groups="base.group_no_one" />
+        <menuitem
+            id="event_track_visitor_menu"
+            name="Track Visitors"
+            parent="event.menu_event_configuration"
+            action="event_track_visitor_action"
+            sequence="38"
+            groups="base.group_no_one" />
+    </data>
+
+</odoo>

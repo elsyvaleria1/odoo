@@ -1,0 +1,286 @@
+@each $color, $value in $grays {
+    @include bg-variant(".bg-#{$color}", $value);
+    @include text-emphasis-variant(".text-#{$color}", $value);
+}
+
+@each $color, $value in $theme-colors {
+    @include text-emphasis-variant(".text-#{$color}", $value);
+}
+
+.card {
+    --body-color: var(--card-color);
+}
+:where(.card:not([data-vxml])) .card-body:not(.card[data-vxml] .card-body) {
+    @include o-bg-color(rgba($card-bg, $o-card-body-bg-opacity), $important: false);
+
+    &:first-child {
+        @include border-top-radius($card-inner-border-radius);
+    }
+    &:last-child {
+        @include border-bottom-radius($card-inner-border-radius);
+    }
+}
+
+$o-btn-bg-colors: () !default;
+$o-btn-border-colors: () !default;
+@each $color, $value in $theme-colors {
+    $-bg-color: map-get($o-btn-bg-colors, $color) or $value;
+    $-border-color: map-get($o-btn-border-colors, $color) or $-bg-color;
+    .btn-fill-#{$color} {
+        @include button-variant($-bg-color, $-border-color);
+    }
+}
+@each $color, $value in $theme-colors {
+    $-bg-color: map-get($o-btn-bg-colors, $color) or $value;
+    $-border-color: increase-contrast(
+        map-get($o-btn-border-colors, $color) or $-bg-color,
+        $body-bg
+    );
+    .btn-outline-#{$color} {
+        @include button-outline-variant($-border-color);
+    }
+}
+$o-btn-flat-defaults: () !default;
+$o-btn-outline-defaults: () !default;
+$o-btn-outline-border-width-defaults: () !default;
+@each $color, $value in $theme-colors {
+    .btn-#{$color} {
+        @if index($o-btn-outline-defaults, $color) {
+            @extend .btn-outline-#{$color};
+            border-width: map-get($o-btn-outline-border-width-defaults, $color);
+        } @else {
+            @extend .btn-fill-#{$color};
+            @if index($o-btn-flat-defaults, $color) {
+                @extend %o-btn-flat !optional;
+            }
+        }
+    }
+}
+
+.btn-group .btn-light.active {
+    box-shadow: inset 0 0 0 $border-width $component-active-bg;
+    border-color: transparent;
+    background-color: mix($component-active-bg, $light, 10%);
+}
+
+@if alpha($navbar-dark-toggler-border-color) < 0.001 {
+    .navbar-dark .navbar-toggler {
+        padding-left: 0;
+        padding-right: 0;
+    }
+}
+@if alpha($navbar-light-toggler-border-color) < 0.001 {
+    .navbar-light .navbar-toggler {
+        padding-left: 0;
+        padding-right: 0;
+    }
+}
+
+$o-navbar-nav-pills-link-padding-x: $nav-link-padding-x !default;
+$o-navbar-nav-pills-link-border-radius: $nav-pills-border-radius !default;
+.navbar-nav.nav-pills .nav-link {
+    padding-right: $o-navbar-nav-pills-link-padding-x;
+    padding-left: $o-navbar-nav-pills-link-padding-x;
+
+    @if $o-navbar-nav-pills-link-border-radius != $nav-pills-border-radius {
+        @include border-radius($o-navbar-nav-pills-link-border-radius);
+    }
+}
+
+.carousel-control-next .visually-hidden {
+    left: 50%;
+}
+
+.pagination {
+    font-variant-numeric: tabular-nums;
+}
+
+.page-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 0;
+    width: 2.5em;
+    aspect-ratio: 1 / 1;
+}
+
+.page-link.active,
+.active > .page-link {
+    text-shadow: 0 0 0.1em var(--pagination-active-bg);
+}
+
+.offcanvas {
+    @include media-breakpoint-down(sm) {
+        --Offcanvas-horizontal-width: calc(100vw - #{map-get($spacers, 5)});
+    }
+}
+
+.modal-content {
+    @if $modal-content-color == null {
+        color: adjust-color-to-background(
+            o-palette-token(--o-text, $body-color),
+            $modal-content-bg
+        );
+
+        &:where(:not(.oe_structure)) {
+            @if ($input-bg == $body-bg) {
+                .form-control {
+                    background-color: $modal-content-bg;
+                    color: color-contrast($modal-content-bg);
+                }
+            }
+            @if ($form-select-bg == $body-bg) {
+                .form-select {
+                    background-color: $modal-content-bg;
+                    color: color-contrast($modal-content-bg);
+                }
+            }
+            @if $form-check-input-bg == $body-bg {
+                .form-check-input:not(:checked) {
+                    background-color: $modal-content-bg;
+                }
+            }
+        }
+    }
+    .text-muted {
+        color: adjust-color-to-background(
+            $text-muted,
+            $modal-content-bg,
+            mute-color($color-contrast-light),
+            mute-color($color-contrast-dark)
+        ) !important;
+    }
+}
+
+.popover {
+    @if $popover-header-color == null {
+        .popover-header {
+            color: adjust-color-to-background(
+                o-palette-token(--o-text, $body-color),
+                $popover-header-bg
+            );
+        }
+    }
+    @if $popover-body-color == $body-color {
+        .popover-body {
+            color: adjust-color-to-background(
+                o-palette-token(--o-text, $body-color),
+                $popover-bg
+            );
+        }
+    }
+}
+
+.form-check-input {
+    color: inherit;
+}
+.form-control.bg-light {
+    @include o-search-cancel-button(adjust-color-to-background($input-color, $light));
+
+    color: adjust-color-to-background($input-color, $light);
+}
+
+input[type="search"] {
+    @include o-search-cancel-button($input-color);
+}
+
+$-color-for-gray-200-bg: adjust-color-to-background($body-color, $gray-200);
+.input-group-text {
+    @if ($input-group-addon-bg == $gray-200) and
+        ($input-group-addon-color == $body-color)
+    {
+        color: $-color-for-gray-200-bg;
+    }
+}
+.form-control::file-selector-button {
+    @if ($form-file-button-bg == $gray-200) and
+        ($form-file-button-color == $body-color)
+    {
+        color: $-color-for-gray-200-bg;
+    }
+}
+
+.offcanvas {
+    @if $offcanvas-color == null {
+        color: adjust-color-to-background(
+            o-palette-token(--o-text, $body-color),
+            $offcanvas-bg-color
+        );
+
+        @if $form-check-input-bg == $body-bg {
+            .form-check-input:where(:not(:checked)) {
+                background-color: $offcanvas-bg-color;
+            }
+        }
+        @if $form-range-thumb-bg == $body-bg {
+            .form-range {
+                &::-webkit-slider-thumb {
+                    &:where(:not(:active)) {
+                        background-color: $offcanvas-bg-color;
+                    }
+                }
+                &::-moz-range-thumb {
+                    &:where(:not(:active)) {
+                        background-color: $offcanvas-bg-color;
+                    }
+                }
+            }
+        }
+    }
+}
+
+.input-group {
+    .btn:first-child,
+    .btn:last-child {
+        @include border-radius($input-border-radius, 0);
+    }
+}
+
+.dropdown-menu {
+    .text-muted {
+        color: adjust-color-to-background(
+            $text-muted,
+            $dropdown-bg,
+            mute-color($color-contrast-light),
+            mute-color($color-contrast-dark)
+        ) !important;
+    }
+
+    .dropdown-item.active {
+        --dropdown-link-active-bg: #{$component-active-bg};
+        --dropdown-link-active-color: #{$component-active-color};
+    }
+}
+
+.form-select {
+    background-clip: padding-box;
+
+    &:disabled:not([multiple]):where(:not([size]), [size="1"]) {
+        background-image: str-replace(
+            $form-select-indicator,
+            #{$form-select-indicator-color},
+            str-replace(#{$form-select-disabled-color}, "#", "%23")
+        );
+    }
+}
+
+.form-control {
+    &:disabled,
+    &[readonly] {
+        color: $form-select-disabled-color;
+    }
+}
+
+.form-check-input:disabled:not(:checked) {
+    background-color: $input-disabled-bg;
+
+    .form-switch & {
+        background-image: escape-svg(
+            url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'><circle r='3' fill='#{$form-select-disabled-color}'/></svg>")
+        );
+    }
+}
+
+.form-range:disabled::-webkit-slider-thumb {
+    border-color: $input-disabled-border-color;
+}

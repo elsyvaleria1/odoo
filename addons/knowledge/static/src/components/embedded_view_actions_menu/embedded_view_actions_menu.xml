@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<templates>
+    <t t-name="knowledge.EmbeddedViewActionsMenu">
+        <CogMenuItem icon="'fa-solid fa-up-right-from-square'" description.translate="Open" onSelected.bind="this._onOpenEmbeddedView"/>
+        <CogMenuItem t-if="!this.knowledgeContext.isEmbeddedReadonly" icon="'fa-solid fa-pencil'" description.translate="Edit…" onSelected.bind="this._onEditEmbeddedView"/>
+    </t>
+</templates>

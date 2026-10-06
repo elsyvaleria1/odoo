@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_base_module_upgrade" model="ir.ui.view">
+        <field name="name">Module Upgrade</field>
+        <field name="model">wizard.ir.module.module.apply.scheduled</field>
+        <field name="arch" type="xml">
+            <form string="System Update">
+                <p>This module will trigger the uninstallation of below modules.</p>
+                <p>
+                    <strong>This operation will permanently erase all data currently stored by
+                        the modules!</strong>
+                </p>
+                <p>If you wish to cancel the process, press the cancel button below</p>
+                <separator string="Impacted Apps" />
+                <field name="module_info" />
+                <footer>
+                    <button
+                        name="upgrade_module"
+                        type="object"
+                        string="Confirm"
+                        class="btn-primary"
+                        data-hotkey="q" />
+                    <button
+                        name="upgrade_module_cancel"
+                        type="object"
+                        string="Cancel"
+                        class="btn-secondary"
+                        data-hotkey="x" />
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_view_base_module_upgrade" model="ir.actions.act_window">
+        <field name="name">Apply Schedule Upgrade</field>
+        <field name="res_model">wizard.ir.module.module.apply.scheduled</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+
+</odoo>

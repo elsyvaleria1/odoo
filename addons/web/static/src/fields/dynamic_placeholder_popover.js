@@ -1,0 +1,131 @@
+// @ts-check
+/** @odoo-module native */
+
+import { Component, onWillStart, proxy, t, useProps } from "@odoo/owl";
+import { ModelFieldSelectorPopover } from "@web/components/model_field_selector/model_field_selector_popover";
+import { useDebugMode } from "@web/core/debug/debug_context";
+import { user } from "@web/core/user";
+import { elementRef } from "@web/core/utils/element_ref";
+import { useAutofocus, useOptionalService } from "@web/core/utils/hooks";
+
+import {
+    isRenderableFieldType,
+    placeholderExpression,
+} from "./dynamic_placeholder_syntax.js";
+
+export class DynamicPlaceholderPopover extends Component {
+    static template = "web.DynamicPlaceholderPopover";
+    static components = {
+        ModelFieldSelectorPopover,
+    };
+    static props = {
+        resModel: t.string(),
+        validate: t.function(),
+        close: t.function(),
+        plainText: t.boolean().optional(false),
+        expressionFor: t
+            .function()
+            .optional(() => (path) => placeholderExpression(path)),
+    };
+    props = useProps(this.constructor.props);
+
+    /** @type {{ path: string; isPathSelected: boolean; defaultValue: string; fieldName: string; fieldType: string }} */
+    state;
+    /** @type {boolean} */
+    isTemplateEditor = false;
+    /** @type {string[]} */
+    allowedQwebExpressions = [];
+
+    setup() {
+        this.debug = useDebugMode();
+        this.autofocusRef = elementRef();
+        useAutofocus({ ref: this.autofocusRef });
+        this.state = proxy({
+            path: "",
+            isPathSelected: false,
+            defaultValue: "",
+            fieldName: "",
+            fieldType: "",
+        });
+        this.getAllowedQwebExpressions = useOptionalService("allowed_qweb_expressions");
+        onWillStart(() => this._loadAllowedExpressions());
+    }
+
+    async _loadAllowedExpressions() {
+        if (!this.getAllowedQwebExpressions) {
+            /** @type {any} */ (this).isTemplateEditor = true;
+            /** @type {any} */ (this).allowedQwebExpressions = [];
+            return;
+        }
+        /** @type {any} */ (this).isTemplateEditor = await user.hasGroup(
+            "mail.group_mail_template_editor",
+        );
+        if (/** @type {any} */ (this).isTemplateEditor) {
+            return;
+        }
+        /** @type {any} */ (this).allowedQwebExpressions =
+            await this.getAllowedQwebExpressions(
+                /** @type {any} */ (this.props).resModel,
+            );
+    }
+
+    filter(fieldDef, path) {
+        if (!isRenderableFieldType(fieldDef, { plainText: this.props.plainText })) {
+            return false;
+        }
+        if (this.isTemplateEditor) {
+            return true;
+        }
+        const fullPath = `${path ? `${path}.` : ""}${fieldDef.name}`;
+        return this.allowedQwebExpressions.includes(
+            this.props.expressionFor(fullPath, fieldDef),
+        );
+    }
+    closeFieldSelector(isPathSelected = false) {
+        if (isPathSelected) {
+            this.state.isPathSelected = true;
+            return;
+        }
+        this.props.close();
+    }
+    setPath(path, fieldInfo) {
+        this.state.path = path;
+        this.state.fieldName = fieldInfo?.string || "";
+        this.state.fieldType = fieldInfo?.type || "";
+    }
+    setDefaultValue(value) {
+        this.state.defaultValue = value;
+    }
+    validate() {
+        this.props.validate(
+            this.state.path,
+            this.state.defaultValue,
+            this.state.fieldType,
+        );
+        this.props.close();
+    }
+
+    onBack() {
+        this.state.defaultValue = "";
+        this.state.isPathSelected = false;
+        this.state.path = "";
+        this.state.fieldName = "";
+        this.state.fieldType = "";
+    }
+
+    /** @param {KeyboardEvent} ev */
+    async onInputKeydown(ev) {
+        switch (ev.key) {
+            case "Enter": {
+                this.validate();
+                ev.stopPropagation();
+                ev.preventDefault();
+                break;
+            }
+            case "Escape": {
+                this.props.close();
+                break;
+            }
+        }
+    }
+}

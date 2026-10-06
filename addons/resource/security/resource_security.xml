@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="privilege_owner_deletes_resource" model="res.groups">
+        <field
+            name="name">Privilege: deleting what owns a resource deletes the resource</field>
+        <field
+            name="comment">An employee, an asset or any record that owns its resource takes it along when it is deleted, with its identifiers and meters. The resource still refuses when it has operational history; it is archived instead.</field>
+        <field name="is_privilege" eval="True" />
+    </record>
+
+</odoo>

@@ -1,0 +1,53 @@
+// @ts-check
+/** @odoo-module native */
+import { dataUrlToBlob } from "@mail/core/common/attachment_uploader_hook";
+import { getComposerTargetThreads } from "@mail/core/web/composer_target_threads";
+import { Component, useProps } from "@odoo/owl";
+import { FileUploader } from "@web/core/file_upload";
+import { registry } from "@web/core/registry";
+import { useService } from "@web/core/utils/hooks";
+import { useX2ManyCrud } from "@web/fields/relational/x2many_crud";
+import { standardFieldProps } from "@web/fields/standard_field_props";
+export class MailComposerAttachmentSelector extends Component {
+    static template = "mail.MailComposerAttachmentSelector";
+    static components = { FileUploader };
+    static props = { ...standardFieldProps };
+    props = useProps(this.constructor.props);
+
+    setup() {
+        this.mailStore = useService("mail.store");
+        this.attachmentUploadService = useService("mail.attachment_upload");
+        this.operations = useX2ManyCrud(
+            () => this.props.record.data["attachment_ids"],
+            true,
+        );
+    }
+
+    /** @param {Object} data */
+    async onFileUploaded({ data, name, type }) {
+        const [thread] = getComposerTargetThreads(this.mailStore, this.props.record);
+        const file = new File([dataUrlToBlob(data, type)], name, { type });
+        const isThreadComposer = this.props.record.context.is_thread_composer;
+        /** @type {{attachments: import("models").Attachment[]}|undefined} */
+        let composer = isThreadComposer ? thread.composer : undefined;
+        if (this.props.record.resModel === "mail.scheduled.message") {
+            composer = { attachments: [] };
+        }
+        const attachment = await this.attachmentUploadService.upload(
+            thread,
+            composer,
+            file,
+        );
+        if (attachment) {
+            await this.operations.linkRecords([attachment.id]);
+        }
+    }
+}
+
+export const mailComposerAttachmentSelector = {
+    component: MailComposerAttachmentSelector,
+};
+
+registry
+    .category("fields")
+    .add("mail_composer_attachment_selector", mailComposerAttachmentSelector);

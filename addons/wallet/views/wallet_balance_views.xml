@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_wallet_balance_list" model="ir.ui.view">
+        <field name="name">wallet.balance.list</field>
+        <field name="model">wallet.balance</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="date" />
+                <field name="card_id" />
+                <field name="account_id" optional="hide" />
+                <field name="amount_balance" widget="monetary" />
+                <field name="source" />
+                <field name="status" optional="hide" />
+                <field name="currency_id" column_invisible="True" />
+            </list>
+        </field>
+    </record>
+
+    <record id="view_wallet_balance_graph" model="ir.ui.view">
+        <field name="name">wallet.balance.graph</field>
+        <field name="model">wallet.balance</field>
+        <field name="arch" type="xml">
+            <graph type="line">
+                <field name="date" interval="day" />
+                <field name="amount_balance" type="measure" />
+            </graph>
+        </field>
+    </record>
+
+    <record id="view_wallet_balance_search" model="ir.ui.view">
+        <field name="name">wallet.balance.search</field>
+        <field name="model">wallet.balance</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="card_id" />
+                <field name="account_id" />
+                <group>
+                    <filter
+                        name="group_by_card"
+                        string="Card"
+                        context="{'group_by': 'card_id'}" />
+                    <filter
+                        name="group_by_date"
+                        string="Date"
+                        context="{'group_by': 'date:day'}" />
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_wallet_balance" model="ir.actions.act_window">
+        <field name="name">Balances</field>
+        <field name="res_model">wallet.balance</field>
+        <field name="view_mode">list,graph</field>
+        <field name="search_view_id" ref="view_wallet_balance_search" />
+    </record>
+
+</odoo>

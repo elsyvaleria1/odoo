@@ -1,0 +1,210 @@
+// @ts-check
+
+import { after, expect, getFixture, test } from "@odoo/hoot";
+import { middleClick, rightClick } from "@odoo/hoot-dom";
+import { App, Component, useProps, xml } from "@odoo/owl";
+import { contains, mountWithCleanup } from "@web/../tests/web_test_helpers";
+
+test(`main button click`, async () => {
+    class MyComponent extends Component {
+        static template = xml`<div t-custom-click="this.plop" class="clickMe"><t t-out="this.props.text"/></div>`;
+        static props = null;
+        props = useProps(this.constructor.props);
+        plop(ev, isMiddleClick) {
+            expect.step("clicked on plop");
+            expect.step(`isMiddleClick: ${isMiddleClick}`);
+        }
+    }
+
+    await mountWithCleanup(MyComponent, { props: { text: "text from props" } });
+
+    expect(".clickMe").toHaveText("text from props");
+    await contains(".clickMe").click();
+    expect.verifySteps(["clicked on plop", "isMiddleClick: false"]);
+});
+
+test(`handler is bound`, async () => {
+    class MyComponent extends Component {
+        static template = xml`<div t-custom-click="this.plop" class="clickMe"><t t-out="this.props.text"/></div>`;
+        static props = null;
+        props = useProps(this.constructor.props);
+        setup() {
+            this.test = "bind";
+        }
+        plop() {
+            expect.step(this.test);
+        }
+    }
+
+    await mountWithCleanup(MyComponent, { props: { text: "text from props" } });
+
+    expect(".clickMe").toHaveText("text from props");
+    await contains(".clickMe").click();
+    expect.verifySteps(["bind"]);
+});
+
+test(`detect if middle Click`, async () => {
+    class MyComponent extends Component {
+        static template = xml`<div t-custom-click="this.plop" class="clickMe"><t t-out="this.props.text"/></div>`;
+        static props = null;
+        props = useProps(this.constructor.props);
+        plop(ev, isMiddleClick) {
+            expect.step(`isMiddleClick: ${isMiddleClick}`);
+        }
+    }
+
+    await mountWithCleanup(MyComponent, { props: { text: "text from props" } });
+    await middleClick(".clickMe");
+
+    expect.verifySteps(["isMiddleClick: true"]);
+});
+
+test(`detect if middle Click (ctrl+click)`, async () => {
+    class MyComponent extends Component {
+        static template = xml`<div t-custom-click="this.plop" class="clickMe"><t t-out="this.props.text"/></div>`;
+        static props = null;
+        props = useProps(this.constructor.props);
+        plop(ev, isMiddleClick) {
+            expect.step(`isMiddleClick: ${isMiddleClick}`);
+        }
+    }
+
+    await mountWithCleanup(MyComponent, { props: { text: "text from props" } });
+
+    expect(".clickMe").toHaveText("text from props");
+    await contains(".clickMe").click({ ctrlKey: true });
+    expect.verifySteps(["isMiddleClick: true"]);
+});
+
+test(`main button (arrow function)`, async () => {
+    class MyComponent extends Component {
+        static template = xml`<div t-custom-click="(ev, isMiddleClick) => this.plop(ev, isMiddleClick, 'test')" class="clickMe"><t t-out="this.props.text"/></div>`;
+        static props = null;
+        props = useProps(this.constructor.props);
+        plop(ev, isMiddleClick, text) {
+            expect.step(`clickend on plop`);
+            expect.step(`text: ${text}`);
+        }
+    }
+
+    await mountWithCleanup(MyComponent, { props: { text: "text from props" } });
+
+    expect(".clickMe").toHaveText("text from props");
+    await contains(".clickMe").click();
+    expect.verifySteps(["clickend on plop", "text: test"]);
+});
+
+test(`handler is bound (arrow function)`, async () => {
+    class MyComponent extends Component {
+        static template = xml`<div t-custom-click="(ev, isMiddleClick) => this.plop(ev, isMiddleClick, 'test')" class="clickMe"><t t-out="this.props.text"/></div>`;
+        static props = null;
+        props = useProps(this.constructor.props);
+        setup() {
+            this.test = "bind";
+        }
+        plop(ev, isMiddleClick, text) {
+            expect.step(this.test);
+            expect.step(`text: ${text}`);
+        }
+    }
+
+    await mountWithCleanup(MyComponent, { props: { text: "text from props" } });
+
+    expect(".clickMe").toHaveText("text from props");
+    await contains(".clickMe").click();
+    expect.verifySteps(["bind", "text: test"]);
+});
+
+test(`detect if middle Click (arrow function)`, async () => {
+    class MyComponent extends Component {
+        static template = xml`<div t-custom-click="(ev, isMiddleClick) => this.plop(ev, isMiddleClick, 'test')" class="clickMe"><t t-out="this.props.text"/></div>`;
+        static props = null;
+        props = useProps(this.constructor.props);
+        plop(ev, isMiddleClick, text) {
+            expect.step(`isMiddleClick: ${isMiddleClick}`);
+            expect.step(`text: ${text}`);
+        }
+    }
+
+    await mountWithCleanup(MyComponent, { props: { text: "text from props" } });
+
+    expect(".clickMe").toHaveText("text from props");
+    await contains(".clickMe").click({ ctrlKey: true });
+    expect.verifySteps(["isMiddleClick: true", "text: test"]);
+});
+
+test(`"stop" and "prevent" modifiers`, async () => {
+    class MyComponent extends Component {
+        static template = xml`<div t-on-click="this.noClick"><div t-custom-click.stop.prevent="this.plop" class="clickMe"><t t-out="this.props.text"/></div></div>`;
+        static props = null;
+        props = useProps(this.constructor.props);
+        plop(ev, isMiddleClick) {
+            expect.step(`isMiddleClick: ${isMiddleClick}`);
+            expect.step(`preventDefaulted: ${ev.defaultPrevented}`);
+        }
+        noClick() {
+            expect.step("Shoudn't be called");
+        }
+    }
+
+    await mountWithCleanup(MyComponent, { props: { text: "text from props" } });
+
+    expect(".clickMe").toHaveText("text from props");
+    await contains(".clickMe").click({ ctrlKey: true });
+    expect.verifySteps(["isMiddleClick: true", "preventDefaulted: true"]);
+});
+
+test(`"synthetic" modifier`, async () => {
+    expect.assertions(2);
+    class MyComponent extends Component {
+        static template = xml`<div t-custom-click.synthetic="this.plop" class="clickMe"><t t-out="this.props.text"/></div>`;
+        static props = null;
+        props = useProps(this.constructor.props);
+        plop(ev) {
+            expect(ev.currentTarget).toBe(document);
+        }
+    }
+
+    await mountWithCleanup(MyComponent, { props: { text: "text from props" } });
+
+    expect(".clickMe").toHaveText("text from props");
+    await contains(".clickMe").click();
+});
+
+test(`Secondary button clicked`, async () => {
+    class MyComponent extends Component {
+        static template = xml`<div t-custom-click="this.plop" class="clickMe"><t t-out="this.props.text"/></div>`;
+        static props = null;
+        props = useProps(this.constructor.props);
+        plop() {
+            expect.step("Shoudn't be called");
+        }
+    }
+
+    await mountWithCleanup(MyComponent, { props: { text: "text from props" } });
+    await rightClick(".clickMe");
+
+    expect.verifySteps([]);
+});
+
+test(`the directive exists only for Apps built through mountComponent`, async () => {
+    class MyComponent extends Component {
+        static template = xml`<div t-custom-click="() => {}" class="clickMe">x</div>`;
+        static props = null;
+        props = useProps(this.constructor.props);
+    }
+
+    const target = document.createElement("div");
+    getFixture()?.appendChild(target);
+    const app = new App();
+    after(() => app.destroy());
+
+    let error;
+    try {
+        await app.createRoot(MyComponent).mount(target);
+    } catch (e) {
+        error = e;
+    }
+    expect(error).toBeInstanceOf(Error);
+    expect(String(error?.message)).toInclude('Custom directive "click" is not defined');
+});

@@ -1,0 +1,147 @@
+// @ts-check
+/** @odoo-module native */
+import { ActionPanel } from "@mail/core/common/action_panel";
+import { NotificationItem } from "@mail/core/public_web/notification_item";
+import { SubChannelPreview } from "@mail/discuss/core/public_web/sub_channel_preview";
+import { useVisible } from "@mail/utils/common/hooks";
+import { useMailContext } from "@mail/utils/common/mail_context";
+import { makeSequential } from "@mail/utils/common/misc";
+import { Component, proxy, t, useProps } from "@odoo/owl";
+import { makeLogger } from "@web/core/debug/debug_logger";
+import { rpc } from "@web/core/network";
+import { _t } from "@web/core/translation";
+import { elementRef } from "@web/core/utils/element_ref";
+import { useAutofocus, useService } from "@web/core/utils/hooks";
+import { useLayoutEffect } from "@web/core/utils/layout_effect";
+import { fuzzyLookup } from "@web/core/utils/search";
+
+const log = makeLogger("mail.sub_channel");
+/**
+ * @typedef {Object} Props
+ * @property {import("models").Thread} thread
+ * @property {function} [close]
+ * @extends {Component<Props, import("@web/env").OdooEnv>}
+ */
+export class SubChannelList extends Component {
+    static template = "mail.SubChannelList";
+    static components = { ActionPanel, NotificationItem, SubChannelPreview };
+
+    static props = { thread: t.any(), close: t.any().optional() };
+    props = useProps(this.constructor.props);
+
+    setup() {
+        this.mailContext = useMailContext();
+        this.store = useService("mail.store");
+        this.state = proxy({
+            loading: false,
+            searchTerm: "",
+            lastSearchTerm: "",
+            searching: false,
+            subChannels: this.props.thread.sub_channel_ids,
+        });
+        this.searchRef = elementRef();
+        this.sequential = makeSequential();
+        useAutofocus({ ref: this.searchRef });
+        this.loadMoreRef = elementRef();
+        this.loadMoreState = useVisible(
+            this.loadMoreRef,
+            /** @param {boolean} isVisible */ (isVisible) => {
+                if (isVisible) {
+                    this.props.thread.loadMoreSubChannels({
+                        searchTerm: this.state.searching
+                            ? this.state.searchTerm
+                            : undefined,
+                    });
+                }
+            },
+        );
+        useLayoutEffect(
+            /** @param {string|undefined} searchTerm */
+            (searchTerm) => {
+                if (!searchTerm) {
+                    this.clearSearch();
+                }
+            },
+            () => [this.state.searchTerm],
+        );
+    }
+
+    get NO_THREAD_FOUND() {
+        return _t(`No thread named "%(thread_name)s"`, {
+            thread_name: this.state.lastSearchTerm,
+        });
+    }
+
+    /** @param {import("models").DiscussChannel} subThread */
+    async onClickSubThread(subThread) {
+        log.logic("onClickSubThread", () => ({
+            thread: subThread.localId,
+            join: !subThread.hasSelfAsMember,
+        }));
+        if (!subThread.hasSelfAsMember) {
+            await rpc("/discuss/channel/join", { channel_id: subThread.id });
+        }
+        subThread.open({ focus: true });
+        if (this.mailContext.inChatWindow) {
+            this.props.close?.();
+        }
+    }
+
+    clearSearch() {
+        this.state.searchTerm = "";
+        this.state.lastSearchTerm = "";
+        this.state.searching = false;
+        this.state.loading = false;
+        this.state.subChannels = this.props.thread.sub_channel_ids;
+        this.props.thread.subChannelSearchTerm = "";
+        this.props.thread.lastSearchSubChannelLoaded = null;
+        this.props.thread.searchSubChannelsDone = false;
+    }
+
+    /** @param {KeyboardEvent} ev */
+    onKeydownSearch(ev) {
+        if (ev.key === "Enter") {
+            this.search();
+        }
+    }
+
+    async onClickCreate() {
+        log.logic("onClickCreate", () => ({ thread: this.props.thread.localId }));
+        await this.props.thread.createSubChannel({ name: this.state.searchTerm });
+        this._updateSubChannelList();
+        this.props.close?.();
+    }
+
+    async search() {
+        if (!this.state.searchTerm) {
+            return;
+        }
+        log.logic("search", () => ({
+            thread: this.props.thread.localId,
+            term: this.state.searchTerm,
+        }));
+        this.sequential(async () => {
+            this.state.searching = true;
+            this.state.loading = true;
+            try {
+                await this.props.thread.loadMoreSubChannels({
+                    searchTerm: this.state.searchTerm,
+                });
+                if (this.state.searching) {
+                    this._updateSubChannelList();
+                    this.state.lastSearchTerm = this.state.searchTerm;
+                }
+            } finally {
+                this.state.loading = false;
+            }
+        });
+    }
+
+    _updateSubChannelList() {
+        this.state.subChannels = fuzzyLookup(
+            this.state.searchTerm ?? "",
+            this.props.thread.sub_channel_ids,
+            /** @param {import("models").DiscussChannel} thread */ ({ name }) => name,
+        );
+    }
+}

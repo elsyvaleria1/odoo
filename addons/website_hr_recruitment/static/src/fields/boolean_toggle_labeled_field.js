@@ -1,0 +1,30 @@
+/** @odoo-module native */
+import { registry } from "@web/core/registry";
+import { _t } from "@web/core/translation";
+import {
+    BooleanToggleField,
+    booleanToggleField,
+} from "@web/fields/basic/boolean_toggle";
+
+export class BooleanToggleFieldLabeled extends BooleanToggleField {
+    static template = "website_hr_recruitment.BooleanToggleFieldLabeled";
+}
+
+export const booleanToggleFieldLabeled = {
+    ...booleanToggleField,
+    component: BooleanToggleFieldLabeled,
+    displayName: _t("ToggleLabeled"),
+    supportedOptions: [
+        {
+            label: _t("Autosave"),
+            name: "autosave",
+            type: "boolean",
+            default: true,
+            help: _t(
+                "If checked, the record will be saved immediately when the field is modified.",
+            ),
+        },
+    ],
+};
+
+registry.category("fields").add("boolean_toggle_labeled", booleanToggleFieldLabeled);

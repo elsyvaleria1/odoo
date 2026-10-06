@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_partner_form_telegram" model="ir.ui.view">
+        <field name="name">res.partner.form.telegram</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_form" />
+        <field name="priority" eval="1" />
+        <field name="arch" type="xml">
+            <xpath expr="//div[@name='partner_phone_row']" position="inside">
+                <field
+                    name="telegram_account_ids"
+                    widget="many2many_tags"
+                    invisible="not telegram_account_ids"
+                    readonly="1" />
+                <button
+                    name="action_telegram_invite"
+                    type="object"
+                    string="Invite to Telegram"
+                    icon="fa-paper-plane"
+                    groups="base.group_system"
+                    invisible="telegram_account_ids"
+                    class="btn-link p-0" />
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

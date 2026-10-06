@@ -1,0 +1,35 @@
+// @ts-check
+/** @odoo-module native */
+import { registry } from "@web/core/registry";
+import { _t } from "@web/core/translation";
+registry.category("command_categories").add("activity", {}, { sequence: 45 });
+
+const commandProviderRegistry = registry.category("command_provider");
+
+commandProviderRegistry.add("activity", {
+    /**
+     * @param {import("@web/env").OdooEnv} env
+     * @param {Object} options
+     * @returns {Object[]}
+     */
+    provide: (env, options) => [
+        {
+            name: _t("Show My Activities"),
+            category: "activity",
+            action() {
+                env.services.action.doAction("mail.mail_activity_action_my", {
+                    clearBreadcrumbs: true,
+                });
+            },
+        },
+        {
+            name: _t("Show All Activities"),
+            category: "activity",
+            action() {
+                env.services.action.doAction("mail.mail_activity_action", {
+                    clearBreadcrumbs: true,
+                });
+            },
+        },
+    ],
+});

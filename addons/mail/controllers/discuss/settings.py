@@ -1,0 +1,95 @@
+from datetime import datetime
+from typing import Literal
+
+from dateutil.relativedelta import relativedelta
+
+from odoo import fields
+from odoo.http import Controller, NotFound, request, route
+from odoo.libs.debug_log import DebugLog
+
+from odoo.addons.mail.controllers.utils import get_channel_or_404
+
+_debug = DebugLog(__name__)
+
+MAX_MUTE_MINUTES = 525_600_000
+
+
+class DiscussSettingsController(Controller):
+    @route("/discuss/settings/mute", methods=["POST"], type="jsonrpc", auth="user")
+    def discuss_mute(self, minutes: int, channel_id: int) -> None:
+        channel = get_channel_or_404(channel_id)
+        member = channel._get_or_create_member_for_self()
+        if not member:
+            raise NotFound
+        if minutes == -1:
+            member.mute_until_dt = datetime.max  # noqa: DTZ901 - mute_until_dt is a naive UTC column; datetime.max is its 'muted forever' sentinel
+        elif minutes:
+            if isinstance(minutes, bool) or not isinstance(minutes, (int, str)):
+                raise NotFound
+            try:
+                minutes = int(minutes)
+            except ValueError:
+                raise NotFound from None
+            if not 0 < minutes <= MAX_MUTE_MINUTES:
+                raise NotFound
+            member.mute_until_dt = fields.Datetime.now() + relativedelta(
+                minutes=minutes
+            )
+        else:
+            member.mute_until_dt = False
+        _debug.lifecycle(
+            "muted", channel=channel.id, member=member.id, minutes=minutes or 0
+        )
+        member._notify_mute()
+
+    @route("/discuss/channel/favorite", methods=["POST"], type="jsonrpc", auth="user")
+    def discuss_channel_favorite(self, channel_id: int, is_favorite: bool) -> None:
+        if not isinstance(is_favorite, bool):
+            raise NotFound
+        member = get_channel_or_404(channel_id).self_member_id
+        if not member:
+            raise NotFound
+        member.is_favorite = is_favorite
+        _debug.lifecycle(
+            "favorite", channel=channel_id, member=member.id, favorite=is_favorite
+        )
+
+    @route(
+        "/discuss/settings/custom_notifications",
+        methods=["POST"],
+        type="jsonrpc",
+        auth="user",
+    )
+    def discuss_custom_notifications(
+        self,
+        custom_notifications: str | Literal[False],
+        channel_id: int | None = None,
+    ) -> None:
+        allowed = (
+            {False, "all", "mentions", "no_notif"}
+            if channel_id
+            else {False, "all", "no_notif"}
+        )
+        if custom_notifications not in allowed:
+            raise NotFound
+        _debug.lifecycle(
+            "custom_notifications",
+            channel=channel_id,
+            value=custom_notifications or "default",
+            by="channel" if channel_id else "user",
+        )
+        if channel_id:
+            channel = get_channel_or_404(channel_id)
+            member = channel._get_or_create_member_for_self()
+            if not member:
+                raise NotFound
+            member.custom_notifications = custom_notifications
+        else:
+            user_settings = request.env["res.users.settings"]._get_or_create_for_user(
+                request.env.user
+            )
+            if not user_settings:
+                raise NotFound
+            user_settings.set_res_users_settings(
+                {"channel_notifications": custom_notifications}
+            )

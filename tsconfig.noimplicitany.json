@@ -1,0 +1,32 @@
+{
+  // noImplicitAny enforcement — FULL-PROGRAM run, scoped verdict.
+  //
+  // The base tsconfig.json runs with noImplicitAny OFF, so every un-annotated
+  // parameter / variable / member silently becomes `any`. Because `any` is
+  // null-safe by fiat, implicit-any ALSO silently defeats the strictNullChecks
+  // gate (tsconfig.strict.json): a value typed `any` satisfies that lock
+  // trivially, so a file locked as "null-safe" can still harbor null bugs
+  // through any-typed values. Measured 2026-07-29 on 19.0-marin: 2986
+  // implicit-any sites sit inside 307 of the 672 strictNullChecks-locked files,
+  // leaving 365 files locked in BOTH gates — those are the ones whose null
+  // safety is actually load-bearing.
+  //
+  // This config is the base config with ONLY noImplicitAny flipped on, over the
+  // SAME full program (so all ambients resolve exactly as in the real build and
+  // the reported errors are REAL — the TS70xx family plus the base errors).
+  //
+  // It is NOT expected to reach zero project-wide yet. Read it per file:
+  //
+  //     npx tsc -p tsconfig.noimplicitany.json --noEmit
+  //
+  // Sibling of tsconfig.strict.json (strictNullChecks); same full-program +
+  // scoped-verdict rationale (see that file's header). The two locks advance the
+  // same foundation together, so prefer fixing a file under BOTH.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noImplicitAny": true,
+    // See tsconfig.strict.json's note: without checkJs the lock's reach is set
+    // by `// @ts-check` pragmas in the source rather than by the gate.
+    "checkJs": true
+  }
+}

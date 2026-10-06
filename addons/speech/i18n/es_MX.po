@@ -1,0 +1,150 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* speech
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-09-28 17:44+0000\n"
+"PO-Revision-Date: 2026-09-28 17:44+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: es_MX\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: speech
+#: model:ir.model.fields.selection,name:speech.selection__speech_vocabulary_form__pronunciation__acronym
+msgid "Acronym"
+msgstr "Sigla"
+
+#. module: speech
+#: model:ir.model.fields,field_description:speech.field_speech_vocabulary__active
+#: model:ir.model.fields,field_description:speech.field_speech_vocabulary_form__active
+msgid "Active"
+msgstr "Activo"
+
+#. module: speech
+#: model:ir.model.fields.selection,name:speech.selection__speech_vocabulary_form__source__admin
+msgid "Administrator"
+msgstr "Administrador"
+
+#. module: speech
+#: model:ir.model.fields,field_description:speech.field_speech_dictation__company_id
+#: model:ir.model.fields,field_description:speech.field_speech_vocabulary__company_id
+#: model:ir.model.fields,field_description:speech.field_speech_vocabulary_form__company_id
+#: model:ir.model.fields.selection,name:speech.selection__speech_vocabulary__kind__company
+msgid "Company"
+msgstr "Empresa"
+
+#. module: speech
+#: model:ir.model.fields,field_description:speech.field_speech_vocabulary_form__confirmations
+msgid "Confirmations"
+msgstr "Confirmaciones"
+
+#. module: speech
+#: model:ir.model.fields,field_description:speech.field_speech_dictation__create_uid
+#: model:ir.model.fields,field_description:speech.field_speech_speaker__create_uid
+#: model:ir.model.fields,field_description:speech.field_speech_vocabulary__create_uid
+msgid "Created by"
+msgstr "Creado por"
+
+#. module: speech
+#: model:ir.model.fields,field_description:speech.field_speech_dictation__create_date
+#: model:ir.model.fields,field_description:speech.field_speech_speaker__create_date
+#: model:ir.model.fields,field_description:speech.field_speech_vocabulary__create_date
+msgid "Created on"
+msgstr "Creado el"
+
+#. module: speech
+#: model:ir.model.fields,field_description:speech.field_ir_attachment__display_name
+#: model:ir.model.fields,field_description:speech.field_ir_websocket__display_name
+#: model:ir.model.fields,field_description:speech.field_media_segment__display_name
+#: model:ir.model.fields,field_description:speech.field_mixin_media_live__display_name
+#: model:ir.model.fields,field_description:speech.field_mixin_media_timeline__display_name
+#: model:ir.model.fields,field_description:speech.field_speech_dictation__display_name
+#: model:ir.model.fields,field_description:speech.field_speech_speaker__display_name
+#: model:ir.model.fields,field_description:speech.field_speech_vocabulary__display_name
+#: model:ir.model.fields,field_description:speech.field_speech_vocabulary_form__display_name
+msgid "Display Name"
+msgstr "Nombre para mostrar"
+
+#. module: speech
+#: model:ir.model.fields.selection,name:speech.selection__speech_vocabulary_form__pronunciation__word
+msgid "English word"
+msgstr "Palabra en inglés"
+
+#. module: speech
+#: model:ir.model.fields,field_description:speech.field_ir_attachment__id
+#: model:ir.model.fields,field_description:speech.field_ir_websocket__id
+#: model:ir.model.fields,field_description:speech.field_media_segment__id
+#: model:ir.model.fields,field_description:speech.field_mixin_media_live__id
+#: model:ir.model.fields,field_description:speech.field_mixin_media_timeline__id
+#: model:ir.model.fields,field_description:speech.field_speech_dictation__id
+#: model:ir.model.fields,field_description:speech.field_speech_speaker__id
+#: model:ir.model.fields,field_description:speech.field_speech_vocabulary__id
+#: model:ir.model.fields,field_description:speech.field_speech_vocabulary_form__id
+msgid "ID"
+msgstr "ID"
+
+#. module: speech
+#: model:ir.model.fields,field_description:speech.field_speech_vocabulary__kind
+msgid "Kind"
+msgstr "Tipo"
+
+#. module: speech
+#: model:ir.model.fields,field_description:speech.field_speech_dictation__language
+msgid "Language"
+msgstr "Idioma"
+
+#. module: speech
+#: model:ir.model.fields,field_description:speech.field_speech_dictation__write_uid
+#: model:ir.model.fields,field_description:speech.field_speech_speaker__write_uid
+#: model:ir.model.fields,field_description:speech.field_speech_vocabulary__write_uid
+msgid "Last Updated by"
+msgstr "Última actualización por"
+
+#. module: speech
+#: model:ir.model.fields,field_description:speech.field_speech_dictation__write_date
+#: model:ir.model.fields,field_description:speech.field_speech_speaker__write_date
+#: model:ir.model.fields,field_description:speech.field_speech_vocabulary__write_date
+msgid "Last Updated on"
+msgstr "Última actualización el"
+
+#. module: speech
+#: model:ir.model.fields.selection,name:speech.selection__speech_vocabulary_form__source__learned
+msgid "Learned"
+msgstr "Aprendido"
+
+#. module: speech
+#: model:ir.model.fields,field_description:speech.field_speech_vocabulary_form__phrases
+msgid "Phrases"
+msgstr "Frases"
+
+#. module: speech
+#: model:ir.model.fields.selection,name:speech.selection__speech_vocabulary_form__source__seed
+msgid "Seed"
+msgstr "Inicial"
+
+#. module: speech
+#: model:ir.model.fields,field_description:speech.field_speech_vocabulary_form__source
+msgid "Source"
+msgstr "Origen"
+
+#. module: speech
+#: model:ir.model.fields,help:speech.field_speech_vocabulary_form__phrases
+msgid ""
+"What is said, as a recogniser writes it; each form separated by a semicolon:"
+" checa; checar; checalo."
+msgstr ""
+"Lo que se dice, como lo escribe un reconocedor; cada forma separada por "
+"punto y coma: checa; checar; checalo."
+
+#. module: speech
+#. odoo-python
+#: code:addons/speech/models/speech_vocabulary.py:0
+msgid "“%(phrase)s” already means “%(means)s”."
+msgstr "“%(phrase)s” ya significa “%(means)s”."

@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+
+    <!-- Categories -->
+    <record
+        id="knowledge_article_template_category_productivity"
+        model="knowledge.article.template.category">
+        <field name="name">Productivity</field>
+        <field name="sequence">100</field>
+    </record>
+
+    <record
+        id="knowledge_article_template_category_sales"
+        model="knowledge.article.template.category">
+        <field name="name">Sales</field>
+        <field name="sequence">200</field>
+    </record>
+
+    <record
+        id="knowledge_article_template_category_marketing"
+        model="knowledge.article.template.category">
+        <field name="name">Marketing</field>
+        <field name="sequence">300</field>
+    </record>
+
+    <record
+        id="knowledge_article_template_category_company_organization"
+        model="knowledge.article.template.category">
+        <field name="name">Company Organization</field>
+        <field name="sequence">400</field>
+    </record>
+
+    <record
+        id="knowledge_article_template_category_product_management"
+        model="knowledge.article.template.category">
+        <field name="name">Product Management</field>
+        <field name="sequence">500</field>
+    </record>
+
+</odoo>

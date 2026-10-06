@@ -1,0 +1,14 @@
+/** @odoo-module native */
+import { PaymentScreen } from "@point_of_sale/app/screens/payment_screen/payment_screen";
+import { now, serializeDateTime } from "@web/core/l10n/dates";
+import { patch } from "@web/core/utils/patch";
+patch(PaymentScreen.prototype, {
+    async addNewPaymentLine(paymentMethod) {
+        if (paymentMethod.is_online_payment && !this.currentOrder.isSynced) {
+            this.currentOrder.date_order = serializeDateTime(now());
+            this.pos.addPendingOrder([this.currentOrder.id]);
+            await this.pos.syncAllOrders();
+        }
+        return await super.addNewPaymentLine(...arguments);
+    },
+});

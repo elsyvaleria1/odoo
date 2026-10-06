@@ -1,0 +1,376 @@
+import { MAIN_EMBEDDINGS } from "@html_editor/others/embedded_components/embedding_sets";
+import { EmbeddedFilePlugin } from "@html_editor/others/embedded_components/plugins/embedded_file_plugin/embedded_file_plugin";
+import { EMBEDDED_COMPONENT_PLUGINS, MAIN_PLUGINS } from "@html_editor/plugin_sets";
+import { isZwnbsp } from "@html_editor/utils/dom_info";
+import { nodeSize } from "@html_editor/utils/position";
+import { describe, expect, test } from "@odoo/hoot";
+import {
+    animationFrame,
+    click,
+    press,
+    queryAll,
+    queryOne,
+    waitFor,
+} from "@odoo/hoot-dom";
+import { onRpc, patchWithCleanup } from "@web/../tests/web_test_helpers";
+
+import { setupEditor, testEditor } from "./_helpers/editor.js";
+import { getContent } from "./_helpers/selection.js";
+import { expandToolbar } from "./_helpers/toolbar.js";
+import { deleteBackward, insertText } from "./_helpers/user_actions.js";
+import { execCommand } from "./_helpers/userCommands.js";
+
+const configWithEmbeddedFile = {
+    Plugins: [
+        ...MAIN_PLUGINS.filter((P) => P.id !== "file"),
+        EmbeddedFilePlugin,
+        ...EMBEDDED_COMPONENT_PLUGINS,
+    ],
+    resources: { embedded_components: MAIN_EMBEDDINGS },
+};
+
+const patchUpload = (editor) => {
+    const mockedUploadPromise = new Promise((resolve) => {
+        patchWithCleanup(editor.services.uploadLocalFiles, {
+            async upload() {
+                resolve();
+                return [{ id: 1, name: "file.txt" }];
+            },
+        });
+    });
+    return mockedUploadPromise;
+};
+
+describe("file command", () => {
+    test("/file uploads a file via the system's selector, skipping the media dialog", async () => {
+        const { editor } = await setupEditor("<p>[]<br></p>");
+        const mockedUpload = patchUpload(editor);
+        await insertText(editor, "/file");
+        await animationFrame();
+        await press("Enter");
+        await animationFrame();
+        expect(".o_select_media_dialog").toHaveCount(0);
+        await mockedUpload;
+        expect(".odoo-editor-editable .o_file_box").toHaveCount(1);
+    });
+
+    test("file card should have inline display, BS alert-info style and no download button", async () => {
+        const { editor } = await setupEditor("<p>[]<br></p>");
+        patchUpload(editor);
+        execCommand(editor, "uploadFile");
+        await waitFor('.o_file_box .o_file_name_container:contains("file.txt")');
+        const fileCard = queryOne(".o_file_box");
+        expect(fileCard).toHaveStyle({ display: "inline-block" });
+        expect(fileCard.firstElementChild).toHaveClass(["alert", "alert-info"]);
+        expect(".o_file_box .fa-download").toHaveCount(0);
+    });
+
+    describe("static file box interactions", () => {
+        test.tags("desktop");
+        test("should toggle file name editability independently on click", async () => {
+            const { el, editor } = await setupEditor("<p>[]<br></p>");
+            patchUpload(editor);
+
+            execCommand(editor, "uploadFile");
+            execCommand(editor, "uploadFile");
+
+            await waitFor('.o_file_box .o_file_name_container:contains("file.txt")');
+
+            const [fileNameEl1, fileNameEl2] = queryAll(
+                ".o_file_box .o_file_name_container .o_link_readonly",
+            );
+
+            expect(fileNameEl1).toHaveAttribute("contenteditable", "false");
+            expect(fileNameEl2).toHaveAttribute("contenteditable", "false");
+
+            await click(fileNameEl1);
+            await animationFrame();
+
+            expect(fileNameEl1).toHaveAttribute("contenteditable", "true");
+            expect(fileNameEl2).toHaveAttribute("contenteditable", "false");
+
+            editor.shared.selection.setSelection({
+                anchorNode: fileNameEl1,
+                anchorOffset: 0,
+                focusNode: fileNameEl1,
+                focusOffset: nodeSize(fileNameEl1),
+            });
+            await animationFrame();
+            expect(getContent(fileNameEl1)).toBe("[file.txt]");
+            expect(".o-we-toolbar").toHaveCount(0);
+
+            await click(fileNameEl2);
+            await animationFrame();
+
+            expect(fileNameEl1).toHaveAttribute("contenteditable", "false");
+            expect(fileNameEl2).toHaveAttribute("contenteditable", "true");
+
+            editor.shared.selection.setSelection({
+                anchorNode: fileNameEl2,
+                anchorOffset: 0,
+                focusNode: fileNameEl2,
+                focusOffset: nodeSize(fileNameEl2),
+            });
+            await animationFrame();
+            expect(getContent(fileNameEl2)).toBe("[file.txt]");
+            expect(".o-we-toolbar").toHaveCount(0);
+
+            const paragraph = el.firstElementChild;
+            await click(paragraph);
+
+            editor.shared.selection.setCursorStart(paragraph);
+            await animationFrame();
+
+            expect(fileNameEl1).toHaveAttribute("contenteditable", "false");
+            expect(fileNameEl2).toHaveAttribute("contenteditable", "false");
+        });
+
+        test.tags("desktop");
+        test("ArrowUp and ArrowDown move the caret to the start and end of a file name", async () => {
+            const { editor } = await setupEditor("<p>[]<br></p>");
+            patchUpload(editor);
+
+            execCommand(editor, "uploadFile");
+            await waitFor('.o_file_box .o_file_name_container:contains("file.txt")');
+
+            const fileNameEl = queryOne(
+                ".o_file_box .o_file_name_container .o_link_readonly",
+            );
+
+            expect(fileNameEl).toHaveAttribute("contenteditable", "false");
+
+            await click(fileNameEl);
+            await animationFrame();
+
+            expect(fileNameEl).toHaveAttribute("contenteditable", "true");
+
+            editor.shared.selection.setCursorStart(fileNameEl);
+            await animationFrame();
+            expect(getContent(fileNameEl)).toBe("[]file.txt");
+
+            await press("ArrowDown");
+            expect(getContent(fileNameEl)).toBe("file.txt[]");
+
+            await press("ArrowUp");
+            expect(getContent(fileNameEl)).toBe("[]file.txt");
+        });
+
+        test.tags("desktop");
+        test("ArrowLeft at start and ArrowRight at end do nothing in a file name", async () => {
+            const { editor } = await setupEditor("<p>[]<br></p>");
+            patchUpload(editor);
+
+            execCommand(editor, "uploadFile");
+            await waitFor('.o_file_box .o_file_name_container:contains("file.txt")');
+
+            const fileNameEl = queryOne(
+                ".o_file_box .o_file_name_container .o_link_readonly",
+            );
+
+            await click(fileNameEl);
+            await animationFrame();
+
+            editor.shared.selection.setCursorStart(fileNameEl);
+            await animationFrame();
+            expect(getContent(fileNameEl)).toBe("[]file.txt");
+
+            await press("ArrowLeft");
+            expect(getContent(fileNameEl)).toBe("[]file.txt");
+
+            editor.shared.selection.setCursorEnd(fileNameEl);
+            await animationFrame();
+            expect(getContent(fileNameEl)).toBe("file.txt[]");
+
+            await press("ArrowRight");
+            expect(getContent(fileNameEl)).toBe("file.txt[]");
+        });
+
+        test.tags("desktop");
+        test("Enter and Shift+Enter do nothing in a file name", async () => {
+            const { editor } = await setupEditor("<p>[]<br></p>");
+            patchUpload(editor);
+
+            execCommand(editor, "uploadFile");
+            await waitFor('.o_file_box .o_file_name_container:contains("file.txt")');
+
+            const fileNameEl = queryOne(
+                ".o_file_box .o_file_name_container .o_link_readonly",
+            );
+
+            await click(fileNameEl);
+            await animationFrame();
+
+            editor.shared.selection.setCursorStart(fileNameEl);
+            await animationFrame();
+            expect(getContent(fileNameEl)).toBe("[]file.txt");
+
+            await press("Enter");
+            expect(getContent(fileNameEl)).toBe("[]file.txt");
+
+            editor.shared.selection.setCursorEnd(fileNameEl);
+            await animationFrame();
+            expect(getContent(fileNameEl)).toBe("file.txt[]");
+
+            await press(["shift", "Enter"]);
+            expect(getContent(fileNameEl)).toBe("file.txt[]");
+        });
+    });
+});
+
+test("Should not apply color to file box", async () => {
+    const { editor } = await setupEditor("<p>a[]b</p>", {
+        config: configWithEmbeddedFile,
+    });
+    const mockedUpload = patchUpload(editor);
+    await insertText(editor, "/file");
+    await animationFrame();
+    await press("Enter");
+    await animationFrame();
+    expect(".o_select_media_dialog").toHaveCount(0);
+    await mockedUpload;
+    await press(["Ctrl", "a"]);
+    await animationFrame();
+    await expandToolbar();
+    await click(".o-we-toolbar .o-select-color-foreground");
+    await animationFrame();
+    await click('.o_colorpicker_section [data-color="o-color-1"]');
+    await animationFrame();
+    const fileBox = queryOne(".o_file_box");
+    expect(fileBox).not.toHaveClass("text-o-color-1");
+});
+
+test("should remove contenteditable=false on backspace", async () => {
+    await testEditor({
+        contentBefore: `<p>a<span contenteditable="false">test</span>[]</p>`,
+        stepFunction: deleteBackward,
+        contentAfter: `<p>a[]</p>`,
+    });
+});
+
+describe("document tab in media dialog", () => {
+    onRpc("ir.attachment", "search_read", () => [
+        {
+            id: 1,
+            name: "file.txt",
+            mimetype: "text/plain",
+            public: true,
+            image_src: "",
+        },
+    ]);
+
+    describe("without File nor EmbeddedFile plugin", () => {
+        test("Document tab is not available by default", async () => {
+            const { editor } = await setupEditor("<p>[]<br></p>", {
+                config: { Plugins: MAIN_PLUGINS.filter((p) => p.id !== "file") },
+            });
+            execCommand(editor, "insertMedia");
+            await animationFrame();
+            expect(".nav-link:contains('Documents')").toHaveCount(0);
+        });
+    });
+
+    describe("with EmbeddedFile plugin", () => {
+        test("file upload via media dialog inserts a file card in the editable", async () => {
+            const { editor } = await setupEditor("<p>[]<br></p>", {
+                config: configWithEmbeddedFile,
+            });
+            execCommand(editor, "insertMedia");
+            await animationFrame();
+            await click(".nav-link:contains('Documents')");
+            await animationFrame();
+            await click(".o_we_attachment_highlight .o_button_area");
+            await waitFor('[data-embedded="file"] .o_file_name:contains("file.txt")');
+            expect('[data-embedded="file"]').toHaveCount(1);
+        });
+    });
+
+    describe("with File plugin (no embedded component)", () => {
+        test("file upload via media dialog inserts a link in the editable", async () => {
+            const { editor } = await setupEditor("<p>[]<br></p>");
+            execCommand(editor, "insertMedia");
+            await animationFrame();
+            await click(".nav-link:contains('Documents')");
+            await animationFrame();
+            await click(".o_we_attachment_highlight .o_button_area");
+            expect(
+                ".odoo-editor-editable .o_file_box a:contains('file.txt')",
+            ).toHaveCount(1);
+        });
+    });
+});
+
+describe("powerbutton", () => {
+    test("file powerbutton uploads a file directly via the system's selector", async () => {
+        const { editor } = await setupEditor("<p>[]<br></p>");
+        const mockedUpload = patchUpload(editor);
+        await click(".power_button.fa-upload");
+        await animationFrame();
+        expect(".o_select_media_dialog").toHaveCount(0);
+        await mockedUpload;
+        expect(".odoo-editor-editable .o_file_box").toHaveCount(1);
+    });
+
+    test("file powerbutton uploads a file directly via the system's selector (embedded component)", async () => {
+        const { editor } = await setupEditor("<p>[]<br></p>", {
+            config: configWithEmbeddedFile,
+        });
+        const mockedUpload = patchUpload(editor);
+        await click(".power_button.fa-upload");
+        await animationFrame();
+        expect(".o_select_media_dialog").toHaveCount(0);
+        await mockedUpload;
+        expect('.odoo-editor-editable [data-embedded="file"]').toHaveCount(1);
+    });
+});
+
+describe("zero width no-break space", () => {
+    test("file card should be padded with zero-width no-break spaces", async () => {
+        const { editor } = await setupEditor("<p>[]<br></p>");
+        patchUpload(editor);
+        execCommand(editor, "uploadFile");
+        await waitFor('.o_file_box a:contains("file.txt")');
+        const fileCard = queryOne(".o_file_box");
+        expect(isZwnbsp(fileCard.previousSibling)).toBe(true);
+        expect(isZwnbsp(fileCard.nextSibling)).toBe(true);
+    });
+
+    test("should not add two contiguous ZWNBSP between two file cards", async () => {
+        const { editor, el } = await setupEditor("<p>[]<br></p>", {
+            config: { ...configWithEmbeddedFile, resources: {} },
+        });
+        let mockUpload = patchUpload(editor);
+        execCommand(editor, "uploadFile");
+        await mockUpload;
+        mockUpload = patchUpload(editor);
+        execCommand(editor, "uploadFile");
+        await mockUpload;
+        let content = getContent(el);
+        content = content.replace(/<span data-embedded="file".*?<\/span>/g, "<FILE/>");
+        expect(content).toBe("<p>\ufeff<FILE/>\ufeff<FILE/>\ufeff[]</p>");
+    });
+
+    test("should not add two contiguous ZWNBSP between two file cards (2)", async () => {
+        const { el } = await setupEditor(
+            '<p>abc<span data-embedded="file" class="o_file_box" contenteditable="false"></span>x[]<span data-embedded="file" class="o_file_box" contenteditable="false"></span></p>',
+            { config: { ...configWithEmbeddedFile, resources: {} } },
+        );
+        expect(getContent(el)).toBe(
+            '<p>abc\ufeff<span data-embedded="file" class="o_file_box" contenteditable="false"></span>\ufeffx[]\ufeff<span data-embedded="file" class="o_file_box" contenteditable="false"></span>\ufeff</p>',
+        );
+        press("Backspace");
+        expect(getContent(el)).toBe(
+            '<p>abc\ufeff<span data-embedded="file" class="o_file_box" contenteditable="false"></span>\ufeff[]<span data-embedded="file" class="o_file_box" contenteditable="false"></span>\ufeff</p>',
+        );
+    });
+});
+
+test("Should delete the file box", async () => {
+    const { el } = await setupEditor(
+        '<p>[ab<span data-embedded="file" class="o_file_box" contenteditable="false"></span>x<span data-embedded="file" class="o_file_box" contenteditable="false"></span>]</p>',
+        { config: { ...configWithEmbeddedFile, resources: {} } },
+    );
+    press("Backspace");
+    expect(getContent(el)).toBe(
+        `<p o-we-hint-text='Type "/" for commands' class="o-we-hint">[]<br></p>`,
+    );
+});

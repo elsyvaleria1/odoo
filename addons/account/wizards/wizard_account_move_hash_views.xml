@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_account_secure_entries_wizard" model="ir.ui.view">
+        <field name="name">account.secure.entries.wizard.form</field>
+        <field name="model">wizard.account.move.hash</field>
+        <field name="arch" type="xml">
+            <form string="Secure Journal Entries">
+                <sheet>
+                    <div class="m-0" name="warnings" invisible="not warnings">
+                        <field
+                            name="warnings"
+                            widget="actionable_errors"
+                            class="o_field_html" />
+                    </div>
+                    <field name="company_id" invisible="1" />
+                    <div class="d-flex" name="hash_date">
+                        <span class="text-muted">
+                            <i>Secure entries up to</i>
+                        </span>
+                        <field
+                            name="hash_date"
+                            placeholder="Not hashed"
+                            options="{'warn_future': true}"
+                            class="oe_inline  ms-2" />
+                        <span class="text-muted ms-2">
+                            <i>inclusive, to make them immutable</i>
+                        </span>
+                    </div>
+                </sheet>
+                <footer>
+                    <button
+                        name="action_secure_entries"
+                        type="object"
+                        string="Secure Entries"
+                        class="btn-primary"
+                        data-hotkey="v" />
+                    <button special="cancel" string="Discard" data-hotkey="z" />
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record
+        id="action_view_account_secure_entries_wizard"
+        model="ir.actions.act_window">
+        <field name="name">Secure Journal Entries</field>
+        <field name="res_model">wizard.account.move.hash</field>
+        <field name="view_mode">form</field>
+        <field name="view_id" ref="view_account_secure_entries_wizard" />
+        <field name="target">new</field>
+    </record>
+
+</odoo>

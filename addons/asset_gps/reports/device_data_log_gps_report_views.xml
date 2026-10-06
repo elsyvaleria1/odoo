@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_device_data_log_gps_report_search_asset" model="ir.ui.view">
+        <field name="name">device.data.log.gps.report.search.asset</field>
+        <field name="model">device.data.log.gps.report</field>
+        <field
+            name="inherit_id"
+            ref="device_gps.view_device_data_log_gps_report_search" />
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='device_id']" position="after">
+                <field name="asset_id" />
+                <field name="asset_name" />
+                <field name="license_plate" />
+            </xpath>
+            <xpath expr="//filter[@name='group_by_device']" position="before">
+                <filter
+                    name="group_by_asset"
+                    string="Asset"
+                    context="{'group_by': 'asset_id'}" />
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_device_data_log_gps_report_list_asset" model="ir.ui.view">
+        <field name="name">device.data.log.gps.report.list.asset</field>
+        <field name="model">device.data.log.gps.report</field>
+        <field
+            name="inherit_id"
+            ref="device_gps.view_device_data_log_gps_report_list" />
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='device_id']" position="after">
+                <field name="asset_name" optional="show" />
+                <field name="license_plate" optional="hide" />
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_device_data_log_gps_report_pivot_asset" model="ir.ui.view">
+        <field name="name">device.data.log.gps.report.pivot.asset</field>
+        <field name="model">device.data.log.gps.report</field>
+        <field
+            name="inherit_id"
+            ref="device_gps.view_device_data_log_gps_report_pivot" />
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='device_id']" position="after">
+                <field name="asset_id" type="row" />
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

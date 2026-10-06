@@ -1,0 +1,125 @@
+// @ts-check
+/** @odoo-module native */
+import { Component, onWillStart, proxy, t, useProps } from "@odoo/owl";
+import { makeLogger } from "@web/core/debug/debug_logger";
+import { rpc } from "@web/core/network";
+import { _t } from "@web/core/translation";
+import { useService } from "@web/core/utils/hooks";
+import { Dialog } from "@web/ui/dialog";
+
+const log = makeLogger("mail.follower");
+/**
+ * @typedef {Object} Props
+ * @property {function} close
+ * @property {import("models").Follower} follower
+ * @property {function} onFollowerChanged
+ * @extends {Component<Props, import("@web/env").OdooEnv>}
+ */
+export class FollowerSubtypeDialog extends Component {
+    static components = { Dialog };
+    static props = { close: t.any(), follower: t.any(), onFollowerChanged: t.any() };
+    static template = "mail.FollowerSubtypeDialog";
+    props = useProps(this.constructor.props);
+
+    setup() {
+        super.setup();
+        this.orm = useService("orm");
+        this.notification = useService("notification");
+        this.store = useService("mail.store");
+        this.state = proxy({
+            /** @type {import("models").MailMessageSubtype[]} */
+            subtypes: [],
+            /** @type {number[]} */
+            selectedIds: [],
+        });
+        onWillStart(async () => {
+            const { store_data, subtype_ids } = await rpc(
+                "/mail/read_subscription_data",
+                {
+                    follower_id: this.props.follower.id,
+                },
+            );
+            this.store.insert(store_data);
+            this.state.subtypes = subtype_ids.map((id) =>
+                this.store["mail.message.subtype"].get(id),
+            );
+            this.state.selectedIds = this.state.subtypes
+                .filter((subtype) => subtype.in(this.props.follower.subtype_ids))
+                .map((subtype) => subtype.id);
+        });
+    }
+
+    /** @returns {import("models").MailMessageSubtype[]} */
+    get unmanagedSubtypes() {
+        const managedIds = new Set(this.state.subtypes.map((subtype) => subtype.id));
+        return [...this.props.follower.subtype_ids].filter(
+            (subtype) => !managedIds.has(subtype.id),
+        );
+    }
+
+    /**
+     * @param {number} subtypeId
+     * @returns {boolean}
+     */
+    isSelected(subtypeId) {
+        return this.state.selectedIds.includes(subtypeId);
+    }
+
+    /**
+     * @param {Event} ev
+     * @param {import("models").MailMessageSubtype} subtype
+     */
+    onChangeCheckbox(ev, subtype) {
+        if (/** @type {HTMLInputElement} */ (ev.target).checked) {
+            if (!this.isSelected(subtype.id)) {
+                this.state.selectedIds.push(subtype.id);
+            }
+        } else {
+            this.state.selectedIds = this.state.selectedIds.filter(
+                (id) => id !== subtype.id,
+            );
+        }
+    }
+
+    async onClickApply() {
+        const selected = this.state.subtypes.filter((subtype) =>
+            this.isSelected(subtype.id),
+        );
+        log.logic("onClickApply", () => ({
+            thread: this.props.follower.thread?.localId,
+            partnerId: this.props.follower.partner_id?.id,
+            selected: selected.length,
+            unmanaged: this.unmanagedSubtypes.length,
+        }));
+        if (selected.length === 0) {
+            await this.props.follower.remove();
+        } else {
+            const subtypes = [...selected, ...this.unmanagedSubtypes];
+            await this.orm.call(
+                this.props.follower.thread.model,
+                "message_subscribe",
+                [[this.props.follower.thread.id]],
+                {
+                    partner_ids: [this.props.follower.partner_id.id],
+                    subtype_ids: subtypes.map((subtype) => subtype.id),
+                },
+            );
+            this.props.follower.subtype_ids =
+                /** @type {typeof this.props.follower.subtype_ids} */ (
+                    /** @type {unknown} */ (subtypes)
+                );
+            this.notification.add(
+                _t("The subscription preferences were successfully applied."),
+                { type: "success" },
+            );
+        }
+        this.props.onFollowerChanged();
+        this.props.close();
+    }
+
+    get title() {
+        return _t("Edit Subscription of %(name)s", {
+            name: this.props.follower.displayName,
+        });
+    }
+}

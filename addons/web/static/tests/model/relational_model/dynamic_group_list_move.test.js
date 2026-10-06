@@ -1,0 +1,135 @@
+// @ts-check
+
+import { describe, expect, test } from "@odoo/hoot";
+import { Mutex } from "@web/core/utils/concurrency";
+import { DynamicGroupList } from "@web/model/relational_model/dynamic_group_list";
+
+const GROUPBY_FIELD = { type: "many2one", name: "stage_id", relation: "stage" };
+
+function makeRec(id, steps, { updateResult = true, updateThrows = false } = {}) {
+    const rec = {
+        id,
+        discarded: false,
+        /** @type {any} */
+        updateChanges: null,
+        async update(changes) {
+            steps.push(`${id}:update`);
+            rec.updateChanges = changes;
+            if (updateThrows) {
+                throw new Error("save boom");
+            }
+            return updateResult;
+        },
+        discardLocked() {
+            steps.push(`${id}:discard`);
+            rec.discarded = true;
+        },
+    };
+    return rec;
+}
+
+function makeGroup(id, value, records, steps) {
+    return {
+        id,
+        value,
+        displayName: `G-${id}`,
+        isFolded: false,
+        groupByField: GROUPBY_FIELD,
+        list: {
+            records,
+            count: records.length,
+            offset: 0,
+            limit: 40,
+            orderBy: [],
+            domain: [],
+            async loadLocked() {
+                steps.push(`${id}:load`);
+            },
+            async resequenceLocked() {
+                steps.push(`${id}:reseq`);
+            },
+        },
+        removeRecords() {
+            steps.push(`${id}:remove`);
+        },
+        addRecord() {
+            steps.push(`${id}:add`);
+        },
+    };
+}
+
+function makeList(groups) {
+    const list = Object.create(DynamicGroupList.prototype);
+    Object.assign(list, {
+        groups,
+        moveMutex: new Mutex(),
+        _config: { resModel: "task" },
+        model: { mutex: { exec: (fn) => Promise.resolve(fn()) } },
+    });
+    return list;
+}
+
+describe("moveRecord cross-group success", () => {
+    test("persists the groupby change via update({save:true}) without discarding", async () => {
+        const steps = [];
+        const rA = makeRec("rA", steps, { updateResult: true });
+        const g1 = makeGroup("g1", 1, [rA], steps);
+        const g2 = makeGroup("g2", 2, [], steps);
+        const list = makeList([g1, g2]);
+
+        await list.moveRecord("rA", "g1", "none", "g2");
+
+        expect(rA.updateChanges).toEqual({ stage_id: { id: 2, display_name: "G-g2" } });
+        expect(rA.discarded).toBe(false);
+        expect(steps).toEqual(["g1:remove", "g2:add", "rA:update", "g2:reseq"]);
+    });
+});
+
+describe("moveRecord failed-move revert", () => {
+    test("reverts the datapoint move AND discards the field change on save=false", async () => {
+        const steps = [];
+        const rA = makeRec("rA", steps, { updateResult: false });
+        const g1 = makeGroup("g1", 1, [rA], steps);
+        const g2 = makeGroup("g2", 2, [], steps);
+        const list = makeList([g1, g2]);
+
+        await list.moveRecord("rA", "g1", "none", "g2");
+
+        expect(rA.discarded).toBe(true);
+        expect(steps).toEqual([
+            "g1:remove",
+            "g2:add",
+            "rA:update",
+            "g2:remove",
+            "g1:add",
+            "rA:discard",
+        ]);
+    });
+
+    test("reverts and discards, then re-throws when update throws", async () => {
+        const steps = [];
+        const rA = makeRec("rA", steps, { updateThrows: true });
+        const g1 = makeGroup("g1", 1, [rA], steps);
+        const g2 = makeGroup("g2", 2, [], steps);
+        const list = makeList([g1, g2]);
+
+        let thrown = null;
+        try {
+            await list.moveRecord("rA", "g1", "none", "g2");
+        } catch (e) {
+            thrown = e;
+        }
+
+        expect(thrown).not.toBe(null);
+        expect(thrown.message).toBe("save boom");
+        expect(rA.discarded).toBe(true);
+        expect(steps).toEqual([
+            "g1:remove",
+            "g2:add",
+            "rA:update",
+            "g2:remove",
+            "g1:add",
+            "rA:discard",
+        ]);
+    });
+});

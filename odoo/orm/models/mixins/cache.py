@@ -1,0 +1,207 @@
+import logging
+import typing
+from collections.abc import Collection, Mapping, Sequence
+
+from odoo.libs.debug_log import DebugLog
+
+from ... import decorators as api
+from ...helpers import get_fields_by_name
+from ._model_stubs import _ModelStubs
+
+_orm_cache = logging.getLogger("odoo.orm.cache")
+_debug = DebugLog(__name__)
+
+if typing.TYPE_CHECKING:
+    from ..._typing import IdType
+    from ...fields.base import Field
+
+
+class RecordCache(Mapping[str, object]):
+    __slots__ = ["_record"]
+
+    def __init__(self, record: typing.Any) -> None:
+        if len(record) != 1:
+            raise ValueError(f"Unexpected RecordCache({record})")
+        self._record = record
+
+    def _peek(self, field: Field[typing.Any]) -> Mapping[IdType, typing.Any] | None:
+        return field._peek_cache(self._record.env)
+
+    def __contains__(self, name: object) -> bool:
+        record = self._record
+        field = record._fields.get(name)
+        if field is None:
+            return False
+        cache = self._peek(field)
+        return cache is not None and record.id in cache
+
+    def __getitem__(self, name: str) -> object:
+        record = self._record
+        field = record._fields[name]
+        cache = self._peek(field)
+        if cache is None:
+            raise KeyError(record.id)
+        return cache[record.id]
+
+    def __iter__(self) -> typing.Iterator[str]:
+        record = self._record
+        id_ = record.id
+        for name, field in record._fields.items():
+            cache = self._peek(field)
+            if cache is not None and id_ in cache:
+                yield name
+
+    def __len__(self) -> int:
+        return sum(1 for name in self)
+
+
+class CacheMixin(_ModelStubs):
+    __slots__ = ()
+
+    @property
+    def _cache(self) -> RecordCache:
+        return RecordCache(self)
+
+    @api.private
+    def invalidate_model(
+        self, fnames: Collection[str] | None = None, flush: bool = True
+    ) -> None:
+        if flush:
+            self.flush_model(fnames)
+        self._invalidate_cache(fnames, flush=flush)
+        _debug.lifecycle(
+            "cache.invalidate_model",
+            model=self._name,
+            fields=None if fnames is None else len(fnames),
+            flush=flush,
+        )
+        if _orm_cache.isEnabledFor(logging.DEBUG):
+            _orm_cache.debug("invalidate_model %s: fnames=%s", self._name, fnames)
+
+    @api.private
+    def invalidate_recordset(
+        self, fnames: Collection[str] | None = None, flush: bool = True
+    ) -> None:
+        if flush:
+            self.flush_recordset(fnames)
+        self._invalidate_cache(fnames, self._ids, flush=flush)
+        _debug.lifecycle(
+            "cache.invalidate_recordset",
+            model=self._name,
+            records=len(self),
+            fields=None if fnames is None else len(fnames),
+            flush=flush,
+        )
+        if _orm_cache.isEnabledFor(logging.DEBUG):
+            _orm_cache.debug(
+                "invalidate_recordset %s: %d records, fnames=%s",
+                self._name,
+                len(self),
+                fnames,
+            )
+
+    def _invalidate_cache(
+        self,
+        fnames: Collection[str] | None = None,
+        ids: Sequence[IdType] | None = None,
+        flush: bool = True,
+    ) -> None:
+        if ids is not None and not ids:
+            return
+
+        fields: Collection[Field[typing.Any]]
+        if fnames is None:
+            fields = self._fields.values()
+        else:
+            fields = get_fields_by_name(self, fnames)
+
+        env = self.env
+        if not flush:
+            self._check_no_pending_write(fields, ids)
+        self._access_inputs_forgotten(fnames)
+        if origin_reads := env.transaction.origin_reads:
+            # the rows may differ from what a draft of them read
+            origin_reads.evict(
+                env.core,
+                self._name,
+                None
+                if ids is None
+                else [typing.cast("int", id_) for id_ in ids if id_],
+                [field.name for field in fields],
+            )
+
+        field_inverses = self.pool.field_inverses
+        inverses_invalidated = 0  # debuglog
+        for field in fields:
+            field._invalidate_cache(env, ids)
+            if inverses := field_inverses.get(field):
+                for invf in inverses:
+                    inverses_invalidated += 1  # debuglog
+                    if flush:
+                        env[invf.model_name].flush_model([invf.name])
+                    invf._invalidate_cache(env, keep_dirty=True)
+        if _debug.logic.enabled and inverses_invalidated:
+            _debug.logic(
+                "cache.inverses_invalidated",
+                model=self._name,
+                fields=len(fields),
+                inverses=inverses_invalidated,
+                flushed=flush,
+            )
+
+    def _evict_x2many_scopes_reading_through(
+        self, fnames: Collection[str] | None
+    ) -> None:
+        env = self.env
+        fields = env.registry.stored_x2many_fields_into(self._name)
+        if not fields:
+            return
+        core = env.core
+        for field in fields:
+            if core.has_any_context_cached(field):
+                field._evict_user_scopes_reading_through(env, fnames, self._name)
+
+    def _access_inputs_written(
+        self, fnames: Collection[str] | None, *, created: bool = False
+    ) -> None:
+        # `fnames` of these rows changed (None: every field, the rows were
+        # deleted): a user's read verdicts and x2many slots over this model,
+        # or over any model whose read rule reads through it, may no longer be
+        # what the user's search would return. A created row is in no slot
+        # and no verdict of its own model yet
+        env = self.env
+        if not created:
+            self._evict_x2many_scopes_reading_through(fnames)
+        memo = env.transaction.access_memo
+        core = env.core
+        for field in memo.written(env, self._name, fnames, created=created):
+            if field.comodel_name != self._name and core.has_any_context_cached(field):
+                field._evict_user_scopes_reading_through(env, fnames, self._name)
+
+    def _access_inputs_forgotten(self, fnames: Collection[str] | None) -> None:
+        # the rows may differ from what was read (an invalidation, a value
+        # replaced behind write()): the verdicts judged on them go, and so do
+        # the user x2many slots a rule reading them filled, as after a write
+        env = self.env
+        env.transaction.access_memo.forget(env.registry, self._name, fnames)
+        self._access_inputs_written(fnames)
+
+    def _check_no_pending_write(
+        self, fields: Collection[Field[typing.Any]], ids: Sequence[IdType] | None
+    ) -> None:
+        found = self.env.core.get_pending_write(fields, ids)
+        if found is None:
+            return
+        field, overlap = found
+        _debug.logic(
+            "cache.invalidate_refused_pending_write",
+            model=self._name,
+            field=field.name,
+            pending=len(overlap),
+        )
+        raise ValueError(
+            f"Refusing to invalidate {field} on records {overlap[:10]} with "
+            f"flush=False: they hold a pending write that would be silently "
+            f"lost.  Flush first (drop flush=False), restrict the records, "
+            f"or discard the write explicitly."
+        )

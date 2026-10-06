@@ -1,0 +1,215 @@
+/** @odoo-module native */
+import { Component, onMounted, onWillUnmount, proxy, t, useProps } from "@odoo/owl";
+import { loadBundle, loadCSS } from "@web/core/assets";
+import { isBrowserFirefox } from "@web/core/browser/feature_detection";
+import { getActiveHotkey } from "@web/core/browser/hotkeys";
+import { colorScheme } from "@web/core/color_scheme";
+import { localization } from "@web/core/l10n/localization";
+import { elementRef } from "@web/core/utils/element_ref";
+import { useChildRef } from "@web/core/utils/hooks";
+import { useLayoutEffect } from "@web/core/utils/layout_effect";
+import { Dialog } from "@web/ui/dialog";
+import { getFirstAndLastTabableElements } from "@web/ui/ui_service";
+
+import { SnippetViewer } from "./snippet_viewer.js";
+
+/**
+ * @typedef {((arg: { iframe: HTMLIFrameElement }) => void)[]} snippet_preview_dialog_stylesheets_handlers
+ * @typedef {string[]} snippet_preview_dialog_bundles
+ */
+
+export class AddSnippetDialog extends Component {
+    static template = "html_builder.AddSnippetDialog";
+    static components = { Dialog };
+    static props = {
+        selectedSnippet: t.object(),
+        selectSnippet: t.function(),
+        snippetModel: t.object(),
+        close: t.function(),
+        installSnippetModule: t.function(),
+        editor: t.object(),
+    };
+    props = useProps(this.constructor.props);
+
+    setup() {
+        this.iframeRef = elementRef();
+        this.modalRef = useChildRef();
+        this.state = proxy({
+            search: "",
+            groupSelected: this.props.selectedSnippet.groupName,
+            showIframe: false,
+            hasNoSearchResults: false,
+        });
+        this.snippetViewerProps = {
+            state: this.state,
+            hasSearchResults: (has) => {
+                this.state.hasNoSearchResults = !has;
+            },
+            selectSnippet: (...args) => {
+                this.props.selectSnippet(...args);
+                this.props.close();
+            },
+            snippetModel: this.props.snippetModel,
+            installSnippetModule: this.props.installSnippetModule,
+            frontendDirection: this.props.editor.editable.classList.contains("o_rtl")
+                ? "rtl"
+                : "ltr",
+        };
+
+        let root;
+        onMounted(async () => {
+            const isFirefox = isBrowserFirefox();
+            if (
+                isFirefox &&
+                !(this.iframeRef.el?.contentDocument.readyState === "complete")
+            ) {
+                // Make sure empty preview iframe is loaded. This was necessary
+                // in Firefox < 148 as it created and parsed a new document.
+                // This event is never triggered on Chrome.
+                await new Promise((resolve) => {
+                    this.iframeRef.el.addEventListener("load", resolve, { once: true });
+                });
+            }
+
+            // Ensure preview styles are applied before mounting the snippets.
+            // Otherwise layout-dependent measurements (e.g., carousel height in
+            // preview) can be wrong.
+            await this.insertStyle();
+
+            const iframeDocument = this.iframeRef.el.contentDocument;
+            iframeDocument.body.parentElement.classList.add("o_add_snippets_preview");
+            iframeDocument.body.style.setProperty("direction", localization.direction);
+            iframeDocument.body.tabIndex = "-1";
+            iframeDocument.addEventListener(
+                "keydown",
+                this.onIframeDocumentKeydown.bind(this),
+            );
+
+            root = this.__owl__.app.createRoot(SnippetViewer, {
+                props: this.snippetViewerProps,
+            });
+            root.mount(iframeDocument.body);
+
+            this.insertColorScheme();
+            this.state.showIframe = true;
+        });
+
+        useLayoutEffect(() => {
+            if (
+                !this.props.snippetModel.hasCustomGroup &&
+                this.state.groupSelected === "custom"
+            ) {
+                this.state.groupSelected =
+                    this.props.snippetModel.snippetGroups[0].groupName;
+            }
+        });
+
+        onWillUnmount(() => {
+            root.destroy();
+        });
+    }
+
+    /**
+     * Loads and injects the required styles into the iframe's <head>.
+     * The URL for web.assets_frontend CSS bundle is retrieved from the editor
+     * document to ensure consistency, especially when using the RTL version.
+     */
+    async insertStyle() {
+        const loadCSSBundleFromEditor = (bundleName, loadOptions) => {
+            const cssLinkEl = this.props.editor.document.head.querySelector(
+                `link[type="text/css"][href*="/${bundleName}."]`,
+            );
+            if (cssLinkEl) {
+                return loadCSS(cssLinkEl.getAttribute("href"), loadOptions);
+            }
+            return loadBundle(bundleName, loadOptions);
+        };
+        this.props.editor.dispatchTo("snippet_preview_dialog_stylesheets_handlers", {
+            iframe: this.iframeRef.el,
+        });
+        const editorPreviewAssetsBundles = this.props.editor.getResource(
+            "snippet_preview_dialog_bundles",
+        );
+        const loadOptions = { targetDoc: this.iframeRef.el.contentDocument, js: false };
+        await Promise.all([
+            ...editorPreviewAssetsBundles.map((assetsBundle) =>
+                loadCSSBundleFromEditor(assetsBundle, loadOptions),
+            ),
+            loadBundle("html_builder.iframe_add_dialog", loadOptions),
+        ]);
+    }
+
+    get snippetGroups() {
+        return this.props.snippetModel.snippetGroups.filter(
+            (snippetGroup) => !snippetGroup.moduleId,
+        );
+    }
+
+    selectGroup(snippetGroup) {
+        this.state.groupSelected = snippetGroup.groupName;
+        const iframeDocument = this.iframeRef.el.contentDocument;
+        iframeDocument.body.scrollTop = 0;
+    }
+
+    /**
+     * Retrieves the color-scheme cookie and injects it into the iframe's
+     * <head> and add a custom class. This is necessary to allow the dark mode
+     * to be handled correctly across browsers.
+     */
+    insertColorScheme() {
+        const scheme = colorScheme.current;
+        const metaElement = document.createElement("meta");
+        const iframeDocument = this.iframeRef.el.contentDocument;
+        metaElement.setAttribute("name", "color-scheme");
+        metaElement.content = scheme;
+        iframeDocument.head.appendChild(metaElement);
+        iframeDocument.body.parentElement.classList.add(
+            "o_add_snippets_preview--" + scheme,
+        );
+    }
+
+    /**
+     * Handles the tablist navigation.
+     *
+     * @param {KeyboardEvent} ev
+     */
+    onTabKeydown(ev) {
+        const hotkey = getActiveHotkey(ev);
+        if (!["arrowleft", "arrowright", "arrowdown", "arrowup"].includes(hotkey)) {
+            return;
+        }
+        if (["arrowleft", "arrowup"].includes(hotkey)) {
+            ev.currentTarget.previousElementSibling?.focus();
+        } else {
+            ev.currentTarget.nextElementSibling?.focus();
+        }
+    }
+    /**
+     * The mix of focused elements within the dialog and within the iframe does
+     * not work well with the `useActiveElement` standard focus trap. This
+     * listener ensures the cycle is well supported.
+     *
+     * @param {KeyboardEvent} ev
+     */
+    onIframeDocumentKeydown(ev) {
+        const hotkey = getActiveHotkey(ev);
+        if (!["tab", "shift+tab"].includes(hotkey)) {
+            return;
+        }
+        const [, lastTabableElInIframe] = getFirstAndLastTabableElements(
+            ev.currentTarget,
+        );
+        if (hotkey === "tab" && lastTabableElInIframe === ev.target) {
+            const [firstTabableElInDialog] = getFirstAndLastTabableElements(
+                this.modalRef.el,
+            );
+            firstTabableElInDialog.focus();
+            ev.preventDefault();
+            ev.stopPropagation();
+        } else if (hotkey === "shift+tab" && ev.target.tagName === "BODY") {
+            lastTabableElInIframe.focus();
+            ev.preventDefault();
+            ev.stopPropagation();
+        }
+    }
+}

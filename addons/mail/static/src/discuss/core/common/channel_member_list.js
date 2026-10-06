@@ -1,0 +1,81 @@
+// @ts-check
+/** @odoo-module native */
+import { ActionPanel } from "@mail/core/common/action_panel";
+import { ImStatus } from "@mail/core/common/im_status";
+import { useMailContext } from "@mail/utils/common/mail_context";
+import { Component, onWillStart, onWillUpdateProps, t, useProps } from "@odoo/owl";
+import { makeLogger } from "@web/core/debug/debug_logger";
+import { _t } from "@web/core/translation";
+import { elementRef } from "@web/core/utils/element_ref";
+import { useService } from "@web/core/utils/hooks";
+
+const log = makeLogger("mail.channel.members");
+export class ChannelMemberList extends Component {
+    static components = { ImStatus, ActionPanel };
+    static props = {
+        thread: t.any(),
+        openChannelInvitePanel: t.any(),
+        className: t.any().optional(),
+    };
+    static template = "discuss.ChannelMemberList";
+    props = useProps(this.constructor.props);
+
+    setup() {
+        super.setup();
+        this.displayNameRef = elementRef();
+        this.mailContext = useMailContext();
+        this.store = useService("mail.store");
+        onWillStart(() => {
+            if (this.props.thread.fetchMembersState === "not_fetched") {
+                this.props.thread.fetchChannelMembers();
+            }
+        });
+        onWillUpdateProps(
+            /** @param {{thread: import("models").DiscussChannel}} nextProps */ (
+                nextProps,
+            ) => {
+                if (nextProps.thread.fetchMembersState === "not_fetched") {
+                    nextProps.thread.fetchChannelMembers();
+                }
+            },
+        );
+    }
+
+    get onlineSectionText() {
+        return _t("Online - %(online_count)s", {
+            online_count: this.props.thread.onlineMembers.length,
+        });
+    }
+
+    get offlineSectionText() {
+        return _t("Offline - %(offline_count)s", {
+            offline_count: this.props.thread.offlineMembers.length,
+        });
+    }
+
+    /**
+     * @param {import("models").ChannelMember} member
+     * @returns {boolean}
+     */
+    canOpenChatWith(member) {
+        return (
+            !this.store.inPublicPage &&
+            !member.guest_id &&
+            Boolean(member.partner_id.main_user_id)
+        );
+    }
+
+    /**
+     * @param {MouseEvent} ev
+     * @param {import("models").ChannelMember} member
+     */
+    onClickAvatar(ev, member) {
+        if (!this.canOpenChatWith(member)) {
+            return;
+        }
+        log.logic("onClickAvatar opens chat", () => ({
+            partnerId: member.partner_id.id,
+        }));
+        this.store.openChat({ partnerId: member.partner_id.id });
+    }
+}

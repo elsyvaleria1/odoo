@@ -1,0 +1,229 @@
+// @ts-check
+/** @odoo-module native */
+import { takeThreadPrefetch } from "@mail/chatter/web_portal/chatter_prefetch";
+import { Composer } from "@mail/core/common/composer";
+import { Thread } from "@mail/core/common/thread";
+import {
+    provideChildMailContext,
+    useMailContext,
+} from "@mail/utils/common/mail_context";
+import {
+    Component,
+    onMounted,
+    onWillUpdateProps,
+    proxy,
+    status,
+    t,
+    untrack,
+    useEffect,
+    useProps,
+} from "@odoo/owl";
+import { makeLogger } from "@web/core/debug/debug_logger";
+import { useLifecycleLog } from "@web/core/debug/logger_hooks";
+import { _t } from "@web/core/translation";
+import { elementRef } from "@web/core/utils/element_ref";
+import { useService } from "@web/core/utils/hooks";
+import { useThrottleForAnimation } from "@web/core/utils/timing";
+/**
+ * @typedef {Object} Props
+ * @property {boolean} [composer=true]
+ * @property {number|false} [threadId=false]
+ * @property {string} threadModel
+ * @property {boolean} [twoColumns=false]
+ */
+/**
+ * @typedef {Object} State
+ * @property {number} jumpThreadPresent
+ * @property {import("models").Thread} thread
+ * @property {boolean} aside
+ * @property {boolean} disabled
+ * @property {boolean} [isTopStickyPinned]
+ */
+const log = makeLogger("mail.chatter");
+
+export const chatterProps = {
+    composer: t.any().optional(true),
+    threadId: t.any().optional(false),
+    threadModel: t.any(),
+    twoColumns: t.any().optional(false),
+};
+
+/**
+ * @template {Props} [P=Props]
+ * @template {State} [S=State]
+ * @extends {Component<P, import("@web/env").OdooEnv>}
+ */
+export class Chatter extends Component {
+    static template = "mail.Chatter";
+    static components = { Thread, Composer };
+    static props = chatterProps;
+    props = useProps(this.constructor.props);
+
+    setup() {
+        this.mailContext = useMailContext();
+        useLifecycleLog(log);
+        this.store = useService("mail.store");
+        /** @type {S} */
+        this.state = /** @type {S} */ (
+            proxy({
+                jumpThreadPresent: 0,
+                /** @type {import("models").Thread} */
+                thread: undefined,
+                aside: false,
+                disabled: !this.props.threadId,
+            })
+        );
+        this.rootRef = elementRef();
+        this.topRef = elementRef();
+        this.onScrollDebounced = useThrottleForAnimation(this.onScroll.bind(this));
+        provideChildMailContext(this.childMailContext);
+
+        onMounted(this._onMounted);
+        // a save reloads the record in place, so the chatter's props do not
+        // change and no update comes: the flag the form raises is the signal
+        useEffect(() => {
+            if (
+                this.mailContext.chatter?.fetchThreadData &&
+                status(this) === "mounted"
+            ) {
+                untrack(() => {
+                    this.mailContext.chatter.fetchThreadData = false;
+                    this.load(this.state.thread, this.requestList);
+                });
+            }
+        });
+        onWillUpdateProps(
+            /** @param {{threadModel: string, threadId: number|false}} nextProps */
+            (nextProps) => {
+                this.state.disabled = !nextProps.threadId;
+                const threadChanged =
+                    this.props.threadId !== nextProps.threadId ||
+                    this.props.threadModel !== nextProps.threadModel;
+                if (threadChanged) {
+                    this.changeThread(nextProps.threadModel, nextProps.threadId);
+                }
+                const staleDataRequested = this.mailContext.chatter
+                    ? this.mailContext.chatter.fetchThreadData
+                    : true;
+                if (this.mailContext.chatter) {
+                    this.mailContext.chatter.fetchThreadData = false;
+                }
+                if (threadChanged || staleDataRequested) {
+                    this.load(this.state.thread, this.requestList);
+                }
+            },
+        );
+    }
+
+    get afterPostRequestList() {
+        return ["messages"];
+    }
+
+    get childMailContext() {
+        return { inChatter: this.state };
+    }
+
+    /** @returns {string[]} */
+    get onCloseFullComposerRequestList() {
+        return ["messages"];
+    }
+
+    /** @returns {string[]} */
+    get requestList() {
+        return [];
+    }
+
+    /**
+     * @param {string} threadModel
+     * @param {number|false} threadId
+     */
+    changeThread(threadModel, threadId) {
+        log.lifecycle("changeThread", () => ({
+            from: this.state.thread?.localId,
+            threadModel,
+            threadId,
+        }));
+        this.state.thread = this.store.Thread.insert({
+            model: threadModel,
+            id: threadId,
+        });
+        if (threadId === false) {
+            if (this.state.thread.messages.length === 0) {
+                const { effectiveSelf } = this.state.thread;
+                const authorModelName = effectiveSelf.Model.getName();
+                this.state.thread.messages.push(
+                    this.store["mail.message"].insert({
+                        id: this.store.getNextTemporaryId(),
+                        author_id:
+                            authorModelName === "res.partner"
+                                ? /** @type {import("models").ResPartner} */ (
+                                      effectiveSelf
+                                  )
+                                : undefined,
+                        author_guest_id:
+                            authorModelName === "mail.guest"
+                                ? /** @type {import("models").MailGuest} */ (
+                                      effectiveSelf
+                                  )
+                                : undefined,
+                        body: _t("Creating a new record..."),
+                        message_type: "notification",
+                        thread: this.state.thread,
+                        trackingValues: [],
+                        res_id: threadId,
+                        model: threadModel,
+                    }),
+                );
+            }
+        }
+    }
+
+    /**
+     * @param {import("models").Thread} thread
+     * @param {string[]} requestList
+     */
+    async load(thread, requestList) {
+        if (!thread.id || !this.state.thread?.eq(thread)) {
+            log.logic("load skipped", () => ({
+                thread: thread.localId,
+                current: this.state.thread?.localId,
+            }));
+            return;
+        }
+        const endLoad = log.perf("load");
+        const remaining = await takeThreadPrefetch(thread, requestList);
+        if (remaining === null || remaining.length) {
+            await thread.fetchThreadData(remaining ?? requestList);
+        }
+        endLoad({
+            thread: thread.localId,
+            requestList,
+            prefetched: remaining !== null,
+        });
+    }
+
+    /** @param {boolean} [isDiscard] */
+    onCloseFullComposerCallback(isDiscard) {
+        this.load(this.state.thread, this.onCloseFullComposerRequestList);
+    }
+
+    _onMounted() {
+        this.changeThread(this.props.threadModel, this.props.threadId);
+        if (!this.mailContext.chatter || this.mailContext.chatter?.fetchThreadData) {
+            if (this.mailContext.chatter) {
+                this.mailContext.chatter.fetchThreadData = false;
+            }
+            this.load(this.state.thread, this.requestList);
+        }
+    }
+
+    onPostCallback() {
+        log.logic("onPostCallback", () => ({ thread: this.state.thread?.localId }));
+        this.state.jumpThreadPresent++;
+        this.load(this.state.thread, this.afterPostRequestList);
+    }
+
+    onScroll() {
+        this.state.isTopStickyPinned = this.rootRef.el.scrollTop !== 0;
+    }
+}

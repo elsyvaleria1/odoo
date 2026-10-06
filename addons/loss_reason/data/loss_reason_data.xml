@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+
+    <record id="loss_reason_price" model="loss.reason">
+        <field name="name">Price</field>
+        <field name="sequence">10</field>
+    </record>
+
+    <record id="loss_reason_delivery" model="loss.reason">
+        <field name="name">Delivery date</field>
+        <field name="sequence">20</field>
+    </record>
+
+    <record id="loss_reason_quality" model="loss.reason">
+        <field name="name">Quality or specification</field>
+        <field name="sequence">30</field>
+    </record>
+
+    <record id="loss_reason_payment_terms" model="loss.reason">
+        <field name="name">Payment terms</field>
+        <field name="sequence">40</field>
+    </record>
+
+    <record id="loss_reason_relationship" model="loss.reason">
+        <field name="name">Relationship</field>
+        <field name="sequence">50</field>
+    </record>
+
+    <record id="loss_reason_no_decision" model="loss.reason">
+        <field name="name">No decision</field>
+        <field name="sequence">60</field>
+    </record>
+
+    <record id="loss_reason_budget" model="loss.reason">
+        <field name="name">Budget</field>
+        <field name="sequence">70</field>
+    </record>
+
+</odoo>

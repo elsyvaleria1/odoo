@@ -1,0 +1,608 @@
+import argparse
+import io
+import logging
+import sys
+import textwrap
+from pathlib import Path
+from typing import Any
+
+from odoo.fields import Domain
+from odoo.libs.collections import OrderedSet
+from odoo.libs.debug_log import DebugLog
+from odoo.modules import get_module_path
+from odoo.tools.translate import (
+    ExtractedSources,
+    TranslationImporter,
+    get_lang_iso_codes,
+    get_po_file_path,
+    load_language,
+    merge_po_template,
+    trans_export,
+)
+
+from . import DatabaseCommand, open_environment
+
+_logger = logging.getLogger(__name__)
+_debug = DebugLog(__name__)
+
+type _SubParsers = argparse._SubParsersAction[argparse.ArgumentParser]
+
+EXPORT_EXTENSIONS = [".po", ".pot", ".tgz", ".csv"]
+IMPORT_EXTENSIONS = [".po", ".csv"]
+
+
+class SubcommandHelpFormatter(argparse.RawTextHelpFormatter):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        kwargs.setdefault("max_help_position", 80)
+        super().__init__(*args, **kwargs)
+
+
+class I18n(DatabaseCommand):
+    description = "Import, export, setup languages and internationalization files"
+    _EPILOG = textwrap.dedent("""\
+        Language codes must follow the XPG (POSIX) locale format.
+        see: https://www.gnu.org/software/libc/manual/html_node/Locale-Names.html
+
+        To list available codes, you can search them querying the database:
+            $ psql -d <dbname> -c "SELECT iso_code FROM res_lang ORDER BY iso_code"
+
+        Examples:
+            odoo-bin i18n loadlang -l en         # English (U.S.)
+            odoo-bin i18n loadlang -l es es_AR   # Spanish (Spain, Argentina)
+            odoo-bin i18n loadlang -l sr@latin   # Serbian (Latin)
+    """)
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.add_config_arguments(self.parser)
+        subparsers = self.parser.add_subparsers(
+            dest="subcommand", required=True, help="Subcommands help"
+        )
+        self.import_parser = self._add_import_parser(subparsers)
+        self.export_parser = self._add_export_parser(subparsers)
+        self.loadlang_parser = self._add_loadlang_parser(subparsers)
+        self.merge_parser = self._add_merge_parser(subparsers)
+
+        for parser in (
+            self.import_parser,
+            self.export_parser,
+            self.loadlang_parser,
+            self.merge_parser,
+        ):
+            self.add_config_arguments(parser, on_subparser=True)
+            parser.epilog = self._EPILOG
+
+    def _add_subparser(
+        self, subparsers: _SubParsers, name: str, help_text: str, description: str
+    ) -> argparse.ArgumentParser:
+        return subparsers.add_parser(
+            name,
+            help=help_text,
+            description=description,
+            formatter_class=SubcommandHelpFormatter,
+        )
+
+    def _add_import_parser(self, subparsers: _SubParsers) -> argparse.ArgumentParser:
+        parser = self._add_subparser(
+            subparsers,
+            "import",
+            "Import i18n files",
+            "Imports provided translation files",
+        )
+        parser.set_defaults(func=self._import_translations)
+        parser.add_argument(
+            "files",
+            nargs="+",
+            metavar="FILE",
+            type=Path,
+            help=f"files to be imported. Allowed extensions: {', '.join(IMPORT_EXTENSIONS)}\n",
+        )
+        parser.add_argument(
+            "-w",
+            "--overwrite",
+            action="store_true",
+            help="overwrite existing terms; records flagged noupdate in "
+            "ir_model_data keep theirs (see --force-overwrite)",
+        )
+        parser.add_argument(
+            "--force-overwrite",
+            action="store_true",
+            help="overwrite existing terms even on noupdate records "
+            "(implies --overwrite)",
+        )
+        parser.add_argument(
+            "-l",
+            "--language",
+            dest="language",
+            metavar="LANG",
+            required=True,
+            help="language code",
+        )
+        return parser
+
+    def _add_export_parser(self, subparsers: _SubParsers) -> argparse.ArgumentParser:
+        parser = self._add_subparser(
+            subparsers,
+            "export",
+            "Export i18n files",
+            "Exports language files into the i18n folder of each module.\n"
+            "A language is written to the file the module already loads it\n"
+            "from (de.po for de_DE, es_CL.po for es_CL), and a new file is\n"
+            "named after the language, or after its base when the language\n"
+            "is that base's main one (ca.po for ca_ES, pt_BR.po for pt_BR).\n"
+            "Translations come from that file, plus database values no other\n"
+            "file could have written; an existing file keeps its header and\n"
+            "turns the translations of vanished terms obsolete (#~).",
+        )
+        parser.set_defaults(func=self._export_translations)
+        parser.add_argument(
+            "-l",
+            "--languages",
+            dest="languages",
+            action="append",
+            default=None,
+            metavar="LANG",
+            help="language code, 'pot' for template (default); repeat for "
+            "more than one",
+        )
+        parser.add_argument(
+            "modules",
+            nargs="+",
+            metavar="MODULE",
+            help="modules to be exported",
+        )
+        parser.add_argument(
+            "-o",
+            "--output",
+            metavar="FILE",
+            dest="output",
+            help=(
+                "output only one file with translations from all provided modules\n"
+                f"allowed extensions: {', '.join(EXPORT_EXTENSIONS)},"
+                " '-' writes a '.po' file to stdout\n"
+                "only one language is allowed when this option is active"
+            ),
+        )
+        return parser
+
+    def _add_loadlang_parser(self, subparsers: _SubParsers) -> argparse.ArgumentParser:
+        parser = self._add_subparser(
+            subparsers, "loadlang", "Load languages", "Loads languages"
+        )
+        parser.set_defaults(func=self._load_languages)
+        parser.add_argument(
+            "-l",
+            "--languages",
+            dest="languages",
+            nargs="+",
+            required=True,
+            metavar="LANG",
+            help="List of language codes to install",
+        )
+        return parser
+
+    def _add_merge_parser(self, subparsers: _SubParsers) -> argparse.ArgumentParser:
+        parser = self._add_subparser(
+            subparsers,
+            "merge",
+            "Merge .po files with their template",
+            "Brings .po files in line with their module's template without a\n"
+            "database: every template term is written with the template's\n"
+            "occurrences, the file's translations are kept, a term whose text\n"
+            "changed only in whitespace keeps its translation, re-indented,\n"
+            "and the translations of terms the template lost turn obsolete (#~).",
+        )
+        parser.set_defaults(func=self._merge_translations)
+        parser.add_argument(
+            "files",
+            nargs="+",
+            metavar="FILE",
+            type=Path,
+            help=".po files to merge in place",
+        )
+        parser.add_argument(
+            "-t",
+            "--template",
+            metavar="POT",
+            type=Path,
+            help="template to merge with; defaults to <module>/i18n/<module>.pot",
+        )
+        return parser
+
+    def run(self, cmdargs: list[str]) -> None:
+        parsed_args, unknown = self.parse_args(cmdargs)
+        self.bootstrap_config(
+            parsed_args,
+            allow_none=parsed_args.subcommand == "merge",
+            extra_args=unknown,
+        )
+        subcommand = getattr(parsed_args.func, "__name__", None)
+        _debug.lifecycle("cli.i18n", subcommand=subcommand, db=parsed_args.db_name)
+        parsed_args.func(parsed_args)
+        _debug.lifecycle("cli.i18n.done", subcommand=subcommand)
+
+    def _get_languages(
+        self, env: Any, language_codes: list[str], installed_only: bool = True
+    ) -> Any:
+        Lang = env["res.lang"].with_context(active_test=False)
+        with _debug.perf(
+            "cli.i18n.language_search", cr=env.cr, codes=len(language_codes)
+        ):
+            languages = Lang.search(
+                Domain.OR(
+                    [
+                        Domain("iso_code", "in", language_codes),
+                        Domain("code", "in", language_codes),
+                    ]
+                )
+            )
+        matched_codes = set(languages.mapped("iso_code")) | set(
+            languages.mapped("code")
+        )
+        if not_found_language_codes := set(language_codes) - matched_codes:
+            _debug.logic(
+                "cli.i18n.languages_skipped",
+                reason="not_found",
+                count=len(not_found_language_codes),
+            )
+            _logger.warning(
+                "Ignoring not found languages: %s",
+                ", ".join(not_found_language_codes),
+            )
+        if installed_only:
+            if not_installed_languages := languages.filtered(lambda x: not x.active):
+                languages -= not_installed_languages
+                iso_codes = not_installed_languages.mapped("iso_code")
+                _debug.logic(
+                    "cli.i18n.languages_skipped",
+                    reason="not_installed",
+                    count=len(not_installed_languages),
+                )
+                _logger.warning(
+                    textwrap.dedent("""\
+                        Ignoring not installed languages: %s
+                        Install them running the below command, then run this command again.
+
+                        $ %s -l %s
+                    """),
+                    ", ".join(iso_codes),
+                    self.loadlang_parser.prog,
+                    " ".join(iso_codes),
+                )
+        _debug.logic(
+            "cli.i18n.languages_resolved",
+            requested=len(language_codes),
+            matched=len(languages),
+            installed_only=installed_only,
+        )
+        return languages
+
+    def _import_translations(self, parsed_args: argparse.Namespace) -> None:
+        paths = OrderedSet(parsed_args.files)
+        if invalid_paths := [
+            path
+            for path in paths
+            if (not path.exists() or path.suffix not in IMPORT_EXTENSIONS)
+        ]:
+            _debug.logic("cli.i18n.import_paths_invalid", count=len(invalid_paths))
+            _logger.warning(
+                "Ignoring invalid paths: %s",
+                ", ".join(str(path) for path in invalid_paths),
+            )
+            paths -= set(invalid_paths)
+        if not paths:
+            _debug.logic("cli.i18n.import_rejected", reason="no_valid_path")
+            self.import_parser.error("No valid path was provided")
+
+        with open_environment(parsed_args.db_name) as env:
+            translation_importer = TranslationImporter(env.cr)
+            language = self._get_languages(env, [parsed_args.language])
+            if not language:
+                _debug.logic("cli.i18n.import_rejected", reason="no_language")
+                self.import_parser.error("No valid language has been provided")
+            if len(language) > 1:
+                _debug.logic(
+                    "cli.i18n.import_rejected",
+                    reason="ambiguous_language",
+                    matches=len(language),
+                )
+                self.import_parser.error(
+                    f"-l {parsed_args.language!r} matches several languages "
+                    f"({', '.join(language.mapped('code'))}); use the full code"
+                )
+            _debug.pipeline(
+                "cli.i18n.import",
+                db=parsed_args.db_name,
+                lang=language.code,
+                files=len(paths),
+                overwrite=parsed_args.overwrite or parsed_args.force_overwrite,
+                force_overwrite=parsed_args.force_overwrite,
+            )
+            for path in paths:
+                with path.open("rb") as infile:
+                    with _debug.perf(
+                        "cli.i18n.import_load",
+                        cr=env.cr,
+                        path=str(path),
+                        format=path.suffix.removeprefix("."),
+                        lang=language.code,
+                    ):
+                        translation_importer.load(
+                            infile, path.suffix.removeprefix("."), language.code
+                        )
+            with _debug.perf("cli.i18n.import_save", cr=env.cr, lang=language.code):
+                translation_importer.save(
+                    overwrite=parsed_args.overwrite or parsed_args.force_overwrite,
+                    force_overwrite=parsed_args.force_overwrite,
+                )
+            _debug.lifecycle(
+                "cli.i18n.imported",
+                db=parsed_args.db_name,
+                lang=language.code,
+                files=len(paths),
+            )
+
+    def _check_export_output(
+        self,
+        parsed_args: argparse.Namespace,
+        requested_languages: list[str],
+        *,
+        export_pot: bool,
+    ) -> None:
+        if len(requested_languages) != 1:
+            _debug.logic(
+                "cli.i18n.export_rejected",
+                reason="output_needs_one_language",
+                languages=len(requested_languages),
+            )
+            self.export_parser.error(
+                "When --output is specified, one single --language must be supplied"
+            )
+        if parsed_args.output != "-":
+            parsed_args.output = Path(parsed_args.output)
+            if parsed_args.output.suffix not in EXPORT_EXTENSIONS:
+                _debug.logic(
+                    "cli.i18n.export_rejected",
+                    reason="output_extension",
+                    suffix=parsed_args.output.suffix,
+                )
+                self.export_parser.error(
+                    f"Extensions allowed for --output are {', '.join(EXPORT_EXTENSIONS)}"
+                )
+            if export_pot and parsed_args.output.suffix == ".csv":
+                _debug.logic("cli.i18n.export_rejected", reason="pot_as_csv")
+                self.export_parser.error(
+                    "Cannot export template in .csv format, please specify a language."
+                )
+            _debug.logic(
+                "cli.i18n.export_output",
+                to="file",
+                suffix=parsed_args.output.suffix,
+                pot=export_pot,
+            )
+        else:
+            _debug.logic("cli.i18n.export_output", to="stdout", pot=export_pot)
+
+    def _export_translations(self, parsed_args: argparse.Namespace) -> None:
+        requested_languages = list(parsed_args.languages or ["pot"])
+        export_pot = "pot" in requested_languages
+
+        if parsed_args.output:
+            self._check_export_output(
+                parsed_args, requested_languages, export_pot=export_pot
+            )
+
+        if export_pot:
+            requested_languages.remove("pot")
+
+        with open_environment(parsed_args.db_name, readonly=True) as env:
+            with _debug.perf(
+                "cli.i18n.module_search", cr=env.cr, requested=len(parsed_args.modules)
+            ):
+                modules = env["ir.module.module"].search_fetch(
+                    [("name", "in", parsed_args.modules)], ["name", "state"]
+                )
+            if not_found_module_names := set(parsed_args.modules) - set(
+                modules.mapped("name")
+            ):
+                _debug.logic(
+                    "cli.i18n.modules_skipped",
+                    reason="not_found",
+                    count=len(not_found_module_names),
+                )
+                _logger.warning(
+                    "Ignoring not found modules: %s",
+                    ", ".join(not_found_module_names),
+                )
+            if not_installed_modules := modules.filtered(
+                lambda x: x.state != "installed"
+            ):
+                _debug.logic(
+                    "cli.i18n.modules_skipped",
+                    reason="not_installed",
+                    count=len(not_installed_modules),
+                )
+                _logger.warning(
+                    "Ignoring not installed modules: %s",
+                    ", ".join(not_installed_modules.mapped("name")),
+                )
+                modules -= not_installed_modules
+            if len(modules) < 1:
+                _debug.logic("cli.i18n.export_rejected", reason="no_module")
+                self.export_parser.error("No valid module has been provided")
+            module_names = modules.mapped("name")
+
+            languages = self._get_languages(env, requested_languages)
+            languages_count = len(languages) + export_pot
+            _debug.pipeline(
+                "cli.i18n.export",
+                db=parsed_args.db_name,
+                modules=len(module_names),
+                languages=len(languages),
+                pot=export_pot,
+                output=str(parsed_args.output) if parsed_args.output else None,
+            )
+            if languages_count == 0:
+                _debug.logic("cli.i18n.export_rejected", reason="no_language")
+                self.export_parser.error("No valid language has been provided")
+
+            if parsed_args.output:
+                if len(languages) > 1:
+                    _debug.logic(
+                        "cli.i18n.export_rejected",
+                        reason="ambiguous_language",
+                        matches=len(languages),
+                    )
+                    self.export_parser.error(
+                        f"--output requires a single language; got "
+                        f"{len(languages)} matches: {languages.mapped('code')}"
+                    )
+                lang_code = languages.code if languages else None
+                self._export_translations_to_path(
+                    env, module_names, lang_code, parsed_args.output
+                )
+            else:
+                self._export_translations_to_modules(
+                    env, module_names, languages, export_pot=export_pot
+                )
+
+    def _export_translations_to_modules(
+        self, env: Any, module_names: list[str], languages: Any, *, export_pot: bool
+    ) -> None:
+        module_paths = {}
+        for module_name in module_names:
+            module_path = get_module_path(module_name)
+            if not module_path:
+                _debug.logic(
+                    "cli.i18n.export_rejected",
+                    module=module_name,
+                    reason="not_on_addons_path",
+                )
+                self.export_parser.error(
+                    f"module {module_name!r} is installed in the "
+                    "database but was not found on the addons path; "
+                    "fix --addons-path or export with --output"
+                )
+            module_paths[module_name] = module_path
+        _debug.pipeline(
+            "cli.i18n.export_to_modules",
+            modules=len(module_names),
+            languages=len(languages),
+            pot=export_pot,
+            files=len(module_names) * (len(languages) + export_pot),
+        )
+        iso_codes = get_lang_iso_codes(env)
+        for module_name in module_names:
+            sources = ExtractedSources()
+            i18n_path = Path(module_paths[module_name], "i18n")
+            if export_pot:
+                path = i18n_path / f"{module_name}.pot"
+                self._export_translations_to_path(
+                    env, [module_name], None, path, sources
+                )
+            for language in languages:
+                path = get_po_file_path(
+                    module_paths[module_name], language.code, iso_codes
+                )
+                self._export_translations_to_path(
+                    env, [module_name], language.code, path, sources
+                )
+
+    def _export_translations_to_path(
+        self,
+        env: Any,
+        module_names: list[str],
+        lang_code: str | None,
+        path: Path | str,
+        sources: ExtractedSources | None = None,
+    ) -> None:
+        source = module_names[0] if len(module_names) == 1 else "modules"
+        destination = "stdout" if path == "-" else path
+        _logger.info("Exporting %s (%s) to %s", source, lang_code or "pot", destination)
+
+        if destination == "stdout":
+            with _debug.perf(
+                "cli.i18n.export_file",
+                cr=env.cr,
+                source=source,
+                lang=lang_code or "pot",
+                format="po",
+                to="stdout",
+            ) as span:
+                exported = trans_export(
+                    lang_code, module_names, sys.stdout.buffer, "po", env, sources
+                )
+                span.set(terms_found=bool(exported))
+            if not exported:
+                _logger.warning("No translatable terms were found in %s.", module_names)
+            return
+
+        path = Path(path)
+        if _debug.lifecycle.enabled and not path.parent.is_dir():
+            _debug.lifecycle("cli.i18n.export_dir_created", path=str(path.parent))
+        path.parent.mkdir(parents=True, exist_ok=True)
+        export_format = path.suffix.removeprefix(".")
+        if export_format == "pot":
+            export_format = "po"
+        # the export reads the file it replaces, so it is written only after
+        buffer = io.BytesIO()
+        with _debug.perf(
+            "cli.i18n.export_file",
+            cr=env.cr,
+            source=source,
+            lang=lang_code or "pot",
+            format=export_format,
+            to=str(path),
+        ) as span:
+            exported = trans_export(
+                lang_code, module_names, buffer, export_format, env, sources
+            )
+            span.set(terms_found=bool(exported), bytes=buffer.tell())
+        if not exported:
+            _logger.warning("No translatable terms were found in %s.", module_names)
+            return
+        path.write_bytes(buffer.getvalue())
+
+    def _merge_translations(self, parsed_args: argparse.Namespace) -> None:
+        merges = []
+        for path in parsed_args.files:
+            template = parsed_args.template or path.with_name(
+                f"{path.resolve().parent.parent.name}.pot"
+            )
+            if path.suffix != ".po" or not path.is_file():
+                self.merge_parser.error(f"{path} is not a .po file")
+            if not template.is_file():
+                self.merge_parser.error(f"template {template} not found")
+            merges.append((path, template))
+        for path, template in merges:
+            _logger.info("Merging %s with %s", path, template)
+            path.write_text(
+                merge_po_template(
+                    path.read_text(encoding="utf-8"),
+                    template.read_text(encoding="utf-8"),
+                    path.stem,
+                ),
+                encoding="utf-8",
+            )
+
+    def _load_languages(self, parsed_args: argparse.Namespace) -> None:
+        with open_environment(parsed_args.db_name) as env:
+            languages = self._get_languages(
+                env, parsed_args.languages, installed_only=False
+            )
+            _debug.pipeline(
+                "cli.i18n.loadlang",
+                db=parsed_args.db_name,
+                requested=len(parsed_args.languages),
+                resolved=len(languages),
+                already_active=len(languages.filtered("active")),
+            )
+            for language in languages:
+                with _debug.perf(
+                    "cli.i18n.load_language",
+                    cr=env.cr,
+                    lang=language.code,
+                    was_active=language.active,
+                ):
+                    load_language(env.cr, language.code)
+                _debug.lifecycle("cli.i18n.language_loaded", lang=language.code)

@@ -1,0 +1,100 @@
+/** @odoo-module native */
+import { Component, proxy, t, useProps } from "@odoo/owl";
+import { ComboConfiguratorPopup } from "@point_of_sale/app/components/popups/combo_configurator_popup/combo_configurator_popup";
+import { usePos } from "@point_of_sale/app/hooks/pos_hook";
+import { makeAwaitable } from "@point_of_sale/app/utils/make_awaitable_dialog";
+import { makeLogger } from "@web/core/debug/debug_logger";
+import { useLifecycleLog } from "@web/core/debug/logger_hooks";
+import { useService } from "@web/core/utils/hooks";
+import { Dialog } from "@web/ui/dialog";
+const log = makeLogger("pos.popup.optional_products");
+export class OptionalProductPopup extends Component {
+    static template = "point_of_sale.OptionalProductPopup";
+    static components = { Dialog };
+    static props = { close: t.any(), productTemplate: t.any() };
+    props = useProps(this.constructor.props);
+
+    setup() {
+        useLifecycleLog(log);
+        this.pos = usePos();
+        this.dialog = useService("dialog");
+        this.state = proxy({
+            product_lines:
+                this.props.productTemplate?.pos_optional_product_ids.map((product) => ({
+                    product_tmpl_id: product,
+                    payload: [],
+                    qty: 0,
+                })) || [],
+        });
+    }
+
+    async changeQuantity(optional_product, increase) {
+        log.logic("changeQuantity", () => ({
+            product: optional_product.product_tmpl_id.id,
+            increase,
+            qty: optional_product.qty,
+            configurable: optional_product.product_tmpl_id.isConfigurable(),
+            combo: Boolean(optional_product.product_tmpl_id.isCombo()),
+            configured: Object.keys(optional_product.payload).length > 0,
+        }));
+        if (
+            optional_product.product_tmpl_id.isConfigurable() &&
+            !Object.keys(optional_product.payload).length
+        ) {
+            const payload = await this.pos.openConfigurator(
+                optional_product.product_tmpl_id,
+            );
+            if (!payload) {
+                return;
+            }
+            optional_product.payload = payload;
+        }
+
+        if (
+            optional_product.product_tmpl_id.isCombo() &&
+            !Object.keys(optional_product.payload).length
+        ) {
+            const payload = await makeAwaitable(this.dialog, ComboConfiguratorPopup, {
+                productTemplate: optional_product.product_tmpl_id,
+            });
+            if (!payload) {
+                return;
+            }
+            optional_product.payload = payload;
+        }
+
+        optional_product.qty = Math.max(0, optional_product.qty + (increase ? 1 : -1));
+    }
+
+    get buttonDisabled() {
+        return this.state.product_lines.every((line) =>
+            line.product_tmpl_id.uom_id.isZero(line.qty),
+        );
+    }
+
+    onInputChangeQuantity(optional_product, quantity) {
+        optional_product.qty = Math.max(0, parseInt(quantity) || 0);
+    }
+
+    async confirm() {
+        log.pipeline("confirm", () => ({
+            template: this.props.productTemplate?.id,
+            added: this.state.product_lines
+                .filter((l) => l.qty > 0)
+                .map((l) => ({ product: l.product_tmpl_id.id, qty: l.qty })),
+        }));
+        try {
+            for (const product of this.state.product_lines) {
+                if (product.qty > 0) {
+                    await this.pos.addLineToCurrentOrder(product, {});
+                }
+            }
+        } finally {
+            this.props.close();
+        }
+    }
+
+    cancel() {
+        this.props.close();
+    }
+}

@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Privilege category grouping the PLM access levels (User, Administrator) -->
+    <record id="res_groups_privilege_plm" model="res.groups.privilege">
+        <field name="name">PLM</field>
+        <field name="sequence">5</field>
+        <field name="category_id" ref="base.module_category_supply_chain" />
+    </record>
+
+    <record id="mrp_plm.group_plm_user" model="res.groups">
+        <field name="name">User</field>
+        <field name="sequence">10</field>
+        <field name="privilege_id" ref="res_groups_privilege_plm" />
+        <field name="comment">The PLM user uses products lifecycle management</field>
+        <field name="implied_ids" eval="[Command.link(ref('mrp.group_mrp_user'))]" />
+    </record>
+
+    <record id="mrp_plm.group_plm_manager" model="res.groups">
+        <field name="name">Administrator</field>
+        <field name="sequence">20</field>
+        <field name="privilege_id" ref="res_groups_privilege_plm" />
+        <field
+            name="comment">The PLM manager manages products lifecycle management</field>
+        <field
+            name="implied_ids"
+            eval="[Command.link(ref('mrp_plm.group_plm_user'))]" />
+    </record>
+
+    <record id="base.user_root" model="res.users">
+        <field
+            name="group_ids"
+            eval="[Command.link(ref('mrp_plm.group_plm_manager'))]" />
+    </record>
+
+    <record id="base.user_admin" model="res.users">
+        <field
+            name="group_ids"
+            eval="[Command.link(ref('mrp_plm.group_plm_manager'))]" />
+    </record>
+
+</odoo>

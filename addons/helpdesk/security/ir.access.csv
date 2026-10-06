@@ -1,0 +1,43 @@
+id,name,model_id/id,group_id/id,kind,operation,reach,anchor,predicate_id/id,predicate_args,domain
+team_member_rule_helpdesk_manager_read,Helpdesk team members: Helpdesk Administrators read,team.model_team_member,group_helpdesk_manager,permission,r,all,,,,"[('team_id.use_helpdesk', '=', True)]"
+access_helpdesk_tag,helpdesk.tag,model_helpdesk_tag,group_helpdesk_user,permission,cud,,,,,
+access_helpdesk_tag_internal_user,helpdesk.tag,model_helpdesk_tag,base.group_user,permission,r,,,,,
+access_helpdesk_sla_internal_user,helpdesk.sla,model_helpdesk_sla,base.group_user,permission,r,,,,,
+access_helpdesk_sla_status_internal_user,helpdesk.sla.status,model_helpdesk_sla_status,base.group_user,permission,r,,,,,
+access_helpdesk_sla_manager,helpdesk.sla.manager,model_helpdesk_sla,group_helpdesk_manager,permission,cud,,,,,
+access_helpdesk_stage_internal_user,helpdesk.stage,model_helpdesk_stage,base.group_user,permission,r,,,,,
+access_helpdesk_stage_manager,helpdesk.stage.manager,model_helpdesk_stage,group_helpdesk_manager,permission,cud,,,,,
+access_helpdesk_stage_portal,helpdesk.stage.portal,model_helpdesk_stage,base.group_portal,permission,r,,,,,
+helpdesk_portal_ticket_rule,Tickets: portal users: following,model_helpdesk_ticket,base.group_portal,permission,r,predicate,,mail.access_predicate_follows,"{""at"": """"}","[('team_privacy_visibility', '=', 'portal')]"
+helpdesk_portal_ticket_rule_2,Tickets: portal users: following (2),model_helpdesk_ticket,base.group_portal,permission,r,predicate,,mail.access_predicate_follows,"{""at"": ""team_id.""}","[('team_privacy_visibility', '=', 'portal')]"
+helpdesk_ticket_manager_rule,Helpdesk Ticket Administrator,model_helpdesk_ticket,group_helpdesk_manager,permission,crud,,,,,
+helpdesk_ticket_user_rule_group_helpdesk_user,Helpdesk Ticket User,model_helpdesk_ticket,group_helpdesk_user,permission,crud,all,,,,"[('team_id.helpdesk_privacy_visibility', '!=', 'invited_internal')]"
+helpdesk_ticket_user_rule_group_helpdesk_user_2,Helpdesk Ticket User (2),model_helpdesk_ticket,group_helpdesk_user,permission,crud,predicate,,mail.access_predicate_follows,"{""at"": ""team_id.""}",
+helpdesk_ticket_user_rule_group_helpdesk_user_3,Helpdesk Ticket User (3),model_helpdesk_ticket,group_helpdesk_user,permission,crud,predicate,,mail.access_predicate_follows,"{""at"": """"}",
+helpdesk_ticket_user_rule,Helpdesk Ticket User,model_helpdesk_ticket,base.group_user,permission,r,all,,,,"[('team_id.helpdesk_privacy_visibility', '!=', 'invited_internal')]"
+helpdesk_ticket_user_rule_2,Helpdesk Ticket User (2),model_helpdesk_ticket,base.group_user,permission,r,predicate,,mail.access_predicate_follows,"{""at"": ""team_id.""}",
+helpdesk_ticket_user_rule_3,Helpdesk Ticket User (3),model_helpdesk_ticket,base.group_user,permission,r,predicate,,mail.access_predicate_follows,"{""at"": """"}",
+helpdesk_team_public_rule,Helpdesk teams: public users,team.model_team_team,base.group_public,permission,r,all,,,,"[('use_helpdesk', '=', True)]"
+helpdesk_team_portal_rule,Helpdesk teams: portal users,team.model_team_team,base.group_portal,permission,r,all,,,,"[('use_helpdesk', '=', True)]"
+team_team_rule_helpdesk_manager,Helpdesk teams: Helpdesk Administrators,team.model_team_team,group_helpdesk_manager,permission,cud,all,,,,"[('use_helpdesk', '=', True)]"
+team_member_rule_personal_group_helpdesk_manager,Team Members: own teams,team.model_team_member,group_helpdesk_manager,permission,r,own,,,,
+team_member_rule_personal_group_helpdesk_manager_2,Team Members: own teams (2),team.model_team_member,group_helpdesk_manager,permission,r,team,,,,
+team_member_rule_helpdesk_manager,Helpdesk team members: Helpdesk Administrators,team.model_team_member,group_helpdesk_manager,permission,cud,all,,,,"[('team_id.use_helpdesk', '=', True)]"
+team_alias_rule_helpdesk_manager,Helpdesk team aliases: Helpdesk Administrators,team.model_team_alias,group_helpdesk_manager,permission,cud,all,,,,"[('team_id.use_helpdesk', '=', True)]"
+helpdesk_sla_report_analysis_rule_user_group_helpdesk_manager,Helpdesk SLA Report: Helpdesk Ticket User,model_helpdesk_sla_report_analysis,group_helpdesk_manager,permission,r,all,,,,"[('team_id.helpdesk_privacy_visibility', '!=', 'invited_internal')]"
+helpdesk_sla_report_analysis_rule_user_group_helpdesk_manager_2,Helpdesk SLA Report: Helpdesk Ticket User (2),model_helpdesk_sla_report_analysis,group_helpdesk_manager,permission,r,predicate,,mail.access_predicate_follows,"{""at"": ""team_id.""}",
+helpdesk_sla_report_analysis_rule_user_group_helpdesk_manager_3,Helpdesk SLA Report: Helpdesk Ticket User (3),model_helpdesk_sla_report_analysis,group_helpdesk_manager,permission,r,predicate,,mail.access_predicate_follows,"{""at"": ""ticket_id.""}",
+helpdesk_sla_report_analysis_rule_user,Helpdesk SLA Report: Helpdesk Ticket User,model_helpdesk_sla_report_analysis,group_helpdesk_user,permission,r,all,,,,"[('team_id.helpdesk_privacy_visibility', '!=', 'invited_internal')]"
+helpdesk_sla_report_analysis_rule_user_2,Helpdesk SLA Report: Helpdesk Ticket User (2),model_helpdesk_sla_report_analysis,group_helpdesk_user,permission,r,predicate,,mail.access_predicate_follows,"{""at"": ""team_id.""}",
+helpdesk_sla_report_analysis_rule_user_3,Helpdesk SLA Report: Helpdesk Ticket User (3),model_helpdesk_sla_report_analysis,group_helpdesk_user,permission,r,predicate,,mail.access_predicate_follows,"{""at"": ""ticket_id.""}",
+access_mail_activity_type_helpdesk_manager,mail.activity.type.helpdesk.manager,mail.model_mail_activity_type,group_helpdesk_manager,permission,cud,,,,,
+helpdesk_ticket_report_analysis_rule_manager,Helpdesk Ticket Report: Helpdesk Ticket Administrator,model_helpdesk_ticket_report_analysis,group_helpdesk_manager,permission,r,,,,,
+helpdesk_ticket_report_analysis_rule_user,Helpdesk Ticket Report: Helpdesk Ticket User,model_helpdesk_ticket_report_analysis,group_helpdesk_user,permission,r,all,,,,"[('team_id.helpdesk_privacy_visibility', '!=', 'invited_internal')]"
+helpdesk_ticket_report_analysis_rule_user_2,Helpdesk Ticket Report: Helpdesk Ticket User (2),model_helpdesk_ticket_report_analysis,group_helpdesk_user,permission,r,predicate,,mail.access_predicate_follows,"{""at"": ""team_id.""}",
+helpdesk_ticket_report_analysis_rule_user_3,Helpdesk Ticket Report: Helpdesk Ticket User (3),model_helpdesk_ticket_report_analysis,group_helpdesk_user,permission,r,predicate,,mail.access_predicate_follows,"{""at"": ""ticket_id.""}",
+access_helpdesk_stage_delete_wizard,wizard.helpdesk.stage.delete,model_wizard_helpdesk_stage_delete,group_helpdesk_manager,permission,cru,,,,,
+access_helpdesk_tag_assignment,access_helpdesk_tag_assignment,model_helpdesk_tag_assignment,group_helpdesk_manager,permission,crud,,,,,
+helpdesk_ticket_company_rule,Ticket: multi-company,model_helpdesk_ticket,base.group_everyone,guard,crud,company,,,,
+helpdesk_sla_company_rule,SLA: multi-company,model_helpdesk_sla,base.group_everyone,guard,crud,company,,,,
+helpdesk_sla_report_analysis_rule_manager,Helpdesk SLA Report: multi-company,model_helpdesk_sla_report_analysis,base.group_everyone,guard,crud,company,,,,
+helpdesk_ticket_report_analysis_rule_multi_company,Helpdesk Ticket Report: multi-company,model_helpdesk_ticket_report_analysis,base.group_everyone,guard,crud,company,,,,

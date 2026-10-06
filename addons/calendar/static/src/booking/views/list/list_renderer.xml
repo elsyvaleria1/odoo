@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates id="template" xml:space="preserve">
+    <t t-name="calendar.booking.AppointmentBookingListRenderer" t-inherit="web.ListRenderer" t-inherit-mode="primary">
+        <xpath expr="//div/table" position="before">
+            <button
+            t-if="this.isAppointmentManager and this.isResourceView"
+            class="o_appointment_booking_list_button_add_leaves btn btn-primary mx-3 mt-2"
+            t-att-class="{'btn-sm btn-link p-1': this.ui.isSmall}"
+            t-on-click="this.onClickAddLeave">Add Closing Day(s)</button>
+        </xpath>
+    </t>
+
+    <t t-name="calendar.booking.AppointmentTypeListRenderer" t-inherit="web.ListRenderer" t-inherit-mode="primary">
+        <EmptyState position="replace">
+            <t t-if="this.showNoContentHelper">
+                <AppointmentTypeActionHelper/>
+            </t>
+        </EmptyState>
+    </t>
+</templates>

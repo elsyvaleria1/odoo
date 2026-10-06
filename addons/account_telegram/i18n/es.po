@@ -1,0 +1,593 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* account_telegram
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: es\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: account_telegram
+#. odoo-python
+#: code:addons/account_telegram/models/telegram_handler.py:0
+msgid "/edocliente - Look up a customer's account statement."
+msgstr "/edocliente - Consulta el estado de cuenta de un cliente."
+
+#. module: account_telegram
+#. odoo-python
+#: code:addons/account_telegram/models/telegram_handler.py:0
+msgid "/estadoctapropio - Get your account statement for this year."
+msgstr "/estadoctapropio - Obtén tu estado de cuenta del año actual."
+
+#. module: account_telegram
+#. odoo-python
+#: code:addons/account_telegram/models/telegram_handler.py:0
+msgid "/estadocuentaperiodo - Choose a specific period."
+msgstr "/estadocuentaperiodo - Selecciona un periodo específico."
+
+#. module: account_telegram
+#. odoo-python
+#: code:addons/account_telegram/models/telegram_handler.py:0
+msgid ""
+"Account statement for <b>{partner_name}</b>\n"
+"Period: {date_from} to {date_to}"
+msgstr ""
+"Estado de cuenta para <b>{partner_name}</b>\n"
+"Período: {date_from} al {date_to}"
+
+#. module: account_telegram
+#. odoo-python
+#: code:addons/account_telegram/models/telegram_handler.py:0
+msgid ""
+"An error occurred while generating the account statement. Please try again "
+"later."
+msgstr ""
+"Ocurrió un error al generar el estado de cuenta. Por favor, inténtalo más "
+"tarde."
+
+#. module: account_telegram
+#: model:ir.model.fields,field_description:account_telegram.field_telegram_financial_report_log__chat_id
+msgid "Chat Session"
+msgstr "Sesión de chat"
+
+#. module: account_telegram
+#: model:ir.model.fields,field_description:account_telegram.field_telegram_financial_report_log__create_uid
+msgid "Created by"
+msgstr "Creado por"
+
+#. module: account_telegram
+#: model:ir.model.fields,field_description:account_telegram.field_telegram_financial_report_log__create_date
+msgid "Created on"
+msgstr "Creado el"
+
+#. module: account_telegram
+#. odoo-python
+#: code:addons/account_telegram/models/telegram_handler.py:0
+msgid "Current year"
+msgstr "Año actual"
+
+#. module: account_telegram
+#: model:ir.actions.act_window,name:account_telegram.action_telegram_financial_report_log
+#: model:ir.ui.menu,name:account_telegram.menu_telegram_financial_report_log
+#: model_terms:ir.ui.view,arch_db:account_telegram.view_telegram_financial_report_log_list
+msgid "Customer Portal Bot Reports"
+msgstr "Reportes del bot del portal de clientes"
+
+#. module: account_telegram
+#: model:ir.model.fields,field_description:account_telegram.field_telegram_financial_report_log__date
+#: model_terms:ir.ui.view,arch_db:account_telegram.view_telegram_financial_report_log_search
+msgid "Date"
+msgstr "Fecha"
+
+#. module: account_telegram
+#: model:ir.model.fields,field_description:account_telegram.field_telegram_financial_report_log__success
+#: model_terms:ir.ui.view,arch_db:account_telegram.view_telegram_financial_report_log_search
+msgid "Delivered"
+msgstr "Entregado"
+
+#. module: account_telegram
+#: model:ir.model.fields,field_description:account_telegram.field_telegram_financial_report_log__display_name
+#: model:ir.model.fields,field_description:account_telegram.field_telegram_handler_account__display_name
+msgid "Display Name"
+msgstr "Nombre en pantalla"
+
+#. module: account_telegram
+#. odoo-python
+#: code:addons/account_telegram/models/telegram_handler.py:0
+msgid "Error computing the period. Please try again."
+msgstr "Error al calcular el período. Por favor intenta de nuevo."
+
+#. module: account_telegram
+#. odoo-python
+#: code:addons/account_telegram/models/telegram_handler.py:0
+msgid "Error processing the selection. Please try again with /edocliente"
+msgstr ""
+"Error al procesar la selección. Por favor intenta de nuevo con /edocliente"
+
+#. module: account_telegram
+#: model_terms:ir.ui.view,arch_db:account_telegram.view_telegram_financial_report_log_search
+msgid "Failed"
+msgstr "Fallido"
+
+#. module: account_telegram
+#. odoo-python
+#: code:addons/account_telegram/models/telegram_handler.py:0
+msgid "Financial Commands"
+msgstr "Comandos Financieros"
+
+#. module: account_telegram
+#. odoo-python
+#: code:addons/account_telegram/models/telegram_handler.py:0
+msgid ""
+"Generating the account statement for the period {date_from} to {date_to}...\n"
+"Please wait a moment."
+msgstr ""
+"Generando estado de cuenta para el período {date_from} al {date_to}...\n"
+"Por favor espera un momento."
+
+#. module: account_telegram
+#: model:ir.model.fields,field_description:account_telegram.field_telegram_financial_report_log__id
+#: model:ir.model.fields,field_description:account_telegram.field_telegram_handler_account__id
+msgid "ID"
+msgstr "ID"
+
+#. module: account_telegram
+#. odoo-python
+#: code:addons/account_telegram/models/telegram_handler.py:0
+msgid "Last 3 months"
+msgstr "Últimos 3 meses"
+
+#. module: account_telegram
+#. odoo-python
+#: code:addons/account_telegram/models/telegram_handler.py:0
+msgid "Last 6 months"
+msgstr "Último semestre"
+
+#. module: account_telegram
+#: model:ir.model.fields,field_description:account_telegram.field_telegram_financial_report_log__write_uid
+msgid "Last Updated by"
+msgstr "Última actualización por"
+
+#. module: account_telegram
+#: model:ir.model.fields,field_description:account_telegram.field_telegram_financial_report_log__write_date
+msgid "Last Updated on"
+msgstr "Última actualización el"
+
+#. module: account_telegram
+#. odoo-python
+#: code:addons/account_telegram/models/telegram_handler.py:0
+msgid "Last month"
+msgstr "Último mes"
+
+#. module: account_telegram
+#: model:ir.model.fields.selection,name:account_telegram.selection__telegram_financial_report_log__requester_role__manager
+msgid "Manager"
+msgstr "Gerente"
+
+#. module: account_telegram
+#: model_terms:ir.ui.view,arch_db:account_telegram.view_telegram_financial_report_log_search
+msgid "Manager Requests"
+msgstr "Solicitudes de gerente"
+
+#. module: account_telegram
+#. odoo-python
+#: code:addons/account_telegram/models/telegram_handler.py:0
+msgid ""
+"No customers with transactions matched '<b>{search}</b>'.\n"
+"\n"
+"Try another search term, or type /cancelar to exit."
+msgstr ""
+"No se encontraron clientes con transacciones que coincidan con '<b>{search}</b>'.\n"
+"\n"
+"Intenta con otro término de búsqueda o escribe /cancelar para salir."
+
+#. module: account_telegram
+#. odoo-python
+#: code:addons/account_telegram/models/telegram_handler.py:0
+msgid "No receivable transactions were found for customer <b>{name}</b>."
+msgstr ""
+"No se encontraron movimientos por cobrar para el cliente <b>{name}</b>."
+
+#. module: account_telegram
+#. odoo-python
+#: code:addons/account_telegram/models/telegram_handler.py:0
+msgid "No receivable transactions were found for your account."
+msgstr "No se encontraron movimientos por cobrar para tu cuenta."
+
+#. module: account_telegram
+#: model_terms:ir.actions.act_window,help:account_telegram.action_telegram_financial_report_log
+msgid "No reports generated yet"
+msgstr "Todavía no se han generado reportes"
+
+#. module: account_telegram
+#: model:ir.model.fields,help:account_telegram.field_telegram_financial_report_log__requester_partner_id
+msgid "Odoo Contact who requested and received the PDF"
+msgstr "Contacto de Odoo que solicitó y recibió el PDF"
+
+#. module: account_telegram
+#: model:ir.model.fields,field_description:account_telegram.field_telegram_financial_report_log__date_from
+msgid "Period From"
+msgstr "Periodo desde"
+
+#. module: account_telegram
+#: model:ir.model.fields,field_description:account_telegram.field_telegram_financial_report_log__date_to
+msgid "Period To"
+msgstr "Periodo hasta"
+
+#. module: account_telegram
+#. odoo-python
+#: code:addons/account_telegram/models/telegram_handler.py:0
+msgid "Please enter at least 2 characters to search."
+msgstr "Por favor ingresa al menos 2 caracteres para buscar."
+
+#. module: account_telegram
+#. odoo-python
+#: code:addons/account_telegram/models/telegram_handler.py:0
+msgid "Previous year"
+msgstr "Año anterior"
+
+#. module: account_telegram
+#: model_terms:ir.ui.view,arch_db:account_telegram.view_telegram_financial_report_log_form
+msgid "Report Details"
+msgstr "Detalles del reporte"
+
+#. module: account_telegram
+#: model_terms:ir.ui.view,arch_db:account_telegram.view_telegram_financial_report_log_list
+msgid "Report For"
+msgstr "Reporte de"
+
+#. module: account_telegram
+#: model_terms:ir.ui.view,arch_db:account_telegram.view_telegram_financial_report_log_form
+msgid "Report Log"
+msgstr "Registro de reportes"
+
+#. module: account_telegram
+#: model:ir.model.fields,field_description:account_telegram.field_telegram_financial_report_log__target_partner_id
+#: model_terms:ir.ui.view,arch_db:account_telegram.view_telegram_financial_report_log_search
+msgid "Report Subject"
+msgstr "Cliente del reporte"
+
+#. module: account_telegram
+#: model:ir.ui.menu,name:account_telegram.menu_telegram_bot_reports
+msgid "Reports"
+msgstr "Reportes"
+
+#. module: account_telegram
+#: model_terms:ir.ui.view,arch_db:account_telegram.view_telegram_financial_report_log_form
+msgid "Request Information"
+msgstr "Información de la solicitud"
+
+#. module: account_telegram
+#: model_terms:ir.ui.view,arch_db:account_telegram.view_telegram_financial_report_log_list
+msgid "Requested By"
+msgstr "Solicitado por"
+
+#. module: account_telegram
+#: model:ir.model.fields,field_description:account_telegram.field_telegram_financial_report_log__requester_partner_id
+#: model_terms:ir.ui.view,arch_db:account_telegram.view_telegram_financial_report_log_search
+msgid "Requester"
+msgstr "Solicitante"
+
+#. module: account_telegram
+#: model:ir.model.fields,field_description:account_telegram.field_telegram_financial_report_log__requester_role
+msgid "Requester Role"
+msgstr "Rol del solicitante"
+
+#. module: account_telegram
+#: model_terms:ir.ui.view,arch_db:account_telegram.view_telegram_financial_report_log_search
+msgid "Role"
+msgstr "Rol"
+
+#. module: account_telegram
+#: model:ir.model.fields,help:account_telegram.field_telegram_financial_report_log__requester_role
+msgid "Role of the requester at the time of the request"
+msgstr "Rol del solicitante al momento de la solicitud"
+
+#. module: account_telegram
+#: model_terms:ir.ui.view,arch_db:account_telegram.view_telegram_financial_report_log_search
+msgid "Search Reports"
+msgstr "Buscar reportes"
+
+#. module: account_telegram
+#: model:ir.model.fields,field_description:account_telegram.field_telegram_financial_report_log__is_self_request
+msgid "Self Request"
+msgstr "Solicitud propia"
+
+#. module: account_telegram
+#: model_terms:ir.ui.view,arch_db:account_telegram.view_telegram_financial_report_log_search
+msgid "Self Requests"
+msgstr "Solicitudes propias"
+
+#. module: account_telegram
+#: model:ir.model.fields,field_description:account_telegram.field_telegram_financial_report_log__telegram_chat_id
+msgid "Telegram Chat ID"
+msgstr "ID del chat de Telegram"
+
+#. module: account_telegram
+#: model_terms:ir.ui.view,arch_db:account_telegram.view_telegram_financial_report_log_form
+msgid "Telegram Details"
+msgstr "Detalles de Telegram"
+
+#. module: account_telegram
+#: model:ir.model,name:account_telegram.model_telegram_financial_report_log
+msgid "Telegram Financial Report Log"
+msgstr "Registro de reportes financieros de Telegram"
+
+#. module: account_telegram
+#: model:ir.model,name:account_telegram.model_telegram_handler_account
+msgid "Telegram: Account Statements"
+msgstr "Telegram: estados de cuenta"
+
+#. module: account_telegram
+#. odoo-python
+#: code:addons/account_telegram/models/telegram_handler.py:0
+msgid ""
+"The /estadoctapropio command generates the current year report.\n"
+"\n"
+"To choose a specific period, use /estadocuentaperiodo"
+msgstr ""
+"El comando /estadoctapropio genera el reporte del año actual.\n"
+"\n"
+"Para seleccionar un periodo específico, usa /estadocuentaperiodo"
+
+#. module: account_telegram
+#. odoo-python
+#: code:addons/account_telegram/models/telegram_handler.py:0
+msgid "The PDF file could not be generated"
+msgstr "No se pudo generar el archivo PDF"
+
+#. module: account_telegram
+#. odoo-python
+#: code:addons/account_telegram/models/telegram_handler.py:0
+msgid "The statement could not be limited to this customer in the bot's company"
+msgstr ""
+"No se pudo limitar el estado de cuenta a este cliente en la empresa del bot"
+
+#. module: account_telegram
+#: model:ir.model.fields,help:account_telegram.field_telegram_financial_report_log__telegram_chat_id
+msgid "The Telegram chat ID where the report was sent"
+msgstr "ID del chat de Telegram al que se envió el reporte"
+
+#. module: account_telegram
+#. odoo-python
+#: code:addons/account_telegram/models/telegram_handler.py:0
+msgid "The generated content is not a valid PDF"
+msgstr "El contenido generado no es un PDF válido"
+
+#. module: account_telegram
+#: model:ir.model.fields,help:account_telegram.field_telegram_financial_report_log__target_partner_id
+msgid "The partner whose account statement was generated"
+msgstr "El contacto cuyo estado de cuenta se generó"
+
+#. module: account_telegram
+#. odoo-python
+#: code:addons/account_telegram/models/telegram_handler.py:0
+msgid ""
+"The selected customer no longer exists. Please try again with /edocliente"
+msgstr ""
+"El cliente seleccionado ya no existe. Por favor intenta de nuevo con "
+"/edocliente"
+
+#. module: account_telegram
+#. odoo-python
+#: code:addons/account_telegram/models/telegram_handler.py:0
+msgid "The session has expired. Please use /edocliente to start again."
+msgstr ""
+"La sesión ha expirado. Por favor usa /edocliente para iniciar de nuevo."
+
+#. module: account_telegram
+#: model_terms:ir.actions.act_window,help:account_telegram.action_telegram_financial_report_log
+msgid ""
+"This view shows all Partner Ledger reports sent via the Telegram Customer "
+"Portal Bot."
+msgstr ""
+"Esta vista muestra todos los estados de cuenta (libro mayor del contacto) "
+"enviados por el bot del portal de clientes de Telegram."
+
+#. module: account_telegram
+#: model:ir.model.fields,help:account_telegram.field_telegram_financial_report_log__is_self_request
+msgid "True if the requester requested their own statement"
+msgstr "Verdadero si el solicitante pidió su propio estado de cuenta"
+
+#. module: account_telegram
+#: model:ir.model.fields.selection,name:account_telegram.selection__telegram_financial_report_log__requester_role__user
+msgid "User"
+msgstr "Usuario"
+
+#. module: account_telegram
+#: model:ir.model.fields,help:account_telegram.field_telegram_financial_report_log__success
+msgid "Whether the PDF was successfully sent to the user"
+msgstr "Indica si el PDF se envió correctamente al usuario"
+
+#. module: account_telegram
+#. odoo-python
+#: code:addons/account_telegram/models/telegram_handler.py:0
+msgid ""
+"You do not have permission to generate this report. Contact the "
+"administrator."
+msgstr ""
+"No tienes permisos para generar este reporte. Contacta al administrador."
+
+#. module: account_telegram
+#. odoo-python
+#: code:addons/account_telegram/models/telegram_handler.py:0
+msgid ""
+"Your Telegram account is not connected to Odoo. In Odoo, open My Preferences"
+" and press Connect Telegram, or ask an administrator for an invitation."
+msgstr ""
+"Tu cuenta de Telegram no está conectada a Odoo. En Odoo, abre Mis "
+"preferencias y pulsa Conectar Telegram, o pide una invitación a un "
+"administrador."
+
+#. module: account_telegram
+#. odoo-python
+#: code:addons/account_telegram/models/telegram_handler.py:0
+msgid "an account statement request"
+msgstr "una solicitud de estado de cuenta"
+
+#. module: account_telegram
+#. odoo-python
+#: code:addons/account_telegram/models/telegram_handler.py:0
+msgid ""
+"⛔ Only a linked Odoo user can look up another customer's account statement."
+msgstr ""
+"⛔ Solo un usuario de Odoo vinculado puede consultar el estado de cuenta de "
+"otro cliente."
+
+#. module: account_telegram
+#. odoo-python
+#: code:addons/account_telegram/models/telegram_handler.py:0
+msgid ""
+"✅ Selected customer: <b>{partner_name}</b>\n"
+"\n"
+"📅 Choose the period for the account statement:"
+msgstr ""
+"✅ Cliente seleccionado: <b>{partner_name}</b>\n"
+"\n"
+"📅 Selecciona el periodo para el estado de cuenta:"
+
+#. module: account_telegram
+#. odoo-python
+#: code:addons/account_telegram/models/telegram_handler.py:0
+msgid ""
+"✅ Start date: <b>{date_from}</b>\n"
+"\n"
+"Now enter the <b>end date</b> in YYYY-MM-DD format\n"
+"Example: <code>2024-12-31</code>"
+msgstr ""
+"✅ Fecha de inicio: <b>{date_from}</b>\n"
+"\n"
+"Ahora ingresa la <b>fecha final</b> en formato YYYY-MM-DD\n"
+"Ejemplo: <code>2024-12-31</code>"
+
+#. module: account_telegram
+#. odoo-python
+#: code:addons/account_telegram/models/telegram_handler.py:0
+msgid ""
+"❌ Invalid date format.\n"
+"Please use YYYY-MM-DD (example: <code>2024-01-01</code>)"
+msgstr ""
+"❌ Formato de fecha inválido.\n"
+"Por favor, usa el formato YYYY-MM-DD (ejemplo: <code>2024-01-01</code>)"
+
+#. module: account_telegram
+#. odoo-python
+#: code:addons/account_telegram/models/telegram_handler.py:0
+msgid ""
+"❌ Invalid date format.\n"
+"Please use YYYY-MM-DD (example: <code>2024-12-31</code>)"
+msgstr ""
+"❌ Formato de fecha inválido.\n"
+"Por favor, usa el formato YYYY-MM-DD (ejemplo: <code>2024-12-31</code>)"
+
+#. module: account_telegram
+#. odoo-python
+#: code:addons/account_telegram/models/telegram_handler.py:0
+msgid ""
+"❌ The end date must be later than the start date.\n"
+"Start date: {date_from}\n"
+"Please enter a valid end date."
+msgstr ""
+"❌ La fecha final debe ser posterior a la fecha de inicio.\n"
+"Fecha de inicio: {date_from}\n"
+"Por favor, ingresa una fecha final válida."
+
+#. module: account_telegram
+#. odoo-python
+#: code:addons/account_telegram/models/telegram_handler.py:0
+msgid "📅 <b>Choose the period for your account statement:</b>"
+msgstr "📅 <b>Selecciona el periodo para tu estado de cuenta:</b>"
+
+#. module: account_telegram
+#. odoo-python
+#: code:addons/account_telegram/models/telegram_handler.py:0
+msgid ""
+"📅 <b>Custom period for {partner_name}</b>\n"
+"\n"
+"Enter the <b>start date</b> in YYYY-MM-DD format\n"
+"Example: <code>2024-01-01</code>"
+msgstr ""
+"📅 <b>Periodo personalizado para {partner_name}</b>\n"
+"\n"
+"Ingresa la <b>fecha de inicio</b> en formato YYYY-MM-DD\n"
+"Ejemplo: <code>2024-01-01</code>"
+
+#. module: account_telegram
+#. odoo-python
+#: code:addons/account_telegram/models/telegram_handler.py:0
+msgid ""
+"📅 <b>Custom period</b>\n"
+"\n"
+"Enter the <b>start date</b> in YYYY-MM-DD format\n"
+"Example: <code>2024-01-01</code>"
+msgstr ""
+"📅 <b>Periodo personalizado</b>\n"
+"\n"
+"Ingresa la <b>fecha de inicio</b> en formato YYYY-MM-DD\n"
+"Ejemplo: <code>2024-01-01</code>"
+
+#. module: account_telegram
+#. odoo-python
+#: code:addons/account_telegram/models/telegram_handler.py:0
+msgid "📆 Custom"
+msgstr "📆 Personalizado"
+
+#. module: account_telegram
+#. odoo-python
+#: code:addons/account_telegram/models/telegram_handler.py:0
+msgid ""
+"📋 <b>Results for '{search}':</b>\n"
+"\n"
+"Choose the customer whose account statement to generate:"
+msgstr ""
+"📋 <b>Resultados para '{search}':</b>\n"
+"\n"
+"Selecciona el cliente para generar su estado de cuenta:"
+
+#. module: account_telegram
+#. odoo-python
+#: code:addons/account_telegram/models/telegram_handler.py:0
+msgid ""
+"🔍 <b>Look up a customer account statement</b>\n"
+"\n"
+"Type the name, or part of the name, of the customer you want to look up:"
+msgstr ""
+"🔍 <b>Consultar estado de cuenta de cliente</b>\n"
+"\n"
+"Escribe el nombre o parte del nombre del cliente que deseas consultar:"
+
+#~ msgid "/ecmanager - Look up another customer's account statement."
+#~ msgstr "/ecmanager - Consulta el estado de cuenta de otro cliente."
+
+#~ msgid "/estadocuenta - Get your account statement for this year."
+#~ msgstr "/estadocuenta - Obtén tu estado de cuenta del año actual."
+
+#~ msgid "Error processing the selection. Please try again with /ecmanager"
+#~ msgstr ""
+#~ "Error al procesar la selección. Por favor intenta de nuevo con /ecmanager"
+
+#~ msgid ""
+#~ "The /estadocuenta command now only generates the current year report.\n"
+#~ "\n"
+#~ "To choose a specific period, use /estadocuentaperiodo"
+#~ msgstr ""
+#~ "El comando /estadocuenta ahora solo genera el reporte del año actual.\n"
+#~ "\n"
+#~ "Para seleccionar un periodo específico, usa /estadocuentaperiodo"
+
+#~ msgid ""
+#~ "The selected customer no longer exists. Please try again with /ecmanager"
+#~ msgstr ""
+#~ "El cliente seleccionado ya no existe. Por favor intenta de nuevo con "
+#~ "/ecmanager"
+
+#~ msgid "The session has expired. Please use /ecmanager to start again."
+#~ msgstr ""
+#~ "La sesión ha expirado. Por favor usa /ecmanager para iniciar de nuevo."

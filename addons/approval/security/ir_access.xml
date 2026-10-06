@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="access_approval_request_decide_approver" model="ir.access">
+        <field
+            name="name">approval.request: an approver decides, asks for a change and re-submits on a request they hold a row on</field>
+        <field name="model_id" ref="model_approval_request" />
+        <field name="group_id" ref="base.group_user" />
+        <field name="kind">permission</field>
+        <field name="anchor">approver_user</field>
+        <field name="reach">own</field>
+        <field name="verbs">approve,refuse,request_change,resubmit</field>
+    </record>
+
+    <record id="access_approval_request_decide_delegate" model="ir.access">
+        <field
+            name="name">approval.request: a delegate decides, asks for a change and re-submits on a request they stand in on</field>
+        <field name="model_id" ref="model_approval_request" />
+        <field name="group_id" ref="base.group_user" />
+        <field name="kind">permission</field>
+        <field name="anchor">approver_delegate</field>
+        <field name="reach">own</field>
+        <field name="verbs">approve,refuse,request_change,resubmit</field>
+    </record>
+
+    <record id="access_approval_request_confirm" model="ir.access">
+        <field
+            name="name">approval.request: whoever may write a request submits it</field>
+        <field name="model_id" ref="model_approval_request" />
+        <field name="group_id" ref="base.group_user" />
+        <field name="kind">permission</field>
+        <field name="reach">all</field>
+        <field name="verbs">confirm</field>
+    </record>
+
+    <record id="access_approval_request_owner" model="ir.access">
+        <field
+            name="name">approval.request: the owner re-submits after a change and cancels their request</field>
+        <field name="model_id" ref="model_approval_request" />
+        <field name="group_id" ref="base.group_user" />
+        <field name="kind">permission</field>
+        <field name="reach">own</field>
+        <field name="verbs">resubmit,cancel</field>
+    </record>
+
+    <record id="access_approval_request_owner_reset" model="ir.access">
+        <field
+            name="name">approval.request: the owner resets their request unless it was approved</field>
+        <field name="model_id" ref="model_approval_request" />
+        <field name="group_id" ref="base.group_user" />
+        <field name="kind">permission</field>
+        <field name="domain">[('state', '!=', 'approved')]</field>
+        <field name="reach">own</field>
+        <field name="verbs">reset</field>
+    </record>
+
+    <record id="access_approval_request_reopen_refusal" model="ir.access">
+        <field
+            name="name">approval.request: a refusal is reopened by whoever refused it or a later step, which the request decides</field>
+        <field name="model_id" ref="model_approval_request" />
+        <field name="group_id" ref="base.group_user" />
+        <field name="kind">permission</field>
+        <field name="domain">[('state', '=', 'refused')]</field>
+        <field name="reach">all</field>
+        <field name="verbs">reset</field>
+    </record>
+
+    <record id="access_approval_request_manager_verbs" model="ir.access">
+        <field
+            name="name">approval.request: an approval manager re-submits, cancels and resets</field>
+        <field name="model_id" ref="model_approval_request" />
+        <field name="group_id" ref="group_approval_manager" />
+        <field name="kind">permission</field>
+        <field name="verbs">resubmit,cancel,reset</field>
+    </record>
+
+</odoo>

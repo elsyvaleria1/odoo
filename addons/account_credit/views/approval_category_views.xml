@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="approval_category_form_hide_credit_limit" model="ir.ui.view">
+        <field name="name">approval.category.form.hide.credit.limit</field>
+        <field name="model">approval.category</field>
+        <field name="inherit_id" ref="approval_sale.view_approval_category_form_sale" />
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='check_credit_limit']" position="attributes">
+                <attribute name="invisible">1</attribute>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

@@ -1,0 +1,36 @@
+// @ts-check
+/** @odoo-module native */
+import {
+    StatusBarDurationField,
+    statusBarDurationField,
+} from "@mail/views/web/fields/statusbar_duration/statusbar_duration_field";
+import { registry } from "@web/core/registry";
+import { useService } from "@web/core/utils/hooks";
+import { useViewModel } from "@web/model/model";
+
+import { getRottingDaysTitle } from "./rotting_widget.js";
+export class RottingStatusBarDurationField extends StatusBarDurationField {
+    static template = "mail.RottingStatusBarDurationField";
+
+    setup() {
+        super.setup();
+        this.model = useViewModel();
+        this.ui = useService("ui");
+    }
+
+    get title() {
+        return getRottingDaysTitle(
+            this.model.config.resModel,
+            this.props.record.data.rotting_days,
+        );
+    }
+}
+
+export const rottingStatusBarDurationField = {
+    ...statusBarDurationField,
+    component: RottingStatusBarDurationField,
+};
+
+registry
+    .category("fields")
+    .add("rotting_statusbar_duration", rottingStatusBarDurationField);

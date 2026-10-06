@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <template
+        id="report_picking_batch_inherit"
+        inherit_id="stock_picking_batch.report_picking_batch">
+        <xpath expr="//div[hasclass('page')]/div[2]" position="after">
+            <div t-if="o.date_planned">
+                <strong>Scheduled Date:</strong>
+                <span t-field="o.date_planned" />
+            </div>
+            <div t-if="o.dock_id">
+                <strong>Dock:</strong>
+                <span t-field="o.dock_id" />
+            </div>
+            <div t-if="o.vehicle_id">
+                <strong>Vehicle:</strong>
+                <span t-field="o.vehicle_id" />
+            </div>
+            <div t-if="o.vehicle_model_id">
+                <strong>Vehicle Category:</strong>
+                <span t-field="o.vehicle_model_id" />
+            </div>
+            <div t-if="o.operator_id">
+                <strong>Operator:</strong>
+                <span t-field="o.operator_id" />
+            </div>
+            <div t-if="o.supervisor_id">
+                <strong>Supervisor:</strong>
+                <span t-field="o.supervisor_id" />
+            </div>
+            <div t-if="o.has_dispatch_management and o.trip_shipping_weight">
+                <strong>Planned Weight:</strong>
+                <span t-field="o.trip_shipping_weight" />
+                <t t-out="o.weight_uom_name" />
+            </div>
+            <!--
+                The sheet leaves with the driver before the trip is over, so a
+                reading that does not exist yet prints as a ruled blank. The table
+                carries no "table" class on purpose: the sequence-column xpaths
+                below anchor on the first table that has it.
+            -->
+            <table
+                t-if="o.has_dispatch_management or o.date_departure"
+                class="o_trip_dispatch o_ignore_layout_styling"
+                style="width: auto; margin-top: 0.5rem;">
+                <thead>
+                    <tr>
+                        <th />
+                        <th>Date</th>
+                        <th>Odometer <span t-field="o.odometer_uom_id" /></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Departure</strong></td>
+                        <td>
+                            <span t-if="o.date_departure" t-field="o.date_departure" />
+                            <span
+                                t-else=""
+                                style="display: inline-block; min-width: 22mm; border-bottom: 1px dotted #000;" />
+                        </td>
+                        <td>
+                            <span
+                                t-if="o.odometer_departure"
+                                t-field="o.odometer_departure" />
+                            <span
+                                t-else=""
+                                style="display: inline-block; min-width: 22mm; border-bottom: 1px dotted #000;" />
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>Return</strong></td>
+                        <td>
+                            <span t-if="o.date_return" t-field="o.date_return" />
+                            <span
+                                t-else=""
+                                style="display: inline-block; min-width: 22mm; border-bottom: 1px dotted #000;" />
+                        </td>
+                        <td>
+                            <span
+                                t-if="o.odometer_return"
+                                t-field="o.odometer_return" />
+                            <span
+                                t-else=""
+                                style="display: inline-block; min-width: 22mm; border-bottom: 1px dotted #000;" />
+                        </td>
+                    </tr>
+                </tbody>
+            </table><br />
+        </xpath>
+        <xpath expr="//table[hasclass('table')]//thead//tr//th" position="before">
+            <th>Sequence</th>
+        </xpath>
+        <xpath expr="//table[hasclass('table')]//tbody//tr//td" position="before">
+            <td>
+                <span t-field="pick.batch_sequence" />
+            </td>
+        </xpath>
+        <!-- The trip sheet rides with the load, where only the transfer and the
+            barcode that opens it matter; status and date are the office's. The
+            headers are found by name, never by their text: a translated sheet
+            has no "Status" to find. -->
+        <xpath expr="//th[@name='th_state']" position="attributes">
+            <attribute name="t-if">not o.has_dispatch_management</attribute>
+        </xpath>
+        <xpath expr="//th[@name='th_date_planned']" position="attributes">
+            <attribute name="t-if">not o.has_dispatch_management</attribute>
+        </xpath>
+        <xpath expr="//td[span[@t-field='pick.state']]" position="attributes">
+            <attribute name="t-if">not o.has_dispatch_management</attribute>
+        </xpath>
+        <xpath expr="//td[span[@t-field='pick.date_planned']]" position="attributes">
+            <attribute name="t-if">not o.has_dispatch_management</attribute>
+        </xpath>
+    </template>
+
+</odoo>

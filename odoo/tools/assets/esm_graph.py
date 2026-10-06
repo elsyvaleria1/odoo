@@ -1,0 +1,761 @@
+import functools
+import logging
+import posixpath
+import re
+import typing
+from collections import deque
+from collections.abc import Callable, Collection, Iterable, Iterator, Mapping
+from pathlib import Path
+
+from odoo.libs.asset_log import get_asset_logger, log_event
+from odoo.libs.debug_log import DebugLog
+from odoo.libs.json import scriptsafe as json
+from odoo.tools.assets import js_scan
+from odoo.tools.assets.constants import DOTTED_ASSET_EXTENSIONS as EXTENSIONS
+from odoo.tools.assets.esm_lexer import lex_module
+from odoo.tools.files import file_open, file_path
+
+_bridge_log = get_asset_logger("bridge")
+_debug = DebugLog(__name__)
+
+
+_URL_RE = re.compile(
+    r"""
+    /?(?P<module>\S+)    # /module name
+    /([\S/]*/)?static/   # ... /static/
+    (?P<type>src|tests|lib)  # src, test, or lib file
+    (?P<url>/[\S/]*)     # URL (/...)
+    """,
+    re.VERBOSE,
+)
+
+_ODOO_MODULE_RE = re.compile(
+    r"""
+    \/(\/|\*)                          # /* or //
+    .*                                 # any comment in between (optional)
+    @odoo-module                       # '@odoo-module' statement
+    (?P<ignore>\s+ignore)?             # module should not be transpiled (optional)
+    (?P<native>\s+native)?             # native ES module (optional)
+    (\s+alias=(?P<alias>[^\s*]+))?     # alias (optional)
+    (\s+default=(?P<default>[\w$]+))?  # default export control (optional)
+""",
+    re.VERBOSE,
+)
+
+
+def _parse_odoo_module_header(content: str) -> re.Match[str] | None:
+    return _ODOO_MODULE_RE.search(content[:500])
+
+
+def is_native_module(content: str) -> bool:
+    result = _parse_odoo_module_header(content)
+    return bool(result and result["native"])
+
+
+def is_odoo_module(url: str, content: str) -> bool:
+    result = _parse_odoo_module_header(content)
+    if result and (result["ignore"] or result["native"]):
+        return False
+    parts = url.split("/") if url else []
+    if len(parts) > 1:
+        addon = parts[1]
+        if url.startswith((f"/{addon}/static/src", f"/{addon}/static/tests")):
+            return True
+    return bool(result)
+
+
+def url_to_module_path(url: str) -> str:
+    match = _URL_RE.match(url)
+    if match:
+        url = match["url"]
+        if url.endswith(("/index.js", "/index")):
+            url, _ = url.rsplit("/", 1)
+        url = url.removesuffix(".js")
+        match match["type"]:
+            case "src":
+                return f"@{match['module']}{url}"
+            case "lib":
+                return f"@{match['module']}/../lib{url}"
+            case _:
+                return f"@{match['module']}/../tests{url}"
+    else:
+        raise ValueError(
+            f"The js file {url!r} must be in the folder "
+            "'/static/src' or '/static/lib' or '/static/test'"
+        )
+
+
+_MODULE_SYNTAX_RE = re.compile(
+    r"""^\s*(?:import\s*(?:["'{*]|\w+\s*(?:,|from\b))|export\b)""",
+    re.MULTILINE,
+)
+
+
+def has_module_syntax(content: str) -> bool:
+    return bool(_MODULE_SYNTAX_RE.search(js_scan.scrub(content)))
+
+
+@functools.lru_cache(maxsize=16384)
+def _cached_module_classification(
+    url: str, filename: str, last_modified: float
+) -> bool:
+    try:
+        with file_open(filename, "rb", filter_ext=EXTENSIONS) as fp:
+            content = fp.read(512).decode("utf-8", errors="ignore")
+    except OSError, ValueError:
+        _debug.logic("esm_graph.classification_unreadable", url=url)
+        return False
+    native = is_native_module(content)
+    odoo_module = not native and is_odoo_module(url, content)
+    _debug.perf.count(
+        "esm_graph.classified", url=url, native=native, odoo_module=odoo_module
+    )
+    return native or odoo_module
+
+
+_ESM_EXPORT_PATTERNS: tuple[tuple[str, str], ...] = (
+    (
+        "decl",
+        r"export\s+(?:const|let|var|function\*?|class|async\s+function\*?)\s+(\w+)",
+    ),
+    ("destructured", r"export\s+(?:const|let|var)\s*\{([^}]+)\}\s*="),
+    ("array_destructured", r"export\s+(?:const|let|var)\s*\[([^\]]+)\]\s*="),
+    ("list_from", r'export\s*\{([^}]+)\}\s*from\s*["\']([^"\']+)["\']'),
+    ("list", r"export\s*\{([^}]+)\}"),
+    ("star_from", r'export\s*\*\s*from\s*["\']([^"\']+)["\']'),
+    ("ns_from", r'export\s*\*\s*as\s+(\w+)\s*from\s*["\']([^"\']+)["\']'),
+)
+_ESM_EXPORT_PATTERNS_COMPILED: tuple[tuple[str, re.Pattern[str]], ...] = tuple(
+    (kind, re.compile(pattern)) for kind, pattern in _ESM_EXPORT_PATTERNS
+)
+_ESM_EXPORT_DEFAULT_RE_SRC = (
+    r"export\s+default(?:\s+(?:async\s+)?(?:function\*?|class)(?:\s+\w+)?)?"
+)
+_ESM_EXPORT_DEFAULT_RE = re.compile(_ESM_EXPORT_DEFAULT_RE_SRC)
+
+# The keyword comes first and the "not part of a longer name" guard follows it
+# as fixed-width lookbehinds: a pattern that opens with a lookbehind cannot use
+# re's literal-prefix skip and is evaluated at every character (2.6x slower on
+# the 21 MB addons corpus, identical matches).
+_TRANSITIVE_IMPORT_RE = re.compile(
+    r"(?:import|export)(?<![\w$.]import)(?<![\w$.]export)\s*"
+    r"[\w$*{},\s]{0,2000}?"
+    r"\bfrom\s*"
+    r"""["'](?P<spec>[^"'\n]+)["']"""
+    r"""|import(?<![\w$.]import)\s*["'](?P<side>[^"'\n]+)["']"""
+)
+
+
+_DYNAMIC_IMPORT_RE = re.compile(
+    r"""import(?<![\w$.]import)\s*\(\s*["'](?P<spec>[^"'\n]+)["']\s*\)"""
+)
+
+
+def _get_import_specifiers(src: str, *, dynamic: bool = False) -> set[str]:
+    lexed = lex_module(src)
+    if lexed is not None:
+        specs = {imp["n"] for imp in lexed["imports"]}
+        specs.update(lexed.get("starFrom") or ())
+        specs.update(lexed.get("reexportFrom") or ())
+        if dynamic:
+            specs.update(lexed.get("specifiers") or ())
+        return specs
+    scrubbed = js_scan.scrub(src)
+    specs = {
+        match.group("spec") or match.group("side")
+        for match in _TRANSITIVE_IMPORT_RE.finditer(scrubbed)
+    }
+    if dynamic:
+        specs.update(match["spec"] for match in _DYNAMIC_IMPORT_RE.finditer(scrubbed))
+    _debug.logic(
+        "esm_graph.imports_by_regex", source_bytes=len(src), specifiers=len(specs)
+    )
+    return specs
+
+
+def get_escaping_relative_imports(
+    modules: Iterable,
+    member_specs: Collection[str] | None = None,
+) -> list[tuple[str, str, str]]:
+    modules = list(modules)
+    if member_specs is None:
+        member_specs = {m.module_path for m in modules}
+    escapes: list[tuple[str, str, str]] = []
+    for module in modules:
+        specs = _get_import_specifiers(module.raw_content)
+        for spec in sorted(specs):
+            if not spec.startswith("."):
+                continue
+            resolved = _resolve_export_specifier(
+                module.module_path, spec, getattr(module, "url", "") or None
+            )
+            if resolved and resolved not in member_specs:
+                escapes.append((module.module_path, spec, resolved))
+    _debug.pipeline(
+        "esm_graph.escaping_imports",
+        modules=len(modules),
+        members=len(member_specs),
+        escapes=len(escapes),
+    )
+    return escapes
+
+
+def discover_transitive_import_specifiers(
+    seed_specifiers: Iterable[str],
+    known_specifiers: Collection[str],
+    ext_libs: Mapping[str, str],
+    bundle_name: str = "",
+) -> set[str]:
+    return _walk_imports(seed_specifiers, known_specifiers, ext_libs, bundle_name)[0]
+
+
+def reachable_module_sources(
+    seed_specifiers: Iterable[str],
+    known_specifiers: Collection[str],
+    ext_libs: Mapping[str, str],
+    bundle_name: str = "",
+    *,
+    dynamic: bool = False,
+    modules: Iterable = (),
+) -> dict[str, tuple[str, str]]:
+    return _walk_imports(
+        seed_specifiers,
+        known_specifiers,
+        ext_libs,
+        bundle_name,
+        dynamic=dynamic,
+        modules=modules,
+    )[1]
+
+
+def _walk_imports(
+    seed_specifiers: Iterable[str],
+    known_specifiers: Collection[str],
+    ext_libs: Mapping[str, str],
+    bundle_name: str,
+    *,
+    dynamic: bool = False,
+    modules: Iterable = (),
+) -> tuple[set[str], dict[str, tuple[str, str]]]:
+    resolver = _BridgeExportResolver(ext_libs, bundle_name)
+    resolver.hold(modules)
+    known = set(known_specifiers) | set(ext_libs) | {"@odoo/owl"}
+    discovered: set[str] = set()
+    sources: dict[str, tuple[str, str]] = {}
+    queue: deque[str] = deque(seed_specifiers)
+    scanned: set[str] = set(queue)
+    while queue:
+        spec = queue.popleft()
+        src = resolver.read_source(spec)
+        if src is None:
+            continue
+        sources[spec] = (resolver.effective_url(spec) or spec, src)
+        for target in sorted(_get_import_specifiers(src, dynamic=dynamic)):
+            if target.startswith("."):
+                abs_spec = _resolve_export_specifier(
+                    spec, target, resolver.effective_url(spec)
+                )
+                # a relative import of a module the map already answers for
+                # (a bridge to the page's copy) is that copy's business: its
+                # own imports are not ours to serve
+                if abs_spec and abs_spec not in scanned and abs_spec not in known:
+                    scanned.add(abs_spec)
+                    queue.append(abs_spec)
+                continue
+            if not target.startswith("@") or target in known or target in discovered:
+                continue
+            discovered.add(target)
+            scanned.add(target)
+            queue.append(target)
+    if discovered:
+        log_event(
+            _bridge_log,
+            logging.DEBUG,
+            "transitive_specifiers",
+            bundle=bundle_name,
+            seeds=len(scanned),
+            discovered=len(discovered),
+        )
+    _debug.pipeline(
+        "esm_graph.transitive_walk",
+        bundle=bundle_name,
+        known=len(known),
+        scanned=len(scanned),
+        discovered=sorted(discovered),
+    )
+    return discovered, sources
+
+
+def _source_map_url(source_map: object, spec: str | None) -> str | None:
+    if not spec:
+        return None
+    for attr in ("effective_url", "resolve_url"):
+        resolve = getattr(source_map, attr, None)
+        if callable(resolve):
+            return resolve(spec)
+    return None
+
+
+def _resolve_relative_url(importing_url: str, target_path: str) -> str | None:
+    joined = posixpath.normpath(
+        posixpath.join(posixpath.dirname(importing_url), target_path)
+    )
+    try:
+        return url_to_module_path(joined)
+    except ValueError:
+        return None
+
+
+def _resolve_export_specifier(
+    importing_specifier: str | None,
+    target_path: str,
+    importing_url: str | None = None,
+) -> str | None:
+    if not target_path.startswith("."):
+        return target_path.removesuffix(".js")
+    # a specifier is not a directory: "@x/models/related_models" names
+    # related_models/index.js, whose siblings live under related_models/, so a
+    # relative import resolves against the file's url when it is known, and
+    # against the url the specifier names when it is not
+    if not importing_url and importing_specifier:
+        importing_url = addon_specifier_to_url(importing_specifier)
+    if importing_url:
+        resolved = _resolve_relative_url(importing_url, target_path)
+        if resolved is not None:
+            return resolved
+    if not importing_specifier or not importing_specifier.startswith("@"):
+        return None
+    addon, _, rest = importing_specifier.partition("/")
+    relative = posixpath.normpath(
+        posixpath.join(posixpath.dirname(rest) or ".", target_path)
+    )
+    # a path climbing out of the addon is kept inside it, as it always was:
+    # the escape check must still see it and name it
+    while relative.startswith("../"):
+        relative = relative[3:]
+    if relative in (".", ".."):
+        return addon
+    return f"{addon}/{relative}".removesuffix(".js").removesuffix("/index")
+
+
+class ModuleSourceMap:
+    __slots__ = ("_sources", "_urls")
+
+    def __init__(self, modules: Iterable) -> None:
+        modules = list(modules)
+        self._sources = {m.module_path: m.raw_content for m in modules}
+        self._urls = {m.module_path: m.url for m in modules if getattr(m, "url", None)}
+
+    def get(self, key: str, default: str | None = None) -> str | None:
+        return self._sources.get(key, default)
+
+    def effective_url(self, spec: str) -> str | None:
+        return self._urls.get(spec)
+
+
+class _SourceMap(typing.Protocol):
+    def get(self, key: str, /) -> str | None: ...
+
+
+def _extract_esm_exports(
+    src: str,
+    source_map: _SourceMap | None = None,
+    importing_specifier: str | None = None,
+    importing_url: str | None = None,
+    _exports_cache: dict[str, set[str]] | None = None,
+) -> tuple[set[str], bool]:
+    stack = [importing_specifier] if importing_specifier else []
+    names, has_default, _reach = _exports_walk(
+        src, source_map, importing_specifier, importing_url, stack, _exports_cache
+    )
+    return names, has_default
+
+
+def _exports_walk(
+    src: str,
+    source_map: _SourceMap | None,
+    importing_specifier: str | None,
+    importing_url: str | None,
+    stack: list[str],
+    exports_cache: dict[str, set[str]] | None,
+) -> tuple[set[str], bool, int]:
+    # the third value is the shallowest stack depth a star cycle reached from
+    # here: a result that a cycle cut short of an ancestor's names is partial,
+    # and only the ancestor that closes the cycle may cache its own
+    walk = _ExportsWalk(
+        source_map, importing_specifier, importing_url, stack, exports_cache
+    )
+    return walk.run(src)
+
+
+def _export_list_tokens(listing: str) -> Iterator[str]:
+    for raw in listing.split(","):
+        token = raw.strip().split(" as ")[-1]
+        if ":" in token:
+            token = token.rsplit(":", 1)[-1]
+        if "=" in token:
+            token = token.split("=", 1)[0]
+        yield token.strip().removeprefix("...").strip()
+
+
+class _ExportsWalk:
+    __slots__ = (
+        "exports_cache",
+        "has_default",
+        "importing_specifier",
+        "importing_url",
+        "names",
+        "reach",
+        "source_map",
+        "stack",
+    )
+
+    def __init__(
+        self,
+        source_map: _SourceMap | None,
+        importing_specifier: str | None,
+        importing_url: str | None,
+        stack: list[str],
+        exports_cache: dict[str, set[str]] | None,
+    ) -> None:
+        self.source_map = source_map
+        self.importing_specifier = importing_specifier
+        self.importing_url = importing_url
+        self.stack = stack
+        self.exports_cache = exports_cache
+        self.names: set[str] = set()
+        self.reach = len(stack)
+        self.has_default = False
+
+    def run(self, src: str) -> tuple[set[str], bool, int]:
+        lexed = lex_module(src)
+        if lexed is not None:
+            self.names.update(lexed["names"])
+            for raw_target in lexed["starFrom"]:
+                self.expand_star(raw_target)
+            return self.names, lexed["hasDefault"], self.reach
+        src = js_scan.scrub(src)
+        self.has_default = bool(_ESM_EXPORT_DEFAULT_RE.search(src))
+        for kind, pattern in _ESM_EXPORT_PATTERNS_COMPILED:
+            handler = self._REGEX_HANDLERS.get(kind)
+            if handler is None:
+                continue
+            for match in pattern.finditer(src):
+                handler(self, match.group(1))
+        _debug.logic(
+            "esm_graph.exports_by_regex",
+            source_bytes=len(src),
+            names=len(self.names),
+            default=self.has_default,
+        )
+        return self.names, self.has_default, self.reach
+
+    def add_name(self, name: str) -> None:
+        self.names.add(name)
+
+    def add_list(self, listing: str) -> None:
+        for token in _export_list_tokens(listing):
+            if token == "default":
+                self.has_default = True
+            elif token:
+                self.names.add(token)
+
+    def _cached_or_cyclic(self, target_spec: str) -> bool:
+        if self.exports_cache is not None and target_spec in self.exports_cache:
+            self.names.update(self.exports_cache[target_spec])
+            return True
+        if target_spec in self.stack:
+            self.reach = min(self.reach, self.stack.index(target_spec))
+            return True
+        return False
+
+    def expand_star(self, raw_target: str) -> None:
+        target_spec = _resolve_export_specifier(
+            self.importing_specifier, raw_target, self.importing_url
+        )
+        if not target_spec or self._cached_or_cyclic(target_spec):
+            return
+        if self.source_map is None:
+            return
+        target_src = self.source_map.get(target_spec)
+        if target_src is None:
+            return
+        depth = len(self.stack)
+        self.stack.append(target_spec)
+        try:
+            child_names, _default, child_reach = _exports_walk(
+                target_src,
+                self.source_map,
+                target_spec,
+                _source_map_url(self.source_map, target_spec),
+                self.stack,
+                self.exports_cache,
+            )
+        finally:
+            self.stack.pop()
+        self.names.update(child_names)
+        if child_reach < depth:
+            self.reach = min(self.reach, child_reach)
+            _debug.logic(
+                "esm_graph.star_cycle_partial", spec=target_spec, names=len(child_names)
+            )
+        elif self.exports_cache is not None:
+            self.exports_cache[target_spec] = child_names
+
+    _REGEX_HANDLERS: typing.ClassVar[dict[str, Callable[[_ExportsWalk, str], None]]] = {
+        "decl": add_name,
+        "list": add_list,
+        "destructured": add_list,
+        "array_destructured": add_list,
+        "list_from": add_list,
+        "ns_from": add_name,
+        "star_from": expand_star,
+    }
+
+
+def addon_specifier_to_url(spec: str) -> str | None:
+    if not spec.startswith("@"):
+        return None
+    rest = spec[1:]
+    slash = rest.find("/")
+    if slash <= 0:
+        return None
+    addon = rest[:slash]
+    if addon == "odoo":
+        return None
+    path = rest[slash + 1 :]
+    if path.startswith("../lib/"):
+        url = f"/{addon}/static/lib/{path[len('../lib/') :]}"
+    elif path.startswith("../tests/"):
+        url = f"/{addon}/static/tests/{path[len('../tests/') :]}"
+    else:
+        url = f"/{addon}/static/src/{path}"
+    if not url.endswith(".js"):
+        url += ".js"
+    return url
+
+
+def resolve_specifier_url(spec: str, ext_libs: Mapping[str, str]) -> str | None:
+    if (url := ext_libs.get(spec)) is not None:
+        return url
+    url = addon_specifier_to_url(spec)
+    if url is None or not url.endswith(".js"):
+        return url
+    # A specifier whose module is a directory index (`foo/index.js`) carries
+    # the directory name (`@addon/foo`); the string heuristic appends `.js` and
+    # points at a `foo.js` that does not exist, so the import map maps it to a
+    # 404 and every module the page imports through that map fails to link.
+    # Prefer `foo/index.js` when `foo.js` is absent, as `read_source` does.
+    if not _static_file_exists(url):
+        alt = f"{url[:-3]}/index.js"
+        if _static_file_exists(alt):
+            return alt
+    return url
+
+
+def _static_file_exists(url: str) -> bool:
+    # file_path memoises the paths it found, so a file removed since is only
+    # seen gone by asking the filesystem
+    try:
+        return Path(file_path(url.lstrip("/"))).is_file()
+    except FileNotFoundError, ValueError:
+        return False
+
+
+class _BridgeExportResolver:
+    __slots__ = (
+        "_bundle_name",
+        "_cache",
+        "_exports_cache",
+        "_ext_libs",
+        "_star_cache",
+        "_url_cache",
+    )
+
+    def __init__(self, ext_libs: Mapping[str, str], bundle_name: str) -> None:
+        self._ext_libs = ext_libs
+        self._bundle_name = bundle_name
+        self._cache: dict[str, str | None] = {}
+        self._exports_cache: dict[str, tuple[set[str], bool]] = {}
+        self._star_cache: dict[str, set[str]] = {}
+        self._url_cache: dict[str, str] = {}
+
+    def hold(self, modules: Iterable) -> None:
+        # the caller's modules as it read them: no second read from disk
+        for module in modules:
+            self._cache[module.module_path] = module.raw_content
+            if url := getattr(module, "url", None):
+                self._url_cache[module.module_path] = url
+
+    def resolve_url(self, spec: str) -> str | None:
+        return resolve_specifier_url(spec, self._ext_libs)
+
+    def read_source(self, spec: str) -> str | None:
+        if spec in self._cache:
+            return self._cache[spec]
+        url = self.resolve_url(spec)
+        if not url:
+            self._cache[spec] = None
+            return None
+        try:
+            parts = url.strip("/").split("/", 1)
+            if len(parts) != 2:
+                self._cache[spec] = None
+                return None
+            rel = f"{parts[0]}/static/{parts[1].split('static/', 1)[-1]}"
+            try:
+                fpath = file_path(rel)
+            except FileNotFoundError, ValueError:
+                if rel.endswith(".js"):
+                    rel = rel[:-3] + "/index.js"
+                    fpath = file_path(rel)
+                    _debug.logic(
+                        "esm_graph.source_index_fallback",
+                        bundle=self._bundle_name,
+                        spec=spec,
+                        path=rel,
+                    )
+                else:
+                    raise
+            src = Path(fpath).read_text(encoding="utf-8")
+            self._cache[spec] = src
+            self._url_cache[spec] = f"/{rel}"
+            return src
+        except (FileNotFoundError, ValueError, OSError) as exc:
+            log_event(
+                _bridge_log,
+                logging.WARNING,
+                "source_exports_read_failed",
+                bundle=self._bundle_name,
+                spec=spec,
+                err=type(exc).__name__,
+            )
+            self._cache[spec] = None
+            return None
+
+    def get(self, key: str, default: str | None = None) -> str | None:
+        src = self.read_source(key)
+        return src if src is not None else default
+
+    def effective_url(self, spec: str) -> str | None:
+        cached = self._url_cache.get(spec)
+        return cached if cached is not None else self.resolve_url(spec)
+
+    def source_exports(self, spec: str) -> tuple[set[str], bool]:
+        cached = self._exports_cache.get(spec)
+        if cached is not None:
+            return cached
+        src = self.read_source(spec)
+        if src is None:
+            result: tuple[set[str], bool] = (set(), False)
+        else:
+            result = _extract_esm_exports(
+                src,
+                source_map=self,
+                importing_specifier=spec,
+                importing_url=self.effective_url(spec),
+                _exports_cache=self._star_cache,
+            )
+        self._exports_cache[spec] = result
+        _debug.perf.count(
+            "esm_graph.exports_extracted",
+            bundle=self._bundle_name,
+            spec=spec,
+            names=len(result[0]),
+            default=result[1],
+            readable=src is not None,
+        )
+        return result
+
+
+_VALID_EXPORT_NAME = re.compile(r"[A-Za-z_$][A-Za-z0-9_$]*\Z")
+
+
+def _strict_stub_source(specifier: str, src_names: set[str]) -> str:
+    names = [
+        name
+        for name in sorted(src_names)
+        if name != "default" and _VALID_EXPORT_NAME.match(name)
+    ]
+    quoted = json.dumps(specifier)
+    lines = [
+        f"const _m = odoo.loader.modules.get({quoted});",
+        "if (_m === undefined) {",
+        (
+            f'  throw new Error({quoted} + " is not registered: the bundle '
+            'importing it must load after the page bundle that owns it");'
+        ),
+        "}",
+        "const _d = _m.default ?? _m;",
+    ]
+    lines.extend(f"const _e{i} = _m.{name};" for i, name in enumerate(names))
+    exported = ["_d as default", *(f"_e{i} as {n}" for i, n in enumerate(names))]
+    lines.append("export { " + ", ".join(exported) + " };")
+    return "\n".join(lines)
+
+
+BRIDGE_WAIT_MS = 10000
+
+
+def _bridge_wait_lines(specifier: str) -> list[str]:
+    spec = json.dumps(specifier)
+    warning = json.dumps(
+        f"[asset.loader] bridge {specifier}: provider not registered after "
+        f"{BRIDGE_WAIT_MS} ms, evaluating with undefined exports"
+    )
+    return [
+        "_s();",
+        f"if (!odoo.loader.modules.has({spec})) {{",
+        "  await new Promise((_r) => {",
+        "    const _w = () => {",
+        f"      if (odoo.loader.modules.has({spec})) {{",
+        '        odoo.loader.bus.removeEventListener("registered", _w);',
+        "        _r();",
+        "      }",
+        "    };",
+        '    odoo.loader.bus.addEventListener("registered", _w);',
+        "    setTimeout(() => {",
+        '      odoo.loader.bus.removeEventListener("registered", _w);',
+        f"      console.warn({warning});",
+        "      _r();",
+        f"    }}, {BRIDGE_WAIT_MS});",
+        "  });",
+        "}",
+        # a listener only while unresolved: registered after a resolving call,
+        # it would copy the exports again on every later registration
+        'if (!_s()) { odoo.loader.bus.addEventListener("registered", _s); }',
+    ]
+
+
+def _bridge_shim_source(
+    specifier: str,
+    src_names: set[str],
+    has_default: bool,
+    *,
+    wait: bool = False,
+) -> tuple[str, bool]:
+    names = [
+        name
+        for name in sorted(src_names)
+        if name != "default" and _VALID_EXPORT_NAME.match(name)
+    ]
+    locals_ = ["_d", *(f"_e{i}" for i in range(len(names)))]
+    lines = [f"let {', '.join(locals_)};"]
+    lines.append("function _s() {")
+    lines.append(f"  const _m = odoo.loader.modules.get({json.dumps(specifier)});")
+    lines.append("  if (_m === undefined) { return false; }")
+    lines.append("  _d = _m.default ?? _m;")
+    lines.extend(f"  _e{i} = _m.{name};" for i, name in enumerate(names))
+    lines.append('  odoo.loader.bus.removeEventListener("registered", _s);')
+    lines.append("  return true;")
+    lines.append("}")
+    if wait:
+        lines.extend(_bridge_wait_lines(specifier))
+    else:
+        lines.append(
+            'if (!_s()) { odoo.loader.bus.addEventListener("registered", _s); }'
+        )
+    exported = ["_d as default", *(f"_e{i} as {n}" for i, n in enumerate(names))]
+    lines.append("export { " + ", ".join(exported) + " };")
+    is_star_fallback = not src_names and not has_default
+    return "\n".join(lines), is_star_fallback

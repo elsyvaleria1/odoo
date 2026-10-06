@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="wizard_telegram_group_link_view_form" model="ir.ui.view">
+        <field name="name">wizard.telegram.group.link.form</field>
+        <field name="model">wizard.telegram.group.link</field>
+        <field name="arch" type="xml">
+            <form>
+                <group invisible="link">
+                    <field name="purpose" widget="radio" />
+                    <field name="bot_id" options="{'no_create': True}" />
+                    <field name="res_model" invisible="1" />
+                    <field name="res_id" invisible="1" />
+                    <field
+                        name="record_name"
+                        string="Record"
+                        invisible="not res_model" />
+                    <field
+                        name="channel_id"
+                        options="{'no_create': True}"
+                        invisible="res_model" />
+                    <field
+                        name="name"
+                        invisible="channel_id or res_model or purpose != 'group'"
+                        required="not channel_id and not res_model and purpose == 'group'" />
+                </group>
+                <div invisible="not link or purpose != 'group'">
+                    <p>
+                        Open this link in Telegram and choose the group. Add the bot
+                        from your own connected Telegram account, as an administrator
+                        of the group. The link works once, for the next 30 minutes.
+                    </p>
+                    <field name="link" widget="url" />
+                </div>
+                <div invisible="not link or purpose != 'broadcast'">
+                    <p>
+                        Open this link in Telegram to add the bot to your channel as an
+                        administrator that may post, edit and delete messages:
+                    </p>
+                    <field name="link" widget="url" />
+                    <p>
+                        Then post this in the channel, from your own connected
+                        Telegram account. The bot deletes it at once. It works once,
+                        for the next 30 minutes.
+                    </p>
+                    <field name="command" widget="CopyClipboardChar" />
+                </div>
+                <footer>
+                    <button
+                        name="action_issue"
+                        type="object"
+                        string="Create Link"
+                        invisible="link"
+                        class="btn-primary" />
+                    <button special="cancel" string="Close" class="btn-secondary" />
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_wizard_telegram_group_link" model="ir.actions.act_window">
+        <field name="name">Connect a Telegram Group</field>
+        <field name="res_model">wizard.telegram.group.link</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+
+</odoo>

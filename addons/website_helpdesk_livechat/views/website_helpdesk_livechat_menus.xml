@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <menuitem
+        id="chatbot_config"
+        name="Chatbots"
+        parent="helpdesk.helpdesk_menu_config"
+        action="im_livechat.chatbot_script_action"
+        sequence="18"
+        groups="website_helpdesk_livechat.group_use_website_helpdesk_livechat" />
+
+</odoo>

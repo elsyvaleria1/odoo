@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_pos_pos_form" model="ir.ui.view">
+        <field name="name">pos.order.form.view.inherit</field>
+        <field name="model">pos.order</field>
+        <field name="inherit_id" ref="point_of_sale.view_pos_pos_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//list/field[@name='refunded_qty']" position="after">
+                <field name="preparation_time" widget="duration_time" optional="hide" />
+                <field name="service_time" widget="duration_time" optional="hide" />
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_pos_order_tree" model="ir.ui.view">
+        <field name="name">pos.order.list</field>
+        <field name="model">pos.order</field>
+        <field name="inherit_id" ref="point_of_sale.view_pos_order_tree" />
+        <field name="arch" type="xml">
+            <xpath expr="//list/field[@name='is_edited']" position="after">
+                <field
+                    name="avg_preparation_time"
+                    widget="duration_time"
+                    optional="hide" />
+                <field name="avg_service_time" widget="duration_time" optional="hide" />
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="calendar_event_view_gantt_room" model="ir.ui.view">
+        <field name="name">calendar.event.gantt.room</field>
+        <field name="model">calendar.event</field>
+        <field
+            name="inherit_id"
+            ref="calendar_gantt.calendar_event_view_gantt_booking_resource" />
+        <field name="mode">primary</field>
+        <field name="priority">20</field>
+        <field name="arch" type="xml">
+            <gantt position="attributes">
+                <attribute name="color">user_id</attribute>
+                <attribute name="form_view_id">%(room.calendar_event_view_form_room)d</attribute>
+                <attribute name="string">Bookings</attribute>
+            </gantt>
+        </field>
+    </record>
+
+    <record id="room_booking_action_view_gantt" model="ir.actions.act_window.view">
+        <field name="sequence">5</field>
+        <field name="view_mode">gantt</field>
+        <field name="view_id" ref="calendar_event_view_gantt_room" />
+        <field name="act_window_id" ref="room.room_booking_action" />
+    </record>
+
+    <record id="room.room_booking_action" model="ir.actions.act_window">
+        <field name="view_mode">gantt,calendar,list,kanban,form</field>
+        <field
+            name="context"
+            eval="{'default_appointment_type_id': ref('room.appointment_type_room'), 'no_mail_to_attendees': True, 'appointment_booking_gantt_show_all_resources': True}" />
+    </record>
+
+</odoo>

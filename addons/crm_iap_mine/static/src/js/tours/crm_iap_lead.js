@@ -1,0 +1,51 @@
+/** @odoo-module native */
+import "@crm/js/tours/crm";
+
+import { markup } from "@odoo/owl";
+import { registry } from "@web/core/registry";
+import { _t } from "@web/core/translation";
+import { patch } from "@web/core/utils/patch";
+
+patch(registry.category("web_tour.tours").get("crm_tour"), {
+    steps() {
+        const originalSteps = super.steps();
+        const DragOppToWonStepIndex = originalSteps.findIndex(
+            (step) => step.id === "drag_opportunity_to_won_step",
+        );
+        originalSteps.splice(
+            DragOppToWonStepIndex + 1,
+            0,
+            {
+                trigger: ".o_button_generate_leads",
+                content: markup(
+                    _t(
+                        "Looking for more opportunities?<br>Try the <b>Lead Generation</b> tool.",
+                    ),
+                ),
+                tooltipPosition: "bottom",
+                run: "click .o_button_generate_leads",
+            },
+            {
+                trigger: ".modal-body .o_industry",
+                content: _t("Which Industry do you want to target?"),
+                tooltipPosition: "right",
+                run: "click",
+            },
+            {
+                isActive: ["manual"],
+                trigger: ".modal-footer button[name=action_submit]",
+                content: _t("Now, just let the magic happen!"),
+                tooltipPosition: "bottom",
+                run: "click",
+            },
+            {
+                isActive: ["auto"],
+                trigger: ".modal-footer button[special=cancel]",
+                content: _t("Now, just let the magic happen!"),
+                tooltipPosition: "bottom",
+                run: "click",
+            },
+        );
+        return originalSteps;
+    },
+});

@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="stock_trip_checkpoint_view_list" model="ir.ui.view">
+        <field name="name">stock.trip.checkpoint.list</field>
+        <field name="model">stock.trip.checkpoint</field>
+        <field name="arch" type="xml">
+            <list create="0" edit="0" delete="0">
+                <field name="batch_id" />
+                <field name="sequence" />
+                <field name="date" />
+                <field name="event_type" />
+                <field name="picking_id" optional="show" />
+                <field name="partner_id" optional="hide" />
+                <field name="product_id" optional="show" />
+                <field name="trace_id" optional="hide" />
+                <field name="quantity" optional="show" />
+                <field name="reason_id" optional="show" />
+                <field name="odometer" optional="hide" />
+                <field name="fuel_level" optional="hide" />
+                <field name="weight_on_board" optional="hide" />
+                <field name="method" optional="hide" />
+                <field name="user_id" optional="show" />
+                <field name="hash" optional="hide" />
+            </list>
+        </field>
+    </record>
+
+    <record id="stock_trip_checkpoint_view_search" model="ir.ui.view">
+        <field name="name">stock.trip.checkpoint.search</field>
+        <field name="model">stock.trip.checkpoint</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="batch_id" />
+                <field name="picking_id" />
+                <field name="product_id" />
+                <field name="trace_id" />
+                <field name="reason_id" />
+                <filter
+                    name="rejections"
+                    string="Rejections"
+                    domain="[('event_type', '=', 'rejection')]" />
+                <filter
+                    name="not_delivered"
+                    string="Not Delivered"
+                    domain="[('event_type', '=', 'not_delivered')]" />
+                <filter
+                    name="manual"
+                    string="Not Verified"
+                    domain="[('method', '=', 'manual')]" />
+                <group>
+                    <filter
+                        name="group_event"
+                        string="Event"
+                        context="{'group_by': 'event_type'}" />
+                    <filter
+                        name="group_reason"
+                        string="Reason"
+                        context="{'group_by': 'reason_id'}" />
+                    <filter
+                        name="group_batch"
+                        string="Trip"
+                        context="{'group_by': 'batch_id'}" />
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_stock_trip_checkpoint" model="ir.actions.act_window">
+        <field name="name">Trip Checkpoints</field>
+        <field name="res_model">stock.trip.checkpoint</field>
+        <field name="path">trip-checkpoints</field>
+        <field name="view_mode">list,pivot,graph</field>
+    </record>
+
+</odoo>

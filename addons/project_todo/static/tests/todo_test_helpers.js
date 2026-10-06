@@ -1,0 +1,19 @@
+import { mailModels } from "@mail/../tests/mail_test_helpers";
+import { projectModels } from "@project/../tests/project_models";
+import { defineModels } from "@web/../tests/web_test_helpers";
+
+import { MailActivityTodoCreate } from "./mock_server/mock_models/mail_activity_todo_create.js";
+import { ProjectTags } from "./mock_server/mock_models/project_tags.js";
+import { ProjectTask } from "./mock_server/mock_models/project_task.js";
+
+export function defineTodoModels() {
+    defineModels(todoModels);
+}
+
+export const todoModels = {
+    ...mailModels,
+    ...projectModels,
+    ProjectTask,
+    ProjectTags,
+    MailActivityTodoCreate,
+};

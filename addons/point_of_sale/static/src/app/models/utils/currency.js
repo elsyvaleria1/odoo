@@ -1,0 +1,9 @@
+/** @odoo-module native */
+import { formatMonetary } from "@web/core/formatters";
+export const formatCurrency = (value, currency, hasSymbol = true) =>
+    formatMonetary(value, {
+        currencyId: currency.id,
+        noSymbol: !hasSymbol,
+    });
+
+export const roundCurrency = (value, currency) => currency.round(value);

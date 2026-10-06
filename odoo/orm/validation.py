@@ -1,0 +1,49 @@
+import re
+
+from odoo.exceptions import ValidationError
+
+regex_alphanumeric = re.compile(r"^[a-z0-9_]+\Z")
+regex_object_name = re.compile(r"^[a-z_][a-z0-9_]*(\.[a-z0-9_]+)*\Z")
+regex_pg_name = re.compile(r"^[a-z_][a-z0-9_$]*\Z")
+regex_column_name = re.compile(r"^[A-Za-z_][A-Za-z0-9_$]*\Z")
+
+MANUAL_NAME_PREFIX = "x_"
+
+MAX_PG_NAME_LENGTH = 63
+
+
+def is_manual_name(name: str) -> bool:
+    return name.startswith(MANUAL_NAME_PREFIX)
+
+
+def is_valid_object_name(name: str) -> bool:
+    return regex_object_name.match(name) is not None
+
+
+def check_object_name(name: str) -> None:
+    if not is_valid_object_name(name):
+        raise ValidationError(  # noqa: E8505  diagnostic, no caller shows it
+            f"The _name attribute {name!r} is not valid."
+        )
+
+
+def check_pg_name(name: str) -> None:
+    if not regex_pg_name.match(name):
+        raise ValidationError(  # noqa: E8505  ir.model.fields translates its own
+            f"Invalid characters in table name {name!r}"
+        )
+    if len(name) > MAX_PG_NAME_LENGTH:
+        raise ValidationError(  # noqa: E8505  ir.model.fields translates its own
+            f"Table name {name!r} is too long"
+        )
+
+
+def check_column_name(name: str) -> None:
+    if not regex_column_name.match(name):
+        raise ValidationError(  # noqa: E8505  ir.model.fields translates its own
+            f"Invalid characters in column name {name!r}"
+        )
+    if len(name) > MAX_PG_NAME_LENGTH:
+        raise ValidationError(  # noqa: E8505  ir.model.fields translates its own
+            f"Column name {name!r} is too long"
+        )

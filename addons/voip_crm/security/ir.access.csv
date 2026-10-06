@@ -1,0 +1,2 @@
+id,name,model_id/id,group_id/id,kind,operation,domain
+voip_call_team_access_rule,phone.call: sales team leaders can read team members' records,phone_call.model_phone_call,sale.group_sale_salesman,permission,r,"[(""user_id.sale_team_ids"", ""any"", [(""user_id"", ""="", user.id)])]"

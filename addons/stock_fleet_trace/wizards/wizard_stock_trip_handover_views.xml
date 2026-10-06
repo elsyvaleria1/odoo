@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="wizard_stock_trip_handover_view_form" model="ir.ui.view">
+        <field name="name">wizard.stock.trip.handover.form</field>
+        <field name="model">wizard.stock.trip.handover</field>
+        <field name="arch" type="xml">
+            <form string="Hand Load Over">
+                <field name="batch_id" invisible="1" />
+                <p class="text-muted">
+                    The pending deliveries and everything still on the vehicle move to
+                    a new trip on the rescue vehicle, which departs from here.
+                </p>
+                <group>
+                    <field name="vehicle_id" />
+                    <field name="operator_id" />
+                    <field name="odometer_departure" />
+                    <field name="fuel_departure" />
+                    <field name="breakdown_date" />
+                    <field name="reason" />
+                </group>
+                <footer>
+                    <button
+                        name="action_confirm"
+                        type="object"
+                        string="Hand Over"
+                        class="btn-primary"
+                        data-hotkey="q" />
+                    <button special="cancel" string="Cancel" data-hotkey="x" />
+                </footer>
+            </form>
+        </field>
+    </record>
+
+</odoo>

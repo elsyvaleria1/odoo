@@ -1,0 +1,146 @@
+/** @odoo-module native */
+import {
+    Component,
+    markup,
+    onWillDestroy,
+    proxy,
+    status,
+    t,
+    useProps,
+} from "@odoo/owl";
+import { rpc } from "@web/core/network";
+import { _t } from "@web/core/translation";
+import { useService } from "@web/core/utils/hooks";
+import { Dialog } from "@web/ui/dialog";
+
+const POSTPROCESS_GENERATED_CONTENT = (content, baseContainer) => {
+    let lines = content.split("\n");
+    if (baseContainer.toUpperCase() === "P") {
+        lines = lines.filter((line) => line.trim().length);
+    }
+    const fragment = document.createDocumentFragment();
+    let parentUl, parentOl;
+    for (const line of lines) {
+        if (line.trim().startsWith("- ")) {
+            parentUl = parentUl || document.createElement("ul");
+            const li = document.createElement("li");
+            li.innerText = line.trim().slice(2);
+            parentUl.appendChild(li);
+        } else if (
+            (parentOl && line.trim().startsWith(`${parentOl.children.length + 1}. `)) ||
+            (!parentOl && line.trim().startsWith("1. "))
+        ) {
+            parentOl = parentOl || document.createElement("ol");
+            const li = document.createElement("li");
+            const trimmedLine = line.trim();
+            li.innerText = trimmedLine.slice(trimmedLine.indexOf(".") + 2);
+            parentOl.appendChild(li);
+        } else if (line.trim().length === 0) {
+            const emptyLine = document.createElement("DIV");
+            emptyLine.append(document.createElement("BR"));
+            fragment.appendChild(emptyLine);
+        } else {
+            [parentUl, parentOl].forEach((list) => list && fragment.appendChild(list));
+            parentUl = parentOl = undefined;
+            const block = document.createElement(
+                line.startsWith("Title: ") ? "h2" : baseContainer,
+            );
+            block.innerText = line;
+            fragment.appendChild(block);
+        }
+    }
+    [parentUl, parentOl].forEach((list) => list && fragment.appendChild(list));
+    return fragment;
+};
+
+export class ChatGPTDialog extends Component {
+    static template = "";
+    static components = { Dialog };
+    static props = {
+        insert: t.function(),
+        close: t.function(),
+        sanitize: t.function(),
+        baseContainer: t.string().optional("DIV"),
+    };
+    props = useProps(this.constructor.props);
+
+    setup() {
+        this.notificationService = useService("notification");
+        this.state = proxy({ selectedMessageId: null });
+        onWillDestroy(() => this.pendingRpcPromise?.abort());
+    }
+
+    selectMessage(ev) {
+        this.state.selectedMessageId =
+            +ev.currentTarget.getAttribute("data-message-id");
+    }
+
+    insertMessage(ev) {
+        this.selectMessage(ev);
+        this._confirm();
+    }
+
+    formatContent(content) {
+        const fragment = POSTPROCESS_GENERATED_CONTENT(
+            content,
+            this.props.baseContainer,
+        );
+        let result = "";
+        for (const child of fragment.children) {
+            this.props.sanitize(child, { IN_PLACE: true });
+            result += child.outerHTML;
+        }
+        return markup(result);
+    }
+
+    generate(prompt, callback) {
+        const protectedCallback = (...args) => {
+            if (status(this) !== "destroyed") {
+                delete this.pendingRpcPromise;
+                return callback(...args);
+            }
+        };
+        this.pendingRpcPromise = rpc(
+            "/html_editor/generate_text",
+            {
+                prompt,
+                conversation_history: this.state.conversationHistory,
+            },
+            { silent: true },
+        );
+        return this.pendingRpcPromise
+            .then((content) => protectedCallback(content))
+            .catch((error) =>
+                protectedCallback(_t(error.data?.message || error.message), true),
+            );
+    }
+
+    _cancel() {
+        this.props.close();
+    }
+
+    _confirm() {
+        try {
+            this.props.close();
+            const text = this.state.messages.find(
+                (message) => message.id === this.state.selectedMessageId,
+            )?.text;
+            this.notificationService.add(
+                _t("Your content was successfully generated."),
+                {
+                    title: _t("Content generated"),
+                    type: "success",
+                },
+            );
+            const fragment = POSTPROCESS_GENERATED_CONTENT(
+                text || "",
+                this.props.baseContainer,
+            );
+            this.props.sanitize(fragment, { IN_PLACE: true });
+            this.props.insert(fragment);
+        } catch (e) {
+            this.props.close();
+            throw e;
+        }
+    }
+}

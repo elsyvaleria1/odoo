@@ -1,0 +1,168 @@
+{
+  "_comment": [
+    "Single source of truth for the third-party libraries vendored under",
+    "web/static/lib. web/machine_doc_v1/factcheck.sh re-derives each version",
+    "from the shipped files through its probe (drift) and holds the pinned",
+    "directories against the ones on disk.",
+    "",
+    "'probe' locates the version inside the vendored tree: 'file' is relative",
+    "to the library directory and 'pattern' is a Python regex in which the",
+    "token {version} is replaced by the escaped 'version' value.",
+    "",
+    "'npm' is the registry coordinate, for an advisory lookup; omit it for",
+    "libraries with no upstream package (fork-local or internal ones) and set",
+    "'upstream' to false."
+  ],
+  "libs": {
+    "Chart": {
+      "version": "4.5.1",
+      "npm": "chart.js",
+      "license": "MIT",
+      "source": "https://www.chartjs.org",
+      "probe": { "file": "Chart.js", "pattern": "=\"{version}\"" },
+      "notes": "Minified with no banner; the only version anchor is a bare assignment, so the probe is deliberately loose. Bundles @kurkle/color 0.3.2. Lazily loaded via @web/core/lib/chartjs."
+    },
+    "ace": {
+      "version": "1.44.0",
+      "npm": "ace-code",
+      "license": "BSD-3-Clause",
+      "source": "https://ajaxorg.github.io/ace/",
+      "probe": { "file": "ace.esm.js", "pattern": "exports\\.version = \"{version}\"" },
+      "notes": "ace.esm.js is built locally with esbuild from the ace-code CommonJS sources (ace-builds ships no ES module); its header carries the entry file and the rebuild command. It holds the javascript, json, python, scss and xml modes and the monokai theme, handed to setMode/setTheme as objects. mode-qweb.js is fork-local, not upstream: an ES module importing the XML pieces from \"ace\"; it reads $rules.attributes[0].regex, so re-check it against the XML highlight rules on every bump. Lazy: the \"ace\" and \"ace-mode-qweb\" external libs, reached only through @web/core/lib/ace."
+    },
+    "axe-core": {
+      "version": "4.13.0",
+      "npm": "axe-core",
+      "license": "MPL-2.0",
+      "source": "https://github.com/dequelabs/axe-core",
+      "probe": { "file": "axe.min.js", "pattern": "axe v{version}" },
+      "notes": "Upstream axe.min.js, LICENSE and LICENSE-3RD-PARTY.txt, verbatim: MPL-2.0 is file-level copyleft, so the file stays unmodified with its header. Test-only: loaded by the lazy web.axe_lib bundle that the accessibility HOOT tests preload, never by a runtime bundle."
+    },
+    "bootstrap": {
+      "version": "5.3.8",
+      "npm": "bootstrap",
+      "license": "MIT",
+      "source": "https://getbootstrap.com",
+      "probe": { "file": "bootstrap.esm.js", "pattern": "Bootstrap v{version}" },
+      "notes": "JS bundle plus the full scss/ tree, which the design system compiles against. Popper is its only reason to exist here."
+    },
+    "diff_match_patch": {
+      "version": "forked",
+      "upstream": false,
+      "license": "Apache-2.0",
+      "source": "https://github.com/google/diff-match-patch",
+      "notes": "Trimmed fork carrying the diff functions only; see the header comment for the modifications. No upstream version to track."
+    },
+    "dompurify": {
+      "version": "3.4.12",
+      "npm": "dompurify",
+      "license": "Apache-2.0 OR MPL-2.0",
+      "source": "https://github.com/cure53/DOMPurify",
+      "probe": { "file": "purify.es.js", "pattern": "DOMPurify {version}" },
+      "notes": "Upstream dist/purify.es.mjs, verbatim. Security-critical: it backs html_editor's sanitize plugin, which passes ADD_TAGS/ADD_ATTR — the exact config surface several past advisories targeted. Treat any advisory here as release-blocking."
+    },
+    "fullcalendar": {
+      "version": "7.1.0",
+      "npm": "fullcalendar",
+      "license": "MIT",
+      "source": "https://fullcalendar.io",
+      "probe": {
+        "file": "fullcalendar.esm.js",
+        "pattern": "FullCalendar \\(Vanilla JS\\) v{version}"
+      },
+      "notes": "Upstream all/global.js carrying 7 AgroMarin: markers, the last of which is a hand-written ESM export footer. skeleton.css MUST be replaced in the same commit: v7 regenerates its fc-* class hashes on every build and recycles some onto unrelated roles. Resolve those names through fcInternalClassName(), never by literal."
+    },
+    "hoot": {
+      "version": "internal",
+      "upstream": false,
+      "license": "LGPL-3",
+      "notes": "Odoo HOOT test framework; developed in-tree and versioned with the fork."
+    },
+    "hoot-dom": {
+      "version": "internal",
+      "upstream": false,
+      "license": "LGPL-3",
+      "notes": "Odoo HOOT DOM helpers; developed in-tree and versioned with the fork."
+    },
+    "joint": {
+        "version": "4.3.2",
+        "npm": "@joint/core",
+        "license": "MPL-2.0",
+        "source": "https://www.jointjs.com",
+        "probe": {
+            "file": "joint.esm.js",
+            "pattern": "JointJS {version} \\| MPL-2.0"
+        },
+        "notes": "NOT a pristine upstream file. @joint/core ships no single-file ESM -- its joint.mjs is a 97-byte re-export shim over ~250 modules under src/, and dist/joint.js is UMD -- so build.sh bundles entry.js with a pinned esbuild, the same recipe geoengine/static/lib/ol uses. entry.js re-exports the WHOLE surface on purpose: JointJS does not tree-shake ({dia, shapes, util} alone measures 431 KB against 462 KB for everything), so a curated entry would buy 7% and add a list to keep in step with its consumers. The artefact also carries @joint/layout-directed-graph 4.3.0 (MPL-2.0, same author) for DAG auto-layout, which pulls @dagrejs/dagre 1.1.8 and @dagrejs/graphlib 2.2.4 (both MIT) with it -- its dependency ranges are ~1.1.4 and ~2.2.4, so neither tracks its own latest (3.1.1 and 4.0.5) and neither should be 'corrected' to it; their licences ship beside this one as LICENSE.dagre and LICENSE.graphlib, and the OSV coordinate above covers @joint/core only. Reached ONLY through a dynamic import() so it never loads on a session that opens no diagram -- the 2.9 MB web_flow charged every session is why that matters. MPL-2.0 combines with this tree's LGPL-3 under MPL section 3.3: no file in the package carries the Exhibit B \"Incompatible With Secondary Licenses\" notice that would opt out of it."
+    },
+    "leaflet": {
+      "version": "1.9.4",
+      "npm": "leaflet",
+      "license": "BSD-2-Clause",
+      "source": "https://leafletjs.com",
+      "probe": { "file": "leaflet-src.esm.js", "pattern": "Leaflet {version}," },
+      "notes": "Upstream dist/leaflet-src.esm.js (sourceMappingURL line dropped), dist/leaflet.css and dist/images/, plus LICENSE. One AgroMarin: marker in leaflet.css (the .leaflet-container a colour rule removed). Declared as the 'leaflet' external lib and reached only through @web/core/lib/leaflet, which also loads the CSS; used by delivery's location selector and enterprise web_map."
+    },
+    "odoo_ui_icons": {
+      "version": "1.2",
+      "upstream": false,
+      "license": "LGPL-3",
+      "source": "IcoMoon build over Carbon + Material icon sets",
+      "probe": { "file": "Read Me.txt", "pattern": "Odoo UI Icons - v{version}" }
+    },
+    "owl": {
+      "version": "3.0.0-alpha.49",
+      "npm": "@odoo/owl",
+      "license": "LGPL-3.0-only",
+      "source": "https://github.com/Agro-Marin/owl/tree/3.0-marin",
+      "probe": { "file": "owl.es.js", "pattern": "var version = \"{version}\"" },
+      "notes": "dist/owl.es.js, owl.runtime.es.js and owl.compiler.es.js built (npm ci && npm run build) from Agro-Marin/owl 3.0-marin 740f45dc = odoo/owl v3.0.0-alpha.49 + the fork's commits (git log v3.0.0-alpha.49..740f45dc in that repo): immediateEffect, observe(target, callback), computed({ detached }), selector(source), t-memo on a keyed t-foreach, the standard JavaScript globals (String, Number, JSON, parseInt, ...) in template expressions, a scheduler hook HOOT waits on, proxy reads that create no atom when nothing observes, dependency tracking over linked edges re-used across renders, a t-foreach over a proxy() array read in one step, opt-in debug channels (setDebug), props views holding a plain atom per read key, with schema views sharing their accessors, fixes to reactivity error handling, cancelled renders, keyed lists, synthetic events, props views, Portal/Suspense, the template compiler and escaping, plus the OWL 3 migration codemods under tools/odoo_migration. The synthetic-event document listener carries Symbol.for(\"owl.syntheticListener\"), which tests/_framework/module_set.hoot.js checks to keep it across tests. @odoo/owl is owl.runtime.es.js; @odoo/owl/compiler is owl.compiler.es.js, which a page imports when one of its bundles may compile a template in the browser (ir_qweb_assets_precompile._is_script_bundle_eval_needed); owl.es.js, runtime and compiler in one file, serves the node precompiler, the standalone bundles and the files importing it by path. __info__.hash names the built commit. Bumping it is a framework-wide change: re-run the full @web suite."
+    },
+    "pdfjs": {
+      "version": "6.1.200",
+      "npm": "pdfjs-dist",
+      "license": "Apache-2.0",
+      "source": "https://mozilla.github.io/pdf.js/",
+      "probe": { "file": "build/pdf.js", "pattern": "pdfjsVersion = {version}" },
+      "notes": "Largest vendored library by far. Sourced from the GitHub prebuilt release zip — the LEGACY one (pdfjs-<v>-legacy-dist.zip), not the modern dist: the modern build calls Map.prototype.getOrInsertComputed with no feature detection and never defines it, and that method only reached Baseline in February 2026 (Firefox 144, Safari 26.2, Chrome 145), so PDF preview breaks on every older browser — t24581 was reported from Chrome 141. The legacy build carries the core-js polyfill in both build/pdf.js and build/pdf.worker.js, which a hand-written prototype patch could not do — it would never reach the worker. addons/web/tests/test_pdfjs_dist.py gates the flavour against the bundle files; a runtime check cannot, since a browser that ships the method natively passes it whatever build is vendored. The npm package ships no full viewer. Reshaped as the README's Update procedure shows, after which the 12 AgroMarin: markers in web/viewer.js are re-applied. Lazily loaded via @web/core/utils/pdfjs. Since v6 the codecs are separate .wasm files under web/wasm/ — getDocument needs PDFJS_WASM_URL, which the facade defaults."
+    },
+    "popper_compat": {
+      "version": "generated",
+      "upstream": false,
+      "license": "LGPL-3",
+      "rebuild": "build.sh",
+      "notes": "NOT a vendored library. Self-contained build of @web/libs/popper_compat, which replaced Popper: Bootstrap was its only importer and used a single entry point. Only import-map pages (the IoT box homepage) load this copy; bundles inline the source module instead. Because it derives from in-tree code rather than a pinned release, `rebuild` is run with --check by the drift gate to prove it is not stale."
+    },
+    "prismjs": {
+      "version": "1.30.0",
+      "npm": "prismjs",
+      "license": "MIT",
+      "source": "https://prismjs.com",
+      "probe": { "file": "prism.js", "pattern": "PrismJS {version}" },
+      "notes": "Custom download bundling a fixed language set; re-select the same languages when bumping (see the header comment)."
+    },
+    "signature_pad": {
+      "version": "5.1.3",
+      "npm": "signature_pad",
+      "license": "MIT",
+      "source": "https://github.com/szimek/signature_pad",
+      "probe": { "file": "signature_pad.js", "pattern": "Signature Pad v{version}" }
+    },
+    "temporal-polyfill": {
+      "version": "1.0.5",
+      "npm": "temporal-polyfill",
+      "license": "MIT",
+      "source": "https://github.com/fullcalendar/temporal-polyfill",
+      "probe": { "file": "temporal-polyfill.js", "pattern": "temporal-polyfill {version} \\(MIT" },
+      "notes": "Upstream global.js (sha256 in the banner) minified with the pinned esbuild; reviewed 2026-09-30: no network, storage, DOM, timers or dynamic code, and it writes only globalThis.Temporal, Intl.DateTimeFormat and Date.prototype.toTemporalInstant, and only where no native Temporal exists. Loaded by web/static/src/module_loader.js through a parser-blocking script carrying the page's CSP nonce, only where Temporal is missing: Safari 27 (coding_guidelines.rst §5.3). Chrome 144+ and Firefox 139+ never fetch it. Drop it once Safari ships Temporal."
+    },
+    "zxing-library": {
+      "version": "0.23.0",
+      "npm": "@zxing/library",
+      "license": "Apache-2.0",
+      "source": "https://github.com/zxing-js/library",
+      "probe": { "file": "version", "pattern": "^{version}$" },
+      "notes": "Not a pristine upstream file: a single-file ESM bundle built from the npm package's esm/ sources with ts-custom-error inlined. The build command, including the pinned esbuild version, is in the file's banner. Only ever fetched by browsers without BarcodeDetector."
+    }
+  }
+}

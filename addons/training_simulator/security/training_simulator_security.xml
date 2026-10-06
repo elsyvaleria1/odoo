@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="res_groups_privilege_training" model="res.groups.privilege">
+        <field name="name">Training Simulators</field>
+        <field name="category_id" ref="base.module_category_human_resources" />
+    </record>
+
+    <record id="group_training_player" model="res.groups">
+        <field name="name">Player</field>
+        <field name="privilege_id" ref="res_groups_privilege_training" />
+        <field name="comment">Plays the simulators and sees their own sessions.</field>
+    </record>
+
+    <record id="group_training_instructor" model="res.groups">
+        <field name="name">Instructor</field>
+        <field name="privilege_id" ref="res_groups_privilege_training" />
+        <field
+            name="comment">Configures the simulators and sees everyone's sessions.</field>
+        <field name="implied_ids" eval="[Command.link(ref('group_training_player'))]" />
+        <field name="user_ids" eval="[Command.link(ref('base.user_admin'))]" />
+    </record>
+
+</odoo>

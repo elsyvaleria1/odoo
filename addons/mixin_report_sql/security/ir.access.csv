@@ -1,0 +1,2 @@
+id,name,model_id/id,group_id/id,kind,operation,reach,anchor,domain
+report_rolling_state_system,Rolling Report State: system,model_report_rolling_state,base.group_system,permission,r,,,

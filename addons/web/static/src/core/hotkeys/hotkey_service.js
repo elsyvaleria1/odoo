@@ -1,0 +1,515 @@
+// @ts-check
+/** @odoo-module native */
+
+import { browser } from "@web/core/browser/browser";
+import {
+    adoptAccessKeys,
+    AUTHORIZED_KEY_SET,
+    getActiveHotkey,
+    MODIFIERS,
+} from "@web/core/browser/hotkeys";
+import { makeLogger } from "@web/core/debug/debug_logger";
+import { registry } from "@web/core/registry";
+import {
+    getDeepActiveElement,
+    getVisibleElements,
+    viewOf,
+} from "@web/core/utils/dom/ui";
+
+export { getActiveHotkey };
+
+/**
+ * @typedef {(context: { area: HTMLElement, target: EventTarget }) => void} HotkeyCallback
+ * @typedef {Object} HotkeyOptions
+ * @property {boolean} [allowRepeat]
+ * @property {boolean} [bypassEditableProtection]
+ * @property {boolean} [global]
+ * @property {() => HTMLElement} [area]
+ * @property {(target: HTMLElement) => boolean} [isAvailable]
+ * @property {() => HTMLElement} [withOverlay]
+ * @property {() => Document | HTMLElement | null} [scope]
+ * @typedef {HotkeyOptions & {
+ * hotkey: string,
+ * callback: HotkeyCallback,
+ * getScope: () => Document | HTMLElement,
+ * }} HotkeyRegistration
+ */
+
+const log = makeLogger("web.hotkeys");
+
+// WAI-ARIA: aria-disabled="true" disables the element and its focusable
+// descendants; an inert subtree cannot be activated at all. A disabled fieldset
+// disables only its form controls, which :disabled already covers.
+const INOPERABLE_SELECTOR = [
+    ":disabled",
+    "[aria-disabled='true' i]",
+    "[aria-disabled='true' i] *",
+    "[inert]",
+    "[inert] *",
+].join(", ");
+
+/**
+ * @param {string} [hotkey]
+ * @returns {string}
+ */
+function getHotkeyAttributeSelector(hotkey) {
+    return hotkey === undefined ? "[data-hotkey]" : `[data-hotkey='${hotkey}' i]`;
+}
+
+/**
+ * @param {string} [hotkey]
+ * @returns {string}
+ */
+function getHotkeyElementSelector(hotkey) {
+    return `${getHotkeyAttributeSelector(hotkey)}:not(${INOPERABLE_SELECTOR})`;
+}
+
+/**
+ * @param {Document | HTMLElement} activeElement
+ * @param {string} [hotkey]
+ * @returns {HTMLElement[]}
+ */
+export function getOperableHotkeyElements(activeElement, hotkey) {
+    const elements = getVisibleElements(
+        activeElement,
+        getHotkeyElementSelector(hotkey),
+    );
+    log.logic("dom.operable", () => ({
+        hotkey: hotkey ?? "*",
+        operable: elements.length,
+        inoperable:
+            getVisibleElements(activeElement, getHotkeyAttributeSelector(hotkey))
+                .length - elements.length,
+    }));
+    return elements;
+}
+
+export class HotkeyService {
+    /**
+     * @param {{ ui: any }} services
+     * @param {{ overlayModifier?: string }} [options]
+     */
+    constructor({ ui }, { overlayModifier = hotkeyService.overlayModifier } = {}) {
+        this.ui = ui;
+        /** @type {string} */
+        this.overlayModifier = overlayModifier;
+        /** @type {Map<number, HotkeyRegistration>} */
+        this.registrations = new Map();
+        /** @type {Map<string, Set<HotkeyRegistration>>} */
+        this.registrationsByHotkey = new Map();
+        this.nextToken = 0;
+        this.overlaysVisible = false;
+        /** @type {HTMLElement[]} */
+        this.overlays = [];
+        /** @type {Set<() => void>} */
+        this.listenerRemovers = new Set();
+        this.removeWindowListeners = this.addListeners(/** @type {any} */ (browser));
+    }
+
+    /**
+     * @param {string} hotkey
+     * @returns {boolean}
+     */
+    includesOverlayModifier(hotkey) {
+        const tokens = hotkey.split("+");
+        return this.overlayModifier.split("+").every((mod) => tokens.includes(mod));
+    }
+
+    /**
+     * @param {Window} target
+     * @returns {() => void}
+     */
+    addListeners(target) {
+        const onKeydown = (/** @type {any} */ ev) => this.onKeydown(ev);
+        const removeOverlays = () => this.removeHotkeyOverlays();
+        target.addEventListener("keydown", onKeydown);
+        target.addEventListener("keyup", removeOverlays);
+        target.addEventListener("blur", removeOverlays);
+        target.addEventListener("click", removeOverlays);
+        return () => {
+            target.removeEventListener("keydown", onKeydown);
+            target.removeEventListener("keyup", removeOverlays);
+            target.removeEventListener("blur", removeOverlays);
+            target.removeEventListener("click", removeOverlays);
+        };
+    }
+
+    /** @param {KeyboardEvent} event */
+    onKeydown(event) {
+        if (event.code?.startsWith("Numpad") && /^\d$/.test(event.key)) {
+            return;
+        }
+
+        const hotkey = getActiveHotkey(event);
+        if (!hotkey) {
+            return;
+        }
+        const { activeElement, isBlocked } = this.ui;
+
+        if (isBlocked) {
+            return;
+        }
+
+        if (this.includesOverlayModifier(hotkey)) {
+            adoptAccessKeys(activeElement);
+        }
+
+        if (!this.overlaysVisible && hotkey === this.overlayModifier) {
+            this.addHotkeyOverlays(activeElement);
+            event.preventDefault();
+            return;
+        }
+
+        const singleKey = hotkey.split("+").pop();
+        if (!AUTHORIZED_KEY_SET.has(singleKey)) {
+            return;
+        }
+
+        const target = /** @type {any} */ (event.target);
+        const targetIsEditable =
+            target?.nodeType === Node.ELEMENT_NODE &&
+            (/input|textarea/i.test(target.tagName) || target.isContentEditable) &&
+            !target.matches("input[type=checkbox], input[type=radio]");
+        const shouldProtectEditable =
+            targetIsEditable &&
+            !(/** @type {HTMLElement} */ (event.target).dataset.allowHotkeys) &&
+            singleKey !== "escape";
+
+        const infos = {
+            activeElement,
+            hotkey,
+            isRepeated: event.repeat,
+            target: event.target,
+            shouldProtectEditable,
+        };
+        const dispatched = this.dispatch(infos);
+        if (dispatched) {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+        }
+
+        if (this.overlaysVisible) {
+            this.removeHotkeyOverlays();
+            event.preventDefault();
+        }
+    }
+
+    /**
+     * @param {{
+     * activeElement: HTMLElement,
+     * hotkey: string,
+     * isRepeated: boolean,
+     * target: EventTarget,
+     * shouldProtectEditable: boolean,
+     * }} infos
+     * @returns {boolean}
+     */
+    dispatch(infos) {
+        const { activeElement, hotkey, isRepeated, target, shouldProtectEditable } =
+            infos;
+
+        const matchingRegistrations = this.registrationsByHotkey.get(hotkey);
+        if (!matchingRegistrations?.size && !this.includesOverlayModifier(hotkey)) {
+            return false;
+        }
+
+        const reversedRegistrations = matchingRegistrations
+            ? Array.from(matchingRegistrations).reverse()
+            : [];
+        const domRegistrations = this.getDomRegistrations(hotkey, activeElement);
+        const allRegistrations = [...reversedRegistrations, ...domRegistrations];
+
+        const candidates = allRegistrations
+            .map((reg) => ({ reg, area: reg.area?.() }))
+            .filter(
+                ({ reg, area }) =>
+                    (reg.allowRepeat || !isRepeated) &&
+                    (reg.bypassEditableProtection || !shouldProtectEditable) &&
+                    (reg.global || reg.getScope() === activeElement) &&
+                    (!reg.isAvailable ||
+                        reg.isAvailable(/** @type {HTMLElement} */ (target))) &&
+                    (!reg.area ||
+                        Boolean(
+                            target &&
+                            area &&
+                            area.contains(/** @type {Node} */ (target)),
+                        )),
+            );
+
+        let winner = candidates.shift();
+        log.logic("dispatch", () => ({
+            hotkey,
+            registrations: allRegistrations.length,
+            candidates: candidates.length + 1,
+            isRepeated,
+            shouldProtectEditable,
+        }));
+        if (winner?.area) {
+            for (const candidate of candidates) {
+                if (candidate.area && winner?.area?.contains(candidate.area)) {
+                    winner = candidate;
+                }
+            }
+        }
+
+        if (winner) {
+            winner.reg.callback({
+                area: winner.area,
+                target,
+            });
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * @param {string} hotkey
+     * @param {HTMLElement} activeElement
+     * @returns {HotkeyRegistration[]}
+     */
+    getDomRegistrations(hotkey, activeElement) {
+        if (!this.includesOverlayModifier(hotkey)) {
+            return [];
+        }
+
+        const overlayModParts = this.overlayModifier.split("+");
+        const cleanHotkey = hotkey
+            .split("+")
+            .filter((key) => !overlayModParts.includes(key))
+            .join("+");
+        const elems = getOperableHotkeyElements(activeElement, cleanHotkey);
+        return elems.map((el) => ({
+            hotkey,
+            getScope: () => activeElement,
+            bypassEditableProtection: true,
+            callback: () => {
+                /** @type {HTMLElement | null} */ (getDeepActiveElement(el))?.blur();
+                el.focus();
+                browser.setTimeout(() => el.click());
+            },
+        }));
+    }
+
+    /** @param {HTMLElement} activeElement */
+    addHotkeyOverlays(activeElement) {
+        const hotkeysFromHookToHighlight = [];
+        for (const [, registration] of this.registrations) {
+            if (!registration.global && registration.getScope() !== activeElement) {
+                continue;
+            }
+            const overlayElement = registration.withOverlay?.();
+            if (overlayElement) {
+                hotkeysFromHookToHighlight.push({
+                    hotkey: registration.hotkey.replace(`${this.overlayModifier}+`, ""),
+                    el: overlayElement,
+                });
+            }
+        }
+
+        const hotkeysFromDomToHighlight = getOperableHotkeyElements(activeElement).map(
+            (el) => ({ hotkey: el.dataset.hotkey, el }),
+        );
+
+        const items = [...hotkeysFromDomToHighlight, ...hotkeysFromHookToHighlight];
+        for (const item of items) {
+            const hotkey = item.hotkey;
+            const doc = item.el.ownerDocument;
+            const overlay = doc.createElement("div");
+            overlay.classList.add(
+                "o_web_hotkey_overlay",
+                "position-absolute",
+                "top-0",
+                "bottom-0",
+                "start-0",
+                "end-0",
+                "d-flex",
+                "justify-content-center",
+                "align-items-center",
+                "m-0",
+                "bg-black-50",
+                "h6",
+            );
+            overlay.style.zIndex = "1";
+            const overlayKbd = doc.createElement("kbd");
+            overlayKbd.className = "small";
+            overlayKbd.appendChild(doc.createTextNode(hotkey.toUpperCase()));
+            overlay.appendChild(overlayKbd);
+
+            let overlayParent;
+            if (item.el.tagName.toUpperCase() === "INPUT") {
+                overlayParent = item.el.parentElement;
+            } else {
+                overlayParent = item.el;
+            }
+
+            if (
+                viewOf(overlayParent).getComputedStyle(overlayParent).position ===
+                "static"
+            ) {
+                overlayParent.dataset.hotkeyOrigPosition = overlayParent.style.position;
+                overlayParent.style.position = "relative";
+            }
+            overlayParent.appendChild(overlay);
+            this.overlays.push(overlay);
+        }
+        this.overlaysVisible = true;
+    }
+
+    removeHotkeyOverlays() {
+        if (!this.overlaysVisible) {
+            return;
+        }
+        const overlays = this.overlays;
+        this.overlays = [];
+        for (const overlay of overlays) {
+            const parent = overlay.parentElement;
+            overlay.remove();
+            if (parent && "hotkeyOrigPosition" in parent.dataset) {
+                parent.style.position = parent.dataset.hotkeyOrigPosition;
+                delete parent.dataset.hotkeyOrigPosition;
+            }
+        }
+        this.overlaysVisible = false;
+    }
+
+    /**
+     * @param {string} hotkey
+     * @param {HotkeyCallback} callback
+     * @param {HotkeyOptions} [options]
+     * @returns {number}
+     */
+    registerHotkey(hotkey, callback, options = {}) {
+        if (!hotkey || !hotkey.length) {
+            throw new Error(
+                "You must specify an hotkey when registering a registration.",
+            );
+        }
+
+        if (!callback || typeof callback !== "function") {
+            throw new Error(
+                "You must specify a callback function when registering a registration.",
+            );
+        }
+
+        const parts = hotkey
+            .toLowerCase()
+            .split("+")
+            .map((part) => part.trim())
+            .filter(Boolean);
+        const modifiers = MODIFIERS.filter((modifier) => parts.includes(modifier));
+        const keys = parts.filter((k) => !MODIFIERS.includes(k));
+        if (keys.some((k) => !AUTHORIZED_KEY_SET.has(k))) {
+            throw new Error(
+                `You are trying to subscribe for an hotkey ('${hotkey}')
+            that contains parts not whitelisted: ${keys.join(", ")}`,
+            );
+        } else if (keys.length > 1) {
+            throw new Error(
+                `You are trying to subscribe for an hotkey ('${hotkey}')
+            that contains more than one single key part: ${keys.join("+")}`,
+            );
+        }
+
+        const token = this.nextToken++;
+        const capturedScope = this.ui.activeElement;
+        /** @type {HotkeyRegistration} */
+        const registration = {
+            hotkey: [...modifiers, ...keys].join("+"),
+            callback,
+            getScope: options?.scope ?? (() => capturedScope),
+            allowRepeat: options?.allowRepeat,
+            bypassEditableProtection: options?.bypassEditableProtection,
+            global: options?.global,
+            area: options?.area,
+            isAvailable: options?.isAvailable,
+            withOverlay: options?.withOverlay,
+        };
+
+        this.registrations.set(token, registration);
+        let sameHotkeyRegistrations = this.registrationsByHotkey.get(
+            registration.hotkey,
+        );
+        if (!sameHotkeyRegistrations) {
+            sameHotkeyRegistrations = new Set();
+            this.registrationsByHotkey.set(
+                registration.hotkey,
+                sameHotkeyRegistrations,
+            );
+        }
+        sameHotkeyRegistrations.add(registration);
+        log.lifecycle("register", () => ({
+            hotkey,
+            token,
+            global: Boolean(options.global),
+            total: this.registrations.size,
+        }));
+        return token;
+    }
+
+    /** @param {number} token */
+    unregisterHotkey(token) {
+        const registration = this.registrations.get(token);
+        if (registration) {
+            const sameHotkey = this.registrationsByHotkey.get(registration.hotkey);
+            sameHotkey?.delete(registration);
+            if (sameHotkey && !sameHotkey.size) {
+                this.registrationsByHotkey.delete(registration.hotkey);
+            }
+        }
+        this.registrations.delete(token);
+    }
+
+    /**
+     * @param {string} hotkey
+     * @param {HotkeyCallback} callback
+     * @param {HotkeyOptions} [options]
+     * @returns {() => void}
+     */
+    add(hotkey, callback, options = {}) {
+        const token = this.registerHotkey(hotkey, callback, options);
+        return () => {
+            this.unregisterHotkey(token);
+        };
+    }
+
+    /**
+     * @param {HTMLIFrameElement} iframe
+     * @returns {() => void}
+     */
+    registerIframe(iframe) {
+        const iframeWindow = iframe?.contentWindow;
+        if (!iframeWindow) {
+            return () => {};
+        }
+        const removeIframeListeners = this.addListeners(iframeWindow);
+        const remove = () => {
+            this.listenerRemovers.delete(remove);
+            removeIframeListeners();
+        };
+        this.listenerRemovers.add(remove);
+        return remove;
+    }
+
+    destroy() {
+        this.removeHotkeyOverlays();
+        for (const remove of [...this.listenerRemovers]) {
+            remove();
+        }
+        this.removeWindowListeners();
+    }
+}
+
+export const hotkeyService = {
+    dependencies: ["ui"],
+    overlayModifier: "alt",
+    /**
+     * @param {import("@web/env").OdooEnv} env
+     * @param {{ ui: any }} services
+     * @returns {HotkeyService}
+     */
+    start(env, { ui }) {
+        return new HotkeyService({ ui }, { overlayModifier: this.overlayModifier });
+    },
+};
+
+registry.category("services").add("hotkey", /** @type {any} */ (hotkeyService));

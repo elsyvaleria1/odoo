@@ -1,0 +1,245 @@
+// @ts-check
+
+import { after, destroy, getFixture, queryFirst, queryOne } from "@odoo/hoot";
+import { App, Component, useProps, xml } from "@odoo/owl";
+import { AppContextPlugin } from "@web/core/app_context";
+import { getTemplate as defaultGetTemplate } from "@web/core/templates";
+import { appTranslateFn } from "@web/core/translation";
+import { isIterable } from "@web/core/utils/collections/arrays";
+import { patch } from "@web/core/utils/patch";
+import {
+    customDirectives as defaultCustomDirectives,
+    globalValues as defaultGlobalValues,
+} from "@web/env";
+import { MainComponentsContainer } from "@web/ui/main_components_container";
+import { getPopoverForTarget } from "@web/ui/popover/popover";
+
+import { getMockEnv, makeMockEnv } from "./env_test_helpers.js";
+
+/**
+ * @typedef {import("@odoo/hoot").Target} Target
+ * @typedef {import("@odoo/owl").Component} OwlComponent
+ * @typedef {import("@web/env").OdooEnv} OdooEnv
+ * @typedef {import("@odoo/owl").AppConfig} AppConfig
+ */
+
+/**
+ * @template [P=any]
+ * @template [E=any]
+ * @typedef {import("@odoo/owl").ComponentConstructor<P, E>} ComponentConstructor
+ */
+
+/**
+ * @template {Component} TComponent
+ * @param {new (...args: any[]) => TComponent} ComponentClass
+ * @param {HTMLElement | ShadowRoot} targetEl
+ * @param {AppConfig & { props?: any }} config
+ */
+const mountComponentWithCleanup = (ComponentClass, targetEl, config) => {
+    const { env, props, ...appConfig } = config;
+    const app = new App({
+        ...appConfig,
+        plugins: [AppContextPlugin],
+        config: { appContext: env },
+    });
+    after(() => destroy(app));
+    return app.createRoot(ComponentClass, { props }).mount(targetEl);
+};
+
+patch(MainComponentsContainer.prototype, {
+    setup() {
+        super.setup();
+
+        hasMainComponent = true;
+        after(() => (hasMainComponent = false));
+    },
+});
+
+let hasMainComponent = false;
+
+/**
+ * @template {Component} C
+ * @overload
+ * @param {Component} parent
+ * @param {(component: Component) => component is C} predicate
+ * @returns {C | null}
+ */
+/**
+ * @overload
+ * @param {Component} parent
+ * @param {(component: Component) => boolean} predicate
+ * @returns {Component | null}
+ */
+/**
+ * @param {Component} parent
+ * @param {(component: Component) => boolean} predicate
+ * @returns {Component | null}
+ */
+export function findComponent(parent, predicate) {
+    const rootNode = parent.__owl__;
+    const queue = [rootNode, ...Object.values(rootNode.children)];
+    while (queue.length) {
+        const { children, component } = queue.pop();
+        if (predicate(component)) {
+            return component;
+        }
+        queue.unshift(...Object.values(children));
+    }
+    return null;
+}
+
+/**
+ * @param {Target} togglerSelector
+ * @returns {HTMLElement | undefined}
+ */
+export function getDropdownMenu(togglerSelector) {
+    if (getMockEnv().isSmall) {
+        return queryFirst(".o-dropdown--menu", { eq: -1 });
+    }
+    let el = queryFirst(togglerSelector);
+    if (el && !el.classList.contains("o-dropdown")) {
+        el = el.querySelector(".o-dropdown");
+    }
+    if (!el) {
+        throw new Error(
+            `getDropdownMenu: Could not find element "${togglerSelector}".`,
+        );
+    }
+    return getPopoverForTarget(el);
+}
+
+/**
+ * @typedef {AppConfig & {
+ * componentEnv?: Partial<OdooEnv>;
+ * containerEnv?: Partial<OdooEnv>;
+ * fixtureClassName?: string | string[] | null;
+ * env?: any;
+ * noMainContainer?: boolean;
+ * props?: any;
+ * target?: Target;
+ * }} MountWithCleanupOptions
+ */
+
+/**
+ * @template {Component} TComponent
+ * @overload
+ * @param {new (...args: any[]) => TComponent} ComponentClass
+ * @param {MountWithCleanupOptions} [options]
+ * @returns {Promise<TComponent>}
+ */
+/**
+ * @overload
+ * @param {string} ComponentClass
+ * @param {MountWithCleanupOptions} [options]
+ * @returns {Promise<Component>}
+ */
+/**
+ * @param {(new (...args: any[]) => Component) | string} ComponentClass
+ * @param {MountWithCleanupOptions} [options]
+ */
+export async function mountWithCleanup(ComponentClass, options) {
+    const {
+        componentEnv,
+        containerEnv,
+        customDirectives = defaultCustomDirectives,
+        env,
+        fixtureClassName = "o_web_client",
+        getTemplate = defaultGetTemplate,
+        globalValues = defaultGlobalValues,
+        noMainContainer,
+        props,
+        target,
+        templates,
+        translatableAttributes,
+        translateFn = appTranslateFn,
+    } = options || {};
+
+    const commonConfig = {
+        customDirectives,
+        getTemplate,
+        globalValues,
+        templates,
+        translatableAttributes,
+        translateFn,
+        test: true,
+    };
+
+    const fixture = getFixture();
+    const targetEl = target ? queryOne(target) : fixture;
+    if (fixtureClassName) {
+        const list = isIterable(fixtureClassName)
+            ? fixtureClassName
+            : [fixtureClassName];
+        fixture.classList.add(.../** @type {string[]} */ (list));
+    }
+
+    if (typeof ComponentClass === "string") {
+        ComponentClass = class extends Component {
+            static name = "anonymous component";
+            static props = {};
+            static template = xml`${ComponentClass}`;
+            props = useProps(this.constructor.props);
+        };
+    }
+
+    const commonEnv = env || getMockEnv() || (await makeMockEnv());
+    const componentConfig = {
+        ...commonConfig,
+        env: Object.assign(Object.create(commonEnv), componentEnv),
+        name: `TEST: ${ComponentClass.name}`,
+        props,
+    };
+
+    const component = await mountComponentWithCleanup(
+        ComponentClass,
+        targetEl,
+        componentConfig,
+    );
+
+    if (!noMainContainer && !hasMainComponent) {
+        const containerConfig = {
+            ...commonConfig,
+            env: Object.assign(Object.create(commonEnv), containerEnv),
+            name: `TEST: ${ComponentClass.name} (main container)`,
+            props: {},
+        };
+        await mountComponentWithCleanup(
+            MainComponentsContainer,
+            targetEl,
+            containerConfig,
+        );
+    }
+
+    return component;
+}
+
+export async function waitUntilIdle(apps = [...App.apps]) {
+    const isOwlIdle = () => apps.every((app) => app.scheduler.tasks.size === 0);
+
+    if (isOwlIdle()) {
+        return Promise.resolve();
+    }
+
+    return /** @type {Promise<void>} */ (
+        new Promise((resolve) => {
+            function cleanup() {
+                for (const cb of unpatch) {
+                    cb();
+                }
+                unpatch = [];
+            }
+            after(cleanup);
+            let unpatch = apps.map((app) =>
+                patch(app.scheduler, {
+                    processTasks() {
+                        super.processTasks();
+                        if (isOwlIdle()) {
+                            cleanup();
+                            resolve();
+                        }
+                    },
+                }),
+            );
+        })
+    );
+}

@@ -1,0 +1,19 @@
+from odoo.tests import common
+
+from odoo.addons.sale_mrp.tests.test_multistep_manufacturing import (
+    TestMultistepManufacturing,
+)
+
+
+@common.tagged("post_install", "-at_install")
+class TestSaleMrpAccount(TestMultistepManufacturing):
+    def test_mo_get_project_from_so(self):
+        project = self.env["project.project"].create(
+            {
+                "name": "SO Project",
+            }
+        )
+        self.sale_order.project_id = project
+        self.assertFalse(self.sale_order.mrp_production_ids.project_id)
+        self.sale_order.action_confirm()
+        self.assertEqual(self.sale_order.mrp_production_ids.project_id, project)

@@ -1,0 +1,186 @@
+from http import HTTPStatus
+from unittest.mock import patch
+
+import requests
+
+from odoo.libs.guarded_http import GuardedSession
+from odoo.libs.json import dumps_bytes as json_dumps_bytes
+from odoo.tests.common import JsonRpcException, new_test_user, tagged
+from odoo.tools import mute_logger
+
+from odoo.addons.base.tests.common import HttpCaseWithUserDemo
+
+SAMPLE = {
+    "text": "<p>Al mal tiempo, buena cara.</p>",
+    "src": "es",
+    "en": "<p>To bad weather, good face.</p>",
+    "fr": "<p>Au mauvais temps, bonne tête.</p>",
+    "nl": "<script src='xss-min.js'/><p onclick='XSS()'>Bij slecht weer, goed gezicht.</p>",
+    "lang": {
+        "fr": "espagnol",
+        "en": "Spanish",
+    },
+}
+
+
+def mock_response(fun):
+    def wrapper(self, url, data=False, params=False, timeout=5):
+        response = requests.Response()
+        response.status_code = HTTPStatus.OK
+        content = {"data": fun(self, url=url, data=data, params=params)}
+        if not content["data"]:
+            response.status_code = HTTPStatus.BAD_REQUEST
+            content = {"error": {"message": "Mocked Error"}}
+        response._content = json_dumps_bytes(content)
+        return response
+
+    return wrapper
+
+
+@tagged("post_install", "-at_install", "mail_message")
+class TestTranslationController(HttpCaseWithUserDemo):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.env["res.lang"]._activate_lang("fr_FR")
+        cls.env["res.lang"]._activate_lang("en_US")
+        cls.env.ref("base.user_admin").write({"lang": "fr_FR"})
+        cls.api_key = "VALIDKEY"
+        cls.env["credential.credential"]._set_system_secret(
+            "mail.google_translate_api_key", cls.api_key
+        )
+        cls.message = cls.env["mail.message"].create(
+            {
+                "body": SAMPLE["text"],
+                "model": "res.partner",
+                "res_id": cls.env.ref("base.user_admin").partner_id.id,
+                "message_type": "comment",
+            }
+        )
+        cls.request_count = 0
+
+    @mock_response
+    def _patched_post(self, url, data, params, timeout=5):
+        self.request_count += 1
+        if f"/v2/detect?key={self.api_key}" in url:
+            result = {
+                "language": SAMPLE["src"],
+                "isReliable": True,
+                "confidence": 0.98,
+            }
+            return {"detections": [[result]]}
+        if f"/v2/?key={self.api_key}" in url:
+            return {"translations": [{"translatedText": SAMPLE[data.get("target")]}]}
+        return None
+
+    def _mock_translation_request(self, data):
+        def request(session, method, url, data=False, timeout=5, **kwargs):
+            return self._patched_post(url, data=data, timeout=timeout)
+
+        with patch.object(GuardedSession, "request", request):
+            return self.call_jsonrpc("/mail/message/translate", data)
+
+    def test_update_message(self):
+        self.authenticate("admin", "admin")
+        result = self._mock_translation_request({"message_id": self.message.id})
+        self.assertFalse(result.get("error"))
+        self.assertEqual(self.env["mail.message.translation"].search_count([]), 1)
+        self.call_jsonrpc(
+            "/mail/message/update_content",
+            {
+                "message_id": self.message.id,
+                "update_data": {"body": None, "attachment_ids": []},
+            },
+        )
+        self.assertEqual(self.env["mail.message.translation"].search_count([]), 1)
+        self.call_jsonrpc(
+            "/mail/message/update_content",
+            {
+                "message_id": self.message.id,
+                "update_data": {"body": "update", "attachment_ids": []},
+            },
+        )
+        self.assertFalse(self.env["mail.message.translation"].search_count([]))
+
+    def test_translation_multi_users(self):
+        new_test_user(self.env, "user_test_fr", groups="base.group_user", lang="fr_FR")
+        new_test_user(self.env, "user_test_en", groups="base.group_user", lang="en_US")
+        for login, target_lang in [
+            ("user_test_fr", "fr"),
+            ("user_test_en", "en"),
+            ("admin", "fr"),
+        ]:
+            self.authenticate(login, login)
+            result = self._mock_translation_request({"message_id": self.message.id})
+            self.assertFalse(result.get("error"))
+            self.assertEqual(result["body"], SAMPLE[target_lang])
+            self.assertEqual(result["lang_name"], SAMPLE["lang"][target_lang])
+        self.assertEqual(self.env["mail.message.translation"].search_count([]), 2)
+        self.assertEqual(self.request_count, 3)
+
+    def test_invalid_api_key(self):
+        self.env["credential.credential"]._set_system_secret(
+            "mail.google_translate_api_key", "INVALIDKEY"
+        )
+        self.authenticate("demo", "demo")
+        result = self._mock_translation_request({"message_id": self.message.id})
+        self.assertNotIn("body", result)
+        self.assertNotIn("lang_name", result)
+        self.assertTrue(result["error"])
+
+    def test_html_sanitization(self):
+        self.env["res.lang"]._activate_lang("nl_NL")
+        new_test_user(self.env, "user_test_nl", groups="base.group_user", lang="nl_NL")
+        self.authenticate("user_test_nl", "user_test_nl")
+        result = self._mock_translation_request({"message_id": self.message.id})
+        self.assertFalse(result.get("error"))
+        self.assertHTMLEqual(result["body"], "<p>Bij slecht weer, goed gezicht.</p>")
+        translation = self.env["mail.message.translation"].search([])
+        self.assertEqual(len(translation), 1)
+        self.assertHTMLEqual(translation.body, "<p>Bij slecht weer, goed gezicht.</p>")
+
+    def test_access_right(self):
+        with self.assertRaises(
+            JsonRpcException, msg="odoo.http.SessionExpiredException"
+        ):
+            self._mock_translation_request({"message_id": self.message.id})
+        new_test_user(
+            self.env, "user_test_portal", groups="base.group_portal", lang="fr_FR"
+        )
+        self.authenticate("user_test_portal", "user_test_portal")
+        with (
+            self.assertRaises(JsonRpcException, msg="odoo.exceptions.AccessError"),
+            mute_logger("odoo.http"),
+        ):
+            self._mock_translation_request({"message_id": self.message.id})
+
+    def test_unknown_language(self):
+        self.authenticate("admin", "admin")
+        with patch.dict(SAMPLE, {"src": "unknown_by_babel_but_known_by_google_api"}):
+            result = self._mock_translation_request({"message_id": self.message.id})
+        self.assertEqual(result["body"], "<p>Au mauvais temps, bonne tête.</p>")
+
+    def test_a_refused_translation_spends_no_quota(self):
+        self.env["ir.config_parameter"].sudo().set_param(
+            "mail.translation.daily_limit", "1"
+        )
+        self.authenticate("admin", "admin")
+        refused = self._mock_translation_request({"message_id": self.message.id})
+        self.assertTrue(
+            refused.get("error"), "an unknown source language costs two calls"
+        )
+        self.assertEqual(self.request_count, 0)
+        self.env["mail.message.translation"].sudo().create(
+            {
+                "body": SAMPLE["en"],
+                "message_id": self.message.id,
+                "source_lang": SAMPLE["src"],
+                "target_lang": "en",
+            }
+        )
+        result = self._mock_translation_request({"message_id": self.message.id})
+        self.assertFalse(
+            result.get("error"),
+            "the refused request must leave its one token for a one-call translation",
+        )
+        self.assertEqual(result["body"], SAMPLE["fr"])

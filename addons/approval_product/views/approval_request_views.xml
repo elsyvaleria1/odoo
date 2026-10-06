@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_approval_request_form_product" model="ir.ui.view">
+        <field name="name">approval.request.view.form.product</field>
+        <field name="model">approval.request</field>
+        <field name="inherit_id" ref="approval_app.view_approval_request_form_fields" />
+        <field name="arch" type="xml">
+            <field name="has_document" position="before">
+                <field name="has_product" invisible="1" />
+            </field>
+            <field name="quantity" position="attributes">
+                <attribute name="required">has_quantity == 'required' and not line_ids and state == 'new'</attribute>
+                <attribute name="invisible">(has_quantity == 'no' and not quantity) or (has_product != 'no' and line_ids)</attribute>
+            </field>
+            <xpath expr="//page[@name='description']" position="before">
+                <page name="products" string="Products" invisible="has_product == 'no'">
+                    <field
+                        name="line_ids"
+                        context="{                             'list_view_ref': 'approval_product.approval_request_line_view_tree',                             'kanban_view_ref': 'approval_product.approval_product_kanban_mobile_view'                         }"
+                        readonly="state != 'new'" />
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

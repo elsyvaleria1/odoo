@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_credit_profile_search_inherit_partner_scoring" model="ir.ui.view">
+        <field name="name">credit.profile.search.inherit.partner.scoring</field>
+        <field name="model">credit.profile</field>
+        <field name="inherit_id" ref="account_credit.view_credit_profile_search" />
+        <field name="arch" type="xml">
+            <xpath expr="//filter[@name='downgrade']" position="after">
+                <separator />
+                <filter
+                    name="customer_unscored"
+                    string="Customer not scored"
+                    help="The commercial score does not weigh on this profile yet"
+                    domain="[('tier_id', '=', False)]" />
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="resource_resource_gps_form" model="ir.ui.view">
+        <field name="name">resource.resource.gps.form</field>
+        <field name="model">resource.resource</field>
+        <field name="inherit_id" ref="resource.resource_resource_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//sheet" position="inside">
+                <group string="GPS Tracking" groups="device_gps.group_device_gps_user">
+                    <field name="gps_device_id" />
+                    <field name="gps_binding_ids" readonly="1">
+                        <list create="0" edit="0" delete="0">
+                            <field name="device_id" />
+                            <field name="date_start" />
+                            <field name="date_end" />
+                            <field name="origin" />
+                        </list>
+                    </field>
+                </group>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

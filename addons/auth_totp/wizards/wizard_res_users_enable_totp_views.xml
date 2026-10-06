@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_totp_wizard" model="ir.ui.view">
+        <field name="name">auth_totp wizard</field>
+        <field name="model">wizard.res.users.enable.totp</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <div class="o_auth_totp_enable_2FA text-center ps-0">
+                        <div class="mb-3 w-100">
+
+                            <!-- Desktop version -->
+                            <h3 class="fw-bold d-none d-md-block">Scan this barcode in your Authenticator app</h3>
+                            <div class="d-none d-md-block">
+                                <field
+                                    name="qrcode"
+                                    widget="image"
+                                    options="{'reload': false }"
+                                    readonly="True" />
+
+                                <details id="collapseTotpSecret">
+                                    <summary class="h3 fw-bold">Cannot scan it?</summary>
+                                    <field
+                                        name="secret"
+                                        widget="CopyClipboardChar"
+                                        readonly="1"
+                                        class="mb-3 ps-3" />
+                                </details>
+                            </div>
+
+                            <!-- Mobile Version -->
+                            <h3 class="fw-bold d-block d-md-none">Add this key in your Authenticator app</h3>
+                            <div class="d-block d-md-none">
+                                <field
+                                    name="secret"
+                                    widget="CopyClipboardChar"
+                                    readonly="1"
+                                    class="mb-3 ps-3" />
+                            </div>
+
+                            <h3 class="fw-bold">Write the code given by your app</h3>
+                            <field
+                                name="code"
+                                placeholder="Verification code"
+                                required="True"
+                                class="o_field_highlight w-50 w-sm-25"
+                                autocomplete="off" />
+                        </div>
+                    </div>
+                </sheet>
+                <footer>
+                    <button
+                        name="enable"
+                        type="object"
+                        string="Enable Two-Factor Authentication"
+                        context="{'code': code}"
+                        class="btn btn-primary"
+                        data-hotkey="q" />
+                    <button special="cancel" string="Discard" data-hotkey="x" />
+                </footer>
+            </form>
+        </field>
+    </record>
+
+</odoo>

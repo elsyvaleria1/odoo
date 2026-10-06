@@ -1,0 +1,77 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* account_credit_partner_scoring
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-09-27 05:12+0000\n"
+"PO-Revision-Date: 2026-09-27 05:12+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: account_credit_partner_scoring
+#: model:scorecard.dimension,name:account_credit_partner_scoring.scorecard_dimension_commercial_score
+msgid "Commercial Score"
+msgstr ""
+
+#. module: account_credit_partner_scoring
+#: model:ir.model.fields,field_description:account_credit_partner_scoring.field_credit_profile__tier_id
+#: model:ir.model.fields,field_description:account_credit_partner_scoring.field_credit_review__tier_id
+msgid "Commercial Tier"
+msgstr ""
+
+#. module: account_credit_partner_scoring
+#: model:ir.model.fields.selection,name:account_credit_partner_scoring.selection__scorecard_dimension__code__commercial_score
+msgid "Commercial score of the customer"
+msgstr ""
+
+#. module: account_credit_partner_scoring
+#: model:ir.model,name:account_credit_partner_scoring.model_credit_profile
+msgid "Credit Profile"
+msgstr ""
+
+#. module: account_credit_partner_scoring
+#: model:ir.model,name:account_credit_partner_scoring.model_credit_review
+msgid "Credit Review"
+msgstr ""
+
+#. module: account_credit_partner_scoring
+#: model_terms:ir.ui.view,arch_db:account_credit_partner_scoring.view_credit_profile_search_inherit_partner_scoring
+msgid "Customer not scored"
+msgstr ""
+
+#. module: account_credit_partner_scoring
+#: model:ir.model.fields,field_description:account_credit_partner_scoring.field_credit_profile__display_name
+#: model:ir.model.fields,field_description:account_credit_partner_scoring.field_credit_review__display_name
+msgid "Display Name"
+msgstr ""
+
+#. module: account_credit_partner_scoring
+#: model:ir.model.fields,help:account_credit_partner_scoring.field_credit_profile__tier_id
+#: model:ir.model.fields,help:account_credit_partner_scoring.field_credit_review__tier_id
+msgid ""
+"First active tier whose score range contains the partner's score. A partner "
+"that was never scored carries no tier: a tier means a measurement was taken."
+" A contact carries its commercial entity's tier: the score describes the "
+"customer, not the person. Tracked, so the chatter carries the band history. "
+"score is deliberately not tracked: it moves on every catalog edit and every "
+"attribute capture, and would bury the transitions that carry commercial "
+"meaning."
+msgstr ""
+
+#. module: account_credit_partner_scoring
+#: model:ir.model.fields,field_description:account_credit_partner_scoring.field_credit_profile__id
+#: model:ir.model.fields,field_description:account_credit_partner_scoring.field_credit_review__id
+msgid "ID"
+msgstr ""
+
+#. module: account_credit_partner_scoring
+#: model_terms:ir.ui.view,arch_db:account_credit_partner_scoring.view_credit_profile_search_inherit_partner_scoring
+msgid "The commercial score does not weigh on this profile yet"
+msgstr ""

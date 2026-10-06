@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <menuitem
+        id="menu_ecommerce"
+        name="eCommerce"
+        parent="website.menu_website_configuration"
+        sequence="20"
+        groups="sale.group_sale_salesman">
+        <menuitem id="menu_orders" name="Orders" sequence="2">
+            <menuitem
+                id="menu_orders_orders"
+                name="Orders"
+                action="action_orders_ecommerce"
+                sequence="1" />
+            <menuitem
+                id="menu_orders_unpaid_orders"
+                name="Unpaid Orders"
+                action="action_view_unpaid_quotation_tree"
+                sequence="2" />
+            <menuitem
+                id="menu_orders_abandoned_orders"
+                name="Abandoned Carts"
+                action="action_view_abandoned_tree"
+                sequence="3" />
+            <menuitem
+                id="menu_orders_customers"
+                name="Customers"
+                action="base.action_partner_customer_form"
+                sequence="4" />
+        </menuitem>
+        <menuitem id="menu_catalog" name="Products" sequence="3">
+            <menuitem
+                id="menu_catalog_products"
+                name="Products"
+                action="product_template_action_website"
+                sequence="1" />
+            <menuitem
+                id="menu_catalog_pricelists"
+                name="Pricelists"
+                action="product.action_product_pricelist_2"
+                sequence="3"
+                groups="product.group_product_pricelist" />
+            <menuitem
+                id="menu_catalog_categories"
+                action="product_public_category_action"
+                sequence="4" />
+            <menuitem
+                id="menu_product_attribute_action"
+                action="product.action_product_attribute"
+                sequence="5"
+                groups="product.group_product_variant" />
+            <menuitem
+                id="menu_product_combos"
+                name="Combo Choices"
+                action="product.action_product_combo"
+                sequence="6" />
+            <menuitem
+                id="product_catalog_product_tags"
+                name="Product Tags"
+                action="product.action_product_tag" />
+            <menuitem
+                id="product_catalog_product_ribbons"
+                name="Product Ribbons"
+                action="website_sale.product_ribbon_action"
+                sequence="11" />
+        </menuitem>
+    </menuitem>
+
+    <menuitem
+        id="menu_ecommerce_settings"
+        name="eCommerce"
+        parent="website.menu_website_global_configuration"
+        sequence="50">
+        <menuitem
+            id="menu_ecommerce_payment_providers"
+            name="Payment Providers"
+            action="payment.action_payment_provider"
+            sequence="10" />
+        <menuitem
+            id="menu_ecommerce_payment_methods"
+            name="Payment Methods"
+            action="payment.action_payment_method"
+            sequence="20" />
+        <menuitem
+            id="menu_ecommerce_payment_tokens"
+            action="payment.action_payment_token"
+            sequence="30"
+            groups="base.group_no_one" />
+        <menuitem
+            id="menu_ecommerce_payment_transactions"
+            action="payment.action_payment_transaction"
+            sequence="40"
+            groups="base.group_no_one" />
+        <menuitem
+            id="menu_ecommerce_delivery"
+            action="delivery.action_delivery_carrier_form"
+            sequence="90" />
+        <menuitem
+            id="menu_delivery_zip_prefix"
+            action="delivery.action_delivery_zip_prefix_list"
+            sequence="100"
+            groups="base.group_no_one" />
+        <menuitem
+            id="menu_product_feeds"
+            action="website_sale.action_product_feeds"
+            sequence="150"
+            groups="website_sale.group_product_feed" />
+    </menuitem>
+
+    <menuitem
+        id="menu_report_sales"
+        name="Online Sales"
+        parent="website.menu_reporting"
+        action="sale_report_action_dashboard"
+        sequence="30"
+        groups="sale.group_sale_manager" />
+
+    <menuitem
+        id="menu_product_pages"
+        name="Products"
+        parent="website.menu_content"
+        action="action_product_pages_list"
+        sequence="30" />
+
+    <record id="website.menu_website_dashboard" model="ir.ui.menu">
+        <field
+            name="group_ids"
+            eval="[Command.link(ref('sale.group_sale_salesman'))]" />
+    </record>
+
+</odoo>

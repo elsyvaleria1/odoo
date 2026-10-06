@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="ai_tool_call_view_list" model="ir.ui.view">
+        <field name="name">ai.tool.call.view.list</field>
+        <field name="model">ai.tool.call</field>
+        <field name="arch" type="xml">
+            <list string="AI Tool Calls" create="0">
+                <field name="name" />
+                <field name="requester_id" />
+                <field name="assignee_id" optional="show" />
+                <field name="confidence" optional="hide" />
+                <field name="approval_state" optional="show" />
+                <field
+                    name="state"
+                    widget="badge"
+                    decoration-danger="state == 'failed'"
+                    decoration-muted="state == 'rejected'"
+                    decoration-success="state == 'applied'" />
+                <field name="create_date" optional="show" />
+            </list>
+        </field>
+    </record>
+
+    <record id="ai_tool_call_view_form" model="ir.ui.view">
+        <field name="name">ai.tool.call.view.form</field>
+        <field name="model">ai.tool.call</field>
+        <field name="arch" type="xml">
+            <form string="AI Tool Call" create="0">
+                <header>
+                    <button
+                        name="action_apply"
+                        type="object"
+                        string="Apply"
+                        invisible="state not in ('proposed', 'failed')"
+                        class="btn-primary" />
+                    <field
+                        name="state"
+                        widget="statusbar"
+                        statusbar_visible="proposed,applied" />
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name" readonly="1" /></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field
+                                name="summary"
+                                invisible="not summary"
+                                readonly="1" />
+                            <field name="tool_name" readonly="1" />
+                            <field name="res_model" readonly="1" />
+                            <field name="res_id" readonly="1" />
+                            <field name="requester_id" readonly="1" />
+                            <field
+                                name="assignee_id"
+                                readonly="state not in ('proposed', 'failed')" />
+                        </group>
+                        <group>
+                            <field name="approval_request_id" readonly="1" />
+                            <field name="approval_state" readonly="1" />
+                            <field name="confidence" readonly="1" />
+                            <field
+                                name="applied_res_model"
+                                invisible="not applied_res_model"
+                                readonly="1" />
+                            <field
+                                name="applied_res_id"
+                                invisible="not applied_res_id"
+                                readonly="1" />
+                        </group>
+                    </group>
+                    <group string="Arguments">
+                        <field
+                            name="arguments_text"
+                            colspan="2"
+                            nolabel="1"
+                            readonly="state not in ('proposed', 'failed')" />
+                    </group>
+                    <group string="Evidence" invisible="not evidence">
+                        <field name="evidence" colspan="2" nolabel="1" readonly="1" />
+                    </group>
+                    <group string="Error" invisible="not error">
+                        <field name="error" colspan="2" nolabel="1" readonly="1" />
+                    </group>
+                </sheet>
+                <chatter />
+            </form>
+        </field>
+    </record>
+
+    <record id="ai_tool_call_view_search" model="ir.ui.view">
+        <field name="name">ai.tool.call.view.search</field>
+        <field name="model">ai.tool.call</field>
+        <field name="arch" type="xml">
+            <search string="AI Tool Calls">
+                <field name="name" />
+                <field name="requester_id" />
+                <filter
+                    name="proposed"
+                    string="Proposed"
+                    domain="[('state', '=', 'proposed')]" />
+                <filter
+                    name="failed"
+                    string="Failed"
+                    domain="[('state', '=', 'failed')]" />
+                <filter
+                    name="mine"
+                    string="Mine"
+                    domain="[('requester_id', '=', uid)]" />
+            </search>
+        </field>
+    </record>
+
+    <record id="ai_tool_call_action" model="ir.actions.act_window">
+        <field name="name">AI Tool Calls</field>
+        <field name="res_model">ai.tool.call</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{'search_default_proposed': 1}</field>
+    </record>
+
+</odoo>

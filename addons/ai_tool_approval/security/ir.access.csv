@@ -1,0 +1,6 @@
+id,name,model_id/id,group_id/id,kind,operation,reach,anchor,domain
+access_ai_tool_call_user,ai.tool.call user,model_ai_tool_call,base.group_user,permission,ru,,,
+access_ai_tool_call_system,ai.tool.call system,model_ai_tool_call,base.group_system,permission,cd,,,
+access_ai_tool_model_access_user,ai.tool.model.access user,model_ai_tool_model_access,base.group_user,permission,r,,,
+access_ai_tool_model_access_system,ai.tool.model.access system,model_ai_tool_model_access,base.group_system,permission,cud,,,
+access_ai_tool_call_approver_reach,"AI Tool Call: an approver reads what they are asked to decide, while they decide",model_ai_tool_call,approval.group_approval_decider,permission,r,own,,

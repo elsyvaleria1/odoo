@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="device_category_pbx" model="device.kind">
+        <field name="name">Phone System</field>
+        <field name="code">pbx</field>
+        <field
+            name="description">The phone system behind the company's numbers, reporting every call it carries and its recording</field>
+        <field name="link_mode">push</field>
+    </record>
+
+</odoo>

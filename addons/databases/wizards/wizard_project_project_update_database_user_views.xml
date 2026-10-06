@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <data>
+        <record id="databases_manage_users_wizard_view_form" model="ir.ui.view">
+            <field name="name">databases.manage_users.wizard.view.form</field>
+            <field name="model">wizard.project.project.update.database.user</field>
+            <field name="arch" type="xml">
+                <form>
+                    <sheet>
+                        <div class="text-muted">
+                            <field
+                                name="summary_message"
+                                colspan="2"
+                                readonly="1"
+                                decoration-danger="error_message" />
+                        </div>
+                        <div>
+                            <field
+                                name="user_ids"
+                                widget="many2many_avatar_user"
+                                domain="[('id', '!=', uid), ('id', 'not in', everywhere_user_ids)]"
+                                invisible="mode != 'invite'"
+                                readonly="state != 'draft'" />
+                            <field
+                                name="user_ids"
+                                widget="many2many_avatar_user"
+                                domain="[('id', '!=', uid), ('id', 'in', removable_user_ids)]"
+                                options="{'no_create': True}"
+                                invisible="mode != 'remove'"
+                                readonly="state != 'draft'" />
+                        </div>
+                    </sheet>
+                    <footer>
+                        <button
+                            name="action_invite_users"
+                            type="object"
+                            string="Invite"
+                            invisible="state != 'draft' or mode != 'invite'"
+                            class="btn-primary" />
+                        <button
+                            name="action_remove_users"
+                            type="object"
+                            string="Remove"
+                            invisible="state != 'draft' or mode != 'remove'"
+                            class="btn-primary" />
+                        <button
+                            special="cancel"
+                            string="Discard"
+                            invisible="state != 'draft'"
+                            class="btn-secondary"
+                            data-hotkey="x" />
+                        <button
+                            special="cancel"
+                            string="Close"
+                            invisible="state == 'draft'"
+                            class="btn-secondary"
+                            data-hotkey="x" />
+                    </footer>
+                </form>
+            </field>
+        </record>
+    </data>
+
+</odoo>

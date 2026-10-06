@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <menuitem
+        id="maintenance.menu_equipment_form"
+        name="Assets"
+        parent="maintenance.menu_maintenance_title"
+        sequence="2"
+        groups="maintenance.group_equipment_manager,base.group_user" />
+
+    <menuitem
+        id="menu_workcenter_tree"
+        parent="maintenance.menu_equipment_form"
+        action="maintenance_workcenter_action"
+        sequence="1"
+        groups="mrp.group_mrp_routings" />
+
+    <menuitem
+        id="menu_equipment_dashboard"
+        name="Machines &amp; Tools"
+        parent="maintenance.menu_equipment_form"
+        action="resource_asset.action_resource_asset"
+        sequence="2" />
+
+</odoo>

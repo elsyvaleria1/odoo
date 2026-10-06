@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_approval_department_kanban" model="ir.ui.view">
+        <field name="name">approval.department.kanban</field>
+        <field name="model">hr.department</field>
+        <field name="priority" eval="99" />
+        <field name="arch" type="xml">
+            <kanban
+                create="false"
+                class="o_approval_dashboard"
+                can_open="0"
+                highlight_color="color">
+                <field name="id" />
+                <field name="name" />
+                <field name="active" />
+                <field name="color" />
+                <field name="approval_category_count" />
+                <templates>
+                    <t t-name="card">
+                        <div class="o_approval_card">
+                            <widget
+                                name="web_ribbon"
+                                title="Archived"
+                                invisible="active"
+                                bg_color="text-bg-danger" />
+
+                            <div class="o_approval_card_header">
+                                <i
+                                    class="fa fa-folder fa-2x o_approval_card_icon text-warning"
+                                    aria-label="Departamento"
+                                    title="Departamento"
+                                    role="img" />
+                                <div class="o_approval_card_info">
+                                    <span class="o_approval_card_name">
+                                        <field name="name" />
+                                    </span>
+                                    <div class="o_approval_card_desc">
+                                        <field name="approval_category_count" /> categorías
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="o_approval_card_actions">
+                                <button
+                                    name="view_approval_categories"
+                                    type="object"
+                                    class="o_approval_btn o_approval_btn_primary">
+                                    <i class="fa fa-folder-open" />
+                                    <span>Ver Categorías</span>
+                                </button>
+                            </div>
+                        </div>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
+    <record id="action_approval_department_dashboard" model="ir.actions.act_window">
+        <field name="name">Dashboard</field>
+        <field name="res_model">hr.department</field>
+        <field name="path">user-approvals</field>
+        <field name="view_mode">kanban</field>
+        <field name="view_id" ref="view_approval_department_kanban" />
+        <field name="domain">[('approval_category_ids', '!=', False)]</field>
+        <field name="context">{}</field>
+        <field name="usage">menu</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Aún no hay departamentos con categorías de aprobación
+            </p>
+            <p>
+                Asigna departamentos a las categorías en Configuration &gt;
+                Approval Categories para que aparezcan aquí.
+            </p>
+        </field>
+    </record>
+
+</odoo>

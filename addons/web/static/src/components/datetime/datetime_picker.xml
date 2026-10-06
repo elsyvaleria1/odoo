@@ -1,0 +1,257 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="web.DateTimePicker.Days">
+        <div class="d-flex gap-3">
+            <t t-foreach="this.items" t-as="month" t-key="month.id">
+                <div
+                    class="o_date_picker d-grid flex-grow-1 rounded overflow-auto"
+                    t-on-pointerleave="() => this.onDateHover(null)"
+                >
+                    <t t-foreach="month.daysOfWeek" t-as="dayOfWeek" t-key="dayOfWeek[0]">
+                        <div
+                            class="o_day_of_week_cell fw-bolder d-flex align-items-center justify-content-center"
+                            t-att-title="dayOfWeek[1]"
+                        >
+                            <div class="text-nowrap overflow-hidden" t-out="this.props.daysOfWeekFormat === 'narrow' ? dayOfWeek[2] : dayOfWeek[0]"/>
+                        </div>
+                    </t>
+                    <t t-foreach="month.weeks" t-as="week" t-key="week.number">
+                        <t t-if="this.props.showWeekNumbers">
+                            <div
+                                class="o_week_number_cell d-flex justify-content-end align-items-center pe-3 fw-bolder"
+                                t-att-class="{ invisible: week.days.every((day) => this.isHidden(day)) }"
+                                t-out="week.number"
+                            />
+                        </t>
+                        <t t-foreach="week.days" t-as="itemInfo" t-key="itemInfo.id">
+                            <t t-set="arInfo" t-value="this.getActiveRangeInfo(itemInfo)" />
+                            <div
+                                class="o_date_item_cell o_datetime_button o_center"
+                                t-att-class="{
+                                    'o_out_of_range text-muted': itemInfo.isOutOfRange,
+                                    invisible: this.isHidden(itemInfo),
+                                    o_selected: arInfo.isSelected,
+                                    o_select_start: arInfo.isSelectStart,
+                                    o_select_end: arInfo.isSelectEnd,
+                                    o_datetime_cursor: this.isCursor(itemInfo),
+                                    'o_today fw-bolder': itemInfo.includesToday,
+                                    [itemInfo.extraClass]: true,
+                                    'opacity-50': !itemInfo.isValid,
+                                    'cursor-pointer': itemInfo.isValid,
+                                }"
+                                t-att-disabled="!itemInfo.isValid"
+                                t-on-pointerenter="() => this.onDateHover(itemInfo)"
+                                t-on-click="() => this.zoomOrSelect(itemInfo)"
+                            >
+                                <div t-att-class="{'w-75 align-content-center text-center rounded-circle': itemInfo.includesToday}">
+                                    <t t-out="itemInfo.label" />
+                                </div>
+                            </div>
+                        </t>
+                    </t>
+                </div>
+            </t>
+        </div>
+        <div t-if="this.showBounds" class="o_datetime_picker_footer d-flex gap-3 align-items-center justify-content-between">
+            <span
+                class="o_datetime_picker_duration small"
+                t-att-class="this.duration.isInverted ? 'text-danger' : 'text-muted'"
+            >
+                <t t-if="this.duration.isInverted">Ends before it starts</t>
+                <t t-elif="this.duration.label">
+                    <i class="fa-regular fa-clock me-1"/><t t-out="this.duration.label"/>
+                </t>
+            </span>
+            <t t-call-slot="buttons" />
+        </div>
+        <div t-elif="this.props.type === 'datetime'" class="d-flex gap-3 justify-content-between">
+            <div class="d-flex gap-1 align-items-center">
+                <TimePicker
+                    t-if="this.state.timeValues[0]"
+                    value="this.state.timeValues[0]"
+                    onChange="(newTime) => this.onTimeChange(0, newTime)"
+                    minutesRounding="this.props.rounding"
+                    showSeconds="this.props.rounding === 0"
+                    inputCssClass="'o_input'"
+                />
+                <i t-if="this.state.timeValues[0] and this.state.timeValues[1]" class="fa-solid fa-arrow-right-long"/>
+                <TimePicker
+                    t-if="this.state.timeValues[1]"
+                    value="this.state.timeValues[1]"
+                    onChange="(newTime) => this.onTimeChange(1, newTime)"
+                    minutesRounding="this.props.rounding"
+                    showSeconds="this.props.rounding === 0"
+                    inputCssClass="'o_input'"
+                />
+            </div>
+            <t t-call-slot="buttons" />
+        </div>
+    </t>
+
+    <t t-name="web.DateTimePicker.Grid">
+        <div class="o_date_item_picker d-grid">
+            <t t-foreach="this.items" t-as="itemInfo" t-key="itemInfo.id">
+                <t t-set="arInfo" t-value="this.getActiveRangeInfo(itemInfo)" />
+                <div
+                    class="o_date_item_cell o_datetime_button o_center cursor-pointer"
+                    t-att-class="{
+                        o_selected: arInfo.isSelected,
+                        o_select_start: arInfo.isSelectStart,
+                        o_select_end: arInfo.isSelectEnd,
+                        o_datetime_cursor: this.isCursor(itemInfo),
+                        o_today: itemInfo.includesToday,
+                        'opacity-50': !itemInfo.isValid,
+                    }"
+                    t-att-disabled="!itemInfo.isValid"
+                    t-on-click="() => this.zoomOrSelect(itemInfo)"
+                >
+                    <t t-out="itemInfo.label" />
+                </div>
+            </t>
+        </div>
+    </t>
+
+    <t t-name="web.DateTimePicker.Presets">
+        <t t-set="presets" t-value="this.presets"/>
+        <div
+            t-if="presets.anchors.length"
+            class="o_datetime_picker_presets d-flex flex-md-column gap-1 overflow-auto"
+        >
+            <span class="o_datetime_picker_presets_title small text-muted fw-bold">Quick select</span>
+            <t t-foreach="presets.anchors" t-as="preset" t-key="preset.id">
+                <t t-call="web.DateTimePicker.Preset"/>
+            </t>
+            <t t-if="presets.lengths.length">
+                <span class="o_datetime_picker_presets_title small text-muted fw-bold mt-md-2">Duration</span>
+                <t t-foreach="presets.lengths" t-as="preset" t-key="preset.id">
+                    <t t-call="web.DateTimePicker.Preset"/>
+                </t>
+            </t>
+        </div>
+    </t>
+
+    <t t-name="web.DateTimePicker.Preset">
+        <button
+            type="button"
+            class="o_datetime_picker_preset btn btn-sm text-start text-nowrap"
+            t-att-class="preset.isActive ? 'btn-primary' : 'btn-light'"
+            t-att-data-preset="preset.id"
+            t-att-disabled="!preset.isValid"
+            tabindex="-1"
+            t-on-click="() => this.applyPreset(preset)"
+            t-out="preset.label"
+        />
+    </t>
+
+    <t t-name="web.DateTimePicker.Bounds">
+        <div class="o_datetime_picker_bounds d-flex align-items-stretch gap-2">
+            <t t-foreach="[0, 1]" t-as="index" t-key="index">
+                <i t-if="index" class="fa-solid fa-arrow-right-long align-self-center text-muted"/>
+                <div
+                    class="o_datetime_picker_bound d-flex flex-column border rounded px-2 py-1"
+                    t-att-class="{
+                        'o_datetime_picker_bound_active border-primary': this.props.focusedDateIndex === index,
+                        o_datetime_picker_bound_empty: !this.values[index],
+                    }"
+                    t-att-data-bound="index ? 'end' : 'start'"
+                >
+                    <div class="d-flex align-items-start gap-1">
+                        <button
+                            type="button"
+                            class="o_datetime_picker_bound_select btn btn-link p-0 text-start text-reset text-decoration-none flex-grow-1 min-w-0"
+                            tabindex="-1"
+                            t-on-click="() => this.selectBound(index)"
+                        >
+                            <small class="d-block text-muted text-truncate" t-out="this.props.boundLabels[index]"/>
+                            <span
+                                class="o_datetime_picker_bound_date d-block fw-bold text-truncate"
+                                t-att-class="{ 'text-muted fw-normal': !this.values[index] }"
+                                t-out="this.formatBound(index)"
+                            />
+                        </button>
+                        <button
+                            t-if="this.values[index]"
+                            type="button"
+                            class="o_datetime_picker_bound_clear btn btn-link btn-sm p-0 text-muted"
+                            title="Clear"
+                            tabindex="-1"
+                            t-on-click="() => this.clearBound(index)"
+                        >
+                            <i class="fa-solid fa-xmark"/>
+                        </button>
+                    </div>
+                    <TimePicker
+                        t-if="this.props.type === 'datetime' and this.state.timeValues[index]"
+                        value="this.state.timeValues[index]"
+                        onChange="(newTime) => this.onTimeChange(index, newTime)"
+                        minutesRounding="this.props.rounding"
+                        showSeconds="this.props.rounding === 0"
+                        inputCssClass="'o_input'"
+                    />
+                </div>
+            </t>
+        </div>
+    </t>
+
+    <t t-name="web.DateTimePicker">
+        <div
+            class="o_datetime_picker d-flex flex-column flex-md-row gap-3 user-select-none p-2"
+            t-att-class="{
+                o_datetime_picker_multi: this.monthCount > 1,
+                o_datetime_picker_wide: this.monthCount > 1 or this.presets.anchors.length,
+            }"
+            t-attf-style="--DateTimePicker__Day-template-columns: {{ this.props.showWeekNumbers ? 8 : 7 }}"
+        >
+            <t t-call="web.DateTimePicker.Presets"/>
+            <div class="o_datetime_picker_main d-flex flex-column gap-2 flex-grow-1 min-w-0">
+                <t t-if="this.showBounds" t-call="web.DateTimePicker.Bounds"/>
+                <nav class="o_datetime_picker_header d-flex">
+                    <button
+                        class="o_previous btn btn-sm opacity-75 opacity-100-hover"
+                        t-on-click="this.previous"
+                        tabindex="-1"
+                    >
+                        <i class="oi oi-chevron-left" t-att-title="this.activePrecisionLevel.prevTitle" />
+                    </button>
+                    <button
+                        class="o_next btn btn-sm opacity-75 opacity-100-hover"
+                        t-on-click="this.next"
+                        tabindex="-1"
+                    >
+                        <i class="oi oi-chevron-right" t-att-title="this.activePrecisionLevel.nextTitle" />
+                    </button>
+                    <button
+                        class="o_zoom_out o_datetime_button btn opacity-75 opacity-100-hover text-truncate"
+                        tabindex="-1"
+                        t-att-class="{ 'disabled': this.isLastPrecisionLevel }"
+                        t-att-title="!this.isLastPrecisionLevel and this.activePrecisionLevel.mainTitle"
+                        t-on-click="this.zoomOut"
+                    >
+                        <t t-foreach="this.titles" t-as="title" t-key="title">
+                            <strong
+                                class="o_header_part"
+                                t-out="title"
+                            />
+                        </t>
+                    </button>
+                    <button
+                        t-if="this.props.showRangeToggler"
+                        class="o_toggle_range btn btn-secondary btn-sm ms-auto"
+                        tabindex="-1"
+                        title="Toggle date range mode"
+                        t-on-click="this.props.onToggleRange"
+                        t-att-class="{'active': this.props.range}"
+                    >
+                        <i class="fa-regular fa-calendar-plus" />
+                    </button>
+                </nav>
+                <t t-if="this.state.precision === 'days'">
+                    <t t-call="web.DateTimePicker.Days" />
+                </t>
+                <t t-else="">
+                    <t t-call="web.DateTimePicker.Grid" />
+                </t>
+            </div>
+        </div>
+    </t>
+</templates>

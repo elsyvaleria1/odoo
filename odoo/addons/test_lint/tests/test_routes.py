@@ -1,0 +1,64 @@
+import logging
+from pprint import pformat
+from unittest.mock import patch
+
+from odoo import http
+from odoo.http import routing as http_routing
+from odoo.tests.common import TransactionCase, no_retry, tagged
+
+_logger = logging.getLogger(__name__)
+
+
+@tagged("post_install", "-at_install")
+@no_retry
+class RoutesLinter(TransactionCase):
+    def test_routes_definition(self):
+        _prepare_route_fragment = http._prepare_route_fragment
+        checked = 0
+        offenders = []
+
+        def extended_check(controller_cls, submethod, merged_routing):
+            nonlocal checked
+            checked += 1
+            if "type" in merged_routing:
+                useless_overrides = {
+                    key: value
+                    for key, value in submethod.original_routing.items()
+                    if key not in ("routes", "type")
+                    if merged_routing.get(key) == value
+                }
+                if useless_overrides:
+                    endpoint = (
+                        f"{controller_cls.__module__}.{controller_cls.__name__}"
+                        f".{submethod.__name__}"
+                    )
+                    offenders.append(f"{endpoint}: {pformat(useless_overrides)}")
+
+            return _prepare_route_fragment(controller_cls, submethod, merged_routing)
+
+        installed_modules = set(
+            self.env["ir.module.module"]
+            .search(
+                [
+                    ("state", "=", "installed"),
+                ]
+            )
+            .mapped("name")
+        )
+        with patch("odoo.http.routing._prepare_route_fragment", extended_check):
+            for _ in http._generate_routing_rules(installed_modules, nodb_only=False):
+                pass
+        _logger.info("checked %s endpoint(s)", checked)
+        self.assertGreater(checked, 0, "route-linter hook was never invoked")
+        self.assertFalse(
+            offenders,
+            f"{len(offenders)} endpoint(s) restate a routing attribute their "
+            f"parent already sets, which hides what the override really "
+            f"changes:\n  " + "\n  ".join(sorted(offenders)),
+        )
+
+    def test_reexported_hook_is_the_routing_one(self):
+        self.assertIs(
+            http._prepare_route_fragment,
+            http_routing._prepare_route_fragment,
+        )

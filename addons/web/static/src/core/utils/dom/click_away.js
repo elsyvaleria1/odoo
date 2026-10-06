@@ -1,0 +1,126 @@
+// @ts-check
+/** @odoo-module native */
+
+import { onMounted, onWillDestroy } from "@odoo/owl";
+import { browser } from "@web/core/browser/browser";
+import { getActiveElement } from "@web/core/utils/dom/ui";
+
+/**
+ * @param {EventTarget} target
+ * @param {string} eventName
+ * @param {(ev: Event) => any} handler
+ * @param {AddEventListenerOptions} [eventParams]
+ */
+function useEarlyExternalListener(target, eventName, handler, eventParams) {
+    target.addEventListener(eventName, handler, eventParams);
+    onWillDestroy(() => target.removeEventListener(eventName, handler, eventParams));
+}
+
+/**
+ * @param {EventTarget | Node | null | undefined} node
+ * @param {(() => (Element | null | undefined)) | undefined} getAnchor
+ * @param {(() => (Element | null | undefined)) | undefined} getContentEl
+ * @returns {boolean}
+ */
+function isInsideWidget(node, getAnchor, getContentEl) {
+    if (!node) {
+        return false;
+    }
+    const target = /** @type {Node} */ (node);
+    return Boolean(
+        getAnchor?.()?.contains(target) || getContentEl?.()?.contains(target),
+    );
+}
+
+/**
+ * @param {(node?: Node) => any} callback
+ * @param {Object} [options]
+ * @param {() => (Element | null | undefined)} [options.getAnchor]
+ * @param {() => (Element | null | undefined)} [options.getContentEl]
+ */
+export function useClickAway(callback, { getAnchor, getContentEl } = {}) {
+    /** @type {(() => void)[]} */
+    const iframeDisposers = [];
+    /** @type {WeakSet<Window>} */
+    const armedWindows = new WeakSet();
+
+    /** @param {Node} [node] */
+    const callbackIfAway = (node) => {
+        if (!isInsideWidget(node, getAnchor, getContentEl)) {
+            callback(node);
+        }
+    };
+
+    function armIframe(/** @type {HTMLIFrameElement} */ iframeEl) {
+        const win = iframeEl.contentWindow;
+        if (!win || armedWindows.has(win)) {
+            return;
+        }
+        const handler = () => callbackIfAway(iframeEl);
+        try {
+            win.addEventListener("pointerdown", handler, { capture: true });
+            armedWindows.add(win);
+            iframeDisposers.push(() =>
+                win.removeEventListener("pointerdown", handler, { capture: true }),
+            );
+        } catch (e) {
+            if (e.name !== "SecurityError") {
+                throw e;
+            }
+        }
+    }
+
+    /** @returns {(Document | ShadowRoot)[]} */
+    function iframeRoots() {
+        const anchorRoot = getAnchor?.()?.getRootNode?.();
+        return anchorRoot && anchorRoot !== document
+            ? [document, /** @type {ShadowRoot} */ (anchorRoot)]
+            : [document];
+    }
+
+    function armIframes() {
+        for (const root of iframeRoots()) {
+            for (const iframeEl of root.querySelectorAll("iframe")) {
+                armIframe(/** @type {HTMLIFrameElement} */ (iframeEl));
+            }
+        }
+    }
+
+    function blurHandler(/** @type {Event} */ ev) {
+        const target =
+            /** @type {FocusEvent} */ (ev).relatedTarget ||
+            getActiveElement(/** @type {Node} */ (ev.target));
+        if (/** @type {Element} */ (target)?.tagName === "IFRAME") {
+            armIframes();
+            return callbackIfAway(/** @type {Node} */ (target));
+        }
+    }
+
+    let lastHref = browser.location.href;
+    function navigationHandler() {
+        if (browser.location.href === lastHref) {
+            return;
+        }
+        lastHref = browser.location.href;
+        callback(document.documentElement);
+    }
+
+    function pointerDownHandler(/** @type {Event} */ ev) {
+        callbackIfAway(/** @type {Node} */ (ev.composedPath()[0]));
+    }
+
+    useEarlyExternalListener(window, "pointerdown", pointerDownHandler, {
+        capture: true,
+    });
+    useEarlyExternalListener(window, "blur", blurHandler, { capture: true });
+    useEarlyExternalListener(window, "popstate", navigationHandler, {
+        capture: true,
+    });
+    armIframes();
+    onMounted(() => armIframes());
+    onWillDestroy(() => {
+        for (const dispose of iframeDisposers) {
+            dispose();
+        }
+    });
+}

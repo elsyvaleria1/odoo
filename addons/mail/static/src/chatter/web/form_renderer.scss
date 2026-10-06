@@ -1,0 +1,89 @@
+.o-mail-ChatterContainer,
+.o-mail-Form-chatter {
+    --Chatter-asideExtraWidth: 0px;
+    &.o-aside {
+        @media (max-width: 1920px) {
+            --ChatterAsideForm-padding-left: #{map-get($spacers, 2)};
+        }
+
+        flex-shrink: 0;
+        flex-grow: 1;
+        padding: map-get($spacers, 0);
+        width: calc(#{$o-mail-Chatter-minWidth} + var(--Chatter-asideExtraWidth));
+    }
+
+    &.o-isInFormSheetBg {
+        margin-left: calc(var(--formView-sheetBg-padding-x) * -1);
+        margin-right: calc(var(--formView-sheetBg-padding-x) * -1);
+    }
+
+    &:not(.o-aside):not(.o-full-width) .o-mail-Chatter {
+        margin-left: auto;
+        margin-right: auto;
+    }
+}
+
+.o_form_sheet_bg:has(+ .o-mail-Form-chatter.o-aside) {
+    @media screen and (max-width: 1920px) {
+        --formView-sheetBg-padding-right: #{map-get($spacers, 2)};
+    }
+}
+
+.o_content:has(.o-mail-Form-chatter:not(.o-aside)) {
+    overflow-anchor: none;
+}
+
+.o-mail-Form-chatter.o-aside {
+    transition: width var(--o-duration-normal, 200ms) ease;
+    overflow: hidden;
+
+    &:has(.o-chatter-collapsed) {
+        width: 48px;
+        flex-grow: 0;
+    }
+}
+
+.o_form_sheet_bg:has(+ .o-mail-Form-chatter.o-aside) {
+    transition: max-width var(--o-duration-normal, 200ms) ease;
+}
+
+.o_form_sheet_bg:has(+ .o-mail-Form-chatter.o-aside .o-chatter-collapsed) {
+    max-width: none;
+}
+
+.o-mail-Chatter-collapsed {
+    cursor: pointer;
+    padding-top: map-get($spacers, 2);
+    gap: map-get($spacers, 3);
+}
+
+.o-mail-Chatter-collapsed-icon {
+    font-size: 1.1rem;
+    color: o-palette-token(--o-text-muted, $text-muted);
+
+    .badge {
+        position: absolute;
+        top: -8px;
+        left: 12px;
+        font-size: 0.6rem;
+        padding: 2px 4px;
+    }
+}
+
+.o-mail-ChatterContainer,
+.o-mail-Form-chatter {
+    display: flex;
+    margin: 0 auto;
+    padding-bottom: map-get($spacers, 5);
+    width: 100%;
+}
+
+// Beside a form whose control panel is laid over it (web's o_chrome_overlay),
+// the aside chatter's own scroller is padded by the panel's height, so its
+// messages pass under the frosted panel like the form sheet beside it.
+@include media-breakpoint-up(md) {
+    .o_content.o_chrome_overlay .o-mail-Form-chatter.o-aside > .o-mail-Chatter {
+        padding-top: var(--o-cp-height, 0px);
+        scroll-padding-top: var(--o-cp-height, 0px);
+    }
+}

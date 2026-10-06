@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+
+    <record id="credit_grade_cash" model="credit.grade">
+        <field name="name">Cash Only</field>
+        <field name="code">cash</field>
+        <field name="kind">entry</field>
+        <field name="sequence" eval="0" />
+        <field name="min_value" eval="0" />
+        <field name="max_value" eval="0" />
+        <field name="max_payment_term_days" eval="0" />
+        <field name="review_interval_months" eval="0" />
+        <field name="color" eval="0" />
+        <field
+            name="description">Entry grade of every customer. Immediate payment terms only until a review grants credit.</field>
+    </record>
+
+    <record id="credit_grade_preferred" model="credit.grade">
+        <field name="name">Preferred</field>
+        <field name="code">preferred</field>
+        <field name="kind">performing</field>
+        <field name="sequence" eval="10" />
+        <field name="min_value" eval="80" />
+        <field name="max_value" eval="0" />
+        <field name="expected_loss_rate" eval="1.5" />
+        <field name="limit_pct_annual_purchases" eval="20.0" />
+        <field name="max_payment_term_days" eval="180" />
+        <field name="review_interval_months" eval="12" />
+        <field name="regulatory_code">A-2</field>
+        <field name="color" eval="10" />
+        <field
+            name="description">Pays on or before its due dates, long-standing relationship, documents in order. Widest limits and longest terms.</field>
+    </record>
+
+    <record id="credit_grade_reliable" model="credit.grade">
+        <field name="name">Reliable</field>
+        <field name="code">reliable</field>
+        <field name="kind">performing</field>
+        <field name="sequence" eval="20" />
+        <field name="min_value" eval="65" />
+        <field name="max_value" eval="80" />
+        <field name="expected_loss_rate" eval="5.0" />
+        <field name="limit_pct_annual_purchases" eval="15.0" />
+        <field name="max_payment_term_days" eval="120" />
+        <field name="review_interval_months" eval="6" />
+        <field name="regulatory_code">B-3</field>
+        <field name="color" eval="4" />
+        <field
+            name="description">Pays with modest delays, documentation complete. Standard limits and terms, reviewed twice a year.</field>
+    </record>
+
+    <record id="credit_grade_watch" model="credit.grade">
+        <field name="name">Watch</field>
+        <field name="code">watch</field>
+        <field name="kind">watch</field>
+        <field name="sequence" eval="30" />
+        <field name="min_value" eval="50" />
+        <field name="max_value" eval="65" />
+        <field name="expected_loss_rate" eval="15.0" />
+        <field name="limit_pct_annual_purchases" eval="10.0" />
+        <field name="max_payment_term_days" eval="90" />
+        <field name="review_interval_months" eval="3" />
+        <field name="regulatory_code">C-2</field>
+        <field name="color" eval="2" />
+        <field
+            name="description">Recurrent delays or a recent incident. Limits frozen, shorter terms, quarterly review.</field>
+    </record>
+
+    <record id="credit_grade_restricted" model="credit.grade">
+        <field name="name">Restricted</field>
+        <field name="code">restricted</field>
+        <field name="kind">watch</field>
+        <field name="sequence" eval="40" />
+        <field name="min_value" eval="35" />
+        <field name="max_value" eval="50" />
+        <field name="expected_loss_rate" eval="45.0" />
+        <field name="limit_pct_annual_purchases" eval="5.0" />
+        <field name="max_payment_term_days" eval="30" />
+        <field name="review_interval_months" eval="3" />
+        <field name="regulatory_code">D</field>
+        <field name="color" eval="1" />
+        <field
+            name="description">Serious delays or missing guarantees. Credit only against additional collateral and a manager's authorization.</field>
+    </record>
+
+    <record id="credit_grade_default" model="credit.grade">
+        <field name="name">Default</field>
+        <field name="code">default</field>
+        <field name="kind">default</field>
+        <field name="sequence" eval="50" />
+        <field name="min_value" eval="0" />
+        <field name="max_value" eval="35" />
+        <field name="expected_loss_rate" eval="100.0" />
+        <field name="limit_pct_annual_purchases" eval="0.0" />
+        <field name="max_payment_term_days" eval="0" />
+        <field name="review_interval_months" eval="1" />
+        <field name="regulatory_code">E</field>
+        <field name="color" eval="9" />
+        <field
+            name="description">A material receivable past due beyond the company's default threshold, or in legal process. Every credit sale needs a manager's authorization.</field>
+    </record>
+
+</odoo>

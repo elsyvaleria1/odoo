@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<templates xml:space="preserve">
+
+    <t t-name="device_gps_geoengine.PolygonDrawField">
+        <div class="o_polygon_draw_field">
+            <button
+                type="button"
+                class="btn btn-primary"
+                t-att-disabled="this.props.readonly"
+                t-on-click="this.openDialog"
+            >
+                <i class="fa fa-map-marker me-2" />
+                <t t-out="this.buttonLabel" />
+            </button>
+        </div>
+    </t>
+
+</templates>

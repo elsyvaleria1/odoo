@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="web.BannerStack">
+        <div t-if="this.banners.length" class="o_banner_stack" t-att-data-scope="this.props.scope">
+            <t t-foreach="this.banners" t-as="entry" t-key="entry.id">
+                <t t-if="entry.banner.Component" t-component="entry.banner.Component" dismiss="() => this.dismiss(entry.id, entry.banner)"/>
+                <div t-else="" class="o_banner alert d-flex align-items-center mb-0 rounded-0"
+                     t-attf-class="alert-{{ entry.banner.severity or 'info' }}"
+                     t-att-role="entry.banner.severity === 'danger' ? 'alert' : 'status'"
+                     t-att-data-banner-id="entry.id">
+                    <span class="flex-grow-1" t-out="entry.banner.message(this.services)"/>
+                    <button t-if="this.canDismiss(entry.banner)" type="button" class="btn-close o_banner_dismiss" aria-label="Dismiss" t-on-click="() => this.dismiss(entry.id, entry.banner)"/>
+                </div>
+            </t>
+        </div>
+    </t>
+
+</templates>

@@ -1,0 +1,31 @@
+/** @odoo-module native */
+
+import { useBus, useEventBus } from "@web/core/utils/hooks";
+import { FormRendererWithHtmlExpander } from "@web/views/form_with_html_expander/form_renderer_with_html_expander";
+
+export class TodoFormRenderer extends FormRendererWithHtmlExpander {
+    setup() {
+        super.setup();
+        this.bus = useEventBus();
+        this.compiledViewRoot = this.ref;
+        this.sizeToExpandHTMLField = 1;
+        useBus(this.bus, "TODO:TOGGLE_CHATTER", (ev) =>
+            this.onChatterToggled(ev.detail.displayChatter),
+        );
+    }
+
+    onChatterToggled(displayChatter) {
+        this.sizeToExpandHTMLField = displayChatter ? 6 : 1;
+        const htmlField = this.compiledViewRoot.el?.querySelector(
+            this.htmlFieldQuerySelector,
+        );
+        const elementToResize = htmlField?.querySelector(".note-editable") || htmlField;
+        if (elementToResize) {
+            elementToResize.style.minHeight = "";
+        }
+    }
+
+    _canExpandHTMLField(size) {
+        return size >= this.sizeToExpandHTMLField;
+    }
+}

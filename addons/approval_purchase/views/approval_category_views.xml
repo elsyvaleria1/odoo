@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_approval_category_form_purchase" model="ir.ui.view">
+        <field name="name">approval.category.form.purchase</field>
+        <field name="model">approval.category</field>
+        <field name="inherit_id" ref="approval.view_approval_category_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//page[@name='settings']" position="before">
+                <page
+                    name="purchase_config"
+                    string="Purchase"
+                    invisible="approval_type != 'purchase'">
+                    <group>
+                        <group string="Flow">
+                            <field name="target_model" string="Generated Document" />
+                            <div
+                                class="text-muted"
+                                colspan="2"
+                                invisible="target_model != False">
+                                <strong>Mixin Flow (PO → Approval)</strong><br /> Purchase orders
+                                trigger approval automatically based on rules below. </div>
+                            <div
+                                class="text-muted"
+                                colspan="2"
+                                invisible="target_model != 'purchase.order'">
+                                <strong>Creation Flow (Approval → PO)</strong><br /> Approval
+                                request creates purchase order when approved. Ensure "Has Product"
+                                is set to Required. </div>
+                        </group>
+                    </group>
+                    <group>
+                        <group
+                            string="Trigger Conditions"
+                            invisible="target_model != False">
+                            <field
+                                name="order_approval_mode"
+                                string="Require approval by" />
+                            <label
+                                for="order_amount_min"
+                                invisible="order_approval_mode not in ['amount', 'combined']" />
+                            <div
+                                invisible="order_approval_mode not in ['amount', 'combined']">
+                                <field name="order_amount_min" placeholder="e.g., 1000" class="oe_inline" /> to <field name="order_amount_max" placeholder="0 = no limit" class="oe_inline" />
+                            </div>
+                            <field
+                                name="order_partner_ids"
+                                placeholder="Leave empty for all vendors"
+                                widget="many2many_tags"
+                                domain="[('supplier_rank', '&gt;', 0)]"
+                                invisible="order_approval_mode not in ['partner', 'combined']" />
+                            <field
+                                name="product_categ_ids"
+                                placeholder="Leave empty for all categories"
+                                widget="many2many_tags"
+                                invisible="order_approval_mode not in ['product', 'combined']" />
+                        </group>
+                        <group
+                            string="Vendor Debit Limit"
+                            invisible="target_model != False or order_approval_mode not in ['debit', 'combined']">
+                            <field name="check_debit_limit" />
+                            <field
+                                name="debit_limit_threshold"
+                                invisible="not check_debit_limit" />
+                            <div
+                                class="text-muted"
+                                colspan="2"
+                                invisible="not check_debit_limit">
+                                This category will only apply when creating the PO
+                                would cause the vendor's total payable balance to exceed
+                                the threshold above.
+                            </div>
+                        </group>
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="action_approval_category_purchase" model="ir.actions.act_window">
+        <field name="name">Purchase Approval Types</field>
+        <field name="res_model">approval.category</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('approval_type', '=', 'purchase')]</field>
+        <field
+            name="context">{'default_approval_type': 'purchase', 'approval_category_routes_by_steps': True}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Create your first purchase approval type
+            </p>
+            <p> Define approval workflows for purchase orders: <br /><br />
+                <strong>Flow 1: Mixin
+                    Flow (PO → Approval)</strong><br /> • Set Approval Type = "Purchase"<br /> •
+                Leave Target Model empty<br /> • Configure approval triggers (amount, vendor, etc.)<br />
+                • POs trigger approval automatically based on rules <br /><br />
+                <strong>Flow 2:
+                Creation Flow (Approval → PO)</strong><br /> • Set Approval Type = "Purchase"<br />
+                • Set Target Model = "Purchase Order"<br /> • Set "Has Product" = Required<br /> •
+                Approval creates PO when approved </p>
+        </field>
+    </record>
+
+</odoo>

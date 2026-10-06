@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="resource_asset_view_list_fleet_wallet" model="ir.ui.view">
+        <field name="name">resource.asset.fleet.list.wallet</field>
+        <field name="model">resource.asset.vehicle</field>
+        <field name="inherit_id" ref="asset_ledger.resource_asset_view_list_fleet" />
+        <field name="arch" type="xml">
+            <field name="value_residual" position="after">
+                <field name="fuel_card_budget" string="Budget (FC)" optional="show" />
+                <field name="fuel_card_balance" string="Balance (FC)" optional="show" />
+                <field
+                    name="highway_pass_budget"
+                    string="Budget (HWP)"
+                    optional="show" />
+            </field>
+        </field>
+    </record>
+
+    <record id="resource_asset_view_kanban_fleet_wallet" model="ir.ui.view">
+        <field name="name">resource.asset.kanban.fleet.wallet</field>
+        <field name="model">resource.asset.vehicle</field>
+        <field name="inherit_id" ref="asset_ledger.resource_asset_view_kanban_fleet" />
+        <field name="arch" type="xml">
+            <field name="service_activity" position="before">
+                <field name="fuel_card_balance" />
+                <field name="highway_pass_balance" />
+            </field>
+            <xpath expr="//main//div[hasclass('row')]" position="inside">
+                <div
+                    class="col-6 text-muted small"
+                    t-if="record.fuel_card_balance.raw_value">
+                    <i class="fa-solid fa-gas-pump me-1" title="Fuel Card" />
+                    <field name="fuel_card_balance" widget="monetary" />
+                </div>
+                <div
+                    class="col-6 text-muted small"
+                    t-if="record.highway_pass_balance.raw_value">
+                    <i class="fa-solid fa-road me-1" title="Highway Pass" />
+                    <field name="highway_pass_balance" widget="monetary" />
+                </div>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="resource_asset_view_form_inherit_wallet" model="ir.ui.view">
+        <field name="name">resource.asset.form.wallet</field>
+        <field name="model">resource.asset</field>
+        <field name="inherit_id" ref="asset_ledger.resource_asset_view_form_ledger" />
+        <field name="arch" type="xml">
+            <div name="button_box" position="inside">
+                <button
+                    name="action_view_wallet_cards"
+                    type="object"
+                    icon="fa-credit-card"
+                    groups="wallet.group_wallet_user"
+                    invisible="kind_code not in ('vehicle', 'machinery')"
+                    class="oe_stat_button">
+                    <field
+                        name="count_wallet_card"
+                        string="Wallet Cards"
+                        widget="statinfo" />
+                </button>
+            </div>
+            <group name="asset_lifecycle" position="after">
+                <group
+                    name="asset_cards"
+                    string="Fuel &amp; Toll Cards"
+                    invisible="kind_code not in ('vehicle', 'machinery')">
+                    <group string="Fuel Card">
+                        <field name="has_fuel_wallet_card" invisible="1" />
+                        <field
+                            name="fuel_wallet_card_id"
+                            groups="wallet.group_wallet_user" />
+                        <field name="fuel_card_budget" string="Monthly Budget" />
+                        <field name="fuel_card_balance" string="Current Balance" />
+                        <field
+                            name="fuel_card_balance_to_reload"
+                            string="Amount to Reload" />
+                    </group>
+                    <group string="Highway Pass / Toll Card">
+                        <field name="has_toll_wallet_card" invisible="1" />
+                        <field
+                            name="toll_wallet_card_id"
+                            groups="wallet.group_wallet_user" />
+                        <field name="highway_pass_budget" string="Monthly Budget" />
+                        <field name="highway_pass_balance" string="Current Balance" />
+                        <field
+                            name="highway_pass_balance_to_reload"
+                            string="Amount to Reload" />
+                    </group>
+                </group>
+            </group>
+        </field>
+    </record>
+
+</odoo>

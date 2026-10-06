@@ -1,0 +1,27 @@
+{
+    "name": "Telegram Approval Request Assistant",
+    "version": "19.0.1.5.0",
+    "oldest_upgradable_version": "19.0.1.5.0",
+    "category": "Human Resources/Approvals",
+    "summary": "Collect approval requests from text or voice with optional AI classification",
+    "description": "Adds a guided request-intake flow, optional model-based category suggestions, manual category selection and confirmation before creation. Uses the model gateway for classification and speech services for eligible voice notes. Requires enabled commands, linked internal users and configured approval categories; AI service access is needed only for the enabled AI features.",
+    "author": "AgroMarin",
+    "license": "LGPL-3",
+    "depends": [
+        "integration_machine_learning",
+        "speech_telegram",
+        "telegram",
+        "approval_telegram",
+        "approval",
+        "approval_product",
+        "approval_account",
+        "credential",
+    ],
+    "data": [
+        "data/integration_ml_purpose_data.xml",
+        "security/res_groups.xml",
+        "security/ir.access.csv",
+        "data/telegram_command_data.xml",
+        "views/telegram_bot_views.xml",
+    ],
+}

@@ -1,0 +1,87 @@
+from odoo.fields import Command
+from odoo.tests import HttpCase, tagged
+
+from odoo.addons.sale.tests.common import SaleCommon
+
+
+@tagged("post_install", "-at_install")
+class TestProductAttributeValue(HttpCase, SaleCommon):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.product_attribute = cls.env["product.attribute"].create(
+            {
+                "name": "PA",
+                "sequence": 1,
+                "create_variant": "no_variant",
+                "value_ids": [
+                    Command.create({"name": f"pa_value_{i + 1}", "sequence": i})
+                    for i in range(3)
+                ],
+            }
+        )
+        cls.a1, cls.a2, cls.a3 = cls.product_attribute.value_ids
+        cls.product_template, cls.archived_template = cls.env[
+            "product.template"
+        ].create(
+            [
+                {
+                    "name": "P1",
+                    "type": "consu",
+                    "attribute_line_ids": [
+                        Command.create(
+                            {
+                                "attribute_id": cls.product_attribute.id,
+                                "value_ids": [Command.set([cls.a1.id, cls.a3.id])],
+                            }
+                        )
+                    ],
+                },
+                {
+                    "name": "P2",
+                    "type": "consu",
+                    "attribute_line_ids": [
+                        Command.create(
+                            {
+                                "attribute_id": cls.product_attribute.id,
+                                "value_ids": [Command.set([cls.a1.id, cls.a2.id])],
+                            }
+                        )
+                    ],
+                },
+            ]
+        )
+        cls.archived_template.action_archive()
+        cls.empty_order.line_ids = [
+            Command.create(
+                {
+                    "product_id": cls.product_template.product_variant_id.id,
+                    "product_no_variant_attribute_value_ids": [
+                        Command.set(
+                            cls.product_template.attribute_line_ids.product_template_value_ids.filtered(
+                                lambda ptav: (
+                                    ptav.product_attribute_value_id.id == cls.a3.id
+                                )
+                            ).ids,
+                        ),
+                    ],
+                }
+            ),
+        ]
+        cls.line_ids = cls.empty_order.line_ids
+
+    def test_attribute_values_deletion_or_archiving(self):
+        group_variant = self.env.ref("product.group_product_variant")
+        self.group_user.implied_ids = [Command.link(group_variant.id)]
+
+        self.product_template.attribute_line_ids.update(
+            {"value_ids": [Command.set([self.a1.id])]}
+        )
+        self.assertEqual(
+            self.line_ids.product_no_variant_attribute_value_ids.product_attribute_value_id,
+            self.a3,
+        )
+        self.assertFalse(
+            self.line_ids.product_no_variant_attribute_value_ids.ptav_active
+        )
+        self.start_tour("/odoo", "delete_product_attribute_value_tour", login="admin")

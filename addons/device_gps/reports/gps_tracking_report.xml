@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="action_report_gps_tracking" model="ir.actions.report">
+        <field name="name">GPS Tracking Report</field>
+        <field name="model">device.device</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">device_gps.report_gps_tracking</field>
+        <field name="report_file">device_gps.report_gps_tracking</field>
+        <field name="binding_model_id" ref="device.model_device_device" />
+        <field name="binding_type">report</field>
+    </record>
+
+    <template id="report_gps_tracking">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="device">
+                <t t-call="web.external_layout">
+                    <div class="page">
+                        <h2 class="text-center">GPS Tracking Report</h2>
+                        <p class="text-center text-muted">
+                            Generated: <span t-out="datetime.datetime.now().strftime('%Y-%m-%d %H:%M')" />
+                        </p>
+
+                        <div class="row mt-4">
+                            <div class="col-8">
+                                <h3>
+                                    <span t-field="device.name" />
+                                </h3>
+                            </div>
+                            <div class="col-4 text-end">
+                                <span
+                                    class="badge"
+                                    t-attf-class="badge-#{device.connection_state == 'connected' and 'success' or 'secondary'}">
+                                    <t t-out="device.connection_state" />
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="row mt-3">
+                            <div class="col-6">
+                                <h4>Device Information</h4>
+                                <table class="table table-sm table-bordered">
+                                    <tr>
+                                        <td width="40%"><strong>Receiver Key</strong></td>
+                                        <td><span t-field="device.gps_receiver_key" /></td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Type</strong></td>
+                                        <td><span t-field="device.device_category_id.name" /></td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Config Profile</strong></td>
+                                        <td><span t-field="device.config_id.name" /></td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Tracking</strong></td>
+                                        <td>
+                                            <span t-if="device.gps_tracking_enabled" class="text-success">Enabled</span>
+                                            <span t-else="" class="text-muted">Disabled</span>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </div>
+
+                            <div class="col-6">
+                                <h4>Current Status</h4>
+                                <table class="table table-sm table-bordered">
+                                    <tr>
+                                        <td width="40%"><strong>Last Update</strong></td>
+                                        <td><span t-field="device.date_last_data_received" /></td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Position</strong></td>
+                                        <td>
+                                            <span t-out="'%.5f' % device.log_gps_last_latitude" />,
+                                            <span
+                                                t-out="'%.5f' % device.log_gps_last_longitude" />
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Speed</strong></td>
+                                        <td><span t-field="device.log_gps_last_speed" /> km/h</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Ignition</strong></td>
+                                        <td>
+                                            <span t-if="device.gps_ignition_state" class="text-success">ON</span>
+                                            <span t-else="" class="text-muted">OFF</span>
+                                            /
+                                            <span t-if="device.gps_movement_state" class="text-success">Moving</span>
+                                            <span t-else="" class="text-muted">Stopped</span>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Battery</strong></td>
+                                        <td>
+                                            <span t-field="device.gps_battery_level" />%
+                                            <span t-if="device.gps_battery_level and device.gps_battery_level &lt; 20" class="text-danger"> (Low!)</span>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+
+                        <div class="row mt-4">
+                            <div class="col-12">
+                                <h4>Recent Tracking Points</h4>
+                                <table class="table table-sm table-bordered">
+                                    <thead class="thead-light">
+                                        <tr>
+                                            <th>Timestamp</th>
+                                            <th>Position</th>
+                                            <th>Speed</th>
+                                            <th>Ignition</th>
+                                            <th>Satellites</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <t
+                                            t-set="points"
+                                            t-value="device.log_gps_ids[:15]" />
+                                        <tr t-foreach="points" t-as="point">
+                                            <td><span t-field="point.timestamp" t-options="{'format': 'yyyy-MM-dd HH:mm:ss'}" /></td>
+                                            <td>
+                                                <span t-out="'%.5f' % point.latitude" />,
+                                                <span
+                                                    t-out="'%.5f' % point.longitude" />
+                                            </td>
+                                            <td><span t-out="'%.0f' % (point.speed or 0)" /> km/h</td>
+                                            <td>
+                                                <span t-if="point.ignition">ON</span>
+                                                <span t-else="">-</span>
+                                            </td>
+                                            <td><span t-out="point.satellites or '-'" /></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+
+</odoo>

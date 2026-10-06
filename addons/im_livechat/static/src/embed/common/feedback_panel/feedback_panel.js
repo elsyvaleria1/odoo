@@ -1,0 +1,74 @@
+/** @odoo-module native */
+import { TranscriptSender } from "@im_livechat/core/common/transcript_sender";
+import { RATING } from "@im_livechat/embed/common/livechat_service";
+import { Component, proxy, t, useProps } from "@odoo/owl";
+import { rpc } from "@web/core/network";
+import { useService } from "@web/core/utils/hooks";
+import { url } from "@web/core/utils/urls";
+import { session } from "@web/session";
+
+/**
+ * @typedef {Object} Props
+ * @property {Function} [onClickClose]
+ * @property {import("models").Thread}
+ * @extends {Component<Props, import("@web/env").OdooEnv>}
+ */
+export class FeedbackPanel extends Component {
+    static template = "im_livechat.FeedbackPanel";
+    static props = {
+        onClickClose: t.any().optional(),
+        onClickNewSession: t.any(),
+        thread: t.any(),
+    };
+    static components = { TranscriptSender };
+    props = useProps(this.constructor.props);
+
+    STEP = Object.freeze({
+        RATING: "rating",
+        THANKS: "thanks",
+    });
+    RATING = RATING;
+
+    setup() {
+        this.session = session;
+        this.livechatService = useService("im_livechat.livechat");
+        this.store = useService("mail.store");
+        this.state = proxy({
+            step: this.STEP.RATING,
+            rating: null,
+            feedback: "",
+        });
+        this.url = url;
+    }
+
+    /**
+     * @param {number} rating
+     */
+    select(rating) {
+        this.state.rating = rating;
+    }
+
+    get allowNewSession() {
+        return (
+            this.store.livechat_rule?.action !== "hide_button" &&
+            this.livechatService.options.channel_id
+        );
+    }
+
+    get transcriptUrl() {
+        return this.props.thread.transcriptUrl;
+    }
+
+    onClickSendFeedback() {
+        rpc("/im_livechat/feedback", {
+            reason: this.state.feedback,
+            rate: this.state.rating,
+            channel_id: this.props.thread.id,
+        });
+        this.state.step = this.STEP.THANKS;
+        const link = this.livechatService.options.review_link;
+        if (this.state.rating === this.RATING.GOOD && link) {
+            window.open(link, "_blank", "noopener");
+        }
+    }
+}

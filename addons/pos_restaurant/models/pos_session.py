@@ -1,0 +1,38 @@
+from odoo import api, models
+from odoo.libs.json import dumps as json_dumps
+
+
+class PosSession(models.Model):
+    _inherit = "pos.session"
+
+    @api.model
+    def _get_model_names_to_load(self, config):
+        data = super()._get_model_names_to_load(config)
+        if config.module_pos_restaurant:
+            data += ["restaurant.floor", "restaurant.table", "restaurant.order.course"]
+        return data
+
+    @api.model
+    def _set_last_order_preparation_change(self, order_ids) -> None:
+        for order_id in order_ids:
+            order = self.env["pos.order"].browse(order_id)
+            last_order_preparation_change = {
+                "lines": {},
+                "generalCustomerNote": "",
+            }
+            for orderline in order["lines"]:
+                last_order_preparation_change["lines"][orderline.uuid + " - "] = {
+                    "uuid": orderline.uuid,
+                    "name": orderline.full_product_name,
+                    "note": "",
+                    "product_id": orderline.product_id.id,
+                    "quantity": orderline.qty,
+                    "attribute_value_ids": orderline.attribute_value_ids.ids,
+                }
+            order.write(
+                {
+                    "last_order_preparation_change": json_dumps(
+                        last_order_preparation_change
+                    )
+                }
+            )

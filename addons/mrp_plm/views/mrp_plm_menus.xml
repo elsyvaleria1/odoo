@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- MENUS -->
+    <menuitem
+        id="menu_mrp_plm_root"
+        name="PLM"
+        sequence="170"
+        groups="mrp_plm.group_plm_user"
+        web_icon="mrp_plm,static/description/icon.png" />
+
+    <menuitem
+        id="menu_mrp_plm_dashboard"
+        name="Overview"
+        parent="menu_mrp_plm_root"
+        action="mrp_eco_type_action_dashboard"
+        sequence="5" />
+
+    <menuitem
+        id="menu_mrp_plm_changes"
+        name="Changes"
+        parent="menu_mrp_plm_root"
+        action="mrp_eco_action_main"
+        sequence="10" />
+
+    <menuitem
+        id="menu_mrp_plm_master_data"
+        name="Master Data"
+        parent="menu_mrp_plm_root"
+        sequence="15" />
+
+    <menuitem
+        id="menu_mrp_plm_products"
+        name="Products"
+        parent="menu_mrp_plm_master_data"
+        action="product.action_product_template"
+        sequence="5" />
+
+    <menuitem
+        id="menu_mrp_plm_boms"
+        name="Bill of Materials"
+        parent="menu_mrp_plm_master_data"
+        action="mrp_bom_action_kanban"
+        sequence="10" />
+
+    <menuitem
+        id="menu_mrp_plm_workcenters"
+        name="Work Centers"
+        parent="menu_mrp_plm_master_data"
+        action="mrp.mrp_workcenter_action"
+        sequence="20"
+        groups="mrp.group_mrp_routings" />
+
+    <menuitem
+        id="menu_mrp_plm_search"
+        name="Search"
+        parent="menu_mrp_plm_root"
+        sequence="20" />
+
+    <menuitem
+        id="menu_mrp_plm_reporting"
+        name="Reporting"
+        parent="menu_mrp_plm_root"
+        sequence="25"
+        groups="mrp_plm.group_plm_manager" />
+
+    <menuitem
+        id="menu_mrp_plm_eco_report"
+        name="ECOs"
+        parent="menu_mrp_plm_reporting"
+        action="mrp_eco_action_report"
+        sequence="1" />
+
+    <menuitem
+        id="menu_mrp_plm_configuration"
+        name="Configuration"
+        parent="menu_mrp_plm_root"
+        sequence="900"
+        groups="mrp_plm.group_plm_manager" />
+
+    <menuitem
+        id="menu_mrp_plm_eco_stages"
+        name="ECO Stages"
+        parent="menu_mrp_plm_configuration"
+        action="mrp_eco_stage_action"
+        sequence="5" />
+
+    <menuitem
+        id="menu_mrp_plm_eco_types"
+        name="ECO Types"
+        parent="menu_mrp_plm_configuration"
+        action="mrp_eco_type_action_form"
+        sequence="10" />
+
+    <menuitem
+        id="menu_mrp_plm_eco_tag"
+        name="ECO Tags"
+        parent="menu_mrp_plm_configuration"
+        action="mrp_eco_tag_action"
+        sequence="11" />
+
+</odoo>

@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <menuitem
+        id="menu_gps_geoengine_root"
+        name="Map"
+        parent="device.menu_device_root"
+        sequence="50" />
+
+    <menuitem
+        id="menu_gps_live_tracking"
+        name="Live Tracking"
+        parent="menu_gps_geoengine_root"
+        action="action_device_device_gps_map"
+        sequence="5" />
+
+    <menuitem
+        id="menu_gps_client_locations"
+        name="Client Locations"
+        parent="menu_gps_geoengine_root"
+        action="action_res_partner_client_locations_map"
+        sequence="15" />
+
+    <menuitem
+        id="menu_gps_geofencing"
+        name="Geofencing"
+        parent="menu_gps_geoengine_root"
+        sequence="20" />
+
+    <menuitem
+        id="menu_gps_geofences"
+        name="Geofences"
+        parent="menu_gps_geofencing"
+        action="action_iot_gps_geofence"
+        sequence="10" />
+
+    <menuitem
+        id="menu_device_client_visit"
+        name="Visitas a Clientes"
+        parent="device.menu_device_data_analytics"
+        action="action_device_client_visit"
+        sequence="37" />
+
+    <menuitem
+        id="menu_gps_trail_wizard"
+        name="View Trails"
+        parent="device_gps_geoengine.menu_gps_geoengine_root"
+        action="action_gps_trail_wizard"
+        sequence="10" />
+
+    <menuitem
+        id="menu_device_gps_visit_rebuild_wizard"
+        name="Rebuild GPS Parcel Visits"
+        parent="device_gps.menu_device_gps_config"
+        action="action_device_gps_visit_rebuild_wizard"
+        sequence="90"
+        groups="device_gps.group_device_gps_manager" />
+
+</odoo>

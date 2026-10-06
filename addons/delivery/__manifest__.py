@@ -1,0 +1,50 @@
+{
+    "name": "Sales Delivery Methods",
+    "version": "1.3",
+    "oldest_upgradable_version": "1.3",
+    "category": "Sales/Delivery",
+    "summary": "Price delivery methods and add shipping charges to sales orders",
+    "description": "Configure delivery carriers, availability conditions and shipping prices. Adds delivery-charge lines to orders; provider-specific modules supply external shipping services.",
+    "author": "Odoo S.A.",
+    "license": "LGPL-3",
+    "depends": [
+        "sale",
+        "payment_custom",
+        "credential",
+        "integration",
+    ],
+    "data": [
+        "data/delivery_data.xml",
+        "data/payment_method_data.xml",
+        "data/payment_provider_data.xml",
+        "security/ir.access.csv",
+        "reports/ir_actions_report_templates.xml",
+        "views/delivery_carrier_views.xml",
+        "views/delivery_price_rule_views.xml",
+        "views/delivery_zip_prefix_views.xml",
+        "views/ir_module_module_views.xml",
+        "views/payment_form_templates.xml",
+        "views/payment_provider_views.xml",
+        "views/res_partner_views.xml",
+        "views/sale_order_views.xml",
+        "wizards/res_config_settings_views.xml",
+        "wizards/wizard_sale_order_add_shipping_views.xml",
+        "views/delivery_menus.xml",
+    ],
+    "demo": [
+        "demo/delivery_demo.xml",
+    ],
+    "assets": {
+        "web.assets_frontend": [
+            "delivery/static/src/**/*",
+        ],
+        "web.assets_unit_tests_setup": [
+            "delivery/static/src/js/location_selector/**/*",
+        ],
+        "web.assets_unit_tests": [
+            "delivery/static/tests/**/*",
+        ],
+    },
+    "post_init_hook": "post_init_hook",
+    "uninstall_hook": "uninstall_hook",
+}

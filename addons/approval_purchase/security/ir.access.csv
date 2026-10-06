@@ -1,0 +1,5 @@
+id,name,model_id/id,group_id/id,kind,operation,reach,anchor,domain
+approval_request_purchase_manager,Approval Request: Purchase manager,approval.model_approval_request,purchase.group_purchase_manager,permission,crud,all,,"[('category_id.approval_type', '=', 'purchase')]"
+approval_approver_purchase_manager,Approval Approver: Purchase manager,approval.model_approval_approver,purchase.group_purchase_manager,permission,crud,all,,"[('request_id.category_id.approval_type', '=', 'purchase')]"
+approval_category_purchase_manager,Approval Category: Purchase manager writes purchase types,approval.model_approval_category,purchase.group_purchase_manager,permission,cud,all,,"[('approval_type', '=', 'purchase')]"
+access_purchase_order_approver_reach,"Purchase Order: an approver reads what they are asked to decide, while they decide",purchase.model_purchase_order,approval.group_approval_decider,permission,r,own,,

@@ -1,0 +1,351 @@
+// Training center: the mockup "Training · tarjetas rediseñadas" (greens over light neutrals).
+// Figtree (SIL Open Font License), latin subset, served by the module itself.
+@font-face {
+    font-family: "Figtree";
+    font-style: normal;
+    font-weight: 400 700;
+    font-display: swap;
+    src: url("/training_simulator/static/src/fonts/figtree-latin.woff2") format("woff2");
+}
+$o-training-text: o-token(--o-text, $o-training-coal);
+$o-training-text-muted: o-token(--o-text-muted, $o-training-dark);
+$o-training-text-faint: o-token(--o-gray-500, $o-training-mid);
+$o-training-page: o-token(--o-gray-100, $o-training-bg);
+$o-training-card: o-token(--o-bg-view, $o-training-surface);
+$o-training-chip: o-token(--o-gray-100, $o-training-tag);
+$o-training-border: o-token(--o-gray-300, $o-training-line);
+$o-training-border-strong: o-token(--o-gray-400, $o-training-line-strong);
+
+.o_training_dashboard {
+    overflow: auto;
+    min-height: 100%;
+    box-sizing: border-box;
+    // Transparent so Odoo's own backdrop shows through, without a grey sheet over it.
+    background: transparent;
+    padding: 36px 48px;
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+    font-family: "Figtree", "Segoe UI", system-ui, sans-serif;
+    color: $o-training-text;
+
+    .o_training_head {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        gap: 24px;
+        flex-wrap: wrap;
+        h1 {
+            margin: 0 0 4px;
+            font-size: 32px;
+            font-weight: 700;
+            color: $o-training-forest;
+        }
+        span {
+            font-size: 16px;
+            color: $o-training-text-muted;
+        }
+    }
+    .o_training_search {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        height: 44px;
+        width: 300px;
+        max-width: 100%;
+        margin: 0;
+        padding: 0 14px;
+        box-sizing: border-box;
+        border-radius: 12px;
+        border: 1px solid $o-training-border-strong;
+        background: $o-training-card;
+        color: $o-training-text-muted;
+        input {
+            border: 0;
+            outline: 0;
+            font: inherit;
+            font-size: 15px;
+            color: $o-training-text;
+            flex-grow: 1;
+            background: transparent;
+        }
+    }
+    .o_training_filters {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        button {
+            height: 38px;
+            padding: 0 18px;
+            border-radius: 999px;
+            font: inherit;
+            font-size: 15px;
+            font-weight: 500;
+            background: $o-training-card;
+            color: $o-training-text;
+            border: 1px solid $o-training-border;
+            &.active {
+                background: $o-training-forest;
+                color: $o-training-on-forest;
+                border-color: $o-training-forest;
+                font-weight: 600;
+            }
+        }
+    }
+
+    // Wide simulator card
+    .o_training_card {
+        background: $o-training-card;
+        border: 1px solid $o-training-border;
+        border-radius: 20px;
+        overflow: hidden;
+        display: flex;
+    }
+    .o_training_scene {
+        width: 300px;
+        flex-shrink: 0;
+        background: $o-training-mint-light;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        overflow: hidden;
+        position: relative;
+    }
+    .o_training_scene_art {
+        min-height: 330px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        svg {
+            display: block;
+        }
+    }
+    .o_training_scene_icon {
+        font-size: 96px;
+        line-height: 1;
+    }
+    .o_training_scene_chip {
+        padding: 0 24px 24px;
+        display: flex;
+        justify-content: center;
+        span {
+            font-size: 13px;
+            font-weight: 600;
+            color: $o-training-forest;
+            background: $o-training-card;
+            padding: 6px 14px;
+            border-radius: 999px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+    }
+    .o_training_body {
+        flex-grow: 1;
+        padding: 26px 30px;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        min-width: 0;
+    }
+    .o_training_title {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        span {
+            font-size: 13px;
+            font-weight: 600;
+            color: $o-training-green;
+        }
+        h2 {
+            margin: 0;
+            font-size: 26px;
+            font-weight: 700;
+            color: $o-training-text;
+        }
+    }
+    .o_training_tagline {
+        margin: 0;
+        font-size: 18px;
+        font-weight: 600;
+        line-height: 1.4;
+        color: $o-training-forest;
+        max-width: 640px;
+    }
+    .o_training_description {
+        margin: 0;
+        font-size: 16px;
+        line-height: 1.5;
+        max-width: 640px;
+        white-space: pre-line;
+    }
+    .o_training_flow {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 6px;
+        font-size: 14px;
+        color: $o-training-forest;
+    }
+    .o_training_step {
+        background: $o-training-mint-light;
+        padding: 5px 12px;
+        border-radius: 999px;
+        font-weight: 500;
+    }
+    .o_training_arrow {
+        color: $o-training-text-faint;
+    }
+    .o_training_safe {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 14px;
+        color: $o-training-text-muted;
+        svg {
+            color: $o-training-green;
+            flex-shrink: 0;
+        }
+    }
+    .o_training_tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        align-items: center;
+        font-size: 14px;
+    }
+    .o_training_tags_label {
+        color: $o-training-text-muted;
+    }
+    .o_training_tag {
+        background: $o-training-chip;
+        padding: 5px 12px;
+        border-radius: 999px;
+    }
+    .o_training_progress {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        max-width: 520px;
+        > div {
+            display: flex;
+            justify-content: space-between;
+            font-size: 14px;
+        }
+        b {
+            font-weight: 600;
+        }
+        a {
+            color: $o-training-forest;
+            font-weight: 500;
+        }
+        > i {
+            display: block;
+            height: 8px;
+            border-radius: 4px;
+            background: $o-training-mint-light;
+            overflow: hidden;
+        }
+        > i > i {
+            display: block;
+            height: 8px;
+            background: $o-training-green;
+        }
+    }
+    .o_training_actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 4px;
+        button {
+            height: 48px;
+            border-radius: 12px;
+            font: inherit;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+    }
+    .o_training_play {
+        padding: 0 32px;
+        border: 0;
+        background: $o-training-forest;
+        color: $o-training-on-forest;
+        font-size: 16px !important;
+        font-weight: 600 !important;
+        &:hover {
+            background: $o-training-forest-hover;
+        }
+    }
+    .o_training_settings {
+        padding: 0 20px;
+        border: 1px solid $o-training-border-strong;
+        background: $o-training-card;
+        color: $o-training-text;
+        font-size: 15px !important;
+        font-weight: 500 !important;
+        &:hover {
+            background: $o-training-page;
+        }
+    }
+
+    // Areas without a simulator yet
+    .o_training_soon {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        h3 {
+            margin: 0;
+            font-size: 16px;
+            font-weight: 600;
+            color: $o-training-text-muted;
+        }
+        > div {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 12px;
+        }
+    }
+    .o_training_soon_card {
+        background: $o-training-card;
+        border: 1px dashed $o-training-border-strong;
+        border-radius: 14px;
+        padding: 16px 18px;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        div {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        b {
+            font-size: 16px;
+            font-weight: 600;
+        }
+        span:not(.o_training_soon_icon) {
+            font-size: 14px;
+            color: $o-training-text-muted;
+        }
+    }
+    .o_training_soon_icon {
+        width: 44px;
+        height: 44px;
+        border-radius: 22px;
+        background: $o-training-chip;
+        color: $o-training-text-muted;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    @media (max-width: 767.98px) {
+        padding: 20px 16px;
+        .o_training_card {
+            flex-direction: column;
+        }
+        .o_training_scene {
+            width: 100%;
+        }
+    }
+}

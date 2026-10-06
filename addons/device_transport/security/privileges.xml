@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="privilege_validate_enrollment" model="res.groups">
+        <field name="name">Validate Device Enrollment</field>
+        <field
+            name="comment">Read only the credential, enrollment bindings or channel exchanges involved in a checked lifecycle operation. Company and personal-credential guards remain enforced.</field>
+        <field name="is_privilege" eval="True" />
+    </record>
+
+</odoo>

@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="res_config_settings_view_form" model="ir.ui.view">
+        <field name="name">res.config.settings.view.form.inherit.credit</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="document.res_config_settings_view_form" />
+        <field name="priority" eval="45" />
+        <field name="arch" type="xml">
+            <xpath expr="//app[@name='document']" position="attributes">
+                <attribute name="notApp">0</attribute>
+            </xpath>
+            <xpath
+                expr="//block[@id='files_centralization_section']"
+                position="attributes">
+                <attribute name="invisible">0</attribute>
+            </xpath>
+            <xpath expr="//block[@id='files_centralization_section']" position="inside">
+                <setting
+                    string="Credit"
+                    help="Root folder for credit-related documentation"
+                    company_dependent="1">
+                    <label
+                        for="credit_folder_id"
+                        string="Folder"
+                        class="o_form_label col-lg-3" />
+                    <field
+                        name="credit_folder_id"
+                        widget="documents_folder_many2one"
+                        options="{'no_create': True, 'no_create_edit': True}" />
+                </setting>
+            </xpath>
+            <xpath expr="//app[@name='document']" position="inside">
+                <block id="credit_risk_section" title="Credit Risk">
+                    <setting
+                        string="Thresholds"
+                        help="Days past due that put a profile under watch and in default, and the overdue amount below which no default is declared"
+                        company_dependent="1">
+                        <div class="row mt8">
+                            <label
+                                for="credit_watch_days"
+                                class="col-lg-4 o_light_label" />
+                            <field name="credit_watch_days" />
+                        </div>
+                        <div class="row">
+                            <label
+                                for="credit_default_days"
+                                class="col-lg-4 o_light_label" />
+                            <field name="credit_default_days" />
+                        </div>
+                        <div class="row">
+                            <label
+                                for="credit_default_materiality_amount"
+                                class="col-lg-4 o_light_label" />
+                            <field name="credit_default_materiality_amount" />
+                        </div>
+                    </setting>
+                    <setting
+                        string="Exceptions and reviews"
+                        help="An exception always ends; the scorecard reads this many months of paid invoices; a worse proposed grade may be applied without a review"
+                        company_dependent="1">
+                        <div class="row mt8">
+                            <label
+                                for="credit_exception_max_days"
+                                class="col-lg-4 o_light_label" />
+                            <field name="credit_exception_max_days" />
+                        </div>
+                        <div class="row">
+                            <label
+                                for="credit_metrics_window_months"
+                                class="col-lg-4 o_light_label" />
+                            <field name="credit_metrics_window_months" />
+                        </div>
+                        <div class="row">
+                            <label
+                                for="credit_auto_downgrade"
+                                class="col-lg-4 o_light_label" />
+                            <field name="credit_auto_downgrade" />
+                        </div>
+                        <div class="row">
+                            <label
+                                for="credit_review_user_id"
+                                class="col-lg-4 o_light_label" />
+                            <field name="credit_review_user_id" />
+                        </div>
+                    </setting>
+                    <setting
+                        string="Expected credit loss"
+                        help="Journal and accounts the provision runs book against, and the matrix they read"
+                        company_dependent="1">
+                        <div class="row mt8">
+                            <label
+                                for="credit_provision_journal_id"
+                                class="col-lg-4 o_light_label" />
+                            <field name="credit_provision_journal_id" />
+                        </div>
+                        <div class="row">
+                            <label
+                                for="credit_provision_expense_account_id"
+                                class="col-lg-4 o_light_label" />
+                            <field name="credit_provision_expense_account_id" />
+                        </div>
+                        <div class="row">
+                            <label
+                                for="credit_provision_allowance_account_id"
+                                class="col-lg-4 o_light_label" />
+                            <field name="credit_provision_allowance_account_id" />
+                        </div>
+                        <div class="row">
+                            <label
+                                for="credit_provision_matrix_id"
+                                class="col-lg-4 o_light_label" />
+                            <field name="credit_provision_matrix_id" />
+                        </div>
+                    </setting>
+                </block>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

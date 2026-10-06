@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-inherit="web.views.ViewButton" t-inherit-mode="extension">
+        <xpath expr="//t[@t-call-slot='contents']" position="after">
+            <ApprovalButton t-if="this.approvalGate" gate="this.approvalGate"/>
+        </xpath>
+    </t>
+
+</templates>

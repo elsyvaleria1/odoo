@@ -1,0 +1,7 @@
+id,name,model_id/id,group_id/id,kind,operation,reach,anchor,domain
+access_account_followup_followup_line_readonly,account_followup.followup.line,model_account_followup_followup_line,account.group_account_readonly,permission,r,,,
+access_account_followup_followup_line_manager,account_followup.followup.line.manager,model_account_followup_followup_line,account.group_account_manager,permission,cud,,,
+ir_rule_sms_template_account_manager,SMS Template: account manager CUD on partner templates,sms.model_sms_template,account.group_account_manager,permission,cud,all,,"[('model_id.model', '=', 'res.partner')]"
+access_account_followup_manual_reminder_account_basic,account_followup.manual_reminder.account.basic,model_wizard_res_partner_send_followup,account.group_account_basic,permission,cru,,,
+access_account_followup_missing_information,access_account_followup_missing_information,model_wizard_res_partner_view_followup_missing_info,account.group_account_manager,permission,cru,,,
+account_followup_comp_rule,Account Follow-up multi company rule,model_account_followup_followup_line,base.group_everyone,guard,crud,company,,

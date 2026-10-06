@@ -1,0 +1,4 @@
+$-o-cohort-light: map-get($theme-colors, "light");
+$o-cohort-heading-bg-color: o-token-darken(--light, $-o-cohort-light, 4%);
+$o-cohort-border-color: o-token-darken(--light, $-o-cohort-light, 10%);
+$o-cohort-hover-color: o-token-darken(--light, $-o-cohort-light, 2%);

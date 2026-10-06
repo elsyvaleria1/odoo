@@ -1,0 +1,58 @@
+/** @odoo-module native */
+import { CheckBox } from "@web/components/checkbox";
+import { registry } from "@web/core/registry";
+import { _t } from "@web/core/translation";
+import { useService } from "@web/core/utils/hooks";
+import {
+    BooleanToggleField,
+    booleanToggleField,
+} from "@web/fields/basic/boolean_toggle";
+import { ConfirmationDialog } from "@web/ui/dialog";
+
+export class ConfirmCheckBox extends CheckBox {
+    onClick(ev) {
+        ev.preventDefault();
+        ev.stopPropagation();
+
+        if (ev.target.tagName !== "INPUT") {
+            return;
+        }
+        this.props.onChange(ev.target.checked);
+    }
+}
+
+export class BooleanToggleConfirm extends BooleanToggleField {
+    static template = "stock_account.BooleanToggleConfirm";
+    static components = { ConfirmCheckBox };
+
+    setup() {
+        super.setup();
+        this.dialogService = useService("dialog");
+    }
+
+    onChange(value) {
+        const record = this.props.record.data;
+        const updateAndSave = () => {
+            this.props.record.update({ [this.props.name]: value }, { save: true });
+        };
+
+        if (record.lot_valuated && !value) {
+            this.dialogService.add(ConfirmationDialog, {
+                body: _t(
+                    "This operation might lead in a loss of data. Valuation will be identical for all lots/SN. Do you want to proceed ? ",
+                ),
+                confirm: updateAndSave,
+                cancel: () => {},
+            });
+        } else {
+            updateAndSave();
+        }
+    }
+}
+
+export const booleanToggleConfirm = {
+    ...booleanToggleField,
+    component: BooleanToggleConfirm,
+};
+
+registry.category("fields").add("confirm_boolean", booleanToggleConfirm);

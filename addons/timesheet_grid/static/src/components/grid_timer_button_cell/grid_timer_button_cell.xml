@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<templates>
+
+    <t t-name="timesheet_grid.GridTimerButtonCell">
+        <button type="button"
+                class="btn_timer_line btn position-relative border-2 fa-stack"
+                t-att-class="{
+                    'btn-outline-secondary': !this.props.timerRunning and this.props.hovered or !this.props.timerRunning and this.ui.isTouch or !this.props.timerRunning,
+                    'btn-success': this.props.hovered,
+                    'btn-danger': this.props.timerRunning,
+                 }"
+                t-on-click.synthetic="() => this.props.onTimerClick(this.props.row)"
+        >
+            <span class="o_grid_timer_button position-absolute start-0 top-0 d-flex align-items-center justify-content-center w-100 h-100"
+                  t-att-class="{
+                    'bg-view bg-opacity-75' : !this.props.hovered and !this.props.timerRunning and !this.ui.isTouch
+                  }">
+                <span t-if="!this.props.timerRunning &amp;&amp; !this.props.hovered" class="d-none d-md-inline text-primary"
+                      t-att-class="{
+                        'text-lowercase': !this.props.addTimeMode,
+                        'text-muted fa-solid fa-play': !this.props.hotKey,
+                      }"
+                      t-out="this.props.hotKey"/>
+                <i t-if="this.props.timerRunning or this.props.hovered or this.ui.isTouch"
+                   class="fa-solid"
+                   t-att-class="{
+                    'fa-stop' : this.props.timerRunning,
+                    'fa-play' : !this.props.timerRunning and !this.props.addTimeMode,
+                    'fa-plus' : !this.props.timerRunning and this.props.addTimeMode,
+                   }"
+                />
+            </span>
+        </button>
+    </t>
+
+</templates>

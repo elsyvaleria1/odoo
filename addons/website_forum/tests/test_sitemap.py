@@ -1,0 +1,39 @@
+from datetime import datetime
+from unittest.mock import patch
+
+from freezegun import freeze_time
+
+from odoo.tests import tagged
+
+from odoo.addons.website_forum.tests.common import TestForumCommon
+
+
+@tagged("post_install", "-at_install")
+class TestWebsiteControllers(TestForumCommon):
+    def test_01_forum_sitemap(self):
+        website = self.env["website"].browse(1)
+
+        posted_on = datetime(2023, 5, 31)
+        with (
+            freeze_time(posted_on),
+            patch.object(self.env.cr, "now", lambda: posted_on),
+        ):
+            self.post.name = "RenameIt"
+            self.post._update_last_activity()
+
+        locs = website._enumerate_pages(
+            query_string="/forum/%s" % self.env["ir.http"]._slug(self.forum)
+        )
+        self.assertEqual(next(iter(locs))["lastmod"].strftime("%Y-%m-%d"), "2023-05-31")
+
+        edited_on = datetime(2024, 1, 1)
+        with (
+            freeze_time(edited_on),
+            patch.object(self.env.cr, "now", lambda: edited_on),
+        ):
+            self.post.content = "I am a bird"
+
+        locs = website._enumerate_pages(
+            query_string="/forum/%s" % self.env["ir.http"]._slug(self.forum)
+        )
+        self.assertEqual(next(iter(locs))["lastmod"].strftime("%Y-%m-%d"), "2024-01-01")

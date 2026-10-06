@@ -1,0 +1,8 @@
+id,name,model_id/id,group_id/id,kind,operation,reach,anchor,predicate_id/id,predicate_args,domain
+databases_manager_project_project_rule,Databases administrators can see all databases,project.model_project_project,group_databases_manager,permission,crud,all,,,,"[('database_hosting', '!=', False)]"
+databases_user_project_project_rule,Databases users can see a database if they have an account,project.model_project_project,group_databases_user,permission,r,,,,,"['&', ('database_hosting', '!=', False), ('database_user_ids.login', '=', user.login)]"
+project_public_members_rule_group_project_manager,Project: internal users: projects they can access,project.model_project_project,project.group_project_manager,permission,crud,predicate,,base.access_predicate_user_has_access,"{""at"": """"}",
+access_databases_user_manager,access.databases.user.manager,model_databases_user,group_databases_manager,permission,cud,,,,,
+access_databases_user_user,access.databases.user.user,model_databases_user,group_databases_user,permission,r,,,,,
+access_databases_manage_users_wizard,access.databases.manage_users.wizard,model_wizard_project_project_update_database_user,group_databases_manager,permission,cru,,,,,
+access_databases_synchronization_wizard,access.databases.synchronization.wizard,model_wizard_project_project_synchronize_database,group_databases_user,permission,cru,,,,,

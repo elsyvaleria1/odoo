@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="res_config_settings_view_form" model="ir.ui.view">
+        <field name="name">res.config.settings.view.form.inherit.hr.timesheet</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="base.res_config_settings_view_form" />
+        <field name="priority" eval="55" />
+        <field name="arch" type="xml">
+            <xpath expr="//form" position="inside">
+                <app
+                    name="hr_timesheet"
+                    id="timesheets"
+                    string="Timesheets"
+                    groups="hr_timesheet.group_timesheet_manager"
+                    data-string="Timesheets">
+                    <block name="time_encoding_setting_container" title="Time Encoding">
+                        <setting
+                            id="time_mode_setting"
+                            invisible="project_time_mode_id"
+                            company_dependent="1">
+                            <field
+                                name="project_time_mode_id"
+                                options="{'no_create': True, 'no_open': True}" />
+                        </setting>
+                        <setting
+                            id="time_unit_timesheets_setting"
+                            help="Time unit used to record your timesheets"
+                            company_dependent="1">
+                            <field
+                                name="timesheet_encode_method"
+                                widget="radio"
+                                class="col-lg-5 ps-0" />
+                            <field name="is_encode_uom_days" invisible="1" />
+                        </setting>
+                    </block>
+                    <block title="Timesheets Control">
+                        <setting
+                            id="reminder_user_allow"
+                            help="Send a periodical email reminder to timesheets users that still have timesheets to encode"
+                            company_dependent="1">
+                            <field
+                                name="reminder_user_allow"
+                                widget="upgrade_boolean" />
+                        </setting>
+                        <setting
+                            id="reminder_allow"
+                            help="Send a periodical email reminder to timesheets approvers that still have timesheets to validate"
+                            company_dependent="1">
+                            <field name="reminder_allow" widget="upgrade_boolean" />
+                        </setting>
+                    </block>
+                    <div name="section_leaves">
+                        <block name="timesheet_control" title="Time Off">
+                            <setting
+                                id="timesheet_off_validation_setting"
+                                help="Generate timesheets for validated time off requests and public holidays"
+                                company_dependent="1"
+                                documentation="/applications/services/timesheets/time_off.html">
+                                <field name="module_project_timesheet_holidays" />
+                            </setting>
+                        </block>
+                    </div>
+                </app>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="hr_timesheet_config_settings_action" model="ir.actions.act_window">
+        <field name="name">Settings</field>
+        <field name="res_model">res.config.settings</field>
+        <field name="view_mode">form</field>
+        <field name="context">{'module' : 'hr_timesheet', 'bin_size': False}</field>
+    </record>
+
+</odoo>

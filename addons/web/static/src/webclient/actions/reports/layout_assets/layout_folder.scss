@@ -1,0 +1,19 @@
+.o_report_layout_folder .o_folder_header_container {
+    rect,
+    path {
+        fill: var(--co-primary, $o-default-report-primary-color);
+    }
+}
+
+.o_folder_adaptative_shape {
+    top: -1px;
+    height: 3rem;
+
+    .o_folder_angle_shape {
+        left: -1px;
+    }
+
+    .o_folder_title {
+        margin-right: $o-default-report-margins;
+    }
+}

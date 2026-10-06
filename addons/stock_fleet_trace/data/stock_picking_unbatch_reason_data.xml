@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+
+    <!-- The whole-delivery reasons of stock_fleet also serve for a single product. -->
+    <record
+        id="stock_fleet.unbatch_reason_refused"
+        model="stock.picking.unbatch.reason">
+        <field name="scope">both</field>
+    </record>
+
+    <record id="unbatch_reason_damaged_product" model="stock.picking.unbatch.reason">
+        <field name="name">Damaged product</field>
+        <field name="sequence">100</field>
+        <field name="moment">on_route</field>
+        <field name="accountable">fulfilment</field>
+        <field name="scope">line</field>
+        <field name="creates_backorder" eval="True" />
+    </record>
+
+    <record id="unbatch_reason_wrong_product" model="stock.picking.unbatch.reason">
+        <field name="name">Wrong product</field>
+        <field name="sequence">110</field>
+        <field name="moment">on_route</field>
+        <field name="accountable">fulfilment</field>
+        <field name="scope">line</field>
+        <field name="creates_backorder" eval="True" />
+    </record>
+
+    <record id="unbatch_reason_not_ordered" model="stock.picking.unbatch.reason">
+        <field name="name">Not ordered</field>
+        <field name="sequence">120</field>
+        <field name="moment">on_route</field>
+        <field name="accountable">operations</field>
+        <field name="scope">line</field>
+    </record>
+
+    <record id="unbatch_reason_price_terms" model="stock.picking.unbatch.reason">
+        <field name="name">Price or terms</field>
+        <field name="sequence">140</field>
+        <field name="moment">on_route</field>
+        <field name="accountable">internal</field>
+        <field name="scope">both</field>
+    </record>
+
+    <record id="unbatch_reason_short_loaded" model="stock.picking.unbatch.reason">
+        <field name="name">Short loaded</field>
+        <field name="sequence">150</field>
+        <field name="moment">on_route</field>
+        <field name="accountable">fulfilment</field>
+        <field name="scope">line</field>
+        <field name="goods_on_board" eval="False" />
+        <field name="creates_backorder" eval="True" />
+    </record>
+
+    <record id="unbatch_reason_lost_in_transit" model="stock.picking.unbatch.reason">
+        <field name="name">Lost in transit (see incident)</field>
+        <field name="sequence">160</field>
+        <field name="moment">on_route</field>
+        <field name="accountable">fleet</field>
+        <field name="scope">line</field>
+        <field name="goods_on_board" eval="False" />
+        <field name="creates_backorder" eval="True" />
+    </record>
+
+</odoo>

@@ -1,0 +1,27 @@
+from odoo import api, fields, models
+
+
+class CrmLead(models.Model):
+    _inherit = "crm.lead"
+
+    visitor_sessions_count = fields.Integer(
+        string="# Sessions",
+        compute="_compute_visitor_sessions_count",
+        groups="im_livechat.im_livechat_group_user",
+    )
+
+    @api.depends("visitor_ids.discuss_channel_ids")
+    def _compute_visitor_sessions_count(self) -> None:
+        for lead in self:
+            lead.visitor_sessions_count = len(lead.visitor_ids.discuss_channel_ids)
+
+    def action_redirect_to_livechat_sessions(self):
+        visitors = self.visitor_ids
+        action = self.env["ir.actions.actions"]._get_action_dict_by_xml_id(
+            "website_livechat.website_visitor_livechat_session_action"
+        )
+        action["domain"] = [
+            ("livechat_visitor_id", "in", visitors.ids),
+            ("has_message", "=", True),
+        ]
+        return action

@@ -1,0 +1,163 @@
+/** @odoo-module native */
+import { useBuilderContext } from "@html_builder/core/builder_context";
+import { isClonable } from "@html_builder/core/clone_plugin";
+import { isRemovable } from "@html_builder/core/remove_plugin";
+import {
+    getSnippetName,
+    provideBuilderOptionsContext,
+} from "@html_builder/utils/utils";
+import { onWillStart, onWillUpdateProps, t } from "@odoo/owl";
+import { user } from "@web/core/user";
+import { elementRef } from "@web/core/utils/element_ref";
+import { useService } from "@web/core/utils/hooks";
+
+import { useOperation } from "../core/operation_plugin.js";
+import {
+    BaseOptionComponent,
+    useApplyVisibility,
+    useDomState,
+    useGetItemValue,
+    useVisibilityObserver,
+} from "../core/utils.js";
+import { BorderConfigurator } from "../plugins/border_configurator_option.js";
+import { ShadowOption } from "../plugins/shadow_option.js";
+
+export class OptionsContainer extends BaseOptionComponent {
+    static template = "html_builder.OptionsContainer";
+    static dependencies = [
+        "builderOptions",
+        "overlayButtons",
+        "builderOverlay",
+        "remove",
+        "clone",
+    ];
+    static components = {
+        BorderConfigurator,
+        ShadowOption,
+    };
+    static props = {
+        snippetModel: t.object(),
+        options: t.array(),
+        editingElement: t.any(),
+        isRemovable: t.boolean(),
+        removeDisabledReason: t.string().optional(),
+        isClonable: t.boolean(),
+        cloneDisabledReason: t.string().optional(),
+        optionTitleComponents: t.array().optional([]),
+        containerTopButtons: t.array(),
+        containerTitle: t.object().optional({}),
+        headerMiddleButtons: t.array().optional([]),
+    };
+
+    setup() {
+        provideBuilderOptionsContext(() => [this.props.editingElement]);
+        super.setup();
+        this.builderContext = useBuilderContext();
+        this.notification = useService("notification");
+        this.getItemValue = useGetItemValue();
+        this.rootRef = elementRef();
+        this.contentRef = elementRef();
+        useVisibilityObserver(this.contentRef, useApplyVisibility(this.rootRef));
+
+        this.callOperation = useOperation();
+
+        this.domState = useDomState((editingElement) => ({
+            isRemovable: isRemovable(editingElement),
+            removeDisabledReason:
+                this.dependencies.builderOptions.getRemoveDisabledReason(
+                    editingElement,
+                ),
+            isClonable: isClonable(editingElement),
+            cloneDisabledReason:
+                this.dependencies.builderOptions.getCloneDisabledReason(editingElement),
+        }));
+
+        this.hasGroup = {};
+        onWillStart(async () => {
+            await this.updateAccessGroup(this.props.options);
+        });
+        onWillUpdateProps(async (nextProps) => {
+            await this.updateAccessGroup(nextProps.options);
+        });
+    }
+
+    async updateAccessGroup(options) {
+        const proms = [];
+        const groups = [...new Set(options.flatMap((o) => o.groups || []))];
+        for (const group of groups) {
+            proms.push(
+                user.hasGroup(group).then((result) => {
+                    this.hasGroup[group] = result;
+                }),
+            );
+        }
+        await Promise.all(proms);
+    }
+
+    hasAccess(groups) {
+        if (!groups) {
+            return true;
+        }
+        return groups.every((group) => this.hasGroup[group]);
+    }
+
+    get title() {
+        let title;
+        for (const option of this.props.options) {
+            if (option.getSnippetTitle) {
+                title = option.getSnippetTitle.call(this);
+                continue;
+            }
+            title = option.title || title;
+        }
+        const titleExtraInfo = this.props.containerTitle.getTitleExtraInfo
+            ? this.props.containerTitle.getTitleExtraInfo(this.props.editingElement)
+            : "";
+
+        return (
+            (title || getSnippetName(this.builderContext.getEditingElement())) +
+            titleExtraInfo
+        );
+    }
+
+    selectElement() {
+        this.dependencies.builderOptions.updateContainers(this.props.editingElement);
+    }
+
+    toggleOverlayPreview(el, show) {
+        if (show) {
+            this.dependencies.overlayButtons.hideOverlayButtons();
+            this.dependencies.builderOverlay.showOverlayPreview(el);
+        } else {
+            this.dependencies.overlayButtons.showOverlayButtons();
+            this.dependencies.builderOverlay.hideOverlayPreview(el);
+        }
+    }
+
+    onPointerEnter() {
+        this.toggleOverlayPreview(this.props.editingElement, true);
+    }
+
+    onPointerLeave() {
+        this.toggleOverlayPreview(this.props.editingElement, false);
+    }
+
+    // Actions of the buttons in the title bar.
+    removeElement() {
+        this.callOperation(() => {
+            this.dependencies.remove.removeElement(this.props.editingElement);
+        });
+    }
+
+    cloneElement() {
+        this.callOperation(async () => {
+            await this.dependencies.clone.cloneElement(this.props.editingElement, {
+                activateClone: false,
+            });
+        });
+    }
+
+    isLegacyOption(option) {
+        return typeof option === "object";
+    }
+}

@@ -1,0 +1,446 @@
+/** @odoo-module native */
+import { Component, proxy, t, useProps } from "@odoo/owl";
+import { AutoComplete } from "@web/components/autocomplete";
+import { useAppContext } from "@web/core/app_context";
+import { makeLogger } from "@web/core/debug/debug_logger";
+import { useLifecycleLog } from "@web/core/debug/logger_hooks";
+import { rpc } from "@web/core/network";
+import { _t } from "@web/core/translation";
+import { elementRef } from "@web/core/utils/element_ref";
+import { textToBase64 } from "@web/core/utils/format/binary";
+import { useService } from "@web/core/utils/hooks";
+import { useLayoutEffect } from "@web/core/utils/layout_effect";
+import { ConfirmationDialog, Dialog } from "@web/ui/dialog";
+
+const log = makeLogger("website.builder.option.add_font_dialog");
+
+class GoogleFontAutoComplete extends AutoComplete {
+    setup() {
+        super.setup();
+        useLifecycleLog(log);
+        this.sourcesListRef = this.listRef;
+        useLayoutEffect(
+            (el) => {
+                el.setAttribute("id", "google_font");
+            },
+            () => [this.inputRef.el],
+        );
+    }
+
+    get dropdownOptions() {
+        return {
+            ...super.dropdownOptions,
+            position: "bottom-fit",
+        };
+    }
+
+    onInput(ev) {
+        super.onInput(ev);
+        if (this.sourcesListRef.el) {
+            this.sourcesListRef.el.scrollTop = 0;
+        }
+    }
+}
+
+export class AddFontDialog extends Component {
+    static template = "website.dialog.addFont";
+    static components = { GoogleFontAutoComplete, Dialog };
+    static props = {
+        close: t.function(),
+        allFonts: t.array(),
+        googleFonts: t.array(),
+        googleLocalFonts: t.array(),
+        uploadedLocalFonts: t.array(),
+        variable: t.string(),
+        customize: t.function(),
+        reloadEditor: t.function(),
+    };
+    props = useProps(this.constructor.props);
+    appContext = useAppContext();
+    state = proxy({
+        valid: true,
+        loading: false,
+        googleFontFamily: undefined,
+        googleServe: !this.appContext.services.website.currentWebsite.cookies_bar,
+        uploadedFontName: undefined,
+        uploadedFonts: [],
+        uploadedFontFaces: undefined,
+        previewText: _t("The quick brown fox jumps over the lazy dog."),
+    });
+    setup() {
+        useLifecycleLog(log);
+        this.fileInput = elementRef();
+        this.dialog = useService("dialog");
+        this.orm = useService("orm");
+    }
+
+    async onClickSave() {
+        if (this.state.loading) {
+            log.logic("onClickSave skip: already saving");
+            return;
+        }
+        this.state.loading = true;
+        const endDialogSave = log.perf("onClickSave save");
+        const shouldClose = await this.save(this.state);
+        endDialogSave({ shouldClose });
+        if (shouldClose) {
+            log.lifecycle("close after save");
+            this.props.close();
+            return;
+        }
+        this.state.loading = false;
+    }
+    onClickCancel() {
+        this.props.close();
+    }
+    get getGoogleFontList() {
+        return [
+            {
+                options: async (term) => {
+                    if (!this.googleFontList) {
+                        const endFontMetadata = log.perf("google_font_metadata");
+                        await rpc("/website/google_font_metadata").then((data) => {
+                            this.googleFontList = data.familyMetadataList.map(
+                                (font) => font.family,
+                            );
+                        });
+                        endFontMetadata(() => ({ count: this.googleFontList?.length }));
+                    }
+                    const lowerCaseTerm = term.toLowerCase();
+                    const filtered = this.googleFontList.filter((value) =>
+                        value.toLowerCase().includes(lowerCaseTerm),
+                    );
+                    return filtered.map((fontFamilyName) => ({
+                        label: fontFamilyName,
+                        onSelect: () => this.onGoogleFontSelect(fontFamilyName),
+                    }));
+                },
+            },
+        ];
+    }
+    async onGoogleFontSelect(fontFamily) {
+        this.fileInput.el.value = "";
+        this.state.uploadedFonts = [];
+        this.state.uploadedFontName = undefined;
+        this.state.uploadedFontFaces = undefined;
+        try {
+            const endPreviewFetch = log.perf("onGoogleFontSelect preview HEAD", {
+                fontFamily,
+            });
+            const result = await fetch(
+                `https://fonts.googleapis.com/css?family=${encodeURIComponent(
+                    fontFamily,
+                )}:300,300i,400,400i,700,700i`,
+                { method: "HEAD" },
+            );
+            endPreviewFetch(() => ({ ok: result.ok }));
+            log.logic("onGoogleFontSelect", () => ({ fontFamily, ok: result.ok }));
+            if (result.ok) {
+                const linkId = `previewFont${fontFamily}`;
+                if (!document.querySelector(`link[id='${linkId}']`)) {
+                    const linkEl = document.createElement("link");
+                    linkEl.id = linkId;
+                    linkEl.setAttribute("href", result.url);
+                    linkEl.setAttribute("rel", "stylesheet");
+                    linkEl.dataset.fontPreview = true;
+                    document.head.appendChild(linkEl);
+                }
+                this.state.googleFontFamily = fontFamily;
+            } else {
+                this.state.googleFontFamily = undefined;
+            }
+        } catch (error) {
+            log.logic("onGoogleFontSelect preview fetch failed", () => ({
+                fontFamily,
+                error: String(error),
+            }));
+            console.error(error);
+        }
+    }
+    async onUploadChange(e) {
+        this.state.googleFontFamily = undefined;
+        const file = this.fileInput.el.files[0];
+        if (!file) {
+            log.logic("onUploadChange: no file, reset upload state");
+            this.state.uploadedFonts = [];
+            this.state.uploadedFontName = undefined;
+            this.state.uploadedFontFaces = undefined;
+            return;
+        }
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const base64 = e.target.result.split(",")[1];
+            const endUploadFont = log.perf("theme_upload_font", () => ({
+                name: file.name,
+                size: file.size,
+            }));
+            rpc("/website/theme_upload_font", {
+                name: file.name,
+                data: base64,
+            }).then((result) => {
+                endUploadFont(() => ({ fonts: result?.length }));
+                this.state.uploadedFonts = result;
+                this.updateFontStyle(file.name.substr(0, file.name.lastIndexOf(".")));
+            });
+        };
+        reader.readAsDataURL(file);
+    }
+    /**
+     * @param baseFontName
+     */
+    updateFontStyle(baseFontName) {
+        const targetFonts = {};
+        let shortestNamedFont;
+        for (const font of this.state.uploadedFonts) {
+            if (
+                !shortestNamedFont ||
+                font.name.length < shortestNamedFont.name.length
+            ) {
+                shortestNamedFont = font;
+            }
+            font.isItalic = /italic/i.test(font.name);
+            font.isLight = /light|300/i.test(font.name);
+            font.isBold = /bold|700/i.test(font.name);
+            font.isRegular = /regular|400/i.test(font.name);
+            font.weight = font.isRegular
+                ? 400
+                : font.isLight
+                  ? 300
+                  : font.isBold
+                    ? 700
+                    : undefined;
+            if (font.isItalic && !font.weight) {
+                if (!/00|thin|medium|black|condense|extrude/i.test(font.name)) {
+                    font.isRegular = true;
+                    font.weight = 400;
+                }
+            }
+            font.style = font.isItalic ? "italic" : "normal";
+            if (font.weight) {
+                targetFonts[`${font.weight}${font.style}`] = font;
+            }
+        }
+        if (!Object.values(targetFonts).filter((font) => font.isRegular).length) {
+            log.logic(
+                "updateFontStyle fallback: no regular weight, using shortest name",
+                () => ({
+                    name: shortestNamedFont?.name,
+                }),
+            );
+            shortestNamedFont.weight = 400;
+            shortestNamedFont.style = "normal";
+            targetFonts["400"] = shortestNamedFont;
+        }
+        const fontFaces = [];
+        for (const font of Object.values(targetFonts)) {
+            fontFaces.push(`@font-face{
+                font-family: ${baseFontName};
+                font-style: ${font.style};
+                font-weight: ${font.weight};
+                src:url("${font.url}");
+            }`);
+        }
+        let styleEl = document.head.querySelector(
+            `style[id='WebsiteThemeFontPreview-${baseFontName}']`,
+        );
+        if (!styleEl) {
+            styleEl = document.createElement("style");
+            styleEl.id = `WebsiteThemeFontPreview-${baseFontName}`;
+            styleEl.dataset.fontPreview = true;
+            document.head.appendChild(styleEl);
+        }
+        log.pipeline("updateFontStyle font faces built", () => ({
+            baseFontName,
+            uploaded: this.state.uploadedFonts.length,
+            faces: fontFaces.length,
+        }));
+        const previewFontFaces = fontFaces.join("");
+        styleEl.textContent = previewFontFaces;
+        this.state.uploadedFontName = baseFontName;
+        this.state.uploadedFontFaces = previewFontFaces;
+    }
+    async save(state) {
+        const uploadedFontName = state.uploadedFontName;
+        const uploadedFontFaces = state.uploadedFontFaces;
+        let font;
+        log.logic("save source", () => ({
+            uploaded: !!(uploadedFontName && uploadedFontFaces),
+            uploadedFontName,
+            googleFontFamily: state.googleFontFamily,
+        }));
+        if (uploadedFontName && uploadedFontFaces) {
+            const fontExistsLocally = this.props.uploadedLocalFonts.some(
+                (localFont) => localFont.split(":")[0] === `'${uploadedFontName}'`,
+            );
+            if (fontExistsLocally) {
+                log.logic("save refused: uploaded font exists", () => ({
+                    uploadedFontName,
+                }));
+                this.dialog.add(ConfirmationDialog, {
+                    title: _t("Font exists"),
+                    body: _t(
+                        "This uploaded font already exists.\nTo replace an existing font, remove it first.",
+                    ),
+                });
+                return;
+            }
+            const homonymGoogleFontExists =
+                this.props.googleFonts.some((font) => font === uploadedFontName) ||
+                this.props.googleLocalFonts.some(
+                    (font) => font.split(":")[0] === `'${uploadedFontName}'`,
+                );
+            if (homonymGoogleFontExists) {
+                log.logic("save refused: homonym google font", () => ({
+                    uploadedFontName,
+                }));
+                this.dialog.add(ConfirmationDialog, {
+                    title: _t("Font name already used"),
+                    body: _t(
+                        "A font with the same name already exists.\nTry renaming the uploaded file.",
+                    ),
+                });
+                return;
+            }
+            const endCreateFontCss = log.perf("save ir.attachment create_unique", {
+                uploadedFontName,
+            });
+            const [fontCssId] = await this.orm.call("ir.attachment", "create_unique", [
+                [
+                    {
+                        name: uploadedFontName,
+                        description: `CSS font face for ${uploadedFontName}`,
+                        datas: textToBase64(uploadedFontFaces),
+                        res_model: "ir.attachment",
+                        mimetype: "text/css",
+                        public: true,
+                    },
+                ],
+            ]);
+            endCreateFontCss({ fontCssId });
+            this.props.uploadedLocalFonts.push(`'${uploadedFontName}': ${fontCssId}`);
+            font = uploadedFontName;
+        } else {
+            let isValidFamily = false;
+            font = state.googleFontFamily;
+
+            try {
+                const endValidateFetch = log.perf("save validate google font HEAD", {
+                    font,
+                });
+                const result = await fetch(
+                    "https://fonts.googleapis.com/css?family=" +
+                        encodeURIComponent(font) +
+                        ":300,300i,400,400i,700,700i",
+                    { method: "HEAD" },
+                );
+                endValidateFetch(() => ({ ok: result.ok }));
+                if (result.ok) {
+                    isValidFamily = true;
+                }
+            } catch (error) {
+                log.logic("save google font validation fetch failed", () => ({
+                    font,
+                    error: String(error),
+                }));
+                console.error(error);
+            }
+
+            if (!isValidFamily) {
+                log.logic("save refused: font not accessible", () => ({ font }));
+                this.dialog.add(ConfirmationDialog, {
+                    title: _t("Font access"),
+                    body: _t("The selected font cannot be accessed."),
+                });
+                return;
+            }
+
+            const googleFontServe = state.googleServe;
+            const fontName = `'${font}'`;
+            const fontExistsLocally = this.props.googleLocalFonts.some(
+                (localFont) => localFont.split(":")[0] === fontName,
+            );
+            const fontExistsOnServer = this.props.allFonts.includes(fontName);
+            const preventFontAddition =
+                fontExistsLocally || (fontExistsOnServer && googleFontServe);
+            log.logic("save google font placement", () => ({
+                font,
+                googleFontServe,
+                fontExistsLocally,
+                fontExistsOnServer,
+            }));
+            if (preventFontAddition) {
+                this.dialog.add(ConfirmationDialog, {
+                    title: _t("Font exists"),
+                    body: _t(
+                        "This font already exists, you can only add it as a local font to replace the server version.",
+                    ),
+                });
+                return;
+            }
+            if (googleFontServe) {
+                this.props.googleFonts.push(font);
+            } else {
+                this.props.googleLocalFonts.push(`'${font}': ''`);
+            }
+        }
+        const endCustomize = log.perf("save customize", () => ({
+            variable: this.props.variable,
+            font,
+        }));
+        await this.props.customize({
+            values: { [this.props.variable]: `'${font}'` },
+            googleFonts: this.props.googleFonts,
+            googleLocalFonts: this.props.googleLocalFonts,
+            uploadedLocalFonts: this.props.uploadedLocalFonts,
+        });
+        endCustomize();
+        const styleEl = document.head.querySelector(
+            `[id='WebsiteThemeFontPreview-${font}']`,
+        );
+        if (styleEl) {
+            delete styleEl.dataset.fontPreview;
+        }
+        const endReloadEditor = log.perf("save reloadEditor");
+        await this.props.reloadEditor();
+        endReloadEditor();
+        return true;
+    }
+}
+
+export function showAddFontDialog(
+    dialog,
+    fontsData,
+    variable,
+    customize,
+    reloadEditor,
+) {
+    log.lifecycle("showAddFontDialog open", () => ({ variable }));
+    dialog.add(
+        AddFontDialog,
+        {
+            allFonts: fontsData.allFonts,
+            googleFonts: fontsData.googleFonts,
+            googleLocalFonts: fontsData.googleLocalFonts,
+            uploadedLocalFonts: fontsData.uploadedLocalFonts,
+            variable,
+            customize,
+            reloadEditor,
+        },
+        {
+            onClose: () => {
+                log.lifecycle(
+                    "showAddFontDialog closed: removing font previews",
+                    () => ({
+                        count: document.head.querySelectorAll("[data-font-preview]")
+                            .length,
+                    }),
+                );
+                for (const el of document.head.querySelectorAll(
+                    "[data-font-preview]",
+                )) {
+                    el.remove();
+                }
+            },
+        },
+    );
+}

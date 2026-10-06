@@ -1,0 +1,4 @@
+id,name,model_id/id,group_id/id,kind,operation,reach,anchor,domain
+access_wallet_reorder_rule_user,wallet.reorder.rule user,model_wallet_reorder_rule,wallet.group_wallet_user,permission,r,,,
+access_wallet_reorder_rule_manager,wallet.reorder.rule manager,model_wallet_reorder_rule,wallet.group_wallet_manager,permission,cud,,,
+wallet_reorder_rule_comp_rule,Wallet Reordering Rule: Multi-company,model_wallet_reorder_rule,base.group_everyone,guard,crud,company,,

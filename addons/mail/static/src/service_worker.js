@@ -1,0 +1,423 @@
+/** @odoo-module native */
+
+importScripts("/mail/static/lib/idb-keyval/idb-keyval.js");
+
+const MESSAGE_TYPE = {
+    POST_RTC_LOGS: "POST_RTC_LOGS",
+};
+
+const { Store, set, get } = idbKeyval;
+const LOG_AGE_LIMIT = 24 * 60 * 60 * 1000;
+/** @type {IDBDatabase|undefined} */
+let db;
+/** @type {Promise<IDBDatabase>|undefined} */
+let dbPromise;
+const unread_store = new Store("odoo-mail-unread-db", "odoo-mail-unread-store");
+let interactionSinceCleanupCount = 0;
+
+function openDatabase() {
+    dbPromise ??= new Promise((resolve, reject) => {
+        const request = indexedDB.open("RtcLogsDB", 1);
+        request.onupgradeneeded = function () {
+            const db = request.result;
+            if (!db.objectStoreNames.contains("logs")) {
+                const store = db.createObjectStore("logs", {
+                    keyPath: "id",
+                    autoIncrement: true,
+                });
+                store.createIndex("timestamp", "timestamp", { unique: false });
+            }
+        };
+        request.onsuccess = async function () {
+            const database = request.result;
+            db = database;
+            try {
+                await cleanupLogs(database);
+            } catch (error) {
+                console.error("Error cleaning up logs:", error);
+            }
+            resolve(database);
+        };
+        request.onerror = function () {
+            dbPromise = undefined;
+            reject(request.error);
+        };
+    });
+    return dbPromise;
+}
+
+sw.addEventListener("install", () => {
+    sw.skipWaiting();
+});
+
+sw.addEventListener(
+    "activate",
+    /** @param {ExtendableEvent} event */ (event) => {
+        event.waitUntil(Promise.all([openDatabase(), sw.clients.claim()]));
+    },
+);
+
+/**
+ * @param {IDBDatabase} dataBase
+ * @returns {Promise<void>}
+ */
+async function cleanupLogs(dataBase) {
+    const cutoffTime = Date.now() - LOG_AGE_LIMIT;
+    return new Promise((resolve, reject) => {
+        const tx = dataBase.transaction("logs", "readwrite");
+        const store = tx.objectStore("logs");
+        const index = store.index("timestamp");
+        const range = IDBKeyRange.upperBound(cutoffTime);
+        const request = index.openCursor(range);
+        request.onsuccess = () => {
+            const cursor = request.result;
+            if (cursor) {
+                cursor.delete();
+                cursor.continue();
+            }
+        };
+        request.onerror = () => reject(request.error);
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error);
+    });
+}
+
+/**
+ * @param {Array<{type: string, entry: string, value: any}|undefined>} logs
+ * @param {Object} [options]
+ * @param {boolean} [options.download=false]
+ * @returns {Promise<{timelines: Object, snapshots: Object}|undefined>}
+ */
+async function storeLogs(logs, { download = false } = {}) {
+    const database = db || (await openDatabase());
+    if (interactionSinceCleanupCount > 30) {
+        interactionSinceCleanupCount = 0;
+        await cleanupLogs(database);
+    }
+    interactionSinceCleanupCount++;
+    return new Promise((resolve, reject) => {
+        /** @type {{timelines: Record<string, unknown>, snapshots: Record<string, unknown>} | undefined} */
+        let output;
+        const tx = database.transaction("logs", "readwrite");
+        const store = tx.objectStore("logs");
+        for (const log of logs) {
+            if (!log) {
+                continue;
+            }
+            const { type, entry, value } = log;
+            const request = store.add({
+                type: type,
+                entry: entry,
+                value: value,
+                timestamp: Date.now(),
+            });
+            request.onerror = () => reject(request.error);
+        }
+        if (download) {
+            const request = store.getAll();
+            request.onerror = () => reject(request.error);
+            request.onsuccess = () => {
+                const allLogs = request.result;
+                /** @type {Record<string, unknown>} */
+                const timelines = {};
+                /** @type {Record<string, unknown>} */
+                const snapshots = {};
+                allLogs.forEach((log) => {
+                    if (log.type === "timeline") {
+                        timelines[log.entry] = log.value;
+                    } else if (log.type === "snapshot") {
+                        snapshots[log.entry] = log.value;
+                    }
+                });
+                output = { timelines, snapshots };
+            };
+        }
+        tx.oncomplete = () => resolve(output);
+        tx.onerror = () => reject(tx.error);
+    });
+}
+
+/**
+ * @param {number} channelId
+ * @param {Object} param1
+ * @param {string} [param1.action]
+ * @param {boolean} [param1.joinCall]
+ * @param {Client | ServiceWorker | MessagePort | null} [param1.source]
+ */
+async function openDiscussChannel(
+    channelId,
+    { action, joinCall = false, source } = {},
+) {
+    const targetClient = pickTargetClient(await matchWindowClients(), {
+        source: source && "id" in source ? source : undefined,
+        urlRegexes: discussUrlRegexes(action),
+    });
+    if (targetClient) {
+        targetClient.postMessage({
+            action: "OPEN_CHANNEL",
+            data: { id: channelId, joinCall },
+        });
+        targetClient.focus().catch(() => {});
+        return;
+    }
+    const url = action
+        ? new URL(`/odoo/action-${action}`, location.origin)
+        : new URL("/odoo/discuss", location.origin);
+    url.searchParams.set("active_id", `discuss.channel_${channelId}`);
+    if (joinCall) {
+        url.searchParams.set("call", "accept");
+    }
+    await sw.clients.openWindow(url.toString());
+}
+
+/** @returns {Promise<readonly WindowClient[]>} */
+function matchWindowClients() {
+    return sw.clients.matchAll({ type: "window", includeUncontrolled: true });
+}
+
+/**
+ * @param {string} model
+ * @param {number} resId
+ */
+async function openRecord(model, resId) {
+    const targetClient = pickTargetClient(await matchWindowClients());
+    if (targetClient) {
+        targetClient.postMessage({
+            action: "OPEN_RECORD",
+            data: { model, res_id: resId },
+        });
+        targetClient.focus().catch(() => {});
+        return;
+    }
+    await sw.clients.openWindow(notificationTargetPath(model, resId));
+}
+
+sw.addEventListener(
+    "notificationclick",
+    /** @param {NotificationEvent} event */ (event) => {
+        event.notification.close();
+        if (event.notification.data) {
+            const { action, model, res_id } = event.notification.data;
+            if (model === "discuss.channel") {
+                if (event.action === PUSH_NOTIFICATION_ACTION.DECLINE) {
+                    event.waitUntil(
+                        fetch("/mail/rtc/channel/leave_call", {
+                            headers: { "Content-type": "application/json" },
+                            body: JSON.stringify({
+                                id: 1,
+                                jsonrpc: "2.0",
+                                method: "call",
+                                params: { channel_id: res_id },
+                            }),
+                            method: "POST",
+                            mode: "cors",
+                            credentials: "include",
+                        }),
+                    );
+                    return;
+                }
+                event.waitUntil(
+                    openDiscussChannel(res_id, {
+                        action,
+                        joinCall: event.action === PUSH_NOTIFICATION_ACTION.ACCEPT,
+                    }),
+                );
+            } else if (model) {
+                event.waitUntil(openRecord(model, res_id));
+            }
+        }
+    },
+);
+sw.addEventListener(
+    "push",
+    /** @param {PushEvent} event */ (event) => {
+        let notification;
+        try {
+            notification = event.data?.json();
+        } catch {
+            notification = undefined;
+        }
+        const plan = planPushNotification(notification, {
+            isAndroid: navigator.userAgent.includes("Android"),
+        });
+        switch (plan.type) {
+            case "generic":
+                event.waitUntil(sw.registration.showNotification("Odoo"));
+                return;
+            case "show":
+                event.waitUntil(
+                    sw.registration.showNotification(plan.title, plan.options || {}),
+                );
+                return;
+            case "ignore":
+                return;
+            case "cancel":
+                event.waitUntil(
+                    sw.registration
+                        .getNotifications({ tag: plan.tag })
+                        .then((notifications) => {
+                            for (const toCancel of notifications) {
+                                toCancel.close();
+                            }
+                        }),
+                );
+                return;
+            case "handshake":
+                event.waitUntil(handlePushEvent(plan.notification));
+                return;
+        }
+    },
+);
+
+/** @type {Map<string, Function>} */
+sw.handlePushEventMessageFns = new Map();
+
+sw.addEventListener(
+    "message",
+    /** @param {ExtendableMessageEvent} ev */ ({ data }) => {
+        const { type, payload } = data;
+        if (type === "notification-display-response") {
+            const fn = sw.handlePushEventMessageFns.get(payload.correlationId);
+            if (fn) {
+                sw.handlePushEventMessageFns.delete(payload.correlationId);
+                fn();
+            }
+        }
+    },
+);
+
+let unreadUpdatePromise = Promise.resolve();
+function incrementUnread() {
+    unreadUpdatePromise = unreadUpdatePromise.then(async () => {
+        try {
+            const oldCounter = (await get("unread", unread_store)) ?? 0;
+            const newCounter = oldCounter + 1;
+            await set("unread", newCounter, unread_store);
+            navigator.setAppBadge?.(newCounter);
+        } catch {}
+    });
+    return unreadUpdatePromise;
+}
+
+/**
+ * @param {import("@mail/service_worker_utils").PushNotification & {title: string}} notification
+ * @returns {Promise<void>}
+ */
+async function handlePushEvent(notification) {
+    const { model, res_id } = notification.options?.data || {};
+    const correlationId = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    /** @type {ReturnType<typeof setTimeout>} */
+    let timeoutId;
+    return new Promise((resolve) => {
+        sw.handlePushEventMessageFns.set(correlationId, () => {
+            clearTimeout(timeoutId);
+            resolve();
+        });
+        sw.clients
+            .matchAll({ includeUncontrolled: true, type: "window" })
+            .then((clients) => {
+                clients.forEach((client) =>
+                    client.postMessage({
+                        type: "notification-display-request",
+                        payload: { correlationId, model, res_id },
+                    }),
+                );
+            });
+        timeoutId = setTimeout(async () => {
+            sw.handlePushEventMessageFns.delete(correlationId);
+            await incrementUnread();
+            sw.clients
+                .matchAll({ includeUncontrolled: true, type: "window" })
+                .then((clients) => {
+                    clients.forEach((client) =>
+                        client.postMessage({
+                            type: "notification-displayed",
+                            payload: { model, res_id },
+                        }),
+                    );
+                });
+            resolve(
+                sw.registration.showNotification(
+                    notification.title,
+                    notification.options,
+                ),
+            );
+        }, 500);
+    });
+}
+sw.addEventListener(
+    "pushsubscriptionchange",
+    /** @param {PushSubscriptionChangeEvent} event */ (event) => {
+        if (!event.oldSubscription) {
+            return;
+        }
+        event.waitUntil(resubscribePushDevice(event.oldSubscription));
+    },
+);
+
+/** @param {PushSubscription} oldSubscription */
+async function resubscribePushDevice(oldSubscription) {
+    const subscription = await sw.registration.pushManager.subscribe(
+        oldSubscription.options,
+    );
+    const applicationServerKey =
+        oldSubscription.options?.applicationServerKey ||
+        subscription.options?.applicationServerKey;
+    await fetch("/web/dataset/call_kw/mail.push.device/register_devices", {
+        headers: {
+            "Content-type": "application/json",
+        },
+        body: JSON.stringify({
+            id: 1,
+            jsonrpc: "2.0",
+            method: "call",
+            params: {
+                model: "mail.push.device",
+                method: "register_devices",
+                args: [],
+                kwargs: {
+                    ...subscription.toJSON(),
+                    previousEndpoint: oldSubscription.endpoint,
+                    ...(applicationServerKey
+                        ? {
+                              vapid_public_key:
+                                  arrayBufferToBase64Url(applicationServerKey),
+                          }
+                        : {}),
+                },
+                context: {},
+            },
+        }),
+        method: "POST",
+        mode: "cors",
+        credentials: "include",
+    });
+}
+/**
+ * @param {Array<{type: string, entry: string, value: any}|undefined>} logs
+ * @param {boolean} download
+ * @param {ExtendableMessageEvent["source"]} source
+ */
+async function postRtcLogs(logs, download, source) {
+    try {
+        const data = await storeLogs(logs, { download });
+        if (download) {
+            source?.postMessage({
+                action: "POST_RTC_LOGS",
+                data,
+            });
+        }
+    } catch (error) {
+        console.error("Error storing log:", error);
+    }
+}
+
+sw.addEventListener(
+    "message",
+    /** @param {ExtendableMessageEvent} event */ (event) => {
+        const { data, source } = event;
+        if (data?.name === MESSAGE_TYPE.POST_RTC_LOGS) {
+            event.waitUntil(postRtcLogs(data.logs, data.download, source));
+        }
+    },
+);

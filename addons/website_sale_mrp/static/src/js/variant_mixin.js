@@ -1,0 +1,18 @@
+/** @odoo-module native */
+
+import { rpc } from "@web/core/network";
+import VariantMixin from "@website_sale_stock/js/variant_mixin";
+
+const oldGetUnavailableQty = VariantMixin._getUnavailableQty;
+
+/**
+ * @override
+ */
+VariantMixin._getUnavailableQty = async function (combination) {
+    const unavailableQty = await oldGetUnavailableQty.apply(this, arguments);
+    const kitUnavailableQty = await rpc(
+        "/website_sale_mrp/get_unavailable_qty_from_kits",
+        combination,
+    );
+    return unavailableQty + kitUnavailableQty;
+};

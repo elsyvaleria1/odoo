@@ -1,0 +1,275 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* stock_fleet_route
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-09-29 17:11+0000\n"
+"PO-Revision-Date: 2026-09-29 17:11+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: es_MX\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: stock_fleet_route
+#. odoo-python
+#: code:addons/stock_fleet_route/models/stock_picking_batch.py:0
+msgid "%s has no phone number on file: let them know another way."
+msgstr "%s no tiene teléfono registrado: avísale por otro medio."
+
+#. module: stock_fleet_route
+#: model:ir.model.fields,field_description:stock_fleet_route.field_stock_picking__trip_eta_notified
+msgid "Arrival Told to the Seller"
+msgstr "Llegada avisada al vendedor"
+
+#. module: stock_fleet_route
+#. odoo-python
+#: code:addons/stock_fleet_route/models/stock_picking_batch.py:0
+msgid "Customers without coordinates, left at the end: %s."
+msgstr "Clientes sin coordenadas, dejados al final: %s."
+
+#. module: stock_fleet_route
+#. odoo-python
+#: code:addons/stock_fleet_route/models/stock_picking_batch.py:0
+msgid ""
+"Delay on %(trip)s: %(customer)s (%(picking)s) now arrives at %(hour)s "
+"(+%(minutes)s min)."
+msgstr "Retraso en %(trip)s: %(customer)s (%(picking)s) ahora llega a las %(hour)s (+%(minutes)s min)."
+
+#. module: stock_fleet_route
+#. odoo-python
+#: code:addons/stock_fleet_route/models/stock_picking_batch.py:0
+msgid ""
+"Delay on %(trip)s: %(customer)s arrives at %(hour)s (+%(minutes)s min)."
+msgstr "Retraso en %(trip)s: %(customer)s llega a las %(hour)s (+%(minutes)s min)."
+
+#. module: stock_fleet_route
+#: model:ir.model.fields,field_description:stock_fleet_route.field_stock_fleet_route_tomtom__display_name
+msgid "Display Name"
+msgstr "Nombre en pantalla"
+
+#. module: stock_fleet_route
+#. odoo-python
+#: code:addons/stock_fleet_route/models/stock_picking_batch.py:0
+msgid ""
+"Does not make it within the day: %(customers)s arrive after %(hour)s:00."
+msgstr "No alcanza en el día: %(customers)s llegan después de las %(hour)s:00."
+
+#. module: stock_fleet_route
+#: model:ir.model.fields,field_description:stock_fleet_route.field_stock_picking__trip_eta
+msgid "Estimated Arrival"
+msgstr "Llegada estimada"
+
+#. module: stock_fleet_route
+#: model:ir.model.fields,help:stock_fleet_route.field_stock_picking_batch__route_total_minutes
+msgid ""
+"From departure back to the warehouse, with traffic and the service time at "
+"every stop."
+msgstr "Desde la salida hasta el regreso al almacén, con tráfico y el tiempo de servicio en cada parada."
+
+#. module: stock_fleet_route
+#: model_terms:ir.ui.view,arch_db:stock_fleet_route.stock_picking_batch_form_driver_route
+#: model_terms:ir.ui.view,arch_db:stock_fleet_route.stock_picking_batch_form_route
+msgid "Google Maps"
+msgstr "Google Maps"
+
+#. module: stock_fleet_route
+#: model:ir.model.fields,help:stock_fleet_route.field_stock_warehouse__route_service_minutes
+msgid ""
+"How long the vehicle stays at each customer, added to the arrival times of "
+"the next stops."
+msgstr "Cuánto tiempo se queda el vehículo con cada cliente; se suma a la hora de llegada de las paradas siguientes."
+
+#. module: stock_fleet_route
+#: model:ir.model.fields,field_description:stock_fleet_route.field_stock_fleet_route_tomtom__id
+msgid "ID"
+msgstr "ID"
+
+#. module: stock_fleet_route
+#. odoo-python
+#: code:addons/stock_fleet_route/models/stock_picking_batch.py:0
+msgid "Let the customer know on WhatsApp: %s"
+msgstr "Avísale al cliente por WhatsApp: %s"
+
+#. module: stock_fleet_route
+#. odoo-python
+#: code:addons/stock_fleet_route/models/stock_fleet_route_tomtom.py:0
+msgid ""
+"No TomTom API key for %(company)s. Create a credential for the outbound "
+"endpoint %(endpoint)s, in its %(environment)s environment, under "
+"Integrations > API Transport > Configuration > Credentials."
+msgstr "No hay llave de API de TomTom para %(company)s. Crea una credencial para el servicio de salida %(endpoint)s, en su ambiente %(environment)s, en Integraciones > Transporte de API > Configuración > Credenciales."
+
+#. module: stock_fleet_route
+#. odoo-python
+#: code:addons/stock_fleet_route/models/stock_picking_batch.py:0
+msgid "No stop of trip %s has coordinates."
+msgstr "Ninguna parada del viaje %s tiene coordenadas."
+
+#. module: stock_fleet_route
+#: model:res.groups,name:stock_fleet_route.privilege_trip_route
+msgid ""
+"Privilege: a trip reads its delay threshold and its vehicle's position, and "
+"tells its crew and sellers on Telegram"
+msgstr "Privilegio: un viaje lee su umbral de retraso y la posición de su vehículo, y avisa por Telegram a su tripulación y vendedores"
+
+#. module: stock_fleet_route
+#: model_terms:ir.ui.view,arch_db:stock_fleet_route.report_delivery_document_route
+#: model_terms:ir.ui.view,arch_db:stock_fleet_route.report_picking_batch_route
+msgid "QR"
+msgstr "QR"
+
+#. module: stock_fleet_route
+#: model_terms:ir.ui.view,arch_db:stock_fleet_route.stock_picking_batch_form_route
+msgid "Refresh ETA"
+msgstr "Actualizar llegada"
+
+#. module: stock_fleet_route
+#: model_terms:ir.ui.view,arch_db:stock_fleet_route.stock_picking_batch_form_route
+msgid "Route"
+msgstr "Ruta"
+
+#. module: stock_fleet_route
+#: model:ir.model.fields,field_description:stock_fleet_route.field_stock_picking_batch__route_computed_at
+msgid "Route Computed"
+msgstr "Ruta calculada"
+
+#. module: stock_fleet_route
+#: model:ir.model.fields,field_description:stock_fleet_route.field_stock_picking_batch__route_distance_km
+msgid "Route Distance (km)"
+msgstr "Distancia de la ruta (km)"
+
+#. module: stock_fleet_route
+#: model:ir.model.fields,field_description:stock_fleet_route.field_stock_picking_batch__route_total_minutes
+msgid "Route Duration (min)"
+msgstr "Duración de la ruta (min)"
+
+#. module: stock_fleet_route
+#: model:ir.model.fields,field_description:stock_fleet_route.field_stock_picking_batch__route_warning
+msgid "Route Warning"
+msgstr "Aviso de ruta"
+
+#. module: stock_fleet_route
+#. odoo-javascript
+#: code:addons/stock_fleet_route/static/src/trip_scan_code_field/trip_scan_code_field.xml:0
+msgid "Scan with the camera"
+msgstr "Escanear con la cámara"
+
+#. module: stock_fleet_route
+#: model:ir.model.fields,field_description:stock_fleet_route.field_stock_warehouse__route_service_minutes
+msgid "Service Time per Stop (min)"
+msgstr "Tiempo de servicio por parada (min)"
+
+#. module: stock_fleet_route
+#. odoo-python
+#: code:addons/stock_fleet_route/models/stock_picking_batch.py:0
+msgid ""
+"Set the trip origin coordinates on warehouse %s, or the coordinates of its "
+"address."
+msgstr "Configura las coordenadas de origen de los viajes en el almacén %s, o las coordenadas de su dirección."
+
+#. module: stock_fleet_route
+#: model_terms:ir.ui.view,arch_db:stock_fleet_route.stock_picking_batch_form_route
+msgid "Suggest Route"
+msgstr "Sugerir ruta"
+
+#. module: stock_fleet_route
+#: model:ir.model.fields,help:stock_fleet_route.field_stock_picking__trip_eta_notified
+msgid "The arrival the seller last heard of: a delay is measured against it."
+msgstr "La última llegada que se le avisó al vendedor: el retraso se mide contra ella."
+
+#. module: stock_fleet_route
+#. odoo-python
+#: code:addons/stock_fleet_route/models/stock_picking_batch.py:0
+msgid "The vehicle of trip %s sent no GPS position in the last 30 minutes."
+msgstr "El vehículo del viaje %s no envió posición GPS en los últimos 30 minutos."
+
+#. module: stock_fleet_route
+#: model:ir.model,name:stock_fleet_route.model_stock_fleet_route_tomtom
+msgid "TomTom Routing"
+msgstr "Ruteo TomTom"
+
+#. module: stock_fleet_route
+#. odoo-python
+#: code:addons/stock_fleet_route/models/stock_fleet_route_tomtom.py:0
+msgid "The TomTom API key %s has expired."
+msgstr "La llave de API de TomTom %s ya venció."
+
+#. module: stock_fleet_route
+#. odoo-python
+#: code:addons/stock_fleet_route/models/stock_fleet_route_tomtom.py:0
+msgid "The TomTom credential %s holds no API key."
+msgstr "La credencial de TomTom %s no tiene llave de API."
+
+#. module: stock_fleet_route
+#. odoo-python
+#: code:addons/stock_fleet_route/models/stock_fleet_route_tomtom.py:0
+msgid "The outbound endpoint %s is missing or archived."
+msgstr "El servicio de salida %s no existe o está archivado."
+
+#. module: stock_fleet_route
+#. odoo-python
+#: code:addons/stock_fleet_route/models/stock_fleet_route_tomtom.py:0
+msgid "TomTom answered: %s"
+msgstr "TomTom respondió: %s"
+
+#. module: stock_fleet_route
+#. odoo-python
+#: code:addons/stock_fleet_route/models/stock_fleet_route_tomtom.py:0
+msgid "TomTom could not be reached: %s"
+msgstr "No se pudo contactar a TomTom: %s"
+
+#. module: stock_fleet_route
+#. odoo-python
+#: code:addons/stock_fleet_route/models/stock_picking_batch.py:0
+msgid ""
+"Trip %(trip)s left with %(picking)s for %(customer)s (%(order)s). Estimated "
+"arrival: %(hour)s."
+msgstr "El viaje %(trip)s salió con %(picking)s para %(customer)s (%(order)s). Llegada estimada: %(hour)s."
+
+#. module: stock_fleet_route
+#. odoo-python
+#: code:addons/stock_fleet_route/models/stock_picking_batch.py:0
+msgid "Trip %s has already left: its route can only be refreshed."
+msgstr "El viaje %s ya salió: su ruta solo se puede actualizar."
+
+#. module: stock_fleet_route
+#. odoo-javascript
+#: code:addons/stock_fleet_route/static/src/trip_scan_code_field/trip_scan_code_field.js:0
+msgid "Trip Scan Code"
+msgstr "Código de escaneo del viaje"
+
+#. module: stock_fleet_route
+#: model:ir.actions.server,name:stock_fleet_route.ir_cron_route_refresh_eta_ir_actions_server
+msgid "Trips: refresh the arrival times from the GPS"
+msgstr "Viajes: actualizar las horas de llegada con el GPS"
+
+#. module: stock_fleet_route
+#: model:ir.model.fields,help:stock_fleet_route.field_stock_picking_batch__route_warning
+msgid ""
+"What the suggested route could not solve: customers without coordinates, "
+"stops reached too late in the day."
+msgstr "Lo que la ruta sugerida no pudo resolver: clientes sin coordenadas, paradas a las que se llega muy tarde."
+
+#. module: stock_fleet_route
+#: model:ir.model.fields,help:stock_fleet_route.field_stock_picking_batch__route_computed_at
+msgid "When the stop order or the arrival times were last computed."
+msgstr "Cuándo se calcularon por última vez el orden de paradas o las horas de llegada."
+
+#. module: stock_fleet_route
+#: model:ir.model.fields,help:stock_fleet_route.field_stock_picking__trip_eta
+msgid ""
+"When the trip's vehicle should reach this customer, from the route with "
+"traffic and the service time of the previous stops."
+msgstr "Cuándo debería llegar el vehículo del viaje con este cliente, según la ruta con tráfico y el tiempo de servicio de las paradas anteriores."
+
+#. module: stock_fleet_route
+#. odoo-python
+#: code:addons/stock_fleet_route/models/stock_picking_batch.py:0
+msgid "today"
+msgstr "hoy"

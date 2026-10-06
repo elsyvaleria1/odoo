@@ -1,0 +1,199 @@
+// @ts-check
+/** @odoo-module native */
+
+import {
+    Component,
+    onMounted,
+    onWillUnmount,
+    proxy,
+    t,
+    useProps,
+    xml,
+} from "@odoo/owl";
+import { Dropdown } from "@web/components/dropdown/dropdown";
+import { Notebook } from "@web/components/notebook/notebook";
+import { makeLogger } from "@web/core/debug/debug_logger";
+import { useLifecycleLog } from "@web/core/debug/logger_hooks";
+import { useDialogContext } from "@web/core/dialog_context_hooks";
+import { inputModality } from "@web/core/input_modality";
+import { evaluateBooleanExpr } from "@web/core/py_js/py";
+import { mutate } from "@web/core/utils/dom/layout_batch";
+import { elementRef } from "@web/core/utils/element_ref";
+import { useService } from "@web/core/utils/hooks";
+import { useLayoutEffect } from "@web/core/utils/layout_effect";
+import { useRenderCounter } from "@web/core/utils/render_instrumentation";
+import { Field } from "@web/fields/field";
+import { provideViewModel } from "@web/model/model";
+import { Dialog } from "@web/ui/dialog/dialog";
+import { ButtonBox } from "@web/views/form/button_box/button_box";
+import { InnerGroup, OuterGroup } from "@web/views/form/form_group/form_group";
+import { ViewButton } from "@web/views/view_button/view_button";
+import { compileViewTemplates } from "@web/views/view_compiler";
+import { Widget } from "@web/views/widgets/widget";
+
+import { useFieldIsDirty } from "./field_is_dirty_hook.js";
+import { FormCompiler } from "./form_compiler.js";
+import { FormLabel } from "./form_label.js";
+import { Setting } from "./setting/setting.js";
+import { StatusBarButtons } from "./status_bar_buttons/status_bar_buttons.js";
+
+const log = makeLogger("web.view.form");
+
+export class FormRenderer extends Component {
+    static template = xml`<t t-call="{{ this.templates.FormRenderer }}" t-call-context="{ __comp__: Object.assign(Object.create(this), { this: this }) }" />`;
+    static components = {
+        Dialog,
+        Dropdown,
+        Field,
+        FormLabel,
+        ButtonBox,
+        ViewButton,
+        Widget,
+        Notebook,
+        Setting,
+        OuterGroup,
+        InnerGroup,
+        StatusBarButtons,
+    };
+    static props = {
+        archInfo: t.object(),
+        Compiler: t.function().optional(),
+        record: t.object(),
+        class: t.string().optional(),
+        onNotebookPageChange: t.function().optional(() => () => {}),
+        activeNotebookPages: t.object().optional({}),
+        readonly: t.boolean().optional(),
+        saveRecord: t.function().optional(),
+        slots: t.object().optional(),
+    };
+    props = useProps(this.constructor.props);
+
+    /** @type {import("services").ServiceFactories["ui"]} */
+    uiService;
+
+    setup() {
+        this.dialogContext = useDialogContext();
+        this.ui = useService("ui");
+        useRenderCounter("form.FormRenderer");
+        useLifecycleLog(log);
+        this.evaluateBooleanExpr = evaluateBooleanExpr;
+        const { archInfo, Compiler, record } = this.props;
+        const templates = { FormRenderer: archInfo.xmlDoc };
+        this.state = proxy(/** @type {any} */ ({}));
+        this.archDialogs = proxy(/** @type {Record<string, boolean>} */ ({}));
+        this.templates = compileViewTemplates(Compiler || FormCompiler, templates);
+        this.hasUnsavedEdits = useFieldIsDirty(record.model);
+        provideViewModel(record.model);
+        this.uiService = proxy(useService("ui"));
+        this.setupStickyStatusbar();
+
+        const { autofocusFieldIds } = archInfo;
+        const rootRef = (this.rootRef = elementRef());
+        useLayoutEffect(
+            (isNew, rootEl) => {
+                if (!rootEl || !this.shouldAutoFocus) {
+                    return;
+                }
+                let elementToFocus;
+                if (isNew) {
+                    const focusableSelectors = [
+                        'input[type="text"]',
+                        "textarea",
+                        "[contenteditable]",
+                    ];
+                    for (const id of autofocusFieldIds) {
+                        elementToFocus = rootEl.querySelector(`#${id}`);
+                        if (elementToFocus) {
+                            break;
+                        }
+                    }
+                    elementToFocus =
+                        elementToFocus ||
+                        rootEl.querySelector(
+                            focusableSelectors
+                                .map((sel) => `.o_content .o_field_widget ${sel}`)
+                                .join(", "),
+                        );
+                }
+                if (elementToFocus) {
+                    mutate(() => {
+                        if (
+                            elementToFocus.isConnected &&
+                            !rootEl
+                                .querySelector(".o_content")
+                                ?.contains(document.activeElement)
+                        ) {
+                            elementToFocus.focus();
+                        }
+                    });
+                }
+            },
+            () => [this.props.record.isNew, rootRef.el],
+        );
+
+        if (this.dialogContext.inDialog) {
+            const fieldNodeIds = new Set(Object.keys(this.props.archInfo.fieldNodes));
+            const elementsByNodeIds = {};
+            onMounted(() => {
+                if (!rootRef.el) {
+                    return;
+                }
+                for (const el of document.querySelectorAll("[id]")) {
+                    const id = el.getAttribute("id");
+                    if (id === null) {
+                        continue;
+                    }
+                    if (
+                        fieldNodeIds.has(id) &&
+                        !(id in elementsByNodeIds) &&
+                        !rootRef.el.contains(el)
+                    ) {
+                        el.removeAttribute("id");
+                        elementsByNodeIds[id] = el;
+                    }
+                }
+            });
+            onWillUnmount(() => {
+                for (const [id, el] of Object.entries(elementsByNodeIds)) {
+                    el.setAttribute("id", id);
+                }
+            });
+        }
+    }
+
+    get shouldAutoFocus() {
+        return !inputModality.isTouch && !this.props.archInfo.disableAutofocus;
+    }
+
+    setupStickyStatusbar() {
+        const sentinel = (this.sentinel = elementRef());
+        useLayoutEffect(
+            (el) => {
+                if (!el) {
+                    return;
+                }
+                const observer = new IntersectionObserver(
+                    ([entry]) => {
+                        this.state.isStatusbarStickyPinned =
+                            !this.dialogContext.inDialog &&
+                            !this.ui.isSmall &&
+                            !entry.isIntersecting;
+                    },
+                    { root: el.parentElement },
+                );
+                observer.observe(el);
+                return () => observer.disconnect();
+            },
+            () => [sentinel.el],
+        );
+    }
+
+    async onWillChangeNotebookPage(
+        /** @type {any} */ _notebookId,
+        /** @type {any} */ _page,
+    ) {
+        // flush the edits still pending in the fields before the page leaves them
+        await this.props.record.model.askChanges();
+        return true;
+    }
+}

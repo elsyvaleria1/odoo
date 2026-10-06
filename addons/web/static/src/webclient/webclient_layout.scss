@@ -1,0 +1,103 @@
+%o-html-layout-fill {
+    height: 100%;
+
+    .o_web_client {
+        height: 100%;
+        display: flex;
+        flex-flow: column nowrap;
+
+        @media (display-mode: browser) {
+            overflow: hidden;
+        }
+        @supports (-webkit-touch-callout: none) {
+            overflow: hidden;
+        }
+
+        > .o_action_manager {
+            direction: ltr;
+            flex: 1 1 auto;
+            height: 100%;
+            overflow: hidden;
+
+            > .o_action {
+                height: 100%;
+                display: flex;
+                flex-flow: column nowrap;
+                overflow: hidden;
+
+                @include media-breakpoint-up(lg) {
+                    -ms-overflow-style: none;
+                    scrollbar-width: none;
+
+                    &::-webkit-scrollbar {
+                        display: none;
+                    }
+                }
+
+                > .o_control_panel {
+                    flex: 0 0 auto;
+                }
+                .o_content {
+                    overflow: auto;
+                    height: 100%;
+                }
+
+                @include media-breakpoint-down(md) {
+                    &:not(.o_action_delegate_scroll),
+                    .o_form_view_container {
+                        overflow: auto;
+
+                        .o_content {
+                            overflow: initial;
+                        }
+                    }
+                }
+            }
+        }
+
+        .o_main_navbar {
+            flex: 0 0 auto;
+        }
+
+        .o_control_panel {
+            flex: 0 0 auto;
+        }
+
+        .o_content {
+            direction: ltr;
+            flex: 1 1 auto;
+            position: relative;
+
+            > .o_view_controller {
+                position: absolute;
+                top: 0;
+                right: 0;
+                bottom: 0;
+                left: 0;
+                height: 100%;
+                direction: ltr;
+            }
+        }
+    }
+
+    body.modal-open {
+        position: fixed;
+    }
+}
+
+@include media-only(screen) {
+    html {
+        @extend %o-html-layout-fill;
+    }
+}
+
+@include media-only(print) {
+    .o_web_client {
+        max-width: 100%;
+    }
+
+    @page {
+        margin: 0.5cm;
+        size: a4 auto;
+    }
+}

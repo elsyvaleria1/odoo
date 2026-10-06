@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="wizard_stock_trip_scan_view_form_route" model="ir.ui.view">
+        <field name="name">wizard.stock.trip.scan.form.route</field>
+        <field name="model">wizard.stock.trip.scan</field>
+        <field
+            name="inherit_id"
+            ref="stock_fleet_trace.wizard_stock_trip_scan_view_form" />
+        <field name="arch" type="xml">
+            <field name="code" position="attributes">
+                <attribute name="widget">trip_scan_code</attribute>
+            </field>
+        </field>
+    </record>
+
+</odoo>

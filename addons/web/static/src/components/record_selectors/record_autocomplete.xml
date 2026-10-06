@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="web.RecordAutocomplete" >
+        <AutoComplete
+            placeholder="this.props.placeholder"
+            value="this.props.value"
+            autoSelect="true"
+            resetOnSelect="this.props.multiSelect"
+            class="this.props.className"
+            sources="this.sources"
+            onChange.bind="this.onChange"
+        >
+            <t t-set-slot="option" t-slot-scope="optionScope">
+                <span t-if="this.isAvatarModel and optionScope.data.record" class="o_avatar_many2x_autocomplete o_avatar d-flex align-items-center">
+                    <img class="rounded me-1" t-att-src="this.avatarUrl(optionScope.data.record.id)" alt=""/>
+                    <t t-out="optionScope.label"/>
+                </span>
+                <t t-else="" t-out="optionScope.label"/>
+            </t>
+        </AutoComplete>
+    </t>
+
+</templates>

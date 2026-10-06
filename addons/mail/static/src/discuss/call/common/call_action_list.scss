@@ -1,0 +1,17 @@
+.o-discuss-CallActionList-pulse {
+    animation: o-pulse 1s 10;
+}
+
+@include media-only(screen) {
+    :root[data-color-scheme="dark"] {
+        .o-discuss-CallActionList-pushToTalk {
+            @include o-scheme-button-variant(
+                $o-dark-bs-primary,
+                $o-dark-bs-primary,
+                o-dark-scheme(),
+                $-active-background: $o-dark-gray-200,
+                $-active-border: $o-dark-gray-200
+            );
+        }
+    }
+}

@@ -1,0 +1,15 @@
+/** @odoo-module native */
+import { registry } from "@web/core/registry";
+import { ZoomedBackgroundShape } from "@website/interactions/zoomed_background_shape";
+
+const ZoomedBackgroundShapeEdit = (I) =>
+    class extends I {
+        shouldStop() {
+            return true;
+        }
+    };
+
+registry.category("public.interactions.edit").add("website.zoomed_background_shape", {
+    Interaction: ZoomedBackgroundShape,
+    mixin: ZoomedBackgroundShapeEdit,
+});

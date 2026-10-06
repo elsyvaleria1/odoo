@@ -1,0 +1,83 @@
+/** @odoo-module native */
+import { Component, onWillStart, t, useProps } from "@odoo/owl";
+import { makeContext } from "@web/core/context";
+import { rpc } from "@web/core/network";
+import { user } from "@web/core/user";
+import { useService } from "@web/core/utils/hooks";
+import { View } from "@web/views/view";
+
+export class BoardAction extends Component {
+    static template = "board.BoardAction";
+    static components = { View };
+    static props = {
+        action: t.object(),
+        actionId: t.number().optional(),
+        className: t.string().optional(),
+    };
+    static cache = {};
+    props = useProps(this.constructor.props);
+    setup() {
+        this.actionService = useService("action");
+        const action = this.props.action;
+        this.formViewId = false;
+        this.isValid = true;
+        onWillStart(async () => {
+            let result = BoardAction.cache[action.actionId];
+            if (!result) {
+                result = await rpc("/web/action/load", { action_id: action.actionId });
+                BoardAction.cache[action.actionId] = result;
+            }
+            if (!result) {
+                // action does not exist
+                this.isValid = false;
+                return;
+            }
+            const viewMode = action.viewMode || result.views[0][1];
+            const formView = result.views.find((v) => v[1] === "form");
+            if (formView) {
+                this.formViewId = formView[0];
+            }
+            this.viewProps = {
+                resModel: result.res_model,
+                type: viewMode,
+                display: { controlPanel: false },
+                selectRecord: (resId) => this.selectRecord(result.res_model, resId),
+            };
+            const view = result.views.find((v) => v[1] === viewMode);
+            if (view) {
+                this.viewProps.viewId = view[0];
+            }
+            const searchView = result.views.find((v) => v[1] === "search");
+            this.viewProps.views = [
+                [this.viewProps.viewId || false, viewMode],
+                [(searchView && searchView[0]) || false, "search"],
+            ];
+
+            if (action.context) {
+                this.viewProps.context = makeContext([
+                    action.context,
+                    { lang: user.context.lang },
+                ]);
+                if ("group_by" in this.viewProps.context) {
+                    const groupBy = this.viewProps.context.group_by;
+                    this.viewProps.groupBy =
+                        typeof groupBy === "string" ? [groupBy] : groupBy;
+                }
+            }
+            if (action.domain) {
+                this.viewProps.domain = action.domain;
+            }
+            if (viewMode === "list") {
+                this.viewProps.allowSelectors = false;
+            }
+        });
+    }
+    selectRecord(resModel, resId) {
+        this.actionService.doAction({
+            type: "ir.actions.act_window",
+            res_model: resModel,
+            views: [[this.formViewId, "form"]],
+            res_id: resId,
+        });
+    }
+}

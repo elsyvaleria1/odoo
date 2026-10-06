@@ -1,0 +1,321 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="molecular_compound_view_form" model="ir.ui.view">
+        <field name="name">molecular.compound.form</field>
+        <field name="model">molecular.compound</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button
+                        name="action_open_sketch"
+                        type="object"
+                        string="Open in Editor"
+                        invisible="not id" />
+                    <button
+                        name="action_recompute_properties"
+                        type="object"
+                        string="Recompute Properties"
+                        invisible="not id" />
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name" placeholder="e.g. CHEMBL461" /></h1>
+                        <field
+                            name="tag_ids"
+                            widget="many2many_tags"
+                            options="{'color_field': 'color'}" />
+                    </div>
+                    <group>
+                        <group string="Identity">
+                            <field name="identity_key" />
+                            <field name="identity_method" />
+                            <field name="inchikey" />
+                            <field name="smiles_canon" />
+                            <field name="formula" />
+                            <field name="element_symbols" />
+                            <field name="formal_charge" />
+                            <field name="origin" />
+                        </group>
+                        <group string="Properties">
+                            <field name="molecular_weight" />
+                            <field name="monoisotopic_mass" />
+                            <field name="logp" />
+                            <field name="tpsa" />
+                            <field name="hbd" />
+                            <field name="hba" />
+                            <field name="rotatable_bonds" />
+                            <field name="ring_count" />
+                            <field name="aromatic_ring_count" />
+                        </group>
+                    </group>
+                    <notebook>
+                        <page name="structure_3d" string="3D Structure">
+                            <field name="molblock_3d" widget="molecule_viewer_3d" />
+                        </page>
+                        <page
+                            name="structure_2d"
+                            string="2D Structure"
+                            invisible="not structure_svg">
+                            <field name="structure_svg" widget="molecule_svg" />
+                        </page>
+                        <page name="roles" string="Roles">
+                            <field name="role_ids">
+                                <list editable="bottom">
+                                    <field name="campaign_id" />
+                                    <field name="role" widget="badge" />
+                                    <field name="note" />
+                                </list>
+                            </field>
+                        </page>
+                        <page name="properties" string="Properties">
+                            <p class="text-muted">
+                                Every value carries the method that produced it, so a
+                                number computed by a toolkit is never mistaken for one
+                                that follows from the formula.
+                            </p>
+                            <field name="property_ids">
+                                <list editable="bottom">
+                                    <field name="key" />
+                                    <field name="value_num" />
+                                    <field name="value_bool" />
+                                    <field name="method" />
+                                    <field name="computed_at" />
+                                </list>
+                            </field>
+                        </page>
+                        <page name="structures" string="Structures">
+                            <field name="structure_ids" readonly="1">
+                                <list>
+                                    <field name="kind" widget="badge" />
+                                    <field name="generator" />
+                                    <field name="generator_ver" />
+                                    <field name="ph" optional="hide" />
+                                    <field name="atom_count" />
+                                    <field name="bond_count" />
+                                    <field name="create_date" />
+                                </list>
+                            </field>
+                        </page>
+                        <page name="results" string="Docking Results">
+                            <field name="result_ids" readonly="1">
+                                <list>
+                                    <field name="campaign_id" />
+                                    <field name="target_id" />
+                                    <field name="score" />
+                                    <field name="pose_rank" />
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="molecular_compound_view_list" model="ir.ui.view">
+        <field name="name">molecular.compound.list</field>
+        <field name="model">molecular.compound</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name" />
+                <field name="formula" />
+                <field name="molecular_weight" />
+                <field name="logp" />
+                <field name="tpsa" optional="show" />
+                <field name="rotatable_bonds" optional="show" />
+                <field name="origin" widget="badge" />
+                <field name="identity_key" optional="hide" />
+                <field name="inchikey" optional="hide" />
+                <field name="tag_ids" widget="many2many_tags" optional="show" />
+            </list>
+        </field>
+    </record>
+
+    <record id="molecular_compound_view_kanban" model="ir.ui.view">
+        <field name="name">molecular.compound.kanban</field>
+        <field name="model">molecular.compound</field>
+        <field name="arch" type="xml">
+            <kanban>
+                <templates>
+                    <t t-name="card">
+                        <field name="structure_svg" widget="molecule_svg" />
+                        <field name="name" class="fw-bold" />
+                        <div class="text-muted">
+                            <field name="formula" /> · <field name="molecular_weight" />
+                        </div>
+                        <field name="origin" widget="badge" />
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
+    <record id="molecular_compound_view_search" model="ir.ui.view">
+        <field name="name">molecular.compound.search</field>
+        <field name="model">molecular.compound</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name" />
+                <field name="formula" />
+                <field
+                    name="element_symbols"
+                    string="Element"
+                    filter_domain="[('element_symbols', 'ilike', self)]" />
+                <field name="smiles_canon" />
+                <field name="inchikey" />
+                <field name="identity_key" />
+                <field name="campaign_ids" string="Campaign" />
+                <field name="tag_ids" />
+                <filter
+                    name="halogenated"
+                    string="Halogenated"
+                    domain="['|', '|', '|', ('element_symbols', 'ilike', 'F'), ('element_symbols', 'ilike', 'Cl'), ('element_symbols', 'ilike', 'Br'), ('element_symbols', 'ilike', 'I')]" />
+                <filter
+                    name="charged"
+                    string="Charged"
+                    domain="[('formal_charge', '!=', 0)]" />
+                <separator />
+                <filter
+                    name="candidates"
+                    string="Candidates"
+                    domain="[('role_ids.role', '=', 'candidate')]" />
+                <filter
+                    name="references"
+                    string="References"
+                    domain="[('role_ids.role', '=', 'reference')]" />
+                <filter
+                    name="controls"
+                    string="Controls"
+                    domain="[('role_ids.role', '=', 'control')]" />
+                <group>
+                    <filter
+                        name="group_origin"
+                        string="Origin"
+                        context="{'group_by': 'origin'}" />
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="molecular_compound_action" model="ir.actions.act_window">
+        <field name="name">Compounds</field>
+        <field name="res_model">molecular.compound</field>
+        <field name="view_mode">kanban,list,form</field>
+    </record>
+
+    <record id="molecular_structure_view_form" model="ir.ui.view">
+        <field name="name">molecular.structure.form</field>
+        <field name="model">molecular.structure</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button
+                        name="action_explode_molblock"
+                        type="object"
+                        string="Rebuild Atoms and Bonds" />
+                </header>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="compound_id" />
+                            <field name="kind" />
+                            <field name="ph" invisible="kind != 'protonated'" />
+                        </group>
+                        <group>
+                            <field name="generator" />
+                            <field name="generator_ver" />
+                            <field name="atom_count" />
+                            <field name="bond_count" />
+                            <field name="formula" />
+                            <field name="net_charge" />
+                            <field name="charge_method" />
+                        </group>
+                    </group>
+                    <notebook>
+                        <page name="viewer" string="Viewer">
+                            <field name="molblock" widget="molecule_viewer_3d" />
+                        </page>
+                        <page name="atoms" string="Atoms">
+                            <field name="atom_ids" readonly="1">
+                                <list decoration-danger="valence_exceeded">
+                                    <field name="idx" />
+                                    <field name="element" />
+                                    <field name="hybridisation" />
+                                    <field name="implicit_h" />
+                                    <field name="lone_pairs" />
+                                    <field name="formal_charge" />
+                                    <field name="partial_charge" sum="Total" />
+                                    <field
+                                        name="hydrogen_charge"
+                                        optional="show"
+                                        sum="Total" />
+                                    <field name="x" optional="hide" />
+                                    <field name="y" optional="hide" />
+                                    <field name="z" optional="hide" />
+                                    <field
+                                        name="valence_exceeded"
+                                        column_invisible="1" />
+                                </list>
+                            </field>
+                        </page>
+                        <page name="bonds" string="Bonds">
+                            <field name="bond_ids" readonly="1">
+                                <list>
+                                    <field name="atom_a" />
+                                    <field name="atom_b" />
+                                    <field name="bond_order" />
+                                    <field name="aromatic" />
+                                    <field name="stereo" />
+                                </list>
+                            </field>
+                        </page>
+                        <page name="molblock" string="Molblock">
+                            <field name="molblock" />
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="molecular_structure_view_list" model="ir.ui.view">
+        <field name="name">molecular.structure.list</field>
+        <field name="model">molecular.structure</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="compound_id" />
+                <field name="kind" widget="badge" />
+                <field name="generator" />
+                <field name="generator_ver" />
+                <field name="atom_count" />
+                <field name="bond_count" />
+                <field name="create_date" />
+            </list>
+        </field>
+    </record>
+
+    <record id="molecular_structure_action" model="ir.actions.act_window">
+        <field name="name">Structures</field>
+        <field name="res_model">molecular.structure</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <record id="molecular_compound_tag_view_list" model="ir.ui.view">
+        <field name="name">molecular.compound.tag.list</field>
+        <field name="model">molecular.compound.tag</field>
+        <field name="arch" type="xml">
+            <list editable="bottom">
+                <field name="name" />
+                <field name="color" widget="color_picker" />
+            </list>
+        </field>
+    </record>
+
+    <record id="molecular_compound_tag_action" model="ir.actions.act_window">
+        <field name="name">Compound Classes</field>
+        <field name="res_model">molecular.compound.tag</field>
+        <field name="view_mode">list</field>
+    </record>
+
+</odoo>

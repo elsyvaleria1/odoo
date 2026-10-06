@@ -1,0 +1,35 @@
+{
+    "name": "Credential Vault",
+    "version": "19.0.1.19.1",
+    "oldest_upgradable_version": "19.0.1.19.1",
+    "category": "Hidden",
+    "sequence": 5,
+    "summary": "Store encrypted credentials for integrations that use the vault",
+    "description": "Provides company-scoped credential records, typed credential fields, validation hooks, access logs and OAuth helpers. Encryption requires ODOO_API_ENCRYPTION_KEY. Integrations must explicitly use these records or the encryption mixin; installing the vault does not migrate arbitrary secrets. Certificate parsing and signing belong to the certificate addon.",
+    "author": "AgroMarin",
+    "website": "https://www.agromarin.mx",
+    "license": "LGPL-3",
+    "depends": [
+        "base",
+        "mixin_encryption",
+        "rate_limit",
+    ],
+    "data": [
+        "security/credential_security.xml",
+        "security/ir.access.csv",
+        "data/credential_category_data.xml",
+        "data/credential_category_field_data.xml",
+        "data/ir_cron.xml",
+        "views/credential_credential_views.xml",
+        "views/credential_category_views.xml",
+        "views/credential_access_log_views.xml",
+        "views/credential_use_views.xml",
+        "views/credential_menu.xml",
+    ],
+    "assets": {
+        "web.assets_backend": [
+            "credential/static/src/fields/credential_secret_fields.js",
+            "credential/static/src/fields/credential_secret_fields.xml",
+        ],
+    },
+}

@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_res_partner_relation_list" model="ir.ui.view">
+        <field name="name">res.partner.relation.list</field>
+        <field name="model">res.partner.relation</field>
+        <field name="arch" type="xml">
+            <list multi_edit="1">
+                <field name="partner_id" />
+                <field name="label" string="is" />
+                <field name="other_partner_id" />
+                <field name="type_id" optional="hide" />
+                <field name="category" />
+                <field name="degree" optional="hide" />
+                <field name="weight_risk" widget="percentage" optional="hide" />
+                <field name="date_start" optional="hide" />
+                <field name="date_end" optional="hide" />
+            </list>
+        </field>
+    </record>
+
+    <record id="view_res_partner_relation_form" model="ir.ui.view">
+        <field name="name">res.partner.relation.form</field>
+        <field name="model">res.partner.relation</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button
+                        name="action_swap"
+                        type="object"
+                        string="Swap Direction"
+                        help="The two contacts were entered the wrong way round" />
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="display_name" readonly="1" /></h1>
+                    </div>
+                    <group name="main">
+                        <group name="endpoints">
+                            <field name="partner_id" />
+                            <field name="type_id" />
+                            <field name="other_partner_id" />
+                        </group>
+                        <group name="validity">
+                            <field name="date_start" />
+                            <field name="date_end" />
+                            <field name="category" readonly="1" />
+                            <field
+                                name="weight_risk"
+                                widget="percentage"
+                                readonly="1" />
+                            <field name="active" widget="boolean_toggle" />
+                        </group>
+                    </group>
+                    <group name="note" string="Notes">
+                        <field
+                            name="note"
+                            placeholder="How this tie is known, and anything qualifying it."
+                            nolabel="1" />
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_res_partner_relation_search" model="ir.ui.view">
+        <field name="name">res.partner.relation.search</field>
+        <field name="model">res.partner.relation</field>
+        <field name="arch" type="xml">
+            <search>
+                <field
+                    name="partner_id"
+                    string="Contact"
+                    filter_domain="['|', ('partner_id', 'ilike', self), ('other_partner_id', 'ilike', self)]" />
+                <field name="type_id" />
+                <filter
+                    name="blood"
+                    string="Blood"
+                    domain="[('category', '=', 'blood')]" />
+                <filter
+                    name="affinity"
+                    string="Affinity"
+                    domain="[('category', '=', 'affinity')]" />
+                <filter
+                    name="ritual"
+                    string="Ritual"
+                    domain="[('category', '=', 'ritual')]" />
+                <filter
+                    name="business"
+                    string="Business"
+                    domain="[('category', '=', 'business')]" />
+                <filter
+                    name="agricultural"
+                    string="Agricultural"
+                    domain="[('category', '=', 'agricultural')]" />
+                <separator />
+                <filter
+                    name="strong_ties"
+                    string="Strong Ties"
+                    help="Ties implying a shared economic interest"
+                    domain="[('weight_risk', '&gt;=', 0.7)]" />
+                <separator />
+                <filter
+                    name="inactive"
+                    string="Archived"
+                    domain="[('active', '=', False)]" />
+                <group>
+                    <filter
+                        name="group_type"
+                        string="Type"
+                        context="{'group_by': 'type_id'}" />
+                    <filter
+                        name="group_category"
+                        string="Category"
+                        context="{'group_by': 'category'}" />
+                    <filter
+                        name="group_partner"
+                        string="Contact"
+                        context="{'group_by': 'partner_id'}" />
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_res_partner_relation" model="ir.actions.act_window">
+        <field name="name">Relationships</field>
+        <field name="res_model">res.partner.relation</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Record a relationship</p>
+            <p>Family, ritual and commercial ties between contacts. They drive the
+                relationship network and the related-party analysis.</p>
+        </field>
+    </record>
+
+</odoo>

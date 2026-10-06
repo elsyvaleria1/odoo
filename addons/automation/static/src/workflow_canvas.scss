@@ -1,0 +1,131 @@
+// The step body is HTML now, not an SVG cell, so a step's type and run state
+// paint a background and a border; only the connections are still SVG.
+.o_workflow_canvas {
+    .o_workflow_canvas_paper {
+        height: 32rem;
+        overflow: hidden;
+        border: 1px solid var(--border-color);
+        border-radius: var(--border-radius);
+        background-color: var(--body-bg);
+    }
+
+    .o_workflow_canvas_step {
+        border-radius: inherit;
+        background-color: var(--tertiary-bg);
+        color: var(--body-color);
+    }
+
+    .o_workflow_canvas_step_header {
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .o_workflow_canvas_step_state {
+        background-color: var(--secondary-bg);
+        color: var(--body-color);
+    }
+
+    .o_workflow_canvas_step_error {
+        display: -webkit-box;
+        overflow: hidden;
+        color: var(--danger-text-emphasis);
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+        line-clamp: 2;
+    }
+
+    .o_workflow_canvas_type_wait {
+        background-color: var(--warning-bg-subtle);
+        box-shadow: inset 0 0 0 2px var(--warning);
+    }
+
+    .o_workflow_canvas_type_approval {
+        background-color: var(--info-bg-subtle);
+        box-shadow: inset 0 0 0 2px var(--info);
+    }
+
+    .o_workflow_canvas_type_input {
+        background-color: var(--success-bg-subtle);
+        box-shadow: inset 0 0 0 2px var(--success);
+    }
+
+    .o_workflow_canvas_type_subflow {
+        background-color: var(--secondary-bg);
+        box-shadow: inset 0 0 0 2px var(--secondary-color);
+    }
+
+    .o_workflow_canvas_link .o_flow_editor_connection_path {
+        stroke: var(--secondary-color);
+        stroke-width: 1.5;
+    }
+
+    .o_workflow_canvas_on_success .o_flow_editor_connection_path {
+        stroke: var(--success);
+    }
+
+    .o_workflow_canvas_on_error .o_flow_editor_connection_path {
+        stroke: var(--danger);
+        stroke-dasharray: 5 3;
+    }
+
+    .o_workflow_canvas_always .o_flow_editor_connection_path {
+        stroke: var(--secondary-color);
+    }
+
+    .o_workflow_canvas_expression .o_flow_editor_connection_path {
+        stroke: var(--info);
+        stroke-dasharray: 2 2;
+    }
+
+    .o_workflow_canvas_event .o_flow_editor_connection_path {
+        stroke: var(--warning);
+    }
+
+    .o_workflow_canvas_no_event .o_flow_editor_connection_path {
+        stroke: var(--warning);
+        stroke-dasharray: 6 3;
+    }
+
+    .o_flow_editor_connection_selected .o_flow_editor_connection_path {
+        stroke: var(--primary);
+        stroke-width: 3;
+    }
+
+    .o_workflow_canvas_run_waiting {
+        background-color: var(--body-bg);
+        box-shadow: inset 0 0 0 2px var(--border-color);
+    }
+
+    .o_workflow_canvas_run_scheduled {
+        background-color: var(--info-bg-subtle);
+        box-shadow: inset 0 0 0 2px var(--info);
+    }
+
+    .o_workflow_canvas_run_ready {
+        box-shadow: inset 0 0 0 2px var(--primary);
+    }
+
+    .o_workflow_canvas_run_in_progress {
+        background-color: var(--primary-bg-subtle);
+        box-shadow: inset 0 0 0 2px var(--primary);
+    }
+
+    .o_workflow_canvas_run_paused {
+        background-color: var(--warning-bg-subtle);
+        box-shadow: inset 0 0 0 2px var(--warning);
+    }
+
+    .o_workflow_canvas_run_done {
+        background-color: var(--success-bg-subtle);
+        box-shadow: inset 0 0 0 2px var(--success);
+    }
+
+    .o_workflow_canvas_run_error {
+        background-color: var(--danger-bg-subtle);
+        box-shadow: inset 0 0 0 2px var(--danger);
+    }
+
+    .o_workflow_canvas_run_skipped,
+    .o_workflow_canvas_run_cancel {
+        opacity: 0.55;
+    }
+}

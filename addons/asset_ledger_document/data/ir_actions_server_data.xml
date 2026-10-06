@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+
+    <record
+        id="ir_actions_server_link_to_vehicule"
+        model="ir.actions.server"
+        forcecreate="0">
+        <field name="name">Link to an asset</field>
+        <field name="model_id" ref="document.model_document_document" />
+        <field name="group_ids" eval="[Command.link(ref('base.group_user'))]" />
+        <field name="state">code</field>
+        <field
+            name="code">action = records.action_link_to_record('resource.asset')</field>
+    </record>
+
+    <!--
+        The action links any asset, so it is pinned in every asset folder.
+        `action_folder_embed_action` toggles, but `<function>` only runs in
+        init mode inside a noupdate file, so these do not unpin on upgrade.
+    -->
+    <function model="document.document" name="action_folder_embed_action">
+        <value name="folder_id" eval="ref('document_folder_equipment')" />
+        <value name="action_id" eval="ref('ir_actions_server_link_to_vehicule')" />
+    </function>
+
+    <function model="document.document" name="action_folder_embed_action">
+        <value name="folder_id" eval="ref('document_folder_fleet')" />
+        <value name="action_id" eval="ref('ir_actions_server_link_to_vehicule')" />
+    </function>
+
+    <function model="document.document" name="action_folder_embed_action">
+        <value name="folder_id" eval="ref('document_folder_machinery')" />
+        <value name="action_id" eval="ref('ir_actions_server_link_to_vehicule')" />
+    </function>
+
+    <function model="document.document" name="action_folder_embed_action">
+        <value name="folder_id" eval="ref('document_folder_property')" />
+        <value name="action_id" eval="ref('ir_actions_server_link_to_vehicule')" />
+    </function>
+
+</odoo>

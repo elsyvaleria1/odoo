@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+
+    <record id="partner_access_device_webhook" model="res.partner">
+        <field name="name">Access Device Webhook</field>
+        <field name="email">access.device.webhook@example.com</field>
+        <field name="active" eval="True" />
+        <field name="company_id" eval="False" />
+        <field name="type">contact</field>
+    </record>
+
+    <record
+        id="user_access_device_webhook"
+        model="res.users"
+        context="{'no_reset_password': True}">
+        <field name="name">Access Device Webhook</field>
+        <field name="login">access_device_webhook_user</field>
+        <field name="partner_id" ref="partner_access_device_webhook" />
+        <field name="company_id" ref="base.main_company" />
+        <field name="company_ids" eval="[Command.set([ref('base.main_company')])]" />
+        <field
+            name="group_ids"
+            eval="[Command.set([ref('base.group_user'), ref('device_access_control.group_access_device_webhook')])]" />
+        <field name="active" eval="True" />
+        <field name="principal_type">service</field>
+    </record>
+
+</odoo>

@@ -1,0 +1,14 @@
+.o-mail-DiscussNotificationSettings button.o-selected {
+    background-color: var(
+        --mail-DiscussNotificationSettings-btnSelectedBg,
+        o-palette-token(--o-gray-200, $gray-200)
+    );
+}
+
+@include media-only(screen) {
+    :root[data-color-scheme="dark"] {
+        .o-mail-DiscussNotificationSettings {
+            --mail-DiscussNotificationSettings-btnSelectedBg: #{$o-dark-gray-300};
+        }
+    }
+}

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="purchase_order_inherited_form_sale" model="ir.ui.view">
+        <field name="name">purchase.order.inherited.form.sale</field>
+        <field name="model">purchase.order</field>
+        <field name="inherit_id" ref="purchase.view_purchase_order_form" />
+        <field name="arch" type="xml">
+            <div name="button_box" position="inside">
+                <button
+                    name="action_view_sale_orders"
+                    type="object"
+                    icon="fa-dollar"
+                    groups="sale.group_sale_salesman"
+                    invisible="sale_order_count == 0"
+                    class="oe_stat_button">
+                    <field name="sale_order_count" string="Sale" widget="statinfo" />
+                </button>
+            </div>
+        </field>
+    </record>
+
+</odoo>

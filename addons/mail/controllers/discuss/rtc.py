@@ -1,0 +1,238 @@
+import json
+from collections import defaultdict
+
+from odoo import http
+from odoo.http import NotFound, Response, request
+from odoo.libs.debug_log import DebugLog
+
+from odoo.addons.mail.controllers.utils import (
+    get_channel_or_404,
+    get_self_member_or_404,
+    javascript_file_response,
+    to_record_id,
+    to_record_ids,
+)
+from odoo.addons.mail.tools.discuss import Store, add_guest_to_context
+
+_debug = DebugLog(__name__)
+
+_MAX_PEER_NOTIFICATIONS = 100
+_MAX_PEER_CONTENT_LEN = 100_000
+
+
+def _is_within_peer_content_limit(content: object) -> bool:
+    if isinstance(content, str):
+        return len(content) <= _MAX_PEER_CONTENT_LEN
+    try:
+        return len(json.dumps(content)) <= _MAX_PEER_CONTENT_LEN
+    except TypeError, ValueError:
+        return False
+
+
+class RtcController(http.Controller):
+    @http.route(
+        "/mail/rtc/session/notify_call_members",
+        methods=["POST"],
+        type="jsonrpc",
+        auth="public",
+    )
+    @add_guest_to_context
+    def session_call_notify(self, peer_notifications: list) -> None:
+        guest = request.env["mail.guest"]._get_guest_from_context()
+        if not isinstance(peer_notifications, (list, tuple)):
+            raise NotFound
+        parsed = []
+        for notification in peer_notifications[:_MAX_PEER_NOTIFICATIONS]:
+            if not isinstance(notification, (list, tuple)) or len(notification) != 3:
+                continue
+            sender_session_id, target_session_ids, content = notification
+            if not _is_within_peer_content_limit(content):
+                continue
+            try:
+                parsed.append(
+                    (
+                        to_record_id(sender_session_id),
+                        to_record_ids(target_session_ids),
+                        content,
+                    )
+                )
+            except NotFound:
+                continue
+        partner = request.env.user.partner_id
+        senders_sudo = {
+            session.id: session
+            for session in request.env["discuss.channel.rtc.session"]
+            .sudo()
+            .browse({sender_id for sender_id, _targets, _content in parsed})
+            .exists()
+            if not (session.guest_id and session.guest_id != guest)
+            and not (session.partner_id and session.partner_id != partner)
+        }
+        notifications_by_session = defaultdict(list)
+        for sender_id, target_ids, content in parsed:
+            if session_sudo := senders_sudo.get(sender_id):
+                notifications_by_session[session_sudo].append((target_ids, content))
+        _debug.pipeline(
+            "peer_notifications",
+            received=len(peer_notifications),
+            sessions=len(notifications_by_session),
+            forwarded=sum(len(n) for n in notifications_by_session.values()),
+        )
+        for session_sudo, notifications in notifications_by_session.items():
+            session_sudo._notify_peers(notifications)
+
+    @http.route(
+        "/mail/rtc/session/update_and_broadcast",
+        methods=["POST"],
+        type="jsonrpc",
+        auth="public",
+    )
+    @add_guest_to_context
+    def session_update_and_broadcast(self, session_id: int, values: dict) -> None:
+        if not isinstance(values, dict):
+            raise NotFound
+        if request.env.user._is_public():
+            guest = request.env["mail.guest"]._get_guest_from_context()
+            if guest:
+                session = (
+                    guest.env["discuss.channel.rtc.session"]
+                    .sudo()
+                    .browse(to_record_id(session_id))
+                    .exists()
+                )
+                if session and session.guest_id == guest:
+                    session._update_and_broadcast(values)
+                    return
+            _debug.logic("session_update_refused", session=session_id, by="guest")
+            return
+        session = (
+            request.env["discuss.channel.rtc.session"]
+            .sudo()
+            .browse(to_record_id(session_id))
+            .exists()
+        )
+        if session and session.partner_id == request.env.user.partner_id:
+            session._update_and_broadcast(values)
+            return
+        _debug.logic("session_update_refused", session=session_id, by="partner")
+
+    @http.route(
+        "/mail/rtc/channel/join_call", methods=["POST"], type="jsonrpc", auth="public"
+    )
+    @add_guest_to_context
+    def channel_call_join(
+        self,
+        channel_id: int,
+        check_rtc_session_ids: list[int] | None = None,
+        camera: bool = False,
+    ) -> dict:
+        channel = get_channel_or_404(channel_id)
+        member = channel._get_or_create_member_for_self()
+        if not member:
+            raise NotFound
+        store = Store()
+        with _debug.perf(
+            "join_call", cr=request.env.cr, channel=channel.id, member=member.id
+        ):
+            member.sudo()._rtc_join_call(
+                store,
+                check_rtc_session_ids=to_record_ids(check_rtc_session_ids),
+                camera=bool(camera),
+            )
+        return store.get_result()
+
+    @http.route(
+        "/mail/rtc/channel/leave_call", methods=["POST"], type="jsonrpc", auth="public"
+    )
+    @add_guest_to_context
+    def channel_call_leave(
+        self, channel_id: int, session_id: int | None = None
+    ) -> None:
+        member = get_self_member_or_404(channel_id)
+        member.sudo()._rtc_leave_call(
+            to_record_id(session_id) if session_id is not None else None
+        )
+
+    @http.route(
+        "/mail/rtc/channel/upgrade_connection",
+        methods=["POST"],
+        type="jsonrpc",
+        auth="user",
+    )
+    def channel_upgrade(self, channel_id: int) -> None:
+        member = get_self_member_or_404(channel_id)
+        member.sudo()._join_sfu(force=True)
+
+    @http.route(
+        "/mail/rtc/channel/cancel_call_invitation",
+        methods=["POST"],
+        type="jsonrpc",
+        auth="public",
+    )
+    @add_guest_to_context
+    def channel_call_cancel_invitation(
+        self, channel_id: int, member_ids: list[int] | None = None
+    ) -> None:
+        channel = get_channel_or_404(channel_id)
+        if not channel.self_member_id:
+            raise NotFound
+        channel.sudo()._rtc_cancel_invitations(
+            member_ids=to_record_ids(member_ids) if member_ids else None
+        )
+
+    @http.route(
+        "/mail/rtc/audio_worklet_processor_v2",
+        methods=["GET"],
+        type="http",
+        auth="public",
+        readonly=True,
+    )
+    def audio_worklet_processor(self) -> Response:
+        return javascript_file_response("mail/static/src/worklets/audio_processor.js")
+
+    @http.route(
+        "/discuss/channel/ping", methods=["POST"], type="jsonrpc", auth="public"
+    )
+    @add_guest_to_context
+    def channel_ping(
+        self,
+        channel_id: int,
+        rtc_session_id: int | None = None,
+        check_rtc_session_ids: list[int] | None = None,
+    ) -> dict:
+        member = get_self_member_or_404(channel_id)
+        channel_member_sudo = member.sudo()
+        if rtc_session_id:
+            domain = [
+                ("id", "=", to_record_id(rtc_session_id)),
+                ("channel_member_id", "=", member.id),
+            ]
+            channel_member_sudo.channel_id.rtc_session_ids.filtered_domain(
+                domain
+            ).write({})
+        current_rtc_sessions, outdated_rtc_sessions = (
+            channel_member_sudo._rtc_sync_sessions(to_record_ids(check_rtc_session_ids))
+        )
+        _debug.logic(
+            "channel_ping",
+            channel=channel_id,
+            member=member.id,
+            session=rtc_session_id,
+            current=len(current_rtc_sessions),
+            outdated=len(outdated_rtc_sessions),
+        )
+        return (
+            Store()
+            .add(
+                member.channel_id,
+                [
+                    {"rtc_session_ids": Store.Many(current_rtc_sessions, mode="ADD")},
+                    {
+                        "rtc_session_ids": Store.Many(
+                            outdated_rtc_sessions, [], mode="DELETE"
+                        )
+                    },
+                ],
+            )
+            .get_result()
+        )

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+
+    <record id="config_aws_iot_mqtt" model="device.profile">
+        <field name="name">AWS IoT Core (MQTT / mTLS)</field>
+        <field
+            name="description">Counter PLC machines over AWS IoT Core. Set the device Endpoint to your ATS endpoint (xxxxx-ats.iot.&lt;region&gt;.amazonaws.com), port 8883, and link the device certificate_id to its X.509 certificate.</field>
+        <field name="protocol">mqtt</field>
+        <field name="mqtt_use_tls" eval="True" />
+        <field name="mqtt_qos">1</field>
+        <field name="auth_type">none</field>
+        <field name="auto_reconnect" eval="True" />
+    </record>
+
+</odoo>

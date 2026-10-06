@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <menuitem
+        id="menu_property_root"
+        name="Property"
+        sequence="223"
+        groups="group_enable_property_assets"
+        web_icon="asset_ledger,static/description/property_icon.png" />
+
+    <menuitem
+        id="menu_property_assets"
+        name="Properties"
+        parent="menu_property_root"
+        sequence="10" />
+
+    <menuitem
+        id="menu_property_all"
+        name="All Properties"
+        parent="menu_property_assets"
+        action="action_resource_asset_property"
+        sequence="10" />
+
+    <menuitem
+        id="menu_property_services"
+        name="Services"
+        parent="menu_property_root"
+        sequence="20" />
+
+    <menuitem
+        id="menu_property_service_logs"
+        name="Service Logs"
+        parent="menu_property_services"
+        action="action_property_service_logs"
+        sequence="10" />
+
+    <menuitem
+        id="menu_property_catalog"
+        name="Catalog"
+        parent="menu_property_root"
+        sequence="50" />
+
+    <menuitem
+        id="menu_property_models"
+        name="Property Types"
+        parent="menu_property_catalog"
+        action="action_product_template_property"
+        sequence="10"
+        groups="group_asset_manager" />
+
+    <menuitem
+        id="menu_general_assets_root"
+        name="Assets"
+        sequence="224"
+        groups="group_asset_user"
+        web_icon="asset_ledger,static/description/asset_icon.png" />
+
+    <menuitem
+        id="menu_all_assets"
+        name="All Assets"
+        parent="menu_general_assets_root"
+        action="action_resource_asset_all"
+        sequence="5" />
+
+    <menuitem
+        id="menu_equipment_assets"
+        name="Equipment"
+        parent="menu_general_assets_root"
+        action="action_resource_asset_general"
+        sequence="10"
+        groups="group_enable_equipment_assets" />
+
+    <menuitem
+        id="menu_machinery_assets"
+        name="Machinery"
+        parent="menu_general_assets_root"
+        action="action_resource_asset_machinery"
+        sequence="20"
+        groups="group_enable_machinery_assets" />
+
+    <menuitem
+        id="menu_tools_assets"
+        name="Tools"
+        parent="menu_general_assets_root"
+        action="action_resource_asset_tools"
+        sequence="30"
+        groups="group_enable_tools" />
+
+    <menuitem
+        id="menu_it_assets"
+        name="IT Assets"
+        parent="menu_general_assets_root"
+        action="action_resource_asset_it_asset"
+        sequence="40"
+        groups="group_enable_it_assets" />
+
+    <menuitem
+        id="menu_general_services"
+        name="Services"
+        parent="menu_general_assets_root"
+        sequence="50" />
+
+    <menuitem
+        id="menu_general_service_logs"
+        name="All Service Logs"
+        parent="menu_general_services"
+        action="action_product_asset_log"
+        sequence="10" />
+
+    <menuitem
+        id="menu_general_catalog"
+        name="Catalog"
+        parent="menu_general_assets_root"
+        sequence="80" />
+
+    <menuitem
+        id="menu_general_asset_templates"
+        name="Asset Templates"
+        parent="menu_general_catalog"
+        action="action_product_template_asset"
+        sequence="10"
+        groups="group_asset_manager" />
+
+    <!--
+        resource_asset ships its own "Assets" root; this module's is the one
+        users work in, so the base module's entries move under it and the
+        base root disappears from the home screen.
+    -->
+    <record id="resource_asset.menu_asset_assignments" model="ir.ui.menu">
+        <field name="parent_id" ref="menu_general_assets_root" />
+        <field name="sequence">60</field>
+    </record>
+
+    <record id="resource_asset.menu_asset_meters" model="ir.ui.menu">
+        <field name="parent_id" ref="menu_general_assets_root" />
+        <field name="sequence">70</field>
+    </record>
+
+    <record id="resource_asset.menu_asset_config" model="ir.ui.menu">
+        <field name="parent_id" ref="menu_general_assets_root" />
+        <field name="sequence">1000</field>
+    </record>
+
+    <!--
+        Vehicles are one more asset family: gated on their enable-group alone,
+        like Equipment or Machinery, which grants the fleet rights the entries
+        under it ask for.
+    -->
+    <record id="resource_asset_vehicle.fleet_vehicles" model="ir.ui.menu">
+        <field name="parent_id" ref="menu_general_assets_root" />
+        <field name="sequence">7</field>
+        <field
+            name="group_ids"
+            eval="[Command.set([ref('group_enable_fleet_assets')])]" />
+    </record>
+
+    <record id="resource_asset.menu_asset_assets" model="ir.ui.menu">
+        <field name="active" eval="False" />
+    </record>
+
+    <menuitem
+        id="menu_asset_tags"
+        parent="resource_asset.menu_asset_config"
+        action="action_resource_asset_tag"
+        sequence="3" />
+
+    <record id="resource_asset.menu_asset_root" model="ir.ui.menu">
+        <field name="active" eval="False" />
+    </record>
+
+</odoo>

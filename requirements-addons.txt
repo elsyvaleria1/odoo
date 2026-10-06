@@ -1,0 +1,121 @@
+# Python dependencies of individual bundled addons.
+#
+# Split out of requirements.txt so a server install does not carry the
+# dependencies of modules it will never load. Nothing here is imported by the
+# framework or by an always-loaded addon; each line names the module that owns
+# it. Install alongside the server requirements whenever `odoo/addons` is on the
+# addons_path — which, for a normal development checkout, is always:
+#
+#     pip install -r requirements.txt -r requirements-addons.txt
+#
+# coding_guidelines.rst §1.2 requires each of these to ALSO be declared in the
+# owning module's __manifest__.py `external_dependencies`, so a missing one is a
+# named MissingDependencyError on the install path rather than an ImportError at
+# import time. Two rules on that declaration:
+#
+#   * Declare only imports the module cannot start without. A package behind a
+#     `find_spec` guard, a function-local import or a `try/except ImportError`
+#     is OPTIONAL, and declaring it would turn a degraded feature into a refused
+#     install. Those lines are marked "optional" below and are deliberately
+#     absent from the manifests.
+#   * `external_dependencies` is not consulted for auto_install modules —
+#     odoo/modules/db.py marks that closure in raw SQL — so a dependency of an
+#     auto_install module has to stay pinned in requirements.txt instead. cbor2
+#     is the one such case and lives there.
+#
+# chardet 5.2.0 is held against BOTH a different library and a newer chardet.
+# The corpus for both is the shape agromarin
+# l10n_mx_account_bank_statement_import/readers/bbva.py reads: ~30 KB of
+# cp1252/latin-1 Mexican Spanish, plus the same text in French, German, Polish,
+# Russian and Japanese across cp1250/cp1251/koi8-r/shift_jis/utf-8, and 4 KB of
+# high-entropy bytes that must detect as None.
+#
+# Do NOT "simplify" chardet away to charset-normalizer: it picks cp1250 at
+# confidence 1.0 and mangles the text ('º'->'ş', 'ñ'->'ń') on BOTH its detect()
+# shim and its native from_bytes().best(), while chardet answers ISO-8859-1 and
+# round-trips exactly. It also returns 'utf-8' rather than None for undetectable
+# input, which would silently disable the "could not detect the encoding" error
+# in base_import.
+#
+# Do NOT bump to 7.x either, which is a separate question and was measured
+# separately -- the argument above is about a different package and settles
+# nothing about the version. 7.0.0 rewrote the detector behind compiled wheels
+# and regressed it. Text correctly decoded, of 16 cases:
+#   5.2.0  15/16   undetectable -> None
+#   6.0.0  14/16   undetectable -> None
+#   7.6.0  12/16   undetectable -> 'cp875'
+# 7.6.0 reads French cp1252/latin-1 as koi8-t and the Mexican-Spanish files as
+# CP874, i.e. 'ASOCIACIÓN AGRÍCOLA' -> 'ASOCIACIำN AGRอCOLA' -- the same failure
+# charset-normalizer is rejected for, now inside chardet. Worse, it returns
+# 'cp875' at confidence 0.037 for undetectable bytes instead of None, which is
+# exactly the second defect above: base_import's "Could not detect the file's
+# encoding" error (t24068 F19) stops firing and the file imports as mojibake.
+# 6.0.0 is safe -- it names WINDOWS-1252 where 5.2.0 says the broader
+# ISO-8859-1, and its two misses return None, so they raise rather than corrupt
+# -- but it loses koi8-r, which 5.2.0 gets right, so it buys nothing.
+# Re-measure before moving; do not read "7.x is current" as a reason to.
+av==19.0.1  # libs/documents/media.py: speech_local, speech_voiceprint, video readers
+boto3==1.43.108  # cloud_storage_s3
+botocore==1.43.108  # cloud_storage_s3 -- boto3's own pinned
+                   # runtime, held at the matching version so a boto3 bump
+                   # cannot silently drag a different botocore in
+chardet==5.2.0  # base_import, mail
+# Last released 2016 and unmaintained, which reads as a candidate for the
+# maintained `dbf` (0.99.11, 2025). Measured, it is not one, and the reason is
+# not the API size — it is that import_wizard.py uses DBF character values as
+# DICT KEYS (account_data[rec.get('NUMBER')], partner_data, category_data,
+# vatcode_data) and looks them up again later:
+#   dbfread returns C fields stripped        -> '400000'
+#   dbf returns them space-padded to width   -> '400000    '
+# so every cross-reference lookup misses, and an accounting import that silently
+# links nothing is a worse failure than one that raises. dbf CAN be made to
+# match, with default_data_types={'C': dbf.Char} — but that is an unobvious
+# invariant guarding book-level correctness, and the only test here is tagged
+# 'external', '-standard': it downloads a 56 MB zip from files.exact.com, so it
+# never runs in CI and the swap would land unverified.
+# Debian is the second reason: the manifest declares the apt name
+# python3-dbfread, which is 2.0.7 in every suite, while python3-dbf is 0.96.005
+# in bookworm and trixie against 0.99.10 in sid — so an apt install would get a
+# release three minors below the one whose Char behaviour was measured.
+# dbfread is pure Python (1353 lines, no extension), imports and runs clean on
+# 3.14, and is read-only, which is the whole of what this module needs. Revisit
+# only behind a committed .dbf fixture and a test that runs by default.
+dbfread==2.0.7  # account_winbooks_import
+defusedxml==0.7.1  # attachment_indexation, website
+google-auth==2.59.1  # cloud_storage_google
+numpy==2.5.3  # speech_local, speech_voiceprint
+odfpy==1.4.1  # base_import: .ods reader (models/odf_ods_reader.py) — optional
+openpyxl==3.1.5  # attachment_indexation, base_import, survey — optional
+paho-mqtt==2.1.0  # integration_mqtt
+pdfminer.six==20260107  # attachment_indexation — optional, degrades without it
+phonenumbers==9.0.40  # phone_validation
+pymodbus==3.15.0  # integration_modbus
+# AGPL-3.0-or-commercial, which is why base/ir_actions_report guards the import
+# and degrades rather than depending on it. setup.py offers the same package as
+# the `pdf-raster` extra.
+PyMuPDF==1.28.2  # base — optional
+python-ldap==3.4.8 ; sys_platform != 'win32'  # auth_ldap
+python-stdnum==2.2  # account_vat + 15 l10n modules. Fixes operation_timeout in SOAP client
+qrcode==8.2  # auth_totp, pos_self_order
+# extract_ocr, both imported at module level: the module refuses to
+# install without them rather than installing and reading nothing off a scan.
+# `rapidocr` is the continuation of `rapidocr-onnxruntime`, which is frozen:
+# every release after the 1.2.3 this used to pin caps at python_requires <3.13,
+# so on 3.14 the old name could never move. Models still ship in the wheel
+# (~32 MB, PP-OCRv6). `onnxruntime` sits out of alphabetical order to stay
+# beside it: 3.x bundles no inference backend and exposes no extra for one, so
+# without this second pin the import succeeds and the first call raises
+# `ImportError: onnxruntime is not installed`.
+rapidocr==3.9.2
+onnxruntime==1.30.0
+sherpa-onnx==1.13.8  # speech_local, speech_voiceprint
+# The only remaining reason pytz is installed anywhere: vobject depends on it.
+vobject==0.9.9  # calendar, event, web, website_event_track — optional
+websocket-client==1.9.2  # integration_websocket
+xlrd==2.0.2  # base_import: legacy .xls (BIFF) reader — optional
+zeep==4.3.3  # account_vat, via stdnum's own SOAP client — optional
+# extract_barcode, imported as `zxingcpp`. The decoder is compiled into
+# the wheel, so unlike the `pyzbar` it replaces there is no libzbar to install
+# system-side -- and none ever was here, which is why that reader had been
+# returning no barcodes on every page and the module could not install.
+zxing-cpp==3.1.1

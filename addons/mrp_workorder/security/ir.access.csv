@@ -1,0 +1,5 @@
+id,name,model_id/id,group_id/id,kind,operation,domain
+access_mrp_workorder_propose_change,access.mrp_workorder.propose.change,model_wizard_mrp_workorder_update_instruction,mrp.group_mrp_user,permission,cru,
+access_mrp_production_additional_workorder,access.mrp_production.additional.workorder,model_wizard_mrp_production_add_workorder,mrp.group_mrp_user,permission,cru,
+access_quality_check_mrp_readonly,quality.check.mrp.readonly,quality.model_quality_check,mrp.group_mrp_readonly,permission,r,
+access_quality_point_mrp_readonly,quality.point.mrp.readonly,quality.model_quality_point,mrp.group_mrp_readonly,permission,r,

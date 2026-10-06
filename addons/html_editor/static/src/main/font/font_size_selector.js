@@ -1,0 +1,186 @@
+/** @odoo-module native */
+import { useEditorOverlayContext } from "@html_editor/core/editor_overlay_context";
+import { useDropdownAutoVisibility } from "@html_editor/dropdown_autovisibility_hook";
+import { toolbarButtonProps } from "@html_editor/main/toolbar/toolbar";
+import { getCSSVariableValue, getHtmlStyle } from "@html_editor/utils/formatting";
+import { Component, onMounted, proxy, t, useProps } from "@odoo/owl";
+import { Dropdown, DropdownItem, useDropdownState } from "@web/components/dropdown";
+import { colorScheme, useColorSchemeEffect } from "@web/core/color_scheme";
+import { elementRef } from "@web/core/utils/element_ref";
+import { useChildRef, useService } from "@web/core/utils/hooks";
+import { useLayoutEffect } from "@web/core/utils/layout_effect";
+import { useDebounced } from "@web/core/utils/timing";
+
+const MAX_FONT_SIZE = 144;
+
+export class FontSizeSelector extends Component {
+    static template = "html_editor.FontSizeSelector";
+    static props = {
+        getItems: t.function(),
+        getDisplay: t.function(),
+        onFontSizeInput: t.function(),
+        onSelected: t.function(),
+        onBlur: t.function().optional(),
+        document: t.customValidator(t.any(), (p) => p.nodeType === Node.DOCUMENT_NODE),
+        ...toolbarButtonProps,
+    };
+    static components = { Dropdown, DropdownItem };
+    props = useProps(this.constructor.props);
+
+    setup() {
+        this.overlayContext = useEditorOverlayContext();
+        this.ui = useService("ui");
+        this.items = this.props.getItems();
+        this.state = proxy(this.props.getDisplay());
+        this.dropdown = useDropdownState();
+        this.menuRef = useChildRef();
+        useDropdownAutoVisibility(this.overlayContext.overlayState, this.menuRef);
+        this.iframeContentRef = elementRef();
+        this.debouncedCustomFontSizeInput = useDebounced(
+            this.onCustomFontSizeInput.bind(this),
+            200,
+        );
+
+        onMounted(() => {
+            const iframeEl = this.iframeContentRef.el;
+
+            const initFontSizeInput = () => {
+                const iframeDoc = iframeEl.contentWindow.document;
+
+                if (
+                    this.fontSizeInput?.closest("body") === iframeDoc.body ||
+                    !iframeDoc.body
+                ) {
+                    return;
+                }
+
+                this.fontSizeInput = iframeDoc.createElement("input");
+                const fontFamily = getCSSVariableValue(
+                    "o-system-fonts",
+                    getHtmlStyle(document),
+                );
+                Object.assign(iframeDoc.body.style, {
+                    padding: "0",
+                    margin: "0",
+                });
+                Object.assign(this.fontSizeInput.style, {
+                    width: "100%",
+                    height: "100%",
+                    border: "none",
+                    outline: "none",
+                    textAlign: "center",
+                    fontFamily: fontFamily,
+                });
+                this.paintFontSizeInput();
+                this.fontSizeInput.type = "text";
+                this.fontSizeInput.name = "font-size-input";
+                this.fontSizeInput.autocomplete = "off";
+                this.fontSizeInput.value = this.state.displayName;
+                iframeDoc.body.appendChild(this.fontSizeInput);
+                this.fontSizeInput.addEventListener("click", () => {
+                    if (!this.dropdown.isOpen) {
+                        this.dropdown.open();
+                    }
+                });
+                this.fontSizeInput.addEventListener(
+                    "input",
+                    this.debouncedCustomFontSizeInput,
+                );
+                this.fontSizeInput.addEventListener(
+                    "keydown",
+                    this.onKeyDownFontSizeInput.bind(this),
+                );
+            };
+            if (iframeEl.contentDocument.readyState === "complete") {
+                initFontSizeInput();
+            }
+            iframeEl.addEventListener("load", initFontSizeInput);
+        });
+        useColorSchemeEffect(() => this.paintFontSizeInput());
+        useLayoutEffect(
+            () => {
+                if (this.fontSizeInput) {
+                    this.fontSizeInput.value = this.state.displayName;
+                }
+            },
+            () => [this.state.displayName],
+        );
+        useLayoutEffect(
+            () => {
+                if (this.fontSizeInput) {
+                    if (this.dropdown.isOpen) {
+                        // on a small screen, opening from the button must not
+                        // pull up the virtual keyboard: only a tapped input
+                        // gets its content selected
+                        const tapped =
+                            this.fontSizeInput.ownerDocument.activeElement ===
+                            this.fontSizeInput;
+                        if (!this.ui.isSmall || tapped) {
+                            this.fontSizeInput.select();
+                        }
+                    } else if (
+                        this.iframeContentRef.el?.contains(
+                            this.props.document.activeElement,
+                        )
+                    ) {
+                        this.fontSizeInput.blur();
+                        this.props.onBlur?.();
+                    }
+                }
+            },
+            () => [this.dropdown.isOpen],
+        );
+    }
+
+    paintFontSizeInput() {
+        if (!this.fontSizeInput) {
+            return;
+        }
+        const htmlStyle = getHtmlStyle(document);
+        Object.assign(this.fontSizeInput.style, {
+            backgroundColor: getCSSVariableValue(
+                colorScheme.isDark ? "gray-200" : "white",
+                htmlStyle,
+            ),
+            color: getCSSVariableValue("black", htmlStyle),
+        });
+    }
+
+    onCustomFontSizeInput(ev) {
+        let fontSize = parseInt(ev.target.value, 10);
+        if (fontSize > 0) {
+            fontSize = Math.min(fontSize, MAX_FONT_SIZE);
+            if (this.state.displayName !== fontSize) {
+                this.props.onFontSizeInput(`${fontSize}px`);
+            } else {
+                this.fontSizeInput.value = this.state.displayName;
+            }
+        }
+        this.fontSizeInput.focus();
+    }
+
+    onKeyDownFontSizeInput(ev) {
+        if (["Enter", "Tab"].includes(ev.key) && this.dropdown.isOpen) {
+            this.dropdown.close();
+        } else if (["ArrowUp", "ArrowDown"].includes(ev.key)) {
+            const fontSizeSelectorMenu = document.querySelector(
+                ".o_font_size_selector_menu div",
+            );
+            if (!fontSizeSelectorMenu) {
+                return;
+            }
+            ev.target.blur();
+            const fontSizeMenuItemToFocus =
+                ev.key === "ArrowUp"
+                    ? fontSizeSelectorMenu.lastElementChild
+                    : fontSizeSelectorMenu.firstElementChild;
+            if (fontSizeMenuItemToFocus) {
+                fontSizeMenuItemToFocus.focus();
+            }
+        }
+    }
+
+    onSelected(item) {
+        this.props.onSelected(item);
+    }
+}

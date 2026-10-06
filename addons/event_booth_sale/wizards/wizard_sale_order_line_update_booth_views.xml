@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <data>
+        <record id="event_booth_configurator_view_form" model="ir.ui.view">
+            <field name="name">event.booth.configurator.view.form</field>
+            <field name="model">wizard.sale.order.line.update.booth</field>
+            <field name="arch" type="xml">
+                <form js_class="event_booth_configurator_form">
+                    <group>
+                        <field name="product_id" invisible="1" />
+                        <field
+                            name="event_id"
+                            domain="[                                 ('event_booth_ids.product_id', '=', product_id),                                 ('is_finished', '=', False)                            ]"
+                            options="{'no_open': True, 'no_create': True}" />
+                        <field
+                            name="event_booth_category_available_ids"
+                            invisible="1" />
+                        <field
+                            name="event_booth_category_id"
+                            domain="[('id', 'in', event_booth_category_available_ids)]"
+                            options="{'no_open': True, 'no_create': True}"
+                            invisible="not event_id" />
+                        <field
+                            name="event_booth_ids"
+                            widget="many2many_checkboxes"
+                            domain="[                                 ('event_id', '=', event_id),                                 ('booth_category_id', '=', event_booth_category_id),                                 ('product_id', '=', product_id),                                 ('state', '=', 'available')                            ]"
+                            options="{'no_open': True, 'no_create': True}"
+                            invisible="not event_booth_category_id" />
+                    </group>
+                    <footer>
+                        <button special="save" string="Ok" class="btn-primary" />
+                        <button
+                            special="cancel"
+                            string="Cancel"
+                            class="btn-secondary" />
+                    </footer>
+                </form>
+            </field>
+        </record>
+        <record id="event_booth_configurator_action" model="ir.actions.act_window">
+            <field name="name">Select an event booth</field>
+            <field name="res_model">wizard.sale.order.line.update.booth</field>
+            <field name="view_mode">form</field>
+            <field name="target">new</field>
+        </record>
+    </data>
+
+</odoo>

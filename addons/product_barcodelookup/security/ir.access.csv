@@ -1,0 +1,5 @@
+id,name,model_id/id,group_id/id,kind,operation,reach,anchor,domain
+access_product_get_pic_barcode_manager,product.images.get.pic.barcode manager,model_wizard_product_product_update_image,base.group_system,permission,cru,,,
+product_fetch_image_wizard_rule,"
+            Product fetch image wizard: access only your own wizard
+        ",model_wizard_product_product_update_image,base.group_everyone,guard,crud,own,creator,

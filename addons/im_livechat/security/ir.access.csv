@@ -1,0 +1,34 @@
+id,name,model_id/id,group_id/id,kind,operation,reach,anchor,domain
+ir_rule_discuss_channel_im_livechat_group_user,discuss.channel: livechat users can read all livechat channels,mail.model_discuss_channel,im_livechat_group_user,permission,r,all,,"[('channel_type', '=', 'livechat')]"
+ir_rule_discuss_channel_member_im_livechat_group_user,discuss.channel.member: livechat users can read all livechat channel members and can invite anyone,mail.model_discuss_channel_member,im_livechat_group_user,permission,cr,all,,"[('channel_id.channel_type', '=', 'livechat')]"
+ir_rule_discuss_call_history_im_livechat_group_user,discuss.call.history: livechat users can access all call histories,mail.model_discuss_call_history,im_livechat_group_user,permission,r,all,,"[('channel_id.channel_type', '=', 'livechat')]"
+access_livechat_channel_user,im_livechat.channel.user,model_im_livechat_channel,im_livechat_group_user,permission,r,,,
+access_livechat_channel_manager,im_livechat.channel.manager,model_im_livechat_channel,im_livechat_group_manager,permission,cud,,,
+access_livechat_support_report_channel,im_livechat.report.channel,model_im_livechat_report_channel,im_livechat_group_manager,permission,r,,,
+access_livechat_channel_rule_user,im_livechat.channel.rule,model_im_livechat_channel_rule,im_livechat_group_user,permission,cru,,,
+access_livechat_channel_rule_manager,im_livechat.channel.rule,model_im_livechat_channel_rule,im_livechat_group_manager,permission,d,,,
+access_livechat_expertise_internal_user,im_livechat.expertise.internal.user,model_im_livechat_expertise,base.group_user,permission,r,,,
+access_livechat_expertise_livechat_manager,im_livechat.expertise.manager,model_im_livechat_expertise,im_livechat_group_manager,permission,cud,,,
+access_livechat_conversation_tag_livechat_user,im_livechat.conversation.tag.livechat.user,model_im_livechat_conversation_tag,im_livechat_group_user,permission,cru,,,
+access_livechat_conversation_tag_livechat_manager,im_livechat.conversation.tag.livechat.manager,model_im_livechat_conversation_tag,im_livechat_group_manager,permission,d,,,
+access_chatbot_script_user,chatbot.script.user,model_chatbot_script,im_livechat_group_manager,permission,crud,,,
+access_chatbot_script_step_user,chatbot.script.step.user,model_chatbot_script_step,im_livechat_group_manager,permission,crud,,,
+access_chatbot_script_answer,chatbot.script.answer,model_chatbot_script_answer,base.group_everyone,permission,r,none,,
+access_chatbot_script_answer_user,chatbot.script.answer.user,model_chatbot_script_answer,im_livechat_group_manager,permission,crud,,,
+access_chatbot_message_user,chatbot.script.user,model_chatbot_message,im_livechat_group_manager,permission,crud,,,
+access_im_livechat_channel_member_history_user,im_livechat.channel.member.history,model_im_livechat_channel_member_history,im_livechat_group_user,permission,r,,,
+privilege_count_livechat_history_member_history,im_livechat.channel.member.history: the live chats counted on a contact,model_im_livechat_channel_member_history,privilege_count_livechat_history,permission,r,,,
+privilege_open_session_livechat_channel,im_livechat.channel: a session's opening reads the live chat channel it opens on,model_im_livechat_channel,privilege_open_session,permission,r,,,
+privilege_open_session_livechat_channel_rule,im_livechat.channel.rule: a session's opening reads the rules that name its chatbot,model_im_livechat_channel_rule,privilege_open_session,permission,r,,,
+privilege_open_session_expertise,im_livechat.expertise: a session's opening reads the expertise its operator is picked by,model_im_livechat_expertise,privilege_open_session,permission,r,,,
+privilege_open_session_member_history,im_livechat.channel.member.history: a session's opening reads which operators answered which open sessions,model_im_livechat_channel_member_history,privilege_open_session,permission,r,,,
+privilege_open_session_users,res.users: a session's opening reads the internal users it may route to,base.model_res_users,privilege_open_session,permission,r,,,"[('share', '=', False)]"
+privilege_open_session_partners,res.partner: a session's opening reads the contacts of the internal users it may route to,base.model_res_partner,privilege_open_session,permission,r,,,"[('user_ids.share', '=', False)]"
+privilege_open_session_chatbot_partners,res.partner: a session's opening reads the contact its chatbot posts the welcome as,base.model_res_partner,privilege_open_session,permission,r,,,"[('chatbot_script_ids', '!=', False)]"
+privilege_open_session_presence,mail.presence: a session's opening reads which internal users are online,mail.model_mail_presence,privilege_open_session,permission,r,,,"[('user_id.share', '=', False)]"
+privilege_open_session_rtc_session,discuss.channel.rtc.session: a session's opening reads which internal users are in a call,mail.model_discuss_channel_rtc_session,privilege_open_session,permission,r,,,"[('partner_id.user_ids.share', '=', False)]"
+privilege_open_session_channel,discuss.channel: a session's opening counts the open live chat sessions and creates its own,mail.model_discuss_channel,privilege_open_session,permission,cr,,,"[('channel_type', '=', 'livechat')]"
+privilege_open_session_channel_member,discuss.channel.member: a session's opening counts the members of live chat sessions and creates its operator and visitor,mail.model_discuss_channel_member,privilege_open_session,permission,cr,,,"[('channel_id.channel_type', '=', 'livechat')]"
+privilege_open_session_channel_open,discuss.channel: a session's opening moves the open session through its chatbot's welcome and marks it looking for help,mail.model_discuss_channel,privilege_open_session,permission,u,,,"[('channel_type', '=', 'livechat'), ('livechat_end_dt', '=', False)]"
+privilege_open_session_message,mail.message: a session's opening posts its chatbot's welcome,mail.model_mail_message,privilege_open_session,permission,c,,,"[('model', '=', 'discuss.channel'), ('message_type', '=', 'comment'), ('author_id.chatbot_script_ids', '!=', False)]"
+privilege_open_session_livechat_group,res.groups: a session's opening tells the live chat users it looks for help,base.model_res_groups,privilege_open_session,permission,r,,,"[('id', 'in', [ref('im_livechat.im_livechat_group_user'), ref('base.group_user')])]"

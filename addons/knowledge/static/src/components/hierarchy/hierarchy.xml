@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<templates>
+    <t t-name="knowledge.KnowledgeHierarchy">
+        <!-- Root Article -->
+        <div t-if="this.rootId !== this.props.record.resId" class="o_hierarchy_item d-flex min-w-0 align-items-center"> 
+            <a role="button" class="btn btn-light border-0 px-2 text-truncate me-1"
+                t-on-click="() => this.knowledgeContext.openArticle(this.rootId)"
+                t-out="this.rootName"
+                t-att-title="this.rootName"/>
+            <span class="text-muted">/</span>
+        </div>
+        <!-- Dropdown with all articles between the root and the direct parent -->
+        <div t-if="this.displayDropdownToggle" class="o_hierarchy_item d-flex w-auto align-items-center">
+            <Dropdown beforeOpen.bind="this.onBeforeOpen">
+                <a type="button" class="btn btn-light border-0 px-2 me-1">
+                    ...
+                </a>
+                <t t-set-slot="content">
+                    <i t-if="this.state.isLoadingArticleHierarchy" class="fa-solid fa-circle-notch fa-spin mx-auto"/>
+                    <t t-else="">
+                        <t t-set="notAccessibleTitle">You do not have access to this article</t>
+                        <t t-foreach="this.articleHierarchy" t-as="article" t-key="article.id">
+                            <DropdownItem onSelected="() => this.knowledgeContext.openArticle(article.id)"
+                                class="article.user_has_access ? '' : 'disabled pe-auto'">
+                                <span t-out="article.display_name"
+                                    t-att-title="article.user_has_access ? article.display_name : notAccessibleTitle"/>
+                            </DropdownItem>
+                        </t>
+                    </t>
+                </t>
+            </Dropdown>
+            <span>/</span>
+        </div>
+        <!-- Parent Article -->
+        <div t-if="this.parentId and this.parentId !== this.rootId" class="o_hierarchy_item d-flex min-w-0 align-items-center">
+            <a role="button" class="btn btn-light border-0 px-2 text-truncate me-1"
+                t-on-click="() => this.knowledgeContext.openArticle(this.parentId)"
+                t-out="this.parentName"
+                t-att-title="this.parentName"/>
+            <span>/</span>
+        </div>
+        <!-- Current Article -->
+        <div class="o_hierarchy_item d-flex min-w-0 align-items-center ms-2">
+            <KnowledgeIcon record="this.props.record" fallbackDefaultIcon="true" iconClasses="'me-1'" readonly="this.isReadonly"/>
+            <div t-if="this.isReadonly" class="text-truncate me-1 fw-bold">
+                <t t-if="this.props.record.data.name" t-out="this.props.record.data.name" />
+                <t t-else="">Untitled</t>
+            </div>
+            <div t-else="" class="o_hierarchy_article_name position-relative text-truncate" t-on-click="this.knowledgeContext.ensureArticleName">
+                <input class="o_input position-absolute top-50 start-50 translate-middle fw-bold text-truncate text-body border-0"
+                    t-model.proxy="this.state.articleName"
+                    t-on-change="ev => this.knowledgeContext.renameArticle(ev.target.value)"
+                    type="text"
+                    autocomplete="off"
+                    placeholder="Untitled"/>
+                <!-- span forces the input to match the length of its value -->
+                <span class="d-inline-block pe-1 fw-bold text-truncate invisible">
+                    <t t-if="this.state.articleName" t-out="this.state.articleName"/>
+                    <t t-else="">Untitled</t>
+                </span>
+            </div>
+            <i t-if="this.props.record.data.is_locked"
+                class="fa-solid fa-lock"
+                title="This article is locked" />
+            <KnowledgeFormStatusIndicator model="this.props.record.model" save="this.knowledgeContext.save" discard="this.knowledgeContext.discard"/>
+        </div>
+    </t>
+</templates>

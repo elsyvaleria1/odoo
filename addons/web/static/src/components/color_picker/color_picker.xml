@@ -1,0 +1,26 @@
+<templates xml:space="preserve">
+<t t-name="web.ColorPicker">
+    <div t-attf-class="o_font_color_selector user-select-none {{this.props.className}}"
+        t-on-pointerdown.stop="() => {}" data-prevent-closing-overlay="true" t-ref="this.root">
+        <div class="px-1 mb-1 pt-2 d-flex">
+            <t t-foreach="this.tabs" t-as="tab" t-key="tab.id">
+                <button t-attf-class="btn btn-sm text-truncate btn-tab #{tab.id}-tab #{ this.isDarkTheme ? 'btn-secondary' : 'btn-light'} #{this.state.activeTab === tab.id ? 'active' : ''}"
+                    t-on-click="() => this.setTab(tab.id)">
+                    <t t-out="tab.name" />
+                </button>
+            </t>
+            <div class="flex-grow-1" />
+            <button t-attf-class="btn btn-sm fa-solid fa-trash #{ this.isDarkTheme ? 'btn-secondary' : 'btn-light'}"
+                    title="Reset"
+                    t-on-click="this.onColorApply"
+                    t-on-mouseover="this.onColorHover"
+                    t-on-mouseout="this.onColorHoverOut"
+                    t-on-focusin="this.onColorFocusin"
+                    t-on-focusout="this.onColorFocusout"/>
+        </div>
+        <t t-set="activeTab" t-value="this.tabs.find((tab) => this.state.activeTab === tab.id)" />
+        <t t-component="activeTab.component" t-props="this.tabProps" />
+    </div>
+</t>
+
+</templates>

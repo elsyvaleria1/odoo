@@ -1,0 +1,30 @@
+{
+    "name": "Vehicles",
+    "version": "1.1",
+    "oldest_upgradable_version": "1.1",
+    "category": "Human Resources/Fleet",
+    "summary": "Track vehicles, driver assignments, odometer readings and service costs",
+    "description": "Adds vehicle assets with plate, VIN and product-model specifications. Provides driver assignments, handover actions, odometer readings and service and cost records using the shared asset infrastructure. Vehicle details and costs are based on entered records.",
+    "author": "Odoo S.A.",
+    "website": "https://www.odoo.com/app/fleet",
+    "license": "LGPL-3",
+    "depends": [
+        "mail",
+        "resource_asset_product",
+    ],
+    "data": [
+        "security/fleet_security.xml",
+        "security/ir.access.csv",
+        "data/fleet_cars_data.xml",
+        "data/fleet_data.xml",
+        "views/product_template_views.xml",
+        "views/fleet_vehicle_views.xml",
+        "views/fleet_service_views.xml",
+        "wizards/wizard_resource_asset_vehicle_send_mail_driver_views.xml",
+        "views/fleet_menus.xml",
+    ],
+    "demo": [
+        "demo/fleet_demo.xml",
+    ],
+    "pre_init_hook": "pre_init_hook",
+}

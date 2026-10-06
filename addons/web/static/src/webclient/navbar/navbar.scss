@@ -1,0 +1,347 @@
+body {
+    --o-navbar-height-density: #{$o-navbar-height};
+    --o-navbar-height: var(--o-navbar-height-density);
+    --o-navbar-padding-v: calc(
+        (var(--o-navbar-height) - #{$o-navbar-entry-height}) / 2
+    );
+}
+
+body.o-density-compact {
+    --o-navbar-height-density: #{$o-navbar-height-compact};
+}
+
+body.o-density-condensed {
+    --o-navbar-height-density: #{$o-navbar-height-condensed};
+}
+
+[data-input-modality="touch"] body {
+    --o-navbar-height: max(var(--o-navbar-height-density), var(--o-hit-target));
+}
+
+.o_main_navbar {
+    --Dropdown_menu-margin-y: #{map-get($spacers, 1)};
+    --o-ring-color: #{o-ring-color-for($o-navbar-background)};
+    --NavBar-entry-color--active: #{o-token(--o-black, $o-component-active-color)};
+    --NavBar-entry-borderColor-active: transparent;
+    --NavBar-entry-backgroundColor--active: #{$o-navbar-entry-bg--active};
+    --NavBar-entry-backgroundColor--hover: #{$o-navbar-entry-bg--hover};
+    --NavBar-entry-backgroundColor--focus: #{$o-navbar-entry-bg--hover};
+
+    display: flex;
+    height: var(--o-navbar-height, #{$o-navbar-height});
+    padding-top: var(--o-navbar-padding-v, #{$o-navbar-padding-v});
+    padding-bottom: var(--o-navbar-padding-v, #{$o-navbar-padding-v});
+    @include o-glass-bar();
+    font-size: $o-navbar-font-size;
+
+    @include media-breakpoint-up(md) {
+        min-width: min-content;
+    }
+
+    > ul {
+        padding: 0;
+        margin: 0;
+        list-style: none;
+    }
+
+    .o_menu_toggle {
+        --NavBar-entry-padding-left: #{$o-horizontal-padding};
+        --NavBar-entry-padding-right: #{$o-horizontal-padding * 0.5};
+
+        @extend %-main-navbar-entry-base;
+        @extend %-main-navbar-entry-spacing;
+        color: var(--NavBar-menuToggle-color, var(--o-brand-odoo));
+
+        rect,
+        g {
+            transform-origin: 0 50%;
+        }
+
+        @mixin o_main_navbar_toggler_toggled() {
+            rect {
+                width: 6px;
+                height: 3px;
+
+                &:first-child {
+                    transform: translate(12%, 0) #{"/* rtl:translate(-6%, 0) */"};
+                    rx: 100%;
+                }
+            }
+
+            #o_menu_toggle_row_0 {
+                transform: scale3d(0.5, 1, 1) translate(0, 45%) skewY(-22deg)
+                    #{"/* rtl:scale3d(.5, 1, 1) translate(0, 41%) skewY(22deg) */"};
+
+                + g rect {
+                    width: 0;
+                    height: 0;
+                }
+            }
+
+            #o_menu_toggle_row_2 {
+                transform: scale3d(0.5, 1, 1) translate(0, -37%) skewY(22deg)
+                    #{"/* rtl:scale3d(.5, 1, 1) translate(0, -35%) skewY(-22deg) */"};
+            }
+        }
+
+        &.o_menu_toggle_back {
+            @include o_main_navbar_toggler_toggled();
+            transform: translateX(25%) rotateY(-180deg);
+        }
+
+        @include media-breakpoint-up(md) {
+            @media screen and (prefers-reduced-motion: no-preference) {
+                &:hover {
+                    @include o_main_navbar_toggler_toggled();
+                }
+
+                &,
+                g {
+                    transition: all var(--o-duration-slow, 0.3s);
+                }
+
+                rect {
+                    transition: all 0.1s;
+                }
+            }
+
+            .o_menu_brand_icon {
+                width: calc(#{$o-navbar-entry-height} + #{map-get($spacers, 1)});
+                object-fit: cover;
+            }
+        }
+    }
+
+    .o_nav_entry,
+    .dropdown-toggle:not(.o-dropdown-toggle-custo) {
+        @extend %-main-navbar-entry-base;
+        @extend %-main-navbar-entry-spacing;
+        border-color: transparent;
+
+        &:is(:hover, :focus-visible) {
+            background-color: var(
+                --NavBar-entry-backgroundColor--hover,
+                #{$o-navbar-entry-bg--hover}
+            );
+        }
+    }
+
+    .o_menu_sections {
+        .o_nav_entry,
+        .dropdown-toggle {
+            background: var(--NavBar-entry-backgroundColor, transparent);
+            border: $border-width solid transparent;
+
+            &:hover {
+                background: var(
+                    --NavBar-entry-backgroundColor--hover,
+                    #{$o-navbar-entry-bg--hover}
+                );
+            }
+
+            &:focus {
+                background: var(
+                    --NavBar-entry-backgroundColor--focus,
+                    #{$o-navbar-entry-bg--hover}
+                );
+            }
+
+            &:active {
+                background: var(
+                    --NavBar-entry-backgroundColor--active,
+                    #{$o-navbar-entry-bg--active}
+                );
+            }
+        }
+
+        .dropdown.show.dropdown-toggle {
+            border-color: var(--NavBar-entry-borderColor-active, transparent);
+            background: var(
+                --NavBar-entry-backgroundColor--active,
+                #{$o-navbar-entry-bg--active}
+            );
+            color: var(
+                --NavBar-entry-color--active,
+                var(--o-navbar-entry-color--active, #{$o-navbar-entry-color--active})
+            );
+        }
+    }
+
+    .dropdown-header.dropdown-menu_group {
+        margin-top: 0;
+    }
+
+    .dropdown-item + .dropdown-header:not(.o_more_dropdown_section_group) {
+        margin-top: 0.3em;
+    }
+
+    .o_dropdown_menu_group_entry.dropdown-item {
+        padding-left: $o-dropdown-hpadding * 1.5;
+
+        + .dropdown-item:not(.o_dropdown_menu_group_entry) {
+            margin-top: 0.8em;
+        }
+    }
+
+    .o_navbar_apps_menu .dropdown-toggle {
+        --NavBar-entry-padding-left: #{$o-horizontal-padding};
+
+        @extend %-main-navbar-entry-base;
+        font-size: $o-navbar-brand-font-size;
+    }
+
+    .o_menu_brand {
+        @extend %-main-navbar-entry-base;
+        @extend %-main-navbar-entry-spacing;
+        padding-left: 0;
+        font-size: $o-navbar-brand-font-size;
+
+        &:hover {
+            background: none;
+        }
+    }
+
+    .o_menu_brand,
+    .o_navbar_breadcrumbs,
+    .o_navbar_breadcrumbs .btn {
+        color: var(
+            --NavBar-brand-color,
+            var(--o-navbar-brand-color, #{$o-navbar-brand-color})
+        );
+    }
+
+    // "Odoo · App": the app's name in its accent, which the server made
+    // readable on the bar in either scheme
+    .o_menu_wordmark_prefix {
+        display: flex;
+        align-items: center;
+        font-size: $o-navbar-brand-font-size;
+        font-weight: 600;
+        color: var(
+            --NavBar-brand-color,
+            var(--o-navbar-brand-color, #{$o-navbar-brand-color})
+        );
+
+        .o_menu_wordmark_dot {
+            margin-inline: 0.35em;
+            opacity: 0.5;
+        }
+    }
+
+    .o_menu_toggle .o_menu_brand {
+        font-weight: 600;
+        color: var(
+            --o-app-accent,
+            var(
+                --NavBar-brand-color,
+                var(--o-navbar-brand-color, #{$o-navbar-brand-color})
+            )
+        );
+    }
+
+    .o_menu_sections {
+        .o_more_dropdown_section_group {
+            margin-top: 0.8em;
+
+            &:first-child {
+                margin-top: $dropdown-padding-y * -1;
+                padding-top: $dropdown-padding-y * 1.5;
+            }
+        }
+    }
+
+    .o_menu_systray {
+        --NavBar-entry-padding-left: #{$o-navbar-entry-padding-h * 0.5};
+        --NavBar-entry-padding-right: #{$o-navbar-entry-padding-h * 0.5};
+
+        .badge {
+            margin-right: -0.5em;
+            border: 0;
+            padding: ($o-navbar-badge-padding * 0.5) $o-navbar-badge-padding;
+            background-color: var(--o-navbar-badge-bg, #{$o-navbar-badge-bg});
+            font-size: $o-navbar-badge-size;
+            color: var(
+                --o-navbar-badge-color,
+                #{o-token(--o-on-danger, $o-navbar-badge-color)}
+            );
+            text-shadow: var(
+                --o-navbar-badge-text-shadow,
+                #{$o-navbar-badge-text-shadow}
+            );
+            transform: translate(-0.6em, -30%);
+        }
+    }
+}
+
+body.o_is_superuser .o_menu_systray {
+    border-image: repeating-linear-gradient(
+            135deg,
+            #d9b904,
+            #d9b904 10px,
+            #373435 10px,
+            #373435 20px
+        )
+        2;
+    border-image-width: map-get($border-widths, 2);
+    border-image-outset: map-get($border-widths, 5);
+}
+
+@include o-publish-per-scheme using ($-scheme, $-ramp, $-record-colors) {
+    $-dark: map-get($-scheme, "dark");
+
+    --o-navbar-entry-color: #{if(
+            $-dark,
+            $o-dark-navbar-entry-color,
+            $o-navbar-entry-color
+        )};
+    --o-navbar-entry-color--hover: #{if(
+            $-dark,
+            $o-dark-navbar-entry-color--hover,
+            $o-navbar-entry-color--hover
+        )};
+    --o-navbar-entry-bg--hover: #{if(
+            $-dark,
+            $o-dark-navbar-entry-bg--hover,
+            $o-navbar-entry-bg--hover
+        )};
+    --o-navbar-entry-color--active: #{if(
+            $-dark,
+            $o-dark-navbar-entry-color--active,
+            $o-navbar-entry-color--active
+        )};
+    --o-navbar-background: #{if(
+            $-dark,
+            $o-dark-navbar-background,
+            $o-navbar-background
+        )};
+    --o-navbar-brand-color: #{if(
+            $-dark,
+            $o-dark-navbar-brand-color,
+            $o-navbar-brand-color
+        )};
+    --o-navbar-badge-bg: #{if($-dark, $o-dark-navbar-badge-bg, $o-navbar-badge-bg)};
+    --o-navbar-badge-text-shadow: #{if(
+            $-dark,
+            $o-dark-navbar-badge-text-shadow,
+            $o-navbar-badge-text-shadow
+        )};
+}
+
+@include media-only(screen) {
+    :root[data-color-scheme="dark"] .o_main_navbar {
+        --o-ring-color: #{o-ring-color-for(
+                $o-dark-navbar-background,
+                $o-dark-ring-color,
+                o-dark-scheme()
+            )};
+
+        --o-navbar-badge-color: #{$o-dark-black};
+        --o-navbar-badge-text-shadow: none;
+        --NavBar-menuToggle-color: #{$o-dark-black};
+        --NavBar-brand-color: #{$o-dark-black};
+        --NavBar-entry-borderColor-active: transparent;
+        --NavBar-entry-backgroundColor--active: #{$o-navbar-entry-bg--active};
+        --NavBar-entry-backgroundColor--hover: #{$o-dark-navbar-entry-bg--hover};
+        --NavBar-entry-backgroundColor--focus: #{$o-dark-navbar-entry-bg--hover};
+    }
+}

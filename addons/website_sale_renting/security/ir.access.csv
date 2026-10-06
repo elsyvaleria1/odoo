@@ -1,0 +1,5 @@
+id,name,model_id/id,group_id/id,kind,operation,reach,anchor,domain
+product_template_public_group_public,Public product template,product.model_product_template,base.group_public,permission,r,all,,"['&', ('website_published', '=', True), ('rent_ok', '=', True)]"
+product_template_public_group_portal,Public product template,product.model_product_template,base.group_portal,permission,r,all,,"['&', ('website_published', '=', True), ('rent_ok', '=', True)]"
+access_product_pricing_public_public,product.pricing.public,sale_renting.model_product_pricing,base.group_public,permission,r,,,
+access_product_pricing_public_portal,product.pricing.public,sale_renting.model_product_pricing,base.group_portal,permission,r,,,

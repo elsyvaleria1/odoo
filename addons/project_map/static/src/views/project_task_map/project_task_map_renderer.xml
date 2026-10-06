@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates>
+    <t t-name="project_map.ProjectTaskMapRenderer" t-inherit="web_map.MapRenderer" t-inherit-mode="primary"/>
+    <t t-name="project_map.ProjectTaskMapRenderer.PinListItems" t-inherit="web_map.MapRenderer.PinListItems" t-inherit-mode="primary">
+        <xpath expr="//t[@t-foreach='records']" position="before">
+            <p t-if="!records.length" class="fst-italic text-muted">View customer locations for your tasks</p>
+        </xpath>
+    </t>
+</templates>

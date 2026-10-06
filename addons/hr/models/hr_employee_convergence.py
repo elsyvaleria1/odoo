@@ -1,0 +1,144 @@
+from odoo import api, models
+from odoo.libs.debug_log import DebugLog
+
+_debug = DebugLog(__name__)
+
+
+class HrEmployee(models.Model):
+    _inherit = "hr.employee"
+
+    @_debug.perf.timed
+    @api.model
+    def report_party_convergence(self):
+        report = {
+            "total": 0,
+            "already_converged": 0,
+            "no_user": 0,
+            "no_work_contact": 0,
+            "divergent": 0,
+            "misparented_home": [],
+            "conflicting": [],
+            "safe_to_merge": [],
+        }
+        fields_to_compare = ("email", "street", "city", "zip")
+
+        for employee in self.sudo().with_context(active_test=False).search([]):
+            report["total"] += 1
+            contact = employee.partner_id
+            home = employee.private_address_id
+            if home and contact and home.parent_id != contact:
+                report["misparented_home"].append(employee.id)
+            user_partner = employee.user_id.partner_id
+            if not contact:
+                report["no_work_contact"] += 1
+                continue
+            if not user_partner:
+                report["no_user"] += 1
+                continue
+            if contact == user_partner:
+                report["already_converged"] += 1
+                continue
+
+            report["divergent"] += 1
+            clashes = {
+                name: (contact[name], user_partner[name])
+                for name in fields_to_compare
+                if contact[name]
+                and user_partner[name]
+                and contact[name] != user_partner[name]
+            }
+            contact_numbers = set(contact.phone_ids.mapped("sanitized"))
+            user_numbers = set(user_partner.phone_ids.mapped("sanitized"))
+            if contact_numbers and user_numbers and contact_numbers != user_numbers:
+                clashes["phone_ids"] = (
+                    sorted(contact_numbers),
+                    sorted(user_numbers),
+                )
+            entry = {
+                "employee": employee.display_name,
+                "employee_id": employee.id,
+                "work_contact": (contact.id, contact.display_name),
+                "user_partner": (user_partner.id, user_partner.display_name),
+                "clashes": clashes,
+            }
+            if clashes:
+                report["conflicting"].append(entry)
+            else:
+                report["safe_to_merge"].append(entry)
+        _debug.logic(
+            "party_convergence_report",
+            total=report["total"],
+            converged=report["already_converged"],
+            no_user=report["no_user"],
+            no_work_contact=report["no_work_contact"],
+            divergent=report["divergent"],
+            mergeable=len(report["safe_to_merge"]),
+            conflicting=len(report["conflicting"]),
+            misparented_home=len(report["misparented_home"]),
+        )
+        return report
+
+    @api.model
+    def print_party_convergence(self) -> str:
+        r = self.report_party_convergence()
+        lines = [
+            "employees                : %s" % r["total"],
+            "  already one partner    : %s" % r["already_converged"],
+            "  no login user          : %s" % r["no_user"],
+            "  no work contact        : %s" % r["no_work_contact"],
+            "  two partners, divergent: %s" % r["divergent"],
+            "      of those, mergeable: %s" % len(r["safe_to_merge"]),
+            "      needing a decision : %s" % len(r["conflicting"]),
+            "  home not under contact : %s" % len(r["misparented_home"]),
+        ]
+        for entry in r["conflicting"]:
+            lines.append("")
+            lines.append(
+                "  %s (employee %s)" % (entry["employee"], entry["employee_id"])
+            )
+            lines.append("    work contact %s: %s" % entry["work_contact"])
+            lines.append("    user partner %s: %s" % entry["user_partner"])
+            for name, (left, right) in entry["clashes"].items():
+                lines.append("      %-8s %r vs %r" % (name, left, right))
+        return "\n".join(lines)
+
+    @_debug.perf.timed
+    @api.model
+    def converge_party_rows(self, limit=None) -> dict:
+        report = self.report_party_convergence()
+        self.browse(report["misparented_home"])._reparent_private_address()
+        entries = report["safe_to_merge"][: limit or None]
+        _debug.pipeline(
+            "party_convergence",
+            homes_reparented=len(report["misparented_home"]),
+            merging=len(entries),
+            mergeable=len(report["safe_to_merge"]),
+            limit=limit,
+        )
+        Merge = self.env["wizard.res.partner.merge"].sudo()
+
+        merged = []
+        for entry in entries:
+            employee = self.browse(entry["employee_id"])
+            work_contact = employee.sudo().partner_id
+            user_partner = employee.sudo().user_id.partner_id
+            if not work_contact or not user_partner or work_contact == user_partner:
+                _debug.logic(
+                    "party_merge_skipped",
+                    employee=employee.id,
+                    reason="already_converged",
+                )
+                continue
+            _debug.pipeline(
+                "party_merging",
+                employee=employee.id,
+                work_contact=work_contact.id,
+                user_partner=user_partner.id,
+            )
+            Merge._merge([work_contact.id, user_partner.id], dst_partner=user_partner)
+            merged.append(entry["employee_id"])
+
+        return {
+            "merged": merged,
+            "left_for_a_human": [e["employee_id"] for e in report["conflicting"]],
+        }

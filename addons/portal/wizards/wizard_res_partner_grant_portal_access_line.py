@@ -1,0 +1,305 @@
+from odoo import Command, api, fields, models
+from odoo.exceptions import UserError
+from odoo.libs.debug_log import DebugLog
+from odoo.tools import email_normalize
+
+_debug = DebugLog(__name__)
+
+
+class WizardResPartnerGrantPortalAccessLine(models.TransientModel):
+    _name = "wizard.res.partner.grant.portal.access.line"
+    _description = "Portal User Config"
+
+    wizard_id = fields.Many2one(
+        comodel_name="wizard.res.partner.grant.portal.access",
+        required=True,
+        ondelete="cascade",
+    )
+    partner_id = fields.Many2one(
+        comodel_name="res.partner",
+        string="Contact",
+        readonly=True,
+        required=True,
+        ondelete="cascade",
+    )
+    email = fields.Char()
+
+    user_id = fields.Many2one(
+        comodel_name="res.users",
+        compute="_compute_user_id",
+        compute_sudo=True,
+    )
+    login_date = fields.Datetime(
+        related="user_id.login_date",
+        string="Latest Authentication",
+    )
+    is_portal = fields.Boolean(compute="_compute_group_details")
+    is_internal = fields.Boolean(compute="_compute_group_details")
+    email_state = fields.Selection(
+        selection=[("ok", "Valid"), ("ko", "Invalid"), ("exist", "Already Registered")],
+        string="Status",
+        compute="_compute_email_state",
+    )
+
+    @api.depends("email", "user_id")
+    def _compute_email_state(self) -> None:
+        portal_users_with_email = self.filtered(
+            lambda user: email_normalize(user.email)
+        )
+        (self - portal_users_with_email).email_state = "ko"
+
+        if not portal_users_with_email:
+            return
+
+        existing_users = (
+            self.env["res.users"]
+            .with_context(active_test=False)
+            .sudo()
+            .search_read(
+                self._get_domain_similar_users(portal_users_with_email),
+                self._get_fields_similar_users(),
+            )
+        )
+        for portal_user in portal_users_with_email:
+            if any(
+                self._is_portal_similar_than_user(user, portal_user)
+                for user in existing_users
+            ):
+                portal_user.email_state = "exist"
+            else:
+                portal_user.email_state = "ok"
+
+    @api.depends("partner_id")
+    def _compute_user_id(self) -> None:
+        for portal_wizard_user in self:
+            user = portal_wizard_user.partner_id.with_context(
+                active_test=False
+            ).user_ids
+            portal_wizard_user.user_id = user[0] if user else False
+
+    @api.depends("user_id", "user_id.active", "user_id.group_ids")
+    def _compute_group_details(self) -> None:
+        for portal_wizard_user in self:
+            user = portal_wizard_user.user_id
+
+            if user and user._is_internal():
+                portal_wizard_user.is_internal = True
+                portal_wizard_user.is_portal = False
+            elif user and user.active and user._is_portal():
+                portal_wizard_user.is_internal = False
+                portal_wizard_user.is_portal = True
+            else:
+                portal_wizard_user.is_internal = False
+                portal_wizard_user.is_portal = False
+
+    def action_grant_access(self):
+        self.check_singleton()
+        self._invalidate_user_state()
+        self._assert_user_email_uniqueness()
+
+        if self.is_portal or self.is_internal:
+            _debug.logic(
+                "grant_access_refused",
+                reason="already_has_access",
+                partner=self.partner_id.id,
+            )
+            raise UserError(
+                self.env._(
+                    'The partner "%s" already has the portal access.',
+                    self.partner_id.name,
+                )
+            )
+
+        group_portal = self.env.ref("base.group_portal")
+        group_public = self.env.ref("base.group_public")
+
+        self._update_partner_email()
+        user_sudo = self.user_id.sudo()
+
+        if not user_sudo:
+            company = self.partner_id.company_id or self.env.company
+            user_sudo = self.sudo().with_company(company.id)._create_user()
+            _debug.lifecycle(
+                "portal_user_created",
+                partner=self.partner_id.id,
+                user=user_sudo.id,
+                company=company.id,
+            )
+
+        self.user_id = user_sudo
+
+        user_sudo.active = True
+        grants = user_sudo.env["res.users.grant"]
+        grants._revoke(user_sudo, group_public, reason="portal access granted")
+        grants._grant(
+            user_sudo,
+            group_portal,
+            cause="provisioning",
+            cause_ref=self.partner_id,
+            reason="portal access granted",
+        )
+        user_sudo.partner_id.signup_prepare()
+
+        _debug.lifecycle(
+            "portal_access_granted", partner=self.partner_id.id, user=user_sudo.id
+        )
+        self.with_context(active_test=True)._send_email()
+
+        return self.action_refresh_modal()
+
+    def action_revoke_access(self):
+        self.check_singleton()
+        self._invalidate_user_state()
+        if not self.is_portal:
+            _debug.logic(
+                "revoke_access_refused",
+                reason="no_portal_access",
+                partner=self.partner_id.id,
+            )
+            raise UserError(
+                self.env._(
+                    'The partner "%s" has no portal access or is internal.',
+                    self.partner_id.name,
+                )
+            )
+
+        self._update_partner_email()
+
+        self.partner_id.sudo().signup_type = None
+
+        user_sudo = self.user_id.sudo()
+
+        if user_sudo and user_sudo._is_portal():
+            _debug.lifecycle(
+                "portal_access_revoked",
+                partner=self.partner_id.id,
+                user=user_sudo.id,
+            )
+            user_sudo.write({"active": False})
+
+        return self.action_refresh_modal()
+
+    def action_invite_again(self):
+        self.check_singleton()
+        self._invalidate_user_state()
+        self._assert_user_email_uniqueness()
+
+        if not self.is_portal:
+            _debug.logic(
+                "invite_refused", reason="no_portal_access", partner=self.partner_id.id
+            )
+            raise UserError(
+                self.env._(
+                    'You should first grant the portal access to the partner "%s".',
+                    self.partner_id.name,
+                )
+            )
+
+        self._update_partner_email()
+        _debug.lifecycle("portal_invite_resent", partner=self.partner_id.id)
+        self.with_context(active_test=True)._send_email()
+
+        return self.action_refresh_modal()
+
+    def action_refresh_modal(self):
+        self._invalidate_user_state()
+        return self.wizard_id._action_view_modal()
+
+    def _invalidate_user_state(self) -> None:
+        # Transient-model dependencies stop at persistent models. Re-read account
+        # state before authorizing an action and after changing the account.
+        self.invalidate_recordset(
+            ["user_id", "login_date", "email_state", "is_portal", "is_internal"]
+        )
+
+    def _create_user(self):
+        return (
+            self.env["res.users"]
+            .with_context(no_reset_password=True)
+            ._create_user_from_template(
+                {
+                    "email": email_normalize(self.email),
+                    "login": email_normalize(self.email),
+                    "partner_id": self.partner_id.id,
+                    "company_id": self.env.company.id,
+                    "company_ids": [Command.set(self.env.company.ids)],
+                }
+            )
+        )
+
+    def _send_email(self):
+        self.check_singleton()
+
+        template = self.env.ref(
+            "auth_signup.portal_set_password_email", raise_if_not_found=False
+        )
+        if not template:
+            _debug.logic("portal_invite_refused", reason="no_template")
+            raise UserError(
+                self.env._(
+                    'The template "Portal: new user" not found for sending email to the portal user.'
+                )
+            )
+
+        lang = self.user_id.sudo().lang
+        partner = self.user_id.sudo().partner_id
+        partner.signup_prepare()
+
+        template.with_context(
+            dbname=self.env.cr.dbname,
+            lang=lang,
+            welcome_message=self.wizard_id.welcome_message,
+            medium="portalinvite",
+        ).send_mail(self.user_id.id, force_send=True)
+
+        _debug.lifecycle("portal_invite_sent", user=self.user_id.id, lang=lang or None)
+        return True
+
+    def _assert_user_email_uniqueness(self) -> None:
+        self.check_singleton()
+        if self.email_state == "ko":
+            _debug.logic(
+                "portal_email_refused", reason="invalid", partner=self.partner_id.id
+            )
+            raise UserError(
+                self.env._(
+                    'The contact "%s" does not have a valid email.',
+                    self.partner_id.name,
+                )
+            )
+        if self.email_state == "exist":
+            _debug.logic(
+                "portal_email_refused", reason="taken", partner=self.partner_id.id
+            )
+            raise UserError(
+                self.env._(
+                    'The contact "%s" has the same email as an existing user',
+                    self.partner_id.name,
+                )
+            )
+
+    def _update_partner_email(self) -> None:
+        self.check_singleton()
+        email_normalized = email_normalize(self.email)
+        if (
+            self.email_state == "ok"
+            and email_normalize(self.partner_id.email) != email_normalized
+        ):
+            _debug.lifecycle("partner_email_updated", partner=self.partner_id.id)
+            self.partner_id.write({"email": email_normalized})
+
+    def _get_domain_similar_users(self, portal_users_with_email):
+        normalized_emails = [
+            email_normalize(portal_user.email)
+            for portal_user in portal_users_with_email
+        ]
+        return [("login", "in", normalized_emails)]
+
+    def _get_fields_similar_users(self):
+        return ["id", "login"]
+
+    def _is_portal_similar_than_user(self, user, portal_user) -> bool:
+        return (
+            user["login"] == email_normalize(portal_user.email)
+            and user["id"] != portal_user.user_id.id
+        )

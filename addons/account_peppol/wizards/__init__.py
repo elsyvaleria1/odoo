@@ -1,0 +1,5 @@
+from . import wizard_account_move_send
+from . import wizard_account_move_send_batch
+from . import wizard_account_peppol_config_register
+from . import wizard_account_peppol_config_update_contact_service
+from . import wizard_account_peppol_config_update_contact

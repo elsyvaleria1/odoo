@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="stock_picking_unbatch_reason_view_list_trace" model="ir.ui.view">
+        <field name="name">stock.picking.unbatch.reason.list.trace</field>
+        <field name="model">stock.picking.unbatch.reason</field>
+        <field
+            name="inherit_id"
+            ref="stock_fleet.stock_picking_unbatch_reason_view_list" />
+        <field name="arch" type="xml">
+            <field name="accountable" position="after">
+                <field name="scope" />
+                <field name="goods_on_board" />
+                <field name="creates_backorder" />
+            </field>
+        </field>
+    </record>
+
+    <record id="stock_picking_type_view_form_trace" model="ir.ui.view">
+        <field name="name">stock.picking.type.form.trace</field>
+        <field name="model">stock.picking.type</field>
+        <field name="inherit_id" ref="stock_fleet.view_picking_type_form_trip" />
+        <field name="arch" type="xml">
+            <field name="dispatch_batch_required" position="after">
+                <field
+                    name="trip_trace"
+                    invisible="code != 'outgoing' or not dispatch_management" />
+            </field>
+        </field>
+    </record>
+
+</odoo>

@@ -1,0 +1,40 @@
+{
+    "name": "Asset Depreciation",
+    "version": "1.8",
+    "oldest_upgradable_version": "1.8",
+    "category": "Accounting/Accounting",
+    "sequence": 32,
+    "summary": "Manage asset depreciation boards and their accounting entries",
+    "description": "Create depreciation boards linked to resource assets and generate their depreciation journal entries. Includes depreciation profiles, board adjustments and asset accounting reports; asset identity and lifecycle are supplied by Resource Assets.",
+    "author": "Odoo S.A.",
+    "license": "OEEL-1",
+    "depends": [
+        "account",
+        "resource_asset",
+    ],
+    "data": [
+        "security/ir.access.csv",
+        "data/resource_asset_kind_data.xml",
+        "wizards/wizard_account_depreciation_board_update_views.xml",
+        "views/account_account_views.xml",
+        "views/account_asset_views.xml",
+        "views/account_asset_group_views.xml",
+        "views/account_depreciation_profile_views.xml",
+        "views/account_move_views.xml",
+        "data/asset_export_template.xml",
+        "data/assets_report.xml",
+        "data/account_report_actions.xml",
+        "data/account_return_check_template.xml",
+        "data/menuitems.xml",
+    ],
+    "demo": [
+        "demo/account_asset_demo.xml",
+    ],
+    "assets": {
+        "web.assets_backend": [
+            "account_depreciation/static/src/scss/account_asset.scss",
+            "account_depreciation/static/src/components/**/*",
+        ],
+    },
+    "post_init_hook": "post_init_hook",
+}

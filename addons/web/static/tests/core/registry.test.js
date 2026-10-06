@@ -1,0 +1,507 @@
+// @ts-check
+
+import { describe, expect, mockSendBeacon, test } from "@odoo/hoot";
+import { Component, t, useProps, xml } from "@odoo/owl";
+import {
+    clearRegistry,
+    mountWithCleanup,
+    patchWithCleanup,
+    registerRegistryForCleanup,
+    restoreRegistry,
+    serverState,
+} from "@web/../tests/web_test_helpers";
+import { Registry, useRegistry } from "@web/core/registry";
+
+describe.current.tags("headless");
+
+test("key set and get", () => {
+    const registry = new Registry();
+    const foo = {};
+
+    registry.add("foo", foo);
+
+    expect(registry.get("foo")).toBe(foo);
+});
+
+test("can set and get falsy values", () => {
+    const registry = new Registry();
+    registry.add("foo1", false);
+    registry.add("foo2", 0);
+    registry.add("foo3", "");
+    registry.add("foo4", undefined);
+    registry.add("foo5", null);
+
+    expect(registry.get("foo1")).toBe(false);
+    expect(registry.get("foo2")).toBe(0);
+    expect(registry.get("foo3")).toBe("");
+    expect(registry.get("foo4")).toBe(undefined);
+    expect(registry.get("foo5")).toBe(null);
+});
+
+test("can set and get falsy values with default value", () => {
+    const registry = new Registry();
+    registry.add("foo1", false);
+    registry.add("foo2", 0);
+    registry.add("foo3", "");
+    registry.add("foo4", undefined);
+    registry.add("foo5", null);
+
+    expect(registry.get("foo1", 1)).toBe(false);
+    expect(registry.get("foo2", 1)).toBe(0);
+    expect(registry.get("foo3", 1)).toBe("");
+    expect(registry.get("foo4", 1)).toBe(undefined);
+    expect(registry.get("foo5", 1)).toBe(null);
+});
+
+test("can get a default value when missing key", () => {
+    const registry = new Registry();
+
+    expect(registry.get("missing", "default")).toBe("default");
+    expect(registry.get("missing", null)).toBe(null);
+    expect(registry.get("missing", false)).toBe(false);
+});
+
+test("throws if key is missing", () => {
+    const registry = new Registry();
+    expect(() => registry.get("missing")).toThrow();
+});
+
+test("missing-key error names an unnamed (root) registry with a fallback label", () => {
+    const registry = new Registry();
+    expect(() => registry.get("missing")).toThrow(/in the "\(root\)" registry/);
+
+    const named = new Registry("myreg");
+    expect(() => named.get("missing")).toThrow(/in the "myreg" registry/);
+});
+
+test("contains method", () => {
+    const registry = new Registry();
+
+    registry.add("foo", 1);
+
+    expect(registry.contains("foo")).toBe(true);
+    expect(registry.contains("bar")).toBe(false);
+});
+
+test("can set and get a value, with an order arg", () => {
+    const registry = new Registry();
+    const foo = {};
+
+    registry.add("foo", foo, { sequence: 24 });
+
+    expect(registry.get("foo")).toBe(foo);
+});
+
+test("can get ordered list of elements", () => {
+    const registry = new Registry();
+
+    registry
+        .add("foo1", "foo1", { sequence: 1 })
+        .add("foo2", "foo2", { sequence: 2 })
+        .add("foo5", "foo5", { sequence: 5 })
+        .add("foo3", "foo3", { sequence: 3 });
+
+    expect(registry.getAll()).toEqual(["foo1", "foo2", "foo3", "foo5"]);
+});
+
+test("equal sequences keep insertion order, even for integer-like keys", () => {
+    const registry = new Registry();
+    registry
+        .add("10", "v10", { sequence: 50 })
+        .add("2", "v2", { sequence: 50 })
+        .add("foo", "vfoo", { sequence: 50 });
+    expect(registry.getAll()).toEqual(["v10", "v2", "vfoo"]);
+    expect(registry.getEntries().map((e) => e[0])).toEqual(["10", "2", "foo"]);
+});
+
+test("can get ordered list of entries", () => {
+    const registry = new Registry();
+
+    registry
+        .add("foo1", "foo1", { sequence: 1 })
+        .add("foo2", "foo2", { sequence: 2 })
+        .add("foo5", "foo5", { sequence: 5 })
+        .add("foo3", "foo3", { sequence: 3 });
+
+    expect(registry.getEntries()).toEqual([
+        ["foo1", "foo1"],
+        ["foo2", "foo2"],
+        ["foo3", "foo3"],
+        ["foo5", "foo5"],
+    ]);
+});
+
+test("getAll and getEntries return frozen cached arrays", () => {
+    const registry = new Registry();
+
+    registry.add("foo1", "foo1");
+
+    const all = registry.getAll();
+    const entries = registry.getEntries();
+
+    expect(all).toEqual(["foo1"]);
+    expect(entries).toEqual([["foo1", "foo1"]]);
+
+    expect(() => /** @type {any[]} */ (all).push("foo2")).toThrow();
+    expect(() => /** @type {any[]} */ (entries).push(["foo2", "foo2"])).toThrow();
+
+    expect(registry.getAll()).toEqual(["foo1"]);
+    expect(registry.getEntries()).toEqual([["foo1", "foo1"]]);
+});
+
+test("getAll and getEntries return the same cached reference", () => {
+    const registry = new Registry();
+    registry.add("a", 1);
+
+    expect(registry.getAll()).toBe(registry.getAll());
+    expect(registry.getEntries()).toBe(registry.getEntries());
+
+    const prev = registry.getAll();
+    registry.add("b", 2);
+    expect(registry.getAll()).not.toBe(prev);
+});
+
+test("getAll/getEntries: callers can spread for mutable copy", () => {
+    const registry = new Registry();
+    registry.add("b", "b", { sequence: 2 });
+    registry.add("a", "a", { sequence: 1 });
+
+    const sorted = [...registry.getAll()];
+    expect(() => sorted.reverse()).not.toThrow();
+    expect(sorted).toEqual(["b", "a"]);
+
+    expect(registry.getAll()).toEqual(["a", "b"]);
+});
+
+test("can override element with sequence", () => {
+    const registry = new Registry();
+
+    registry
+        .add("foo1", "foo1", { sequence: 1 })
+        .add("foo2", "foo2", { sequence: 2 })
+        .add("foo1", "foo3", { force: true });
+
+    expect(registry.getEntries()).toEqual([
+        ["foo1", "foo3"],
+        ["foo2", "foo2"],
+    ]);
+});
+
+test("can override element with sequence 2 ", () => {
+    const registry = new Registry();
+
+    registry
+        .add("foo1", "foo1", { sequence: 1 })
+        .add("foo2", "foo2", { sequence: 2 })
+        .add("foo1", "foo3", { force: true, sequence: 3 });
+
+    expect(registry.getEntries()).toEqual([
+        ["foo2", "foo2"],
+        ["foo1", "foo3"],
+    ]);
+});
+
+test("force-replacing preserves sequence 0", () => {
+    const registry = new Registry();
+
+    registry.add("first", "a", { sequence: 0 }).add("second", "b", { sequence: 1 });
+
+    registry.add("first", "a2", { force: true });
+
+    expect(registry.getEntries()).toEqual([
+        ["first", "a2"],
+        ["second", "b"],
+    ]);
+});
+
+test("force-replacing keeps the entry's position among equal-sequence peers", () => {
+    const registry = new Registry();
+
+    registry.add("a", "a1").add("b", "b1").add("c", "c1");
+
+    registry.add("a", "a2", { force: true });
+
+    expect(registry.getEntries()).toEqual([
+        ["a", "a2"],
+        ["b", "b1"],
+        ["c", "c1"],
+    ]);
+    expect(registry.getAll()).toEqual(["a2", "b1", "c1"]);
+});
+
+test("contains is not fooled by Object.prototype keys", () => {
+    const registry = new Registry();
+
+    expect(registry.contains("constructor")).toBe(false);
+    expect(registry.contains("toString")).toBe(false);
+    expect(registry.contains("hasOwnProperty")).toBe(false);
+    expect(registry.contains("__proto__")).toBe(false);
+
+    registry.add("constructor", "my-value");
+    expect(registry.contains("constructor")).toBe(true);
+    expect(registry.get("constructor")).toBe("my-value");
+});
+
+test("can recursively open sub registry", () => {
+    const registry = new Registry();
+
+    registry.category("sub").add("a", "b");
+    expect(registry.category("sub").get("a")).toBe("b");
+});
+
+test("can validate the values from a schema", () => {
+    serverState.debug = "1";
+    const schema = t.strictObject({ name: t.string(), age: t.number().optional() });
+    const friendsRegistry = new Registry();
+    friendsRegistry.addValidation(schema);
+    expect(() => friendsRegistry.add("jean", { name: "Jean" })).not.toThrow();
+    expect(friendsRegistry.get("jean")).toEqual({ name: "Jean" });
+    expect(() => friendsRegistry.add("luc", { name: "Luc", age: 32 })).not.toThrow();
+    expect(friendsRegistry.get("luc")).toEqual({ name: "Luc", age: 32 });
+    expect(() => friendsRegistry.add("adrien", { name: 23 })).toThrow();
+    expect(() => friendsRegistry.add("hubert", { age: 54 })).toThrow();
+    expect(() =>
+        friendsRegistry.add("chris", { name: "chris", city: "Namur" }),
+    ).toThrow();
+    expect(() =>
+        friendsRegistry.addValidation(t.strictObject({ something: t.number() })),
+    ).not.toThrow();
+    expect(friendsRegistry.validationSchema).toBe(schema);
+});
+
+test("can validate by adding a schema after the registry is filled", async () => {
+    serverState.debug = "1";
+    const schema = t.strictObject({ name: t.string() });
+    const friendsRegistry = new Registry();
+    expect(() => friendsRegistry.add("jean", { name: 999 })).not.toThrow();
+    expect(() => friendsRegistry.addValidation(schema)).toThrow();
+});
+
+test("can validate subclassess", async () => {
+    serverState.debug = "1";
+    const schema = t.strictObject({
+        component: t.customValidator(
+            t.any(),
+            (/** @type {any} */ c) => c.prototype instanceof Component,
+        ),
+    });
+    const widgetRegistry = new Registry();
+    widgetRegistry.addValidation(schema);
+    class Widget extends Component {
+        props = useProps(this.constructor.props);
+    }
+    expect(() => widgetRegistry.add("calculator", { component: Widget })).not.toThrow(
+        undefined,
+        {
+            message: "Support subclasses",
+        },
+    );
+});
+
+test("function predicate accepts and rejects values", async () => {
+    serverState.debug = "1";
+    const fnRegistry = new Registry();
+    fnRegistry.addValidation((v) => typeof v === "function");
+
+    expect(() => fnRegistry.add("ok", () => 1)).not.toThrow();
+    expect(() => fnRegistry.add("bad", { not: "a function" })).toThrow();
+
+    /** @type {any} */
+    const lenientReg = new Registry();
+    lenientReg.addValidation(() => undefined);
+    expect(() => lenientReg.add("x", "anything")).not.toThrow();
+    expect(() => lenientReg.add("y", null)).not.toThrow();
+});
+
+test("function predicate validates existing entries on addValidation", async () => {
+    serverState.debug = "1";
+    const fnRegistry = new Registry();
+    expect(() => fnRegistry.add("good", () => 1)).not.toThrow();
+    expect(() => fnRegistry.add("bad", 42)).not.toThrow(undefined, {
+        message: "no schema yet, anything goes",
+    });
+    expect(() => fnRegistry.addValidation((v) => typeof v === "function")).toThrow();
+});
+
+test("non-debug: refuses (quarantines) an invalid entry without throwing", async () => {
+    const schema = t.strictObject({ name: t.string() });
+    const registry = new Registry();
+    registry.addValidation(schema);
+
+    /** @type {any[][]} */
+    const warnings = [];
+    patchWithCleanup(console, {
+        warn: (...args) => warnings.push(args),
+    });
+
+    expect(() => registry.add("jean", { name: 50 })).not.toThrow();
+    expect(warnings.length).toBe(1);
+    expect(warnings[0][0]).toInclude("[registry]");
+    expect(warnings[0][0]).toInclude(`Validation error for key "jean"`);
+    expect(registry.contains("jean")).toBe(false);
+    expect(() => registry.get("jean")).toThrow();
+    registry.add("jean", { name: "Jean" });
+    expect(registry.get("jean")).toEqual({ name: "Jean" });
+});
+
+test("non-debug: a quarantined invalid entry beacons the anomaly (observability)", async () => {
+    /** @type {any[]} */
+    const calls = [];
+    mockSendBeacon((url, blob) => {
+        calls.push({ url, blob });
+        return true;
+    });
+    patchWithCleanup(console, { warn: () => {} });
+
+    const registry = new Registry("registry_beacon_probe");
+    registry.addValidation(t.strictObject({ name: t.string() }));
+    registry.add("bad_entry", { name: 50 });
+
+    expect(registry.contains("bad_entry")).toBe(false);
+    expect(calls).toHaveLength(1);
+    const payload = JSON.parse(await calls[0].blob.text());
+    expect(payload.message).toInclude("[registry]");
+    expect(payload.message).toInclude(`Validation error for key "bad_entry"`);
+    expect(payload.filename).toBe("@web/core/registry");
+});
+
+test("non-debug: a duplicate add with a different value beacons the anomaly (observability)", async () => {
+    /** @type {any[]} */
+    const calls = [];
+    mockSendBeacon((url, blob) => {
+        calls.push({ url, blob });
+        return true;
+    });
+    patchWithCleanup(console, { warn: () => {} });
+
+    const registry = new Registry("registry_collision_probe");
+    registry.add("colliding_key", "first");
+    registry.add("colliding_key", "second");
+
+    expect(registry.get("colliding_key")).toBe("first");
+    expect(calls).toHaveLength(1);
+    const payload = JSON.parse(await calls[0].blob.text());
+    expect(payload.message).toInclude("[registry]");
+    expect(payload.message).toInclude(`Duplicate add for key "colliding_key"`);
+    expect(payload.message).toInclude(`"registry_collision_probe" registry`);
+    expect(payload.filename).toBe("@web/core/registry");
+});
+
+test("non-debug: addValidation retroactively quarantines invalid existing entries", async () => {
+    const registry = new Registry();
+    registry.add("good", { name: "ok" });
+    registry.add("bad", { name: 123 });
+    patchWithCleanup(console, { warn: () => {} });
+
+    expect(() =>
+        registry.addValidation(t.strictObject({ name: t.string() })),
+    ).not.toThrow();
+    expect(registry.contains("good")).toBe(true);
+    expect(registry.contains("bad")).toBe(false);
+});
+
+test("useRegistry: additions after a local splice keep sequence order", async () => {
+    const testRegistry = new Registry();
+    testRegistry.add("a", "A", { sequence: 10 });
+    testRegistry.add("b", "B", { sequence: 20 });
+    testRegistry.add("d", "D", { sequence: 40 });
+
+    /** @type {any} */
+    let state;
+    class MyComponent extends Component {
+        static template = xml`<div/>`;
+        static props = null;
+        props = useProps(this.constructor.props);
+        setup() {
+            state = useRegistry(testRegistry);
+        }
+    }
+    await mountWithCleanup(MyComponent);
+    expect(state.entries.map(([/** @type {any} */ k]) => k)).toEqual(["a", "b", "d"]);
+
+    state.entries.splice(0, 1);
+    expect(state.entries.map(([/** @type {any} */ k]) => k)).toEqual(["b", "d"]);
+
+    testRegistry.add("c", "C", { sequence: 30 });
+    expect(state.entries.map(([/** @type {any} */ k]) => k)).toEqual(["b", "c", "d"]);
+
+    testRegistry.add("e", "E", { sequence: 50 });
+    expect(state.entries.map(([/** @type {any} */ k]) => k)).toEqual([
+        "b",
+        "c",
+        "d",
+        "e",
+    ]);
+});
+
+test("useRegistry: listens from setup time, not onWillStart", async () => {
+    const testRegistry = new Registry();
+    testRegistry.add("a", "A", { sequence: 10 });
+
+    /** @type {any} */
+    let state;
+    class MyComponent extends Component {
+        static template = xml`<div/>`;
+        static props = null;
+        props = useProps(this.constructor.props);
+        setup() {
+            state = useRegistry(testRegistry);
+            testRegistry.add("b", "B", { sequence: 20 });
+        }
+    }
+    await mountWithCleanup(MyComponent);
+    expect(state.entries.map(([/** @type {any} */ k]) => k)).toEqual(["a", "b"]);
+});
+
+test("tests see production first-registration-wins semantics", () => {
+    const registry = new Registry();
+    registry.add("k", "first");
+    registry.add("k", "second");
+    expect(registry.get("k")).toBe("first");
+
+    registry.add("k", "third", { force: true });
+    expect(registry.get("k")).toBe("third");
+});
+
+describe("keys are data, never property names", () => {
+    /** @param {import("@web/core/registry").Registry<any>} reg */
+    function expectNoPrototypeLeak(reg) {
+        for (const member of [
+            "toString",
+            "constructor",
+            "valueOf",
+            "hasOwnProperty",
+            "isPrototypeOf",
+            "propertyIsEnumerable",
+            "toLocaleString",
+        ]) {
+            expect(reg.contains(member)).toBe(false, { message: member });
+            expect(() => reg.get(member)).toThrow(
+                new RegExp(`Cannot find key "${member}"`),
+            );
+        }
+        expect(reg.getEntries()).toHaveLength(reg.contains("real") ? 1 : 0);
+    }
+
+    test("a fresh registry answers for none of Object.prototype", () => {
+        expectNoPrototypeLeak(new Registry("probe"));
+    });
+
+    test("nor does one the test harness has cleared", () => {
+        const reg = new Registry("probe");
+        reg.add("real", 1);
+        clearRegistry(reg);
+        expectNoPrototypeLeak(reg);
+    });
+
+    test("nor one restored from a snapshot", () => {
+        const reg = new Registry("probe");
+        reg.add("real", 1);
+        registerRegistryForCleanup(reg);
+        reg.add("scratch", 2);
+        restoreRegistry(reg);
+        expect(reg.get("real")).toBe(1);
+        expect(reg.contains("scratch")).toBe(false);
+        expectNoPrototypeLeak(reg);
+    });
+});

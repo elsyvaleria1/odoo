@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <menuitem
+        id="sale_menu_root"
+        name="Sales"
+        sequence="30"
+        groups="group_sale_app_menu"
+        web_icon="sale,static/description/icon.png"
+        web_keywords="quotation, quote, sales order, customer order, pricelist, salesperson">
+        <menuitem id="sale_order_menu" name="Orders" sequence="10">
+            <menuitem
+                id="menu_sale_quotations"
+                action="action_quotations_with_onboarding"
+                sequence="10"
+                groups="sale.group_sale_salesman,sale.group_sale_readonly" />
+            <menuitem
+                id="menu_sale_order"
+                name="Orders"
+                action="action_sale_order"
+                sequence="20"
+                groups="sale.group_sale_salesman,sale.group_sale_readonly" />
+            <menuitem
+                id="res_partner_menu"
+                action="account.res_partner_action_customer"
+                sequence="40"
+                groups="sale.group_sale_salesman,sale.group_sale_readonly" />
+        </menuitem>
+        <menuitem
+            id="menu_sale_invoicing"
+            name="To Invoice"
+            sequence="20"
+            groups="sale.group_sale_salesman">
+            <menuitem
+                id="menu_sale_order_invoice"
+                action="action_orders_to_invoice"
+                sequence="10" />
+            <menuitem
+                id="menu_sale_order_upselling"
+                action="action_orders_upselling"
+                sequence="20" />
+        </menuitem>
+        <menuitem
+            id="product_menu_catalog"
+            name="Products"
+            sequence="30"
+            groups="sale.group_sale_salesman,sale.group_sale_readonly">
+            <menuitem
+                id="menu_product_template_action"
+                action="action_product_template"
+                sequence="10" />
+            <menuitem
+                id="menu_products"
+                action="product.product_normal_action_sell"
+                sequence="20"
+                groups="product.group_product_variant" />
+            <menuitem
+                id="menu_product_pricelist_main"
+                name="Pricelists"
+                action="product.action_product_pricelist_2"
+                sequence="30"
+                groups="product.group_product_pricelist" />
+        </menuitem>
+        <menuitem
+            id="menu_sale_report"
+            name="Reporting"
+            sequence="40"
+            groups="sale.group_sale_manager,sale.group_sale_readonly">
+            <menuitem
+                id="menu_reporting_sales"
+                name="Sales"
+                action="action_sale_report_all"
+                sequence="10" />
+            <menuitem
+                id="menu_reporting_salespeople"
+                name="Salespersons"
+                action="action_sale_report_salesperson"
+                sequence="20" />
+            <menuitem
+                id="menu_reporting_product"
+                name="Products"
+                action="action_sale_report_product"
+                sequence="30" />
+            <menuitem
+                id="menu_reporting_customer"
+                name="Customers"
+                action="action_sale_report_customer"
+                sequence="40" />
+        </menuitem>
+        <menuitem
+            id="menu_sale_config"
+            name="Configuration"
+            sequence="50"
+            groups="sale.group_sale_manager">
+            <menuitem
+                id="menu_sale_general_settings"
+                name="Settings"
+                action="action_sale_config_settings"
+                sequence="10"
+                groups="base.group_system" />
+            <menuitem id="menu_sales_config" name="Sales Orders" sequence="30">
+                <menuitem
+                    id="sale_order_template_menu"
+                    name="Quotation Templates"
+                    action="sale_order_template_action"
+                    sequence="1"
+                    groups="group_sale_order_template" />
+                <menuitem
+                    id="menu_loss_reason_sale"
+                    name="Loss Reasons"
+                    action="action_loss_reason_sale"
+                    sequence="20" />
+            </menuitem>
+            <menuitem id="prod_config_main" name="Products" sequence="40">
+                <menuitem
+                    id="menu_product_attribute_action"
+                    action="product.action_product_attribute"
+                    sequence="10"
+                    groups="product.group_product_variant" />
+                <menuitem
+                    id="menu_product_combos"
+                    name="Combo Choices"
+                    action="product.action_product_combo"
+                    sequence="15" />
+                <menuitem
+                    id="menu_product_categories"
+                    action="product.action_product_category"
+                    sequence="20" />
+                <menuitem
+                    id="menu_product_tags"
+                    action="product.action_product_tag"
+                    sequence="30" />
+                <menuitem
+                    id="menu_product_uom_form_action"
+                    name="Units &amp; Packagings"
+                    action="uom.action_uom_uom"
+                    sequence="35"
+                    groups="uom.group_uom" />
+            </menuitem>
+            <menuitem
+                id="payment_menu"
+                name="Online Payments"
+                sequence="45"
+                groups="base.group_system">
+                <menuitem
+                    id="payment_provider_menu"
+                    action="payment.action_payment_provider"
+                    sequence="10" />
+                <menuitem
+                    id="payment_method_menu"
+                    action="payment.action_payment_method"
+                    sequence="20" />
+                <menuitem
+                    id="payment_token_menu"
+                    action="payment.action_payment_token"
+                    sequence="30"
+                    groups="base.group_no_one" />
+                <menuitem
+                    id="payment_transaction_menu"
+                    action="payment.action_payment_transaction"
+                    sequence="40"
+                    groups="base.group_no_one" />
+            </menuitem>
+            <menuitem id="sale_menu_config_activities" name="Activities" sequence="55">
+                <menuitem
+                    id="sale_menu_config_activity_type"
+                    action="mail_activity_type_action_config_sale"
+                    sequence="10"
+                    groups="base.group_no_one" />
+                <menuitem
+                    id="sale_menu_config_activity_plan"
+                    name="Activity Plans"
+                    action="mail_activity_plan_action_sale_order"
+                    sequence="20"
+                    groups="sale.group_sale_manager" />
+            </menuitem>
+        </menuitem>
+    </menuitem>
+
+</odoo>

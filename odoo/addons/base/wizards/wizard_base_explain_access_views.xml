@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="ir_access_explain_view_form" model="ir.ui.view">
+        <field name="name">ir.access.explain.form</field>
+        <field name="model">wizard.base.explain.access</field>
+        <field name="arch" type="xml">
+            <form string="Why Can I See This?">
+                <group>
+                    <field
+                        name="user_id"
+                        options="{'no_create': True}"
+                        groups="base.group_erp_manager" />
+                    <field name="record_ref" />
+                    <field name="operation" />
+                </group>
+                <field
+                    name="explanation"
+                    invisible="not explanation"
+                    class="font-monospace" />
+                <field
+                    name="who_can"
+                    groups="base.group_erp_manager"
+                    invisible="not who_can"
+                    class="font-monospace" />
+                <footer>
+                    <button
+                        name="action_explain"
+                        type="object"
+                        string="Explain"
+                        class="btn-primary" />
+                    <button
+                        name="action_who_can"
+                        type="object"
+                        string="Who Can"
+                        groups="base.group_erp_manager" />
+                    <button special="cancel" string="Close" />
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_ir_access_explain" model="ir.actions.act_window">
+        <field name="name">Why Can I See This?</field>
+        <field name="res_model">wizard.base.explain.access</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+
+</odoo>

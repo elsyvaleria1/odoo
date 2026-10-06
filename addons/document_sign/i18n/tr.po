@@ -1,0 +1,244 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# * documents_sign
+#
+# Translators:
+# Murat Kaplan <muratk@projetgrup.com>, 2022
+# Ertuğrul Güreş <ertugrulg@projetgrup.com>, 2022
+# Umur Akın <umura@projetgrup.com>, 2022
+# Weblate <noreply-mt-weblate@weblate.org>, 2025.
+# DeepL <noreply-mt-deepl@weblate.org>, 2025.
+# Odoo Turkish Import <dyki+tr@odoo.com>, 2025.
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server saas~14.4+e\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-01-30 18:46+0000\n"
+"PO-Revision-Date: 2025-11-21 14:20+0000\n"
+"Last-Translator: Odoo Turkish Import <dyki+tr@odoo.com>\n"
+"Language-Team: Turkish <https://translate.odoo.com/projects/odoo-19/"
+"document_sign/tr/>\n"
+"Language: tr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+"X-Generator: Weblate 5.12.2\n"
+
+#. module: document_sign
+#: model_terms:ir.ui.view,arch_db:document_sign.sign_import_from_documents_view_form
+msgid "Cancel"
+msgstr "İptal"
+
+#. module: document_sign
+#: model:ir.model.fields,field_description:document_sign.field_wizard_sign_template_import_document__create_uid
+msgid "Created by"
+msgstr "Tarafından oluşturuldu"
+
+#. module: document_sign
+#: model:ir.model.fields,field_description:document_sign.field_wizard_sign_template_import_document__create_date
+msgid "Created on"
+msgstr "Oluşturuldu"
+
+#. module: document_sign
+#: model:ir.model.fields,field_description:document_sign.field_document_document__display_name
+#: model:ir.model.fields,field_description:document_sign.field_sign_document__display_name
+#: model:ir.model.fields,field_description:document_sign.field_wizard_sign_template_import_document__display_name
+#: model:ir.model.fields,field_description:document_sign.field_sign_request__display_name
+#: model:ir.model.fields,field_description:document_sign.field_sign_request_item__display_name
+#: model:ir.model.fields,field_description:document_sign.field_sign_template__display_name
+msgid "Display Name"
+msgstr "İsim Göster"
+
+#. module: document_sign
+#: model:ir.model,name:document_sign.model_document_document
+msgid "Document"
+msgstr "Belge"
+
+#. module: document_sign
+#: model_terms:ir.ui.view,arch_db:document_sign.documents_sign_template_form_inherit
+msgid "Documents folder"
+msgstr "Belgeler klasörü"
+
+#. module: document_sign
+#: model_terms:ir.ui.view,arch_db:document_sign.documents_sign_template_form_inherit
+msgid "Documents tags"
+msgstr "Belge etiketleri"
+
+#. module: document_sign
+#: model:document.document,name:document_sign.documents_sign_employment
+msgid "Employment Contract.pdf"
+msgstr "İş Sözleşmesi.pdf"
+
+#. module: document_sign
+#: model_terms:ir.ui.view,arch_db:document_sign.res_config_settings_view_form_inherit_documents_sign
+msgid "Go to Sign Document Templates"
+msgstr "İmzalanacak Belge Şablonlarına Git"
+
+#. module: document_sign
+#: model:ir.model.fields,field_description:document_sign.field_document_document__id
+#: model:ir.model.fields,field_description:document_sign.field_sign_document__id
+#: model:ir.model.fields,field_description:document_sign.field_wizard_sign_template_import_document__id
+#: model:ir.model.fields,field_description:document_sign.field_sign_request__id
+#: model:ir.model.fields,field_description:document_sign.field_sign_request_item__id
+#: model:ir.model.fields,field_description:document_sign.field_sign_template__id
+msgid "ID"
+msgstr "ID"
+
+#. module: document_sign
+#: model_terms:ir.ui.view,arch_db:document_sign.sign_import_from_documents_view_form
+msgid "Import and Sign"
+msgstr "İçe Aktar ve İmzala"
+
+#. module: document_sign
+#. odoo-javascript
+#: code:addons/document_sign/static/src/backend_components/cog_menu/sign_import_documents_cog_menu.js:0
+#: code:addons/document_sign/static/src/backend_components/cog_menu/sign_import_documents_cog_menu.xml:0
+msgid "Import from Documents"
+msgstr "Belgelerden İçe Aktarma"
+
+#. module: document_sign
+#. odoo-javascript
+#: code:addons/document_sign/static/src/backend_components/cog_menu/sign_import_document_cog_menu.xml:0
+msgid "Import from Documents…"
+msgstr "Belgelerden İçe Aktarma…"
+
+#. module: document_sign
+#: model:ir.model.fields,field_description:document_sign.field_wizard_sign_template_import_document__write_uid
+msgid "Last Updated by"
+msgstr "Son Güncelleyen"
+
+#. module: document_sign
+#: model:ir.model.fields,field_description:document_sign.field_wizard_sign_template_import_document__write_date
+msgid "Last Updated on"
+msgstr "Son Güncelleme"
+
+#. module: document_sign
+#: model_terms:ir.ui.view,arch_db:document_sign.res_config_settings_view_form_inherit_documents_sign
+msgid "Link Sign Templates to directories"
+msgstr "İmzla Şablonlarını dizinlere bağlama"
+
+#. module: document_sign
+#. odoo-python
+#: code:addons/document_sign/wizard/sign_import_documents.py:0
+msgid "No document selected to import and sign."
+msgstr "İçe aktarmak ve imzalamak için seçilen belge yok."
+
+#. module: document_sign
+#: model:document.document,name:document_sign.documents_sign_cla
+msgid "Odoo CLA.pdf"
+msgstr "Odoo CLA.pdf"
+
+#. module: document_sign
+#: model_terms:ir.ui.view,arch_db:document_sign.document_sign_send_request_view_form
+msgid "Select Documents"
+msgstr "Belgeleri Seçin"
+
+#. module: document_sign
+#: model_terms:ir.ui.view,arch_db:document_sign.sign_import_from_documents_view_form
+msgid "Select a Document"
+msgstr "Bir Belge Seçin"
+
+#. module: document_sign
+#: model_terms:ir.ui.view,arch_db:document_sign.sign_import_from_documents_view_form
+msgid "Select a Document to Import and Sign"
+msgstr "İçe Aktarılacak ve İmzalanacak Bir Belge Seçin"
+
+#. module: document_sign
+#: model:ir.model.fields,field_description:document_sign.field_wizard_sign_template_import_document__selected_document
+msgid "Selected Document"
+msgstr "Seçilmiş Belge"
+
+#. module: document_sign
+#: model_terms:ir.ui.view,arch_db:document_sign.documents_sign_template_form_inherit
+msgid "Send signed PDFs to a folder"
+msgstr ""
+
+#. module: document_sign
+#: model:document.document,name:document_sign.document_sign_folder
+#: model:ir.actions.server,name:document_sign.ir_actions_server_create_sign_template_direct
+#: model:ir.actions.server,name:document_sign.ir_actions_server_create_sign_template_direct_code
+#: model_terms:ir.ui.view,arch_db:document_sign.res_config_settings_view_form_inherit_documents_sign
+msgid "Sign"
+msgstr "İmzala"
+
+#. module: document_sign
+#: model:ir.model,name:document_sign.model_sign_document
+msgid "Signature Document"
+msgstr "İmza Belgesi"
+
+#. module: document_sign
+#: model:ir.model,name:document_sign.model_sign_request
+msgid "Signature Request"
+msgstr "İmza Talebi"
+
+#. module: document_sign
+#: model:ir.model,name:document_sign.model_sign_request_item
+msgid "Signature Request Item"
+msgstr "İmza İsteği Kalemi"
+
+#. module: document_sign
+#: model:ir.model,name:document_sign.model_sign_template
+msgid "Signature Template"
+msgstr "İmza Şablonu"
+
+#. module: document_sign
+#: model:ir.model.fields,field_description:document_sign.field_sign_template__folder_id
+msgid "Signed Document Folder"
+msgstr "İmzalanmış Belge Klasörü"
+
+#. module: document_sign
+#: model:ir.model.fields,field_description:document_sign.field_sign_template__documents_tag_ids
+msgid "Signed Document Tags"
+msgstr "İmzalı Belge Etiketleri"
+
+#. module: document_sign
+#. odoo-python
+#: code:addons/document_sign/models/document_document.py:0
+msgid ""
+"The \"%s\" folder is required by the Sign application and cannot be deleted."
+msgstr "\"%s\" klasörü İmza uygulaması tarafından gereklidir ve silinemez."
+
+#. module: document_sign
+#. odoo-python
+#: code:addons/document_sign/models/document_document.py:0
+msgid "This action can only be applied on pdf document."
+msgstr "Bu işlem yalnızca PDF belgeleri için uygulanabilir."
+
+#. module: document_sign
+#: model:ir.model,name:document_sign.model_wizard_sign_template_import_document
+msgid "Wizard to select PDF documents from the Documents app to sign"
+msgstr ""
+"Belgeler uygulamasından imzalanacak PDF dosyalarını seçmek için kullanılanır."
+
+#. module: document_sign
+#. odoo-python
+#: code:addons/document_sign/models/document_document.py:0
+msgid "You cannot archive the Sign folder (%s)."
+msgstr "İmza klasörünü arşivleyemezsiniz (%s)."
+
+#. module: document_sign
+#. odoo-python
+#: code:addons/document_sign/models/document_document.py:0
+msgid "You cannot set a company on the %s folder."
+msgstr "%s klasöründe şirket belirtemezsiniz."
+
+#. module: document_sign
+#: model:document.document,name:document_sign.documents_attachment_video_studio_document
+msgid "sample-nda.pdf"
+msgstr "örnek-nda.pdf"
+
+#~ msgid ""
+#~ "A set of condition and actions which will be available to all attachments "
+#~ "matching the conditions"
+#~ msgstr ""
+#~ "Koşullara uyan tüm eklerde kullanılabilecek bir koşul ve eylem dizisi"
+
+#~ msgid "Create"
+#~ msgstr "Oluştur"
+
+#~ msgid "New templates"
+#~ msgstr "Yeni şablonlar"
+
+#~ msgid "Signed Document Workspace"
+#~ msgstr "İmzalı Belge Çalışma Alanı"

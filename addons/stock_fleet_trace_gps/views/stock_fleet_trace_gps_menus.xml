@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <menuitem
+        id="menu_stock_trip_alert"
+        parent="stock.menu_delivery"
+        action="action_stock_trip_alert"
+        sequence="63"
+        groups="stock.group_stock_user" />
+
+</odoo>

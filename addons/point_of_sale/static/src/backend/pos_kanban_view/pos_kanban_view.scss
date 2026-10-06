@@ -1,0 +1,8 @@
+.pos-scenario-card:disabled {
+    cursor: not-allowed;
+    color: $o-brand-secondary;
+
+    img {
+        opacity: 0.5;
+    }
+}

@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="job_pages_tree_view" model="ir.ui.view">
+        <field name="name">Job Pages List</field>
+        <field name="model">hr.job</field>
+        <field name="inherit_id" ref="hr.view_hr_job_tree" />
+        <field name="mode">primary</field>
+        <field name="priority">99</field>
+        <field name="arch" type="xml">
+            <xpath expr="//list" position="attributes">
+                <attribute name="js_class">website_pages_list</attribute>
+                <attribute name="type">object</attribute>
+                <attribute name="action">open_website_url</attribute>
+                <attribute name="multi_edit">1</attribute>
+            </xpath>
+
+            <field name="name" position="after">
+                <field name="website_url" />
+                <field name="company_id" column_invisible="True" />
+            </field>
+            <xpath expr="//list">
+                <field name="is_seo_optimized" />
+                <field name="is_published" position="move" />
+
+                <field name="website_id" groups="website.group_multi_website" />
+            </xpath>
+        </field>
+    </record>
+
+    <record id="job_pages_kanban_view" model="ir.ui.view">
+        <field name="name">Job Pages Kanban</field>
+        <field name="model">hr.job</field>
+        <field name="inherit_id" ref="hr_job_website_inherit" />
+        <field name="mode">primary</field>
+        <field name="priority">99</field>
+        <field name="arch" type="xml">
+            <kanban position="attributes">
+                <attribute name="js_class">website_pages_kanban</attribute>
+                <attribute name="type">object</attribute>
+                <attribute name="action">open_website_url</attribute>
+            </kanban>
+        </field>
+    </record>
+
+    <record id="action_job_pages_list" model="ir.actions.act_window">
+        <field name="name">Job Pages</field>
+        <field name="res_model">hr.job</field>
+        <field name="path">job-pages</field>
+        <field name="view_mode">list,kanban,form</field>
+        <field name="context">{'create_action': '/jobs/add'}</field>
+        <field
+            name="view_ids"
+            eval="[Command.clear(), Command.create({'view_mode': 'list', 'view_id': ref('job_pages_tree_view')}), Command.create({'view_mode': 'kanban', 'view_id': ref('job_pages_kanban_view')})]" />
+    </record>
+
+</odoo>

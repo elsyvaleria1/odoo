@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_users_form" model="ir.ui.view">
+        <field name="name">res.users.form</field>
+        <field name="model">res.users</field>
+        <field name="inherit_id" ref="calendar.res_users_view_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//page[@name='calendar']" position="attributes">
+                <attribute name="invisible">0</attribute>
+            </xpath>
+            <group name="calendar_accounts" position="inside">
+                <group string="Google Calendar" invisible="share" class="text-break">
+                    <field
+                        name="google_calendar_rtoken"
+                        groups="base.group_system"
+                        readonly="1" />
+                    <field name="google_calendar_token" readonly="1" />
+                    <field name="google_calendar_token_validity" readonly="1" />
+                    <field name="google_calendar_sync_token" readonly="1" />
+                    <field name="google_calendar_cal_id" readonly="1" />
+                    <button
+                        name="%(google_calendar_reset_account_action)d"
+                        type="action"
+                        string="Reset Account"
+                        colspan="2"
+                        context="{'default_user_id': id}"
+                        class="btn btn-secondary mt-3" />
+                </group>
+            </group>
+        </field>
+    </record>
+
+</odoo>

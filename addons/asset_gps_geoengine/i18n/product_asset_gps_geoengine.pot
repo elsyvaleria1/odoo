@@ -1,0 +1,724 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* product_asset_remote_geoengine
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-09-09 00:25+0000\n"
+"PO-Revision-Date: 2026-09-09 00:25+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: product_asset_remote_geoengine
+#. odoo-python
+#: code:addons/product_asset_remote_geoengine/models/device_gps_speed_alert.py:0
+msgid "%(who)s at %(speed)s km/h, critical limit %(limit)s"
+msgstr ""
+
+#. module: product_asset_remote_geoengine
+#. odoo-python
+#: code:addons/product_asset_remote_geoengine/models/device_gps_speed_alert.py:0
+msgid ""
+"%(who)s drove %(what)s at up to %(speed)s km/h for %(minutes)s minutes from "
+"%(start)s, over the critical limit of %(limit)s km/h. Where: %(place)s."
+msgstr ""
+
+#. module: product_asset_remote_geoengine
+#. odoo-python
+#: code:addons/product_asset_remote_geoengine/wizard/gps_trail_wizard.py:0
+msgid "%d assets selected"
+msgstr ""
+
+#. module: product_asset_remote_geoengine
+#. odoo-python
+#: code:addons/product_asset_remote_geoengine/wizard/gps_trail_wizard.py:0
+msgid "%d operators selected"
+msgstr ""
+
+#. module: product_asset_remote_geoengine
+#: model:ir.model.constraint,message:product_asset_remote_geoengine.constraint_device_gps_speed_alert_device_start_uniq
+msgid "A burst is alerted once."
+msgstr ""
+
+#. module: product_asset_remote_geoengine
+#: model:ir.model.fields,field_description:product_asset_remote_geoengine.field_device_gps_speed_alert__activity_id
+msgid "Activity"
+msgstr ""
+
+#. module: product_asset_remote_geoengine
+#: model:ir.model.fields.selection,name:product_asset_remote_geoengine.selection__device_gps_speed_event__level__alert
+#: model_terms:ir.ui.view,arch_db:product_asset_remote_geoengine.view_device_gps_speed_event_search
+msgid "Alert"
+msgstr ""
+
+#. module: product_asset_remote_geoengine
+#: model:ir.model.fields,field_description:product_asset_remote_geoengine.field_wizard_device_device_view_trail__asset_ids
+#: model_terms:ir.ui.view,arch_db:product_asset_remote_geoengine.view_gps_trail_result_search_asset
+msgid "Asset"
+msgstr ""
+
+#. module: product_asset_remote_geoengine
+#: model:ir.model.fields,help:product_asset_remote_geoengine.field_device_client_visit__asset_id
+msgid "Asset (serial number) this GPS device is installed on, archived or not"
+msgstr ""
+
+#. module: product_asset_remote_geoengine
+#: model_terms:ir.ui.view,arch_db:product_asset_remote_geoengine.view_stock_lot_search_gps_trail
+msgid "Asset / Operator / Device"
+msgstr ""
+
+#. module: product_asset_remote_geoengine
+#: model:ir.model.fields,field_description:product_asset_remote_geoengine.field_wizard_device_device_view_trail_result__asset_name
+msgid "Asset Name"
+msgstr ""
+
+#. module: product_asset_remote_geoengine
+#: model_terms:ir.ui.view,arch_db:product_asset_remote_geoengine.view_stock_lot_search_gps_trail
+msgid "Asset Type"
+msgstr ""
+
+#. module: product_asset_remote_geoengine
+#: model:ir.model.fields,field_description:product_asset_remote_geoengine.field_wizard_device_device_view_trail_result__asset_id
+msgid "Asset/Vehicle"
+msgstr ""
+
+#. module: product_asset_remote_geoengine
+#: model_terms:ir.ui.view,arch_db:product_asset_remote_geoengine.view_device_gps_speed_day_list
+msgid "Avg Speed"
+msgstr ""
+
+#. module: product_asset_remote_geoengine
+#: model:ir.model.fields,field_description:product_asset_remote_geoengine.field_device_gps_speed_day__speed_avg
+#: model:ir.model.fields,field_description:product_asset_remote_geoengine.field_device_gps_speed_event__speed_avg
+msgid "Avg Speed (km/h)"
+msgstr ""
+
+#. module: product_asset_remote_geoengine
+#: model:ir.model.fields.selection,name:product_asset_remote_geoengine.selection__wizard_device_device_view_trail__selection_mode__asset
+msgid "By Asset/Vehicle"
+msgstr ""
+
+#. module: product_asset_remote_geoengine
+#: model:ir.model.fields.selection,name:product_asset_remote_geoengine.selection__wizard_device_device_view_trail__selection_mode__operator
+msgid "By Operator/Driver"
+msgstr ""
+
+#. module: product_asset_remote_geoengine
+#: model:ir.model.fields,help:product_asset_remote_geoengine.field_wizard_device_device_view_trail__selection_mode
+msgid "Choose how to select GPS tracking sources"
+msgstr ""
+
+#. module: product_asset_remote_geoengine
+#: model:ir.model.fields,field_description:product_asset_remote_geoengine.field_device_gps_speed_alert__company_id
+#: model:ir.model.fields,field_description:product_asset_remote_geoengine.field_device_gps_speed_day__company_id
+#: model:ir.model.fields,field_description:product_asset_remote_geoengine.field_device_gps_speed_event__company_id
+msgid "Company"
+msgstr ""
+
+#. module: product_asset_remote_geoengine
+#: model:ir.model.fields,field_description:product_asset_remote_geoengine.field_device_gps_speed_alert__create_uid
+msgid "Created by"
+msgstr ""
+
+#. module: product_asset_remote_geoengine
+#: model:ir.model.fields,field_description:product_asset_remote_geoengine.field_device_gps_speed_alert__create_date
+msgid "Created on"
+msgstr ""
+
+#. module: product_asset_remote_geoengine
+#: model:ir.model.fields.selection,name:product_asset_remote_geoengine.selection__device_gps_speed_event__level__critical
+#: model_terms:ir.ui.view,arch_db:product_asset_remote_geoengine.view_device_gps_speed_event_search
+msgid "Critical"
+msgstr ""
+
+#. module: product_asset_remote_geoengine
+#: model_terms:ir.ui.view,arch_db:product_asset_remote_geoengine.view_device_gps_speed_alert_list
+#: model_terms:ir.ui.view,arch_db:product_asset_remote_geoengine.view_device_gps_speed_day_list
+msgid "Critical Limit"
+msgstr ""
+
+#. module: product_asset_remote_geoengine
+#: model:ir.model.fields,field_description:product_asset_remote_geoengine.field_device_gps_speed_alert__speed_limit
+#: model:ir.model.fields,field_description:product_asset_remote_geoengine.field_device_gps_speed_day__speed_limit_critical
+msgid "Critical Limit (km/h)"
+msgstr ""
+
+#. module: product_asset_remote_geoengine
+#: model:ir.model,name:product_asset_remote_geoengine.model_device_gps_speed_alert
+msgid "Critical Speed Alert"
+msgstr ""
+
+#. module: product_asset_remote_geoengine
+#: model:ir.model.fields,help:product_asset_remote_geoengine.field_device_client_visit__operator_id
+msgid "Current operator/driver assigned to the linked asset"
+msgstr ""
+
+#. module: product_asset_remote_geoengine
+#: model:ir.actions.act_window,name:product_asset_remote_geoengine.action_device_gps_speed_day
+#: model:ir.ui.menu,name:product_asset_remote_geoengine.menu_device_gps_speed_day
+msgid "Daily Speed"
+msgstr ""
+
+#. module: product_asset_remote_geoengine
+#: model:ir.model,name:product_asset_remote_geoengine.model_device_gps_speed_day
+msgid "Daily Speed per Vehicle"
+msgstr ""
+
+#. module: product_asset_remote_geoengine
+#: model:ir.model.fields,field_description:product_asset_remote_geoengine.field_device_gps_speed_day__date
+#: model:ir.model.fields,field_description:product_asset_remote_geoengine.field_device_gps_speed_event__date
+#: model_terms:ir.ui.view,arch_db:product_asset_remote_geoengine.view_device_gps_speed_alert_search
+#: model_terms:ir.ui.view,arch_db:product_asset_remote_geoengine.view_device_gps_speed_day_search
+#: model_terms:ir.ui.view,arch_db:product_asset_remote_geoengine.view_device_gps_speed_event_search
+msgid "Date"
+msgstr ""
+
+#. module: product_asset_remote_geoengine
+#: model_terms:ir.ui.view,arch_db:product_asset_remote_geoengine.view_device_gps_speed_alert_search
+#: model_terms:ir.ui.view,arch_db:product_asset_remote_geoengine.view_device_gps_speed_day_search
+#: model_terms:ir.ui.view,arch_db:product_asset_remote_geoengine.view_device_gps_speed_event_search
+msgid "Day"
+msgstr ""
+
+#. module: product_asset_remote_geoengine
+#: model_terms:ir.ui.view,arch_db:product_asset_remote_geoengine.view_hr_employee_search_gps_trail
+msgid "Department"
+msgstr ""
+
+#. module: product_asset_remote_geoengine
+#: model:ir.model.fields,field_description:product_asset_remote_geoengine.field_device_gps_speed_alert__device_id
+#: model:ir.model.fields,field_description:product_asset_remote_geoengine.field_device_gps_speed_day__device_id
+#: model:ir.model.fields,field_description:product_asset_remote_geoengine.field_device_gps_speed_event__device_id
+msgid "Device"
+msgstr ""
+
+#. module: product_asset_remote_geoengine
+#: model:ir.model.fields,field_description:product_asset_remote_geoengine.field_wizard_device_device_view_trail_result__display_name
+#: model:ir.model.fields,field_description:product_asset_remote_geoengine.field_wizard_device_device_view_trail__display_name
+#: model:ir.model.fields,field_description:product_asset_remote_geoengine.field_device_client_visit__display_name
+#: model:ir.model.fields,field_description:product_asset_remote_geoengine.field_device_device__display_name
+#: model:ir.model.fields,field_description:product_asset_remote_geoengine.field_device_gps_speed_alert__display_name
+#: model:ir.model.fields,field_description:product_asset_remote_geoengine.field_device_gps_speed_day__display_name
+#: model:ir.model.fields,field_description:product_asset_remote_geoengine.field_device_gps_speed_event__display_name
+msgid "Display Name"
+msgstr ""
+
+#. module: product_asset_remote_geoengine
+#: model:ir.model.fields,field_description:product_asset_remote_geoengine.field_device_gps_speed_event__distance_km
+msgid "Distance (km)"
+msgstr ""
+
+#. module: product_asset_remote_geoengine
+#: model:ir.model.fields,field_description:product_asset_remote_geoengine.field_device_gps_speed_event__nearby_distance_m
+msgid "Distance to Parcel (m)"
+msgstr ""
+
+#. module: product_asset_remote_geoengine
+#: model:ir.model.fields,field_description:product_asset_remote_geoengine.field_device_gps_speed_alert__duration_min
+#: model:ir.model.fields,field_description:product_asset_remote_geoengine.field_device_gps_speed_event__duration_min
+msgid "Duration (min)"
+msgstr ""
+
+#. module: product_asset_remote_geoengine
+#: model_terms:ir.actions.act_window,help:product_asset_remote_geoengine.action_device_gps_speed_event
+msgid ""
+"Each row is one continuous stretch above the device's warning\n"
+"               limit. The ones that passed the critical limit are in red."
+msgstr ""
+
+#. module: product_asset_remote_geoengine
+#: model:ir.model.fields,field_description:product_asset_remote_geoengine.field_device_device__operator_name
+msgid "Employee Name"
+msgstr ""
+
+#. module: product_asset_remote_geoengine
+#: model:ir.model.fields,field_description:product_asset_remote_geoengine.field_device_gps_speed_alert__end
+#: model:ir.model.fields,field_description:product_asset_remote_geoengine.field_device_gps_speed_event__end
+msgid "End"
+msgstr ""
+
+#. module: product_asset_remote_geoengine
+#: model_terms:ir.ui.view,arch_db:product_asset_remote_geoengine.view_stock_lot_search_gps_trail
+msgid "Equipment"
+msgstr ""
+
+#. module: product_asset_remote_geoengine
+#: model_terms:ir.actions.act_window,help:product_asset_remote_geoengine.action_device_gps_speed_alert
+msgid ""
+"Every 5 minutes the stretches that passed the device's critical\n"
+"               limit are reviewed. Each one schedules an activity for the\n"
+"               operator's manager and is recorded here."
+msgstr ""
+
+#. module: product_asset_remote_geoengine
+#: model:ir.model.fields,field_description:product_asset_remote_geoengine.field_device_gps_speed_day__first_seen
+#: model_terms:ir.ui.view,arch_db:product_asset_remote_geoengine.view_device_gps_speed_day_list
+msgid "First Position"
+msgstr ""
+
+#. module: product_asset_remote_geoengine
+#: model_terms:ir.ui.view,arch_db:product_asset_remote_geoengine.view_stock_lot_search_gps_trail
+msgid "GPS Device"
+msgstr ""
+
+#. module: product_asset_remote_geoengine
+#: model:ir.model,name:product_asset_remote_geoengine.model_wizard_device_device_view_trail_result
+msgid "GPS Trail Result"
+msgstr ""
+
+#. module: product_asset_remote_geoengine
+#: model:ir.model,name:product_asset_remote_geoengine.model_wizard_device_device_view_trail
+msgid "GPS Trail Wizard"
+msgstr ""
+
+#. module: product_asset_remote_geoengine
+#: model:ir.model,name:product_asset_remote_geoengine.model_device_client_visit
+msgid "GPS Visit to a Client Parcel"
+msgstr ""
+
+#. module: product_asset_remote_geoengine
+#: model:ir.actions.server,name:product_asset_remote_geoengine.ir_cron_raise_critical_speed_ir_actions_server
+msgid "GPS: Alert Critical Speed"
+msgstr ""
+
+#. module: product_asset_remote_geoengine
+#: model_terms:ir.ui.view,arch_db:product_asset_remote_geoengine.view_stock_lot_search_gps_trail
+msgid "Has Operator"
+msgstr ""
+
+#. module: product_asset_remote_geoengine
+#: model_terms:ir.ui.view,arch_db:product_asset_remote_geoengine.view_hr_employee_search_gps_trail
+msgid "Has Vehicle with GPS"
+msgstr ""
+
+#. module: product_asset_remote_geoengine
+#: model:ir.model.fields,help:product_asset_remote_geoengine.field_device_client_visit__trip_speed_max
+msgid ""
+"Highest speed on the way to this parcel: from the departure of the device's "
+"previous visit (or the first position of the day) to this arrival."
+msgstr ""
+
+#. module: product_asset_remote_geoengine
+#: model:ir.model.fields,field_description:product_asset_remote_geoengine.field_wizard_device_device_view_trail_result__id
+#: model:ir.model.fields,field_description:product_asset_remote_geoengine.field_wizard_device_device_view_trail__id
+#: model:ir.model.fields,field_description:product_asset_remote_geoengine.field_device_client_visit__id
+#: model:ir.model.fields,field_description:product_asset_remote_geoengine.field_device_device__id
+#: model:ir.model.fields,field_description:product_asset_remote_geoengine.field_device_gps_speed_alert__id
+#: model:ir.model.fields,field_description:product_asset_remote_geoengine.field_device_gps_speed_day__id
+#: model:ir.model.fields,field_description:product_asset_remote_geoengine.field_device_gps_speed_event__id
+msgid "ID"
+msgstr ""
+
+#. module: product_asset_remote_geoengine
+#: model:ir.model,name:product_asset_remote_geoengine.model_device_device
+msgid "IoT Remote Device"
+msgstr ""
+
+#. module: product_asset_remote_geoengine
+#: model_terms:ir.ui.view,arch_db:product_asset_remote_geoengine.view_hr_employee_search_gps_trail
+msgid "Job Position"
+msgstr ""
+
+#. module: product_asset_remote_geoengine
+#: model:ir.model.fields,field_description:product_asset_remote_geoengine.field_device_gps_speed_day__last_seen
+#: model_terms:ir.ui.view,arch_db:product_asset_remote_geoengine.view_device_gps_speed_day_list
+msgid "Last Position"
+msgstr ""
+
+#. module: product_asset_remote_geoengine
+#: model:ir.model.fields,field_description:product_asset_remote_geoengine.field_device_gps_speed_alert__write_uid
+msgid "Last Updated by"
+msgstr ""
+
+#. module: product_asset_remote_geoengine
+#: model:ir.model.fields,field_description:product_asset_remote_geoengine.field_device_gps_speed_alert__write_date
+msgid "Last Updated on"
+msgstr ""
+
+#. module: product_asset_remote_geoengine
+#: model:ir.model.fields,field_description:product_asset_remote_geoengine.field_device_gps_speed_event__latitude
+msgid "Latitude"
+msgstr ""
+
+#. module: product_asset_remote_geoengine
+#: model:ir.model.fields,field_description:product_asset_remote_geoengine.field_device_gps_speed_event__level
+#: model_terms:ir.ui.view,arch_db:product_asset_remote_geoengine.view_device_gps_speed_event_search
+msgid "Level"
+msgstr ""
+
+#. module: product_asset_remote_geoengine
+#: model:ir.model.fields,field_description:product_asset_remote_geoengine.field_wizard_device_device_view_trail_result__license_plate
+msgid "License Plate"
+msgstr ""
+
+#. module: product_asset_remote_geoengine
+#: model:ir.model.fields,field_description:product_asset_remote_geoengine.field_device_gps_speed_event__speed_limit
+msgid "Limit Exceeded (km/h)"
+msgstr ""
+
+#. module: product_asset_remote_geoengine
+#: model_terms:ir.ui.view,arch_db:product_asset_remote_geoengine.view_device_device_search_gps_trail_asset
+msgid "Linked Asset"
+msgstr ""
+
+#. module: product_asset_remote_geoengine
+#: model:ir.model.fields,field_description:product_asset_remote_geoengine.field_device_gps_speed_event__longitude
+msgid "Longitude"
+msgstr ""
+
+#. module: product_asset_remote_geoengine
+#: model:ir.model.fields,help:product_asset_remote_geoengine.field_device_gps_speed_day__speed_min
+msgid ""
+"Lowest speed while moving (5 km/h or more); stops and GPS drift are not "
+"counted."
+msgstr ""
+
+#. module: product_asset_remote_geoengine
+#: model:ir.model.fields,help:product_asset_remote_geoengine.field_device_client_visit__trip_speed_min
+msgid "Lowest speed while moving on the way to this parcel."
+msgstr ""
+
+#. module: product_asset_remote_geoengine
+#: model_terms:ir.ui.view,arch_db:product_asset_remote_geoengine.view_device_gps_speed_alert_list
+#: model_terms:ir.ui.view,arch_db:product_asset_remote_geoengine.view_device_gps_speed_day_list
+msgid "Max Speed"
+msgstr ""
+
+#. module: product_asset_remote_geoengine
+#: model:ir.model.fields,field_description:product_asset_remote_geoengine.field_device_gps_speed_alert__speed_max
+#: model:ir.model.fields,field_description:product_asset_remote_geoengine.field_device_gps_speed_day__speed_max
+#: model:ir.model.fields,field_description:product_asset_remote_geoengine.field_device_gps_speed_event__speed_max
+msgid "Max Speed (km/h)"
+msgstr ""
+
+#. module: product_asset_remote_geoengine
+#: model:ir.model.fields,help:product_asset_remote_geoengine.field_device_gps_speed_day__speed_avg
+msgid "Mean of the readings while moving."
+msgstr ""
+
+#. module: product_asset_remote_geoengine
+#: model_terms:ir.ui.view,arch_db:product_asset_remote_geoengine.view_device_gps_speed_day_list
+msgid "Min Speed"
+msgstr ""
+
+#. module: product_asset_remote_geoengine
+#: model:ir.model.fields,field_description:product_asset_remote_geoengine.field_device_gps_speed_day__speed_min
+msgid "Min Speed (km/h)"
+msgstr ""
+
+#. module: product_asset_remote_geoengine
+#: model_terms:ir.ui.view,arch_db:product_asset_remote_geoengine.view_device_gps_speed_alert_list
+msgid "Minutes"
+msgstr ""
+
+#. module: product_asset_remote_geoengine
+#: model:ir.model.fields,field_description:product_asset_remote_geoengine.field_device_gps_speed_day__moving_positions
+msgid "Moving Positions"
+msgstr ""
+
+#. module: product_asset_remote_geoengine
+#: model:ir.model.fields,field_description:product_asset_remote_geoengine.field_device_gps_speed_event__nearby_partner_id
+#: model_terms:ir.ui.view,arch_db:product_asset_remote_geoengine.view_device_gps_speed_event_search
+msgid "Nearest Client"
+msgstr ""
+
+#. module: product_asset_remote_geoengine
+#: model:ir.model.fields,field_description:product_asset_remote_geoengine.field_device_gps_speed_event__nearby_geofence_id
+msgid "Nearest Parcel"
+msgstr ""
+
+#. module: product_asset_remote_geoengine
+#: model_terms:ir.actions.act_window,help:product_asset_remote_geoengine.action_device_gps_speed_day
+msgid "No GPS positions"
+msgstr ""
+
+#. module: product_asset_remote_geoengine
+#: model_terms:ir.actions.act_window,help:product_asset_remote_geoengine.action_device_gps_speed_alert
+msgid "No alerts"
+msgstr ""
+
+#. module: product_asset_remote_geoengine
+#. odoo-python
+#: code:addons/product_asset_remote_geoengine/wizard/gps_trail_wizard.py:0
+msgid "No assets selected"
+msgstr ""
+
+#. module: product_asset_remote_geoengine
+#. odoo-python
+#: code:addons/product_asset_remote_geoengine/wizard/gps_trail_wizard.py:0
+msgid "No operators selected"
+msgstr ""
+
+#. module: product_asset_remote_geoengine
+#: model_terms:ir.actions.act_window,help:product_asset_remote_geoengine.action_device_gps_speed_event
+msgid "No speeding events"
+msgstr ""
+
+#. module: product_asset_remote_geoengine
+#: model:ir.model.fields,field_description:product_asset_remote_geoengine.field_device_gps_speed_alert__user_id
+#: model_terms:ir.ui.view,arch_db:product_asset_remote_geoengine.view_device_gps_speed_alert_list
+msgid "Notified"
+msgstr ""
+
+#. module: product_asset_remote_geoengine
+#: model_terms:ir.actions.act_window,help:product_asset_remote_geoengine.action_device_gps_speed_day
+msgid ""
+"One row per vehicle and day with the maximum, minimum and average\n"
+"               speed of the whole route. The ones that passed the device's\n"
+"               critical limit are in red."
+msgstr ""
+
+#. module: product_asset_remote_geoengine
+#: model:ir.model.fields,field_description:product_asset_remote_geoengine.field_wizard_device_device_view_trail__operator_ids
+#: model:ir.model.fields,field_description:product_asset_remote_geoengine.field_device_client_visit__operator_id
+#: model:ir.model.fields,field_description:product_asset_remote_geoengine.field_device_gps_speed_alert__operator_id
+#: model:ir.model.fields,field_description:product_asset_remote_geoengine.field_device_gps_speed_day__operator_id
+#: model:ir.model.fields,field_description:product_asset_remote_geoengine.field_device_gps_speed_event__operator_id
+#: model_terms:ir.ui.view,arch_db:product_asset_remote_geoengine.view_gps_trail_result_search_asset
+#: model_terms:ir.ui.view,arch_db:product_asset_remote_geoengine.view_device_client_visit_search_asset
+#: model_terms:ir.ui.view,arch_db:product_asset_remote_geoengine.view_device_device_search_gps_trail_asset
+#: model_terms:ir.ui.view,arch_db:product_asset_remote_geoengine.view_device_gps_speed_alert_search
+#: model_terms:ir.ui.view,arch_db:product_asset_remote_geoengine.view_device_gps_speed_day_search
+#: model_terms:ir.ui.view,arch_db:product_asset_remote_geoengine.view_device_gps_speed_event_search
+#: model_terms:ir.ui.view,arch_db:product_asset_remote_geoengine.view_stock_lot_search_gps_trail
+msgid "Operator"
+msgstr ""
+
+#. module: product_asset_remote_geoengine
+#: model:ir.model.fields,field_description:product_asset_remote_geoengine.field_wizard_device_device_view_trail_result__operator_name
+#: model_terms:ir.ui.view,arch_db:product_asset_remote_geoengine.view_hr_employee_search_gps_trail
+msgid "Operator Name"
+msgstr ""
+
+#. module: product_asset_remote_geoengine
+#: model:ir.model.fields,field_description:product_asset_remote_geoengine.field_wizard_device_device_view_trail_result__operator_id
+#: model_terms:ir.ui.view,arch_db:product_asset_remote_geoengine.view_stock_lot_search_gps_trail
+msgid "Operator/Driver"
+msgstr ""
+
+#. module: product_asset_remote_geoengine
+#: model:ir.model.fields,field_description:product_asset_remote_geoengine.field_device_gps_speed_day__over_critical
+msgid "Over Critical Limit"
+msgstr ""
+
+#. module: product_asset_remote_geoengine
+#: model_terms:ir.ui.view,arch_db:product_asset_remote_geoengine.view_device_gps_speed_day_search
+msgid "Over the Critical Limit"
+msgstr ""
+
+#. module: product_asset_remote_geoengine
+#: model:ir.model.fields,field_description:product_asset_remote_geoengine.field_device_gps_speed_alert__place
+#: model:ir.model.fields,field_description:product_asset_remote_geoengine.field_device_gps_speed_event__place
+msgid "Place"
+msgstr ""
+
+#. module: product_asset_remote_geoengine
+#. odoo-python
+#: code:addons/product_asset_remote_geoengine/wizard/gps_trail_wizard.py:0
+msgid "Please select at least one asset with a GPS device"
+msgstr ""
+
+#. module: product_asset_remote_geoengine
+#. odoo-python
+#: code:addons/product_asset_remote_geoengine/wizard/gps_trail_wizard.py:0
+msgid "Please select at least one operator with an assigned vehicle"
+msgstr ""
+
+#. module: product_asset_remote_geoengine
+#: model:ir.model.fields,field_description:product_asset_remote_geoengine.field_device_gps_speed_day__positions
+#: model:ir.model.fields,field_description:product_asset_remote_geoengine.field_device_gps_speed_event__positions
+msgid "Positions"
+msgstr ""
+
+#. module: product_asset_remote_geoengine
+#: model_terms:ir.ui.view,arch_db:product_asset_remote_geoengine.view_stock_lot_search_gps_trail
+msgid "Search Assets for GPS Trail"
+msgstr ""
+
+#. module: product_asset_remote_geoengine
+#: model_terms:ir.ui.view,arch_db:product_asset_remote_geoengine.view_hr_employee_search_gps_trail
+msgid "Search Operators for GPS Trail"
+msgstr ""
+
+#. module: product_asset_remote_geoengine
+#: model_terms:ir.ui.view,arch_db:product_asset_remote_geoengine.view_gps_trail_wizard_form_asset
+msgid "Search by vehicle, operator, plate, or device..."
+msgstr ""
+
+#. module: product_asset_remote_geoengine
+#: model_terms:ir.ui.view,arch_db:product_asset_remote_geoengine.view_gps_trail_wizard_form_asset
+msgid "Search operators by name..."
+msgstr ""
+
+#. module: product_asset_remote_geoengine
+#: model_terms:ir.ui.view,arch_db:product_asset_remote_geoengine.view_gps_trail_wizard_form_asset
+msgid "Select Assets"
+msgstr ""
+
+#. module: product_asset_remote_geoengine
+#: model_terms:ir.ui.view,arch_db:product_asset_remote_geoengine.view_gps_trail_wizard_form_asset
+msgid "Select Operators"
+msgstr ""
+
+#. module: product_asset_remote_geoengine
+#: model:ir.model.fields,help:product_asset_remote_geoengine.field_wizard_device_device_view_trail__asset_ids
+msgid "Select assets/vehicles with GPS tracking devices"
+msgstr ""
+
+#. module: product_asset_remote_geoengine
+#: model:ir.model.fields,help:product_asset_remote_geoengine.field_wizard_device_device_view_trail__operator_ids
+msgid "Select operators/drivers to view their assigned vehicle trails"
+msgstr ""
+
+#. module: product_asset_remote_geoengine
+#: model:ir.model.fields,field_description:product_asset_remote_geoengine.field_wizard_device_device_view_trail__selection_mode
+msgid "Selection Mode"
+msgstr ""
+
+#. module: product_asset_remote_geoengine
+#: model:ir.actions.act_window,name:product_asset_remote_geoengine.action_device_gps_speed_alert
+#: model:ir.ui.menu,name:product_asset_remote_geoengine.menu_device_gps_speed_alert
+msgid "Speed Alerts"
+msgstr ""
+
+#. module: product_asset_remote_geoengine
+#: model:ir.model,name:product_asset_remote_geoengine.model_device_gps_speed_event
+msgid "Speeding Event"
+msgstr ""
+
+#. module: product_asset_remote_geoengine
+#: model:ir.actions.act_window,name:product_asset_remote_geoengine.action_device_gps_speed_event
+#: model:ir.ui.menu,name:product_asset_remote_geoengine.menu_device_gps_speed_event
+msgid "Speeding Events"
+msgstr ""
+
+#. module: product_asset_remote_geoengine
+#: model:ir.model.fields,field_description:product_asset_remote_geoengine.field_device_gps_speed_alert__start
+#: model:ir.model.fields,field_description:product_asset_remote_geoengine.field_device_gps_speed_event__start
+msgid "Start"
+msgstr ""
+
+#. module: product_asset_remote_geoengine
+#: model:ir.model.fields,field_description:product_asset_remote_geoengine.field_device_gps_speed_event__state_id
+#: model_terms:ir.ui.view,arch_db:product_asset_remote_geoengine.view_device_gps_speed_event_search
+msgid "State"
+msgstr ""
+
+#. module: product_asset_remote_geoengine
+#: model:ir.model.fields,help:product_asset_remote_geoengine.field_device_gps_speed_event__speed_limit
+msgid "The highest of the device's limits that the burst went over."
+msgstr ""
+
+#. module: product_asset_remote_geoengine
+#: model_terms:ir.ui.view,arch_db:product_asset_remote_geoengine.view_device_gps_speed_day_search
+#: model_terms:ir.ui.view,arch_db:product_asset_remote_geoengine.view_device_gps_speed_event_search
+msgid "This Week"
+msgstr ""
+
+#. module: product_asset_remote_geoengine
+#: model_terms:ir.ui.view,arch_db:product_asset_remote_geoengine.view_device_gps_speed_alert_search
+#: model_terms:ir.ui.view,arch_db:product_asset_remote_geoengine.view_device_gps_speed_day_search
+#: model_terms:ir.ui.view,arch_db:product_asset_remote_geoengine.view_device_gps_speed_event_search
+msgid "Today"
+msgstr ""
+
+#. module: product_asset_remote_geoengine
+#: model_terms:ir.ui.view,arch_db:product_asset_remote_geoengine.view_device_gps_speed_event_list
+msgid "Total"
+msgstr ""
+
+#. module: product_asset_remote_geoengine
+#: model_terms:ir.ui.view,arch_db:product_asset_remote_geoengine.view_device_client_visit_list_asset
+msgid "Trip Avg Speed"
+msgstr ""
+
+#. module: product_asset_remote_geoengine
+#: model:ir.model.fields,field_description:product_asset_remote_geoengine.field_device_client_visit__trip_speed_avg
+msgid "Trip Avg Speed (km/h)"
+msgstr ""
+
+#. module: product_asset_remote_geoengine
+#: model_terms:ir.ui.view,arch_db:product_asset_remote_geoengine.view_device_client_visit_list_asset
+msgid "Trip Max Speed"
+msgstr ""
+
+#. module: product_asset_remote_geoengine
+#: model:ir.model.fields,field_description:product_asset_remote_geoengine.field_device_client_visit__trip_speed_max
+msgid "Trip Max Speed (km/h)"
+msgstr ""
+
+#. module: product_asset_remote_geoengine
+#: model_terms:ir.ui.view,arch_db:product_asset_remote_geoengine.view_device_client_visit_list_asset
+msgid "Trip Min Speed"
+msgstr ""
+
+#. module: product_asset_remote_geoengine
+#: model:ir.model.fields,field_description:product_asset_remote_geoengine.field_device_client_visit__trip_speed_min
+msgid "Trip Min Speed (km/h)"
+msgstr ""
+
+#. module: product_asset_remote_geoengine
+#: model:ir.model.fields,help:product_asset_remote_geoengine.field_device_device__asset_name
+msgid "Unique Lot/Serial Number"
+msgstr ""
+
+#. module: product_asset_remote_geoengine
+#: model:ir.model.fields,field_description:product_asset_remote_geoengine.field_device_client_visit__asset_id
+#: model:ir.model.fields,field_description:product_asset_remote_geoengine.field_device_device__asset_name
+#: model:ir.model.fields,field_description:product_asset_remote_geoengine.field_device_gps_speed_alert__asset_id
+#: model:ir.model.fields,field_description:product_asset_remote_geoengine.field_device_gps_speed_day__asset_id
+#: model:ir.model.fields,field_description:product_asset_remote_geoengine.field_device_gps_speed_event__asset_id
+#: model_terms:ir.ui.view,arch_db:product_asset_remote_geoengine.view_device_client_visit_search_asset
+#: model_terms:ir.ui.view,arch_db:product_asset_remote_geoengine.view_device_gps_speed_day_search
+#: model_terms:ir.ui.view,arch_db:product_asset_remote_geoengine.view_device_gps_speed_event_search
+msgid "Vehicle"
+msgstr ""
+
+#. module: product_asset_remote_geoengine
+#: model_terms:ir.ui.view,arch_db:product_asset_remote_geoengine.view_stock_lot_search_gps_trail
+msgid "Vehicle Model"
+msgstr ""
+
+#. module: product_asset_remote_geoengine
+#: model_terms:ir.ui.view,arch_db:product_asset_remote_geoengine.view_stock_lot_search_gps_trail
+msgid "Vehicles"
+msgstr ""
+
+#. module: product_asset_remote_geoengine
+#: model_terms:ir.ui.view,arch_db:product_asset_remote_geoengine.view_device_gps_speed_event_list
+msgid "View Trail"
+msgstr ""
+
+#. module: product_asset_remote_geoengine
+#: model:ir.model.fields.selection,name:product_asset_remote_geoengine.selection__device_gps_speed_event__level__warning
+#: model_terms:ir.ui.view,arch_db:product_asset_remote_geoengine.view_device_gps_speed_event_search
+msgid "Warning"
+msgstr ""
+
+#. module: product_asset_remote_geoengine
+#: model_terms:ir.ui.view,arch_db:product_asset_remote_geoengine.view_device_gps_speed_event_search
+msgid "Week"
+msgstr ""
+
+#. module: product_asset_remote_geoengine
+#: model_terms:ir.ui.view,arch_db:product_asset_remote_geoengine.view_device_gps_speed_alert_list
+msgid "Where"
+msgstr ""
+
+#. module: product_asset_remote_geoengine
+#: model:ir.model.fields,help:product_asset_remote_geoengine.field_device_gps_speed_alert__user_id
+msgid ""
+"Who received the activity: the operator's manager, else the fallback user of"
+" the unmapped-stop notification."
+msgstr ""
+
+#. module: product_asset_remote_geoengine
+#: model_terms:ir.ui.view,arch_db:product_asset_remote_geoengine.view_stock_lot_search_gps_trail
+msgid "With GPS Device"
+msgstr ""

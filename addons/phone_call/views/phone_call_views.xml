@@ -1,0 +1,238 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="phone_call_view_list" model="ir.ui.view">
+        <field name="name">phone.call.view.list</field>
+        <field name="model">phone.call</field>
+        <field name="arch" type="xml">
+            <list string="Calls" default_order="create_date desc" create="false">
+                <field name="create_date" string="Date" />
+                <field name="partner_id" string="Contact" />
+                <field name="contact_name" optional="hide" />
+                <field name="phone_number" />
+                <field
+                    name="duration"
+                    widget="float_time"
+                    options="{'display_seconds': True}"
+                    invisible="not (start_date and end_date)" />
+                <field name="start_date" column_invisible="True" />
+                <field name="end_date" column_invisible="True" />
+                <field name="user_id" string="User" widget="many2one_avatar_user" />
+                <field
+                    name="company_id"
+                    optional="hide"
+                    groups="base.group_multi_company" />
+                <field name="channel" optional="hide" />
+                <field name="state" string="Status" />
+                <field name="direction" column_invisible="True" />
+            </list>
+        </field>
+    </record>
+
+    <record id="phone_call_view_calendar" model="ir.ui.view">
+        <field name="name">phone.call.view.calendar</field>
+        <field name="model">phone.call</field>
+        <field name="arch" type="xml">
+            <calendar
+                mode="week"
+                create="False"
+                color="user_id"
+                date_start="create_date"
+                date_stop="end_date"
+                event_open_popup="true">
+                <field name="partner_id" invisible="not partner_id" />
+                <field name="user_id" invisible="True" filters="True" />
+                <field name="state" string="Status" invisible="True" filters="True" />
+            </calendar>
+        </field>
+    </record>
+
+    <record id="phone_call_view_pivot" model="ir.ui.view">
+        <field name="name">phone.call.view.pivot</field>
+        <field name="model">phone.call</field>
+        <field name="arch" type="xml">
+            <pivot string="Calls Analysis">
+                <field name="user_id" type="row" />
+                <field name="create_date" type="col" />
+            </pivot>
+        </field>
+    </record>
+
+    <record id="phone_call_view_graph" model="ir.ui.view">
+        <field name="name">phone.call.view.graph</field>
+        <field name="model">phone.call</field>
+        <field name="arch" type="xml">
+            <graph string="Calls Analysis">
+                <field name="user_id" />
+            </graph>
+        </field>
+    </record>
+
+    <record id="phone_call_view_search" model="ir.ui.view">
+        <field name="name">phone.call.view.search</field>
+        <field name="model">phone.call</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="partner_id" />
+                <field name="phone_number" />
+                <field name="contact_name" />
+                <field name="user_id" />
+                <filter
+                    name="my_calls"
+                    string="My Calls"
+                    domain="[('user_id', '=', uid)]" />
+                <separator />
+                <filter
+                    name="incoming"
+                    string="Incoming"
+                    domain="[('direction', '=', 'incoming')]" />
+                <filter
+                    name="outgoing"
+                    string="Outgoing"
+                    domain="[('direction', '=', 'outgoing')]" />
+                <filter
+                    name="missed"
+                    string="Missed"
+                    domain="[('state', '=', 'missed')]" />
+                <separator />
+                <filter
+                    name="today"
+                    string="Today"
+                    domain="[('create_date', '&gt;=', 'today')]" />
+                <filter
+                    name="yesterday"
+                    string="Yesterday"
+                    domain="[('create_date', '&lt;', 'today'), ('create_date', '&gt;=', 'today -1d')]" />
+                <filter
+                    name="last_7_days"
+                    string="Last 7 Days"
+                    domain="[('create_date', '&gt;=', 'today -6d')]" />
+                <group name="group_by">
+                    <filter
+                        name="groupby_user"
+                        string="User"
+                        context="{'group_by': 'user_id'}" />
+                    <filter
+                        name="groupby_contact"
+                        string="Contact"
+                        context="{'group_by': 'partner_id'}" />
+                    <filter
+                        name="groupby_channel"
+                        string="Channel"
+                        context="{'group_by': 'channel'}" />
+                    <filter
+                        name="groupby_status"
+                        string="Status"
+                        context="{'group_by': 'state'}" />
+                    <filter
+                        name="groupby_company"
+                        string="Company"
+                        context="{'group_by': 'company_id'}"
+                        groups="base.group_multi_company" />
+                    <separator />
+                    <filter
+                        name="groupby_date"
+                        string="Date"
+                        context="{'group_by': 'create_date'}" />
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="phone_call_view_form" model="ir.ui.view">
+        <field name="name">phone.call.view.form</field>
+        <field name="model">phone.call</field>
+        <field name="arch" type="xml">
+            <form create="false">
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button
+                            name="action_view_calls"
+                            type="object"
+                            icon="fa-phone"
+                            class="oe_stat_button">
+                            <field name="call_count" string="Calls" widget="statinfo" />
+                        </button>
+                    </div>
+                    <div class="mb8" name="heading">
+                        <div
+                            class="d-flex gap-3 justify-content-between align-items-start"
+                            name="heading_row">
+                            <div
+                                class="d-flex flex-column flex-grow-1"
+                                name="correspondent">
+                                <h1 class="mb-0">
+                                    <field
+                                        name="partner_id"
+                                        placeholder="e.g. Brandon Freeman" />
+                                </h1>
+                                <div class="d-flex align-items-baseline" name="number">
+                                    <i
+                                        class="fa-solid fa-phone me-1 text-primary"
+                                        title="Phone" />
+                                    <field name="phone_number" widget="phone" />
+                                </div>
+                                <field
+                                    name="contact_name"
+                                    invisible="not contact_name or partner_id"
+                                    class="text-muted" />
+                            </div>
+                            <field name="state" class="float-end" />
+                            <field name="direction" invisible="True" />
+                        </div>
+                    </div>
+                    <group>
+                        <group name="timing">
+                            <field name="create_date" />
+                            <field name="start_date" invisible="True" />
+                            <field name="end_date" invisible="True" />
+                            <field
+                                name="duration"
+                                widget="float_time"
+                                options="{'display_seconds': True}"
+                                invisible="not (start_date and end_date)"
+                                readonly="True" />
+                        </group>
+                        <group name="people">
+                            <field name="channel" readonly="True" />
+                            <field
+                                name="user_id"
+                                string="User"
+                                widget="many2one_avatar_user"
+                                readonly="True" />
+                            <field
+                                name="company_id"
+                                groups="base.group_multi_company"
+                                readonly="True" />
+                        </group>
+                    </group>
+                    <field name="has_media" invisible="1" />
+                    <group
+                        name="recording"
+                        string="Recording"
+                        invisible="not has_media">
+                        <field name="timeline_transcript_state" />
+                        <field
+                            name="segment_ids"
+                            widget="transcript_timeline"
+                            colspan="2"
+                            nolabel="1" />
+                    </group>
+                </sheet>
+                <chatter />
+            </form>
+        </field>
+    </record>
+
+    <record id="phone_call_action" model="ir.actions.act_window">
+        <field name="name">Calls</field>
+        <field name="res_model">phone.call</field>
+        <field name="view_mode">list,calendar,graph,pivot,form</field>
+        <field name="view_id" ref="phone_call_view_list" />
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">No Calls Yet!</p>
+            <p>Every call a company line or phone carries is filed here.</p>
+        </field>
+    </record>
+
+</odoo>

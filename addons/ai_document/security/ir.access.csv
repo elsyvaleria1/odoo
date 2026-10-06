@@ -1,0 +1,2 @@
+id,name,model_id/id,group_id/id,kind,operation,domain
+ai_documents_sort,access.ai_documents.sort,model_wizard_document_document_setup_ai_sort,base.group_system,permission,crud,

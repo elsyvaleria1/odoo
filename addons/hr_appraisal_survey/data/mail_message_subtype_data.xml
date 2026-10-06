@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+
+    <record id="mt_360_feedback" model="mail.message.subtype">
+        <field name="name">360 Feedback</field>
+        <field name="description">360 Feedback</field>
+        <field name="res_model">hr.appraisal</field>
+        <!--
+            a completed 360 report is what a follower of the appraisal is
+            following it for; with default False nobody was ever subscribed to
+            this subtype and message_post notified no one
+        -->
+        <field name="default" eval="True" />
+    </record>
+
+</odoo>

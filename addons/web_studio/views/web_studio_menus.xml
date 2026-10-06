@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <menuitem
+        id="menu_models_to_export"
+        name="Studio Export"
+        parent="base.menu_database_structure"
+        action="action_models_to_export"
+        sequence="45" />
+
+</odoo>

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <menuitem
+        id="menu_automation_runtime_accounting"
+        name="Accounting Workflows"
+        parent="account.menu_finance_entries"
+        action="action_automation_runtime_accounting"
+        sequence="100"
+        groups="account.group_account_basic" />
+
+</odoo>

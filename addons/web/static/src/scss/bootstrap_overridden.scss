@@ -1,0 +1,295 @@
+$blue: #007bff !default;
+$pink: #e83e8c !default;
+$green: #28a745 !default;
+$cyan: #17a2b8 !default;
+
+$o-bootstrap-follows-palette: true;
+
+$white: $o-white !default;
+$gray-100: $o-gray-100 !default;
+$gray-200: $o-gray-200 !default;
+$gray-300: $o-gray-300 !default;
+$gray-400: $o-gray-400 !default;
+$gray-500: $o-gray-500 !default;
+$gray-600: $o-gray-600 !default;
+$gray-700: $o-gray-700 !default;
+$gray-800: $o-gray-800 !default;
+$gray-900: $o-gray-900 !default;
+
+$black: $o-black !default;
+
+$primary: $o-brand-primary !default;
+$secondary: $gray-300 !default;
+$light: $o-white !default;
+$dark: $o-gray-900 !default;
+
+$success: $o-success !default;
+$info: $o-info !default;
+$warning: $o-warning !default;
+$danger: $o-danger !default;
+
+@function o-shadow-ink-white($-alpha) {
+    @return unquote(
+        "color-mix(in srgb, var(--o-white, #{$white}) #{$-alpha}, transparent)"
+    );
+}
+
+@function o-shadow-ink-black($-alpha) {
+    @return unquote(
+        "color-mix(in srgb, var(--o-black, #{$black}) #{$-alpha}, transparent)"
+    );
+}
+
+$box-shadow: 0 0.5rem 1rem o-shadow-ink-black(15%) !default;
+$box-shadow-sm: 0 0.125rem 0.25rem o-shadow-ink-black(7.5%) !default;
+$box-shadow-lg: 0 1rem 3rem o-shadow-ink-black(17.5%) !default;
+$box-shadow-inset: inset 0 1px 2px o-shadow-ink-black(7.5%) !default;
+$btn-active-box-shadow: inset 0 3px 5px o-shadow-ink-black(12.5%) !default;
+
+$min-contrast-ratio: 3 !default;
+
+$enable-smooth-scroll: false !default;
+
+$enable-shadows: true !default;
+
+$variable-prefix: "" !default;
+
+$enable-negative-margins: true !default;
+
+$enable-cssgrid: true !default;
+
+$enable-dark-mode: true !default;
+
+$spacer: $o-spacer !default;
+
+$body-bg: $o-webclient-background-color !default;
+$body-color: $o-main-text-color !default;
+
+$link-color: $o-main-link-color !default;
+$link-decoration: none !default;
+$link-hover-decoration: none !default;
+$link-shade-percentage: 30% !default;
+
+$text-muted: $o-main-color-muted !default;
+
+$grid-gutter-width: $o-horizontal-padding * 2 !default;
+
+$border-color: $o-border-color !default;
+
+$border-radius: $o-border-radius !default;
+$border-radius-sm: $o-border-radius-sm !default;
+$border-radius-lg: $o-border-radius-lg !default;
+
+$component-active-color: unset !default;
+$component-active-bg: $o-component-active-bg !default;
+
+$caret-width: 4px !default;
+
+$font-weight-normal: $o-font-weight-normal !default;
+$font-weight-bold: $o-font-weight-medium !default;
+
+$font-family-sans-serif: $o-font-family-sans-serif !default;
+$font-family-monospace: $o-font-family-monospace !default;
+
+$font-size-base: $o-font-size-base !default;
+$font-size-sm: $o-font-size-base-small !default;
+$small-font-size: $font-size-sm !default;
+
+$line-height-base: $o-line-height-base !default;
+$line-height-sm: $o-line-height-sm !default;
+$line-height-lg: $o-line-height-lg !default;
+
+$h6-font-size: $font-size-base !default;
+$h5-font-size: $h6-font-size * $o-type-scale-ratio !default;
+$h4-font-size: $h5-font-size * $o-type-scale-ratio !default;
+$h3-font-size: $h4-font-size * $o-type-scale-ratio !default;
+$h2-font-size: $h3-font-size * $o-type-scale-ratio !default;
+$h1-font-size: $h2-font-size * $o-type-scale-ratio !default;
+
+$headings-font-family: $o-headings-font-family !default;
+$headings-font-weight: $o-font-weight-semibold !default;
+$headings-color: $o-main-headings-color !default;
+
+$table-bg: transparent !default;
+$table-striped-color: inherit !default;
+$table-striped-bg-factor: 0.01 !default;
+$table-hover-bg-factor: 0.055 !default;
+$table-border-color: o-token(--border-color, $border-color) !default;
+$table-group-separator-color: $o-hairline !default;
+$table-cell-padding-x: 0.75rem !default;
+$table-cell-padding-y: 0.75rem !default;
+$table-cell-padding-x-sm: $o-table-cell-padding-x-sm !default;
+$table-cell-padding-y-sm: $o-table-cell-padding-y-sm !default;
+$table-striped-order: even !default;
+
+$table-active-bg-factor: 0.05 !default;
+$table-active-color: o-token(--heading-color, $headings-color) !default;
+$table-th-font-weight: $headings-font-weight !default;
+
+$input-btn-padding-y: o-to-rem(6px) !default;
+$input-btn-padding-x: o-to-rem(12px) !default;
+
+$input-btn-padding-y-sm: o-to-rem(4px) !default;
+$input-btn-padding-x-sm: o-to-rem(8px) !default;
+
+$input-btn-padding-y-lg: o-to-rem(8px) !default;
+$input-btn-padding-x-lg: o-to-rem(16px) !default;
+
+$btn-font-weight: $font-weight-bold !default;
+$btn-disabled-opacity: $o-opacity-disabled !default;
+$btn-border-radius-lg: $border-radius !default;
+$btn-transition:
+    color $o-duration-fast $o-easing-standard,
+    background-color $o-duration-fast $o-easing-standard,
+    border-color $o-duration-fast $o-easing-standard,
+    box-shadow $o-duration-fast $o-easing-standard,
+    transform $o-duration-fast $o-easing-standard !default;
+
+$dropdown-box-shadow: $o-shadow-lg !default;
+
+$dropdown-header-color: o-palette-token(--o-gray-600, $gray-600) !default;
+$dropdown-border-color: o-token(--border-color, $border-color) !default;
+
+$dropdown-link-color: o-palette-token(--o-text, $o-main-text-color) !default;
+$dropdown-link-hover-color: o-token(--o-black, $black) !default;
+$dropdown-link-hover-bg: o-token(--o-fill-4, map-get($o-fills, 4)) !default;
+
+$dropdown-link-active-color: o-token(--o-black, $black) !default;
+$dropdown-link-active-bg: transparent !default;
+
+$dropdown-link-disabled-color: o-palette-token(
+    --o-text-muted,
+    $o-main-color-muted
+) !default;
+
+$dropdown-item-padding-y: $o-dropdown-vpadding !default;
+$dropdown-item-padding-x: $o-dropdown-hpadding !default;
+
+$list-group-bg: $o-view-background-color !default;
+$list-group-hover-bg: $dropdown-link-hover-bg !default;
+
+$list-group-active-color: $o-action-text !default;
+$list-group-active-bg: $component-active-bg !default;
+$list-group-active-border-color: $o-enterprise-action-color !default;
+$list-group-action-hover-color: o-palette-token(--o-gray-900, $gray-900) !default;
+
+$breadcrumb-item-padding-x: $o-breadcrumb-item-padding-x !default;
+$breadcrumb-active-color: $o-main-text-color !default;
+$breadcrumb-divider-color: $o-main-color-muted !default;
+
+$nav-link-color: $o-main-text-color !default;
+$nav-tabs-link-active-color: $o-main-headings-color !default;
+$nav-tabs-link-active-bg: transparent !default;
+
+$nav-pills-border-radius: 0 !default;
+$nav-pills-link-active-color: $white !default;
+$nav-pills-link-active-bg: o-token(--o-brand, $o-brand-primary) !default;
+
+$tooltip-font-size: $font-size-sm !default;
+$tooltip-max-width: 400px !default;
+$tooltip-color: o-palette-token(--o-gray-200, $o-gray-200) !default;
+$tooltip-opacity: 1 !default;
+
+$popover-header-color: o-token(--heading-color, $o-main-headings-color) !default;
+$btn-box-shadow:
+    inset 0 1px 0 o-shadow-ink-white(15%),
+    0 1px 1px o-shadow-ink-black(7.5%) !default;
+
+$blockquote-footer-color: o-palette-token(--o-gray-600, $gray-600) !default;
+$btn-link-disabled-color: o-palette-token(--o-gray-600, $gray-600) !default;
+$carousel-dark-indicator-active-bg: o-token(--o-black, $black) !default;
+$carousel-dark-caption-color: o-token(--o-black, $black) !default;
+$navbar-dark-hover-color: o-shadow-ink-white(75%) !default;
+$navbar-dark-disabled-color: o-shadow-ink-white(25%) !default;
+$navbar-dark-toggler-border-color: o-shadow-ink-white(10%) !default;
+
+$dropdown-dark-bg: o-palette-token(--o-gray-800, $gray-800) !default;
+$dropdown-dark-color: o-palette-token(--o-gray-300, $gray-300) !default;
+$dropdown-dark-link-hover-color: o-token(--o-white, $white) !default;
+$dropdown-dark-link-hover-bg: o-shadow-ink-white(15%) !default;
+$dropdown-dark-link-disabled-color: o-palette-token(--o-gray-500, $gray-500) !default;
+$dropdown-dark-header-color: o-palette-token(--o-gray-500, $gray-500) !default;
+
+$kbd-color: o-palette-token(--o-gray-700, $o-gray-700) !default;
+$kbd-bg: o-palette-token(--o-gray-100, $o-gray-100) !default;
+$progress-bar-bg: o-token(--o-brand, $o-brand-primary) !default;
+$progress-bar-color: o-token(--o-white, $white) !default;
+$carousel-caption-color: o-token(--o-white, $white) !default;
+$pagination-active-bg: $component-active-bg !default;
+$pagination-active-border-color: $component-active-bg !default;
+$pagination-active-color: $component-active-color !default;
+$popover-bg: $white !default;
+$popover-border-color: o-token(--border-color, $border-color) !default;
+$popover-border-radius: $border-radius !default;
+$popover-arrow-color: var(--popover-arrow-color, #{$popover-bg}) !default;
+$popover-arrow-outer-color: $popover-border-color !default;
+
+$toast-max-width: 320px !default;
+$toast-padding-x: 1.5rem !default;
+$toast-padding-y: 0.5rem !default;
+$toast-font-size: $font-size-base !default;
+$toast-background-color: rgba($white, 0.7) !default;
+$toast-header-background-color: $toast-background-color !default;
+
+$modal-inner-padding: $o-horizontal-padding !default;
+$modal-content-color: null !default;
+$modal-footer-margin-between: 1px !default;
+
+$modal-lg: $o-modal-lg !default;
+$modal-md: $o-modal-md !default;
+
+$modal-content-border-radius: $border-radius !default;
+$modal-content-bg: $o-view-background-color !default;
+
+$modal-scale-transform: none !default;
+
+$breadcrumb-padding-y: 0 !default;
+$breadcrumb-padding-x: 0 !default;
+$breadcrumb-margin-bottom: 0 !default;
+
+$breadcrumb-bg: transparent !default;
+
+$code-color: $o-main-code-color !default;
+
+$kbd-color: $o-gray-700 !default;
+$kbd-bg: $o-gray-100 !default;
+$kbd-box-shadow:
+    0px 1px 1px rgba($o-black, 0.2),
+    inset 0px -1px 1px 1px rgba($o-gray-200, 0.8),
+    inset 0px 2px 0px 0px rgba($o-white, 0.8) !default;
+
+$input-bg: $o-input-bg !default;
+$input-border-color: $o-hairline !default;
+$input-box-shadow: 0 !default;
+$input-focus-bg: $o-white !default;
+$input-focus-box-shadow: 0 !default;
+$input-focus-border-color: mix($o-enterprise-action-color, $o-gray-200) !default;
+$form-check-input-border: var(--border-width) solid #{$o-input-boundary-color} !default;
+$form-check-input-checked-color: $o-white !default;
+$form-check-input-checked-border-color: $o-enterprise-action-color !default;
+$form-check-input-checked-bg-color: $o-enterprise-action-color !default;
+$form-select-focus-box-shadow: 0 !default;
+$form-range-track-box-shadow: 0 !default;
+$form-switch-checked-color: $white !default;
+$form-switch-focus-color: mix($o-success, $input-bg) !default;
+
+$form-range-thumb-bg: $primary !default;
+$form-range-thumb-focus-box-shadow: 0 0 0 1px $o-brand-primary !default;
+
+$badge-color: inherit !default;
+$badge-padding-y: 0.25em !default;
+$badge-padding-x: 0.82em !default;
+$badge-border-radius: $o-border-radius !default;
+$badge-font-weight: normal !default;
+
+$alert-border-width: 0 !default;
+$progress-box-shadow: 0 !default;
+$thumbnail-box-shadow: 0 !default;
+
+$input-placeholder-color: unquote(
+    "color-mix(in srgb, #{o-palette-token(--o-gray-400, $gray-400)} 50%, #{o-palette-token(--o-gray-500, $gray-500)})"
+) !default;
+
+$card-bg: $o-view-background-color !default;
+$card-spacer-y: $spacer !default;
+$card-cap-padding-y: $card-spacer-y !default;

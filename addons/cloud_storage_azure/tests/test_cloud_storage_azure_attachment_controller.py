@@ -1,0 +1,122 @@
+import re
+from unittest.mock import patch
+
+from requests import Response
+
+import odoo
+from odoo.libs.guarded_http import GuardedSession
+from odoo.libs.hashing import content_hash
+from odoo.libs.json import dumps as json_dumps
+from odoo.libs.json import loads as json_loads
+from odoo.tools.misc import file_open
+
+from odoo.addons.base.tests.common import HttpCaseWithUserDemo
+from odoo.addons.cloud_storage_azure.tests.test_cloud_storage_azure import (
+    TestCloudStorageAzureCommon,
+)
+
+
+@odoo.tests.tagged("-at_install", "post_install", "mail_controller")
+class TestCloudStorageAttachmentController(
+    HttpCaseWithUserDemo, TestCloudStorageAzureCommon
+):
+    def test_cloud_storage_azure_attachment_upload(self):
+        """Test uploading an attachment with azure cloud storage."""
+        thread = self.env["res.partner"].create({"name": "Test"})
+        self.env["ir.config_parameter"].set_param("cloud_storage_provider", "azure")
+        self.authenticate(self.user_demo.login, self.user_demo.login)
+
+        def post(url, **kwargs):
+            response = Response()
+            if url.startswith("https://login.microsoftonline.com"):
+                response.status_code = 200
+                response._content = bytes(json_dumps({"access_token": "xxx"}), "utf-8")
+            if "blob.core.windows.net" in url:
+                response.status_code = 200
+                response._content = self.DUMMY_USER_DELEGATION_KEY_XML
+            return response
+
+        with patch.object(GuardedSession, "post", staticmethod(post)):
+            with file_open("addons/web/__init__.py") as file:
+                res = self.url_open(
+                    url="/mail/attachment/upload",
+                    data={
+                        "csrf_token": odoo.http.Request.csrf_token(self),
+                        "is_pending": True,
+                        "thread_id": thread.id,
+                        "thread_model": thread._name,
+                        "cloud_storage": True,
+                    },
+                    files={"ufile": file},
+                )
+                res.raise_for_status()
+                attachment = self.env["ir.attachment"].search(
+                    [], order="id desc", limit=1
+                )
+                # ignore signature in url
+                content = re.sub(
+                    r'"url":\s*"https://accountname\.blob\.core\.windows\.net/[^"]*"',
+                    '"url":"[url]"',
+                    res.content.decode("utf-8"),
+                )
+                payload = json_loads(content)
+                [entry] = payload["data"]["store_data"]["ir.attachment"]
+                named = {
+                    "checksum",
+                    "create_date",
+                    "file_size",
+                    "has_thumbnail",
+                    "id",
+                    "mimetype",
+                    "name",
+                    "ownership_token",
+                    "raw_access_token",
+                    "res_model",
+                    "res_name",
+                    "thread",
+                    "thumbnail_access_token",
+                    "type",
+                    "url",
+                    "voice_ids",
+                }
+                payload["data"]["store_data"]["ir.attachment"] = [
+                    {key: value for key, value in entry.items() if key in named}
+                ]
+                self.assertEqual(
+                    payload,
+                    {
+                        "data": {
+                            "attachment_id": attachment.id,
+                            "store_data": {
+                                "ir.attachment": [
+                                    {
+                                        "checksum": content_hash(b""),
+                                        "create_date": odoo.fields.Datetime.to_string(
+                                            attachment.create_date
+                                        ),
+                                        "file_size": 0,
+                                        "has_thumbnail": False,
+                                        "id": attachment.id,
+                                        "mimetype": "text/x-python",
+                                        "name": "__init__.py",
+                                        "ownership_token": attachment._get_ownership_token(),
+                                        "raw_access_token": attachment._get_raw_access_token(),
+                                        "res_model": "wizard.mail.message.send",
+                                        "res_name": False,
+                                        "thread": False,
+                                        "thumbnail_access_token": attachment._get_thumbnail_token(),
+                                        "type": "cloud_storage",
+                                        "url": "[url]",
+                                        "voice_ids": [],
+                                    }
+                                ],
+                            },
+                        },
+                        "upload_info": {
+                            "headers": {"x-ms-blob-type": "BlockBlob"},
+                            "method": "PUT",
+                            "response_status": 201,
+                            "url": "[url]",
+                        },
+                    },
+                )

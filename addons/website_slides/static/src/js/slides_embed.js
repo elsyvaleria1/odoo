@@ -1,0 +1,380 @@
+// @odoo-module ignore
+document.addEventListener("DOMContentLoaded", function () {
+    function debounce(func, timeout = 300) {
+        let timer;
+        return (...args) => {
+            clearTimeout(timer);
+            timer = setTimeout(() => {
+                func.apply(this, args);
+            }, timeout);
+        };
+    }
+
+    const pdfViewer = document.getElementById("PDFViewer");
+    const pdfViewerCanvas = document.getElementById("PDFViewerCanvas");
+
+    if (pdfViewer && pdfViewerCanvas) {
+        const MIN_ZOOM = 1,
+            MAX_ZOOM = 10,
+            ZOOM_INCREMENT = 0.5;
+
+        const EmbeddedViewer = function (viewer) {
+            const self = this;
+            this.viewer = viewer;
+            const slideViewerEl = viewer.querySelector("#PDFSlideViewer");
+            this.slide_url = slideViewerEl.dataset.slideurl;
+            this.slide_id = slideViewerEl.dataset.slideid;
+            this.defaultpage = parseInt(slideViewerEl.dataset.defaultpage);
+            this.canvas = viewer.querySelector("canvas");
+
+            this.pdf_viewer = new globalThis.PDFSlidesViewer(
+                this.slide_url,
+                this.canvas,
+            );
+            this.hasSuggestions = !!this.viewer.querySelector(
+                ".oe_slides_suggestion_media",
+            );
+            import("pdfjs-dist")
+                .then(function (pdfjsLib) {
+                    pdfjsLib.GlobalWorkerOptions.workerSrc =
+                        "/web/static/lib/pdfjs/build/pdf.worker.js";
+                    return self.pdf_viewer.loadDocument(pdfjsLib);
+                })
+                .then(function () {
+                    self.on_loaded_file();
+                });
+        };
+        EmbeddedViewer.prototype.__proto__ = {
+            $: function (selector) {
+                return this.viewer.querySelector(selector);
+            },
+            on_loaded_file: function () {
+                this.$("canvas").style.display = "";
+                this.$("#page_count").textContent = this.pdf_viewer.pdf_page_total;
+                this.$("#PDFViewerLoader").style.display = "none";
+                const initpage = this.defaultpage;
+                const pageNum =
+                    initpage > 0 && initpage <= this.pdf_viewer.pdf_page_total
+                        ? initpage
+                        : 1;
+                this.render_page(pageNum);
+            },
+            on_rendered_page: function (pageNumber) {
+                if (pageNumber) {
+                    this.$("#page_number").value = pageNumber;
+                    this.navUpdate(pageNumber);
+                }
+            },
+            on_resize: function () {
+                this.render_page(this.pdf_viewer.pdf_page_current);
+            },
+            render_page: function (pageNumber) {
+                this.pdf_viewer
+                    .queueRenderPage(pageNumber)
+                    .then(this.on_rendered_page.bind(this));
+                this.navUpdate(pageNumber);
+            },
+            change_page: function () {
+                const pageAsked = parseInt(this.$("#page_number").value, 10);
+                if (1 <= pageAsked && pageAsked <= this.pdf_viewer.pdf_page_total) {
+                    this.pdf_viewer
+                        .changePage(pageAsked)
+                        .then(this.on_rendered_page.bind(this));
+                    this.navUpdate(pageAsked);
+                } else {
+                    this.$("#page_number").value = this.pdf_viewer.pdf_page_current;
+                }
+            },
+            next: function () {
+                if (
+                    this.pdf_viewer.pdf_page_current >=
+                    this.pdf_viewer.pdf_page_total + this.hasSuggestions
+                ) {
+                    return;
+                }
+
+                const self = this;
+                this.pdf_viewer.nextPage().then(function (pageNum) {
+                    if (pageNum) {
+                        self.on_rendered_page(pageNum);
+                    } else {
+                        if (self.pdf_viewer.pdf) {
+                            self.display_suggested_slides();
+                        }
+                    }
+                });
+            },
+            previous: function () {
+                const slideSuggestOverlay = this.$("#slide_suggest");
+                if (
+                    slideSuggestOverlay &&
+                    !slideSuggestOverlay.classList.contains("d-none")
+                ) {
+                    slideSuggestOverlay.classList.add("d-none");
+                    this.$("#next").classList.remove("disabled");
+                    if (this.pdf_viewer.pdf_page_total <= 1) {
+                        this.$("#previous").classList.add("disabled");
+                        this.$("#first").classList.add("disabled");
+                    }
+                    return;
+                }
+                const self = this;
+                this.pdf_viewer.previousPage().then(function (pageNum) {
+                    if (pageNum) {
+                        self.on_rendered_page(pageNum);
+                    }
+                    if (slideSuggestOverlay) {
+                        slideSuggestOverlay.classList.add("d-none");
+                    }
+                });
+            },
+            first: function () {
+                const self = this;
+                this.pdf_viewer.firstPage().then(function (pageNum) {
+                    self.on_rendered_page(pageNum);
+                    const el = self.$("#slide_suggest");
+                    if (el) {
+                        el.classList.add("d-none");
+                    }
+                });
+            },
+            last: function () {
+                const self = this;
+                this.pdf_viewer.lastPage().then(function (pageNum) {
+                    self.on_rendered_page(pageNum);
+                    const el = self.$("#slide_suggest");
+                    if (el) {
+                        el.classList.add("d-none");
+                    }
+                });
+            },
+            zoomIn: function () {
+                if (this.pdf_viewer.pdf_zoom < MAX_ZOOM) {
+                    this.pdf_viewer.pdf_zoom += ZOOM_INCREMENT;
+                    this.render_page(this.pdf_viewer.pdf_page_current);
+                }
+            },
+            zoomOut: function () {
+                if (this.pdf_viewer.pdf_zoom > MIN_ZOOM) {
+                    this.pdf_viewer.pdf_zoom -= ZOOM_INCREMENT;
+                    this.render_page(this.pdf_viewer.pdf_page_current);
+                }
+            },
+            navUpdate: function (pageNum) {
+                const pagesCount = this.pdf_viewer.pdf_page_total + this.hasSuggestions;
+                this.$("#first").classList.toggle(
+                    "disabled",
+                    pagesCount < 2 || pageNum < 2,
+                );
+                this.$("#last").classList.toggle(
+                    "disabled",
+                    pagesCount < 2 || pageNum >= this.pdf_viewer.pdf_page_total,
+                );
+                this.$("#next").classList.toggle("disabled", pageNum >= pagesCount);
+                this.$("#previous").classList.toggle("disabled", pageNum <= 1);
+                this.$("#zoomout").classList.toggle(
+                    "disabled",
+                    this.pdf_viewer.pdf_zoom <= MIN_ZOOM,
+                );
+                this.$("#zoomin").classList.toggle(
+                    "disabled",
+                    this.pdf_viewer.pdf_zoom >= MAX_ZOOM,
+                );
+            },
+            fullscreen: function () {
+                this.pdf_viewer.toggleFullScreen();
+            },
+            fullScreenFooter: function (ev) {
+                if (ev.target.id === "PDFViewerCanvas") {
+                    this.pdf_viewer.toggleFullScreenFooter();
+                }
+            },
+            display_suggested_slides: function () {
+                const suggestEl = this.$("#slide_suggest");
+                if (suggestEl) {
+                    suggestEl.classList.remove("d-none");
+                }
+                const nextEl = this.$("#next");
+                if (nextEl) {
+                    nextEl.classList.add("disabled");
+                }
+                const lastEl = this.$("#last");
+                if (lastEl) {
+                    lastEl.classList.add("disabled");
+                }
+                const prevEl = this.$("#previous");
+                if (prevEl) {
+                    prevEl.classList.remove("disabled");
+                }
+                const firstEl = this.$("#first");
+                if (firstEl) {
+                    firstEl.classList.remove("disabled");
+                }
+            },
+        };
+
+        const embeddedViewer = new EmbeddedViewer(pdfViewer);
+
+        document.getElementById("previous").addEventListener("click", function () {
+            embeddedViewer.previous();
+        });
+        document.getElementById("next").addEventListener("click", function () {
+            embeddedViewer.next();
+        });
+        document.getElementById("first").addEventListener("click", function () {
+            embeddedViewer.first();
+        });
+        document.getElementById("last").addEventListener("click", function () {
+            embeddedViewer.last();
+        });
+        document.getElementById("zoomin").addEventListener("click", function () {
+            embeddedViewer.zoomIn();
+        });
+        document.getElementById("zoomout").addEventListener("click", function () {
+            embeddedViewer.zoomOut();
+        });
+        document.getElementById("page_number").addEventListener("change", function () {
+            embeddedViewer.change_page();
+        });
+        document.getElementById("fullscreen").addEventListener("click", function () {
+            embeddedViewer.fullscreen();
+        });
+        pdfViewer.addEventListener("click", function (ev) {
+            embeddedViewer.fullScreenFooter(ev);
+        });
+        pdfViewer.addEventListener("wheel", function (ev) {
+            if (ev.metaKey || ev.ctrlKey) {
+                if (ev.deltaY > 0) {
+                    embeddedViewer.zoomOut();
+                } else if (ev.deltaY < 0) {
+                    embeddedViewer.zoomIn();
+                }
+                ev.preventDefault();
+                return;
+            }
+        });
+        window.addEventListener(
+            "resize",
+            debounce(function () {
+                embeddedViewer.on_resize();
+            }, 500),
+        );
+
+        document.addEventListener("keydown", function (ev) {
+            if (ev.key === "ArrowLeft" || ev.key === "ArrowUp") {
+                embeddedViewer.previous();
+            }
+            if (ev.key === "ArrowRight" || ev.key === "ArrowDown") {
+                embeddedViewer.next();
+            }
+        });
+
+        for (const link of document.querySelectorAll(
+            ".oe_slide_js_embed_option_link",
+        )) {
+            link.addEventListener("click", function (ev) {
+                ev.preventDefault();
+                const toggleId = this.dataset.slideOptionId;
+                const toggleEl = toggleId ? document.querySelector(toggleId) : null;
+                for (const opt of document.querySelectorAll(".oe_slide_embed_option")) {
+                    if (opt !== toggleEl) {
+                        opt.style.display = "none";
+                    }
+                }
+                if (toggleEl) {
+                    toggleEl.style.display =
+                        toggleEl.style.display === "none" ? "" : "none";
+                }
+            });
+        }
+
+        for (const media of document.querySelectorAll(".oe_slides_suggestion_media")) {
+            const caption = media.querySelector(".oe_slides_suggestion_caption");
+            if (!caption) {
+                continue;
+            }
+            caption.style.overflow = "hidden";
+            caption.style.transition = "max-height 250ms ease, opacity 250ms ease";
+            caption.style.maxHeight = "0";
+            caption.style.opacity = "0";
+
+            media.addEventListener("mouseenter", function () {
+                const cap = this.querySelector(".oe_slides_suggestion_caption");
+                if (cap) {
+                    cap.style.maxHeight = cap.scrollHeight + "px";
+                    cap.style.opacity = "1";
+                }
+            });
+            media.addEventListener("mouseleave", function () {
+                const cap = this.querySelector(".oe_slides_suggestion_caption");
+                if (cap) {
+                    cap.style.maxHeight = "0";
+                    cap.style.opacity = "0";
+                }
+            });
+        }
+
+        const shareBtn = document.querySelector(".oe_slide_js_share_email button");
+        if (shareBtn) {
+            shareBtn.addEventListener("click", function () {
+                const widget = document.querySelector(".oe_slide_js_share_email");
+                const input = widget.querySelector("input");
+                const slideID = widget.querySelector("button").dataset.slideId;
+                if (input.value) {
+                    widget.classList.remove("o_has_error");
+                    for (const ctrl of widget.querySelectorAll(
+                        ".form-control, .form-select",
+                    )) {
+                        ctrl.classList.remove("is-invalid");
+                    }
+                    fetch("/slides/slide/send_share_email", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json; charset=utf-8" },
+                        body: JSON.stringify({
+                            jsonrpc: "2.0",
+                            method: "call",
+                            params: { slide_id: slideID, emails: input.value },
+                        }),
+                    })
+                        .then(function (response) {
+                            return response.json();
+                        })
+                        .then(function (action) {
+                            if (action.result) {
+                                widget
+                                    .querySelector(".alert-info")
+                                    .classList.remove("d-none");
+                                widget
+                                    .querySelector(".input-group")
+                                    .classList.add("d-none");
+                            } else {
+                                widget
+                                    .querySelector(".alert-warning")
+                                    .classList.remove("d-none");
+                                widget
+                                    .querySelector(".input-group")
+                                    .classList.add("d-none");
+                                widget.classList.add("o_has_error");
+                                for (const ctrl of widget.querySelectorAll(
+                                    ".form-control, .form-select",
+                                )) {
+                                    ctrl.classList.add("is-invalid");
+                                }
+                                input.focus();
+                            }
+                        });
+                } else {
+                    widget.querySelector(".alert-warning").classList.remove("d-none");
+                    widget.querySelector(".input-group").classList.add("d-none");
+                    widget.classList.add("o_has_error");
+                    for (const ctrl of widget.querySelectorAll(
+                        ".form-control, .form-select",
+                    )) {
+                        ctrl.classList.add("is-invalid");
+                    }
+                    input.focus();
+                }
+            });
+        }
+    }
+});

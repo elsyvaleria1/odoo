@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <data>
+        <record id="action_account_fiscal_report" model="ir.actions.client">
+            <field name="name">Fiscal Report</field>
+            <field name="tag">account_report</field>
+            <field
+                name="context"
+                eval="{'report_id': ref('account_fiscal_categories.fiscal_report')}" />
+            <field name="path">fiscal-report</field>
+        </record>
+    </data>
+
+</odoo>

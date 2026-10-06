@@ -1,0 +1,61 @@
+$o-bus-ConnectionAlert-color: unquote(
+    "color-mix(in srgb, #{o-token(--o-white, $white)} 60%, #{o-token(--warning, $warning)})"
+);
+
+.o-bus-ConnectionAlert {
+    z-index: 1056;
+    animation: o-bus-ConnectionAlert-borderAnimation ease-in-out 0.5s forwards;
+    border: 2px solid $o-bus-ConnectionAlert-color;
+}
+
+.o-bus-ConnectionAlert-failure {
+    width: fit-content;
+    animation: o-bus-ConnectionAlert-failureAnimation ease-in-out 0.5s forwards;
+    padding: map-get($spacers, 1);
+    padding-bottom: map-get($spacers, 1) - 2px;
+}
+
+.o-bus-ConnectionAlert-icon {
+    animation: o-bus-ConnectionAlert-iconAnimation 0.5s;
+    animation-direction: alternate;
+    animation-timing-function: cubic-bezier(0.5, 0.95, 0, 0.5);
+    animation-iteration-count: 9;
+}
+
+.o-bus-ConnectionAlert-label {
+    color: o-token(--o-black, $black);
+}
+
+@keyframes o-bus-ConnectionAlert-iconAnimation {
+    from {
+        opacity: 0.5;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes o-bus-ConnectionAlert-borderAnimation {
+    from {
+        border-color: transparent;
+    }
+
+    to {
+        border-color: $o-bus-ConnectionAlert-color;
+    }
+}
+
+@keyframes o-bus-ConnectionAlert-failureAnimation {
+    from {
+        opacity: 0%;
+        background-color: unquote(
+            "color-mix(in srgb, #{$o-bus-ConnectionAlert-color} 50%, transparent)"
+        );
+    }
+
+    to {
+        opacity: 100%;
+        background-color: $o-bus-ConnectionAlert-color;
+    }
+}

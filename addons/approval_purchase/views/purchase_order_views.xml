@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_purchase_order_form_approval" model="ir.ui.view">
+        <field name="name">purchase.order.form.approval</field>
+        <field name="model">purchase.order</field>
+        <field name="inherit_id" ref="purchase.view_purchase_order_form" />
+        <field name="arch" type="xml">
+
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <field name="approval_request_id" invisible="1" />
+                <field name="approval_required" invisible="1" />
+                <button
+                    name="action_view_approval_request"
+                    type="object"
+                    icon="fa-check-square"
+                    invisible="not approval_request_id"
+                    class="oe_stat_button">
+                    <div class="o_stat_info">
+                        <field
+                            name="approval_state"
+                            string="Approval"
+                            widget="statinfo" />
+                    </div>
+                </button>
+            </xpath>
+
+            <xpath
+                expr="//page[@name='other_information']//group[@name='invoice_info']"
+                position="after">
+                <group
+                    name="approval_chain_preview"
+                    string="Who Will Approve"
+                    invisible="approval_request_id or not approval_required">
+                    <field name="approval_chain_preview" colspan="2" nolabel="1" />
+                </group>
+                <group
+                    name="approval_info"
+                    string="Approval Information"
+                    col="2"
+                    invisible="not approval_request_id">
+                    <group>
+                        <field
+                            name="approval_state"
+                            widget="badge"
+                            decoration-danger="approval_state == 'refused'"
+                            decoration-success="approval_state == 'approved'"
+                            decoration-warning="approval_state == 'pending'" />
+
+                        <field name="date_approval_requested" />
+                        <field
+                            name="date_approval_granted"
+                            invisible="approval_state != 'approved'" />
+
+                        <field
+                            name="approval_progress"
+                            widget="progressbar"
+                            invisible="approval_state not in ['pending', 'new']" />
+                    </group>
+
+                    <group>
+                        <field name="approval_user_ids" widget="many2many_tags" />
+
+                        <field
+                            name="pending_approver_ids"
+                            widget="many2many_tags"
+                            invisible="approval_state != 'pending'" />
+                    </group>
+                </group>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

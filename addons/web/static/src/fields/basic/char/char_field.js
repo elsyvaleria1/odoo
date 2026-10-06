@@ -1,0 +1,104 @@
+// @ts-check
+/** @odoo-module native */
+
+import { t } from "@odoo/owl";
+import { formatChar } from "@web/core/formatters";
+import { _t } from "@web/core/translation";
+import { elementRef } from "@web/core/utils/element_ref";
+import { exprToBoolean } from "@web/core/utils/format/strings";
+import { registerField } from "@web/fields/_registry";
+import {
+    archAttribute,
+    dynamicPlaceholderDependency,
+    dynamicPlaceholderOptions,
+    placeholderFieldOption,
+} from "@web/fields/field_options";
+import { useInputField } from "@web/fields/input_field_hook";
+import { standardFieldProps } from "@web/fields/standard_field_props";
+import { TranslationButton } from "@web/fields/translation_button";
+
+import { TextInputFieldBase } from "../text_input_field_base.js";
+
+export const charFieldProps = {
+    ...standardFieldProps,
+    autocomplete: t.string().optional(),
+    isPassword: t.boolean().optional(),
+    trim: t.boolean().optional(),
+    placeholder: t.string().optional(),
+    dynamicPlaceholder: t.boolean().optional(false),
+    dynamicPlaceholderModelReferenceField: t.string().optional(),
+};
+
+export class CharField extends TextInputFieldBase {
+    static template = "web.CharField";
+    static components = {
+        TranslationButton,
+    };
+    static props = charFieldProps;
+
+    /** @type {import("@odoo/owl").Ref<HTMLInputElement>} */
+    input;
+
+    /** @returns {HTMLInputElement | null} */
+    get inputEl() {
+        return /** @type {HTMLInputElement | null} */ (this.input.el);
+    }
+
+    setup() {
+        this.input = elementRef();
+        this.setupDynamicPlaceholder(this.input);
+        useInputField({
+            ref: this.input,
+            getValue: () => this.field.value || "",
+            parse: (v) => this.parse(v),
+        });
+    }
+
+    /** @returns {boolean} */
+    get shouldTrim() {
+        return (this.props.trim ?? super.shouldTrim) && !this.props.isPassword;
+    }
+    /** @returns {number | undefined} */
+    get maxLength() {
+        return this.field.definition.size;
+    }
+    /** @returns {string} */
+    get formattedValue() {
+        return formatChar(this.field.value, {
+            isPassword: this.props.isPassword,
+        });
+    }
+}
+
+/** @type {import("registries").FieldsRegistryItemShape} */
+export const charField = {
+    component: CharField,
+    displayName: _t("Text"),
+    supportedTypes: ["char", "text"],
+    supportedOptions: [
+        ...dynamicPlaceholderOptions(),
+        placeholderFieldOption(["char", "text"]),
+    ],
+    supportedAttributes: [
+        archAttribute("password", _t("Password"), {
+            type: "boolean",
+            help: _t("Render the input as `type=password`, masking what is typed."),
+        }),
+        archAttribute("autocomplete", _t("Autocomplete"), {
+            help: _t(
+                "Passed straight through to the input's `autocomplete` attribute.",
+            ),
+        }),
+    ],
+    fieldDependencies: dynamicPlaceholderDependency(),
+    extractProps: ({ attrs, options, placeholder }) => ({
+        isPassword: exprToBoolean(attrs.password),
+        dynamicPlaceholder: options.dynamic_placeholder || false,
+        dynamicPlaceholderModelReferenceField:
+            options.dynamic_placeholder_model_reference_field || "",
+        autocomplete: attrs.autocomplete,
+        placeholder,
+    }),
+};
+
+registerField("char", charField);

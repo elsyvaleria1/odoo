@@ -1,0 +1,20 @@
+input[name="sale_quantity"] {
+    padding: 0;
+
+    @include media-breakpoint-down(md) {
+        max-width: 3rem;
+    }
+
+    @include media-breakpoint-up(md) {
+        max-width: 4rem;
+    }
+
+    &::-webkit-outer-spin-button,
+    &::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
+    &[type="number"] {
+        -moz-appearance: textfield;
+    }
+}

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="ir_cron_digest_scheduler_action" model="ir.cron" forcecreate="True">
+        <field name="name">Digest Emails</field>
+        <field name="model_id" ref="model_digest_digest" />
+        <field name="state">code</field>
+        <field name="code">model._cron_send_digest_email()</field>
+        <field name="user_id" ref="base.user_root" />
+        <field name="repeat_interval">1</field>
+        <field name="repeat_unit">day</field>
+        <field
+            name="nextcall"
+            eval="(DateTime.now() + timedelta(hours=2)).strftime('%Y-%m-%d %H:%M:%S')" />
+    </record>
+
+</odoo>

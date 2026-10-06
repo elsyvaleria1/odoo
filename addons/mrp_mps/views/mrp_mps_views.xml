@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="mrp_mps_production_schedule_form_view" model="ir.ui.view">
+        <field name="name">mrp.production.schedule.form.view</field>
+        <field name="model">mrp.production.schedule</field>
+        <field name="arch" type="xml">
+            <form>
+                <field name="company_id" invisible="1" />
+                <group>
+                    <group>
+                        <field name="product_id" readonly="id" />
+                        <field name="is_indirect" string="Indirect Demand" />
+                        <field name="product_tmpl_id" invisible="1" />
+                        <field name="bom_id" readonly="id" />
+                        <field
+                            name="warehouse_id"
+                            groups="stock.group_stock_multi_warehouses"
+                            readonly="id" />
+                        <field name="allowed_route_ids" invisible="1" />
+                        <field
+                            name="route_id"
+                            string="Route"
+                            domain="[('id', 'in', allowed_route_ids)]" />
+                        <field name="show_vendor" invisible="1" />
+                        <field
+                            name="supplier_id"
+                            domain="[('product_tmpl_id', '=', product_tmpl_id)]"
+                            options="{'no_open': 1, 'no_create': 1}"
+                            invisible="not show_vendor"
+                            required="show_vendor" />
+                    </group>
+                    <group>
+                        <label for="forecast_target_qty" />
+                        <div class="o_row">
+                            <field name="forecast_target_qty" />
+                            <field
+                                name="product_uom_id"
+                                groups="uom.group_uom"
+                                readonly="1" />
+                        </div>
+                        <label for="min_to_replenish_qty" />
+                        <div class="o_row">
+                            <field name="min_to_replenish_qty" />
+                            <field
+                                name="product_uom_id"
+                                groups="uom.group_uom"
+                                readonly="1" />
+                        </div>
+                        <label for="replenish_trigger" />
+                        <div class="o_row">
+                            <field name="replenish_trigger" />
+                        </div>
+                    </group>
+                </group>
+                <footer>
+                    <button
+                        special="save"
+                        string="Save"
+                        class="btn-primary"
+                        data-hotkey="q" />
+                    <button
+                        special="cancel"
+                        string="Cancel"
+                        class="btn btn-secondary"
+                        data-hotkey="x" />
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="mrp_mps_search_view" model="ir.ui.view">
+        <field name="name">mrp.production.schedule.search.view</field>
+        <field name="model">mrp.production.schedule</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="product_id" />
+                <field name="warehouse_id" />
+                <field name="bom_id" />
+                <filter
+                    name="to_forecast"
+                    string="To Forecast"
+                    domain="['|', ('is_indirect', '=', False), '&amp;', ('forecast_ids', '!=', False), ('forecast_ids.forecast_qty', '!=', 0)]" />
+                <filter
+                    name="to_replenish"
+                    string="To Replenish"
+                    domain="[('replenish_state', '=', 'to_replenish')]" />
+                <filter
+                    name="indirect"
+                    string="Indirect Demand"
+                    domain="[('is_indirect', '=', True)]" />
+                <separator />
+                <filter
+                    name="under_replenishment"
+                    string="Replenishment Too Low"
+                    domain="[('replenish_state', '=', 'under_replenishment')]" />
+                <filter
+                    name="excessive_replenishment"
+                    string="Replenishment Too High"
+                    domain="[('replenish_state', '=', 'excessive_replenishment')]" />
+                <filter
+                    name="low_forecast"
+                    string="Forecast Too Low"
+                    domain="[('replenish_state', '=', 'low_forecast')]" />
+                <separator />
+                <filter
+                    name="manual_replenish"
+                    string="Manually Replenished"
+                    domain="[('replenish_trigger', '=', 'manual')]" />
+                <filter
+                    name="auto_replenish"
+                    string="Automatically Replenished"
+                    domain="[('replenish_trigger', '=', 'automated')]" />
+                <filter
+                    name="never_replenish"
+                    string="Not Replenished from MPS"
+                    domain="[('replenish_trigger', '=', 'never')]" />
+            </search>
+        </field>
+    </record>
+
+</odoo>

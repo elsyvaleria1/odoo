@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="exchange_channel_view_list" model="ir.ui.view">
+        <field name="name">exchange.channel.list</field>
+        <field name="model">exchange.channel</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="sequence" widget="handle" />
+                <field name="name" />
+                <field name="protocol" />
+                <field name="counterparty" />
+                <field name="environment" />
+                <field name="company_id" groups="base.group_multi_company" />
+                <field name="count_transmission_open" string="Open" />
+                <field name="is_healthy" widget="boolean_toggle" readonly="1" />
+            </list>
+        </field>
+    </record>
+
+    <record id="exchange_channel_view_form" model="ir.ui.view">
+        <field name="name">exchange.channel.form</field>
+        <field name="model">exchange.channel</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button
+                        name="action_read_inbox"
+                        type="object"
+                        string="Read Inbox"
+                        invisible="not is_inbox_enabled" />
+                    <button
+                        name="action_test_connection"
+                        type="object"
+                        string="Test Connection" />
+                </header>
+                <sheet>
+                    <div name="button_box" class="oe_button_box">
+                        <button
+                            name="action_view_transmissions"
+                            type="object"
+                            icon="fa-exchange"
+                            class="oe_stat_button">
+                            <field
+                                name="count_transmission"
+                                string="Transmissions"
+                                widget="statinfo" />
+                        </button>
+                    </div>
+                    <div class="oe_title">
+                        <h1><field name="name" placeholder="Counterparty name" /></h1>
+                    </div>
+                    <group name="main">
+                        <group name="protocol">
+                            <field name="protocol" />
+                            <field name="counterparty" />
+                            <field name="code" />
+                            <field name="environment" />
+                            <field
+                                name="company_id"
+                                groups="base.group_multi_company" />
+                        </group>
+                        <group name="identity">
+                            <field name="participant" />
+                            <field name="certificate_id" />
+                            <field name="endpoint_id" />
+                        </group>
+                    </group>
+                    <notebook>
+                        <page name="policy" string="Policy">
+                            <group name="policy">
+                                <field name="is_chained" />
+                                <field name="is_inbox_enabled" />
+                                <field
+                                    name="date_last_inbox"
+                                    invisible="not is_inbox_enabled" />
+                                <field name="annul_window_days" />
+                            </group>
+                        </page>
+                        <page name="transmissions" string="Transmissions">
+                            <field name="transmission_ids" readonly="1">
+                                <list>
+                                    <field name="date_created" />
+                                    <field name="subject_id" />
+                                    <field name="intent" />
+                                    <field name="reference" />
+                                    <field name="state" />
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="exchange_channel_view_search" model="ir.ui.view">
+        <field name="name">exchange.channel.search</field>
+        <field name="model">exchange.channel</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name" />
+                <field name="protocol" />
+                <field name="participant" />
+                <filter
+                    name="production"
+                    string="Production"
+                    domain="[('environment', '=', 'production')]" />
+                <filter
+                    name="with_inbox"
+                    string="With Inbox"
+                    domain="[('is_inbox_enabled', '=', True)]" />
+                <separator />
+                <filter
+                    name="inactive"
+                    string="Archived"
+                    domain="[('active', '=', False)]" />
+                <group name="groupby">
+                    <filter
+                        name="group_protocol"
+                        string="Protocol"
+                        context="{'group_by': 'protocol'}" />
+                    <filter
+                        name="group_counterparty"
+                        string="Counterparty"
+                        context="{'group_by': 'counterparty'}" />
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="exchange_channel_action" model="ir.actions.act_window">
+        <field name="name">Exchange Channels</field>
+        <field name="res_model">exchange.channel</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+</odoo>

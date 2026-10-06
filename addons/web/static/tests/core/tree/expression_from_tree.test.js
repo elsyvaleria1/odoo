@@ -1,0 +1,221 @@
+// @ts-check
+
+import { expect, test } from "@odoo/hoot";
+import {
+    complexCondition,
+    condition,
+    connector,
+    expression,
+} from "@web/core/tree/condition_tree";
+import { expressionFromTree } from "@web/core/tree/expression_from_tree";
+
+test("expressionFromTree", () => {
+    const options = {
+        getFieldDef: (name) => {
+            if (["foo", "bar"].includes(name)) {
+                return { type: "any" };
+            }
+            if (["foo_ids", "bar_ids"].includes(name)) {
+                return { type: "many2many" };
+            }
+            return null;
+        },
+    };
+    const toTest = [
+        {
+            expressionTree: condition("foo", "=", false),
+            result: `not foo`,
+        },
+        {
+            expressionTree: condition("foo", "=", false, true),
+            result: `foo`,
+        },
+        {
+            expressionTree: condition("foo", "!=", false),
+            result: `foo`,
+        },
+        {
+            expressionTree: condition("foo", "!=", false, true),
+            result: `not foo`,
+        },
+        {
+            expressionTree: condition("y", "=", false),
+            result: `not "y"`,
+        },
+        {
+            expressionTree: condition("foo", "between", [1, 3]),
+            result: `foo >= 1 and foo <= 3`,
+        },
+        {
+            expressionTree: condition("foo", "between", [1, expression("uid")], true),
+            result: `not ( foo >= 1 and foo <= uid )`,
+        },
+        {
+            expressionTree: complexCondition("uid"),
+            result: `uid`,
+        },
+        {
+            expressionTree: condition("foo_ids", "in", []),
+            result: `set(foo_ids).intersection([])`,
+        },
+        {
+            expressionTree: condition("foo_ids", "in", [1]),
+            result: `set(foo_ids).intersection([1])`,
+        },
+        {
+            expressionTree: condition("foo_ids", "in", 1),
+            result: `set(foo_ids).intersection([1])`,
+        },
+        {
+            expressionTree: condition("foo", "in", []),
+            result: `foo in []`,
+        },
+        {
+            expressionTree: condition(expression("expr"), "in", []),
+            result: `expr in []`,
+        },
+        {
+            expressionTree: condition("foo", "in", [1]),
+            result: `foo in [1]`,
+        },
+        {
+            expressionTree: condition("foo", "in", 1),
+            result: `foo in [1]`,
+        },
+        {
+            expressionTree: condition("foo", "in", expression("expr")),
+            result: `foo in expr`,
+        },
+        {
+            expressionTree: condition("foo_ids", "in", expression("expr")),
+            result: `set(foo_ids).intersection(expr)`,
+        },
+        {
+            expressionTree: condition("y", "in", []),
+            result: `"y" in []`,
+        },
+        {
+            expressionTree: condition("y", "in", [1]),
+            result: `"y" in [1]`,
+        },
+        {
+            expressionTree: condition("y", "in", 1),
+            result: `"y" in [1]`,
+        },
+        {
+            expressionTree: condition("foo_ids", "not in", []),
+            result: `not set(foo_ids).intersection([])`,
+        },
+        {
+            expressionTree: condition("foo_ids", "not in", [1]),
+            result: `not set(foo_ids).intersection([1])`,
+        },
+        {
+            expressionTree: condition("foo_ids", "not in", 1),
+            result: `not set(foo_ids).intersection([1])`,
+        },
+        {
+            expressionTree: condition("foo", "not in", []),
+            result: `foo not in []`,
+        },
+        {
+            expressionTree: condition("foo", "not in", [1]),
+            result: `foo not in [1]`,
+        },
+        {
+            expressionTree: condition("foo", "not in", 1),
+            result: `foo not in [1]`,
+        },
+        {
+            expressionTree: condition("y", "not in", []),
+            result: `"y" not in []`,
+        },
+        {
+            expressionTree: condition("y", "not in", [1]),
+            result: `"y" not in [1]`,
+        },
+        {
+            expressionTree: condition("y", "not in", 1),
+            result: `"y" not in [1]`,
+        },
+    ];
+    for (const { expressionTree, result, extraOptions } of toTest) {
+        const o = { ...options, ...extraOptions };
+        expect(expressionFromTree(expressionTree, o)).toBe(result);
+    }
+});
+
+test("expressionFromTree: a negated connector is not collapsed into if/else", () => {
+    const options = {
+        getFieldDef: (name) => (["foo", "bar"].includes(name) ? { type: "any" } : null),
+    };
+    const ifElseShape = () =>
+        connector("|", [
+            connector("&", [condition("foo", "=", false), condition("bar", "=", 1)]),
+            connector("&", [condition("foo", "!=", false), condition("bar", "=", 2)]),
+        ]);
+    expect(expressionFromTree(ifElseShape(), options)).toBe(
+        "bar == 1 if not foo else bar == 2",
+    );
+    const negated = ifElseShape();
+    negated.negate = true;
+    expect(expressionFromTree(negated, options)).toBe(
+        "not ( ( not foo and bar == 1 ) or ( foo and bar == 2 ) )",
+    );
+});
+
+test("expressionFromTree: constant condition leaves", () => {
+    expect(expressionFromTree(condition(1, "=", 1))).toBe("True");
+    expect(expressionFromTree(condition(0, "=", 1))).toBe("False");
+    expect(() => expressionFromTree(condition(1, "=", 1, true))).toThrow(
+        /Invalid condition/,
+    );
+    expect(() => expressionFromTree(condition(1, "!=", 1))).toThrow(
+        /Invalid condition/,
+    );
+    expect(() => expressionFromTree(condition(0, "=", 2))).toThrow(/Invalid condition/);
+});
+
+test("expressionFromTree: complex conditions are parenthesized when needed", () => {
+    const options = {
+        getFieldDef: (name) => (name === "foo" ? { type: "integer" } : null),
+    };
+    expect(
+        expressionFromTree(
+            connector("&", [condition("foo", "=", 1), complexCondition("a or b")]),
+            options,
+        ),
+    ).toBe("foo == 1 and ( a or b )");
+    expect(
+        expressionFromTree(
+            connector("&", [
+                condition("foo", "=", 1),
+                complexCondition("x if y else z"),
+            ]),
+            options,
+        ),
+    ).toBe("foo == 1 and ( x if y else z )");
+    expect(
+        expressionFromTree(
+            connector("&", [
+                condition("foo", "=", 1),
+                complexCondition(`context.get("k")`),
+            ]),
+            options,
+        ),
+    ).toBe(`foo == 1 and context.get("k")`);
+    expect(
+        expressionFromTree(
+            connector("&", [condition("foo", "=", 1), complexCondition("not a")]),
+            options,
+        ),
+    ).toBe("foo == 1 and not a");
+    expect(expressionFromTree(complexCondition("a or b"), options)).toBe("a or b");
+});
+
+test("expressionFromTree: a negated complex condition is parenthesised, not dropped", () => {
+    const tree = connector("&", [complexCondition("a.b")], true);
+    expect(expressionFromTree(tree)).toBe("not ( a.b )");
+    const wide = connector("&", [complexCondition("x or y")], true);
+    expect(expressionFromTree(wide)).toBe("not ( x or y )");
+});

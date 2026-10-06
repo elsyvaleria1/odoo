@@ -1,0 +1,2 @@
+id,name,model_id/id,group_id/id,kind,operation,reach,anchor,domain
+product_trace_rule_multi_company,Lot/Serial Number multi-company,model_product_trace,base.group_everyone,guard,crud,company,,

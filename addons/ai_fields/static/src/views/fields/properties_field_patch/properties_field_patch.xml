@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+        <t t-inherit="web.PropertyDefinition" t-inherit-mode="extension">
+        <xpath expr="//div[hasclass('o_field_property_definition_value')]" position="attributes">
+            <attribute name="t-if" add="!this.state.propertyDefinition.ai" separator="and"/>
+        </xpath>
+        <xpath expr="//div[hasclass('o_modal_container')]" position="inside">
+            <div t-if="this.state.propertyDefinition.type !== 'separator'" class="d-contents mb-3 mb-sm-0">
+                <label t-att-for="this.getUniqueDomID('ai')" class="o_form_label align-self-center text-900">
+                    AI
+                </label>
+                <CheckBox
+                    id="this.getUniqueDomID('ai')"
+                    value="this.state.propertyDefinition.ai"
+                    disabled="this.props.readonly"
+                    onChange.bind="this.onAiChange"
+                />
+            </div>
+            <div t-if="this.state.propertyDefinition.ai" class="d-contents mb-3 mb-sm-0">
+                <label t-att-for="this.getUniqueDomID('prompt')" class="o_form_label align-self-center text-900 mb-auto">
+                    Prompt
+                </label>
+                <h6 t-if="this.props.readonly" t-out="this.state.propertyDefinition.system_prompt" class="text-truncate"/>
+                <AiPrompt
+                    t-else=""
+                    comodel="this.comodel"
+                    domain="this.state.propertyDefinition.domain or ''"
+                    model="this.props.propertiesModel"
+                    updatePrompt.bind="this.onSystemPromptChange"
+                    placeholder.translate="Write a prompt, use '/field' to insert dynamic values"
+                    prompt="this.state.propertyDefinition.system_prompt || ''"
+                    readonly="this.props.readonly"
+                    aiFieldPath="this.props.fieldName + '.' + this.state.propertyDefinition.name"
+                />
+            </div>
+        </xpath>
+    </t>
+</templates>

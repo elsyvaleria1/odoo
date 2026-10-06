@@ -1,0 +1,33 @@
+/** @odoo-module native */
+import { registry } from "@web/core/registry";
+import { _t } from "@web/core/translation";
+import {
+    SelectionField,
+    selectionField,
+} from "@web/fields/selection/selection/selection_field";
+
+export class DocumentsServerActionEvaluationTypeField extends SelectionField {
+    get options() {
+        const optionLabel = _t("Change");
+        return [
+            ["value", optionLabel],
+            ...this.props.record.fields[this.props.name].selection.filter(
+                (option) => option[0] !== "value",
+            ),
+        ];
+    }
+}
+
+export const documentsServerActionEvaluationTypeField = {
+    ...selectionField,
+    component: DocumentsServerActionEvaluationTypeField,
+    displayName: _t("Evaluation type field for Documents server actions"),
+    supportedTypes: ["selection"],
+};
+
+registry
+    .category("fields")
+    .add(
+        "documents_server_action_evaluation_type_field",
+        documentsServerActionEvaluationTypeField,
+    );

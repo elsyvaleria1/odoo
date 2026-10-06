@@ -1,0 +1,42 @@
+{
+    "name": "Sustainability Reporting Templates",
+    "version": "1.1",
+    "oldest_upgradable_version": "1.1",
+    "category": "ESG",
+    "summary": "Assess materiality and assemble CSRD or VSME report drafts",
+    "description": "Provides ESRS topic records, impact and financial materiality scoring, stakeholder surveys and Knowledge-based report templates. Report completeness and applicability require user review.",
+    "author": "Odoo S.A.",
+    "license": "OEEL-1",
+    "depends": [
+        "esg",
+        "survey",
+        "accountant_knowledge",
+    ],
+    "data": [
+        "security/esg_security.xml",
+        "security/ir.access.csv",
+        "data/esg.esrs.csv",
+        "data/esg.nace.csv",
+        "data/esg_metric_survey_data.xml",
+        "data/mail_template_data.xml",
+        "data/esg_csrd_knowledge_article_template_category_data.xml",
+        "data/esg_csrd_knowledge_article_template_csrd_data.xml",
+        "data/esg_csrd_knowledge_article_template_vsme_data.xml",
+        "views/esg_esrs_views.xml",
+        "views/esg_metric_views.xml",
+        "views/esg_report_views.xml",
+        "views/knowledge_article_views.xml",
+        "views/survey_user_input_views.xml",
+        "views/res_config_settings_views.xml",
+        "wizards/wizard_esg_metric_send_review_survey_views.xml",
+        "views/esg_menus.xml",
+    ],
+    "assets": {
+        "web.assets_backend": [
+            "esg_csrd/static/src/**/*",
+        ],
+    },
+    "auto_install": [
+        "esg",
+    ],
+}

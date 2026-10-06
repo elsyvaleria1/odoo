@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="payment_token_form" model="ir.ui.view">
+        <field name="name">payment.token.form</field>
+        <field name="model">payment.token</field>
+        <field name="arch" type="xml">
+            <form string="Payment Tokens" create="false" edit="false">
+                <sheet>
+                    <field name="active" invisible="1" />
+                    <div class="oe_button_box" name="button_box">
+                        <button
+                            name="%(action_payment_transaction_linked_to_token)d"
+                            type="action"
+                            string="Payments"
+                            icon="fa-money"
+                            class="oe_stat_button">
+                        </button>
+                    </div>
+                    <widget
+                        name="web_ribbon"
+                        title="Archived"
+                        invisible="active"
+                        bg_color="text-bg-danger" />
+                    <group>
+                        <group name="general_information">
+                            <field name="payment_details" />
+                            <field name="payment_method_id" />
+                            <field name="partner_id" />
+                        </group>
+                        <group name="technical_information">
+                            <field name="provider_id" />
+                            <field name="provider_ref" />
+                            <field
+                                name="company_id"
+                                groups="base.group_multi_company" />
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="payment_token_list" model="ir.ui.view">
+        <field name="name">payment.token.list</field>
+        <field name="model">payment.token</field>
+        <field name="arch" type="xml">
+            <list string="Payment Tokens" create="false">
+                <field name="payment_details" />
+                <field name="partner_id" />
+                <field name="payment_method_id" />
+                <field name="provider_id" />
+                <field name="provider_ref" />
+                <field
+                    name="company_id"
+                    optional="show"
+                    groups="base.group_multi_company" />
+            </list>
+        </field>
+    </record>
+
+    <record id="payment_token_search" model="ir.ui.view">
+        <field name="name">payment.token.search</field>
+        <field name="model">payment.token</field>
+        <field name="arch" type="xml">
+            <search string="Payment Tokens">
+                <field name="partner_id" />
+                <separator />
+                <filter
+                    name="inactive"
+                    string="Archived"
+                    domain="[('active', '=', False)]" />
+                <group>
+                    <filter
+                        name="provider_id"
+                        string="Provider"
+                        context="{'group_by': 'provider_id'}" />
+                    <filter
+                        name="partner_id"
+                        string="Partner"
+                        context="{'group_by': 'partner_id'}" />
+                    <filter
+                        name="company"
+                        string="Company"
+                        context="{'group_by': 'company_id'}"
+                        groups="base.group_multi_company" />
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_payment_token" model="ir.actions.act_window">
+        <field name="name">Payment Tokens</field>
+        <field name="res_model">payment.token</field>
+        <field name="path">payment-tokens</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                There is no token created yet.
+            </p>
+        </field>
+    </record>
+
+</odoo>

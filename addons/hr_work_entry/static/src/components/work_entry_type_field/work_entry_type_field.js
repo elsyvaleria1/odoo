@@ -1,0 +1,89 @@
+/** @odoo-module native */
+import { Component, onWillUpdateProps, proxy, t, useProps } from "@odoo/owl";
+import { registry } from "@web/core/registry";
+import {
+    buildM2OFieldDescription,
+    Many2One,
+    Many2OneField,
+} from "@web/fields/relational/many2one";
+
+export class WorkEntryType extends Component {
+    static template = "hr_work_entry.WorkEntryType";
+    static props = { data: t.object(), className: t.string().optional() };
+    props = useProps(this.constructor.props);
+
+    setup() {
+        this.state = proxy({ data: this.props.data });
+        onWillUpdateProps((nextProps) => {
+            this.state.data = nextProps.data;
+        });
+    }
+}
+
+function extractData(record) {
+    if (!record) {
+        return null;
+    }
+    let name;
+    if ("display_name" in record) {
+        name = record.display_name;
+    } else if ("name" in record) {
+        name = record.name.id ? record.name.display_name : record.name;
+    }
+    return {
+        id: record.id,
+        display_name: name,
+        display_code: record.display_code,
+        color: record.color,
+    };
+}
+
+export class WorkEntryTypeMany2One extends Many2One {
+    get many2XAutocompleteProps() {
+        const props = super.many2XAutocompleteProps;
+        return {
+            ...props,
+            update: (records) => {
+                const idNamePair =
+                    records && extractData(records[0]) ? records[0] : false;
+                this.update(idNamePair);
+            },
+        };
+    }
+}
+
+export class Many2OneWorkEntryTypeField extends Many2OneField {
+    static template = "hr_work_entry.Many2OneWorkEntryTypeField";
+    static components = {
+        ...Many2OneField.components,
+        Many2One: WorkEntryTypeMany2One,
+        WorkEntryType,
+    };
+
+    setup() {
+        super.setup();
+    }
+
+    get workEntryType() {
+        const data = this.props.record.data;
+        return data?.work_entry_type_id.color ? data.work_entry_type_id : data;
+    }
+
+    get m2oProps() {
+        const props = super.m2oProps;
+        return {
+            ...props,
+            specification: { display_code: 1, color: 1 },
+        };
+    }
+}
+
+export const many2OneWorkEntryTypeField = {
+    ...buildM2OFieldDescription(Many2OneWorkEntryTypeField),
+    fieldDependencies: [
+        { name: "display_code", type: "char" },
+        { name: "color", type: "integer" },
+    ],
+};
+
+registry.category("fields").add("many2one_work_entry_type", many2OneWorkEntryTypeField);

@@ -1,0 +1,39 @@
+from odoo import fields, models
+
+
+class HrAppraisalTemplate(models.Model):
+    _name = "hr.appraisal.template"
+    _description = "Employee Appraisal Template"
+    _rec_name = "description"
+    _order = "sequence, description, id"
+
+    description = fields.Char(
+        string="Short Name",
+        required=True,
+    )
+    company_id = fields.Many2one(
+        comodel_name="res.company",
+        default=lambda self: self.env.company,
+        domain=lambda self: [("id", "in", self.env.companies.ids)],
+    )
+    sequence = fields.Integer(default=10)
+    department_ids = fields.Many2many(
+        comodel_name="hr.department",
+        string="Departments",
+        domain="(company_id and [('company_id', 'in', [company_id, False])] or [('company_id', 'in', allowed_company_ids + [False])])",
+    )
+    appraisal_employee_feedback_template = fields.Html(
+        string="Employee Feedback",
+        translate=True,
+    )
+    appraisal_manager_feedback_template = fields.Html(
+        string="Manager Feedback",
+        translate=True,
+    )
+
+    def copy_data(self, default=None):
+        vals_list = super().copy_data(default=default)
+        return [
+            dict(vals, description=self.env._("%s (copy)", template.description))
+            for template, vals in zip(self, vals_list, strict=True)
+        ]

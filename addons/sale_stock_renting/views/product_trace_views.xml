@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="stock_lot_kanban_allocation" model="ir.ui.view">
+        <field name="name">stock.lot.kanban.allocation.inherit.stock</field>
+        <field name="model">product.trace</field>
+        <field name="inherit_id" ref="product_trace.view_product_trace_kanban" />
+        <field name="mode">primary</field>
+        <field name="priority">999</field>
+        <field name="arch" type="xml">
+            <kanban position="inside">
+                <control>
+                    <button
+                        name="action_auto_assign_lots"
+                        type="object"
+                        string="Auto assign"
+                        context="{'order_line_id': parent.id}"
+                        class="btn-primary" />
+                    <create name="add_serial" string="Add Serial Number" />
+                </control>
+            </kanban>
+        </field>
+    </record>
+
+</odoo>

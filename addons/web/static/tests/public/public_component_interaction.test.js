@@ -1,0 +1,86 @@
+// @ts-check
+
+import { expect, test } from "@odoo/hoot";
+import { queryAllTexts } from "@odoo/hoot-dom";
+import { animationFrame } from "@odoo/hoot-mock";
+import { Component, useProps, xml } from "@odoo/owl";
+import { registry } from "@web/core/registry";
+
+import { setupInteractionWhiteList, startInteractions } from "./helpers.js";
+
+setupInteractionWhiteList("public_components");
+
+const publicComponentRegistry = registry.category("public_components");
+
+test(`render Public Component`, async () => {
+    class MyPublicComp extends Component {
+        static template = xml`<div class="my_public_comp" t-out="this.value"/>`;
+        static props = null;
+        props = useProps(this.constructor.props);
+        setup() {
+            const { info } = this.props;
+            this.value = typeof info === "object" ? JSON.stringify(info) : info;
+            expect.step(`MyPublicComp: ${this.value} - ${typeof info}`);
+        }
+    }
+    publicComponentRegistry.add("my_public_comp", MyPublicComp);
+
+    const html = `
+            <div>
+                <owl-component name="my_public_comp" props='{"info": "blibli"}'></owl-component>
+                <owl-component name="my_public_comp" props='{"info": 3}'></owl-component>
+                <owl-component name="my_public_comp" props='{"info": {"test": "plop"}}'></owl-component>
+            </div>
+    `;
+
+    await startInteractions(html);
+    expect.verifySteps([
+        "MyPublicComp: blibli - string",
+        "MyPublicComp: 3 - number",
+        'MyPublicComp: {"test":"plop"} - object',
+    ]);
+    expect(`.my_public_comp`).toHaveCount(3);
+    expect(queryAllTexts`.my_public_comp`).toEqual(["blibli", "3", `{"test":"plop"}`]);
+});
+
+test(`content of owl-component tag is cleared`, async () => {
+    class MyPublicComp extends Component {
+        static template = xml`<div>component</div>`;
+        static props = null;
+        props = useProps(this.constructor.props);
+    }
+    publicComponentRegistry.add("my_public_comp", MyPublicComp);
+
+    const html = `
+            <div>
+                <owl-component name="my_public_comp">some content</owl-component>
+            </div>
+    `;
+
+    await startInteractions(html);
+    await animationFrame();
+    expect(`.my_public_comp`).toHaveCount(0);
+    expect("owl-component").toHaveOuterHTML(`
+        <owl-component name="my_public_comp">
+            <owl-root contenteditable="false" data-oe-protected="true" style="display: contents;">
+                <div> component </div>
+            </owl-root> 
+        </owl-component>`);
+});
+
+test(`an unregistered name leaves the placeholder markup alone`, async () => {
+    const html = `
+            <div>
+                <owl-component name="no_such_component">server-rendered fallback</owl-component>
+            </div>
+    `;
+
+    expect.errors(1);
+    await expect(startInteractions(html)).rejects.toThrow(
+        `No public component registered as "no_such_component"`,
+    );
+    await animationFrame();
+    expect.verifyErrors([/No public component registered/]);
+    expect("owl-component").toHaveText("server-rendered fallback");
+    expect("owl-component owl-root").toHaveCount(0);
+});

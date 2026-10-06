@@ -1,0 +1,54 @@
+from odoo import api, fields, models
+from odoo.tools.authority_keys import declare_authority_keys
+
+declare_authority_keys("test_rpc", "test_rpc_authority")
+
+
+class Test_RpcModel_A(models.Model):
+    _name = "test_rpc.model_a"
+    _description = "Model A"
+
+    name = fields.Char(required=True)
+    field_b1 = fields.Many2one(
+        comodel_name="test_rpc.model_b",
+        string="required field",
+        required=True,
+    )
+    field_b2 = fields.Many2one(
+        comodel_name="test_rpc.model_b",
+        string="restricted field",
+        ondelete="restrict",
+    )
+
+    @api.private
+    def private_method(self):
+        return "private"
+
+    @api.model
+    def not_depending_on_id(self, vals=None):
+        return f"got {vals}"
+
+    @api.model
+    def echo_context_keys(self):
+        return sorted(self.env.context)
+
+    @api.model
+    def echo_context_action(self):
+        return {
+            "type": "ir.actions.client",
+            "tag": "test_rpc_echo",
+            "params": {"keys": sorted(self.env.context)},
+        }
+
+
+class Test_RpcModel_B(models.Model):
+    _name = "test_rpc.model_b"
+    _description = "Model B"
+
+    name = fields.Char(required=True)
+    value = fields.Integer()
+
+    _qty_positive = models.Constraint(
+        "check (value > 0)",
+        "The value must be positive",
+    )

@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <data>
+        <record id="create_fsm_task_view_form" model="ir.ui.view">
+            <field name="name">Create a new FSM task from this ticket</field>
+            <field name="model">wizard.helpdesk.ticket.create.fsm.task</field>
+            <field name="arch" type="xml">
+                <form>
+                    <sheet>
+                        <group>
+                            <field name="helpdesk_ticket_id" invisible="1" />
+                            <field name="name" />
+                            <field name="company_id" invisible="1" />
+                            <field
+                                name="project_id"
+                                options="{'no_create': 1, 'no_edit': 1, 'no_open': 1}" />
+                            <field
+                                name="partner_id"
+                                context="{'res_partner_search_mode': 'customer'}" />
+                        </group>
+                    </sheet>
+                    <footer>
+                        <button
+                            name="action_generate_and_view_task"
+                            type="object"
+                            string="Create &amp; View Task"
+                            class="btn btn-primary"
+                            data-hotkey="q" />
+                        <button
+                            name="action_generate_task"
+                            type="object"
+                            string="Create Task"
+                            class="btn btn-primary"
+                            data-hotkey="w" />
+                        <button
+                            special="cancel"
+                            string="Discard"
+                            class="btn btn-secondary"
+                            data-hotkey="x" />
+                    </footer>
+                </form>
+            </field>
+        </record>
+    </data>
+
+</odoo>

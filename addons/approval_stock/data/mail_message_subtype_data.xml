@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+
+    <record id="mt_stock_approved" model="mail.message.subtype">
+        <field name="name">Stock Transfer Approved</field>
+        <field name="description">Stock transfer has been approved</field>
+        <field name="res_model">stock.picking</field>
+        <field name="default" eval="True" />
+        <field name="internal" eval="True" />
+    </record>
+
+    <record id="mt_stock_refused" model="mail.message.subtype">
+        <field name="name">Stock Transfer Refused</field>
+        <field name="description">Stock transfer has been refused</field>
+        <field name="res_model">stock.picking</field>
+        <field name="default" eval="True" />
+        <field name="internal" eval="True" />
+    </record>
+
+</odoo>

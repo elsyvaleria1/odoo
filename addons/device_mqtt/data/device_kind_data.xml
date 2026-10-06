@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!--
+        A sensor is a device kind whatever it speaks, so remote owns the
+        categories. The protocol they suggest only exists once this module is
+        installed.
+    -->
+    <record id="device.device_category_gps" model="device.kind">
+        <field name="comm_protocol">mqtt</field>
+    </record>
+
+    <record id="device.device_category_humidity_sensor" model="device.kind">
+        <field name="comm_protocol">mqtt</field>
+        <field name="link_mode">stream</field>
+    </record>
+
+    <record id="device.device_category_smart_switch" model="device.kind">
+        <field name="comm_protocol">mqtt</field>
+        <field name="link_mode">stream</field>
+    </record>
+
+    <record id="device.device_category_temperature_sensor" model="device.kind">
+        <field name="comm_protocol">mqtt</field>
+        <field name="link_mode">stream</field>
+    </record>
+
+    <record id="device.device_category_temp_humidity" model="device.kind">
+        <field name="comm_protocol">mqtt</field>
+        <field name="link_mode">stream</field>
+    </record>
+
+</odoo>

@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Rendered by the token-gated auth="calendar" route /calendar/meeting/view (validates the invitation token, then falls back to public auth), letting an invitee see meeting details even when not logged in -->
+    <template
+        id="invitation_page_anonymous"
+        name="Calendar Invitation Page for anonymous users">
+        <t t-call="web.layout">
+            <t t-set="head">
+                <t t-call-assets="web.assets_frontend" t-js="false" />
+            </t>
+
+            <div class="container">
+                <div class="o_logo">
+                    <img
+                        t-attf-src="/web/binary/company_logo?company={{ company.id }}"
+                        alt="Logo" />
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h2>Calendar Invitation <small><t t-out="event.name" /></small></h2>
+                    </div>
+                    <div class="card-body">
+                        <div
+                            class="clearfix mb16"
+                            t-if="attendee.state != 'needsAction'">
+                            <span class="float-end badge text-bg-info">
+                                <t t-if="attendee.state == 'accepted'">Yes I'm going.</t>
+                                <t t-if="attendee.state == 'declined'">No I'm not going.</t>
+                                <t t-if="attendee.state == 'tentative'">Tentative</t>
+                                <t t-if="attendee.state == 'needsAction'">No feedback yet</t>
+                            </span>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="o_event_table table table-striped">
+                                <tr>
+                                    <th>Invitation for</th>
+                                    <td><t t-out="attendee.common_name" /> (<t t-out="attendee.email" />)</td>
+                                </tr>
+                                <tr>
+                                    <th>Date</th>
+                                    <td><t t-out="event.display_time" /></td>
+                                </tr>
+                                <tr>
+                                    <th>Location</th>
+                                    <td><t t-out="event.location or '-'" /></td>
+                                </tr>
+                                <tr>
+                                    <th>Attendees</th>
+                                    <td>
+                                        <ul>
+                                            <li
+                                                t-foreach="event.attendee_ids"
+                                                t-as="event_attendee"
+                                                t-attf-class="o_#{event_attendee.state}">
+                                                <t t-out="event_attendee.common_name" />
+                                            </li>
+                                        </ul>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>Description</th>
+                                    <td><t t-out="event.description or '-'" /></td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </t>
+    </template>
+
+    <template id="invitation_answer_confirm" name="Calendar Invitation Answer">
+        <t t-call="web.layout">
+            <t t-set="head">
+                <t t-call-assets="web.assets_frontend" t-js="false" />
+            </t>
+            <div class="container mt-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h2>Calendar Invitation <small><t t-out="event.name" /></small></h2>
+                    </div>
+                    <div class="card-body">
+                        <p>
+                            <t t-out="attendee.common_name" />, <t t-out="event.display_time" />
+                        </p>
+                        <form method="post" t-att-action="request.httprequest.path">
+                            <input
+                                type="hidden"
+                                name="csrf_token"
+                                t-att-value="request.csrf_token()" />
+                            <input type="hidden" name="token" t-att-value="token" />
+                            <input type="hidden" name="id" t-att-value="event.id" />
+                            <button
+                                t-if="answer == 'accept'"
+                                type="submit"
+                                class="btn btn-primary">
+                                <t t-if="recurrence">Accept all the meetings of this recurrence</t>
+                                <t t-else="">Accept the invitation</t>
+                            </button>
+                            <button t-else="" type="submit" class="btn btn-secondary">
+                                <t t-if="recurrence">Decline all the meetings of this recurrence</t>
+                                <t t-else="">Decline the invitation</t>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </t>
+    </template>
+
+</odoo>

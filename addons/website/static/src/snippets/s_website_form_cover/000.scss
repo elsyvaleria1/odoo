@@ -1,0 +1,8 @@
+.s_website_form_cover {
+    > *:not(.o_scroll_button) {
+        &,
+        > .row {
+            min-height: inherit;
+        }
+    }
+}

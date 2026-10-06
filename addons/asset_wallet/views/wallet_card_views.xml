@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_wallet_card_form_inherit_asset" model="ir.ui.view">
+        <field name="name">wallet.card.form.asset</field>
+        <field name="model">wallet.card</field>
+        <field name="inherit_id" ref="wallet.view_wallet_card_form" />
+        <field name="arch" type="xml">
+            <field name="holder_id" position="after">
+                <field name="asset_id" />
+                <field name="license_plate" invisible="not asset_id" />
+                <field name="opening_balance" />
+                <field name="amount_budget" />
+            </field>
+        </field>
+    </record>
+
+    <record id="view_wallet_card_list_inherit_asset" model="ir.ui.view">
+        <field name="name">wallet.card.list.asset</field>
+        <field name="model">wallet.card</field>
+        <field name="inherit_id" ref="wallet.view_wallet_card_list" />
+        <field name="arch" type="xml">
+            <field name="holder_id" position="after">
+                <field name="asset_id" optional="show" />
+            </field>
+        </field>
+    </record>
+
+    <record id="view_wallet_transaction_list_inherit_asset" model="ir.ui.view">
+        <field name="name">wallet.transaction.list.asset</field>
+        <field name="model">wallet.transaction</field>
+        <field name="inherit_id" ref="wallet.view_wallet_transaction_list" />
+        <field name="arch" type="xml">
+            <field name="card_id" position="after">
+                <field name="asset_id" optional="show" />
+            </field>
+        </field>
+    </record>
+
+</odoo>

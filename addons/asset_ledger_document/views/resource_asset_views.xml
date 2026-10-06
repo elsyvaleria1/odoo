@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="resource_asset_view_list_fleet_documents" model="ir.ui.view">
+        <field name="name">resource.asset.fleet.list.documents</field>
+        <field name="model">resource.asset.vehicle</field>
+        <field name="inherit_id" ref="asset_ledger.resource_asset_view_list_fleet" />
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='value_residual']" position="after">
+                <field
+                    name="fuel_card_id"
+                    optional="hide"
+                    options="{'no_create': True}" />
+                <field
+                    name="highway_pass_id"
+                    optional="hide"
+                    options="{'no_create': True}" />
+            </xpath>
+        </field>
+    </record>
+
+    <record id="resource_asset_view_list_property_documents" model="ir.ui.view">
+        <field name="name">resource.asset.property.list.documents</field>
+        <field name="model">resource.asset</field>
+        <field name="inherit_id" ref="asset_ledger.resource_asset_view_list_property" />
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='state']" position="before">
+                <field
+                    name="property_deed_id"
+                    optional="hide"
+                    options="{'no_create': True}" />
+                <field
+                    name="lease_agreement_id"
+                    optional="hide"
+                    options="{'no_create': True}" />
+                <field
+                    name="building_permit_id"
+                    optional="hide"
+                    options="{'no_create': True}" />
+            </xpath>
+        </field>
+    </record>
+
+    <record id="resource_asset_view_form_documents" model="ir.ui.view">
+        <field name="name">resource.asset.form.documents</field>
+        <field name="model">resource.asset</field>
+        <field name="inherit_id" ref="asset_ledger.resource_asset_view_form_ledger" />
+        <field name="arch" type="xml">
+            <group name="asset_lifecycle" position="after">
+                <group
+                    name="asset_card_documents"
+                    string="Card Documents"
+                    invisible="kind_code not in ('vehicle', 'machinery')">
+                    <field name="fuel_card_id" options="{'no_create': True}" />
+                    <field name="fuel_card_name" invisible="1" />
+                    <field name="highway_pass_id" options="{'no_create': True}" />
+                    <field name="highway_pass_name" invisible="1" />
+                </group>
+            </group>
+            <xpath expr="//group[@name='asset_operational']" position="inside">
+                <separator
+                    string="Property Documents"
+                    colspan="2"
+                    invisible="kind_code != 'property'" />
+                <field
+                    name="property_deed_id"
+                    options="{'no_create': True}"
+                    invisible="kind_code != 'property'" />
+                <field name="property_deed_name" invisible="1" />
+                <field
+                    name="lease_agreement_id"
+                    options="{'no_create': True}"
+                    invisible="kind_code != 'property'" />
+                <field name="lease_agreement_name" invisible="1" />
+                <field
+                    name="building_permit_id"
+                    options="{'no_create': True}"
+                    invisible="kind_code != 'property'" />
+                <field name="building_permit_name" invisible="1" />
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

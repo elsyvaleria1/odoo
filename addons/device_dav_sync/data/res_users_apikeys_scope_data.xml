@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+
+    <record id="apikeys_scope_dav" model="res.users.apikeys.scope">
+        <field name="key">dav</field>
+        <field name="name">DAV</field>
+        <field name="door_only" eval="True" />
+    </record>
+
+</odoo>

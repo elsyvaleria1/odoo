@@ -1,0 +1,546 @@
+/** @odoo-module native */
+import {
+    activateCropper,
+    getAspectRatio,
+    getDataURLBinarySize,
+    getImageSizeFromCache,
+    isGif,
+    isWebGLEnabled,
+    loadImage,
+    loadImageDataURL,
+    loadImageInfo,
+} from "@html_editor/utils/image_processing";
+import {
+    getAffineApproximation,
+    getProjective,
+} from "@html_editor/utils/perspective_utils";
+
+import { Plugin } from "../../plugin.js";
+
+export const DEFAULT_IMAGE_QUALITY = "92";
+
+/**
+ * @typedef { Object } ImagePostProcessShared
+ * @property { ImagePostProcessPlugin['processImage'] } processImage
+ * @property { ImagePostProcessPlugin['getProcessedImageSize'] } getProcessedImageSize
+ */
+
+/**
+ * @typedef {(
+ * (img: HTMLImageElement, newDataset: object) => Promise<{
+ * getHeight: (canvas: HTMLCanvasElement) => number,
+ * perspective: string | null,
+ * newDataset: object,
+ * postProcessCroppedCanvas: (canvas: HTMLCanvasElement) => Promise<HTMLCanvasElement>,
+ * svg: SVGElement,
+ * svgAspectRatio: number,
+ * svgWidth: number,
+ * }>
+ * )[]} process_image_warmup_handlers
+ * @typedef {(
+ * (
+ * url: string,
+ * newDataset: object,
+ * processContext: { svg: SVGElement, svgAspectRatio: number, svgWidth: number }
+ * ) => Promise<[newUrl: string, handlerDataset: object]>
+ * )[]} process_image_post_handlers
+ * @typedef {((args: {imageEl: HTMLElement}) => void)[]} on_image_updated_handlers
+ */
+
+export class ImagePostProcessPlugin extends Plugin {
+    static id = "imagePostProcess";
+    static dependencies = ["style"];
+    static shared = ["processImage", "getProcessedImageSize"];
+
+    /**
+     * @param {HTMLImageElement} img
+     * @param {Object} newDataset
+     * @param {Function} [onImageInfoLoaded]
+     * @returns {{ url: string, newDataset: object }}
+     */
+    async _processImage({ img, newDataset = {}, onImageInfoLoaded }) {
+        const processContext = {};
+        if (!newDataset.originalSrc || !newDataset.mimetypeBeforeConversion) {
+            Object.assign(newDataset, await loadImageInfo(img));
+        }
+        if (onImageInfoLoaded) {
+            if (await onImageInfoLoaded(newDataset)) {
+                return;
+            }
+        }
+        for (const cb of this.getResource("process_image_warmup_handlers")) {
+            const addedContext = await cb(img, newDataset);
+            if (addedContext) {
+                if (addedContext.newDataset) {
+                    Object.assign(newDataset, addedContext.newDataset);
+                }
+                Object.assign(processContext, addedContext);
+            }
+        }
+
+        const data = getImageTransformationData({ ...img.dataset, ...newDataset });
+        const {
+            mimetypeBeforeConversion,
+            formatMimetype,
+            width,
+            height,
+            resizeWidth,
+            filter,
+            glFilter,
+            filterOptions,
+            aspectRatio,
+            quality,
+        } = data;
+
+        const { postProcessCroppedCanvas, perspective, getHeight } = processContext;
+
+        const originalImg = await loadImage(data.originalSrc);
+        const originalSrc = originalImg.getAttribute("src");
+
+        if (
+            !(await isImageSupportedForProcessing(
+                img,
+                formatMimetype || mimetypeBeforeConversion,
+            ))
+        ) {
+            const [postUrl, postDataset] = await this.postProcessImage(
+                await loadImageDataURL(originalSrc),
+                newDataset,
+                processContext,
+            );
+            return { url: postUrl, newDataset: postDataset };
+        }
+        const container = document.createElement("div");
+        container.appendChild(originalImg);
+        const cropper = await activateCropper(originalImg, aspectRatio, data);
+        const croppedCanvas = cropper.getCroppedCanvas(width, height);
+        cropper.destroy();
+        const processedCanvas =
+            (await postProcessCroppedCanvas?.(croppedCanvas)) || croppedCanvas;
+
+        const canvas = document.createElement("canvas");
+        canvas.width = resizeWidth || processedCanvas.width;
+        canvas.height = getHeight
+            ? getHeight(canvas)
+            : (processedCanvas.height * canvas.width) / processedCanvas.width;
+        const ctx = canvas.getContext("2d");
+        ctx.imageSmoothingQuality = "high";
+        ctx.mozImageSmoothingEnabled = true;
+        ctx.webkitImageSmoothingEnabled = true;
+        ctx.msImageSmoothingEnabled = true;
+        ctx.imageSmoothingEnabled = true;
+
+        if (perspective) {
+            const points = JSON.parse(perspective);
+            const divisions = 10;
+            const w = processedCanvas.width,
+                h = processedCanvas.height;
+
+            const project = getProjective(w, h, [
+                [
+                    (canvas.width / 100) * points[0][0],
+                    (canvas.height / 100) * points[0][1],
+                ],
+                [
+                    (canvas.width / 100) * points[1][0],
+                    (canvas.height / 100) * points[1][1],
+                ],
+                [
+                    (canvas.width / 100) * points[2][0],
+                    (canvas.height / 100) * points[2][1],
+                ],
+                [
+                    (canvas.width / 100) * points[3][0],
+                    (canvas.height / 100) * points[3][1],
+                ],
+            ]);
+
+            for (let i = 0; i < divisions; i++) {
+                for (let j = 0; j < divisions; j++) {
+                    const [dx, dy] = [w / divisions, h / divisions];
+
+                    const upper = {
+                        origin: [i * dx, j * dy],
+                        sides: [dx, dy],
+                        flange: 0.1,
+                        overlap: 0,
+                    };
+                    const lower = {
+                        origin: [i * dx + dx, j * dy + dy],
+                        sides: [-dx, -dy],
+                        flange: 0,
+                        overlap: 0.1,
+                    };
+
+                    for (const { origin, sides, flange, overlap } of [upper, lower]) {
+                        const [[a, c, e], [b, d, f]] = getAffineApproximation(project, [
+                            origin,
+                            [origin[0] + sides[0], origin[1]],
+                            [origin[0], origin[1] + sides[1]],
+                        ]);
+
+                        const ox =
+                            (i !== divisions ? overlap * sides[0] : 0) +
+                            flange * sides[0];
+                        const oy =
+                            (j !== divisions ? overlap * sides[1] : 0) +
+                            flange * sides[1];
+
+                        origin[0] += flange * sides[0];
+                        origin[1] += flange * sides[1];
+
+                        sides[0] -= flange * sides[0];
+                        sides[1] -= flange * sides[1];
+
+                        ctx.save();
+                        ctx.setTransform(a, b, c, d, e, f);
+
+                        ctx.beginPath();
+                        ctx.moveTo(origin[0] - ox, origin[1] - oy);
+                        ctx.lineTo(origin[0] + sides[0], origin[1] - oy);
+                        ctx.lineTo(origin[0] + sides[0], origin[1]);
+                        ctx.lineTo(origin[0], origin[1] + sides[1]);
+                        ctx.lineTo(origin[0] - ox, origin[1] + sides[1]);
+                        ctx.closePath();
+                        ctx.clip();
+                        ctx.drawImage(processedCanvas, 0, 0);
+
+                        ctx.restore();
+                    }
+                }
+            }
+        } else {
+            ctx.drawImage(
+                processedCanvas,
+                0,
+                0,
+                processedCanvas.width,
+                processedCanvas.height,
+                0,
+                0,
+                canvas.width,
+                canvas.height,
+            );
+        }
+
+        const canUseWebGL = glFilter && isWebGLEnabled() && window.WebGLImageFilter;
+        if (canUseWebGL) {
+            const glf = new window.WebGLImageFilter();
+            const cv = document.createElement("canvas");
+            cv.width = canvas.width;
+            cv.height = canvas.height;
+            glFilters[glFilter](glf, cv, filterOptions, applyAllTo(canvas));
+            const filtered = glf.apply(canvas);
+            ctx.drawImage(
+                filtered,
+                0,
+                0,
+                filtered.width,
+                filtered.height,
+                0,
+                0,
+                canvas.width,
+                canvas.height,
+            );
+        }
+
+        ctx.fillStyle = filter || "#0000";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        newDataset.mimetype = formatMimetype || mimetypeBeforeConversion;
+        const dataURL = canvas.toDataURL(newDataset.mimetype, quality / 100);
+        const newSize = getDataURLBinarySize(dataURL);
+        const originalSize = getImageSizeFromCache(originalSrc);
+        const isChanged =
+            !!perspective ||
+            !!glFilter ||
+            (filter && filter !== "#0000") ||
+            originalImg.width !== canvas.width ||
+            originalImg.height !== canvas.height ||
+            originalImg.width !== processedCanvas.width ||
+            originalImg.height !== processedCanvas.height;
+
+        let url =
+            isChanged || originalSize >= newSize
+                ? dataURL
+                : await loadImageDataURL(originalSrc);
+        [url, newDataset] = await this.postProcessImage(
+            url,
+            newDataset,
+            processContext,
+        );
+        return { url, newDataset };
+    }
+    async processImage(params) {
+        const processed = await this._processImage(params);
+        if (!processed) {
+            return () => {};
+        }
+        return () =>
+            this.updateImageAttributes(params.img, processed.url, processed.newDataset);
+    }
+    async getProcessedImageSize(img) {
+        const processed = await this._processImage({ img });
+        return getDataURLBinarySize(processed.url);
+    }
+    async postProcessImage(url, newDataset, processContext) {
+        for (const cb of this.getResource("process_image_post_handlers")) {
+            const [newUrl, handlerDataset] =
+                (await cb(url, newDataset, processContext)) || [];
+            url = newUrl || url;
+            newDataset = handlerDataset || newDataset;
+        }
+        return [url, newDataset];
+    }
+    updateImageAttributes(el, url, newDataset) {
+        el.classList.add("o_modified_image_to_save");
+        if (el.tagName === "IMG") {
+            el.setAttribute("src", url);
+        } else {
+            this.dependencies.style.setBackgroundImageUrl(el, url);
+        }
+        for (const key in newDataset) {
+            const value = newDataset[key];
+            if (value) {
+                el.dataset[key] = value;
+            } else {
+                delete el.dataset[key];
+            }
+        }
+        this.dispatchTo("on_image_updated_handlers", { imageEl: el });
+    }
+}
+
+export function getImageTransformationData(dataset) {
+    const data = Object.assign(
+        {
+            glFilter: "",
+            filter: "#0000",
+        },
+        dataset,
+    );
+    for (const key of ["width", "height", "resizeWidth"]) {
+        data[key] = parseFloat(data[key]);
+    }
+    if (!("quality" in data)) {
+        data.quality = DEFAULT_IMAGE_QUALITY;
+    }
+    data.aspectRatio = data.aspectRatio ? getAspectRatio(data.aspectRatio) : 0;
+    return data;
+}
+
+function shouldTransformImage(data) {
+    return (
+        data.perspective ||
+        data.glFilter ||
+        data.width ||
+        data.height ||
+        data.resizeWidth ||
+        data.aspectRatio
+    );
+}
+
+export function shouldPreventGifTransformation(data) {
+    return isGif(data.mimetypeBeforeConversion) && !shouldTransformImage(data);
+}
+
+export const defaultImageFilterOptions = {
+    blend: "normal",
+    filterColor: "",
+    blur: "0",
+    desaturateLuminance: "0",
+    saturation: "0",
+    contrast: "0",
+    brightness: "0",
+    sepia: "0",
+};
+
+export async function isImageSupportedForProcessing(imgEl, originalImgMimetype) {
+    if (!["image/jpeg", "image/png", "image/webp"].includes(originalImgMimetype)) {
+        return false;
+    }
+    return !!(imgEl.dataset.originalSrc || (await loadImageInfo(imgEl)).originalSrc);
+}
+
+const applyAllTo = (result) => (filter, filters) => {
+    filters.forEach((f) => {
+        if (f[0] === "blend") {
+            const cv = f[1];
+            const ctx = result.getContext("2d");
+            ctx.globalCompositeOperation = f[2];
+            ctx.globalAlpha = f[3];
+            ctx.drawImage(cv, 0, 0);
+            ctx.globalCompositeOperation = "source-over";
+            ctx.globalAlpha = 1.0;
+        } else {
+            filter.addFilter(...f);
+        }
+    });
+};
+const glFilters = {
+    blur: (filter) => filter.addFilter("blur", 10),
+
+    1977: (filter, cv, filterOptions, applyAll) => {
+        const ctx = cv.getContext("2d");
+        ctx.fillStyle = "rgb(243, 106, 188)";
+        ctx.fillRect(0, 0, cv.width, cv.height);
+        applyAll(filter, [
+            ["blend", cv, "screen", 0.3],
+            ["brightness", 0.1],
+            ["contrast", 0.1],
+            ["saturation", 0.3],
+        ]);
+    },
+
+    aden: (filter, cv, filterOptions, applyAll) => {
+        const ctx = cv.getContext("2d");
+        ctx.fillStyle = "rgb(66, 10, 14)";
+        ctx.fillRect(0, 0, cv.width, cv.height);
+        applyAll(filter, [
+            ["blend", cv, "darken", 0.2],
+            ["brightness", 0.2],
+            ["contrast", -0.1],
+            ["saturation", -0.15],
+            ["hue", 20],
+        ]);
+    },
+
+    brannan: (filter, cv, filterOptions, applyAll) => {
+        const ctx = cv.getContext("2d");
+        ctx.fillStyle = "rgb(161, 44, 191)";
+        ctx.fillRect(0, 0, cv.width, cv.height);
+        applyAll(filter, [
+            ["blend", cv, "lighten", 0.31],
+            ["sepia", 0.5],
+            ["contrast", 0.4],
+        ]);
+    },
+
+    earlybird: (filter, cv, filterOptions, applyAll) => {
+        const ctx = cv.getContext("2d");
+        const gradient = ctx.createRadialGradient(
+            cv.width / 2,
+            cv.height / 2,
+            0,
+            cv.width / 2,
+            cv.height / 2,
+            Math.hypot(cv.width, cv.height) / 2,
+        );
+        gradient.addColorStop(0.2, "#D0BA8E");
+        gradient.addColorStop(1, "#1D0210");
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, cv.width, cv.height);
+        applyAll(filter, [
+            ["blend", cv, "overlay", 0.2],
+            ["sepia", 0.2],
+            ["contrast", -0.1],
+        ]);
+    },
+
+    inkwell: (filter, cv, filterOptions, applyAll) => {
+        applyAll(filter, [
+            ["sepia", 0.3],
+            ["brightness", 0.1],
+            ["contrast", -0.1],
+            ["desaturateLuminance"],
+        ]);
+    },
+
+    maven: (filter, cv, filterOptions, applyAll) => {
+        applyAll(filter, [
+            ["sepia", 0.25],
+            ["brightness", -0.05],
+            ["contrast", -0.05],
+            ["saturation", 0.5],
+        ]);
+    },
+
+    toaster: (filter, cv, filterOptions, applyAll) => {
+        const ctx = cv.getContext("2d");
+        const gradient = ctx.createRadialGradient(
+            cv.width / 2,
+            cv.height / 2,
+            0,
+            cv.width / 2,
+            cv.height / 2,
+            Math.hypot(cv.width, cv.height) / 2,
+        );
+        gradient.addColorStop(0, "#0F4E80");
+        gradient.addColorStop(1, "#3B003B");
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, cv.width, cv.height);
+        applyAll(filter, [
+            ["blend", cv, "screen", 0.5],
+            ["brightness", -0.1],
+            ["contrast", 0.5],
+        ]);
+    },
+
+    walden: (filter, cv, filterOptions, applyAll) => {
+        const ctx = cv.getContext("2d");
+        ctx.fillStyle = "#CC4400";
+        ctx.fillRect(0, 0, cv.width, cv.height);
+        applyAll(filter, [
+            ["blend", cv, "screen", 0.3],
+            ["sepia", 0.3],
+            ["brightness", 0.1],
+            ["saturation", 0.6],
+            ["hue", 350],
+        ]);
+    },
+
+    valencia: (filter, cv, filterOptions, applyAll) => {
+        const ctx = cv.getContext("2d");
+        ctx.fillStyle = "#3A0339";
+        ctx.fillRect(0, 0, cv.width, cv.height);
+        applyAll(filter, [
+            ["blend", cv, "exclusion", 0.5],
+            ["sepia", 0.08],
+            ["brightness", 0.08],
+            ["contrast", 0.08],
+        ]);
+    },
+
+    xpro: (filter, cv, filterOptions, applyAll) => {
+        const ctx = cv.getContext("2d");
+        const gradient = ctx.createRadialGradient(
+            cv.width / 2,
+            cv.height / 2,
+            0,
+            cv.width / 2,
+            cv.height / 2,
+            Math.hypot(cv.width, cv.height) / 2,
+        );
+        gradient.addColorStop(0.4, "#E0E7E6");
+        gradient.addColorStop(1, "#2B2AA1");
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, cv.width, cv.height);
+        applyAll(filter, [
+            ["blend", cv, "color-burn", 0.7],
+            ["sepia", 0.3],
+        ]);
+    },
+
+    custom: (filter, cv, filterOptions, applyAll) => {
+        const options = Object.assign(
+            defaultImageFilterOptions,
+            JSON.parse(filterOptions || "{}"),
+        );
+        const filters = [];
+        if (options.filterColor) {
+            const ctx = cv.getContext("2d");
+            ctx.fillStyle = options.filterColor;
+            ctx.fillRect(0, 0, cv.width, cv.height);
+            filters.push(["blend", cv, options.blend, 1]);
+        }
+        delete options.blend;
+        delete options.filterColor;
+        filters.push(
+            ...Object.entries(options).map(([filter, amount]) => [
+                filter,
+                parseInt(amount) / 100,
+            ]),
+        );
+        applyAll(filter, filters);
+    },
+};

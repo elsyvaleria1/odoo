@@ -1,0 +1,4 @@
+id,name,model_id/id,group_id/id,kind,operation,reach,anchor,predicate_id/id,predicate_args,domain
+hr_employee_privilege_own_attendance,Employee: a Telegram attendance command finds the sender's employee,hr.model_hr_employee,privilege_record_own_attendance,permission,r,predicate,,hr.access_predicate_your_employee,"{""at"": """"}",
+hr_attendance_privilege_own_attendance,Attendance: a Telegram attendance command records the sender's own attendance,hr_attendance.model_hr_attendance,privilege_record_own_attendance,permission,cru,predicate,,hr.access_predicate_your_employee,"{""at"": ""employee_id.""}",
+hr_version_privilege_own_attendance,Employee Version: a Telegram attendance command reads the version its employee is made of,hr.model_hr_version,privilege_record_own_attendance,permission,r,predicate,,hr.access_predicate_your_employee,"{""at"": ""employee_id.""}",

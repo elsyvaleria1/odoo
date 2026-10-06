@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+
+    <!-- Categories -->
+    <record
+        id="esg_csrd_knowledge_article_template_category_report"
+        model="knowledge.article.template.category">
+        <field name="name">ESG Reporting</field>
+        <field name="sequence">700</field>
+    </record>
+
+</odoo>

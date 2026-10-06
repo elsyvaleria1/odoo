@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="account_analytic_account_view_form_inherit" model="ir.ui.view">
+        <field name="name">account.analytic.account.form.inherit</field>
+        <field name="model">account.analytic.account</field>
+        <field name="inherit_id" ref="analytic.view_account_analytic_account_form" />
+        <field name="priority" eval="9" />
+        <field name="arch" type="xml">
+            <div name="button_box" position="inside">
+                <button
+                    name="action_view_invoice"
+                    type="object"
+                    icon="fa-regular fa-pen-to-square"
+                    invisible="invoice_count == 0"
+                    class="oe_stat_button">
+                    <field
+                        name="invoice_count"
+                        string="Customer Invoices"
+                        widget="statinfo" />
+                </button>
+                <button
+                    name="action_view_vendor_bill"
+                    type="object"
+                    icon="fa-regular fa-file-lines"
+                    invisible="vendor_bill_count == 0"
+                    class="oe_stat_button">
+                    <field
+                        name="vendor_bill_count"
+                        string="Vendor Bills"
+                        widget="statinfo" />
+                </button>
+            </div>
+        </field>
+    </record>
+
+    <record id="account_analytic_account_view_list_inherit" model="ir.ui.view">
+        <field name="name">account.analytic.account.list.inherit</field>
+        <field name="model">account.analytic.account</field>
+        <field name="inherit_id" ref="analytic.view_account_analytic_account_list" />
+        <field name="arch" type="xml">
+            <field name="debit" position="attributes">
+                <attribute name="column_invisible">False</attribute>
+                <attribute name="groups">
+                    account.group_account_readonly,account.group_account_invoice</attribute>
+            </field>
+            <field name="credit" position="attributes">
+                <attribute name="column_invisible">False</attribute>
+                <attribute name="groups">
+                    account.group_account_readonly,account.group_account_invoice</attribute>
+            </field>
+            <field name="balance" position="attributes">
+                <attribute name="column_invisible">False</attribute>
+                <attribute name="groups">
+                    account.group_account_readonly,account.group_account_invoice</attribute>
+            </field>
+        </field>
+    </record>
+
+</odoo>

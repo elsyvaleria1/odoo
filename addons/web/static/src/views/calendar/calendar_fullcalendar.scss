@@ -1,0 +1,106 @@
+// FullCalendar 7 draws structure only and leaves borders, event chips and
+// header typography to a theme; Odoo uses no theme, so they are drawn here.
+.o_calendar_renderer .o_calendar_widget {
+    --o-fc-border: #{$border-width} solid var(--o-cw-border-color);
+    --fc-highlight-color: #{o-token-alpha(--o-action, $o-action, 0.15)};
+    --fc-neutral-bg-color: #{o-palette-token(--o-gray-100, $gray-100)};
+
+    .fc-col-header-cell,
+    .fc-daygrid-day,
+    .fc-timegrid-col {
+        border: var(--o-fc-border);
+    }
+
+    .fc-daygrid-row,
+    .fc-col-header-divider {
+        border-bottom: var(--o-fc-border);
+    }
+
+    .fc-timegrid-axis-divider {
+        border-inline-end: var(--o-fc-border);
+    }
+
+    .fc-timegrid-slot-lane {
+        border-top: var(--o-fc-border);
+    }
+
+    .fc-timegrid-slot-label {
+        justify-content: flex-end;
+    }
+
+    .fc-col-header-cell {
+        font-weight: $font-weight-medium;
+    }
+
+    .fc-timegrid-slot-label-cushion {
+        padding: 0 map-get($spacers, 1);
+    }
+
+    .fc-event {
+        position: relative;
+        border-radius: $border-radius-sm;
+        font-size: $o-font-size-base-smaller;
+
+        .fc-event-main {
+            position: relative;
+            z-index: 2;
+        }
+
+        &:not(.o_event_dot) {
+            border: $border-width solid var(--fc-event-border-color, transparent);
+            background-color: var(--fc-event-bg-color);
+            color: var(--fc-event-text-color);
+
+            .fc-event-main {
+                color: var(--fc-event-text-color);
+            }
+        }
+    }
+
+    .fc-popover {
+        border: var(--o-fc-border);
+        border-radius: $border-radius;
+        background-color: var(--o-bg-view);
+        box-shadow: var(--#{$prefix}box-shadow-sm);
+
+        > .fc-col-header-cell {
+            border: none;
+            background-color: var(--fc-neutral-bg-color);
+        }
+
+        .fc-popover-close {
+            position: absolute;
+            top: map-get($spacers, 1);
+            inset-inline-end: map-get($spacers, 1);
+            border: none;
+            background: none;
+            opacity: 0.65;
+
+            &::before {
+                font: normal 900 1em/1 "Font Awesome 7 Pro";
+                content: "\f00d";
+            }
+
+            &:hover {
+                opacity: 1;
+            }
+        }
+    }
+
+    .fc-highlight {
+        background-color: var(--fc-highlight-color);
+    }
+
+    .fc-bg-event {
+        background-color: var(--fc-bg-event-color);
+        opacity: 0.3;
+    }
+
+    .fc-daygrid-event {
+        margin: $border-width map-get($spacers, 1) * 0.5 0;
+    }
+
+    .fc-timegrid-event {
+        margin-bottom: $border-width;
+    }
+}

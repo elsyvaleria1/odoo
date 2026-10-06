@@ -1,0 +1,33 @@
+/** @odoo-module native */
+import { provideBuilderContext } from "@html_builder/core/builder_context";
+import { Component, t, useProps, xml } from "@odoo/owl";
+import { batched } from "@web/core/utils/timing";
+
+export class ImgGroup extends Component {
+    static template = xml`<t><t t-call-slot="default"/></t>`;
+    static props = { slots: t.object() };
+    props = useProps(this.constructor.props);
+
+    setup() {
+        this.load = () => {};
+        this.imgProms = [];
+        this.loadImgs = batched(this._loadImgs.bind(this));
+
+        provideBuilderContext({
+            imgGroup: {
+                loaded: new Promise((resolve) => {
+                    this.load = resolve;
+                }),
+                addImgProm: (promise) => {
+                    this.imgProms.push(promise);
+                    this.loadImgs();
+                },
+            },
+        });
+    }
+
+    async _loadImgs() {
+        await Promise.all(this.imgProms);
+        this.load();
+    }
+}

@@ -1,0 +1,11 @@
+/** @odoo-module native */
+import { AnalyticSearchModel } from "@analytic/views/analytic_search_model";
+import { registry } from "@web/core/registry";
+import { graphView } from "@web/views/graph";
+
+export const analyticGraphView = {
+    ...graphView,
+    SearchModel: AnalyticSearchModel,
+};
+
+registry.category("views").add("analytic_graph", analyticGraphView);

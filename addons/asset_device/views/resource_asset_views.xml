@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_resource_asset_form_device" model="ir.ui.view">
+        <field name="name">resource.asset.form.device</field>
+        <field name="model">resource.asset</field>
+        <field name="inherit_id" ref="resource_asset.resource_asset_view_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//sheet" position="inside">
+                <div class="oe_button_box" name="button_box_device">
+                    <button
+                        name="action_view_device_devices"
+                        type="object"
+                        icon="fa-microchip"
+                        invisible="count_device_devices == 0"
+                        class="oe_stat_button">
+                        <field
+                            name="count_device_devices"
+                            string="Devices"
+                            widget="statinfo" />
+                    </button>
+                </div>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

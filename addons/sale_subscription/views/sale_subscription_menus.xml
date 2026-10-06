@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <menuitem
+        id="menu_sale_subscription_root"
+        name="Subscriptions"
+        sequence="40"
+        groups="sale.group_sale_salesman"
+        web_icon="sale_subscription,static/description/icon.png">
+        <menuitem id="menu_sale_subscription" name="Subscriptions" sequence="5">
+            <menuitem
+                id="menu_sale_subscription_action"
+                action="sale_subscription_action"
+                sequence="10" />
+            <menuitem
+                id="menu_sale_subscription_quotes"
+                action="sale_subscription_action_quotes"
+                sequence="20" />
+            <menuitem
+                id="menu_sale_subscription_pending"
+                action="sale_subscription_action_pending"
+                sequence="30" />
+            <menuitem
+                id="menu_sale_subscription_upsell"
+                action="sale_subscription_action_upsell"
+                sequence="40" />
+            <menuitem
+                id="menu_orders_customers"
+                action="account.res_partner_action_customer"
+                sequence="50" />
+        </menuitem>
+        <menuitem
+            id="product_menu_catalog"
+            name="Products"
+            sequence="30"
+            groups="sale.group_sale_salesman">
+            <menuitem
+                id="menu_sale_subscription_product"
+                action="product_action_subscription"
+                sequence="10" />
+            <menuitem
+                id="menu_sale_subscription_pricelist"
+                action="product.action_product_pricelist_2"
+                sequence="50"
+                groups="product.group_product_pricelist" />
+        </menuitem>
+        <menuitem
+            id="menu_sale_subscription_config"
+            name="Configuration"
+            sequence="100"
+            groups="sale.group_sale_manager">
+            <menuitem
+                id="menu_sale_subscription_settings"
+                name="Settings"
+                action="sale.action_sale_config_settings"
+                sequence="1"
+                groups="base.group_system" />
+            <menuitem
+                id="menu_sale_subscription_plans"
+                name="Recurring Plans"
+                action="sale_subscription_plan_action"
+                sequence="2" />
+            <menuitem
+                id="menu_template_of_subscription"
+                action="sale_subscription_template_action"
+                sequence="4"
+                groups="sale.group_sale_order_template" />
+            <menuitem
+                id="menu_sale_subscription_close_reason_action"
+                action="sale_subscription_close_reason_action"
+                sequence="10" />
+            <menuitem
+                id="subscription_menu_config_activity_type"
+                name="Activity Types"
+                action="mail_activity_type_action_config_subscription"
+                sequence="100" />
+            <menuitem
+                id="mail_activity_plan_menu_config_subscription"
+                name="Activity Plans"
+                action="mail_activity_plan_action_subscription"
+                sequence="110" />
+        </menuitem>
+    </menuitem>
+
+    <menuitem
+        id="menu_sale_subscription_report"
+        name="Reporting"
+        parent="menu_sale_subscription_root"
+        sequence="40" />
+
+    <menuitem
+        id="menu_sale_subscription_analysis"
+        name="Subscriptions"
+        parent="menu_sale_subscription_report"
+        action="sale_subscription_report_analysis_action"
+        sequence="1" />
+
+    <menuitem
+        id="menu_sale_subscription_report_cohort"
+        name="Retention"
+        parent="menu_sale_subscription_report"
+        action="sale_subscription_report_cohort_action"
+        sequence="2" />
+
+    <menuitem
+        id="menu_sale_order_log_growth_report"
+        name="MRR Breakdown"
+        parent="sale_subscription.menu_sale_subscription_report"
+        action="sale_order_log_growth_action"
+        sequence="30" />
+
+    <menuitem
+        id="menu_sale_order_log_analysis_report"
+        name="MRR Timeline"
+        parent="sale_subscription.menu_sale_subscription_report"
+        action="sale_order_log_analysis_action"
+        sequence="40" />
+
+</odoo>

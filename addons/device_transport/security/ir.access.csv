@@ -1,0 +1,12 @@
+id,name,model_id/id,group_id/id,kind,operation,reach,anchor,domain
+access_device_enrollment_user,device.enrollment user,model_device_enrollment,device.group_device_user,permission,r,,,
+access_device_enrollment_manager,device.enrollment manager,model_device_enrollment,device.group_device_manager,permission,cud,,,
+access_device_channel_user,device.channel user,model_device_channel,device.group_device_user,permission,r,,,
+access_device_channel_manager,device.channel manager,model_device_channel,device.group_device_manager,permission,cud,,,
+device_enrollment_company_rule,Enrollment company,model_device_enrollment,base.group_everyone,guard,crud,company,,
+device_channel_company_rule,Channel company,model_device_channel,base.group_everyone,guard,crud,company,,
+access_validate_enrollment_credential,Read the enrollment credential,credential.model_credential_credential,privilege_validate_enrollment,permission,r,,,
+access_validate_device_enrollments,Read the changed device bindings,model_device_enrollment,privilege_validate_enrollment,permission,r,,,
+access_validate_channel_history,Read the deleted channel history,integration.model_integration_exchange,privilege_validate_enrollment,permission,r,,,
+access_device_transport_event_manager,device.transport.event manager,model_device_transport_event,device.group_device_manager,permission,r,,,
+device_transport_event_company_guard,Transport history company,model_device_transport_event,base.group_everyone,guard,crud,company,,

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <template
+        id="report_picking_batch_route_map"
+        inherit_id="stock_picking_batch.report_picking_batch">
+        <xpath expr="//p[hasclass('o_page_break_after')]" position="before">
+            <t t-set="route_map" t-value="o.vehicle_id and o._trip_route_map()" />
+            <div
+                t-if="route_map"
+                class="o_trip_route_map"
+                style="page-break-inside: avoid; margin-top: 1rem;">
+                <h5>Route</h5>
+                <t t-out="route_map" />
+            </div>
+        </xpath>
+    </template>
+
+</odoo>

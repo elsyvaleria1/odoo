@@ -1,0 +1,16 @@
+.o-voip-TabEntry {
+    --voip__countryFlag-width: 1em;
+
+    details[open],
+    summary:hover {
+        background: var(
+            --voipCalling__tabEntry-background-color--hover,
+            #{o-palette-token(--o-gray-100, $gray-100)}
+        );
+    }
+
+    summary:focus-visible {
+        outline-offset: $btn-focus-width * -1;
+        outline: $btn-focus-width solid o-token-alpha(--primary, $primary, 0.5);
+    }
+}

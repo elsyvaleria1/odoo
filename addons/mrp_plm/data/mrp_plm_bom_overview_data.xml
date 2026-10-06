@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="bom_overview_report_column_ecos" model="report.formula.column">
+        <field name="name">ECOs</field>
+        <field name="expression_label">ecos</field>
+        <field name="figure_type">integer</field>
+        <field name="sequence">75</field>
+        <field name="optional" eval="True" />
+        <field name="report_id" ref="mrp.bom_overview_report" />
+    </record>
+
+</odoo>

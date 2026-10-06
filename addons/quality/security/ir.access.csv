@@ -1,0 +1,24 @@
+id,name,model_id/id,group_id/id,kind,operation,reach,anchor,domain
+access_quality_check_user,quality.check,model_quality_check,group_quality_user,permission,cru,,,
+access_quality_alert_user,quality.alert,model_quality_alert,group_quality_user,permission,cru,,,
+access_quality_reason_user,quality.reason,model_quality_reason,group_quality_user,permission,r,,,
+access_quality_tag_user,quality.tag,model_quality_tag,group_quality_user,permission,r,,,
+access_quality_alert_stage_user,quality.alert.stage,model_quality_alert_stage,group_quality_user,permission,r,,,
+access_quality_point_user,quality.point,model_quality_point,group_quality_user,permission,r,,,
+access_quality_point_test_type_user,quality.point.test_type,model_quality_point_test_type,group_quality_user,permission,r,,,
+access_stock_lot_user,product.trace,product_trace.model_product_trace,group_quality_user,permission,r,,,
+access_stock_picking,stock.picking,stock.model_stock_picking,group_quality_user,permission,r,,,
+team_team_rule_quality_manager,Quality teams: Quality Administrators,team.model_team_team,group_quality_manager,permission,cud,all,,"[('use_quality', '=', True)]"
+team_member_rule_personal_group_quality_manager,Team Members: own teams,team.model_team_member,group_quality_manager,permission,r,own,,
+team_member_rule_personal_group_quality_manager_2,Team Members: own teams (2),team.model_team_member,group_quality_manager,permission,r,team,,
+team_member_rule_quality_manager,Quality team members: Quality Administrators,team.model_team_member,group_quality_manager,permission,cud,all,,"[('team_id.use_quality', '=', True)]"
+team_alias_rule_quality_manager,Quality team aliases: Quality Administrators,team.model_team_alias,group_quality_manager,permission,cud,all,,"[('team_id.use_quality', '=', True)]"
+access_quality_check_manager,quality.check,model_quality_check,group_quality_manager,permission,d,,,
+access_quality_alert_manager,quality.alert,model_quality_alert,group_quality_manager,permission,d,,,
+access_quality_reason_manager,quality.reason,model_quality_reason,group_quality_manager,permission,cud,,,
+access_quality_tag_manager,quality.tag,model_quality_tag,group_quality_manager,permission,cud,,,
+access_quality_alert_stage_manager,quality.alert.stage,model_quality_alert_stage,group_quality_manager,permission,cud,,,
+access_quality_point_manager,quality.point,model_quality_point,group_quality_manager,permission,cud,,,
+quality_alert_comp_rule,Quality alert company rule,model_quality_alert,base.group_everyone,guard,crud,company,,
+quality_check_comp_rule,Quality check company rule,model_quality_check,base.group_everyone,guard,crud,,,"['|', ('company_id', 'in', company_ids), ('point_id.company_id', 'in', company_ids)]"
+control_point_comp_rule,Control point company rule,model_quality_point,base.group_everyone,guard,crud,company,,

@@ -1,0 +1,5 @@
+id,name,model_id/id,group_id/id,kind,operation,domain
+report_project_task_user_fsm_manager_rule,Tasks Analysis: FSM project visibility for manager,model_report_project_task_user_fsm,group_fsm_manager,permission,r,
+access_project_task_stop_timers_wizard_user_fsm,access_project_task_stop_timers_wizard_user_fsm,model_wizard_project_task_validate_running_timer,group_fsm_user,permission,cru,
+access_project_task_stop_timers_wizard_line_user_fsm,access_project_task_stop_timers_wizard_line_user_fsm,model_wizard_project_task_validate_running_timer_line,group_fsm_user,permission,cru,
+report_project_task_user_fsm_rule,Tasks Analysis: FSM project visibility,model_report_project_task_user_fsm,group_fsm_user,permission,r,"[ '|', ('project_id.user_has_access', '=', True), '|', ('task_id.message_partner_ids', 'in', [user.partner_id.id]), ('user_ids', 'in', user.id), ]"

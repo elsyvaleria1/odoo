@@ -1,0 +1,119 @@
+from odoo import api, models
+from odoo.fields import Domain
+from odoo.libs.json import dumps as json_dumps
+from odoo.libs.json import loads as json_loads
+
+
+class LoyaltyReward(models.Model):
+    _name = "loyalty.reward"
+    _inherit = ["loyalty.reward", "mixin.pos.load"]
+
+    def _prepare_discount_product_vals(self):
+        res = super()._prepare_discount_product_vals()
+        for vals in res:
+            vals.update({"taxes_id": False})
+        return res
+
+    @api.model
+    def _load_pos_data_domain(self, data, config):
+        reward_product_tag_domain = [
+            ("reward_product_tag_id", "!=", False),
+            "|",
+            ("reward_product_tag_id.product_template_ids.active", "=", True),
+            ("reward_product_tag_id.product_product_ids.active", "=", True),
+        ]
+        return Domain.AND(
+            [
+                [("program_id", "in", config._get_program_ids().ids)],
+                Domain.OR(
+                    [
+                        [("reward_type", "!=", "product")],
+                        [("reward_product_id.active", "=", True)],
+                        reward_product_tag_domain,
+                    ]
+                ),
+            ]
+        )
+
+    @api.model
+    def _load_pos_data_fields(self, config):
+        return [
+            "description",
+            "program_id",
+            "reward_type",
+            "required_points",
+            "clear_wallet",
+            "currency_id",
+            "discount",
+            "discount_mode",
+            "discount_applicability",
+            "all_discount_product_ids",
+            "is_global_discount",
+            "discount_max_amount",
+            "discount_line_product_id",
+            "reward_product_id",
+            "multi_product",
+            "reward_product_ids",
+            "reward_product_qty",
+            "reward_product_uom_id",
+            "reward_product_domain",
+        ]
+
+    @api.model
+    def _load_pos_data_read(self, records, config):
+        read_records = super()._load_pos_data_read(records, config)
+        for reward in read_records:
+            reward["reward_product_domain"] = self._replace_ilike_with_in(
+                reward["reward_product_domain"]
+            )
+        return read_records
+
+    def _get_domain_fields_reward_product(self, config):
+        fields = set()
+        search_domain = [("program_id", "in", config._get_program_ids().ids)]
+        domains = self.search_read(
+            search_domain, fields=["reward_product_domain"], load=False
+        )
+        for domain in filter(lambda d: d["reward_product_domain"] != "null", domains):
+            domain = json_loads(domain["reward_product_domain"])
+            for condition in self._parse_domain(domain).values():
+                field_name, _, _ = condition
+                fields.add(field_name)
+        return fields
+
+    def _replace_ilike_with_in(self, domain_str):
+        if domain_str == "null":
+            return domain_str
+
+        domain = json_loads(domain_str)
+
+        for index, condition in self._parse_domain(domain).items():
+            field_name, operator, value = condition
+            field = self.env["product.product"]._fields.get(field_name)
+
+            if (
+                field
+                and field.type == "many2one"
+                and operator in ("ilike", "not ilike")
+            ):
+                comodel = self.env[field.comodel_name]
+                matching_ids = list(comodel._search([("display_name", "ilike", value)]))
+
+                new_operator = "in" if operator == "ilike" else "not in"
+                domain[index] = [field_name, new_operator, matching_ids]
+
+        return json_dumps(domain)
+
+    def _parse_domain(self, domain):
+        return {
+            index: condition
+            for index, condition in enumerate(domain)
+            if isinstance(condition, (list, tuple)) and len(condition) == 3
+        }
+
+    def unlink(self):
+        if len(self) == 1 and self.env["pos.order.line"].sudo().search_count(
+            [("reward_id", "in", self.ids)], limit=1
+        ):
+            return self.action_archive()
+        return super().unlink()

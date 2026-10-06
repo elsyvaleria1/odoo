@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <menuitem
+        id="menu_telegram_bot_reports"
+        name="Reports"
+        parent="telegram.menu_telegram_root"
+        sequence="50"
+        groups="base.group_system" />
+
+    <menuitem
+        id="menu_telegram_financial_report_log"
+        name="Customer Portal Bot Reports"
+        parent="menu_telegram_bot_reports"
+        action="action_telegram_financial_report_log"
+        sequence="10"
+        groups="base.group_system" />
+
+</odoo>

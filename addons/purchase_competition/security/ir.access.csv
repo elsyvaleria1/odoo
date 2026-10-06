@@ -1,0 +1,5 @@
+id,name,model_id/id,group_id/id,kind,operation,reach,anchor,domain
+competitor_offer_rule_purchase_user,Rival buyers' offers to vendors: purchase users maintain them,trade_competition.model_competitor_offer,purchase.group_purchase_user,permission,crud,,,"[('direction', '=', 'purchase')]"
+competitor_offer_rule_purchase_readonly,Rival buyers' offers to vendors: read-only purchase users read them,trade_competition.model_competitor_offer,purchase.group_purchase_readonly,permission,r,,,"[('direction', '=', 'purchase')]"
+competitor_offer_line_rule_purchase_user,Rival buyers' offer lines to vendors: purchase users maintain them,trade_competition.model_competitor_offer_line,purchase.group_purchase_user,permission,crud,,,"[('direction', '=', 'purchase')]"
+competitor_offer_line_rule_purchase_readonly,Rival buyers' offer lines to vendors: read-only purchase users read them,trade_competition.model_competitor_offer_line,purchase.group_purchase_readonly,permission,r,,,"[('direction', '=', 'purchase')]"

@@ -1,0 +1,627 @@
+/** @odoo-module native */
+import { getAttributeString, getFullProductName } from "@point_of_sale/utils";
+import { makeLogger } from "@web/core/debug/debug_logger";
+import { localization as l10n } from "@web/core/l10n/localization";
+import { parseFloat } from "@web/core/parsers";
+import { registry } from "@web/core/registry";
+import { _t } from "@web/core/translation";
+import { formatFloat } from "@web/core/utils/format/numbers";
+
+import { PosOrderlineAccounting } from "./accounting/pos_order_line_accounting.js";
+import { PRODUCT_PRICE, PRODUCT_UNIT } from "./decimal_precision.js";
+import { parseNoteEntries } from "./utils/note_entries.js";
+
+const log = makeLogger("pos.orderline");
+
+export class PosOrderline extends PosOrderlineAccounting {
+    static pythonModel = "pos.order.line";
+
+    setup(vals) {
+        super.setup(vals);
+        if (!this.product_id) {
+            log.lifecycle("setup: no product, deleting", () => ({
+                line: this.uuid,
+                id: this.id,
+                order: this.order_id?.uuid,
+            }));
+            this.delete();
+            return;
+        }
+        this.setFullProductName();
+    }
+
+    initState() {
+        super.initState();
+        this.uiState = {
+            hasChange: true,
+            savedQuantity: 0,
+            oldQty: this.qty,
+        };
+    }
+
+    setFullProductName() {
+        this.full_product_name = getFullProductName(this);
+    }
+
+    setOptions(options) {
+        if (options.uiState) {
+            this.uiState = { ...this.uiState, ...options.uiState };
+        }
+
+        if (options.code) {
+            const code = options.code;
+            const blockMerge = ["weight", "quantity", "discount"];
+            const product_packaging_by_barcode =
+                this.models["product.uom"].getAllBy("barcode");
+            const uom_by_id = this.models["uom.uom"].getAllBy("id");
+            log.logic("setOptions: barcode", () => ({
+                line: this.uuid,
+                type: code.type,
+                value: code.value,
+                packaging: Boolean(product_packaging_by_barcode[code.code]),
+            }));
+
+            if (blockMerge.includes(code.type)) {
+                this.setQuantity(code.value);
+            } else if (code.type === "price") {
+                this.setUnitPrice(code.value);
+                this.price_type = "manual";
+            }
+
+            if (product_packaging_by_barcode[code.code]) {
+                this.setQuantity(
+                    uom_by_id[product_packaging_by_barcode[code.code].uom_id.id]
+                        .factor / this.product_id.product_tmpl_id.uom_id.factor,
+                );
+            }
+        }
+
+        this.setUnitPrice(this.price_unit);
+    }
+
+    get preparationKey() {
+        return this.uuid;
+    }
+
+    isInPreparation() {
+        return Boolean(
+            this.order_id?.last_order_preparation_change?.lines?.[this.preparationKey],
+        );
+    }
+
+    get quantityStr() {
+        return this.quantityStrFor(this.qty);
+    }
+
+    quantityStrFor(qty) {
+        let unitPart;
+        let decimalPart = "";
+        const unit = this.product_id.uom_id;
+        const decimalPoint = l10n.decimalPoint;
+
+        if (unit) {
+            if (unit.rounding) {
+                const ProductUnit = this.models["decimal.precision"].getBy(
+                    "name",
+                    PRODUCT_UNIT,
+                );
+
+                if (qty % 1 === 0) {
+                    unitPart = qty.toFixed(0);
+                } else {
+                    const formatted = formatFloat(qty, {
+                        digits: [69, ProductUnit.digits],
+                    });
+                    const parts = formatted.split(decimalPoint);
+                    unitPart = parts[0];
+                    decimalPart = parts[1] || "";
+                }
+            } else {
+                unitPart = qty.toFixed(0);
+            }
+        } else {
+            unitPart = "" + qty;
+        }
+        return {
+            qtyStr: unitPart + (decimalPart ? decimalPoint + decimalPart : ""),
+            unitPart: unitPart,
+            decimalPoint: decimalPoint,
+            decimalPart: decimalPart,
+        };
+    }
+
+    get company() {
+        return this.config.company_id;
+    }
+
+    get config() {
+        return this.models["pos.config"].getFirst();
+    }
+
+    get session() {
+        return this.models["pos.session"].getFirst();
+    }
+
+    get currency() {
+        return this.order_id.currency;
+    }
+
+    get pickingType() {
+        return this.models["stock.picking.type"].getFirst();
+    }
+
+    get selectedComboIds() {
+        const allLines = this.getAllLinesInCombo();
+        return allLines.reduce((acc, line) => {
+            if (!line.combo_item_id) {
+                return acc;
+            }
+
+            acc[line.combo_item_id.combo_id.id] = line.combo_item_id.id;
+            return acc;
+        }, {});
+    }
+
+    get selectedAttributes() {
+        return this.attribute_value_ids.reduce((acc, attrValue) => {
+            const customValue =
+                this.custom_attribute_value_ids.find(
+                    (c) =>
+                        c.custom_product_template_attribute_value_id.id ===
+                        attrValue.id,
+                )?.custom_value || "";
+
+            if (attrValue.attribute_id.display_type === "multi") {
+                if (!acc[attrValue.attribute_id.id]) {
+                    acc[attrValue.attribute_id.id] = {
+                        selected: [],
+                        custom_value: customValue,
+                    };
+                }
+                acc[attrValue.attribute_id.id].selected.push(attrValue);
+            } else {
+                acc[attrValue.attribute_id.id] = {
+                    selected: attrValue,
+                    custom_value: customValue,
+                };
+            }
+            return acc;
+        }, {});
+    }
+
+    getDisplayClasses() {
+        return {};
+    }
+
+    getPackLotLinesToEdit(isAllowOnlyOneLot) {
+        const currentPackLotLines = this.pack_lot_ids;
+        let nExtraLines = Math.abs(this.qty) - currentPackLotLines.length;
+        nExtraLines = Math.ceil(nExtraLines);
+        nExtraLines = nExtraLines > 0 ? nExtraLines : 1;
+        const tempLines = currentPackLotLines
+            .map((lotLine) => ({
+                id: lotLine.id,
+                text: lotLine.lot_name,
+            }))
+            .concat(
+                Array.from(Array(nExtraLines)).map((_) => ({
+                    text: "",
+                })),
+            );
+        return isAllowOnlyOneLot ? [tempLines[0]] : tempLines;
+    }
+
+    async editPackLotLines(editedPackLotLines) {
+        if (!editedPackLotLines) {
+            return;
+        }
+        this.setPackLotLines(editedPackLotLines);
+        this.order_id.selectOrderline(this);
+    }
+
+    setPackLotLines({ modifiedPackLotLines, newPackLotLines, setQuantity = true }) {
+        const lotLinesToRemove = [];
+        log.lifecycle("setPackLotLines", () => ({
+            line: this.uuid,
+            existing: this.pack_lot_ids.length,
+            modified: Object.keys(modifiedPackLotLines || {}).length,
+            new: newPackLotLines?.length,
+            setQuantity,
+        }));
+
+        for (const lotLine of this.pack_lot_ids) {
+            const modifiedLotName = modifiedPackLotLines[lotLine.id];
+            if (modifiedLotName) {
+                lotLine.lot_name = modifiedLotName;
+            } else {
+                lotLinesToRemove.push(lotLine);
+            }
+        }
+
+        for (const lotLine of lotLinesToRemove) {
+            lotLine.delete();
+        }
+
+        for (const newLotLine of newPackLotLines) {
+            this.models["pos.pack.operation.lot"].create({
+                lot_name: newLotLine.lot_name,
+                pos_order_line_id: this,
+            });
+        }
+
+        if (!this.product_id.to_weight && setQuantity) {
+            this.setQuantityByLot();
+        }
+    }
+
+    setDiscount(discount) {
+        log.logic("setDiscount", () => ({ line: this.uuid, discount }));
+        let parsed_discount;
+        if (typeof discount === "number") {
+            parsed_discount = discount;
+        } else {
+            try {
+                parsed_discount = parseFloat("" + discount);
+            } catch {
+                parsed_discount = 0;
+            }
+        }
+        const disc = Math.min(Math.max(parsed_discount || 0, 0), 100);
+        this.discount = disc;
+    }
+
+    setQuantity(quantity, keep_price) {
+        log.logic("setQuantity", () => ({
+            line: this.uuid,
+            from: this.qty,
+            to: quantity,
+            keep_price,
+        }));
+        this.uiState.oldQty = this.qty;
+        if (this.order_id.preset_id?.is_return) {
+            quantity = -Math.abs(quantity);
+        }
+
+        this.order_id.assertEditable();
+        const quant =
+            typeof quantity === "number"
+                ? quantity
+                : parseFloat("" + (quantity ? quantity : 0));
+
+        const refundDetails = this.refundDetail;
+        if (refundDetails) {
+            const maxQtyToRefund =
+                refundDetails.line.qty - refundDetails.line.refundedQty - this.qty;
+            log.logic("setQuantity: refund guard", () => ({
+                line: this.uuid,
+                requested: quant,
+                maxQtyToRefund,
+                rejected: quant > 0 || -quant > maxQtyToRefund,
+            }));
+            if (quant > 0) {
+                return {
+                    title: _t("Positive quantity not allowed"),
+                    body: _t(
+                        "Only a negative quantity is allowed for this refund line. Click on +/- to modify the quantity to be refunded.",
+                    ),
+                };
+            } else if (quant === 0) {
+                refundDetails.qty = 0;
+            } else if (-quant <= maxQtyToRefund) {
+                refundDetails.qty = -quant;
+            } else {
+                return {
+                    title: _t("Greater than allowed"),
+                    body: _t(
+                        "The requested quantity to be refunded is higher than the refundable quantity.",
+                    ),
+                };
+            }
+        }
+
+        const rounder =
+            this.product_id.uom_id ||
+            this.models["decimal.precision"].getBy("name", PRODUCT_UNIT);
+
+        this.qty = rounder.round(quant);
+
+        log.logic("setQuantity: reprice", () => ({
+            line: this.uuid,
+            qty: this.qty,
+            reprice: !keep_price && this.price_type === "original",
+            priceType: this.price_type,
+            comboChildren: this.combo_line_ids.length,
+        }));
+        if (!keep_price && this.price_type === "original") {
+            const productTemplate = this.product_id.product_tmpl_id;
+            if (this.isLotTracked()) {
+                const related_lines = [];
+                const price = productTemplate.getPrice(
+                    this.order_id.pricelist_id,
+                    this.getQuantity(),
+                    this.getPriceExtra(),
+                    false,
+                    this.product_id,
+                    this,
+                    related_lines,
+                );
+                related_lines.forEach((line) => line.setUnitPrice(price));
+            } else {
+                this.setUnitPrice(
+                    productTemplate.getPrice(
+                        this.order_id.pricelist_id,
+                        this.getQuantity(),
+                        this.getPriceExtra(),
+                        false,
+                        this.product_id,
+                    ),
+                );
+            }
+        }
+        for (const comboLine of this.combo_line_ids) {
+            comboLine.setQuantity(
+                (comboLine.qty / (this.uiState.oldQty || 1)) * quant,
+                true,
+            );
+        }
+        return true;
+    }
+
+    setQuantityByLot() {
+        let valid_lots_quantity = this.getValidLots().length;
+        if (this.qty < 0) {
+            valid_lots_quantity = -valid_lots_quantity;
+        }
+        this.setQuantity(valid_lots_quantity, !!this.combo_parent_id);
+    }
+
+    hasValidProductLot() {
+        const valid_product_lot = this.getValidLots();
+        const lotsRequired =
+            this.product_id.tracking === "serial" ? Math.abs(this.qty) : 1;
+        log.logic("hasValidProductLot", () => ({
+            line: this.uuid,
+            tracking: this.product_id.tracking,
+            required: lotsRequired,
+            valid: valid_product_lot.length,
+        }));
+        return lotsRequired === valid_product_lot.length;
+    }
+
+    canBeMergedWith(orderline) {
+        const product = orderline.getProduct();
+        const blocker =
+            (this.getProduct().id !== product.id && "product") ||
+            (this.full_product_name !== orderline.full_product_name && "name") ||
+            (this.price_type !== orderline.price_type && "price_type") ||
+            (this.getDiscount() !== orderline.getDiscount() && "discount") ||
+            (this.getNote() !== orderline.getNote() && "note") ||
+            (this.getCustomerNote() !== orderline.getCustomerNote() &&
+                "customer_note") ||
+            (this.refunded_orderline_id && "refund") ||
+            (orderline.isPartOfCombo() && "combo") ||
+            (!this.isPosGroupable() && "not_groupable") ||
+            (this.isLotTracked() && "lot_tracked") ||
+            null;
+        log.logic("canBeMergedWith", () => ({
+            line: this.uuid,
+            candidate: orderline.uuid,
+            blocker,
+        }));
+        if (blocker) {
+            return false;
+        }
+
+        const ProductPrice = this.models["decimal.precision"].getBy(
+            "name",
+            PRODUCT_PRICE,
+        );
+        const price = ProductPrice.round(this.price_unit || 0);
+        const order_line_price = product.getPrice(
+            orderline.order_id.pricelist_id,
+            this.getQuantity(),
+            0,
+            false,
+            product,
+        );
+        const samePrice = this.currency.isZero(
+            this.currency.round(price) -
+                this.currency.round(order_line_price) -
+                orderline.getPriceExtra(),
+        );
+        log.logic("canBeMergedWith: price", () => ({
+            line: this.uuid,
+            candidate: orderline.uuid,
+            price,
+            candidatePrice: order_line_price,
+            priceExtra: orderline.getPriceExtra(),
+            samePrice,
+        }));
+        return samePrice;
+    }
+
+    isLotTracked() {
+        return (
+            this.product_id.tracking === "lot" &&
+            (this.pickingType.use_create_lots || this.pickingType.use_existing_lots)
+        );
+    }
+
+    isPosGroupable() {
+        const unit_groupable = this.product_id.uom_id
+            ? this.product_id.uom_id.is_pos_groupable
+            : false;
+        return unit_groupable && !this.isPartOfCombo();
+    }
+
+    merge(orderline) {
+        log.logic("merge", () => ({
+            line: this.uuid,
+            with: orderline.uuid,
+            qty: orderline.getQuantity(),
+        }));
+        this.order_id.assertEditable();
+        this.setQuantity(this.getQuantity() + orderline.getQuantity());
+        this.update({
+            pack_lot_ids: [["link", ...orderline.pack_lot_ids]],
+        });
+    }
+
+    setUnitPrice(price) {
+        log.logic("setUnitPrice", () => ({
+            line: this.uuid,
+            from: this.price_unit,
+            to: price,
+        }));
+        const ProductPrice = this.models["decimal.precision"].getBy(
+            "name",
+            PRODUCT_PRICE,
+        );
+        let parsed_price;
+        if (!isNaN(price)) {
+            parsed_price = Number(price);
+        } else {
+            try {
+                parsed_price = parseFloat("" + price);
+            } catch {
+                parsed_price = 0;
+            }
+        }
+        this.price_unit = ProductPrice.round(parsed_price || 0);
+    }
+
+    displayDiscountPolicy() {
+        const withoutDiscount = Boolean(
+            this.order_id.pricelist_id &&
+            this.order_id.pricelist_id.item_ids
+                .map((rule) => rule.compute_price)
+                .includes("percentage"),
+        );
+        log.logic("displayDiscountPolicy", () => ({
+            line: this.uuid,
+            pricelist: this.order_id.pricelist_id?.id,
+            policy: withoutDiscount ? "without_discount" : "with_discount",
+        }));
+        return withoutDiscount ? "without_discount" : "with_discount";
+    }
+
+    setCustomerNote(note) {
+        this.customer_note = note || "";
+    }
+
+    getCustomerNote() {
+        return this.customer_note || "";
+    }
+
+    getTotalCost() {
+        return this.product_id.standard_price * this.qty;
+    }
+
+    isTipLine() {
+        const tipProduct = this.config.tip_product_id;
+        return tipProduct && this.product_id.id === tipProduct.id;
+    }
+
+    getAllLinesInCombo() {
+        if (this.combo_parent_id) {
+            return this.combo_parent_id.getAllLinesInCombo();
+        }
+        const lines = [];
+        const stack = [this];
+        while (stack.length) {
+            const n = stack.pop();
+            lines.push(n);
+            if (n.combo_line_ids) {
+                stack.push(...n.combo_line_ids);
+            }
+        }
+        return lines;
+    }
+
+    isPartOfCombo() {
+        return Boolean(this.combo_parent_id || this.combo_line_ids?.length);
+    }
+
+    get packLotLines() {
+        return this.pack_lot_ids.map(
+            (l) =>
+                `${l.pos_order_line_id.product_id.tracking === "lot" ? "Lot Number" : "SN"} ${
+                    l.lot_name
+                }`,
+        );
+    }
+
+    getDiscount() {
+        return this.discount || 0;
+    }
+
+    getValidLots() {
+        return this.pack_lot_ids.filter((item) => item.lot_name);
+    }
+    updateSavedQuantity() {
+        this.uiState.savedQuantity = this.qty;
+    }
+    getPriceExtra() {
+        return this.price_extra;
+    }
+    getNote() {
+        return this.note || "[]";
+    }
+    get noteEntries() {
+        return parseNoteEntries(this.note);
+    }
+    setNote(note) {
+        this.note = note || "[]";
+    }
+    setHasChange(isChange) {
+        this.uiState.hasChange = isChange;
+    }
+    getDiscountStr() {
+        return this.discount ? this.discount.toString() : "";
+    }
+    getQuantity() {
+        return this.qty;
+    }
+    getQuantityStr() {
+        return this.quantityStr;
+    }
+    getUnit() {
+        return this.product_id.uom_id;
+    }
+    getProduct() {
+        return this.product_id;
+    }
+    getFullProductName() {
+        return this.full_product_name || this.product_id.display_name;
+    }
+    get orderDisplayProductName() {
+        return {
+            name: this.product_id?.name,
+            attributeString: getAttributeString(this),
+        };
+    }
+    isSelected() {
+        return this.order_id?.uiState?.selected_orderline_uuid === this.uuid;
+    }
+    get canBeRemoved() {
+        return this.product_id.uom_id?.isZero(this.qty) ?? this.qty === 0;
+    }
+    /** The ticket screen files a refund detail on the order that owns the line
+     * being refunded, keyed by that line's uuid -- never on the refunding order. */
+    get refundDetail() {
+        const refunded = this.refunded_orderline_id;
+        return refunded?.order_id?.uiState?.lineToRefund?.[refunded.uuid];
+    }
+
+    get refundedQty() {
+        return (
+            this.refund_orderline_ids?.reduce(
+                (acc, line) =>
+                    line.order_id.state !== "cancel" ? acc - line.qty : acc,
+                0,
+            ) || 0
+        );
+    }
+}
+
+registry.category("pos_available_models").add(PosOrderline.pythonModel, PosOrderline);

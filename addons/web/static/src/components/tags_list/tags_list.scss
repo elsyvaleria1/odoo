@@ -1,0 +1,26 @@
+.o_tag {
+    font-size: var(--Tag-font-size, #{$font-size-sm});
+    max-width: var(--Tag-max-width, 100%);
+
+    @include media-only(screen) {
+        --bg-opacity: 0.45;
+    }
+
+    @for $size from 1 through length($o-colors) {
+        &.o_tag_color_#{$size - 1} {
+            &,
+            &::after {
+                @include o-print-color-rgb(
+                    var(--o-record-color-#{$size}-chip-bg-rgb),
+                    background-color,
+                    bg-opacity
+                );
+                @include o-print-color-rgb(
+                    var(--o-record-color-#{$size}-chip-text-rgb),
+                    color,
+                    text-opacity
+                );
+            }
+        }
+    }
+}

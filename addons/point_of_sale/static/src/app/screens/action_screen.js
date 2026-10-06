@@ -1,0 +1,22 @@
+/** @odoo-module native */
+import { Component, t, useProps, xml } from "@odoo/owl";
+import { registry } from "@web/core/registry";
+import { ActionContainer } from "@web/webclient/actions";
+export class ActionScreen extends Component {
+    static components = { ActionContainer };
+    static props = { actionName: t.string() };
+    static storeOnOrder = false;
+    static template = xml`
+        <div class="o_web_client">
+            <ActionContainer/>
+        </div>
+    `;
+    props = useProps(this.constructor.props);
+}
+
+registry.category("pos_pages").add("ActionScreen", {
+    name: "ActionScreen",
+    component: ActionScreen,
+    route: `/pos/ui/${odoo.pos_config_id}/action/{string:actionName}`,
+    params: {},
+});

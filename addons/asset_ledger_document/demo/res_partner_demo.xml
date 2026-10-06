@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="manufacturer_haas" model="res.partner">
+        <field name="name">Haas Automation</field>
+        <field name="is_company" eval="True" />
+        <field name="is_manufacturer" eval="True" />
+        <field name="country_id" ref="base.us" />
+    </record>
+
+    <record id="manufacturer_dell" model="res.partner">
+        <field name="name">Dell Technologies</field>
+        <field name="is_company" eval="True" />
+        <field name="is_manufacturer" eval="True" />
+        <field name="country_id" ref="base.us" />
+    </record>
+
+    <record id="manufacturer_hp" model="res.partner">
+        <field name="name">HP Inc.</field>
+        <field name="is_company" eval="True" />
+        <field name="is_manufacturer" eval="True" />
+        <field name="country_id" ref="base.us" />
+    </record>
+
+</odoo>

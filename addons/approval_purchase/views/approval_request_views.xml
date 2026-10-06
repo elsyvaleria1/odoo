@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_approval_request_form_inherit_purchase" model="ir.ui.view">
+        <field name="name">approval.request.form.inherit.purchase</field>
+        <field name="model">approval.request</field>
+        <field name="inherit_id" ref="approval.view_approval_request_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//button[@name='action_view_attachment']" position="after">
+                <button
+                    name="action_view_purchase_order"
+                    type="object"
+                    string="Purchase Orders"
+                    icon="fa-shopping-cart"
+                    groups="purchase.group_purchase_user"
+                    invisible="count_purchase_order == 0"
+                    class="oe_stat_button">
+                    <field name="count_purchase_order" widget="statinfo" />
+                </button>
+            </xpath>
+
+            <xpath expr="//button[@name='action_confirm']" position="after">
+                <button
+                    name="action_create_purchase_orders"
+                    type="object"
+                    string="Create Purchase Orders"
+                    groups="purchase.group_purchase_user"
+                    invisible="target_model != 'purchase.order' or state != 'approved'"
+                    class="btn-primary" />
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

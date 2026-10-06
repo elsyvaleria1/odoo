@@ -1,0 +1,30 @@
+from odoo import fields, models
+
+
+class Website(models.Model):
+    _inherit = "website"
+
+    website_slide_google_app_key = fields.Char(
+        string="Google Doc Key",
+        classification="secret.credential",
+        groups="base.group_system",
+    )
+
+    def get_suggested_controllers(self):
+        suggested_controllers = super().get_suggested_controllers()
+        suggested_controllers.append(
+            (
+                self.env._("Courses"),
+                self.env["ir.http"]._url_for("/slides"),
+                "website_slides",
+            )
+        )
+        return suggested_controllers
+
+    def _search_get_details(self, search_type, order, options):
+        result = super()._search_get_details(search_type, order, options)
+        if search_type in ["slide_channels_only", "all"]:
+            result.append(
+                self.env["slide.channel"]._search_get_detail(self, order, options)
+            )
+        return result

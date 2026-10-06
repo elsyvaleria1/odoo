@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_payment_term_form_inherit_account" model="ir.ui.view">
+        <field name="name">account.payment.term.form</field>
+        <field name="model">account.payment.term</field>
+        <field name="inherit_id" ref="payment_term.view_payment_term_form" />
+        <field name="arch" type="xml">
+            <field name="active" position="after">
+                <field name="fiscal_country_codes" invisible="1" />
+            </field>
+        </field>
+    </record>
+
+</odoo>

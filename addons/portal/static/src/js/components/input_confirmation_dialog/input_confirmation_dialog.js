@@ -1,0 +1,61 @@
+/** @odoo-module native */
+import { t } from "@odoo/owl";
+import { makeLogger } from "@web/core/debug/debug_logger";
+import { useLayoutEffect } from "@web/core/utils/layout_effect";
+import { ConfirmationDialog } from "@web/ui/dialog";
+
+const log = makeLogger("portal.input_dialog");
+
+export class InputConfirmationDialog extends ConfirmationDialog {
+    static props = {
+        ...ConfirmationDialog.props,
+        onInput: t.function().optional(),
+        initialValue: t.string().optional(),
+    };
+    static template = "portal.InputConfirmationDialog";
+
+    setup() {
+        super.setup();
+
+        const onInput = () => {
+            if (this.props.onInput) {
+                this.props.onInput({ inputEl: this.inputEl });
+            }
+        };
+        const onKeydown = (ev) => {
+            if (ev.key === "Enter" && !ev.isComposing) {
+                ev.preventDefault();
+                this.confirm();
+            }
+        };
+        useLayoutEffect(
+            (inputEl) => {
+                this.inputEl = inputEl;
+                if (this.inputEl) {
+                    if (this.props.initialValue !== undefined) {
+                        this.inputEl.value = this.props.initialValue;
+                    }
+                    this.inputEl.focus();
+                    this.inputEl.addEventListener("keydown", onKeydown);
+                    this.inputEl.addEventListener("input", onInput);
+                    return () => {
+                        this.inputEl.removeEventListener("keydown", onKeydown);
+                        this.inputEl.removeEventListener("input", onInput);
+                    };
+                }
+            },
+            () => [this.modalRef.el?.querySelector("input")],
+        );
+    }
+
+    confirm() {
+        return this.execButton(() => {
+            const validationTarget = this.inputEl?.form || this.inputEl;
+            if (validationTarget && !validationTarget.reportValidity()) {
+                log.logic("confirmation blocked by invalid input");
+                return false;
+            }
+            return this.props.confirm?.({ inputEl: this.inputEl });
+        });
+    }
+}

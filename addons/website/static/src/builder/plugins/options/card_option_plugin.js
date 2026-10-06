@@ -1,0 +1,51 @@
+/** @odoo-module native */
+import { Plugin } from "@html_editor/plugin";
+import { registry } from "@web/core/registry";
+import {
+    CARD_DISABLE_WIDTH_APPLY_TO,
+    CARD_PARENT_HANDLERS,
+    WEBSITE_BG_APPLY_TO,
+} from "@website/builder/plugins/options/utils";
+
+import { BaseWebsiteBackgroundOption } from "./background_option.js";
+import { CardOption, CardWithoutWidthOption } from "./card_option.js";
+import { CarouselCardsItemOption } from "./carousel_cards_item_option.js";
+
+export class WebsiteBackgroundCardOption extends BaseWebsiteBackgroundOption {
+    static selector = CARD_PARENT_HANDLERS;
+    static applyTo = WEBSITE_BG_APPLY_TO;
+    static props = {
+        ...BaseWebsiteBackgroundOption.props,
+        withColors: BaseWebsiteBackgroundOption.props.withColors.optional(true),
+        withImages: BaseWebsiteBackgroundOption.props.withImages.optional(true),
+        withShapes: BaseWebsiteBackgroundOption.props.withShapes.optional(true),
+        withColorCombinations:
+            BaseWebsiteBackgroundOption.props.withColorCombinations.optional(true),
+    };
+}
+
+export class CardOptionPlugin extends Plugin {
+    static id = "cardOption";
+
+    /** @type {import("plugins").WebsiteResources} */
+    resources = {
+        content_editable_selectors: [
+            `${CardOption.selector} > *`,
+            `${CardOption.selector} figure > img`,
+        ],
+        content_not_editable_selectors: `${CardOption.selector} figure`,
+        builder_options: [
+            CardOption,
+            CardWithoutWidthOption,
+            WebsiteBackgroundCardOption,
+            CarouselCardsItemOption,
+        ],
+        mark_color_level_selector_params: [
+            { selector: CardOption.selector, exclude: CardOption.exclude },
+            { selector: CARD_PARENT_HANDLERS, applyTo: CARD_DISABLE_WIDTH_APPLY_TO },
+            { selector: CARD_PARENT_HANDLERS, applyTo: WEBSITE_BG_APPLY_TO },
+        ],
+    };
+}
+
+registry.category("website-plugins").add(CardOptionPlugin.id, CardOptionPlugin);

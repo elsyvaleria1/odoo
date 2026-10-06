@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_report_pos_order_pivot" model="ir.ui.view">
+        <field name="name">report.pos.order.pivot</field>
+        <field name="model">report.pos.order</field>
+        <field name="arch" type="xml">
+            <pivot string="Point of Sale Analysis" sample="1">
+                <field name="product_category_id" type="row" />
+                <field name="date_order" type="col" interval="month" />
+                <field name="order_id" type="measure" />
+                <field name="product_uom_qty" type="measure" />
+                <field name="price_total" type="measure" />
+            </pivot>
+        </field>
+    </record>
+
+    <record id="view_report_pos_order_graph" model="ir.ui.view">
+        <field name="name">report.pos.order.graph</field>
+        <field name="model">report.pos.order</field>
+        <field name="arch" type="xml">
+            <graph string="Point of Sale Analysis" sample="1">
+                <field name="product_category_id" />
+                <field name="price_total" type="measure" />
+            </graph>
+        </field>
+    </record>
+
+    <record id="report_pos_order_view_tree" model="ir.ui.view">
+        <field name="name">report.pos.order.view.list</field>
+        <field name="model">report.pos.order</field>
+        <field name="arch" type="xml">
+            <list string="Point of Sale Analysis">
+                <field name="date_order" />
+                <field name="order_id" optional="hide" />
+                <field name="partner_id" optional="hide" />
+                <field name="product_id" optional="show" />
+                <field name="product_uom_qty" optional="show" />
+                <field name="product_uom_id" optional="show" />
+                <field name="product_category_id" optional="show" />
+                <field name="config_id" optional="hide" />
+                <field
+                    name="company_id"
+                    optional="show"
+                    groups="base.group_multi_company" />
+                <field name="price_total" optional="show" />
+                <field name="state" optional="show" />
+            </list>
+        </field>
+    </record>
+
+    <record id="view_report_pos_order_search" model="ir.ui.view">
+        <field name="name">report.pos.order.search</field>
+        <field name="model">report.pos.order</field>
+        <field name="arch" type="xml">
+            <search string="Point of Sale Analysis">
+                <field name="date_order" />
+                <separator />
+                <filter
+                    name="invoiced"
+                    string="Invoiced"
+                    domain="[('invoiced','=',True)]" />
+                <filter
+                    name="not_invoiced"
+                    string="Not Invoiced"
+                    domain="[('invoiced','=',False)]" />
+                <filter
+                    name="not_cancelled"
+                    string="Not Cancelled"
+                    domain="[('state','!=','cancel')]" />
+                <separator />
+                <filter name="filter_date" date="date_order" />
+                <field name="config_id" />
+                <field name="partner_id" />
+                <field name="product_id" />
+                <field name="product_category_id" />
+                <group>
+                    <filter
+                        name="User"
+                        string="User"
+                        context="{'group_by':'user_id'}" />
+                    <filter
+                        name="pos"
+                        string="Point of Sale"
+                        context="{'group_by':'config_id'}" />
+                    <filter
+                        name="product"
+                        string="Product"
+                        context="{'group_by':'product_id'}" />
+                    <filter
+                        name="product_category"
+                        string="Product Category"
+                        context="{'group_by':'product_category_id'}" />
+                    <filter
+                        name="payment_method"
+                        string="Payment Method"
+                        context="{'group_by':'payment_method_id'}" />
+                    <filter
+                        name="pos_categ_id"
+                        string="Point of Sale Category"
+                        context="{'group_by':'pos_categ_id'}" />
+                    <separator />
+                    <filter
+                        name="order_month"
+                        string="Order Date"
+                        context="{'group_by':'date_order:month'}" />
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="filter_orders_per_session" model="ir.filters">
+        <field name="name">Per session</field>
+        <field name="model_id">report.pos.order</field>
+        <field name="user_ids" eval="False" />
+        <field name="context">{'group_by': ['date_order', 'session_id']}</field>
+    </record>
+
+    <record id="action_report_pos_order_all" model="ir.actions.act_window">
+        <field name="name">Orders Analysis</field>
+        <field name="res_model">report.pos.order</field>
+        <field name="view_mode">graph,pivot</field>
+        <field name="search_view_id" ref="view_report_pos_order_search" />
+        <field name="context">{'group_by':[], 'search_default_not_cancelled': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No data yet!
+            </p><p>
+                Create a new POS order
+            </p>
+        </field>
+    </record>
+
+    <record id="action_report_pos_details" model="ir.actions.act_window">
+        <field name="name">Sales Details</field>
+        <field name="res_model">wizard.pos.config.print.sale.detail</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+
+</odoo>

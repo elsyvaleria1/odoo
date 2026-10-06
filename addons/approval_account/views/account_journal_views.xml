@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_account_journal_search_approval" model="ir.ui.view">
+        <field name="name">account.journal.search.approval</field>
+        <field name="model">account.journal</field>
+        <field name="inherit_id" ref="account.view_account_journal_search" />
+        <field name="arch" type="xml">
+            <xpath expr="//filter[@name='inactive']" position="after">
+                <filter
+                    name="approval_required"
+                    string="Requires Approval"
+                    help="Journals that require approval for all moves"
+                    domain="[('approval_required', '=', True)]" />
+            </xpath>
+            <xpath expr="//group[@name='group_by']" position="inside">
+                <filter
+                    name="group_by_approval"
+                    string="Approval Required"
+                    context="{'group_by': 'approval_required'}" />
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_account_journal_list_approval" model="ir.ui.view">
+        <field name="name">account.journal.list.approval</field>
+        <field name="model">account.journal</field>
+        <field name="inherit_id" ref="account.view_account_journal_tree" />
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='type']" position="after">
+                <field
+                    name="approval_required"
+                    string="Approval"
+                    widget="boolean_toggle"
+                    optional="hide" />
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_account_journal_form_approval" model="ir.ui.view">
+        <field name="name">account.journal.form.approval</field>
+        <field name="model">account.journal</field>
+        <field name="inherit_id" ref="account.view_account_journal_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//page[@name='advanced_settings']" position="inside">
+                <group name="approval_settings" string="Approval Settings">
+                    <group>
+                        <field name="approval_required" widget="boolean_toggle" />
+                        <div class="text-muted" invisible="not approval_required">
+                            When enabled, all invoices and bills using this journal
+                            will require approval regardless of other settings.
+                        </div>
+                    </group>
+                </group>
+                <group
+                    name="approval_notes_group"
+                    string="Approval Notes"
+                    invisible="not approval_required">
+                    <field
+                        name="approval_notes"
+                        placeholder="Add special instructions or notes for approvers...&#10;&#10;Example: 'Foreign currency journal - verify exchange rate before approving'"
+                        nolabel="1" />
+                </group>
+                <div
+                    class="alert alert-warning"
+                    invisible="not approval_required"
+                    role="alert">
+                    <strong>Approval Required:</strong> This journal is flagged for approval. All
+                    invoices and bills using this journal will require approval through the
+                    configured approval workflow. </div>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

@@ -1,0 +1,765 @@
+.o_home_menu_background,
+.o_home_menu {
+    --Home-icon-plate: #fff;
+}
+
+@include media-only(screen) {
+    :root[data-color-scheme="dark"] {
+        .o_home_menu_background,
+        .o_home_menu {
+            --Home-icon-plate: rgba(255, 255, 255, 0.08);
+        }
+    }
+}
+
+.o_home_menu_background {
+    &:not(.o_home_menu_background_custom):not(.o_in_studio) .o_main_navbar {
+        --NavBar-entry-color: var(--o-label-1);
+        --NavBar-entry-color--hover: var(--o-label-1);
+        --NavBar-menuToggle-color: var(--o-label-1);
+
+        .o_dropdown_active,
+        > ul > li.show > a {
+            outline: none;
+        }
+    }
+
+    // The bar floats over the board, so the tiles scroll under its blur.
+    &:not(.o_home_menu_background_custom):not(.o_in_studio) {
+        > .o_navbar {
+            position: absolute;
+            inset: 0 0 auto;
+            z-index: 20;
+        }
+
+        .o_home_menu {
+            padding-top: var(--o-navbar-height, #{$o-navbar-height});
+            scroll-padding-top: calc(
+                var(--o-navbar-height, #{$o-navbar-height}) + 12px
+            );
+        }
+    }
+
+    &.o_home_menu_background_custom .o_home_menu {
+        background: {
+            size: cover;
+            repeat: no-repeat;
+            position: center;
+        }
+    }
+
+    .o_menu_systray {
+        @include print-variable(
+            o-navbar-badge-bg,
+            o-token(--danger, $o-navbar-badge-bg)
+        );
+    }
+
+    .o_navbar_home_brand {
+        padding-inline: 16px;
+        font-family: $o-home-menu-font-family;
+        font-size: 20px;
+        font-weight: 600;
+        letter-spacing: -0.02em;
+        color: var(--o-label-1);
+    }
+}
+
+.o_home_menu {
+    font-family: $o-home-menu-font-family;
+    font-size: $font-size-base;
+    color: var(--o-label-1);
+    scrollbar-color: var(--o-fill-2) transparent;
+
+    &::-webkit-scrollbar {
+        width: map-get($spacers, 2);
+    }
+
+    &::-webkit-scrollbar-thumb {
+        background: var(--o-fill-2);
+        border-radius: $border-radius-pill;
+    }
+
+    .o_home_menu_container {
+        max-width: calc(
+            #{$o-home-menu-container-size} + var(--bs-gutter-x, 1.5rem)
+        ) !important;
+        padding-top: 40px;
+    }
+
+    %o-home-surface {
+        background: var(--o-glass-surface);
+        border-radius: $o-home-menu-tile-radius;
+        box-shadow: $o-glass-elevation;
+        @include o-material("thick");
+    }
+
+    // Edit toolbar: replaces the top bar while customizing.
+    .o_home_menu_toolbar {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        background: var(--o-glass-bar);
+        border-bottom: 1px solid var(--o-glass-bar-border);
+        @include o-material("thin");
+    }
+
+    .o_home_menu_toolbar_inner {
+        max-width: $o-home-menu-container-size;
+        min-height: 44px;
+        margin: 0 auto;
+        padding: 2px 0;
+
+        @media (max-width: #{$o-home-menu-container-size + 30px}) {
+            padding-inline: 16px;
+        }
+    }
+
+    .o_home_menu_done {
+        height: 34px;
+        padding: 0 16px;
+        border: 0;
+        border-radius: 18px;
+        background: var(--o-action);
+        color: #fff;
+        font-size: 17px;
+        font-weight: 600;
+
+        &:hover,
+        &:focus-visible {
+            background: var(--o-action);
+            color: #fff;
+            filter: brightness(1.08);
+        }
+    }
+
+    .o_home_toolbar_action {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 7px 10px;
+        border: 0;
+        border-radius: 18px;
+        color: var(--o-action);
+        font-size: 17px;
+
+        &:hover,
+        &:focus-visible {
+            background: var(--o-fill-2);
+            color: var(--o-action);
+        }
+    }
+
+    .o_home_menu_edit_hint,
+    .o_home_menu_save_status {
+        color: var(--o-label-2);
+    }
+
+    // Banner: the search input sits where iCloud shows its notice.
+    .o_home_banner {
+        min-height: 72px;
+        margin-top: 0 !important;
+        margin-bottom: 10px;
+        padding: 0 20px;
+        border-radius: $o-home-menu-tile-radius;
+        background: var(--o-glass-surface-strong);
+        box-shadow: $o-glass-elevation;
+        @include o-material("regular");
+    }
+
+    .o_home_banner_icon {
+        font-size: 28px;
+        color: var(--o-label-1);
+        pointer-events: none;
+    }
+
+    .o_home_menu_search_wrapper {
+        min-width: 0;
+    }
+
+    .o_home_menu_search {
+        appearance: none;
+        padding: 0;
+        border: 0;
+        background: transparent;
+        box-shadow: none;
+        color: var(--o-label-1);
+        font-size: 17px;
+        font-weight: 600;
+        line-height: 21px;
+
+        &::placeholder {
+            color: var(--o-label-1);
+            opacity: 1;
+        }
+
+        &:focus,
+        &:focus-visible {
+            outline: 0;
+            box-shadow: none;
+        }
+
+        &:focus::placeholder {
+            color: var(--o-label-2);
+        }
+    }
+
+    .o_home_banner_subtitle {
+        font-size: 14px;
+        line-height: 20px;
+        color: var(--o-label-2);
+    }
+
+    .o_home_banner_arrow {
+        font-size: 20px;
+        color: var(--o-label-1);
+    }
+
+    .o_home_menu_container > .alert-info {
+        @extend %o-home-surface;
+        margin: 20px 0 10px;
+        border: 0;
+        background: var(--o-glass-surface-strong);
+        color: var(--o-label-1);
+        font-size: 14px;
+    }
+
+    // Board: square 315px units with 30px gutters, like iCloud's tile grid.
+    .o_home_menu_board {
+        display: grid;
+        grid-template-columns: repeat(3, $o-home-menu-tile-unit);
+        grid-auto-rows: minmax($o-home-menu-tile-unit, auto);
+        grid-auto-flow: row dense;
+        justify-content: center;
+        gap: $o-home-menu-tile-gap;
+        margin-top: 30px;
+
+        @media (max-width: #{$o-home-menu-container-size + 60px}) {
+            grid-template-columns: repeat(2, $o-home-menu-tile-unit);
+        }
+
+        @media (max-width: #{$o-home-menu-tile-unit * 2 + $o-home-menu-tile-gap + 40px}) {
+            grid-template-columns: minmax(0, $o-home-menu-tile-unit * 2);
+            gap: 20px;
+        }
+    }
+
+    .o_home_tile {
+        @extend %o-home-surface;
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+        color: var(--o-label-1);
+        transition:
+            box-shadow var(--o-duration-normal, 0.2s) $o-easing-emphasized,
+            transform var(--o-duration-normal, 0.2s) $o-easing-emphasized;
+
+        &:not(.o_home_tile_full) {
+            height: $o-home-menu-tile-unit;
+            overflow: hidden;
+        }
+
+        @media (hover: hover) {
+            &:not(.o_home_tile_full):hover {
+                transform: $o-glass-lift;
+                box-shadow: $o-glass-elevation-hover;
+            }
+        }
+    }
+
+    .o_home_tile_wide {
+        grid-column: span 2;
+
+        @media (max-width: #{$o-home-menu-tile-unit * 2 + $o-home-menu-tile-gap + 40px}) {
+            grid-column: span 1;
+        }
+    }
+
+    .o_home_tile_full {
+        grid-column: 1 / -1;
+    }
+
+    .o_home_tile_empty {
+        align-items: center;
+        justify-content: center;
+        color: var(--o-label-2);
+        font-size: 17px;
+    }
+
+    // Tile banner: 80px band, an inset link holding a 40px icon and the titles.
+    .o_home_tile_header {
+        position: relative;
+        display: flex;
+        flex-shrink: 0;
+        align-items: center;
+        height: 80px;
+        border-radius: $o-home-menu-tile-radius $o-home-menu-tile-radius 0 0;
+        background: var(--o-glass-surface-strong);
+        @include o-material("regular");
+    }
+
+    .o_home_tile_header_link {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        min-width: 0;
+        margin: 0 10px;
+        padding: 8px 10px;
+        color: inherit;
+        text-decoration: none;
+
+        &:is(a) {
+            @include o-hover-fill();
+        }
+    }
+
+    .o_home_tile_icon {
+        width: 40px;
+        height: 40px;
+        flex-shrink: 0;
+        border-radius: 9px;
+        object-fit: cover;
+
+        :is(#{$o-icon-selector}),
+        .oi {
+            font-size: 20px;
+        }
+    }
+
+    .o_home_apps_glyph {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(180deg, #5ac8fa, #007aff);
+        color: #fff;
+    }
+
+    .o_home_tile_heading {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+    }
+
+    .o_home_tile_title {
+        font-size: 21px;
+        font-weight: 600;
+        line-height: 25px;
+        color: var(--o-label-1);
+    }
+
+    .o_home_tile_subtitle {
+        display: flex;
+        align-items: center;
+        font-size: 14px;
+        line-height: 20px;
+        color: var(--o-label-2);
+    }
+
+    .o_home_tile_badge {
+        display: inline-flex;
+        flex-shrink: 0;
+        align-items: center;
+        justify-content: center;
+        width: 19px;
+        height: 19px;
+        margin-inline-end: 4px;
+        border-radius: 50%;
+        background: rgba(10, 132, 255, 0.7);
+        color: #fff;
+        font-size: 9px;
+    }
+
+    .o_home_tile_body {
+        flex-grow: 1;
+        min-height: 0;
+        padding: 10px;
+    }
+
+    // App widgets: the app's first menus, like iCloud's Mail and Drive tiles.
+    .o_home_widget_links {
+        display: grid;
+        grid-auto-rows: min-content;
+        column-gap: 20px;
+    }
+
+    .o_home_tile_wide .o_home_widget_links {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .o_home_widget_link {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+        padding: 9px 10px;
+        border-bottom: 1px solid var(--o-separator);
+        color: inherit;
+        text-decoration: none;
+        @include o-hover-fill();
+    }
+
+    .o_home_widget_link_label {
+        font-size: 15px;
+        line-height: 20px;
+    }
+
+    .o_home_widget_link_parents {
+        font-size: 12px;
+        line-height: 16px;
+        color: var(--o-label-2);
+    }
+
+    .o_home_widget_empty {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        color: inherit;
+        font-size: 17px;
+        line-height: 21px;
+        text-decoration: none;
+
+        :is(#{$o-icon-selector}) {
+            margin-bottom: 15px;
+            font-size: 44px;
+            color: var(--o-action);
+        }
+    }
+
+    // Launcher tiles: iCloud's app library tile, a 4-wide grid of 56px cells.
+    .o_home_apps_board {
+        display: contents;
+    }
+
+    .o_home_launcher_tile {
+        padding: 16px 20px 20px;
+        border-radius: $o-home-menu-launcher-radius;
+        @include o-material("regular");
+
+        .row {
+            display: grid;
+            grid-template-columns: repeat(4, 56px);
+            gap: 10px 17px;
+            margin: 0;
+
+            > * {
+                width: auto;
+                max-width: none;
+                padding: 0;
+            }
+        }
+
+        &.o_home_tile_wide .row,
+        &.o_home_tile_full .row {
+            grid-template-columns: repeat(auto-fill, 56px);
+        }
+
+        .o_app {
+            padding: 0 !important;
+
+            .o_app_icon {
+                width: 52px;
+                padding: 6px;
+                border-radius: 12px !important;
+
+                :is(#{$o-icon-selector}) {
+                    font-size: 26px;
+                }
+            }
+
+            .o_caption {
+                min-height: 0;
+                margin-top: 6px !important;
+                font-size: 12px;
+                line-height: 14px;
+                -webkit-line-clamp: 1;
+            }
+
+            .o_app_badge {
+                right: -4px;
+            }
+        }
+    }
+
+    .o_home_launcher_title.o_home_menu_section_title {
+        padding: 0 0 6px;
+        font-size: 13px;
+        line-height: 16px;
+        color: var(--o-label-1);
+    }
+
+    // The flat apps tile (search, customize) keeps the whole catalogue.
+    .o_apps_section.o_home_tile_full > .o_apps {
+        padding: 20px 10px 10px;
+        margin: 0;
+    }
+
+    .o_pinned_apps.o_home_tile_full {
+        padding: 20px 10px 10px;
+    }
+
+    .o_home_menu_section_title {
+        padding: 0 10px 6px;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--o-label-2);
+    }
+
+    .o_home_tile_title.o_home_menu_section_title {
+        padding: 0;
+        font-size: 21px;
+        color: var(--o-label-1);
+    }
+
+    .o_home_menu_menu_results {
+        .o_menu_result {
+            padding: 10px 14px;
+            border-bottom: 1px solid var(--o-separator);
+            color: var(--o-label-1);
+            font-size: 15px;
+            @include o-hover-fill(".o_focused");
+
+            &.o_focused {
+                outline: 1px solid var(--o-action);
+            }
+        }
+
+        .o_menu_result_parents {
+            color: var(--o-label-2);
+        }
+
+        .o_home_menu_all_results {
+            color: var(--o-action);
+        }
+    }
+
+    // Customize pill under the board.
+    .o_home_menu_footer {
+        margin: 60px 0 80px;
+    }
+
+    .o_home_menu_customize {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 207px;
+        height: 40px;
+        padding: 0 16px;
+        border: 0;
+        border-radius: 22px;
+        background: var(--o-glass-chip);
+        color: var(--o-label-1);
+        font-size: 17px;
+        line-height: 21px;
+        @include o-material("regular");
+
+        &:hover,
+        &:focus-visible {
+            background: var(--o-glass-surface-strong);
+            color: var(--o-label-1);
+        }
+    }
+
+    // App icons.
+    .o_app .o_app_badge {
+        top: 0;
+        right: calc(50% - #{$o-home-menu-app-icon-max-width * 0.5} - 0.5rem);
+        font-size: 11px;
+        box-shadow: 0 0 0 2px var(--o-bg-view);
+    }
+
+    .o_app.o_app_hidden {
+        opacity: 0.45;
+    }
+
+    .o_app.o_app_pinned .o_app_icon {
+        outline: 2px solid var(--o-action);
+        outline-offset: 2px;
+    }
+
+    .o_app {
+        --AppLauncherIcon-box-shadow:
+            0 1px 2px rgba(0, 0, 0, 0.18), 0 2px 6px rgba(0, 0, 0, 0.08);
+        --AppLauncherIcon-transition: box-shadow ease-in 0.1s, transform ease-in 0.1s;
+
+        .o_app_icon {
+            width: $o-home-menu-app-icon-max-width;
+            aspect-ratio: 1;
+            padding: $o-home-menu-app-icon-padding;
+            border-radius: 22.5% !important;
+            background-color: var(--AppLauncherIcon-background, var(--Home-icon-plate));
+            object-fit: cover;
+            transform-origin: center bottom;
+            transform: var(--AppLauncherIcon-transform);
+            transition: var(--AppLauncherIcon-transition);
+            box-shadow: var(--AppLauncherIcon-box-shadow);
+
+            :is(#{$o-icon-selector}) {
+                font-size: $o-home-menu-app-icon-max-width * 0.5;
+            }
+        }
+
+        &:hover {
+            --AppLauncherIcon-transform: scale(1.06);
+        }
+
+        &:active {
+            --AppLauncherIcon-transform: scale(0.96);
+            --AppLauncherIcon-transition: none;
+        }
+
+        .o_caption {
+            overflow-wrap: anywhere;
+            min-height: 2.6em;
+            font-size: 12px;
+            line-height: 14px;
+            color: var(--o-label-1);
+            text-shadow: none;
+        }
+
+        &.o_focused {
+            background: var(--o-fill-4);
+            outline: 1px solid var(--o-app-accent, var(--o-action));
+            border-radius: 10px;
+        }
+    }
+
+    // Customize mode: iCloud's round badges on the tile corners.
+    .o_home_menu_editing {
+        .row {
+            row-gap: 26px;
+        }
+
+        .o_home_app_tile {
+            padding-top: 10px;
+            padding-bottom: 30px;
+        }
+    }
+
+    .o_app_edit_actions {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+
+        button {
+            position: absolute;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            border: 0;
+            border-radius: 50%;
+            background: var(--o-bg-view);
+            color: var(--o-label-1);
+            box-shadow: 0 8px 15px var(--o-fill-3);
+            pointer-events: auto;
+            transition: transform var(--o-duration-normal, 0.2s) $o-easing-emphasized;
+
+            &:hover:not(:disabled) {
+                transform: scale(1.1333);
+            }
+
+            &:disabled {
+                opacity: 0.35;
+            }
+        }
+
+        .o_app_hide,
+        .o_app_pin {
+            top: 0;
+            width: 30px;
+            height: 30px;
+            font-size: 13px;
+        }
+
+        .o_app_hide {
+            left: calc(50% - #{$o-home-menu-app-icon-max-width * 0.5} - 14px);
+
+            &:hover {
+                color: var(--danger);
+            }
+        }
+
+        .o_app_pin {
+            right: calc(50% - #{$o-home-menu-app-icon-max-width * 0.5} - 14px);
+        }
+
+        .o_app_move_earlier,
+        .o_app_move_later {
+            bottom: 0;
+            width: 26px;
+            height: 26px;
+            font-size: 11px;
+            background: var(--o-fill-4);
+            box-shadow: none;
+        }
+
+        .o_app_move_earlier {
+            left: calc(50% - 30px);
+        }
+
+        .o_app_move_later {
+            right: calc(50% - 30px);
+        }
+    }
+
+    .o_app_pinned + .o_app_edit_actions .o_app_pin {
+        background: var(--o-action);
+        color: #fff;
+    }
+
+    .o_dragged_app {
+        transition: transform 0.5s;
+        transform: rotate(6deg);
+        .o_app_icon {
+            box-shadow: 0 8px 15px -10px black;
+            transform: translateY(-1px);
+        }
+    }
+
+    @include media-breakpoint-down(md) {
+        &.o_ios_app {
+            .o_apps,
+            .o_pinned_apps > .row,
+            .o_recent_apps {
+                flex-direction: column;
+                font-size: $o-home-menu-font-size-base * 1.25;
+                margin-top: map-get($spacers, 1);
+                padding: 0 map-get($spacers, 2);
+
+                > *,
+                .o_app {
+                    width: 100%;
+                }
+            }
+
+            .o_app {
+                flex-direction: row !important;
+                justify-content: initial !important;
+                background-color: var(--o-fill-4);
+                padding: map-get($spacers, 3) map-get($spacers, 4) !important;
+            }
+
+            .o_app_icon {
+                width: $o-home-menu-app-icon-max-width * 0.75;
+                height: $o-home-menu-app-icon-max-width * 0.75;
+                margin-inline-end: map-get($spacers, 4);
+            }
+
+            .o_caption {
+                min-height: auto;
+                text-align: start !important;
+            }
+        }
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .o_home_menu .o_home_tile,
+    .o_home_menu .o_app,
+    .o_home_menu .o_app_icon,
+    .o_home_menu .o_dragged_app {
+        transition: none;
+        transform: none !important;
+    }
+}

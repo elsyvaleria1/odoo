@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="payment_transaction_form" model="ir.ui.view">
+        <field name="name">Demo Transaction Form</field>
+        <field name="model">payment.transaction</field>
+        <field name="inherit_id" ref="payment.payment_transaction_form" />
+        <field name="arch" type="xml">
+            <header position="inside">
+                <field name="capture_manually" invisible="1" />
+                <button
+                    name="action_demo_set_done"
+                    type="object"
+                    string="Authorize"
+                    invisible="provider_code != 'demo' or not capture_manually or state != 'pending'"
+                    class="oe_highlight" />
+                <button
+                    name="action_demo_set_done"
+                    type="object"
+                    string="Confirm"
+                    invisible="provider_code != 'demo' or capture_manually or state != 'pending'"
+                    class="oe_highlight" />
+                <button
+                    name="action_demo_set_canceled"
+                    type="object"
+                    string="Cancel"
+                    invisible="provider_code != 'demo' or state != 'pending'" />
+                <button
+                    name="action_demo_set_error"
+                    type="object"
+                    string="Set to Error"
+                    invisible="provider_code != 'demo' or state != 'pending'" />
+            </header>
+        </field>
+    </record>
+
+</odoo>

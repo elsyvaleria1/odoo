@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="hr_employee_driver_john_smith" model="hr.employee">
+        <field name="name">John Smith</field>
+        <field name="work_email">john.smith@agromarin.mx</field>
+        <field name="company_id" ref="base.main_company" />
+    </record>
+
+    <record id="hr_employee_driver_maria_garcia" model="hr.employee">
+        <field name="name">Maria Garcia</field>
+        <field name="work_email">maria.garcia@agromarin.mx</field>
+        <field name="company_id" ref="base.main_company" />
+    </record>
+
+    <record id="hr_employee_driver_robert_johnson" model="hr.employee">
+        <field name="name">Robert Johnson</field>
+        <field name="work_email">robert.johnson@agromarin.mx</field>
+        <field name="company_id" ref="base.main_company" />
+    </record>
+
+    <record id="hr_employee_driver_lisa_chen" model="hr.employee">
+        <field name="name">Lisa Chen</field>
+        <field name="work_email">lisa.chen@agromarin.mx</field>
+        <field name="company_id" ref="base.main_company" />
+    </record>
+
+    <record id="hr_employee_driver_carlos_rodriguez" model="hr.employee">
+        <field name="name">Carlos Rodriguez</field>
+        <field name="work_email">carlos.rodriguez@agromarin.mx</field>
+        <field name="company_id" ref="base.main_company" />
+    </record>
+
+    <record id="hr_employee_driver_sarah_williams" model="hr.employee">
+        <field name="name">Sarah Williams</field>
+        <field name="work_email">sarah.williams@agromarin.mx</field>
+        <field name="company_id" ref="base.main_company" />
+    </record>
+
+    <record id="hr_employee_operator_mike_anderson" model="hr.employee">
+        <field name="name">Mike Anderson</field>
+        <field name="work_email">mike.anderson@agromarin.mx</field>
+        <field name="company_id" ref="base.main_company" />
+    </record>
+
+    <record id="hr_employee_operator_tom_martinez" model="hr.employee">
+        <field name="name">Tom Martinez</field>
+        <field name="work_email">tom.martinez@agromarin.mx</field>
+        <field name="company_id" ref="base.main_company" />
+    </record>
+
+    <record id="hr_employee_manager_david_brown" model="hr.employee">
+        <field name="name">David Brown</field>
+        <field name="work_email">david.brown@agromarin.mx</field>
+        <field name="company_id" ref="base.main_company" />
+    </record>
+
+    <record id="hr_employee_manager_jennifer_davis" model="hr.employee">
+        <field name="name">Jennifer Davis</field>
+        <field name="work_email">jennifer.davis@agromarin.mx</field>
+        <field name="company_id" ref="base.main_company" />
+    </record>
+
+    <record id="hr_employee_manager_patricia_wilson" model="hr.employee">
+        <field name="name">Patricia Wilson</field>
+        <field name="work_email">patricia.wilson@agromarin.mx</field>
+        <field name="company_id" ref="base.main_company" />
+    </record>
+
+</odoo>

@@ -1,0 +1,203 @@
+from odoo import api, fields, models
+from odoo.exceptions import UserError
+from odoo.libs.debug_log import DebugLog
+
+_debug = DebugLog(__name__)
+
+
+class ResConfigSettings(models.TransientModel):
+    _inherit = "res.config.settings"
+
+    module_product_expiry = fields.Boolean(
+        string="Expiration Dates",
+        help="Track following dates on lots & serial numbers: best before, removal, end of life, alert. \n Such dates are set automatically at lot/serial number creation based on values set on the product (in days).",
+    )
+    group_stock_production_lot = fields.Boolean(
+        string="Lots & Serial Numbers",
+        implied_group="stock.group_production_lot",
+        group="base.group_user,base.group_portal",
+    )
+    group_stock_lot_print_gs1 = fields.Boolean(
+        string="Print GS1 Barcodes for Lots & Serial Numbers",
+        implied_group="stock.group_stock_lot_print_gs1",
+    )
+    group_lot_on_delivery_slip = fields.Boolean(
+        string="Display Lots & Serial Numbers on Delivery Slips",
+        implied_group="stock.group_lot_on_delivery_slip",
+        group="base.group_user,base.group_portal",
+    )
+    group_stock_tracking_lot = fields.Boolean(
+        string="Packages",
+        implied_group="stock.group_tracking_lot",
+    )
+    group_stock_tracking_owner = fields.Boolean(
+        string="Consignment",
+        implied_group="stock.group_tracking_owner",
+    )
+    group_stock_adv_location = fields.Boolean(
+        string="Multi-Step Routes",
+        implied_group="stock.group_adv_location",
+        help="Add and customize route operations to process product moves in your warehouse(s): e.g. unload > quality control > stock for incoming products, pick > pack > ship for outgoing products. \n You can also set putaway strategies on warehouse locations in order to send incoming products into specific child locations straight away (e.g. specific bins, racks).",
+    )
+    group_warning_stock = fields.Boolean(
+        string="Warnings for Stock",
+        implied_group="stock.group_warning_stock",
+    )
+    group_stock_sign_delivery = fields.Boolean(
+        string="Signature",
+        implied_group="stock.group_stock_sign_delivery",
+    )
+    module_stock_picking_batch = fields.Boolean(
+        string="Batch, Wave & Cluster Transfers"
+    )
+    module_stock_barcode = fields.Boolean(string="Barcode Scanner")
+    module_stock_barcode_barcodelookup = fields.Boolean(string="Stock Barcode Database")
+    stock_move_email_validation = fields.Boolean(
+        related="company_id.stock_config_id.stock_move_email_validation",
+        readonly=False,
+    )
+    module_stock_sms = fields.Boolean(string="SMS Confirmation")
+    module_delivery = fields.Boolean(string="Delivery Methods")
+    module_delivery_dhl = fields.Boolean(string="DHL Express Connector")
+    module_delivery_fedex_rest = fields.Boolean(string="FedEx Connector")
+    module_delivery_ups_rest = fields.Boolean(string="UPS Connector")
+    module_delivery_usps_rest = fields.Boolean(string="USPS Connector")
+    module_delivery_bpost = fields.Boolean(string="bpost Connector")
+    module_delivery_easypost = fields.Boolean(string="Easypost Connector")
+    module_delivery_sendcloud = fields.Boolean(string="Sendcloud Connector")
+    module_delivery_shiprocket = fields.Boolean(string="Shiprocket Connector")
+    module_delivery_starshipit = fields.Boolean(string="Starshipit Connector")
+    module_delivery_envia = fields.Boolean(string="Envia.com Connector")
+    module_quality_control = fields.Boolean(string="Quality")
+    module_quality_control_worksheet = fields.Boolean(string="Quality Worksheet")
+    group_stock_multi_locations = fields.Boolean(
+        string="Storage Locations",
+        implied_group="stock.group_stock_multi_locations",
+        help="Store products in specific locations of your warehouse (e.g. bins, racks) and to track inventory accordingly.",
+    )
+    annual_inventory_month = fields.Selection(
+        related="company_id.stock_config_id.annual_inventory_month",
+        readonly=False,
+    )
+    annual_inventory_day = fields.Integer(
+        related="company_id.stock_config_id.annual_inventory_day",
+        readonly=False,
+    )
+    group_stock_reception_report = fields.Boolean(
+        string="Reception Report",
+        implied_group="stock.group_reception_report",
+    )
+    module_stock_dropshipping = fields.Boolean(string="Dropshipping")
+    barcode_separator = fields.Char(
+        string="Separator",
+        config_parameter="stock.barcode_separator",
+        help="Character(s) used to separate data contained within an aggregate barcode (i.e. a barcode containing multiple barcode encodings)",
+    )
+    module_stock_fleet = fields.Boolean(string="Dispatch Management System")
+    replenish_on_order = fields.Boolean(
+        string="Replenish on Order (MTO)",
+        compute="_compute_replenish_on_order",
+        inverse="_inverse_replenish_on_order",
+    )
+    stock_text_confirmation = fields.Boolean(
+        related="company_id.stock_config_id.stock_text_confirmation",
+        string="Stock Text Validation with stock move",
+        readonly=False,
+    )
+    stock_confirmation_type = fields.Selection(
+        related="company_id.stock_config_id.stock_confirmation_type",
+        string="Stock Text Validation type",
+        readonly=False,
+    )
+    horizon_days = fields.Integer(
+        related="company_id.stock_config_id.horizon_days",
+        readonly=False,
+    )
+
+    def _compute_replenish_on_order(self) -> None:
+        route = self.env.ref("stock.route_warehouse0_mto", raise_if_not_found=False)
+        self.replenish_on_order = bool(route and route.active)
+
+    def _inverse_replenish_on_order(self) -> None:
+        route = self.env.ref("stock.route_warehouse0_mto", raise_if_not_found=False)
+        if route:
+            _debug.lifecycle(
+                "mto_route_active", route=route.id, active=self.replenish_on_order
+            )
+            route.active = self.replenish_on_order
+
+    @api.onchange("group_stock_multi_locations")
+    def _onchange_group_stock_multi_locations(self) -> None:
+        if not self.group_stock_multi_locations:
+            self.group_stock_adv_location = False
+
+    @api.onchange("group_stock_production_lot")
+    def _onchange_group_stock_production_lot(self) -> None:
+        if not self.group_stock_production_lot:
+            self.group_lot_on_delivery_slip = False
+            self.module_product_expiry = False
+
+    @api.onchange("stock_confirmation_type", "stock_text_confirmation")
+    def _onchange_stock_confirmation_fields(self) -> None:
+        if self.stock_text_confirmation and self.stock_confirmation_type == "sms":
+            self.module_stock_sms = True
+
+    @api.onchange("group_stock_adv_location")
+    def _onchange_group_stock_adv_location(self) -> None:
+        if self.group_stock_adv_location and not self.group_stock_multi_locations:
+            self.group_stock_multi_locations = True
+
+    @_debug.perf.timed
+    def set_values(self):
+        warehouse_grp = self.env.ref("stock.group_stock_multi_warehouses")
+        location_grp = self.env.ref("stock.group_stock_multi_locations")
+        base_user = self.env.ref("base.group_user")
+        base_user_implied_ids = base_user.implied_ids
+        if (
+            not self.group_stock_multi_locations
+            and location_grp in base_user_implied_ids
+            and warehouse_grp in base_user_implied_ids
+        ):
+            raise UserError(
+                self.env._(
+                    "You can't deactivate the multi-location setting if you have more than one warehouse per company."
+                )
+            )
+
+        previous_group = self.default_get(
+            [
+                "group_stock_multi_locations",
+                "group_stock_production_lot",
+                "group_stock_tracking_lot",
+            ]
+        )
+        super().set_values()
+
+        if not self.env.user.has_group("stock.group_stock_manager"):
+            return
+
+        warehouse_obj = self.env["stock.warehouse"]
+        was_multi_location = previous_group.get("group_stock_multi_locations")
+        if bool(self.group_stock_multi_locations) != bool(was_multi_location):
+            _debug.lifecycle(
+                "multi_locations_changed",
+                was=bool(was_multi_location),
+                now=bool(self.group_stock_multi_locations),
+            )
+            warehouse_obj._update_multi_location_defaults(
+                bool(self.group_stock_multi_locations)
+            )
+
+        if not self.group_stock_production_lot and previous_group.get(
+            "group_stock_production_lot"
+        ):
+            if self.env["product.product"].search_count(
+                [("tracking", "!=", "none")], limit=1
+            ):
+                raise UserError(
+                    self.env._(
+                        "You have product(s) in stock that have lot/serial number tracking enabled. \nSwitch off tracking on all the products before switching off this setting."
+                    )
+                )
+
+        return

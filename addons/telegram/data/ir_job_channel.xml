@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="job_channel_telegram_outbound" model="ir.job.channel">
+        <field name="name">telegram_outbound</field>
+        <field name="capacity">4</field>
+    </record>
+
+</odoo>

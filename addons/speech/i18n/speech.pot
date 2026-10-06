@@ -1,0 +1,600 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* speech
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-09-28 17:44+0000\n"
+"PO-Revision-Date: 2026-09-28 17:44+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: speech
+#: model:ir.model.fields,help:speech.field_media_segment__live
+msgid "A chunk sent during a live capture, transcribed as soon as it arrives."
+msgstr ""
+
+#. module: speech
+#. odoo-python
+#: code:addons/speech/models/speech_vocabulary.py:0
+msgid "A spoken form needs a phrase and the word it means."
+msgstr ""
+
+#. module: speech
+#: model:ir.model.constraint,message:speech.constraint_speech_vocabulary_name_company_unique
+msgid "A vocabulary term is already registered for this company."
+msgstr ""
+
+#. module: speech
+#: model:ir.model.constraint,message:speech.constraint_speech_speaker_attachment_label_unique
+msgid "A voice is named once per recording."
+msgstr ""
+
+#. module: speech
+#: model:ir.model.fields.selection,name:speech.selection__speech_vocabulary_form__pronunciation__acronym
+msgid "Acronym"
+msgstr ""
+
+#. module: speech
+#: model:ir.model.fields,field_description:speech.field_speech_vocabulary__active
+#: model:ir.model.fields,field_description:speech.field_speech_vocabulary_form__active
+msgid "Active"
+msgstr ""
+
+#. module: speech
+#: model_terms:ir.actions.act_window,help:speech.speech_vocabulary_action
+msgid "Add a term"
+msgstr ""
+
+#. module: speech
+#: model:ir.model.fields.selection,name:speech.selection__speech_vocabulary_form__source__admin
+msgid "Administrator"
+msgstr ""
+
+#. module: speech
+#: model:ir.model.fields,help:speech.field_speech_vocabulary_form__pronunciation
+msgid ""
+"An English word or an acronym is also matched as a Mexican speaker says it "
+"(status: estatus; PO: pe o); a form said as written only as written."
+msgstr ""
+
+#. module: speech
+#: model:ir.model.fields.selection,name:speech.selection__speech_vocabulary_form__pronunciation__local
+msgid "As written"
+msgstr ""
+
+#. module: speech
+#: model:ir.model,name:speech.model_ir_attachment
+#: model:ir.model.fields,field_description:speech.field_speech_speaker__attachment_id
+msgid "Attachment"
+msgstr ""
+
+#. module: speech
+#: model_terms:ir.actions.act_window,help:speech.speech_vocabulary_action
+msgid ""
+"Brands, places and names a transcriber must spell right. The first hundred, "
+"in order, travel with every transcription."
+msgstr ""
+
+#. module: speech
+#: model:ir.model.fields,field_description:speech.field_ir_attachment__can_transcribe
+msgid "Can Transcribe"
+msgstr ""
+
+#. module: speech
+#: model:ir.model.fields,field_description:speech.field_speech_dictation__company_id
+#: model:ir.model.fields,field_description:speech.field_speech_vocabulary__company_id
+#: model:ir.model.fields,field_description:speech.field_speech_vocabulary_form__company_id
+#: model:ir.model.fields.selection,name:speech.selection__speech_vocabulary__kind__company
+msgid "Company"
+msgstr ""
+
+#. module: speech
+#: model:ir.model.fields,field_description:speech.field_speech_vocabulary_form__confirmations
+msgid "Confirmations"
+msgstr ""
+
+#. module: speech
+#: model:ir.model.fields,field_description:speech.field_speech_dictation__create_uid
+#: model:ir.model.fields,field_description:speech.field_speech_speaker__create_uid
+#: model:ir.model.fields,field_description:speech.field_speech_vocabulary__create_uid
+msgid "Created by"
+msgstr ""
+
+#. module: speech
+#: model:ir.model.fields,field_description:speech.field_speech_dictation__create_date
+#: model:ir.model.fields,field_description:speech.field_speech_speaker__create_date
+#: model:ir.model.fields,field_description:speech.field_speech_vocabulary__create_date
+msgid "Created on"
+msgstr ""
+
+#. module: speech
+#: model:ir.model.fields,field_description:speech.field_speech_dictation__res_model
+msgid "Dictated into"
+msgstr ""
+
+#. module: speech
+#: model:ir.model,name:speech.model_speech_dictation
+msgid "Dictation"
+msgstr ""
+
+#. module: speech
+#: model:ir.model.fields,field_description:speech.field_ir_attachment__display_name
+#: model:ir.model.fields,field_description:speech.field_ir_websocket__display_name
+#: model:ir.model.fields,field_description:speech.field_media_segment__display_name
+#: model:ir.model.fields,field_description:speech.field_mixin_media_live__display_name
+#: model:ir.model.fields,field_description:speech.field_mixin_media_timeline__display_name
+#: model:ir.model.fields,field_description:speech.field_speech_dictation__display_name
+#: model:ir.model.fields,field_description:speech.field_speech_speaker__display_name
+#: model:ir.model.fields,field_description:speech.field_speech_vocabulary__display_name
+#: model:ir.model.fields,field_description:speech.field_speech_vocabulary_form__display_name
+msgid "Display Name"
+msgstr ""
+
+#. module: speech
+#: model:ir.model.fields,help:speech.field_speech_vocabulary__company_id
+msgid "Empty means every company"
+msgstr ""
+
+#. module: speech
+#: model:ir.model.fields.selection,name:speech.selection__speech_vocabulary_form__pronunciation__word
+msgid "English word"
+msgstr ""
+
+#. module: speech
+#: model:ir.model.fields.selection,name:speech.selection__discuss_call_history__timeline_transcript_state__failed
+#: model:ir.model.fields.selection,name:speech.selection__ir_attachment__transcript_state__failed
+#: model:ir.model.fields.selection,name:speech.selection__mixin_media_live__timeline_transcript_state__failed
+#: model:ir.model.fields.selection,name:speech.selection__mixin_media_timeline__timeline_transcript_state__failed
+#: model:ir.model.fields.selection,name:speech.selection__speech_dictation__timeline_transcript_state__failed
+msgid "Failed"
+msgstr ""
+
+#. module: speech
+#: model:ir.model.fields,field_description:speech.field_speech_speaker__first_spoke_s
+msgid "First spoke at (s)"
+msgstr ""
+
+#. module: speech
+#: model:ir.model.fields,field_description:speech.field_mixin_media_live__has_media
+#: model:ir.model.fields,field_description:speech.field_speech_dictation__has_media
+msgid "Has Media"
+msgstr ""
+
+#. module: speech
+#: model:ir.model.fields,help:speech.field_speech_vocabulary_form__confirmations
+msgid ""
+"How many times a user who shares what they say chose this reading from a "
+"list. A learned form is used once an administrator approves it."
+msgstr ""
+
+#. module: speech
+#: model:ir.model.fields,help:speech.field_speech_vocabulary__form_ids
+msgid "How people say this word when it is not said as written."
+msgstr ""
+
+#. module: speech
+#: model:ir.model.fields,field_description:speech.field_ir_attachment__id
+#: model:ir.model.fields,field_description:speech.field_ir_websocket__id
+#: model:ir.model.fields,field_description:speech.field_media_segment__id
+#: model:ir.model.fields,field_description:speech.field_mixin_media_live__id
+#: model:ir.model.fields,field_description:speech.field_mixin_media_timeline__id
+#: model:ir.model.fields,field_description:speech.field_speech_dictation__id
+#: model:ir.model.fields,field_description:speech.field_speech_speaker__id
+#: model:ir.model.fields,field_description:speech.field_speech_vocabulary__id
+#: model:ir.model.fields,field_description:speech.field_speech_vocabulary_form__id
+msgid "ID"
+msgstr ""
+
+#. module: speech
+#: model:ir.model.fields,field_description:speech.field_speech_vocabulary__kind
+msgid "Kind"
+msgstr ""
+
+#. module: speech
+#: model:ir.model.fields,field_description:speech.field_speech_speaker__label
+msgid "Label"
+msgstr ""
+
+#. module: speech
+#: model:ir.model.fields,field_description:speech.field_speech_dictation__language
+msgid "Language"
+msgstr ""
+
+#. module: speech
+#: model:ir.model.fields,field_description:speech.field_speech_dictation__write_uid
+#: model:ir.model.fields,field_description:speech.field_speech_speaker__write_uid
+#: model:ir.model.fields,field_description:speech.field_speech_vocabulary__write_uid
+msgid "Last Updated by"
+msgstr ""
+
+#. module: speech
+#: model:ir.model.fields,field_description:speech.field_speech_dictation__write_date
+#: model:ir.model.fields,field_description:speech.field_speech_speaker__write_date
+#: model:ir.model.fields,field_description:speech.field_speech_vocabulary__write_date
+msgid "Last Updated on"
+msgstr ""
+
+#. module: speech
+#: model:ir.model.fields.selection,name:speech.selection__speech_vocabulary_form__source__learned
+msgid "Learned"
+msgstr ""
+
+#. module: speech
+#: model:ir.model.fields,help:speech.field_speech_vocabulary_form__company_id
+msgid "Leave empty to use the form in every company."
+msgstr ""
+
+#. module: speech
+#: model:ir.model.fields,field_description:speech.field_media_segment__live
+msgid "Live"
+msgstr ""
+
+#. module: speech
+#: model:ir.model.fields,field_description:speech.field_mixin_media_live__live_chunk_count
+#: model:ir.model.fields,field_description:speech.field_speech_dictation__live_chunk_count
+msgid "Live Chunk Count"
+msgstr ""
+
+#. module: speech
+#: model:ir.model.fields,field_description:speech.field_mixin_media_live__is_live
+#: model:ir.model.fields,field_description:speech.field_speech_dictation__is_live
+msgid "Live capture in progress"
+msgstr ""
+
+#. module: speech
+#: model:ir.model,name:speech.model_mixin_media_live
+msgid "Live capture onto a media timeline"
+msgstr ""
+
+#. module: speech
+#: model:ir.model.fields,field_description:speech.field_mixin_media_live__live_elapsed_s
+#: model:ir.model.fields,field_description:speech.field_speech_dictation__live_elapsed_s
+msgid "Live elapsed (s)"
+msgstr ""
+
+#. module: speech
+#: model:ir.model.fields,field_description:speech.field_mixin_media_live__segment_ids
+#: model:ir.model.fields,field_description:speech.field_speech_dictation__segment_ids
+msgid "Media"
+msgstr ""
+
+#. module: speech
+#: model:ir.model.fields,field_description:speech.field_mixin_media_live__media_duration_ms
+#: model:ir.model.fields,field_description:speech.field_speech_dictation__media_duration_ms
+msgid "Media Duration Ms"
+msgstr ""
+
+#. module: speech
+#: model:ir.model,name:speech.model_media_segment
+msgid "Media Segment"
+msgstr ""
+
+#. module: speech
+#: model:ir.model,name:speech.model_mixin_media_timeline
+msgid "Media Timeline"
+msgstr ""
+
+#. module: speech
+#: model:ir.model.fields,field_description:speech.field_speech_speaker__name
+#: model:ir.model.fields,field_description:speech.field_speech_vocabulary__name
+msgid "Name"
+msgstr ""
+
+#. module: speech
+#. odoo-python
+#: code:addons/speech/models/mixin_media_live.py:0
+msgid "No live session is running here."
+msgstr ""
+
+#. module: speech
+#. odoo-python
+#: code:addons/speech/tools/hear.py:0
+msgid "No speech engine may hear this recording here."
+msgstr ""
+
+#. module: speech
+#. odoo-python
+#: code:addons/speech/models/mixin_media_live.py:0
+msgid ""
+"No speech engine may hear this: the data policy of %(company)s allows no "
+"vendor, and no local engine is installed."
+msgstr ""
+
+#. module: speech
+#. odoo-python
+#: code:addons/speech/models/ir_attachment.py:0
+msgid "No speech engine reads %(mimetype)s."
+msgstr ""
+
+#. module: speech
+#. odoo-python
+#: code:addons/speech/models/ir_attachment.py:0
+msgid "No speech engine writes %(mimetype)s."
+msgstr ""
+
+#. module: speech
+#: model:ir.model.fields.selection,name:speech.selection__discuss_call_history__timeline_transcript_state__none
+#: model:ir.model.fields.selection,name:speech.selection__ir_attachment__transcript_state__none
+#: model:ir.model.fields.selection,name:speech.selection__mixin_media_live__timeline_transcript_state__none
+#: model:ir.model.fields.selection,name:speech.selection__mixin_media_timeline__timeline_transcript_state__none
+#: model:ir.model.fields.selection,name:speech.selection__speech_dictation__timeline_transcript_state__none
+msgid "Not transcribed"
+msgstr ""
+
+#. module: speech
+#. odoo-python
+#: code:addons/speech/models/ir_attachment.py:0
+msgid ""
+"Nothing here can be transcribed: either the file is not a recording, or no "
+"speech engine is installed."
+msgstr ""
+
+#. module: speech
+#: model:ir.model.fields,field_description:speech.field_speech_speaker__partner_id
+#: model:ir.model.fields.selection,name:speech.selection__speech_vocabulary__kind__person
+msgid "Person"
+msgstr ""
+
+#. module: speech
+#: model:ir.model.fields,field_description:speech.field_speech_vocabulary_form__phrases
+msgid "Phrases"
+msgstr ""
+
+#. module: speech
+#: model:ir.model.fields.selection,name:speech.selection__speech_vocabulary__kind__place
+msgid "Place"
+msgstr ""
+
+#. module: speech
+#: model:ir.model.fields.selection,name:speech.selection__speech_vocabulary__kind__product
+msgid "Product"
+msgstr ""
+
+#. module: speech
+#: model:ir.model.fields,field_description:speech.field_speech_dictation__prompt
+msgid "Prompt"
+msgstr ""
+
+#. module: speech
+#: model:ir.model.fields,field_description:speech.field_speech_vocabulary_form__pronunciation
+msgid "Pronunciation"
+msgstr ""
+
+#. module: speech
+#: model:ir.model.fields.selection,name:speech.selection__discuss_call_history__timeline_transcript_state__queued
+#: model:ir.model.fields.selection,name:speech.selection__ir_attachment__transcript_state__queued
+#: model:ir.model.fields.selection,name:speech.selection__mixin_media_live__timeline_transcript_state__queued
+#: model:ir.model.fields.selection,name:speech.selection__mixin_media_timeline__timeline_transcript_state__queued
+#: model:ir.model.fields.selection,name:speech.selection__speech_dictation__timeline_transcript_state__queued
+msgid "Queued"
+msgstr ""
+
+#. module: speech
+#: model:ir.model.fields,field_description:speech.field_speech_dictation__res_id
+msgid "Res"
+msgstr ""
+
+#. module: speech
+#: model:ir.model.fields.selection,name:speech.selection__speech_vocabulary_form__source__seed
+msgid "Seed"
+msgstr ""
+
+#. module: speech
+#: model:ir.model.fields,field_description:speech.field_speech_vocabulary__sequence
+msgid "Sequence"
+msgstr ""
+
+#. module: speech
+#: model:ir.model.fields,field_description:speech.field_speech_vocabulary_form__source
+msgid "Source"
+msgstr ""
+
+#. module: speech
+#: model:ir.model,name:speech.model_speech_speaker
+msgid "Speaker"
+msgstr ""
+
+#. module: speech
+#: model:ir.model.fields,field_description:speech.field_ir_attachment__speaker_ids
+#: model:ir.model.fields,field_description:speech.field_mixin_media_live__timeline_speaker_ids
+#: model:ir.model.fields,field_description:speech.field_mixin_media_timeline__timeline_speaker_ids
+#: model:ir.model.fields,field_description:speech.field_speech_dictation__timeline_speaker_ids
+msgid "Speakers"
+msgstr ""
+
+#. module: speech
+#: model_terms:ir.ui.view,arch_db:speech.ir_attachment_view_form_speech
+msgid "Speech"
+msgstr ""
+
+#. module: speech
+#: model:ir.actions.act_window,name:speech.speech_vocabulary_action
+#: model:ir.model,name:speech.model_speech_vocabulary
+#: model:ir.ui.menu,name:speech.speech_vocabulary_menu
+msgid "Speech Vocabulary"
+msgstr ""
+
+#. module: speech
+#: model:ir.model,name:speech.model_speech_vocabulary_form
+msgid "Spoken Form of a Vocabulary Word"
+msgstr ""
+
+#. module: speech
+#: model:ir.model.fields,field_description:speech.field_speech_vocabulary__form_ids
+msgid "Spoken forms"
+msgstr ""
+
+#. module: speech
+#: model:ir.model.fields,field_description:speech.field_speech_speaker__talk_time_s
+msgid "Talk time (s)"
+msgstr ""
+
+#. module: speech
+#: model:ir.model.fields.selection,name:speech.selection__speech_vocabulary__kind__term
+msgid "Term"
+msgstr ""
+
+#. module: speech
+#. odoo-python
+#: code:addons/speech/models/mixin_media_live.py:0
+msgid "The audio is not valid base64."
+msgstr ""
+
+#. module: speech
+#. odoo-python
+#: code:addons/speech/models/mixin_media_live.py:0
+msgid "The chunk holds no audio."
+msgstr ""
+
+#. module: speech
+#: model:ir.model.fields,help:speech.field_speech_vocabulary_form__word
+msgid ""
+"The word as the screens spell it; a word not in the vocabulary yet is added "
+"to it."
+msgstr ""
+
+#. module: speech
+#. odoo-python
+#: code:addons/speech/models/ir_attachment.py:0
+msgid "There is nothing to read aloud."
+msgstr ""
+
+#. module: speech
+#: model:ir.model.fields,field_description:speech.field_mixin_media_live__timeline_transcript
+#: model:ir.model.fields,field_description:speech.field_mixin_media_timeline__timeline_transcript
+#: model:ir.model.fields,field_description:speech.field_speech_dictation__timeline_transcript
+msgid "Timeline Transcript"
+msgstr ""
+
+#. module: speech
+#: model:ir.model.fields,field_description:speech.field_mixin_media_live__timeline_transcript_state
+#: model:ir.model.fields,field_description:speech.field_mixin_media_timeline__timeline_transcript_state
+#: model:ir.model.fields,field_description:speech.field_speech_dictation__timeline_transcript_state
+msgid "Timeline Transcript State"
+msgstr ""
+
+#. module: speech
+#: model_terms:ir.ui.view,arch_db:speech.ir_attachment_view_form_speech
+msgid "Transcribe"
+msgstr ""
+
+#. module: speech
+#: model:ir.model.fields.selection,name:speech.selection__discuss_call_history__timeline_transcript_state__done
+#: model:ir.model.fields.selection,name:speech.selection__ir_attachment__transcript_state__done
+#: model:ir.model.fields.selection,name:speech.selection__mixin_media_live__timeline_transcript_state__done
+#: model:ir.model.fields.selection,name:speech.selection__mixin_media_timeline__timeline_transcript_state__done
+#: model:ir.model.fields.selection,name:speech.selection__speech_dictation__timeline_transcript_state__done
+msgid "Transcribed"
+msgstr ""
+
+#. module: speech
+#: model:ir.model.fields.selection,name:speech.selection__discuss_call_history__timeline_transcript_state__running
+#: model:ir.model.fields.selection,name:speech.selection__ir_attachment__transcript_state__running
+#: model:ir.model.fields.selection,name:speech.selection__mixin_media_live__timeline_transcript_state__running
+#: model:ir.model.fields.selection,name:speech.selection__mixin_media_timeline__timeline_transcript_state__running
+#: model:ir.model.fields.selection,name:speech.selection__speech_dictation__timeline_transcript_state__running
+msgid "Transcribing"
+msgstr ""
+
+#. module: speech
+#: model:ir.model.fields,field_description:speech.field_ir_attachment__transcript_cues
+#: model:ir.model.fields,field_description:speech.field_media_segment__transcript_cues
+msgid "Transcript Cues"
+msgstr ""
+
+#. module: speech
+#: model:ir.model.fields,field_description:speech.field_ir_attachment__transcript_engine
+msgid "Transcript Engine"
+msgstr ""
+
+#. module: speech
+#: model:ir.model.fields,field_description:speech.field_ir_attachment__transcript_error
+msgid "Transcript Error"
+msgstr ""
+
+#. module: speech
+#: model:ir.model.fields,field_description:speech.field_ir_attachment__transcript_language
+msgid "Transcript Language"
+msgstr ""
+
+#. module: speech
+#: model:ir.model.fields,field_description:speech.field_ir_attachment__transcript_state
+msgid "Transcript State"
+msgstr ""
+
+#. module: speech
+#: model:ir.model.fields,field_description:speech.field_ir_attachment__transcript_text
+msgid "Transcript Text"
+msgstr ""
+
+#. module: speech
+#: model:ir.model.fields,field_description:speech.field_media_segment__transcript_state
+msgid "Transcription"
+msgstr ""
+
+#. module: speech
+#: model:ir.model.fields,field_description:speech.field_speech_speaker__turns
+msgid "Turns"
+msgstr ""
+
+#. module: speech
+#: model:ir.model.fields,field_description:speech.field_speech_dictation__user_id
+#: model:ir.model.fields,field_description:speech.field_speech_speaker__user_id
+msgid "User"
+msgstr ""
+
+#. module: speech
+#: model_terms:ir.ui.view,arch_db:speech.speech_vocabulary_view_form
+#: model_terms:ir.ui.view,arch_db:speech.speech_vocabulary_view_list
+msgid "Vocabulary"
+msgstr ""
+
+#. module: speech
+#: model:ir.model.fields,help:speech.field_ir_attachment__transcript_cues
+#: model:ir.model.fields,help:speech.field_media_segment__transcript_cues
+msgid ""
+"What is said in this recording, with the moment each phrase starts and ends."
+msgstr ""
+
+#. module: speech
+#: model:ir.model.fields,help:speech.field_speech_vocabulary_form__phrases
+msgid ""
+"What is said, as a recogniser writes it; each form separated by a semicolon:"
+" checa; checar; checalo."
+msgstr ""
+
+#. module: speech
+#: model:ir.model.fields,help:speech.field_speech_dictation__prompt
+msgid ""
+"What the speaker is expected to talk about: names and terms the engine "
+"should recognise."
+msgstr ""
+
+#. module: speech
+#: model:ir.model.fields,help:speech.field_speech_speaker__label
+msgid "What the transcriber called this voice, e.g. SPEAKER_0"
+msgstr ""
+
+#. module: speech
+#: model:ir.model.fields,field_description:speech.field_speech_vocabulary_form__vocabulary_id
+#: model:ir.model.fields,field_description:speech.field_speech_vocabulary_form__word
+msgid "Word"
+msgstr ""
+
+#. module: speech
+#: model:ir.model,name:speech.model_ir_websocket
+msgid "websocket message handling"
+msgstr ""
+
+#. module: speech
+#. odoo-python
+#: code:addons/speech/models/speech_vocabulary.py:0
+msgid "“%(phrase)s” already means “%(means)s”."
+msgstr ""

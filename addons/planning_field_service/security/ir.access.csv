@@ -1,0 +1,5 @@
+id,name,model_id/id,group_id/id,kind,operation,reach,anchor,domain
+planning_rule_user_edit_own_visit,Planning: user can edit his own customer visit,planning.model_planning_slot,planning.group_planning_user,permission,u,own,,"[('state', '!=', '1_draft'), ('partner_id', '!=', False)]"
+planning_rule_user_declare_own_visit,Planning: user can declare his own customer visit,planning.model_planning_slot,planning.group_planning_user,permission,c,own,,"[('state', '!=', '1_draft'), ('partner_id', '!=', False)]"
+planning_rule_user_read_published_shift,Planning: user can see the published shifts that are not customer visits,planning.model_planning_slot,planning.group_planning_user,permission,r,all,,"[('state', '!=', '1_draft'), ('partner_id', '=', False)]"
+planning_rule_supervisor_read_visit,Planning: visit supervisor can see every customer visit,planning.model_planning_slot,group_field_service_supervisor,permission,r,all,,"[('partner_id', '!=', False)]"

@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<templates xml:space="preserve">
+
+<t t-name="device_access_control.AccessDeviceDashboard">
+    <div class="o_action access_device_dashboard">
+        <div class="access_device_dashboard_content">
+            <div
+                    t-if="this.state.loading"
+                    class="d-flex align-items-center justify-content-center"
+                    style="min-height: 400px;"
+                >
+                <div class="spinner-border text-primary" role="status" />
+            </div>
+
+            <t t-else="">
+                <div class="ad_header">
+                    <div>
+                        <h4 class="mb-0">Access Control</h4>
+                        <span class="ad_subtitle">
+                            <t t-out="this.state.stats.devices_online" /> of <t
+                                    t-out="this.state.stats.devices_total"
+                                /> devices online
+                        </span>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button class="ad_icon_btn" t-on-click="this.onRefresh" title="Refresh">
+                            <i class="fa fa-refresh" />
+                        </button>
+                        <button class="ad_icon_btn accent" t-on-click="this.onAddDevice" title="Add Device">
+                            <i class="fa fa-plus" />
+                        </button>
+                    </div>
+                </div>
+
+                <div class="ad_stats_row">
+                    <div class="ad_stat_card">
+                        <div class="ad_stat_icon granted"><i class="fa fa-check-circle" /></div>
+                        <div class="ad_stat_info">
+                            <span class="ad_stat_value" t-out="this.state.stats.access_granted_today" />
+                            <span class="ad_stat_label">Granted Today</span>
+                        </div>
+                    </div>
+                    <div class="ad_stat_card">
+                        <div class="ad_stat_icon denied"><i class="fa fa-times-circle" /></div>
+                        <div class="ad_stat_info">
+                            <span class="ad_stat_value" t-out="this.state.stats.access_denied_today" />
+                            <span class="ad_stat_label">Denied Today</span>
+                        </div>
+                    </div>
+                    <div class="ad_stat_card">
+                        <div class="ad_stat_icon alarms"><i class="fa fa-exclamation-triangle" /></div>
+                        <div class="ad_stat_info">
+                            <span class="ad_stat_value" t-out="this.state.stats.alarms_today" />
+                            <span class="ad_stat_label">Alarms</span>
+                        </div>
+                    </div>
+                    <div class="ad_stat_card">
+                        <div class="ad_stat_icon users"><i class="fa fa-users" /></div>
+                        <div class="ad_stat_info">
+                            <span class="ad_stat_value" t-out="this.state.stats.total_users" />
+                            <span class="ad_stat_label">Registered Users</span>
+                        </div>
+                    </div>
+                    <div class="ad_stat_card clickable" t-on-click="this.onViewEvents">
+                        <div class="ad_stat_icon events"><i class="fa fa-list-alt" /></div>
+                        <div class="ad_stat_info">
+                            <span class="ad_stat_value" t-out="this.state.stats.total_events_today" />
+                            <span class="ad_stat_label">Events Today</span>
+                        </div>
+                        <i class="fa fa-chevron-right ad_stat_arrow" />
+                    </div>
+                </div>
+
+                <div class="ad_devices">
+                    <t t-foreach="this.state.devices" t-as="device" t-key="device.id">
+                        <div t-attf-class="ad_device_card ad_device_{{ device.state }}">
+                            <div t-attf-class="ad_device_status_bar ad_bar_{{ device.state }}" />
+
+                            <div class="ad_device_body">
+                                <div class="ad_device_top">
+                                    <div class="ad_device_info">
+                                        <div class="ad_device_name" t-out="device.name" />
+                                        <div class="ad_device_meta">
+                                            <span t-if="device.model" t-out="device.model" />
+                                            <span t-if="device.model and device.ehome_device_id" class="mx-1">·</span>
+                                            <span t-if="device.ehome_device_id" t-out="device.ehome_device_id" />
+                                        </div>
+                                    </div>
+                                    <span t-attf-class="ad_badge ad_badge_{{ device.state }}">
+                                        <span class="ad_badge_dot" />
+                                        <t t-out="this.getStateLabel(device.state)" />
+                                    </span>
+                                </div>
+
+                                <div class="ad_device_metrics">
+                                    <div class="ad_metric">
+                                        <i t-attf-class="fa {{ this.getDoorIcon(device.door_state) }}" />
+                                        <span t-out="this.getDoorLabel(device.door_state)" />
+                                    </div>
+                                    <div class="ad_metric clickable" t-on-click="() => this.onViewUsers(device.id)">
+                                        <i class="fa fa-users" />
+                                        <span><t t-out="device.user_count" /> users</span>
+                                    </div>
+                                    <div class="ad_metric" t-if="device.last_heartbeat">
+                                        <i class="fa fa-heartbeat" />
+                                        <span t-out="this.formatTime(device.last_heartbeat)" />
+                                    </div>
+                                </div>
+
+                                <div class="ad_device_actions">
+                                    <t t-if="device.state === 'connected'">
+                                        <button
+                                                class="ad_action_btn open"
+                                                t-on-click="() => this.onOpenDoor(device.id)"
+                                            >
+                                            <i class="fa fa-unlock" />
+                                            <span>Open</span>
+                                        </button>
+                                        <button class="ad_action_btn" t-on-click="() => this.onCloseDoor(device.id)">
+                                            <i class="fa fa-lock" />
+                                            <span>Close</span>
+                                        </button>
+                                        <button
+                                                class="ad_action_btn lock"
+                                                t-on-click="() => this.onLockDoor(device.id)"
+                                            >
+                                            <i class="fa fa-ban" />
+                                            <span>Lock</span>
+                                        </button>
+                                    </t>
+                                    <t t-else="">
+                                        <button
+                                                class="ad_action_btn reconnect"
+                                                t-on-click="() => this.onCheckConnection(device.id)"
+                                            >
+                                            <i class="fa fa-plug" />
+                                            <span>Check Connection</span>
+                                        </button>
+                                    </t>
+                                </div>
+                            </div>
+                        </div>
+                    </t>
+
+                    <div t-if="!this.state.devices.length" class="ad_empty">
+                        <i class="fa fa-shield" />
+                        <span>No devices configured</span>
+                    </div>
+                </div>
+            </t>
+        </div>
+    </div>
+</t>
+
+</templates>

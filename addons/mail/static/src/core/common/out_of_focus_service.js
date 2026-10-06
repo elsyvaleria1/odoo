@@ -1,0 +1,190 @@
+// @ts-check
+/** @odoo-module native */
+import { htmlToTextContentInline } from "@mail/utils/common/format";
+import { browser } from "@web/core/browser/browser";
+import { makeLogger } from "@web/core/debug/debug_logger";
+import { registry } from "@web/core/registry";
+import { _t } from "@web/core/translation";
+const PREVIEW_MSG_MAX_SIZE = 350;
+
+const log = makeLogger("mail.out_of_focus");
+
+export class OutOfFocusService {
+    /**
+     * @param {import("@web/env").OdooEnv} env
+     * @param {import("services").ServiceFactories} services
+     */
+    constructor(env, services) {
+        this.setup(env, services);
+    }
+
+    /**
+     * @param {import("@web/env").OdooEnv} env
+     * @param {import("services").ServiceFactories} services
+     */
+    setup(env, services) {
+        this.env = env;
+        this.audio = undefined;
+        this.multiTab = services.multi_tab;
+        this.notificationService = services.notification;
+        this.soundEffectService = services["mail.sound_effects"];
+        /** @type {import("models").Store} */
+        this.store = services["mail.store"];
+        this.closeFuncs = [];
+    }
+
+    /**
+     * @param {import("models").Message} message
+     * @param {import("models").Thread} [thread]
+     */
+    async notify(message, thread) {
+        log.logic("notify", () => ({ message: message.id, thread: thread?.localId }));
+        const modelsHandleByPush = ["mixin.mail.thread", "discuss.channel"];
+        if (
+            modelsHandleByPush.includes(message.thread?.model) &&
+            (await this.hasServiceWorkInstalledAndPushSubscriptionActive())
+        ) {
+            log.logic("notify delegated to push", () => ({ message: message.id }));
+            return;
+        }
+        const author = message.author;
+        let notificationTitle;
+        let icon = "/mail/static/src/img/odoobot_transparent.png";
+        if (!author) {
+            notificationTitle = _t("New message");
+        } else {
+            icon = author.avatarUrl;
+            notificationTitle =
+                message.thread?.outOfFocusNotificationTitle(message) ??
+                message.authorName;
+        }
+        const notificationContent = htmlToTextContentInline(
+            message.previewText,
+        ).substring(0, PREVIEW_MSG_MAX_SIZE);
+        await this.sendNotification({
+            message: notificationContent,
+            sound: Boolean(message.thread?.isChannelKind),
+            title: notificationTitle,
+            type: "info",
+            icon,
+        });
+    }
+
+    async hasServiceWorkInstalledAndPushSubscriptionActive() {
+        const registration = await browser.navigator.serviceWorker?.getRegistration();
+        if (registration) {
+            const pushManager = await registration.pushManager;
+            if (pushManager) {
+                const subscription = await pushManager.getSubscription();
+                return !!subscription;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * @param {Object} param0
+     * @param {string} [param0.message]
+     * @param {boolean} [param0.sound=true]
+     * @param {string} [param0.title]
+     * @param {string} [param0.type]
+     * @param {string} [param0.icon]
+     */
+    async sendNotification({ message, sound = true, title, type, icon }) {
+        log.logic("sendNotification", () => ({
+            type,
+            title,
+            sound,
+            native: this.canSendNativeNotification,
+        }));
+        if (!this.canSendNativeNotification || !(await this.multiTab.isOnMainTab())) {
+            log.logic("sendNotification sound only", () => ({
+                native: this.canSendNativeNotification,
+            }));
+            if (sound) {
+                this._playSound();
+            }
+            return;
+        }
+        try {
+            this.sendNativeNotification(title, message, icon, { sound });
+        } catch (error) {
+            if (String(error?.message ?? "").includes("ServiceWorkerRegistration")) {
+                log.logic("native notification fell back to odoo notification");
+                this.sendOdooNotification(message, { sound, title, type });
+            } else {
+                throw error;
+            }
+        }
+    }
+
+    /**
+     * @param {string} message
+     * @param {Object} options
+     */
+    async sendOdooNotification(message, { sound, ...options } = {}) {
+        this.closeFuncs.push(this.notificationService.add(message, options));
+        if (this.closeFuncs.length > 3) {
+            this.closeFuncs.shift()();
+        }
+        if (sound) {
+            this._playSound();
+        }
+    }
+
+    /**
+     * @param {string} title
+     * @param {string} message
+     * @param {string} [icon]
+     * @param {Object} [options]
+     * @param {boolean} [options.sound=true]
+     */
+    sendNativeNotification(title, message, icon, { sound = true } = {}) {
+        const notification = new browser.Notification(title, {
+            body: message,
+            icon,
+        });
+        notification.addEventListener("click", () => {
+            window.focus();
+            notification.close();
+        });
+        if (sound) {
+            this._playSound();
+        }
+    }
+
+    async _playSound() {
+        if (
+            this.canPlayAudio &&
+            this.store.settings.messageSound &&
+            (await this.multiTab.isOnMainTab())
+        ) {
+            log.logic("playSound new-message");
+            this.soundEffectService.play("new-message");
+        }
+    }
+
+    get canPlayAudio() {
+        return typeof Audio !== "undefined";
+    }
+
+    get canSendNativeNotification() {
+        return Boolean(
+            browser.Notification && browser.Notification.permission === "granted",
+        );
+    }
+}
+
+export const outOfFocusService = {
+    dependencies: ["multi_tab", "notification", "mail.sound_effects", "mail.store"],
+    /**
+     * @param {import("@web/env").OdooEnv} env
+     * @param {import("services").ServiceFactories} services
+     */
+    start(env, services) {
+        const service = new OutOfFocusService(env, services);
+        return service;
+    },
+};
+
+registry.category("services").add("mail.out_of_focus", outOfFocusService);

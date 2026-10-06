@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="demo_addressbook_personal" model="dav.addressbook">
+        <field name="name">Personal Contacts</field>
+        <field name="user_id" ref="base.user_admin" />
+        <field name="description">Personal contacts addressbook</field>
+        <field name="contact_domain">[]</field>
+        <field name="include_company_contacts" eval="False" />
+    </record>
+
+</odoo>

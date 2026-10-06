@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="stock_picking_batch_form_trace_gps" model="ir.ui.view">
+        <field name="name">stock.picking.batch.form.trace.gps</field>
+        <field name="model">stock.picking.batch</field>
+        <field
+            name="inherit_id"
+            ref="stock_fleet_trace.stock_picking_batch_form_trace" />
+        <field name="arch" type="xml">
+            <xpath expr="//header" position="inside">
+                <field name="has_trip_gps" invisible="1" />
+                <button
+                    name="action_trip_gps_sync"
+                    type="object"
+                    string="Read GPS"
+                    icon="fa-crosshairs"
+                    invisible="not has_trip_gps or not date_loaded" />
+            </xpath>
+            <field name="date_return" position="after">
+                <field name="trip_gps_exit_date" invisible="not trip_gps_exit_date" />
+                <field name="trip_gps_entry_date" invisible="not trip_gps_entry_date" />
+                <field
+                    name="trip_harsh_event_count"
+                    invisible="not trip_harsh_event_count" />
+                <field
+                    name="trip_alert_open_count"
+                    invisible="not trip_alert_open_count"
+                    decoration-danger="1" />
+            </field>
+            <xpath expr="//page[@name='trip_checkpoints']" position="after">
+                <page
+                    name="trip_alerts"
+                    string="GPS Alerts"
+                    invisible="not trip_alert_ids">
+                    <field name="trip_alert_ids" readonly="1">
+                        <list decoration-muted="state == 'reviewed'">
+                            <field name="date" />
+                            <field name="alert_type" />
+                            <field name="picking_id" />
+                            <field name="duration_minutes" />
+                            <field name="note" />
+                            <field
+                                name="state"
+                                widget="badge"
+                                decoration-warning="state == 'open'" />
+                        </list>
+                    </field>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="stock_picking_batch_form_driver_trace_gps" model="ir.ui.view">
+        <field name="name">stock.picking.batch.form.driver.trace.gps</field>
+        <field name="model">stock.picking.batch</field>
+        <field
+            name="inherit_id"
+            ref="stock_fleet_trace.stock_picking_batch_form_driver_trace" />
+        <field name="arch" type="xml">
+            <xpath
+                expr="//field[@name='picking_ids']/list/field[@name='trip_arrival_date']"
+                position="after">
+                <field name="trip_gps_verified" string="GPS" optional="show" />
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

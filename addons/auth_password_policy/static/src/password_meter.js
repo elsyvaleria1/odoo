@@ -1,0 +1,52 @@
+/** @odoo-module native */
+import { Component, t, useProps, xml } from "@odoo/owl";
+import { _t } from "@web/core/translation";
+
+import { computeScore } from "./password_policy.js";
+
+export class Meter extends Component {
+    static template = xml`
+        <div class="o_password_meter_container d-flex align-items-center">
+            <span t-out="this.passwordStrengthParams.text"
+                t-attf-class="me-2 #{this.passwordStrengthParams.className}"/>
+            <meter class="o_password_meter"
+                min="0" low="0.5" high="0.99" max="1" optimum="1"
+                t-att-title="this.title" t-att-value="this.value"/>
+        </div>
+    `;
+    static props = {
+        password: t.string(),
+        required: t.object(),
+        recommended: t.object(),
+    };
+    props = useProps(this.constructor.props);
+
+    get passwordStrengthParams() {
+        const strengthRanges = [
+            { upperLimit: 0.5, className: "text-danger", text: _t("Weak") },
+            { upperLimit: 0.99, className: "text-warning", text: _t("Medium") },
+            { upperLimit: 1, className: "text-success", text: _t("Strong") },
+        ];
+
+        // Finding the appropriate strength range
+        const { className, text } = strengthRanges.find(
+            ({ upperLimit }) => this.value <= upperLimit,
+        );
+        return { className, text };
+    }
+
+    get title() {
+        return _t(
+            "Required: %s\n\nHint: to increase password strength, increase length, use multiple words, and use non-letter characters.",
+            String(this.props.required) || _t("no requirements"),
+        );
+    }
+
+    get value() {
+        return computeScore(
+            this.props.password,
+            this.props.required,
+            this.props.recommended,
+        );
+    }
+}

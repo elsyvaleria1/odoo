@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <data noupdate="1">
+        <function
+            model="document.document"
+            name="_data_embed_if_records_exist"
+            eval="[             'document_project.document_project_folder',             'document_sign.ir_actions_server_create_sign_template_direct'         ]" />
+    </data>
+
+</odoo>

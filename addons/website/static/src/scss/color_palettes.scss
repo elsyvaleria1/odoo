@@ -1,0 +1,80 @@
+:root {
+    @include print-variable("o-we-toolbar-height", $o-navbar-height);
+
+    $o-palette-names: ();
+    $-default-cc: ();
+    $-bg-attrs: "menu", "footer";
+    @each $attr in $-bg-attrs {
+        $-default-cc: map-merge(
+            $-default-cc,
+            (
+                $attr: map-get($o-base-color-palette, $attr),
+            )
+        );
+    }
+
+    @each $-selected-palette-name in $o-selected-color-palettes-names {
+        $-palette: map-get($o-color-palettes, $-selected-palette-name);
+
+        @if $-selected-palette-name != "user-palette" {
+            @each $key, $value in $-palette {
+                @include print-variable(
+                    "o-palette-#{$-selected-palette-name}-#{$key}",
+                    $value
+                );
+            }
+
+            @each $attr-name, $default-cc-idx in $-default-cc {
+                $-cc-idx: $default-cc-idx;
+                @if map-has-key($-palette, $attr-name) {
+                    $-cc-idx: map-get($-palette, $attr-name);
+                }
+                $-bg: $body-bg;
+                @if $-cc-idx != null {
+                    $-cc: nth($o-color-combinations, $-cc-idx);
+                    $-bg: o-safe-get(
+                        $-palette,
+                        "o-cc#{$-cc-idx}-bg",
+                        map-get($-cc, "bg")
+                    );
+                    @if type-of($-bg) != color {
+                        $-bg: map-get($-palette, $-bg);
+                    }
+                }
+                @include print-variable(
+                    "o-palette-#{$-selected-palette-name}-#{$attr-name}-bg",
+                    $-bg
+                );
+            }
+        }
+    }
+
+    @each $attr-name, $default-cc-idx in $-default-cc {
+        $-cc: nth($o-color-combinations, $default-cc-idx);
+        $-default-bg: map-get($-cc, "bg");
+        @include print-variable("o-default-#{$attr-name}-bg", $-default-bg);
+    }
+
+    @include print-variable("palette-names", $o-selected-color-palettes-names);
+
+    @each $name, $color in $o-base-gray-color-palette {
+        @include print-variable("base-#{$name}", $color);
+    }
+}
+
+@include media-only(screen) {
+    :root[data-color-scheme="dark"] {
+        @each $-palette-name in $o-selected-color-palettes-names {
+            @if $-palette-name != "user-palette" {
+                @each $-key, $-color in map-get($o-color-palettes, $-palette-name) {
+                    @if $-color == $o-brand-primary {
+                        @include print-variable(
+                            "o-palette-#{$-palette-name}-#{$-key}",
+                            $o-dark-brand-primary
+                        );
+                    }
+                }
+            }
+        }
+    }
+}

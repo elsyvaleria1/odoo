@@ -1,0 +1,326 @@
+import logging
+from collections import defaultdict
+
+from dateutil import relativedelta
+
+from odoo import api, fields, models
+from odoo.fields import Domain
+from odoo.libs.debug_log import DebugLog
+
+_logger = logging.getLogger(__name__)
+_debug = DebugLog(__name__)
+
+_LEAD_TIME_STATS_QUERY = """
+WITH RECURSIVE receipt AS (
+    SELECT DISTINCT
+        sp.id,
+        sp.backorder_id,
+        sp.create_date,
+        sp.date_done
+    FROM stock_picking sp
+    JOIN stock_picking_type spt ON sp.picking_type_id = spt.id
+    JOIN stock_move sm ON sm.picking_id = sp.id
+    WHERE sp.state = 'done'
+      AND sm.state = 'done'
+      AND sp.date_done IS NOT NULL
+      AND sp.date_done >= %s
+      AND spt.code = 'incoming'
+      AND sm.product_id = ANY(%s)
+      AND sm.location_dest_id IN (
+          SELECT id FROM stock_location
+          WHERE parent_path LIKE %s
+      )
+),
+chain AS (
+    SELECT r.id AS receipt_id, r.backorder_id, r.create_date
+    FROM receipt r
+    UNION ALL
+    SELECT c.receipt_id, sp.backorder_id, sp.create_date
+    FROM chain c
+    JOIN stock_picking sp ON sp.id = c.backorder_id
+),
+ordered AS (
+    SELECT receipt_id, create_date AS ordered_date
+    FROM chain
+    WHERE backorder_id IS NULL
+      AND create_date IS NOT NULL
+),
+receipts AS (
+    SELECT DISTINCT ON (sm.product_id, r.id)
+        sm.product_id,
+        r.date_done,
+        EXTRACT(EPOCH FROM (r.date_done - o.ordered_date)) / 86400.0
+            AS lead_time_days
+    FROM stock_move sm
+    JOIN receipt r ON sm.picking_id = r.id
+    JOIN ordered o ON o.receipt_id = r.id
+    WHERE sm.state = 'done'
+      AND r.date_done - o.ordered_date >= interval '1 hour'
+      AND sm.product_id = ANY(%s)
+      AND sm.location_dest_id IN (
+          SELECT id FROM stock_location
+          WHERE parent_path LIKE %s
+      )
+    ORDER BY sm.product_id, r.id
+),
+ranked_receipts AS (
+    SELECT
+        product_id,
+        lead_time_days,
+        ROW_NUMBER() OVER (
+            PARTITION BY product_id
+            ORDER BY date_done DESC
+        ) AS rn
+    FROM receipts
+)
+SELECT
+    product_id,
+    COALESCE(AVG(lead_time_days), 0),
+    COALESCE(STDDEV_POP(lead_time_days), 0),
+    COUNT(*)
+FROM ranked_receipts
+WHERE rn <= %s
+GROUP BY product_id
+"""
+
+
+class StockWarehouseOrderpointLeadTime(models.Model):
+    _inherit = "stock.warehouse.orderpoint"
+
+    @api.depends(
+        "location_id",
+        "warehouse_id",
+        "product_min_qty",
+        "route_id",
+        "rule_ids",
+        "product_id.route_ids",
+        "product_id.stock_move_ids.date",
+        "product_id.stock_move_ids.state",
+        "product_id.seller_ids",
+        "product_id.seller_ids.delay",
+        "company_id.stock_config_id.horizon_days",
+    )
+    @_debug.perf.timed
+    def _compute_deadline_date(self) -> None:
+        canonical = self._with_canonical_horizon()
+        critical_orderpoints = canonical.filtered(
+            lambda o: o.product_uom_id.compare(o.qty_on_hand, o.product_min_qty) < 0,
+        )
+        for company, orderpoints in critical_orderpoints.grouped("company_id").items():
+            orderpoints.deadline_date = self._get_company_today(company)
+        orderpoints_to_compute = canonical - critical_orderpoints
+        _debug.logic(
+            "deadline_date",
+            critical=critical_orderpoints,
+            to_compute=orderpoints_to_compute,
+        )
+        if not orderpoints_to_compute:
+            return
+
+        orderpoints_by_company = orderpoints_to_compute.grouped("company_id")
+        for company in orderpoints_to_compute.company_id:
+            company_orderpoints = orderpoints_by_company[company]
+            horizon = relativedelta.relativedelta(
+                days=company.stock_config_id.horizon_days,
+            )
+            horizon_date = self._get_company_today(company) + horizon
+            moves_by_product = company_orderpoints._read_pending_moves_by_product(
+                horizon_date,
+            )
+            for orderpoint in company_orderpoints:
+                orderpoint.deadline_date = orderpoint._get_deadline_from_timeline(
+                    moves_by_product.get(orderpoint.product_id.id, ()),
+                    horizon_date,
+                )
+
+    def _get_domains_pending_moves(self, horizon_date) -> tuple:
+        Location = self.env["stock.location"]
+        location_ids = self.location_id.ids
+        leaving = Domain("location_id", "child_of", location_ids)
+        arriving, _dummy = Location._get_domains_move_destination(
+            lambda field: Domain(field, "child_of", location_ids),
+        )
+        _dummy, domain_move_in, domain_move_out = (
+            Location._get_domains_quantity_unblocked((leaving, arriving, leaving))
+        )
+        scope = Domain.AND(
+            [
+                [("product_id", "in", self.product_id.ids)],
+                [
+                    (
+                        "state",
+                        "in",
+                        ("waiting", "confirmed", "assigned", "partially_available"),
+                    ),
+                ],
+                [("date", "<=", horizon_date)],
+            ],
+        )
+        return scope & domain_move_in, scope & domain_move_out
+
+    def _read_pending_moves_by_product(self, horizon_date):
+        domain_move_in, domain_move_out = self._get_domains_pending_moves(horizon_date)
+        Move = self.env["stock.move"].with_context(active_test=False)
+        moves_by_product = defaultdict(list)
+        groupby = [
+            "product_id",
+            "location_id",
+            "location_dest_id",
+            "location_final_id",
+            "date:day",
+        ]
+        rows_in = Move._read_group(domain_move_in, groupby, ["product_qty:sum"])
+        rows_out = Move._read_group(domain_move_out, groupby, ["product_qty:sum"])
+        for sign, rows in ((1, rows_in), (-1, rows_out)):
+            for product, source, destination, final, day, qty in rows:
+                moves_by_product[product.id].append(
+                    (
+                        sign,
+                        source.parent_path or "",
+                        (final or destination).parent_path or "",
+                        day.date(),
+                        qty,
+                    ),
+                )
+        if _debug.perf.enabled:
+            _debug.perf.count(
+                "pending_moves_by_product",
+                horizon=horizon_date,
+                products=len(moves_by_product),
+                rows=sum(len(rows) for rows in moves_by_product.values()),
+            )
+        return moves_by_product
+
+    def _get_deadline_from_timeline(self, timeline, horizon_date):
+        self.check_singleton()
+        location_path = self.location_id.parent_path or ""
+        qty_by_date = defaultdict(float)
+        if not location_path:
+            return False
+        for sign, source_path, arrival_path, move_date, move_qty in timeline:
+            from_inside = source_path.startswith(location_path)
+            to_inside = arrival_path.startswith(location_path)
+            if (sign > 0 and to_inside and not from_inside) or (
+                sign < 0 and from_inside and not to_inside
+            ):
+                qty_by_date[move_date] += sign * move_qty
+        qty_on_hand_at_date = self.qty_on_hand
+        for move_date, move_qty in sorted(qty_by_date.items()):
+            qty_on_hand_at_date += move_qty
+            if (
+                self.product_uom_id.compare(qty_on_hand_at_date, self.product_min_qty)
+                < 0
+            ):
+                deadline = move_date - relativedelta.relativedelta(days=self.lead_days)
+                _debug.logic(
+                    "below_min",
+                    orderpoint=self.id,
+                    date=move_date,
+                    qty_on_hand=qty_on_hand_at_date,
+                    deadline=deadline,
+                    horizon=horizon_date,
+                )
+                return deadline if deadline < horizon_date else False
+        return False
+
+    @api.depends("product_id", "warehouse_id")
+    def _compute_lead_time_stats(self) -> None:
+        result_map = self._read_lead_time_stats()
+        for orderpoint in self:
+            avg, stddev, count = result_map.get(
+                (orderpoint.product_id.id, orderpoint.warehouse_id.id),
+                (0.0, 0.0, 0),
+            )
+            orderpoint.actual_lead_time_avg = avg
+            orderpoint.actual_lead_time_stddev = stddev
+            orderpoint.lead_time_sample_count = count
+
+    @_debug.perf.timed
+    def _read_lead_time_stats(self):
+        self.env["stock.move"].flush_model()
+        self.env["stock.picking"].flush_model()
+        wh_orderpoints = defaultdict(lambda: self.env["stock.warehouse.orderpoint"])
+        for orderpoint in self:
+            if orderpoint.product_id and orderpoint.warehouse_id:
+                wh_orderpoints[orderpoint.warehouse_id] |= orderpoint
+
+        date_done_cutoff = fields.Datetime.now() - relativedelta.relativedelta(
+            days=self._LEAD_TIME_LOOKBACK_DAYS,
+        )
+        result_map = {}
+        for warehouse, orderpoints in wh_orderpoints.items():
+            product_ids = orderpoints.product_id.ids
+            parent_path = warehouse.view_location_id.parent_path
+            if not product_ids or not parent_path:
+                continue
+
+            self.env.cr.execute(
+                _LEAD_TIME_STATS_QUERY,
+                (
+                    date_done_cutoff,
+                    product_ids,
+                    f"{parent_path}%",
+                    product_ids,
+                    f"{parent_path}%",
+                    self._LEAD_TIME_SAMPLE_SIZE,
+                ),
+            )
+
+            for product_id, avg_lt, stddev_lt, count in self.env.cr.fetchall():
+                result_map[(product_id, warehouse.id)] = (
+                    max(avg_lt, 0.0),
+                    max(stddev_lt, 0.0),
+                    count,
+                )
+        _debug.perf.count(
+            "lead_time_stats", warehouses=len(wh_orderpoints), rows=len(result_map)
+        )
+        return result_map
+
+    @api.depends(
+        "rule_ids",
+        "product_id.seller_ids",
+        "product_id.seller_ids.delay",
+        "company_id.stock_config_id.horizon_days",
+    )
+    @api.depends_context("global_horizon_days")
+    def _compute_lead_time(self):
+        orderpoints_to_compute = self.filtered(
+            lambda orderpoint: orderpoint.product_id and orderpoint.location_id,
+        )
+        values_by_orderpoint = orderpoints_to_compute._prepare_lead_time_params_map()
+        today_by_company = {
+            company: self._get_company_today(company)
+            for company in orderpoints_to_compute.company_id
+        }
+        for orderpoint in orderpoints_to_compute.with_context(
+            bypass_delay_description=True,
+        ):
+            values = values_by_orderpoint[orderpoint.id]
+            lead_days, _dummy = orderpoint.rule_ids.with_context(
+                global_horizon_days=orderpoint._get_horizon_days(),
+            )._get_lead_days(
+                orderpoint.product_id,
+                **values,
+            )
+            lead_horizon = relativedelta.relativedelta(
+                days=lead_days["total_delay"] + lead_days["horizon_time"],
+            )
+            orderpoint.lead_horizon_date = (
+                today_by_company[orderpoint.company_id] + lead_horizon
+            )
+            orderpoint.lead_days = lead_days["total_delay"]
+            _debug.logic(
+                "lead_time",
+                orderpoint=orderpoint.id,
+                lead_days=lead_days["total_delay"],
+                horizon=lead_days["horizon_time"],
+                horizon_date=orderpoint.lead_horizon_date,
+            )
+        excluded = self - orderpoints_to_compute
+        excluded.lead_horizon_date = False
+        excluded.lead_days = 0.0
+
+    @api.depends("route_id", "product_id")
+    def _compute_days_to_order(self):
+        self.days_to_order = 0

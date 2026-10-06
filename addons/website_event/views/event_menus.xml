@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <data>
+        <menuitem
+            id="menu_website_event_menu"
+            name="Website Menus"
+            parent="event.menu_event_configuration"
+            action="website_event_menu_action"
+            sequence="99"
+            groups="base.group_no_one" />
+    </data>
+
+    <menuitem
+        id="menu_event_pages"
+        name="Events"
+        parent="website.menu_content"
+        action="action_event_pages_list"
+        sequence="40" />
+
+</odoo>

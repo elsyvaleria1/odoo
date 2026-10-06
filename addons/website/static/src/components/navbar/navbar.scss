@@ -1,0 +1,26 @@
+.o_menu_systray.o_website_systray {
+    --NavBar-entry-padding-left: #{$o-navbar-entry-padding-h};
+    --NavBar-entry-padding-right: #{$o-navbar-entry-padding-h};
+    --NavBar-separator-margin-v: 10px;
+    --border-color: #{darken($primary, 10%)};
+
+    .o_user_menu {
+        margin: calc(-1 * var(--o-navbar-padding-v, #{$o-navbar-padding-v})) 0;
+        border-right: $border-width solid var(--border-color);
+        padding: var(--o-navbar-padding-v, #{$o-navbar-padding-v}) 0;
+    }
+
+    .o_nav_entry,
+    .o_menu_systray_item > a,
+    .o_menu_systray_item > button {
+        height: auto;
+        margin-top: calc(-1 * var(--o-navbar-padding-v, #{$o-navbar-padding-v}));
+        margin-bottom: calc(-1 * var(--o-navbar-padding-v, #{$o-navbar-padding-v}));
+        padding-top: var(--o-navbar-padding-v, #{$o-navbar-padding-v});
+        padding-bottom: var(--o-navbar-padding-v, #{$o-navbar-padding-v});
+    }
+
+    .o_website_systray_separator {
+        margin: var(--NavBar-separator-margin-v) 0;
+    }
+}

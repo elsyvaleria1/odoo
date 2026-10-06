@@ -1,0 +1,38 @@
+// @ts-check
+/** @odoo-module native */
+import { useMailContext } from "@mail/utils/common/mail_context";
+import { registry } from "@web/core/registry";
+import { useService } from "@web/core/utils/hooks";
+import {
+    Many2ManyBinaryField,
+    many2ManyBinaryField,
+} from "@web/fields/relational/many2many_binary/many2many_binary_field";
+export class MailComposerAttachmentList extends Many2ManyBinaryField {
+    static template = "mail.MailComposerAttachmentList";
+    setup() {
+        super.setup();
+        this.mailContext = useMailContext();
+        this.mailStore = useService("mail.store");
+        this.attachmentUploadService = useService("mail.attachment_upload");
+    }
+    /** @param {integer} fileId */
+    async onFileRemove(fileId) {
+        super.onFileRemove(fileId);
+        const attachment = this.mailStore["ir.attachment"].insert(fileId);
+        if (attachment && attachment.res_model === "wizard.mail.message.send") {
+            await this.attachmentUploadService.unlink(attachment);
+        }
+        this.mailContext.fullComposerBus?.trigger("ATTACHMENT_REMOVED", {
+            id: attachment.id,
+        });
+    }
+}
+
+export const mailComposerAttachmentList = {
+    ...many2ManyBinaryField,
+    component: MailComposerAttachmentList,
+};
+
+registry
+    .category("fields")
+    .add("mail_composer_attachment_list", mailComposerAttachmentList);

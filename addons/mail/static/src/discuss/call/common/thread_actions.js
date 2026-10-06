@@ -1,0 +1,101 @@
+// @ts-check
+/** @odoo-module native */
+import { ACTION_TAGS } from "@mail/core/common/action";
+import { registerThreadAction } from "@mail/core/common/thread_actions";
+import { CallSettings } from "@mail/discuss/call/common/call_settings";
+import { MeetingChat } from "@mail/discuss/call/common/meeting_chat";
+import { mailContextOf } from "@mail/utils/common/mail_context";
+import { _t } from "@web/core/translation";
+
+/** @typedef {import("@mail/core/common/thread_actions").ActionParams} ActionParams */
+registerThreadAction("meeting-chat", {
+    actionPanelComponent: MeetingChat,
+    /** @param {ActionParams} params */
+    badge: ({ thread }) => thread.isUnread,
+    /** @param {ActionParams} params */
+    badgeIcon: ({ thread }) =>
+        !thread.importantCounter && "fa-solid fa-circle text-700",
+    /** @param {ActionParams} params */
+    badgeText: ({ thread }) =>
+        thread.importantCounter ? String(thread.importantCounter) : undefined,
+    /** @param {ActionParams} params */
+    condition: ({ owner }) => mailContextOf(owner).inMeetingView,
+    icon: "fa-solid fa-comments",
+    name: _t("Chat"),
+    panelOuterClass: "bg-100 border border-secondary",
+    sequence: 30,
+    toggle: true,
+    /** @param {ActionParams} params */
+    tags: ({ thread }) => {
+        const tags = [];
+        if (thread.importantCounter) {
+            tags.push(ACTION_TAGS.IMPORTANT_BADGE);
+        }
+        return tags;
+    },
+});
+registerThreadAction("call", {
+    /** @param {ActionParams} params */
+    condition: ({ store, thread }) =>
+        thread?.allowCalls && !thread?.eq(store.rtc.channel),
+    icon: "fa-solid fa-phone",
+    /** @param {ActionParams} params */
+    name: ({ thread }) =>
+        thread.channel.rtc_session_ids.length > 0
+            ? _t("Join the Call")
+            : _t("Start Call"),
+    /** @param {ActionParams} params */
+    open: ({ store, thread }) => store.rtc.toggleCall(thread.channel),
+    sequence: 10,
+    sequenceQuick: 30,
+    tags: [ACTION_TAGS.SUCCESS, ACTION_TAGS.JOIN_LEAVE_CALL],
+});
+registerThreadAction("camera-call", {
+    /** @param {ActionParams} params */
+    condition: ({ store, thread }) =>
+        thread?.allowCalls && !thread?.eq(store.rtc.channel),
+    icon: "fa-solid fa-video",
+    /** @param {ActionParams} params */
+    name: ({ thread }) =>
+        thread.channel.rtc_session_ids.length > 0
+            ? _t("Join the Call with Camera")
+            : _t("Start Video Call"),
+    /** @param {ActionParams} params */
+    open: async ({ store, thread }) => {
+        await store.rtc.toggleCall(thread.channel, { camera: true });
+        if (store.rtc.selfSession) {
+            store.rtc.enterFullscreen();
+        }
+    },
+    sequence: 5,
+    /** @param {ActionParams} params */
+    sequenceQuick: ({ owner }) => (mailContextOf(owner).inDiscussApp ? 25 : 35),
+    tags: [ACTION_TAGS.SUCCESS, ACTION_TAGS.JOIN_LEAVE_CALL],
+});
+registerThreadAction("call-settings", {
+    actionPanelComponent: CallSettings,
+    actionPanelComponentProps: () => ({ isCompact: true }),
+    /** @param {ActionParams} params */
+    condition: ({ owner, store, thread }) =>
+        thread?.allowCalls &&
+        (owner.props.chatWindow?.isOpen || store.inPublicPage) &&
+        !owner.isChannelActionList,
+    icon: "fa-solid fa-gear",
+    name: _t("Call Settings"),
+    sequence: 20,
+    sequenceGroup: 30,
+    toggle: true,
+});
+registerThreadAction("disconnect", {
+    /** @param {ActionParams} params */
+    condition: ({ owner, store, thread }) =>
+        store.rtc.selfSession?.in(thread?.channel?.rtc_session_ids) &&
+        owner.isChannelActionList,
+    /** @param {ActionParams} params */
+    open: ({ store, thread }) => store.rtc.toggleCall(thread.channel),
+    icon: "fa-solid fa-phone",
+    name: _t("Disconnect"),
+    sequence: 30,
+    sequenceGroup: 10,
+    tags: [ACTION_TAGS.DANGER, ACTION_TAGS.JOIN_LEAVE_CALL],
+});

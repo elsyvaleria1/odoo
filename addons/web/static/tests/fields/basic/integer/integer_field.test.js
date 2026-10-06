@@ -1,0 +1,386 @@
+// @ts-check
+
+import { expect, getFixture, test } from "@odoo/hoot";
+import { queryAllTexts } from "@odoo/hoot-dom";
+import {
+    clickSave,
+    contains,
+    defineModels,
+    defineParams,
+    fieldInput,
+    fields,
+    models,
+    mountView,
+    onRpc,
+} from "@web/../tests/web_test_helpers";
+
+class Product extends models.Model {
+    price = fields.Integer();
+}
+
+defineModels([Product]);
+
+test("human readable format 1", async () => {
+    Product._records = [{ id: 1, price: 3.756754e6 }];
+    await mountView({
+        type: "form",
+        resModel: "product",
+        resId: 1,
+        arch: `<form><field name="price" options="{'human_readable': 'true'}"/></form>`,
+    });
+    expect(".o_field_widget input").toHaveValue("4M", {
+        message: "The value should be rendered in human readable format (k, M, G, T)",
+    });
+});
+
+test("human readable format 2", async () => {
+    Product._records = [{ id: 1, price: 2.034e3 }];
+    await mountView({
+        type: "form",
+        resModel: "product",
+        resId: 1,
+        arch: `<form><field name="price" options="{'human_readable': 'true', 'decimals': 1}"/></form>`,
+    });
+    expect(".o_field_widget input").toHaveValue("2.0k", {
+        message: "The value should be rendered in human readable format (k, M, G, T)",
+    });
+});
+
+test("human readable format 3", async () => {
+    Product._records = [{ id: 1, price: 6.67543577586e12 }];
+    await mountView({
+        type: "form",
+        resModel: "product",
+        resId: 1,
+        arch: `<form><field name="price" options="{'human_readable': 'true', 'decimals': 4}"/></form>`,
+    });
+    expect(".o_field_widget input").toHaveValue("6.6754T", {
+        message: "The value should be rendered in human readable format (k, M, G, T)",
+    });
+});
+
+test("still human readable when readonly", async () => {
+    Product._records = [{ id: 1, price: 6.67543577586e12 }];
+    await mountView({
+        type: "form",
+        resModel: "product",
+        resId: 1,
+        arch: `<form><field name="price" readonly="true" options="{'human_readable': 'true', 'decimals': 4}"/></form>`,
+    });
+    expect(".o_field_widget span").toHaveText("6.6754T");
+});
+
+test("should be 0 when unset", async () => {
+    Product._records = [{ id: 1 }];
+    await mountView({
+        type: "form",
+        resModel: "product",
+        resId: 1,
+        arch: '<form><field name="price"/></form>',
+    });
+    expect(".o_field_widget input").not.toHaveClass("o_field_empty");
+    expect(".o_field_widget input").toHaveValue("0");
+});
+
+test("basic form view flow", async () => {
+    Product._records = [{ id: 1, price: 10 }];
+    await mountView({
+        type: "form",
+        resModel: "product",
+        resId: 1,
+        arch: '<form><field name="price"/></form>',
+    });
+
+    expect(".o_field_widget input").toHaveValue("10");
+    await fieldInput("price").edit("30");
+    expect(".o_field_widget input").toHaveValue("30");
+    await clickSave();
+    expect(".o_field_widget input").toHaveValue("30");
+});
+
+test("no need to focus out of the input to save the record after correcting an invalid input", async () => {
+    Product._records = [{ id: 1, price: 10 }];
+    await mountView({
+        type: "form",
+        resModel: "product",
+        resId: 1,
+        arch: '<form><field name="price"/></form>',
+    });
+
+    expect(".o_field_widget input").toHaveValue("10");
+    await fieldInput("price").edit("a");
+    expect(".o_field_widget input").toHaveValue("a");
+    expect(".o_form_status_indicator span i.fa-triangle-exclamation").toHaveCount(1);
+    expect(".o_form_button_save[disabled]").toHaveCount(1);
+    await fieldInput("price").edit("1");
+    expect(".o_field_widget input").toHaveValue("1");
+    expect(".o_form_status_indicator span i.fa-triangle-exclamation").toHaveCount(0);
+    expect(".o_form_button_save[disabled]").toHaveCount(0);
+    await clickSave();
+});
+
+test("formula with an integer result in form view", async () => {
+    Product._records = [{ id: 1, price: 10 }];
+    await mountView({
+        type: "form",
+        resModel: "product",
+        resId: 1,
+        arch: '<form><field name="price"/></form>',
+    });
+    await fieldInput("price").edit("=99/3");
+    expect(".o_field_widget input").toHaveValue("33");
+});
+
+test("formula with a non-integer result is rejected in form view", async () => {
+    Product._records = [{ id: 1, price: 10 }];
+    await mountView({
+        type: "form",
+        resModel: "product",
+        resId: 1,
+        arch: '<form><field name="price"/></form>',
+    });
+    await fieldInput("price").edit("=100/3");
+    expect(".o_field_widget input").toHaveValue("=100/3");
+    expect(".o_form_status_indicator span i.fa-triangle-exclamation").toHaveCount(1);
+});
+
+test("with input type 'number' option", async () => {
+    Product._records = [{ id: 1, price: 10 }];
+    await mountView({
+        type: "form",
+        resModel: "product",
+        resId: 1,
+        arch: `<form><field name="price" options="{'type': 'number'}"/></form>`,
+    });
+    expect(".o_field_widget input").toHaveAttribute("type", "number");
+    await fieldInput("price").edit("1234567890");
+    expect(".o_field_widget input").toHaveValue(1234567890, {
+        message: "Integer value must be not formatted if input type is number",
+    });
+});
+
+test("type number does not misparse a dot-decimal value in a dot-thousands locale", async () => {
+    defineParams({
+        lang_parameters: {
+            thousands_sep: ".",
+            decimal_point: ",",
+            grouping: [3, 0],
+        },
+    });
+    Product._records = [{ id: 1, price: 10 }];
+    await mountView({
+        type: "form",
+        resModel: "product",
+        resId: 1,
+        arch: `<form><field name="price" options="{'type': 'number'}"/></form>`,
+    });
+    expect(".o_field_widget input").toHaveAttribute("type", "number");
+    await fieldInput("price").edit("1.5", { instantly: true });
+    expect(".o_form_status_indicator span i.fa-triangle-exclamation").toHaveCount(1);
+});
+
+test("type number saves the raw number in a dot-thousands locale", async () => {
+    defineParams({
+        lang_parameters: {
+            thousands_sep: ".",
+            decimal_point: ",",
+            grouping: [3, 0],
+        },
+    });
+    Product._records = [{ id: 1, price: 10 }];
+    onRpc("web_save", ({ args }) => {
+        expect.step(`price: ${args[1].price}`);
+    });
+    await mountView({
+        type: "form",
+        resModel: "product",
+        resId: 1,
+        arch: `<form><field name="price" options="{'type': 'number'}"/></form>`,
+    });
+    await fieldInput("price").edit("1234");
+    await clickSave();
+    expect.verifySteps(["price: 1234"]);
+});
+
+test("with 'step' option", async () => {
+    Product._records = [{ id: 1, price: 10 }];
+    await mountView({
+        type: "form",
+        resModel: "product",
+        resId: 1,
+        arch: `<form><field name="price" options="{'type': 'number', 'step': 3}"/></form>`,
+    });
+    expect(".o_field_widget input").toHaveAttribute("step", "3");
+});
+
+test("with 'min'/'max' option", async () => {
+    Product._records = [{ id: 1, price: 10 }];
+    await mountView({
+        type: "form",
+        resModel: "product",
+        resId: 1,
+        arch: `<form><field name="price" options="{'type': 'number', 'min': 3, 'max': 10}"/></form>`,
+    });
+    expect(".o_field_widget input").toHaveAttribute("min", "3");
+    expect(".o_field_widget input").toHaveAttribute("max", "10");
+});
+
+test("without input type option", async () => {
+    Product._records = [{ id: 1, price: 10 }];
+    await mountView({
+        type: "form",
+        resModel: "product",
+        resId: 1,
+        arch: '<form><field name="price"/></form>',
+    });
+
+    expect(".o_field_widget input").toHaveAttribute("type", "text");
+    await fieldInput("price").edit("1234567890");
+    expect(".o_field_widget input").toHaveValue("1,234,567,890");
+});
+
+test("is formatted by default", async () => {
+    Product._records = [{ id: 1, price: 8069 }];
+    await mountView({
+        type: "form",
+        resModel: "product",
+        resId: 1,
+        arch: `<form><field name="price" options="{'enable_formatting': 'false'}"/></form>`,
+    });
+    expect(".o_field_widget input").toHaveValue("8,069");
+});
+
+test("basic flow in editable list view", async () => {
+    Product._records = [{ id: 1 }, { id: 2, price: 10 }];
+    onRpc("has_group", () => true);
+    await mountView({
+        type: "list",
+        resModel: "product",
+        arch: '<list editable="bottom"><field name="price"/></list>',
+    });
+    const zeroValues = queryAllTexts("td").filter(
+        (/** @type {any} */ text) => text === "0",
+    );
+    expect(zeroValues).toHaveLength(1, {
+        message: "Unset integer values should not be rendered as zeros",
+    });
+    await contains("td.o_data_cell").click();
+    expect('.o_field_widget[name="price"] input').toHaveCount(1);
+    await contains('.o_field_widget[name="price"] input').edit("-28");
+    expect("td.o_data_cell:first").toHaveText("-28");
+    expect('.o_field_widget[name="price"] input').toHaveValue("10");
+    await contains(getFixture()).click();
+    expect(queryAllTexts("td.o_data_cell")).toEqual(["-28", "10"]);
+});
+
+test("with enable_formatting option as false", async () => {
+    Product._records = [{ id: 1, price: 8069 }];
+    await mountView({
+        type: "form",
+        resModel: "product",
+        resId: 1,
+        arch: `<form><field name="price" options="{'enable_formatting': false}"/></form>`,
+    });
+    expect(".o_field_widget input").toHaveValue("8069");
+    await fieldInput("price").edit("1234567890");
+    expect(".o_field_widget input").toHaveValue("1234567890");
+});
+
+test("value is formatted on Enter", async () => {
+    await mountView({
+        type: "form",
+        resModel: "product",
+        arch: '<form><field name="price"/></form>',
+    });
+
+    expect(".o_field_widget input").toHaveValue("0");
+
+    await fieldInput("price").edit("1000", { confirm: "enter" });
+    expect(".o_field_widget input").toHaveValue("1,000");
+});
+
+test("value is formatted on Enter (even if same value)", async () => {
+    Product._records = [{ id: 1, price: 8069 }];
+
+    await mountView({
+        type: "form",
+        resModel: "product",
+        resId: 1,
+        arch: '<form><field name="price"/></form>',
+    });
+
+    expect(".o_field_widget input").toHaveValue("8,069");
+
+    await fieldInput("price").edit("8069", { confirm: "enter" });
+    expect(".o_field_widget input").toHaveValue("8,069");
+});
+
+test("value is formatted on click out (even if same value)", async () => {
+    Product._records = [{ id: 1, price: 8069 }];
+
+    await mountView({
+        type: "form",
+        resModel: "product",
+        resId: 1,
+        arch: '<form><field name="price"/></form>',
+    });
+
+    expect(".o_field_widget input").toHaveValue("8,069");
+
+    await fieldInput("price").edit("8069", { confirm: false });
+    expect(".o_field_widget input").toHaveValue("8069");
+
+    await contains(".o_control_panel").click();
+    expect(".o_field_widget input").toHaveValue("8,069");
+});
+
+test("Value should not be a boolean when enable_formatting is false", async () => {
+    onRpc("has_group", () => true);
+    await mountView({
+        type: "list",
+        resModel: "product",
+        arch: `
+            <list editable="bottom">
+                <field name="id" options="{'enable_formatting': false}"/>
+                <field name="price"/>
+            </list>
+        `,
+    });
+    await contains(`.o_list_button_add`).click();
+    expect(".o_selected_row .o_field_integer").toHaveText("");
+});
+
+test("integer set to false by an onchange renders empty, not the string 'false'", async () => {
+    Product._records = [{ id: 1, price: 3 }];
+    Product._onChanges = {
+        price: (record) => {
+            record.price = false;
+        },
+    };
+    await mountView({
+        type: "form",
+        resModel: "product",
+        resId: 1,
+        arch: `<form><field name="price" options="{'enable_formatting': false}"/></form>`,
+    });
+    await contains(".o_field_widget[name=price] input").edit("12");
+    expect(".o_field_widget[name=price] input").toHaveValue("");
+});
+
+test("an operation dividing by zero marks the field invalid instead of clearing it", async () => {
+    Product._records = [{ id: 1, price: 10 }];
+    onRpc("web_save", ({ args }) => expect.step(args[1]));
+    await mountView({
+        type: "form",
+        resModel: "product",
+        resId: 1,
+        arch: `<form><field name="price"/></form>`,
+    });
+    await contains(".o_field_widget[name=price] input").edit("/=0");
+    expect(".o_field_widget[name=price]").toHaveClass("o_field_invalid");
+    await contains(".o_field_widget[name=price] input").edit("/=3");
+    expect(".o_field_widget[name=price]").not.toHaveClass("o_field_invalid");
+    expect(".o_field_widget[name=price] input").toHaveValue("3");
+    await clickSave();
+    expect.verifySteps([{ price: 3 }]);
+});

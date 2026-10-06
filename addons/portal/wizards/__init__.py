@@ -1,0 +1,3 @@
+from . import wizard_mail_message_send_portal_link
+from . import wizard_res_partner_grant_portal_access
+from . import wizard_res_partner_grant_portal_access_line

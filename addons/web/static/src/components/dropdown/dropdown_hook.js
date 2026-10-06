@@ -1,0 +1,46 @@
+// @ts-check
+/** @odoo-module native */
+
+import { proxy } from "@odoo/owl";
+import { useParentDropdownNesting } from "@web/components/dropdown/_behaviours/dropdown_nesting";
+import { SignalStore } from "@web/core/utils/reactive";
+/** @param {{ onOpen?: Function, onClose?: Function }} [callbacks] */
+export class DropdownState extends SignalStore {
+    isOpen = false;
+    constructor({ onOpen, onClose } = /** @type {any} */ ({})) {
+        super();
+        this._onOpen = onOpen;
+        this._onClose = onClose;
+    }
+    open() {
+        if (this.isOpen) {
+            return;
+        }
+        this.isOpen = true;
+        this._onOpen?.();
+    }
+    close() {
+        if (!this.isOpen) {
+            return;
+        }
+        this.isOpen = false;
+        this._onClose?.();
+    }
+}
+
+/**
+ * @param {{ onOpen?: Function, onClose?: Function }} [callbacks]
+ * @returns {DropdownState}
+ */
+export function useDropdownState({ onOpen, onClose } = /** @type {any} */ ({})) {
+    return proxy(new DropdownState({ onOpen, onClose }));
+}
+
+export function useDropdownCloser() {
+    const dropdown = useParentDropdownNesting();
+    return {
+        close: () => dropdown?.close(),
+        closeChildren: () => dropdown?.closeChildren(),
+        closeAll: () => dropdown?.closeAllParents(),
+    };
+}

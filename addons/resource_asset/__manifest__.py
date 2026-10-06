@@ -1,0 +1,27 @@
+{
+    "name": "Physical Assets",
+    "version": "1.16",
+    "oldest_upgradable_version": "1.10",
+    "category": "Hidden",
+    "summary": "Track physical asset identity, custody, meters and lifecycle",
+    "description": "Defines asset kinds and identifiers, hierarchical components, custody and operator assignments, meter readings and service states. Specialized addons add accounting, stock tracking and domain-specific asset types.",
+    "author": "AgroMarin",
+    "license": "LGPL-3",
+    "depends": [
+        "resource",
+        "mail",
+        "uom",
+    ],
+    "data": [
+        "security/resource_asset_security.xml",
+        "security/ir.access.csv",
+        "security/ir_access.xml",
+        "data/mail_message_subtype_data.xml",
+        "data/resource_asset_kind_data.xml",
+        "views/resource_asset_kind_views.xml",
+        "views/resource_identifier_type_views.xml",
+        "views/resource_asset_views.xml",
+        "views/resource_asset_subtype_views.xml",
+        "views/menuitems.xml",
+    ],
+}

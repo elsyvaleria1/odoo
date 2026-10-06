@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <data>
+        <record id="social_post_template_view_form" model="ir.ui.view">
+            <field name="name">social.post.template.view.form.inherit.facebook</field>
+            <field name="model">social.post.template</field>
+            <field name="inherit_id" ref="social.social_post_template_view_form" />
+            <field name="priority">5</field>
+            <field name="arch" type="xml">
+                <xpath
+                    expr="//div[hasclass('o_social_post_preview_container')]"
+                    position="inside">
+                    <field name="has_facebook_account" invisible="1" />
+                    <field name="display_facebook_preview" invisible="1" />
+                    <field
+                        name="facebook_preview"
+                        widget="social_post_preview"
+                        colspan="2"
+                        nolabel="1"
+                        invisible="not display_facebook_preview"
+                        readonly="1"
+                        class="o_social_preview_wrapper m-0 px-4 py-4 bg-200"
+                        media_type="facebook_preview" />
+                </xpath>
+                <xpath expr="//notebook[@name='media_customization']" position="inside">
+                    <page
+                        name="facebook_content"
+                        string="Facebook"
+                        invisible="not has_facebook_account">
+                        <group>
+                            <group>
+                                <field
+                                    name="facebook_message"
+                                    string="Message"
+                                    required="is_split_per_media and has_facebook_account and not facebook_image_ids" />
+                                <field
+                                    name="facebook_image_ids"
+                                    string="Images"
+                                    widget="many2many_binary"
+                                    required="is_split_per_media and has_facebook_account and not facebook_message" />
+                            </group>
+                            <group invisible="not display_facebook_preview">
+                                <field
+                                    name="facebook_preview"
+                                    widget="social_post_preview"
+                                    nolabel="1"
+                                    readonly="1"
+                                    class="o_social_preview_wrapper m-0 px-4 py-4 bg-200"
+                                    media_type="facebook_preview" />
+                            </group>
+                        </group>
+                    </page>
+                </xpath>
+            </field>
+        </record>
+    </data>
+
+</odoo>

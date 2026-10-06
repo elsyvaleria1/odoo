@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+
+    <record id="cron_record_gps_odometer" model="ir.cron">
+        <field name="name">Record GPS Odometer Readings</field>
+        <field name="model_id" ref="resource_asset.model_resource_asset" />
+        <field name="state">code</field>
+        <field name="code">model._cron_record_gps_odometer()</field>
+        <field name="repeat_interval" eval="1" />
+        <field name="repeat_unit">day</field>
+        <field name="active" eval="True" />
+    </record>
+
+</odoo>

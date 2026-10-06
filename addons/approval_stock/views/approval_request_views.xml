@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_approval_request_tree_inherit_stock" model="ir.ui.view">
+        <field name="name">approval.request.tree.inherit.stock</field>
+        <field name="model">approval.request</field>
+        <field name="inherit_id" ref="approval.view_approval_request_tree" />
+        <field name="arch" type="xml">
+            <xpath expr="//list" position="inside">
+                <field name="asset_id" optional="hide" />
+                <field name="odometer" string="Odometer" optional="hide" />
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_approval_request_form_inherit_stock" model="ir.ui.view">
+        <field name="name">approval.request.form.inherit.stock</field>
+        <field name="model">approval.request</field>
+        <field name="inherit_id" ref="approval.view_approval_request_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='can_change_request_owner']" position="after">
+                <field name="has_asset" invisible="1" />
+                <field name="has_odometer" invisible="1" />
+                <field name="count_stock_picking" invisible="1" />
+            </xpath>
+
+            <xpath expr="//button[@name='action_view_attachment']" position="after">
+                <button
+                    name="action_view_target_documents"
+                    type="object"
+                    string="Stock Transfers"
+                    icon="fa-truck"
+                    groups="stock.group_stock_user"
+                    invisible="count_stock_picking == 0"
+                    class="oe_stat_button">
+                    <field name="count_stock_picking" widget="statinfo" />
+                </button>
+
+                <button
+                    name="action_view_asset_log"
+                    type="object"
+                    string="Vehicle Logs"
+                    icon="fa-list-alt"
+                    invisible="not asset_id"
+                    class="oe_stat_button" />
+            </xpath>
+
+            <xpath expr="//button[@name='action_confirm']" position="after">
+                <button
+                    name="action_create_target_documents"
+                    type="object"
+                    string="Create Stock Transfers"
+                    groups="stock.group_stock_user"
+                    invisible="target_model != 'stock.picking' or state != 'approved'"
+                    class="btn-primary"
+                    data-hotkey="t" />
+
+                <button
+                    name="action_create_asset_log"
+                    type="object"
+                    string="Create Asset Log"
+                    groups="stock.group_stock_user"
+                    invisible="approval_type != 'asset_log' or state != 'approved'"
+                    class="btn-primary"
+                    data-hotkey="g" />
+            </xpath>
+
+            <xpath expr="//group[@name='request_main']" position="inside">
+                <field
+                    name="asset_id"
+                    invisible="has_asset == 'no'"
+                    readonly="state != 'new'"
+                    required="has_asset == 'required'" />
+                <field
+                    name="odometer"
+                    invisible="has_odometer == 'no'"
+                    readonly="state != 'new'"
+                    required="has_odometer == 'required'" />
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_approval_request_line_form_inherit_stock" model="ir.ui.view">
+        <field name="name">approval.request.line.form.inherit.stock</field>
+        <field name="model">approval.request.line</field>
+        <field
+            name="inherit_id"
+            ref="approval_product.approval_request_line_view_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='product_id']" position="after">
+                <field
+                    name="picking_type_id"
+                    invisible="parent.target_model != 'stock.picking'" />
+                <field
+                    name="location_id"
+                    invisible="parent.target_model != 'stock.picking'" />
+                <field
+                    name="location_dest_id"
+                    invisible="parent.target_model != 'stock.picking'" />
+                <field
+                    name="stock_picking_id"
+                    invisible="parent.target_model != 'stock.picking'" />
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

@@ -1,0 +1,288 @@
+// @ts-check
+/** @odoo-module native */
+
+import { makeLogger } from "@web/core/debug/debug_logger";
+import { localization } from "@web/core/l10n/localization";
+
+import { dateTime as makeDateTime } from "./date_utils.js";
+import { formatValue } from "./dates.js";
+
+const log = makeLogger("web.l10n");
+
+const NUMERAL_MAPS = [
+    "٠١٢٣٤٥٦٧٨٩",
+    "۰۱۲۳۴۵۶۷۸۹",
+    "०१२३४५६७८९",
+    "๐๑๒๓๔๕๖๗๘๙",
+    "零一二三四五六七八九",
+];
+
+export class Time {
+    /**
+     * @param {any} value
+     * @returns {Time|null}
+     */
+    static from(value) {
+        if (value === null || value === undefined || value === false) {
+            return null;
+        } else if (value instanceof Time) {
+            return value;
+        } else if (typeof value === "string") {
+            return parseTime(value, true);
+        } else if (typeof value === "object") {
+            return new Time(value);
+        } else {
+            return null;
+        }
+    }
+
+    /** @param {{ hour?: number, minute?: number, second?: number }} [params] */
+    constructor({ hour = 0, minute = 0, second = 0 } = {}) {
+        /** @type {number} */
+        this.hour = hour;
+        /** @type {number} */
+        this.minute = minute;
+        /** @type {number} */
+        this.second = second;
+    }
+
+    /** @param {number} rounding */
+    roundMinutes(rounding) {
+        const rounded = Math.round(this.minute / rounding) * rounding;
+        if (rounded >= 60) {
+            if (this.hour >= 23) {
+                this.minute = Math.floor(59 / rounding) * rounding;
+            } else {
+                this.hour = this.hour + 1;
+                this.minute = 0;
+            }
+        } else {
+            this.minute = rounded;
+        }
+    }
+
+    /** @returns {Time} */
+    copy() {
+        return new Time(this);
+    }
+
+    /**
+     * @param {Time | null | undefined} other
+     * @param {boolean} [checkSeconds=false]
+     * @returns {boolean}
+     */
+    equals(other, checkSeconds = false) {
+        return Boolean(
+            other &&
+            this.hour === other.hour &&
+            this.minute === other.minute &&
+            (!checkSeconds || this.second === other.second),
+        );
+    }
+
+    /**
+     * @param {boolean} [showSeconds=false]
+     * @returns {string}
+     */
+    toString(showSeconds = false) {
+        const hourFormat = is24HourFormat() ? "H" : "h";
+        const secondFormat = showSeconds ? ":ss" : "";
+        const dateTime = makeDateTime(
+            { year: 2000, month: 1, day: 1, ...this.toObject() },
+            "UTC",
+        );
+        let result = formatValue(dateTime, `${hourFormat}:mm${secondFormat}`);
+        if (isMeridiemFormat()) {
+            result += formatValue(dateTime, "a").toLowerCase();
+        }
+        log.logic("Time.toString", () => ({
+            ...this.toObject(),
+            showSeconds,
+            hourFormat,
+            result,
+        }));
+        return result;
+    }
+
+    /** @returns {{hour: number, minute: number, second: number}} */
+    toObject() {
+        return {
+            hour: this.hour,
+            minute: this.minute,
+            second: this.second,
+        };
+    }
+}
+
+/** @param {string} [format] */
+export function is24HourFormat(format) {
+    return /H/.test(format || localization.timeFormat);
+}
+
+/** @param {string} [format] */
+function isMeridiemFormat(format) {
+    return /a/.test(format || localization.timeFormat);
+}
+
+/**
+ * @param {string} str
+ * @returns {number}
+ */
+function parseTimeComponent(str) {
+    if (!str.length) {
+        return 0;
+    } else if (/^[\d]+$/.test(str)) {
+        return Number.parseInt(str, 10);
+    } else {
+        return NaN;
+    }
+}
+
+/**
+ * @param {string} raw
+ * @param {boolean} [parseSeconds]
+ * @returns {{ hour: number, minute: number, second: number } | null}
+ */
+function parseTimeDigitRun(raw, parseSeconds) {
+    const pickSolution = (/** @type {string[][]} */ ...solutions) => {
+        for (const solution of solutions) {
+            const hour = parseTimeComponent(solution[0]);
+            if (hour < 24 || (hour === 24 && !solution[1])) {
+                const minute = solution[1]
+                    ? parseTimeComponent(solution[1].padEnd(2, "0"))
+                    : 0;
+                return { hour, minute, second: 0 };
+            }
+        }
+        return { hour: 0, minute: 0, second: 0 };
+    };
+
+    if (raw.length === 1) {
+        return { hour: parseTimeComponent(raw), minute: 0, second: 0 };
+    } else if (raw.length === 2) {
+        return pickSolution([raw], [raw[0], raw[1]]);
+    } else if (raw.length === 3) {
+        return pickSolution([raw.slice(0, 2), raw[2]], [raw[0], raw.slice(1)]);
+    } else if (raw.length === 4) {
+        return {
+            hour: parseTimeComponent(raw.slice(0, 2)),
+            minute: parseTimeComponent(raw.slice(2)),
+            second: 0,
+        };
+    } else if (raw.length > 4 && raw.length <= 6) {
+        if (!parseSeconds) {
+            return null;
+        }
+        return {
+            hour: parseTimeComponent(raw.slice(0, 2)),
+            minute: parseTimeComponent(raw.slice(2, 4)),
+            second: parseTimeComponent(raw.slice(4).padEnd(2, "0")),
+        };
+    }
+    return null;
+}
+
+/**
+ * @param {number} hour
+ * @param {number} minute
+ * @param {number} second
+ * @returns {Time | null}
+ */
+function makeTime(hour, minute, second) {
+    if (
+        hour >= 0 &&
+        hour <= 24 &&
+        minute >= 0 &&
+        minute < 60 &&
+        second >= 0 &&
+        second < 60
+    ) {
+        if (hour === 24) {
+            if (minute || second) {
+                return null;
+            }
+            hour = 0;
+        }
+        return new Time({ hour, minute, second });
+    }
+    return null;
+}
+
+/**
+ * @param {unknown} value
+ * @param {boolean} [parseSeconds]
+ * @returns {Time | null}
+ */
+export function parseTime(value, parseSeconds) {
+    const { isPm, isAm } = meridiemCheck(value);
+    const normalized = normalizeTimeStr(value);
+
+    if (!normalized) {
+        return null;
+    }
+
+    let hour = 0;
+    let minute = 0;
+    let second = 0;
+
+    const parts = normalized.split(/[\s:]/g);
+    if (parts.length > 3) {
+        return null;
+    } else if (parts.length === 3) {
+        if (!parseSeconds) {
+            return null;
+        }
+        hour = parseTimeComponent(parts[0]);
+        minute = parseTimeComponent(parts[1].padEnd(2, "0"));
+        second = parseTimeComponent(parts[2].padEnd(2, "0"));
+    } else if (parts.length === 2) {
+        hour = parseTimeComponent(parts[0]);
+        minute = parseTimeComponent(parts[1].padEnd(2, "0"));
+    } else if (parts.length === 1) {
+        const parsed = parseTimeDigitRun(parts[0], parseSeconds);
+        if (!parsed) {
+            return null;
+        }
+        ({ hour, minute, second } = parsed);
+    }
+
+    if (isPm && hour < 12) {
+        hour += 12;
+    } else if (isAm && hour === 12) {
+        hour = 0;
+    }
+    return makeTime(hour, minute, second);
+}
+
+/**
+ * @param {unknown} timeStr
+ * @returns {string|false}
+ */
+function normalizeTimeStr(timeStr) {
+    if (typeof timeStr !== "string") {
+        return false;
+    }
+
+    let normalized = timeStr.trim().toLowerCase();
+
+    for (const map of NUMERAL_MAPS) {
+        for (let i = 0; i < map.length; i++) {
+            normalized = normalized.replaceAll(map[i], String(i));
+        }
+    }
+
+    return normalized.replace(/^\D+|\D+$/g, "").replace(/\D+/g, ":");
+}
+
+/**
+ * @param {unknown} timeStr
+ * @returns {{ isPm: boolean, isAm: boolean }}
+ */
+function meridiemCheck(timeStr) {
+    const amPmMatch =
+        typeof timeStr === "string" ? timeStr.toLowerCase().match(/(am|pm)/g) : null;
+    return {
+        isPm: amPmMatch?.[0] === "pm",
+        isAm: amPmMatch?.[0] === "am",
+    };
+}

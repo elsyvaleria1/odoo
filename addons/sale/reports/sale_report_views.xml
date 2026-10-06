@@ -1,0 +1,261 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_sale_report_search" model="ir.ui.view">
+        <field name="name">sale.report.search</field>
+        <field name="model">sale.report</field>
+        <field name="arch" type="xml">
+            <search string="Sales Analysis">
+                <field name="date_order" />
+                <filter
+                    name="year"
+                    string="Date"
+                    date="date_order"
+                    default_period="year"
+                    invisible="1" />
+                <filter
+                    name="Quotations"
+                    string="Quotations"
+                    domain="[('state','=', 'draft')]" />
+                <filter
+                    name="Sales"
+                    string="Sales Orders"
+                    domain="[('state','not in',('draft', 'cancel'))]" />
+                <separator />
+                <filter name="filter_date" date="date_order" default_period="month" />
+                <filter
+                    name="filter_order_date"
+                    string="Order Date: Last 365 Days"
+                    domain="[('date_order', '&gt;=', '-365d')]"
+                    invisible="1" />
+                <separator />
+                <field name="user_id" />
+                <field name="product_id" />
+                <field name="product_tmpl_id" />
+                <field name="product_category_id" />
+                <filter
+                    name="to_invoice"
+                    string="To Invoice"
+                    domain="[('line_invoice_state', '=', 'to do')]" />
+                <filter
+                    name="fully_invoiced"
+                    string="Fully Invoiced"
+                    domain="[('line_invoice_state', '=', 'done')]" />
+                <field name="partner_id" />
+                <field name="country_id" />
+                <field name="industry_id" />
+                <group>
+                    <field
+                        name="product_category_id"
+                        filter_domain="[('product_category_id', 'child_of', self)]" />
+                    <field name="company_id" groups="base.group_multi_company" />
+                </group>
+                <group>
+                    <filter
+                        name="User"
+                        string="Salesperson"
+                        context="{'group_by':'user_id'}" />
+                    <filter
+                        name="Customer"
+                        string="Customer"
+                        context="{'group_by':'partner_id'}" />
+                    <filter
+                        name="country_id"
+                        string="Customer Country"
+                        context="{'group_by':'country_id'}" />
+                    <filter
+                        name="industry_id"
+                        string="Customer Industry"
+                        context="{'group_by':'industry_id'}" />
+                    <filter
+                        name="product_tmpl_id"
+                        string="Product"
+                        context="{'group_by':'product_tmpl_id'}" />
+                    <filter
+                        name="product_id"
+                        string="Product Variant"
+                        context="{'group_by':'product_id'}"
+                        groups="product.group_product_variant" />
+                    <filter
+                        name="Category"
+                        string="Product Category"
+                        context="{'group_by':'product_category_id'}" />
+                    <filter
+                        name="status"
+                        string="Status"
+                        context="{'group_by':'state'}" />
+                    <filter
+                        name="company"
+                        string="Company"
+                        context="{'group_by':'company_id'}"
+                        groups="base.group_multi_company" />
+                    <separator />
+                    <filter
+                        name="group_by_date"
+                        string="Order Date"
+                        context="{'group_by':'date_order'}"
+                        invisible="context.get('sale_report_view_hide_date')" />
+                    <filter
+                        name="group_by_date_day"
+                        string="Order Date"
+                        context="{'group_by':'date_order:day'}"
+                        invisible="not context.get('sale_report_view_hide_date')" />
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="view_sale_report_pivot" model="ir.ui.view">
+        <field name="name">sale.report.pivot</field>
+        <field name="model">sale.report</field>
+        <field name="arch" type="xml">
+            <pivot string="Sales Analysis" sample="1">
+                <field name="date_order" type="row" interval="month" />
+                <field name="product_uom_qty" type="measure" />
+            </pivot>
+        </field>
+    </record>
+
+    <record id="view_sale_report_graph" model="ir.ui.view">
+        <field name="name">sale.report.graph</field>
+        <field name="model">sale.report</field>
+        <field name="arch" type="xml">
+            <graph type="line" string="Sales Analysis" sample="1">
+                <field name="date_order" interval="month" />
+                <field name="product_uom_qty" type="measure" />
+            </graph>
+        </field>
+    </record>
+
+    <record id="view_sale_report_graph_pie" model="ir.ui.view">
+        <field name="name">sale.report.graph.pie</field>
+        <field name="model">sale.report</field>
+        <field name="inherit_id" ref="view_sale_report_graph" />
+        <field name="mode">primary</field>
+        <field name="arch" type="xml">
+            <graph position="attributes">
+                <attribute name="type">pie</attribute>
+            </graph>
+        </field>
+    </record>
+
+    <record id="view_sale_report_graph_bar" model="ir.ui.view">
+        <field name="name">sale.report.graph.bar</field>
+        <field name="model">sale.report</field>
+        <field name="inherit_id" ref="view_sale_report_graph" />
+        <field name="mode">primary</field>
+        <field name="arch" type="xml">
+            <graph position="attributes">
+                <attribute name="type">bar</attribute>
+                <attribute name="order">DESC</attribute>
+            </graph>
+        </field>
+    </record>
+
+    <record id="view_sale_report_list" model="ir.ui.view">
+        <field name="name">sale.report.view.list</field>
+        <field name="model">sale.report</field>
+        <field name="arch" type="xml">
+            <list type="object" string="Sales Analysis" action="action_view_order">
+                <field name="date_order" />
+                <field name="order_reference" optional="show" />
+                <field name="product_id" string="Product" optional="show" />
+                <field name="partner_id" />
+                <field name="user_id" widget="many2one_avatar_user" optional="show" />
+                <field
+                    name="company_id"
+                    optional="show"
+                    groups="base.group_multi_company" />
+                <field name="product_uom_qty" string="Quantity" sum="Sum of Quantity" />
+                <field
+                    name="price_subtotal"
+                    optional="hide"
+                    sum="Sum of Untaxed Total" />
+                <field name="price_unit" widget="monetary" avg="Average" />
+                <field name="price_total" optional="show" sum="Sum of Total" />
+                <field name="state" optional="hide" />
+                <field name="pricelist_id" optional="hide" />
+                <field name="line_invoice_state" optional="hide" />
+                <field name="currency_id" column_invisible="True" />
+            </list>
+        </field>
+    </record>
+
+    <record id="action_sale_report_all" model="ir.actions.act_window">
+        <field name="name">Sales Analysis</field>
+        <field name="res_model">sale.report</field>
+        <field name="view_mode">graph,pivot,list,form</field>
+        <field name="view_id" />
+        <field name="search_view_id" ref="view_sale_report_search" />
+        <field name="domain">[('state', '!=', 'cancel')]</field>
+        <field
+            name="context">{'search_default_Sales':1,'group_by':[],
+            'search_default_filter_order_date': 1}</field>
+        <field
+            name="help">This report performs analysis on your quotations and sales orders.
+            Analysis check your sales revenues and sort it by different group criteria (salesman,
+            partner, product, etc.) Use this report to perform analysis on sales not having invoiced
+            yet. If you want to analyse your turnover, you should use the Invoice Analysis report in
+            the Accounting application.</field>
+    </record>
+
+    <record id="action_sale_report_salesperson" model="ir.actions.act_window">
+        <field name="name">Sales Analysis By Salespersons</field>
+        <field name="res_model">sale.report</field>
+        <field name="view_mode">graph,pivot</field>
+        <field name="view_id" ref="view_sale_report_graph_bar" />
+        <field name="search_view_id" ref="view_sale_report_search" />
+        <field
+            name="context">{
+            'search_default_User': 1,
+            'group_by': 'user_id',
+            'search_default_filter_order_date': 1}</field>
+        <field
+            name="help">This report performs analysis on your quotations and sales orders.
+            Analysis check your sales revenues and sort it by different group criteria (salesman,
+            partner, product, etc.) Use this report to perform analysis on sales not having invoiced
+            yet. If you want to analyse your turnover, you should use the Invoice Analysis report in
+            the Accounting application.</field>
+    </record>
+
+    <record id="action_sale_report_product" model="ir.actions.act_window">
+        <field name="name">Sales Analysis By Products</field>
+        <field name="res_model">sale.report</field>
+        <field name="view_mode">graph,pivot</field>
+        <field name="view_id" ref="view_sale_report_graph_pie" />
+        <field name="search_view_id" ref="view_sale_report_search" />
+        <field
+            name="context">{'search_default_Sales': 1, 'search_default_Product': 1, 'group_by':
+            'product_id', 'search_default_filter_order_date': 1}</field>
+        <field
+            name="help">This report performs analysis on your quotations and sales orders.
+            Analysis check your sales revenues and sort it by different group criteria (salesman,
+            partner, product, etc.) Use this report to perform analysis on sales not having invoiced
+            yet. If you want to analyse your turnover, you should use the Invoice Analysis report in
+            the Accounting application.</field>
+    </record>
+
+    <record id="action_sale_report_customer" model="ir.actions.act_window">
+        <field name="name">Sales Analysis By Customers</field>
+        <field name="res_model">sale.report</field>
+        <field name="view_mode">graph,pivot</field>
+        <field name="view_id" ref="view_sale_report_graph_bar" />
+        <field name="search_view_id" ref="view_sale_report_search" />
+        <field
+            name="context">{'search_default_Customer': 1, 'group_by': 'partner_id',
+            'search_default_filter_order_date': 1}</field>
+        <field
+            name="help">This report performs analysis on your quotations and sales orders.
+            Analysis check your sales revenues and sort it by different group criteria (salesman,
+            partner, product, etc.) Use this report to perform analysis on sales not having invoiced
+            yet. If you want to analyse your turnover, you should use the Invoice Analysis report in
+            the Accounting application.</field>
+    </record>
+
+    <record id="action_sale_report_all_channels_sales" model="ir.actions.act_window">
+        <field name="name">Sales Analysis</field>
+        <field name="res_model">sale.report</field>
+        <field name="view_mode">list,pivot,graph,form</field>
+    </record>
+
+</odoo>

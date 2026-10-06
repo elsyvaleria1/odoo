@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="web.RecentRecordsTile">
+        <ul t-if="this.records.length" class="list-unstyled mb-0 o_recent_records_tile">
+            <li t-foreach="this.records" t-as="record" t-key="record.res_model + ',' + record.res_id">
+                <HomeTileRecordLink resModel="record.res_model" resId="record.res_id" className="'d-flex flex-column o_recent_record'">
+                    <span class="text-truncate" t-out="record.display_name"/>
+                    <small class="text-muted text-truncate" t-out="record.model_name"/>
+                </HomeTileRecordLink>
+            </li>
+        </ul>
+        <p t-else="" class="text-muted small mb-0">Records you open appear here.</p>
+    </t>
+
+</templates>

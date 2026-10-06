@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <menuitem
+        id="ai_tool_call_menu"
+        name="AI Tool Calls"
+        parent="base.menu_custom"
+        action="ai_tool_call_action"
+        sequence="70" />
+
+    <menuitem
+        id="ai_tool_model_access_menu"
+        name="AI Tool Model Access"
+        parent="base.menu_custom"
+        action="ai_tool_model_access_action"
+        sequence="71"
+        groups="base.group_system" />
+
+</odoo>

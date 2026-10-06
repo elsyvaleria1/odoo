@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="helpdesk.SmileyBadge" owl="1">
+        <i t-if="this.props.record.data[this.props.name] == 'top'" class="fa-regular fa-fw fa-face-smile fa-lg" t-att-class="this.badgeClass"/>
+        <i t-elif="this.props.record.data[this.props.name] == 'ok'" class="fa-regular fa-fw fa-face-meh fa-lg" t-att-class="this.badgeClass"/>
+        <i t-else="" class="fa-regular fa-face-frown fa-lg" t-att-class="this.badgeClass"/>
+    </t>
+
+</templates>

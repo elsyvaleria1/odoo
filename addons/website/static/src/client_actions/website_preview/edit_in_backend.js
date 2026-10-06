@@ -1,0 +1,52 @@
+/** @odoo-module native */
+import { Component, onWillStart, proxy, useProps } from "@odoo/owl";
+import { makeLogger } from "@web/core/debug/debug_logger";
+import { useLifecycleLog } from "@web/core/debug/logger_hooks";
+import { registry } from "@web/core/registry";
+import { useBus, useService } from "@web/core/utils/hooks";
+
+const websiteSystrayRegistry = registry.category("website_systray");
+
+const log = makeLogger("website.systray.edit_in_backend");
+
+export class EditInBackendSystrayItem extends Component {
+    static template = "website.EditInBackendSystrayItem";
+    static props = {};
+    props = useProps(this.constructor.props);
+    setup() {
+        useLifecycleLog(log);
+        this.websiteService = useService("website");
+        this.actionService = useService("action");
+        this.state = proxy({ mainObjectName: "" });
+
+        onWillStart(this._updateMainObjectName);
+        useBus(
+            websiteSystrayRegistry,
+            "CONTENT-UPDATED",
+            this._updateMainObjectName.bind(this),
+        );
+    }
+
+    editInBackend() {
+        const {
+            metadata: { mainObject },
+        } = this.websiteService.currentWebsite;
+        log.logic("editInBackend", () => ({
+            model: mainObject.model,
+            id: mainObject.id,
+        }));
+        this.actionService.doAction({
+            res_model: mainObject.model,
+            res_id: mainObject.id,
+            views: [[false, "form"]],
+            type: "ir.actions.act_window",
+            view_mode: "form",
+        });
+    }
+
+    async _updateMainObjectName() {
+        const endName = log.perf("getUserModelName");
+        this.state.mainObjectName = await this.websiteService.getUserModelName();
+        endName();
+    }
+}

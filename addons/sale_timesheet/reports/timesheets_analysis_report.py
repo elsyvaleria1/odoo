@@ -1,0 +1,112 @@
+from odoo import api, fields, models
+from odoo.tools import frozendict
+
+from odoo.addons.sale_timesheet.models.hr_timesheet import TIMESHEET_INVOICE_TYPES
+
+
+class TimesheetsAnalysisReport(models.Model):
+    _inherit = "timesheets.analysis.report"
+    _depends = frozendict(
+        {
+            "account.analytic.line": [
+                "so_line",
+                "timesheet_invoice_id",
+                "timesheet_invoice_type",
+            ],
+            "product.product": ["product_tmpl_id"],
+            "product.template": ["invoice_policy", "service_type"],
+            "sale.order.line": [
+                "order_id",
+                "price_subtotal",
+                "price_unit",
+                "product_id",
+                "product_uom_id",
+                "qty_transferred",
+            ],
+        }
+    )
+
+    order_id = fields.Many2one(
+        comodel_name="sale.order",
+        string="Sales Order",
+        readonly=True,
+    )
+    so_line = fields.Many2one(
+        comodel_name="sale.order.line",
+        string="Sales Order Item",
+        readonly=True,
+    )
+    timesheet_invoice_type = fields.Selection(
+        selection=TIMESHEET_INVOICE_TYPES,
+        string="Billable Type",
+        readonly=True,
+    )
+    timesheet_invoice_id = fields.Many2one(
+        comodel_name="account.move",
+        string="Invoice",
+        readonly=True,
+        help="Invoice created from the timesheet",
+    )
+    timesheet_revenues = fields.Monetary(
+        currency_field="currency_id",
+        readonly=True,
+        help="Number of hours spent multiplied by the unit price per hour/day.",
+    )
+    margin = fields.Monetary(
+        currency_field="currency_id",
+        readonly=True,
+        help="Timesheets revenues minus the costs",
+    )
+    billable_time = fields.Float(
+        readonly=True,
+        help="Number of hours/days linked to a SOL.",
+    )
+    non_billable_time = fields.Float(
+        string="Non-billable Time",
+        readonly=True,
+        help="Number of hours/days not linked to a SOL.",
+    )
+
+    @property
+    def _table_query(self):
+        return """
+            SELECT A.*,
+                (timesheet_revenues + A.amount) AS margin,
+                (A.unit_amount - billable_time) AS non_billable_time
+            FROM (
+                %s %s %s
+            ) A
+        """ % (self._select(), self._from(), self._where())
+
+    @api.model
+    def _select(self):
+        return (
+            super()._select()
+            + """,
+            SOL.order_id AS order_id,
+            A.so_line AS so_line,
+            A.timesheet_invoice_type AS timesheet_invoice_type,
+            A.timesheet_invoice_id AS timesheet_invoice_id,
+            CASE
+                WHEN SOL.order_id IS NULL OR T.service_type in ('manual', 'milestones')
+                THEN 0
+                WHEN T.invoice_policy = 'ordered' AND SOL.qty_transferred != 0
+                THEN (SOL.price_subtotal / SOL.qty_transferred) * (A.unit_amount / sol_product_uom.factor * a_product_uom.factor)
+                ELSE A.unit_amount * SOL.price_unit / sol_product_uom.factor * a_product_uom.factor
+            END AS timesheet_revenues,
+            CASE WHEN SOL.order_id IS NULL THEN 0 ELSE A.unit_amount END AS billable_time
+        """
+        )
+
+    @api.model
+    def _from(self):
+        return (
+            super()._from()
+            + """
+            LEFT JOIN sale_order_line SOL ON A.so_line = SOL.id
+            LEFT JOIN uom_uom sol_product_uom ON sol_product_uom.id = SOL.product_uom_id
+            INNER JOIN uom_uom a_product_uom ON a_product_uom.id = A.product_uom_id
+            LEFT JOIN product_product P ON P.id = SOL.product_id
+            LEFT JOIN product_template T ON T.id = P.product_tmpl_id
+        """
+        )

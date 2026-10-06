@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="stock_trip_alert_view_list" model="ir.ui.view">
+        <field name="name">stock.trip.alert.list</field>
+        <field name="model">stock.trip.alert</field>
+        <field name="arch" type="xml">
+            <list create="0" decoration-muted="state == 'reviewed'">
+                <field name="date" />
+                <field name="alert_type" />
+                <field name="vehicle_id" />
+                <field name="batch_id" />
+                <field name="picking_id" optional="show" />
+                <field name="partner_id" optional="show" />
+                <field name="duration_minutes" optional="show" />
+                <field name="note" optional="show" />
+                <field name="latitude" optional="hide" />
+                <field name="longitude" optional="hide" />
+                <field
+                    name="state"
+                    widget="badge"
+                    decoration-warning="state == 'open'" />
+                <button
+                    name="action_review"
+                    type="object"
+                    string="Reviewed"
+                    icon="fa-check"
+                    groups="stock.group_stock_manager"
+                    invisible="state != 'open'" />
+            </list>
+        </field>
+    </record>
+
+    <record id="stock_trip_alert_view_search" model="ir.ui.view">
+        <field name="name">stock.trip.alert.search</field>
+        <field name="model">stock.trip.alert</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="vehicle_id" />
+                <field name="batch_id" />
+                <field name="picking_id" />
+                <filter name="open" string="Open" domain="[('state', '=', 'open')]" />
+                <filter
+                    name="without_trip"
+                    string="Left Without a Trip"
+                    domain="[('alert_type', 'in', ('departure_without_trip', 'departure_not_loaded', 'departure_blocked'))]" />
+                <filter
+                    name="unverified"
+                    string="Outcome Without Visit"
+                    domain="[('alert_type', '=', 'outcome_without_visit')]" />
+                <group>
+                    <filter
+                        name="group_type"
+                        string="Alert"
+                        context="{'group_by': 'alert_type'}" />
+                    <filter
+                        name="group_vehicle"
+                        string="Vehicle"
+                        context="{'group_by': 'vehicle_id'}" />
+                    <filter
+                        name="group_day"
+                        string="Day"
+                        context="{'group_by': 'date:day'}" />
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_stock_trip_alert" model="ir.actions.act_window">
+        <field name="name">Trip Alerts</field>
+        <field name="res_model">stock.trip.alert</field>
+        <field name="path">trip-alerts</field>
+        <field name="view_mode">list,pivot,graph</field>
+        <field name="context">{'search_default_open': 1}</field>
+    </record>
+
+</odoo>

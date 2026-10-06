@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_res_partner_client_locations_map" model="ir.ui.view">
+        <field name="name">res.partner.client.locations.map</field>
+        <field name="model">res.partner</field>
+        <field name="arch" type="xml">
+            <geoengine editable="0" features_list="1" features_list_field="name">
+                <field name="name" />
+                <field name="client_the_point" />
+                <field name="city" />
+                <field name="state_id" />
+                <field name="phone_ids" />
+                <field name="client_salesperson_name" />
+                <templates>
+                    <t t-name="info_box">
+                        <div class="o_kanban_card">
+                            <strong><t t-out="record.name.value" /></strong>
+                            <div t-if="record.city.value or record.state_id.value">
+                                <t t-out="record.city.value" />
+                                <t t-if="record.state_id.value">, <t t-out="record.state_id.value" /></t>
+                            </div>
+                            <div
+                                t-if="record.phone_ids.raw_value.length"
+                                class="text-muted">
+                                <t t-out="record.phone_ids.value" />
+                            </div>
+                            <div
+                                t-if="record.client_salesperson_name.value"
+                                class="text-muted">
+                                Vendedor: <t t-out="record.client_salesperson_name.value" />
+                            </div>
+                        </div>
+                    </t>
+                </templates>
+            </geoengine>
+        </field>
+    </record>
+
+    <record id="raster_layer_res_partner_client_osm" model="geoengine.raster.layer">
+        <field name="name">OpenStreetMap</field>
+        <field name="view_id" ref="view_res_partner_client_locations_map" />
+        <field name="raster_type">osm</field>
+        <field name="overlay">0</field>
+        <field name="url">https://tile.openstreetmap.org/{z}/{x}/{y}.png</field>
+        <field name="sequence" eval="1" />
+    </record>
+
+    <record
+        id="raster_layer_res_partner_client_google_sat"
+        model="geoengine.raster.layer">
+        <field name="name">Google Satellite</field>
+        <field name="view_id" ref="view_res_partner_client_locations_map" />
+        <field name="raster_type">xyz</field>
+        <field name="overlay">0</field>
+        <field
+            name="url">https://mt1.google.com/vt/lyrs=s&amp;x={x}&amp;y={y}&amp;z={z}</field>
+        <field name="sequence" eval="2" />
+    </record>
+
+    <record
+        id="raster_layer_res_partner_client_google_hybrid"
+        model="geoengine.raster.layer">
+        <field name="name">Google Hybrid</field>
+        <field name="view_id" ref="view_res_partner_client_locations_map" />
+        <field name="raster_type">xyz</field>
+        <field name="overlay">0</field>
+        <field
+            name="url">https://mt1.google.com/vt/lyrs=y&amp;x={x}&amp;y={y}&amp;z={z}</field>
+        <field name="sequence" eval="3" />
+    </record>
+
+    <record
+        id="raster_layer_res_partner_client_google_terrain"
+        model="geoengine.raster.layer">
+        <field name="name">Google Terrain</field>
+        <field name="view_id" ref="view_res_partner_client_locations_map" />
+        <field name="raster_type">xyz</field>
+        <field name="overlay">0</field>
+        <field
+            name="url">https://mt1.google.com/vt/lyrs=p&amp;x={x}&amp;y={y}&amp;z={z}</field>
+        <field name="sequence" eval="4" />
+    </record>
+
+    <record
+        id="raster_layer_res_partner_client_esri_satellite"
+        model="geoengine.raster.layer">
+        <field name="name">ESRI Satellite</field>
+        <field name="view_id" ref="view_res_partner_client_locations_map" />
+        <field name="raster_type">xyz</field>
+        <field name="overlay">0</field>
+        <field
+            name="url">https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}</field>
+        <field name="sequence" eval="5" />
+    </record>
+
+    <record
+        id="raster_layer_res_partner_client_carto_light"
+        model="geoengine.raster.layer">
+        <field name="name">CartoDB Light</field>
+        <field name="view_id" ref="view_res_partner_client_locations_map" />
+        <field name="raster_type">xyz</field>
+        <field name="overlay">0</field>
+        <field
+            name="url">https://cartodb-basemaps-a.global.ssl.fastly.net/light_all/{z}/{x}/{y}.png</field>
+        <field name="sequence" eval="6" />
+    </record>
+
+    <record
+        id="raster_layer_res_partner_client_carto_dark"
+        model="geoengine.raster.layer">
+        <field name="name">CartoDB Dark</field>
+        <field name="view_id" ref="view_res_partner_client_locations_map" />
+        <field name="raster_type">xyz</field>
+        <field name="overlay">0</field>
+        <field
+            name="url">https://cartodb-basemaps-a.global.ssl.fastly.net/dark_all/{z}/{x}/{y}.png</field>
+        <field name="sequence" eval="7" />
+    </record>
+
+    <record id="raster_layer_res_partner_client_topo" model="geoengine.raster.layer">
+        <field name="name">OpenTopoMap</field>
+        <field name="view_id" ref="view_res_partner_client_locations_map" />
+        <field name="raster_type">xyz</field>
+        <field name="overlay">0</field>
+        <field name="url">https://tile.opentopomap.org/{z}/{x}/{y}.png</field>
+        <field name="sequence" eval="8" />
+    </record>
+
+    <record
+        id="vector_layer_res_partner_client_locations"
+        model="geoengine.vector.layer">
+        <field name="name">Client Locations</field>
+        <field name="view_id" ref="view_res_partner_client_locations_map" />
+        <field
+            name="geo_field_id"
+            ref="device_gps_geoengine.field_res_partner__client_the_point" />
+        <field name="geo_repr">basic</field>
+        <field name="nb_class">1</field>
+        <field name="begin_color">#22AA44</field>
+        <field name="sequence" eval="1" />
+        <field name="active_on_startup" eval="True" />
+        <field name="layer_opacity">0.9</field>
+    </record>
+
+    <record id="action_res_partner_client_locations_map" model="ir.actions.act_window">
+        <field name="name">Client Locations</field>
+        <field name="res_model">res.partner</field>
+        <field name="view_mode">geoengine,kanban,list,form</field>
+        <field
+            name="domain">[('partner_latitude', '!=', 0), ('customer_rank', '&gt;', 0)]</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No client locations found
+            </p>
+            <p>
+                Customers with GPS coordinates set in Contacts → Partner Assignment
+                (Geo Latitude / Geo Longitude).
+            </p>
+        </field>
+    </record>
+
+</odoo>

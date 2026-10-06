@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="phone_call_view_form" model="ir.ui.view">
+        <field name="name">phone.call.view.form.conversation</field>
+        <field name="model">phone.call</field>
+        <field name="inherit_id" ref="phone_call.phone_call_view_form" />
+        <field name="arch" type="xml">
+            <group name="recording" position="before">
+                <group name="conversation" invisible="not conversation_id">
+                    <field name="conversation_id" />
+                </group>
+            </group>
+        </field>
+    </record>
+
+</odoo>

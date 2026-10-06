@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <template
+        id="report_invoice_document_signature"
+        inherit_id="account.report_invoice_document">
+        <div id="right-elements" position="inside">
+            <div
+                t-if="o.show_signature_area"
+                t-attf-class="{{ 'col-lg-5 offset-lg-7 col-md-12' if report_type == 'html' else 'col-12' }}">
+                <img
+                    t-if="o.signature"
+                    t-att-src="image_data_uri(o.signature)"
+                    class="img-fluid mx-auto o_signature_image" />
+                <div t-else="" class="o_signature_placeholder" />
+                <p class="mx-auto text-center o_signature_line">Authorized signatory</p>
+            </div>
+        </div>
+    </template>
+
+</odoo>

@@ -1,0 +1,36 @@
+import re
+
+from odoo import api, fields, models
+from odoo.exceptions import ValidationError
+
+from odoo.addons.sms.tools.sms_api import ERROR_MESSAGES, SmsApi
+
+
+class WizardIapAccountUpdateSmsSender(models.TransientModel):
+    _name = "wizard.iap.account.update.sms.sender"
+    _description = "SMS Account Sender Name Wizard"
+
+    account_id = fields.Many2one(
+        comodel_name="iap.account",
+        required=True,
+    )
+    sender_name = fields.Char()
+
+    @api.constrains("sender_name")
+    def _check_sender_name(self) -> None:
+        for record in self:
+            if not re.fullmatch(r"[a-zA-Z0-9\- ]{3,11}", record.sender_name):
+                raise ValidationError(
+                    self.env._(
+                        "Your sender name must be between 3 and 11 characters long and only contain alphanumeric characters."
+                    )
+                )
+
+    def action_set_sender_name(self) -> None:
+        status = SmsApi(self.env, self.account_id)._set_sender_name(self.sender_name)[
+            "state"
+        ]
+        if status != "success":
+            raise ValidationError(
+                ERROR_MESSAGES.get(status, ERROR_MESSAGES["unknown_error"])
+            )

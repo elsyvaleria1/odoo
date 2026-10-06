@@ -1,0 +1,80 @@
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-09-27 07:53+0000\n"
+"PO-Revision-Date: 2026-09-27 07:53+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: mn\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: trade_agreement_competition
+#: model:ir.model.fields,field_description:trade_agreement_competition.field_mixin_agreement_line__display_name
+msgid "Display Name"
+msgstr "Дэлгэрэнгүй нэр"
+
+#. module: trade_agreement_competition
+#: model:ir.model.fields,field_description:trade_agreement_competition.field_mixin_agreement_line__price_gap
+msgid "Gap to Market (%)"
+msgstr ""
+
+#. module: trade_agreement_competition
+#: model:ir.model.fields,help:trade_agreement_competition.field_mixin_agreement_line__price_gap
+msgid ""
+"How far the agreed price sits above (positive) or below (negative) the "
+"market price."
+msgstr ""
+
+#. module: trade_agreement_competition
+#: model:ir.model.fields,field_description:trade_agreement_competition.field_mixin_agreement_line__id
+msgid "ID"
+msgstr "ID"
+
+#. module: trade_agreement_competition
+#: model:ir.model.fields.selection,name:trade_agreement_competition.selection__mixin_agreement_line__market_scope__segment
+#: model:ir.model.fields.selection,name:trade_agreement_competition.selection__purchase_agreement_line__market_scope__segment
+#: model:ir.model.fields.selection,name:trade_agreement_competition.selection__sale_agreement_line__market_scope__segment
+msgid "Its Industry"
+msgstr ""
+
+#. module: trade_agreement_competition
+#: model:ir.model.fields.selection,name:trade_agreement_competition.selection__mixin_agreement_line__market_scope__market
+#: model:ir.model.fields.selection,name:trade_agreement_competition.selection__purchase_agreement_line__market_scope__market
+#: model:ir.model.fields.selection,name:trade_agreement_competition.selection__sale_agreement_line__market_scope__market
+msgid "Market"
+msgstr ""
+
+#. module: trade_agreement_competition
+#: model:ir.model.fields,field_description:trade_agreement_competition.field_mixin_agreement_line__market_price
+msgid "Market Price"
+msgstr ""
+
+#. module: trade_agreement_competition
+#: model:ir.model.fields,field_description:trade_agreement_competition.field_mixin_agreement_line__market_scope
+msgid "Market Scope"
+msgstr ""
+
+#. module: trade_agreement_competition
+#: model:ir.model.fields,help:trade_agreement_competition.field_mixin_agreement_line__market_price
+msgid ""
+"The best comparable price competitors offer this product today: to the "
+"agreement's partner when known, else to its industry, else to the market. "
+"Per this line's unit, in the agreement's currency."
+msgstr ""
+
+#. module: trade_agreement_competition
+#: model:ir.model.fields.selection,name:trade_agreement_competition.selection__mixin_agreement_line__market_scope__partner
+#: model:ir.model.fields.selection,name:trade_agreement_competition.selection__purchase_agreement_line__market_scope__partner
+#: model:ir.model.fields.selection,name:trade_agreement_competition.selection__sale_agreement_line__market_scope__partner
+msgid "This Partner"
+msgstr ""
+
+#. module: trade_agreement_competition
+#: model:ir.model,name:trade_agreement_competition.model_mixin_agreement_line
+msgid "Trade Agreement Line"
+msgstr ""

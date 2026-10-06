@@ -1,0 +1,89 @@
+/** @odoo-module native */
+
+import { sortBy } from "@web/core/utils/collections/arrays";
+import { GraphModel } from "@web/views/graph";
+
+export class HrHolidaysGraphModel extends GraphModel {
+    async load(searchParams) {
+        const { groupBy } = searchParams;
+        if (groupBy.length && !groupBy.includes("leave_type")) {
+            return super.load({ ...searchParams, groupBy: [...groupBy, "leave_type"] });
+        }
+        return super.load(searchParams);
+    }
+
+    getLineOverlayDataset() {
+        return null;
+    }
+
+    /**
+     * @protected
+     * @returns {Object[]}
+     */
+    _getProcessedDataPoints() {
+        const { fields, groupBy, mode, order } = this.metaData;
+        this.allocation_label = fields["leave_type"].selection.find(
+            (selection) => selection[0] === "allocation",
+        )[1];
+        this.timeoff_label = fields["leave_type"].selection.find(
+            (selection) => selection[0] === "request",
+        )[1];
+
+        let processedDataPoints;
+        if (mode === "bar") {
+            processedDataPoints = this.dataPoints.filter(
+                (dataPoint) =>
+                    dataPoint.labels[0] !== this._getDefaultFilterLabel(groupBy[0]),
+            );
+
+            if (order !== null && groupBy.length > 0) {
+                const groupedDataPoints = {};
+                for (const dataPt of processedDataPoints) {
+                    const key = dataPt.labels[0];
+                    if (!groupedDataPoints[key]) {
+                        groupedDataPoints[key] = [];
+                    }
+                    groupedDataPoints[key].push(dataPt);
+                }
+
+                const groups = Object.values(groupedDataPoints);
+                const datapointsWithAllocation = new Set(
+                    groups
+                        .flat()
+                        .map((dataPoint) => {
+                            if (
+                                dataPoint.labels[dataPoint.labels.length - 1] ===
+                                this.allocation_label
+                            ) {
+                                return dataPoint.labels.slice(0, -1).join("/");
+                            }
+                            return false;
+                        })
+                        .filter((label) => label !== false),
+                );
+
+                const groupTotal = (group) =>
+                    group.reduce((sum, dataPt) => {
+                        if (
+                            datapointsWithAllocation.has(
+                                dataPt.labels.slice(0, -1).join("/"),
+                            )
+                        ) {
+                            return sum + dataPt.value;
+                        }
+                        return sum;
+                    }, 0);
+
+                processedDataPoints = sortBy(
+                    groups,
+                    groupTotal,
+                    order.toLowerCase(),
+                ).flat();
+            } else {
+                processedDataPoints = super._getProcessedDataPoints();
+            }
+            return processedDataPoints;
+        }
+        return super._getProcessedDataPoints();
+    }
+}

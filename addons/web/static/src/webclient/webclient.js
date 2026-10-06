@@ -1,0 +1,207 @@
+// @ts-check
+/** @odoo-module native */
+
+import { Component, onMounted, proxy, useListener, useProps } from "@odoo/owl";
+import { browser } from "@web/core/browser/browser";
+import { router, routerBus } from "@web/core/browser/router";
+import { provideDebugContext, useDebugMode } from "@web/core/debug/debug_context";
+import { makeLogger } from "@web/core/debug/debug_logger";
+import { useLifecycleLog } from "@web/core/debug/logger_hooks";
+import { reportUncaught } from "@web/core/errors/error_utils";
+import { AppEvent, RouterEvent } from "@web/core/events";
+import { registry } from "@web/core/registry";
+import { SupersededError } from "@web/core/utils/concurrency";
+import { useBus, useEventBus, useService } from "@web/core/utils/hooks";
+import { MainComponentsContainer } from "@web/ui/main_components_container";
+import { BannerStack } from "@web/webclient/banners/banner_stack";
+import { DebugMenu } from "@web/webclient/debug/debug_menu";
+
+import { ActionContainer } from "./actions/action_container.js";
+import { ActionPlaceholder } from "./actions/action_placeholder.js";
+import { menuStorage } from "./menus/menu_storage.js";
+import { NavBar } from "./navbar/navbar.js";
+
+const log = makeLogger("web.webclient");
+
+export class WebClient extends Component {
+    static template = "web.WebClient";
+    static props = {};
+    static components = {
+        ActionContainer,
+        ActionPlaceholder,
+        BannerStack,
+        NavBar,
+        MainComponentsContainer,
+    };
+    props = useProps(this.constructor.props);
+
+    /** @type {import("services").ServiceFactories["action"]} */
+    actionService;
+    /** @type {import("services").ServiceFactories["menu"]} */
+    menuService;
+    /** @type {{ fullscreen: boolean }} */
+    state;
+    /** @type {import("services").ServiceFactories["home_menu"]} */
+    hm;
+
+    setup() {
+        this.debug = useDebugMode();
+        this.bus = useEventBus();
+        useLifecycleLog(log);
+        this.menuService = useService("menu");
+        this.actionService = useService("action");
+        this.hm = useService("home_menu");
+        provideDebugContext({ categories: ["default"] });
+        if (this.debug) {
+            registry
+                .category("systray")
+                .add(
+                    "web.debug_mode_menu",
+                    { Component: DebugMenu },
+                    { sequence: 100 },
+                );
+        }
+        this.state = proxy({
+            fullscreen: false,
+        });
+        useBus(routerBus, RouterEvent.ROUTE_CHANGE, () => this.loadRouterState());
+        useBus(this.bus, AppEvent.ACTION_MANAGER_UI_UPDATED, ({ detail: mode }) => {
+            if (mode !== "new") {
+                this.state.fullscreen = mode === "fullscreen";
+            }
+        });
+        useBus(
+            this.bus,
+            AppEvent.WEBCLIENT_LOAD_DEFAULT_APP,
+            this._loadDefaultApp.bind(this),
+        );
+        onMounted(() => {
+            this.loadRouterState();
+            this.bus.trigger(AppEvent.WEB_CLIENT_READY);
+        });
+        useListener(
+            window,
+            "click",
+            /** @type {any} */ (this.onGlobalClick.bind(this)),
+            {
+                capture: true,
+            },
+        );
+    }
+
+    /**
+     * @param {number} storedMenuId
+     * @returns {number}
+     */
+    _resolveMenuFromUrl(storedMenuId) {
+        const menuId = Number(router.current.menu_id || 0);
+        if (menuId) {
+            return menuId;
+        }
+        const firstAction = router.current.actionStack?.[0]?.action;
+        if (!firstAction) {
+            return 0;
+        }
+        return (
+            Number(this.menuService.getAppIdByAction(firstAction, storedMenuId)) || 0
+        );
+    }
+
+    _scrollToUrlAnchor() {
+        if (browser.location.hash === "") {
+            return;
+        }
+        try {
+            document.querySelector(browser.location.hash)?.scrollIntoView(true);
+        } catch {}
+    }
+
+    async loadRouterState() {
+        const storedMenuId = menuStorage.readCurrentApp();
+        const menuId = this._resolveMenuFromUrl(storedMenuId);
+        const endRoute = log.perf("loadRouterState");
+        log.pipeline("loadRouterState", () => ({
+            storedMenuId,
+            menuId,
+            route: router.current,
+        }));
+        if (menuId) {
+            this.menuService.setCurrentMenu(menuId);
+        }
+        let stateLoaded;
+        try {
+            stateLoaded = await this._restoreRoute(menuId, storedMenuId);
+        } finally {
+            endRoute({ stateLoaded: Boolean(stateLoaded), menuId });
+        }
+    }
+
+    /**
+     * @param {number} menuId
+     * @param {number} storedMenuId
+     * @returns {Promise<boolean | undefined>}
+     */
+    async _restoreRoute(menuId, storedMenuId) {
+        const { navigation } = this.actionService;
+        const epoch = navigation.epoch;
+        let stateLoaded;
+        try {
+            stateLoaded = await this.actionService.loadState();
+        } catch (error) {
+            if (error instanceof SupersededError) {
+                return;
+            }
+            reportUncaught(error);
+            if (!this.actionService.currentController) {
+                await this._loadDefaultApp();
+            }
+            return;
+        }
+        if (!stateLoaded && navigation.epoch > epoch + 1) {
+            return;
+        }
+
+        if (!stateLoaded && menuId) {
+            const actionId = this.menuService.getMenu(menuId)?.actionID;
+            if (actionId) {
+                await this.actionService.doAction(actionId, {
+                    clearBreadcrumbs: true,
+                });
+                stateLoaded = true;
+            }
+        }
+
+        if (stateLoaded && !menuId) {
+            const actionId = this.actionService.currentController?.action.id;
+            menuId =
+                Number(this.menuService.getAppIdByAction(actionId)) || storedMenuId;
+            if (menuId) {
+                this.menuService.setCurrentMenu(menuId);
+            }
+        }
+
+        if (stateLoaded) {
+            this._scrollToUrlAnchor();
+        } else {
+            await this._loadDefaultApp();
+        }
+        return stateLoaded;
+    }
+
+    _loadDefaultApp() {
+        return this.hm.toggle(true);
+    }
+
+    /** @param {MouseEvent} ev */
+    onGlobalClick(ev) {
+        if (
+            (ev.ctrlKey || ev.metaKey) &&
+            !(/** @type {any} */ (ev.target).isContentEditable) &&
+            ((ev.target instanceof HTMLAnchorElement && ev.target.href) ||
+                (ev.target instanceof HTMLElement &&
+                    ev.target.closest("a[href]:not([href=''])")))
+        ) {
+            ev.stopImmediatePropagation();
+        }
+    }
+}

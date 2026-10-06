@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="access_predicate_your_employee" model="ir.access.predicate">
+        <field name="name">hr.your_employee</field>
+        <field
+            name="description">it is your employee: yours as a user, or the contact you act for</field>
+        <field
+            name="template">['|', (args.at + 'user_id', '=', P.user), (args.at + 'partner_id', '=', P.partner)]</field>
+    </record>
+
+    <record
+        id="base.access_res_partner_bank_group_partner_manager_crud"
+        model="ir.access">
+        <field name="active" eval="False" />
+    </record>
+
+    <record id="base.access_res_partner_bank_group_user_r" model="ir.access">
+        <field name="active" eval="False" />
+    </record>
+
+</odoo>

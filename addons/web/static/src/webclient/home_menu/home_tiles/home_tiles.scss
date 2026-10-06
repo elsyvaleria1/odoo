@@ -1,0 +1,44 @@
+.o_home_data_tile {
+    // The app widgets inset their heading and rows by 20px (link margin plus
+    // padding); a data tile's heading and content sit straight in the band.
+    > .o_home_tile_header,
+    > .o_home_tile_body {
+        padding-inline: 20px;
+    }
+
+    .o_home_data_tile_configure,
+    .o_home_data_tile_resize,
+    .o_home_data_tile_remove {
+        padding: 0 map-get($spacers, 1);
+        color: var(--o-label-2);
+    }
+}
+
+.o_home_data_tile_add {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: center;
+    border: $border-width dashed var(--o-separator);
+    background: transparent;
+}
+
+.o_metric_tile_value {
+    font-size: 1.75rem;
+    font-weight: 600;
+    line-height: 1.1;
+}
+
+.o_metric_tile_spark {
+    width: 100%;
+    height: 24px;
+}
+
+.o_home_menu .o_home_data_tiles {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: subgrid;
+    grid-auto-rows: minmax($o-home-menu-tile-unit, auto);
+    grid-auto-flow: row dense;
+    row-gap: $o-home-menu-tile-gap;
+}

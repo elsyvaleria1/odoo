@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!--
+        A visit is the business of its employee: colleagues do not see it. The
+        supervisor follows every visit without editing it, and the planning
+        administrator is one.
+    -->
+    <record id="group_field_service_supervisor" model="res.groups">
+        <field name="name">Visit Supervisor</field>
+        <field name="sequence">15</field>
+        <field name="privilege_id" ref="planning.res_groups_privilege_planning" />
+        <field
+            name="implied_ids"
+            eval="[Command.link(ref('planning.group_planning_user'))]" />
+    </record>
+
+    <record id="planning.group_planning_manager" model="res.groups">
+        <field
+            name="implied_ids"
+            eval="[Command.link(ref('group_field_service_supervisor'))]" />
+    </record>
+
+    <record id="access_planning_slot_manage_visits" model="ir.access">
+        <field
+            name="name">planning.slot: planning managers hand visits over and move their status</field>
+        <field name="model_id" ref="planning.model_planning_slot" />
+        <field name="group_id" ref="planning.group_planning_manager" />
+        <field name="kind">permission</field>
+        <field name="verbs">manage_visits</field>
+    </record>
+
+</odoo>

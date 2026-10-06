@@ -1,0 +1,74 @@
+// @ts-check
+/** @odoo-module native */
+import { t } from "@odoo/owl";
+import { exprToBoolean } from "@web/core/utils/format/strings";
+import { useLayoutEffect } from "@web/core/utils/layout_effect";
+import { patch } from "@web/core/utils/patch";
+import { useDebounced } from "@web/core/utils/timing";
+import {
+    CharField,
+    charField,
+    charFieldProps,
+} from "@web/fields/basic/char/char_field";
+import {
+    TextField,
+    textField,
+    textFieldProps,
+} from "@web/fields/basic/text/text_field";
+const onchangeOnKeydownMixin = () => ({
+    setup() {
+        super.setup();
+
+        if (this.props.onchangeOnKeydown) {
+            const input = this.input || this.textareaRef;
+
+            const triggerOnChange = useDebounced(
+                this.triggerOnChange.bind(this),
+                this.props.keydownDebounceDelay,
+            );
+            useLayoutEffect(
+                /** @param {HTMLElement|null} el */
+                (el) => {
+                    if (el) {
+                        el.addEventListener("keydown", triggerOnChange);
+                        return () => {
+                            el.removeEventListener("keydown", triggerOnChange);
+                        };
+                    }
+                },
+                () => [input.el],
+            );
+        }
+    },
+
+    triggerOnChange() {
+        const input = this.input || this.textareaRef;
+        input.el.dispatchEvent(new Event("change"));
+    },
+});
+
+patch(CharField.prototype, onchangeOnKeydownMixin());
+patch(TextField.prototype, onchangeOnKeydownMixin());
+
+const extraProps = {
+    onchangeOnKeydown: t.boolean().optional(),
+    keydownDebounceDelay: t.number().optional(),
+};
+Object.assign(charFieldProps, extraProps);
+Object.assign(textFieldProps, extraProps);
+
+/**
+ * @param {NonNullable<typeof charField.extractProps>} baseExtractProps
+ * @returns {NonNullable<typeof charField.extractProps>}
+ */
+function extendExtractProps(baseExtractProps) {
+    return (fieldInfo, dynamicInfo) =>
+        Object.assign(baseExtractProps(fieldInfo, dynamicInfo), {
+            onchangeOnKeydown: exprToBoolean(fieldInfo.attrs.onchange_on_keydown),
+            keydownDebounceDelay: fieldInfo.attrs.keydown_debounce_delay
+                ? Number(fieldInfo.attrs.keydown_debounce_delay)
+                : 2000,
+        });
+}
+charField.extractProps = extendExtractProps(charField.extractProps);
+textField.extractProps = extendExtractProps(textField.extractProps);

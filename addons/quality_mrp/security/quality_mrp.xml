@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="mrp.group_mrp_user" model="res.groups">
+        <field name="name">User</field>
+        <field
+            name="implied_ids"
+            eval="[Command.link(ref('quality.group_quality_user'))]" />
+    </record>
+
+</odoo>

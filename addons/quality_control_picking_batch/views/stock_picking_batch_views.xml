@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="stock_picking_batch_form" model="ir.ui.view">
+        <field name="name">stock.picking.batch.form.quality.control.inherit</field>
+        <field name="model">stock.picking.batch</field>
+        <field name="inherit_id" ref="stock_picking_batch.stock_picking_batch_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//button[@name='action_done'][1]" position="attributes">
+                <attribute name="invisible">state != 'in_progress' or quality_check_todo or show_check_availability</attribute>
+            </xpath>
+            <xpath expr="//button[@name='action_done'][2]" position="attributes">
+                <attribute name="invisible">state != 'in_progress' or not quality_check_todo and not show_check_availability</attribute>
+            </xpath>
+            <xpath expr="//button[@name='action_done']" position="after">
+                <field name="quality_check_todo" invisible="1" />
+                <button
+                    name="action_done"
+                    type="object"
+                    string="Validate"
+                    invisible="not quality_check_todo or not picking_ids or state != 'in_progress'"
+                    data-hotkey="v" />
+                <button
+                    name="action_view_quality_check_wizard"
+                    type="object"
+                    string="Quality Checks"
+                    groups="quality.group_quality_user"
+                    invisible="not quality_check_todo or state in ('done', 'cancel')"
+                    class="oe_highlight"
+                    data-hotkey="shift+z" />
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_stock_move_line_list" model="ir.ui.view">
+        <field name="name">stock_picking_batch.move.line.list.inherit</field>
+        <field name="model">stock.move.line</field>
+        <field name="inherit_id" ref="stock_picking_batch.view_stock_move_line_list" />
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='company_id']" position="after">
+                <field name="check_state" column_invisible="True" />
+                <button
+                    name="action_view_quality_check_wizard"
+                    type="object"
+                    title="Check Quality"
+                    icon="fa-check"
+                    invisible="check_state != 'in_progress'"
+                    class="btn-secondary text-muted" />
+                <button
+                    name="action_view_quality_check_wizard"
+                    type="object"
+                    title="Check Quality"
+                    icon="fa-check"
+                    invisible="check_state != 'fail'"
+                    class="btn-secondary text-danger" />
+                <button
+                    name="action_view_quality_check_wizard"
+                    type="object"
+                    title="Check Quality"
+                    icon="fa-check"
+                    invisible="check_state != 'pass'"
+                    class="btn-secondary text-success" />
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

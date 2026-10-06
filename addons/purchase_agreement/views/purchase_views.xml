@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="purchase_order_form_inherit" model="ir.ui.view">
+        <field name="name">purchase.order.form.inherit</field>
+        <field name="model">purchase.order</field>
+        <field name="inherit_id" ref="purchase.view_purchase_order_form" />
+        <field name="arch" type="xml">
+            <field name="partner_id" position="replace">
+                <field name="agreement_type" invisible="1" />
+                <field
+                    name="partner_id"
+                    placeholder="Name, TIN, Email, or Reference"
+                    widget="res_partner_many2one"
+                    force_save="1"
+                    context="{'res_partner_search_mode': 'supplier', 'show_vat': True}"
+                    readonly="agreement_type == 'blanket_order' or state in ['done', 'cancel']" />
+            </field>
+            <field name="partner_ref" position="after">
+                <field name="commercial_partner_id" invisible="1" />
+                <field
+                    name="agreement_id"
+                    domain="[('state', '=', 'confirmed'), '|', ('partner_id', '=', False), ('partner_id.commercial_partner_id', '=', commercial_partner_id), ('company_id', '=', company_id)]"
+                    options="{'no_create': True}" />
+            </field>
+            <xpath expr="//sheet" position="before">
+                <div
+                    class="alert alert-warning"
+                    role="alert"
+                    invisible="not agreement_warning">
+                    <field name="agreement_warning" class="fw-bold" />
+                </div>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="purchase_order_search_inherit" model="ir.ui.view">
+        <field name="name">purchase.order.list.select.inherit</field>
+        <field name="model">purchase.order</field>
+        <field name="inherit_id" ref="purchase.view_purchase_order_search" />
+        <field name="arch" type="xml">
+            <field name="product_id" position="after">
+                <field name="agreement_id" />
+            </field>
+            <filter name="representative" position="after">
+                <filter
+                    name="agreement"
+                    string="Agreement"
+                    context="{'group_by': 'agreement_id'}" />
+            </filter>
+        </field>
+    </record>
+
+</odoo>

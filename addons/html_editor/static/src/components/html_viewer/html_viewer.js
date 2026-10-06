@@ -1,0 +1,306 @@
+/** @odoo-module native */
+import { HtmlUpgradeManager } from "@html_editor/html_migrations/html_upgrade_manager";
+import {
+    createEmbeddedRoot,
+    mountReplacingHost,
+} from "@html_editor/others/embedded_component_utils";
+import { TableOfContentManager } from "@html_editor/others/embedded_components/core/table_of_content/table_of_content_manager";
+import { fillHtmlTransferData } from "@html_editor/utils/clipboard";
+import { fixInvalidHTML, instanceofMarkup } from "@html_editor/utils/sanitize";
+import { scrollAndHighlightHeading } from "@html_editor/utils/url";
+import {
+    Component,
+    markup,
+    onMounted,
+    onWillStart,
+    onWillUnmount,
+    onWillUpdateProps,
+    proxy,
+    t,
+    useProps,
+} from "@odoo/owl";
+import { useAppContext } from "@web/core/app_context";
+import { getBundle } from "@web/core/assets";
+import { browser } from "@web/core/browser/browser";
+import { elementRef } from "@web/core/utils/element_ref";
+import { memoize } from "@web/core/utils/functions";
+import { useLayoutEffect } from "@web/core/utils/layout_effect";
+
+export class HtmlViewer extends Component {
+    static template = "html_editor.HtmlViewer";
+    static props = { config: t.object(), migrateHTML: t.boolean().optional(true) };
+    props = useProps(this.constructor.props);
+
+    setup() {
+        this.appContext = useAppContext();
+        this._cleanups = [];
+        this.htmlUpgradeManager = new HtmlUpgradeManager();
+        this.iframeRef = elementRef();
+
+        this.state = proxy({
+            iframeVisible: false,
+            value: this.formatValue(this.props.config.value),
+        });
+        this.components = new Set();
+
+        onWillUpdateProps((newProps) => {
+            const newValue = this.formatValue(newProps.config.value);
+            if (newValue.toString() !== this.state.value.toString()) {
+                this.state.value = this.formatValue(newProps.config.value);
+                if (this.props.config.embeddedComponents) {
+                    this.destroyComponents();
+                }
+                if (this.showIframe) {
+                    this.updateIframeContent(this.state.value);
+                }
+            }
+        });
+
+        onWillUnmount(() => {
+            this.destroyComponents();
+        });
+
+        if (this.showIframe) {
+            onMounted(() => {
+                const onLoadIframe = () => this.onLoadIframe(this.state.value);
+                this.iframeRef.el.addEventListener("load", onLoadIframe, {
+                    once: true,
+                });
+                this.iframeRef.el.after(this.iframeRef.el);
+            });
+        } else {
+            this.readonlyElementRef = elementRef();
+            useLayoutEffect(
+                () => {
+                    this.processReadonlyContent(this.readonlyElementRef.el);
+                },
+                () => [this.props.config.value.toString(), this.readonlyElementRef?.el],
+            );
+        }
+
+        onMounted(() => {
+            scrollAndHighlightHeading(
+                this.readonlyElementRef?.el || this.iframeRef?.el,
+            );
+        });
+
+        if (this.props.config.cssAssetId) {
+            onWillStart(async () => {
+                this.cssAsset = await getBundle(this.props.config.cssAssetId);
+            });
+        }
+
+        if (this.props.config.embeddedComponents) {
+            this.embeddedComponents = memoize((embeddedComponents = []) => {
+                const result = {};
+                for (const embedding of embeddedComponents) {
+                    result[embedding.name] = embedding;
+                }
+                return result;
+            });
+            useLayoutEffect(
+                () => {
+                    if (this.readonlyElementRef?.el) {
+                        this.mountComponents();
+                    }
+                },
+                () => [this.props.config.value.toString(), this.readonlyElementRef?.el],
+            );
+            this.tocManager = new TableOfContentManager(this.readonlyElementRef);
+        }
+    }
+
+    addDomListener(target, eventName, fn, capture = false) {
+        const handler = (ev) => {
+            fn?.call(this, ev);
+        };
+        target.addEventListener(eventName, handler, capture);
+        this._cleanups.push(() =>
+            target.removeEventListener(eventName, handler, capture),
+        );
+    }
+
+    get showIframe() {
+        return this.props.config.hasFullHtml || this.props.config.cssAssetId;
+    }
+
+    /**
+     * @param { string | Markup } value
+     * @returns { string | Markup }
+     */
+    formatValue(value) {
+        let newVal = fixInvalidHTML(value);
+        if (this.props.migrateHTML) {
+            newVal = this.htmlUpgradeManager.processForUpgrade(newVal, {
+                containsComplexHTML: this.props.config.hasFullHtml,
+                env: this.appContext,
+            });
+        }
+        if (instanceofMarkup(value)) {
+            return markup(newVal);
+        }
+        return newVal;
+    }
+
+    processReadonlyContent(container) {
+        this.retargetLinks(container);
+        this.applyAccessibilityAttributes(container);
+        this.addDomListener(container, "copy", this.onCopy);
+    }
+
+    /**
+     * @param {ClipboardEvent} ev
+     */
+    onCopy(ev) {
+        ev.preventDefault();
+        const selection = ev.target.ownerDocument.defaultView.getSelection();
+        const clonedContents = selection.getRangeAt(0).cloneContents();
+        fillHtmlTransferData(ev, "clipboardData", clonedContents, {
+            textContent: selection.toString(),
+        });
+    }
+
+    applyAccessibilityAttributes(container) {
+        for (const el of container.querySelectorAll("[data-oe-role]")) {
+            el.setAttribute("role", el.dataset.oeRole);
+        }
+        for (const el of container.querySelectorAll("[data-oe-aria-label]")) {
+            el.setAttribute("aria-label", el.dataset.oeAriaLabel);
+        }
+    }
+
+    retargetLinks(container) {
+        const isInsideIframe = container.ownerDocument !== document;
+        const retargetSelector = isInsideIframe
+            ? "a"
+            : `a:not([href^="${browser.location.origin}"]):not([href^="/"])`;
+
+        for (const link of container.querySelectorAll(retargetSelector)) {
+            this.retargetLink(link);
+        }
+    }
+
+    retargetLink(link) {
+        link.setAttribute("target", "_blank");
+        link.setAttribute("rel", "noreferrer");
+    }
+
+    updateIframeContent(content) {
+        const contentWindow = this.iframeRef.el.contentWindow;
+        const iframeTarget = this.props.config.hasFullHtml
+            ? contentWindow.document.documentElement
+            : contentWindow.document.querySelector("#iframe_target");
+        iframeTarget.innerHTML = content;
+        this.processReadonlyContent(iframeTarget);
+    }
+
+    onLoadIframe(value) {
+        const contentWindow = this.iframeRef.el.contentWindow;
+        if (!this.props.config.hasFullHtml) {
+            contentWindow.document.open("text/html", "replace").write(
+                `<!DOCTYPE html><html>
+                        <head>
+                            <meta charset="utf-8"/>
+                            <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+                            <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no"/>
+                        </head>
+                        <body class="o_in_iframe o_readonly" style="overflow: hidden;">
+                            <div id="iframe_target"></div>
+                        </body>
+                    </html>`,
+            );
+        }
+
+        if (this.cssAsset) {
+            for (const cssLib of this.cssAsset.cssLibs) {
+                const link = contentWindow.document.createElement("link");
+                link.setAttribute("type", "text/css");
+                link.setAttribute("rel", "stylesheet");
+                link.setAttribute("href", cssLib);
+                contentWindow.document.head.append(link);
+            }
+        }
+
+        this.updateIframeContent(this.state.value);
+        this.state.iframeVisible = true;
+    }
+
+    destroyComponent({ root, host }) {
+        const { getEditableDescendants } = this.getEmbedding(host);
+        const editableDescendants = getEditableDescendants?.(host) || {};
+        root.destroy();
+        this.components.delete(arguments[0]);
+        host.append(...Object.values(editableDescendants));
+    }
+
+    destroyComponents() {
+        for (const cleanup of this._cleanups) {
+            cleanup();
+        }
+        for (const info of [...this.components]) {
+            this.destroyComponent(info);
+        }
+    }
+
+    forEachEmbeddedComponentHost(elem, callback) {
+        const selector = `[data-embedded]`;
+        const targets = [...elem.querySelectorAll(selector)];
+        if (elem.matches(selector)) {
+            targets.unshift(elem);
+        }
+        for (const host of targets) {
+            const embedding = this.getEmbedding(host);
+            if (!embedding) {
+                continue;
+            }
+            callback(host, embedding);
+        }
+    }
+
+    getEmbedding(host) {
+        return this.embeddedComponents(this.props.config.embeddedComponents)[
+            host.dataset.embedded
+        ];
+    }
+
+    setupNewComponent({ name, env, props }) {
+        if (name === "tableOfContent") {
+            Object.assign(props, {
+                manager: this.tocManager,
+            });
+        }
+    }
+
+    mountComponent(host, { Component, getEditableDescendants, getProps, name }) {
+        const props = getProps?.(host) || {};
+        const env = Object.create(this.appContext);
+        if (getEditableDescendants) {
+            env.getEditableDescendants = getEditableDescendants;
+        }
+        this.setupNewComponent({
+            name,
+            env,
+            props,
+        });
+        const root = createEmbeddedRoot(this.__owl__.app, Component, {
+            props,
+            context: env,
+            pluginManager: this.__owl__.pluginManager,
+        });
+        void mountReplacingHost(root, host);
+        const info = {
+            root,
+            host,
+        };
+        this.components.add(info);
+    }
+
+    mountComponents() {
+        this.forEachEmbeddedComponentHost(
+            this.readonlyElementRef.el,
+            (host, embedding) => {
+                this.mountComponent(host, embedding);
+            },
+        );
+    }
+}

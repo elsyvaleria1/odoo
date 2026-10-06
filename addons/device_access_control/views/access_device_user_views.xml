@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_access_device_user_list" model="ir.ui.view">
+        <field name="name">access.device.user.list</field>
+        <field name="model">access.device.user</field>
+        <field name="arch" type="xml">
+            <list
+                string="Device Users"
+                decoration-danger="state == 'error'"
+                decoration-muted="state == 'draft'"
+                decoration-success="state == 'synced'">
+                <field name="employee_id" widget="many2one_avatar_employee" />
+                <field name="device_id" />
+                <field
+                    name="access_profile"
+                    widget="badge"
+                    decoration-info="access_profile == 'collaborator'"
+                    decoration-success="access_profile == 'tenant'" />
+                <field name="employee_no" optional="hide" />
+                <field name="card_no" optional="hide" />
+                <field name="fingerprint_count" string="FP" />
+                <field name="face_count" string="Faces" />
+                <field
+                    name="state"
+                    widget="badge"
+                    decoration-danger="state == 'error'"
+                    decoration-info="state == 'draft'"
+                    decoration-success="state == 'synced'" />
+                <field name="synced_date" optional="show" />
+            </list>
+        </field>
+    </record>
+
+    <record id="view_access_device_user_form" model="ir.ui.view">
+        <field name="name">access.device.user.form</field>
+        <field name="model">access.device.user</field>
+        <field name="arch" type="xml">
+            <form string="Device User">
+                <header>
+                    <button
+                        name="action_sync_to_device"
+                        type="object"
+                        string="Sync to Device"
+                        icon="fa-upload"
+                        invisible="state == 'synced'"
+                        class="oe_highlight" />
+                    <button
+                        name="action_sync_to_device"
+                        type="object"
+                        string="Re-sync"
+                        icon="fa-refresh"
+                        invisible="state != 'synced'" />
+                    <button
+                        name="action_remove_from_device"
+                        type="object"
+                        string="Remove from Device"
+                        confirm="This will delete the user and all biometric data from the device. Continue?"
+                        icon="fa-trash"
+                        invisible="state == 'draft'"
+                        class="btn-secondary" />
+                    <field
+                        name="state"
+                        widget="statusbar"
+                        statusbar_visible="draft,synced" />
+                </header>
+                <sheet>
+                    <div
+                        class="alert alert-danger d-flex align-items-center gap-2"
+                        role="alert"
+                        invisible="not error_message">
+                        <i
+                            class="fa fa-exclamation-triangle"
+                            aria-label="Error"
+                            title="Error"
+                            role="img" />
+                        <field name="error_message" readonly="True" />
+                    </div>
+
+                    <div class="oe_button_box" name="button_box">
+                        <button
+                            name="action_capture_fingerprint"
+                            type="object"
+                            icon="fa-hand-paper-o"
+                            invisible="state != 'synced'"
+                            class="oe_stat_button">
+                            <field
+                                name="fingerprint_count"
+                                string="Fingerprints"
+                                widget="statinfo" />
+                        </button>
+                        <button
+                            name="action_capture_face"
+                            type="object"
+                            icon="fa-user-circle"
+                            invisible="state != 'synced'"
+                            class="oe_stat_button">
+                            <field name="face_count" string="Faces" widget="statinfo" />
+                        </button>
+                        <button
+                            name="action_register_card"
+                            type="object"
+                            icon="fa-id-card"
+                            invisible="state != 'synced' or not card_no"
+                            class="oe_stat_button">
+                            <div class="o_field_widget o_stat_info">
+                                <span class="o_stat_text">Register Card</span>
+                            </div>
+                        </button>
+                    </div>
+
+                    <field name="face_photo" widget="image" class="oe_avatar" />
+                    <div class="oe_title">
+                        <h1>
+                            <field name="employee_id" placeholder="Select Employee" />
+                        </h1>
+                        <field name="device_id" placeholder="Select Device" />
+                    </div>
+
+                    <group>
+                        <group string="Identification">
+                            <field name="employee_no" />
+                            <field name="card_no" />
+                            <field name="access_profile" widget="radio" />
+                        </group>
+                        <group string="Sync Status">
+                            <field name="synced_date" />
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_access_device_user" model="ir.actions.act_window">
+        <field name="name">Device Users</field>
+        <field name="res_model">access.device.user</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+</odoo>

@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <data>
+        <record
+            id="view_account_report_file_download_error_wizard_form"
+            model="ir.ui.view">
+            <field name="name">account.report.file.download.error.wizard.form</field>
+            <field name="model">wizard.report.formula.export.error</field>
+            <field name="arch" type="xml">
+                <form string="File Download Errors">
+                    <field name="file_content" invisible="1" />
+                    <div invisible="file_content">
+                        <span>One or more error(s) occurred during file generation:</span>
+                    </div>
+                    <div>
+                        <field
+                            name="actionable_errors"
+                            widget="actionable_errors"
+                            class="o_field_html w-100" />
+                        <p invisible="file_content"><i>Errors marked with <i class="fa-solid fa-triangle-exclamation" /> are critical and prevent the file generation.</i></p>
+                    </div>
+                    <footer>
+                        <button
+                            string="Download Anyway"
+                            invisible="file_content"
+                            class="btn btn-primary"
+                            disabled="" />
+                        <button
+                            name="button_download"
+                            type="object"
+                            string="Download Anyway"
+                            invisible="not file_content"
+                            class="btn btn-primary"
+                            close="1"
+                            data-hotkey="d" />
+                        <button
+                            special="cancel"
+                            string="Close"
+                            class="btn btn-secondary"
+                            data-hotkey="z" />
+                    </footer>
+                </form>
+            </field>
+        </record>
+    </data>
+
+</odoo>

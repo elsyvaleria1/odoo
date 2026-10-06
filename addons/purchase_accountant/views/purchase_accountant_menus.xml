@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <menuitem
+        id="purchase_accountant_accrual_menu"
+        name="Purchases"
+        parent="account.menu_account_audit"
+        sequence="55">
+        <menuitem
+            id="menu_purchase_order_line_accrual_bill_to_receives_action"
+            name="Bill To Receive"
+            action="purchase_accountant.purchase_order_line_accrual_bill_to_receive_action"
+            groups="account.group_account_readonly" />
+        <menuitem
+            id="menu_purchase_order_line_accrual_prepaid_expenses_action"
+            name="Billed Not Received"
+            action="purchase_accountant.purchase_order_line_accrual_prepaid_expenses_action"
+            sequence="20"
+            groups="account.group_account_readonly" />
+    </menuitem>
+
+</odoo>

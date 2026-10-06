@@ -1,0 +1,736 @@
+/** @odoo-module native */
+import { Component, proxy, t, useProps } from "@odoo/owl";
+import { CheckBox } from "@web/components/checkbox";
+import { useColorPicker } from "@web/components/color_picker";
+import { browser } from "@web/core/browser/browser";
+import { _t } from "@web/core/translation";
+import { elementRef } from "@web/core/utils/element_ref";
+import { useMountedListener, useService } from "@web/core/utils/hooks";
+import { useLayoutEffect } from "@web/core/utils/layout_effect";
+import { session } from "@web/session";
+
+import { cleanZWChars, deduceURLfromText } from "./utils.js";
+
+const DEFAULT_CUSTOM_TEXT_COLOR = "#A855F7";
+const DEFAULT_CUSTOM_FILL_COLOR = "#ffffff";
+
+const isCSSVariable = (color) => color.match(/^o-color-\d$|^\d{3}$/);
+const formatColor = (color) => {
+    if (color.match(/^o-color-\d$/gm)) {
+        return `var(--hb-cp-${color})`;
+    }
+    if (color.match(/^\d{3}$/gm)) {
+        return `var(--${color})`;
+    }
+    return color;
+};
+
+export class LinkPopover extends Component {
+    static template = "html_editor.linkPopover";
+    static props = {
+        document: t.customValidator(t.any(), (p) => p.nodeType === Node.DOCUMENT_NODE),
+        linkElement: t.customValidator(
+            t.any(),
+            (el) => el.nodeType === Node.ELEMENT_NODE,
+        ),
+        onApply: t.function(),
+        onChange: t.function(),
+        onDiscard: t.function(),
+        onRemove: t.function(),
+        onCopy: t.function(),
+        onEdit: t.function(),
+        getInternalMetaData: t.function(),
+        getExternalMetaData: t.function(),
+        getAttachmentMetadata: t.function(),
+        isImage: t.boolean(),
+        showReplaceTitleBanner: t.boolean(),
+        type: t.string(),
+        LinkPopoverState: t.object(),
+        recordInfo: t.object(),
+        canEdit: t.boolean().optional(true),
+        canRemove: t.boolean().optional(true),
+        canUpload: t.boolean().optional(),
+        onUpload: t.function().optional(),
+        allowCustomStyle: t.boolean().optional(),
+        allowTargetBlank: t.boolean().optional(),
+        allowStripDomain: t.boolean().optional(),
+        publicAttachments: t.boolean().optional(),
+        formatColor: t.function().optional(() => formatColor),
+    };
+    static components = { CheckBox };
+    props = useProps(this.constructor.props);
+    colorsData = [
+        { type: "", label: _t("Link"), btnPreview: "link" },
+        { type: "primary", label: _t("Button Primary"), btnPreview: "primary" },
+        { type: "secondary", label: _t("Button Secondary"), btnPreview: "secondary" },
+        { type: "custom", label: _t("Custom"), btnPreview: "custom" },
+    ];
+    buttonSizesData = [
+        { size: "sm", label: _t("Small") },
+        { size: "", label: _t("Medium") },
+        { size: "lg", label: _t("Large") },
+    ];
+    borderData = [
+        { style: "solid", label: "━━━" },
+        { style: "dashed", label: "╌╌╌" },
+        { style: "dotted", label: "┄┄┄" },
+        { style: "double", label: "═══" },
+    ];
+    buttonShapeData = [
+        { shape: "", label: "Default" },
+        { shape: "rounded-circle", label: "Default + Rounded" },
+        { shape: "outline", label: "Outline" },
+        { shape: "outline rounded-circle", label: "Outline + Rounded" },
+        { shape: "fill", label: "Fill" },
+        { shape: "fill rounded-circle", label: "Fill + Rounded" },
+        { shape: "flat", label: "Flat" },
+    ];
+    setup() {
+        this.ui = useService("ui");
+        this.notificationService = useService("notification");
+        this.uploadService = useService("uploadLocalFiles");
+
+        const linkElement = this.props.linkElement;
+        const textContent = cleanZWChars(linkElement.textContent);
+        const labelEqualsUrl =
+            textContent === linkElement.getAttribute("href") ||
+            textContent + "/" === linkElement.getAttribute("href");
+
+        const computedStyle =
+            this.props.document.defaultView.getComputedStyle(linkElement);
+        const currentRelValues = linkElement.rel.split(" ");
+        this.state = proxy({
+            editing: this.props.LinkPopoverState.editing,
+            url: linkElement.getAttribute("href") || this.deduceUrl(textContent),
+            label: labelEqualsUrl ? "" : textContent,
+            previewIcon: {
+                /** @type {'fa'|'imgSrc'|'mimetype'} */
+                type: "fa",
+                value: "fa-globe",
+            },
+            urlTitle: "",
+            urlDescription: "",
+            linkPreviewName: "",
+            imgSrc: "",
+            type:
+                this.props.type ||
+                linkElement.className
+                    .match(/btn(-[a-z0-9_-]*)(primary|secondary|custom)/)
+                    ?.pop() ||
+                "",
+            linkTarget: linkElement.target === "_blank" ? "_blank" : "",
+            directDownload: true,
+            isDocument: false,
+            buttonSize: linkElement.className.match(/btn-(sm|lg)/)?.[1] || "",
+            buttonShape: this.getButtonShape(),
+            customBorderSize: computedStyle.borderWidth.replace("px", "") || "0",
+            customBorderStyle: computedStyle.borderStyle || "solid",
+            isImage: this.props.isImage,
+            showReplaceTitleBanner: this.props.showReplaceTitleBanner,
+            showLabel: !linkElement.childElementCount,
+            stripDomain: true,
+            showAdvancedOptions: false,
+            relAttributeOptions: {
+                nofollow: {
+                    label: "nofollow",
+                    description: _t("Tells search engines not to follow this link"),
+                    isChecked: currentRelValues.includes("nofollow"),
+                },
+                noreferrer: {
+                    label: "noreferrer",
+                    description: _t(
+                        "Removes referrer information sent to the target site",
+                    ),
+                    isChecked: currentRelValues.includes("noreferrer"),
+                },
+                sponsored: {
+                    label: "sponsored",
+                    description: _t("Indicates the link is sponsored or paid content"),
+                    isChecked: currentRelValues.includes("sponsored"),
+                },
+                noopener: {
+                    label: "noopener",
+                    description: _t(
+                        "Prevents the new page from accessing the original window (security)",
+                    ),
+                    isChecked: currentRelValues.includes("noopener"),
+                },
+            },
+        });
+
+        const getTargetedElements = () => [this.props.linkElement];
+        this.customTextColorState = proxy({
+            selectedColor: computedStyle.color || DEFAULT_CUSTOM_TEXT_COLOR,
+            defaultTab: "solid",
+            getTargetedElements,
+            mode: "color",
+        });
+        this.customTextResetPreviewColor = this.customTextColorState.selectedColor;
+        this.customFillColorState = proxy({
+            selectedColor:
+                (computedStyle.backgroundImage === "none"
+                    ? undefined
+                    : computedStyle.backgroundImage) ||
+                computedStyle.backgroundColor ||
+                DEFAULT_CUSTOM_FILL_COLOR,
+            defaultTab: "solid",
+            getTargetedElements,
+            mode: "background-color",
+        });
+        this.customFillResetPreviewColor = this.customFillColorState.selectedColor;
+        this.customBorderColorState = proxy({
+            selectedColor: computedStyle.borderColor || DEFAULT_CUSTOM_TEXT_COLOR,
+            defaultTab: "solid",
+            getTargetedElements,
+            mode: "border-color",
+        });
+        this.customBorderResetPreviewColor = this.customBorderColorState.selectedColor;
+
+        if (this.props.allowCustomStyle) {
+            const createCustomColorPicker = (ref, colorStateRef, resetValueRef) =>
+                useColorPicker(
+                    ref,
+                    {
+                        state: this[colorStateRef],
+                        enabledTabs:
+                            colorStateRef === "customFillColorState"
+                                ? ["solid", "custom", "gradient"]
+                                : ["solid", "custom"],
+                        getUsedCustomColors: () => [],
+                        colorPrefix: "",
+                        cssVarColorPrefix: "hb-cp-",
+                        applyColor: (colorValue) => {
+                            this[colorStateRef].selectedColor = colorValue;
+                            this[resetValueRef] = colorValue;
+                        },
+                        applyColorPreview: (colorValue) => {
+                            this[colorStateRef].selectedColor = colorValue;
+                            this.onChange();
+                        },
+                        applyColorResetPreview: () => {
+                            this[colorStateRef].selectedColor = this[resetValueRef];
+                            this.onChange();
+                        },
+                    },
+                    {
+                        pluginManager: this.__owl__.pluginManager,
+                        sequence: 1051,
+                    },
+                );
+            this.customTextColorPicker = createCustomColorPicker(
+                (this.customTextColorButtonRef = elementRef()),
+                "customTextColorState",
+                "customTextResetPreviewColor",
+            );
+            this.customFillColorPicker = createCustomColorPicker(
+                (this.customFillColorButtonRef = elementRef()),
+                "customFillColorState",
+                "customFillResetPreviewColor",
+            );
+            this.customBorderColorPicker = createCustomColorPicker(
+                (this.customBorderColorButtonRef = elementRef()),
+                "customBorderColorState",
+                "customBorderResetPreviewColor",
+            );
+        }
+        this.updateDocumentState();
+        this.editingWrapper = elementRef();
+        this.urlRef = elementRef();
+        this.labelRef = elementRef();
+        this.inputRef =
+            this.state.isImage || (this.state.label && !this.state.url)
+                ? this.urlRef
+                : this.labelRef;
+        useLayoutEffect(
+            (el) => {
+                if (el) {
+                    el.focus();
+                }
+            },
+            () => [this.inputRef.el],
+        );
+        if (!this.state.editing) {
+            this.loadAsyncLinkPreview();
+        }
+        const onPointerDown = (ev) => {
+            if (this.state.isImage) {
+                return;
+            }
+            this.state.url ||= "#";
+            if (
+                this.editingWrapper?.el &&
+                !this.editingWrapper.el.contains(ev.target)
+            ) {
+                this.onClickApply();
+            }
+        };
+        useMountedListener(this.props.document, "pointerdown", onPointerDown);
+        if (this.props.document !== document) {
+            useMountedListener(document, "pointerdown", onPointerDown);
+        }
+    }
+
+    toggleAdvancedOptions() {
+        this.state.showAdvancedOptions = !this.state.showAdvancedOptions;
+    }
+
+    toggleRelAttr(attr) {
+        const option = this.state.relAttributeOptions[attr];
+        option.isChecked = !option.isChecked;
+    }
+
+    discard() {
+        this.props.onDiscard();
+        this.cancelUpload?.();
+    }
+
+    onChange() {
+        this.props.onChange(
+            this.state.url,
+            this.state.label,
+            this.classes,
+            this.customStyles,
+            this.state.linkTarget,
+            this.state.attachmentId,
+        );
+        this.updateDocumentState();
+    }
+    onClickApply() {
+        const relOptions = this.state.relAttributeOptions;
+        const relValue = Object.keys(relOptions)
+            .filter((key) => relOptions[key].isChecked)
+            .join(" ");
+        this.state.editing = false;
+        this.applyDeducedUrl();
+        this.props.onApply(
+            this.state.url,
+            this.state.label,
+            this.classes,
+            this.customStyles,
+            this.state.linkTarget,
+            this.state.attachmentId,
+            relValue,
+        );
+    }
+    applyDeducedUrl() {
+        if (this.state.label === "") {
+            this.state.label = this.state.url;
+        }
+        const deducedUrl = this.deduceUrl(this.state.url);
+        this.state.url = deducedUrl
+            ? this.correctLink(deducedUrl)
+            : this.correctLink(this.state.url);
+        if (
+            this.props.allowStripDomain &&
+            this.state.stripDomain &&
+            this.isAbsoluteURLInCurrentDomain()
+        ) {
+            const urlObj = new URL(this.state.url, window.location.origin);
+            this.state.url = this.state.url.replace(urlObj.origin, "");
+        }
+    }
+    onClickEdit() {
+        this.state.editing = true;
+        this.props.onEdit();
+        this.updateUrlAndLabel();
+    }
+    updateUrlAndLabel() {
+        this.state.url = this.props.linkElement.getAttribute("href");
+
+        const textContent = cleanZWChars(this.props.linkElement.textContent);
+        const labelEqualsUrl =
+            textContent === this.props.linkElement.getAttribute("href") ||
+            textContent + "/" === this.props.linkElement.getAttribute("href");
+        this.state.label = labelEqualsUrl ? "" : textContent;
+    }
+    async onClickCopy(ev) {
+        ev.preventDefault();
+        await browser.navigator.clipboard.writeText(this.props.linkElement.href || "");
+        this.notificationService.add(_t("Link copied to clipboard."), {
+            type: "success",
+        });
+        this.props.onCopy();
+    }
+    onClickRemove() {
+        this.props.onRemove();
+    }
+
+    onKeydownEnter(ev) {
+        const isAutoCompleteDropdownOpen = document.querySelector(
+            ".o-autocomplete--dropdown-menu",
+        );
+        if (ev.key === "Enter" && !isAutoCompleteDropdownOpen && this.state.url) {
+            ev.preventDefault();
+            this.onClickApply();
+        }
+    }
+
+    onKeydown(ev) {
+        if (ev.key === "Escape") {
+            ev.preventDefault();
+            ev.stopImmediatePropagation();
+            this.onClickApply();
+        } else if (ev.key === "Tab") {
+            ev.preventDefault();
+            const focusableElements = [
+                ...this.editingWrapper.el.querySelectorAll(
+                    "input, select, button:not([disabled])",
+                ),
+            ];
+            const currentIndex = focusableElements.indexOf(document.activeElement);
+            const nextIndex =
+                (currentIndex + (ev.shiftKey ? -1 : 1) + focusableElements.length) %
+                focusableElements.length;
+            focusableElements[nextIndex].focus();
+        }
+    }
+
+    onInput() {
+        this.onChange();
+    }
+
+    onClickReplaceTitle() {
+        this.state.label = this.state.urlTitle;
+        this.onClickApply();
+    }
+
+    onClickDirectDownload(checked) {
+        this.state.directDownload = checked;
+        this.state.url = this.state.url.replace("&download=true", "");
+        if (this.state.directDownload) {
+            this.state.url += "&download=true";
+        }
+    }
+
+    onClickNewWindow(checked) {
+        this.state.linkTarget = checked ? "_blank" : "";
+        if (!checked) {
+            this.state.relAttributeOptions.noopener.isChecked = false;
+        }
+    }
+
+    onClickStripDomain(checked) {
+        this.state.stripDomain = checked;
+    }
+
+    /**
+     * @private
+     */
+    async updateDocumentState() {
+        const url = this.state.url;
+        const urlObject = URL.parse(url, document.URL);
+        if (
+            url &&
+            (url.startsWith("/web/content/") ||
+                (urlObject &&
+                    urlObject.pathname.startsWith("/web/content") &&
+                    urlObject.host === document.location.host))
+        ) {
+            const { type } = await this.props.getAttachmentMetadata(url);
+            this.state.isDocument = type !== "url";
+            this.state.directDownload = url.includes("&download=true");
+        } else {
+            this.state.isDocument = false;
+            this.state.directDownload = true;
+        }
+    }
+    correctLink(url) {
+        if (
+            url &&
+            !url.startsWith("tel:") &&
+            !url.startsWith("mailto:") &&
+            !url.includes("://") &&
+            !url.startsWith("/") &&
+            !url.startsWith("#") &&
+            !url.startsWith("${")
+        ) {
+            url = "https://" + url;
+        }
+        if (url && (url.startsWith("http:") || url.startsWith("https:"))) {
+            url = URL.parse(url) ? url : "";
+        }
+        return url;
+    }
+    deduceUrl(text) {
+        text = text.trim();
+        if (/^(https?:|mailto:|tel:)/.test(text)) {
+            return text;
+        } else {
+            return deduceURLfromText(text, this.props.linkElement) || "";
+        }
+    }
+    getButtonShape() {
+        const shapeToRegex = (shape) => {
+            const parts = shape.trim().split(/\s+/);
+            const regexParts = parts.map((cls) => {
+                if (["outline", "fill"].includes(cls)) {
+                    cls = `btn-${cls}`;
+                }
+                return `(?=.*\\b${cls}\\b)`;
+            });
+            return { regex: new RegExp(regexParts.join("")), nbParts: parts.length };
+        };
+        let shapeMatched = "";
+        let matchScore = 0;
+        for (const { shape } of this.buttonShapeData) {
+            if (!shape) {
+                continue;
+            }
+            const { regex, nbParts } = shapeToRegex(shape);
+            if (regex.test(this.props.linkElement.className)) {
+                if (matchScore < nbParts) {
+                    matchScore = nbParts;
+                    shapeMatched = shape;
+                }
+            }
+        }
+        return shapeMatched;
+    }
+    resetPreview() {
+        this.state.previewIcon = { type: "fa", value: "fa-globe" };
+        this.state.urlTitle = this.state.url || _t("No URL specified");
+        this.state.urlDescription = "";
+        this.state.linkPreviewName = "";
+    }
+    async loadAsyncLinkPreview() {
+        let url;
+        if (!this.state.url || this.state.url.startsWith("#")) {
+            this.resetPreview();
+            this.state.previewIcon.value = "fa-regular fa-circle-question";
+            return;
+        }
+        if (this.isLogoutUrl()) {
+            this.resetPreview();
+            this.state.urlTitle = _t("Logout");
+            this.state.previewIcon.value = "fa-solid fa-right-from-bracket";
+            return;
+        }
+        if (this.isAttachmentUrl()) {
+            const { name, mimetype } = await this.props.getAttachmentMetadata(
+                this.state.url,
+            );
+            this.resetPreview();
+            this.state.urlTitle = name;
+            this.state.previewIcon = { type: "mimetype", value: mimetype };
+            return;
+        }
+        try {
+            url = new URL(this.state.url, document.URL);
+        } catch {
+            this.notificationService.add(
+                _t("This URL is invalid. Preview couldn't be updated."),
+                {
+                    type: "danger",
+                },
+            );
+            return;
+        }
+        this.resetPreview();
+        const protocol = url.protocol;
+        if (!protocol.startsWith("http")) {
+            const faMap = {
+                "mailto:": "fa-regular fa-envelope",
+                "tel:": "fa-solid fa-phone",
+            };
+            const icon = faMap[protocol];
+            if (icon) {
+                this.state.previewIcon.value = icon;
+            }
+        } else if (
+            window.location.hostname !== url.hostname &&
+            !new RegExp(`^https?://${session.db}\\.odoo\\.com(/.*)?$`).test(url.origin)
+        ) {
+            this.state.previewIcon = {
+                type: "imgSrc",
+                value: `https://www.google.com/s2/favicons?sz=16&domain=${encodeURIComponent(url)}`,
+            };
+
+            const externalMetadata = await this.props
+                .getExternalMetaData(this.state.url)
+                .catch((error) => {
+                    console.warn(
+                        `Error fetching external metadata for ${url.href}:`,
+                        error,
+                    );
+                    return {};
+                });
+
+            this.state.urlTitle = externalMetadata?.og_title || this.state.url;
+            this.state.urlDescription = externalMetadata?.og_description || "";
+            this.state.imgSrc = externalMetadata?.og_image || "";
+            if (
+                externalMetadata?.og_image &&
+                this.state.label &&
+                this.state.urlTitle === this.state.url
+            ) {
+                this.state.urlTitle = this.state.label;
+            }
+        } else {
+            const internalMetadata = await this.props
+                .getInternalMetaData(url.href)
+                .catch((error) => {
+                    if (!session.test_mode) {
+                        console.warn(
+                            `Error fetching internal metadata for ${url.href}:`,
+                            error,
+                        );
+                    }
+                    return {};
+                });
+            if (internalMetadata.favicon) {
+                this.state.previewIcon = {
+                    type: "imgSrc",
+                    value: internalMetadata.favicon.href,
+                };
+            }
+            if (internalMetadata.error_msg) {
+                this.notificationService.add(internalMetadata.error_msg, {
+                    type: "warning",
+                });
+            } else if (internalMetadata.other_error_msg) {
+                console.error(
+                    "Internal meta data retrieve error for link preview: " +
+                        internalMetadata.other_error_msg,
+                );
+            } else {
+                this.state.linkPreviewName =
+                    internalMetadata.link_preview_name ||
+                    internalMetadata.display_name ||
+                    internalMetadata.name;
+                this.state.urlDescription = internalMetadata?.description || "";
+                this.state.urlTitle = this.state.linkPreviewName
+                    ? this.state.linkPreviewName
+                    : this.state.url;
+            }
+
+            if (
+                (internalMetadata.ogTitle || internalMetadata.title) &&
+                !this.state.linkPreviewName
+            ) {
+                this.state.urlTitle = internalMetadata.ogTitle
+                    ? internalMetadata.ogTitle.getAttribute("content")
+                    : internalMetadata.title.text.trim();
+            }
+        }
+    }
+
+    get classes() {
+        const classes = [...this.props.linkElement.classList].filter(
+            (value) =>
+                !value.match(
+                    /^(btn.*|rounded-circle|flat|(text|bg)-(o-color-\d$|\d{3}$))$/,
+                ),
+        );
+
+        let stylePrefix = "";
+        if (this.state.type) {
+            if (this.state.buttonSize) {
+                classes.push(`btn-${this.state.buttonSize}`);
+            }
+
+            if (this.state.buttonShape) {
+                const buttonShape = this.state.buttonShape.split(" ");
+                if (["outline", "fill"].includes(buttonShape[0])) {
+                    stylePrefix = `${buttonShape[0]}-`;
+                }
+                classes.push(buttonShape.slice(stylePrefix ? 1 : 0).join(" "));
+            }
+
+            classes.push(`btn`, `btn-${stylePrefix}${this.state.type}`);
+        }
+
+        const textColor = this.customTextColorState.selectedColor;
+        if (isCSSVariable(textColor)) {
+            classes.push(`text-${textColor}`);
+        }
+
+        const fillColor = this.customFillColorState.selectedColor;
+        if (isCSSVariable(fillColor)) {
+            classes.push(`bg-${fillColor}`);
+        }
+
+        return classes.filter(Boolean).join(" ");
+    }
+
+    get customStyles() {
+        if (!this.props.allowCustomStyle || this.state.type !== "custom") {
+            return false;
+        }
+        let customStyles = "";
+
+        const textColor = this.customTextColorState.selectedColor;
+        if (!isCSSVariable(textColor)) {
+            customStyles += `color: ${textColor}; `;
+        }
+
+        const fillColor = this.customFillColorState.selectedColor;
+        if (!isCSSVariable(fillColor)) {
+            const backgroundProperty = fillColor.includes("gradient")
+                ? "background-image"
+                : "background-color";
+            customStyles += `${backgroundProperty}: ${fillColor}; `;
+        }
+
+        const borderColor = this.customBorderColorState.selectedColor;
+        customStyles += `border-width: ${this.state.customBorderSize}px; `;
+        customStyles += `border-color: ${formatColor(borderColor)}; `;
+        customStyles += `border-style: ${this.state.customBorderStyle}; `;
+
+        return customStyles;
+    }
+
+    async uploadFile() {
+        const { upload, getURL } = this.uploadService;
+        const { resModel, resId } = this.props.recordInfo;
+        const setAbortCallback = (abortFn) => {
+            this.cancelUpload = abortFn;
+        };
+        const [attachment] = await upload(
+            { resModel, resId },
+            { accessToken: true, setAbortCallback },
+        );
+        delete this.cancelUpload;
+        if (!attachment) {
+            return;
+        }
+        this.props.onUpload?.(attachment);
+        this.state.url = getURL(attachment, {
+            download: true,
+            unique: true,
+            accessToken: true,
+        });
+        this.state.label ||= attachment.name;
+        this.state.attachmentId = attachment.id;
+        this.onChange();
+    }
+
+    isLogoutUrl() {
+        return !!this.state.url.match(/\/web\/session\/logout\b/);
+    }
+    isAttachmentUrl() {
+        return !!this.state.url.match(/\/web\/content\/\d+/);
+    }
+    /**
+     * @private
+     * @returns {boolean}
+     */
+    isAbsoluteURLInCurrentDomain() {
+        let hasProtocol;
+        try {
+            hasProtocol = !!new URL(this.state.url).protocol;
+        } catch {
+            hasProtocol = false;
+        }
+        if (!hasProtocol) {
+            return false;
+        }
+
+        const urlObj = new URL(this.state.url, window.location.origin);
+        return (
+            urlObj.origin === window.location.origin ||
+            new RegExp(`^https?://${session.db}\\.odoo\\.com(/.*)?$`).test(
+                urlObj.origin,
+            )
+        );
+    }
+}

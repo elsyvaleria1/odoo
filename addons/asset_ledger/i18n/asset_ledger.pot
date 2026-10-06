@@ -1,0 +1,1434 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* asset_ledger
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-09-27 05:12+0000\n"
+"PO-Revision-Date: 2026-09-27 05:12+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: asset_ledger
+#: model:product.attribute.value,name:asset_ledger.displacement_1
+msgid "1 cylinder"
+msgstr ""
+
+#. module: asset_ledger
+#: model:product.attribute.value,name:asset_ledger.displacement_10
+msgid "10 cylinders"
+msgstr ""
+
+#. module: asset_ledger
+#: model:product.attribute.value,name:asset_ledger.displacement_2
+msgid "2 cylinders"
+msgstr ""
+
+#. module: asset_ledger
+#: model:product.attribute.value,name:asset_ledger.displacement_3
+msgid "3 cylinders"
+msgstr ""
+
+#. module: asset_ledger
+#: model:product.attribute.value,name:asset_ledger.displacement_4
+msgid "4 cylinders"
+msgstr ""
+
+#. module: asset_ledger
+#: model:product.template,name:asset_ledger.product_product_tractor_5075e_product_template
+msgid "5075E Utility Tractor"
+msgstr ""
+
+#. module: asset_ledger
+#: model:product.attribute.value,name:asset_ledger.displacement_6
+msgid "6 cylinders"
+msgstr ""
+
+#. module: asset_ledger
+#: model:product.attribute.value,name:asset_ledger.displacement_8
+msgid "8 cylinders"
+msgstr ""
+
+#. module: asset_ledger
+#: model_terms:ir.ui.view,arch_db:asset_ledger.resource_asset_view_kanban_general
+#: model_terms:ir.ui.view,arch_db:asset_ledger.resource_asset_view_kanban_property
+msgid "<i class=\"fa-regular fa-pen-to-square me-1\" title=\"Edit\"/> Edit"
+msgstr ""
+
+#. module: asset_ledger
+#: model_terms:ir.ui.view,arch_db:asset_ledger.resource_asset_view_kanban_general
+msgid "<i class=\"fa-solid fa-barcode me-1\" title=\"Serial Number\"/>Serial Number"
+msgstr ""
+
+#. module: asset_ledger
+#: model_terms:ir.ui.view,arch_db:asset_ledger.resource_asset_view_kanban_fleet
+msgid "<i class=\"fa-solid fa-gauge-high me-1\" title=\"Odometer\"/>"
+msgstr ""
+
+#. module: asset_ledger
+#: model_terms:ir.ui.view,arch_db:asset_ledger.resource_asset_view_kanban_general
+msgid "<i class=\"fa-solid fa-gauge-high me-1\" title=\"Odometer\"/> Hours/KM"
+msgstr ""
+
+#. module: asset_ledger
+#: model_terms:ir.ui.view,arch_db:asset_ledger.resource_asset_view_kanban_fleet
+msgid "<i class=\"fa-solid fa-location-dot me-1\" title=\"Location\"/>"
+msgstr ""
+
+#. module: asset_ledger
+#: model_terms:ir.ui.view,arch_db:asset_ledger.resource_asset_view_kanban_property
+msgid "<i class=\"fa-solid fa-location-dot me-1\" title=\"Location\"/>Address"
+msgstr ""
+
+#. module: asset_ledger
+#: model_terms:ir.ui.view,arch_db:asset_ledger.resource_asset_view_kanban_general
+msgid "<i class=\"fa-solid fa-location-dot me-1\" title=\"Location\"/>Location"
+msgstr ""
+
+#. module: asset_ledger
+#: model_terms:ir.ui.view,arch_db:asset_ledger.resource_asset_view_kanban_property
+msgid "<i class=\"fa-solid fa-maximize me-1\" title=\"Area\"/> Area"
+msgstr ""
+
+#. module: asset_ledger
+#: model_terms:ir.ui.view,arch_db:asset_ledger.resource_asset_view_kanban_general
+msgid "<i class=\"fa-solid fa-user me-1\" title=\"Holder\"/>Holder"
+msgstr ""
+
+#. module: asset_ledger
+#: model_terms:ir.ui.view,arch_db:asset_ledger.resource_asset_view_kanban_general
+msgid "<i class=\"fa-solid fa-wrench me-1\" title=\"Service\"/> Services"
+msgstr ""
+
+#. module: asset_ledger
+#: model_terms:ir.ui.view,arch_db:asset_ledger.resource_asset_view_kanban_general
+msgid "<i class=\"fa-solid fa-wrench me-1\" title=\"Service\"/>Service Overdue"
+msgstr ""
+
+#. module: asset_ledger
+#: model_terms:ir.ui.view,arch_db:asset_ledger.resource_asset_view_kanban_general
+msgid "<i class=\"fa-solid fa-wrench me-1\" title=\"Service\"/>Service Today"
+msgstr ""
+
+#. module: asset_ledger
+#: model_terms:ir.ui.view,arch_db:asset_ledger.view_form_product_asset_log
+msgid "<span class=\"ms-2\">L</span>"
+msgstr ""
+
+#. module: asset_ledger
+#: model_terms:ir.ui.view,arch_db:asset_ledger.resource_asset_view_form_ledger
+msgid "<span>This asset's kind requires identifiers it does not carry:</span>"
+msgstr ""
+
+#. module: asset_ledger
+#: model:ir.model.fields,field_description:asset_ledger.field_account_depreciation_board__account_prefix
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset__account_prefix
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_device__account_prefix
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_equipment__account_prefix
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_furniture__account_prefix
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_it__account_prefix
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_machinery__account_prefix
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_property__account_prefix
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_room__account_prefix
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_telecom__account_prefix
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_vehicle__account_prefix
+#: model:ir.model.fields,field_description:asset_ledger.field_product_trace__account_prefix
+msgid "Account Prefix"
+msgstr ""
+
+#. module: asset_ledger
+#: model_terms:ir.ui.view,arch_db:asset_ledger.resource_asset_view_kanban_property
+msgid "Acquisition Date"
+msgstr ""
+
+#. module: asset_ledger
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_tag__active
+msgid "Active"
+msgstr ""
+
+#. module: asset_ledger
+#: model_terms:ir.actions.act_window,help:asset_ledger.action_resource_asset_tag
+msgid "Add a new asset tag"
+msgstr ""
+
+#. module: asset_ledger
+#: model:res.groups,name:asset_ledger.group_asset_manager
+msgid "Administrator"
+msgstr ""
+
+#. module: asset_ledger
+#: model:product.template,name:asset_ledger.product_product_farmland_product_template
+msgid "Agricultural Farmland"
+msgstr ""
+
+#. module: asset_ledger
+#: model:ir.actions.act_window,name:asset_ledger.action_resource_asset_all
+#: model:ir.ui.menu,name:asset_ledger.menu_all_assets
+msgid "All Assets"
+msgstr ""
+
+#. module: asset_ledger
+#: model:ir.ui.menu,name:asset_ledger.menu_property_all
+msgid "All Properties"
+msgstr ""
+
+#. module: asset_ledger
+#: model:ir.ui.menu,name:asset_ledger.menu_general_service_logs
+msgid "All Service Logs"
+msgstr ""
+
+#. module: asset_ledger
+#: model:res.groups,name:asset_ledger.group_enable_equipment_assets
+#: model:res.groups,name:asset_ledger.group_enable_fleet_assets
+#: model:res.groups,name:asset_ledger.group_enable_it_assets
+#: model:res.groups,name:asset_ledger.group_enable_machinery_assets
+#: model:res.groups,name:asset_ledger.group_enable_property_assets
+#: model:res.groups,name:asset_ledger.group_enable_tools
+msgid "Allow"
+msgstr ""
+
+#. module: asset_ledger
+#: model:ir.model.fields,help:asset_ledger.field_resource_asset_tag__active
+msgid "Archive a tag to hide it without deleting it."
+msgstr ""
+
+#. module: asset_ledger
+#: model_terms:ir.ui.view,arch_db:asset_ledger.resource_asset_tag_view_search
+#: model_terms:ir.ui.view,arch_db:asset_ledger.resource_asset_view_search_asset
+#: model_terms:ir.ui.view,arch_db:asset_ledger.view_form_product_asset_log
+#: model_terms:ir.ui.view,arch_db:asset_ledger.view_search_product_asset_log
+msgid "Archived"
+msgstr ""
+
+#. module: asset_ledger
+#: model:ir.model.fields,field_description:asset_ledger.field_account_depreciation_board__area
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset__area
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_device__area
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_equipment__area
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_furniture__area
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_it__area
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_machinery__area
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_property__area
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_room__area
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_telecom__area
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_vehicle__area
+#: model:ir.model.fields,field_description:asset_ledger.field_product_trace__area
+msgid "Area"
+msgstr ""
+
+#. module: asset_ledger
+#: model_terms:ir.ui.view,arch_db:asset_ledger.resource_asset_view_list_property
+msgid "Area (m²)"
+msgstr ""
+
+#. module: asset_ledger
+#: model:ir.model.fields,field_description:asset_ledger.field_account_depreciation_board__area_uom_name
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset__area_uom_name
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_device__area_uom_name
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_equipment__area_uom_name
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_furniture__area_uom_name
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_it__area_uom_name
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_machinery__area_uom_name
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_property__area_uom_name
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_room__area_uom_name
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_telecom__area_uom_name
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_vehicle__area_uom_name
+msgid "Area Unit"
+msgstr ""
+
+#. module: asset_ledger
+#: model_terms:ir.ui.view,arch_db:asset_ledger.resource_asset_view_search_asset
+#: model_terms:ir.ui.view,arch_db:asset_ledger.view_search_product_asset_log
+msgid "Asset"
+msgstr ""
+
+#. module: asset_ledger
+#: model_terms:ir.ui.view,arch_db:asset_ledger.view_product_template_form_asset
+msgid "Asset Information"
+msgstr ""
+
+#. module: asset_ledger
+#: model:ir.model.fields,field_description:asset_ledger.field_account_depreciation_board__location
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset__location
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_device__location
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_equipment__location
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_furniture__location
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_it__location
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_machinery__location
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_property__location
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_room__location
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_telecom__location
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_vehicle__location
+#: model:ir.model.fields,field_description:asset_ledger.field_product_trace__location
+msgid "Asset Location"
+msgstr ""
+
+#. module: asset_ledger
+#: model_terms:ir.ui.view,arch_db:asset_ledger.view_form_product_asset_log
+msgid "Asset Log"
+msgstr ""
+
+#. module: asset_ledger
+#: model:ir.actions.act_window,name:asset_ledger.action_product_asset_log
+#: model_terms:ir.ui.view,arch_db:asset_ledger.view_list_product_asset_log
+#: model_terms:ir.ui.view,arch_db:asset_ledger.view_product_category_form_inherit_asset
+#: model_terms:ir.ui.view,arch_db:asset_ledger.view_search_product_asset_log
+msgid "Asset Logs"
+msgstr ""
+
+#. module: asset_ledger
+#: model:res.groups.privilege,name:asset_ledger.res_groups_privilege_asset_management
+msgid "Asset Management"
+msgstr ""
+
+#. module: asset_ledger
+#: model_terms:ir.ui.view,arch_db:asset_ledger.resource_asset_view_form_ledger
+#: model_terms:ir.ui.view,arch_db:asset_ledger.resource_asset_view_list_general
+msgid "Asset Model"
+msgstr ""
+
+#. module: asset_ledger
+#: model_terms:ir.ui.view,arch_db:asset_ledger.view_activity_product_asset_log
+msgid "Asset Services"
+msgstr ""
+
+#. module: asset_ledger
+#: model:ir.model,name:asset_ledger.model_resource_asset_tag
+msgid "Asset Tag"
+msgstr ""
+
+#. module: asset_ledger
+#: model:ir.actions.act_window,name:asset_ledger.action_resource_asset_tag
+#: model:ir.model.fields,field_description:asset_ledger.field_account_depreciation_board__asset_tag_ids
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset__asset_tag_ids
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_device__asset_tag_ids
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_equipment__asset_tag_ids
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_furniture__asset_tag_ids
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_it__asset_tag_ids
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_machinery__asset_tag_ids
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_property__asset_tag_ids
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_room__asset_tag_ids
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_telecom__asset_tag_ids
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_vehicle__asset_tag_ids
+#: model:ir.ui.menu,name:asset_ledger.menu_asset_tags
+#: model_terms:ir.ui.view,arch_db:asset_ledger.resource_asset_tag_view_list
+#: model_terms:ir.ui.view,arch_db:asset_ledger.resource_asset_tag_view_search
+msgid "Asset Tags"
+msgstr ""
+
+#. module: asset_ledger
+#: model:ir.ui.menu,name:asset_ledger.menu_general_asset_templates
+msgid "Asset Templates"
+msgstr ""
+
+#. module: asset_ledger
+#: model_terms:ir.ui.view,arch_db:asset_ledger.resource_asset_view_search_asset
+#: model_terms:ir.ui.view,arch_db:asset_ledger.view_product_template_search_asset
+msgid "Asset Type"
+msgstr ""
+
+#. module: asset_ledger
+#: model:ir.actions.act_window,name:asset_ledger.action_product_template_asset
+#: model:ir.module.category,name:asset_ledger.module_category_asset_management
+#: model:ir.ui.menu,name:asset_ledger.menu_general_assets_root
+#: model_terms:ir.ui.view,arch_db:asset_ledger.resource_asset_view_list_general
+#: model_terms:ir.ui.view,arch_db:asset_ledger.resource_asset_view_search_asset
+msgid "Assets"
+msgstr ""
+
+#. module: asset_ledger
+#: model:ir.actions.server,name:asset_ledger.ir_cron_refresh_service_activity_ir_actions_server
+msgid "Assets: roll the service activity flag over to today"
+msgstr ""
+
+#. module: asset_ledger
+#: model:product.attribute.value,name:asset_ledger.transmission_automatic
+msgid "Automatic"
+msgstr ""
+
+#. module: asset_ledger
+#: model:ir.model.fields,field_description:asset_ledger.field_product_trace__brand_new
+msgid "Brand New"
+msgstr ""
+
+#. module: asset_ledger
+#: model:product.attribute.value,name:asset_ledger.fuel_type_cng
+msgid "CNG"
+msgstr ""
+
+#. module: asset_ledger
+#: model:ir.model.fields,field_description:asset_ledger.field_product_trace__cadastral_id
+msgid "Cadastral ID"
+msgstr ""
+
+#. module: asset_ledger
+#: model:res.groups,comment:asset_ledger.group_asset_user
+msgid ""
+"Can view, create, and edit all asset types. Cannot delete or\n"
+"            configure."
+msgstr ""
+
+#. module: asset_ledger
+#: model_terms:ir.ui.view,arch_db:asset_ledger.view_form_product_asset_log
+msgid "Cancel"
+msgstr ""
+
+#. module: asset_ledger
+#: model_terms:ir.ui.view,arch_db:asset_ledger.view_product_template_form_asset
+msgid "Capacity Specifications"
+msgstr ""
+
+#. module: asset_ledger
+#: model:ir.ui.menu,name:asset_ledger.menu_general_catalog
+#: model:ir.ui.menu,name:asset_ledger.menu_property_catalog
+msgid "Catalog"
+msgstr ""
+
+#. module: asset_ledger
+#: model_terms:ir.ui.view,arch_db:asset_ledger.view_search_product_asset_log
+msgid "Category"
+msgstr ""
+
+#. module: asset_ledger
+#: model:product.template,name:asset_ledger.product_product_civic_product_template
+msgid "Civic LX"
+msgstr ""
+
+#. module: asset_ledger
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_tag__code
+#: model:ir.model.fields,field_description:asset_ledger.field_product_trace__kind_code
+msgid "Code"
+msgstr ""
+
+#. module: asset_ledger
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_tag__color
+msgid "Color"
+msgstr ""
+
+#. module: asset_ledger
+#: model:product.template,name:asset_ledger.product_product_office_building_product_template
+msgid "Commercial Office Building"
+msgstr ""
+
+#. module: asset_ledger
+#: model:ir.module.category,description:asset_ledger.module_category_asset_management
+msgid "Comprehensive asset tracking and management"
+msgstr ""
+
+#. module: asset_ledger
+#. odoo-python
+#: code:addons/asset_ledger/migrations/19.0.1.36.0/post-migration.py:0
+msgid ""
+"Contract %(name)s (%(state)s), %(start)s to %(end)s, amount %(amount)s. "
+"Assets no longer track contracts as ledger entries; file it as a document of"
+" this asset, with its expiry date."
+msgstr ""
+
+#. module: asset_ledger
+#: model:ir.model.fields,field_description:asset_ledger.field_account_depreciation_board__count_logs_all
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset__count_logs_all
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_device__count_logs_all
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_equipment__count_logs_all
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_furniture__count_logs_all
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_it__count_logs_all
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_machinery__count_logs_all
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_property__count_logs_all
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_room__count_logs_all
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_telecom__count_logs_all
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_vehicle__count_logs_all
+msgid "Count Logs All"
+msgstr ""
+
+#. module: asset_ledger
+#: model:ir.model.fields,field_description:asset_ledger.field_account_depreciation_board__count_logs_assignment
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset__count_logs_assignment
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_device__count_logs_assignment
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_equipment__count_logs_assignment
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_furniture__count_logs_assignment
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_it__count_logs_assignment
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_machinery__count_logs_assignment
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_property__count_logs_assignment
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_room__count_logs_assignment
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_telecom__count_logs_assignment
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_vehicle__count_logs_assignment
+msgid "Count Logs Assignment"
+msgstr ""
+
+#. module: asset_ledger
+#: model:ir.model.fields,field_description:asset_ledger.field_account_depreciation_board__count_logs_fuel
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset__count_logs_fuel
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_device__count_logs_fuel
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_equipment__count_logs_fuel
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_furniture__count_logs_fuel
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_it__count_logs_fuel
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_machinery__count_logs_fuel
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_property__count_logs_fuel
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_room__count_logs_fuel
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_telecom__count_logs_fuel
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_vehicle__count_logs_fuel
+msgid "Count Logs Fuel"
+msgstr ""
+
+#. module: asset_ledger
+#: model:ir.model.fields,field_description:asset_ledger.field_account_depreciation_board__count_logs_service
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset__count_logs_service
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_device__count_logs_service
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_equipment__count_logs_service
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_furniture__count_logs_service
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_it__count_logs_service
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_machinery__count_logs_service
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_property__count_logs_service
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_room__count_logs_service
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_telecom__count_logs_service
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_vehicle__count_logs_service
+msgid "Count Logs Service"
+msgstr ""
+
+#. module: asset_ledger
+#: model_terms:ir.actions.act_window,help:asset_ledger.action_product_asset_log
+msgid "Create a new log entry"
+msgstr ""
+
+#. module: asset_ledger
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_tag__create_uid
+msgid "Created by"
+msgstr ""
+
+#. module: asset_ledger
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_tag__create_date
+msgid "Created on"
+msgstr ""
+
+#. module: asset_ledger
+#: model:ir.model.fields,field_description:asset_ledger.field_product_trace__currency_id
+msgid "Currency"
+msgstr ""
+
+#. module: asset_ledger
+#: model_terms:ir.ui.view,arch_db:asset_ledger.resource_asset_view_form_ledger
+msgid "Current Odometer"
+msgstr ""
+
+#. module: asset_ledger
+#: model_terms:ir.ui.view,arch_db:asset_ledger.resource_asset_view_form_ledger
+#: model_terms:ir.ui.view,arch_db:asset_ledger.resource_asset_view_kanban_property
+#: model_terms:ir.ui.view,arch_db:asset_ledger.resource_asset_view_list_property
+msgid "Current Value"
+msgstr ""
+
+#. module: asset_ledger
+#: model_terms:ir.ui.view,arch_db:asset_ledger.view_search_product_asset_log
+msgid "Date"
+msgstr ""
+
+#. module: asset_ledger
+#: model:ir.model.fields,field_description:asset_ledger.field_product_trace__date_acquisition
+msgid "Date Acquisition"
+msgstr ""
+
+#. module: asset_ledger
+#: model:ir.model.fields,field_description:asset_ledger.field_product_trace__date_write_off
+msgid "Date Write Off"
+msgstr ""
+
+#. module: asset_ledger
+#: model:ir.model.fields,help:asset_ledger.field_product_trace__date_acquisition
+msgid "Date of asset's registration"
+msgstr ""
+
+#. module: asset_ledger
+#: model:ir.model.fields,help:asset_ledger.field_resource_asset_log__date_start
+msgid "Date this entry's coverage begins"
+msgstr ""
+
+#. module: asset_ledger
+#: model:ir.model.fields,help:asset_ledger.field_resource_asset_log__date_end
+msgid "Date this entry's coverage ends"
+msgstr ""
+
+#. module: asset_ledger
+#: model:ir.model.fields,help:asset_ledger.field_product_trace__date_write_off
+msgid "Date when the asset's license plate has been cancelled/removed."
+msgstr ""
+
+#. module: asset_ledger
+#: model_terms:ir.ui.view,arch_db:asset_ledger.view_form_product_asset_log
+msgid "Dates"
+msgstr ""
+
+#. module: asset_ledger
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_log__days_left
+msgid "Days Left"
+msgstr ""
+
+#. module: asset_ledger
+#: model:ir.model.fields,help:asset_ledger.field_resource_asset_log__days_left
+msgid "Days until the end date. Negative once it has passed."
+msgstr ""
+
+#. module: asset_ledger
+#: model:product.attribute.value,name:asset_ledger.fuel_type_diesel
+msgid "Diesel"
+msgstr ""
+
+#. module: asset_ledger
+#: model:product.attribute.value,name:asset_ledger.fuel_type_diesel_hybrid
+msgid "Diesel hybrid"
+msgstr ""
+
+#. module: asset_ledger
+#: model:product.attribute,name:asset_ledger.product_attribute_displacement
+msgid "Displacement"
+msgstr ""
+
+#. module: asset_ledger
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_tag__display_name
+msgid "Display Name"
+msgstr ""
+
+#. module: asset_ledger
+#: model:ir.model.fields,help:asset_ledger.field_resource_asset_log__efficiency
+msgid ""
+"Distance covered since the previous reading, per litre of fuel. The distance"
+" carries the asset's own odometer unit, so the ratio does too -- read "
+"efficiency_uom_name rather than assuming km/L."
+msgstr ""
+
+#. module: asset_ledger
+#: model_terms:ir.ui.view,arch_db:asset_ledger.view_search_product_asset_log
+msgid "Done"
+msgstr ""
+
+#. module: asset_ledger
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_log__efficiency
+msgid "Efficiency"
+msgstr ""
+
+#. module: asset_ledger
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_log__efficiency_uom_name
+msgid "Efficiency Unit"
+msgstr ""
+
+#. module: asset_ledger
+#: model:product.attribute.value,name:asset_ledger.fuel_type_electric
+msgid "Electric"
+msgstr ""
+
+#. module: asset_ledger
+#: model:product.template,name:asset_ledger.product_product_electric_power_product_template
+msgid "Electric power supply"
+msgstr ""
+
+#. module: asset_ledger
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_log__date_end
+msgid "End Date"
+msgstr ""
+
+#. module: asset_ledger
+#: model:ir.model.fields,field_description:asset_ledger.field_product_trace__engine_sn
+msgid "Engine Serial Number"
+msgstr ""
+
+#. module: asset_ledger
+#: model:ir.actions.act_window,name:asset_ledger.action_resource_asset_general
+#: model:ir.ui.menu,name:asset_ledger.menu_equipment_assets
+#: model_terms:ir.ui.view,arch_db:asset_ledger.view_product_template_search_asset
+msgid "Equipment"
+msgstr ""
+
+#. module: asset_ledger
+#: model:ir.model.fields,help:asset_ledger.field_account_depreciation_board__count_logs_all
+#: model:ir.model.fields,help:asset_ledger.field_resource_asset__count_logs_all
+#: model:ir.model.fields,help:asset_ledger.field_resource_asset_device__count_logs_all
+#: model:ir.model.fields,help:asset_ledger.field_resource_asset_equipment__count_logs_all
+#: model:ir.model.fields,help:asset_ledger.field_resource_asset_furniture__count_logs_all
+#: model:ir.model.fields,help:asset_ledger.field_resource_asset_it__count_logs_all
+#: model:ir.model.fields,help:asset_ledger.field_resource_asset_machinery__count_logs_all
+#: model:ir.model.fields,help:asset_ledger.field_resource_asset_property__count_logs_all
+#: model:ir.model.fields,help:asset_ledger.field_resource_asset_room__count_logs_all
+#: model:ir.model.fields,help:asset_ledger.field_resource_asset_telecom__count_logs_all
+#: model:ir.model.fields,help:asset_ledger.field_resource_asset_vehicle__count_logs_all
+msgid "Every log on this asset, counted in every state."
+msgstr ""
+
+#. module: asset_ledger
+#: model:product.template,name:asset_ledger.product_product_f150_product_template
+msgid "F-150 XLT"
+msgstr ""
+
+#. module: asset_ledger
+#: model_terms:ir.ui.view,arch_db:asset_ledger.resource_asset_view_form_ledger
+msgid "Financial Information"
+msgstr ""
+
+#. module: asset_ledger
+#: model:ir.model.fields.selection,name:asset_ledger.selection__product_category__log_type__fuel
+#: model_terms:ir.ui.view,arch_db:asset_ledger.resource_asset_view_form_ledger
+#: model_terms:ir.ui.view,arch_db:asset_ledger.view_search_product_asset_log
+msgid "Fuel"
+msgstr ""
+
+#. module: asset_ledger
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_log__qty_fuel
+msgid "Fuel Quantity"
+msgstr ""
+
+#. module: asset_ledger
+#: model:ir.model.fields,help:asset_ledger.field_account_depreciation_board__count_logs_fuel
+#: model:ir.model.fields,help:asset_ledger.field_resource_asset__count_logs_fuel
+#: model:ir.model.fields,help:asset_ledger.field_resource_asset_device__count_logs_fuel
+#: model:ir.model.fields,help:asset_ledger.field_resource_asset_equipment__count_logs_fuel
+#: model:ir.model.fields,help:asset_ledger.field_resource_asset_furniture__count_logs_fuel
+#: model:ir.model.fields,help:asset_ledger.field_resource_asset_it__count_logs_fuel
+#: model:ir.model.fields,help:asset_ledger.field_resource_asset_machinery__count_logs_fuel
+#: model:ir.model.fields,help:asset_ledger.field_resource_asset_property__count_logs_fuel
+#: model:ir.model.fields,help:asset_ledger.field_resource_asset_room__count_logs_fuel
+#: model:ir.model.fields,help:asset_ledger.field_resource_asset_telecom__count_logs_fuel
+#: model:ir.model.fields,help:asset_ledger.field_resource_asset_vehicle__count_logs_fuel
+msgid ""
+"Fuel consumption logs on this asset (by category), counted in every state."
+msgstr ""
+
+#. module: asset_ledger
+#: model:product.template,name:asset_ledger.product_product_fuel_credit_product_template
+msgid "Fuel credit"
+msgstr ""
+
+#. module: asset_ledger
+#: model:product.template,name:asset_ledger.product_product_fuel_debit_product_template
+msgid "Fuel electronic wallet recharge"
+msgstr ""
+
+#. module: asset_ledger
+#. odoo-python
+#: code:addons/asset_ledger/models/resource_asset_log.py:0
+msgid "Fuel quantity cannot be negative."
+msgstr ""
+
+#. module: asset_ledger
+#: model:product.attribute,name:asset_ledger.product_attribute_fuel_type
+msgid "Fuel type"
+msgstr ""
+
+#. module: asset_ledger
+#: model:res.groups,comment:asset_ledger.group_asset_manager
+msgid "Full access to all asset types including delete and configuration."
+msgstr ""
+
+#. module: asset_ledger
+#: model:product.attribute.value,name:asset_ledger.fuel_type_gasoline
+msgid "Gasoline"
+msgstr ""
+
+#. module: asset_ledger
+#: model:product.attribute.value,name:asset_ledger.fuel_type_gasoline_hybrid
+msgid "Gasoline hybrid"
+msgstr ""
+
+#. module: asset_ledger
+#: model:product.template,name:asset_ledger.product_product_forklift_product_template
+msgid "H2.5FT Forklift"
+msgstr ""
+
+#. module: asset_ledger
+#: model:ir.model.fields.selection,name:asset_ledger.selection__product_category__log_type__highway
+#: model_terms:ir.ui.view,arch_db:asset_ledger.view_search_product_asset_log
+msgid "Highway"
+msgstr ""
+
+#. module: asset_ledger
+#: model:product.template,name:asset_ledger.product_product_highway_credit_product_template
+msgid "Highway credit"
+msgstr ""
+
+#. module: asset_ledger
+#: model:product.template,name:asset_ledger.product_product_highway_debit_product_template
+msgid "Highway electronic pass recharge"
+msgstr ""
+
+#. module: asset_ledger
+#: model:product.attribute.value,name:asset_ledger.fuel_type_hydrogen
+msgid "Hydrogen"
+msgstr ""
+
+#. module: asset_ledger
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_tag__id
+msgid "ID"
+msgstr ""
+
+#. module: asset_ledger
+#: model:ir.model.fields,field_description:asset_ledger.field_product_trace__imei
+msgid "IMEI"
+msgstr ""
+
+#. module: asset_ledger
+#: model:ir.actions.act_window,name:asset_ledger.action_resource_asset_it_asset
+#: model:ir.ui.menu,name:asset_ledger.menu_it_assets
+msgid "IT Assets"
+msgstr ""
+
+#. module: asset_ledger
+#: model_terms:ir.ui.view,arch_db:asset_ledger.resource_asset_view_form_ledger
+msgid "Identification"
+msgstr ""
+
+#. module: asset_ledger
+#: model:product.template,name:asset_ledger.product_product_generator_product_template
+msgid "Industrial Generator 50kW"
+msgstr ""
+
+#. module: asset_ledger
+#: model:product.template,name:asset_ledger.product_product_warehouse_product_template
+msgid "Industrial Warehouse"
+msgstr ""
+
+#. module: asset_ledger
+#: model_terms:ir.ui.view,arch_db:asset_ledger.resource_asset_vehicle_view_form_ledger
+msgid "Information"
+msgstr ""
+
+#. module: asset_ledger
+#: model:product.template,name:asset_ledger.product_product_insurance_product_template
+msgid "Insurance"
+msgstr ""
+
+#. module: asset_ledger
+#: model:product.attribute.value,name:asset_ledger.fuel_type_lpg
+msgid "LPG"
+msgstr ""
+
+#. module: asset_ledger
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_tag__write_uid
+msgid "Last Updated by"
+msgstr ""
+
+#. module: asset_ledger
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_tag__write_date
+msgid "Last Updated on"
+msgstr ""
+
+#. module: asset_ledger
+#: model:ir.model.fields,field_description:asset_ledger.field_product_trace__license_plate
+msgid "License Plate"
+msgstr ""
+
+#. module: asset_ledger
+#: model_terms:ir.ui.view,arch_db:asset_ledger.resource_asset_view_search_asset
+msgid "Location"
+msgstr ""
+
+#. module: asset_ledger
+#: model:ir.model.fields,help:asset_ledger.field_account_depreciation_board__location
+#: model:ir.model.fields,help:asset_ledger.field_resource_asset__location
+#: model:ir.model.fields,help:asset_ledger.field_resource_asset_device__location
+#: model:ir.model.fields,help:asset_ledger.field_resource_asset_equipment__location
+#: model:ir.model.fields,help:asset_ledger.field_resource_asset_furniture__location
+#: model:ir.model.fields,help:asset_ledger.field_resource_asset_it__location
+#: model:ir.model.fields,help:asset_ledger.field_resource_asset_machinery__location
+#: model:ir.model.fields,help:asset_ledger.field_resource_asset_property__location
+#: model:ir.model.fields,help:asset_ledger.field_resource_asset_room__location
+#: model:ir.model.fields,help:asset_ledger.field_resource_asset_telecom__location
+#: model:ir.model.fields,help:asset_ledger.field_resource_asset_vehicle__location
+#: model:ir.model.fields,help:asset_ledger.field_product_trace__location
+msgid "Location of the asset (garage, ...)"
+msgstr ""
+
+#. module: asset_ledger
+#: model:ir.model.fields,field_description:asset_ledger.field_product_trace__log_ids
+msgid "Log"
+msgstr ""
+
+#. module: asset_ledger
+#: model_terms:ir.ui.view,arch_db:asset_ledger.view_search_product_asset_log
+msgid "Log Type"
+msgstr ""
+
+#. module: asset_ledger
+#: model_terms:ir.ui.view,arch_db:asset_ledger.resource_asset_view_form_ledger
+msgid "Logs"
+msgstr ""
+
+#. module: asset_ledger
+#: model:ir.actions.act_window,name:asset_ledger.action_resource_asset_machinery
+#: model:ir.ui.menu,name:asset_ledger.menu_machinery_assets
+#: model_terms:ir.ui.view,arch_db:asset_ledger.view_product_template_search_asset
+msgid "Machinery"
+msgstr ""
+
+#. module: asset_ledger
+#: model:product.template,name:asset_ledger.product_product_maintenance_product_template
+msgid "Maintenance"
+msgstr ""
+
+#. module: asset_ledger
+#: model:product.attribute.value,name:asset_ledger.transmission_manual
+msgid "Manual"
+msgstr ""
+
+#. module: asset_ledger
+#: model_terms:ir.ui.view,arch_db:asset_ledger.view_form_product_asset_log
+msgid "Mark as Done"
+msgstr ""
+
+#. module: asset_ledger
+#: model:ir.model.fields,help:asset_ledger.field_product_trace__brand_new
+msgid "Mark as True if this asset was acquired as brand new."
+msgstr ""
+
+#. module: asset_ledger
+#: model_terms:ir.ui.view,arch_db:asset_ledger.resource_asset_view_search_asset
+msgid "Missing Identifiers"
+msgstr ""
+
+#. module: asset_ledger
+#: model_terms:ir.ui.view,arch_db:asset_ledger.resource_asset_view_search_asset
+#: model_terms:ir.ui.view,arch_db:asset_ledger.resource_asset_view_search_ledger
+msgid "Model"
+msgstr ""
+
+#. module: asset_ledger
+#: model:product.template,name:asset_ledger.product_product_model3_product_template
+msgid "Model 3 Long Range"
+msgstr ""
+
+#. module: asset_ledger
+#: model:ir.model.fields,field_description:asset_ledger.field_product_trace__model_year
+msgid "Model Year"
+msgstr ""
+
+#. module: asset_ledger
+#: model_terms:ir.ui.view,arch_db:asset_ledger.view_search_product_asset_log
+msgid "New"
+msgstr ""
+
+#. module: asset_ledger
+#: model:product.attribute.value,name:asset_ledger.displacement_0
+msgid "No cylinders"
+msgstr ""
+
+#. module: asset_ledger
+#: model:ir.model.fields.selection,name:asset_ledger.selection__resource_asset__service_activity__none
+#: model:ir.model.fields.selection,name:asset_ledger.selection__resource_asset_device__service_activity__none
+#: model:ir.model.fields.selection,name:asset_ledger.selection__resource_asset_equipment__service_activity__none
+#: model:ir.model.fields.selection,name:asset_ledger.selection__resource_asset_furniture__service_activity__none
+#: model:ir.model.fields.selection,name:asset_ledger.selection__resource_asset_it__service_activity__none
+#: model:ir.model.fields.selection,name:asset_ledger.selection__resource_asset_machinery__service_activity__none
+#: model:ir.model.fields.selection,name:asset_ledger.selection__resource_asset_property__service_activity__none
+#: model:ir.model.fields.selection,name:asset_ledger.selection__resource_asset_room__service_activity__none
+#: model:ir.model.fields.selection,name:asset_ledger.selection__resource_asset_telecom__service_activity__none
+#: model:ir.model.fields.selection,name:asset_ledger.selection__resource_asset_vehicle__service_activity__none
+msgid "None"
+msgstr ""
+
+#. module: asset_ledger
+#: model_terms:ir.ui.view,arch_db:asset_ledger.view_form_product_asset_log
+msgid "Notes"
+msgstr ""
+
+#. module: asset_ledger
+#: model:ir.model.fields,field_description:asset_ledger.field_product_trace__odometer_uom_name
+msgid "Odometer Unit"
+msgstr ""
+
+#. module: asset_ledger
+#: model:ir.model.fields,field_description:asset_ledger.field_account_depreciation_board__odometer_uom_id
+#: model:ir.model.fields,field_description:asset_ledger.field_product_trace__odometer_uom_id
+msgid "Odometer Uom"
+msgstr ""
+
+#. module: asset_ledger
+#: model_terms:ir.ui.view,arch_db:asset_ledger.resource_asset_view_form_ledger
+msgid "Operational Data"
+msgstr ""
+
+#. module: asset_ledger
+#: model:ir.model.fields.selection,name:asset_ledger.selection__product_category__log_type__operator
+#: model_terms:ir.ui.view,arch_db:asset_ledger.view_search_product_asset_log
+msgid "Operator Assignment"
+msgstr ""
+
+#. module: asset_ledger
+#: model:product.template,name:asset_ledger.product_product_operator_assignment_product_template
+msgid "Operator assignment"
+msgstr ""
+
+#. module: asset_ledger
+#: model:ir.model.fields,help:asset_ledger.field_account_depreciation_board__count_logs_assignment
+#: model:ir.model.fields,help:asset_ledger.field_resource_asset__count_logs_assignment
+#: model:ir.model.fields,help:asset_ledger.field_resource_asset_device__count_logs_assignment
+#: model:ir.model.fields,help:asset_ledger.field_resource_asset_equipment__count_logs_assignment
+#: model:ir.model.fields,help:asset_ledger.field_resource_asset_furniture__count_logs_assignment
+#: model:ir.model.fields,help:asset_ledger.field_resource_asset_it__count_logs_assignment
+#: model:ir.model.fields,help:asset_ledger.field_resource_asset_machinery__count_logs_assignment
+#: model:ir.model.fields,help:asset_ledger.field_resource_asset_property__count_logs_assignment
+#: model:ir.model.fields,help:asset_ledger.field_resource_asset_room__count_logs_assignment
+#: model:ir.model.fields,help:asset_ledger.field_resource_asset_telecom__count_logs_assignment
+#: model:ir.model.fields,help:asset_ledger.field_resource_asset_vehicle__count_logs_assignment
+msgid "Operator assignment logs on this asset, counted in every state."
+msgstr ""
+
+#. module: asset_ledger
+#: model:ir.model.fields,field_description:asset_ledger.field_product_trace__value_original
+#: model_terms:ir.ui.view,arch_db:asset_ledger.resource_asset_view_kanban_property
+msgid "Original Value"
+msgstr ""
+
+#. module: asset_ledger
+#: model:ir.model.fields.selection,name:asset_ledger.selection__resource_asset__service_activity__overdue
+#: model:ir.model.fields.selection,name:asset_ledger.selection__resource_asset_device__service_activity__overdue
+#: model:ir.model.fields.selection,name:asset_ledger.selection__resource_asset_equipment__service_activity__overdue
+#: model:ir.model.fields.selection,name:asset_ledger.selection__resource_asset_furniture__service_activity__overdue
+#: model:ir.model.fields.selection,name:asset_ledger.selection__resource_asset_it__service_activity__overdue
+#: model:ir.model.fields.selection,name:asset_ledger.selection__resource_asset_machinery__service_activity__overdue
+#: model:ir.model.fields.selection,name:asset_ledger.selection__resource_asset_property__service_activity__overdue
+#: model:ir.model.fields.selection,name:asset_ledger.selection__resource_asset_room__service_activity__overdue
+#: model:ir.model.fields.selection,name:asset_ledger.selection__resource_asset_telecom__service_activity__overdue
+#: model:ir.model.fields.selection,name:asset_ledger.selection__resource_asset_vehicle__service_activity__overdue
+msgid "Overdue"
+msgstr ""
+
+#. module: asset_ledger
+#: model_terms:ir.ui.view,arch_db:asset_ledger.view_product_template_form_asset
+msgid "Power Specifications"
+msgstr ""
+
+#. module: asset_ledger
+#: model_terms:ir.ui.view,arch_db:asset_ledger.view_product_template_list_vehicle
+msgid "Product"
+msgstr ""
+
+#. module: asset_ledger
+#: model:ir.ui.menu,name:asset_ledger.menu_property_assets
+#: model_terms:ir.ui.view,arch_db:asset_ledger.resource_asset_view_list_property
+msgid "Properties"
+msgstr ""
+
+#. module: asset_ledger
+#: model:ir.ui.menu,name:asset_ledger.menu_property_root
+#: model_terms:ir.ui.view,arch_db:asset_ledger.view_product_template_search_asset
+msgid "Property"
+msgstr ""
+
+#. module: asset_ledger
+#: model:ir.actions.act_window,name:asset_ledger.action_resource_asset_property
+msgid "Property Assets"
+msgstr ""
+
+#. module: asset_ledger
+#: model:ir.actions.act_window,name:asset_ledger.action_property_service_logs
+msgid "Property Service Logs"
+msgstr ""
+
+#. module: asset_ledger
+#: model_terms:ir.ui.view,arch_db:asset_ledger.resource_asset_view_list_property
+msgid "Property Type"
+msgstr ""
+
+#. module: asset_ledger
+#: model:ir.actions.act_window,name:asset_ledger.action_product_template_property
+#: model:ir.ui.menu,name:asset_ledger.menu_property_models
+msgid "Property Types"
+msgstr ""
+
+#. module: asset_ledger
+#: model_terms:ir.ui.view,arch_db:asset_ledger.resource_asset_view_list_property
+msgid "Purchase Value"
+msgstr ""
+
+#. module: asset_ledger
+#: model:ir.model.fields,help:asset_ledger.field_resource_asset_log__qty_fuel
+msgid "Quantity of fuel added to the asset, in litres."
+msgstr ""
+
+#. module: asset_ledger
+#: model_terms:ir.ui.view,arch_db:asset_ledger.resource_asset_view_kanban_property
+msgid "Ref:"
+msgstr ""
+
+#. module: asset_ledger
+#. odoo-python
+#: code:addons/asset_ledger/models/resource_asset.py:0
+msgid "Register Fuel"
+msgstr ""
+
+#. module: asset_ledger
+#: model:product.template,name:asset_ledger.product_product_repair_product_template
+msgid "Repair"
+msgstr ""
+
+#. module: asset_ledger
+#: model_terms:ir.ui.view,arch_db:asset_ledger.view_form_product_asset_log
+msgid "Reset to New"
+msgstr ""
+
+#. module: asset_ledger
+#: model:product.template,name:asset_ledger.product_product_retail_store_product_template
+msgid "Retail Store Space"
+msgstr ""
+
+#. module: asset_ledger
+#: model_terms:ir.ui.view,arch_db:asset_ledger.view_search_product_asset_log
+msgid "Running"
+msgstr ""
+
+#. module: asset_ledger
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_log__trace_id
+msgid "Serial"
+msgstr ""
+
+#. module: asset_ledger
+#: model_terms:ir.ui.view,arch_db:asset_ledger.resource_asset_view_list_general
+msgid "Serial Number"
+msgstr ""
+
+#. module: asset_ledger
+#: model:ir.model.fields,field_description:asset_ledger.field_product_trace__vin_sn
+msgid "Serial Number / VIN"
+msgstr ""
+
+#. module: asset_ledger
+#: model_terms:ir.ui.view,arch_db:asset_ledger.view_search_product_asset_log
+msgid "Service"
+msgstr ""
+
+#. module: asset_ledger
+#: model:ir.model.fields,field_description:asset_ledger.field_account_depreciation_board__service_activity
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset__service_activity
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_device__service_activity
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_equipment__service_activity
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_furniture__service_activity
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_it__service_activity
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_machinery__service_activity
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_property__service_activity
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_room__service_activity
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_telecom__service_activity
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_vehicle__service_activity
+#: model_terms:ir.ui.view,arch_db:asset_ledger.resource_asset_view_search_asset
+msgid "Service Activity"
+msgstr ""
+
+#. module: asset_ledger
+#: model_terms:ir.ui.view,arch_db:asset_ledger.view_graph_product_asset_log
+msgid "Service Costs Per Month"
+msgstr ""
+
+#. module: asset_ledger
+#: model_terms:ir.ui.view,arch_db:asset_ledger.view_form_product_asset_log
+msgid "Service Details"
+msgstr ""
+
+#. module: asset_ledger
+#: model:ir.ui.menu,name:asset_ledger.menu_property_service_logs
+msgid "Service Logs"
+msgstr ""
+
+#. module: asset_ledger
+#: model_terms:ir.ui.view,arch_db:asset_ledger.resource_asset_view_search_asset
+#: model_terms:ir.ui.view,arch_db:asset_ledger.resource_asset_view_search_ledger
+msgid "Service Overdue"
+msgstr ""
+
+#. module: asset_ledger
+#: model_terms:ir.ui.view,arch_db:asset_ledger.resource_asset_view_search_asset
+msgid "Service Today"
+msgstr ""
+
+#. module: asset_ledger
+#: model:ir.model.fields,help:asset_ledger.field_account_depreciation_board__count_logs_service
+#: model:ir.model.fields,help:asset_ledger.field_resource_asset__count_logs_service
+#: model:ir.model.fields,help:asset_ledger.field_resource_asset_device__count_logs_service
+#: model:ir.model.fields,help:asset_ledger.field_resource_asset_equipment__count_logs_service
+#: model:ir.model.fields,help:asset_ledger.field_resource_asset_furniture__count_logs_service
+#: model:ir.model.fields,help:asset_ledger.field_resource_asset_it__count_logs_service
+#: model:ir.model.fields,help:asset_ledger.field_resource_asset_machinery__count_logs_service
+#: model:ir.model.fields,help:asset_ledger.field_resource_asset_property__count_logs_service
+#: model:ir.model.fields,help:asset_ledger.field_resource_asset_room__count_logs_service
+#: model:ir.model.fields,help:asset_ledger.field_resource_asset_telecom__count_logs_service
+#: model:ir.model.fields,help:asset_ledger.field_resource_asset_vehicle__count_logs_service
+msgid "Service logs on this asset, counted in every state."
+msgstr ""
+
+#. module: asset_ledger
+#: model:ir.ui.menu,name:asset_ledger.menu_general_services
+#: model:ir.ui.menu,name:asset_ledger.menu_property_services
+#: model_terms:ir.ui.view,arch_db:asset_ledger.resource_asset_view_form_ledger
+msgid "Services"
+msgstr ""
+
+#. module: asset_ledger
+#: model:res.groups,comment:asset_ledger.group_enable_it_assets
+msgid "Show IT asset management menus and features"
+msgstr ""
+
+#. module: asset_ledger
+#: model:res.groups,comment:asset_ledger.group_enable_equipment_assets
+msgid "Show equipment/maintenance management menus and features"
+msgstr ""
+
+#. module: asset_ledger
+#: model:res.groups,comment:asset_ledger.group_enable_fleet_assets
+msgid "Show fleet/vehicle management menus and features"
+msgstr ""
+
+#. module: asset_ledger
+#: model:res.groups,comment:asset_ledger.group_enable_machinery_assets
+msgid "Show machinery management menus and features"
+msgstr ""
+
+#. module: asset_ledger
+#: model:res.groups,comment:asset_ledger.group_enable_property_assets
+msgid "Show property/real estate management menus and features"
+msgstr ""
+
+#. module: asset_ledger
+#: model:res.groups,comment:asset_ledger.group_enable_tools
+msgid "Show tools management menus and features"
+msgstr ""
+
+#. module: asset_ledger
+#: model_terms:ir.ui.view,arch_db:asset_ledger.view_search_product_asset_log
+msgid "Source"
+msgstr ""
+
+#. module: asset_ledger
+#: model:ir.model.fields,help:asset_ledger.field_resource_asset_tag__code
+msgid ""
+"Stable identifier for imports, filters and data files. Unlike the name it is"
+" never translated, so it means the same thing to every reader."
+msgstr ""
+
+#. module: asset_ledger
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_log__date_start
+msgid "Start Date"
+msgstr ""
+
+#. module: asset_ledger
+#: model_terms:ir.ui.view,arch_db:asset_ledger.resource_asset_view_search_asset
+msgid "State"
+msgstr ""
+
+#. module: asset_ledger
+#: model:ir.model.fields,help:asset_ledger.field_account_depreciation_board__area
+#: model:ir.model.fields,help:asset_ledger.field_resource_asset__area
+#: model:ir.model.fields,help:asset_ledger.field_resource_asset_device__area
+#: model:ir.model.fields,help:asset_ledger.field_resource_asset_equipment__area
+#: model:ir.model.fields,help:asset_ledger.field_resource_asset_furniture__area
+#: model:ir.model.fields,help:asset_ledger.field_resource_asset_it__area
+#: model:ir.model.fields,help:asset_ledger.field_resource_asset_machinery__area
+#: model:ir.model.fields,help:asset_ledger.field_resource_asset_property__area
+#: model:ir.model.fields,help:asset_ledger.field_resource_asset_room__area
+#: model:ir.model.fields,help:asset_ledger.field_resource_asset_telecom__area
+#: model:ir.model.fields,help:asset_ledger.field_resource_asset_vehicle__area
+#: model:ir.model.fields,help:asset_ledger.field_product_trace__area
+msgid ""
+"Surface area of the asset. The unit follows the system setting, so read "
+"area_uom_name rather than assuming square metres."
+msgstr ""
+
+#. module: asset_ledger
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_tag__name
+msgid "Tag Name"
+msgstr ""
+
+#. module: asset_ledger
+#: model:product.template,name:asset_ledger.product_product_telephone_product_template
+msgid "Telephone and connectivity"
+msgstr ""
+
+#. module: asset_ledger
+#: model:ir.model.fields,help:asset_ledger.field_resource_asset_log__trace_id
+msgid ""
+"The inventory identity of this unit, when it entered through a receipt or a "
+"manufacturing order."
+msgstr ""
+
+#. module: asset_ledger
+#: model_terms:ir.ui.view,arch_db:asset_ledger.resource_asset_vehicle_view_form_ledger
+msgid ""
+"These ratings belong to the asset's model, not to this\n"
+"                                    unit: they are read from it and cannot be edited\n"
+"                                    here. Change them on the model itself."
+msgstr ""
+
+#. module: asset_ledger
+#: model:ir.model.fields,help:asset_ledger.field_account_depreciation_board__account_prefix
+#: model:ir.model.fields,help:asset_ledger.field_resource_asset__account_prefix
+#: model:ir.model.fields,help:asset_ledger.field_resource_asset_device__account_prefix
+#: model:ir.model.fields,help:asset_ledger.field_resource_asset_equipment__account_prefix
+#: model:ir.model.fields,help:asset_ledger.field_resource_asset_furniture__account_prefix
+#: model:ir.model.fields,help:asset_ledger.field_resource_asset_it__account_prefix
+#: model:ir.model.fields,help:asset_ledger.field_resource_asset_machinery__account_prefix
+#: model:ir.model.fields,help:asset_ledger.field_resource_asset_property__account_prefix
+#: model:ir.model.fields,help:asset_ledger.field_resource_asset_room__account_prefix
+#: model:ir.model.fields,help:asset_ledger.field_resource_asset_telecom__account_prefix
+#: model:ir.model.fields,help:asset_ledger.field_resource_asset_vehicle__account_prefix
+#: model:ir.model.fields,help:asset_ledger.field_product_trace__account_prefix
+msgid "This fields is required by Accounting to group according to its needs."
+msgstr ""
+
+#. module: asset_ledger
+#: model:ir.model.fields.selection,name:asset_ledger.selection__resource_asset__service_activity__today
+#: model:ir.model.fields.selection,name:asset_ledger.selection__resource_asset_device__service_activity__today
+#: model:ir.model.fields.selection,name:asset_ledger.selection__resource_asset_equipment__service_activity__today
+#: model:ir.model.fields.selection,name:asset_ledger.selection__resource_asset_furniture__service_activity__today
+#: model:ir.model.fields.selection,name:asset_ledger.selection__resource_asset_it__service_activity__today
+#: model:ir.model.fields.selection,name:asset_ledger.selection__resource_asset_machinery__service_activity__today
+#: model:ir.model.fields.selection,name:asset_ledger.selection__resource_asset_property__service_activity__today
+#: model:ir.model.fields.selection,name:asset_ledger.selection__resource_asset_room__service_activity__today
+#: model:ir.model.fields.selection,name:asset_ledger.selection__resource_asset_telecom__service_activity__today
+#: model:ir.model.fields.selection,name:asset_ledger.selection__resource_asset_vehicle__service_activity__today
+msgid "Today"
+msgstr ""
+
+#. module: asset_ledger
+#: model:ir.actions.act_window,name:asset_ledger.action_resource_asset_tools
+#: model:ir.ui.menu,name:asset_ledger.menu_tools_assets
+msgid "Tools"
+msgstr ""
+
+#. module: asset_ledger
+#: model_terms:ir.ui.view,arch_db:asset_ledger.view_list_product_asset_log
+msgid "Total"
+msgstr ""
+
+#. module: asset_ledger
+#: model_terms:ir.actions.act_window,help:asset_ledger.action_product_asset_log
+msgid ""
+"Track services, maintenance, and contracts.\n"
+"                Log entries can include: fuel, maintenance, repairs, insurance, and more."
+msgstr ""
+
+#. module: asset_ledger
+#: model_terms:ir.ui.view,arch_db:asset_ledger.resource_asset_vehicle_view_form_ledger
+msgid "Trailer Hitch"
+msgstr ""
+
+#. module: asset_ledger
+#: model:product.template,name:asset_ledger.product_product_transit_product_template
+msgid "Transit 350"
+msgstr ""
+
+#. module: asset_ledger
+#: model:product.attribute,name:asset_ledger.product_attribute_transmission
+msgid "Transmission"
+msgstr ""
+
+#. module: asset_ledger
+#: model_terms:ir.ui.view,arch_db:asset_ledger.resource_asset_vehicle_view_form_ledger
+msgid "Transport Capacity"
+msgstr ""
+
+#. module: asset_ledger
+#: model_terms:ir.ui.view,arch_db:asset_ledger.view_search_product_asset_log
+msgid "Unclassified"
+msgstr ""
+
+#. module: asset_ledger
+#: model:ir.model.fields,help:asset_ledger.field_account_depreciation_board__odometer_uom_id
+#: model:ir.model.fields,help:asset_ledger.field_product_trace__odometer_uom_id
+msgid "Unit of measurement for the odometer readings"
+msgstr ""
+
+#. module: asset_ledger
+#: model:res.groups,name:asset_ledger.group_asset_user
+msgid "User"
+msgstr ""
+
+#. module: asset_ledger
+#: model:ir.model.fields,field_description:asset_ledger.field_account_depreciation_board__value_residual
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset__value_residual
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_device__value_residual
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_equipment__value_residual
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_furniture__value_residual
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_it__value_residual
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_machinery__value_residual
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_property__value_residual
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_room__value_residual
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_telecom__value_residual
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_vehicle__value_residual
+#: model:ir.model.fields,field_description:asset_ledger.field_product_trace__value_residual
+msgid "Value Residual"
+msgstr ""
+
+#. module: asset_ledger
+#: model_terms:ir.ui.view,arch_db:asset_ledger.resource_asset_view_kanban_general
+msgid "Value:"
+msgstr ""
+
+#. module: asset_ledger
+#: model_terms:ir.ui.view,arch_db:asset_ledger.view_product_template_search_asset
+msgid "Vehicles"
+msgstr ""
+
+#. module: asset_ledger
+#: model_terms:ir.ui.view,arch_db:asset_ledger.view_search_product_asset_log
+msgid "Vendor"
+msgstr ""
+
+#. module: asset_ledger
+#: model_terms:ir.ui.view,arch_db:asset_ledger.view_form_product_asset_log
+msgid "Vendor & Cost"
+msgstr ""
+
+#. module: asset_ledger
+#: model_terms:ir.ui.view,arch_db:asset_ledger.resource_asset_view_form_ledger
+msgid "View all asset records"
+msgstr ""
+
+#. module: asset_ledger
+#: model_terms:ir.ui.view,arch_db:asset_ledger.resource_asset_view_form_ledger
+msgid "View fuel logs"
+msgstr ""
+
+#. module: asset_ledger
+#: model_terms:ir.ui.view,arch_db:asset_ledger.resource_asset_view_form_ledger
+msgid "View service records"
+msgstr ""
+
+#. module: asset_ledger
+#: model_terms:ir.ui.view,arch_db:asset_ledger.resource_asset_vehicle_view_form_ledger
+msgid "Weight & Volume Capacity"
+msgstr ""
+
+#. module: asset_ledger
+#: model_terms:ir.ui.view,arch_db:asset_ledger.view_form_product_asset_log
+msgid ""
+"Write here any additional information related to this service or contract."
+msgstr ""
+
+#. module: asset_ledger
+#: model_terms:ir.ui.view,arch_db:asset_ledger.resource_asset_view_kanban_general
+msgid "Year"
+msgstr ""
+
+#. module: asset_ledger
+#: model_terms:ir.ui.view,arch_db:asset_ledger.resource_asset_view_kanban_property
+#: model_terms:ir.ui.view,arch_db:asset_ledger.resource_asset_view_list_property
+msgid "Year Built"
+msgstr ""
+
+#. module: asset_ledger
+#: model:ir.model.fields,help:asset_ledger.field_product_trace__model_year
+msgid "Year of the model"
+msgstr ""
+
+#. module: asset_ledger
+#: model_terms:ir.ui.view,arch_db:asset_ledger.resource_asset_view_form_ledger
+msgid "e.g. ABC-123"
+msgstr ""
+
+#. module: asset_ledger
+#: model_terms:ir.ui.view,arch_db:asset_ledger.resource_asset_view_form_ledger
+msgid "e.g. Main Garage, Industrial Park"
+msgstr ""
+
+#. module: asset_ledger
+#: model_terms:ir.ui.view,arch_db:asset_ledger.resource_asset_view_kanban_property
+msgid "m²"
+msgstr ""

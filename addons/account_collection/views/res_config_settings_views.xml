@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="res_config_settings_view_form" model="ir.ui.view">
+        <field
+            name="name">res.config.settings.view.form.inherit.account.collection</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="account.res_config_settings_view_form" />
+        <field name="arch" type="xml">
+            <block position="inside" id="pay_invoice_online_setting_container">
+                <setting
+                    id="collection_custody"
+                    string="Field Collections"
+                    help="Collections a collector holds before handing them in"
+                    company_dependent="1">
+                    <div class="content-group">
+                        <div class="row mt-2">
+                            <label
+                                for="collection_custody_days_cash"
+                                class="col-lg-5 o_light_label" />
+                            <field name="collection_custody_days_cash" />
+                        </div>
+                        <div class="row">
+                            <label
+                                for="collection_custody_days_check"
+                                class="col-lg-5 o_light_label" />
+                            <field name="collection_custody_days_check" />
+                        </div>
+                        <div class="row">
+                            <label
+                                for="collection_custody_limit"
+                                class="col-lg-5 o_light_label" />
+                            <field name="collection_custody_limit" />
+                        </div>
+                        <div class="row">
+                            <label
+                                for="collection_max_distance_km"
+                                class="col-lg-5 o_light_label" />
+                            <field name="collection_max_distance_km" />
+                        </div>
+                        <div class="row">
+                            <label
+                                for="collection_send_receipt"
+                                class="col-lg-5 o_light_label" />
+                            <field name="collection_send_receipt" />
+                        </div>
+                        <div class="row">
+                            <label
+                                for="collection_supervisor_id"
+                                class="col-lg-5 o_light_label" />
+                            <field
+                                name="collection_supervisor_id"
+                                options="{'no_create': True}" />
+                        </div>
+                        <div class="row">
+                            <label
+                                for="collection_shortage_account_id"
+                                class="col-lg-5 o_light_label" />
+                            <field name="collection_shortage_account_id" />
+                        </div>
+                        <div class="row">
+                            <label
+                                for="collection_overage_account_id"
+                                class="col-lg-5 o_light_label" />
+                            <field name="collection_overage_account_id" />
+                        </div>
+                        <div class="row">
+                            <label
+                                for="collection_check_fee_account_id"
+                                class="col-lg-5 o_light_label" />
+                            <field name="collection_check_fee_account_id" />
+                        </div>
+                    </div>
+                </setting>
+            </block>
+        </field>
+    </record>
+
+</odoo>

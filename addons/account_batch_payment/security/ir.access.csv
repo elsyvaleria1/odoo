@@ -1,0 +1,7 @@
+id,name,model_id/id,group_id/id,kind,operation,reach,anchor,domain
+access_account_batch_payment_readonly,account.batch.payment,model_account_batch_payment,account.group_account_readonly,permission,r,,,
+access_account_batch_payment,account.batch.payment,model_account_batch_payment,account.group_account_invoice,permission,cud,,,
+access_account_batch_error_wizard,access.account.batch.error.wizard,model_wizard_account_batch_payment_validate_error,account.group_account_invoice,permission,cru,,,
+access_account_batch_error_wizard_line,access.account.batch.error.wizard.line,model_wizard_account_batch_payment_validate_error_line,account.group_account_invoice,permission,cru,,,
+access_account_create_batch_error_wizard,access.account.create.batch.error.wizard,model_wizard_account_payment_create_batch_partial,account.group_account_invoice,permission,cru,,,
+account_batch_payment_comp_rule,Account batch payment company rule,model_account_batch_payment,base.group_everyone,guard,crud,company,,

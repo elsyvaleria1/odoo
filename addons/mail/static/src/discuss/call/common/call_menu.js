@@ -1,0 +1,37 @@
+// @ts-check
+/** @odoo-module native */
+import { ActionList } from "@mail/core/common/action_list";
+import { useCallActions } from "@mail/discuss/call/common/call_actions";
+import { provideMailContext } from "@mail/utils/common/mail_context";
+import { Component, useProps } from "@odoo/owl";
+import { Dropdown } from "@web/components/dropdown";
+import { registry } from "@web/core/registry";
+import { useService } from "@web/core/utils/hooks";
+export class CallMenu extends Component {
+    static props = {};
+    static template = "discuss.CallMenu";
+    static components = { ActionList, Dropdown };
+    props = useProps(this.constructor.props);
+    setup() {
+        super.setup();
+        this.rtc = useService("discuss.rtc");
+        this.callActions = useCallActions({
+            owner: this,
+            thread: () => this.rtc.channel,
+        });
+        this.isEnterprise = odoo.info && odoo.info.isEnterprise;
+        provideMailContext({ inCallMenu: true });
+    }
+
+    get icon() {
+        return (
+            this.rtc.callActions.find(
+                (action) => action.id === this.rtc.lastSelfCallAction,
+            )?.icon ?? "fa-solid fa-microphone"
+        );
+    }
+}
+
+registry
+    .category("systray")
+    .add("discuss.CallMenu", { Component: CallMenu }, { sequence: 100 });

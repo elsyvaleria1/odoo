@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="group_mass_mailing_user" model="res.groups">
+        <field name="name">User</field>
+        <field name="sequence">10</field>
+        <field name="privilege_id" ref="res_groups_privilege_email_marketing" />
+        <field name="implied_ids" eval="[Command.link(ref('base.group_user'))]" />
+        <field
+            name="user_ids"
+            eval="[Command.link(ref('base.user_root')), Command.link(ref('base.user_admin'))]" />
+    </record>
+
+    <record id="privilege_record_legacy_token_use" model="res.groups">
+        <field
+            name="name">Privilege: code records the day a recipient token signed with the bare database secret was last accepted, whoever followed the link</field>
+        <field name="is_privilege" eval="True" />
+    </record>
+
+    <!-- Group to manage campaigns -->
+    <record id="group_mass_mailing_campaign" model="res.groups">
+        <field name="name">Manage Mass Mailing Campaigns</field>
+    </record>
+
+</odoo>

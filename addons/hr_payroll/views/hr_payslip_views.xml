@@ -1,0 +1,796 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_hr_payslip_tree" model="ir.ui.view">
+        <field name="name">hr.payslip.list</field>
+        <field name="model">hr.payslip</field>
+        <field name="arch" type="xml">
+            <list
+                string="Payslips"
+                edit="1"
+                duplicate="0"
+                multi_edit="1"
+                sample="1"
+                js_class="hr_payroll_payslip_list">
+                <header>
+                    <button
+                        name="action_validate"
+                        type="object"
+                        string="Validate"
+                        class="oe_highlight" />
+                    <button
+                        name="compute_sheet"
+                        type="object"
+                        string="Compute Sheet"
+                        class="oe_highlight" />
+                    <button
+                        name="action_payslip_done"
+                        type="object"
+                        string="Confirm"
+                        context="{'payslip_generate_pdf': True}"
+                        class="oe_highlight" />
+                    <button
+                        name="action_payslip_paid"
+                        type="object"
+                        string="Mark as Paid"
+                        class="oe_highlight" />
+                </header>
+                <field name="company_id" column_invisible="True" />
+                <field name="currency_id" column_invisible="True" />
+                <field
+                    name="employee_id"
+                    widget="many2one_avatar_employee"
+                    readonly="state != 'draft'" />
+                <field name="employee_reference" optional="hide" />
+                <field
+                    name="date_from"
+                    string="Period"
+                    widget="daterange"
+                    options="{'end_date_field': 'date_to', 'payrun_optional': 'hide'}"
+                    readonly="1" />
+                <field name="date_to" invisible="1" column_invisible="1" readonly="1" />
+                <field
+                    name="payslip_run_id"
+                    placeholder="Off-Cycle"
+                    widget="many2one"
+                    optional="show"
+                    options="{'payrun_optional': 'hide', 'no_open': 0}"
+                    readonly="state != 'draft'" />
+                <field
+                    name="struct_id"
+                    optional="hide"
+                    readonly="state in ['cancel', 'validated', 'paid']" />
+                <field
+                    name="company_id"
+                    optional="hide"
+                    options="{'no_create': True}"
+                    groups="base.group_multi_company" />
+                <field
+                    name="employer_cost"
+                    widget="monetary"
+                    optional="show"
+                    options="{'currency_field': 'currency_id'}" />
+                <field
+                    name="basic_wage"
+                    widget="monetary"
+                    optional="show"
+                    options="{'currency_field': 'currency_id'}" />
+                <field
+                    name="gross_wage"
+                    widget="monetary"
+                    optional="show"
+                    options="{'currency_field': 'currency_id'}" />
+                <field name="payslip_properties" />
+                <field
+                    name="net_wage"
+                    widget="monetary"
+                    optional="show"
+                    options="{'currency_field': 'currency_id'}"
+                    decoration-bf="1" />
+                <field
+                    name="state_display"
+                    widget="badge"
+                    decoration-danger="state_display == 'error'"
+                    decoration-info="state_display == 'draft'"
+                    decoration-primary="state_display == 'paid'"
+                    decoration-success="state_display == 'validated'"
+                    decoration-warning="state_display == 'warning'" />
+                <field
+                    name="issues"
+                    widget="actionable_warnings"
+                    optional="hide"
+                    options="{'payrun_optional': 'show', 'first_only': True}" />
+                <button
+                    name="action_move_to_off_cycle"
+                    type="object"
+                    string="Off-Cycle"
+                    help="Detach the payslip from the pay run to send it to the Off-Cycle"
+                    icon="fa-long-arrow-right"
+                    invisible="state != 'draft' or not payslip_run_id" />
+            </list>
+        </field>
+    </record>
+
+    <record id="hr_payslip_view_kanban" model="ir.ui.view">
+        <field name="name">hr.payslip.kanban</field>
+        <field name="model">hr.payslip</field>
+        <field name="arch" type="xml">
+            <kanban sample="1" class="o_kanban_mobile">
+                <field name="currency_id" />
+                <templates>
+                    <t t-name="card" class="row g-0">
+                        <field
+                            name="employee_id"
+                            widget="many2one_avatar_employee"
+                            options="{'display_avatar_name': True}"
+                            readonly="state != 'draft'"
+                            class="col-6 fw-bold mb-1" />
+                        <div class="col-6">
+                            <field
+                                name="state"
+                                widget="badge"
+                                class="float-end"
+                                decoration-info="state == 'draft'"
+                                decoration-primary="state == 'paid'"
+                                decoration-success="state == 'validated'" />
+                        </div>
+                        <div>
+                            <field name="date_from" readonly="state in ['cancel', 'validated', 'paid']" /> - <field name="date_to" readonly="state in ['cancel', 'validated', 'paid']" />
+                        </div>
+                        <field
+                            name="name"
+                            readonly="state in ['cancel', 'validated', 'paid']" />
+                        <span>Net - <field name="net_wage" /></span>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
+    <record id="view_hr_payslip_form" model="ir.ui.view">
+        <field name="name">hr.payslip.form</field>
+        <field name="model">hr.payslip</field>
+        <field name="arch" type="xml">
+            <form string="Payslip" duplicate="0">
+            <header>
+                <button
+                    name="action_payslip_done"
+                    type="object"
+                    string="Confirm"
+                    context="{'payslip_generate_pdf': True}"
+                    invisible="state != 'draft' or not line_ids"
+                    class="oe_highlight" />
+                <button
+                    name="action_payslip_paid"
+                    type="object"
+                    string="Mark as paid"
+                    invisible="state != 'validated'"
+                    class="oe_highlight" />
+                <button
+                    name="action_payslip_payment_report"
+                    type="object"
+                    string="Create Payment Report"
+                    invisible="state != 'validated'" />
+                <button
+                    name="refund_sheet"
+                    type="object"
+                    string="Revert"
+                    confirm="Are you sure you want to revert this payslip? This will create a negative of this payslip."
+                    invisible="is_refunded or credit_note or state != 'paid'" />
+                <button
+                    name="refund_sheet"
+                    type="object"
+                    string="Revert"
+                    confirm="Another refund payslip with the same amount has been found. Do you want to create a new one?"
+                    invisible="not is_refunded or credit_note or state != 'paid'" />
+                <button
+                    name="action_payslip_draft"
+                    type="object"
+                    string="Set to Draft"
+                    invisible="state != 'cancel'" />
+                <button
+                    name="action_payslip_unpaid"
+                    type="object"
+                    string="Unpaid"
+                    invisible="state != 'paid'" />
+                <button
+                    name="compute_sheet"
+                    type="object"
+                    string="Compute Sheet"
+                    help="Recompute the payslip lines only, not the worked days / input lines"
+                    invisible="state != 'draft' or line_ids or credit_note"
+                    class="oe_highlight" />
+                <button
+                    name="compute_sheet"
+                    type="object"
+                    string="Compute Sheet"
+                    help="Recompute the payslip lines only, not the worked days / input lines"
+                    invisible="state != 'draft' or not line_ids or credit_note" />
+                <button
+                    name="action_payslip_cancel"
+                    type="object"
+                    string="Cancel"
+                    invisible="state not in ('draft', 'validated')" />
+                <button
+                    name="action_export_payslip"
+                    type="object"
+                    string="Export Payslip"
+                    invisible="not is_superuser" />
+                <field
+                    name="state"
+                    widget="statusbar"
+                    statusbar_visible="draft,validated,paid" />
+            </header>
+            <div
+                class="alert alert-warning d-flex align-items-center"
+                role="alert"
+                invisible="(not has_wrong_data) or (is_refunded or is_corrected or keep_wrong_version or is_refund_payslip)">
+                The employee's data has been updated since this payslip was created.
+                <button name="action_adjust_payslip" type="object" class="btn btn-link ms-auto">Adjust payslip</button>
+                <button name="action_keep_wrong_version" type="object" class="btn btn-link ms-2">Keep it as is</button>
+            </div>
+            <div
+                class="alert alert-warning d-flex align-items-center"
+                role="alert"
+                invisible="(not is_wrong_version) or (is_refunded or is_corrected or keep_wrong_version or is_refund_payslip)">
+                Employee's record is not the latest version for this payslip period.
+                <button name="action_adjust_payslip" type="object" class="btn btn-link ms-auto">Adjust payslip</button>
+                <button name="action_keep_wrong_version" type="object" class="btn btn-link ms-2">Keep it as is</button>
+            </div>
+            <sheet>
+                <field
+                    name="issues"
+                    widget="actionable_warnings"
+                    invisible="not issues"
+                    class="w-100" />
+                <div
+                    class="alert alert-warning mb-2 px-3 py-2"
+                    role="alert"
+                    invisible="not negative_net_to_report_display">
+                    <field name="negative_net_to_report_message" />
+                    <button
+                        name="action_report_negative_amount"
+                        type="object"
+                        string="Report"
+                        icon="oi-arrow-right"
+                        class="oe_link" />
+                </div>
+                <div class="oe_button_box" name="button_box">
+                    <button
+                        name="action_view_related_payslips"
+                        id="open_related_payslips"
+                        type="object"
+                        icon="fa-files-o"
+                        invisible="related_payslip_count == 0"
+                        class="oe_stat_button">
+                        <field
+                            name="related_payslip_count"
+                            string="Related Payslips"
+                            widget="statinfo" />
+                    </button>
+                    <button
+                        name="action_view_work_entries"
+                        id="open_work_entries"
+                        type="object"
+                        icon="fa-calendar"
+                        class="oe_stat_button">
+                        <div class="o_stat_info">
+                            <span class="o_stat_text">
+                            Work Entries
+                            </span>
+                        </div>
+                    </button>
+                    <button
+                        name="action_view_salary_attachments"
+                        id="open_salary_attachments"
+                        type="object"
+                        icon="fa-files-o"
+                        invisible="salary_attachment_count == 0"
+                        class="oe_stat_button">
+                        <field
+                            name="salary_attachment_count"
+                            string="Salary Adjustments"
+                            widget="statinfo" />
+                    </button>
+                </div>
+                <div class="row justify-content-between position-relative w-100 m-0">
+                    <div class="oe_title mw-75 ps-0 pe-2" name="title">
+                        <h1 class="d-flex flex-row align-items-center">
+                            <field
+                                name="employee_id"
+                                placeholder="Employee"
+                                options="{'no_create': True}"
+                                readonly="state != 'draft'" />
+                        </h1>
+                    </div>
+                    <div class="o_employee_avatar mw-25 m-0 p-0">
+                        <field
+                            name="image_1920"
+                            widget="image"
+                            options="{&quot;zoom&quot;: true, &quot;preview_image&quot;:&quot;avatar_128&quot;}"
+                            class="oe_avatar m-0" />
+                    </div>
+                </div>
+                <group name="top">
+                    <group name="top_left">
+                        <field name="company_id" invisible="1" />
+                        <field name="employee_version_ids_count" invisible="1" />
+                        <field
+                            name="version_id"
+                            string="Employee Record"
+                            domain="[('employee_id', '=', employee_id)]"
+                            context="{'default_employee_id': employee_id}"
+                            options="{                                 'no_create': True,                                 'no_create_edit': True,                             }"
+                            invisible="not employee_id or employee_version_ids_count &lt;= 1"
+                            readonly="state in ['cancel', 'validated', 'paid']"
+                            required="1" />
+                        <field name="country_id" invisible="1" />
+                        <field name="country_code" invisible="1" />
+                        <field
+                            name="payslip_run_id"
+                            string="Pay Run"
+                            placeholder="Off-Cycle"
+                            context="{'default_date_start': date_from, 'default_date_end': date_to}" />
+                        <field
+                            name="struct_id"
+                            options="{'no_open': True, 'no_create': True, 'no_create_edit': True}"
+                            groups="!hr_payroll.group_hr_payroll_manager"
+                            readonly="state in ['cancel', 'validated', 'paid']"
+                            required="1" />
+                        <field
+                            name="struct_id"
+                            groups="hr_payroll.group_hr_payroll_manager"
+                            readonly="state in ['cancel', 'validated', 'paid']"
+                            required="1" />
+                        <field
+                            name="salary_attachment_ids"
+                            force_save="1"
+                            invisible="1" />
+                        <field name="wage_type" invisible="1" />
+                        <field name="sum_worked_hours" invisible="1" />
+                        <field
+                            name="credit_note"
+                            invisible="1"
+                            readonly="state != 'draft'" />
+                        <field name="is_superuser" invisible="1" />
+                        <field name="use_worked_day_lines" invisible="1" />
+                        <field name="payment_report_filename" invisible="1" />
+                        <field
+                            name="payment_report"
+                            filename="payment_report_filename"
+                            invisible="not payment_report" />
+                        <label for="date_from" string="Period" />
+                        <div>
+                            <field name="date_from" readonly="state in ['cancel', 'validated', 'paid']" class="oe_inline" /> - <field name="date_to" readonly="state in ['cancel', 'validated', 'paid']" class="oe_inline" />
+                        </div>
+                    </group>
+                </group>
+                <notebook>
+                    <page
+                        name="worked_days"
+                        string="Worked Days"
+                        invisible="not use_worked_day_lines"
+                        class="o_hr_payroll_worked_days">
+                        <field
+                            name="worked_days_line_ids"
+                            readonly="state in ['cancel', 'validated', 'paid']">
+                            <list
+                                string="Worked Days"
+                                editable="bottom"
+                                create="0"
+                                delete="0">
+                                <field
+                                    name="work_entry_type_id"
+                                    force_save="1"
+                                    readonly="1" />
+                                <field name="name" />
+                                <field
+                                    name="number_of_days"
+                                    string="Days"
+                                    sum="Total Working Days"
+                                    force_save="1"
+                                    readonly="1" />
+                                <field
+                                    name="number_of_hours"
+                                    string="Hours"
+                                    widget="float_time"
+                                    sum="Total Working Hours"
+                                    force_save="1"
+                                    readonly="1" />
+                                <field
+                                    name="amount"
+                                    sum="Total Amount"
+                                    force_save="1"
+                                    readonly="1" />
+                                <field
+                                    name="ytd"
+                                    optional="show"
+                                    force_save="1"
+                                    column_invisible="not parent.ytd_computation"
+                                    readonly="1" />
+                                <field
+                                    name="is_paid"
+                                    force_save="1"
+                                    column_invisible="True"
+                                    readonly="1" />
+                                <field
+                                    name="sequence"
+                                    force_save="1"
+                                    column_invisible="True"
+                                    readonly="1" />
+                                <field name="currency_id" column_invisible="True" />
+                            </list>
+                        </field>
+                    </page>
+                    <page string="Salary Inputs" class="o_hr_payroll_worked_days">
+                        <field
+                            name="input_line_ids"
+                            colspan="4"
+                            readonly="state in ['cancel', 'validated', 'paid']">
+                            <list string="Input Data" editable="bottom">
+                                <!--
+                                    Required 0 to force client to send on change request even when not defined
+                                    Salary Attachments would otherwise not properly be computed and payslip_id is
+                                    required for _allowed_input_type_ids to work..
+                                -->
+                                <field
+                                    name="payslip_id"
+                                    column_invisible="True"
+                                    required="0" />
+                                <field
+                                    name="_allowed_input_type_ids"
+                                    column_invisible="True" />
+                                <field name="input_type_id" />
+                                <field name="name" string="Note" />
+                                <field
+                                    name="amount"
+                                    widget="float_without_trailing_zeros" />
+                                <field name="version_id" column_invisible="True" />
+                                <field name="sequence" column_invisible="True" />
+                            </list>
+                            <form string="Payslip Line">
+                                <group col="4">
+                                    <field name="payslip_id" invisible="1" />
+                                    <field
+                                        name="_allowed_input_type_ids"
+                                        invisible="1" />
+                                    <field name="input_type_id" />
+                                    <field name="name" />
+                                    <field name="sequence" />
+                                    <field name="amount" />
+                                    <field name="version_id" />
+                                </group>
+                            </form>
+                        </field>
+                        <field name="currency_id" invisible="1" />
+                        <field name="payslip_properties" widget="properties" />
+                        <button
+                            name="action_configure_payslip_inputs"
+                            type="object"
+                            string="Add Inputs"
+                            icon="fa-plus"
+                            context="{'structure_id': struct_id}"
+                            class="btn btn-secondary text-break m-0" />
+                    </page>
+                    <page
+                        name="salary_computation"
+                        string="Salary Computation"
+                        class="o_hr_payroll_salary_computation">
+                        <field name="line_ids" colspan="4" readonly="state != 'draft'">
+                            <list
+                                string="Salary Structure"
+                                editable="bottom"
+                                create="0"
+                                delete="0"
+                                decoration-info="total == 0">
+                                <field name="name" />
+                                <field
+                                    name="code"
+                                    optional="hide"
+                                    force_save="1"
+                                    readonly="1" />
+                                <field
+                                    name="category_id"
+                                    optional="hide"
+                                    force_save="1"
+                                    readonly="1" />
+                                <field
+                                    name="sequence"
+                                    force_save="1"
+                                    column_invisible="True"
+                                    readonly="1" />
+                                <field
+                                    name="quantity"
+                                    optional="show"
+                                    force_save="1"
+                                    readonly="1" />
+                                <field
+                                    name="rate"
+                                    optional="show"
+                                    force_save="1"
+                                    readonly="1" />
+                                <field
+                                    name="salary_rule_id"
+                                    optional="hide"
+                                    force_save="1"
+                                    groups="base.group_no_one"
+                                    readonly="1" />
+                                <field
+                                    name="amount"
+                                    optional="show"
+                                    force_save="1"
+                                    readonly="1" />
+                                <field name="total" force_save="1" readonly="1" />
+                                <field
+                                    name="ytd"
+                                    optional="show"
+                                    force_save="1"
+                                    column_invisible="not parent.ytd_computation"
+                                    readonly="1" />
+                                <field name="currency_id" column_invisible="True" />
+                            </list>
+                            <form string="Payslip Line">
+                                <group col="4">
+                                    <field name="name" />
+                                    <field name="code" />
+                                    <field name="category_id" />
+                                    <field name="sequence" />
+                                    <field name="quantity" />
+                                    <field name="rate" />
+                                    <field name="amount" />
+                                    <field name="total" />
+                                    <field
+                                        name="ytd"
+                                        invisible="not parent.ytd_computation"
+                                        readonly="1" />
+                                    <field name="salary_rule_id" />
+                                    <field name="currency_id" invisible="1" />
+                                </group>
+                            </form>
+                        </field>
+                    </page>
+                    <page name="account_info" string="Other Info">
+                        <group>
+                            <group>
+                                <field
+                                    name="name"
+                                    readonly="state in ['cancel', 'validated', 'paid']" />
+                                <field
+                                    name="company_id"
+                                    options="{'no_create': True}"
+                                    groups="base.group_multi_company" />
+                            </group>
+                            <group name="accounting">
+                                <field
+                                    name="has_negative_net_to_report"
+                                    invisible="1" />
+                                <field
+                                    name="negative_net_to_report_display"
+                                    invisible="1" />
+                                <field name="paid_date" />
+                                <field
+                                    name="paid"
+                                    invisible="1"
+                                    readonly="state != 'draft'" />
+                            </group>
+                        </group>
+                        <div colspan="4">
+                            <field
+                                name="note"
+                                placeholder="Add an internal note..."
+                                readonly="state != 'draft'" />
+                        </div>
+                    </page>
+                </notebook>
+                </sheet>
+                <div
+                    class="o_attachment_preview"
+                    groups="hr_payroll.group_payslip_display" />
+                <chatter />
+            </form>
+        </field>
+    </record>
+
+    <record id="view_hr_payslip_pivot" model="ir.ui.view">
+        <field name="name">hr.payslip.pivot</field>
+        <field name="model">hr.payslip</field>
+        <field name="arch" type="xml">
+            <pivot string="Payslips" sample="1">
+                <field name="net_wage" type="measure" />
+                <field name="department_id" type="row" />
+            </pivot>
+        </field>
+    </record>
+
+    <record id="view_hr_payslip_filter" model="ir.ui.view">
+        <field name="name">hr.payslip.select</field>
+        <field name="model">hr.payslip</field>
+        <field name="arch" type="xml">
+            <search string="Search Payslips">
+                <field name="employee_id" />
+                <field
+                    name="employee_id"
+                    string="Employee Reference"
+                    filter_domain="[('employee_id.registration_number', 'ilike', self)]" />
+                <field
+                    name="name"
+                    string="Payslips"
+                    filter_domain="[('name', 'ilike', self)]" />
+                <field name="date_from" />
+                <field name="version_id" />
+                <field name="payslip_run_id" />
+                <field name="struct_id" />
+                <field name="activity_user_id" string="Activities of" />
+                <field name="activity_type_id" string="Activity type" />
+                <filter
+                    name="filter_issue"
+                    string="Has Issues"
+                    domain="['|', ('error_count', '&gt;', 0), ('warning_count', '&gt;', 0)]" />
+                <separator />
+                <filter
+                    name="draft"
+                    string="Draft"
+                    help="Draft Slip"
+                    domain="[('state', '=', 'draft')]" />
+                <filter
+                    name="validated"
+                    string="Validated"
+                    help="Done Slip"
+                    domain="[('state', '=', 'validated')]" />
+                <filter
+                    name="paid"
+                    string="Paid"
+                    help="Paid Slip"
+                    domain="[('state', '=', 'paid')]" />
+                <filter
+                    name="cancel"
+                    string="Cancelled"
+                    help="Canceled Slip"
+                    domain="[('state', '=', 'cancel')]" />
+                <separator />
+                <filter
+                    name="date_filter"
+                    string="Date"
+                    date="date_to"
+                    default_period="month-1" />
+                <separator />
+                <filter
+                    name="filter_off_cycle"
+                    string="Off-Cycle"
+                    domain="[('payslip_run_id', '=', False)]" />
+                <filter
+                    name="credit_note"
+                    string="Credit Notes"
+                    domain="[('credit_note', '=', True)]" />
+                <separator />
+                <group>
+                    <filter
+                        name="group_by_employee_id"
+                        string="Employee"
+                        context="{'group_by': 'employee_id'}" />
+                    <filter
+                        name="group_by_version_id"
+                        string="Employee Record"
+                        context="{'group_by': 'version_id'}" />
+                    <filter
+                        name="group_by_department_id"
+                        string="Department"
+                        context="{'group_by':'department_id'}" />
+                    <filter
+                        name="group_by_job_id"
+                        string="Job Position"
+                        context="{'group_by':'job_id'}" />
+                    <filter
+                        name="group_by_state"
+                        string="Status"
+                        context="{'group_by': 'state'}" />
+                    <filter
+                        name="group_by_batch"
+                        string="Pay Run"
+                        context="{'group_by': 'payslip_run_id'}" />
+                    <filter
+                        name="group_by_structure"
+                        string="Structure"
+                        context="{'group_by': 'struct_id'}" />
+                    <filter
+                        name="group_by_company_id"
+                        string="Company"
+                        context="{'group_by': 'company_id'}"
+                        groups="base.group_multi_company" />
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_hr_payslip_new" model="ir.actions.act_window">
+        <field name="name">Employee Payslips</field>
+        <field name="res_model">hr.payslip</field>
+        <field name="view_mode">form</field>
+    </record>
+
+    <record id="action_view_hr_payslip_month_form" model="ir.actions.act_window">
+        <field name="name">Employee Payslips</field>
+        <field name="res_model">hr.payslip</field>
+        <field name="path">payslips</field>
+        <field name="view_mode">list,kanban,form,activity</field>
+        <field name="search_view_id" ref="view_hr_payslip_filter" />
+    </record>
+
+    <record id="act_hr_employee_payslip_list" model="ir.actions.act_window">
+        <field name="name">Payslips</field>
+        <field name="res_model">hr.payslip</field>
+        <field name="view_mode">list,form</field>
+        <field
+            name="context">{'search_default_employee_id': [active_id], 'default_employee_id': active_id}</field>
+    </record>
+
+    <record id="action_hr_payroll_draft" model="ir.actions.server">
+        <field name="name">Reset to Draft</field>
+        <field name="model_id" ref="hr_payroll.model_hr_payslip" />
+        <field name="binding_model_id" ref="hr_payroll.model_hr_payslip" />
+        <field name="binding_view_types">list</field>
+        <field name="binding_sequence" eval="10" />
+        <field name="binding_icon">fa-solid fa-rotate-left</field>
+        <field name="state">code</field>
+        <field name="code">records.action_payslip_draft()</field>
+    </record>
+
+    <record id="action_hr_payroll_compute_payroll" model="ir.actions.server">
+        <field name="name">Compute Sheet</field>
+        <field name="model_id" ref="hr_payroll.model_hr_payslip" />
+        <field name="binding_model_id" ref="hr_payroll.model_hr_payslip" />
+        <field name="binding_view_types">list</field>
+        <field name="binding_sequence" eval="20" />
+        <field name="state">code</field>
+        <field
+            name="code">result = records.compute_sheet()
+if isinstance(result, dict):
+    action = result</field>
+    </record>
+
+    <record id="action_hr_payroll_confirm_payroll" model="ir.actions.server">
+        <field name="name">Confirm</field>
+        <field name="model_id" ref="hr_payroll.model_hr_payslip" />
+        <field name="binding_model_id" ref="hr_payroll.model_hr_payslip" />
+        <field name="binding_view_types">list</field>
+        <field name="binding_sequence" eval="30" />
+        <field name="binding_icon">fa-solid fa-check</field>
+        <field name="state">code</field>
+        <field
+            name="code">if records:
+                records.with_context(payslip_generate_pdf=True).action_payslip_done()</field>
+    </record>
+
+    <record id="action_hr_payroll_cancel_payroll" model="ir.actions.server">
+        <field name="name">Cancel</field>
+        <field name="model_id" ref="hr_payroll.model_hr_payslip" />
+        <field name="binding_model_id" ref="hr_payroll.model_hr_payslip" />
+        <field name="binding_sequence" eval="40" />
+        <field name="binding_icon">fa-solid fa-ban</field>
+        <field name="state">code</field>
+        <field
+            name="code">if records:
+                records.action_payslip_cancel()</field>
+    </record>
+
+    <record id="action_hr_payroll_recompute_whole_sheet" model="ir.actions.server">
+        <field name="name">Recompute Whole Sheet</field>
+        <field name="model_id" ref="hr_payroll.model_hr_payslip" />
+        <field name="binding_model_id" ref="hr_payroll.model_hr_payslip" />
+        <field name="binding_view_types">list,form</field>
+        <field name="binding_sequence" eval="50" />
+        <field name="state">code</field>
+        <field name="code">records.action_refresh_from_work_entries()</field>
+    </record>
+
+    <record id="action_hr_payroll_remove_from_payrun" model="ir.actions.server">
+        <field name="name">Send to Off-Cycle</field>
+        <field name="model_id" ref="hr_payroll.model_hr_payslip" />
+        <field name="binding_model_id" ref="hr_payroll.model_hr_payslip" />
+        <field name="binding_view_types">list,form</field>
+        <field name="binding_sequence" eval="50" />
+        <field name="state">code</field>
+        <field name="code">records.action_move_to_off_cycle()</field>
+    </record>
+
+</odoo>

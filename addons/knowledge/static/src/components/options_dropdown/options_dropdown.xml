@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates>
+    <t t-name="knowledge.OptionsDropdown">
+        <Dropdown beforeOpen.bind="this.beforeOpen" menuClass="'o_knowledge_options_dropdown'">
+            <button class="btn btn-light text-muted" data-hotkey="p" title="More actions" aria-label="More actions">
+                <i class="oi oi-fw fs-6 oi-ellipsis-v"/>
+            </button>
+            <t t-set-slot="content">
+                <t t-if="this.props.record.data.active">
+                    <t t-if="this.props.record.data.user_can_write">
+                        <t t-if="!this.props.record.data.is_locked">
+                            <DropdownItem class="'d-md-none'" onSelected="this.knowledgeContext.toggleFavorite">
+                                <i t-attf-class="o_cog_menu_item_icon #{this.props.record.data.is_user_favorite ? 'fa-solid fa-star' : 'fa-regular fa-star'} me-1" aria-hidden="true"/>
+                                <t t-if="this.props.record.data.is_user_favorite">Remove From Favorites</t>
+                                <t t-else="">Add to Favorites</t>
+                            </DropdownItem>
+                            <DropdownItem t-if="this.isInternalUser" class="'d-md-none'" onSelected="this.knowledgeContext.toggleChatter">
+                                <i class="o_cog_menu_item_icon fa-regular fa-comments me-1" aria-hidden="true"/>
+                                <t t-if="this.chatterPanelState.isDisplayed">Hide Chatter</t>
+                                <t t-else="">Show Chatter</t>
+                            </DropdownItem>
+                            <DropdownItem t-if="this.isInternalUser and this.commentsState.hasComments" class="'d-md-none'" onSelected="this.knowledgeContext.toggleComments">
+                                <i class="o_cog_menu_item_icon fa-regular fa-comment-dots me-1" aria-hidden="true"/>
+                                <t t-if="this.commentsState.isDisplayed">Hide Comments</t>
+                                <t t-else="">Show Comments</t>
+                            </DropdownItem>
+                            <DropdownItem t-if="this.props.record.data.article_properties.some((prop) => !prop.definition_deleted)" class="'d-md-none'" onSelected="this.knowledgeContext.toggleProperties">
+                                <i class="o_cog_menu_item_icon fa-solid fa-gears me-1" aria-hidden="true"/>
+                                <t t-if="this.propertiesPanelState.isDisplayed">Hide Properties</t>
+                                <t t-else="">Show Properties</t>
+                            </DropdownItem>
+                            <DropdownItem t-if="this.props.record.data.icon" onSelected.bind="this.removeIcon">
+                                <i class="o_cog_menu_item_icon fa-regular fa-circle-xmark me-1" aria-hidden="true"/>Remove Icon
+                            </DropdownItem>
+                            <DropdownItem t-else="" onSelected.bind="this.addIcon">
+                                <i class="o_cog_menu_item_icon oi oi-smile-add me-1" aria-hidden="true"/>Add Icon
+                            </DropdownItem>
+                            <t t-if="this.isInternalUser">
+                                <DropdownItem t-if="this.props.record.data.cover_image_id" onSelected.bind="this.removeCover">
+                                    <i class="o_cog_menu_item_icon fa-solid fa-xmark me-1" aria-hidden="true"/>Remove Cover
+                                </DropdownItem>
+                                <DropdownItem t-else="" onSelected.bind="this.addCover">
+                                    <i class="o_cog_menu_item_icon fa-regular fa-image me-1" aria-hidden="true"/>Add Cover
+                                </DropdownItem>
+                                <t t-set="title">Properties are fields that can only be added on articles that have a parent.</t>
+                                <DropdownItem t-if="!this.props.record.data.parent_id and this.isInternalUser" class="'text-muted o_disabled_option'" onSelected="() => {}" attrs="{title}" closingMode="'none'">
+                                    <i class="o_cog_menu_item_icon fa-solid fa-gears me-1" aria-hidden="true"/>Add Properties
+                                </DropdownItem>
+                                <DropdownItem t-elif="!this.props.record.data.article_properties.some((prop) => !prop.definition_deleted) and !this.propertiesPanelState.isDisplayed and this.isInternalUser" onSelected.bind="() => this.knowledgeContext.toggleProperties(true)">
+                                    <i class="o_cog_menu_item_icon fa-solid fa-gears me-1" aria-hidden="true"/>Add Properties
+                                </DropdownItem>
+                            </t>
+                        </t>
+                        <DropdownItem onSelected.bind="this.toggleFullWidth" class="'d-inline-flex align-items-start'" closingMode="'none'">
+                            <div class="pe-3">
+                                <i class="o_cog_menu_item_icon oi oi-arrows-h me-1" aria-hidden="true"/>Full Width
+                            </div>
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" id="full_width_input" type="checkbox" role="switch" t-att-checked="this.props.record.data.full_width"/>
+                            </div>
+                        </DropdownItem>
+                        <div role="separator" class="dropdown-divider"/>
+                    </t>
+                    <DropdownItem t-if="this.isInternalUser and this.props.record.data.user_can_write and !this.props.record.data.is_article_item" onSelected.bind="this.moveArticle">
+                        <i class="o_cog_menu_item_icon fa-solid fa-angles-right me-1" aria-hidden="true"/>Move To
+                    </DropdownItem>
+                    <DropdownItem t-if="this.props.record.data.user_can_write" onSelected.bind="this.toggleLock">
+                        <t t-if="this.props.record.data.is_locked">
+                            <i class="o_cog_menu_item_icon fa-solid fa-lock-open me-1" aria-hidden="true"/>Unlock
+                        </t>
+                        <t t-else="">
+                            <i class="o_cog_menu_item_icon fa-solid fa-lock me-1" aria-hidden="true"/>Lock Content
+                        </t>
+                    </DropdownItem>
+                    <DropdownItem t-if="this.canCreateArticle" onSelected.bind="this.copy">
+                        <i class="o_cog_menu_item_icon fa-solid fa-copy me-1" aria-hidden="true"/>Create a Copy
+                    </DropdownItem>
+                    <DropdownItem t-if="this.isInternalUser and this.props.record.data.user_can_write and !this.areDatesEqual(this.creationDate, this.lastEditionDate)" onSelected.bind="this.openHistory">
+                        <i class="o_cog_menu_item_icon fa-solid fa-clock-rotate-left me-1" aria-hidden="true"/>Open Version History
+                    </DropdownItem>
+                    <DropdownItem t-if="!this.props.record.data.is_article_item and this.props.record.data.user_can_write and this.props.record.data.parent_id" onSelected.bind="this.toggleItem">
+                        <i class="o_cog_menu_item_icon fa-solid fa-bars-progress me-1" aria-hidden="true"/>Convert into Article Item
+                    </DropdownItem>
+                    <DropdownItem t-elif="this.props.record.data.is_article_item and this.props.record.data.user_can_write and !this.data.has_item_parent" onSelected.bind="this.toggleItem">
+                        <i class="o_cog_menu_item_icon fa-solid fa-sitemap me-1" aria-hidden="true"/>Convert into Article
+                    </DropdownItem>
+                    <DropdownItem onSelected.bind="this.export" attrs="{ 'name': 'export' }">
+                        <i class="o_cog_menu_item_icon fa-solid fa-download me-1" aria-hidden="true"/>Download PDF
+                    </DropdownItem>
+                    <DropdownItem t-if="this.props.record.data.user_can_write and this.isInternalUser" onSelected.bind="this.toggleIsListedInTemplatesGallery">
+                        <i class="o_cog_menu_item_icon fa-solid fa-paintbrush me-1" aria-hidden="true"/>
+                        <t t-if="this.data.is_listed_in_templates_gallery">Remove from Templates</t>
+                        <t t-else="">Add to Templates</t>
+                    </DropdownItem>
+                    <DropdownItem t-if="this.props.record.data.user_can_write and (this.isInternalUser or this.props.record.data.category === 'private')" onSelected.bind="this.sendToTrash">
+                        <i class="o_cog_menu_item_icon fa-solid fa-trash-can me-1" aria-hidden="true"/>Send to Trash
+                    </DropdownItem>
+                </t>
+                <t t-elif="this.props.record.data.user_can_write">
+                    <DropdownItem t-if="this.props.record.data.to_delete and (this.isInternalUser or this.props.record.data.category === 'private')" onSelected.bind="this.unarchive">
+                        <i class="o_cog_menu_item_icon fa-regular fa-trash-can me-1" aria-hidden="true"/>Restore from Trash
+                    </DropdownItem>
+                    <DropdownItem t-else="" onSelected.bind="this.unarchive">
+                        <i class="o_cog_menu_item_icon fa-solid fa-box-archive me-1" aria-hidden="true"/>Unarchive
+                    </DropdownItem>
+                </t>
+                <div role="separator" class="dropdown-divider"/>
+                <div t-if="this.lastEditionDate" class="o_knowledge_options_dropdown_section">
+                    <div class="text-muted ps-1" t-att-title="this.formatDateTime(this.lastEditionDate)">
+                        Last Edited · <t t-out="this.toRelative(this.lastEditionDate)"/>
+                    </div>
+                    <div class="d-flex">
+                        <div class="o_knowledge_options_dropdown_image d-flex align-items-center justify-content-center me-2">
+                            <img t-if="this.isInternalUser" class="rounded cursor-pointer"
+                                t-att-src="this.lastEditorAvatarUrl" t-on-click="this.onLastEditorClick" t-att-title="this.lastEditor"/>
+                            <img t-else="" class="d-block rounded"
+                                t-att-src="this.lastEditorAvatarUrl" t-att-title="this.lastEditor"/>
+                        </div>
+                        <div class="flex-grow-1 text-truncate text-muted" t-out="this.lastEditor"/>
+                    </div>
+                </div>
+            </t>
+        </Dropdown>
+    </t>
+</templates>

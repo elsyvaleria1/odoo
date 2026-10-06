@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="planning_tour" model="web_tour.tour">
+        <field name="name">planning_tour</field>
+        <field name="sequence">120</field>
+        <field
+            name="rainbow_man_message">&lt;b&gt;Congratulations!&lt;/b&gt;&lt;/br&gt; You are now a master of planning.</field>
+    </record>
+
+</odoo>

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Switch root menu "Invoicing" to "Accounting" -->
+    <!-- Top menu item -->
+    <menuitem
+        id="menu_accounting"
+        name="Accounting"
+        sequence="60"
+        groups="account.group_account_readonly,account.group_account_invoice"
+        web_icon="accountant,static/description/icon.png" />
+
+</odoo>

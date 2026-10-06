@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+
+    <record id="ir_cron_credit_profile_refresh" model="ir.cron">
+        <field
+            name="name">Credit: refresh profiles, detect events, expire exceptions</field>
+        <field name="model_id" ref="model_credit_profile" />
+        <field name="state">code</field>
+        <field name="code">model._cron_refresh()</field>
+        <field name="repeat_interval">1</field>
+        <field name="repeat_unit">day</field>
+        <field name="active" eval="True" />
+    </record>
+
+    <record id="ir_cron_credit_facility_expire" model="ir.cron">
+        <field name="name">Credit: expire facilities</field>
+        <field name="model_id" ref="model_credit_facility" />
+        <field name="state">code</field>
+        <field name="code">model._cron_expire()</field>
+        <field name="repeat_interval">1</field>
+        <field name="repeat_unit">day</field>
+        <field name="active" eval="True" />
+    </record>
+
+    <record id="ir_cron_credit_portfolio_report_refresh" model="ir.cron">
+        <field name="name">Credit: refresh the portfolio report</field>
+        <field name="model_id" ref="model_credit_portfolio_report" />
+        <field name="state">code</field>
+        <field name="code">model._cron_refresh_materialized_view()</field>
+        <field name="repeat_interval">1</field>
+        <field name="repeat_unit">day</field>
+        <field name="active" eval="True" />
+    </record>
+
+</odoo>

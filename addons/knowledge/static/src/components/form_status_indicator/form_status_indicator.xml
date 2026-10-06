@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="knowledge.FormStatusIndicator">
+        <img src="/knowledge/static/src/img/form_status_indicator_saved.svg"
+            class="align-items-center user-select-none text-muted px-1"
+            t-attf-class="{{ this.displayButtons ? 'd-none' : ''}}"
+            data-tooltip="All changes saved"/>
+        <button
+            class="o_form_button_save btn btn-light text-muted border-0 px-1 py-0"
+            t-ref="this.saveButton"
+            t-att-class="{'d-none': !(this.props.model.root.isNew or this.displayButtons)}"
+            t-on-click.stop="this.save"
+            data-hotkey="s"
+            data-tooltip="Save manually"
+            aria-label="Save manually">
+            <i class="fa-solid fa-cloud-arrow-up" />
+        </button>
+        <button
+            class="o_form_button_cancel btn btn-light text-muted border-0 px-1 py-0"
+            t-att-class="{'d-none': !(this.props.model.root.isNew or this.displayButtons)}"
+            t-on-click.stop="this.discard"
+            data-hotkey="j"
+            data-tooltip="Discard all changes"
+            aria-label="Discard all changes">
+            <i class="fa-solid fa-times" />
+        </button>
+        <span
+            t-if="!this.props.model.root.isNew and this.indicatorMode === 'invalid'"
+            class="text-danger small ms-2"
+            data-tooltip="Unable to save. Correct the issue or discard all changes">
+            <i class="fa-solid fa-triangle-exclamation" />
+        </span>
+    </t>
+</templates>

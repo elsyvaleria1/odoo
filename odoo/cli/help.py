@@ -1,0 +1,94 @@
+import sys
+import textwrap
+
+import odoo.release
+from odoo.libs.debug_log import DebugLog
+
+from .command import (
+    DEFAULT_COMMAND,
+    PROG_NAME,
+    Command,
+    commands,
+    get_cli_command,
+    load_addons_commands,
+    load_internal_commands,
+)
+
+_debug = DebugLog(__name__)
+
+
+class Help(Command):
+    description = "Display the list of available commands"
+    template = textwrap.dedent("""\
+        usage: {prog_name} [--addons-path=PATH,...] <command> [...]
+
+        Odoo {version}
+        Available commands:
+
+        {command_list}
+
+        Use '{prog_name} {default_command} --help' for regular server options.
+        Use '{prog_name} <command> --help' for other individual commands options.
+    """)
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.parser.add_argument(
+            "command",
+            nargs="?",
+            metavar="COMMAND",
+            help="show this command's own --help instead of the full list",
+        )
+
+    def run(self, args: list[str]) -> None:
+        parsed = self.parser.parse_args(args)
+        if parsed.command and Command.is_valid_name(parsed.command):
+            _debug.logic("cli.help.mode", mode="command", command=parsed.command)
+            return self._show_command_help(parsed.command)
+        _debug.logic(
+            "cli.help.mode",
+            mode="list",
+            ignored_argument=parsed.command or None,
+        )
+
+        with _debug.perf("cli.help.discover") as span:
+            load_internal_commands()
+            load_addons_commands()
+            span.set(commands=len(commands))
+
+        _debug.pipeline("cli.help.listing", commands=len(commands))
+        padding = max((len(cmd_name) for cmd_name in commands), default=0) + 2
+        name_desc = [
+            (
+                cmd_name,
+                (cmd.description or cmd.__doc__ or "")
+                .strip()
+                .partition("\n")[0]
+                .strip(),
+            )
+            for cmd_name, cmd in sorted(commands.items())
+        ]
+        command_list = "\n".join(
+            f"    {name:<{padding}}{desc}" for name, desc in name_desc
+        )
+
+        print(
+            Help.template.format(
+                prog_name=PROG_NAME,
+                version=odoo.release.version,
+                command_list=command_list,
+                default_command=DEFAULT_COMMAND,
+            )
+        )
+        return None
+
+    def _show_command_help(self, name: str) -> None:
+        command = get_cli_command(name)
+        if command is None:
+            _debug.logic("cli.help.unknown_command", command=name)
+            sys.exit(
+                f"Unknown command {name!r}.\n"
+                f"Use '{PROG_NAME} help' to see the list of available commands."
+            )
+        _debug.pipeline("cli.help.delegated", command=name, module=command.__module__)
+        command().run(["--help"])

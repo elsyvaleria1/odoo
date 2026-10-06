@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="event.paperformat_event_full_page_ticket" model="report.paperformat">
+        <field name="margin_bottom">29</field>
+    </record>
+
+</odoo>

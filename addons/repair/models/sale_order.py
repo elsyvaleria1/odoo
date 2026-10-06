@@ -1,0 +1,153 @@
+from odoo import api, fields, models
+from odoo.libs.debug_log import DebugLog
+
+_debug = DebugLog(__name__)
+
+
+class SaleOrder(models.Model):
+    _inherit = "sale.order"
+
+    repair_order_ids = fields.One2many(
+        comodel_name="repair.order",
+        inverse_name="sale_order_id",
+        groups="stock.group_stock_user",
+    )
+    repair_count = fields.Count(
+        count_of="repair_order_ids",
+        string="Repair Order(s)",
+        groups="stock.group_stock_user",
+    )
+
+    def _action_cancel(self):
+        res = super()._action_cancel()
+        self.line_ids._cancel_repair_order()
+        return res
+
+    def _action_confirm(self):
+        res = super()._action_confirm()
+        self.line_ids._create_repair_order()
+        return res
+
+    def action_show_repair(self) -> dict | None:
+        self.check_singleton()
+        if self.repair_count == 1:
+            return {
+                "type": "ir.actions.act_window",
+                "res_model": "repair.order",
+                "views": [[False, "form"]],
+                "res_id": self.repair_order_ids.id,
+            }
+        elif self.repair_count > 1:
+            return {
+                "name": self.env._("Repair Orders"),
+                "type": "ir.actions.act_window",
+                "res_model": "repair.order",
+                "view_mode": "list,form",
+                "domain": [("sale_order_id", "=", self.id)],
+            }
+        return None
+
+
+class SaleOrderLine(models.Model):
+    _inherit = "sale.order.line"
+
+    def _compute_qty_transferred(self):
+        _debug.perf.count("repair_sale_qty_transferred_compute", lines=self)
+        remaining_so_lines = self
+        for so_line in self:
+            move = so_line.move_ids.sudo().filtered(
+                lambda m: m.repair_id and m.state == "done"
+            )
+            if len(move) != 1:
+                continue
+            remaining_so_lines -= so_line
+            so_line.qty_transferred = move.quantity
+        return super(SaleOrderLine, remaining_so_lines)._compute_qty_transferred()
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        res = super().create(vals_list)
+        res.filtered(lambda line: line.state == "done")._create_repair_order()
+        return res
+
+    def write(self, vals):
+        if "product_qty" in vals:
+            old_product_qty = {line.id: line.product_qty for line in self}
+            res = super().write(vals)
+            for line in self:
+                if line.state == "done" and line.product_id:
+                    if (
+                        line.product_uom_id.compare(old_product_qty[line.id], 0) <= 0
+                        and line.product_uom_id.compare(line.product_qty, 0) > 0
+                    ):
+                        self._create_repair_order()
+                    if (
+                        line.product_uom_id.compare(old_product_qty[line.id], 0) > 0
+                        and line.product_uom_id.compare(line.product_qty, 0) <= 0
+                    ):
+                        self._cancel_repair_order()
+            return res
+        return super().write(vals)
+
+    def _action_launch_stock_rule(self, **kwargs):
+        # Picking must be generated for products created from the SO but not for parts added from the RO, as they're already handled there
+        _debug.pipeline("repair_stock_rule_launch", lines=self)
+        lines_without_repair_move = self.filtered(
+            lambda line: not line.move_ids.sudo().repair_id
+        )
+        return super(
+            SaleOrderLine, lines_without_repair_move
+        )._action_launch_stock_rule(**kwargs)
+
+    def _create_repair_order(self) -> None:
+        _debug.pipeline("repair_order_from_sale", lines=self)
+        new_repair_vals = []
+        for line in self:
+            # One RO for each line with at least a quantity of 1, quantities > 1 don't create multiple ROs
+            if (
+                any(
+                    line.id == ro.sale_order_line_id.id
+                    for ro in line.order_id.sudo().repair_order_ids
+                )
+                and line.product_uom_id.compare(line.product_qty, 0) > 0
+            ):
+                binded_ro_ids = line.order_id.sudo().repair_order_ids.filtered_domain(
+                    [("sale_order_line_id", "=", line.id), ("state", "=", "cancel")]
+                )
+                binded_ro_ids.action_repair_cancel_draft()
+                binded_ro_ids._action_repair_confirm()
+                continue
+            if (
+                line.product_template_id.sudo().service_tracking != "repair"
+                or line.move_ids.sudo().repair_id
+                or line.product_uom_id.compare(line.product_qty, 0) <= 0
+            ):
+                continue
+
+            order = line.order_id
+            new_repair_vals.append(
+                {
+                    "state": "confirmed",
+                    "partner_id": order.partner_id.id,
+                    "sale_order_id": order.id,
+                    "sale_order_line_id": line.id,
+                    "picking_type_id": order.warehouse_id.repair_type_id.id,
+                }
+            )
+
+        if new_repair_vals:
+            self.env["repair.order"].sudo().create(new_repair_vals)
+
+    def _cancel_repair_order(self) -> None:
+        # Each RO binded to a SO line with Qty set to 0 or cancelled is set to 'Cancelled'
+        _debug.lifecycle("repair_order_cancel_from_sale", lines=self)
+        binded_ro_ids = self.env["repair.order"]
+        for line in self:
+            binded_ro_ids |= line.order_id.sudo().repair_order_ids.filtered_domain(
+                [("sale_order_line_id", "=", line.id), ("state", "!=", "done")]
+            )
+        binded_ro_ids.action_repair_cancel()
+
+    def has_valued_moves(self) -> bool:
+        res = super().has_valued_moves()
+        return bool(res and not self.move_ids.repair_id)

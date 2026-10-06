@@ -1,0 +1,536 @@
+// @ts-check
+/** @odoo-module native */
+
+import { Component, proxy, t, toRaw, useProps } from "@odoo/owl";
+import { webNameSearch } from "@web/components/autocomplete/name_search";
+import { BarcodeScanner } from "@web/components/barcode/barcode_dialog";
+import { isBarcodeScannerSupported } from "@web/components/barcode/barcode_video_scanner";
+import { useAction } from "@web/core/action_port";
+import { useAppContext } from "@web/core/app_context";
+import { isMobileOS } from "@web/core/browser/feature_detection";
+import { makeContext } from "@web/core/context";
+import { makeLogger } from "@web/core/debug/debug_logger";
+import { useDialogContext } from "@web/core/dialog_context_hooks";
+import { evaluateBooleanExpr } from "@web/core/py_js/py";
+import { _t } from "@web/core/translation";
+import { shallowEqual } from "@web/core/utils/collections/objects";
+import { elementRef } from "@web/core/utils/element_ref";
+import { useService } from "@web/core/utils/hooks";
+import { useRenderCounter } from "@web/core/utils/render_instrumentation";
+import { getFieldDomain } from "@web/model/relational_model";
+import { usePopover } from "@web/ui/popover";
+
+import { Many2XAutocomplete, useOpenMany2XRecord } from "../many2x_autocomplete.js";
+
+/**
+ * @param {Object} record
+ * @returns {{ id: number, display_name: string }}
+ */
+export function extractData(record) {
+    let name;
+    if ("display_name" in record) {
+        name = record.display_name;
+    } else if ("name" in record) {
+        name = record.name?.id ? record.name.display_name : record.name;
+    }
+    return { id: record.id, display_name: name };
+}
+
+/** @typedef {{ latest: any, stable: any, props: any, value: any }} M2OHolder */
+
+/** @type {WeakMap<object, Map<string, M2OHolder>>} */
+const M2O_PROPS = new WeakMap();
+
+/**
+ * @param {Object} fieldProps
+ * @returns {M2OHolder}
+ */
+function m2oHolder(fieldProps) {
+    const { record, name, id } = fieldProps;
+    // a field can appear more than once in an arch, each node with its own
+    // domain and context: one holder per node, not per field name
+    const key = id ? `${name}/${id}` : name;
+    let byName = M2O_PROPS.get(record);
+    if (!byName) {
+        byName = new Map();
+        M2O_PROPS.set(record, byName);
+    }
+    let holder = byName.get(key);
+    if (!holder) {
+        log.logic("prop holder created", () => ({ name, id, key }));
+        /** @type {M2OHolder} */
+        const created = {
+            latest: fieldProps,
+            stable: null,
+            props: null,
+            value: null,
+        };
+        created.stable = {
+            domain: () =>
+                getFieldDomain(
+                    created.latest.record,
+                    created.latest.name,
+                    created.latest.domain,
+                ),
+            openActionContext: () => {
+                const { context, name, openActionContext, record } = created.latest;
+                return makeContext(
+                    [openActionContext || context, record.fields[name].context],
+                    record.evalContext,
+                );
+            },
+            update: (value, options = {}) =>
+                created.latest.record.update({ [created.latest.name]: value }, options),
+        };
+        byName.set(key, created);
+        holder = created;
+    }
+    holder.latest = fieldProps;
+    return holder;
+}
+
+/**
+ * @param {Object} fieldProps
+ * @returns {Object}
+ */
+export function computeM2OProps(fieldProps) {
+    const computeLinkCssClass = () => {
+        if (!fieldProps.decorations) {
+            return "";
+        }
+        const evalContext = fieldProps.record.evalContextWithVirtualIds;
+        for (const decorationName of Object.keys(fieldProps.decorations)) {
+            if (
+                evaluateBooleanExpr(fieldProps.decorations[decorationName], evalContext)
+            ) {
+                return `text-${decorationName}`;
+            }
+        }
+        return "";
+    };
+
+    const holder = m2oHolder(fieldProps);
+    const fresh = {
+        ...holder.stable,
+        canCreate: fieldProps.canCreate,
+        canCreateEdit: fieldProps.canCreateEdit,
+        canOpen: fieldProps.canOpen,
+        canQuickCreate: fieldProps.canQuickCreate,
+        canScanBarcode: fieldProps.canScanBarcode,
+        canWrite: fieldProps.canWrite,
+        context: fieldProps.context,
+        id: fieldProps.id,
+        linkCssClass: computeLinkCssClass(),
+        nameCreateField: fieldProps.nameCreateField,
+        placeholder: fieldProps.placeholder,
+        readonly: fieldProps.readonly,
+        relation: fieldProps.record.fields[fieldProps.name].relation,
+        searchMemoization: fieldProps.searchMemoization,
+        searchThreshold: fieldProps.searchThreshold,
+        string:
+            fieldProps.string || fieldProps.record.fields[fieldProps.name].string || "",
+        value: toRaw(fieldProps.record.data[fieldProps.name]),
+    };
+    if (holder.props && shallowEqual(holder.props, fresh)) {
+        return holder.props;
+    }
+    holder.props = fresh;
+    return fresh;
+}
+
+/**
+ * @param {Object} fieldProps
+ * @param {{ id: number, display_name: string } | false | null | undefined} pair
+ * @returns {{ id: number, display_name: string } | false}
+ */
+export function stableM2OValue(fieldProps, pair) {
+    if (!pair) {
+        return false;
+    }
+    const holder = m2oHolder(fieldProps);
+    const previous = holder.value;
+    if (
+        previous &&
+        previous.id === pair.id &&
+        previous.display_name === pair.display_name
+    ) {
+        return previous;
+    }
+    holder.value = { id: pair.id, display_name: pair.display_name };
+    return holder.value;
+}
+
+const log = makeLogger("web.field.many2one");
+
+export class Many2One extends Component {
+    static template = "web.Many2One";
+    static components = { Many2XAutocomplete };
+
+    /** @type {ReturnType<typeof import("@web/core/name_service").nameService.start>} */
+    nameService;
+    static props = {
+        canCreate: t.boolean().optional(true),
+        canCreateEdit: t.boolean().optional(true),
+        canOpen: t.boolean().optional(true),
+        canQuickCreate: t.boolean().optional(true),
+        canScanBarcode: t.boolean().optional(false),
+        canWrite: t.boolean().optional(true),
+        context: t.object().optional({}),
+        createAction: t.function().optional(),
+        cssClass: t.string().optional(),
+        domain: t.function().optional(() => () => []),
+        id: t.string().optional(),
+        linkCssClass: t.string().optional(""),
+        nameCreateField: t.string().optional("name"),
+        openActionContext: t.function().optional(() => () => ({})),
+        openRecordAction: t.function().optional(),
+        otherSources: t.array().optional([]),
+        placeholder: t.string().optional(""),
+        readonly: t.boolean().optional(false),
+        relation: t.string(),
+        searchMoreLabel: t.string().optional(),
+        searchThreshold: t.number().optional(),
+        searchMemoization: t.string().optional(),
+        slots: t.object().optional(),
+        specification: t.object().optional(),
+        string: t.string().optional(""),
+        update: t.function(),
+        value: t.or([t.array(), t.object(), t.literal(false)]).optional(),
+    };
+    props = useProps(this.constructor.props);
+
+    /** @type {import("@odoo/owl").Ref<HTMLElement>} */
+    rootRef;
+    /** @type {import("@web/core/action_port").ActionPort} */
+    action;
+    /** @type {import("services").ServiceFactories["notification"]} */
+    notification;
+    /** @type {import("services").ServiceFactories["orm"]} */
+    orm;
+    /** @type {{ isFloating: boolean }} */
+    state;
+    /** @type {any} */
+    recordDialog;
+    /** @type {{ quickCreate: Function, setInputFloats: Function, update: Function }} */
+    autocompleteCallbacks;
+    /** @type {{ create: boolean, createEdit: boolean, write: boolean } | null} */
+    _activeActions = null;
+
+    setup() {
+        this.appContext = useAppContext();
+        this.dialogContext = useDialogContext();
+        this.ui = useService("ui");
+        useRenderCounter("fields.web.Many2One");
+        this.rootRef = elementRef();
+
+        this.action = useAction();
+        this.notification = useService("notification");
+        this.orm = useService("orm");
+        this.nameService = useService("name");
+
+        this.state = proxy({ isFloating: false });
+        this.autocompleteCallbacks = {
+            quickCreate: (name) => this.quickCreate(name),
+            setInputFloats: (isFloating) => {
+                this.state.isFloating = isFloating;
+            },
+            update: (records) => {
+                const idNamePair =
+                    records && records[0] ? extractData(records[0]) : false;
+                return this.update(idNamePair);
+            },
+        };
+
+        const self = this;
+        this.recordDialog = {
+            open: useOpenMany2XRecord({
+                activeActions: {
+                    get create() {
+                        return self.props.canCreate;
+                    },
+                    get createEdit() {
+                        return self.props.canCreateEdit;
+                    },
+                    get write() {
+                        return self.props.canWrite;
+                    },
+                },
+                fieldString: this.props.string,
+                isToMany: false,
+                onClose: () => {
+                    this.input?.focus();
+                },
+                onRecordSaved: async () => {
+                    const resId = this.props.value?.id;
+                    if (resId == null) {
+                        return;
+                    }
+                    const fieldNames = ["display_name"];
+                    const records = await this.orm.read(
+                        this.props.relation,
+                        [resId],
+                        fieldNames,
+                        {
+                            context: this.props.context,
+                        },
+                    );
+                    if (records[0]) {
+                        this.nameService.addDisplayNames(this.props.relation, {
+                            [resId]: records[0].display_name,
+                        });
+                    }
+                    await this.update(records[0] ? extractData(records[0]) : false);
+                },
+                onRecordDiscarded: () => {},
+                resModel: this.props.relation,
+            }),
+        };
+    }
+
+    /** @returns {{ create: boolean, createEdit: boolean, write: boolean }} */
+    get activeActions() {
+        const next = {
+            create: this.props.canCreate,
+            createEdit: this.props.canCreateEdit,
+            write: this.props.canWrite,
+        };
+        if (this._activeActions && shallowEqual(this._activeActions, next)) {
+            return this._activeActions;
+        }
+        this._activeActions = next;
+        return next;
+    }
+
+    /** @returns {Object} */
+    get many2XAutocompleteProps() {
+        return {
+            activeActions: this.activeActions,
+            autoSelect: true,
+            context: this.props.context,
+            createAction: this.props.createAction,
+            fieldString: this.props.string,
+            getDomain: this.props.domain,
+            id: this.props.id,
+            nameCreateField: this.props.nameCreateField,
+            otherSources: this.props.otherSources,
+            placeholder: this.props.placeholder,
+            quickCreate: this.props.canQuickCreate
+                ? this.autocompleteCallbacks.quickCreate
+                : null,
+            resModel: this.props.relation,
+            searchMoreLabel: this.props.searchMoreLabel,
+            searchThreshold: this.props.searchThreshold,
+            searchMemoization: this.props.searchMemoization,
+            setInputFloats: this.autocompleteCallbacks.setInputFloats,
+            slots: this.props.slots,
+            specification: this.props.specification,
+            update: this.autocompleteCallbacks.update,
+            value: this.displayName,
+        };
+    }
+
+    /** @returns {string} */
+    get displayName() {
+        if (this.props.value) {
+            if (this.props.value.display_name) {
+                return this.props.value.display_name.split("\n")[0];
+            } else {
+                return _t("Unnamed");
+            }
+        } else {
+            return "";
+        }
+    }
+
+    /** @returns {string[]} */
+    get extraLines() {
+        const name = this.props.value?.display_name;
+        return name
+            ? name
+                  .split("\n")
+                  .map((line) => line.trim())
+                  .slice(1)
+            : [];
+    }
+
+    /** @returns {boolean} */
+    get hasBarcodeButton() {
+        const supported = isBarcodeScannerSupported();
+        return (
+            this.props.canScanBarcode &&
+            isMobileOS() &&
+            supported &&
+            !this.hasLinkButton
+        );
+    }
+
+    /** @returns {boolean} */
+    get hasLinkButton() {
+        return (
+            this.props.canOpen &&
+            typeof this.props.value?.id === "number" &&
+            !this.state.isFloating
+        );
+    }
+
+    /** @returns {HTMLInputElement|null} */
+    get input() {
+        return this.rootRef.el?.querySelector("input") ?? null;
+    }
+
+    /** @returns {string} */
+    get linkHref() {
+        if (!this.props.value) {
+            return "/";
+        }
+        const relation = this.props.relation.includes(".")
+            ? this.props.relation
+            : `m-${this.props.relation}`;
+        return `/odoo/${relation}/${this.props.value.id}`;
+    }
+
+    async openBarcodeScanner() {
+        const barcode = await BarcodeScanner.scanBarcode(this.appContext);
+        if (barcode) {
+            await this.processScannedBarcode(barcode);
+            if ("vibrate" in navigator) {
+                navigator.vibrate(100);
+            }
+        } else {
+            /** @type {any} */
+            const message = _t("Please, scan again!");
+            this.notification.add(message, { type: "warning" });
+        }
+    }
+
+    /** @param {"action"|"dialog"|"tab"} mode */
+    async openRecord(mode) {
+        log.logic("openRecord", () => ({
+            mode,
+            resModel: this.props.relation,
+            id: this.props.value?.id,
+        }));
+        if (this.props.openRecordAction) {
+            return this.props.openRecordAction(mode);
+        }
+
+        switch (mode) {
+            case "action": {
+                return this.openRecordInAction(false);
+            }
+            case "dialog": {
+                return this.openRecordInDialog();
+            }
+            case "tab": {
+                return this.openRecordInAction(true);
+            }
+        }
+    }
+
+    /** @param {boolean} newWindow */
+    async openRecordInAction(newWindow) {
+        const action = await this.orm.call(
+            this.props.relation,
+            "get_formview_action",
+            [[this.props.value?.id]],
+            { context: this.props.openActionContext() },
+        );
+        await this.action.doAction(action, { newWindow });
+    }
+
+    async openRecordInDialog() {
+        return this.recordDialog.open({
+            resId: this.props.value?.id,
+            context: this.props.context,
+        });
+    }
+
+    /** @param {string} barcode */
+    async processScannedBarcode(barcode) {
+        const records = await webNameSearch(this.orm, this.props.relation, {
+            name: barcode,
+            domain: this.props.domain(),
+            limit: 2,
+            context: this.props.context,
+        });
+        const matches = records.filter((record) => record.id);
+        if (matches.length === 1) {
+            const { id, display_name } = matches[0];
+            return this.update({ id, display_name });
+        } else {
+            const input = this.input;
+            if (!input) {
+                return;
+            }
+            input.value = barcode;
+            input.dispatchEvent(new Event("input"));
+            if (this.ui.isSmall) {
+                input.dispatchEvent(new Event("barcode-search"));
+            }
+        }
+    }
+
+    /**
+     * @param {string} name
+     * @returns {Promise}
+     */
+    quickCreate(name) {
+        log.logic("quickCreate", () => ({ resModel: this.props.relation, name }));
+        return this.update({ id: false, display_name: name });
+    }
+
+    /**
+     * @param {{ id: number|false, display_name: string }|false} idNamePair
+     * @returns {Promise}
+     */
+    update(idNamePair) {
+        log.logic("update", () => ({
+            resModel: this.props.relation,
+            id: idNamePair && idNamePair.id,
+        }));
+        this.state.isFloating = false;
+        return this.props.update(idNamePair);
+    }
+}
+
+class KanbanMany2OneAssignPopover extends Many2One {
+    static props = { ...super.props, close: t.function() };
+
+    get many2XAutocompleteProps() {
+        return {
+            ...super.many2XAutocompleteProps,
+            dropdown: false,
+        };
+    }
+}
+
+export class KanbanMany2One extends Component {
+    static template = "web.KanbanMany2One";
+    static props = { ...Many2One.props };
+    props = useProps(this.constructor.props);
+
+    /** @type {any} */
+    assignPopover;
+
+    setup() {
+        this.assignPopover = usePopover(KanbanMany2OneAssignPopover, {
+            class: "o_m2o_tags_avatar_field_popover",
+        });
+    }
+
+    /** @param {HTMLElement} target */
+    openAssignPopover(target) {
+        this.assignPopover.open(target, {
+            ...this.props,
+            canCreate: false,
+            canCreateEdit: false,
+            canQuickCreate: false,
+            placeholder: this.props.placeholder || _t("Search user..."),
+            readonly: false,
+            update: async (value) => {
+                await this.props.update(value, { save: true });
+                this.assignPopover.close();
+            },
+        });
+    }
+}

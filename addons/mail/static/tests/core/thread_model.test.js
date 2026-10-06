@@ -1,0 +1,332 @@
+// @ts-check
+import { waitUntilSubscribe } from "@bus/../tests/bus_test_helpers";
+import { defineMailModels, start, startServer } from "@mail/../tests/mail_test_helpers";
+import { applyCounterAbsolute } from "@mail/utils/common/counters";
+import { describe, expect, test } from "@odoo/hoot";
+import { runAllTimers } from "@odoo/hoot-mock";
+import {
+    getService,
+    makeServerError,
+    onRpc,
+    patchWithCleanup,
+    serverState,
+} from "@web/../tests/web_test_helpers";
+import { browser } from "@web/core/browser/browser";
+
+describe.current.tags("desktop");
+defineMailModels();
+
+test("fetchNewMessages keeps thread messages in ascending id order", async () => {
+    const pyEnv = await startServer();
+    const partnerId = pyEnv["res.partner"].create({ name: "John" });
+    const messageIds = pyEnv["mail.message"].create([
+        { body: "message 1", model: "res.partner", res_id: partnerId },
+        { body: "message 2", model: "res.partner", res_id: partnerId },
+        { body: "message 3", model: "res.partner", res_id: partnerId },
+    ]);
+    await start();
+    const store = getService("mail.store");
+    const thread = store.Thread.insert({ id: partnerId, model: "res.partner" });
+    const knownMessage = store["mail.message"].insert({
+        id: messageIds[1],
+        thread: { id: partnerId, model: "res.partner" },
+    });
+    thread.messages.add(knownMessage);
+    await thread.fetchNewMessages();
+    expect(thread.messages.map((message) => message.id)).toEqual(
+        [...messageIds].sort((id1, id2) => id1 - id2),
+    );
+});
+
+test("fetchNewMessages on a first load keeps a server message between two known ones", async () => {
+    const pyEnv = await startServer();
+    const partnerId = pyEnv["res.partner"].create({ name: "John" });
+    const messageIds = pyEnv["mail.message"].create([
+        { body: "message 1", model: "res.partner", res_id: partnerId },
+        { body: "message 2", model: "res.partner", res_id: partnerId },
+        { body: "message 3", model: "res.partner", res_id: partnerId },
+    ]);
+    await start();
+    const store = getService("mail.store");
+    const thread = store.Thread.insert({ id: partnerId, model: "res.partner" });
+    for (const id of [messageIds[0], messageIds[2]]) {
+        thread.messages.add(
+            store["mail.message"].insert({
+                id,
+                thread: { id: partnerId, model: "res.partner" },
+            }),
+        );
+    }
+    await thread.fetchNewMessages();
+    expect(thread.messages.map((message) => message.id)).toEqual(
+        [...messageIds].sort((id1, id2) => id1 - id2),
+    );
+});
+
+test("a full page of newer messages leaves loadNewer open", async () => {
+    const pyEnv = await startServer();
+    const partnerId = pyEnv["res.partner"].create({ name: "John" });
+    pyEnv["mail.message"].create({
+        body: "first",
+        model: "res.partner",
+        res_id: partnerId,
+    });
+    await start();
+    const store = getService("mail.store");
+    const thread = store.Thread.insert({ id: partnerId, model: "res.partner" });
+    await thread.fetchNewMessages();
+    expect(thread.messages).toHaveLength(1);
+    expect(thread.loadNewer).toBe(false);
+    pyEnv["mail.message"].create(
+        Array.from({ length: store.FETCH_LIMIT + 1 }, (_, i) => ({
+            body: `later ${i}`,
+            model: "res.partner",
+            res_id: partnerId,
+        })),
+    );
+    await thread.fetchNewMessages();
+    expect(thread.messages).toHaveLength(1 + store.FETCH_LIMIT);
+    expect(thread.loadNewer).toBe(true);
+    await thread.fetchMoreMessages("newer");
+    expect(thread.messages).toHaveLength(2 + store.FETCH_LIMIT);
+    expect(thread.loadNewer).toBe(false);
+});
+
+test("thread needaction counter decrements when needaction message is deleted", async () => {
+    const pyEnv = await startServer();
+    pyEnv["res.users"].write(serverState.userId, { notification_type: "inbox" });
+    const partnerId = pyEnv["res.partner"].create({ name: "John" });
+    const messageId = pyEnv["mail.message"].create({
+        body: "Needaction message",
+        model: "res.partner",
+        needaction: true,
+        res_id: partnerId,
+    });
+    pyEnv["mail.notification"].create({
+        mail_message_id: messageId,
+        notification_status: "sent",
+        notification_type: "inbox",
+        res_partner_id: serverState.partnerId,
+    });
+    const env = await start();
+    const store = getService("mail.store");
+    store.insert({
+        "mixin.mail.thread": [
+            {
+                id: partnerId,
+                message_needaction_counter: 1,
+                model: "res.partner",
+            },
+        ],
+        "mail.message": [
+            {
+                id: messageId,
+                needaction: true,
+                thread: { id: partnerId, model: "res.partner" },
+            },
+        ],
+    });
+    const thread = store.Thread.get({ id: partnerId, model: "res.partner" });
+    expect(thread.message_needaction_counter).toBe(1);
+    env.services.bus_service.start();
+    env.services.bus_service.forceUpdateChannels();
+    await runAllTimers();
+    await waitUntilSubscribe();
+    /** @type {Promise<void>} */
+    const deleteHandled = new Promise((resolve) =>
+        env.bus.addEventListener("mail.message/delete", () => resolve(), {
+            once: true,
+        }),
+    );
+    const [partner] = pyEnv["res.partner"].read(serverState.partnerId);
+    pyEnv["bus.bus"]._sendone(partner, "mail.message/delete", {
+        message_ids: [messageId],
+    });
+    await deleteHandled;
+    expect(thread.message_needaction_counter).toBe(0);
+});
+
+async function setupNeedactionThread(pyEnv) {
+    pyEnv["res.users"].write(serverState.userId, { notification_type: "inbox" });
+    const partnerId = pyEnv["res.partner"].create({ name: "John" });
+    const messageId = pyEnv["mail.message"].create({
+        body: "Needaction message",
+        model: "res.partner",
+        needaction: true,
+        res_id: partnerId,
+    });
+    pyEnv["mail.notification"].create({
+        mail_message_id: messageId,
+        notification_status: "sent",
+        notification_type: "inbox",
+        res_partner_id: serverState.partnerId,
+    });
+    await start();
+    const store = getService("mail.store");
+    store.insert({
+        "mixin.mail.thread": [
+            {
+                id: partnerId,
+                message_needaction_counter: 1,
+                model: "res.partner",
+            },
+        ],
+        "mail.message": [
+            {
+                id: messageId,
+                needaction: true,
+                thread: { id: partnerId, model: "res.partner" },
+            },
+        ],
+    });
+    const message = store["mail.message"].get(messageId);
+    store.needaction_counter = 1;
+    return {
+        message,
+        store,
+        thread: store.Thread.get({ id: partnerId, model: "res.partner" }),
+    };
+}
+
+test("failed markAllMessagesAsRead rolls back the optimistic counter updates", async () => {
+    const pyEnv = await startServer();
+    onRpc("mail.message", "mark_all_as_read", () => {
+        throw makeServerError({ message: "mark all boom" });
+    });
+    const { message, store, thread } = await setupNeedactionThread(pyEnv);
+    const warnings = [];
+    patchWithCleanup(console, {
+        warn: (...args) => warnings.push(args.map(String).join(" ")),
+    });
+    await thread.markAllMessagesAsRead();
+    expect(message.needaction).toBe(true);
+    expect(store.needaction_counter).toBe(1);
+    expect(thread.message_needaction_counter).toBe(1);
+    expect(
+        warnings.some((line) => line.includes("Failed to mark all messages as read")),
+    ).toBe(true);
+});
+
+test("markAllMessagesAsRead rollback is skipped when a newer absolute snapshot landed", async () => {
+    const pyEnv = await startServer();
+    onRpc("mail.message", "mark_all_as_read", () => {
+        throw makeServerError({ message: "mark all boom" });
+    });
+    const { store, thread } = await setupNeedactionThread(pyEnv);
+    const warnings = [];
+    patchWithCleanup(console, {
+        warn: (...args) => warnings.push(args.map(String).join(" ")),
+    });
+    const promise = thread.markAllMessagesAsRead();
+    applyCounterAbsolute(store, "needaction_counter", 5, 99);
+    applyCounterAbsolute(thread, "message_needaction_counter", 0, 99);
+    await promise;
+    expect(store.needaction_counter).toBe(5);
+    expect(thread.message_needaction_counter).toBe(0);
+    expect(
+        warnings.some((line) => line.includes("Failed to mark all messages as read")),
+    ).toBe(true);
+});
+
+test("plain document threads answer the channel-behavior hooks with neutral defaults", async () => {
+    const pyEnv = await startServer();
+    const partnerId = pyEnv["res.partner"].create({ name: "John" });
+    await start();
+    const store = getService("mail.store");
+    const thread = store.Thread.insert({ id: partnerId, model: "res.partner" });
+    expect(thread.isChannelKind).toBe(false);
+    expect(thread.isChatChannel).toBe(false);
+    expect(thread.isDirectChat).toBe(false);
+    expect(thread.canLeave).toBe(false);
+    expect(thread.canUnpin).toBe(false);
+    expect(thread.allowCalls).toBe(false);
+    expect(thread.allowDescription).toBe(false);
+    expect(thread.hasAttachmentPanel).toBe(false);
+    expect(thread.supportsCustomChannelName).toBe(false);
+    expect(thread.invitationLink).toBe(undefined);
+    expect(thread.hasOptimisticPost).toBe(false);
+    expect(thread.hasStartOfConversationBanner).toBe(false);
+    expect(thread.chatWindowComposerType).toBe("note");
+    expect(thread.computeDisplayToSelf()).toBe(false);
+    expect(thread.computeCorrespondent()).toBe(undefined);
+    expect(thread.membersThatCanSeen).toHaveLength(0);
+    expect(thread.showCorrespondentCountry).toBe(false);
+    expect(thread.imStatusMember).toBe(undefined);
+    expect(thread.isChatWith(store.self)).toBe(false);
+    expect(thread.newMessageSeparatorId).toBe(undefined);
+    expect(thread.openChannel()).toBe(false);
+    expect(thread.fullNameWithParent).toBe(thread.displayName);
+    expect(thread._getActualModelName()).toBe("mixin.mail.thread");
+    expect(thread.channel).toBe(undefined);
+    await thread.rename("new name");
+    expect(thread.displayName).toBe(thread.display_name);
+});
+
+test("channel threads answer the channel-behavior hooks channel-wise", async () => {
+    const pyEnv = await startServer();
+    const channelId = pyEnv["discuss.channel"].create({ name: "General" });
+    await start();
+    const store = getService("mail.store");
+    const thread = await store.Thread.getOrFetch({
+        id: channelId,
+        model: "discuss.channel",
+    });
+    expect(thread.isChannelKind).toBe(true);
+    expect(thread.hasOptimisticPost).toBe(true);
+    expect(thread.hasAttachmentPanel).toBe(true);
+    expect(thread.hasStartOfConversationBanner).toBe(true);
+    expect(thread.chatWindowComposerType).toBe(undefined);
+    expect(thread._getActualModelName()).toBe("discuss.channel");
+    expect(thread).toBe(thread.channel);
+    expect(store["discuss.channel"].get(channelId)).toBe(thread);
+});
+
+test("a deleted message is not resurrected by a stale fetch response", async () => {
+    const pyEnv = await startServer();
+    const partnerId = pyEnv["res.partner"].create({ name: "John" });
+    const messageId = pyEnv["mail.message"].create({
+        body: "doomed",
+        model: "res.partner",
+        res_id: partnerId,
+    });
+    await start();
+    const store = getService("mail.store");
+    const thread = store.Thread.insert({ id: partnerId, model: "res.partner" });
+    await thread.fetchNewMessages();
+    expect(thread.messages).toHaveLength(1);
+    const [partner] = pyEnv["res.partner"].read(serverState.partnerId);
+    pyEnv["bus.bus"]._sendone(partner, "mail.message/delete", {
+        message_ids: [messageId],
+    });
+    await waitUntilSubscribe();
+    await runAllTimers();
+    expect(store["mail.message"].get(messageId)).toBe(undefined);
+    expect(thread.messages).toHaveLength(0);
+    store.insert({
+        "mail.message": [
+            {
+                id: messageId,
+                body: "<p>doomed</p>",
+                thread: { id: partnerId, model: "res.partner" },
+            },
+        ],
+    });
+    thread.messages.add({ id: messageId });
+    expect(store["mail.message"].get(messageId)).toBe(undefined);
+    expect(thread.messages).toHaveLength(0);
+});
+
+test("a channel's invitation link is built from the mockable origin", async () => {
+    const pyEnv = await startServer();
+    const channelId = pyEnv["discuss.channel"].create({ name: "General" });
+    await start();
+    patchWithCleanup(browser.location, {
+        origin: "https://example.test",
+        host: "example.test",
+        protocol: "https:",
+    });
+    const store = getService("mail.store");
+    const thread = store.Thread.insert({ id: channelId, model: "discuss.channel" });
+    thread.uuid = "abcd";
+    expect(thread.invitationLink).toBe(`https://example.test/chat/${channelId}/abcd`);
+});

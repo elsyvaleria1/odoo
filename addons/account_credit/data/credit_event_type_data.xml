@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+
+    <record id="event_type_legal_hold" model="credit.event.type">
+        <field name="name">Legal Process</field>
+        <field name="code">legal_hold</field>
+        <field name="sequence" eval="10" />
+        <field name="severity">critical</field>
+        <field name="is_hold" eval="True" />
+    </record>
+
+    <record id="event_type_overdue_default" model="credit.event.type">
+        <field name="name">Receivable in default</field>
+        <field name="code">overdue_default</field>
+        <field name="sequence" eval="20" />
+        <field name="severity">critical</field>
+        <field name="requires_review" eval="True" />
+        <field name="grade_cap_id" ref="credit_grade_default" />
+    </record>
+
+    <record id="event_type_payment_recovered" model="credit.event.type">
+        <field name="name">Default cleared</field>
+        <field name="code">payment_recovered</field>
+        <field name="sequence" eval="30" />
+        <field name="severity">info</field>
+        <field name="requires_review" eval="True" />
+    </record>
+
+    <record id="event_type_override" model="credit.event.type">
+        <field name="name">Manager authorization</field>
+        <field name="code">override</field>
+        <field name="sequence" eval="40" />
+        <field name="severity">warning</field>
+    </record>
+
+    <record id="event_type_facility_expired" model="credit.event.type">
+        <field name="name">Facility expired</field>
+        <field name="code">facility_expired</field>
+        <field name="sequence" eval="50" />
+        <field name="severity">warning</field>
+    </record>
+
+    <record id="event_type_exception_granted" model="credit.event.type">
+        <field name="name">Exception granted</field>
+        <field name="code">exception_granted</field>
+        <field name="sequence" eval="60" />
+        <field name="severity">warning</field>
+    </record>
+
+    <record id="event_type_exception_ended" model="credit.event.type">
+        <field name="name">Exception ended</field>
+        <field name="code">exception_ended</field>
+        <field name="sequence" eval="61" />
+        <field name="severity">info</field>
+    </record>
+
+    <record id="event_type_exception_expired" model="credit.event.type">
+        <field name="name">Exception expired</field>
+        <field name="code">exception_expired</field>
+        <field name="sequence" eval="62" />
+        <field name="severity">warning</field>
+        <field name="requires_review" eval="True" />
+    </record>
+
+    <record id="event_type_grade_changed" model="credit.event.type">
+        <field name="name">Grade changed</field>
+        <field name="code">grade_changed</field>
+        <field name="sequence" eval="70" />
+        <field name="severity">info</field>
+    </record>
+
+</odoo>

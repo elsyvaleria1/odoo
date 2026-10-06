@@ -1,0 +1,19 @@
+id,name,model_id/id,group_id/id,kind,operation,reach,anchor,predicate_id/id,predicate_args,domain
+access_test_access_right_some_obj_employee,access_test_access_right_some_obj,model_test_access_right_some_obj,base.group_user,permission,crud,,,,,
+access_test_access_right_some_obj_public,access_test_access_right_some_obj,model_test_access_right_some_obj,base.group_public,permission,crud,,,,,
+access_test_access_right_container_employee,access_test_access_right_container,model_test_access_right_container,base.group_user,permission,crud,,,,,
+access_test_access_right_container_public,access_test_access_right_container,model_test_access_right_container,base.group_public,permission,crud,,,,,
+access_test_access_right_inherits_public,access_test_access_right_inherits,model_test_access_right_inherits,base.group_public,permission,crud,,,,,
+access_test_access_right_inherits_employee,access_test_access_right_inherits,model_test_access_right_inherits,base.group_user,permission,crud,,,,,
+access_test_access_right_inherits_computed_employee,access_test_access_right_inherits_computed,model_test_access_right_inherits_computed,base.group_user,permission,crud,,,,,
+access_test_access_right_inherits_computed_public,access_test_access_right_inherits_computed,model_test_access_right_inherits_computed,base.group_public,permission,crud,,,,,
+access_test_access_right_child_public,access_test_access_right_child,model_test_access_right_child,base.group_public,permission,crud,,,,,
+access_test_access_right_child_employee,access_test_access_right_child,model_test_access_right_child,base.group_user,permission,crud,,,,,
+access_test_access_right_obj_categ,access_test_access_right_obj_categ,model_test_access_right_obj_categ,base.group_user,permission,crud,,,,,
+test_access_right_fake_ticket,Fake Ticket: portal or following,model_test_access_right_ticket,base.group_portal,permission,r,,,,,"[ '|', ('message_partner_ids', 'child_of', [user.partner_id.commercial_partner_id.id]), ('message_partner_ids', 'in', [user.partner_id.id]) ]"
+access_test_access_right_ticket_employee,access_test_access_right_ticket_employee,model_test_access_right_ticket,base.group_user,permission,crud,,,,,
+access_test_access_right_shared_doc_owner,The owner of a shared doc,model_test_access_right_shared_doc,base.group_user,permission,crud,,,,,"[('create_uid', '=', user.id)]"
+access_test_access_right_shared_doc_reader,The named readers of a shared doc,model_test_access_right_shared_doc,base.group_user,permission,r,,,,,"[('reader_ids', 'in', user.id)]"
+access_test_access_right_graph_node,Graph nodes: what the user reaches,model_test_access_right_graph_node,base.group_user,permission,r,predicate,,base.access_predicate_graph_role,"{""at"": """", ""roles"": [""view"", ""edit"", ""manage""]}",
+access_test_access_right_graph_node_manage,Graph nodes: what the user manages,model_test_access_right_graph_node,base.group_user,permission,cud,predicate,,base.access_predicate_graph_role,"{""at"": """", ""roles"": [""manage""]}",
+access_test_access_right_graph_grant,Graph grants: of nodes the user manages,model_test_access_right_graph_grant,base.group_user,permission,crud,predicate,,base.access_predicate_graph_role,"{""at"": ""node_id."", ""roles"": [""manage""]}",

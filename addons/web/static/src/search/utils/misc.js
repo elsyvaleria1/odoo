@@ -1,0 +1,148 @@
+// @ts-check
+/** @odoo-module native */
+import { t } from "@odoo/owl";
+import { sortBy } from "@web/core/utils/collections/arrays";
+
+/** @type {Record<string, string>} */
+export const FACET_ICONS = {
+    filter: "fa-solid fa-filter",
+    groupBy: "oi oi-group",
+    groupByAsc: "fa-solid fa-arrow-down-1-9",
+    groupByDesc: "fa-solid fa-arrow-down-9-1",
+    favorite: "fa-solid fa-star",
+};
+
+/** @type {Record<string, string>} */
+export const FACET_COLORS = {
+    filter: "primary",
+    groupBy: "action",
+    favorite: "warning",
+};
+
+/** @type {string[]} */
+export const GROUPABLE_TYPES = [
+    "boolean",
+    "char",
+    "date",
+    "datetime",
+    "integer",
+    "many2one",
+    "many2many",
+    "selection",
+    "tags",
+];
+
+const TEXT_SEARCH_FIELD_TYPES = [
+    "char",
+    "html",
+    "many2many",
+    "many2one",
+    "one2many",
+    "properties",
+    "text",
+];
+
+const RELATIONAL_TYPES = ["many2many", "many2one", "one2many"];
+
+/**
+ * A text type matches by name, unless a relational field is given record ids.
+ *
+ * @param {string} fieldType
+ * @param {unknown} value
+ * @returns {"ilike" | "=" | "in"}
+ */
+export function defaultSearchOperator(fieldType, value) {
+    if (RELATIONAL_TYPES.includes(fieldType)) {
+        if (Array.isArray(value)) {
+            return "in";
+        }
+        if (typeof value === "number") {
+            return "=";
+        }
+    }
+    return TEXT_SEARCH_FIELD_TYPES.includes(fieldType) ? "ilike" : "=";
+}
+
+/** @type {WeakMap<Object, Object[]>} */
+const groupableFieldsByMap = new WeakMap();
+
+/**
+ * @param {Record<string, any>} searchViewFields
+ * @param {(fieldName: string, field: any) => boolean} [accepts]
+ * @returns {Object[]} the fields a group-by menu may offer, sorted by label,
+ *  computed once per field map when the default predicate is used
+ */
+export function groupableFields(searchViewFields, accepts = isGroupableField) {
+    if (accepts === isGroupableField && groupableFieldsByMap.has(searchViewFields)) {
+        return /** @type {Object[]} */ (groupableFieldsByMap.get(searchViewFields));
+    }
+    const fields = [];
+    for (const [fieldName, field] of Object.entries(searchViewFields)) {
+        if (accepts(fieldName, field)) {
+            fields.push(Object.assign({ name: fieldName }, field));
+        }
+    }
+    const sorted = sortBy(fields, "string");
+    if (accepts === isGroupableField) {
+        groupableFieldsByMap.set(searchViewFields, sorted);
+    }
+    return sorted;
+}
+
+/**
+ * @param {string} fieldName
+ * @param {{ groupable?: boolean, type: string }} field
+ * @returns {boolean} whether a group-by menu may offer the field
+ */
+export function isGroupableField(fieldName, field) {
+    const { groupable, type } = field;
+    return Boolean(groupable) && fieldName !== "id" && GROUPABLE_TYPES.includes(type);
+}
+
+export const MENU_REGISTRY_VALIDATION = t.object({
+    Component: t.function(),
+    groupNumber: t.number().optional(),
+    isDisplayed: t.function().optional(),
+});
+
+/**
+ * @param {import("@web/core/registry").Registry<any>} registry
+ * @param {import("@web/model/view_scope").ViewScope} viewScope
+ * @returns {Promise<{Component: import("@odoo/owl").ComponentConstructor, groupNumber: number, key: string}[]>}
+ */
+export async function getDisplayedRegistryItems(registry, viewScope) {
+    const entries = registry.getEntries();
+    const displayed = await Promise.all(
+        entries.map(([, item]) =>
+            "isDisplayed" in item ? item.isDisplayed(viewScope) : true,
+        ),
+    );
+    const items = [];
+    for (const [index, [key, item]] of entries.entries()) {
+        if (displayed[index]) {
+            items.push({
+                Component: item.Component,
+                groupNumber: item.groupNumber,
+                key,
+            });
+        }
+    }
+    return items;
+}
+
+/**
+ * @param {Record<string, any>} actionService
+ * @param {number} resId
+ * @returns {Promise<any>}
+ */
+export function editFavoriteFilter(actionService, resId) {
+    return actionService.doAction({
+        type: "ir.actions.act_window",
+        res_model: "ir.filters",
+        views: [[false, "form"]],
+        context: {
+            form_view_ref: "base.ir_filters_view_edit_form",
+        },
+        res_id: resId,
+    });
+}

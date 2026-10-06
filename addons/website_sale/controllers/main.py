@@ -1,0 +1,1954 @@
+import base64
+import itertools
+from datetime import datetime
+from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
+
+from werkzeug.exceptions import Forbidden, NotFound
+
+from odoo import fields
+from odoo.exceptions import ValidationError
+from odoo.fields import Command, Domain
+from odoo.http import request, route
+from odoo.libs.debug_log import DebugLog
+from odoo.tools import SQL, clean_context, float_round, lazy
+from odoo.tools.json import scriptsafe as json_scriptsafe
+from odoo.tools.translate import LazyTranslate
+
+from odoo.addons.html_editor.tools import get_video_thumbnail
+from odoo.addons.payment import utils as payment_utils
+from odoo.addons.payment.controllers import portal as payment_portal
+from odoo.addons.portal.controllers.portal import _parse_bool_param, _parse_record_id
+from odoo.addons.sale.controllers import portal as sale_portal
+from odoo.addons.website.controllers.main import QueryURL
+from odoo.addons.website.models.ir_http import sitemap_qs2dom
+from odoo.addons.website_sale.const import SHOP_PATH
+from odoo.addons.website_sale.models.website import (
+    PRICELIST_SELECTED_SESSION_CACHE_KEY,
+    PRICELIST_SESSION_CACHE_KEY,
+)
+
+_debug = DebugLog(__name__)
+
+_lt = LazyTranslate(__name__)
+
+
+def handle_product_params_error(exc, product, category=None, **kwargs):
+    product = product.exists()
+    if category:
+        category = category.exists()
+
+    if category and not (product and product.has_access("read")):
+        return request.redirect(WebsiteSale._get_shop_path(category))
+
+    if not category and product and product.has_access("read"):
+        return request.redirect(product._get_product_url())
+
+    return NotFound.code
+
+
+class TableCompute:
+    def __init__(self):
+        self.table = {}
+
+    def _check_place(self, posx, posy, sizex, sizey, ppr):
+        res = True
+        for y in range(sizey):
+            for x in range(sizex):
+                if posx + x >= ppr:
+                    res = False
+                    break
+                row = self.table.setdefault(posy + y, {})
+                if row.setdefault(posx + x) is not None:
+                    res = False
+                    break
+            for x in range(ppr):
+                self.table[posy + y].setdefault(x, None)
+        return res
+
+    def process(self, products, ppg=20, ppr=4):
+        minpos = 0
+        maxy = 0
+        x = 0
+        for index, p in enumerate(products):
+            x = min(max(p.website_size_x, 1), ppr)
+            y = min(max(p.website_size_y, 1), ppr)
+            if index >= ppg:
+                x = y = 1
+
+            pos = minpos
+            while not self._check_place(pos % ppr, pos // ppr, x, y, ppr):
+                pos += 1
+            if index >= ppg and ((pos + 1.0) // ppr) > maxy:
+                break
+
+            if x == 1 and y == 1:
+                minpos = pos // ppr
+
+            for y2 in range(y):
+                for x2 in range(x):
+                    self.table[(pos // ppr) + y2][(pos % ppr) + x2] = False
+            self.table[pos // ppr][pos % ppr] = {
+                "product": p,
+                "x": x,
+                "y": y,
+                "ribbon": p.sudo().website_ribbon_id,
+            }
+            if index <= ppg:
+                maxy = max(maxy, y + (pos // ppr))
+
+        rows = sorted(self.table.items())
+        rows = [r[1] for r in rows]
+        for col in range(len(rows)):
+            cols = sorted(rows[col].items())
+            x += len(cols)
+            rows[col] = [r[1] for r in cols if r[1]]
+
+        return rows
+
+
+class WebsiteSale(payment_portal.PaymentPortal):
+    _express_checkout_route = "/shop/express_checkout"
+    _express_checkout_delivery_route = "/shop/express/shipping_address_change"
+
+    WRITABLE_PARTNER_FIELDS = [
+        "name",
+        "email",
+        "phone",
+        "street",
+        "street2",
+        "city",
+        "zip",
+        "country_id",
+        "state_id",
+    ]
+
+    def _get_search_order(self, post):
+        order = (
+            post.get("order")
+            or request.env["website"].get_current_website().shop_default_sort
+        )
+        return "is_published desc, %s, id desc" % order
+
+    def _add_search_subdomains_hook(self, search):
+        return []
+
+    def _get_domain_shop(
+        self, search, category, attribute_value_dict, search_in_description=True
+    ):
+        domains = [request.website.sale_product_domain()]
+        if search:
+            for srch in search.split(" "):
+                subdomains = [
+                    Domain("name", "ilike", srch),
+                    Domain("variants_default_code", "ilike", srch),
+                ]
+                if search_in_description:
+                    subdomains.extend(
+                        (
+                            Domain("website_description", "ilike", srch),
+                            Domain("description_sale", "ilike", srch),
+                        )
+                    )
+                extra_subdomain = self._add_search_subdomains_hook(srch)
+                if extra_subdomain:
+                    subdomains.append(extra_subdomain)
+                domains.append(Domain.OR(subdomains))
+
+        if category:
+            domains.append(Domain("public_categ_ids", "child_of", int(category)))
+
+        if attribute_value_dict:
+            domains.extend(
+                request.env["product.template"]._get_domain_attribute_value(
+                    attribute_value_dict
+                )
+            )
+
+        return Domain.AND(domains)
+
+    @staticmethod
+    def sitemap_shop(env, rule, qs):
+        website = env["website"].get_current_website()
+        if website and website.ecommerce_access == "logged_in" and not qs:
+            return
+
+        if not qs or qs.lower() in SHOP_PATH:
+            yield {"loc": SHOP_PATH}
+
+        Category = env["product.public.category"]
+        dom = sitemap_qs2dom(qs, f"{SHOP_PATH}/category", Category._rec_name)
+        dom &= website.website_domain()
+        for cat in Category.search(dom):
+            loc = f"{SHOP_PATH}/category/{env['ir.http']._slug(cat)}"
+            if not qs or qs.lower() in loc:
+                yield {"loc": loc}
+
+    @staticmethod
+    def sitemap_products(env, rule, qs):
+        website = env["website"].get_current_website()
+        if website and website.ecommerce_access == "logged_in" and not qs:
+            return
+
+        ProductTemplate = env["product.template"]
+        dom = sitemap_qs2dom(qs, SHOP_PATH, ProductTemplate._rec_name)
+        dom &= Domain(website.sale_product_domain())
+        for product in ProductTemplate.with_context(prefetch_fields=False).search(dom):
+            loc = f"{SHOP_PATH}/{env['ir.http']._slug(product)}"
+            if not qs or qs.lower() in loc:
+                yield {"loc": loc}
+
+    def _get_search_options(
+        self,
+        category=None,
+        attribute_value_dict=None,
+        tags=None,
+        min_price=0.0,
+        max_price=0.0,
+        conversion_rate=1,
+        **post,
+    ):
+        return {
+            "displayDescription": True,
+            "displayDetail": True,
+            "displayExtraDetail": True,
+            "displayExtraLink": True,
+            "displayImage": True,
+            "allowFuzzy": not post.get("noFuzzy"),
+            "category": str(category.id) if category else None,
+            "tags": tags,
+            "min_price": min_price / conversion_rate,
+            "max_price": max_price / conversion_rate,
+            "attribute_value_dict": attribute_value_dict,
+            "display_currency": post.get("display_currency"),
+        }
+
+    def _shop_lookup_products(self, options, post, search, website):
+        product_count, details, fuzzy_search_term = website._search_with_fuzzy(
+            "products_only",
+            search,
+            limit=None,
+            order=self._get_search_order(post),
+            options=options,
+        )
+        search_result = (
+            details[0]
+            .get("results", request.env["product.template"])
+            .with_context(bin_size=True)
+        )
+
+        return fuzzy_search_term, product_count, search_result
+
+    def _shop_get_query_url_kwargs(
+        self, search, min_price, max_price, order=None, tags=None, **kwargs
+    ):
+        attribute_values = request.session.get("attribute_values", [])
+        return {
+            "search": search,
+            "min_price": min_price,
+            "max_price": max_price,
+            "order": order,
+            "tags": tags,
+            "attribute_values": attribute_values,
+        }
+
+    def _prepare_additional_shop_context(self, values, **kwargs):
+        return {}
+
+    def _prepare_product_query_params(self, **kwargs):
+        return {}
+
+    @route(
+        [
+            SHOP_PATH,
+            f"{SHOP_PATH}/page/<int:page>",
+            f'{SHOP_PATH}/category/<model("product.public.category"):category>',
+            f'{SHOP_PATH}/category/<model("product.public.category"):category>/page/<int:page>',
+        ],
+        type="http",
+        auth="public",
+        website=True,
+        list_as_website_content=_lt("Shop"),
+        sitemap=sitemap_shop,
+        handle_params_access_error=lambda e, **kwargs: NotFound.code,
+    )
+    def shop(
+        self,
+        page=0,
+        category=None,
+        search="",
+        min_price=0.0,
+        max_price=0.0,
+        tags="",
+        **post,
+    ):
+        if not request.website.has_ecommerce_access():
+            return request.redirect(f"/web/login?redirect={request.httprequest.path}")
+
+        is_category_in_query = category and isinstance(category, str)
+        category = self._get_category(category)
+        if is_category_in_query:
+            query = self._get_filtered_query_string(
+                request.httprequest.query_string.decode(), keys_to_remove=["category"]
+            )
+            return request.redirect(
+                f"{self._get_shop_path(category, page)}?{query}", code=301
+            )
+
+        try:
+            min_price = float(min_price)
+        except ValueError:
+            min_price = 0
+        try:
+            max_price = float(max_price)
+        except ValueError:
+            max_price = 0
+
+        website = request.env["website"].get_current_website()
+        website_domain = website.website_domain()
+
+        ppg = website.shop_ppg or 21
+        ppr = website.shop_ppr or 4
+        gap = website.shop_gap or "16px"
+
+        request_args = request.httprequest.args
+        attribute_values = request_args.getlist("attribute_values")
+        attribute_value_dict = self._get_attribute_value_dict(attribute_values)
+        attribute_ids = set(attribute_value_dict.keys())
+        attribute_value_ids = set(
+            itertools.chain.from_iterable(attribute_value_dict.values())
+        )
+        if attribute_values:
+            request.session["attribute_values"] = attribute_values
+            post["attribute_values"] = attribute_values
+        else:
+            request.session.pop("attribute_values", None)
+
+        filter_by_tags_enabled = website.is_view_active(
+            "website_sale.filter_products_tags"
+        )
+        if filter_by_tags_enabled:
+            if tags:
+                post["tags"] = tags
+                tags = {self.env["ir.http"]._unslug(tag)[1] for tag in tags.split(",")}
+            else:
+                post["tags"] = None
+                tags = {}
+
+        url = self._get_shop_path(category)
+        keep = QueryURL(
+            url, **self._shop_get_query_url_kwargs(search, min_price, max_price, **post)
+        )
+
+        now = datetime.timestamp(datetime.now())
+        if "website_sale_pricelist_time" in request.session:
+            pricelist_save_time = request.session["website_sale_pricelist_time"]
+            if pricelist_save_time < now - 60 * 60:
+                request.session.pop(PRICELIST_SESSION_CACHE_KEY, None)
+                request.session["website_sale_pricelist_time"] = now
+
+        filter_by_price_enabled = website.is_view_active(
+            "website_sale.filter_products_price"
+        )
+        if filter_by_price_enabled:
+            company_currency = website.company_id.sudo().currency_id
+            conversion_rate = request.env["res.currency"]._get_conversion_rate(
+                company_currency,
+                website.currency_id,
+                request.website.company_id,
+                fields.Date.today(),
+            )
+        else:
+            conversion_rate = 1
+
+        if search:
+            post["search"] = search
+
+        options = self._get_search_options(
+            category=category,
+            attribute_value_dict=attribute_value_dict,
+            min_price=min_price,
+            max_price=max_price,
+            conversion_rate=conversion_rate,
+            display_currency=website.currency_id,
+            **post,
+        )
+        fuzzy_search_term, product_count, search_product = self._shop_lookup_products(
+            options, post, search, website
+        )
+
+        filter_by_price_enabled = website.is_view_active(
+            "website_sale.filter_products_price"
+        )
+        if filter_by_price_enabled:
+            Product = request.env["product.template"].with_context(bin_size=True)
+            search_term = fuzzy_search_term or search
+            domain = self._get_domain_shop(search_term, category, attribute_value_dict)
+
+            query = Product._search(domain)
+            sql = query.select(
+                SQL(
+                    "COALESCE(MIN(list_price), 0) * %(conversion_rate)s, COALESCE(MAX(list_price), 0) * %(conversion_rate)s",
+                    conversion_rate=conversion_rate,
+                )
+            )
+            available_min_price, available_max_price = request.env.execute_query(sql)[0]
+
+            if min_price or max_price:
+                if min_price:
+                    min_price = (
+                        min_price
+                        if min_price <= available_max_price
+                        else available_min_price
+                    )
+                    post["min_price"] = min_price
+                if max_price:
+                    max_price = (
+                        max_price
+                        if max_price >= available_min_price
+                        else available_max_price
+                    )
+                    post["max_price"] = max_price
+
+        ProductTag = request.env["product.tag"]
+        if filter_by_tags_enabled and search_product:
+            all_tags = ProductTag.search_fetch(
+                Domain.AND(
+                    [
+                        Domain("visible_to_customers", "=", True),
+                        Domain.OR(
+                            [
+                                Domain("product_template_ids.is_published", "=", True),
+                                Domain("product_ids.is_published", "=", True),
+                            ]
+                        ),
+                        website_domain,
+                    ]
+                )
+            )
+        else:
+            all_tags = ProductTag
+
+        Category = request.env["product.public.category"]
+        categs_domain = Domain("parent_id", "=", False) & website_domain
+        if not self.env.user._is_internal():
+            categs_domain &= Domain("has_published_products", "=", True)
+        if search:
+            search_categories = Category.search(
+                Domain("product_tmpl_ids", "in", search_product.ids) & website_domain
+            ).parents_and_self
+            categs_domain &= Domain("id", "in", search_categories.ids)
+        else:
+            search_categories = Category
+        categs = Category.search_fetch(categs_domain)
+
+        category_entries = Category
+        if category:
+            category_entries = (
+                not search and category.child_id
+            ) or category.child_id.filtered(lambda c: c.id in search_categories.ids)
+            if not category_entries:
+                parent = category.parent_id
+                category_entries = (
+                    not search and parent.child_id
+                ) or parent.child_id.filtered(lambda c: c.id in search_categories.ids)
+            if not request.env.user._is_internal():
+                category_entries = category_entries.filtered("has_published_products")
+        else:
+            category_entries = categs
+
+        pager = website.pager(
+            url=url, total=product_count, page=page, step=ppg, scope=5, url_args=post
+        )
+        offset = pager["offset"]
+        products = search_product[offset : offset + ppg]
+        products.fetch()
+
+        variants = (
+            request.env["product.product"]
+            .sudo()
+            .browse(product._get_first_possible_variant_id() for product in products)
+        )
+        variants.fetch()
+        product_variants = dict(zip(products, variants, strict=True))
+
+        ProductAttribute = request.env["product.attribute"]
+        if products:
+            attributes_grouped = request.env[
+                "product.template.attribute.line"
+            ]._read_group(
+                domain=[
+                    ("product_tmpl_id", "in", search_product.ids),
+                    ("attribute_id.visibility", "=", "visible"),
+                ],
+                groupby=["attribute_id"],
+                order="attribute_id",
+            )
+            attribute_ids = [attribute.id for (attribute,) in attributes_grouped]
+            attributes = ProductAttribute.browse(attribute_ids)
+        else:
+            attributes = ProductAttribute.browse(attribute_ids).sorted()
+
+        if website.is_view_active("website_sale.products_list_view"):
+            layout_mode = "list"
+        else:
+            layout_mode = "grid"
+
+        products_prices = products._get_sales_prices(website)
+        product_query_params = self._prepare_product_query_params(**post)
+
+        grouped_attributes_values = (
+            request.env["product.attribute.value"]
+            .browse(attribute_value_ids)
+            .sorted()
+            .grouped("attribute_id")
+        )
+
+        values = {
+            "auto_assign_ribbons": self.env["product.ribbon"]
+            .sudo()
+            .search([("assign", "!=", "manual")]),
+            "search": fuzzy_search_term or search,
+            "original_search": fuzzy_search_term and search,
+            "order": post.get("order", ""),
+            "category": category,
+            "attrib_values": attribute_value_dict,
+            "attrib_set": attribute_value_ids,
+            "pager": pager,
+            "products": products,
+            "product_variants": product_variants,
+            "search_product": search_product,
+            "search_count": product_count,
+            "bins": TableCompute().process(products, ppg, ppr),
+            "ppg": ppg,
+            "ppr": ppr,
+            "gap": gap,
+            "categories": categs,
+            "category_entries": category_entries,
+            "attributes": attributes,
+            "keep": keep,
+            "search_categories_ids": search_categories.ids,
+            "layout_mode": layout_mode,
+            "get_product_prices": lambda product: products_prices[product.id],
+            "float_round": float_round,
+            "shop_path": SHOP_PATH,
+            "product_query_params": product_query_params,
+            "grouped_attributes_values": grouped_attributes_values,
+            "previewed_attribute_values": lazy(
+                lambda: products._get_previewed_attribute_values(
+                    category, product_query_params
+                ),
+            ),
+        }
+        if filter_by_price_enabled:
+            values["min_price"] = min_price or available_min_price
+            values["max_price"] = max_price or available_max_price
+            values["available_min_price"] = float_round(available_min_price, 2)
+            values["available_max_price"] = float_round(available_max_price, 2)
+        if filter_by_tags_enabled:
+            values.update({"all_tags": all_tags, "tags": tags})
+        if category:
+            values["main_object"] = category
+        values.update(self._prepare_additional_shop_context(values, **post))
+        return request.render("website_sale.products", values)
+
+    @route(
+        [
+            f'{SHOP_PATH}/<model("product.template"):product>',
+            f'{SHOP_PATH}/<model("product.public.category"):category>/<model("product.template"):product>',
+        ],
+        type="http",
+        auth="public",
+        website=True,
+        sitemap=sitemap_products,
+        handle_params_access_error=handle_product_params_error,
+    )
+    def product(self, product, category=None, pricelist=None, **kwargs):
+        if not request.website.has_ecommerce_access():
+            return request.redirect(f"/web/login?redirect={request.httprequest.path}")
+
+        if pricelist is not None:
+            try:
+                pricelist_id = int(pricelist)
+            except ValueError as e:
+                raise ValidationError(
+                    request.env._(
+                        "Wrong format: got `pricelist=%s`, expected an integer",
+                        pricelist,
+                    )
+                ) from e
+            if not self._apply_selectable_pricelist(pricelist_id):
+                return request.redirect(self._get_shop_path(category))
+
+        is_category_in_query = category and isinstance(category, str)
+        category = self._get_category(category)
+        query = self._get_filtered_query_string(
+            request.httprequest.query_string.decode(), keys_to_remove=["category"]
+        )
+        if category and not product.filtered_domain(
+            [("public_categ_ids", "child_of", category.id)]
+        ):
+            return request.redirect(f"{product._get_product_url()}?{query}", code=301)
+        if is_category_in_query:
+            return request.redirect(
+                f"{product._get_product_url(category)}?{query}", code=301
+            )
+        return request.render(
+            "website_sale.product",
+            self._prepare_product_values(
+                product.with_context(request.env.context),
+                category,
+                **kwargs,
+            ),
+        )
+
+    @route(
+        '/shop/<model("product.template"):product_template>/document/<int:document_id>',
+        type="http",
+        auth="public",
+        website=True,
+        sitemap=False,
+        readonly=True,
+    )
+    def product_document(self, product_template, document_id):
+        product_template.check_access("read")
+
+        document = request.env["document.document"].browse(document_id).sudo().exists()
+        if not document or not document.active:
+            return request.redirect(self._get_shop_path())
+
+        if not document.shown_on_product_page or not (
+            document.res_id == product_template.id
+            and document.res_model == "product.template"
+        ):
+            return request.redirect(self._get_shop_path())
+
+        return (
+            request.env["ir.binary"]
+            ._get_stream_from_record(
+                document.attachment_id,
+            )
+            .prepare_response(as_attachment=True)
+        )
+
+    @route(
+        [f'{SHOP_PATH}/product/<model("product.template"):product>'],
+        type="http",
+        auth="public",
+        website=True,
+        sitemap=False,
+    )
+    def old_product(self, product, category="", **kwargs):
+        category = int(category) if str(category).isdigit() else False
+        category = self._get_category(category)
+        query = self._get_filtered_query_string(
+            request.httprequest.query_string.decode(), keys_to_remove=["category"]
+        )
+        return request.redirect(
+            f"{product._get_product_url(category)}?{query}", code=301
+        )
+
+    @route(["/shop/product/extra-media"], type="jsonrpc", auth="user", website=True)
+    def add_product_media(
+        self, media, type, product_product_id, product_template_id, combination_ids=None
+    ):
+
+        if not request.env.user.has_group("website.group_website_restricted_editor"):
+            raise NotFound
+
+        if type == "image":
+            image_ids = request.env["ir.attachment"].browse(i["id"] for i in media)
+            media_create_data = [
+                Command.create(
+                    {
+                        "name": image.name,
+                        "image_1920": image.datas
+                        or request.env["ir.qweb.field.image"].load_remote_url(
+                            image.url
+                        ),
+                    }
+                )
+                for image in image_ids
+            ]
+        elif type == "video":
+            video_data = media[0]
+            thumbnail = None
+            if video_data.get("src"):
+                try:
+                    thumbnail = base64.b64encode(get_video_thumbnail(video_data["src"]))
+                except TypeError, ValueError:
+                    thumbnail = None
+            else:
+                raise ValidationError(request.env._("Invalid video URL provided."))
+            media_create_data = [
+                Command.create(
+                    {
+                        "name": video_data.get("name", "Odoo Video"),
+                        "video_url": video_data["src"],
+                        "image_1920": thumbnail,
+                    }
+                )
+            ]
+
+        product_product = request.env["product.product"].browse(
+            _parse_record_id(product_product_id)
+        )
+        product_template = request.env["product.template"].browse(
+            _parse_record_id(product_template_id)
+        )
+
+        if product_product and not product_template:
+            product_template = product_product.product_tmpl_id
+
+        if (
+            not product_product
+            and product_template
+            and product_template.has_dynamic_attributes()
+        ):
+            combination = request.env["product.template.attribute.value"].browse(
+                combination_ids
+            )
+            product_product = product_template._get_variant_for_combination(combination)
+            if not product_product:
+                product_product = product_template._create_product_variant(combination)
+        if (
+            product_template.has_configurable_attributes
+            and product_product
+            and not all(
+                pa.create_variant == "no_variant"
+                for pa in product_template.attribute_line_ids.attribute_id
+            )
+        ):
+            product_product.write({"product_variant_image_ids": media_create_data})
+        else:
+            product_template.write({"product_template_image_ids": media_create_data})
+
+    @route(["/shop/product/clear-images"], type="jsonrpc", auth="user", website=True)
+    def clear_product_images(self, product_product_id, product_template_id):
+        if not request.env.user.has_group("website.group_website_restricted_editor"):
+            raise NotFound
+
+        product_product = request.env["product.product"].browse(
+            _parse_record_id(product_product_id)
+        )
+        product_template = request.env["product.template"].browse(
+            _parse_record_id(product_template_id)
+        )
+
+        if product_product and not product_template:
+            product_template = product_product.product_tmpl_id
+
+        if product_product and product_product.product_variant_image_ids:
+            product_product.product_variant_image_ids.unlink()
+        else:
+            product_template.product_template_image_ids.unlink()
+
+    @route(
+        ["/shop/product/resequence-image"], type="jsonrpc", auth="user", website=True
+    )
+    def resequence_product_image(self, image_res_model, image_res_id, move):
+        if (
+            not request.env.user.has_group("website.group_website_restricted_editor")
+            or image_res_model
+            not in ["product.product", "product.template", "product.image"]
+            or move not in ["first", "left", "right", "last"]
+        ):
+            raise NotFound
+
+        image_res_id = _parse_record_id(image_res_id)
+        image_to_resequence = request.env[image_res_model].browse(image_res_id)
+        if image_res_model == "product.product":
+            product = image_to_resequence
+            product_template = product.product_tmpl_id
+        elif image_res_model == "product.template":
+            product_template = image_to_resequence
+            product = product_template.product_variant_id
+        else:
+            product = image_to_resequence.product_variant_id
+            product_template = (
+                product.product_tmpl_id or image_to_resequence.product_tmpl_id
+            )
+
+        if not product and not product_template:
+            raise ValidationError(request.env._("Product not found"))
+
+        product_images = (product or product_template)._get_images()
+        if image_to_resequence not in product_images:
+            raise ValidationError(request.env._("Invalid image"))
+
+        image_idx = product_images.index(image_to_resequence)
+        new_image_idx = 0
+        if move == "left":
+            new_image_idx = max(0, image_idx - 1)
+        elif move == "right":
+            new_image_idx = min(len(product_images) - 1, image_idx + 1)
+        elif move == "last":
+            new_image_idx = len(product_images) - 1
+
+        if new_image_idx == image_idx:
+            return
+
+        product_images.insert(new_image_idx, product_images.pop(image_idx))
+
+        main_image_idx = next(
+            idx
+            for idx, image in enumerate(product_images)
+            if image._name != "product.image"
+        )
+        if main_image_idx != 0:
+            main_image = product_images[main_image_idx]
+            additional_image = product_images[0]
+            if additional_image.video_url:
+                raise ValidationError(
+                    request.env._("You can't use a video as the product's main image.")
+                )
+            product_images[main_image_idx], product_images[0] = (
+                additional_image,
+                main_image,
+            )
+            main_image.image_1920, additional_image.image_1920 = (
+                additional_image.image_1920,
+                main_image.image_1920,
+            )
+            additional_image.name = main_image.name
+
+        for idx, product_image in enumerate(product_images):
+            if product_image._name == "product.image":
+                product_image.sequence = idx
+
+    @route(
+        ["/shop/product/is_add_to_cart_allowed"],
+        type="jsonrpc",
+        auth="public",
+        website=True,
+        readonly=True,
+    )
+    def is_add_to_cart_allowed(self, product_id, **kwargs) -> bool:
+        product = request.env["product.product"].browse(product_id)
+        return bool(product.sudo()._is_add_to_cart_allowed())
+
+    def _prepare_product_values(self, product, category, **kwargs):
+        ProductCategory = request.env["product.public.category"]
+        product_markup_data = [product._to_markup_data(request.website)]
+        category = (
+            category and ProductCategory.browse(int(category)).exists()
+        ) or product.public_categ_ids[:1]
+        if category:
+            product_markup_data.append(
+                self._prepare_breadcrumb_markup_data(
+                    request.website.get_base_url(), category, product.name
+                )
+            )
+
+        if last_attributes_search := request.session.get("attribute_values", []):
+            keep = QueryURL(
+                self._get_shop_path(category), attribute_values=last_attributes_search
+            )
+        else:
+            keep = QueryURL(self._get_shop_path(category))
+
+        if attribute_values := kwargs.get("attribute_values", ""):
+            attribute_value_ids = {int(i) for i in attribute_values.split(",")}
+            combination = product.attribute_line_ids.mapped(
+                lambda ptal: (
+                    (
+                        ptal.product_template_value_ids.filtered(
+                            lambda ptav: (
+                                ptav.ptav_active
+                                and ptav.product_attribute_value_id.id
+                                in attribute_value_ids
+                            )
+                        )[:1]
+                    )
+                    or ptal.product_template_value_ids.filtered("ptav_active")[:1]
+                )
+            )
+            combination_info = product._get_combination_info(
+                combination=request.env["product.template.attribute.value"].concat(
+                    combination
+                )
+            )
+        else:
+            combination_info = product._get_combination_info()
+
+        view_track = request.website.viewref("website_sale.product").track
+
+        return {
+            "categories": ProductCategory.search([("parent_id", "=", False)]),
+            "category": category,
+            "combination_info": combination_info,
+            "keep": keep,
+            "main_object": product,
+            "product": product,
+            "product_variant": request.env["product.product"].browse(
+                combination_info["product_id"]
+            ),
+            "view_track": view_track,
+            "product_markup_data": json_scriptsafe.dumps(product_markup_data, indent=2),
+            "shop_path": SHOP_PATH,
+        }
+
+    def _prepare_breadcrumb_markup_data(self, base_url, category, product_name):
+        return {
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            "itemListElement": [
+                {
+                    "@type": "ListItem",
+                    "position": 1,
+                    "name": "All Products",
+                    "item": f"{base_url}{self._get_shop_path()}",
+                },
+                {
+                    "@type": "ListItem",
+                    "position": 2,
+                    "name": category.name,
+                    "item": f"{base_url}{self._get_shop_path(category)}",
+                },
+                {
+                    "@type": "ListItem",
+                    "position": 3,
+                    "name": product_name,
+                },
+            ],
+        }
+
+    @route(
+        '/shop/change_pricelist/<model("product.pricelist"):pricelist>',
+        type="http",
+        auth="public",
+        website=True,
+        sitemap=False,
+    )
+    def pricelist_change(self, pricelist, **post):
+        website = request.env["website"].get_current_website()
+        redirect_url = request.httprequest.referrer
+        prev_pricelist = request.pricelist
+        if (
+            self._apply_selectable_pricelist(pricelist.id)
+            and redirect_url
+            and website.is_view_active("website_sale.filter_products_price")
+            and prev_pricelist != pricelist
+        ):
+            decoded_url = urlsplit(redirect_url)
+            args = dict(parse_qsl(decoded_url.query))
+            min_price = args.get("min_price")
+            max_price = args.get("max_price")
+            if min_price or max_price:
+                try:
+                    min_price = float(min_price)
+                    args["min_price"] = min_price and str(
+                        prev_pricelist.currency_id._convert(
+                            min_price,
+                            pricelist.currency_id,
+                            request.website.company_id,
+                            fields.Date.today(),
+                            round=False,
+                        )
+                    )
+                except ValueError, TypeError:
+                    pass
+                try:
+                    max_price = float(max_price)
+                    args["max_price"] = max_price and str(
+                        prev_pricelist.currency_id._convert(
+                            max_price,
+                            pricelist.currency_id,
+                            request.website.company_id,
+                            fields.Date.today(),
+                            round=False,
+                        )
+                    )
+                except ValueError, TypeError:
+                    pass
+            redirect_url = urlunsplit(decoded_url._replace(query=urlencode(args)))
+
+        return request.redirect(redirect_url or self._get_shop_path())
+
+    @route("/shop/pricelist", type="http", auth="public", website=True, sitemap=False)
+    def pricelist(self, promo, **post):
+        redirect = post.get("r", "/shop/cart")
+        if promo:
+            pricelist_sudo = (
+                request.env["product.pricelist"]
+                .sudo()
+                .search([("code", "=", promo)], limit=1)
+            )
+            if not (
+                pricelist_sudo
+                and request.website.is_pricelist_available(pricelist_sudo.id)
+            ):
+                return request.redirect("%s?code_not_available=1" % redirect)
+
+            self._apply_pricelist(pricelist=pricelist_sudo)
+        else:
+            self._apply_pricelist(pricelist=None)
+
+        return request.redirect(redirect)
+
+    def _apply_selectable_pricelist(self, pricelist_id):
+        if (
+            request.env["website"]
+            .get_current_website()
+            .is_pricelist_available(pricelist_id)
+            and (pricelist := request.env["product.pricelist"].browse(pricelist_id))
+            and (
+                pricelist.selectable
+                or pricelist == request.env.user.partner_id.property_product_pricelist
+            )
+        ):
+            self._apply_pricelist(pricelist=pricelist)
+            return True
+        return False
+
+    def _apply_pricelist(self, pricelist=None):
+        if pricelist is None:
+            request.session.pop(PRICELIST_SESSION_CACHE_KEY, None)
+            request.session.pop(PRICELIST_SELECTED_SESSION_CACHE_KEY, None)
+            request.pricelist = lazy(request.website._get_and_cache_current_pricelist)
+
+            if order_sudo := request.cart:
+                pl_before = order_sudo.pricelist_id
+                order_sudo._compute_pricelist_id()
+                if order_sudo.pricelist_id != pl_before:
+                    order_sudo._recompute_prices()
+            return
+
+        pricelist.check_singleton()
+
+        if pricelist.id == request.pricelist.id:
+            return
+
+        request.session[PRICELIST_SESSION_CACHE_KEY] = pricelist.id
+        request.session[PRICELIST_SELECTED_SESSION_CACHE_KEY] = pricelist.id
+        request.pricelist = pricelist.sudo()
+
+        if order_sudo := request.cart:
+            order_sudo.pricelist_id = pricelist
+            order_sudo._recompute_prices()
+
+    @route("/shop/save_shop_layout_mode", type="jsonrpc", auth="public", website=True)
+    def save_shop_layout_mode(self, layout_mode):
+        assert layout_mode in ("grid", "list"), "Invalid shop layout mode"
+        request.session["website_sale_shop_layout_mode"] = layout_mode
+
+    @route(
+        "/shop/checkout",
+        type="http",
+        methods=["GET"],
+        auth="public",
+        website=True,
+        sitemap=False,
+        list_as_website_content=_lt("Shop Checkout"),
+    )
+    def shop_checkout(self, try_skip_step=None, **query_params):
+        try_skip_step = _parse_bool_param(try_skip_step)
+        order_sudo = request.cart
+        request.session["sale_last_order_id"] = order_sudo.id
+
+        if redirection := self._check_cart_and_addresses(order_sudo):
+            _debug.pipeline("checkout", verdict="redirected", order=order_sudo.id)
+            return redirection
+
+        query_params = self._filter_client_address_params(query_params)
+        checkout_page_values = self._prepare_checkout_page_values(
+            order_sudo, **query_params
+        )
+
+        can_skip_delivery = True
+        if order_sudo._has_deliverable_products():
+            can_skip_delivery = False
+            available_dms = order_sudo._get_delivery_methods()
+            checkout_page_values["delivery_methods"] = available_dms
+            if delivery_method := order_sudo._get_preferred_delivery_method(
+                available_dms
+            ):
+                rate = delivery_method.rate_shipment(order_sudo)
+                if (
+                    not order_sudo.carrier_id
+                    or not rate.get("success")
+                    or order_sudo.amount_delivery != rate["price"]
+                ):
+                    order_sudo._set_delivery_method(delivery_method, rate=rate)
+
+        checkout_page_values.update(request.website._prepare_checkout_step_values())
+        if try_skip_step and can_skip_delivery:
+            return request.redirect(
+                checkout_page_values["next_website_checkout_step_href"]
+            )
+
+        return request.render("website_sale.checkout", checkout_page_values)
+
+    def _prepare_checkout_page_values(self, order_sudo, **kwargs):
+        partner_sudo = order_sudo.partner_id
+        return {
+            "order": order_sudo,
+            "website_sale_order": order_sudo,
+            "use_delivery_as_billing": (
+                order_sudo.partner_shipping_id == order_sudo.partner_invoice_id
+            ),
+            "only_services": order_sudo.only_services,
+            **self._prepare_address_data(partner_sudo, **kwargs),
+            "address_url": "/shop/address",
+        }
+
+    @route(
+        "/shop/address",
+        type="http",
+        methods=["GET"],
+        auth="public",
+        website=True,
+        sitemap=False,
+    )
+    def shop_address(
+        self,
+        partner_id=None,
+        address_type="billing",
+        use_delivery_as_billing=None,
+        **query_params,
+    ):
+        use_delivery_as_billing = _parse_bool_param(use_delivery_as_billing)
+
+        order_sudo = request.cart
+        if redirection := self._check_cart(order_sudo):
+            return redirection
+
+        partner_sudo, address_type = self._prepare_address_update(
+            order_sudo,
+            partner_id=_parse_record_id(partner_id),
+            address_type=address_type,
+        )
+
+        if partner_sudo:
+            use_delivery_as_billing = (
+                partner_sudo
+                == order_sudo.partner_shipping_id
+                == order_sudo.partner_invoice_id
+            )
+
+        query_params = self._filter_client_address_params(query_params)
+        address_form_values = self._prepare_address_form_values(
+            partner_sudo,
+            address_type=address_type,
+            order_sudo=order_sudo,
+            use_delivery_as_billing=use_delivery_as_billing,
+            **query_params,
+        )
+        address_form_values.update(request.website._prepare_checkout_step_values())
+        return request.render("website_sale.address", address_form_values)
+
+    def _prepare_address_form_values(
+        self, *args, callback="", order_sudo=False, **kwargs
+    ):
+        rendering_values = super()._prepare_address_form_values(
+            *args, order_sudo=order_sudo, callback=callback, **kwargs
+        )
+        if not order_sudo:
+            return rendering_values
+
+        is_anonymous_cart = order_sudo._is_anonymous_cart()
+        rendering_values["display_b2b_fields"] = rendering_values.get(
+            "display_b2b_fields", False
+        ) or request.website.is_view_active("website_sale.address_b2b")
+
+        if rendering_values["commercial_address_update_url"]:
+            rendering_values["commercial_address_update_url"] = (
+                f"/shop/address?partner_id={order_sudo.partner_id.id}"
+            )
+
+        return {
+            **rendering_values,
+            "is_anonymous_cart": is_anonymous_cart,
+            "website_sale_order": order_sudo,
+            "only_services": order_sudo.only_services,
+            "discard_url": callback
+            or (is_anonymous_cart and "/shop/cart")
+            or "/shop/checkout",
+        }
+
+    def _get_default_country(self, order_sudo=False, **kwargs):
+        is_anonymous_cart = order_sudo and order_sudo._is_anonymous_cart()
+        if is_anonymous_cart and request.geoip.country_code:
+            return (
+                request.env["res.country"]
+                .sudo()
+                .search(
+                    [
+                        ("code", "=", request.geoip.country_code),
+                    ],
+                    limit=1,
+                )
+            )
+        return super()._get_default_country(order_sudo=order_sudo, **kwargs)
+
+    @route(
+        "/shop/address/submit",
+        type="http",
+        methods=["POST"],
+        auth="public",
+        website=True,
+        sitemap=False,
+    )
+    def shop_address_submit(
+        self,
+        partner_id=None,
+        address_type="billing",
+        use_delivery_as_billing=None,
+        callback=None,
+        **form_data,
+    ):
+        order_sudo = request.cart
+        if redirection := self._check_cart(order_sudo):
+            return request.prepare_json_response({"redirectUrl": redirection.location})
+
+        partner_sudo, address_type = self._prepare_address_update(
+            order_sudo,
+            partner_id=_parse_record_id(partner_id),
+            address_type=address_type,
+        )
+
+        is_new_address = not partner_sudo
+        if is_new_address or order_sudo.only_services:
+            callback = callback or "/shop/checkout?try_skip_step=true"
+        else:
+            callback = callback or "/shop/checkout"
+
+        form_data = self._filter_client_address_params(form_data)
+
+        partner_sudo, feedback_dict = self._create_or_update_address(
+            partner_sudo,
+            address_type=address_type,
+            use_delivery_as_billing=use_delivery_as_billing,
+            callback=callback,
+            order_sudo=order_sudo,
+            **form_data,
+        )
+
+        if feedback_dict.get("invalid_fields"):
+            return request.prepare_json_response(feedback_dict)
+
+        is_anonymous_cart = order_sudo._is_anonymous_cart()
+        is_main_address = (
+            is_anonymous_cart or order_sudo.partner_id.id == partner_sudo.id
+        )
+        partner_fnames = set()
+        if is_main_address:
+            partner_fnames.add("partner_id")
+
+        if address_type == "billing":
+            partner_fnames.add("partner_invoice_id")
+            if is_new_address and order_sudo.only_services:
+                partner_fnames.add("partner_shipping_id")
+        elif address_type == "delivery":
+            partner_fnames.add("partner_shipping_id")
+            if use_delivery_as_billing:
+                partner_fnames.add("partner_invoice_id")
+
+        order_sudo._update_address(partner_sudo.id, partner_fnames)
+
+        if order_sudo._is_anonymous_cart():
+            order_sudo.message_unsubscribe(order_sudo.website_id.partner_id.ids)
+
+        return request.prepare_json_response(feedback_dict)
+
+    def _is_address_required(self) -> bool:
+        if cart := request.cart:
+            return bool(cart._is_customer_address_required())
+        return super()._is_address_required()
+
+    def _prepare_address_update(self, order_sudo, partner_id=None, address_type=None):
+        PartnerSudo = request.env["res.partner"].with_context(show_address=1).sudo()
+        if order_sudo._is_anonymous_cart():
+            partner_sudo = PartnerSudo
+        else:
+            partner_sudo = PartnerSudo.browse(partner_id)
+            if partner_sudo and partner_sudo not in {
+                order_sudo.partner_id,
+                order_sudo.partner_invoice_id,
+                order_sudo.partner_shipping_id,
+            }:
+                partner_sudo = partner_sudo.exists()
+
+        if partner_sudo and not address_type:
+            if partner_id == order_sudo.partner_invoice_id.id:
+                address_type = "billing"
+            elif partner_id == order_sudo.partner_shipping_id.id:
+                address_type = "delivery"
+            else:
+                address_type = "billing"
+
+        if partner_sudo and not partner_sudo._can_be_edited_by_current_customer(
+            order_sudo=order_sudo
+        ):
+            raise Forbidden
+
+        return partner_sudo, address_type
+
+    def _get_reserved_address_form_keys(self):
+        return super()._get_reserved_address_form_keys() | {"order_sudo"}
+
+    def _complete_address_values(
+        self, address_values, *args, order_sudo=False, **kwargs
+    ):
+        super()._complete_address_values(
+            address_values, *args, order_sudo=order_sudo, **kwargs
+        )
+
+        if order_sudo and order_sudo._is_anonymous_cart():
+            address_values["type"] = "contact"
+
+        if address_values["lang"] not in request.website.mapped("language_ids.code"):
+            address_values.pop("lang")
+
+        if not order_sudo:
+            return
+        address_values["company_id"] = (
+            order_sudo.website_id.company_id.id or address_values["company_id"]
+        )
+        address_values["user_id"] = order_sudo.website_id.salesperson_id.id
+
+        if order_sudo.website_id.specific_user_account:
+            address_values["website_id"] = order_sudo.website_id.id
+
+    def _create_new_address(
+        self, address_values, address_type, use_delivery_as_billing, order_sudo
+    ):
+        self._complete_address_values(
+            address_values, address_type, use_delivery_as_billing, order_sudo=order_sudo
+        )
+        creation_context = clean_context(request.env.context)
+        creation_context.update(
+            {
+                "tracking_disable": True,
+            }
+        )
+        return (
+            request.env["res.partner"]
+            .sudo()
+            .with_context(creation_context)
+            .create(self._resolve_address_phone_values(address_values))
+        )
+
+    @route(
+        _express_checkout_route,
+        type="jsonrpc",
+        methods=["POST"],
+        auth="public",
+        website=True,
+        sitemap=False,
+    )
+    def process_express_checkout(
+        self, billing_address, shipping_address=None, shipping_option=None, **kwargs
+    ):
+        order_sudo = request.cart
+
+        self._include_country_and_state_in_address(billing_address)
+        billing_address, _side_values = self._parse_form_data(billing_address)
+        if order_sudo._is_anonymous_cart():
+            new_partner_sudo = self._create_new_address(
+                billing_address,
+                address_type="billing",
+                use_delivery_as_billing=False,
+                order_sudo=order_sudo,
+            )
+            with request.env.protecting(
+                [order_sudo._fields["pricelist_id"]], order_sudo
+            ):
+                order_sudo.partner_id = new_partner_sudo
+        elif not self._are_same_addresses(
+            billing_address, order_sudo.partner_invoice_id
+        ):
+            child_partner_id = self._find_child_partner(
+                order_sudo.partner_id.commercial_partner_id.id, billing_address
+            )
+            order_sudo.partner_invoice_id = (
+                child_partner_id
+                or self._create_new_address(
+                    billing_address,
+                    address_type="billing",
+                    use_delivery_as_billing=False,
+                    order_sudo=order_sudo,
+                )
+            )
+
+        request.session["sale_last_order_id"] = order_sudo.id
+
+        if shipping_address:
+            self._include_country_and_state_in_address(shipping_address)
+            shipping_address, _side_values = self._parse_form_data(shipping_address)
+
+            if order_sudo.name in order_sudo.partner_shipping_id.name:
+                order_sudo.partner_shipping_id.write(
+                    self._resolve_address_phone_values(
+                        shipping_address, order_sudo.partner_shipping_id
+                    )
+                )
+                order_sudo._update_address(
+                    order_sudo.partner_shipping_id.id, ["partner_shipping_id"]
+                )
+            elif not self._are_same_addresses(
+                shipping_address, order_sudo.partner_shipping_id
+            ):
+                child_partner_id = self._find_child_partner(
+                    order_sudo.partner_id.commercial_partner_id.id, shipping_address
+                )
+                order_sudo.partner_shipping_id = (
+                    child_partner_id
+                    or self._create_new_address(
+                        shipping_address,
+                        address_type="delivery",
+                        use_delivery_as_billing=False,
+                        order_sudo=order_sudo,
+                    )
+                )
+            if shipping_option:
+                dm_id = int(shipping_option["id"])
+                available_dms = order_sudo._get_delivery_methods()
+                order_sudo._set_delivery_method(
+                    available_dms.filtered(lambda dm: dm.id == dm_id)
+                )
+
+        return order_sudo.partner_id.id
+
+    def _find_child_partner(self, commercial_partner_id, address):
+        partners_sudo = (
+            request.env["res.partner"]
+            .with_context(show_address=1)
+            .sudo()
+            .search(
+                [
+                    ("id", "child_of", commercial_partner_id),
+                ]
+            )
+        )
+        for partner_sudo in partners_sudo:
+            if self._are_same_addresses(address, partner_sudo):
+                return partner_sudo.id
+        return False
+
+    def _include_country_and_state_in_address(self, address):
+        country = request.env["res.country"].search(
+            [
+                ("code", "=", address.pop("country")),
+            ],
+            limit=1,
+        )
+        state_id = False
+        if state_code := address.pop("state", False):
+            state_id = country.state_ids.filtered(
+                lambda state: state.code == state_code
+            ).id
+        address.update(country_id=country.id, state_id=state_id)
+
+    @route("/shop/update_address", type="jsonrpc", auth="public", website=True)
+    def shop_update_address(self, partner_id, address_type="billing", **kw):
+        partner_id = _parse_record_id(partner_id)
+
+        if not (order_sudo := request.cart):
+            return
+
+        ResPartner = request.env["res.partner"].sudo()
+        partner_sudo = ResPartner.browse(partner_id).exists()
+        children = ResPartner._search(
+            [
+                ("id", "child_of", order_sudo.partner_id.commercial_partner_id.id),
+                ("type", "in", ("invoice", "delivery", "other")),
+            ]
+        )
+        if (
+            partner_sudo
+            not in (order_sudo.partner_id, order_sudo.partner_id.commercial_partner_id)
+            and partner_sudo.id not in children
+        ):
+            raise Forbidden
+
+        partner_fnames = set()
+        if address_type == "billing" and partner_sudo != order_sudo.partner_invoice_id:
+            partner_fnames.add("partner_invoice_id")
+        elif (
+            address_type == "delivery"
+            and partner_sudo != order_sudo.partner_shipping_id
+        ):
+            partner_fnames.add("partner_shipping_id")
+
+        order_sudo._update_address(partner_id, partner_fnames)
+
+    @route(
+        ["/shop/extra_info"],
+        type="http",
+        auth="public",
+        website=True,
+        sitemap=False,
+        list_as_website_content=_lt("Shop Checkout - Extra Information"),
+    )
+    def extra_info(self, **post):
+        extra_step = request.website.viewref("website_sale.extra_info")
+        if not extra_step.active:
+            return request.redirect("/shop/payment")
+
+        order_sudo = request.cart
+        redirection = self._check_cart(order_sudo)
+        open_editor = request.params.get("open_editor") == "true"
+        if not open_editor and redirection:
+            return redirection
+
+        values = {
+            "website_sale_order": order_sudo,
+            "post": post,
+            "escape": lambda x: x.replace("'", r"\'"),
+            "partner": order_sudo.partner_id.id,
+            "order": order_sudo,
+        }
+
+        values.update(request.website._prepare_checkout_step_values())
+
+        return request.render("website_sale.extra_info", values)
+
+    def _prepare_shop_payment_context(self, order, **kwargs):
+        checkout_page_values = {
+            "sale_order": order,
+            "website_sale_order": order,
+            "errors": self._get_shop_payment_errors(order),
+            "partner": order.partner_invoice_id,
+            "order": order,
+            "submit_button_label": request.env._("Pay now"),
+        }
+        payment_form_values = {
+            **sale_portal.CustomerPortal._prepare_payment_form_context(
+                self, order, website_id=request.website.id
+            ),
+            "display_submit_button": False,
+            "transaction_route": f"/shop/payment/transaction/{order.id}",
+            "landing_route": "/shop/payment/validate",
+            "sale_order_id": order.id,
+        }
+        return checkout_page_values | payment_form_values
+
+    @route(
+        _express_checkout_delivery_route + "/compute_taxes",
+        type="jsonrpc",
+        auth="public",
+        website=True,
+        sitemap=False,
+    )
+    def express_checkout_shipping_address_compute_taxes(self):
+        order_sudo = request.cart
+        order_sudo._recompute_taxes()
+
+        return payment_utils.major_to_minor_currency_units(
+            order_sudo.amount_total, order_sudo.currency_id
+        )
+
+    def _get_shop_payment_errors(self, order):
+        errors = []
+
+        if order._has_deliverable_products() and not order._get_delivery_methods():
+            errors.append(
+                (
+                    request.env._("Sorry, we are unable to ship your order."),
+                    request.env._(
+                        "No shipping method is available for your current order and shipping address."
+                        " Please contact us for more information."
+                    ),
+                )
+            )
+        return errors
+
+    @route(
+        "/shop/payment",
+        type="http",
+        auth="public",
+        website=True,
+        sitemap=False,
+        list_as_website_content=_lt("Shop Payment"),
+    )
+    def shop_payment(self, **post):
+        order_sudo = request.cart
+
+        if redirection := self._check_cart_and_addresses(order_sudo):
+            _debug.pipeline("payment_page", verdict="redirected", order=order_sudo.id)
+            return redirection
+
+        order_sudo._recompute_cart()
+        render_values = self._prepare_shop_payment_context(order_sudo, **post)
+        render_values["only_services"] = order_sudo and order_sudo.only_services
+
+        if render_values["errors"]:
+            _debug.logic(
+                "payment_page_blocked",
+                order=order_sudo.id,
+                errors=len(render_values["errors"]),
+            )
+            render_values.pop("payment_methods_sudo", "")
+            render_values.pop("tokens_sudo", "")
+
+        render_values.update(request.website._prepare_checkout_step_values())
+
+        return request.render("website_sale.payment", render_values)
+
+    @route(
+        "/shop/payment/validate",
+        type="http",
+        auth="public",
+        website=True,
+        sitemap=False,
+    )
+    def shop_payment_validate(self, sale_order_id=None, **post):
+        if sale_order_id is None:
+            order_sudo = request.cart
+            if not order_sudo and "sale_last_order_id" in request.session:
+                last_order_id = request.session["sale_last_order_id"]
+                order_sudo = (
+                    request.env["sale.order"].sudo().browse(last_order_id).exists()
+                )
+        else:
+            order_sudo = request.env["sale.order"].sudo().browse(sale_order_id)
+            assert order_sudo.id == request.session.get("sale_last_order_id")
+
+        if not order_sudo:
+            return request.redirect(self._get_shop_path())
+
+        errors = (
+            self._get_shop_payment_errors(order_sudo)
+            if order_sudo.state != "done"
+            else []
+        )
+        if errors:
+            first_error = errors[0]
+            error_msg = f"{first_error[0]}\n{first_error[1]}"
+            raise ValidationError(error_msg)
+
+        tx_sudo = order_sudo.get_portal_last_transaction()
+        if order_sudo.amount_total and not tx_sudo:
+            return request.redirect(self._get_shop_path())
+
+        if not order_sudo.amount_total and not tx_sudo and order_sudo.state != "done":
+            order_sudo._check_cart_is_ready_to_be_paid()
+            order_sudo._confirm_order()
+
+        request.website.sale_reset()
+        if tx_sudo and tx_sudo.state == "draft":
+            return request.redirect(self._get_shop_path())
+
+        return request.redirect("/shop/confirmation")
+
+    @route(
+        ["/shop/confirmation"],
+        type="http",
+        auth="public",
+        website=True,
+        sitemap=False,
+        list_as_website_content=_lt("Shop Confirmation"),
+    )
+    def shop_payment_confirmation(self, **post):
+        sale_order_id = request.session.get("sale_last_order_id")
+        if sale_order_id:
+            order = request.env["sale.order"].sudo().browse(sale_order_id)
+            values = self._prepare_shop_payment_confirmation_values(order)
+            return request.render("website_sale.confirmation", values)
+        return request.redirect(self._get_shop_path())
+
+    def _prepare_shop_payment_confirmation_values(self, order):
+        return {
+            "order": order,
+            "website_sale_order": order,
+            "order_tracking_info": self.order_2_return_dict(order),
+        }
+
+    @route(["/shop/print"], type="http", auth="public", website=True, sitemap=False)
+    def print_saleorder(self, **kwargs):
+        sale_order_id = request.session.get("sale_last_order_id")
+        if sale_order_id:
+            pdf, _ = (
+                request.env["ir.actions.report"]
+                .sudo()
+                ._render_qweb_pdf("sale.action_report_saleorder", [sale_order_id])
+            )
+            pdfhttpheaders = [
+                ("Content-Type", "application/pdf"),
+                ("Content-Length", "%s" % len(pdf)),
+            ]
+            return request.prepare_response(pdf, headers=pdfhttpheaders)
+        return request.redirect(self._get_shop_path())
+
+    def _check_cart_and_addresses(self, order_sudo):
+        if redirection := self._check_cart(order_sudo):
+            return redirection
+
+        if redirection := self._check_addresses(order_sudo):
+            return redirection
+        return None
+
+    def _check_cart(self, order_sudo):
+        if not order_sudo or order_sudo.state != "draft":
+            request.session["sale_order_id"] = None
+            request.session["sale_transaction_id"] = None
+            return request.redirect(self._get_shop_path())
+
+        if not order_sudo.line_ids:
+            return request.redirect("/shop/cart")
+
+        if (
+            request.env.user._is_public()
+            and request.website.account_on_checkout == "mandatory"
+        ):
+            return request.redirect("/web/login?redirect=/shop/checkout")
+        return None
+
+    def _check_addresses(self, order_sudo):
+        if order_sudo._is_anonymous_cart():
+            return request.redirect("/shop/address")
+
+        delivery_partner_sudo = order_sudo.partner_shipping_id
+        if (
+            not order_sudo.only_services
+            and not self._is_delivery_address_complete(delivery_partner_sudo)
+            and delivery_partner_sudo._can_be_edited_by_current_customer(
+                order_sudo=order_sudo
+            )
+        ):
+            return request.redirect(
+                f"/shop/address?partner_id={delivery_partner_sudo.id}&address_type=delivery"
+            )
+        invoice_partner_sudo = order_sudo.partner_invoice_id
+        if not self._is_billing_address_complete(
+            invoice_partner_sudo
+        ) and invoice_partner_sudo._can_be_edited_by_current_customer(
+            order_sudo=order_sudo
+        ):
+            return request.redirect(
+                f"/shop/address?partner_id={invoice_partner_sudo.id}&address_type=billing"
+            )
+        return None
+
+    @route(["/shop/config/product"], type="jsonrpc", auth="user")
+    def change_product_config(self, product_id, **options):
+        if not request.env.user.has_group("website.group_website_restricted_editor"):
+            raise NotFound
+
+        product = request.env["product.template"].browse(product_id)
+        if "sequence" in options:
+            sequence = options["sequence"]
+            if sequence == "top":
+                product.set_sequence_top()
+            elif sequence == "bottom":
+                product.set_sequence_bottom()
+            elif sequence == "up":
+                product.set_sequence_up()
+            elif sequence == "down":
+                product.set_sequence_down()
+        if {"x", "y"} <= set(options):
+            product.write(
+                {"website_size_x": options["x"], "website_size_y": options["y"]}
+            )
+
+    @route(["/shop/config/attribute"], type="jsonrpc", auth="user")
+    def change_attribute_config(self, attribute_id, **options):
+        if not request.env.user.has_group("website.group_website_restricted_editor"):
+            raise NotFound
+
+        attribute = request.env["product.attribute"].browse(attribute_id)
+        if "display_type" in options:
+            attribute.write({"display_type": options["display_type"]})
+            request.env.registry.clear_cache("templates")
+
+    @route(["/shop/config/website"], type="jsonrpc", auth="user")
+    def _change_website_config(self, **options):
+        if not request.env.user.has_group("website.group_website_restricted_editor"):
+            raise NotFound
+
+        current_website = request.env["website"].get_current_website()
+        writable_fields = {
+            "shop_page_container",
+            "shop_ppg",
+            "shop_ppr",
+            "shop_default_sort",
+            "shop_gap",
+            "shop_opt_products_design_classes",
+            "product_page_container",
+            "product_page_image_layout",
+            "product_page_image_width",
+            "product_page_grid_columns",
+            "product_page_image_spacing",
+            "product_page_image_ratio",
+            "product_page_image_ratio_mobile",
+            "product_page_cols_order",
+            "product_page_image_roundness",
+            "product_page_cta_design",
+        }
+        if "ppg" in options and not options["ppg"]:
+            options["ppg"] = 1
+        if "product_page_grid_columns" in options:
+            options["product_page_grid_columns"] = int(
+                options["product_page_grid_columns"]
+            )
+
+        if "extra_step" in options:
+            extra_step_view = current_website.viewref("website_sale.extra_info")
+            extra_step = current_website._get_checkout_step("/shop/extra_info")
+            extra_step_view.active = extra_step.is_published = (
+                options.get("extra_step") == "true"
+            )
+
+        write_vals = {k: v for k, v in options.items() if k in writable_fields}
+        if write_vals:
+            current_website.write(write_vals)
+
+    @route(["/shop/config/category"], type="jsonrpc", auth="user")
+    def _change_category_config(self, category_id, **options):
+        category = request.env["product.public.category"].browse(
+            _parse_record_id(category_id)
+        )
+        if not category.exists():
+            raise NotFound
+
+        targeted_options = {
+            "show_category_title",
+            "show_category_description",
+            "align_category_content",
+        }
+        modified_options = {
+            option: value
+            for option, value in options.items()
+            if option in targeted_options
+        }
+        if modified_options:
+            category.write(modified_options)
+
+    def order_lines_2_google_api(self, order_lines):
+        ret = []
+        for line in order_lines.filtered(lambda line: not line.is_delivery):
+            product = line.product_id
+            ret.append(
+                {
+                    "item_id": product.barcode or product.id,
+                    "item_name": product.name or "-",
+                    "item_category": product.categ_id.name or "-",
+                    "price": line.price_unit,
+                    "quantity": line.product_qty,
+                }
+            )
+        return ret
+
+    def order_2_return_dict(self, order):
+        tracking_cart_dict = {
+            "transaction_id": order.id,
+            "affiliation": order.company_id.name,
+            "value": order.amount_total,
+            "tax": order.amount_tax,
+            "currency": order.currency_id.name,
+            "items": self.order_lines_2_google_api(order.line_ids),
+        }
+        delivery_line = order.line_ids.filtered("is_delivery")
+        if delivery_line:
+            tracking_cart_dict["shipping"] = delivery_line.price_unit
+        return tracking_cart_dict
+
+    @route(
+        "/shop/products/recently_viewed_update",
+        type="jsonrpc",
+        auth="public",
+        website=True,
+    )
+    def products_recently_viewed_update(self, product_id, **kwargs):
+        res = {}
+        visitor_sudo = request.env["website.visitor"]._get_visitor_from_request(
+            force_create=True
+        )
+        visitor_sudo._add_viewed_product(_parse_record_id(product_id))
+        return res
+
+    @route(
+        "/shop/products/recently_viewed_delete",
+        type="jsonrpc",
+        auth="public",
+        website=True,
+    )
+    def products_recently_viewed_delete(
+        self, product_id=None, product_template_id=None, **kwargs
+    ):
+        if not (product_id or product_template_id):
+            return None
+        visitor_sudo = request.env["website.visitor"]._get_visitor_from_request()
+        if visitor_sudo:
+            domain = [("visitor_id", "=", visitor_sudo.id)]
+            if product_id:
+                domain += [("product_id", "=", _parse_record_id(product_id))]
+            else:
+                domain += [
+                    (
+                        "product_id.product_tmpl_id",
+                        "=",
+                        _parse_record_id(product_template_id),
+                    )
+                ]
+            request.env["website.track"].sudo().search(domain).unlink()
+        return {}
+
+    @route("/snippets/category/set_image", type="jsonrpc", auth="user")
+    def set_category_image(self, category_id, attachment_id):
+        if not request.env.user.has_group("website.group_website_restricted_editor"):
+            raise Forbidden
+        category = request.env["product.public.category"].browse(category_id).exists()
+        if category:
+            image_data = request.env["ir.attachment"].browse(attachment_id).datas
+            category.cover_image = image_data
+
+    @staticmethod
+    def _update_currency_and_pricelist(kwargs):
+        website = request.website
+        kwargs.update(
+            {
+                "currency_id": website.currency_id.id,
+                "pricelist_id": request.pricelist.id,
+            }
+        )
+
+    @staticmethod
+    def _get_category(category):
+        ProductCategory = request.env["product.public.category"]
+        if (
+            not isinstance(category, ProductCategory.__class__)
+            and category
+            and not str(category).isdigit()
+        ):
+            raise ValidationError(request.env._("Invalid category."))
+        if (
+            category := ProductCategory.browse(category and int(category)).exists()
+        ) and category.can_access_from_current_website():
+            return category
+        else:
+            return ProductCategory
+
+    @staticmethod
+    def _get_shop_path(category=None, page=0):
+        path = SHOP_PATH
+        if category:
+            slug = request.env["ir.http"]._slug
+            path += f"/category/{slug(category)}"
+        if page:
+            path += f"/page/{page}"
+        return path
+
+    @staticmethod
+    def _get_filtered_query_string(query_string, keys_to_remove):
+        query = dict(parse_qsl(query_string))
+        for key in keys_to_remove:
+            query.pop(key, False)
+        return urlencode(query)
+
+    @staticmethod
+    def _get_attribute_value_dict(attribute_values):
+        result = {}
+        for value in attribute_values:
+            if not value:
+                continue
+            pair = value.split("-")
+            if len(pair) < 2:
+                continue
+            try:
+                result[int(pair[0])] = [
+                    int(value_id) for value_id in pair[1].split(",")
+                ]
+            except ValueError:
+                continue
+        return result

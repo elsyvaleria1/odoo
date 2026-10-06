@@ -1,0 +1,48 @@
+.o-discuss-ChannelInvitation {
+    min-height: 0;
+}
+
+.o-discuss-ChannelInvitation-selectable {
+    &.o-odd {
+        background-color: o-palette-token(--o-gray-100, $gray-100) !important;
+    }
+    &:hover {
+        background-color: unquote(
+            "color-mix(in srgb, #{o-palette-token(--o-gray-100, $gray-100)} 50%, #{o-palette-token(--o-gray-200, $gray-200)})"
+        ) !important;
+    }
+    &.o-selected {
+        background-color: unquote(
+            "color-mix(in srgb, #{o-token(--o-bg-view, $o-view-background-color)} 85%, #{o-token(--o-action, $o-action)})"
+        ) !important;
+    }
+}
+
+.o-discuss-ChannelInvitation-selectedList {
+    max-height: 100px;
+
+    button {
+        background-color: unquote(
+            "color-mix(in srgb, #{o-token(--o-bg-view, $o-view-background-color)} 85%, #{o-token(--o-action, $o-action)})"
+        );
+
+        &:not(:hover) .oi-close {
+            border-color: transparent !important;
+        }
+
+        &:hover .oi-close {
+            color: o-token(--danger, $danger);
+            border-color: o-token(--danger, $danger) !important;
+        }
+    }
+}
+
+.o-discuss-ChannelInvitation-avatar {
+    width: 32px;
+    aspect-ratio: 1;
+}
+
+.o-discuss-ChannelInvitation-invitationBox {
+    position: sticky;
+    bottom: - map-get($spacers, 2);
+}

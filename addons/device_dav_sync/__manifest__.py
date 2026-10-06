@@ -1,0 +1,47 @@
+{
+    "name": "Device Calendar and Contact Sync",
+    "version": "19.0.1.3.0",
+    "oldest_upgradable_version": "19.0.1.2.1",
+    "category": "Productivity",
+    "sequence": 15,
+    "summary": "Expose contact and calendar collections through CardDAV and CalDAV routes",
+    "description": "Provides DAV discovery, collection and resource endpoints with vCard and iCalendar conversion for contacts and events. Adds device authentication settings, collection scopes, synchronization state and conflict-handling strategies. Requires provisioned user credentials and enabled device profiles; protocol endpoints do not establish compatibility certification for every DAV client.",
+    "author": "AgroMarin",
+    "website": "https://www.agromarin.mx",
+    "images": [
+        "static/description/icon.png",
+    ],
+    "license": "LGPL-3",
+    "depends": [
+        "device",
+        "calendar",
+        "partner",
+    ],
+    "external_dependencies": {
+        "python": [
+            "icalendar",
+            "vobject",
+        ],
+    },
+    "data": [
+        "security/device_dav_security.xml",
+        "security/ir.access.csv",
+        "data/device_kind_data.xml",
+        "data/ir_sequence_data.xml",
+        "data/ir_config_parameter_data.xml",
+        "data/res_users_apikeys_scope_data.xml",
+        "views/device_device_views.xml",
+        "views/device_profile_views.xml",
+        "views/dav_sync_state_views.xml",
+        "views/dav_addressbook_views.xml",
+        "views/dav_calendar_views.xml",
+        "views/device_dav_menu.xml",
+    ],
+    "demo": [
+        "demo/device_dav_config_demo.xml",
+        "demo/device_dav_device_demo.xml",
+        "demo/dav_addressbook_demo.xml",
+        "demo/dav_calendar_demo.xml",
+    ],
+    "post_init_hook": "post_init_hook",
+}

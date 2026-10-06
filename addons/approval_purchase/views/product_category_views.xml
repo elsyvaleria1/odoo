@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_product_category_form_purchase_approval" model="ir.ui.view">
+        <field name="name">product.category.form.purchase.approval</field>
+        <field name="model">product.category</field>
+        <field name="inherit_id" ref="product.view_product_category_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//group[@name='first']" position="after">
+                <group name="purchase_approval" string="Purchase Approval">
+                    <group>
+                        <field name="po_approval_required" widget="boolean_toggle" />
+                        <div
+                            class="text-muted"
+                            invisible="not po_approval_required"
+                            groups="purchase.group_purchase_manager">
+                            When enabled, all purchase orders containing products
+                            from this category will require approval.
+                        </div>
+                    </group>
+                </group>
+                <group
+                    name="approval_notes"
+                    string="Approval Notes"
+                    groups="purchase.group_purchase_manager"
+                    invisible="not po_approval_required">
+                    <field
+                        name="po_approval_notes"
+                        placeholder="Add special instructions or notes for approvers regarding products in this category...&#10;&#10;Example: 'Controlled chemicals - verify safety requirements and storage compliance before approving'"
+                        nolabel="1" />
+                </group>
+                <div
+                    class="alert alert-warning"
+                    invisible="not po_approval_required"
+                    groups="purchase.group_purchase_manager"
+                    role="alert">
+                    <strong>Approval Required:</strong> This category is flagged for purchase order
+                    approval. All purchase orders containing products from this category will
+                    require approval through the configured approval workflow. </div>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_product_category_list_purchase_approval" model="ir.ui.view">
+        <field name="name">product.category.list.purchase.approval</field>
+        <field name="model">product.category</field>
+        <field name="inherit_id" ref="product.view_product_category_list" />
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='display_name']" position="after">
+                <field
+                    name="po_approval_required"
+                    string="PO Approval"
+                    widget="boolean_toggle"
+                    optional="hide" />
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_product_category_search_purchase_approval" model="ir.ui.view">
+        <field name="name">product.category.search.purchase.approval</field>
+        <field name="model">product.category</field>
+        <field name="inherit_id" ref="product.view_product_category_search" />
+        <field name="arch" type="xml">
+            <xpath expr="//search" position="inside">
+                <filter
+                    name="po_approval_required"
+                    string="Requires PO Approval"
+                    help="Categories that require purchase order approval"
+                    domain="[('po_approval_required', '=', True)]"
+                    groups="purchase.group_purchase_manager" />
+                <group groups="purchase.group_purchase_manager">
+                    <filter
+                        name="group_by_approval"
+                        string="Approval Required"
+                        context="{'group_by': 'po_approval_required'}" />
+                </group>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

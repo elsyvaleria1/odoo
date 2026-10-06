@@ -1,0 +1,508 @@
+// @ts-check
+
+import { destroy, expect, test } from "@odoo/hoot";
+import { keyDown, keyUp, press, queryAllTexts, queryOne, resize } from "@odoo/hoot-dom";
+import { animationFrame } from "@odoo/hoot-mock";
+import { Component, onMounted, proxy, useProps, xml } from "@odoo/owl";
+import {
+    contains,
+    getService,
+    makeDialogMockEnv,
+    mountWithCleanup,
+} from "@web/../tests/web_test_helpers";
+import { dialogContextOf } from "@web/core/dialog_context_hooks";
+import { useService } from "@web/core/utils/hooks";
+import { Dialog } from "@web/ui/dialog/dialog";
+
+test("simple rendering", async () => {
+    expect.assertions(7);
+    class Parent extends Component {
+        static components = { Dialog };
+        static template = xml`
+            <Dialog title="'Wow(l) Effect'">
+                Hello!
+            </Dialog>
+        `;
+        static props = null;
+        props = useProps(this.constructor.props);
+    }
+    await makeDialogMockEnv();
+    await mountWithCleanup(Parent);
+    expect(".o_dialog").toHaveCount(1);
+    expect(".o_dialog header .modal-title").toHaveCount(1, {
+        message: "the header is rendered by default",
+    });
+    expect("header .modal-title").toHaveText("Wow(l) Effect");
+    expect(".o_dialog main").toHaveCount(1, {
+        message: "a dialog has always a main node",
+    });
+    expect("main").toHaveText("Hello!");
+    expect(".o_dialog footer").toHaveCount(1, {
+        message: "the footer is rendered by default",
+    });
+    expect(".o_dialog footer:visible").toHaveCount(0, {
+        message: "the footer is hidden if empty",
+    });
+});
+
+test("dialog has aria-modal and aria-labelledby pointing at title", async () => {
+    class Parent extends Component {
+        static components = { Dialog };
+        static template = xml`<Dialog title="'My title'">body</Dialog>`;
+        static props = null;
+        props = useProps(this.constructor.props);
+    }
+    await makeDialogMockEnv();
+    await mountWithCleanup(Parent);
+    const modal = queryOne(".o_dialog dialog");
+    expect(modal.getAttribute("aria-modal")).toBe("true");
+    const labelledById = modal.getAttribute("aria-labelledby");
+    expect(labelledById).toMatch(/.+/);
+    const titleEl = queryOne("#" + labelledById);
+    expect(titleEl).toHaveClass("modal-title");
+    expect(titleEl).toHaveText("My title");
+});
+
+test("dialog without title has no aria-labelledby", async () => {
+    class Parent extends Component {
+        static components = { Dialog };
+        static template = xml`<Dialog>body</Dialog>`;
+        static props = null;
+        props = useProps(this.constructor.props);
+    }
+    await makeDialogMockEnv();
+    await mountWithCleanup(Parent);
+    const modal = queryOne(".o_dialog dialog");
+    expect(modal.getAttribute("aria-modal")).toBe("true");
+    const labelledById = modal.getAttribute("aria-labelledby");
+    if (labelledById !== null) {
+        expect(queryOne("#" + labelledById)).toHaveClass("modal-title");
+    }
+});
+
+test("hotkeys work on dialogs", async () => {
+    class Parent extends Component {
+        static components = { Dialog };
+        static template = xml`
+            <Dialog title="'Wow(l) Effect'">
+                Hello!
+                <t t-set-slot="footer">
+                    <button t-on-click="this.onClickOk">Ok</button>
+                </t>
+            </Dialog>
+        `;
+        static props = null;
+        props = useProps(this.constructor.props);
+        onClickOk() {
+            expect.step("clickOk");
+        }
+    }
+    await makeDialogMockEnv({
+        dialogData: {
+            close: () => expect.step("close"),
+            dismiss: () => expect.step("dismiss"),
+        },
+    });
+    await mountWithCleanup(Parent);
+    expect("header .modal-title").toHaveText("Wow(l) Effect");
+    expect("footer button").toHaveText("Ok");
+    await press("escape");
+    await animationFrame();
+    expect.verifySteps(["dismiss", "close"]);
+    await keyDown("control+enter");
+    await keyUp("ctrl+enter");
+    expect.verifySteps(["clickOk"]);
+});
+
+test("simple rendering with two dialogs", async () => {
+    expect.assertions(3);
+    class Parent extends Component {
+        static template = xml`
+            <div>
+                <Dialog title="'First Title'">
+                    Hello!
+                </Dialog>
+                <Dialog title="'Second Title'">
+                    Hello again!
+                </Dialog>
+            </div>
+        `;
+        static props = null;
+        static components = { Dialog };
+        props = useProps(this.constructor.props);
+    }
+    await makeDialogMockEnv();
+    await mountWithCleanup(Parent);
+    expect(".o_dialog").toHaveCount(2);
+    expect(queryAllTexts("header .modal-title")).toEqual([
+        "First Title",
+        "Second Title",
+    ]);
+    expect(queryAllTexts(".o_dialog .modal-body")).toEqual(["Hello!", "Hello again!"]);
+});
+
+test("click on the button x triggers the service close", async () => {
+    expect.assertions(2);
+    class Parent extends Component {
+        static template = xml`
+            <Dialog>
+                Hello!
+            </Dialog>
+        `;
+        static props = null;
+        static components = { Dialog };
+        props = useProps(this.constructor.props);
+    }
+    await makeDialogMockEnv({
+        dialogData: {
+            close: (/** @type {any} */ params) =>
+                expect.step(`close ${JSON.stringify(params)}`),
+            dismiss: () => expect.step("dismiss"),
+        },
+    });
+    await mountWithCleanup(Parent);
+    expect(".o_dialog").toHaveCount(1);
+    await contains(".o_dialog header button[aria-label='Close']").click();
+    expect.verifySteps(["dismiss", 'close {"dismiss":true}']);
+});
+
+test("click on the button x triggers the close and dismiss defined by a Child component", async () => {
+    expect.assertions(2);
+    class Child extends Component {
+        static template = xml`<div>Hello</div>`;
+        static props = null;
+        props = useProps(this.constructor.props);
+
+        setup() {
+            dialogContextOf(this).dialogData.close = () => expect.step("close");
+            dialogContextOf(this).dialogData.dismiss = () => expect.step("dismiss");
+            dialogContextOf(this).dialogData.scrollToOrigin = () => {};
+        }
+    }
+    class Parent extends Component {
+        static template = xml`
+            <Dialog>
+                <Child/>
+            </Dialog>
+        `;
+        static props = null;
+        static components = { Child, Dialog };
+        props = useProps(this.constructor.props);
+    }
+    await makeDialogMockEnv();
+    await mountWithCleanup(Parent);
+    expect(".o_dialog").toHaveCount(1);
+
+    await contains(".o_dialog header button[aria-label='Close']").click();
+    expect.verifySteps(["dismiss", "close"]);
+});
+
+test("render custom footer buttons is possible", async () => {
+    expect.assertions(2);
+    class SimpleButtonsDialog extends Component {
+        static components = { Dialog };
+        static template = xml`
+            <Dialog>
+                content
+                <t t-set-slot="footer">
+                    <div>
+                        <button class="btn btn-primary">The First Button</button>
+                        <button class="btn btn-primary">The Second Button</button>
+                    </div>
+                </t>
+            </Dialog>
+        `;
+        static props = null;
+        props = useProps(this.constructor.props);
+    }
+    class Parent extends Component {
+        static template = xml`
+              <div>
+                  <SimpleButtonsDialog/>
+              </div>
+          `;
+        static props = null;
+        static components = { SimpleButtonsDialog };
+        props = useProps(this.constructor.props);
+        setup() {
+            super.setup();
+            this.state = proxy({
+                displayDialog: true,
+            });
+        }
+    }
+    await makeDialogMockEnv();
+    await mountWithCleanup(Parent);
+    expect(".o_dialog").toHaveCount(1);
+    expect(".o_dialog footer button").toHaveCount(2);
+});
+
+test("embed an arbitrary component in a dialog is possible", async () => {
+    expect.assertions(4);
+    class SubComponent extends Component {
+        static template = xml`
+            <div class="o_subcomponent" t-out="this.props.text" t-on-click="this._onClick"/>
+        `;
+        static props = null;
+        props = useProps(this.constructor.props);
+        _onClick() {
+            expect.step("subcomponent-clicked");
+            this.props.onClicked();
+        }
+    }
+    class Parent extends Component {
+        static components = { Dialog, SubComponent };
+        static template = xml`
+            <Dialog>
+                <SubComponent text="'Wow(l) Effect'" onClicked="this._onSubcomponentClicked"/>
+            </Dialog>
+        `;
+        static props = null;
+        props = useProps(this.constructor.props);
+        _onSubcomponentClicked() {
+            expect.step("message received by parent");
+        }
+    }
+    await makeDialogMockEnv();
+    await mountWithCleanup(Parent);
+    expect(".o_dialog").toHaveCount(1);
+    expect(".o_dialog main .o_subcomponent").toHaveCount(1);
+    expect(".o_subcomponent").toHaveText("Wow(l) Effect");
+    await contains(".o_subcomponent").click();
+    expect.verifySteps(["subcomponent-clicked", "message received by parent"]);
+});
+
+test("dialog without header/footer", async () => {
+    expect.assertions(4);
+    class Parent extends Component {
+        static components = { Dialog };
+        static template = xml`
+            <Dialog header="false" footer="false">content</Dialog>
+        `;
+        static props = null;
+        props = useProps(this.constructor.props);
+    }
+    await makeDialogMockEnv();
+    await mountWithCleanup(Parent);
+    expect(".o_dialog").toHaveCount(1);
+    expect(".o_dialog header").toHaveCount(0);
+    expect("main").toHaveCount(1, { message: "a dialog has always a main node" });
+    expect(".o_dialog footer").toHaveCount(0);
+});
+
+test("dialog size can be chosen", async () => {
+    expect.assertions(5);
+    class Parent extends Component {
+        static template = xml`
+            <div>
+                <Dialog contentClass="'xl'" size="'xl'">content</Dialog>
+                <Dialog contentClass="'lg'">content</Dialog>
+                <Dialog contentClass="'md'" size="'md'">content</Dialog>
+                <Dialog contentClass="'sm'" size="'sm'">content</Dialog>
+            </div>
+        `;
+        static props = null;
+        static components = { Dialog };
+        props = useProps(this.constructor.props);
+    }
+    await makeDialogMockEnv();
+    await mountWithCleanup(Parent);
+    expect(".o_dialog").toHaveCount(4);
+    expect(".o_dialog .modal-dialog.modal-xl .xl").toHaveCount(1);
+    expect(".o_dialog .modal-dialog.modal-lg .lg").toHaveCount(1);
+    expect(".o_dialog .modal-dialog.modal-md .md").toHaveCount(1);
+    expect(".o_dialog .modal-dialog.modal-sm .sm").toHaveCount(1);
+});
+
+test("dialog can be rendered on fullscreen", async () => {
+    expect.assertions(2);
+    class Parent extends Component {
+        static template = xml`
+            <Dialog fullscreen="true">content</Dialog>
+        `;
+        static props = null;
+        static components = { Dialog };
+        props = useProps(this.constructor.props);
+    }
+    await makeDialogMockEnv();
+    await mountWithCleanup(Parent);
+    expect(".o_dialog").toHaveCount(1);
+    expect(".o_dialog .modal").toHaveClass("o_modal_full");
+});
+
+test("can be the UI active element", async () => {
+    expect.assertions(4);
+    class Parent extends Component {
+        static template = xml`<Dialog>content</Dialog>`;
+        static props = null;
+        static components = { Dialog };
+        props = useProps(this.constructor.props);
+        setup() {
+            this.ui = useService("ui");
+            expect(/** @type {any} */ (this.ui.activeElement)).toBe(document, {
+                message:
+                    "UI active element should be the default (document) as Parent is not mounted yet",
+            });
+            onMounted(() => {
+                expect(".modal").toHaveCount(1);
+                expect(/** @type {any} */ (this.ui.activeElement)).toBe(
+                    queryOne(".modal"),
+                );
+            });
+        }
+    }
+    await makeDialogMockEnv();
+    const parent = await mountWithCleanup(Parent);
+    destroy(parent);
+    await Promise.resolve();
+    expect(getService("ui").activeElement).toBe(document, {
+        message: "UI owner should be reset to the default (document)",
+    });
+});
+
+test.tags("mobile");
+test("dialog can't be moved on small screen", async () => {
+    class Parent extends Component {
+        static template = xml`<Dialog>content</Dialog>`;
+        static components = { Dialog };
+        static props = null;
+        props = useProps(this.constructor.props);
+    }
+
+    await makeDialogMockEnv();
+    await mountWithCleanup(Parent);
+
+    expect(".modal-content").toHaveStyle({
+        top: "0px",
+        left: "0px",
+    });
+
+    const header = queryOne(".modal-header");
+    const headerRect = header.getBoundingClientRect();
+
+    await contains(header).dragAndDrop(".modal-content", {
+        position: {
+            x: headerRect.x + headerRect.width / 2 + 20,
+            y: headerRect.y + headerRect.height / 2 + 50,
+        },
+    });
+
+    expect(".modal-content").toHaveStyle({
+        top: "0px",
+        left: "0px",
+    });
+});
+
+test.tags("desktop");
+test("dialog can be moved", async () => {
+    class Parent extends Component {
+        static template = xml`<Dialog>content</Dialog>`;
+        static props = null;
+        static components = { Dialog };
+        props = useProps(this.constructor.props);
+    }
+    await makeDialogMockEnv();
+    await mountWithCleanup(Parent);
+    expect(".modal-content").toHaveStyle({
+        left: "0px",
+        top: "0px",
+    });
+
+    const modalRect = queryOne(".modal").getBoundingClientRect();
+    const header = queryOne(".modal-header");
+    const headerRect = header.getBoundingClientRect();
+    await contains(header).dragAndDrop(".modal-content", {
+        position: {
+            x: headerRect.x + headerRect.width / 2 + 20,
+            y: headerRect.y + headerRect.height / 2 + 50,
+        },
+    });
+    expect(".modal-content").toHaveStyle({
+        left: `${modalRect.y + 20}px`,
+        top: `${modalRect.x + 50}px`,
+    });
+});
+
+test.tags("desktop");
+test("dialog's position is reset on resize", async () => {
+    class Parent extends Component {
+        static template = xml`<Dialog>content</Dialog>`;
+        static props = null;
+        static components = { Dialog };
+        props = useProps(this.constructor.props);
+    }
+    await makeDialogMockEnv();
+    await mountWithCleanup(Parent);
+    expect(".modal-content").toHaveStyle({
+        left: "0px",
+        top: "0px",
+    });
+
+    const modalRect = queryOne(".modal").getBoundingClientRect();
+    const header = queryOne(".modal-header");
+    const headerRect = header.getBoundingClientRect();
+    await contains(header).dragAndDrop(".modal-content", {
+        position: {
+            x: headerRect.x + headerRect.width / 2 + 20,
+            y: headerRect.y + headerRect.height / 2 + 50,
+        },
+    });
+    expect(".modal-content").toHaveStyle({
+        left: `${modalRect.y + 20}px`,
+        top: `${modalRect.x + 50}px`,
+    });
+
+    await resize();
+    await animationFrame();
+    expect(".modal-content").toHaveStyle({
+        left: "0px",
+        top: "0px",
+    });
+});
+
+test("control+enter skips disabled footer buttons", async () => {
+    const env = await makeDialogMockEnv();
+    class Custom extends Component {
+        static components = { Dialog };
+        static props = null;
+        static template = xml`
+            <Dialog>
+                body
+                <t t-set-slot="footer">
+                    <button class="btn first" disabled="disabled" t-on-click="() => this.props.onFirst()">First</button>
+                    <button class="btn second" t-on-click="() => this.props.onSecond()">Second</button>
+                </t>
+            </Dialog>`;
+        props = useProps(this.constructor.props);
+    }
+    await mountWithCleanup(Custom, {
+        env,
+        props: {
+            onFirst: () => expect.step("first (disabled!)"),
+            onSecond: () => expect.step("second"),
+        },
+    });
+
+    await press(["control", "enter"]);
+    await animationFrame();
+    expect.verifySteps(["second"]);
+});
+
+test.tags("mobile");
+test("a dialog on a hand-built dialogData survives teardown", async () => {
+    const env = await makeDialogMockEnv({
+        dialogData: { close: () => {}, isActive: true, scrollToOrigin: undefined },
+    });
+    class Parent extends Component {
+        static components = { Dialog };
+        static props = null;
+        static template = xml`<Dialog><p>content</p></Dialog>`;
+        props = useProps(this.constructor.props);
+    }
+    const parent = await mountWithCleanup(Parent, { env });
+    expect(".modal").toHaveCount(1);
+
+    destroy(parent);
+    await animationFrame();
+    expect(".modal").toHaveCount(0);
+});

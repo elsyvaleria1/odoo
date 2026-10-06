@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="mrp_workcenter_view_form_asset" model="ir.ui.view">
+        <field name="name">mrp.workcenter.form.asset</field>
+        <field name="model">mrp.workcenter</field>
+        <field name="inherit_id" ref="mrp.mrp_workcenter_view" />
+        <field name="arch" type="xml">
+            <xpath
+                expr="//page[@name='general_info']//group[@name='capacity']"
+                position="after">
+                <group name="fuel_performance" string="Fuel Performance">
+                    <field name="asset_id" />
+                    <field
+                        name="theoretical_fuel_efficiency"
+                        invisible="not asset_id" />
+                    <field name="actual_fuel_efficiency" invisible="not asset_id" />
+                    <label for="fuel_efficiency_deviation" invisible="not asset_id" />
+                    <div class="o_row" invisible="not asset_id">
+                        <field
+                            name="fuel_efficiency_deviation"
+                            nolabel="1"
+                            decoration-danger="fuel_efficiency_deviation &lt; 0"
+                            decoration-success="fuel_efficiency_deviation &gt;= 0" />
+                        <span>%</span>
+                    </div>
+                </group>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

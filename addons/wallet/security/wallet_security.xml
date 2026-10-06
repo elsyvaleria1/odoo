@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="module_category_wallet" model="ir.module.category">
+        <field name="name">Electronic Wallets</field>
+        <field name="description">Prepaid balances held with issuers</field>
+        <field name="sequence" eval="91" />
+    </record>
+
+    <record id="res_groups_privilege_wallet" model="res.groups.privilege">
+        <field name="name">Electronic Wallets</field>
+        <field name="category_id" ref="module_category_wallet" />
+        <field name="description">Access to wallet accounts, cards and balances</field>
+        <field name="placeholder">Set wallet access level...</field>
+        <field name="sequence" eval="10" />
+    </record>
+
+    <record id="group_wallet_user" model="res.groups">
+        <field name="name">User</field>
+        <field name="sequence" eval="10" />
+        <field name="privilege_id" ref="res_groups_privilege_wallet" />
+        <field name="comment">Can read wallets, cards, balances and transactions</field>
+        <field name="implied_ids" eval="[Command.link(ref('base.group_user'))]" />
+    </record>
+
+    <record id="group_wallet_manager" model="res.groups">
+        <field name="name">Manager</field>
+        <field name="sequence" eval="20" />
+        <field name="privilege_id" ref="res_groups_privilege_wallet" />
+        <field
+            name="comment">Configure wallet accounts and cards, record balances and transactions</field>
+        <field name="implied_ids" eval="[Command.link(ref('group_wallet_user'))]" />
+    </record>
+
+</odoo>

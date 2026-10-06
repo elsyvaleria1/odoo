@@ -1,0 +1,66 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* approval_analytics
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Language: es\n"
+"Plural-Forms: \n"
+
+#. module: approval_analytics
+#: model:ir.model,name:approval_analytics.model_approval_dashboard
+#: model:ir.ui.menu,name:approval_analytics.menu_approval_dashboard
+#: model_terms:ir.ui.view,arch_db:approval_analytics.view_approval_dashboard_form
+msgid "Approval Dashboard"
+msgstr "Tablero de aprobaciones"
+
+#. module: approval_analytics
+#: model:ir.actions.act_window,name:approval_analytics.action_approval_metrics
+#: model:ir.model,name:approval_analytics.model_approval_metrics
+#: model:ir.ui.menu,name:approval_analytics.menu_approval_metrics
+#: model_terms:ir.ui.view,arch_db:approval_analytics.view_approval_metrics_graph
+#: model_terms:ir.ui.view,arch_db:approval_analytics.view_approval_metrics_list
+#: model_terms:ir.ui.view,arch_db:approval_analytics.view_approval_metrics_pivot
+msgid "Approval Metrics"
+msgstr "Métricas de aprobación"
+
+#. module: approval_analytics
+#: model:ir.actions.act_window,name:approval_analytics.action_approver_performance
+#: model:ir.ui.menu,name:approval_analytics.menu_approver_performance
+#: model_terms:ir.ui.view,arch_db:approval_analytics.view_approver_performance_graph
+#: model_terms:ir.ui.view,arch_db:approval_analytics.view_approver_performance_list
+#: model_terms:ir.ui.view,arch_db:approval_analytics.view_approver_performance_pivot
+msgid "Approver Performance"
+msgstr "Desempeño de los aprobadores"
+
+#. module: approval_analytics
+#: model_terms:ir.ui.view,arch_db:approval_analytics.view_approval_dashboard_form
+msgid "Refresh"
+msgstr "Actualizar"
+
+#. module: approval_analytics
+#: model_terms:ir.ui.view,arch_db:approval_analytics.view_approval_dashboard_form
+msgid "Review My Pending"
+msgstr "Revisar mis pendientes"
+
+#. module: approval_analytics
+#: model_terms:ir.ui.view,arch_db:approval_analytics.view_approval_dashboard_form
+msgid "View Pending"
+msgstr "Ver pendientes"
+
+#. module: approval_analytics
+#: model_terms:ir.ui.view,arch_db:approval_analytics.view_approval_dashboard_form
+msgid "View Requests"
+msgstr "Ver solicitudes"
+
+#. module: approval_analytics
+#: model_terms:ir.ui.view,arch_db:approval_analytics.view_approval_dashboard_form
+msgid "View Workload"
+msgstr "Ver carga de trabajo"

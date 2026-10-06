@@ -1,0 +1,5 @@
+id,name,model_id/id,group_id/id,kind,operation,reach,anchor,domain
+mail_plan_rule_group_sale_manager_order,Manager can manage sale order plans,mail.model_mail_activity_plan,sale.group_sale_manager,permission,cud,all,,"[('res_model', '=', 'sale.order')]"
+mail_plan_templates_rule_group_sale_manager_order,Manager can manage sale order plan templates,mail.model_mail_activity_plan_template,sale.group_sale_manager,permission,cud,all,,"[('plan_id.res_model', '=', 'sale.order')]"
+mail_plan_rule_group_sale_manager_lead,Manager can manage lead plans,mail.model_mail_activity_plan,sale.group_sale_manager,permission,cud,all,,"[('res_model', '=', 'crm.lead')]"
+mail_plan_templates_rule_group_sale_manager_lead,Manager can manage lead plan templates,mail.model_mail_activity_plan_template,sale.group_sale_manager,permission,cud,all,,"[('plan_id.res_model', '=', 'crm.lead')]"

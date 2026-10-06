@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="res_config_settings_view_form" model="ir.ui.view">
+        <field name="name">res.config.settings.view.form.inherit.product</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="base.res_config_settings_view_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//form" position="inside">
+                <app
+                    name="gps_tracking"
+                    string="GPS Tracking"
+                    groups="device_gps.group_device_gps_manager"
+                    data-string="GPS Tracking">
+                    <block
+                        name="gps_accuracy_settings"
+                        title="GPS Positioning Accuracy"
+                        help="Configure GPS positioning accuracy requirements">
+                        <setting
+                            name="min_satellites"
+                            help="Minimum number of satellites required for accurate GPS positioning">
+                            <field name="min_satellites" />
+                        </setting>
+                        <setting
+                            name="max_hdop"
+                            help="Maximum Horizontal Dilution of Precision allowed (lower is better)">
+                            <field name="max_hdop" />
+                        </setting>
+                    </block>
+                    <block
+                        name="coordinate_settings"
+                        title="Coordinate Validation"
+                        help="Configure acceptable coordinate ranges">
+                        <setting
+                            name="coordinate_ranges"
+                            help="Define valid latitude and longitude bounds">
+                            <div class="row">
+                                <div class="col-6">
+                                    <label for="min_latitude" string="Min Latitude" />
+                                    <field name="min_latitude" />
+                                </div>
+                                <div class="col-6">
+                                    <label for="max_latitude" string="Max Latitude" />
+                                    <field name="max_latitude" />
+                                </div>
+                            </div>
+                            <div class="row mt-2">
+                                <div class="col-6">
+                                    <label for="min_longitude" string="Min Longitude" />
+                                    <field name="min_longitude" />
+                                </div>
+                                <div class="col-6">
+                                    <label for="max_longitude" string="Max Longitude" />
+                                    <field name="max_longitude" />
+                                </div>
+                            </div>
+                        </setting>
+                    </block>
+                    <block
+                        name="vehicle_settings"
+                        title="Vehicle Parameters"
+                        help="Configure vehicle-related validation limits">
+                        <setting
+                            name="max_realistic_speed_kmh"
+                            help="Maximum reasonable speed for ground vehicles (km/h)">
+                            <field name="max_realistic_speed" />
+                        </setting>
+                        <setting
+                            name="fuel_settings"
+                            help="Fuel level validation parameters">
+                            <div class="row">
+                                <div class="col-6">
+                                    <label
+                                        for="max_fuel_level_percentage"
+                                        string="Max Fuel Level (%)" />
+                                    <field name="max_fuel_level_percentage" />
+                                </div>
+                                <div class="col-6">
+                                    <label
+                                        for="max_engine_total_hours"
+                                        string="Max Engine Hours" />
+                                    <field name="max_engine_total_hours" />
+                                </div>
+                            </div>
+                        </setting>
+                    </block>
+                    <block
+                        name="temporal_settings"
+                        title="Temporal Validation"
+                        help="Configure time-based validation parameters">
+                        <setting
+                            name="max_time_past_hours"
+                            help="Maximum allowed time gap between current time and GPS timestamp">
+                            <field name="max_time_past_hours" />
+                        </setting>
+                        <setting
+                            name="max_time_future_minutes"
+                            help="Maximum allowed time gap between current time and GPS timestamp">
+                            <field name="max_time_future_minutes" />
+                        </setting>
+                        </block>
+                    <block
+                        name="duplicate_settings"
+                        title="Duplicate Detection"
+                        help="Configure duplicate point detection">
+                        <setting
+                            name="duplicate_time_window_seconds"
+                            help="Time window for duplicate point detection">
+                            <field name="duplicate_time_window_seconds" />
+                        </setting>
+                        <setting
+                            name="duplicate_coordinate_tolerance"
+                            help="Coordinate tolerance for duplicate detection">
+                            <field name="duplicate_coordinate_tolerance" />
+                        </setting>
+                    </block>
+                    </app>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="action_gps_tracking_configuration" model="ir.actions.act_window">
+        <field name="name">Settings</field>
+        <field name="res_model">res.config.settings</field>
+        <field name="view_mode">form</field>
+        <field name="context">{'module' : 'gps_tracking', 'bin_size': False}</field>
+    </record>
+
+</odoo>

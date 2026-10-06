@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="hr_payroll_edit_payslip_lines_form_wizard" model="ir.ui.view">
+        <field name="name">hr.payroll.edit.payslip.lines.wizard.view.form</field>
+        <field name="model">wizard.hr.payslip.update.line</field>
+        <field name="arch" type="xml">
+            <form string="Edition of Payslip Lines in the Payslip">
+                <field name="payslip_id" invisible="1" />
+                <field name="ytd_computation" invisible="True" />
+                <span><strong>Tip:</strong> Each time you edit the quantity or the amount on a line, we recompute the following lines. We recommend that you edit from top to bottom to prevent your edition from being overwritten by the automatic recalculation. Be careful that reordering the lines doesn't recompute them.</span>
+                <field
+                    name="worked_days_line_ids"
+                    widget="worked_days_line_one2many"
+                    context="{'default_slip_id': payslip_id}">
+                    <list string="Worked Days" editable="bottom" delete="0">
+                        <field
+                            name="edit_payslip_lines_wizard_id"
+                            column_invisible="1" />
+                        <field name="work_entry_type_id" />
+                        <field name="name" required="1" />
+                        <field name="number_of_days" />
+                        <field name="number_of_hours" />
+                        <field name="code" optional="hide" />
+                        <field name="amount" />
+                        <field
+                            name="ytd"
+                            optional="show"
+                            column_invisible="not parent.ytd_computation"
+                            readonly="0" />
+                    </list>
+                </field>
+                <field
+                    name="line_ids"
+                    widget="payslip_line_one2many"
+                    context="{'default_slip_id': payslip_id}">
+                    <list
+                        string="Salary Structure"
+                        editable="bottom"
+                        delete="0"
+                        decoration-info="total == 0">
+                        <field
+                            name="edit_payslip_lines_wizard_id"
+                            column_invisible="1" />
+                        <field name="sequence" widget="handle" />
+                        <field name="slip_id" column_invisible="True" />
+                        <field name="struct_id" column_invisible="True" />
+                        <field name="name" required="True" />
+                        <field
+                            name="code"
+                            optional="hide"
+                            force_save="1"
+                            readonly="1" />
+                        <field
+                            name="category_id"
+                            force_save="1"
+                            column_invisible="True"
+                            readonly="1" />
+                        <field name="quantity" />
+                        <field name="rate" />
+                        <field
+                            name="salary_rule_id"
+                            options="{'no_create_edit': True}"
+                            required="1" />
+                        <field name="amount" />
+                        <field name="total" force_save="1" readonly="1" />
+                        <field
+                            name="ytd"
+                            optional="show"
+                            force_save="1"
+                            column_invisible="not parent.ytd_computation"
+                            readonly="0" />
+                    </list>
+                </field>
+                <footer>
+                    <button
+                        name="action_validate_edition"
+                        type="object"
+                        string="Validate Edition"
+                        class="oe_highlight"
+                        data-hotkey="q" />
+                    <button
+                        special="cancel"
+                        string="Discard"
+                        class="btn-secondary"
+                        data-hotkey="x" />
+                </footer>
+            </form>
+        </field>
+    </record>
+
+</odoo>

@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="event_track_view_form_in_gantt" model="ir.ui.view">
+        <field name="name">event.track.view.form.in.gantt</field>
+        <field name="model">event.track</field>
+        <field name="inherit_id" ref="website_event_track.view_event_track_form" />
+        <field name="mode">primary</field>
+        <field name="arch" type="xml">
+            <xpath expr="//form" position="attributes">
+                <attribute name="js_class">event_track_form_in_gantt</attribute>
+            </xpath>
+            <xpath expr="//sheet" position="after">
+                <footer>
+                    <button
+                        special="save"
+                        string="Save"
+                        groups="event.group_event_manager"
+                        class="btn btn-primary"
+                        close="1"
+                        data-hotkey="q" />
+                    <button
+                        special="cancel"
+                        string="Discard"
+                        class="btn-secondary"
+                        close="1"
+                        data-hotkey="x" />
+                    <button
+                        name="action_unschedule"
+                        type="object"
+                        string="Unschedule"
+                        groups="event.group_event_manager"
+                        invisible="not id"
+                        class="btn-secondary"
+                        close="1" />
+                    <button
+                        name="unlink"
+                        type="object"
+                        title="Delete"
+                        icon="fa-trash"
+                        groups="event.group_event_manager"
+                        invisible="not id"
+                        class="btn-secondary float-end"
+                        close="1"
+                        data-hotkey="d" />
+                </footer>
+            </xpath>
+            <xpath expr="//field[@name='stage_id']" position="replace" />
+            <xpath expr="//field[@name='wishlist_visitor_count']" position="replace" />
+            <xpath expr="//field[@name='is_published']" position="replace" />
+        </field>
+    </record>
+
+    <record id="event_track_view_gantt" model="ir.ui.view">
+        <field name="name">event.track.view.gantt</field>
+        <field name="model">event.track</field>
+        <field name="priority" eval="2" />
+        <field name="arch" type="xml">
+            <gantt
+                string="Tracks"
+                default_group_by="location_id"
+                color="color"
+                date_start="date"
+                date_stop="date_end"
+                form_view_id="%(event_track_view_form_in_gantt)d">
+                <templates>
+                    <div t-name="gantt-popover">
+                        <div><strong>Start — </strong> <t t-out="dates.formatValue(date, 'f')" /></div>
+                        <div t-if="partner_name"><strong>Proposed By — </strong> <t t-out="partner_name" /></div>
+                    </div>
+                </templates>
+                <field name="partner_name" />
+            </gantt>
+        </field>
+    </record>
+
+    <record id="website_event_track.action_event_track" model="ir.actions.act_window">
+        <field name="view_mode">kanban,list,form,gantt,calendar,graph,activity</field>
+        <field
+            name="context">{'default_scale': 'year', 'search_default_location': 1}</field>
+    </record>
+
+    <record
+        id="website_event_track.action_event_track_from_event"
+        model="ir.actions.act_window">
+        <field name="view_mode">kanban,list,form,gantt,calendar,graph,activity</field>
+    </record>
+
+</odoo>

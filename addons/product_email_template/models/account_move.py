@@ -1,0 +1,29 @@
+from odoo import SUPERUSER_ID, models
+
+
+class AccountMove(models.Model):
+    _inherit = "account.move"
+
+    def _send_product_email_templates(self) -> bool:
+        if self.env.su:
+            # sending mail in sudo was meant for it being sent from superuser
+            self = self.with_user(SUPERUSER_ID)
+        for invoice in self.filtered(lambda x: x.move_type == "out_invoice"):
+            # send template only on customer invoice
+            comment_subtype_id = self.env["ir.model.data"]._xmlid_to_res_id(
+                "mail.mt_comment"
+            )
+            for line in invoice.invoice_line_ids:
+                if line.product_id.email_template_id:
+                    invoice.message_post_with_source(
+                        line.product_id.email_template_id,
+                        email_layout_xmlid="mail.mail_notification_light",
+                        subtype_id=comment_subtype_id,
+                    )
+        return True
+
+    def _post_entries(self):
+        # OVERRIDE
+        posted = super()._post_entries()
+        posted._send_product_email_templates()
+        return posted

@@ -1,0 +1,1178 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* exchange
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-09-27 05:12+0000\n"
+"PO-Revision-Date: 2026-09-27 05:12+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: exchange
+#. odoo-python
+#: code:addons/exchange/models/exchange_channel.py:0
+msgid ""
+"%(company)s already reaches %(protocol)s through channel %(name)s in this "
+"environment."
+msgstr ""
+
+#. module: exchange
+#. odoo-python
+#: code:addons/exchange/models/exchange_transmission.py:0
+msgid ""
+"%(kind)s is a document of the %(owner)s protocol, and this transmission goes"
+" over %(protocol)s."
+msgstr ""
+
+#. module: exchange
+#. odoo-python
+#: code:addons/exchange/models/exchange_transmission.py:0
+msgid "A chain does not cross channels."
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.constraint,message:exchange.constraint_exchange_transmission_reference_uniq
+msgid "A counterparty issues one reference per ask."
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,field_description:exchange.field_exchange_channel__api_key_header
+msgid "API Key Header"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,field_description:exchange.field_exchange_channel__api_key_scheme
+msgid "API Key Scheme"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,field_description:exchange.field_exchange_channel__api_version_header
+msgid "API Version Header"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields.selection,name:exchange.selection__exchange_transmission__state__accepted
+#: model:ir.model.fields.selection,name:exchange.selection__mixin_exchange_subject__exchange_state__accepted
+#: model:ir.model.fields.selection,name:exchange.selection__mixin_syngenta_report__exchange_state__accepted
+#: model:ir.model.fields.selection,name:exchange.selection__syngenta_sale_report__exchange_state__accepted
+#: model:ir.model.fields.selection,name:exchange.selection__syngenta_stock_report__exchange_state__accepted
+msgid "Accepted"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,field_description:exchange.field_exchange_channel__active
+msgid "Active"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,field_description:exchange.field_exchange_channel__credential_id
+msgid "Active Credential"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,field_description:exchange.field_exchange_channel__allow_multiple_credentials
+msgid "Allow Multiple Credentials"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,field_description:exchange.field_exchange_channel__allow_user_credentials
+msgid "Allow Personal Credentials"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,help:exchange.field_exchange_channel__allow_multiple_credentials
+msgid ""
+"Allow multiple active credentials per company/environment. Useful for "
+"services like Telegram that support multiple bots."
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,field_description:exchange.field_exchange_channel__allowed_hosts
+msgid "Allowed Hosts"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields.selection,name:exchange.selection__exchange_transmission__intent__amend
+msgid "Amend"
+msgstr ""
+
+#. module: exchange
+#. odoo-python
+#: code:addons/exchange/models/exchange_channel.py:0
+msgid "An annulment window cannot be negative."
+msgstr ""
+
+#. module: exchange
+#. odoo-python
+#: code:addons/exchange/models/exchange_transmission.py:0
+msgid "An issuing transmission acts upon nothing."
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields.selection,name:exchange.selection__exchange_transmission__intent__annul
+msgid "Annul"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,field_description:exchange.field_exchange_channel__annul_window_days
+msgid "Annul Window Days"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields.selection,name:exchange.selection__mixin_exchange_subject__exchange_state__annulled
+#: model:ir.model.fields.selection,name:exchange.selection__mixin_syngenta_report__exchange_state__annulled
+#: model:ir.model.fields.selection,name:exchange.selection__syngenta_sale_report__exchange_state__annulled
+#: model:ir.model.fields.selection,name:exchange.selection__syngenta_stock_report__exchange_state__annulled
+msgid "Annulled"
+msgstr ""
+
+#. module: exchange
+#: model_terms:ir.ui.view,arch_db:exchange.exchange_transmission_view_search
+msgid "Annulments"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,field_description:exchange.field_exchange_channel__api_version
+msgid "Api Version"
+msgstr ""
+
+#. module: exchange
+#: model_terms:ir.ui.view,arch_db:exchange.exchange_channel_view_search
+msgid "Archived"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,field_description:exchange.field_exchange_transmission__attachment_id
+msgid "Attachment"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,help:exchange.field_exchange_channel__endpoint_id
+msgid ""
+"Auth, rate limiting, retry policy, caching and TLS live on the endpoint. A "
+"channel adds only what the counterparty decides."
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,field_description:exchange.field_exchange_channel__auth_type
+msgid "Authentication Type"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,help:exchange.field_exchange_channel__retry_enabled
+msgid "Automatically retry failed operations with exponential backoff"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,field_description:exchange.field_exchange_channel__avg_response_time
+msgid "Avg Response Time"
+msgstr ""
+
+#. module: exchange
+#: model_terms:ir.ui.view,arch_db:exchange.exchange_transmission_view_search
+msgid "Awaiting a Verdict"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,help:exchange.field_exchange_channel__endpoint_url
+msgid "Base URL for production environment"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,help:exchange.field_exchange_channel__endpoint_url_test
+msgid "Base URL for test environment"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,field_description:exchange.field_exchange_channel__cache_enabled
+msgid "Cache Enabled"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,field_description:exchange.field_exchange_channel__cache_error_count
+msgid "Cache Error Count"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,field_description:exchange.field_exchange_channel__cache_health
+msgid "Cache Health"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,field_description:exchange.field_exchange_channel__cache_last_error
+msgid "Cache Last Error"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,field_description:exchange.field_exchange_channel__cache_ttl
+msgid "Cache Ttl"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,field_description:exchange.field_exchange_channel__category
+msgid "Category"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,field_description:exchange.field_exchange_channel__certificate_id
+msgid "Certificate"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,field_description:exchange.field_exchange_transmission__chain_previous_id
+msgid "Chain Previous"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,field_description:exchange.field_exchange_transmission__channel_id
+#: model_terms:ir.ui.view,arch_db:exchange.exchange_transmission_view_search
+msgid "Channel"
+msgstr ""
+
+#. module: exchange
+#. odoo-python
+#: code:addons/exchange/models/exchange_channel.py:0
+msgid "Channel %(name)s holds no inbox to read."
+msgstr ""
+
+#. module: exchange
+#: model:ir.ui.menu,name:exchange.menu_exchange_channel
+msgid "Channels"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,field_description:exchange.field_exchange_channel__code
+msgid "Code"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,field_description:exchange.field_exchange_channel__company_id
+#: model:ir.model.fields,field_description:exchange.field_exchange_transmission__company_id
+msgid "Company"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,help:exchange.field_exchange_channel__provider
+msgid "Company providing the service"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,help:exchange.field_exchange_channel__company_id
+msgid "Company that owns this channel (for multi-tenancy isolation)"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,field_description:exchange.field_exchange_channel__connection_ids
+msgid "Connections"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,field_description:exchange.field_exchange_channel__per_record_connections
+msgid "Connections per Record"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,field_description:exchange.field_exchange_channel__count_transmission
+#: model:ir.model.fields,field_description:exchange.field_mixin_exchange_subject__count_transmission
+msgid "Count Transmission"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,field_description:exchange.field_exchange_channel__count_transmission_open
+msgid "Count Transmission Open"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,field_description:exchange.field_exchange_channel__counterparty
+#: model_terms:ir.ui.view,arch_db:exchange.exchange_channel_view_search
+msgid "Counterparty"
+msgstr ""
+
+#. module: exchange
+#: model_terms:ir.ui.view,arch_db:exchange.exchange_channel_view_form
+msgid "Counterparty name"
+msgstr ""
+
+#. module: exchange
+#: model_terms:ir.ui.view,arch_db:exchange.exchange_transmission_view_form
+msgid "Counterparty's Answer"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,field_description:exchange.field_exchange_channel__create_uid
+#: model:ir.model.fields,field_description:exchange.field_exchange_transmission__create_uid
+msgid "Created by"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,field_description:exchange.field_exchange_channel__create_date
+#: model:ir.model.fields,field_description:exchange.field_exchange_transmission__create_date
+msgid "Created on"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,field_description:exchange.field_exchange_channel__credential_count
+msgid "Credential Count"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,field_description:exchange.field_exchange_channel__credential_fingerprint
+msgid "Credential Fingerprint"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,field_description:exchange.field_exchange_channel__credential_ids
+msgid "Credentials"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,field_description:exchange.field_exchange_transmission__date_created
+msgid "Date Created"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,field_description:exchange.field_exchange_channel__date_last_inbox
+msgid "Date Last Inbox"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,field_description:exchange.field_exchange_transmission__date_next_retry
+msgid "Date Next Retry"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,field_description:exchange.field_exchange_transmission__date_sent
+msgid "Date Sent"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,field_description:exchange.field_exchange_transmission__date_settled
+msgid "Date Settled"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,help:exchange.field_exchange_channel__annul_window_days
+msgid ""
+"Days after acceptance during which an annulment is still admissible. Zero "
+"means the counterparty sets no window."
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,help:exchange.field_exchange_channel__log_retention_days
+msgid ""
+"Delete this endpoint's event logs older than this many days. 0 uses the "
+"retention set in API Transport settings."
+msgstr ""
+
+#. module: exchange
+#: model_terms:ir.ui.view,arch_db:exchange.exchange_transmission_view_form
+msgid "Delivery"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,help:exchange.field_exchange_channel__rate_limit_strict
+msgid ""
+"Deny the request when the rate-limit bucket cannot be read (lock contention,"
+" timeout, internal error) instead of allowing it. Enable wherever the limit "
+"is a security control rather than a best-effort cap."
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,field_description:exchange.field_exchange_channel__description
+msgid "Description"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,help:exchange.field_exchange_channel__description
+msgid "Description of what this channel does"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,field_description:exchange.field_exchange_channel__display_name
+#: model:ir.model.fields,field_description:exchange.field_exchange_protocol__display_name
+#: model:ir.model.fields,field_description:exchange.field_exchange_transmission__display_name
+#: model:ir.model.fields,field_description:exchange.field_mixin_exchange_subject__display_name
+msgid "Display Name"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,field_description:exchange.field_exchange_transmission__document_kind
+msgid "Document Kind"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,field_description:exchange.field_exchange_channel__documentation_url
+msgid "Documentation Url"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields.selection,name:exchange.selection__exchange_transmission__state__draft
+msgid "Draft"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,help:exchange.field_exchange_channel__per_record_connections
+msgid ""
+"Each connection belongs to one record, such as a device, and carries its own"
+" address. Calls name the connection they use; none is picked by company, and"
+" the service needs no URL of its own."
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,field_description:exchange.field_exchange_channel__rate_limit_enabled
+msgid "Enable Rate Limiting"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,field_description:exchange.field_exchange_channel__retry_enabled
+msgid "Enable Retry"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,help:exchange.field_exchange_channel__rate_limit_enabled
+msgid "Enable rate limiting using token bucket algorithm"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,help:exchange.field_exchange_channel__credential_id
+msgid "Encrypted credential for authentication. Managed by credential."
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,field_description:exchange.field_exchange_channel__endpoint_id
+msgid "Endpoint"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,field_description:exchange.field_exchange_channel__endpoint_url
+msgid "Endpoint Url"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,field_description:exchange.field_exchange_channel__endpoint_url_test
+msgid "Endpoint Url Test"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,field_description:exchange.field_exchange_channel__environment
+msgid "Environment"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,field_description:exchange.field_exchange_channel__event_log_ids
+#: model:ir.model.fields,field_description:exchange.field_exchange_transmission__event_log_id
+msgid "Event Log"
+msgstr ""
+
+#. module: exchange
+#: model:ir.ui.menu,name:exchange.menu_exchange_root
+msgid "Exchange"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model,name:exchange.model_exchange_channel
+#: model:ir.model.fields,field_description:exchange.field_exchange_channel__exchange_channel_ids
+#: model:ir.model.fields,field_description:exchange.field_integration_service__exchange_channel_ids
+msgid "Exchange Channel"
+msgstr ""
+
+#. module: exchange
+#: model:ir.actions.act_window,name:exchange.exchange_channel_action
+msgid "Exchange Channels"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model,name:exchange.model_exchange_protocol
+msgid "Exchange Protocol"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,field_description:exchange.field_mixin_exchange_subject__exchange_state
+msgid "Exchange Status"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model,name:exchange.model_mixin_exchange_subject
+msgid "Exchange Subject Mixin"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model,name:exchange.model_exchange_transmission
+msgid "Exchange Transmission"
+msgstr ""
+
+#. module: exchange
+#: model:ir.actions.server,name:exchange.cron_read_inboxes_ir_actions_server
+msgid "Exchange: read the inboxes"
+msgstr ""
+
+#. module: exchange
+#: model:ir.actions.server,name:exchange.cron_read_verdicts_ir_actions_server
+msgid "Exchange: read the verdicts still outstanding"
+msgstr ""
+
+#. module: exchange
+#: model:ir.actions.server,name:exchange.cron_send_queued_ir_actions_server
+msgid "Exchange: send what is queued"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields.selection,name:exchange.selection__exchange_transmission__state__expired
+msgid "Expired"
+msgstr ""
+
+#. module: exchange
+#. odoo-python
+#: code:addons/exchange/models/exchange_transmission.py:0
+msgid "Gave up after %(attempts)s attempts. Last error: %(message)s"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,help:exchange.field_exchange_channel__api_version_header
+msgid ""
+"Header carrying the API Version for a vendor that names its own — "
+"'anthropic-version' for Anthropic. Leave empty when the version travels the "
+"generic way (see Send Generic Version Headers) or not in a header at all, as"
+" Google's does in the URL path."
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,help:exchange.field_exchange_channel__api_key_header
+msgid ""
+"Header carrying the API key for this vendor, when it wants one of its own — "
+"'x-api-key' for Anthropic, 'x-goog-api-key' for Google. Leave empty for the "
+"generic 'Authorization: Bearer' and 'X-API-Key' pair, which most vendors "
+"accept."
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,field_description:exchange.field_exchange_channel__health_check_enabled
+msgid "Health Check Enabled"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,field_description:exchange.field_exchange_channel__health_check_endpoint
+msgid "Health Check Endpoint"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,field_description:exchange.field_exchange_channel__health_check_environment
+msgid "Health Check Environment"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,field_description:exchange.field_exchange_channel__health_check_interval
+msgid "Health Check Interval"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,field_description:exchange.field_exchange_channel__health_message
+msgid "Health Message"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,help:exchange.field_exchange_channel__allowed_hosts
+msgid ""
+"Hosts, besides those of the endpoint URLs, that may receive this endpoint's "
+"credential, separated by commas. 'private' admits any private-network host, "
+"for an endpoint that reaches devices at their own addresses. A call to any "
+"other host that would carry the credential is refused."
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,help:exchange.field_exchange_channel__name
+msgid "Human-readable name for this channel"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,field_description:exchange.field_exchange_channel__id
+#: model:ir.model.fields,field_description:exchange.field_exchange_protocol__id
+#: model:ir.model.fields,field_description:exchange.field_exchange_transmission__id
+#: model:ir.model.fields,field_description:exchange.field_mixin_exchange_subject__id
+msgid "ID"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields.selection,name:exchange.selection__mixin_exchange_subject__exchange_state__pending
+#: model:ir.model.fields.selection,name:exchange.selection__mixin_syngenta_report__exchange_state__pending
+#: model:ir.model.fields.selection,name:exchange.selection__syngenta_sale_report__exchange_state__pending
+#: model:ir.model.fields.selection,name:exchange.selection__syngenta_stock_report__exchange_state__pending
+msgid "In flight"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,field_description:exchange.field_exchange_channel__retry_initial_delay
+msgid "Initial Retry Delay (seconds)"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,help:exchange.field_exchange_channel__retry_initial_delay
+msgid "Initial delay before first retry. Increases exponentially."
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,field_description:exchange.field_exchange_transmission__intent
+#: model_terms:ir.ui.view,arch_db:exchange.exchange_transmission_view_search
+msgid "Intent"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,field_description:exchange.field_exchange_channel__is_chained
+msgid "Is Chained"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,field_description:exchange.field_exchange_channel__is_healthy
+msgid "Is Healthy"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,field_description:exchange.field_exchange_channel__is_inbox_enabled
+msgid "Is Inbox Enabled"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,field_description:exchange.field_exchange_transmission__is_settled
+msgid "Is Settled"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields.selection,name:exchange.selection__exchange_transmission__intent__issue
+msgid "Issue"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,help:exchange.field_exchange_channel__max_response_bytes
+msgid ""
+"Largest response body accepted from this service; 0 keeps the server-wide "
+"cap of the outbound pipeline."
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,field_description:exchange.field_exchange_channel__date_last_activity
+msgid "Last Activity"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,field_description:exchange.field_exchange_channel__last_health_check
+msgid "Last Health Check"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,field_description:exchange.field_exchange_channel__write_uid
+#: model:ir.model.fields,field_description:exchange.field_exchange_transmission__write_uid
+msgid "Last Updated by"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,field_description:exchange.field_exchange_channel__write_date
+#: model:ir.model.fields,field_description:exchange.field_exchange_transmission__write_date
+msgid "Last Updated on"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,help:exchange.field_exchange_channel__allow_user_credentials
+msgid ""
+"Let a user hold their own credential for this endpoint, so calls they "
+"trigger are attributed to them rather than to the company. When a user has "
+"no personal credential the company one is used, so turning this on changes "
+"nothing until someone creates one."
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields.selection,name:exchange.selection__exchange_channel__counterparty__agent
+msgid "Licensed agent or access point"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,field_description:exchange.field_exchange_channel__log_request_payload
+msgid "Log Request Payload"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,field_description:exchange.field_exchange_channel__log_retention_days
+msgid "Log Retention Days"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,field_description:exchange.field_exchange_channel__rate_limit_requests
+msgid "Max Requests"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,field_description:exchange.field_exchange_channel__max_response_bytes
+msgid "Max Response (bytes)"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,field_description:exchange.field_exchange_channel__retry_max_attempts
+msgid "Max Retry Attempts"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,help:exchange.field_exchange_channel__rate_limit_requests
+msgid "Maximum number of requests allowed per time period"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,help:exchange.field_exchange_channel__retry_max_attempts
+msgid "Maximum number of retry attempts before marking as failed"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,field_description:exchange.field_exchange_transmission__message
+msgid "Message"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,help:exchange.field_exchange_channel__auth_type
+msgid "Method used for authentication"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,field_description:exchange.field_exchange_channel__name
+msgid "Name"
+msgstr ""
+
+#. module: exchange
+#. odoo-python
+#: code:addons/exchange/models/mixin_exchange_subject.py:0
+msgid "No exchange channel is configured for %(record)s."
+msgstr ""
+
+#. module: exchange
+#. odoo-python
+#: code:addons/exchange/models/exchange_channel.py:0
+msgid "No installed module declares the exchange protocol %(protocol)s."
+msgstr ""
+
+#. module: exchange
+#: model_terms:ir.ui.view,arch_db:exchange.exchange_transmission_view_form
+msgid "Nothing said yet."
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields.selection,name:exchange.selection__mixin_exchange_subject__exchange_state__none
+#: model:ir.model.fields.selection,name:exchange.selection__mixin_syngenta_report__exchange_state__none
+#: model:ir.model.fields.selection,name:exchange.selection__syngenta_sale_report__exchange_state__none
+#: model:ir.model.fields.selection,name:exchange.selection__syngenta_stock_report__exchange_state__none
+msgid "Nothing sent"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,field_description:exchange.field_exchange_channel__oauth_auth_endpoint
+msgid "Oauth Auth Endpoint"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,field_description:exchange.field_exchange_channel__oauth_client_id
+msgid "Oauth Client"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,field_description:exchange.field_exchange_channel__oauth_scope
+msgid "Oauth Scope"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,field_description:exchange.field_exchange_channel__oauth_token_endpoint
+msgid "Oauth Token Endpoint"
+msgstr ""
+
+#. module: exchange
+#: model_terms:ir.ui.view,arch_db:exchange.exchange_channel_view_list
+#: model_terms:ir.ui.view,arch_db:exchange.exchange_transmission_view_search
+msgid "Open"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,help:exchange.field_exchange_channel__participant
+msgid ""
+"Our identifier at the counterparty -- a Peppol participant id, an issuer "
+"RFC, a taxpayer number."
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,field_description:exchange.field_exchange_transmission__parent_id
+msgid "Parent"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,field_description:exchange.field_exchange_channel__participant
+msgid "Participant"
+msgstr ""
+
+#. module: exchange
+#: model_terms:ir.ui.view,arch_db:exchange.exchange_transmission_view_form
+msgid "Payload"
+msgstr ""
+
+#. module: exchange
+#: model_terms:ir.ui.view,arch_db:exchange.exchange_channel_view_form
+msgid "Policy"
+msgstr ""
+
+#. module: exchange
+#: model_terms:ir.ui.view,arch_db:exchange.exchange_channel_view_search
+msgid "Production"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,field_description:exchange.field_exchange_channel__protocol
+#: model:ir.model.fields,field_description:exchange.field_exchange_transmission__protocol
+#: model_terms:ir.ui.view,arch_db:exchange.exchange_channel_view_search
+msgid "Protocol"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,field_description:exchange.field_exchange_channel__provider
+msgid "Provider"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields.selection,name:exchange.selection__exchange_transmission__intent__query
+msgid "Query"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields.selection,name:exchange.selection__exchange_transmission__state__queued
+msgid "Queued"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,field_description:exchange.field_exchange_channel__rate_limit_period
+msgid "Rate Limit Period"
+msgstr ""
+
+#. module: exchange
+#: model_terms:ir.ui.view,arch_db:exchange.exchange_channel_view_form
+msgid "Read Inbox"
+msgstr ""
+
+#. module: exchange
+#: model_terms:ir.ui.view,arch_db:exchange.exchange_transmission_view_form
+msgid "Read Verdict"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,field_description:exchange.field_exchange_transmission__reference
+msgid "Reference"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields.selection,name:exchange.selection__exchange_transmission__state__rejected
+#: model:ir.model.fields.selection,name:exchange.selection__mixin_exchange_subject__exchange_state__rejected
+#: model:ir.model.fields.selection,name:exchange.selection__mixin_syngenta_report__exchange_state__rejected
+#: model:ir.model.fields.selection,name:exchange.selection__syngenta_sale_report__exchange_state__rejected
+#: model:ir.model.fields.selection,name:exchange.selection__syngenta_stock_report__exchange_state__rejected
+#: model_terms:ir.ui.view,arch_db:exchange.exchange_transmission_view_search
+msgid "Rejected"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,field_description:exchange.field_exchange_transmission__response_attachment_id
+msgid "Response Attachment"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,field_description:exchange.field_exchange_channel__retry_backoff_type
+msgid "Retry Backoff Type"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,field_description:exchange.field_exchange_transmission__retry_count
+msgid "Retry Count"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,help:exchange.field_mixin_exchange_subject__exchange_state
+msgid ""
+"Rolled up from this record's transmissions. The counterparty's verdict, not "
+"whether a call completed."
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,help:exchange.field_exchange_channel__credential_fingerprint
+msgid ""
+"SHA-256 of the credential's secret. Lets a presented token be verified, and "
+"its channel found, without decrypting anything."
+msgstr ""
+
+#. module: exchange
+#: model_terms:ir.ui.view,arch_db:exchange.exchange_transmission_view_form
+msgid "Send"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,help:exchange.field_exchange_channel__send_version_headers
+msgid ""
+"Send API-Version and X-API-Version built from the API Version field. Turn "
+"this off for a vendor that carries its version its own way — in the URL "
+"path, or in a header of its own name — where the generic pair is at best "
+"ignored and at worst rejected."
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,field_description:exchange.field_exchange_channel__send_version_headers
+msgid "Send Generic Version Headers"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields.selection,name:exchange.selection__exchange_transmission__state__sent
+msgid "Sent"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,field_description:exchange.field_exchange_channel__sequence
+msgid "Sequence"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,help:exchange.field_exchange_channel__certificate_id
+msgid ""
+"Signing material this counterparty requires. Shared with every other "
+"consumer of certificate.certificate rather than re-uploaded."
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,field_description:exchange.field_exchange_transmission__state
+#: model_terms:ir.ui.view,arch_db:exchange.exchange_transmission_view_search
+msgid "State"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,help:exchange.field_exchange_channel__log_request_payload
+msgid ""
+"Store the request body on each integration.exchange row.\n"
+"\n"
+"Turn this off for a service whose payload is secret by construction rather than by field name — signing and cancellation calls that carry a private key, for instance. Redaction matches key names, so it cannot protect a payload whose names it does not know, and these rows are readable by everyone with API Transport access. The exchange is still recorded: URL, status, timing, error and trace id are unaffected."
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,help:exchange.field_exchange_channel__retry_backoff_type
+msgid "Strategy for increasing delay between retries"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,field_description:exchange.field_exchange_channel__rate_limit_strict
+msgid "Strict Rate Limiting"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,field_description:exchange.field_exchange_transmission__subject_id
+#: model_terms:ir.ui.view,arch_db:exchange.exchange_transmission_view_form
+msgid "Subject"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,field_description:exchange.field_exchange_channel__success_rate
+msgid "Success Rate"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields.selection,name:exchange.selection__exchange_channel__counterparty__authority
+msgid "Tax or regulatory authority"
+msgstr ""
+
+#. module: exchange
+#: model_terms:ir.ui.view,arch_db:exchange.exchange_channel_view_form
+msgid "Test Connection"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,help:exchange.field_exchange_transmission__subject_id
+msgid "The business record this transmission is about."
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,help:exchange.field_exchange_channel__is_inbox_enabled
+msgid ""
+"The counterparty holds documents addressed to us that must be polled for. "
+"Off for a send-only channel."
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,help:exchange.field_exchange_channel__is_chained
+msgid ""
+"The counterparty requires each document to reference the previous one, so "
+"transmissions on this channel form a chain."
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,help:exchange.field_exchange_transmission__reference
+msgid ""
+"The counterparty's own identifier for this exchange, whatever it calls it --"
+" uuid, mark, index, zip key, CSV."
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,help:exchange.field_exchange_transmission__message
+msgid "The counterparty's own words. Never paraphrased."
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,help:exchange.field_exchange_transmission__chain_previous_id
+msgid ""
+"The previous link, for a counterparty that requires each document to "
+"reference the one before it."
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,help:exchange.field_exchange_channel__counterparty
+msgid ""
+"The three things 'EDI' names -- fiscal clearance, partner interchange, "
+"document import -- on the record rather than in a module name. Only "
+"'partner' is interchange in the strict sense."
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,help:exchange.field_exchange_transmission__parent_id
+msgid ""
+"The transmission this one acts upon: an annulment's issue, an amendment's "
+"original."
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,help:exchange.field_exchange_transmission__event_log_id
+msgid ""
+"The transport record: whether the call completed. A settled transmission "
+"whose call failed is a contradiction, and the constraint below says so."
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,help:exchange.field_exchange_channel__rate_limit_period
+msgid "Time period for rate limiting"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,field_description:exchange.field_exchange_channel__timeout_connect
+msgid "Timeout Connect"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,field_description:exchange.field_exchange_channel__timeout_read
+msgid "Timeout Read"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,help:exchange.field_exchange_channel__date_last_activity
+msgid "Timestamp of most recent activity (request received or sent)"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,field_description:exchange.field_exchange_channel__total_requests
+msgid "Total Requests"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields.selection,name:exchange.selection__exchange_channel__counterparty__partner
+msgid "Trading partner"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,field_description:exchange.field_exchange_channel__transmission_ids
+#: model:ir.model.fields,field_description:exchange.field_mixin_exchange_subject__transmission_ids
+msgid "Transmission"
+msgstr ""
+
+#. module: exchange
+#. odoo-python
+#: code:addons/exchange/models/exchange_transmission.py:0
+msgid ""
+"Transmission %(name)s is accepted while the call that carried it failed. One"
+" of the two readings is wrong."
+msgstr ""
+
+#. module: exchange
+#. odoo-python
+#: code:addons/exchange/models/exchange_transmission.py:0
+msgid "Transmission %(name)s is settled and cannot be sent again."
+msgstr ""
+
+#. module: exchange
+#. odoo-python
+#: code:addons/exchange/models/exchange_channel.py:0
+#: code:addons/exchange/models/mixin_exchange_subject.py:0
+#: model:ir.actions.act_window,name:exchange.exchange_transmission_action
+#: model:ir.ui.menu,name:exchange.menu_exchange_transmission
+#: model_terms:ir.ui.view,arch_db:exchange.exchange_channel_view_form
+msgid "Transmissions"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,help:exchange.field_exchange_channel__verify_tls
+msgid ""
+"Uncheck only for an endpoint presenting a certificate this server cannot "
+"validate — typically a device on the local network with a self-signed "
+"certificate. Unchecking makes the connection interceptable; it is not a way "
+"to silence a certificate warning from a public endpoint."
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,help:exchange.field_exchange_channel__code
+msgid "Unique identifier code for programmatic access"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,field_description:exchange.field_exchange_channel__verify_tls
+msgid "Verify TLS certificate"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,field_description:exchange.field_exchange_channel__website
+msgid "Website"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,help:exchange.field_exchange_transmission__response_attachment_id
+msgid "What came back, exactly as it arrived."
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,help:exchange.field_exchange_transmission__intent
+msgid ""
+"What we are asking the counterparty for. Separate from state because an "
+"annulment that failed is intent=annul, state=rejected -- not a value in the "
+"issuing field."
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,help:exchange.field_exchange_transmission__attachment_id
+msgid "What we sent, exactly as it went."
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,help:exchange.field_exchange_transmission__state
+msgid ""
+"Where the ask has got to, as the counterparty sees it. Whether the call "
+"itself completed is on the event log, not here."
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,help:exchange.field_exchange_transmission__document_kind
+msgid ""
+"Which document this is, when a counterparty takes more than one about the "
+"same record -- an invoice and its expense classification, a CFDI and the "
+"payment complement. Not a phase and not an ask: the third axis l10n_mx_edi "
+"flattened into its sixteen-value state."
+msgstr ""
+
+#. module: exchange
+#: model_terms:ir.ui.view,arch_db:exchange.exchange_channel_view_search
+msgid "With Inbox"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,help:exchange.field_exchange_channel__api_key_scheme
+msgid ""
+"Word in front of the key in the Authorization header when the vendor does "
+"not use 'Bearer' — 'Token' for Deepgram. Ignored when an API Key Header "
+"names a header of its own."
+msgstr ""

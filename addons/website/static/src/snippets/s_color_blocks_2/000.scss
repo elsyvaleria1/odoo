@@ -1,0 +1,34 @@
+.s_color_blocks_2 {
+    &.o_half_screen_height,
+    &.o_full_screen_height {
+        > :first-child {
+            &,
+            > .row {
+                min-height: inherit;
+            }
+        }
+    }
+    .row {
+        display: flex;
+        flex-flow: row wrap;
+
+        &::before,
+        &::after {
+            width: 0;
+        }
+    }
+    > .container,
+    > .container-fluid,
+    > .o_container_small {
+        > .row > [class*="col-lg-"] {
+            padding: 8% 5%;
+            padding-top: 8vw;
+            padding-bottom: 8vw;
+        }
+    }
+
+    img {
+        max-width: 100%;
+        height: auto;
+    }
+}

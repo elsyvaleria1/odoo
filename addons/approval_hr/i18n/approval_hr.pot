@@ -1,0 +1,236 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* approval_hr
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-09-27 05:12+0000\n"
+"PO-Revision-Date: 2026-09-27 05:12+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: approval_hr
+#. odoo-python
+#: code:addons/approval_hr/models/hr_department.py:0
+msgid "%(dept)s — Approval Categories"
+msgstr ""
+
+#. module: approval_hr
+#: model_terms:ir.ui.view,arch_db:approval_hr.view_approval_department_kanban
+msgid ""
+"<i class=\"fa fa-folder fa-2x o_approval_card_icon text-warning\" aria-"
+"label=\"Departamento\" title=\"Departamento\" role=\"img\"/>"
+msgstr ""
+
+#. module: approval_hr
+#: model_terms:ir.ui.view,arch_db:approval_hr.view_approval_department_kanban
+msgid ""
+"<i class=\"fa fa-folder-open\"/>\n"
+"                                    <span>Ver Categorías</span>"
+msgstr ""
+
+#. module: approval_hr
+#: model:ir.model.fields,field_description:approval_hr.field_hr_department__approval_category_ids
+msgid "Approval Categories"
+msgstr ""
+
+#. module: approval_hr
+#: model:ir.model.fields,field_description:approval_hr.field_hr_department__approval_category_count
+msgid "Approval Category Count"
+msgstr ""
+
+#. module: approval_hr
+#: model:ir.model.fields,help:approval_hr.field_hr_department__approval_category_ids
+msgid "Approval categories whose scope includes this department."
+msgstr ""
+
+#. module: approval_hr
+#: model_terms:ir.ui.view,arch_db:approval_hr.view_approval_department_kanban
+msgid "Archived"
+msgstr ""
+
+#. module: approval_hr
+#: model_terms:ir.actions.act_window,help:approval_hr.action_approval_department_dashboard
+msgid ""
+"Asigna departamentos a las categorías en Configuration &gt;\n"
+"                Approval Categories para que aparezcan aquí."
+msgstr ""
+
+#. module: approval_hr
+#: model_terms:ir.actions.act_window,help:approval_hr.action_approval_department_dashboard
+msgid "Aún no hay departamentos con categorías de aprobación"
+msgstr ""
+
+#. module: approval_hr
+#: model:ir.actions.act_window,name:approval_hr.action_approval_department_dashboard
+msgid "Dashboard"
+msgstr ""
+
+#. module: approval_hr
+#: model:ir.model.fields,field_description:approval_hr.field_approval_category__department_ids
+#: model_terms:ir.ui.view,arch_db:approval_hr.view_approval_category_search_hr
+msgid "Departments"
+msgstr ""
+
+#. module: approval_hr
+#: model:ir.model.fields,help:approval_hr.field_approval_category__department_ids
+msgid ""
+"Departments where this category appears on the Approvals dashboard.\n"
+"Leave empty to hide it from the dashboard (still reachable via Configuration > Approval Categories)."
+msgstr ""
+
+#. module: approval_hr
+#: model:approval.category,name:approval_hr.approval_category_equipment_request
+msgid "Equipment Request"
+msgstr ""
+
+#. module: approval_hr
+#: model:approval.category,name:approval_hr.approval_category_expense_report
+msgid "Expense Report"
+msgstr ""
+
+#. module: approval_hr
+#: model:ir.model.fields.selection,name:approval_hr.selection__approval_category__approval_type__hr
+msgid "HR"
+msgstr ""
+
+#. module: approval_hr
+#: model:ir.model.fields,help:approval_hr.field_approval_category__manager_approval
+#: model:ir.model.fields,help:approval_hr.field_approval_request__manager_approval
+msgid ""
+"How the requester's manager participates as an approver:\n"
+"\n"
+"        • None: the manager is not added\n"
+"        • Optional: the manager is added as an optional approver\n"
+"        • Required: the manager must approve the request\n"
+"\n"
+"        A step that takes its approvers from a security group never asks the\n"
+"        manager; the manager joins the steps that count approvers added to the\n"
+"        request, or waits in a step of their own when required."
+msgstr ""
+
+#. module: approval_hr
+#: model:res.groups,name:approval_hr.group_it_approvers
+msgid "IT Approvers"
+msgstr ""
+
+#. module: approval_hr
+#: model_terms:ir.ui.view,arch_db:approval_hr.view_approval_category_form_hr
+msgid "Leave empty to hide from the Approvals dashboard"
+msgstr ""
+
+#. module: approval_hr
+#: model:ir.model.fields,field_description:approval_hr.field_approval_category__manager_approval
+#: model:ir.model.fields,field_description:approval_hr.field_approval_request__manager_approval
+msgid "Manager Approval"
+msgstr ""
+
+#. module: approval_hr
+#: model:ir.model.fields.selection,name:approval_hr.selection__approval_category__manager_approval__no
+msgid "None"
+msgstr ""
+
+#. module: approval_hr
+#: model:ir.model.fields,help:approval_hr.field_hr_department__approval_category_count
+msgid "Number of approval categories tagged with this department."
+msgstr ""
+
+#. module: approval_hr
+#: model:ir.model.fields.selection,name:approval_hr.selection__approval_category__manager_approval__optional
+msgid "Optional"
+msgstr ""
+
+#. module: approval_hr
+#: model:approval.category,name:approval_hr.approval_category_remote_work
+msgid "Remote Work Request"
+msgstr ""
+
+#. module: approval_hr
+#: model:ir.model.fields,field_description:approval_hr.field_approval_request__requester_manager_user_id
+msgid "Requester's Manager"
+msgstr ""
+
+#. module: approval_hr
+#. odoo-python
+#: code:addons/approval_hr/models/approval_category.py:0
+msgid "Requester's manager"
+msgstr ""
+
+#. module: approval_hr
+#: model:ir.model.fields.selection,name:approval_hr.selection__approval_category__manager_approval__required
+msgid "Required"
+msgstr ""
+
+#. module: approval_hr
+#: model:ir.model.fields,help:approval_hr.field_approval_request__requester_manager_user_id
+msgid ""
+"The manager of the requester's employee in the request's company, when that "
+"manager has an active user other than the requester. A step reads it to ask "
+"the manager on requests that have no source document."
+msgstr ""
+
+#. module: approval_hr
+#. odoo-python
+#: code:addons/approval_hr/models/approval_request.py:0
+msgid ""
+"This category expects your manager as an optional approver, but you do not have a manager configured. You need to add at least %(missing)d more approver(s) to meet the minimum of %(minimum)d approvers.\n"
+"\n"
+"Either:\n"
+"• Ask your HR administrator to assign a manager to your profile, or\n"
+"• Manually add %(missing)d more approver(s) to this request"
+msgstr ""
+
+#. module: approval_hr
+#. odoo-python
+#: code:addons/approval_hr/models/approval_request.py:0
+msgid ""
+"This request requires manager approval, but no manager is assigned to your "
+"employee profile. Please contact your HR administrator to assign a manager "
+"to your profile."
+msgstr ""
+
+#. module: approval_hr
+#. odoo-python
+#: code:addons/approval_hr/models/approval_request.py:0
+msgid ""
+"This request requires manager approval, but you are recorded as your own "
+"manager. Please contact your HR administrator."
+msgstr ""
+
+#. module: approval_hr
+#. odoo-python
+#: code:addons/approval_hr/models/approval_request.py:0
+msgid ""
+"This request requires manager approval, but you do not have an employee "
+"profile in company '%(company)s'. Please contact your HR administrator to "
+"create your employee record."
+msgstr ""
+
+#. module: approval_hr
+#. odoo-python
+#: code:addons/approval_hr/models/approval_request.py:0
+msgid ""
+"This request requires manager approval, but your manager '%(manager)s' does "
+"not have an active user account. Please contact your HR administrator."
+msgstr ""
+
+#. module: approval_hr
+#: model:approval.category,name:approval_hr.approval_category_time_off
+msgid "Time Off Request"
+msgstr ""
+
+#. module: approval_hr
+#: model:approval.category,name:approval_hr.approval_category_training_request
+msgid "Training Request"
+msgstr ""
+
+#. module: approval_hr
+#: model_terms:ir.ui.view,arch_db:approval_hr.view_approval_department_kanban
+msgid "categorías"
+msgstr ""

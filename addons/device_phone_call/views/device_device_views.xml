@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="device_device_view_form" model="ir.ui.view">
+        <field name="name">device.device.view.form.phone.call</field>
+        <field name="model">device.device</field>
+        <field name="inherit_id" ref="device.view_device_device_form" />
+        <field name="arch" type="xml">
+            <field name="device_category_id" position="after">
+                <field name="user_id" widget="many2one_avatar_user" />
+            </field>
+        </field>
+    </record>
+
+</odoo>

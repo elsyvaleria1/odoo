@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+
+    <record id="product_product_fuel_debit" model="product.product">
+        <field name="name">Fuel electronic wallet recharge</field>
+        <field name="uom_id" ref="uom.product_uom_unit" />
+        <field name="categ_id" ref="asset_ledger.product_category_fuel" />
+        <field name="type">service</field>
+    </record>
+
+    <record id="product_product_fuel_credit" model="product.product">
+        <field name="name">Fuel credit</field>
+        <field name="uom_id" ref="uom.product_uom_unit" />
+        <field name="categ_id" ref="asset_ledger.product_category_fuel" />
+        <field name="type">service</field>
+    </record>
+
+    <record id="product_product_highway_debit" model="product.product">
+        <field name="name">Highway electronic pass recharge</field>
+        <field name="uom_id" ref="uom.product_uom_unit" />
+        <field name="categ_id" ref="asset_ledger.product_category_highway_toll" />
+        <field name="type">service</field>
+    </record>
+
+    <record id="product_product_highway_credit" model="product.product">
+        <field name="name">Highway credit</field>
+        <field name="uom_id" ref="uom.product_uom_unit" />
+        <field name="categ_id" ref="asset_ledger.product_category_highway_toll" />
+        <field name="type">service</field>
+    </record>
+
+    <record id="product_product_insurance" model="product.product">
+        <field name="name">Insurance</field>
+        <field name="uom_id" ref="uom.product_uom_unit" />
+        <field
+            name="categ_id"
+            ref="asset_ledger.product_category_insurance_and_policies" />
+        <field name="type">service</field>
+    </record>
+
+    <record id="product_product_maintenance" model="product.product">
+        <field name="name">Maintenance</field>
+        <field name="uom_id" ref="uom.product_uom_unit" />
+        <field
+            name="categ_id"
+            ref="asset_ledger.product_category_maintenance_and_repairs" />
+        <field name="type">service</field>
+    </record>
+
+    <record id="product_product_operator_assignment" model="product.product">
+        <field name="name">Operator assignment</field>
+        <field name="uom_id" ref="uom.product_uom_unit" />
+        <field
+            name="categ_id"
+            ref="asset_ledger.product_category_operator_assignment" />
+        <field name="type">service</field>
+    </record>
+
+    <record id="product_product_repair" model="product.product">
+        <field name="name">Repair</field>
+        <field name="uom_id" ref="uom.product_uom_unit" />
+        <field
+            name="categ_id"
+            ref="asset_ledger.product_category_maintenance_and_repairs" />
+        <field name="type">service</field>
+    </record>
+
+    <record id="product_product_electric_power" model="product.product">
+        <field name="name">Electric power supply</field>
+        <field name="uom_id" ref="uom.product_uom_unit" />
+        <field name="categ_id" ref="asset_ledger.product_category_electric_power" />
+        <field name="type">service</field>
+    </record>
+
+    <record id="product_product_telephone" model="product.product">
+        <field name="name">Telephone and connectivity</field>
+        <field name="uom_id" ref="uom.product_uom_unit" />
+        <field name="categ_id" ref="asset_ledger.product_category_telephone" />
+        <field name="type">service</field>
+    </record>
+
+</odoo>

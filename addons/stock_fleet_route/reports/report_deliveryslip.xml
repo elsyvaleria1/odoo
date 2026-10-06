@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- The driver scans the slip at the customer with the phone camera. -->
+    <template
+        id="report_delivery_document_route"
+        inherit_id="stock.report_delivery_document">
+        <xpath expr="//div[hasclass('page')]/div[@id='informations']" position="before">
+            <div class="text-end">
+                <img
+                    t-att-src="'/report/barcode/?barcode_type=QR&amp;value=%s&amp;width=140&amp;height=140' % quote_plus(o.name)"
+                    style="width: 28mm; height: 28mm;"
+                    alt="QR" />
+            </div>
+        </xpath>
+    </template>
+
+</odoo>

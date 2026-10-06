@@ -1,0 +1,58 @@
+<?xml version="1.0"?>
+<templates>
+<t t-name="voip.InCallView">
+    <div class="o-voip-InCallView h-100 w-100 d-flex flex-column gap-3">
+        <t t-if="this.activeView === 'default'">
+            <t t-call="voip.InCallView-default"/>
+        </t>
+        <t t-elif="this.activeView === 'transfer'">
+            <TransferConfirmation call="this.userAgent.activeSession?.call" targetContact="this.state.targetContact" targetPhoneNumber="this.state.targetPhoneNumber" t-if="this.softphone.inCallView.transferView.activeView === 'confirmation'"/>
+            <TransferView state="this.softphone.inCallView.transferView" onClickTransferContact.bind="this.onClickTransferContact" onClickTransferPhone.bind="this.onClickTransferPhone" t-else=""/>
+        </t>
+        <div class="o-voip-InCallView-pad grid p-3" t-att-class="{ 'pt-0': this.activeView === 'transfer' }" t-if="!(this.activeView === 'transfer' and this.softphone.inCallView.transferView.activeView === 'confirmation')">
+            <t t-if="this.activeView === 'default' and !this.isKeypadOpen">
+                <ActionButton name.translate="Confirm Transfer" icon="'oi-transfer'" inCallPad="true" extraClass="'g-col-4'" onClick.bind="this.onClickConfirmTransfer" disabled="this.props.call.state !== 'ongoing'" t-if="this.hasPendingTransfer"/>
+                <ActionButton name.translate="Transfer" icon="'oi-transfer'" inCallPad="true" extraClass="'g-col-4'" onClick.bind="this.onClickTransfer" disabled="this.props.call.state !== 'ongoing'" t-else=""/>
+                <ActionButton name.translate="Hold" icon="'fa-pause'" type="'secondary'" inCallPad="true" extraClass="this.isOnHold ? `g-col-4 active` : 'g-col-4'" disabled="this.props.call.state !== 'ongoing'" onClick.bind="this.onClickHold"/>
+                <ActionButton name="this.recordButtonName" icon="'oi-record'" type="'secondary'" inCallPad="true" extraClass="this.isRecording ? `g-col-4 active` : 'g-col-4'" disabled="this.props.call.state !== 'ongoing' or this.voip.recordingPolicy !== 'user'" onClick.bind="this.toggleRecording"/>
+            </t>
+            <t t-if="this.activeView === 'default'">
+                <ActionButton name.translate="Mute" icon="'fa-microphone-slash'" type="'secondary'" inCallPad="true" extraClass="this.isMuted ? 'g-col-4 active' : 'g-col-4'" onClick.bind="this.onClickMute"/>
+                <ActionButton name.translate="Hang up" icon="'o-voip-CallIcon-end fa-phone fa-2x'" type="'danger'" hideLabel="true" inCallPad="true" extraClass="'g-col-4'" onClick.bind="this.onClickHangUp"/>
+                <ActionButton name.translate="Keypad" icon="'oi-numpad'" inCallPad="true" extraClass="'g-col-4' + (this.isKeypadOpen ? ' active' : '')" onClick.bind="this.onClickKeypad"/>
+            </t>
+            <t t-elif="this.activeView === 'transfer'">
+                <ActionButton name.translate="Contacts" icon="'oi-user'" type="'secondary'" inCallPad="true" extraClass="this.softphone.inCallView.transferView.activeView === 'contacts' ? ' active g-col-6' : 'g-col-4'" onClick.bind="this.onClickTransferContacts"/>
+                <ActionButton name.translate="Transfer" icon="'oi-transfer fa-2x'" type="'success'" hideLabel="true" inCallPad="true" extraClass="'g-col-4'" onClick.bind="this.onClickTransferPhone" disabled="!this.softphone.inCallView.transferView.keypad.input.value.trim()" t-if="this.softphone.inCallView.transferView.activeView === 'keypad'" />
+                <ActionButton name.translate="Keypad" icon="'oi-numpad'" inCallPad="true" extraClass="this.softphone.inCallView.transferView.activeView === 'keypad' ? 'active g-col-4' : 'g-col-6'" onClick.bind="this.onClickTransferKeypad"/>
+            </t>
+        </div>
+    </div>
+</t>
+
+<t t-name="voip.InCallView-default">
+    <t t-if="this.isKeypadOpen">
+        <Keypad dtmf="true" state="this.softphone.inCallView.keypad.state"/>
+    </t>
+    <t t-else="">
+        <ContactInfo contact="this.props.call?.partner_id" phoneNumber="this.props.call?.phone_number" extraClass="'mt-3'"/>
+        <div class="d-flex justify-content-center gap-3">
+            <ActionButton name.translate="Contact" title.translate="View customer details" icon="this.props.call.partner_id ? 'oi-user' : 'oi-user-plus'" onClick.bind="this.onClickContact"/>
+            <t class="o-voip-InCallView-xpathTarget"/>
+        </div>
+        <div class="d-flex flex-column align-items-center justify-content-center flex-grow-1 gap-2 mx-3 p-3">
+            <span class="fs-2 fw-bold" t-out="this.props.call.timerText"/>
+            <div class="o-voip-InCallView-statusWrapper d-flex gap-2 flex-wrap justify-content-center">
+                <span class="o-voip-InCallView-recordingIndicator d-flex gap-2 align-items-center rounded-pill py-1 px-3 text-bg-info" t-att-title="this.recordingIndicatorTitle" t-if="this.isRecording">
+                    <i class="oi oi-record" aria-hidden="true"/>
+                    <span class="me-1 small">Recording</span>
+                </span>
+                <span t-if="this.userAgent.activeSession?.isOnHold" class="o-voip-InCallStatus d-flex gap-2 align-items-center rounded-pill border border-warning px-2 bg-warning bg-opacity-25 lh-lg">
+                    <i class="fa-solid fa-pause" aria-hidden="true"/>
+                    <span class="me-1 small">On hold</span>
+                </span>
+            </div>
+        </div>
+    </t>
+</t>
+</templates>

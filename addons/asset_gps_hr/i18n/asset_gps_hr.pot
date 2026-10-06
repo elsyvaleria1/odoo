@@ -1,0 +1,346 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* asset_gps_hr
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-09-27 05:12+0000\n"
+"PO-Revision-Date: 2026-09-27 05:12+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: asset_gps_hr
+#: model_terms:ir.ui.view,arch_db:asset_gps_hr.view_device_device_kanban_gps_dashboard_hr
+msgid ""
+"<i class=\"fa-solid fa-user\"/>\n"
+"                        <span class=\"ms-1\">Operator: </span>"
+msgstr ""
+
+#. module: asset_gps_hr
+#: model:ir.model.fields,field_description:asset_gps_hr.field_asset_trip_report__asset_id
+msgid "Asset"
+msgstr ""
+
+#. module: asset_gps_hr
+#: model_terms:ir.ui.view,arch_db:asset_gps_hr.view_device_device_form_hr
+msgid "Asset & Operator"
+msgstr ""
+
+#. module: asset_gps_hr
+#: model:ir.model.fields,field_description:asset_gps_hr.field_asset_trip_report__asset_name
+msgid "Asset Name"
+msgstr ""
+
+#. module: asset_gps_hr
+#: model_terms:ir.ui.view,arch_db:asset_gps_hr.view_asset_trip_report_search
+msgid "Commercial"
+msgstr ""
+
+#. module: asset_gps_hr
+#: model:ir.model.fields,help:asset_gps_hr.field_device_device__asset_operator_id
+msgid "Current operator/driver assigned to the linked asset"
+msgstr ""
+
+#. module: asset_gps_hr
+#: model:ir.model.fields,field_description:asset_gps_hr.field_asset_trip_report__date_end
+msgid "Date End"
+msgstr ""
+
+#. module: asset_gps_hr
+#: model:ir.model.fields,field_description:asset_gps_hr.field_asset_trip_report__date_end_local
+msgid "Date End Local"
+msgstr ""
+
+#. module: asset_gps_hr
+#: model:ir.model.fields,field_description:asset_gps_hr.field_asset_trip_report__date_start
+msgid "Date Start"
+msgstr ""
+
+#. module: asset_gps_hr
+#: model:ir.model.fields,field_description:asset_gps_hr.field_asset_trip_report__date_start_local
+msgid "Date Start Local"
+msgstr ""
+
+#. module: asset_gps_hr
+#: model_terms:ir.ui.view,arch_db:asset_gps_hr.view_asset_trip_report_list
+#: model_terms:ir.ui.view,arch_db:asset_gps_hr.view_asset_trip_report_search
+msgid "Day"
+msgstr ""
+
+#. module: asset_gps_hr
+#: model:ir.model.fields,field_description:asset_gps_hr.field_asset_trip_report__department_id
+#: model_terms:ir.ui.view,arch_db:asset_gps_hr.view_asset_trip_report_list
+#: model_terms:ir.ui.view,arch_db:asset_gps_hr.view_asset_trip_report_search
+msgid "Department"
+msgstr ""
+
+#. module: asset_gps_hr
+#: model:ir.model.fields,field_description:asset_gps_hr.field_asset_trip_report__department_name
+msgid "Department Name"
+msgstr ""
+
+#. module: asset_gps_hr
+#: model:ir.model.fields,field_description:asset_gps_hr.field_asset_trip_report__device_id
+msgid "Device"
+msgstr ""
+
+#. module: asset_gps_hr
+#: model_terms:ir.ui.view,arch_db:asset_gps_hr.view_device_device_search_hr
+msgid "Device, Vehicle, Plate or Driver"
+msgstr ""
+
+#. module: asset_gps_hr
+#: model:ir.model.fields,field_description:asset_gps_hr.field_asset_trip_report__display_name
+msgid "Display Name"
+msgstr ""
+
+#. module: asset_gps_hr
+#: model:ir.model.fields,field_description:asset_gps_hr.field_asset_trip_report__distance
+msgid "Distance"
+msgstr ""
+
+#. module: asset_gps_hr
+#: model_terms:ir.ui.view,arch_db:asset_gps_hr.view_asset_trip_report_list
+msgid "Distance (km)"
+msgstr ""
+
+#. module: asset_gps_hr
+#: model:ir.model.fields,help:asset_gps_hr.field_asset_trip_report__fuel_amount
+msgid "Distance times the vehicle's fuel cost per kilometer"
+msgstr ""
+
+#. module: asset_gps_hr
+#: model_terms:ir.ui.view,arch_db:asset_gps_hr.view_asset_trip_report_list
+msgid "Duration (hrs)"
+msgstr ""
+
+#. module: asset_gps_hr
+#: model:ir.model.fields,field_description:asset_gps_hr.field_asset_trip_report__duration_hours
+msgid "Duration Hours"
+msgstr ""
+
+#. module: asset_gps_hr
+#: model_terms:ir.ui.view,arch_db:asset_gps_hr.view_asset_trip_report_list
+msgid "End"
+msgstr ""
+
+#. module: asset_gps_hr
+#: model:ir.model.fields,help:asset_gps_hr.field_asset_trip_report__date_end_local
+msgid "End date and time in local timezone (24h format)"
+msgstr ""
+
+#. module: asset_gps_hr
+#: model_terms:ir.ui.view,arch_db:asset_gps_hr.view_asset_trip_report_list
+msgid "Fuel $/km"
+msgstr ""
+
+#. module: asset_gps_hr
+#: model:ir.model.fields,field_description:asset_gps_hr.field_asset_trip_report__fuel_amount
+#: model_terms:ir.ui.view,arch_db:asset_gps_hr.view_asset_trip_report_list
+msgid "Fuel Amount"
+msgstr ""
+
+#. module: asset_gps_hr
+#: model:ir.model.fields,field_description:asset_gps_hr.field_account_depreciation_board__fuel_cost_per_km
+#: model:ir.model.fields,field_description:asset_gps_hr.field_asset_trip_report__fuel_cost_per_km
+#: model:ir.model.fields,field_description:asset_gps_hr.field_resource_asset__fuel_cost_per_km
+#: model:ir.model.fields,field_description:asset_gps_hr.field_resource_asset_device__fuel_cost_per_km
+#: model:ir.model.fields,field_description:asset_gps_hr.field_resource_asset_equipment__fuel_cost_per_km
+#: model:ir.model.fields,field_description:asset_gps_hr.field_resource_asset_furniture__fuel_cost_per_km
+#: model:ir.model.fields,field_description:asset_gps_hr.field_resource_asset_it__fuel_cost_per_km
+#: model:ir.model.fields,field_description:asset_gps_hr.field_resource_asset_machinery__fuel_cost_per_km
+#: model:ir.model.fields,field_description:asset_gps_hr.field_resource_asset_property__fuel_cost_per_km
+#: model:ir.model.fields,field_description:asset_gps_hr.field_resource_asset_room__fuel_cost_per_km
+#: model:ir.model.fields,field_description:asset_gps_hr.field_resource_asset_telecom__fuel_cost_per_km
+#: model:ir.model.fields,field_description:asset_gps_hr.field_resource_asset_vehicle__fuel_cost_per_km
+#: model:ir.model.fields,field_description:asset_gps_hr.field_product_trace__fuel_cost_per_km
+msgid "Fuel Cost Per Km"
+msgstr ""
+
+#. module: asset_gps_hr
+#: model:ir.model.fields,help:asset_gps_hr.field_account_depreciation_board__fuel_cost_per_km
+#: model:ir.model.fields,help:asset_gps_hr.field_resource_asset__fuel_cost_per_km
+#: model:ir.model.fields,help:asset_gps_hr.field_resource_asset_device__fuel_cost_per_km
+#: model:ir.model.fields,help:asset_gps_hr.field_resource_asset_equipment__fuel_cost_per_km
+#: model:ir.model.fields,help:asset_gps_hr.field_resource_asset_furniture__fuel_cost_per_km
+#: model:ir.model.fields,help:asset_gps_hr.field_resource_asset_it__fuel_cost_per_km
+#: model:ir.model.fields,help:asset_gps_hr.field_resource_asset_machinery__fuel_cost_per_km
+#: model:ir.model.fields,help:asset_gps_hr.field_resource_asset_property__fuel_cost_per_km
+#: model:ir.model.fields,help:asset_gps_hr.field_resource_asset_room__fuel_cost_per_km
+#: model:ir.model.fields,help:asset_gps_hr.field_resource_asset_telecom__fuel_cost_per_km
+#: model:ir.model.fields,help:asset_gps_hr.field_resource_asset_vehicle__fuel_cost_per_km
+#: model:ir.model.fields,help:asset_gps_hr.field_product_trace__fuel_cost_per_km
+msgid ""
+"Fuel cost billed per kilometer driven outside work hours. Used by the "
+"Vehicle Trip Report to compute the amount charged to the operator for out-"
+"of-hours use of this vehicle."
+msgstr ""
+
+#. module: asset_gps_hr
+#: model:ir.model.fields,help:asset_gps_hr.field_asset_trip_report__fuel_cost_per_km
+msgid "Fuel cost per kilometer configured on the vehicle"
+msgstr ""
+
+#. module: asset_gps_hr
+#: model:ir.model.fields,field_description:asset_gps_hr.field_asset_trip_report__id
+msgid "ID"
+msgstr ""
+
+#. module: asset_gps_hr
+#: model_terms:ir.ui.view,arch_db:asset_gps_hr.view_asset_trip_report_search
+msgid "In hours"
+msgstr ""
+
+#. module: asset_gps_hr
+#: model:ir.model.fields,field_description:asset_gps_hr.field_asset_trip_report__license_plate
+#: model:ir.model.fields,field_description:asset_gps_hr.field_device_device__asset_license_plate
+#: model_terms:ir.ui.view,arch_db:asset_gps_hr.view_asset_trip_report_list
+#: model_terms:ir.ui.view,arch_db:asset_gps_hr.view_asset_trip_report_search
+#: model_terms:ir.ui.view,arch_db:asset_gps_hr.view_device_device_search_hr
+msgid "License Plate"
+msgstr ""
+
+#. module: asset_gps_hr
+#: model:ir.model.fields,help:asset_gps_hr.field_device_device__asset_license_plate
+msgid "License plate of the linked asset"
+msgstr ""
+
+#. module: asset_gps_hr
+#: model_terms:ir.ui.view,arch_db:asset_gps_hr.view_asset_trip_report_graph
+#: model_terms:ir.ui.view,arch_db:asset_gps_hr.view_asset_trip_report_pivot
+msgid "Loans Analysis"
+msgstr ""
+
+#. module: asset_gps_hr
+#: model_terms:ir.ui.view,arch_db:asset_gps_hr.view_asset_trip_report_search
+msgid "Month"
+msgstr ""
+
+#. module: asset_gps_hr
+#: model:ir.model.fields,field_description:asset_gps_hr.field_asset_trip_report__odometer_end
+#: model_terms:ir.ui.view,arch_db:asset_gps_hr.view_asset_trip_report_list
+msgid "Odometer End"
+msgstr ""
+
+#. module: asset_gps_hr
+#: model:ir.model.fields,field_description:asset_gps_hr.field_asset_trip_report__odometer_start
+#: model_terms:ir.ui.view,arch_db:asset_gps_hr.view_asset_trip_report_list
+msgid "Odometer Start"
+msgstr ""
+
+#. module: asset_gps_hr
+#: model:ir.model.fields,field_description:asset_gps_hr.field_asset_trip_report__operator_id
+#: model:ir.model.fields,field_description:asset_gps_hr.field_device_data_log_gps_report__operator_id
+#: model_terms:ir.ui.view,arch_db:asset_gps_hr.view_asset_trip_report_list
+#: model_terms:ir.ui.view,arch_db:asset_gps_hr.view_asset_trip_report_search
+#: model_terms:ir.ui.view,arch_db:asset_gps_hr.view_device_data_log_gps_report_search_operator
+#: model_terms:ir.ui.view,arch_db:asset_gps_hr.view_device_device_list_hr
+#: model_terms:ir.ui.view,arch_db:asset_gps_hr.view_device_device_search_hr
+msgid "Operator"
+msgstr ""
+
+#. module: asset_gps_hr
+#: model:ir.model.fields,field_description:asset_gps_hr.field_device_device__asset_operator_id
+msgid "Operator (Employee)"
+msgstr ""
+
+#. module: asset_gps_hr
+#: model:ir.model.fields,field_description:asset_gps_hr.field_asset_trip_report__operator_name
+#: model:ir.model.fields,field_description:asset_gps_hr.field_device_data_log_gps_report__operator_name
+msgid "Operator Name"
+msgstr ""
+
+#. module: asset_gps_hr
+#: model_terms:ir.ui.view,arch_db:asset_gps_hr.view_asset_trip_report_search
+msgid "Out of hours"
+msgstr ""
+
+#. module: asset_gps_hr
+#: model_terms:ir.ui.view,arch_db:asset_gps_hr.view_device_device_list_hr
+msgid "Plate"
+msgstr ""
+
+#. module: asset_gps_hr
+#: model_terms:ir.ui.view,arch_db:asset_gps_hr.view_asset_trip_report_search
+msgid "Search Loans"
+msgstr ""
+
+#. module: asset_gps_hr
+#: model_terms:ir.ui.view,arch_db:asset_gps_hr.view_asset_trip_report_list
+msgid "Start"
+msgstr ""
+
+#. module: asset_gps_hr
+#: model:ir.model.fields,help:asset_gps_hr.field_asset_trip_report__date_start_local
+msgid "Start date and time in local timezone (24h format)"
+msgstr ""
+
+#. module: asset_gps_hr
+#: model_terms:ir.ui.view,arch_db:asset_gps_hr.view_asset_trip_report_list
+#: model_terms:ir.ui.view,arch_db:asset_gps_hr.view_asset_trip_report_search
+msgid "Status"
+msgstr ""
+
+#. module: asset_gps_hr
+#: model_terms:ir.ui.view,arch_db:asset_gps_hr.view_asset_trip_report_list
+msgid "Total Distance"
+msgstr ""
+
+#. module: asset_gps_hr
+#: model_terms:ir.ui.view,arch_db:asset_gps_hr.view_asset_trip_report_list
+msgid "Total Fuel Amount"
+msgstr ""
+
+#. module: asset_gps_hr
+#: model_terms:ir.ui.view,arch_db:asset_gps_hr.view_asset_trip_report_list
+msgid "Total Hours"
+msgstr ""
+
+#. module: asset_gps_hr
+#: model_terms:ir.ui.view,arch_db:asset_gps_hr.view_asset_trip_report_list
+#: model_terms:ir.ui.view,arch_db:asset_gps_hr.view_asset_trip_report_search
+msgid "Vehicle"
+msgstr ""
+
+#. module: asset_gps_hr
+#: model:ir.actions.act_window,name:asset_gps_hr.action_asset_trip_report
+#: model:ir.ui.menu,name:asset_gps_hr.menu_asset_trip_report
+#: model_terms:ir.ui.view,arch_db:asset_gps_hr.view_asset_trip_report_list
+msgid "Vehicle Loans"
+msgstr ""
+
+#. module: asset_gps_hr
+#: model:ir.model,name:asset_gps_hr.model_asset_trip_report
+msgid "Vehicle Trip Report"
+msgstr ""
+
+#. module: asset_gps_hr
+#: model_terms:ir.ui.view,arch_db:asset_gps_hr.view_asset_trip_report_search
+msgid "Week"
+msgstr ""
+
+#. module: asset_gps_hr
+#: model:ir.model.fields,field_description:asset_gps_hr.field_asset_trip_report__weekday_end
+msgid "Weekday End"
+msgstr ""
+
+#. module: asset_gps_hr
+#: model:ir.model.fields,field_description:asset_gps_hr.field_asset_trip_report__weekday_start
+msgid "Weekday Start"
+msgstr ""
+
+#. module: asset_gps_hr
+#: model:ir.model.fields,help:asset_gps_hr.field_asset_trip_report__work_hours_status
+msgid "Whether the trip was during or outside work hours"
+msgstr ""
+
+#. module: asset_gps_hr
+#: model:ir.model.fields,field_description:asset_gps_hr.field_asset_trip_report__work_hours_status
+msgid "Work Hours Status"
+msgstr ""

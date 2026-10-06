@@ -1,0 +1,8 @@
+id,name,model_id/id,group_id/id,kind,operation,reach,anchor,predicate_id/id,predicate_args,domain
+planning_slot_template_rule_admin,manager can see all project shifts,planning.model_planning_slot_template,project.group_project_manager,permission,r,,,,,
+planning_slot_template_rule_planning_manager,planning managers manage every shift template,planning.model_planning_slot_template,planning.group_planning_manager,permission,crud,,,,,
+planning_slot_template_rule_user,shift templates of accessible projects,planning.model_planning_slot_template,base.group_user,permission,r,all,,,,"[('project_id', '=', False)]"
+planning_slot_template_rule_user_2,shift templates of accessible projects (2),planning.model_planning_slot_template,base.group_user,permission,r,predicate,,base.access_predicate_user_has_access,"{""at"": ""project_id.""}",
+planning_slot_template_rule_user_group_planning_user,shift templates of accessible projects,planning.model_planning_slot_template,planning.group_planning_user,permission,r,all,,,,"[('project_id', '=', False)]"
+planning_slot_template_rule_user_group_planning_user_2,shift templates of accessible projects (2),planning.model_planning_slot_template,planning.group_planning_user,permission,r,predicate,,base.access_predicate_user_has_access,"{""at"": ""project_id.""}",
+planning_slot_template_rule_multi_company,Planning Shift Template multi-company,planning.model_planning_slot_template,base.group_everyone,guard,crud,company,,,,

@@ -1,0 +1,937 @@
+/** @import { OdooEnv } from "@web/env" */
+// @ts-check
+/** @odoo-module alias=@web/../tests/utils default=false */
+
+import { __debug__, after, afterEach, expect, getFixture } from "@odoo/hoot";
+import { queryAll, queryFirst } from "@odoo/hoot-dom";
+import { animationFrame, Deferred, tick } from "@odoo/hoot-mock";
+import { isMacOS } from "@web/core/browser/feature_detection";
+import { isVisible } from "@web/core/utils/dom/ui";
+
+/** @typedef {import("@web/../tests/helpers/utils").EventType} EventType */
+/** @typedef {{skipVisibilityCheck?: boolean, sync?: boolean}} TriggerEventOptions */
+
+export const TIMEOUT = 10_000;
+
+const TICK_DELAY = 3000;
+
+/** @param {EventInit & {pageX?: number, pageY?: number, touches?: TouchInit[]}} [args] */
+const mapBubblingEvent = (args) => ({ ...args, bubbles: true });
+
+/** @param {EventInit & {pageX?: number, pageY?: number, touches?: TouchInit[]}} [args] */
+const mapNonBubblingEvent = (args) => ({ ...args, bubbles: false });
+
+/** @param {EventInit & {pageX?: number, pageY?: number, touches?: TouchInit[]}} [args={}] */
+const mapBubblingPointerEvent = (args = {}) => ({
+    clientX: args.pageX,
+    clientY: args.pageY,
+    ...args,
+    bubbles: true,
+    cancelable: true,
+    view: window,
+});
+
+/** @param {EventInit & {pageX?: number, pageY?: number, touches?: TouchInit[]}} [args] */
+const mapNonBubblingPointerEvent = (args) => ({
+    ...mapBubblingPointerEvent(args),
+    bubbles: false,
+    cancelable: false,
+});
+
+/** @param {EventInit & {pageX?: number, pageY?: number, touches?: TouchInit[]}} [args={}] */
+const mapCancelableTouchEvent = (args = {}) => ({
+    ...args,
+    bubbles: true,
+    cancelable: true,
+    composed: true,
+    rotation: 0.0,
+    touches: args.touches ? [...args.touches.map((e) => new Touch(e))] : undefined,
+    view: window,
+    zoom: 1.0,
+});
+
+/** @param {EventInit & {pageX?: number, pageY?: number, touches?: TouchInit[]}} [args] */
+const mapNonCancelableTouchEvent = (args) => ({
+    ...mapCancelableTouchEvent(args),
+    cancelable: false,
+});
+
+/** @param {EventInit & {pageX?: number, pageY?: number, touches?: TouchInit[]}} [args] */
+const mapKeyboardEvent = (args) => ({
+    ...args,
+    bubbles: true,
+    cancelable: true,
+});
+
+/**
+ * @param {EventType} eventType
+ * @returns {[(new (type: string, eventInitDict?: EventInit) => Event), (attrs?: EventInit) => EventInit]}
+ */
+const getEventConstructor = (eventType) => {
+    switch (eventType) {
+        case "auxclick":
+        case "click":
+        case "contextmenu":
+        case "dblclick":
+        case "mousedown":
+        case "mouseup":
+        case "mousemove":
+        case "mouseover":
+        case "mouseout": {
+            return [MouseEvent, mapBubblingPointerEvent];
+        }
+        case "mouseenter":
+        case "mouseleave": {
+            return [MouseEvent, mapNonBubblingPointerEvent];
+        }
+        case "pointerdown":
+        case "pointerup":
+        case "pointermove":
+        case "pointerover":
+        case "pointerout": {
+            return [PointerEvent, mapBubblingPointerEvent];
+        }
+        case "pointerenter":
+        case "pointerleave": {
+            return [PointerEvent, mapNonBubblingPointerEvent];
+        }
+        case "focusin": {
+            return [FocusEvent, mapBubblingEvent];
+        }
+        case "focus":
+        case "blur": {
+            return [FocusEvent, mapNonBubblingEvent];
+        }
+        case "cut":
+        case "copy":
+        case "paste": {
+            return [ClipboardEvent, mapBubblingEvent];
+        }
+        case "keydown":
+        case "keypress":
+        case "keyup": {
+            return [KeyboardEvent, mapKeyboardEvent];
+        }
+        case "drag":
+        case "dragend":
+        case "dragenter":
+        case "dragstart":
+        case "dragleave":
+        case "dragover":
+        case "drop": {
+            return [DragEvent, mapBubblingEvent];
+        }
+        case "input": {
+            return [InputEvent, mapBubblingEvent];
+        }
+        case "compositionstart":
+        case "compositionend": {
+            return [CompositionEvent, mapBubblingEvent];
+        }
+        case "scroll": {
+            return [UIEvent, mapNonBubblingEvent];
+        }
+        case "touchstart":
+        case "touchend":
+        case "touchmove": {
+            return [TouchEvent, mapCancelableTouchEvent];
+        }
+        case "touchcancel": {
+            return [TouchEvent, mapNonCancelableTouchEvent];
+        }
+        default: {
+            return [Event, mapBubblingEvent];
+        }
+    }
+};
+
+function findElement(el, selector) {
+    let target = el;
+    if (selector) {
+        const els = el.querySelectorAll(selector);
+        if (els.length === 0) {
+            throw new Error(`No element found (selector: ${selector})`);
+        }
+        if (els.length > 1) {
+            throw new Error(
+                `Found ${els.length} elements, instead of 1 (selector: ${selector})`,
+            );
+        }
+        target = els[0];
+    }
+    return target;
+}
+
+/**
+ * @param {Element} el
+ * @param {string | null | undefined | false} selector
+ * @param {EventType} eventType
+ * @param {EventInit} [eventInit]
+ * @param {TriggerEventOptions} [options={}]
+ * @returns {Event | Promise<Event>}
+ */
+function triggerEvent(el, selector, eventType, eventInit, options = {}) {
+    const errors = [];
+    const target = findElement(el, selector);
+
+    if (typeof eventType !== "string") {
+        errors.push("event type must be a string");
+    }
+    if (!target) {
+        errors.push("cannot find target");
+    } else if (!options.skipVisibilityCheck && !isVisible(target)) {
+        errors.push("target is not visible");
+    }
+    if (errors.length) {
+        throw new Error(
+            `Cannot trigger event${eventType ? ` "${eventType}"` : ""}${
+                selector ? ` (with selector "${selector}")` : ""
+            }: ${errors.join(" and ")}`,
+        );
+    }
+
+    const [Constructor, processParams] = getEventConstructor(eventType);
+    const event = new Constructor(eventType, processParams(eventInit));
+    target.dispatchEvent(event);
+
+    if (__debug__.debug) {
+        const group = `%c[${event.type.toUpperCase()}]`;
+        console.groupCollapsed(group, "color: #b52c9b");
+        console.log(target, event);
+        console.groupEnd();
+    }
+
+    if (options.sync) {
+        return event;
+    } else {
+        return tick().then(() => event);
+    }
+}
+
+/**
+ * @param {Element} el
+ * @param {string | null | undefined | false} selector
+ * @param {(EventType | [EventType, EventInit])[]} [eventDefs]
+ * @param {TriggerEventOptions} [options={}]
+ */
+function _triggerEvents(el, selector, eventDefs, options = {}) {
+    const events = [...eventDefs].map((eventDef) => {
+        const [eventType, eventInit] = Array.isArray(eventDef)
+            ? eventDef
+            : [eventDef, {}];
+        return triggerEvent(el, selector, eventType, eventInit, options);
+    });
+    if (options.sync) {
+        return events;
+    } else {
+        return tick().then(() => events);
+    }
+}
+
+function _click(
+    el,
+    selector,
+    {
+        mouseEventInit = {},
+        skipDisabledCheck = false,
+        skipVisibilityCheck = false,
+    } = {},
+) {
+    if (!skipDisabledCheck && el.disabled) {
+        throw new Error("Can't click on a disabled button");
+    }
+    return _triggerEvents(
+        el,
+        selector,
+        [
+            "pointerdown",
+            "mousedown",
+            "focus",
+            "focusin",
+            "pointerup",
+            "mouseup",
+            ["click", mouseEventInit],
+        ],
+        { skipVisibilityCheck },
+    );
+}
+
+export async function editInput(el, selector, value) {
+    const input = findElement(el, selector);
+    if (!(input instanceof HTMLInputElement || input instanceof HTMLTextAreaElement)) {
+        throw new Error(
+            "Only 'input' and 'textarea' elements can be edited with 'editInput'.",
+        );
+    }
+    if (
+        ![
+            "text",
+            "textarea",
+            "email",
+            "search",
+            "color",
+            "number",
+            "file",
+            "tel",
+            "range",
+        ].includes(input.type)
+    ) {
+        throw new Error(`Type "${input.type}" not supported by 'editInput'.`);
+    }
+
+    const eventOpts = {};
+    if (input.type === "file") {
+        const files = Array.isArray(value) ? value : [value];
+        const dataTransfer = new DataTransfer();
+        for (const file of files) {
+            if (!(file instanceof File)) {
+                throw new Error(
+                    `File input value should be one or several File objects.`,
+                );
+            }
+            dataTransfer.items.add(file);
+        }
+        /** @type {HTMLInputElement} */ (input).files = dataTransfer.files;
+        eventOpts.skipVisibilityCheck = true;
+    } else {
+        input.value = value;
+    }
+
+    await _triggerEvents(input, null, ["input", "change"], eventOpts);
+
+    if (input.type === "file") {
+        await tick();
+        await tick();
+    }
+}
+
+/**
+ * @param {Object[]} files
+ * @returns {Object}
+ */
+function createFakeDataTransfer(files) {
+    return {
+        dropEffect: "all",
+        effectAllowed: "all",
+        files,
+        items: [],
+        getData: () => "",
+        types: ["Files"],
+    };
+}
+
+/**
+ * @param {import("@odoo/hoot-dom").Target} selector
+ * @param {ContainsOptions & {shiftKey?: boolean}} [options]
+ */
+export async function click(selector, options = {}) {
+    const { shiftKey } = options;
+    delete options.shiftKey;
+    await contains(selector, { click: { shiftKey }, ...options });
+}
+
+/**
+ * @param {import("@odoo/hoot-dom").Target} selector
+ * @param {Object[]} files
+ * @param {ContainsOptions} [options]
+ */
+export async function dragenterFiles(selector, files, options) {
+    await contains(selector, { dragenterFiles: files, ...options });
+}
+
+/**
+ * @param {import("@odoo/hoot-dom").Target} selector
+ * @param {Object[]} files
+ * @param {ContainsOptions} [options]
+ */
+export async function dragoverFiles(selector, files, options) {
+    await contains(selector, { dragoverFiles: files, ...options });
+}
+
+/**
+ * @param {import("@odoo/hoot-dom").Target} selector
+ * @param {Object[]} files
+ * @param {ContainsOptions} [options]
+ */
+export async function dropFiles(selector, files, options) {
+    await contains(selector, { dropFiles: files, ...options });
+}
+
+/**
+ * @param {import("@odoo/hoot-dom").Target} selector
+ * @param {Object[]} files
+ * @param {ContainsOptions} [options]
+ */
+export async function inputFiles(selector, files, options) {
+    await contains(selector, { inputFiles: files, ...options });
+}
+
+/**
+ * @param {import("@odoo/hoot-dom").Target} selector
+ * @param {Object[]} files
+ * @param {ContainsOptions} [options]
+ */
+export async function pasteFiles(selector, files, options) {
+    await contains(selector, { pasteFiles: files, ...options });
+}
+
+/**
+ * @param {import("@odoo/hoot-dom").Target} selector
+ * @param {ContainsOptions} [options]
+ */
+export async function focus(selector, options) {
+    await contains(selector, { setFocus: true, ...options });
+}
+
+/**
+ * @param {import("@odoo/hoot-dom").Target} selector
+ * @param {string} content
+ * @param {ContainsOptions & {replace?: boolean}} [options]
+ */
+export async function insertText(selector, content, options = {}) {
+    const { replace = false } = options;
+    delete options.replace;
+    await contains(selector, { ...options, insertText: { content, replace } });
+    await animationFrame();
+}
+
+/**
+ * @param {import("@odoo/hoot-dom").Target} selector
+ * @param {number|"bottom"} scrollTop
+ * @param {ContainsOptions} [options]
+ */
+export async function scroll(selector, scrollTop, options) {
+    await contains(selector, { setScroll: scrollTop, ...options });
+}
+
+/**
+ * @param {import("@odoo/hoot-dom").Target} selector
+ * @param {(import("@web/../tests/helpers/utils").EventType|[import("@web/../tests/helpers/utils").EventType, EventInit])[]} events
+ * @param {ContainsOptions} [options]
+ */
+export async function triggerEvents(selector, events, options) {
+    await contains(selector, { triggerEvents: events, ...options });
+}
+
+/**
+ * @param {string} hotkey
+ * @param {boolean} addOverlayModParts
+ * @param {KeyboardEventInit} eventAttrs
+ */
+export async function triggerHotkey(
+    hotkey,
+    addOverlayModParts = false,
+    eventAttrs = {},
+) {
+    eventAttrs.key = hotkey.split("+").pop();
+    if (/shift/i.test(hotkey)) {
+        eventAttrs.shiftKey = true;
+    }
+    if (/control/i.test(hotkey)) {
+        if (isMacOS()) {
+            eventAttrs.metaKey = true;
+        } else {
+            eventAttrs.ctrlKey = true;
+        }
+    }
+    if (/alt/i.test(hotkey) || addOverlayModParts) {
+        if (isMacOS()) {
+            eventAttrs.ctrlKey = true;
+        } else {
+            eventAttrs.altKey = true;
+        }
+    }
+    if (!("bubbles" in eventAttrs)) {
+        eventAttrs.bubbles = true;
+    }
+    const [keydownEvent, keyupEvent] = await _triggerEvents(
+        document.activeElement,
+        null,
+        [
+            ["keydown", eventAttrs],
+            ["keyup", eventAttrs],
+        ],
+        { skipVisibilityCheck: true },
+    );
+    return { keydownEvent, keyupEvent };
+}
+
+function log(ok, message) {
+    expect(Boolean(ok)).toBe(true, { message });
+}
+
+let hasUsedContainsPositively = false;
+afterEach(() => (hasUsedContainsPositively = false), { global: true });
+/**
+ * @typedef {[string, ContainsOptions?]} ContainsTuple
+ * @typedef {Object} ContainsOptions
+ * @property {ContainsTuple} [after]
+ * @property {ContainsTuple} [before]
+ * @property {Object} [click]
+ * @property {ContainsTuple|ContainsTuple[]} [contains]
+ * @property {number} [count=1]
+ * @property {Object[]} [dragenterFiles]
+ * @property {Object[]} [dragoverFiles]
+ * @property {Object[]} [dropFiles]
+ * @property {Object[]} [inputFiles]
+ * @property {{content:string, replace:boolean}} [insertText]
+ * @property {ContainsTuple} [parent]
+ * @property {Object[]} [pasteFiles]
+ * @property {number|"bottom"} [scroll]
+ * @property {boolean} [setFocus]
+ * @property {boolean} [shadowRoot]
+ * @property {number|"bottom"} [setScroll]
+ * @property {HTMLElement|ShadowRoot|OdooEnv} [target=getFixture()]
+ * @property {(EventType|[EventType, EventInit])[]} [triggerEvents]
+ * @property {string} [text]
+ * @property {string} [textContent]
+ * @property {string} [value]
+ * @property {boolean} [visible]
+ */
+class Contains {
+    timeoutCount = 0;
+    /**
+     * @param {import("@odoo/hoot-dom").Target} selector
+     * @param {ContainsOptions} [options={}]
+     */
+    constructor(selector, options = {}) {
+        this.selector = selector;
+        this.options = options;
+        this.options.count ??= 1;
+        let targetParam;
+        if (this.options.target && "testEnv" in this.options.target) {
+            targetParam = this.options.target.target;
+        }
+        if (!targetParam) {
+            targetParam = this.options.target;
+        }
+        this.options.target = targetParam || getFixture();
+        let selectorMessage = `${this.options.count} of "${this.selector}"`;
+        if (this.options.visible !== undefined) {
+            selectorMessage = `${selectorMessage} ${
+                this.options.visible ? "visible" : "invisible"
+            }`;
+        }
+        if (targetParam) {
+            selectorMessage = `${selectorMessage} inside a specific target`;
+        }
+        if (this.options.parent) {
+            selectorMessage = `${selectorMessage} inside a specific parent`;
+        }
+        if (this.options.contains) {
+            selectorMessage = `${selectorMessage} with a specified sub-contains`;
+        }
+        if (this.options.text !== undefined) {
+            selectorMessage = `${selectorMessage} with text "${this.options.text}"`;
+        }
+        if (this.options.textContent !== undefined) {
+            selectorMessage = `${selectorMessage} with textContent "${this.options.textContent}"`;
+        }
+        if (this.options.value !== undefined) {
+            selectorMessage = `${selectorMessage} with value "${this.options.value}"`;
+        }
+        if (this.options.scroll !== undefined) {
+            selectorMessage = `${selectorMessage} with scroll "${this.options.scroll}"`;
+        }
+        if (this.options.after !== undefined) {
+            selectorMessage = `${selectorMessage} after a specified element`;
+        }
+        if (this.options.before !== undefined) {
+            selectorMessage = `${selectorMessage} before a specified element`;
+        }
+        this.selectorMessage = selectorMessage;
+        if (this.options.contains && !Array.isArray(this.options.contains[0])) {
+            this.options.contains = [
+                /** @type {ContainsTuple} */ (this.options.contains),
+            ];
+        }
+        if (this.options.count) {
+            hasUsedContainsPositively = true;
+        } else if (!hasUsedContainsPositively) {
+            throw new Error(
+                `Starting a test with "contains" of count 0 for selector "${this.selector}" is useless because it might immediately resolve. Start the test by checking that an expected element actually exists.`,
+            );
+        }
+        /** @type {string} */
+        this.successMessage = undefined;
+        /** @type {function} */
+        this.executeError = undefined;
+    }
+
+    setTickTimeout() {
+        this.timer = setTimeout(() => {
+            this.timeoutCount++;
+            const res = this.runOnce(
+                `Timeout of ${(this.timeoutCount * this.tickTimeoutDelay) / 1000} seconds`,
+                { crashOnFail: this.timeoutCount * this.tickTimeoutDelay >= TIMEOUT },
+            );
+            if (!res) {
+                this.setTickTimeout();
+            }
+        }, this.tickTimeoutDelay);
+    }
+
+    /** @returns {Promise} */
+    run() {
+        this.done = false;
+        this.def = new Deferred();
+        this.scrollListeners = new Set();
+        // an event can fire inside a commit (a mounted hook focusing an input)
+        // while sibling components have not run their mounted hooks yet: act
+        // after the current task, as the mutation observer and a user do
+        const runAfterEvent = (/** @type {string} */ whenMessage) => () =>
+            queueMicrotask(() => {
+                if (this.done) {
+                    return;
+                }
+                try {
+                    this.runOnce(whenMessage);
+                } catch (e) {
+                    this.def.reject(e);
+                }
+            });
+        this.onBlur = runAfterEvent("after blur");
+        this.onChange = runAfterEvent("after change");
+        this.onFocus = runAfterEvent("after focus");
+        this.onScroll = runAfterEvent("after scroll");
+        if (!this.runOnce("immediately")) {
+            const hasValue =
+                this.options.value !== undefined ||
+                (typeof this.selector === "string" && this.selector.includes(":value"));
+            this.tickTimeoutDelay = hasValue ? 500 : TICK_DELAY;
+            this.setTickTimeout();
+            this.observer = new MutationObserver((mutations) => {
+                try {
+                    this.runOnce("after mutations");
+                } catch (e) {
+                    this.def.reject(e);
+                }
+            });
+            this.observer.observe(document.body, {
+                attributes: true,
+                childList: true,
+                subtree: true,
+            });
+            document.body.addEventListener("blur", this.onBlur, { capture: true });
+            document.body.addEventListener("change", this.onChange, { capture: true });
+            document.body.addEventListener("focus", this.onFocus, { capture: true });
+            after(() => {
+                if (!this.done) {
+                    this.runOnce("Test ended", { crashOnFail: true });
+                }
+            });
+        }
+        return this.def;
+    }
+
+    /**
+     * @param {string} whenMessage
+     * @param {Object} [options={}]
+     * @param {boolean} [options.crashOnFail=false]
+     * @param {boolean} [options.executeOnSuccess=true]
+     * @returns {(HTMLElement | ShadowRoot)[]|undefined}
+     */
+    runOnce(whenMessage, { crashOnFail = false, executeOnSuccess = true } = {}) {
+        const res = this.select();
+        if ((res?.length ?? 0) === this.options.count || crashOnFail) {
+            this.observer?.disconnect();
+            clearTimeout(this.timer);
+            for (const el of this.scrollListeners ?? []) {
+                el.removeEventListener("scroll", this.onScroll);
+            }
+            document.body.removeEventListener("blur", this.onBlur, { capture: true });
+            document.body.removeEventListener("change", this.onChange, {
+                capture: true,
+            });
+            document.body.removeEventListener("focus", this.onFocus, { capture: true });
+            this.done = true;
+        }
+        if ((res?.length ?? 0) === this.options.count) {
+            this.successMessage = `Found ${this.selectorMessage} (${whenMessage})`;
+            if (executeOnSuccess) {
+                this.executeAction(/** @type {HTMLElement} */ (res[0]));
+            }
+            return res;
+        } else {
+            this.executeError = () => {
+                let message = `Failed to find ${this.selectorMessage} (${whenMessage}).`;
+                message = res
+                    ? `${message} Found ${res.length} instead.`
+                    : `${message} Parent not found.`;
+                if (this.parentContains) {
+                    if (this.parentContains.successMessage) {
+                        log(true, this.parentContains.successMessage);
+                    } else {
+                        this.parentContains.executeError();
+                    }
+                }
+                log(false, message);
+                this.def?.reject(new Error(message));
+                for (const childContains of this.childrenContains || []) {
+                    if (childContains.successMessage) {
+                        log(true, childContains.successMessage);
+                    } else {
+                        childContains.executeError();
+                    }
+                }
+            };
+            if (crashOnFail) {
+                this.executeError();
+            }
+        }
+    }
+
+    /** @param {HTMLElement} el */
+    executeAction(el) {
+        let message = this.successMessage;
+        if (this.options.click) {
+            message = `${message} and clicked it`;
+            _click(el, undefined, {
+                mouseEventInit: this.options.click,
+                skipDisabledCheck: true,
+                skipVisibilityCheck: true,
+            });
+        }
+        if (this.options.dragenterFiles) {
+            message = `${message} and dragentered ${this.options.dragenterFiles.length} file(s)`;
+            const ev = new Event("dragenter", { bubbles: true });
+            Object.defineProperty(ev, "dataTransfer", {
+                value: createFakeDataTransfer(this.options.dragenterFiles),
+            });
+            el.dispatchEvent(ev);
+        }
+        if (this.options.dragoverFiles) {
+            message = `${message} and dragovered ${this.options.dragoverFiles.length} file(s)`;
+            const ev = new Event("dragover", { bubbles: true });
+            Object.defineProperty(ev, "dataTransfer", {
+                value: createFakeDataTransfer(this.options.dragoverFiles),
+            });
+            el.dispatchEvent(ev);
+        }
+        if (this.options.dropFiles) {
+            message = `${message} and dropped ${this.options.dropFiles.length} file(s)`;
+            const ev = new Event("drop", { bubbles: true });
+            Object.defineProperty(ev, "dataTransfer", {
+                value: createFakeDataTransfer(this.options.dropFiles),
+            });
+            el.dispatchEvent(ev);
+        }
+        if (this.options.inputFiles) {
+            message = `${message} and inputted ${this.options.inputFiles.length} file(s)`;
+            const dataTransfer = new window.DataTransfer();
+            for (const file of this.options.inputFiles) {
+                dataTransfer.items.add(file);
+            }
+            /** @type {HTMLInputElement} */ (el).files = dataTransfer.files;
+            const versionRaw = navigator.userAgent.match(/Chrom(e|ium)\/([0-9]+)\./);
+            const chromeVersion = versionRaw ? parseInt(versionRaw[2], 10) : false;
+            if (!chromeVersion || chromeVersion >= 73) {
+                el.dispatchEvent(new Event("change"));
+            }
+        }
+        if (this.options.insertText !== undefined) {
+            message = `${message} and inserted text "${this.options.insertText.content}" (replace: ${this.options.insertText.replace})`;
+            el.focus();
+            if (this.options.insertText.replace) {
+                /** @type {HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement} */ (
+                    el
+                ).value = "";
+                el.dispatchEvent(
+                    new window.KeyboardEvent("keydown", { key: "Backspace" }),
+                );
+                el.dispatchEvent(
+                    new window.KeyboardEvent("keyup", { key: "Backspace" }),
+                );
+                el.dispatchEvent(new window.InputEvent("input"));
+            }
+            for (const char of this.options.insertText.content) {
+                /** @type {HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement} */ (
+                    el
+                ).value += char;
+                el.dispatchEvent(new window.KeyboardEvent("keydown", { key: char }));
+                el.dispatchEvent(new window.KeyboardEvent("keyup", { key: char }));
+                el.dispatchEvent(new window.InputEvent("input"));
+            }
+            el.dispatchEvent(new window.InputEvent("change"));
+        }
+        if (this.options.pasteFiles) {
+            message = `${message} and pasted ${this.options.pasteFiles.length} file(s)`;
+            const ev = new Event("paste", { bubbles: true });
+            Object.defineProperty(ev, "clipboardData", {
+                value: createFakeDataTransfer(this.options.pasteFiles),
+            });
+            el.dispatchEvent(ev);
+        }
+        if (this.options.setFocus) {
+            message = `${message} and focused it`;
+            el.focus();
+        }
+        if (this.options.setScroll !== undefined) {
+            message = `${message} and set scroll to "${this.options.setScroll}"`;
+            el.scrollTop =
+                this.options.setScroll === "bottom"
+                    ? el.scrollHeight
+                    : this.options.setScroll;
+        }
+        if (this.options.triggerEvents) {
+            message = `${message} and triggered "${this.options.triggerEvents.join(", ")}" events`;
+            _triggerEvents(el, null, this.options.triggerEvents, {
+                skipVisibilityCheck: true,
+            });
+        }
+        if (this.parentContains) {
+            log(true, this.parentContains.successMessage);
+        }
+        log(true, message);
+        for (const childContains of this.childrenContains) {
+            log(true, childContains.successMessage);
+        }
+        this.def?.resolve();
+    }
+
+    /** @returns {(HTMLElement | ShadowRoot)[]|undefined} */
+    select() {
+        const target = this.selectParent();
+        if (!target) {
+            return;
+        }
+        let elems;
+        if (target === getFixture() && queryFirst(this.selector) === target) {
+            elems = [target];
+        } else {
+            elems = queryAll(this.selector, { root: target });
+        }
+        const baseRes = elems
+            .map((el) => (this.options.shadowRoot ? el.shadowRoot : el))
+            .filter((el) => el);
+        /** @type {Contains[]} */
+        this.childrenContains = [];
+        const res = baseRes.filter((el, currentIndex) => {
+            let condition =
+                (this.options.textContent === undefined ||
+                    el.textContent.trim() === this.options.textContent) &&
+                (this.options.value === undefined ||
+                    /** @type {HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement} */ (
+                        el
+                    ).value === this.options.value) &&
+                (this.options.scroll === undefined ||
+                    (this.options.scroll === "bottom"
+                        ? Math.abs(
+                              /** @type {HTMLElement} */ (el).scrollHeight -
+                                  /** @type {HTMLElement} */ (el).clientHeight -
+                                  /** @type {HTMLElement} */ (el).scrollTop,
+                          ) <= 1
+                        : Math.abs(
+                              /** @type {HTMLElement} */ (el).scrollTop -
+                                  this.options.scroll,
+                          ) <= 1));
+            if (condition && this.options.text !== undefined) {
+                if (
+                    el.textContent.trim() !== this.options.text &&
+                    [.../** @type {ParentNode} */ (el).querySelectorAll("*")].every(
+                        (el) => el.textContent.trim() !== this.options.text,
+                    )
+                ) {
+                    condition = false;
+                }
+            }
+            if (condition && this.options.contains) {
+                for (const param of this.options.contains) {
+                    const childContains = new Contains(param[0], {
+                        ...param[1],
+                        target: el,
+                    });
+                    if (
+                        !childContains.runOnce(`as child of el ${currentIndex + 1})`, {
+                            executeOnSuccess: false,
+                        })
+                    ) {
+                        condition = false;
+                    }
+                    this.childrenContains.push(childContains);
+                }
+            }
+            if (condition && this.options.visible !== undefined) {
+                if (isVisible(el) !== this.options.visible) {
+                    condition = false;
+                }
+            }
+            if (condition && this.options.after) {
+                const afterContains = new Contains(this.options.after[0], {
+                    ...this.options.after[1],
+                    target,
+                });
+                const afterEl = afterContains.runOnce(`as "after"`, {
+                    executeOnSuccess: false,
+                })?.[0];
+                if (
+                    !afterEl ||
+                    !(
+                        el.compareDocumentPosition(afterEl) &
+                        Node.DOCUMENT_POSITION_PRECEDING
+                    )
+                ) {
+                    condition = false;
+                }
+                this.childrenContains.push(afterContains);
+            }
+            if (condition && this.options.before) {
+                const beforeContains = new Contains(this.options.before[0], {
+                    ...this.options.before[1],
+                    target,
+                });
+                const beforeEl = beforeContains.runOnce(`as "before"`, {
+                    executeOnSuccess: false,
+                })?.[0];
+                if (
+                    !beforeEl ||
+                    !(
+                        el.compareDocumentPosition(beforeEl) &
+                        Node.DOCUMENT_POSITION_FOLLOWING
+                    )
+                ) {
+                    condition = false;
+                }
+                this.childrenContains.push(beforeContains);
+            }
+            return condition;
+        });
+        if (
+            this.options.scroll !== undefined &&
+            this.scrollListeners &&
+            baseRes.length === this.options.count &&
+            res.length !== this.options.count
+        ) {
+            for (const el of baseRes) {
+                if (!this.scrollListeners.has(el)) {
+                    this.scrollListeners.add(el);
+                    el.addEventListener("scroll", this.onScroll);
+                }
+            }
+        }
+        return res;
+    }
+
+    /** @returns {HTMLElement | ShadowRoot | undefined} */
+    selectParent() {
+        if (this.options.parent) {
+            this.parentContains = new Contains(this.options.parent[0], {
+                ...this.options.parent[1],
+                target: this.options.target,
+            });
+            return this.parentContains.runOnce(`as parent`, {
+                executeOnSuccess: false,
+            })?.[0];
+        }
+        return /** @type {HTMLElement} */ (this.options.target);
+    }
+}
+
+/**
+ * @param {import("@odoo/hoot-dom").Target} selector
+ * @param {ContainsOptions} [options]
+ * @returns {Promise}
+ */
+export async function contains(selector, options) {
+    await new Contains(selector, options).run();
+}

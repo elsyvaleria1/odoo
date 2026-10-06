@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates>
+    <t t-name="document.DocumentsActionHelper">
+        <div class="o_view_nocontent">
+            <div class="o_nocontent_help">
+                <t t-out="this.noContentHelp"/>
+                <t t-if="typeof this.selectedFolderId === 'number'">
+                    <t t-set="mailTo" t-value="this.mailTo"/>
+                    <div t-if="mailTo">
+                        <p class="fw-normal">Or send emails to
+                            <a t-attf-href="mailto:{{mailTo}}">
+                                <t t-out="mailTo"/>
+                            </a>
+                        </p>
+                        <p class="fw-normal"><em>Tip: configure your scanner to send all documents to this address.</em></p>
+                    </div>
+                    <p t-else="">No alias configured</p>
+                </t>
+            </div>
+        </div>
+    </t>
+</templates>

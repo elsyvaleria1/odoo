@@ -1,0 +1,345 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* planning_field_service
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-09-25 12:21+0000\n"
+"PO-Revision-Date: 2026-09-25 12:21+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: planning_field_service
+#. odoo-python
+#: code:addons/planning_field_service/models/planning_slot.py:0
+msgid "%(customer)s has neither coordinates nor an address to navigate to."
+msgstr "%(customer)s no tiene coordenadas ni dirección a donde navegar."
+
+#. module: planning_field_service
+#. odoo-python
+#: code:addons/planning_field_service/models/planning_slot.py:0
+msgid "A shift that is in progress or completed cannot go back to draft."
+msgstr "Un turno en curso o completado no puede regresar a borrador."
+
+#. module: planning_field_service
+#: model_terms:ir.actions.act_window,help:planning_field_service.planning_field_service_action_visits
+msgid "A shift with a customer is a visit."
+msgstr "Un turno con cliente es una visita."
+
+#. module: planning_field_service
+#. odoo-python
+#: code:addons/planning_field_service/models/planning_slot.py:0
+msgid "A visit changes status only through Start and Complete."
+msgstr "Una visita solo cambia de estado con Iniciar y Completar."
+
+#. module: planning_field_service
+#. odoo-python
+#: code:addons/planning_field_service/models/planning_slot.py:0
+msgid "A visit that has not started yet cannot be completed."
+msgstr "Una visita que todavía no empieza no se puede completar."
+
+#. module: planning_field_service
+#: model:ir.model.fields,field_description:planning_field_service.field_planning_slot__message_needaction
+msgid "Action Needed"
+msgstr "Se requiere una acción"
+
+#. module: planning_field_service
+#: model:ir.ui.menu,name:planning_field_service.planning_field_service_menu_all_visits
+msgid "All Visits"
+msgstr "Todas las visitas"
+
+#. module: planning_field_service
+#: model:ir.model.fields,field_description:planning_field_service.field_planning_slot__message_attachment_count
+msgid "Attachment Count"
+msgstr "Número de archivos adjuntos"
+
+#. module: planning_field_service
+#: model:ir.model.fields,field_description:planning_field_service.field_planning_slot__partner_city
+msgid "City"
+msgstr "Ciudad"
+
+#. module: planning_field_service
+#: model_terms:ir.ui.view,arch_db:planning_field_service.planning_slot_view_form_visit
+#: model_terms:ir.ui.view,arch_db:planning_field_service.planning_view_form
+msgid "Complete"
+msgstr "Completar"
+
+#. module: planning_field_service
+#: model:ir.model.fields.selection,name:planning_field_service.selection__planning_slot__state__4_completed
+#: model_terms:ir.ui.view,arch_db:planning_field_service.planning_view_search_base
+msgid "Completed"
+msgstr "Completado"
+
+#. module: planning_field_service
+#: model:ir.model,name:planning_field_service.model_res_config_settings
+msgid "Config Settings"
+msgstr "Ajustes de configuración"
+
+#. module: planning_field_service
+#: model:ir.model.fields,field_description:planning_field_service.field_planning_slot__partner_id
+#: model_terms:ir.ui.view,arch_db:planning_field_service.planning_slot_view_form_visit
+#: model_terms:ir.ui.view,arch_db:planning_field_service.planning_slot_view_map_visit
+#: model_terms:ir.ui.view,arch_db:planning_field_service.planning_slot_view_search_visit
+#: model_terms:ir.ui.view,arch_db:planning_field_service.planning_view_search
+msgid "Customer"
+msgstr "Cliente"
+
+#. module: planning_field_service
+#: model_terms:ir.ui.view,arch_db:planning_field_service.planning_slot_view_form_visit
+#: model_terms:ir.ui.view,arch_db:planning_field_service.planning_slot_view_list_visit
+#: model_terms:ir.ui.view,arch_db:planning_field_service.planning_slot_view_map_visit
+msgid "Date"
+msgstr "Fecha"
+
+#. module: planning_field_service
+#: model_terms:ir.actions.act_window,help:planning_field_service.planning_field_service_action_my_visits
+msgid ""
+"Declare the customers you visit, and start and complete each visit on site."
+msgstr ""
+"Declara los clientes que visitas, e inicia y completa cada visita en el sitio."
+
+#. module: planning_field_service
+#: model:ir.model.fields,field_description:planning_field_service.field_planning_slot__display_name
+#: model:ir.model.fields,field_description:planning_field_service.field_res_config_settings__display_name
+msgid "Display Name"
+msgstr "Nombre mostrado"
+
+#. module: planning_field_service
+#: model_terms:ir.ui.view,arch_db:planning_field_service.planning_slot_view_map_visit
+msgid "Employee"
+msgstr "Empleado"
+
+#. module: planning_field_service
+#: model_terms:ir.ui.view,arch_db:planning_field_service.res_config_settings_view_form
+msgid "Field Service"
+msgstr "Servicio en campo"
+
+#. module: planning_field_service
+#: model:ir.model.fields,field_description:planning_field_service.field_planning_slot__message_follower_ids
+msgid "Followers"
+msgstr "Seguidores"
+
+#. module: planning_field_service
+#: model:ir.model.fields,field_description:planning_field_service.field_planning_slot__message_partner_ids
+msgid "Followers (Partners)"
+msgstr "Seguidores (contactos)"
+
+#. module: planning_field_service
+#. odoo-python
+#: code:addons/planning_field_service/models/planning_slot.py:0
+msgid "GPS Coordinates: %(latitude)s, %(longitude)s"
+msgstr "Coordenadas GPS: %(latitude)s, %(longitude)s"
+
+#. module: planning_field_service
+#: model:ir.model.fields,field_description:planning_field_service.field_res_config_settings__group_field_service_allow_geolocation
+msgid "Geolocation"
+msgstr "Geolocalización"
+
+#. module: planning_field_service
+#: model:ir.model.fields,field_description:planning_field_service.field_planning_slot__has_message
+msgid "Has Message"
+msgstr "Tiene un mensaje"
+
+#. module: planning_field_service
+#: model:ir.model.fields,field_description:planning_field_service.field_planning_slot__id
+#: model:ir.model.fields,field_description:planning_field_service.field_res_config_settings__id
+msgid "ID"
+msgstr "ID"
+
+#. module: planning_field_service
+#: model:ir.model.fields,help:planning_field_service.field_planning_slot__message_needaction
+msgid "If checked, new messages require your attention."
+msgstr "Si está seleccionado, hay nuevos mensajes que requieren tu atención."
+
+#. module: planning_field_service
+#: model:ir.model.fields,help:planning_field_service.field_planning_slot__message_has_error
+#: model:ir.model.fields,help:planning_field_service.field_planning_slot__message_has_sms_error
+msgid "If checked, some messages have a delivery error."
+msgstr "Si está seleccionado, algunos mensajes tienen error de envío."
+
+#. module: planning_field_service
+#: model:ir.model.fields.selection,name:planning_field_service.selection__planning_slot__state__3_in_progress
+#: model_terms:ir.ui.view,arch_db:planning_field_service.planning_view_search_base
+msgid "In Progress"
+msgstr "En curso"
+
+#. module: planning_field_service
+#: model:ir.model.fields,field_description:planning_field_service.field_planning_slot__message_is_follower
+msgid "Is Follower"
+msgstr "Es un seguidor"
+
+#. module: planning_field_service
+#. odoo-python
+#: code:addons/planning_field_service/models/planning_slot.py:0
+msgid "Location error"
+msgstr "Error de ubicación"
+
+#. module: planning_field_service
+#. odoo-javascript
+#: code:addons/planning_field_service/static/src/services/field_service_geolocation_service.js:0
+msgid "Location error: %s"
+msgstr "Error de ubicación: %s"
+
+#. module: planning_field_service
+#: model_terms:ir.ui.view,arch_db:planning_field_service.res_config_settings_view_form
+msgid "Log where the phone was when a visit is started and completed"
+msgstr "Registrar dónde estaba el teléfono al iniciar y al completar una visita"
+
+#. module: planning_field_service
+#: model:ir.model.fields,help:planning_field_service.field_res_config_settings__group_field_service_allow_geolocation
+msgid "Log where the phone was when a visit is started and completed."
+msgstr "Registrar dónde estaba el teléfono al iniciar y al completar una visita."
+
+#. module: planning_field_service
+#: model:ir.model.fields,field_description:planning_field_service.field_planning_slot__message_has_error
+msgid "Message Delivery error"
+msgstr "Error al enviar el mensaje"
+
+#. module: planning_field_service
+#: model:ir.model.fields,field_description:planning_field_service.field_planning_slot__message_ids
+msgid "Messages"
+msgstr "Mensajes"
+
+#. module: planning_field_service
+#: model:ir.actions.act_window,name:planning_field_service.planning_field_service_action_my_visits
+#: model:ir.ui.menu,name:planning_field_service.planning_field_service_menu_my_visits
+msgid "My Visits"
+msgstr "Mis visitas"
+
+#. module: planning_field_service
+#: model_terms:ir.ui.view,arch_db:planning_field_service.planning_slot_view_form_visit
+#: model_terms:ir.ui.view,arch_db:planning_field_service.planning_view_form
+msgid "Navigate"
+msgstr "Navegar"
+
+#. module: planning_field_service
+#: model_terms:ir.actions.act_window,help:planning_field_service.planning_field_service_action_visits
+msgid "No visits"
+msgstr "Sin visitas"
+
+#. module: planning_field_service
+#: model_terms:ir.actions.act_window,help:planning_field_service.planning_field_service_action_my_visits
+msgid "No visits to do"
+msgstr "No hay visitas por hacer"
+
+#. module: planning_field_service
+#: model_terms:ir.ui.view,arch_db:planning_field_service.planning_slot_view_form_visit
+msgid "Notes about the visit"
+msgstr "Notas de la visita"
+
+#. module: planning_field_service
+#: model:ir.model.fields,field_description:planning_field_service.field_planning_slot__message_needaction_counter
+msgid "Number of Actions"
+msgstr "Número de acciones"
+
+#. module: planning_field_service
+#: model:ir.model.fields,field_description:planning_field_service.field_planning_slot__message_has_error_counter
+msgid "Number of errors"
+msgstr "Número de errores"
+
+#. module: planning_field_service
+#: model:ir.model.fields,help:planning_field_service.field_planning_slot__message_needaction_counter
+msgid "Number of messages requiring action"
+msgstr "Número de mensajes que requieren una acción"
+
+#. module: planning_field_service
+#: model:ir.model.fields,help:planning_field_service.field_planning_slot__message_has_error_counter
+msgid "Number of messages with delivery error"
+msgstr "Número de mensajes con error de envío"
+
+#. module: planning_field_service
+#. odoo-python
+#: code:addons/planning_field_service/models/planning_slot.py:0
+msgid "Only a planning manager can hand a visit over to someone else."
+msgstr "Solo un administrador de planeación puede pasar una visita a otra persona."
+
+#. module: planning_field_service
+#. odoo-python
+#: code:addons/planning_field_service/models/planning_slot.py:0
+msgid "Only a published shift can be started."
+msgstr "Solo se puede iniciar un turno publicado."
+
+#. module: planning_field_service
+#. odoo-python
+#: code:addons/planning_field_service/models/planning_slot.py:0
+msgid "Only a shift that is published or in progress can be completed."
+msgstr "Solo se puede completar un turno publicado o en curso."
+
+#. module: planning_field_service
+#: model:ir.model,name:planning_field_service.model_planning_slot
+msgid "Planning Shift"
+msgstr "Turno de planeación"
+
+#. module: planning_field_service
+#: model:ir.model.fields,field_description:planning_field_service.field_planning_slot__website_message_ids
+msgid "Portal Messages"
+msgstr "Mensajes del portal"
+
+#. module: planning_field_service
+#: model:ir.model.fields,help:planning_field_service.field_planning_slot__website_message_ids
+msgid "Portal communication history for this record."
+msgstr "Historial de comunicación del portal de este registro."
+
+#. module: planning_field_service
+#: model:ir.model.fields,field_description:planning_field_service.field_planning_slot__message_has_sms_error
+msgid "SMS Delivery error"
+msgstr "Error en el envío del SMS"
+
+#. module: planning_field_service
+#: model_terms:ir.ui.view,arch_db:planning_field_service.planning_slot_view_form_visit
+#: model_terms:ir.ui.view,arch_db:planning_field_service.planning_view_form
+msgid "Start"
+msgstr "Iniciar"
+
+#. module: planning_field_service
+#: model:ir.model.fields,field_description:planning_field_service.field_planning_slot__state
+#: model_terms:ir.ui.view,arch_db:planning_field_service.planning_slot_view_map_visit
+#: model_terms:ir.ui.view,arch_db:planning_field_service.planning_view_search_base
+msgid "Status"
+msgstr "Estado"
+
+#. module: planning_field_service
+#. odoo-javascript
+#: code:addons/planning_field_service/static/src/services/field_service_geolocation_service.js:0
+msgid "This device cannot give its location."
+msgstr "Este dispositivo no puede dar su ubicación."
+
+#. module: planning_field_service
+#: model_terms:ir.ui.view,arch_db:planning_field_service.planning_slot_view_search_visit
+msgid "To Do"
+msgstr "Por hacer"
+
+#. module: planning_field_service
+#. odoo-python
+#: code:addons/planning_field_service/models/planning_slot.py:0
+msgid "View on Map"
+msgstr "Ver en el mapa"
+
+#. module: planning_field_service
+#: model_terms:ir.ui.view,arch_db:planning_field_service.planning_slot_view_form_visit
+msgid "Visit"
+msgstr "Visita"
+
+#. module: planning_field_service
+#: model:res.groups,name:planning_field_service.group_field_service_supervisor
+msgid "Visit Supervisor"
+msgstr "Supervisor de visitas"
+
+#. module: planning_field_service
+#: model:ir.actions.act_window,name:planning_field_service.planning_field_service_action_visits
+#: model:ir.ui.menu,name:planning_field_service.planning_field_service_menu_visits
+#: model_terms:ir.ui.view,arch_db:planning_field_service.planning_slot_view_list_visit
+msgid "Visits"
+msgstr "Visitas"
+
+#. module: planning_field_service
+#. odoo-python
+#: code:addons/planning_field_service/models/planning_slot.py:0
+msgid "You have no employee in %(company)s: a visit is made by an employee."
+msgstr "No tienes empleado en %(company)s: una visita la hace un empleado."

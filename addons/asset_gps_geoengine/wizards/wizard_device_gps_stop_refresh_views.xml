@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="wizard_device_gps_stop_refresh_view_form" model="ir.ui.view">
+        <field name="name">wizard.device.gps.stop.refresh.form</field>
+        <field name="model">wizard.device.gps.stop.refresh</field>
+        <field name="arch" type="xml">
+            <form>
+                <p class="text-muted">
+                    Recomputes the stops of the chosen days from the stored
+                    GPS positions. Every ten minutes the scheduled action
+                    already does this for yesterday and today; use this for
+                    older days.
+                </p>
+                <group>
+                    <field name="date_from" />
+                    <field name="date_to" />
+                    <field name="device_ids" widget="many2many_tags" />
+                </group>
+                <footer>
+                    <button
+                        name="action_refresh"
+                        type="object"
+                        string="Refresh"
+                        class="btn-primary" />
+                    <button special="cancel" string="Cancel" />
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="wizard_device_gps_stop_refresh_action" model="ir.actions.act_window">
+        <field name="name">Refresh Stops</field>
+        <field name="res_model">wizard.device.gps.stop.refresh</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+
+</odoo>

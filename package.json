@@ -1,0 +1,22 @@
+{
+  "name": "odoo",
+  "private": true,
+  "description": "Odoo 19.0 JS tooling",
+  "engines": {
+    "node": "^20.19.0 || ^22.13.0 || >=24.0.0"
+  },
+  "dependencies": {
+    "acorn": "^8.17.0",
+    "es-module-lexer": "^1.7.0",
+    "esbuild": "^0.28.2",
+    "jsdom": "^29.1.1",
+    "rtlcss": "^4.3.0",
+    "sass-embedded": "^1.100.0",
+    "xpath": "^0.0.34"
+  },
+  "devDependencies": {
+    "oxfmt": "0.71.0",
+    "oxlint": "1.86.0",
+    "typescript": "^7.0.2"
+  }
+}

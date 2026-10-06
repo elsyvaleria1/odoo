@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="approval.ApprovalsTile">
+        <div class="o_approvals_tile d-flex flex-column gap-2">
+            <button type="button" class="btn btn-link p-0 d-flex gap-3 text-start o_approvals_tile_totals" t-on-click="() => this.openAll()">
+                <span><strong t-out="this.props.data.count"/> <small class="text-muted">To decide</small></span>
+                <span t-if="this.props.data.overdue"><strong class="text-danger" t-out="this.props.data.overdue"/> <small class="text-muted">Overdue</small></span>
+            </button>
+            <ul t-if="this.requests.length" class="list-unstyled mb-0">
+                <li t-foreach="this.requests" t-as="request" t-key="request.id">
+                    <HomeTileRecordLink resModel="'approval.request'" resId="request.id" className="'d-flex flex-column o_approvals_tile_request'">
+                        <span class="d-flex gap-2">
+                            <span class="text-truncate flex-grow-1" t-out="request.name"/>
+                            <small t-att-class="request.overdue ? 'text-danger' : 'text-muted'" class="flex-shrink-0" t-out="this.deadlineOf(request)"/>
+                        </span>
+                        <small class="text-muted text-truncate"><t t-out="request.category"/> · <t t-out="request.owner"/></small>
+                    </HomeTileRecordLink>
+                </li>
+            </ul>
+            <p t-else="" class="text-muted small mb-0">Nothing awaits your decision.</p>
+        </div>
+    </t>
+
+</templates>

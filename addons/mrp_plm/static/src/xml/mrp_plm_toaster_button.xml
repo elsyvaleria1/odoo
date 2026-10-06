@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<template>
+
+    <t t-name="mrp_plm.ToasterButton">
+        <button t-on-click="this.onClick" class="btn oe_inline btn-link">
+            <i class="fa-solid fa-info-circle o_button_icon"></i>
+        </button>
+    </t>
+
+</template>

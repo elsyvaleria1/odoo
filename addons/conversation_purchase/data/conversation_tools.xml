@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="tool_create_purchase_order" model="ir.actions.server">
+        <field name="name">Conversation: create draft purchase order</field>
+        <field name="model_id" ref="conversation.model_conversation_conversation" />
+        <field name="state">code</field>
+        <field
+            name="code">supplier = tools.find("res.partner", supplier_name) or record.partner_id
+if not supplier:
+    raise UserError("La orden de compra necesita un proveedor.")
+order_lines = []
+for line in tools.lines(lines):
+    product = tools.find("product.product", line["name"])
+    if not product:
+        raise UserError("No existe el producto '%s'; créalo o corrige el nombre." % line["name"])
+    order_lines.append((0, 0, {"product_id": product.id, "product_qty": line["quantity"], "name": product.display_name + ((" (" + line["unit"] + ")") if line["unit"] else "")}))
+order_vals = {"partner_id": supplier.id, "origin": record._tool_origin(), "line_ids": order_lines}
+if date_planned and "date_planned" in env["purchase.order"]._fields:
+    order_vals["date_planned"] = tools.datetime(date_planned, default_time="09:00", tz=record.user_id.tz or "America/Mexico_City")
+order = env["purchase.order"].create(order_vals)
+if note:
+    record._tool_note(order, note)
+ai["result"] = {"model": "purchase.order", "id": order.id}</field>
+        <field
+            name="ai_approval_category_id"
+            ref="conversation.approval_category_tool_leader" />
+        <field
+            name="ai_tool_description">Crear una orden de compra en borrador (solicitud de cotización) a un proveedor con los productos y cantidades dichos. Compras la revisa y confirma. El proveedor es el contacto de la conversación salvo que se nombre otro.</field>
+        <field
+            name="ai_tool_schema">{
+    "type": "object",
+    "properties": {
+        "supplier_name": {"type": "string", "description": "Vacío = contacto de la conversación"},
+        "lines": {"type": "array", "items": {"type": "string"}, "description": "Una línea por producto: 'producto | cantidad | unidad dicha'"},
+        "date_planned": {"type": "string", "description": "Fecha de entrega deseada YYYY-MM-DD, vacío si no se dijo"},
+        "note": {"type": "string"}
+    },
+    "required": ["lines"]
+}</field>
+        <field name="conversation_enabled" eval="True" />
+        <field
+            name="conversation_examples">"pídele al proveedor", "que nos manden 20 tambos de", "cotiza con Syngenta", acuerdos con un proveedor</field>
+        <field name="conversation_key">create_purchase_order</field>
+        <field name="use_in_ai" eval="True" />
+    </record>
+
+</odoo>

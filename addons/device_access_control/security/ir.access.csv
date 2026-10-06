@@ -1,0 +1,14 @@
+id,name,model_id/id,group_id/id,kind,operation,reach,anchor,domain
+access_event_rule_manager,Access Event: System users manage all,model_access_event,base.group_system,permission,crud,,,
+access_event_rule_user,Access Event: Users read own company,model_access_event,base.group_user,permission,r,company,,
+access_command_rule_manager,Access Command: System users manage all,model_access_command,base.group_system,permission,ud,,,
+access_command_rule_user,Access Command: a user reads the commands of the devices they may read,model_access_command,base.group_user,permission,r,,,"[('device_id', 'access', 'read')]"
+access_command_rule_user_create,Access Command: a user sends commands to the devices they may operate,model_access_command,base.group_user,permission,c,,,"[('device_id', 'access', 'write')]"
+access_event_rule_webhook,Access Event: Webhook processor full access,model_access_event,group_access_device_webhook,permission,cru,,,
+access_command_rule_webhook,Access Command: Webhook processor full access,model_access_command,group_access_device_webhook,permission,cru,,,
+access_device_user_rule_manager,Access Device User: System users manage all,model_access_device_user,base.group_system,permission,cud,,,
+access_device_user_rule_user,Access Device User: Users can read all,model_access_device_user,base.group_user,permission,r,,,
+acl_hr_employee_webhook,hr.employee.webhook,hr.model_hr_employee,group_access_device_webhook,permission,r,,,
+acl_device_device_webhook,device.device.webhook,device.model_device_device,group_access_device_webhook,permission,r,,,
+acl_device_profile_webhook,device.profile.webhook,device.model_device_profile,group_access_device_webhook,permission,r,,,
+acl_device_kind_webhook,device.kind.webhook,device.model_device_kind,group_access_device_webhook,permission,r,,,

@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="res_groups_privilege_collection" model="res.groups.privilege">
+        <field name="name">Field Collections</field>
+        <field name="category_id" ref="base.module_category_accounting" />
+    </record>
+
+    <record id="group_collection_collector" model="res.groups">
+        <field name="name">Collector</field>
+        <field name="privilege_id" ref="res_groups_privilege_collection" />
+        <field
+            name="comment">Collectors record what customers pay them, see what they hold in custody and hand it in through their own remittances.</field>
+        <field name="implied_ids" eval="[Command.link(ref('base.group_user'))]" />
+    </record>
+
+    <record id="privilege_register_collection" model="res.groups">
+        <field
+            name="name">Privilege: a collector records the payment a customer handed them</field>
+        <field
+            name="comment">A collector who holds no accounting right records a customer's payment in a collection custody journal: creating and posting that payment and its entry in their own name, reading the customer's open posted invoices and reconciling them with it. Nothing else of accounting is theirs.</field>
+        <field name="is_privilege" eval="True" />
+    </record>
+
+    <record id="privilege_read_custody_status" model="res.groups">
+        <field
+            name="name">Privilege: whoever acts on a collector's work reads what that collector holds</field>
+        <field
+            name="comment">Whether a collector holds collections past their hand-in date, or above their limit, decides what they may do next: collect more, or have a credit sale confirmed. Whoever asks reads the collector's collections in custody journals, and nothing else of their payments.</field>
+        <field name="is_privilege" eval="True" />
+    </record>
+
+</odoo>

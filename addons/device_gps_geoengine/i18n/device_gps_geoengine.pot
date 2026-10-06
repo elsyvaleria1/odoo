@@ -1,0 +1,2117 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* device_gps_geoengine
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-10-01 09:47+0000\n"
+"PO-Revision-Date: 2026-10-01 09:47+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: device_gps_geoengine
+#. odoo-python
+#: code:addons/device_gps_geoengine/models/device_device.py:0
+msgid " Nearest known client: %(partner)s."
+msgstr ""
+
+#. module: device_gps_geoengine
+#. odoo-python
+#: code:addons/device_gps_geoengine/models/device_device.py:0
+msgid ""
+"%(device)s has been stationary for %(minutes)s+ minutes at a location not "
+"linked to any mapped client parcel.%(near)s Please map the exact parcel in "
+"Remote so future stops resolve automatically."
+msgstr ""
+
+#. module: device_gps_geoengine
+#. odoo-python
+#: code:addons/device_gps_geoengine/wizards/wizard_device_device_view_trail.py:0
+msgid "%d devices selected"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:device_gps_geoengine.view_device_device_geoengine
+msgid "(a"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:device_gps_geoengine.view_device_data_log_gps_map
+msgid "<b>Device:</b>"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:device_gps_geoengine.view_device_data_log_gps_map
+msgid "<b>Ignition:</b>"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:device_gps_geoengine.view_device_data_log_gps_map
+msgid "<b>Movement:</b>"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:device_gps_geoengine.view_device_data_log_gps_map
+msgid "<b>Speed:</b>"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:device_gps_geoengine.view_device_device_geoengine
+msgid "<span class=\"badge text-bg-secondary\">Stopped</span>"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:device_gps_geoengine.view_device_device_geoengine
+msgid "<span class=\"badge text-bg-success mb-1\">Cliente</span>"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:device_gps_geoengine.view_device_device_geoengine
+msgid "<span class=\"badge text-bg-success\">Moving</span>"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:device_gps_geoengine.view_device_geo_fence_kanban
+msgid "<span class=\"fa-solid fa-car me-1\" title=\"Devices\"/>"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:device_gps_geoengine.view_device_geo_fence_kanban
+msgid "<span class=\"fa-solid fa-location-dot me-1\" title=\"Inside\"/>"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:device_gps_geoengine.view_device_geo_fence_kanban
+msgid "<span class=\"fa-solid fa-map me-1\" title=\"Surface\"/>"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:device_gps_geoengine.view_device_geo_fence_kanban
+msgid "<span class=\"fa-solid fa-shapes me-1\" title=\"Type\"/>"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:device_gps_geoengine.view_gps_trail_wizard_form
+msgid "<strong>Selection:</strong>"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,help:device_gps_geoengine.field_device_device__dwell_notification_sent
+msgid ""
+"A mapping request has already been raised for the current unmapped stop. "
+"Reset once the device moves on or lands on a mapped parcel, so the next "
+"unmapped stop notifies again."
+msgstr ""
+
+#. module: device_gps_geoengine
+#. odoo-python
+#: code:addons/device_gps_geoengine/wizards/wizard_device_device_view_trail.py:0
+msgid ""
+"A trail of %(count)d positions is too large to draw, even simplified. Narrow"
+" the dates, or group the trail by day."
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_device_geo_fence__active
+#: model_terms:ir.ui.view,arch_db:device_gps_geoengine.view_device_geo_fence_search
+msgid "Active"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_device_geo_fence__alert_on_dwell
+msgid "Alert On Dwell"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_device_geo_fence__alert_on_enter
+msgid "Alert On Enter"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_device_geo_fence__alert_on_exit
+msgid "Alert On Exit"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:device_gps_geoengine.view_device_geo_fence_form
+msgid "Alert Settings"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:device_gps_geoengine.view_device_geo_fence_form
+msgid "Alert Triggers"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:device_gps_geoengine.view_device_geo_fence_search
+msgid "Alert on Dwell"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:device_gps_geoengine.view_device_geo_fence_search
+msgid "Alert on Enter"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:device_gps_geoengine.view_device_geo_fence_search
+msgid "Alert on Exit"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields.selection,name:device_gps_geoengine.selection__device_geo_fence__schedule_type__always
+msgid "Always"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,help:device_gps_geoengine.field_wizard_device_device_view_trail_result__length_km
+msgid "Approximate trail length in kilometers"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_device_geo_fence__area_type
+#: model_terms:ir.ui.view,arch_db:device_gps_geoengine.view_device_geo_fence_search
+msgid "Area Type"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_device_client_visit__arrival
+msgid "Arrival"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_device_device__client_visit_arrival
+msgid "Arrival Time"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_device_device__gps_speed_avg_today
+msgid "Average Speed Today (km/h)"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,help:device_gps_geoengine.field_wizard_device_device_view_trail_result__speed_avg
+msgid "Average speed while moving (excludes stationary points)"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:device_gps_geoengine.view_gps_trail_result_geoengine
+msgid "Avg Speed:"
+msgstr ""
+
+#. module: device_gps_geoengine
+#. odoo-javascript
+#: code:addons/device_gps_geoengine/static/src/polygon_draw/polygon_draw_dialog.xml:0
+msgid "Base map"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:device_gps_geoengine.view_device_device_geoengine
+msgid "Battery:"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields.selection,name:device_gps_geoengine.selection__device_geo_fence__schedule_type__business_hours
+msgid "Business Hours"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields.selection,name:device_gps_geoengine.selection__wizard_device_device_view_trail__selection_mode__device
+msgid "By GPS Device"
+msgstr ""
+
+#. module: device_gps_geoengine
+#. odoo-javascript
+#: code:addons/device_gps_geoengine/static/src/polygon_draw/polygon_draw_dialog.xml:0
+#: model_terms:ir.ui.view,arch_db:device_gps_geoengine.view_gps_trail_wizard_form
+msgid "Cancel"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:geoengine.raster.layer,name:device_gps_geoengine.raster_layer_device_data_log_gps_carto_dark
+#: model:geoengine.raster.layer,name:device_gps_geoengine.raster_layer_device_device_carto_dark
+#: model:geoengine.raster.layer,name:device_gps_geoengine.raster_layer_device_geo_fence_carto_dark
+#: model:geoengine.raster.layer,name:device_gps_geoengine.raster_layer_gps_trail_result_carto_dark
+#: model:geoengine.raster.layer,name:device_gps_geoengine.raster_layer_res_partner_client_carto_dark
+msgid "CartoDB Dark"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:geoengine.raster.layer,name:device_gps_geoengine.raster_layer_device_data_log_gps_carto_light
+#: model:geoengine.raster.layer,name:device_gps_geoengine.raster_layer_device_device_carto_light
+#: model:geoengine.raster.layer,name:device_gps_geoengine.raster_layer_device_geo_fence_carto_light
+#: model:geoengine.raster.layer,name:device_gps_geoengine.raster_layer_gps_trail_result_carto_light
+#: model:geoengine.raster.layer,name:device_gps_geoengine.raster_layer_res_partner_client_carto_light
+msgid "CartoDB Light"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_device_geo_fence__center_latitude
+msgid "Center Latitude"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_device_geo_fence__center_longitude
+msgid "Center Longitude"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,help:device_gps_geoengine.field_device_geo_fence__center_latitude
+msgid "Center latitude for circle geofence"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,help:device_gps_geoengine.field_device_geo_fence__center_longitude
+msgid "Center longitude for circle geofence"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_device_geo_fence__child_ids
+msgid "Child"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:device_gps_geoengine.view_device_geo_fence_form
+msgid "Child Areas"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,help:device_gps_geoengine.field_device_geo_fence__child_ids
+msgid "Child geofences (e.g., parcels within a property)"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,help:device_gps_geoengine.field_wizard_device_device_view_trail__selection_mode
+msgid "Choose how to select GPS tracking sources"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields.selection,name:device_gps_geoengine.selection__device_geo_fence__geofence_type__circle
+#: model_terms:ir.ui.view,arch_db:device_gps_geoengine.view_device_geo_fence_search
+msgid "Circle"
+msgstr ""
+
+#. module: device_gps_geoengine
+#. odoo-python
+#: code:addons/device_gps_geoengine/models/device_geo_fence.py:0
+msgid "Circle geofence requires center coordinates"
+msgstr ""
+
+#. module: device_gps_geoengine
+#. odoo-python
+#: code:addons/device_gps_geoengine/models/device_geo_fence.py:0
+msgid "Circle radius cannot exceed 100km"
+msgstr ""
+
+#. module: device_gps_geoengine
+#. odoo-python
+#: code:addons/device_gps_geoengine/models/device_geo_fence.py:0
+msgid "Circle radius must be positive"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_device_geo_fence__city
+msgid "City"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,help:device_gps_geoengine.field_device_geo_fence__city
+msgid "City/Municipality (optional)"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,help:device_gps_geoengine.field_device_geo_fence__area_type
+msgid "Classification of the geofenced area"
+msgstr ""
+
+#. module: device_gps_geoengine
+#. odoo-javascript
+#: code:addons/device_gps_geoengine/static/src/polygon_draw/polygon_draw_dialog.xml:0
+msgid "Clear"
+msgstr ""
+
+#. module: device_gps_geoengine
+#. odoo-javascript
+#: code:addons/device_gps_geoengine/static/src/polygon_draw/polygon_draw_dialog.xml:0
+msgid ""
+"Click on the map to add vertices. Double-click to finish the polygon.\n"
+"                        Drawing a new polygon replaces the previous one."
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_device_client_visit__partner_id
+#: model_terms:ir.ui.view,arch_db:device_gps_geoengine.view_device_client_visit_search
+msgid "Client"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_res_bank__client_the_area
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_res_company__client_the_area
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_res_partner__client_the_area
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_res_users__client_the_area
+msgid "Client Area"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_res_bank__client_the_point
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_res_company__client_the_point
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_res_partner__client_the_point
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_res_users__client_the_point
+msgid "Client GPS Point"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:geoengine.vector.layer,name:device_gps_geoengine.vector_layer_res_partner_client_locations
+#: model:ir.actions.act_window,name:device_gps_geoengine.action_res_partner_client_locations_map
+#: model:ir.ui.menu,name:device_gps_geoengine.menu_gps_client_locations
+msgid "Client Locations"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:geoengine.vector.layer,name:device_gps_geoengine.vector_layer_device_device_client_locations
+msgid "Client Locations (overlay)"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_res_bank__client_geofence_ids
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_res_company__client_geofence_ids
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_res_partner__client_geofence_ids
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_res_users__client_geofence_ids
+msgid "Client Parcels"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.actions.act_window,name:device_gps_geoengine.action_device_client_visit
+msgid "Client Visits"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,help:device_gps_geoengine.field_device_device__current_client_geofence_id
+msgid ""
+"Client parcel geofence closest to the device's last known position, within "
+"50 m"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_device_weekday__code
+msgid "Code"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_device_geo_fence__color
+msgid "Color"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,help:device_gps_geoengine.field_device_geo_fence__color
+msgid "Color for map display"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_device_client_visit__company_id
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_device_geo_fence__company_id
+msgid "Company"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,help:device_gps_geoengine.field_device_client_visit__company_id
+msgid "Company that owns this channel (for multi-tenancy isolation)"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,help:device_gps_geoengine.field_device_geo_fence__company_id
+msgid "Company that owns this geofence. Leave empty for multi-company"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:device_gps_geoengine.view_device_device_search_gps_trail
+msgid "Connected"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:device_gps_geoengine.view_device_device_search_gps_trail
+msgid "Connection State"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model,name:device_gps_geoengine.model_res_partner
+#: model_terms:ir.ui.view,arch_db:device_gps_geoengine.view_device_geo_fence_search
+msgid "Contact"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,help:device_gps_geoengine.field_device_geo_fence__partner_id
+msgid "Contact associated with this geofence"
+msgstr ""
+
+#. module: device_gps_geoengine
+#. odoo-python
+#: code:addons/device_gps_geoengine/wizards/wizard_device_device_view_trail.py:0
+msgid ""
+"Could not generate any trails from the GPS data. This can happen when "
+"devices are stationary."
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_device_state_boundary__country_id
+msgid "Country"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,help:device_gps_geoengine.field_device_state_boundary__country_id
+msgid "Country this boundary belongs to"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model_terms:ir.actions.act_window,help:device_gps_geoengine.action_iot_gps_geofence
+msgid "Create a geofence zone"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:res.groups,comment:device_gps_geoengine.group_device_gps_geofence_editor
+msgid ""
+"Create and manage geofences (device.geo.fence) without device, IoT, or "
+"machine administration rights."
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_device_client_visit__create_uid
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_device_geo_fence__create_uid
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_device_state_boundary__create_uid
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_device_weekday__create_uid
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_wizard_device_device_view_trail__create_uid
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_wizard_device_device_view_trail_result__create_uid
+msgid "Created by"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_device_client_visit__create_date
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_device_geo_fence__create_date
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_device_state_boundary__create_date
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_device_weekday__create_date
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_wizard_device_device_view_trail__create_date
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_wizard_device_device_view_trail_result__create_date
+msgid "Created on"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_device_device__current_client_partner_id
+msgid "Current Client"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_device_device__current_client_geofence_id
+msgid "Current Client Parcel"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,help:device_gps_geoengine.field_device_device__the_point
+msgid "Current device location for map display"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields.selection,name:device_gps_geoengine.selection__device_geo_fence__schedule_type__custom
+msgid "Custom Schedule"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model_terms:ir.actions.act_window,help:device_gps_geoengine.action_res_partner_client_locations_map
+msgid ""
+"Customers with GPS coordinates set in Contacts → Partner Assignment\n"
+"                (Geo Latitude / Geo Longitude)."
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:device_gps_geoengine.view_device_client_visit_search
+msgid "Date"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_wizard_device_device_view_trail__date_from
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_wizard_device_device_view_trail_result__date_from
+msgid "Date From"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:device_gps_geoengine.view_gps_trail_wizard_form
+msgid "Date Range"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_wizard_device_device_view_trail__date_to
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_wizard_device_device_view_trail_result__date_to
+msgid "Date To"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,help:device_gps_geoengine.field_device_weekday__name
+msgid "Day name (e.g. Monday)"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model,name:device_gps_geoengine.model_device_weekday
+msgid "Day of the Week"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,help:device_gps_geoengine.field_device_geo_fence__schedule_weekday_ids
+msgid ""
+"Days when this geofence is active (custom schedule). Leave empty to activate"
+" on all days."
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model_terms:ir.actions.act_window,help:device_gps_geoengine.action_iot_gps_geofence
+msgid ""
+"Define geographical boundaries to monitor when vehicles\n"
+"                enter or exit specific areas. Set up alerts for\n"
+"                unauthorized movements or dwell time violations."
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_device_client_visit__departure
+msgid "Departure"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_device_device__client_visit_departure
+msgid "Departure Time"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_device_geo_fence__description
+#: model_terms:ir.ui.view,arch_db:device_gps_geoengine.view_device_geo_fence_form
+msgid "Description"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_device_client_visit__device_id
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_device_geo_fence__device_ids
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_wizard_device_device_view_trail__device_ids
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_wizard_device_device_view_trail_result__device_id
+#: model_terms:ir.ui.view,arch_db:device_gps_geoengine.view_device_device_search_gps_trail
+#: model_terms:ir.ui.view,arch_db:device_gps_geoengine.view_gps_trail_result_search
+msgid "Device"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_device_geo_fence__device_count
+msgid "Device Count"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:geoengine.vector.layer,name:device_gps_geoengine.vector_layer_device_device_location
+msgid "Device Locations"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_wizard_device_device_view_trail_result__device_name
+msgid "Device Name"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_device_geo_fence__devices_inside_ids
+#: model_terms:ir.ui.view,arch_db:device_gps_geoengine.view_device_geo_fence_form
+msgid "Devices Inside"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_device_geo_fence__devices_inside_count
+msgid "Devices Inside Count"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_device_geo_fence__devices_inside_last_ids
+msgid "Devices Inside Last"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,help:device_gps_geoengine.field_device_geo_fence__devices_inside_ids
+msgid "Devices currently inside this geofence"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,help:device_gps_geoengine.field_device_geo_fence__device_ids
+msgid "Devices monitored by this geofence"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,help:device_gps_geoengine.field_device_geo_fence__devices_inside_last_ids
+msgid ""
+"Devices that were inside this geofence on the previous cron run. Used to "
+"detect enter/exit transitions."
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:device_gps_geoengine.view_gps_trail_result_form
+msgid "Display"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_device_client_visit__display_name
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_device_data_log_gps__display_name
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_device_device__display_name
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_device_geo_fence__display_name
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_device_state_boundary__display_name
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_device_weekday__display_name
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_ir_websocket__display_name
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_res_partner__display_name
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_wizard_device_device_view_trail__display_name
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_wizard_device_device_view_trail_result__display_name
+msgid "Display Name"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,help:device_gps_geoengine.field_device_weekday__sequence
+msgid "Display order (0=Monday, 6=Sunday)"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:device_gps_geoengine.view_gps_trail_result_list
+msgid "Dist (km)"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:device_gps_geoengine.view_gps_trail_result_form
+msgid "Distance"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_wizard_device_device_view_trail_result__distance_gps
+msgid "Distance Gps"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_wizard_device_device_view_trail_result__distance_odo
+msgid "Distance Odo"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,help:device_gps_geoengine.field_wizard_device_device_view_trail_result__distance_gps
+msgid "Distance calculated from GPS coordinates (Haversine)"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,help:device_gps_geoengine.field_wizard_device_device_view_trail_result__distance_odo
+msgid "Distance from odometer readings (end - start)"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_device_device__current_client_distance_m
+msgid "Distance to Parcel (m)"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:device_gps_geoengine.view_gps_trail_result_geoengine
+msgid "Distance:"
+msgstr ""
+
+#. module: device_gps_geoengine
+#. odoo-javascript
+#: code:addons/device_gps_geoengine/static/src/polygon_draw/polygon_draw_field.js:0
+msgid "Draw polygon on map"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:device_gps_geoengine.view_gps_trail_result_list
+msgid "Driving"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_wizard_device_device_view_trail_result__driving_hours
+msgid "Driving Hours"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:device_gps_geoengine.view_gps_trail_result_geoengine
+msgid "Driving:"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:device_gps_geoengine.view_device_client_visit_list
+#: model_terms:ir.ui.view,arch_db:device_gps_geoengine.view_gps_trail_result_list
+msgid "Duration"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_device_client_visit__duration_hours
+msgid "Duration (h)"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_wizard_device_device_view_trail_result__duration_hours
+msgid "Duration Hours"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:device_gps_geoengine.view_gps_trail_result_geoengine
+msgid "Duration:"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_device_device__dwell_notification_sent
+msgid "Dwell Notification Sent"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_device_geo_fence__dwell_time
+msgid "Dwell Time"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:geoengine.raster.layer,name:device_gps_geoengine.raster_layer_device_data_log_gps_esri_satellite
+#: model:geoengine.raster.layer,name:device_gps_geoengine.raster_layer_device_device_esri_satellite
+#: model:geoengine.raster.layer,name:device_gps_geoengine.raster_layer_device_geo_fence_esri_satellite
+#: model:geoengine.raster.layer,name:device_gps_geoengine.raster_layer_gps_trail_result_esri_satellite
+#: model:geoengine.raster.layer,name:device_gps_geoengine.raster_layer_res_partner_client_esri_satellite
+msgid "ESRI Satellite"
+msgstr ""
+
+#. module: device_gps_geoengine
+#. odoo-python
+#: code:addons/device_gps_geoengine/models/device_geo_fence.py:0
+msgid "Each polygon point must be a [latitude, longitude] pair of numbers"
+msgstr ""
+
+#. module: device_gps_geoengine
+#. odoo-javascript
+#: code:addons/device_gps_geoengine/static/src/polygon_draw/polygon_draw_field.js:0
+msgid "Edit polygon on map (%s points)"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,help:device_gps_geoengine.field_device_client_visit__duration_hours
+msgid ""
+"Elapsed time so far while the visit is ongoing (recomputed on every read, "
+"not stored, so it stays current without needing the cron to touch the row); "
+"the final arrival-to-departure span once it has ended. Not stored, so it "
+"cannot be summed by group-by (aggregator=None) -- grouping crashed on that "
+"before this was added."
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,help:device_gps_geoengine.field_device_client_visit__departure
+msgid "Empty while the visit is still ongoing."
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,help:device_gps_geoengine.field_wizard_device_device_view_trail__date_to
+msgid "End date/time for trail generation (in your timezone)"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,help:device_gps_geoengine.field_device_geo_fence__schedule_time_to
+msgid "End time (24h format, e.g., 17.5 for 17:30)"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:device_gps_geoengine.view_device_geo_fence_form
+msgid "Enter geofence description..."
+msgstr ""
+
+#. module: device_gps_geoengine
+#. odoo-python
+#: code:addons/device_gps_geoengine/models/device_geo_fence.py:0
+msgid "Entered geofence %(geofence)s."
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model_terms:ir.actions.act_window,help:device_gps_geoengine.action_device_client_visit
+msgid ""
+"Every time a vehicle enters and leaves a client's parcel, a\n"
+"                record is kept here with the arrival time, the departure time\n"
+"                and the duration."
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:device_gps_geoengine.view_device_client_visit_search
+msgid "Finished"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:device.weekday,name:device_gps_geoengine.weekday_4_friday
+msgid "Friday"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:device_gps_geoengine.view_gps_trail_result_form
+msgid "Fuel"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_wizard_device_device_view_trail_result__fuel_consumed
+msgid "Fuel Consumed"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_wizard_device_device_view_trail_result__fuel_efficiency
+msgid "Fuel Efficiency"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_wizard_device_device_view_trail_result__fuel_end
+msgid "Fuel End"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_wizard_device_device_view_trail_result__fuel_start
+msgid "Fuel Start"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,help:device_gps_geoengine.field_wizard_device_device_view_trail_result__fuel_consumed
+msgid "Fuel consumed during trail"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,help:device_gps_geoengine.field_wizard_device_device_view_trail_result__fuel_end
+msgid "Fuel level at trail end"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,help:device_gps_geoengine.field_wizard_device_device_view_trail_result__fuel_start
+msgid "Fuel level at trail start"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:device_gps_geoengine.view_gps_trail_result_geoengine
+msgid "Fuel:"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,help:device_gps_geoengine.field_device_geo_fence__usage
+msgid ""
+"Functional role of this geofence (internal operation, restricted area, ...)."
+" Extended by bridge modules; e.g. agricultural surface."
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:device_gps_geoengine.view_gps_trail_result_form
+msgid "GPS Distance (km)"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:device_gps_geoengine.view_device_geo_fence_form
+msgid "GPS Geofence"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.actions.act_window,name:device_gps_geoengine.action_iot_gps_geofence
+msgid "GPS Geofences"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.actions.act_window,name:device_gps_geoengine.action_device_device_gps_map
+msgid "GPS Live Tracking"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model_terms:ir.actions.act_window,help:device_gps_geoengine.action_device_device_gps_map
+msgid "GPS Live Tracking shows devices in real-time on a map."
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_device_device__the_point
+msgid "GPS Location"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:geoengine.vector.layer,name:device_gps_geoengine.vector_layer_device_data_log_gps_points
+msgid "GPS Tracking Points"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:device_gps_geoengine.view_gps_trail_result_form
+msgid "GPS Trail"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model,name:device_gps_geoengine.model_wizard_device_device_view_trail_result
+msgid "GPS Trail Result"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model,name:device_gps_geoengine.model_wizard_device_device_view_trail
+msgid "GPS Trail Wizard"
+msgstr ""
+
+#. module: device_gps_geoengine
+#. odoo-python
+#: code:addons/device_gps_geoengine/wizards/wizard_device_device_view_trail.py:0
+#: model:geoengine.vector.layer,name:device_gps_geoengine.vector_layer_gps_trail_result_lines
+#: model_terms:ir.ui.view,arch_db:device_gps_geoengine.view_gps_trail_result_list
+#: model_terms:ir.ui.view,arch_db:device_gps_geoengine.view_gps_trail_result_search
+msgid "GPS Trails"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model,name:device_gps_geoengine.model_device_client_visit
+msgid "GPS Visit to a Client Parcel"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,help:device_gps_geoengine.field_wizard_device_device_view_trail__resolved_device_ids
+msgid "GPS devices resolved from selection (computed)"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:device_gps_geoengine.view_device_device_geoengine
+#: model_terms:ir.ui.view,arch_db:device_gps_geoengine.view_gps_trail_result_geoengine
+msgid "GPS:"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.actions.server,name:device_gps_geoengine.ir_cron_gps_check_unmapped_dwell_ir_actions_server
+msgid "GPS: Check Unmapped Parcel Dwell"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.actions.server,name:device_gps_geoengine.ir_cron_gps_process_geofence_alerts_ir_actions_server
+msgid "GPS: Process Geofence Alerts"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.actions.server,name:device_gps_geoengine.ir_cron_gps_track_client_visits_ir_actions_server
+msgid "GPS: Track Client Visit Arrival/Departure"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,help:device_gps_geoengine.field_device_device__current_client_distance_m
+msgid ""
+"Geodesic metres from the last known position to the edge of "
+"current_client_geofence_id: 0 while inside the polygon, up to the proximity "
+"tolerance while beside it."
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:geoengine.vector.layer,name:device_gps_geoengine.vector_layer_device_geo_fence_boundaries
+msgid "Geofence Boundaries"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:device_gps_geoengine.view_device_geo_fence_form
+msgid "Geofence Definition"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:device_gps_geoengine.view_device_geo_fence_form
+msgid "Geofence Name"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_device_geo_fence__geofence_type
+msgid "Geofence Type"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,help:device_gps_geoengine.field_device_geo_fence__description
+msgid "Geofence description"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,help:device_gps_geoengine.field_device_geo_fence__name
+msgid "Geofence name"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,help:device_gps_geoengine.field_device_geo_fence__geofence_type
+msgid "Geofence shape type"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.ui.menu,name:device_gps_geoengine.menu_gps_geofences
+msgid "Geofences"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,help:device_gps_geoengine.field_device_device__gps_geofence_ids
+msgid "Geofences being monitored for this device"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,help:device_gps_geoengine.field_device_device__gps_inside_geofence_ids
+msgid "Geofences the device is currently inside"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.ui.menu,name:device_gps_geoengine.menu_gps_geofencing
+msgid "Geofencing"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,help:device_gps_geoengine.field_wizard_device_device_view_trail_result__the_trail
+msgid "Geographic line representing the trail (WGS84/EPSG:4326)"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,help:device_gps_geoengine.field_device_data_log_gps__the_point
+msgid "Geographic point for map display (WGS84/EPSG:4326)"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_device_state_boundary__geom
+msgid "Geom"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:geoengine.raster.layer,name:device_gps_geoengine.raster_layer_device_data_log_gps_google_hybrid
+#: model:geoengine.raster.layer,name:device_gps_geoengine.raster_layer_device_device_google_hybrid
+#: model:geoengine.raster.layer,name:device_gps_geoengine.raster_layer_device_geo_fence_google_hybrid
+#: model:geoengine.raster.layer,name:device_gps_geoengine.raster_layer_gps_trail_result_google_hybrid
+#: model:geoengine.raster.layer,name:device_gps_geoengine.raster_layer_res_partner_client_google_hybrid
+msgid "Google Hybrid"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:geoengine.raster.layer,name:device_gps_geoengine.raster_layer_device_data_log_gps_google_sat
+#: model:geoengine.raster.layer,name:device_gps_geoengine.raster_layer_device_device_google_sat
+#: model:geoengine.raster.layer,name:device_gps_geoengine.raster_layer_device_geo_fence_google_sat
+#: model:geoengine.raster.layer,name:device_gps_geoengine.raster_layer_gps_trail_result_google_sat
+#: model:geoengine.raster.layer,name:device_gps_geoengine.raster_layer_res_partner_client_google_sat
+msgid "Google Satellite"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:geoengine.raster.layer,name:device_gps_geoengine.raster_layer_device_data_log_gps_google_terrain
+#: model:geoengine.raster.layer,name:device_gps_geoengine.raster_layer_device_device_google_terrain
+#: model:geoengine.raster.layer,name:device_gps_geoengine.raster_layer_device_geo_fence_google_terrain
+#: model:geoengine.raster.layer,name:device_gps_geoengine.raster_layer_gps_trail_result_google_terrain
+#: model:geoengine.raster.layer,name:device_gps_geoengine.raster_layer_res_partner_client_google_terrain
+msgid "Google Terrain"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_wizard_device_device_view_trail__group_by
+msgid "Group By"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields.selection,name:device_gps_geoengine.selection__wizard_device_device_view_trail__group_by__day
+msgid "Group by Day"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:device_gps_geoengine.view_device_geo_fence_tree
+msgid "Ha"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,help:device_gps_geoengine.field_device_device__map_title
+msgid ""
+"Headline the live map puts on this device's marker. The map does not know "
+"what a vehicle or a driver is; a bridge that does overrides this to say so."
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,help:device_gps_geoengine.field_wizard_device_device_view_trail__trail_color
+msgid "Hex color for trail lines"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,help:device_gps_geoengine.field_wizard_device_device_view_trail__group_by
+msgid "How to group GPS points into trails"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:device_gps_geoengine.view_device_device_geoengine
+msgid "Hoy:"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,help:device_gps_geoengine.field_wizard_device_device_view_trail__selection_summary
+msgid "Human-readable summary of current selection"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_device_client_visit__id
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_device_data_log_gps__id
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_device_device__id
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_device_geo_fence__id
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_device_state_boundary__id
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_device_weekday__id
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_ir_websocket__id
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_res_partner__id
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_wizard_device_device_view_trail__id
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_wizard_device_device_view_trail_result__id
+msgid "ID"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_wizard_device_device_view_trail_result__idling_hours
+msgid "Idling Hours"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:device_gps_geoengine.view_gps_trail_result_geoengine
+msgid "Idling:"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:device_gps_geoengine.view_device_geo_fence_form
+#: model_terms:ir.ui.view,arch_db:device_gps_geoengine.view_device_geo_fence_search
+msgid "Inactive"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_device_device__gps_inside_geofence_ids
+msgid "Inside Geofences"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields.selection,name:device_gps_geoengine.selection__device_geo_fence__usage__internal
+msgid "Internal"
+msgstr ""
+
+#. module: device_gps_geoengine
+#. odoo-python
+#: code:addons/device_gps_geoengine/models/device_geo_fence.py:0
+msgid "Invalid polygon points format"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model,name:device_gps_geoengine.model_device_geo_fence
+msgid "IoT GPS Geofence"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model,name:device_gps_geoengine.model_device_data_log_gps
+msgid "IoT GPS Tracking log"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model,name:device_gps_geoengine.model_device_device
+msgid "IoT Remote Device"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,help:device_gps_geoengine.field_wizard_device_device_view_trail_result__trail_timestamps
+msgid ""
+"JSON array of Unix timestamps (seconds) for each coordinate in the trail. "
+"Used for WebGL time-based animation."
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,help:device_gps_geoengine.field_device_geo_fence__polygon_points
+msgid ""
+"JSON array of [lat, lon] points: the outer ring of the geofence's first "
+"area. Writing it replaces the shape."
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,help:device_gps_geoengine.field_wizard_device_device_view_trail_result__fuel_efficiency
+msgid "Kilometers per liter (higher is better)"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:device_gps_geoengine.view_gps_trail_result_geoengine
+msgid "L"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_device_client_visit__write_uid
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_device_geo_fence__write_uid
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_device_state_boundary__write_uid
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_device_weekday__write_uid
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_wizard_device_device_view_trail__write_uid
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_wizard_device_device_view_trail_result__write_uid
+msgid "Last Updated by"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_device_client_visit__write_date
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_device_geo_fence__write_date
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_device_state_boundary__write_date
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_device_weekday__write_date
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_wizard_device_device_view_trail__write_date
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_wizard_device_device_view_trail_result__write_date
+msgid "Last Updated on"
+msgstr ""
+
+#. module: device_gps_geoengine
+#. odoo-python
+#: code:addons/device_gps_geoengine/models/device_geo_fence.py:0
+msgid "Latitude must be between -90 and 90"
+msgstr ""
+
+#. module: device_gps_geoengine
+#. odoo-python
+#: code:addons/device_gps_geoengine/models/device_geo_fence.py:0
+msgid "Left geofence %(geofence)s."
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_wizard_device_device_view_trail_result__length_km
+msgid "Length Km"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,help:device_gps_geoengine.field_device_state_boundary__state_id
+msgid "Link to res.country.state for this boundary"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.ui.menu,name:device_gps_geoengine.menu_gps_live_tracking
+msgid "Live Tracking"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:device_gps_geoengine.view_device_geo_fence_form
+msgid "Location Details"
+msgstr ""
+
+#. module: device_gps_geoengine
+#. odoo-python
+#: code:addons/device_gps_geoengine/models/device_geo_fence.py:0
+msgid "Longitude must be between -180 and 180"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.ui.menu,name:device_gps_geoengine.menu_gps_geoengine_root
+msgid "Map"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_device_device__map_subtitle
+msgid "Map Subtitle"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_device_device__map_title
+msgid "Map Title"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:device_gps_geoengine.view_gps_trail_result_geoengine
+msgid "Max Speed:"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_device_device__gps_speed_max_today
+msgid "Maximum Speed Today (km/h)"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,help:device_gps_geoengine.field_wizard_device_device_view_trail_result__speed_max
+msgid "Maximum speed recorded during trail"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,help:device_gps_geoengine.field_device_device__gps_speed_avg_today
+msgid ""
+"Mean of today's speed readings while moving (zero readings excluded), in the"
+" user's timezone. Per reading, not per time: a tracker that reports more "
+"often on the highway pulls it up."
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,help:device_gps_geoengine.field_device_geo_fence__dwell_time
+msgid "Minutes before dwell alert is triggered"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:device.weekday,name:device_gps_geoengine.weekday_0_monday
+msgid "Monday"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:device_gps_geoengine.view_device_geo_fence_form
+msgid "Monitored Devices"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_device_device__gps_geofence_ids
+msgid "Monitored Geofences"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,help:device_gps_geoengine.field_device_state_boundary__geom
+msgid "MultiPolygon geometry of state boundary"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_device_geo_fence__name
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_device_state_boundary__name
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_device_weekday__name
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_wizard_device_device_view_trail_result__name
+msgid "Name"
+msgstr ""
+
+#. module: device_gps_geoengine
+#. odoo-python
+#: code:addons/device_gps_geoengine/wizards/wizard_device_device_view_trail.py:0
+msgid "No GPS data found for the selection in the specified date range"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model_terms:ir.actions.act_window,help:device_gps_geoengine.action_device_device_gps_map
+msgid "No GPS devices found"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model_terms:ir.actions.act_window,help:device_gps_geoengine.action_res_partner_client_locations_map
+msgid "No client locations found"
+msgstr ""
+
+#. module: device_gps_geoengine
+#. odoo-python
+#: code:addons/device_gps_geoengine/wizards/wizard_device_device_view_trail.py:0
+msgid "No devices selected"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model_terms:ir.actions.act_window,help:device_gps_geoengine.action_device_client_visit
+msgid "No visits recorded yet"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,help:device_gps_geoengine.field_wizard_device_device_view_trail_result__point_count
+msgid "Number of GPS points in this trail"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,help:device_gps_geoengine.field_device_geo_fence__devices_inside_count
+msgid "Number of devices currently inside"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,help:device_gps_geoengine.field_device_geo_fence__device_count
+msgid "Number of devices monitored"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,help:device_gps_geoengine.field_wizard_device_device_view_trail_result__stop_count
+msgid "Number of ignition-off stops during trail"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,help:device_gps_geoengine.field_device_weekday__code
+msgid "Numeric code matching Python datetime.weekday() (0=Monday, 6=Sunday)"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_wizard_device_device_view_trail_result__odometer_end
+msgid "Odometer End"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_wizard_device_device_view_trail_result__odometer_start
+msgid "Odometer Start"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,help:device_gps_geoengine.field_wizard_device_device_view_trail_result__odometer_end
+msgid "Odometer reading at trail end"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,help:device_gps_geoengine.field_wizard_device_device_view_trail_result__odometer_start
+msgid "Odometer reading at trail start"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields.selection,name:device_gps_geoengine.selection__wizard_device_device_view_trail__group_by__source
+msgid "One Trail per Selection"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:device_gps_geoengine.view_device_client_visit_search
+msgid "Ongoing"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_device_device__client_visit_log_id
+msgid "Open Visit Log"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:geoengine.raster.layer,name:device_gps_geoengine.raster_layer_device_data_log_gps_osm
+#: model:geoengine.raster.layer,name:device_gps_geoengine.raster_layer_device_device_osm
+#: model:geoengine.raster.layer,name:device_gps_geoengine.raster_layer_device_geo_fence_osm
+#: model:geoengine.raster.layer,name:device_gps_geoengine.raster_layer_gps_trail_result_osm
+#: model:geoengine.raster.layer,name:device_gps_geoengine.raster_layer_res_partner_client_osm
+msgid "OpenStreetMap"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:geoengine.raster.layer,name:device_gps_geoengine.raster_layer_device_data_log_gps_topo
+#: model:geoengine.raster.layer,name:device_gps_geoengine.raster_layer_device_device_topo
+#: model:geoengine.raster.layer,name:device_gps_geoengine.raster_layer_device_geo_fence_topo
+#: model:geoengine.raster.layer,name:device_gps_geoengine.raster_layer_gps_trail_result_topo
+#: model:geoengine.raster.layer,name:device_gps_geoengine.raster_layer_res_partner_client_topo
+msgid "OpenTopoMap"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields.selection,name:device_gps_geoengine.selection__device_geo_fence__usage__other
+msgid "Other"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_device_client_visit__geofence_id
+#: model:ir.model.fields.selection,name:device_gps_geoengine.selection__device_geo_fence__area_type__parcel
+msgid "Parcel"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,help:device_gps_geoengine.field_device_device__client_visit_geofence_id
+msgid ""
+"Parcel of the current or most recent client visit. Kept after the device "
+"leaves (client_visit_departure gets set) until a new visit -- to this or "
+"another parcel -- starts."
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:device_gps_geoengine.view_device_geo_fence_search
+msgid "Parcels"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_device_geo_fence__parent_id
+msgid "Parent"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_device_geo_fence__parent_path
+msgid "Parent Path"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,help:device_gps_geoengine.field_device_geo_fence__parent_id
+msgid "Parent geofence for hierarchy (e.g., property containing parcels)"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_wizard_device_device_view_trail_result__parked_hours
+msgid "Parked Hours"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_device_geo_fence__partner_id
+msgid "Partner"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,help:device_gps_geoengine.field_res_bank__client_salesperson_name
+#: model:ir.model.fields,help:device_gps_geoengine.field_res_company__client_salesperson_name
+#: model:ir.model.fields,help:device_gps_geoengine.field_res_partner__client_salesperson_name
+#: model:ir.model.fields,help:device_gps_geoengine.field_res_users__client_salesperson_name
+msgid ""
+"Plain-text mirror of Salesperson, for map layers that can only carry a "
+"char/text field (Client Locations overlay's color_field_id) alongside the "
+"geometry."
+msgstr ""
+
+#. module: device_gps_geoengine
+#. odoo-python
+#: code:addons/device_gps_geoengine/wizards/wizard_device_device_view_trail.py:0
+msgid "Please select at least one GPS device"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_wizard_device_device_view_trail_result__point_count
+msgid "Point Count"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,help:device_gps_geoengine.field_res_bank__client_the_point
+#: model:ir.model.fields,help:device_gps_geoengine.field_res_company__client_the_point
+#: model:ir.model.fields,help:device_gps_geoengine.field_res_partner__client_the_point
+#: model:ir.model.fields,help:device_gps_geoengine.field_res_users__client_the_point
+msgid ""
+"Point built from Geo Latitude/Geo Longitude (Partner Assignment), for the "
+"Client Locations map."
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields.selection,name:device_gps_geoengine.selection__device_geo_fence__geofence_type__polygon
+#: model_terms:ir.ui.view,arch_db:device_gps_geoengine.view_device_geo_fence_search
+msgid "Polygon"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_device_geo_fence__polygon_points
+msgid "Polygon Points"
+msgstr ""
+
+#. module: device_gps_geoengine
+#. odoo-python
+#: code:addons/device_gps_geoengine/models/device_geo_fence.py:0
+msgid "Polygon geofence requires points"
+msgstr ""
+
+#. module: device_gps_geoengine
+#. odoo-javascript
+#: code:addons/device_gps_geoengine/static/src/polygon_draw/polygon_draw_dialog.xml:0
+msgid "Polygon is read-only."
+msgstr ""
+
+#. module: device_gps_geoengine
+#. odoo-python
+#: code:addons/device_gps_geoengine/models/device_geo_fence.py:0
+msgid "Polygon point out of range (latitude ±90, longitude ±180)"
+msgstr ""
+
+#. module: device_gps_geoengine
+#. odoo-python
+#: code:addons/device_gps_geoengine/models/device_geo_fence.py:0
+msgid "Polygon requires at least 3 points"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:device_gps_geoengine.view_device_geo_fence_search
+msgid "Properties"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields.selection,name:device_gps_geoengine.selection__device_geo_fence__area_type__property
+msgid "Property"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_device_geo_fence__radius
+msgid "Radius"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,help:device_gps_geoengine.field_device_geo_fence__radius
+msgid "Radius in meters for circle geofence"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields.selection,name:device_gps_geoengine.selection__device_geo_fence__geofence_type__rectangle
+#: model_terms:ir.ui.view,arch_db:device_gps_geoengine.view_device_geo_fence_search
+msgid "Rectangle"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:res.groups,name:device_gps_geoengine.group_device_gps_geofence_editor
+msgid "Remote GPS Geofence Editor"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_wizard_device_device_view_trail__resolved_device_ids
+msgid "Resolved Device"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields.selection,name:device_gps_geoengine.selection__device_geo_fence__usage__restricted
+msgid "Restricted zone"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_res_bank__client_salesperson_name
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_res_company__client_salesperson_name
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_res_partner__client_salesperson_name
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_res_users__client_salesperson_name
+msgid "Salesperson"
+msgstr ""
+
+#. module: device_gps_geoengine
+#. odoo-javascript
+#: code:addons/device_gps_geoengine/static/src/polygon_draw/polygon_draw_dialog.xml:0
+msgid "Satellite"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:device.weekday,name:device_gps_geoengine.weekday_5_saturday
+msgid "Saturday"
+msgstr ""
+
+#. module: device_gps_geoengine
+#. odoo-javascript
+#: code:addons/device_gps_geoengine/static/src/polygon_draw/polygon_draw_dialog.xml:0
+msgid "Save"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:device_gps_geoengine.view_device_geo_fence_form
+#: model_terms:ir.ui.view,arch_db:device_gps_geoengine.view_device_geo_fence_search
+msgid "Schedule"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_device_geo_fence__schedule_time_from
+msgid "Schedule Time From"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_device_geo_fence__schedule_time_to
+msgid "Schedule Time To"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_device_geo_fence__schedule_type
+msgid "Schedule Type"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_device_geo_fence__schedule_weekday_ids
+msgid "Schedule Weekday"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:device_gps_geoengine.view_device_device_search_gps_trail
+msgid "Search GPS Devices for Trail"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:device_gps_geoengine.view_gps_trail_wizard_form
+msgid "Search by device or IMEI..."
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:device_gps_geoengine.view_gps_trail_wizard_form
+msgid "Select GPS Devices"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,help:device_gps_geoengine.field_wizard_device_device_view_trail__device_ids
+msgid "Select GPS devices directly (advanced)"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_wizard_device_device_view_trail__selection_mode
+#: model_terms:ir.ui.view,arch_db:device_gps_geoengine.view_gps_trail_wizard_form
+msgid "Selection Mode"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_wizard_device_device_view_trail__selection_summary
+msgid "Selection Summary"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,help:device_gps_geoengine.field_device_geo_fence__alert_on_enter
+msgid "Send alert when device enters geofence"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,help:device_gps_geoengine.field_device_geo_fence__alert_on_exit
+msgid "Send alert when device exits geofence"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,help:device_gps_geoengine.field_device_geo_fence__alert_on_dwell
+msgid "Send alert when device stays in geofence too long"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_device_weekday__sequence
+msgid "Sequence"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:device_gps_geoengine.view_device_geo_fence_form
+msgid "Shape Parameters"
+msgstr ""
+
+#. module: device_gps_geoengine
+#. odoo-javascript
+#: code:addons/device_gps_geoengine/static/src/polygon_draw/polygon_draw_dialog.xml:0
+msgid "Show existing geofences"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields.selection,name:device_gps_geoengine.selection__wizard_device_device_view_trail__group_by__single
+msgid "Single Combined Trail"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,help:device_gps_geoengine.field_wizard_device_device_view_trail_result__device_id
+msgid "Source GPS device for this trail"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:device_gps_geoengine.view_gps_trail_result_form
+msgid "Source Information"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:device_gps_geoengine.view_gps_trail_result_form
+msgid "Speed"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_wizard_device_device_view_trail_result__speed_avg
+msgid "Speed Avg"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_wizard_device_device_view_trail_result__speed_max
+msgid "Speed Max"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:device_gps_geoengine.view_device_device_geoengine
+msgid "Speed:"
+msgstr ""
+
+#. module: device_gps_geoengine
+#. odoo-python
+#: code:addons/device_gps_geoengine/wizards/wizard_device_device_view_trail.py:0
+msgid "Start date must be before end date"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,help:device_gps_geoengine.field_wizard_device_device_view_trail__date_from
+msgid "Start date/time for trail generation (in your timezone)"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,help:device_gps_geoengine.field_device_geo_fence__schedule_time_from
+msgid "Start time (24h format, e.g., 8.5 for 8:30)"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_device_geo_fence__state_id
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_device_state_boundary__state_id
+msgid "State"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,help:device_gps_geoengine.field_device_geo_fence__state_id
+msgid "State determined from geofence centroid coordinates"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model,name:device_gps_geoengine.model_device_state_boundary
+msgid "State/Province Boundary"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:device_gps_geoengine.view_device_geo_fence_form
+msgid "Statistics"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:device_gps_geoengine.view_device_device_geoengine
+msgid "Status:"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_wizard_device_device_view_trail_result__stop_count
+msgid "Stop Count"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:device_gps_geoengine.view_gps_trail_result_geoengine
+msgid "Stops:"
+msgstr ""
+
+#. module: device_gps_geoengine
+#. odoo-javascript
+#: code:addons/device_gps_geoengine/static/src/polygon_draw/polygon_draw_dialog.xml:0
+msgid "Streets"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields.selection,name:device_gps_geoengine.selection__device_geo_fence__area_type__structure
+msgid "Structure"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:device_gps_geoengine.view_device_geo_fence_search
+msgid "Structures"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:device_gps_geoengine.view_gps_trail_wizard_form
+msgid "Styling"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:device.weekday,name:device_gps_geoengine.weekday_6_sunday
+msgid "Sunday"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_device_geo_fence__surface
+msgid "Surface"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,help:device_gps_geoengine.field_device_geo_fence__surface
+msgid "Surface area in hectares"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_device_geo_fence__the_geom
+msgid "The Geom"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_device_data_log_gps__the_point
+msgid "The Point"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_wizard_device_device_view_trail_result__the_trail
+msgid "The Trail"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,help:device_gps_geoengine.field_res_bank__client_the_area
+#: model:ir.model.fields,help:device_gps_geoengine.field_res_company__client_the_area
+#: model:ir.model.fields,help:device_gps_geoengine.field_res_partner__client_the_area
+#: model:ir.model.fields,help:device_gps_geoengine.field_res_users__client_the_area
+msgid ""
+"The client's own mapped parcel(s) when any exist, otherwise a 150 m circle "
+"around Geo Latitude/Geo Longitude, so every client with either kind of "
+"location can be drawn on a single polygon layer."
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,help:device_gps_geoengine.field_device_device__client_visit_log_id
+msgid ""
+"The device.client.visit row for the current visit, open (no departure) until"
+" the device leaves."
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,help:device_gps_geoengine.field_device_geo_fence__the_geom
+msgid ""
+"The geofence's shape: containment and alerts test against it. A circle's "
+"is drawn from its centre and radius."
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:device.weekday,name:device_gps_geoengine.weekday_3_thursday
+msgid "Thursday"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:device_gps_geoengine.view_gps_trail_result_form
+msgid "Time Breakdown"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:device_gps_geoengine.view_gps_trail_result_form
+msgid "Time Range"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,help:device_gps_geoengine.field_wizard_device_device_view_trail_result__parked_hours
+msgid "Time with ignition OFF"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,help:device_gps_geoengine.field_wizard_device_device_view_trail_result__driving_hours
+msgid "Time with ignition ON and vehicle moving"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,help:device_gps_geoengine.field_wizard_device_device_view_trail_result__idling_hours
+msgid "Time with ignition ON but vehicle stationary"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:device_gps_geoengine.view_device_client_visit_search
+msgid "Today"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,help:device_gps_geoengine.field_wizard_device_device_view_trail_result__duration_hours
+msgid "Total time span from first to last GPS point"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:device_gps_geoengine.view_device_device_search_gps_trail
+msgid "Tracking Enabled"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:device_gps_geoengine.view_gps_trail_result_search
+msgid "Trail"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_wizard_device_device_view_trail__trail_color
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_wizard_device_device_view_trail_result__trail_color
+msgid "Trail Color"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:device_gps_geoengine.view_gps_trail_result_form
+msgid "Trail Geometry"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:device_gps_geoengine.view_gps_trail_wizard_form
+msgid "Trail Options"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_wizard_device_device_view_trail_result__trail_timestamps
+msgid "Trail Timestamps"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:device.weekday,name:device_gps_geoengine.weekday_1_tuesday
+msgid "Tuesday"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:device_gps_geoengine.view_device_geo_fence_search
+msgid "Type"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_device_geo_fence__usage
+#: model_terms:ir.ui.view,arch_db:device_gps_geoengine.view_device_geo_fence_search
+msgid "Usage"
+msgstr ""
+
+#. module: device_gps_geoengine
+#. odoo-python
+#: code:addons/device_gps_geoengine/models/device_device.py:0
+msgid "Vehicle stopped without a mapped client parcel"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:device_gps_geoengine.view_device_device_geoengine
+#: model_terms:ir.ui.view,arch_db:device_gps_geoengine.view_res_partner_client_locations_map
+msgid "Vendedor:"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:device_gps_geoengine.view_device_device_geoengine
+msgid "Ver detalle completo en Client Locations"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:device_gps_geoengine.view_device_geo_fence_form
+msgid "View Devices"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:device_gps_geoengine.view_device_geo_fence_form
+msgid "View Devices Inside"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.actions.act_window,name:device_gps_geoengine.action_gps_trail_wizard
+#: model_terms:ir.ui.view,arch_db:device_gps_geoengine.view_gps_trail_wizard_form
+msgid "View GPS Trails"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.ui.menu,name:device_gps_geoengine.menu_gps_trail_wizard
+#: model_terms:ir.ui.view,arch_db:device_gps_geoengine.view_gps_trail_wizard_form
+msgid "View Trails"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:device_gps_geoengine.view_device_geo_fence_form
+#: model_terms:ir.ui.view,arch_db:device_gps_geoengine.view_device_geo_fence_tree
+msgid "View on Map"
+msgstr ""
+
+#. module: device_gps_geoengine
+#. odoo-javascript
+#: code:addons/device_gps_geoengine/static/src/geoengine_device_trail.xml:0
+msgid "View today's GPS trail for this device"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.ui.menu,name:device_gps_geoengine.menu_device_client_visit
+msgid "Visitas a Clientes"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_device_device__client_visit_partner_id
+msgid "Visited Client"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,field_description:device_gps_geoengine.field_device_device__client_visit_geofence_id
+msgid "Visited Parcel"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:device.weekday,name:device_gps_geoengine.weekday_2_wednesday
+msgid "Wednesday"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,help:device_gps_geoengine.field_device_device__client_visit_departure
+msgid ""
+"When the device was first detected off client_visit_geofence_id. Empty while"
+" the visit is still ongoing."
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,help:device_gps_geoengine.field_device_device__client_visit_arrival
+msgid "When the device was first detected on client_visit_geofence_id."
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,help:device_gps_geoengine.field_device_geo_fence__schedule_type
+msgid "When this geofence is active"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model.fields,help:device_gps_geoengine.field_device_geo_fence__active
+msgid "Whether this geofence is active"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:device_gps_geoengine.view_device_geo_fence_kanban
+#: model_terms:ir.ui.view,arch_db:device_gps_geoengine.view_device_geo_fence_map
+msgid "devices"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:device_gps_geoengine.view_device_geo_fence_kanban
+#: model_terms:ir.ui.view,arch_db:device_gps_geoengine.view_device_geo_fence_map
+msgid "ha"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:device_gps_geoengine.view_gps_trail_result_geoengine
+msgid "hrs"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:device_gps_geoengine.view_device_geo_fence_kanban
+#: model_terms:ir.ui.view,arch_db:device_gps_geoengine.view_device_geo_fence_map
+msgid "inside"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:device_gps_geoengine.view_gps_trail_result_geoengine
+msgid "km"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:device_gps_geoengine.view_device_data_log_gps_map
+#: model_terms:ir.ui.view,arch_db:device_gps_geoengine.view_device_device_geoengine
+#: model_terms:ir.ui.view,arch_db:device_gps_geoengine.view_gps_trail_result_geoengine
+msgid "km/h"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:device_gps_geoengine.view_device_device_geoengine
+msgid ""
+"km/h,\n"
+"                                        máx."
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:device_gps_geoengine.view_device_device_geoengine
+msgid "m)"
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model_terms:ir.ui.view,arch_db:device_gps_geoengine.view_device_device_geoengine
+msgid "prom."
+msgstr ""
+
+#. module: device_gps_geoengine
+#: model:ir.model,name:device_gps_geoengine.model_ir_websocket
+msgid "websocket message handling"
+msgstr ""

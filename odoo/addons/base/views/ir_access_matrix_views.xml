@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="ir_access_matrix_view_list" model="ir.ui.view">
+        <field name="name">ir.access.matrix.list</field>
+        <field name="model">ir.access.matrix</field>
+        <field name="arch" type="xml">
+            <list string="Access Matrix" create="0" edit="0" delete="0">
+                <field name="model_id" />
+                <field name="group_id" />
+                <field name="read_reach" />
+                <field name="write_reach" />
+                <field name="create_reach" />
+                <field name="unlink_reach" />
+                <field name="verb_reach" optional="show" />
+                <field name="guard_names" optional="show" />
+                <field name="category_id" optional="hide" />
+                <field name="privilege_id" optional="hide" />
+                <field name="is_privilege" optional="hide" />
+                <field name="permission_count" optional="hide" />
+            </list>
+        </field>
+    </record>
+
+    <record id="ir_access_matrix_view_pivot" model="ir.ui.view">
+        <field name="name">ir.access.matrix.pivot</field>
+        <field name="model">ir.access.matrix</field>
+        <field name="arch" type="xml">
+            <pivot string="Access Matrix" disable_linking="1">
+                <field name="model_id" type="row" />
+                <field name="group_id" type="col" />
+                <field name="operation_count" type="measure" />
+                <field name="guard_count" type="measure" />
+            </pivot>
+        </field>
+    </record>
+
+    <record id="ir_access_matrix_view_search" model="ir.ui.view">
+        <field name="name">ir.access.matrix.search</field>
+        <field name="model">ir.access.matrix</field>
+        <field name="arch" type="xml">
+            <search string="Access Matrix">
+                <field name="model_id" />
+                <field name="group_id" />
+                <field name="category_id" />
+                <field name="privilege_id" />
+                <field name="changeset_ids" />
+                <filter
+                    name="privileges"
+                    string="Named Privileges"
+                    domain="[('is_privilege', '=', True)]" />
+                <filter
+                    name="groups"
+                    string="Groups People Hold"
+                    domain="[('is_privilege', '=', False)]" />
+                <separator />
+                <filter
+                    name="guarded"
+                    string="Guarded Models"
+                    domain="[('guard_count', '&gt;', 0)]" />
+                <filter
+                    name="changed"
+                    string="Changed in an Open Change Set"
+                    domain="[('changeset_ids', '!=', False)]" />
+                <group>
+                    <filter
+                        name="group_by_model"
+                        string="Model"
+                        context="{'group_by': 'model_id'}" />
+                    <filter
+                        name="group_by_group"
+                        string="Group"
+                        context="{'group_by': 'group_id'}" />
+                    <filter
+                        name="group_by_app"
+                        string="App"
+                        context="{'group_by': 'category_id'}" />
+                    <filter
+                        name="group_by_privilege"
+                        string="Privilege"
+                        context="{'group_by': 'privilege_id'}" />
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_ir_access_matrix" model="ir.actions.act_window">
+        <field name="name">Access Matrix</field>
+        <field name="res_model">ir.access.matrix</field>
+        <field name="view_mode">list,pivot</field>
+        <field name="context">{'search_default_group_by_model': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">No group reaches any model</p>
+            <p>
+                Each row is what one group may do on one model: the reach of each
+                operation and verb, and the guards that bind it whatever it reaches.
+            </p>
+        </field>
+    </record>
+
+    <record id="action_res_users_grant_by_person" model="ir.actions.act_window">
+        <field name="name">Grants by Person</field>
+        <field name="res_model">res.users.grant</field>
+        <field name="view_mode">list,form</field>
+        <field
+            name="context">{'search_default_live': 1, 'search_default_group_by_user': 1}</field>
+    </record>
+
+</odoo>

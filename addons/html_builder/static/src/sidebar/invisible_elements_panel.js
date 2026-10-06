@@ -1,0 +1,121 @@
+/** @odoo-module native */
+import { useBuilderContext } from "@html_builder/core/builder_context";
+import { getSnippetName, isElementInViewport } from "@html_builder/utils/utils";
+import {
+    Component,
+    onWillStart,
+    onWillUpdateProps,
+    proxy,
+    t,
+    useProps,
+} from "@odoo/owl";
+
+/**
+ * @typedef {((snippetEl: HTMLElement) => void)[]} on_reveal_target_handlers
+ */
+
+export class InvisibleElementsPanel extends Component {
+    static template = "html_builder.InvisibleElementsPanel";
+    static props = { invisibleEls: t.array(), invisibleSelector: t.string() };
+    props = useProps(this.constructor.props);
+
+    setup() {
+        this.builderContext = useBuilderContext();
+        this.state = proxy({ invisibleEntries: null });
+
+        onWillStart(() => this.updateInvisibleElementsPanel(this.props.invisibleEls));
+
+        onWillUpdateProps((nextProps) => {
+            const { invisibleEls, invisibleSelector } = nextProps;
+            this.updateInvisibleElementsPanel(invisibleEls, invisibleSelector);
+        });
+    }
+
+    get shared() {
+        return this.builderContext.editor.shared;
+    }
+
+    updateInvisibleElementsPanel(
+        invisibleEls,
+        invisibleSelector = this.props.invisibleSelector,
+    ) {
+        // descendantPerSnippet: a map with its keys set to invisible
+        // snippets that have invisible descendants. The value corresponding
+        // to an invisible snippet element is a list filled with all its
+        // descendant invisible snippets except those that have a closer
+        // invisible snippet ancestor.
+        const descendantPerSnippet = new Map();
+        // Filter the invisibleEls to only keep the root snippets
+        // and create the map ("descendantPerSnippet") of the snippets and
+        // their descendant snippets.
+        const rootInvisibleSnippetEls = invisibleEls.filter((invisibleSnippetEl) => {
+            const ancestorInvisibleEl =
+                invisibleSnippetEl.parentElement.closest(invisibleSelector);
+            if (!ancestorInvisibleEl) {
+                return true;
+            }
+            const descendantSnippets =
+                descendantPerSnippet.get(ancestorInvisibleEl) || [];
+            descendantPerSnippet.set(ancestorInvisibleEl, [
+                ...descendantSnippets,
+                invisibleSnippetEl,
+            ]);
+            return false;
+        });
+        // Recursively build the invisible entries for "snippetEls", nesting
+        // each snippet's descendant invisible snippets under it as "children".
+        // Called with "rootInvisibleSnippetEls" (and no "parentEl"), it
+        // produces the nested structure:
+        // rootInvisibleSnippet
+        //     └ descendantInvisibleSnippet
+        //          └ descendantOfDescendantInvisibleSnippet
+        //               └ etc...
+        const createInvisibleEntries = (snippetEls, parentEl = null) =>
+            snippetEls.map((snippetEl) => {
+                const descendantSnippetEls = descendantPerSnippet.get(snippetEl);
+                // An element is considered as "RootParent" if it has one or
+                // more invisible descendants but is not a descendant.
+                const invisibleElement = {
+                    snippetEl: snippetEl,
+                    name: getSnippetName(snippetEl),
+                    isRootParent: !parentEl && !!descendantSnippetEls,
+                    isDescendant: !!parentEl,
+                    isVisible: snippetEl.dataset.invisible !== "1",
+                    children: [],
+                    parentEl,
+                };
+                if (descendantSnippetEls) {
+                    invisibleElement.children = createInvisibleEntries(
+                        descendantSnippetEls,
+                        invisibleElement,
+                    );
+                }
+                return invisibleElement;
+            });
+        this.state.invisibleEntries = createInvisibleEntries(rootInvisibleSnippetEls);
+    }
+
+    toggleElementVisibility(invisibleEntry) {
+        const snippetEl = invisibleEntry.snippetEl;
+        // the element says whether it is visible: a click can reach an entry
+        // that a rebuild of the panel already replaced, whose flag is stale
+        if (snippetEl.dataset.invisible !== "1") {
+            this.shared.visibility.toggleTargetVisibility(snippetEl, false);
+            this.shared.builderOptions.deactivateContainers();
+        } else {
+            this.shared.visibility.toggleTargetVisibility(snippetEl, true);
+            this.builderContext.editor.dispatchTo(
+                "on_reveal_target_handlers",
+                snippetEl,
+            );
+            this.shared.builderOptions.updateContainers(snippetEl);
+            // Scroll to the target if not visible.
+            if (!isElementInViewport(snippetEl) && !snippetEl.matches(".s_popup")) {
+                // Firefox mis-scrolls with block "center" on tall snippets; keep "start".
+                snippetEl.scrollIntoView({ behavior: "smooth", block: "start" });
+            }
+        }
+        this.shared.disableSnippets.disableUndroppableSnippets();
+        this.updateInvisibleElementsPanel(this.props.invisibleEls);
+    }
+}

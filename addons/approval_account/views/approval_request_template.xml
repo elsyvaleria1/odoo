@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <template
+        id="report_approval_request_document_journal"
+        inherit_id="approval_app.report_approval_request_document_fields">
+        <xpath expr="//tr[@t-if='o.template_id']" position="before">
+            <tr t-if="o.journal_id">
+                <td class="fw-bold">Journal</td>
+                <td><span t-field="o.journal_id" /></td>
+            </tr>
+        </xpath>
+    </template>
+
+</odoo>

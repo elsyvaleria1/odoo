@@ -1,0 +1,24 @@
+.o_content_pdf {
+    .o_header {
+        vertical-align: middle;
+        .col-6 {
+            .row:first-child {
+                padding-top: 15px;
+            }
+
+            .row:last-child {
+                padding-bottom: 15px;
+            }
+        }
+    }
+}
+
+.o_attachment_pdf {
+    max-height: 700px;
+    max-width: 700px;
+}
+
+.o_overflow {
+    white-space: normal !important;
+    overflow-wrap: break-word;
+}

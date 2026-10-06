@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="job_channel_ai_livechat_reply" model="ir.job.channel">
+        <field name="name">ai_livechat_reply</field>
+        <field name="capacity">2</field>
+    </record>
+
+</odoo>

@@ -1,0 +1,785 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="demo_track_van001_001" model="device.data.log.gps">
+        <field name="device_id" ref="demo_gps_device_delivery_van_01" />
+        <field
+            name="timestamp"
+            eval="(DateTime.now() - timedelta(hours=4)).strftime('%Y-%m-%d 08:00:00')" />
+        <field name="latitude">19.432608</field>
+        <field name="longitude">-99.133209</field>
+        <field name="altitude">2240.0</field>
+        <field name="speed">0.0</field>
+        <field name="heading">0.0</field>
+        <field name="satellites">8</field>
+        <field name="accuracy">3.5</field>
+        <field name="hdop">1.2</field>
+        <field name="ignition" eval="True" />
+        <field name="movement" eval="False" />
+        <field name="odometer">0.0</field>
+        <field name="fuel_level">95.0</field>
+        <field name="battery_voltage">13.8</field>
+        <field name="gsm_signal">85</field>
+    </record>
+
+    <record id="demo_track_van001_002" model="device.data.log.gps">
+        <field name="device_id" ref="demo_gps_device_delivery_van_01" />
+        <field
+            name="timestamp"
+            eval="(DateTime.now() - timedelta(hours=4)).strftime('%Y-%m-%d 08:05:00')" />
+        <field name="latitude">19.433245</field>
+        <field name="longitude">-99.134567</field>
+        <field name="altitude">2238.0</field>
+        <field name="speed">25.5</field>
+        <field name="heading">315.0</field>
+        <field name="satellites">9</field>
+        <field name="accuracy">2.8</field>
+        <field name="hdop">0.9</field>
+        <field name="ignition" eval="True" />
+        <field name="movement" eval="True" />
+        <field name="odometer">0.8</field>
+        <field name="fuel_level">94.8</field>
+        <field name="battery_voltage">13.9</field>
+        <field name="gsm_signal">88</field>
+    </record>
+
+    <record id="demo_track_van001_003" model="device.data.log.gps">
+        <field name="device_id" ref="demo_gps_device_delivery_van_01" />
+        <field
+            name="timestamp"
+            eval="(DateTime.now() - timedelta(hours=4)).strftime('%Y-%m-%d 08:15:00')" />
+        <field name="latitude">19.440123</field>
+        <field name="longitude">-99.141234</field>
+        <field name="altitude">2235.0</field>
+        <field name="speed">45.0</field>
+        <field name="heading">285.0</field>
+        <field name="satellites">10</field>
+        <field name="accuracy">2.2</field>
+        <field name="hdop">0.8</field>
+        <field name="ignition" eval="True" />
+        <field name="movement" eval="True" />
+        <field name="odometer">3.2</field>
+        <field name="fuel_level">94.2</field>
+        <field name="battery_voltage">14.0</field>
+        <field name="gsm_signal">92</field>
+    </record>
+
+    <record id="demo_track_van001_004" model="device.data.log.gps">
+        <field name="device_id" ref="demo_gps_device_delivery_van_01" />
+        <field
+            name="timestamp"
+            eval="(DateTime.now() - timedelta(hours=4)).strftime('%Y-%m-%d 08:45:00')" />
+        <field name="latitude">19.435678</field>
+        <field name="longitude">-99.156789</field>
+        <field name="altitude">2242.0</field>
+        <field name="speed">0.0</field>
+        <field name="heading">285.0</field>
+        <field name="satellites">9</field>
+        <field name="accuracy">3.0</field>
+        <field name="hdop">1.0</field>
+        <field name="ignition" eval="False" />
+        <field name="movement" eval="False" />
+        <field name="odometer">8.5</field>
+        <field name="fuel_level">93.5</field>
+        <field name="battery_voltage">12.5</field>
+        <field name="gsm_signal">78</field>
+        <field name="event_type">stop</field>
+    </record>
+
+    <record id="demo_track_van001_005" model="device.data.log.gps">
+        <field name="device_id" ref="demo_gps_device_delivery_van_01" />
+        <field
+            name="timestamp"
+            eval="(DateTime.now() - timedelta(hours=3)).strftime('%Y-%m-%d 09:15:00')" />
+        <field name="latitude">19.436012</field>
+        <field name="longitude">-99.157234</field>
+        <field name="altitude">2243.0</field>
+        <field name="speed">15.0</field>
+        <field name="heading">180.0</field>
+        <field name="satellites">10</field>
+        <field name="accuracy">2.5</field>
+        <field name="hdop">0.9</field>
+        <field name="ignition" eval="True" />
+        <field name="movement" eval="True" />
+        <field name="odometer">8.8</field>
+        <field name="fuel_level">93.4</field>
+        <field name="battery_voltage">13.8</field>
+        <field name="gsm_signal">85</field>
+    </record>
+
+    <record id="demo_track_van001_006" model="device.data.log.gps">
+        <field name="device_id" ref="demo_gps_device_delivery_van_01" />
+        <field
+            name="timestamp"
+            eval="(DateTime.now() - timedelta(hours=3)).strftime('%Y-%m-%d 09:30:00')" />
+        <field name="latitude">19.425432</field>
+        <field name="longitude">-99.165123</field>
+        <field name="altitude">2238.0</field>
+        <field name="speed">75.0</field>
+        <field name="heading">195.0</field>
+        <field name="satellites">11</field>
+        <field name="accuracy">1.8</field>
+        <field name="hdop">0.7</field>
+        <field name="ignition" eval="True" />
+        <field name="movement" eval="True" />
+        <field name="odometer">14.2</field>
+        <field name="fuel_level">92.8</field>
+        <field name="engine_speed_rpm">2500.0</field>
+        <field name="battery_voltage">14.1</field>
+        <field name="gsm_signal">90</field>
+    </record>
+
+    <record id="demo_track_van001_007" model="device.data.log.gps">
+        <field name="device_id" ref="demo_gps_device_delivery_van_01" />
+        <field
+            name="timestamp"
+            eval="(DateTime.now() - timedelta(hours=2)).strftime('%Y-%m-%d 10:15:00')" />
+        <field name="latitude">19.395678</field>
+        <field name="longitude">-99.172345</field>
+        <field name="altitude">2245.0</field>
+        <field name="speed">0.0</field>
+        <field name="heading">195.0</field>
+        <field name="satellites">8</field>
+        <field name="accuracy">3.2</field>
+        <field name="hdop">1.1</field>
+        <field name="ignition" eval="False" />
+        <field name="movement" eval="False" />
+        <field name="odometer">22.8</field>
+        <field name="fuel_level">91.5</field>
+        <field name="battery_voltage">12.4</field>
+        <field name="gsm_signal">72</field>
+        <field name="event_type">stop</field>
+    </record>
+
+    <record id="demo_track_van001_008" model="device.data.log.gps">
+        <field name="device_id" ref="demo_gps_device_delivery_van_01" />
+        <field
+            name="timestamp"
+            eval="(DateTime.now() - timedelta(hours=2)).strftime('%Y-%m-%d 10:45:00')" />
+        <field name="latitude">19.396123</field>
+        <field name="longitude">-99.173012</field>
+        <field name="altitude">2246.0</field>
+        <field name="speed">20.0</field>
+        <field name="heading">90.0</field>
+        <field name="satellites">9</field>
+        <field name="accuracy">2.7</field>
+        <field name="hdop">0.9</field>
+        <field name="ignition" eval="True" />
+        <field name="movement" eval="True" />
+        <field name="odometer">23.2</field>
+        <field name="fuel_level">91.4</field>
+        <field name="battery_voltage">13.9</field>
+        <field name="gsm_signal">80</field>
+    </record>
+
+    <record id="demo_track_van001_009" model="device.data.log.gps">
+        <field name="device_id" ref="demo_gps_device_delivery_van_01" />
+        <field
+            name="timestamp"
+            eval="(DateTime.now() - timedelta(hours=1)).strftime('%Y-%m-%d 11:20:00')" />
+        <field name="latitude">19.408765</field>
+        <field name="longitude">-99.158432</field>
+        <field name="altitude">2241.0</field>
+        <field name="speed">0.0</field>
+        <field name="heading">45.0</field>
+        <field name="satellites">10</field>
+        <field name="accuracy">2.5</field>
+        <field name="hdop">0.8</field>
+        <field name="ignition" eval="False" />
+        <field name="movement" eval="False" />
+        <field name="odometer">31.5</field>
+        <field name="fuel_level">90.2</field>
+        <field name="battery_voltage">12.5</field>
+        <field name="gsm_signal">88</field>
+        <field name="event_type">stop</field>
+    </record>
+
+    <record id="demo_track_van001_010" model="device.data.log.gps">
+        <field name="device_id" ref="demo_gps_device_delivery_van_01" />
+        <field
+            name="timestamp"
+            eval="(DateTime.now() - timedelta(minutes=30)).strftime('%Y-%m-%d 11:50:00')" />
+        <field name="latitude">19.428456</field>
+        <field name="longitude">-99.140123</field>
+        <field name="altitude">2239.0</field>
+        <field name="speed">35.0</field>
+        <field name="heading">60.0</field>
+        <field name="satellites">9</field>
+        <field name="accuracy">2.8</field>
+        <field name="hdop">0.9</field>
+        <field name="ignition" eval="True" />
+        <field name="movement" eval="True" />
+        <field name="odometer">38.7</field>
+        <field name="fuel_level">89.5</field>
+        <field name="engine_speed_rpm">1800.0</field>
+        <field name="battery_voltage">14.0</field>
+        <field name="gsm_signal">92</field>
+    </record>
+
+    <record id="demo_track_van001_011" model="device.data.log.gps">
+        <field name="device_id" ref="demo_gps_device_delivery_van_01" />
+        <field name="timestamp" eval="DateTime.now().strftime('%Y-%m-%d 12:10:00')" />
+        <field name="latitude">19.432608</field>
+        <field name="longitude">-99.133209</field>
+        <field name="altitude">2240.0</field>
+        <field name="speed">0.0</field>
+        <field name="heading">60.0</field>
+        <field name="satellites">8</field>
+        <field name="accuracy">3.0</field>
+        <field name="hdop">1.0</field>
+        <field name="ignition" eval="False" />
+        <field name="movement" eval="False" />
+        <field name="odometer">42.3</field>
+        <field name="fuel_level">88.8</field>
+        <field name="battery_voltage">12.6</field>
+        <field name="gsm_signal">85</field>
+        <field name="event_type">arrival</field>
+    </record>
+
+    <record id="demo_track_truck042_001" model="device.data.log.gps">
+        <field name="device_id" ref="demo_gps_device_fleet_truck_01" />
+        <field
+            name="timestamp"
+            eval="(DateTime.now() - timedelta(hours=6)).strftime('%Y-%m-%d 06:00:00')" />
+        <field name="latitude">20.659698</field>
+        <field name="longitude">-103.349609</field>
+        <field name="altitude">1566.0</field>
+        <field name="speed">0.0</field>
+        <field name="heading">0.0</field>
+        <field name="satellites">10</field>
+        <field name="accuracy">2.0</field>
+        <field name="hdop">0.8</field>
+        <field name="ignition" eval="True" />
+        <field name="movement" eval="False" />
+        <field name="total_odometer">125680.5</field>
+        <field name="fuel_level">98.0</field>
+        <field name="engine_hours">5234.5</field>
+        <field name="battery_voltage">24.2</field>
+        <field name="gsm_signal">90</field>
+    </record>
+
+    <record id="demo_track_truck042_002" model="device.data.log.gps">
+        <field name="device_id" ref="demo_gps_device_fleet_truck_01" />
+        <field
+            name="timestamp"
+            eval="(DateTime.now() - timedelta(hours=4)).strftime('%Y-%m-%d 08:00:00')" />
+        <field name="latitude">20.892345</field>
+        <field name="longitude">-102.987654</field>
+        <field name="altitude">1650.0</field>
+        <field name="speed">88.0</field>
+        <field name="heading">75.0</field>
+        <field name="satellites">11</field>
+        <field name="accuracy">1.5</field>
+        <field name="hdop">0.6</field>
+        <field name="ignition" eval="True" />
+        <field name="movement" eval="True" />
+        <field name="total_odometer">125798.3</field>
+        <field name="fuel_level">92.5</field>
+        <field name="engine_hours">5236.5</field>
+        <field name="engine_temperature">85.0</field>
+        <field name="engine_speed_rpm">1650.0</field>
+        <field name="battery_voltage">24.5</field>
+        <field name="gsm_signal">75</field>
+    </record>
+
+    <record id="demo_track_truck042_003" model="device.data.log.gps">
+        <field name="device_id" ref="demo_gps_device_fleet_truck_01" />
+        <field
+            name="timestamp"
+            eval="(DateTime.now() - timedelta(hours=2)).strftime('%Y-%m-%d 10:00:00')" />
+        <field name="latitude">21.156789</field>
+        <field name="longitude">-102.456789</field>
+        <field name="altitude">1720.0</field>
+        <field name="speed">0.0</field>
+        <field name="heading">75.0</field>
+        <field name="satellites">9</field>
+        <field name="accuracy">2.5</field>
+        <field name="hdop">0.9</field>
+        <field name="ignition" eval="False" />
+        <field name="movement" eval="False" />
+        <field name="total_odometer">125965.8</field>
+        <field name="fuel_level">85.0</field>
+        <field name="engine_hours">5239.3</field>
+        <field name="battery_voltage">23.8</field>
+        <field name="gsm_signal">68</field>
+        <field name="event_type">rest_stop</field>
+    </record>
+
+    <record id="demo_track_truck042_004" model="device.data.log.gps">
+        <field name="device_id" ref="demo_gps_device_fleet_truck_01" />
+        <field
+            name="timestamp"
+            eval="(DateTime.now() - timedelta(hours=1, minutes=30)).strftime('%Y-%m-%d 10:30:00')" />
+        <field name="latitude">21.157234</field>
+        <field name="longitude">-102.457123</field>
+        <field name="altitude">1722.0</field>
+        <field name="speed">25.0</field>
+        <field name="heading">70.0</field>
+        <field name="satellites">10</field>
+        <field name="accuracy">2.0</field>
+        <field name="hdop">0.8</field>
+        <field name="ignition" eval="True" />
+        <field name="movement" eval="True" />
+        <field name="total_odometer">125967.2</field>
+        <field name="fuel_level">84.8</field>
+        <field name="engine_hours">5239.3</field>
+        <field name="engine_temperature">75.0</field>
+        <field name="battery_voltage">24.3</field>
+        <field name="gsm_signal">72</field>
+    </record>
+
+    <record id="demo_track_truck042_005" model="device.data.log.gps">
+        <field name="device_id" ref="demo_gps_device_fleet_truck_01" />
+        <field
+            name="timestamp"
+            eval="(DateTime.now() - timedelta(minutes=45)).strftime('%Y-%m-%d 11:15:00')" />
+        <field name="latitude">21.385432</field>
+        <field name="longitude">-101.987654</field>
+        <field name="altitude">1850.0</field>
+        <field name="speed">82.0</field>
+        <field name="heading">65.0</field>
+        <field name="satellites">11</field>
+        <field name="accuracy">1.8</field>
+        <field name="hdop">0.7</field>
+        <field name="ignition" eval="True" />
+        <field name="movement" eval="True" />
+        <field name="total_odometer">126098.5</field>
+        <field name="fuel_level">78.2</field>
+        <field name="engine_hours">5241.5</field>
+        <field name="engine_temperature">88.0</field>
+        <field name="engine_speed_rpm">1680.0</field>
+        <field name="battery_voltage">24.4</field>
+        <field name="gsm_signal">80</field>
+    </record>
+
+    <record id="demo_track_truck042_006" model="device.data.log.gps">
+        <field name="device_id" ref="demo_gps_device_fleet_truck_01" />
+        <field name="timestamp" eval="DateTime.now().strftime('%Y-%m-%d 12:00:00')" />
+        <field name="latitude">21.428765</field>
+        <field name="longitude">-101.923456</field>
+        <field name="altitude">1875.0</field>
+        <field name="speed">0.0</field>
+        <field name="heading">65.0</field>
+        <field name="satellites">9</field>
+        <field name="accuracy">2.8</field>
+        <field name="hdop">1.0</field>
+        <field name="ignition" eval="False" />
+        <field name="movement" eval="False" />
+        <field name="total_odometer">126125.3</field>
+        <field name="fuel_level">77.5</field>
+        <field name="engine_hours">5242.0</field>
+        <field name="battery_voltage">23.9</field>
+        <field name="gsm_signal">85</field>
+        <field name="event_type">arrival</field>
+    </record>
+
+    <record id="demo_track_forklift_001" model="device.data.log.gps">
+        <field name="device_id" ref="demo_gps_device_forklift_01" />
+        <field
+            name="timestamp"
+            eval="(DateTime.now() - timedelta(hours=3)).strftime('%Y-%m-%d 09:00:00')" />
+        <field name="latitude">19.412345</field>
+        <field name="longitude">-99.087654</field>
+        <field name="altitude">2235.0</field>
+        <field name="speed">0.0</field>
+        <field name="heading">0.0</field>
+        <field name="satellites">5</field>
+        <field name="accuracy">8.5</field>
+        <field name="hdop">2.5</field>
+        <field name="ignition" eval="True" />
+        <field name="movement" eval="False" />
+        <field name="odometer">2340.5</field>
+        <field name="battery_voltage">12.8</field>
+        <field name="gsm_signal">45</field>
+    </record>
+
+    <record id="demo_track_forklift_002" model="device.data.log.gps">
+        <field name="device_id" ref="demo_gps_device_forklift_01" />
+        <field
+            name="timestamp"
+            eval="(DateTime.now() - timedelta(hours=2, minutes=45)).strftime('%Y-%m-%d 09:15:00')" />
+        <field name="latitude">19.412389</field>
+        <field name="longitude">-99.087702</field>
+        <field name="altitude">2235.0</field>
+        <field name="speed">3.5</field>
+        <field name="heading">180.0</field>
+        <field name="satellites">3</field>
+        <field name="accuracy">15.0</field>
+        <field name="hdop">4.2</field>
+        <field name="ignition" eval="True" />
+        <field name="movement" eval="True" />
+        <field name="odometer">2341.2</field>
+        <field name="battery_voltage">12.7</field>
+        <field name="gsm_signal">38</field>
+    </record>
+
+    <record id="demo_track_forklift_003" model="device.data.log.gps">
+        <field name="device_id" ref="demo_gps_device_forklift_01" />
+        <field
+            name="timestamp"
+            eval="(DateTime.now() - timedelta(hours=2, minutes=15)).strftime('%Y-%m-%d 09:45:00')" />
+        <field name="latitude">19.412567</field>
+        <field name="longitude">-99.087234</field>
+        <field name="altitude">2236.0</field>
+        <field name="speed">5.0</field>
+        <field name="heading">90.0</field>
+        <field name="satellites">9</field>
+        <field name="accuracy">3.2</field>
+        <field name="hdop">1.1</field>
+        <field name="ignition" eval="True" />
+        <field name="movement" eval="True" />
+        <field name="odometer">2342.8</field>
+        <field name="battery_voltage">12.6</field>
+        <field name="gsm_signal">78</field>
+    </record>
+
+    <record id="demo_track_forklift_004" model="device.data.log.gps">
+        <field name="device_id" ref="demo_gps_device_forklift_01" />
+        <field
+            name="timestamp"
+            eval="(DateTime.now() - timedelta(hours=1, minutes=30)).strftime('%Y-%m-%d 10:30:00')" />
+        <field name="latitude">19.412401</field>
+        <field name="longitude">-99.087688</field>
+        <field name="altitude">2235.0</field>
+        <field name="speed">0.0</field>
+        <field name="heading">270.0</field>
+        <field name="satellites">4</field>
+        <field name="accuracy">12.0</field>
+        <field name="hdop">3.5</field>
+        <field name="ignition" eval="True" />
+        <field name="movement" eval="False" />
+        <field name="odometer">2345.3</field>
+        <field name="battery_voltage">11.2</field>
+        <field name="gsm_signal">42</field>
+        <field name="event_type">low_battery</field>
+    </record>
+
+    <record id="demo_track_forklift_005" model="device.data.log.gps">
+        <field name="device_id" ref="demo_gps_device_forklift_01" />
+        <field name="timestamp" eval="DateTime.now().strftime('%Y-%m-%d 12:00:00')" />
+        <field name="latitude">19.412423</field>
+        <field name="longitude">-99.087712</field>
+        <field name="altitude">2235.0</field>
+        <field name="speed">0.0</field>
+        <field name="heading">0.0</field>
+        <field name="satellites">4</field>
+        <field name="accuracy">11.5</field>
+        <field name="hdop">3.3</field>
+        <field name="ignition" eval="False" />
+        <field name="movement" eval="False" />
+        <field name="odometer">2345.5</field>
+        <field name="battery_voltage">13.5</field>
+        <field name="external_voltage">14.2</field>
+        <field name="gsm_signal">40</field>
+        <field name="event_type">charging</field>
+    </record>
+
+    <record id="demo_track_reefer_001" model="device.data.log.gps">
+        <field name="device_id" ref="demo_gps_device_reefer_01" />
+        <field
+            name="timestamp"
+            eval="(DateTime.now() - timedelta(hours=5)).strftime('%Y-%m-%d 07:00:00')" />
+        <field name="latitude">20.676567</field>
+        <field name="longitude">-103.347234</field>
+        <field name="altitude">1560.0</field>
+        <field name="speed">0.0</field>
+        <field name="heading">0.0</field>
+        <field name="satellites">9</field>
+        <field name="accuracy">2.5</field>
+        <field name="hdop">0.9</field>
+        <field name="ignition" eval="True" />
+        <field name="movement" eval="False" />
+        <field name="odometer">0.0</field>
+        <field name="fuel_level">96.0</field>
+        <field name="engine_temperature">65.0</field>
+        <field name="battery_voltage">13.9</field>
+        <field name="gsm_signal">88</field>
+    </record>
+
+    <record id="demo_track_reefer_002" model="device.data.log.gps">
+        <field name="device_id" ref="demo_gps_device_reefer_01" />
+        <field
+            name="timestamp"
+            eval="(DateTime.now() - timedelta(hours=4, minutes=45)).strftime('%Y-%m-%d 07:15:00')" />
+        <field name="latitude">20.685432</field>
+        <field name="longitude">-103.356789</field>
+        <field name="altitude">1565.0</field>
+        <field name="speed">28.0</field>
+        <field name="heading">320.0</field>
+        <field name="satellites">10</field>
+        <field name="accuracy">2.0</field>
+        <field name="hdop">0.8</field>
+        <field name="ignition" eval="True" />
+        <field name="movement" eval="True" />
+        <field name="odometer">4.2</field>
+        <field name="fuel_level">95.6</field>
+        <field name="engine_temperature">78.0</field>
+        <field name="engine_speed_rpm">1450.0</field>
+        <field name="battery_voltage">14.1</field>
+        <field name="gsm_signal">85</field>
+    </record>
+
+    <record id="demo_track_reefer_003" model="device.data.log.gps">
+        <field name="device_id" ref="demo_gps_device_reefer_01" />
+        <field
+            name="timestamp"
+            eval="(DateTime.now() - timedelta(hours=3, minutes=30)).strftime('%Y-%m-%d 08:30:00')" />
+        <field name="latitude">20.923456</field>
+        <field name="longitude">-103.567890</field>
+        <field name="altitude">1620.0</field>
+        <field name="speed">85.0</field>
+        <field name="heading">310.0</field>
+        <field name="satellites">11</field>
+        <field name="accuracy">1.5</field>
+        <field name="hdop">0.6</field>
+        <field name="ignition" eval="True" />
+        <field name="movement" eval="True" />
+        <field name="odometer">68.5</field>
+        <field name="fuel_level">90.2</field>
+        <field name="engine_temperature">85.0</field>
+        <field name="engine_speed_rpm">1750.0</field>
+        <field name="battery_voltage">14.2</field>
+        <field name="gsm_signal">78</field>
+    </record>
+
+    <record id="demo_track_reefer_004" model="device.data.log.gps">
+        <field name="device_id" ref="demo_gps_device_reefer_01" />
+        <field
+            name="timestamp"
+            eval="(DateTime.now() - timedelta(hours=2, minutes=15)).strftime('%Y-%m-%d 09:45:00')" />
+        <field name="latitude">21.145678</field>
+        <field name="longitude">-103.789012</field>
+        <field name="altitude">1680.0</field>
+        <field name="speed">0.0</field>
+        <field name="heading">310.0</field>
+        <field name="satellites">8</field>
+        <field name="accuracy">3.5</field>
+        <field name="hdop">1.2</field>
+        <field name="ignition" eval="False" />
+        <field name="movement" eval="False" />
+        <field name="odometer">125.8</field>
+        <field name="fuel_level">85.5</field>
+        <field name="battery_voltage">12.6</field>
+        <field name="gsm_signal">72</field>
+        <field name="event_type">delivery_stop</field>
+    </record>
+
+    <record id="demo_track_reefer_005" model="device.data.log.gps">
+        <field name="device_id" ref="demo_gps_device_reefer_01" />
+        <field
+            name="timestamp"
+            eval="(DateTime.now() - timedelta(hours=1, minutes=30)).strftime('%Y-%m-%d 10:30:00')" />
+        <field name="latitude">21.145678</field>
+        <field name="longitude">-103.789012</field>
+        <field name="altitude">1680.0</field>
+        <field name="speed">0.0</field>
+        <field name="heading">310.0</field>
+        <field name="satellites">8</field>
+        <field name="accuracy">3.5</field>
+        <field name="hdop">1.2</field>
+        <field name="ignition" eval="False" />
+        <field name="movement" eval="False" />
+        <field name="odometer">125.8</field>
+        <field name="fuel_level">85.5</field>
+        <field name="battery_voltage">12.3</field>
+        <field name="gsm_signal">72</field>
+        <field name="event_type">extended_idle</field>
+    </record>
+
+    <record id="demo_track_reefer_006" model="device.data.log.gps">
+        <field name="device_id" ref="demo_gps_device_reefer_01" />
+        <field
+            name="timestamp"
+            eval="(DateTime.now() - timedelta(minutes=45)).strftime('%Y-%m-%d 11:15:00')" />
+        <field name="latitude">21.146234</field>
+        <field name="longitude">-103.789567</field>
+        <field name="altitude">1682.0</field>
+        <field name="speed">22.0</field>
+        <field name="heading">45.0</field>
+        <field name="satellites">9</field>
+        <field name="accuracy">2.8</field>
+        <field name="hdop">0.9</field>
+        <field name="ignition" eval="True" />
+        <field name="movement" eval="True" />
+        <field name="odometer">126.5</field>
+        <field name="fuel_level">85.4</field>
+        <field name="engine_temperature">72.0</field>
+        <field name="battery_voltage">13.9</field>
+        <field name="gsm_signal">75</field>
+    </record>
+
+    <record id="demo_track_reefer_007" model="device.data.log.gps">
+        <field name="device_id" ref="demo_gps_device_reefer_01" />
+        <field name="timestamp" eval="DateTime.now().strftime('%Y-%m-%d 12:00:00')" />
+        <field name="latitude">21.234567</field>
+        <field name="longitude">-103.856789</field>
+        <field name="altitude">1720.0</field>
+        <field name="speed">78.0</field>
+        <field name="heading">50.0</field>
+        <field name="satellites">10</field>
+        <field name="accuracy">2.2</field>
+        <field name="hdop">0.8</field>
+        <field name="ignition" eval="True" />
+        <field name="movement" eval="True" />
+        <field name="odometer">158.3</field>
+        <field name="fuel_level">82.8</field>
+        <field name="engine_temperature">84.0</field>
+        <field name="engine_speed_rpm">1680.0</field>
+        <field name="battery_voltage">14.0</field>
+        <field name="gsm_signal">82</field>
+    </record>
+
+    <record id="demo_track_car_001" model="device.data.log.gps">
+        <field name="device_id" ref="demo_gps_device_company_car_01" />
+        <field
+            name="timestamp"
+            eval="(DateTime.now() - timedelta(hours=4)).strftime('%Y-%m-%d 08:00:00')" />
+        <field name="latitude">25.686614</field>
+        <field name="longitude">-100.316113</field>
+        <field name="altitude">540.0</field>
+        <field name="speed">0.0</field>
+        <field name="heading">0.0</field>
+        <field name="satellites">9</field>
+        <field name="accuracy">2.5</field>
+        <field name="hdop">0.9</field>
+        <field name="ignition" eval="True" />
+        <field name="movement" eval="False" />
+        <field name="odometer">0.0</field>
+        <field name="fuel_level">88.0</field>
+        <field name="battery_voltage">13.8</field>
+        <field name="gsm_signal">90</field>
+    </record>
+
+    <record id="demo_track_car_002" model="device.data.log.gps">
+        <field name="device_id" ref="demo_gps_device_company_car_01" />
+        <field
+            name="timestamp"
+            eval="(DateTime.now() - timedelta(hours=3, minutes=45)).strftime('%Y-%m-%d 08:15:00')" />
+        <field name="latitude">25.692345</field>
+        <field name="longitude">-100.323456</field>
+        <field name="altitude">542.0</field>
+        <field name="speed">35.0</field>
+        <field name="heading">225.0</field>
+        <field name="satellites">10</field>
+        <field name="accuracy">2.0</field>
+        <field name="hdop">0.8</field>
+        <field name="ignition" eval="True" />
+        <field name="movement" eval="True" />
+        <field name="odometer">2.8</field>
+        <field name="fuel_level">87.8</field>
+        <field name="engine_speed_rpm">1350.0</field>
+        <field name="battery_voltage">14.0</field>
+        <field name="gsm_signal">88</field>
+    </record>
+
+    <record id="demo_track_car_003" model="device.data.log.gps">
+        <field name="device_id" ref="demo_gps_device_company_car_01" />
+        <field
+            name="timestamp"
+            eval="(DateTime.now() - timedelta(hours=3, minutes=15)).strftime('%Y-%m-%d 08:45:00')" />
+        <field name="latitude">25.678901</field>
+        <field name="longitude">-100.334567</field>
+        <field name="altitude">545.0</field>
+        <field name="speed">0.0</field>
+        <field name="heading">225.0</field>
+        <field name="satellites">9</field>
+        <field name="accuracy">2.8</field>
+        <field name="hdop">1.0</field>
+        <field name="ignition" eval="False" />
+        <field name="movement" eval="False" />
+        <field name="odometer">8.5</field>
+        <field name="fuel_level">87.2</field>
+        <field name="battery_voltage">12.5</field>
+        <field name="gsm_signal">85</field>
+        <field name="event_type">meeting</field>
+    </record>
+
+    <record id="demo_track_car_004" model="device.data.log.gps">
+        <field name="device_id" ref="demo_gps_device_company_car_01" />
+        <field
+            name="timestamp"
+            eval="(DateTime.now() - timedelta(hours=2)).strftime('%Y-%m-%d 10:00:00')" />
+        <field name="latitude">25.734567</field>
+        <field name="longitude">-100.289012</field>
+        <field name="altitude">538.0</field>
+        <field name="speed">135.0</field>
+        <field name="heading">45.0</field>
+        <field name="satellites">11</field>
+        <field name="accuracy">1.5</field>
+        <field name="hdop">0.6</field>
+        <field name="ignition" eval="True" />
+        <field name="movement" eval="True" />
+        <field name="odometer">28.7</field>
+        <field name="fuel_level">84.5</field>
+        <field name="engine_temperature">92.0</field>
+        <field name="engine_speed_rpm">3200.0</field>
+        <field name="battery_voltage">14.2</field>
+        <field name="gsm_signal">82</field>
+        <field name="event_type">speeding</field>
+        <field name="priority">2</field>
+    </record>
+
+    <record id="demo_track_car_005" model="device.data.log.gps">
+        <field name="device_id" ref="demo_gps_device_company_car_01" />
+        <field
+            name="timestamp"
+            eval="(DateTime.now() - timedelta(hours=1, minutes=30)).strftime('%Y-%m-%d 10:30:00')" />
+        <field name="latitude">25.698765</field>
+        <field name="longitude">-100.298765</field>
+        <field name="altitude">540.0</field>
+        <field name="speed">0.0</field>
+        <field name="heading">90.0</field>
+        <field name="satellites">8</field>
+        <field name="accuracy">3.2</field>
+        <field name="hdop">1.1</field>
+        <field name="ignition" eval="False" />
+        <field name="movement" eval="False" />
+        <field name="odometer">42.3</field>
+        <field name="fuel_level">82.8</field>
+        <field name="battery_voltage">12.4</field>
+        <field name="gsm_signal">78</field>
+    </record>
+
+    <record id="demo_track_car_006" model="device.data.log.gps">
+        <field name="device_id" ref="demo_gps_device_company_car_01" />
+        <field
+            name="timestamp"
+            eval="(DateTime.now() - timedelta(minutes=30)).strftime('%Y-%m-%d 11:30:00')" />
+        <field name="latitude">25.689432</field>
+        <field name="longitude">-100.318765</field>
+        <field name="altitude">541.0</field>
+        <field name="speed">42.0</field>
+        <field name="heading">135.0</field>
+        <field name="satellites">10</field>
+        <field name="accuracy">2.2</field>
+        <field name="hdop">0.8</field>
+        <field name="ignition" eval="True" />
+        <field name="movement" eval="True" />
+        <field name="odometer">55.8</field>
+        <field name="fuel_level">80.5</field>
+        <field name="engine_speed_rpm">1580.0</field>
+        <field name="battery_voltage">14.1</field>
+        <field name="gsm_signal">92</field>
+    </record>
+
+    <record id="demo_track_car_007" model="device.data.log.gps">
+        <field name="device_id" ref="demo_gps_device_company_car_01" />
+        <field name="timestamp" eval="DateTime.now().strftime('%Y-%m-%d 12:00:00')" />
+        <field name="latitude">25.686614</field>
+        <field name="longitude">-100.316113</field>
+        <field name="altitude">540.0</field>
+        <field name="speed">0.0</field>
+        <field name="heading">180.0</field>
+        <field name="satellites">9</field>
+        <field name="accuracy">2.5</field>
+        <field name="hdop">0.9</field>
+        <field name="ignition" eval="False" />
+        <field name="movement" eval="False" />
+        <field name="odometer">62.5</field>
+        <field name="fuel_level">79.8</field>
+        <field name="battery_voltage">12.6</field>
+        <field name="gsm_signal">90</field>
+        <field name="event_type">arrival</field>
+    </record>
+
+</odoo>

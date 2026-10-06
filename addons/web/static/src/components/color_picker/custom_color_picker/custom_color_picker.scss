@@ -1,0 +1,77 @@
+.o_colorpicker_widget {
+    .o_color_pick_area {
+        height: 125px;
+        // `output_style = compressed`, which drops a plain `/*rtl:ignore*/`
+        /*!rtl:ignore*/
+        background-image:
+            linear-gradient(
+                to bottom,
+                hsl(0, 0%, 100%) 0%,
+                hsla(0, 0%, 100%, 0) 50%,
+                hsla(0, 0%, 0%, 0) 50%,
+                hsl(0, 0%, 0%) 100%
+            ),
+            linear-gradient(to right, hsl(0, 0%, 50%) 0%, hsla(0, 0%, 50%, 0) 100%);
+        cursor: crosshair;
+    }
+    .o_color_slider {
+        background: linear-gradient(
+            #f00 0%,
+            #f0f 16.66%,
+            #00f 33.33%,
+            #0ff 50%,
+            #0f0 66.66%,
+            #ff0 83.33%,
+            #f00 100%
+        );
+    }
+    .o_opacity_slider {
+        @extend %o-preview-alpha-background;
+    }
+    .o_color_slider,
+    .o_opacity_slider {
+        width: 4%;
+        margin-right: 2%;
+        cursor: pointer;
+    }
+    .o_slider_pointer,
+    .o_opacity_pointer {
+        @include o-position-absolute($left: -50%);
+        width: 200%;
+        height: 8px;
+        margin-top: -2px;
+    }
+    .o_slider_pointer,
+    .o_opacity_pointer,
+    .o_picker_pointer {
+        &:focus-visible {
+            outline: none;
+            box-shadow:
+                inset 0 0 0 1px rgba(white, 0.9),
+                0 0 0 1px var(--bg, #{o-token(--o-white, $white)}),
+                0 0 0 3px
+                    var(
+                        --o-color-picker-active-color,
+                        #{o-token(--o-action, $o-enterprise-action-color)}
+                    );
+        }
+    }
+    .o_slider_pointer,
+    .o_opacity_pointer,
+    .o_picker_pointer {
+        box-shadow: inset 0 0 0 1px rgba(white, 0.9);
+        border: 1px solid black;
+    }
+    .o_color_picker_inputs {
+        font-size: 10px;
+
+        input {
+            font-family: monospace !important;
+            height: 18px;
+            font-size: 11px;
+        }
+        .o_hex_div input {
+            width: 9ch;
+        }
+    }
+}

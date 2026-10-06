@@ -1,0 +1,301 @@
+/** @odoo-module native */
+import { useBuilderContext } from "@html_builder/core/builder_context";
+import { BaseOptionComponent, useDomState } from "@html_builder/core/utils";
+import { getCSSVariableValue } from "@html_editor/utils/formatting";
+import { proxy } from "@odoo/owl";
+import { makeLogger } from "@web/core/debug/debug_logger";
+import { useLifecycleLog } from "@web/core/debug/logger_hooks";
+import { _t } from "@web/core/translation";
+import { isCSSColor } from "@web/core/utils/format/colors";
+
+const log = makeLogger("website.builder.option.chart_option");
+
+export const DATASET_KEY_PREFIX = "chart_dataset_";
+
+export function getColor(color, win, doc) {
+    if (!color) {
+        return "";
+    }
+    return isCSSColor(color)
+        ? color
+        : getCSSVariableValue(color, win.getComputedStyle(doc.documentElement));
+}
+
+export class ChartOption extends BaseOptionComponent {
+    static template = "website.ChartOption";
+    static selector = ".s_chart";
+    static dependencies = ["chartOptionPlugin"];
+
+    setup() {
+        super.setup();
+        this.builderContext = useBuilderContext();
+        useLifecycleLog(log);
+
+        this.builderContext.getEditingElement().dataset.data = JSON.stringify(
+            this.prepareData(this.builderContext.getEditingElement()),
+        );
+        log.pipeline("ChartOption prepared chart data", () => ({
+            datasets: JSON.parse(this.builderContext.getEditingElement().dataset.data)
+                .datasets.length,
+        }));
+
+        this.state = proxy({ currentCell: {} });
+
+        this.domState = useDomState((editingElement) => ({
+            data: this.getData(editingElement),
+            isPieChart: this.isPieChart(editingElement),
+        }));
+        this.setDefaultState();
+    }
+
+    setDefaultState() {
+        const { backgroundLabel, borderLabel } = this.getColorpickersLabels(
+            this.domState.isPieChart,
+        );
+        this.updateCurrentCell({
+            backgroundLabel,
+            borderLabel,
+            datasetIndex: 0,
+            dataIndex: 0,
+        });
+    }
+
+    getData(editingElement) {
+        return JSON.parse(editingElement.dataset.data);
+    }
+    /**
+     * @param {HTMLElement} editingElement
+     * @returns {Object}
+     */
+    prepareData(editingElement) {
+        const data = this.getData(editingElement);
+        data.datasets = data.datasets.map((dataset, index) => {
+            if (dataset.key) {
+                return dataset;
+            }
+            return {
+                ...dataset,
+                key: `${DATASET_KEY_PREFIX}${Date.now()}_${index}`,
+            };
+        });
+        return data;
+    }
+    isPieChart(editingElement) {
+        const isPieChart =
+            this.dependencies.chartOptionPlugin.isPieChart(editingElement);
+        if (!this.domState || this.domState.isPieChart !== isPieChart) {
+            const { backgroundLabel, borderLabel } =
+                this.getColorpickersLabels(isPieChart);
+            this.updateCurrentCell({ backgroundLabel, borderLabel });
+        }
+        return isPieChart;
+    }
+    getColorpickersLabels(isPieChart) {
+        const backgroundLabel = isPieChart ? _t("Data Color") : _t("Dataset Color");
+        const borderLabel = isPieChart ? _t("Data Border") : _t("Dataset Border");
+        return { backgroundLabel, borderLabel };
+    }
+    getColor(color) {
+        return getColor(color, this.window, this.document);
+    }
+    /**
+     * @returns {Set}
+     */
+    getColorPalette() {
+        const editingElement = this.builderContext.getEditingElement();
+        const data = this.getData(editingElement);
+        const colorSet = new Set();
+        for (const dataset of data.datasets) {
+            if (this.isPieChart(editingElement)) {
+                dataset.backgroundColor.forEach((color) =>
+                    colorSet.add(this.getColor(color)),
+                );
+                dataset.borderColor.forEach((color) =>
+                    colorSet.add(this.getColor(color)),
+                );
+            } else {
+                colorSet.add(this.getColor(dataset.backgroundColor));
+                colorSet.add(this.getColor(dataset.borderColor));
+            }
+        }
+        colorSet.delete("");
+        return colorSet;
+    }
+
+    /**
+     * @param {Object} updatedCellInfo
+     * @param {Number} [updatedCellInfo.dataIndex]
+     * @param {Number} [updatedCellInfo.datasetIndex]
+     * @param {String} [updatedCellInfo.backgroundLabel]
+     * @param {String} [updatedCellInfo.borderLabel]
+     */
+    updateCurrentCell(updatedCellInfo) {
+        for (const key in updatedCellInfo) {
+            this.state.currentCell[key] = updatedCellInfo[key];
+        }
+    }
+
+    /**
+     * @param {Event} ev
+     * @returns {Object}
+     */
+    getCellInfo(ev) {
+        const cellEl = ev.target.closest("td, th");
+        if (cellEl) {
+            const cellRowEl = cellEl.parentElement;
+            const cellSectionEl = cellRowEl.parentElement;
+            const datasetIndex = [...cellRowEl.children].indexOf(cellEl) - 1;
+            let dataIndex;
+            if (cellSectionEl.tagName === "TBODY") {
+                dataIndex = [...cellSectionEl.children].indexOf(cellRowEl);
+            }
+            return { cellEl, cellSectionEl, datasetIndex, dataIndex };
+        }
+        return {};
+    }
+
+    isTableButton(target) {
+        return !!target.closest(
+            ".o_builder_matrix_remove_row, .add_row, .o_builder_matrix_remove_col, .add_column",
+        );
+    }
+    /**
+     * @param {Event} ev
+     */
+    onTableFocusin(ev) {
+        this.onTableMouseover(ev);
+        this.handleCellFocus(ev);
+    }
+    /**
+     * @param {Event} ev
+     */
+    handleCellFocus(ev) {
+        if (this.isTableButton(ev.target)) {
+            log.logic("ChartOption cell focus ignored: table button");
+            return;
+        }
+        const { cellEl, cellSectionEl, datasetIndex, dataIndex } = this.getCellInfo(ev);
+        if (!cellEl) {
+            log.logic("ChartOption cell focus ignored: not a cell");
+            return;
+        }
+        log.logic("ChartOption cell focus", () => ({
+            section: cellSectionEl.tagName,
+            datasetIndex,
+            dataIndex,
+        }));
+        const cellRowEl = cellEl.parentElement;
+        if (cellSectionEl.tagName === "THEAD" && datasetIndex !== -1) {
+            this.updateCurrentCell({
+                datasetIndex: this.domState.isPieChart ? null : datasetIndex,
+                dataIndex: this.domState.isPieChart ? null : 0,
+            });
+        } else if (
+            datasetIndex !== -1 &&
+            datasetIndex !== cellRowEl.children.length - 2
+        ) {
+            this.updateCurrentCell({ datasetIndex, dataIndex });
+        }
+    }
+    /**
+     * @param {Event} ev
+     */
+    onButtonCellClick(ev) {
+        if (!this.isTableButton(ev.target)) {
+            return;
+        }
+        const { cellEl, cellSectionEl, datasetIndex, dataIndex } = this.getCellInfo(ev);
+        const isColumnButton = dataIndex === cellSectionEl.children.length - 1;
+        const isRowButton = datasetIndex === cellEl.parentElement.children.length - 2;
+        log.logic("ChartOption table button click", () => ({
+            isColumnButton,
+            isRowButton,
+            datasetIndex,
+            dataIndex,
+            className: ev.target.className,
+        }));
+
+        if (isColumnButton) {
+            if (ev.target.classList.contains("add_row")) {
+                this.updateCurrentCell({ datasetIndex: 0, dataIndex });
+            } else if (datasetIndex === this.state.currentCell.datasetIndex) {
+                this.setDefaultState();
+            } else if (datasetIndex < this.state.currentCell.datasetIndex) {
+                this.updateCurrentCell({
+                    datasetIndex: this.state.currentCell.datasetIndex - 1,
+                });
+            }
+            return;
+        }
+
+        if (isRowButton) {
+            if (ev.target.classList.contains("add_column")) {
+                this.updateCurrentCell({ datasetIndex, dataIndex: 0 });
+            } else if (dataIndex === this.state.currentCell.dataIndex) {
+                this.setDefaultState();
+            } else if (dataIndex < this.state.currentCell.dataIndex) {
+                this.updateCurrentCell({
+                    dataIndex: this.state.currentCell.dataIndex - 1,
+                });
+            }
+        }
+    }
+
+    /**
+     * @param {Event} ev
+     */
+    onDatasetLabelClick(ev) {
+        const { datasetIndex } = this.getCellInfo(ev);
+        log.logic("ChartOption dataset label click", () => ({ datasetIndex }));
+        this.updateCurrentCell({
+            datasetIndex: this.domState.isPieChart ? null : datasetIndex,
+            dataIndex: this.domState.isPieChart ? null : 0,
+        });
+    }
+
+    onTableMouseoutOrFocusout(ev) {
+        ev.currentTarget
+            .querySelector(
+                ".o_builder_matrix_remove_col:not(.visually-hidden-focusable)",
+            )
+            ?.classList.add("visually-hidden-focusable");
+        ev.currentTarget
+            .querySelector(
+                ".o_builder_matrix_remove_row:not(.visually-hidden-focusable)",
+            )
+            ?.classList.add("visually-hidden-focusable");
+    }
+    /**
+     * @param {Event} ev
+     */
+    onTableMouseover(ev) {
+        ev.stopPropagation();
+        if (ev.target === ev.currentTarget) {
+            return;
+        }
+        const tableEl = ev.currentTarget;
+        const cellEl = ev.target.closest("td, th");
+        const rowEl = cellEl.closest("tr");
+        const columnIndex = [...rowEl.children].indexOf(cellEl);
+
+        if (
+            rowEl.children.length > 3 &&
+            columnIndex > 0 &&
+            columnIndex < rowEl.children.length - 1
+        ) {
+            tableEl
+                .querySelectorAll(".o_builder_matrix_remove_col")
+                [columnIndex - 1].classList.remove("visually-hidden-focusable");
+        }
+
+        if (
+            rowEl.parentElement.children.length > 2 &&
+            cellEl.closest("tbody") &&
+            rowEl.nextElementSibling
+        ) {
+            rowEl
+                .querySelector(".o_builder_matrix_remove_row")
+                .classList.remove("visually-hidden-focusable");
+        }
+    }
+}

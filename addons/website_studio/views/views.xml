@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="website_controller_page_form_dialog" model="ir.ui.view">
+        <field name="name">website_page_form</field>
+        <field name="model">website.controller.page</field>
+        <field name="type">form</field>
+        <field name="arch" type="xml">
+            <form>
+            <sheet>
+                <div name="button_box">
+                    <field
+                        name="is_published"
+                        widget="website_redirect_button"
+                        invisible="not id" />
+                </div>
+                <widget
+                    name="web_ribbon"
+                    invisible="not website_published"
+                    text="Published" />
+                <widget
+                    name="web_ribbon"
+                    invisible="website_published"
+                    bg_color="text-bg-danger"
+                    text="Unpublished" />
+                <div class="oe_title h1">
+                    <field name="name" />
+                </div>
+                <group>
+                    <group string="Basic parameters">
+                        <label for="name_slugified" string="URL" />
+                        <div class="d-flex">
+                            <span class="bg-300 align-self-baseline">/model/</span>
+                            <field name="name_slugified" force_save="True" />
+                            <span invisible="name_slugified" class="bg-300">...</span>
+                        </div>
+                        <field
+                            name="model_id"
+                            string="Exposed model"
+                            force_save="True"
+                            readonly="id" />
+                        <field name="view_id" invisible="not id" readonly="1" />
+                        <field name="record_view_id" invisible="not id" readonly="1" />
+                        <field name="website_id" />
+                    </group>
+                    <group string="Advanced">
+                        <field
+                            name="record_domain"
+                            widget="domain"
+                            options="{'model': 'model'}" />
+                    </group>
+                </group>
+            </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="website_controller_page_form_dialog_new" model="ir.ui.view">
+        <field name="name">website_controller_page_form_dialog_new</field>
+        <field name="model">website.controller.page</field>
+        <field
+            name="inherit_id"
+            ref="website_studio.website_controller_page_form_dialog" />
+        <field name="type">form</field>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='model_id']" position="after">
+                <field name="model" invisible="1" />
+            </xpath>
+
+            <xpath expr="//field[@name='record_domain']" position="after">
+                <field
+                    name="use_menu"
+                    widget="boolean_toggle"
+                    options="{&quot;autosave&quot;: False}"
+                    invisible="id" />
+                <field
+                    name="auto_single_page"
+                    widget="boolean_toggle"
+                    options="{&quot;autosave&quot;: False}"
+                    invisible="id" />
+            </xpath>
+        </field>
+    </record>
+
+    <record id="select_simple_ir_model" model="ir.ui.view">
+        <field name="name">select_simple_ir_model</field>
+        <field name="model">ir.model</field>
+        <field name="type">list</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name" />
+                <field name="model" />
+                <field name="state" />
+            </list>
+        </field>
+    </record>
+
+</odoo>

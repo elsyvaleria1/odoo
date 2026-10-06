@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_partner_form_stock" model="ir.ui.view">
+        <field name="name">res.partner.stock.property.form.inherit</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="mail.res_partner_view_form_inherit_mail" />
+        <field name="arch" type="xml">
+            <xpath expr="//group[@name='sales_purchases_columns']" position="inside">
+                <group name="inventory" string="Inventory" groups="base.group_no_one">
+                    <field name="property_stock_customer" />
+                    <field name="property_stock_supplier" />
+                </group>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_partner_form_stock_warnings" model="ir.ui.view">
+        <field name="name">res.partner.stock.warning</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_form" />
+        <field name="arch" type="xml">
+            <page name="partner_warnings" position="attributes">
+                <attribute
+                    name="groups"
+                    add="stock.group_warning_stock"
+                    separator="," />
+            </page>
+            <group name="warnings" position="inside">
+                <group name="stock_warning" col="2" groups="stock.group_warning_stock">
+                    <separator
+                        name="stock_warning_separator"
+                        string="Instructions on the Stock Operations"
+                        colspan="2" />
+                    <field
+                        name="picking_warn_msg"
+                        placeholder="e.g. The delivery area is at the back of the building."
+                        colspan="2"
+                        nolabel="1" />
+                </group>
+            </group>
+            <xpath expr="//div[@name='anchor_buttons_inventory']" position="before">
+                <button
+                    name="action_view_stock_serial"
+                    type="object"
+                    icon="fa-bars"
+                    context="{'create': False}"
+                    groups="stock.group_production_lot"
+                    class="oe_stat_button">
+                    <div class="o_stat_info">
+                        <span class="o_stat_text">Lots/Serial Numbers</span>
+                    </div>
+                </button>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

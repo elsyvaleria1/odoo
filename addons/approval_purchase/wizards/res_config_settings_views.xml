@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="res_config_settings_view_form_approval_purchase" model="ir.ui.view">
+        <field
+            name="name">res.config.settings.view.form.inherit.approval.purchase</field>
+        <field name="model">res.config.settings</field>
+        <field
+            name="inherit_id"
+            ref="purchase.res_config_settings_view_form_purchase" />
+        <field name="arch" type="xml">
+
+            <xpath expr="//block[@name='purchase_setting_container']" position="inside">
+
+                <setting
+                    id="po_validation_setting"
+                    help="Define how purchase orders should be validated and approved"
+                    company_dependent="1">
+                    <div class="content-group">
+                        <div class="row">
+                            <label
+                                for="po_validation_level"
+                                string="Validation Level"
+                                class="col-lg-3 o_light_label" />
+                            <field name="po_validation_level" />
+                        </div>
+                        <div
+                            class="row mt16"
+                            invisible="po_validation_level != 'manager_amount'">
+                            <label
+                                for="po_validation_amount"
+                                string="Threshold Amount"
+                                class="col-lg-3 o_light_label" />
+                            <field name="po_validation_amount" />
+                        </div>
+                        <div
+                            class="row mt16"
+                            invisible="po_validation_level != 'module_approval'">
+                            <button
+                                name="action_view_po_approval_categories"
+                                type="object"
+                                string="Configure Approval Categories"
+                                icon="fa-arrow-right"
+                                class="btn-link" />
+                        </div>
+                    </div>
+                </setting>
+
+                <setting
+                    id="po_rate_limit_setting"
+                    help="Fraud prevention: monitor for suspicious patterns of below-threshold orders"
+                    invisible="po_validation_level != 'manager_amount'"
+                    company_dependent="1">
+                    <field name="po_rate_limit_enabled" />
+                    <div class="content-group" invisible="not po_rate_limit_enabled">
+                        <div class="row mt16">
+                            <label
+                                for="po_rate_limit_hours"
+                                string="Time Window (Hours)"
+                                class="col-lg-3 o_light_label" />
+                            <field name="po_rate_limit_hours" />
+                        </div>
+                        <div class="row mt16">
+                            <label
+                                for="po_rate_limit_count"
+                                string="Max Orders in Window"
+                                class="col-lg-3 o_light_label" />
+                            <field name="po_rate_limit_count" />
+                        </div>
+                        <div class="row mt16">
+                            <label
+                                for="po_rate_limit_amount"
+                                string="Max Cumulative Amount"
+                                class="col-lg-3 o_light_label" />
+                            <field name="po_rate_limit_amount" />
+                        </div>
+                    </div>
+                </setting>
+
+                <setting
+                    id="po_auto_confirm_setting"
+                    help="Automatically confirm purchase orders when all approvals are granted"
+                    company_dependent="1">
+                    <field name="po_auto_confirm_on_approval" />
+                </setting>
+
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

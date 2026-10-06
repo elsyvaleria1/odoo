@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!--
+        A PLC is a device kind whatever it speaks, so remote owns the category.
+        The protocol it suggests only exists once this module is installed.
+    -->
+    <record id="device.device_category_industrial_plc" model="device.kind">
+        <field name="comm_protocol">modbus_tcp</field>
+        <field name="link_mode">stream</field>
+    </record>
+
+</odoo>

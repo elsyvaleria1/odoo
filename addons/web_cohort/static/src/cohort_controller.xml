@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="web_cohort.CohortView.Buttons">
+    </t>
+
+    <t t-name="web_cohort.CohortView">
+        <ViewLayout t-props="this.chassis.props">
+            <t t-set-slot="layout-buttons">
+                <t t-call="{{ this.props.buttonTemplate }}"/>
+            </t>
+            <t t-component="this.props.Renderer" class="'o_renderer'" model="this.model" onRowClicked="(row, middleClick) => this.onRowClicked(row, middleClick)"/>
+        </ViewLayout>
+    </t>
+
+</templates>

@@ -1,0 +1,316 @@
+// @ts-check
+import {
+    click,
+    contains,
+    defineMailModels,
+    inputFiles,
+    openFormView,
+    patchUiSize,
+    scroll,
+    SIZES,
+    start,
+    startServer,
+} from "@mail/../tests/mail_test_helpers";
+import { describe, test } from "@odoo/hoot";
+import { Deferred } from "@odoo/hoot-mock";
+import { onRpc, pagerNext, pagerPrevious } from "@web/../tests/web_test_helpers";
+
+describe.current.tags("desktop");
+defineMailModels();
+
+test("base non-empty rendering", async () => {
+    const pyEnv = await startServer();
+    const partnerId = pyEnv["res.partner"].create({});
+    pyEnv["ir.attachment"].create([
+        {
+            mimetype: "text/plain",
+            name: "Blah.txt",
+            res_id: partnerId,
+            res_model: "res.partner",
+        },
+        {
+            mimetype: "text/plain",
+            name: "Blu.txt",
+            res_id: partnerId,
+            res_model: "res.partner",
+        },
+    ]);
+    await start();
+    await openFormView("res.partner", partnerId, {
+        arch: `
+            <form>
+                <sheet></sheet>
+                <chatter open_attachments="True"/>
+            </form>`,
+    });
+    await contains(".o-mail-AttachmentBox");
+    await contains("button", { text: "Attach files" });
+    await contains(".o-mail-Chatter input[type='file']");
+    await contains(".o-mail-AttachmentList");
+});
+
+test("remove attachment should ask for confirmation", async () => {
+    const pyEnv = await startServer();
+    const partnerId = pyEnv["res.partner"].create({});
+    pyEnv["ir.attachment"].create({
+        mimetype: "text/plain",
+        name: "Blah.txt",
+        res_id: partnerId,
+        res_model: "res.partner",
+    });
+    await start();
+    await openFormView("res.partner", partnerId, {
+        arch: `
+            <form>
+                <sheet></sheet>
+                <chatter open_attachments="True"/>
+            </form>`,
+    });
+    await contains(".o-mail-AttachmentCard");
+    await contains("button[title='Remove']");
+    await click("button[title='Remove']");
+    await contains(".modal-body", { text: 'Do you really want to delete "Blah.txt"?' });
+    await click(".modal-footer .btn-primary");
+    await contains(".o-mail-AttachmentImage", { count: 0 });
+});
+
+test("view attachments", async () => {
+    const pyEnv = await startServer();
+    const partnerId = pyEnv["res.partner"].create({});
+    pyEnv["ir.attachment"].create([
+        {
+            mimetype: "text/plain",
+            name: "Blah.txt",
+            res_id: partnerId,
+            res_model: "res.partner",
+        },
+        {
+            mimetype: "text/plain",
+            name: "Blu.txt",
+            res_id: partnerId,
+            res_model: "res.partner",
+        },
+    ]);
+    await start();
+    await openFormView("res.partner", partnerId, {
+        arch: `
+            <form>
+                <sheet></sheet>
+                <chatter open_attachments="True"/>
+            </form>`,
+    });
+    await click(
+        '.o-mail-AttachmentContainer[aria-label="Blah.txt"] .o-mail-AttachmentCard-image',
+    );
+    await contains(".o-FileViewer");
+    await contains(".o-FileViewer-header", { text: "Blah.txt" });
+    await contains(".o-FileViewer div[aria-label='Next']");
+    await click(".o-FileViewer div[aria-label='Next']");
+    await contains(".o-FileViewer-header", { text: "Blu.txt" });
+    await contains(".o-FileViewer div[aria-label='Next']");
+    await click(".o-FileViewer div[aria-label='Next']");
+    await contains(".o-FileViewer-header", { text: "Blah.txt" });
+});
+
+test("scroll to attachment box when toggling on", async () => {
+    patchUiSize({ size: SIZES.XXL });
+    const pyEnv = await startServer();
+    const partnerId = pyEnv["res.partner"].create({});
+    for (let i = 0; i < 30; i++) {
+        pyEnv["mail.message"].create({
+            body: "not empty".repeat(50),
+            model: "res.partner",
+            res_id: partnerId,
+        });
+    }
+    pyEnv["ir.attachment"].create({
+        mimetype: "text/plain",
+        name: "Blah.txt",
+        res_id: partnerId,
+        res_model: "res.partner",
+    });
+    await start();
+    await openFormView("res.partner", partnerId);
+    await contains(".o-mail-Message", { count: 30 });
+    await scroll(".o-mail-Chatter", "bottom");
+    await click("button[aria-label='Attach files']");
+    await contains(".o-mail-AttachmentBox");
+    await contains(".o-mail-Chatter", { scroll: 0 });
+    await contains(".o-mail-AttachmentBox", { visible: true });
+});
+
+test("do not auto-scroll to attachment box when initially open", async () => {
+    patchUiSize({ size: SIZES.LG });
+    const pyEnv = await startServer();
+    const partnerId = pyEnv["res.partner"].create({});
+    pyEnv["mail.message"].create({
+        body: "not empty",
+        model: "res.partner",
+        res_id: partnerId,
+    });
+    pyEnv["ir.attachment"].create({
+        mimetype: "text/plain",
+        name: "Blah.txt",
+        res_id: partnerId,
+        res_model: "res.partner",
+    });
+    await start();
+    await openFormView("res.partner", partnerId, {
+        arch: `
+            <form>
+                ${`<sheet><field name="name"/></sheet>`.repeat(100)}
+                <chatter open_attachments="True"/>
+            </form>`,
+    });
+    await contains(".o-mail-Message");
+    await contains(".o_content", { scroll: 0 });
+});
+
+test("attachment box should order attachments from newest to oldest", async () => {
+    const pyEnv = await startServer();
+    const partnerId = pyEnv["res.partner"].create({});
+    const resData = { res_id: partnerId, res_model: "res.partner" };
+    pyEnv["ir.attachment"].create([
+        { name: "A.txt", mimetype: "text/plain", ...resData },
+        { name: "B.txt", mimetype: "text/plain", ...resData },
+        { name: "C.txt", mimetype: "text/plain", ...resData },
+    ]);
+    await start();
+    await openFormView("res.partner", partnerId);
+    await contains(".o-mail-Chatter [aria-label='Attach files']", { text: "3" });
+    await click(".o-mail-Chatter [aria-label='Attach files']");
+    await contains(":nth-child(1 of .o-mail-AttachmentContainer)", { text: "C.txt" });
+    await contains(":nth-child(2 of .o-mail-AttachmentContainer)", { text: "B.txt" });
+    await contains(":nth-child(3 of .o-mail-AttachmentContainer)", { text: "A.txt" });
+});
+
+test("attachment box auto-closed on switch to record wih no attachments", async () => {
+    const pyEnv = await startServer();
+    const [partnerId_1, partnerId_2] = pyEnv["res.partner"].create([
+        { display_name: "first partner" },
+        { display_name: "second partner" },
+    ]);
+    pyEnv["ir.attachment"].create([
+        {
+            mimetype: "text/plain",
+            name: "Blah.txt",
+            res_id: partnerId_1,
+            res_model: "res.partner",
+        },
+    ]);
+    await start();
+    await openFormView("res.partner", partnerId_1, {
+        arch: `
+            <form>
+                <sheet></sheet>
+                <chatter open_attachments="True"/>
+            </form>`,
+        resIds: [partnerId_1, partnerId_2],
+    });
+    await contains(".o-mail-AttachmentBox");
+    await click(".o_pager_next");
+    await contains(".o-mail-AttachmentBox", { count: 0 });
+});
+
+test("attachment should be uploaded on the correct record when using the pager navigation", async () => {
+    const pyEnv = await startServer();
+    const [partnerId_1, partnerId_2] = pyEnv["res.partner"].create([
+        { display_name: "first partner" },
+        { display_name: "second partner" },
+    ]);
+    await start();
+    await openFormView("res.partner", partnerId_1, {
+        arch: `
+            <form>
+                <sheet><field name="display_name"/></sheet>
+                <div class="oe_chatter"><chatter/></div>
+            </form>`,
+        resIds: [partnerId_1, partnerId_2],
+    });
+    let uploadDeferred = new Deferred();
+    onRpc("/mail/attachment/upload", () => uploadDeferred);
+    await click(".o-mail-Chatter-attachFiles");
+    let uploadPromise = inputFiles(".o_input_file", [new File(["image"], "A.jpeg")]);
+    await pagerNext();
+    uploadDeferred.resolve();
+    await uploadPromise;
+    await contains("button[aria-label='Attach files']:not(:has(sup))");
+    await pagerPrevious();
+    await click("button[aria-label='Attach files']", { text: "1" });
+    await contains(".o-mail-AttachmentCard", { text: "A.jpeg" });
+    uploadDeferred = new Deferred();
+    await click("button[aria-label='Attach files']");
+    await click("button", { text: "Attach files" });
+    uploadPromise = inputFiles(".o_input_file", [new File(["image"], "B.jpeg")]);
+    await pagerNext();
+    uploadDeferred.resolve();
+    await uploadPromise;
+    await contains("button[aria-label='Attach files']:not(:has(sup))");
+    await pagerPrevious();
+    await click("button[aria-label='Attach files']", { text: "2" });
+    await contains(".o-mail-AttachmentCard", { text: "A.jpeg" });
+    await contains(".o-mail-AttachmentCard", { text: "B.jpeg" });
+});
+
+test("attachment box closes once its last attachment is unlinked", async () => {
+    const pyEnv = await startServer();
+    const partnerId = pyEnv["res.partner"].create({ name: "John Doe" });
+    pyEnv["ir.attachment"].create({
+        mimetype: "text/plain",
+        name: "Blah.txt",
+        res_id: partnerId,
+        res_model: "res.partner",
+    });
+    await start();
+    await openFormView("res.partner", partnerId, {
+        arch: `
+            <form>
+                <sheet></sheet>
+                <chatter open_attachments="True"/>
+            </form>`,
+    });
+    await contains(".o-mail-AttachmentBox");
+    await contains(".o-mail-AttachmentCard", { text: "Blah.txt" });
+    await click("button[title='Remove']");
+    await click(".modal-footer .btn-primary");
+    await contains(".o-mail-AttachmentCard", { count: 0 });
+    await contains(".o-mail-AttachmentBox", { count: 0 });
+});
+
+test("files being uploaded are listed first, the newest first", async () => {
+    const pyEnv = await startServer();
+    const partnerId = pyEnv["res.partner"].create({ name: "John Doe" });
+    pyEnv["ir.attachment"].create({
+        mimetype: "text/plain",
+        name: "Old.txt",
+        res_id: partnerId,
+        res_model: "res.partner",
+    });
+    onRpc("/mail/attachment/upload", () => new Deferred());
+    await start();
+    await openFormView("res.partner", partnerId, {
+        arch: `
+            <form>
+                <sheet></sheet>
+                <chatter open_attachments="True"/>
+            </form>`,
+    });
+    await contains(".o-mail-AttachmentBox .o-mail-AttachmentContainer", { count: 1 });
+    inputFiles(".o-mail-AttachmentBox .o_input_file", [
+        new File(["x"], "First.txt", { type: "text/plain" }),
+    ]);
+    await contains(".o-mail-AttachmentBox .o-mail-AttachmentContainer", { count: 2 });
+    inputFiles(".o-mail-AttachmentBox .o_input_file", [
+        new File(["y"], "Second.txt", { type: "text/plain" }),
+    ]);
+    await contains(".o-mail-AttachmentBox .o-mail-AttachmentContainer", { count: 3 });
+    await contains(".o-mail-AttachmentBox .o-mail-AttachmentContainer:eq(0)", {
+        text: "Second.txt",
+    });
+    await contains(".o-mail-AttachmentBox .o-mail-AttachmentContainer:eq(1)", {
+        text: "First.txt",
+    });
+    await contains(".o-mail-AttachmentBox .o-mail-AttachmentContainer:eq(2)", {
+        text: "Old.txt",
+    });
+});

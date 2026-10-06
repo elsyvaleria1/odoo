@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <menuitem
+        id="account_sepa_direct_debit_customer_mandates_menu"
+        name="Direct Debit Mandates"
+        parent="account.menu_finance_receivables"
+        action="account_sepa_direct_debit_mandate_tree_act"
+        sequence="50" />
+
+</odoo>

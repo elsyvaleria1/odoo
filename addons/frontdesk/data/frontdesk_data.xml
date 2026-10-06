@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <data noupdate="1">
+        <!-- Drinks -->
+        <record id="frontdesk.frontdesk_drink_1" model="frontdesk.drink">
+            <field name="name">Water</field>
+            <field
+                name="notify_user_ids"
+                eval="[Command.link(ref('base.user_admin'))]" />
+            <field
+                name="drink_image"
+                type="base64"
+                file="frontdesk/static/img/water.jpg" />
+        </record>
+        <record id="frontdesk.frontdesk_drink_2" model="frontdesk.drink">
+            <field name="name">Cola</field>
+            <field
+                name="notify_user_ids"
+                eval="[Command.link(ref('base.user_admin'))]" />
+            <field
+                name="drink_image"
+                type="base64"
+                file="frontdesk/static/img/cola.jpg" />
+        </record>
+    </data>
+
+</odoo>

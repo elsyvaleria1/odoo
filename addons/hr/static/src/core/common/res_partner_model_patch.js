@@ -1,0 +1,25 @@
+/** @odoo-module native */
+import { ResPartner } from "@mail/core/common/res_partner_model";
+import { fields } from "@mail/model/misc";
+import { user } from "@web/core/user";
+import { patch } from "@web/core/utils/patch";
+
+patch(ResPartner.prototype, {
+    employeeId: undefined,
+    setup() {
+        super.setup();
+        this.employee_ids = fields.Many("hr.employee", {
+            inverse: "partner_id",
+        });
+        this.employee_id = fields.One("hr.employee", {
+            compute() {
+                return (
+                    this.employee_ids.find(
+                        (employee) =>
+                            employee.company_id?.id === user.activeCompany?.id,
+                    ) || this.employee_ids[0]
+                );
+            },
+        });
+    },
+});

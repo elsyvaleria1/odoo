@@ -1,0 +1,10 @@
+id,name,model_id/id,group_id/id,kind,operation,reach,anchor,domain
+rule_knowledge_article_users_read_group_portal,Articles: users/portal: published gives read access,knowledge.model_knowledge_article,base.group_portal,permission,r,all,,"[('website_published', '=', True)]"
+rule_knowledge_article_users_read_group_user,Articles: users/portal: published gives read access,knowledge.model_knowledge_article,base.group_user,permission,r,all,,"[('website_published', '=', True)]"
+rule_knowledge_article_member_portal,Article members: portal: sync with article,knowledge.model_knowledge_article_member,base.group_portal,permission,r,own,partner,"[('article_id.website_published', '=', True)]"
+rule_knowledge_article_member_users,Article members: sync with article,knowledge.model_knowledge_article_member,base.group_user,permission,r,all,,"[('article_id.website_published', '=', True)]"
+rule_knowledge_article_favorite_users_group_portal,Article favorite: sync with article,knowledge.model_knowledge_article_favorite,base.group_portal,permission,crud,own,,"[('article_id.website_published', '=', True)]"
+rule_knowledge_article_favorite_users_group_user,Article favorite: sync with article,knowledge.model_knowledge_article_favorite,base.group_user,permission,crud,own,,"[('article_id.website_published', '=', True)]"
+rule_knowledge_article_stage_users_read_group_portal,Stages: users/portal: published articles give read access,knowledge.model_knowledge_article_stage,base.group_portal,permission,r,all,,"[('parent_id.website_published', '=', True)]"
+rule_knowledge_article_stage_users_read_group_user,Stages: users/portal: published articles give read access,knowledge.model_knowledge_article_stage,base.group_user,permission,r,all,,"[('parent_id.website_published', '=', True)]"
+rule_knowledge_article_public_users_read,Articles: public: published gives read access,knowledge.model_knowledge_article,base.group_public,permission,r,all,,"[('website_published', '=', True)]"

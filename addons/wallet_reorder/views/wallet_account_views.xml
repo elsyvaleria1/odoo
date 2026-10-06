@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_wallet_account_form_inherit_reorder" model="ir.ui.view">
+        <field name="name">wallet.account.form.reorder</field>
+        <field name="model">wallet.account</field>
+        <field name="inherit_id" ref="wallet.view_wallet_account_form" />
+        <field name="arch" type="xml">
+            <div name="button_box" position="inside">
+                <button
+                    name="action_view_reorder_rules"
+                    type="object"
+                    icon="fa-refresh"
+                    class="oe_stat_button">
+                    <field name="count_reorder_rule" string="Rules" widget="statinfo" />
+                </button>
+            </div>
+            <field name="amount_threshold_low" position="after">
+                <field name="reload_product_id" />
+            </field>
+        </field>
+    </record>
+
+</odoo>

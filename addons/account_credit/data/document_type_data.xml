@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+
+    <record id="doc_type_id_document" model="document.type">
+        <field name="name">ID Document</field>
+        <field name="code">CREDIT_ID</field>
+        <field name="applies_to">res.partner</field>
+        <field name="company_id" eval="False" />
+        <field name="has_expiration" eval="False" />
+        <field name="has_amount" eval="False" />
+        <field name="has_collateral" eval="False" />
+        <field name="has_guarantor" eval="True" />
+    </record>
+
+    <record id="doc_type_contract" model="document.type">
+        <field name="name">Contract</field>
+        <field name="code">CREDIT_CONTRACT</field>
+        <field name="applies_to">res.partner</field>
+        <field name="company_id" eval="False" />
+        <field name="has_expiration" eval="True" />
+        <field name="has_amount" eval="True" />
+        <field name="has_collateral" eval="False" />
+        <field name="has_guarantor" eval="False" />
+    </record>
+
+    <record id="doc_type_promissory_note" model="document.type">
+        <field name="name">Promissory Note</field>
+        <field name="code">CREDIT_PROMISSORY</field>
+        <field name="applies_to">res.partner</field>
+        <field name="company_id" eval="False" />
+        <field name="has_expiration" eval="True" />
+        <field name="has_amount" eval="True" />
+        <field name="has_collateral" eval="False" />
+        <field name="has_guarantor" eval="False" />
+    </record>
+
+    <record id="doc_type_warranty" model="document.type">
+        <field name="name">Warranty</field>
+        <field name="code">CREDIT_WARRANTY</field>
+        <field name="applies_to">res.partner</field>
+        <field name="company_id" eval="False" />
+        <field name="has_expiration" eval="True" />
+        <field name="has_amount" eval="True" />
+        <field name="has_collateral" eval="True" />
+        <field name="has_guarantor" eval="False" />
+    </record>
+
+    <record id="doc_type_credit_application" model="document.type">
+        <field name="name">Credit Application</field>
+        <field name="code">CREDIT_APP</field>
+        <field name="applies_to">res.partner</field>
+        <field name="company_id" eval="False" />
+        <field name="has_expiration" eval="False" />
+        <field name="has_amount" eval="False" />
+        <field name="has_collateral" eval="False" />
+        <field name="has_guarantor" eval="False" />
+    </record>
+
+    <record id="doc_type_proof_of_address" model="document.type">
+        <field name="name">Proof of Address</field>
+        <field name="code">CREDIT_ADDRESS</field>
+        <field name="applies_to">res.partner</field>
+        <field name="company_id" eval="False" />
+        <field name="has_expiration" eval="True" />
+        <field name="has_amount" eval="False" />
+        <field name="has_collateral" eval="False" />
+        <field name="has_guarantor" eval="False" />
+    </record>
+
+    <record id="doc_type_authorized_signatures" model="document.type">
+        <field name="name">Authorized Signatures</field>
+        <field name="code">CREDIT_SIGNATURES</field>
+        <field name="applies_to">res.partner</field>
+        <field name="company_id" eval="False" />
+        <field name="has_expiration" eval="False" />
+        <field name="has_amount" eval="False" />
+        <field name="has_collateral" eval="False" />
+        <field name="has_guarantor" eval="False" />
+    </record>
+
+</odoo>

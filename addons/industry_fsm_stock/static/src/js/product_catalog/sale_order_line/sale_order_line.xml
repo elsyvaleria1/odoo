@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates id="template" xml:space="preserve">
+
+    <t t-inherit="product.ProductCatalogOrderLine" t-inherit-mode="extension">
+        <xpath expr="//div[hasclass('o_product_catalog_quantity')]/div/div/input" position="replace">
+            <input t-if="!this.props.tracking or !this.fsmContext.fsm_task_id"
+                   class="o_input form-control text-center text-bg-light border border-end-0 rounded-0"
+                   type="number"
+                   t-att-class="this.catalogContext.displayUoM ? 'w-50' : 'w-100'"
+                   t-att-value="this.quantity"
+                   t-on-change="this.catalogContext.setQuantity"
+            />
+            <button t-else=""
+                    class="o_input form-control border text-center text-bg-light"
+                    t-on-click.stop="(ev) => this.catalogContext.increaseQuantity()"
+                    t-out="this.quantity"
+            >
+            </button>
+        </xpath>
+        <xpath expr="//div[hasclass('o_product_catalog_buttons')]" position="before">
+            <button t-if="this.props.tracking and this.props.quantity != 0 and this.fsmContext.fsm_task_id"
+                    class="btn align-self-end o_product_catalog_cancel_global_click"
+                    type="object" t-on-click="this.fsmContext.resetQuantity">
+                <i class="fa-solid fa-list text-success" title="Lot/Serial number"></i>
+            </button>
+        </xpath>
+    </t>
+
+</templates>

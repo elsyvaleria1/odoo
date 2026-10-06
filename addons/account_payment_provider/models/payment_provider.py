@@ -1,0 +1,230 @@
+from odoo import api, fields, models
+from odoo.exceptions import UserError
+
+from odoo.addons.account_payment_provider.const import REPORT_REASONS_MAPPING
+from odoo.addons.payment import utils as payment_utils
+
+
+class PaymentProvider(models.Model):
+    _inherit = "payment.provider"
+
+    journal_id = fields.Many2one(
+        comodel_name="account.journal",
+        string="Payment Journal",
+        compute="_compute_journal_id",
+        inverse="_inverse_journal_id",
+        copy=False,
+        domain='[("type", "=", "bank")]',
+        check_company=True,
+        help="The journal in which the successful transactions are posted.",
+    )
+    available_pricelist_ids = fields.Many2many(
+        comodel_name="product.pricelist",
+        string="Pricelists",
+        help="Only allow this payment provider when the customer's pricelist is one of these. "
+        "Leave empty to allow it whatever the customer's pricelist.",
+    )
+
+    # === COMPUTE METHODS ===#
+
+    def _sync_payment_channel(self, allow_create=True) -> None:
+        self.check_singleton()
+        if not self.id:
+            return
+
+        default_payment_method = self._get_provider_payment_method(self._get_code())
+        if not default_payment_method:
+            return
+
+        pay_method_line = self.env["account.payment.channel"].search(
+            [
+                ("payment_provider_id", "=", self.id),
+                ("journal_id", "!=", False),
+            ],
+            limit=1,
+        )
+
+        if not self.journal_id:
+            if pay_method_line:
+                pay_method_line.unlink()
+                return
+
+        if not pay_method_line:
+            # Only reuse a line already sitting on the provider's own journal:
+            # reusing one configured on a different journal would silently
+            # move it away from wherever a user had it configured.
+            pay_method_line = self.env["account.payment.channel"].search(
+                [
+                    *self.env["account.payment.channel"]._check_company_domain(
+                        self.company_id
+                    ),
+                    ("code", "=", self._get_code()),
+                    ("payment_provider_id", "=", False),
+                    ("journal_id", "=", self.journal_id.id),
+                ],
+                limit=1,
+            )
+        if pay_method_line:
+            pay_method_line.payment_provider_id = self
+            pay_method_line.journal_id = self.journal_id
+            pay_method_line.name = self.name
+        elif allow_create:
+            create_values = {
+                "name": self.name,
+                "payment_method_id": default_payment_method.id,
+                "journal_id": self.journal_id.id,
+                "payment_provider_id": self.id,
+                "payment_account_id": self._get_payment_method_outstanding_account_id(
+                    default_payment_method
+                ),
+            }
+            pay_method_line_same_code = self.env["account.payment.channel"].search(
+                [
+                    *self.env["account.payment.channel"]._check_company_domain(
+                        self.company_id
+                    ),
+                    ("code", "=", self._get_code()),
+                ],
+                limit=1,
+            )
+            if pay_method_line_same_code:
+                create_values["payment_account_id"] = (
+                    pay_method_line_same_code.payment_account_id.id
+                )
+            if self._get_code() == "sepa_direct_debit":
+                create_values["name"] = "Online SEPA"
+            self.env["account.payment.channel"].create(create_values)
+
+    def _get_payment_method_outstanding_account_id(self, payment_method_id):
+        if self.code == "custom":
+            return False
+        account_ref = (
+            "account_journal_payment_debit_account_id"
+            if payment_method_id.payment_type == "inbound"
+            else "account_journal_payment_credit_account_id"
+        )
+        chart_template = self.with_context(
+            allowed_company_ids=self.company_id.root_id.ids
+        ).env["account.chart.template"]
+        return (
+            chart_template.ref(account_ref, raise_if_not_found=False)
+            or self.company_id.account_config_id.transfer_account_id
+        ).id
+
+    @api.depends("code", "state", "company_id")
+    def _compute_journal_id(self) -> None:
+        first_channel_by_provider = {}
+        for channel in self.env["account.payment.channel"].search(
+            [
+                ("payment_provider_id", "in", self._origin.ids),
+                ("journal_id", "!=", False),
+            ]
+        ):
+            first_channel_by_provider.setdefault(channel.payment_provider_id, channel)
+        first_bank_journal_by_company = {}
+        for journal in self.env["account.journal"].search(
+            [("company_id", "in", self.company_id.ids), ("type", "=", "bank")]
+        ):
+            first_bank_journal_by_company.setdefault(journal.company_id, journal)
+
+        for provider in self:
+            pay_method_line = first_channel_by_provider.get(provider._origin)
+
+            if pay_method_line:
+                provider.journal_id = pay_method_line.journal_id
+            elif provider.state in ("enabled", "test"):
+                provider.journal_id = first_bank_journal_by_company.get(
+                    provider.company_id, self.env["account.journal"]
+                )
+                if provider.id:
+                    provider._sync_payment_channel()
+
+    def _inverse_journal_id(self) -> None:
+        for provider in self:
+            provider._sync_payment_channel()
+
+    @api.model
+    def _get_provider_payment_method(self, code):
+        return self.env["account.payment.method"].search([("code", "=", code)], limit=1)
+
+    # === BUSINESS METHODS ===#
+
+    @api.model
+    def _get_compatible_providers(
+        self, company_id, partner_id, *args, report=None, **kwargs
+    ):
+        """Override of `payment` to drop the providers the customer's pricelist rules out.
+
+        A provider that lists no pricelist is available whatever the customer's, so the
+        restriction stays opt-in.
+
+        :param int company_id: The company to which providers must belong, as a `res.company` id.
+        :param int partner_id: The partner making the payment, as a `res.partner` id.
+        :param dict report: The report in which each provider's availability status and reason must
+                            be logged.
+        :return: The compatible providers.
+        :rtype: payment.provider
+        """
+        providers = super()._get_compatible_providers(
+            company_id, partner_id, *args, report=report, **kwargs
+        )
+        pricelist = (
+            self.env["res.partner"].browse(partner_id).property_product_pricelist
+        )
+        if pricelist:
+            unfiltered_providers = providers
+            providers = providers.filtered(
+                lambda p: (
+                    not p.available_pricelist_ids
+                    or pricelist in p.available_pricelist_ids
+                )
+            )
+            payment_utils.add_to_report(
+                report,
+                unfiltered_providers - providers,
+                available=False,
+                reason=REPORT_REASONS_MAPPING["pricelist_not_allowed"],
+            )
+        return providers
+
+    @api.model
+    def _setup_provider(self, code, **kwargs) -> None:
+        """Override of `payment` to create the payment method of the provider."""
+        super()._setup_provider(code, **kwargs)
+        self._setup_payment_method(code)
+
+    @api.model
+    def _setup_payment_method(self, code) -> None:
+        if code not in ("none", "custom") and not self._get_provider_payment_method(
+            code
+        ):
+            providers_description = dict(
+                self._fields["code"]._description_selection(self.env)
+            )
+            self.env["account.payment.method"].sudo().create(
+                {
+                    "name": providers_description[code],
+                    "code": code,
+                    "payment_type": "inbound",
+                }
+            )
+
+    def _has_existing_payment(self, payment_method) -> bool:
+        existing_payment_count = self.env["account.payment"].search_count(
+            [("payment_method_id", "=", payment_method.id)], limit=1
+        )
+        return bool(existing_payment_count)
+
+    @api.model
+    def _remove_provider(self, code, **kwargs) -> None:
+        """Override of `payment` to delete the payment method of the provider."""
+        payment_method = self._get_provider_payment_method(code)
+        # If the payment method is used by any payments, we block the uninstallation of the module.
+        if self._has_existing_payment(payment_method):
+            raise UserError(
+                self.env._(
+                    "You cannot uninstall this module as payments using this payment method already exist."
+                )
+            )
+        super()._remove_provider(code, **kwargs)
+        payment_method.unlink()

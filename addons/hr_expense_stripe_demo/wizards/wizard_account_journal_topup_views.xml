@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <data>
+        <record id="hr_expense_stripe_topup_wizard_inherit_demo" model="ir.ui.view">
+            <field name="name">hr.expense.stripe.topup.wizard.form.inherit.demo</field>
+            <field name="model">wizard.account.journal.topup</field>
+            <field
+                name="inherit_id"
+                ref="hr_expense_stripe.hr_expense_stripe_topup_wizard_form" />
+            <field name="arch" type="xml">
+                <!-- US PULL BUTTONS -->
+                <xpath expr="//button[hasclass('us_topup')]" position="after">
+                    <button
+                        name="action_topup"
+                        type="object"
+                        invisible="is_live_mode or pull_push_funds == 'push'"
+                        class="btn btn-primary">
+                        Simulate Topup
+                    </button>
+                </xpath>
+                <xpath expr="//button[hasclass('eu_done')]" position="after">
+                    <button
+                        name="action_simulate_topup"
+                        type="object"
+                        invisible="is_live_mode or pull_push_funds == 'pull'"
+                        class="btn btn-primary">
+                        Simulate Topup
+                    </button>
+                    <button
+                        special="cancel"
+                        string="Close"
+                        invisible="is_live_mode or pull_push_funds == 'pull'"
+                        class="btn btn-secondary" />
+                </xpath>
+            </field>
+        </record>
+    </data>
+
+</odoo>

@@ -1,0 +1,25 @@
+.o-mail-AutoresizeInput {
+    --o-input-border-color: transparent;
+    border: $input-border-width solid var(--o-input-border-color);
+    background-color: var(--o-input-background-color, #{$input-bg});
+
+    &:where(:not([disabled])):where(:not(:focus)) {
+        &::placeholder {
+            font-style: italic;
+        }
+    }
+
+    &:not([disabled]) {
+        &:hover {
+            --o-input-border-color: #{o-token(--border-color, $border-color)};
+        }
+        &:focus {
+            --o-input-border-color: #{o-token(--o-action, $o-component-active-border)};
+            color: o-token(--body-color, $body-color) !important;
+        }
+    }
+
+    &:where([disabled]) {
+        color: o-palette-token(--o-text, $body-color);
+    }
+}

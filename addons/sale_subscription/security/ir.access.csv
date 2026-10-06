@@ -1,0 +1,23 @@
+id,name,model_id/id,group_id/id,kind,operation,reach,anchor,domain
+mail_plan_rule_group_sale_manager_order,Manager can manage sale order plans,mail.model_mail_activity_plan,sale.group_sale_manager,permission,cud,all,,"[('res_model', '=', 'sale.order')]"
+mail_plan_templates_rule_group_sale_manager_order,Manager can manage sale order plan templates,mail.model_mail_activity_plan_template,sale.group_sale_manager,permission,cud,all,,"[('plan_id.res_model', '=', 'sale.order')]"
+sale_subscription_report_personal_rule,Personal Subscription Analysis,model_sale_subscription_report,sale.group_sale_salesman,permission,r,own,,
+sale_order_report_see_all,All Orders Analysis,model_sale_subscription_report,sale.group_sale_salesman_all_leads,permission,r,,,
+access_sale_subscription_close_reason_manager,access_sale_order_close_reason_manager,model_sale_order_close_reason,sale.group_sale_manager,permission,cud,,,
+access_subscription_close_reason_public_public,access_order_close_reason_public,model_sale_order_close_reason,base.group_public,permission,r,,,
+access_subscription_close_reason_public_portal,access_order_close_reason_public,model_sale_order_close_reason,base.group_portal,permission,r,,,
+access_subscription_close_reason_public_employee,access_order_close_reason_public,model_sale_order_close_reason,base.group_user,permission,r,,,
+access_sale_order_log,access_sale_order_log,model_sale_order_log,sale.group_sale_salesman,permission,r,,,
+access_sms_template_sale_subscription_manager_cud,access.sms.template.sale.subscription.manager,sms.model_sms_template,sale.group_sale_manager,permission,cud,,,
+access_sale_subscription_close_reason_wizard,access.sale.subscription.close.reason.wizard,model_wizard_sale_order_close_subscription,sale.group_sale_salesman,permission,cru,,,
+access_sale_subscription_change_customer_wizard,access.sale.subscription.change.customer.wizard,model_wizard_sale_order_update_customer,sale.group_sale_manager,permission,cru,,,
+access_sale_order_log_report_salesman,access_sale_order_log_report_salesman,model_sale_order_log_report,sale.group_sale_salesman,permission,r,,,
+mail_plan_rule_group_sale_manager,Manager can manage sale order plans,mail.model_mail_activity_plan,sale.group_sale_manager,permission,cud,all,,"[('res_model', '=', 'sale.order')]"
+mail_plan_template_rule_group_sale_manager,Manager can manage sale order plan templates,mail.model_mail_activity_plan_template,sale.group_sale_manager,permission,cud,all,,"[('plan_id.res_model', '=', 'sale.order')]"
+access_sale_subscription_plan_salesman,access_sale_subscription_plan_salesman,model_sale_subscription_plan,sale.group_sale_salesman,permission,r,,,
+access_sale_subscription_plan_manager,access_sale_subscription_plan_manager,model_sale_subscription_plan,sale.group_sale_manager,permission,cud,,,
+sale_subscription_log_multicompany,Subscription log multi-company,model_sale_order_log,base.group_everyone,guard,crud,company,,
+sale_subscription_plan_rule_company,Subscription Plan multi-company,model_sale_subscription_plan,base.group_everyone,guard,crud,company,,
+sale_subscription_pricing_rule_company,Subscription Pricing multi-company,model_product_pricelist_item,base.group_everyone,guard,crud,,,"['&', ('company_id', 'in', [False] + company_ids), '|', ('pricelist_id', '=', False), ('pricelist_id.company_id', 'in', [False] + company_ids)]"
+sale_subscription_report_comp_rule,Subscription Analysis multi-company,model_sale_subscription_report,base.group_everyone,guard,crud,company,,
+sale_subscription_log_report_multicompany,Subscription log report multi-company,model_sale_order_log_report,base.group_everyone,guard,crud,company,,

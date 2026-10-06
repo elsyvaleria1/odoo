@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="appraisal_select_survey_view_form" model="ir.ui.view">
+        <field name="name">appraisal.select.survey.view.form</field>
+        <field name="model">wizard.survey.user_input.view.result</field>
+        <field name="arch" type="xml">
+            <form string="Choose Survey">
+                <sheet>
+                    <field name="survey_input_ids" invisible="1" />
+                    <group col="2">
+                        <field name="survey_template_id" options="{'no_create': 1}" />
+                    </group>
+                </sheet>
+                <footer>
+                    <button
+                        name="action_see_results"
+                        type="object"
+                        string="See Results"
+                        class="btn-primary"
+                        data-hotkey="q" />
+                    <button
+                        special="cancel"
+                        string="Discard"
+                        class="btn-secondary"
+                        data-hotkey="x" />
+                </footer>
+            </form>
+        </field>
+    </record>
+
+</odoo>

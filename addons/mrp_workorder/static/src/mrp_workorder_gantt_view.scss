@@ -1,0 +1,22 @@
+@mixin gantt-decoration-color($-token, $-color) {
+    background-image: linear-gradient(
+        o-token($-token, $-color),
+        o-token($-token, $-color)
+    );
+    background-color: o-token-lighten($-token, $-color, 10%);
+    &:before {
+        content: none;
+    }
+}
+
+.o_mrp_workorder_gantt .o_gantt_cells .o_gantt_pill_wrapper div.o_gantt_pill {
+    &.decoration-success {
+        @include gantt-decoration-color(--success, $success);
+    }
+    &.decoration-warning {
+        @include gantt-decoration-color(--o-gray-500, map-get($grays, "500"));
+    }
+    &.decoration-danger {
+        @include gantt-decoration-color(--danger, $danger);
+    }
+}

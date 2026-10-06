@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!--
+        The map's own view reads map_title / map_subtitle, which this module's
+        _compute_map_labels fills with the vehicle and its driver. These are the
+        raw columns, for search and group-by.
+    -->
+    <record id="view_device_device_geoengine_asset" model="ir.ui.view">
+        <field name="name">device.device.geoengine.asset</field>
+        <field name="model">device.device</field>
+        <field
+            name="inherit_id"
+            ref="device_gps_geoengine.view_device_device_geoengine" />
+        <field name="arch" type="xml">
+            <field name="map_subtitle" position="after">
+                <field name="operator_name" />
+                <field name="asset_name" />
+                <field name="asset_license_plate" />
+                <field name="stay_place" />
+                <field name="stay_since" />
+                <field name="stay_elapsed" />
+            </field>
+            <!-- Where the vehicle is now, as a place: the popup gives the street
+                address, this adds the geofence and its client, or the place
+                outside every geofence, and for how long. The client parcel
+                it left is not shown: the visits report keeps that. -->
+            <xpath expr="//div[@name='current_location']" position="after">
+                <div name="current_stay" class="border-top pt-2 mt-2">
+                    <t t-if="record.gps_movement_state.value">
+                        <span class="badge text-bg-success">In Motion</span>
+                        <div t-if="record.stay_since.value" class="small text-muted">
+                            Since <t t-out="record.stay_since.value" />
+                            (<t t-out="record.stay_elapsed.value" />)
+                        </div>
+                    </t>
+                    <t t-else="">
+                        <span class="badge text-bg-secondary">Parked</span>
+                        <div t-if="record.stay_place.value" class="fw-bold">
+                            <t t-out="record.stay_place.value" />
+                        </div>
+                        <div t-else="" class="small text-muted">
+                            Place pending: stops refresh every 10 minutes.
+                        </div>
+                        <div t-if="record.stay_since.value" class="small text-muted">
+                            Since <t t-out="record.stay_since.value" />
+                        </div>
+                        <div t-if="record.stay_elapsed.value" class="small text-muted">
+                            There for: <t t-out="record.stay_elapsed.value" />
+                        </div>
+                    </t>
+                </div>
+            </xpath>
+        </field>
+    </record>
+
+    <!--
+        The live map too, in orange until someone marks them: geofences
+        without a client and places without a geofence where a vehicle
+        stayed more than 20 minutes.
+    -->
+    <record
+        id="vector_layer_device_device_geofences_to_mark"
+        model="geoengine.vector.layer">
+        <field name="name">Geofences to Mark</field>
+        <field name="view_id" ref="device_gps_geoengine.view_device_device_geoengine" />
+        <field name="model_id" ref="device_gps_geoengine.model_device_geo_fence" />
+        <field name="model_domain">[('to_mark', '=', True)]</field>
+        <field
+            name="geo_field_id"
+            ref="device_gps_geoengine.field_device_geo_fence__the_geom" />
+        <field name="geo_repr">basic</field>
+        <field name="begin_color">#fd7e14</field>
+        <field name="sequence" eval="0" />
+        <field name="active_on_startup" eval="True" />
+        <field name="layer_opacity">0.6</field>
+    </record>
+
+    <record
+        id="vector_layer_device_device_places_to_mark"
+        model="geoengine.vector.layer">
+        <field name="name">Places to Mark</field>
+        <field name="view_id" ref="device_gps_geoengine.view_device_device_geoengine" />
+        <field name="model_id" ref="model_device_gps_stop" />
+        <field
+            name="model_domain">[('to_mark', '=', True), ('geofence_id', '=', False)]</field>
+        <field name="geo_field_id" ref="field_device_gps_stop__the_point" />
+        <field name="geo_repr">basic</field>
+        <field name="begin_color">#fd7e14</field>
+        <field name="sequence" eval="0" />
+        <field name="active_on_startup" eval="True" />
+        <field name="layer_opacity">1.0</field>
+    </record>
+
+</odoo>

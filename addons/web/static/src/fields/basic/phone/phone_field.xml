@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="web.PhoneField">
+        <div class="o_phone_content d-inline-flex w-100">
+            <t t-if="this.props.readonly">
+                <a t-if="this.props.record.data[this.props.name]" class="o_form_uri" target="_blank" t-att-href="this.phoneHref" t-out="this.props.record.data[this.props.name]"/>
+            </t>
+            <t t-else="">
+                <input
+                    class="o_input"
+                    t-att-id="this.props.id"
+                    type="tel"
+                    autocomplete="off"
+                    t-att-placeholder="this.props.placeholder"
+                    t-att-required="this.props.required"
+                    t-ref="this.inputRef"
+                />
+            </t>
+        </div>
+    </t>
+
+    <t t-name="web.FormPhoneField" t-inherit="web.PhoneField" t-inherit-mode="primary">
+        <xpath expr="//input" position="after">
+            <a
+                t-if="this.props.record.data[this.props.name]"
+                t-att-href="this.phoneHref"
+                target="_blank"
+                class="o_phone_form_link ms-3 d-inline-flex align-items-center"
+            >
+                <i class="fa-solid fa-phone"></i><small class="fw-bold ms-1">Call</small>
+            </a>
+        </xpath>
+    </t>
+
+</templates>

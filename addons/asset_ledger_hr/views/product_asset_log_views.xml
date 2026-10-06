@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_search_product_asset_log_hr" model="ir.ui.view">
+        <field name="name">resource.asset.log.hr.search</field>
+        <field name="model">resource.asset.log</field>
+        <field name="inherit_id" ref="asset_ledger.view_search_product_asset_log" />
+        <field name="arch" type="xml">
+            <field name="vendor_id" position="after">
+                <field name="operator_id" />
+                <field name="asset_manager_id" />
+            </field>
+
+            <filter name="groupby_asset_id" position="after">
+                <filter
+                    name="groupby_operator_id"
+                    string="Operator"
+                    context="{'group_by': 'operator_id'}" />
+                <filter
+                    name="groupby_asset_manager_id"
+                    string="Asset Manager"
+                    context="{'group_by': 'asset_manager_id'}" />
+            </filter>
+        </field>
+    </record>
+
+    <record id="view_list_product_asset_log_hr" model="ir.ui.view">
+        <field name="name">resource.asset.log.hr.list</field>
+        <field name="model">resource.asset.log</field>
+        <field name="inherit_id" ref="asset_ledger.view_list_product_asset_log" />
+        <field name="arch" type="xml">
+            <field name="asset_id" position="after">
+                <field
+                    name="operator_id"
+                    widget="many2one_avatar"
+                    optional="show"
+                    readonly="1" />
+                <field
+                    name="asset_manager_id"
+                    widget="many2one_avatar"
+                    optional="hide"
+                    readonly="1" />
+            </field>
+        </field>
+    </record>
+
+    <record id="view_kanban_product_asset_log_hr" model="ir.ui.view">
+        <field name="name">resource.asset.log.hr.kanban</field>
+        <field name="model">resource.asset.log</field>
+        <field name="inherit_id" ref="asset_ledger.view_kanban_product_asset_log" />
+        <field name="arch" type="xml">
+            <!-- [last()] is applied per parent context, not to the flattened result, so
+                the bare hasclass('text-truncate') form matched three divs and Odoo took
+                the first. This path matches exactly that one node. -->
+            <xpath
+                expr="//div[hasclass('flex-row')]/div[hasclass('text-truncate')]"
+                position="inside">
+                <field name="operator_id" />
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_form_product_asset_log_hr" model="ir.ui.view">
+        <field name="name">resource.asset.log.hr.form</field>
+        <field name="model">resource.asset.log</field>
+        <field name="inherit_id" ref="asset_ledger.view_form_product_asset_log" />
+        <field name="arch" type="xml">
+            <field name="asset_id" position="after">
+                <field
+                    name="operator_id"
+                    widget="many2one_avatar"
+                    invisible="log_type != 'operator'"
+                    readonly="1" />
+                <field
+                    name="asset_manager_id"
+                    widget="many2one_avatar"
+                    invisible="log_type != 'operator'"
+                    readonly="1" />
+            </field>
+        </field>
+    </record>
+
+</odoo>

@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record
+        id="view_purchase_order_line_price_history_form_competition"
+        model="ir.ui.view">
+        <field name="name">purchase.order.line.price.history.form.competition</field>
+        <field name="model">wizard.purchase.order.line.view.price.history</field>
+        <field
+            name="inherit_id"
+            ref="purchase.view_purchase_order_line_price_history_form" />
+        <field name="arch" type="xml">
+            <group name="price_stats" position="after">
+                <group
+                    name="competition"
+                    string="Competitors"
+                    invisible="not competitor_offer_count">
+                    <group>
+                        <field name="competitor_best_price" />
+                        <field name="competitor_avg_price" />
+                    </group>
+                    <group>
+                        <field
+                            name="competitor_partner_price"
+                            invisible="not competitor_partner_price" />
+                        <field name="competitor_offer_count" />
+                        <button
+                            name="action_view_competitor_prices"
+                            type="object"
+                            string="Competitor Prices"
+                            icon="fa-crosshairs"
+                            class="btn-link" />
+                    </group>
+                </group>
+            </group>
+        </field>
+    </record>
+
+</odoo>

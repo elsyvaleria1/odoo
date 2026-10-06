@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="sale_order_form_competition" model="ir.ui.view">
+        <field name="name">sale.order.form.competition</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_sale_order_form" />
+        <field name="arch" type="xml">
+            <xpath
+                expr="//field[@name='line_ids']/list/widget[@name='price_history']"
+                position="after">
+                <field
+                    name="market_position"
+                    widget="badge"
+                    optional="show"
+                    decoration-danger="market_position == 'cannot_match'"
+                    decoration-info="market_position == 'competitive'"
+                    decoration-success="market_position == 'leader'"
+                    decoration-warning="market_position == 'behind'" />
+                <field name="market_price" optional="hide" />
+                <field name="price_gap" optional="hide" />
+                <field name="recommended_price" optional="hide" />
+                <field name="limit_price" optional="hide" />
+            </xpath>
+            <xpath expr="//page[@name='other_information']" position="after">
+                <page name="market" string="Market">
+                    <group>
+                        <group>
+                            <field name="competitor_offer_count" invisible="1" />
+                            <field name="market_position" />
+                            <label
+                                for="market_rank"
+                                invisible="not market_offer_count" />
+                            <div class="o_row" invisible="not market_offer_count">
+                                <field name="market_rank" class="oe_inline" />
+                                <span>of</span>
+                                <field name="market_offer_count" class="oe_inline" />
+                                <span>offers</span>
+                            </div>
+                            <field name="competitor_ids" widget="many2many_tags" />
+                        </group>
+                        <group>
+                            <field name="lost_to_id" invisible="not lost_to_id" />
+                            <field
+                                name="price_gap_at_close"
+                                invisible="outcome not in ('won', 'lost')" />
+                        </group>
+                    </group>
+                    <button
+                        name="action_record_competitor_offer"
+                        type="object"
+                        string="Record a Competitor Offer"
+                        icon="fa-crosshairs"
+                        class="btn-link" />
+                    <button
+                        name="action_compare_competitor_offers"
+                        type="object"
+                        string="Compare the Offers"
+                        icon="fa-th"
+                        invisible="not competitor_offer_count"
+                        class="btn-link" />
+                    <field name="competitor_offer_ids" readonly="1">
+                        <list>
+                            <field name="date" />
+                            <field name="competitor_id" />
+                            <field name="source" />
+                            <field name="confidence" />
+                            <field name="amount_total" />
+                            <field name="currency_id" column_invisible="1" />
+                            <field name="is_winner" />
+                        </list>
+                    </field>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

@@ -1,0 +1,861 @@
+from datetime import datetime, timedelta
+
+from odoo import Command
+from odoo.exceptions import AccessError
+from odoo.tests import Form, tagged
+from odoo.tools import html2plaintext
+
+from odoo.addons.sale.tests.common import TestSaleCommon
+from odoo.addons.stock.tests.test_report import TestReportsCommon
+
+
+class TestSaleStockReports(TestReportsCommon):
+    def test_report_forecast_1_sale_order_replenishment(self):
+        self.picking_type_out.reservation_method = "manual"
+
+        today = datetime.today()
+        quant_vals = {
+            "product_id": self.product.id,
+            "product_uom_id": self.product.uom_id.id,
+            "location_id": self.stock_location.id,
+            "quantity": 5,
+            "reserved_quantity": 0,
+        }
+        self.env["stock.quant"].create(quant_vals)
+        so_form = Form(self.env["sale.order"])
+        so_form.partner_id = self.partner
+        with so_form.line_ids.new() as so_line:
+            so_line.product_id = self.product
+            so_line.product_qty = 5
+        so_1 = so_form.save()
+        so_1.action_confirm()
+        so_1.picking_ids.date_planned = today + timedelta(days=7)
+
+        so_form = Form(self.env["sale.order"])
+        so_form.partner_id = self.partner
+        with so_form.line_ids.new() as so_line:
+            so_line.product_id = self.product
+            so_line.product_qty = 5
+        so_2 = so_form.save()
+        so_2.action_confirm()
+        so_2.picking_ids.date_planned = today + timedelta(days=1)
+
+        _, _, lines = self.get_report_forecast(
+            product_template_ids=self.product_template.ids
+        )
+        self.assertEqual(len(lines), 2)
+        line_1 = lines[0]
+        line_2 = lines[1]
+        self.assertEqual(line_1["quantity"], 5)
+        self.assertTrue(line_1["replenishment_filled"])
+        self.assertEqual(line_1["document_out"]["id"], so_2.id)
+        self.assertEqual(line_2["quantity"], 5)
+        self.assertEqual(line_2["replenishment_filled"], False)
+        self.assertEqual(line_2["document_out"]["id"], so_1.id)
+
+    def test_report_forecast_2_report_line_corresponding_to_so_line_highlighted(self):
+        so_form = Form(self.env["sale.order"])
+        so_form.partner_id = self.partner
+        with so_form.line_ids.new() as line:
+            line.product_id = self.product
+            line.product_qty = 5
+        so1 = so_form.save()
+        so1.action_confirm()
+        so2 = so1.copy()
+        so2.action_confirm()
+
+        for so in [so1, so2]:
+            context = {"move_to_match_ids": so.line_ids.move_ids.ids}
+            _, _, lines = self.get_report_forecast(
+                product_template_ids=self.product_template.ids, context=context
+            )
+            for line in lines:
+                if line["document_out"]["id"] == so.id:
+                    self.assertTrue(
+                        line["is_matched"],
+                        "The corresponding SO line should be matched in the forecast report.",
+                    )
+                else:
+                    self.assertFalse(
+                        line["is_matched"],
+                        "A line of the forecast report not linked to the SO shoud not be matched.",
+                    )
+
+    def test_report_forecast_3_unreserve_2_step_delivery(self):
+        warehouse = self.env.ref("stock.warehouse0")
+        warehouse.delivery_steps = "pick_ship"
+        product = self.product
+        self.env["stock.quant"]._update_available_quantity(
+            product, warehouse.lot_stock_id, 5
+        )
+        so = self.env["sale.order"].create(
+            {
+                "partner_id": self.partner.id,
+                "line_ids": [
+                    Command.create(
+                        {
+                            "name": product.name,
+                            "product_id": product.id,
+                            "product_qty": 3,
+                        }
+                    ),
+                ],
+            }
+        )
+        so.action_confirm()
+        _, _, lines = self.get_report_forecast(
+            product_template_ids=product.product_tmpl_id.ids
+        )
+        outgoing_line = next(filter(lambda line: line.get("document_out"), lines))
+        self.assertEqual(
+            (
+                outgoing_line["document_out"]["id"],
+                outgoing_line["quantity"],
+                outgoing_line["replenishment_filled"],
+                outgoing_line["reservation"]["id"],
+            ),
+            (
+                so.id,
+                3.0,
+                True,
+                so.picking_ids.filtered(
+                    lambda p: p.picking_type_id == warehouse.pick_type_id
+                ).id,
+            ),
+        )
+        stock_line = next(filter(lambda line: not line.get("document_out"), lines))
+        self.assertEqual(
+            (
+                stock_line["quantity"],
+                stock_line["replenishment_filled"],
+                stock_line["reservation"],
+            ),
+            (2.0, True, False),
+        )
+        pick_delivery = so.picking_ids.filtered(
+            lambda p: p.picking_type_id == warehouse.pick_type_id
+        )
+        pick_delivery.action_unreserve()
+        _, _, lines = self.get_report_forecast(
+            product_template_ids=product.product_tmpl_id.ids
+        )
+        outgoing_line = next(filter(lambda line: line.get("document_out"), lines))
+        self.assertEqual(
+            (
+                outgoing_line["document_out"]["id"],
+                outgoing_line["quantity"],
+                outgoing_line["replenishment_filled"],
+                outgoing_line["reservation"],
+            ),
+            (so.id, 3.0, True, False),
+        )
+        stock_line = next(filter(lambda line: not line.get("document_out"), lines))
+        self.assertEqual(
+            (
+                stock_line["quantity"],
+                stock_line["replenishment_filled"],
+                stock_line["reservation"],
+            ),
+            (2.0, True, False),
+        )
+
+    def test_report_forecast_4_so_from_another_salesman(self):
+        with Form(self.env["sale.order"]) as so_form:
+            so_form.partner_id = self.partner
+            with so_form.line_ids.new() as line:
+                line.product_id = self.product
+                line.product_qty = 3
+            sale_order = so_form.save()
+        sale_order.action_confirm()
+
+        with Form(self.env["sale.order"]) as so_form:
+            so_form.partner_id = self.partner
+            with so_form.line_ids.new() as line:
+                line.product_id = self.product
+                line.product_qty = 2
+            draft = so_form.save()
+
+        other = self.env["res.users"].create(
+            {
+                "name": "Other Salesman",
+                "login": "other",
+                "group_ids": [
+                    Command.link(self.env.ref("sale.group_sale_salesman").id),
+                    Command.link(self.env.ref("stock.group_stock_readonly").id),
+                ],
+            }
+        )
+
+        sale_order.env.invalidate_all()
+        report_values = (
+            self.env["stock.forecasted_product_product"]
+            .with_user(other)
+            .get_report_values(docids=self.product.ids)
+        )
+        self.assertEqual(len(report_values["docs"]["lines"]), 1)
+        self.assertEqual(
+            report_values["docs"]["lines"][0]["document_out"]["name"], sale_order.name
+        )
+        self.assertEqual(
+            len(report_values["docs"]["product"][self.product.id]["draft_sale_orders"]),
+            1,
+        )
+        self.assertEqual(
+            report_values["docs"]["product"][self.product.id]["draft_sale_orders"][0][
+                "name"
+            ],
+            draft.name,
+        )
+
+        with self.assertRaises(AccessError):
+            sale_order.with_user(other).check_access("read")
+        with self.assertRaises(AccessError):
+            draft.with_user(other).check_access("read")
+
+        self.assertFalse(
+            report_values["docs"]["lines"][0]["document_out"]["can_open"],
+            "An unreadable source document must not be offered as a link",
+        )
+        own_report = self.env["stock.forecasted_product_product"].get_report_values(
+            docids=self.product.ids
+        )
+        self.assertTrue(
+            own_report["docs"]["lines"][0]["document_out"]["can_open"],
+            "The document's own salesman must still get a working link",
+        )
+
+    def test_add_reference_remove_reference_works_with_multiple_records(self):
+        so = self.env["sale.order"].create(
+            {
+                "partner_id": self.partner.id,
+                "line_ids": [
+                    Command.create(
+                        {
+                            "product_id": self.product.id,
+                            "product_qty": 5,
+                        }
+                    )
+                ],
+            }
+        )
+        so.action_confirm()
+        so_delivery = so.picking_ids
+
+        so_delivery.reference_ids.copy()
+
+        picking_receipt = self.env["stock.picking"].create(
+            {
+                "picking_type_id": self.env.ref("stock.picking_type_in").id,
+                "partner_id": self.partner.id,
+                "move_ids": [
+                    Command.create(
+                        {
+                            "product_id": self.product.id,
+                            "product_uom_qty": 18,
+                        }
+                    )
+                ],
+            }
+        )
+        picking_receipt.action_confirm()
+
+        self.env["report.stock.report_reception"]._share_source_references(
+            picking_receipt.move_ids,
+            so_delivery.move_ids,
+        )
+        self.assertEqual(
+            picking_receipt.move_ids.reference_ids, so_delivery.move_ids.reference_ids
+        )
+
+        self.env["report.stock.report_reception"]._unshare_source_references(
+            picking_receipt.move_ids,
+            so_delivery.move_ids,
+        )
+        self.assertNotIn(
+            picking_receipt.move_ids.reference_ids, so_delivery.move_ids.reference_ids
+        )
+
+
+@tagged("post_install", "-at_install")
+class TestSaleStockInvoices(TestSaleCommon):
+    def setUp(self):
+        super().setUp()
+        self.env.ref("base.group_user").write(
+            {"implied_ids": [(4, self.env.ref("stock.group_production_lot").id)]}
+        )
+        self.product_by_lot = self.env["product.product"].create(
+            {
+                "name": "Product By Lot",
+                "is_storable": True,
+                "tracking": "lot",
+            }
+        )
+        self.product_by_usn = self.env["product.product"].create(
+            {
+                "name": "Product By USN",
+                "is_storable": True,
+                "tracking": "serial",
+            }
+        )
+        self.warehouse = self.env["stock.warehouse"].search(
+            [("company_id", "=", self.env.company.id)], limit=1
+        )
+        self.stock_location = self.warehouse.lot_stock_id
+        lot = self.env["product.trace"].create(
+            {
+                "name": "LOT0001",
+                "product_id": self.product_by_lot.id,
+            }
+        )
+        self.usn01 = self.env["product.trace"].create(
+            {
+                "name": "USN0001",
+                "product_id": self.product_by_usn.id,
+            }
+        )
+        self.usn02 = self.env["product.trace"].create(
+            {
+                "name": "USN0002",
+                "product_id": self.product_by_usn.id,
+            }
+        )
+        self.env["stock.quant"]._update_available_quantity(
+            self.product_by_lot, self.stock_location, 10, trace_id=lot
+        )
+        self.env["stock.quant"]._update_available_quantity(
+            self.product_by_usn, self.stock_location, 1, trace_id=self.usn01
+        )
+        self.env["stock.quant"]._update_available_quantity(
+            self.product_by_usn, self.stock_location, 1, trace_id=self.usn02
+        )
+
+    def test_invoice_less_than_delivered(self):
+        display_lots = self.env.ref("stock_account.group_lot_on_invoice")
+        display_uom = self.env.ref("uom.group_uom")
+        self.env.user.write({"group_ids": [(4, display_lots.id), (4, display_uom.id)]})
+
+        so = self.env["sale.order"].create(
+            {
+                "partner_id": self.partner_a.id,
+                "line_ids": [
+                    (
+                        0,
+                        0,
+                        {
+                            "name": self.product_by_lot.name,
+                            "product_id": self.product_by_lot.id,
+                            "product_qty": 5,
+                        },
+                    ),
+                ],
+            }
+        )
+        so.action_confirm()
+
+        picking = so.picking_ids
+        picking.move_ids.write({"quantity": 5, "picked": True})
+        picking.button_validate()
+
+        invoice = so._create_invoices()
+        with Form(invoice) as form:
+            with form.invoice_line_ids.edit(0) as line:
+                line.quantity = 2
+        invoice.action_post()
+
+        html = self.env["ir.actions.report"]._render_qweb_html(
+            "account.report_invoice_with_payments", invoice.ids
+        )[0]
+        text = html2plaintext(html)
+        self.assertRegex(
+            text,
+            r"Product By Lot\n2.00Units\nLOT0001",
+            "There should be a line that specifies 2 x LOT0001",
+        )
+
+    def test_invoice_before_delivery(self):
+        display_lots = self.env.ref("stock_account.group_lot_on_invoice")
+        display_uom = self.env.ref("uom.group_uom")
+        self.env.user.write({"group_ids": [(4, display_lots.id), (4, display_uom.id)]})
+
+        self.product_by_lot.invoice_policy = "ordered"
+
+        so = self.env["sale.order"].create(
+            {
+                "partner_id": self.partner_a.id,
+                "line_ids": [
+                    (
+                        0,
+                        0,
+                        {
+                            "name": self.product_by_lot.name,
+                            "product_id": self.product_by_lot.id,
+                            "product_qty": 4,
+                        },
+                    ),
+                ],
+            }
+        )
+        so.action_confirm()
+
+        invoice = so._create_invoices()
+        invoice.action_post()
+
+        picking = so.picking_ids
+        picking.move_ids.write({"quantity": 4, "picked": True})
+        picking.button_validate()
+
+        html = self.env["ir.actions.report"]._render_qweb_html(
+            "account.report_invoice_with_payments", invoice.ids
+        )[0]
+        text = html2plaintext(html)
+        self.assertRegex(
+            text,
+            r"Product By Lot\n4.00Units\nLOT0001",
+            "There should be a line that specifies 4 x LOT0001",
+        )
+
+    def test_picking_description(self):
+        product_attr = self.env["product.attribute"].create(
+            {"name": "Color", "create_variant": "no_variant"}
+        )
+        product_attrv1, product_attrv2 = self.env["product.attribute.value"].create(
+            [
+                {"name": "Value1", "attribute_id": product_attr.id},
+                {"name": "Value2", "attribute_id": product_attr.id},
+            ]
+        )
+        product_template_no_variant = self.env["product.template"].create(
+            {
+                "name": "product name",
+                "attribute_line_ids": [
+                    Command.create(
+                        {
+                            "attribute_id": product_attr.id,
+                            "value_ids": [
+                                Command.set([product_attrv1.id, product_attrv2.id])
+                            ],
+                        }
+                    )
+                ],
+            }
+        )
+        so = self.env["sale.order"].create(
+            {
+                "partner_id": self.partner_a.id,
+                "line_ids": [
+                    Command.create(
+                        {
+                            "name": product_template_no_variant.name,
+                            "product_id": product_template_no_variant.product_variant_id.id,
+                            "product_qty": 4,
+                            "product_no_variant_attribute_value_ids": product_template_no_variant.product_variant_id.attribute_line_ids.product_template_value_ids,
+                        }
+                    ),
+                ],
+            }
+        )
+        so.action_confirm()
+        picking = so.picking_ids[0]
+        picking_description = picking.move_ids._get_report_description_picking()
+        self.assertEqual(picking_description, "Color: Value1\nColor: Value2")
+
+    def test_backorder_and_several_invoices(self):
+        display_lots = self.env.ref("stock_account.group_lot_on_invoice")
+        display_uom = self.env.ref("uom.group_uom")
+        self.env.user.write({"group_ids": [(4, display_lots.id), (4, display_uom.id)]})
+
+        so = self.env["sale.order"].create(
+            {
+                "partner_id": self.partner_a.id,
+                "line_ids": [
+                    (
+                        0,
+                        0,
+                        {
+                            "name": self.product_by_usn.name,
+                            "product_id": self.product_by_usn.id,
+                            "product_qty": 2,
+                        },
+                    ),
+                ],
+            }
+        )
+        so.action_confirm()
+
+        picking = so.picking_ids
+        picking.move_ids.move_line_ids[0].quantity = 1
+        picking.button_validate()
+
+        invoice01 = so._create_invoices()
+        with Form(invoice01) as form:
+            with form.invoice_line_ids.edit(0) as line:
+                line.quantity = 1
+        invoice01.action_post()
+
+        backorder = picking.backorder_ids
+        backorder.move_ids.move_line_ids.quantity = 1
+        backorder.button_validate()
+
+        IrActionsReport = self.env["ir.actions.report"]
+        html = IrActionsReport._render_qweb_html(
+            "account.report_invoice_with_payments", invoice01.ids
+        )[0]
+        text = html2plaintext(html)
+        self.assertRegex(
+            text,
+            r"Product By USN\n1.00Units\nUSN0001",
+            "There should be a line that specifies 1 x USN0001",
+        )
+        self.assertNotIn("USN0002", text)
+
+        invoice02 = so._create_invoices()
+        invoice02.action_post()
+        html = IrActionsReport._render_qweb_html(
+            "account.report_invoice_with_payments", invoice02.ids
+        )[0]
+        text = html2plaintext(html)
+        self.assertRegex(
+            text,
+            r"Product By USN\n1.00Units\nUSN0002",
+            "There should be a line that specifies 1 x USN0002",
+        )
+        self.assertNotIn("USN0001", text)
+
+        html = IrActionsReport._render_qweb_html(
+            "account.report_invoice_with_payments", invoice01.ids
+        )[0]
+        text = html2plaintext(html)
+        self.assertRegex(
+            text,
+            r"Product By USN\n1.00Units\nUSN0001",
+            "There should still be a line that specifies 1 x USN0001",
+        )
+        self.assertNotIn("USN0002", text)
+
+        invoice01.action_draft()
+        invoice01.action_post()
+        html = IrActionsReport._render_qweb_html(
+            "account.report_invoice_with_payments", invoice01.ids
+        )[0]
+        text = html2plaintext(html)
+        self.assertRegex(
+            text,
+            r"Product By USN\n1.00Units\nUSN0001",
+            "There should still be a line that specifies 1 x USN0001",
+        )
+        self.assertNotIn("USN0002", text)
+        html = IrActionsReport._render_qweb_html(
+            "account.report_invoice_with_payments", invoice02.ids
+        )[0]
+        text = html2plaintext(html)
+        self.assertRegex(
+            text,
+            r"Product By USN\n1.00Units\nUSN0002",
+            "There should be a line that specifies 1 x USN0002",
+        )
+        self.assertNotIn("USN0001", text)
+
+    def test_invoice_with_several_returns(self):
+        display_lots = self.env.ref("stock_account.group_lot_on_invoice")
+        display_uom = self.env.ref("uom.group_uom")
+        self.env.user.write({"group_ids": [(4, display_lots.id), (4, display_uom.id)]})
+
+        lot01 = self.env["product.trace"].search([("name", "=", "LOT0001")])
+        lot02, lot03 = self.env["product.trace"].create(
+            [
+                {
+                    "name": name,
+                    "product_id": self.product_by_lot.id,
+                }
+                for name in ["LOT0002", "LOT0003"]
+            ]
+        )
+        self.env["stock.quant"]._update_available_quantity(
+            self.product_by_lot, self.stock_location, 8, trace_id=lot02
+        )
+        self.env["stock.quant"]._update_available_quantity(
+            self.product_by_lot, self.stock_location, 2, trace_id=lot03
+        )
+
+        so = self.env["sale.order"].create(
+            {
+                "partner_id": self.partner_a.id,
+                "line_ids": [
+                    (
+                        0,
+                        0,
+                        {
+                            "name": self.product_by_lot.name,
+                            "product_id": self.product_by_lot.id,
+                            "product_qty": 10,
+                        },
+                    ),
+                ],
+            }
+        )
+        so.action_confirm()
+
+        delivery01 = so.picking_ids
+        delivery01.move_ids.write({"quantity": 10, "picked": True})
+        delivery01.button_validate()
+        self.assertEqual(delivery01.move_line_ids.trace_id.name, "LOT0001")
+
+        return_form = Form(
+            self.env["wizard.stock.picking.return"].with_context(
+                active_ids=[delivery01.id],
+                active_id=delivery01.id,
+                active_model="stock.picking",
+            )
+        )
+        return_wizard = return_form.save()
+        return_wizard.product_return_moves.quantity = 10
+        action = return_wizard.action_create_returns()
+        pick_return = self.env["stock.picking"].browse(action["res_id"])
+
+        move_form = Form(
+            pick_return.move_ids, view="stock.view_stock_move_form_operations"
+        )
+        with move_form.move_line_ids.edit(0) as line:
+            line.trace_id = lot01
+            line.quantity = 10
+        move_form.save()
+        pick_return.move_ids.picked = True
+        pick_return.button_validate()
+
+        return_form = Form(
+            self.env["wizard.stock.picking.return"].with_context(
+                active_ids=[pick_return.id],
+                active_id=pick_return.id,
+                active_model="stock.picking",
+            )
+        )
+        return_wizard = return_form.save()
+        return_wizard.product_return_moves.quantity = 10
+        action = return_wizard.action_create_returns()
+        delivery02 = self.env["stock.picking"].browse(action["res_id"])
+
+        delivery02.action_unreserve()
+        move_form = Form(
+            delivery02.move_ids, view="stock.view_stock_move_form_operations"
+        )
+        with move_form.move_line_ids.new() as line:
+            line.trace_id = lot02
+            line.quantity = 3
+        move_form.save()
+        delivery02.move_ids.picked = True
+        Form.from_action(self.env, delivery02.button_validate()).save().process()
+
+        invoice01 = so._create_invoices()
+        with Form(invoice01) as form:
+            with form.invoice_line_ids.edit(0) as line:
+                line.quantity = 2
+        invoice01.action_post()
+
+        html = self.env["ir.actions.report"]._render_qweb_html(
+            "account.report_invoice_with_payments", invoice01.ids
+        )[0]
+        text = html2plaintext(html)
+        self.assertRegex(
+            text,
+            r"Product By Lot\n2.00Units\nLOT0002",
+            "There should be a line that specifies 2 x LOT0002",
+        )
+        self.assertNotIn("LOT0001", text)
+
+        delivery03 = delivery02.backorder_ids
+        delivery03.action_unreserve()
+        move_form = Form(
+            delivery03.move_ids, view="stock.view_stock_move_form_operations"
+        )
+        with move_form.move_line_ids.new() as line:
+            line.trace_id = lot02
+            line.quantity = 5
+        with move_form.move_line_ids.new() as line:
+            line.trace_id = lot03
+            line.quantity = 2
+        move_form.save()
+        delivery03.move_ids.picked = True
+        delivery03.button_validate()
+
+        invoice02 = so._create_invoices()
+        invoice02.action_post()
+
+        html = self.env["ir.actions.report"]._render_qweb_html(
+            "account.report_invoice_with_payments", invoice02.ids
+        )[0]
+        text = html2plaintext(html)
+        self.assertRegex(
+            text,
+            r"Product By Lot\n6.00Units\nLOT0002",
+            "There should be a line that specifies 6 x LOT0002",
+        )
+        self.assertRegex(
+            text,
+            r"Product By Lot\n2.00Units\nLOT0003",
+            "There should be a line that specifies 2 x LOT0003",
+        )
+        self.assertNotIn("LOT0001", text)
+
+    def test_refund_cancel_invoices(self):
+        display_lots = self.env.ref("stock_account.group_lot_on_invoice")
+        display_uom = self.env.ref("uom.group_uom")
+        self.env.user.write({"group_ids": [(4, display_lots.id), (4, display_uom.id)]})
+
+        so = self.env["sale.order"].create(
+            {
+                "partner_id": self.partner_a.id,
+                "line_ids": [
+                    (
+                        0,
+                        0,
+                        {
+                            "name": self.product_by_usn.name,
+                            "product_id": self.product_by_usn.id,
+                            "product_qty": 2,
+                        },
+                    ),
+                ],
+            }
+        )
+        so.action_confirm()
+
+        picking = so.picking_ids
+        picking.move_ids.move_line_ids[0].quantity = 1
+        picking.move_ids.move_line_ids[1].quantity = 1
+        picking.move_ids.picked = True
+        picking.button_validate()
+
+        invoice01 = so._create_invoices()
+        invoice01.action_post()
+
+        html = self.env["ir.actions.report"]._render_qweb_html(
+            "account.report_invoice_with_payments", invoice01.ids
+        )[0]
+        text = html2plaintext(html)
+        self.assertRegex(
+            text,
+            r"Product By USN\n1.00Units\nUSN0001",
+            "There should be a line that specifies 1 x USN0001",
+        )
+        self.assertRegex(
+            text,
+            r"Product By USN\n1.00Units\nUSN0002",
+            "There should be a line that specifies 1 x USN0002",
+        )
+
+        refund_wizard = (
+            self.env["wizard.account.move.reverse"]
+            .with_context(active_model="account.move", active_ids=invoice01.ids)
+            .create(
+                {
+                    "journal_id": invoice01.journal_id.id,
+                }
+            )
+        )
+        res = refund_wizard.refund_moves()
+        refund_invoice = self.env["account.move"].browse(res["res_id"])
+        refund_invoice.action_post()
+
+        stock_return_picking_form = Form(
+            self.env["wizard.stock.picking.return"].with_context(
+                active_ids=picking.ids,
+                active_id=picking.sorted().ids[0],
+                active_model="stock.picking",
+            )
+        )
+        return_wiz = stock_return_picking_form.save()
+        return_wiz.product_return_moves.quantity = 2
+        res = return_wiz.action_create_returns()
+        pick_return = self.env["stock.picking"].browse(res["res_id"])
+
+        move_form = Form(
+            pick_return.move_ids, view="stock.view_stock_move_form_operations"
+        )
+        with move_form.move_line_ids.edit(0) as line:
+            line.trace_id = self.usn01
+            line.quantity = 1
+        with move_form.move_line_ids.edit(1) as line:
+            line.trace_id = self.usn02
+            line.quantity = 1
+        move_form.save()
+        pick_return.move_ids.picked = True
+        pick_return.button_validate()
+
+        html = self.env["ir.actions.report"]._render_qweb_html(
+            "account.report_invoice_with_payments", refund_invoice.ids
+        )[0]
+        text = html2plaintext(html)
+        self.assertRegex(
+            text,
+            r"Product By USN\n1.00Units\nUSN0001",
+            "There should be a line that specifies 1 x USN0001",
+        )
+        self.assertRegex(
+            text,
+            r"Product By USN\n1.00Units\nUSN0002",
+            "There should be a line that specifies 1 x USN0002",
+        )
+
+    def test_refund_modify_invoices(self):
+        display_lots = self.env.ref("stock_account.group_lot_on_invoice")
+        display_uom = self.env.ref("uom.group_uom")
+        self.env.user.write({"group_ids": [(4, display_lots.id), (4, display_uom.id)]})
+
+        so = self.env["sale.order"].create(
+            {
+                "partner_id": self.partner_a.id,
+                "line_ids": [
+                    (
+                        0,
+                        0,
+                        {
+                            "name": self.product_by_usn.name,
+                            "product_id": self.product_by_usn.id,
+                            "product_qty": 1,
+                        },
+                    ),
+                ],
+            }
+        )
+        so.action_confirm()
+
+        picking = so.picking_ids
+        picking.move_ids.move_line_ids[0].quantity = 1
+        picking.move_ids.picked = True
+        picking.button_validate()
+
+        invoice01 = so._create_invoices()
+        invoice01.action_post()
+
+        html = self.env["ir.actions.report"]._render_qweb_html(
+            "account.report_invoice_with_payments", invoice01.ids
+        )[0]
+        text = html2plaintext(html)
+        self.assertRegex(
+            text,
+            r"Product By USN\n1.00Units\nUSN0001",
+            "There should be a line that specifies 1 x USN0001",
+        )
+
+        refund_wizard = (
+            self.env["wizard.account.move.reverse"]
+            .with_context(active_model="account.move", active_ids=invoice01.ids)
+            .create(
+                {
+                    "journal_id": invoice01.journal_id.id,
+                }
+            )
+        )
+        res = refund_wizard.modify_moves()
+        invoice02 = self.env["account.move"].browse(res["res_id"])
+        invoice02.action_post()
+
+        html = self.env["ir.actions.report"]._render_qweb_html(
+            "account.report_invoice_with_payments", invoice02.ids
+        )[0]
+        text = html2plaintext(html)
+        self.assertRegex(
+            text,
+            r"Product By USN\n1.00Units\nUSN0001",
+            "There should be a line that specifies 1 x USN0001",
+        )

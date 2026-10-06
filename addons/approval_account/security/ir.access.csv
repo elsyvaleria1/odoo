@@ -1,0 +1,9 @@
+id,name,model_id/id,group_id/id,kind,operation,reach,anchor,domain
+approval_request_account_user,Approval Request: Account user,approval.model_approval_request,account.group_account_user,permission,r,all,,"[('category_id.approval_type', 'in', ['accounting', 'payment'])]"
+approval_request_account_manager,Approval Request: Account manager,approval.model_approval_request,account.group_account_manager,permission,crud,all,,"[('category_id.approval_type', 'in', ['accounting', 'payment'])]"
+approval_approver_account_user,Approval Approver: Account user,approval.model_approval_approver,account.group_account_user,permission,r,all,,"[('request_id.category_id.approval_type', 'in', ['accounting', 'payment'])]"
+approval_approver_account_manager,Approval Approver: Account manager,approval.model_approval_approver,account.group_account_manager,permission,crud,all,,"[('request_id.category_id.approval_type', 'in', ['accounting', 'payment'])]"
+approval_category_account_manager,Approval Category: Accounting manager writes accounting types,approval.model_approval_category,account.group_account_manager,permission,cud,all,,"[('approval_type', 'in', ['accounting', 'payment'])]"
+access_account_journal_approval,account.journal.approval,account.model_account_journal,base.group_user,permission,r,,,
+account_move_approver_reach,"Journal Entry: an approver reads what they are asked to decide, while they decide",account.model_account_move,approval.group_approval_decider,permission,r,own,approval_pending_user,
+account_move_line_approver_reach,"Journal Item: an approver reads the lines of what they are asked to decide, while they decide",account.model_account_move_line,approval.group_approval_decider,permission,r,own,approval_pending_user,

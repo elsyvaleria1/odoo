@@ -1,0 +1,52 @@
+// @ts-check
+/** @odoo-module native */
+import { ActionList } from "@mail/core/common/action_list";
+import { provideMailContext } from "@mail/utils/common/mail_context";
+import { Component, t, useProps } from "@odoo/owl";
+import { useService } from "@web/core/utils/hooks";
+/** @typedef {"chat"|"invite"} MeetingPanel */
+
+/**
+ * @typedef {Object} Props
+ * @property {ReturnType<typeof import("@mail/core/common/thread_actions").useThreadActions>} threadActions
+ * @extends {Component<Props, import("@web/env").OdooEnv>}
+ */
+export class MeetingSideActions extends Component {
+    static template = "mail.MeetingSideActions";
+    static props = { threadActions: t.any() };
+    static components = { ActionList };
+    props = useProps(this.constructor.props);
+
+    setup() {
+        this.store = useService("mail.store");
+        provideMailContext({ inMeetingSideActions: true });
+    }
+
+    get actions() {
+        const quickThreadActionIds = ["invite-people", "meeting-chat"];
+        const threadActions = this.props.threadActions;
+        const { quick, other, group } = threadActions.partition;
+        const partitionedActions = {
+            quick: quick.filter((action) => !quickThreadActionIds.includes(action.id)),
+            other: other.filter((action) => !quickThreadActionIds.includes(action.id)),
+            group: group
+                .map((group) =>
+                    group.filter((action) => !quickThreadActionIds.includes(action.id)),
+                )
+                .filter((g) => g.length > 0),
+        };
+        const actions = threadActions.actions.filter((action) =>
+            quickThreadActionIds.includes(action.id),
+        );
+        actions.push(
+            threadActions.more({
+                actions: [
+                    partitionedActions.quick,
+                    partitionedActions.other,
+                    ...partitionedActions.group,
+                ],
+            }),
+        );
+        return actions;
+    }
+}

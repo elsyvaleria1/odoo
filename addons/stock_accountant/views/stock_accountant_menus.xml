@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <menuitem
+        id="menu_action_stock_account_report_stock_valuation"
+        name="Inventory Valuation"
+        parent="account.account_audit_inventory_entries_menu"
+        action="stock_account.action_report_stock_valuation"
+        sequence="10"
+        groups="account.group_account_readonly" />
+
+</odoo>

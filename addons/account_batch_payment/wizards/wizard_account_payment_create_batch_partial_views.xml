@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <data>
+        <record id="create_batch_error_wizard" model="ir.ui.view">
+            <field name="name">account.create.batch.error.wizard.form</field>
+            <field name="model">wizard.account.payment.create.batch.partial</field>
+            <field name="arch" type="xml">
+                <form string="Create Batch Payment">
+                    <sheet>
+                        <div class="text-prewrap">
+                            <field name="error_message" /> <a type="object" name="action_view_invalid_payments" class="oe_link fw-bold" icon="oi-arrow-right">Check them.</a>
+                        </div>
+                    </sheet>
+                    <footer>
+                        <button
+                            name="action_create_batch"
+                            type="object"
+                            string="Create Batch"
+                            invisible="not has_valid_payments"
+                            class="btn btn-primary" />
+                        <button
+                            special="cancel"
+                            string="Discard"
+                            class="btn-secondary" />
+                    </footer>
+                </form>
+            </field>
+        </record>
+    </data>
+
+</odoo>

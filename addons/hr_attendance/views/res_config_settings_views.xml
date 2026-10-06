@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="res_config_settings_view_form" model="ir.ui.view">
+        <field name="name">res.config.settings.view.form.inherit.hr.attendance</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="base.res_config_settings_view_form" />
+        <field name="priority" eval="80" />
+        <field name="arch" type="xml">
+            <xpath expr="//form" position="inside">
+                <app
+                    name="hr_attendance"
+                    string="Attendances"
+                    groups="hr_attendance.group_hr_attendance_manager"
+                    data-string="Attendances">
+                    <block name="kiosk_mode_setting_container" title="Modes">
+                        <setting
+                            string="Kiosk Mode"
+                            help="Define the way the user will be identified by the application."
+                            company_dependent="1">
+                            <field
+                                name="attendance_kiosk_mode"
+                                required="1"
+                                class="w-75" />
+                            <div>
+                                <a href="https://www.odoo.com/documentation/latest/applications/hr/attendances/hardware.html" target="_blank"><i class="fa-solid fa-arrow-right" />Installation Manual</a>
+                            </div>
+                        </setting>
+                        <setting
+                            string="Attendances from Backend"
+                            help="Allow Users to Check in/out from Odoo."
+                            company_dependent="1">
+                            <field name="attendance_from_systray" required="1" />
+                        </setting>
+                        <setting
+                            string="Automatic Check-Out"
+                            help="Automatically Check-Out employees who forgot to. Tolerance closes them once they run past their working schedule, and so does not reach a flexible schedule or an employee with none; Specific Time closes every open attendance at a fixed hour of their own day."
+                            company_dependent="1">
+                            <field name="auto_check_out" />
+                            <div invisible="not auto_check_out">
+                                <field
+                                    name="auto_check_out_mode"
+                                    widget="radio"
+                                    options="{'horizontal': True}" />
+                            </div>
+                            <div
+                                invisible="not auto_check_out or auto_check_out_mode != 'tolerance'">
+                                <span class="me-2">Tolerance</span><field name="auto_check_out_tolerance" class="text-center" style="width: 5ch;" /><span class="ms-2">Hours</span>
+                            </div>
+                            <div
+                                invisible="not auto_check_out or auto_check_out_mode != 'specific_time'">
+                                <span class="me-2">At</span><field name="auto_check_out_specific_time" widget="float_time" class="text-center" style="width: 6ch;" /><span class="ms-2">every day</span>
+                            </div>
+                        </setting>
+                        <setting
+                            string="Absence Management"
+                            help="If checked, days not covered by an attendance will be visible in the Report. Does not apply to employees with a flexible working schedule."
+                            company_dependent="1">
+                            <field name="absence_management" />
+                        </setting>
+                        <setting
+                            string="Device &amp; Location Tracking"
+                            help="Allow the collection of GPS location, IP address, and browser/device details used to track employee access and attendance"
+                            company_dependent="1">
+                            <field name="attendance_device_tracking" />
+                        </setting>
+                    </block>
+                    <block title="Kiosk Settings">
+                        <setting
+                            help="Define the camera used for the barcode scan."
+                            invisible="attendance_kiosk_mode == 'manual'"
+                            company_dependent="1">
+                            <field name="attendance_barcode_source" required="1" />
+                        </setting>
+                        <setting
+                            string="Display Time"
+                            help="Choose how long the greeting message will be displayed."
+                            company_dependent="1">
+                            <field name="attendance_kiosk_delay" required="1" class="text-center" style="width: 10%; min-width: 4rem;" /><span> seconds</span>
+                        </setting>
+                        <setting
+                            title="Set PIN codes in the employee detail form (in HR Settings tab)."
+                            help="Use PIN codes (defined on the Employee's profile) to check-in."
+                            invisible="attendance_kiosk_mode == 'barcode'"
+                            company_dependent="1">
+                            <field name="attendance_kiosk_use_pin" />
+                        </setting>
+                        <setting
+                            title="Kiosk Mode Adress"
+                            help="Use this url to access your kiosk mode from any device.">
+                            <field
+                                name="attendance_kiosk_url"
+                                widget="CopyClipboardURL"
+                                class="o_hr_kiosk_url_media w-100"
+                                style="width:100% !important;" />
+                            <button
+                                name="regenerate_kiosk_key"
+                                type="object"
+                                string="Generate new URL"
+                                icon="fa-refresh"
+                                class="btn-link" />
+                        </setting>
+                    </block>
+                    <block name="overtime_settings" title="Extra Hours">
+                        <setting
+                            string="Display Extra Hours"
+                            title="Display Extra Hours."
+                            help="Display Extra Hours in Kiosk mode and on User profile."
+                            company_dependent="1">
+                            <field name="hr_attendance_display_overtime" />
+                        </setting>
+                        <setting
+                            string="Extra Hours Validation"
+                            title="Extra Hours Validation"
+                            help="Can be converted as Time Off (cfr Time Off configuration)."
+                            company_dependent="1">
+                            <field
+                                name="attendance_overtime_validation"
+                                widget="radio" />
+                        </setting>
+                    </block>
+                </app>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="action_hr_attendance_settings" model="ir.actions.act_window">
+        <field name="name">Settings</field>
+        <field name="res_model">res.config.settings</field>
+        <field name="view_mode">form</field>
+        <field name="context">{'module' : 'hr_attendance', 'bin_size': False}</field>
+    </record>
+
+</odoo>

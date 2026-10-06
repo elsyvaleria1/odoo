@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <menuitem
+        id="menu_sale_competition"
+        name="Competition"
+        parent="sale.sale_menu_root"
+        sequence="15"
+        groups="sale.group_sale_salesman,sale.group_sale_readonly">
+        <menuitem
+            id="menu_sale_competitor_offers"
+            action="competitor_offer_action_sale"
+            sequence="10" />
+        <menuitem
+            id="menu_sale_competitors"
+            action="competitor_action_sale"
+            sequence="20" />
+        <menuitem id="menu_sale_win_loss" action="win_loss_action_sale" sequence="30" />
+        <menuitem
+            id="menu_sale_market_prices"
+            action="market_price_action_sale"
+            sequence="40" />
+    </menuitem>
+
+</odoo>

@@ -1,0 +1,15 @@
+[workspace]
+resolver = "3"
+members = ["odoo_build", "odoo_lint", "odoo_rust"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.88"
+
+[workspace.dependencies]
+pyo3 = { version = "0.29.2" }
+
+[profile.release]
+lto = "fat"
+codegen-units = 1

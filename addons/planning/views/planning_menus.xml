@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!--
+        Menus
+    -->
+    <menuitem
+        id="planning_menu_root"
+        name="Planning"
+        sequence="85"
+        groups="base.group_user"
+        web_icon="planning,static/description/icon.png" />
+
+    <menuitem
+        id="planning_menu_my_planning"
+        name="My Planning"
+        parent="planning_menu_root"
+        action="planning_action_my_calendar"
+        sequence="30" />
+
+    <menuitem
+        id="planning_menu_open_shifts"
+        name="Open Shifts"
+        parent="planning_menu_root"
+        action="planning_action_view_shifts"
+        sequence="20"
+        groups="planning.group_planning_manager" />
+
+    <menuitem
+        id="planning_menu_schedule"
+        name="Schedule"
+        parent="planning_menu_root"
+        sequence="10"
+        groups="planning.group_planning_manager,planning.group_planning_user" />
+
+    <menuitem
+        id="planning_menu_schedule_by_resource"
+        name="By Resource"
+        parent="planning_menu_schedule"
+        action="planning_action_schedule_by_resource"
+        sequence="10" />
+
+    <menuitem
+        id="planning_menu_schedule_by_role"
+        name="By Role"
+        parent="planning_menu_schedule"
+        action="planning_action_schedule_by_role"
+        sequence="20" />
+
+    <menuitem
+        id="planning_menu_settings"
+        name="Configuration"
+        parent="planning_menu_root"
+        sequence="50"
+        groups="planning.group_planning_manager" />
+
+    <menuitem
+        id="planning_menu_settings_config"
+        name="Settings"
+        parent="planning_menu_settings"
+        action="planning_action_settings"
+        sequence="10"
+        groups="base.group_system" />
+
+    <menuitem
+        id="planning_menu_settings_employee"
+        name="Employees"
+        parent="planning_menu_settings"
+        action="hr.open_view_employee_list_my"
+        sequence="12"
+        groups="planning.group_planning_manager" />
+
+    <menuitem
+        id="planning_menu_settings_resource"
+        name="Materials"
+        parent="planning_menu_settings"
+        action="planning_action_resources"
+        sequence="15"
+        groups="planning.group_planning_manager" />
+
+    <menuitem
+        id="planning_menu_settings_role"
+        name="Roles"
+        parent="planning_menu_settings"
+        action="planning_action_roles"
+        sequence="20"
+        groups="planning.group_planning_manager" />
+
+    <menuitem
+        id="planning_menu_settings_shift_template"
+        name="Shift Templates"
+        parent="planning_menu_settings"
+        action="planning_action_shift_template"
+        sequence="30"
+        groups="planning.group_planning_manager" />
+
+    <menuitem
+        id="planning_menu_reporting"
+        name="Reporting"
+        parent="planning_menu_root"
+        sequence="40"
+        groups="planning.group_planning_user" />
+
+    <menuitem
+        id="planning_menu_planning_analysis"
+        name="Planning Analysis"
+        parent="planning_menu_reporting"
+        action="planning_report_action_analysis"
+        sequence="10"
+        groups="planning.group_planning_user" />
+
+</odoo>

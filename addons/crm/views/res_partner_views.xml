@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Add contextual button on partner form view -->
+    <record id="view_partners_form_crm1" model="ir.ui.view">
+        <field name="name">view.res.partner.form.crm.inherited1</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_form" />
+        <field name="priority" eval="1" />
+        <field name="arch" type="xml">
+            <data>
+                <div name="button_box" position="inside">
+                    <button
+                        name="action_view_opportunity"
+                        type="object"
+                        icon="fa-star"
+                        context="{'default_partner_id': id, 'default_type':'opportunity'}"
+                        groups="sale.group_sale_salesman"
+                        class="oe_stat_button o_res_partner_tip_opp">
+                        <field
+                            name="opportunity_count"
+                            string="Opportunities"
+                            widget="statinfo" />
+                    </button>
+                </div>
+            </data>
+        </field>
+    </record>
+
+</odoo>

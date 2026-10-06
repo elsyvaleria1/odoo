@@ -1,0 +1,78 @@
+from odoo.http import request
+
+from odoo.addons.website_sale.controllers.main import WebsiteSale
+
+
+class WebsiteSaleCollect(WebsiteSale):
+    def _prepare_product_values(self, product, category, **kwargs):
+        res = super()._prepare_product_values(product, category, **kwargs)
+        if in_store_dm_sudo := request.website.sudo().in_store_dm_id:
+            order_sudo = request.cart
+            selected_location_data = {}
+            single_location = len(in_store_dm_sudo.warehouse_ids) == 1
+            if (
+                order_sudo.carrier_id.delivery_type == "in_store"
+                and order_sudo.pickup_location_data
+            ):
+                selected_location_data = order_sudo.pickup_location_data
+            elif single_location:
+                warehouse = in_store_dm_sudo.warehouse_ids[0]
+                warehouse._update_missing_coordinates()
+                selected_location_data = warehouse._prepare_pickup_location_data()
+            res.update(
+                {
+                    "selected_location_data": selected_location_data,
+                    "show_select_store_button": not single_location,
+                    "zip_code": (
+                        order_sudo.partner_shipping_id.zip
+                        or selected_location_data.get("zip_code")
+                        or request.geoip.postal.code
+                        or ""
+                    ),
+                }
+            )
+        return res
+
+    def _prepare_checkout_page_values(self, order_sudo, **query_params):
+        res = super()._prepare_checkout_page_values(order_sudo, **query_params)
+
+        if order_sudo.only_services:
+            return res
+
+        res.update(order_sudo._acquire_in_store_default_location_data())
+        if (
+            order_sudo.carrier_id.delivery_type == "in_store"
+            and order_sudo.pickup_location_data
+        ):
+            res["insufficient_stock_data"] = (
+                order_sudo._acquire_insufficient_stock_data(
+                    order_sudo.pickup_location_data.get("id")
+                )
+            )
+        return res
+
+    def _get_shop_payment_errors(self, order):
+        errors = super()._get_shop_payment_errors(order)
+        if (
+            order._has_deliverable_products()
+            and order.carrier_id.delivery_type == "in_store"
+        ):
+            if not order.pickup_location_data:
+                errors.append(
+                    (
+                        request.env._("Sorry, we are unable to ship your order."),
+                        request.env._("Please choose a store to collect your order."),
+                    )
+                )
+            else:
+                selected_wh_id = order.pickup_location_data["id"]
+                if not order._is_in_stock(selected_wh_id):
+                    errors.append(
+                        (
+                            request.env._("Sorry, we are unable to ship your order."),
+                            request.env._(
+                                "Some products are not available in the selected store."
+                            ),
+                        )
+                    )
+        return errors

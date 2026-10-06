@@ -1,0 +1,201 @@
+from odoo.fields import Command
+
+from odoo.addons.sale.tests.common import SaleCommon
+
+
+class TestSaleMargin(SaleCommon):
+    def test_sale_margin(self):
+        self.product.standard_price = 700.0
+        order = self.empty_order
+
+        order.line_ids = [
+            Command.create(
+                {
+                    "price_unit": 1000.0,
+                    "product_qty": 10.0,
+                    "product_id": self.product.id,
+                }
+            ),
+        ]
+        order.action_confirm()
+        self.assertEqual(order.margin, 3000.00, "Sales order profit should be 6000.00")
+        self.assertEqual(order.margin_percent, 0.3, "Sales order margin should be 30%")
+
+    def test_negative_margin(self):
+        order = self.empty_order
+        self.service_product.standard_price = 40.0
+
+        order.line_ids = [
+            Command.create(
+                {
+                    "price_unit": 20.0,
+                    "product_qty": 1.0,
+                    "state": "draft",
+                    "product_id": self.service_product.id,
+                }
+            ),
+            Command.create(
+                {
+                    "price_unit": -100.0,
+                    "purchase_price": 0.0,
+                    "product_qty": 1.0,
+                    "state": "draft",
+                    "product_id": self.product.id,
+                }
+            ),
+        ]
+        order.action_confirm()
+        self.assertEqual(
+            order.line_ids[0].margin, -20.00, "Sales order profit should be -20.00"
+        )
+        self.assertEqual(
+            order.line_ids[0].margin_percent,
+            -1,
+            "Sales order margin percentage should be -100%",
+        )
+        self.assertEqual(
+            order.line_ids[1].margin, -100.00, "Sales order profit should be -100.00"
+        )
+        self.assertEqual(
+            order.line_ids[1].margin_percent,
+            1.00,
+            "Sales order margin should be 100% when the cost is zero and price defined",
+        )
+        self.assertEqual(order.margin, -120.00, "Sales order margin should be -120.00")
+        self.assertEqual(order.margin_percent, 1.5, "Sales order margin should be 150%")
+
+    def test_margin_no_cost(self):
+        order = self.empty_order
+        order.line_ids = [
+            Command.create(
+                {
+                    "product_id": self.product.id,
+                    "price_unit": 70.0,
+                    "product_qty": 1.0,
+                }
+            )
+        ]
+
+        self.assertEqual(
+            order.line_ids[0].margin, 70.00, "Sales order profit should be 70.00"
+        )
+        self.assertEqual(
+            order.line_ids[0].margin_percent,
+            1.0,
+            "Sales order margin percentage should be 100.00",
+        )
+        self.assertEqual(order.margin, 70.00, "Sales order profit should be 70.00")
+        self.assertEqual(
+            order.margin_percent, 1.00, "Sales order margin percentage should be 100.00"
+        )
+
+    def test_margin_considering_product_qty(self):
+        order = self.empty_order
+        self.service_product.standard_price = 50.0
+
+        order.line_ids = [
+            Command.create(
+                {
+                    "price_unit": 100.0,
+                    "product_qty": 3.0,
+                    "product_id": self.service_product.id,
+                }
+            ),
+            Command.create(
+                {
+                    "price_unit": -50.0,
+                    "product_qty": 1.0,
+                    "product_id": self.product.id,
+                }
+            ),
+        ]
+
+        order.action_confirm()
+        self.assertEqual(
+            order.line_ids[0].margin, 150.00, "Sales order profit should be 150.00"
+        )
+        self.assertEqual(
+            order.line_ids[0].margin_percent, 0.5, "Sales order margin should be 100%"
+        )
+        self.assertEqual(
+            order.line_ids[1].margin, -50.00, "Sales order profit should be -50.00"
+        )
+        self.assertEqual(
+            order.line_ids[1].margin_percent, 1.0, "Sales order margin should be 100%"
+        )
+        self.assertEqual(order.margin, 100.00, "Sales order profit should be 100.00")
+        self.assertEqual(order.margin_percent, 0.4, "Sales order margin should be 40%")
+
+    def test_sale_margin_order_copy(self):
+        order = self.empty_order
+        self.pricelist.currency_id = self.env.company.currency_id
+        self.product.standard_price = 500.0
+        order.line_ids = [
+            Command.create(
+                {
+                    "price_unit": 1000.0,
+                    "product_qty": 10.0,
+                    "product_id": self.product.id,
+                }
+            ),
+        ]
+        self.assertAlmostEqual(500.0, order.line_ids.purchase_price)
+        self.assertAlmostEqual(5000.0, order.line_ids.margin)
+        self.assertAlmostEqual(0.5, order.line_ids.margin_percent)
+        self.product.standard_price = 750.0
+        following_sale = order.copy()
+        self.assertAlmostEqual(750.0, following_sale.line_ids.purchase_price)
+        self.assertAlmostEqual(2500.0, following_sale.line_ids.margin)
+        self.assertAlmostEqual(0.25, following_sale.line_ids.margin_percent)
+
+    def test_combo_master_line_has_no_phantom_margin(self):
+        order = self.empty_order
+
+        combo_item_product = self._create_product(name="Combo Item", standard_price=5.0)
+        combo = self.env["product.combo"].create(
+            {
+                "name": "Test Combo",
+                "combo_item_ids": [
+                    Command.create({"product_id": combo_item_product.id})
+                ],
+            }
+        )
+        combo_product = self._create_product(
+            name="Combo Master Product",
+            type="combo",
+            standard_price=12.0,
+            combo_ids=[Command.link(combo.id)],
+        )
+
+        combo_line = self.env["sale.order.line"].create(
+            {
+                "order_id": order.id,
+                "product_id": combo_product.id,
+                "product_qty": 1.0,
+            }
+        )
+        item_line = self.env["sale.order.line"].create(
+            {
+                "order_id": order.id,
+                "product_id": combo_item_product.id,
+                "product_qty": 1.0,
+                "combo_item_id": combo.combo_item_ids.id,
+                "linked_line_id": combo_line.id,
+            }
+        )
+
+        self.assertEqual(
+            combo_line.purchase_price,
+            0.0,
+            "The combo master line must not cost itself off its own product",
+        )
+        self.assertEqual(
+            combo_line.margin,
+            0.0,
+            "The combo master line has no revenue of its own, so no margin either",
+        )
+        self.assertEqual(
+            item_line.purchase_price,
+            5.0,
+            "The combo item line still costs off its own product as usual",
+        )

@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="demo_credential_telegram" model="credential.credential">
+        <field name="name">Telegram Bot - Demo (enter the bot token)</field>
+        <field name="endpoint_id" ref="service_telegram" />
+        <field name="category_id" ref="credential.credential_category_bearer_token" />
+        <field name="company_id" ref="base.main_company" />
+        <field name="environment">production</field>
+        <field name="active" eval="False" />
+        <field
+            name="notes">Demo credential for Telegram Bot API, shipped without a token.
+Enter the bot token from @BotFather in bearer_token.
+The token format is: {bot_id}:{auth_token}</field>
+    </record>
+
+    <record id="demo_credential_telegram_hr" model="credential.credential">
+        <field name="name">Demo Telegram HR Bot Token</field>
+        <field name="endpoint_id" ref="service_telegram" />
+        <field name="category_id" ref="credential.credential_category_bearer_token" />
+    </record>
+
+    <record id="telegram_command_demo_status" model="telegram.command">
+        <field name="name">/status</field>
+    </record>
+
+    <record id="telegram_command_demo_help" model="telegram.command">
+        <field name="name">/help</field>
+    </record>
+
+    <record id="telegram_command_demo_report" model="telegram.command">
+        <field name="name">/report</field>
+    </record>
+
+    <record id="telegram_command_demo_notify" model="telegram.command">
+        <field name="name">/notify</field>
+    </record>
+
+    <record id="telegram_bot_demo_main" model="telegram.bot">
+        <field name="name">Demo Bot - AgroMarin Assistant</field>
+        <field name="credential_id" ref="demo_credential_telegram" />
+        <field
+            name="command_ids"
+            eval="[             Command.link(ref('telegram_command_demo_status')),             Command.link(ref('telegram_command_demo_report')),             Command.link(ref('telegram_command_demo_notify'))         ]" />
+    </record>
+
+    <record id="telegram_bot_demo_hr" model="telegram.bot">
+        <field name="name">Demo Bot - HR Support</field>
+        <field name="credential_id" ref="demo_credential_telegram_hr" />
+        <field
+            name="command_ids"
+            eval="[             Command.link(ref('telegram_command_demo_status')),             Command.link(ref('telegram_command_demo_help'))         ]" />
+    </record>
+
+</odoo>

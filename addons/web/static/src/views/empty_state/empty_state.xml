@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="web.EmptyState">
+        <div class="o_view_nocontent" role="status" aria-live="polite">
+            <div class="o_nocontent_help">
+                <t t-if="this.isFiltered">
+                    <i class="fa fa-search o_view_nocontent_no_results_icon" aria-hidden="true"/>
+                    <p class="o_view_nocontent_no_results">No results</p>
+                    <p>
+                        <t t-if="this.state.hiddenCount === 1">1 record is hidden by your search.</t>
+                        <t t-else=""><t t-out="this.state.hiddenCount"/> records are hidden by your search.</t>
+                    </p>
+                    <button type="button" class="btn btn-secondary o_empty_state_clear_search" t-on-click="this.clearSearch">
+                        Clear search
+                    </button>
+                </t>
+                <t t-elif="this.showDefaultHelper">
+                    <p class="o_view_nocontent_empty_folder">
+                        <t t-if="this.props.title" t-out="this.props.title"/>
+                        <t t-else="">No data to display</t>
+                    </p>
+                    <p>
+                        <t t-if="this.props.description" t-out="this.props.description"/>
+                        <t t-else="">Try to add some records, or make sure that there is no
+                            active filter in the search bar.</t>
+                    </p>
+                </t>
+                <t t-else="">
+                    <t t-out="this.props.noContentHelp"/>
+                </t>
+            </div>
+        </div>
+    </t>
+
+</templates>

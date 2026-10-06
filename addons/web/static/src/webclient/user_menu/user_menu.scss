@@ -1,0 +1,65 @@
+.o_user_menu .dropdown-toggle {
+    --NavBar-entry-padding-right: #{$o-horizontal-padding};
+
+    .o_user_avatar {
+        height: calc(var(--o-navbar-height) - 20px);
+    }
+}
+
+.o_user_menu_dropdown {
+    min-width: 16rem;
+    padding: 5px;
+    border-radius: 12px;
+    @include o-material("thick");
+
+    .o_user_menu_header {
+        margin-bottom: 5px;
+        padding: 8px 12px 10px;
+        border-bottom: 1px solid o-token(--border-color, $border-color);
+    }
+
+    .o_user_menu_name {
+        font-size: 15px;
+        font-weight: 600;
+        line-height: 20px;
+    }
+
+    .o_user_menu_login {
+        font-size: 13px;
+        line-height: 18px;
+        color: var(--o-text-muted, #{$text-muted});
+    }
+
+    .dropdown-item {
+        border-radius: 6px;
+    }
+
+    .dropdown-item[data-menu="logout"] {
+        color: o-token(--danger, $o-danger);
+    }
+}
+
+.o_segmented {
+    display: flex;
+    padding: 2px;
+    border-radius: $border-radius-lg;
+    background-color: var(--o-gray-200);
+
+    .o_segment {
+        flex: 1 1 0;
+        min-height: var(--o-hit-target, 28px);
+        padding: 2px map-get($spacers, 2);
+        border: 0;
+        border-radius: $border-radius;
+        background: transparent;
+        color: var(--o-label-2, inherit);
+        font-size: $font-size-sm;
+        white-space: nowrap;
+
+        &[aria-checked="true"] {
+            background-color: var(--o-bg-view, #{$o-view-background-color});
+            color: var(--o-label-1, inherit);
+            box-shadow: $o-shadow-sm;
+        }
+    }
+}

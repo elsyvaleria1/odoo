@@ -1,0 +1,173 @@
+@mixin o-grid-zindex($level) {
+    z-index: map-get(
+        (
+            interact: 20,
+            // Top-most elements
+            top: 30,
+        ),
+        $level
+    );
+}
+
+// The widths the grid lays itself out on, declared once and published twice.
+//
+// Sibling modules compiled into the same bundle read the Sass variables --
+// timesheet_grid's timer column sizes itself and offsets the navigation bar by
+// `$o-web-grid-first-column-width` -- while `gridTemplateColumns` reads the
+// custom properties below to build its track list.
+//
+// Do not delete the Sass half as "duplicated" by the custom properties. An
+// undefined `$variable` fails the compile of the whole bundle, not the one
+// declaration that names it; Odoo then serves the last known-good stylesheet
+// under a red "A css error occurred" banner (AssetsBundle.css ->
+// _render_css_error_banner). On a database that has never compiled that bundle
+// there is no known-good to fall back to and the banner is served alone -- so
+// the degradation is graceful in production and total on a fresh database,
+// which is what every test database is. A `var()` on an undefined custom
+// property costs only the declaration that reads it, in every environment.
+$o-web-grid-first-column-width: 3rem;
+$o-web-grid-cell-minwidth: 10ch;
+$o-web-grid-cell-minwidth-dense: 8ch;
+$o-web-grid-total-column-width: 10em;
+
+.o_grid_renderer {
+    --o-grid-first-column-width: #{$o-web-grid-first-column-width};
+    --o-grid-cell-minwidth: #{$o-web-grid-cell-minwidth};
+    --o-grid-cell-minwidth-dense: #{$o-web-grid-cell-minwidth-dense};
+    --o-grid-total-column-width: #{$o-web-grid-total-column-width};
+
+    height: inherit;
+    .o_grid_grid {
+        min-width: fit-content;
+    }
+
+    .o_grid_row,
+    .o_grid_section,
+    .o_grid_column_title {
+        &:not(.o_grid_highlighted) {
+            > .o_grid_cell_overlay:not(.o_grid_unavailable),
+            > .o_grid_cell_overlay_total {
+                --bg-opacity: 0;
+            }
+
+            > .o_grid_cell_overlay.o_grid_unavailable {
+                --bg-opacity: 0.05;
+            }
+        }
+    }
+
+    .o_grid_column_title {
+        @include o-grid-zindex(interact);
+
+        > .o_grid_cell_overlay_today {
+            --bg-opacity: 0.5;
+        }
+
+        span {
+            white-space: pre-line;
+        }
+    }
+
+    .o_grid_row_title,
+    .o_grid_section_title {
+        @include o-grid-zindex(interact);
+    }
+
+    .o_grid_highlighted,
+    .o_grid_row_highlighted {
+        > .o_grid_cell_overlay {
+            --bg-opacity: 0.1;
+        }
+
+        > .o_grid_cell_overlay_today,
+        > .o_grid_cell_overlay_total {
+            --bg-opacity: 0.4;
+        }
+    }
+
+    .o_grid_cell_highlighted:not(.o_grid_row_title):not(.o_grid_section_title):not(
+            .o_grid_column_total
+        ) {
+        > .o_grid_cell_overlay {
+            --bg-opacity: 0.15;
+        }
+
+        > .o_grid_cell_overlay_today,
+        > .o_grid_cell_overlay_total {
+            --bg-opacity: 0.5;
+        }
+    }
+
+    .o_grid_section .o_grid_cell_overlay_today {
+        --bg-opacity: 0.25;
+    }
+
+    .o_grid_section ~ .o_grid_row.o_grid_row_title {
+        padding-left: calc(
+            #{map-get($spacers, 3)} + #{$o-avatar-size} + #{map-get($spacers, 1)}
+        ) !important;
+    }
+
+    .o_grid_row_title {
+        .o_form_uri {
+            @include text-truncate();
+            @include o-hover-text-color(
+                o-token(--body-color, $body-color),
+                o-token(--o-action, $o-action)
+            );
+            max-width: 300px;
+        }
+    }
+
+    // To have at least one day shown in My Timesheets on mobile
+    .o_grid_row_timer + .o_grid_row_title {
+        @include media-breakpoint-down(md) {
+            max-width: calc(
+                100vw - var(--o-grid-cell-minwidth) - var(--o-grid-first-column-width)
+            );
+        }
+    }
+
+    .o_grid_grid .o_input {
+        text-align: center;
+        padding: 0;
+    }
+
+    .o_grid_navigation_wrap {
+        @include o-grid-zindex(top);
+    }
+}
+
+// The dark half, folded in from `grid_renderer.dark.scss`.
+@include media-only(screen) {
+    :root[data-color-scheme="dark"] {
+        // = Grid Renderer
+        // ============================================================================
+        // No CSS hacks, variables overrides only
+
+        .o_grid_renderer {
+            .o_grid_row_total,
+            .o_grid_add_line:not(.o_grid_row) {
+                --background-color: #{$o-dark-gray-300};
+                --color: #{$o-dark-black};
+            }
+
+            .o_grid_cell_overlay_total {
+                --background-color: #{rgba($o-dark-gray-400, var(--bg-opacity, 1))};
+            }
+
+            .o_grid_section {
+                --background-color: #{darken($o-dark-gray-200, 4%)};
+
+                .o_grid_cell_overlay_today {
+                    --bg-opacity: 0.5;
+                }
+            }
+
+            .o_grid_column_total_computed {
+                --background-color: #{$o-dark-gray-400};
+                --color: #{$o-dark-black};
+            }
+        }
+    }
+}

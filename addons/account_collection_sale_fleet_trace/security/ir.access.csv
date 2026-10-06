@@ -1,0 +1,2 @@
+id,name,model_id/id,group_id/id,kind,operation,reach,anchor,domain
+privilege_hand_over_cash_sale_vehicle_quant,stock.quant: a collector handing over a cash sale on the route reads the stock their vehicle carries,stock.model_stock_quant,account_collection_sale.privilege_hand_over_cash_sale,permission,r,,,"[('location_id.trip_vehicle_id', '!=', False)]"

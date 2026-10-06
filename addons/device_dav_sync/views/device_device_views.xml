@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_device_device_form_dav" model="ir.ui.view">
+        <field name="name">device.device.form.dav</field>
+        <field name="model">device.device</field>
+        <field name="inherit_id" ref="device.view_device_device_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//notebook" position="inside">
+                <page name="dav_sync" string="DAV Sync" invisible="not is_dav_device">
+                    <group>
+                        <group string="DAV Configuration">
+                            <field name="is_dav_device" />
+                            <field name="dav_sync_enabled" />
+                            <field name="dav_user_id" />
+                        </group>
+                        <group string="Sync Options">
+                            <field name="dav_addressbook_enabled" />
+                            <field name="dav_calendar_enabled" />
+                            <field name="dav_last_sync" readonly="1" />
+                        </group>
+                    </group>
+                    <group>
+                        <group string="Collection Tags">
+                            <field name="dav_addressbook_ctag" readonly="1" />
+                            <field name="dav_calendar_ctag" readonly="1" />
+                        </group>
+                        <group string="Sync Statistics">
+                            <field name="dav_sync_state_count" />
+                        </group>
+                    </group>
+                    <group>
+                        <button
+                            name="action_view_dav_sync_states"
+                            type="object"
+                            string="View Sync States"
+                            invisible="dav_sync_state_count == 0"
+                            class="oe_highlight" />
+                        <button
+                            name="action_force_dav_sync"
+                            type="object"
+                            string="Force Re-Sync"
+                            invisible="not dav_sync_enabled" />
+                        <button
+                            name="action_generate_dav_password"
+                            type="object"
+                            string="Generate DAV Password"
+                            help="The password a DAV client presents with the user's login: an API key of the DAV scope, minted by that user, shown once."
+                            invisible="not dav_sync_enabled" />
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_device_device_search_dav" model="ir.ui.view">
+        <field name="name">device.device.search.dav</field>
+        <field name="model">device.device</field>
+        <field name="inherit_id" ref="device.view_device_device_search" />
+        <field name="arch" type="xml">
+            <xpath expr="//search/filter[last()]" position="after">
+                <separator />
+                <filter
+                    name="dav_devices"
+                    string="DAV Clients"
+                    domain="[('is_dav_device', '=', True)]" />
+                <filter
+                    name="dav_enabled"
+                    string="DAV Enabled"
+                    domain="[('dav_sync_enabled', '=', True)]" />
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

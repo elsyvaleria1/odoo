@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <menuitem
+        id="menu_wallet_reorder_rule"
+        name="Reordering Rules"
+        parent="wallet.menu_wallet_root"
+        action="action_wallet_reorder_rule"
+        sequence="35" />
+
+</odoo>

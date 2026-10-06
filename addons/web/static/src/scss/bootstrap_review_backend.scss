@@ -1,0 +1,322 @@
+h1,
+.h1,
+h2,
+.h2 {
+    letter-spacing: $o-tracking-display;
+}
+
+h3,
+.h3,
+h4,
+.h4 {
+    letter-spacing: $o-tracking-heading;
+}
+
+h5,
+.h5,
+h6,
+.h6 {
+    letter-spacing: $o-tracking-tight;
+}
+
+.btn {
+    --#{$variable-prefix}btn-disabled-border-color: transparent;
+    font-weight: $o-font-weight-medium;
+    transition:
+        color $o-duration-fast $o-easing-standard,
+        background-color $o-duration-fast $o-easing-standard,
+        border-color $o-duration-fast $o-easing-standard,
+        box-shadow $o-duration-fast $o-easing-standard,
+        transform $o-duration-fast $o-easing-standard;
+
+    &:focus-visible {
+        @include o-focus-ring();
+        box-shadow: var(--#{$prefix}btn-box-shadow);
+    }
+}
+
+.btn-primary {
+    --#{$prefix}btn-box-shadow: #{$o-shadow-xs};
+
+    @media (hover: hover) {
+        &:hover {
+            --#{$prefix}btn-box-shadow: #{$o-shadow-sm};
+            transform: translateY(-1px);
+        }
+    }
+
+    &:active {
+        --#{$prefix}btn-box-shadow: #{$o-shadow-xs};
+        transform: translateY(0);
+    }
+}
+
+@each $-name, $-value in $o-btns-bs-override {
+    .btn-#{$-name},
+    .btn-fill-#{$-name} {
+        @include o-button-variant-from($-value);
+    }
+}
+
+@each $-name, $-value in $o-btns-bs-outline-override {
+    .btn-outline-#{$-name} {
+        @include o-button-variant-from($-value);
+    }
+}
+
+@include media-only(screen) {
+    @each $-name in ("secondary", "light") {
+        .btn-#{$-name},
+        .btn-fill-#{$-name} {
+            @include o-glass-button($-name);
+        }
+    }
+}
+
+@each $-name, $-color in $theme-colors {
+    @if (not map-get($o-btns-bs-override, $-name)) {
+        .btn-#{$-name} {
+            @include button-variant($-color, $-color);
+        }
+    }
+    @if (not map-get($o-btns-bs-outline-override, $-name)) {
+        .btn-outline-#{$-name} {
+            @include button-outline-variant($-color);
+        }
+    }
+}
+
+@each $-name, $-color in $o-btn-custom {
+    .btn-#{$-name} {
+        @include button-variant($-color, $-color);
+    }
+}
+
+.btn-group {
+    > :not(.btn-check:first-child) + .btn,
+    > .btn-group:not(:first-child) {
+        margin-left: var(--btn-group-gap, $btn-border-width);
+    }
+}
+
+$-o-theme-text-colors: map-merge($theme-colors, $o-theme-text-colors);
+
+@each $-name, $-value in $-o-theme-text-colors {
+    @include text-emphasis-variant(".text-#{$-name}", $-value);
+}
+
+.btn-link {
+    font-weight: $btn-font-weight;
+
+    @each $-name, $-color in map-merge($-o-theme-text-colors, $o-text-colors-custom) {
+        &.btn-#{$-name},
+        &.text-#{$-name} {
+            @include o-btn-link-variant(
+                $o-gray-600 !important,
+                o-text-color($-name) or $-color !important
+            );
+        }
+    }
+}
+
+$-o-theme-text-colors: null;
+
+@each $-name, $-color in $theme-colors {
+    .bg-#{$-name} {
+        @include o-print-color($-color, background-color, bg-opacity);
+    }
+}
+
+@function o-palette-rgb($-token, $-fallback) {
+    @return unquote("var(#{$-token}, #{to-rgb($-fallback)})");
+}
+
+%-text-white {
+    @include o-print-color-rgb(
+        o-palette-rgb(--o-white-rgb, $o-white),
+        color,
+        text-opacity
+    );
+}
+
+%-text-black {
+    @include o-print-color-rgb(
+        o-palette-rgb(--o-black-rgb, $o-black),
+        color,
+        text-opacity
+    );
+}
+
+%-bg-white {
+    @include o-print-color-rgb(
+        o-palette-rgb(--o-white-rgb, $o-white),
+        background-color,
+        bg-opacity
+    );
+}
+
+%-bg-black {
+    @include o-print-color-rgb(
+        o-palette-rgb(--o-black-rgb, $o-black),
+        background-color,
+        bg-opacity
+    );
+}
+
+.text-white {
+    @extend %-text-white;
+}
+
+.text-black {
+    @extend %-text-black;
+}
+
+.bg-white {
+    @extend %-bg-white;
+}
+
+.bg-black {
+    @extend %-bg-black;
+}
+
+.bg-transparent {
+    --bg-opacity: 0;
+    @extend %-bg-black;
+}
+
+$-o-grayscale-opacities: map-remove($o-opacities, 0, 100);
+@each $-name, $-value in $-o-grayscale-opacities {
+    .bg-white-#{$-name} {
+        --bg-opacity: #{$-value};
+        @extend %-bg-white;
+    }
+
+    .bg-black-#{$-name} {
+        --bg-opacity: #{$-value};
+        @extend %-bg-black;
+    }
+}
+
+@each $-name, $-value in $-o-grayscale-opacities {
+    .text-white-#{$-name} {
+        --text-opacity: #{$-value};
+        @extend %-text-white;
+    }
+
+    .text-black-#{$-name} {
+        --text-opacity: #{$-value};
+        @extend %-text-black;
+    }
+}
+
+$-o-grayscale-opacities: null;
+
+$-o-text-colors-custom: map-merge($o-text-colors-custom, $o-grays);
+$-o-bg-colors-custom: map-merge($o-bg-colors-custom, $o-grays);
+
+@each $-name, $-color in $-o-text-colors-custom {
+    @include text-emphasis-variant(".text-#{$-name}", $-color);
+}
+
+@each $-name, $-color in $theme-colors {
+    .text-bg-#{$-name} {
+        @include o-print-color(
+            color-contrast($-color, $min-contrast-ratio: $o-text-bg-contrast),
+            color,
+            text-opacity
+        );
+    }
+}
+
+@each $-name, $-color in map-merge($-o-bg-colors-custom, $o-grays) {
+    .bg-#{$-name},
+    .text-bg-#{$-name} {
+        @include o-print-color($-color, background-color, bg-opacity);
+    }
+
+    .text-bg-#{$-name} {
+        @include o-print-color(
+            color-contrast($-color, $min-contrast-ratio: $o-text-bg-contrast),
+            color,
+            text-opacity
+        );
+    }
+}
+
+$-o-text-colors-custom: null;
+$-o-bg-colors-custom: null;
+
+.bg-inherit {
+    background-color: inherit;
+}
+
+.alert {
+    padding-top: var(--alert-padding-y, $alert-padding-y);
+    padding-bottom: var(--alert-padding-y, $alert-padding-y);
+    margin-bottom: var(--alert-margin-bottom, $alert-margin-bottom);
+}
+
+$-o-switch-on: var(--success, #{$o-success});
+$-o-switch-toggle: var(--o-action, #{$o-action});
+
+.form-switch {
+    .form-check-input:checked {
+        background-color: $-o-switch-on;
+        border-color: $-o-switch-on;
+    }
+
+    .form-check-input:focus {
+        border-color: $-o-switch-on;
+    }
+
+    &:hover .form-check-input:not(:disabled) {
+        border-color: $-o-switch-on;
+    }
+
+    &.o_switch_toggle {
+        .form-check-input,
+        .form-check-input:checked {
+            border-color: $-o-switch-toggle;
+            background-color: var(
+                --o-bg-view,
+                #{o-token(--o-bg-view, $o-view-background-color)}
+            );
+
+            &,
+            &:focus,
+            &:checked {
+                background-image: escape-svg(
+                    url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'><circle r='3' fill='#{$o-action}'/></svg>")
+                );
+            }
+        }
+
+        &:hover .form-check-input:not(:disabled) {
+            border-color: $-o-switch-toggle;
+        }
+    }
+
+    &:disabled,
+    &.disabled,
+    &[disabled] {
+        opacity: $o-opacity-disabled;
+    }
+}
+
+$-o-switch-on: null;
+$-o-switch-toggle: null;
+
+.table {
+    > :not(caption) > * > * {
+        color: unset;
+    }
+}
+
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible {
+    @include o-focus-ring();
+}

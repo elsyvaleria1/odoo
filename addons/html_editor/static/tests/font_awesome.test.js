@@ -1,0 +1,582 @@
+import { describe, expect, test } from "@odoo/hoot";
+
+import { dispatchNormalize } from "./_helpers/dispatch.js";
+import { setupEditor, testEditor } from "./_helpers/editor.js";
+import { getContent } from "./_helpers/selection.js";
+import {
+    deleteBackward,
+    deleteForward,
+    insertText,
+    undo,
+} from "./_helpers/user_actions.js";
+import { execCommand } from "./_helpers/userCommands.js";
+
+function insertFontAwesome(faClass) {
+    return (editor) => {
+        execCommand(editor, "insertFontAwesome", { faClass });
+    };
+}
+
+describe("parse/render", () => {
+    test("should parse an old-school fontawesome", async () => {
+        await testEditor({
+            contentBefore: '<p><i class="fa-solid fa-star"></i></p>',
+            contentBeforeEdit:
+                '<p>\ufeff<i class="fa-solid fa-star" contenteditable="false">\u200b</i>\ufeff</p>',
+            contentAfter: '<p><i class="fa-solid fa-star"></i></p>',
+        });
+    });
+
+    test("should parse a brand fontawesome", async () => {
+        await testEditor({
+            contentBefore: '<p><i class="fab fa-opera"></i></p>',
+            contentBeforeEdit:
+                '<p>\ufeff<i class="fab fa-opera" contenteditable="false">\u200b</i>\ufeff</p>',
+            contentAfter: '<p><i class="fab fa-opera"></i></p>',
+        });
+    });
+
+    test("should parse a duotone fontawesome", async () => {
+        await testEditor({
+            contentBefore: '<p><i class="fad fa-bus-alt"></i></p>',
+            contentBeforeEdit:
+                '<p>\ufeff<i class="fad fa-bus-alt" contenteditable="false">\u200b</i>\ufeff</p>',
+            contentAfter: '<p><i class="fad fa-bus-alt"></i></p>',
+        });
+    });
+
+    test("should parse a light fontawesome", async () => {
+        await testEditor({
+            contentBefore: '<p><i class="fab fa-accessible-icon"></i></p>',
+            contentBeforeEdit:
+                '<p>\ufeff<i class="fab fa-accessible-icon" contenteditable="false">\u200b</i>\ufeff</p>',
+            contentAfter: '<p><i class="fab fa-accessible-icon"></i></p>',
+        });
+    });
+
+    test("should parse a regular fontawesome", async () => {
+        await testEditor({
+            contentBefore: '<p><i class="far fa-money-bill-alt"></i></p>',
+            contentBeforeEdit:
+                '<p>\ufeff<i class="far fa-money-bill-alt" contenteditable="false">\u200b</i>\ufeff</p>',
+            contentAfter: '<p><i class="far fa-money-bill-alt"></i></p>',
+        });
+    });
+
+    test("should parse a solid fontawesome", async () => {
+        await testEditor({
+            contentBefore: '<p><i class="fa-solid fa-pastafarianism"></i></p>',
+            contentBeforeEdit:
+                '<p>\ufeff<i class="fa-solid fa-pastafarianism" contenteditable="false">\u200b</i>\ufeff</p>',
+            contentAfter: '<p><i class="fa-solid fa-pastafarianism"></i></p>',
+        });
+    });
+
+    test("should parse a fontawesome in a <span> (1)", async () => {
+        await testEditor({
+            contentBefore: '<p><span class="fa-solid fa-pastafarianism"></span></p>',
+            contentBeforeEdit:
+                '<p>\ufeff<span class="fa-solid fa-pastafarianism" contenteditable="false">\u200b</span>\ufeff</p>',
+            contentAfter: '<p><span class="fa-solid fa-pastafarianism"></span></p>',
+        });
+    });
+
+    test("should parse a fontawesome in a <span> (2)", async () => {
+        await testEditor({
+            contentBefore: '<p><span class="oi oi-pastafarianism"></span></p>',
+            contentBeforeEdit:
+                '<p>\ufeff<span class="oi oi-pastafarianism" contenteditable="false">\u200b</span>\ufeff</p>',
+            contentAfter: '<p><span class="oi oi-pastafarianism"></span></p>',
+        });
+    });
+
+    test("should parse a fontawesome in a <i> (1)", async () => {
+        await testEditor({
+            contentBefore: '<p><i class="fa-solid fa-pastafarianism"></i></p>',
+            contentBeforeEdit:
+                '<p>\ufeff<i class="fa-solid fa-pastafarianism" contenteditable="false">\u200b</i>\ufeff</p>',
+            contentAfter: '<p><i class="fa-solid fa-pastafarianism"></i></p>',
+        });
+    });
+
+    test("should parse a fontawesome in a <i> (2)", async () => {
+        await testEditor({
+            contentBefore: '<p><i class="oi oi-pastafarianism"></i></p>',
+            contentBeforeEdit:
+                '<p>\ufeff<i class="oi oi-pastafarianism" contenteditable="false">\u200b</i>\ufeff</p>',
+            contentAfter: '<p><i class="oi oi-pastafarianism"></i></p>',
+        });
+    });
+
+    test("should parse a fontawesome with more classes", async () => {
+        await testEditor({
+            contentBefore:
+                '<p><i class="red fa-solid fa-pastafarianism bordered big"></i></p>',
+            contentBeforeEdit:
+                '<p>\ufeff<i class="red fa-solid fa-pastafarianism bordered big" contenteditable="false">\u200b</i>\ufeff</p>',
+            contentAfter:
+                '<p><i class="red fa-solid fa-pastafarianism bordered big"></i></p>',
+        });
+    });
+
+    test("should parse a fontawesome with multi-line classes", async () => {
+        await testEditor({
+            contentBefore: `<p><i class="fa
+                                fa-pastafarianism"></i></p>`,
+            contentBeforeEdit: `<p>\ufeff<i class="fa
+                                fa-pastafarianism" contenteditable="false">\u200b</i>\ufeff</p>`,
+            contentAfter: `<p><i class="fa
+                                fa-pastafarianism"></i></p>`,
+        });
+    });
+
+    test("should parse a fontawesome with more multi-line classes", async () => {
+        await testEditor({
+            contentBefore: `<p><i class="red fa bordered
+                                big fa-pastafarianism scary"></i></p>`,
+            contentBeforeEdit: `<p>\ufeff<i class="red fa bordered
+                                big fa-pastafarianism scary" contenteditable="false">\u200b</i>\ufeff</p>`,
+            contentAfter: `<p><i class="red fa bordered
+                                big fa-pastafarianism scary"></i></p>`,
+        });
+    });
+
+    test("should parse a fontawesome at the beginning of a paragraph", async () => {
+        await testEditor({
+            contentBefore: '<p><i class="fa-solid fa-pastafarianism"></i>a[b]c</p>',
+            contentBeforeEdit:
+                '<p>\ufeff<i class="fa-solid fa-pastafarianism" contenteditable="false">\u200b</i>\ufeffa[b]c</p>',
+            contentAfter: '<p><i class="fa-solid fa-pastafarianism"></i>a[b]c</p>',
+        });
+    });
+
+    test("should parse a fontawesome in the middle of a paragraph", async () => {
+        await testEditor({
+            contentBefore: '<p>a[b]c<i class="fa-solid fa-pastafarianism"></i>def</p>',
+            contentBeforeEdit:
+                '<p>a[b]c\ufeff<i class="fa-solid fa-pastafarianism" contenteditable="false">\u200b</i>\ufeffdef</p>',
+            contentAfter: '<p>a[b]c<i class="fa-solid fa-pastafarianism"></i>def</p>',
+        });
+    });
+
+    test("should parse a fontawesome at the end of a paragraph", async () => {
+        await testEditor({
+            contentBefore: '<p>a[b]c<i class="fa-solid fa-pastafarianism"></i></p>',
+            contentBeforeEdit:
+                '<p>a[b]c\ufeff<i class="fa-solid fa-pastafarianism" contenteditable="false">\u200b</i>\ufeff</p>',
+            contentAfter: '<p>a[b]c<i class="fa-solid fa-pastafarianism"></i></p>',
+        });
+    });
+
+    test("should not add U+FEFF characters around icons not within a paragraph related element or a base container", async () => {
+        await testEditor({
+            contentBefore:
+                '<div><i class="fa-solid fa-pastafarianism"></i><div><p>abc</p></div></div>',
+            contentBeforeEdit:
+                '<p data-selection-placeholder=""><br></p>' +
+                '<div><i class="fa-solid fa-pastafarianism" contenteditable="false">\u200b</i><div><p>abc</p></div></div>' +
+                '<p data-selection-placeholder=""><br></p>',
+            contentAfter:
+                '<div><i class="fa-solid fa-pastafarianism"></i><div><p>abc</p></div></div>',
+        });
+    });
+
+    test("should add U+FEFF characters around icon within a span which is within a paragraph related element or a base container", async () => {
+        await testEditor({
+            contentBefore:
+                '<p><span><i class="fa-solid fa-pastafarianism"></i></span></p>',
+            contentBeforeEdit:
+                '<p><span>\ufeff<i class="fa-solid fa-pastafarianism" contenteditable="false">\u200b</i>\ufeff</span></p>',
+            contentAfter:
+                '<p><span><i class="fa-solid fa-pastafarianism"></i></span></p>',
+        });
+    });
+
+    test("should not add U+FEFF characters around icon if not direct child of paragraph related element or formatable tag", async () => {
+        const { editor, el } = await setupEditor(`<p></p>`);
+        const div = document.createElement("div");
+        const icon = document.createElement("i");
+        icon.className = "fa-solid fa-pastafarianism";
+        div.appendChild(icon);
+        el.firstChild.appendChild(div);
+        dispatchNormalize(editor);
+        expect(getContent(el)).toBe(
+            `<p><div><i class="fa-solid fa-pastafarianism" contenteditable="false">\u200b</i></div></p>`,
+        );
+    });
+});
+
+describe("deleteForward", () => {
+    describe("Selection collapsed", () => {
+        describe("Basic", () => {
+            test("should delete a fontawesome (deleteForward, collapsed)", async () => {
+                await testEditor({
+                    contentBefore:
+                        '<p>ab[]<i class="fa-solid fa-pastafarianism"></i>cd</p>',
+                    contentBeforeEdit:
+                        '<p>ab[]\ufeff<i class="fa-solid fa-pastafarianism" contenteditable="false">\u200b</i>\ufeffcd</p>',
+                    stepFunction: deleteForward,
+                    contentAfter: "<p>ab[]cd</p>",
+                });
+            });
+
+            test("should not delete a fontawesome", async () => {
+                await testEditor({
+                    contentBefore:
+                        '<p>ab<i class="fa-solid fa-pastafarianism"></i>[]cd</p>',
+                    contentBeforeEdit:
+                        '<p>ab\ufeff<i class="fa-solid fa-pastafarianism" contenteditable="false">\u200b</i>\ufeff[]cd</p>',
+                    stepFunction: deleteForward,
+                    contentAfterEdit:
+                        '<p>ab\ufeff<i class="fa-solid fa-pastafarianism" contenteditable="false">\u200b</i>\ufeff[]d</p>',
+                    contentAfter:
+                        '<p>ab<i class="fa-solid fa-pastafarianism"></i>[]d</p>',
+                });
+            });
+
+            test("should not delete a fontawesome after multiple deleteForward", async () => {
+                await testEditor({
+                    contentBefore:
+                        '<p>ab[]cde<i class="fa-solid fa-pastafarianism"></i>fghij</p>',
+                    contentBeforeEdit:
+                        '<p>ab[]cde\ufeff<i class="fa-solid fa-pastafarianism" contenteditable="false">\u200b</i>\ufefffghij</p>',
+                    stepFunction: async (editor) => {
+                        deleteForward(editor);
+                        deleteForward(editor);
+                        deleteForward(editor);
+                    },
+                    contentAfterEdit:
+                        '<p>ab[]\ufeff<i class="fa-solid fa-pastafarianism" contenteditable="false">\u200b</i>\ufefffghij</p>',
+                    contentAfter:
+                        '<p>ab[]<i class="fa-solid fa-pastafarianism"></i>fghij</p>',
+                });
+            });
+
+            test("should not delete a fontawesome after one deleteForward with spaces", async () => {
+                await testEditor({
+                    contentBefore:
+                        '<p>ab[] <i class="fa-solid fa-pastafarianism"></i> cd</p>',
+                    contentBeforeEdit:
+                        '<p>ab[] \ufeff<i class="fa-solid fa-pastafarianism" contenteditable="false">\u200b</i>\ufeff cd</p>',
+                    stepFunction: async (editor) => {
+                        deleteForward(editor);
+                    },
+                    contentAfterEdit:
+                        '<p>ab[]\ufeff<i class="fa-solid fa-pastafarianism" contenteditable="false">\u200b</i>\ufeff cd</p>',
+                    contentAfter:
+                        '<p>ab[]<i class="fa-solid fa-pastafarianism"></i> cd</p>',
+                });
+            });
+
+            test("should not delete a fontawesome after multiple deleteForward with spaces", async () => {
+                await testEditor({
+                    contentBefore:
+                        '<p>a[]b <i class="fa-solid fa-pastafarianism"></i> cd</p>',
+                    contentBeforeEdit:
+                        '<p>a[]b \ufeff<i class="fa-solid fa-pastafarianism" contenteditable="false">\u200b</i>\ufeff cd</p>',
+                    stepFunction: async (editor) => {
+                        deleteForward(editor);
+                        deleteForward(editor);
+                    },
+                    contentAfterEdit:
+                        '<p>a[]\ufeff<i class="fa-solid fa-pastafarianism" contenteditable="false">\u200b</i>\ufeff cd</p>',
+                    contentAfter:
+                        '<p>a[]<i class="fa-solid fa-pastafarianism"></i> cd</p>',
+                });
+            });
+
+            test("should not delete a fontawesome after multiple deleteForward with spaces inside a <span>", async () => {
+                await testEditor({
+                    contentBefore:
+                        '<p><span class="a">ab[]c </span><i class="fa-solid fa-star"></i> def</p>',
+                    contentBeforeEdit:
+                        '<p><span class="a">ab[]c </span>\ufeff<i class="fa-solid fa-star" contenteditable="false">\u200b</i>\ufeff def</p>',
+                    stepFunction: async (editor) => {
+                        deleteForward(editor);
+                        deleteForward(editor);
+                    },
+                    contentAfterEdit:
+                        '<p><span class="a">ab[]</span>\ufeff<i class="fa-solid fa-star" contenteditable="false">\u200b</i>\ufeff def</p>',
+                    contentAfter:
+                        '<p><span class="a">ab[]</span><i class="fa-solid fa-star"></i> def</p>',
+                });
+            });
+        });
+    });
+
+    describe("Selection not collapsed", () => {
+        describe("Basic", () => {
+            test("should delete a fontawesome (forward selection, deleteForward, !collapsed)", async () => {
+                await testEditor({
+                    contentBefore:
+                        '<p>ab[<i class="fa-solid fa-pastafarianism"></i>]cd</p>',
+                    stepFunction: deleteForward,
+                    contentAfter: "<p>ab[]cd</p>",
+                });
+            });
+            test("should delete a fontawesome (backward selection, deleteForward, !collapsed)", async () => {
+                await testEditor({
+                    contentBefore:
+                        '<p>ab]<i class="fa-solid fa-pastafarianism"></i>[cd</p>',
+                    stepFunction: deleteForward,
+                    contentAfter: "<p>ab[]cd</p>",
+                });
+            });
+        });
+    });
+});
+
+describe("deleteBackward", () => {
+    describe("Selection collapsed", () => {
+        describe("Basic", () => {
+            test("should delete a fontawesome (deleteBackward, collapsed) (1)", async () => {
+                await testEditor({
+                    contentBefore:
+                        '<p>ab<i class="fa-solid fa-pastafarianism"></i>[]cd</p>',
+                    contentBeforeEdit:
+                        '<p>ab\ufeff<i class="fa-solid fa-pastafarianism" contenteditable="false">\u200b</i>\ufeff[]cd</p>',
+                    stepFunction: deleteBackward,
+                    contentAfter: "<p>ab[]cd</p>",
+                });
+            });
+
+            test("should delete a fontawesome (deleteBackward, collapsed) (2)", async () => {
+                await testEditor({
+                    contentBefore: '<p>ab<i class="oi oi-pastafarianism"></i>[]cd</p>',
+                    contentBeforeEdit:
+                        '<p>ab\ufeff<i class="oi oi-pastafarianism" contenteditable="false">\u200b</i>\ufeff[]cd</p>',
+                    stepFunction: deleteBackward,
+                    contentAfter: "<p>ab[]cd</p>",
+                });
+            });
+
+            test("should delete a fontawesome before a span", async () => {
+                await testEditor({
+                    contentBefore:
+                        '<p>ab<i class="fa-solid fa-pastafarianism"></i><span class="a">[]cd</span></p>',
+                    contentBeforeEdit:
+                        '<p>ab\ufeff<i class="fa-solid fa-pastafarianism" contenteditable="false">\u200b</i>\ufeff<span class="a">[]cd</span></p>',
+                    stepFunction: deleteBackward,
+                    contentAfter: '<p>ab[]<span class="a">cd</span></p>',
+                });
+            });
+
+            test("should not delete a fontawesome before a span", async () => {
+                await testEditor({
+                    contentBefore:
+                        '<p>ab<i class="fa-solid fa-pastafarianism"></i><span class="a">c[]d</span></p>',
+                    contentBeforeEdit:
+                        '<p>ab\ufeff<i class="fa-solid fa-pastafarianism" contenteditable="false">\u200b</i>\ufeff<span class="a">c[]d</span></p>',
+                    stepFunction: deleteBackward,
+                    contentAfterEdit:
+                        '<p>ab\ufeff<i class="fa-solid fa-pastafarianism" contenteditable="false">\u200b</i>\ufeff<span class="a">[]d</span></p>',
+                    contentAfter:
+                        '<p>ab<i class="fa-solid fa-pastafarianism"></i><span class="a">[]d</span></p>',
+                });
+            });
+
+            test("should not delete a fontawesome", async () => {
+                await testEditor({
+                    contentBefore:
+                        '<p>ab[]<i class="fa-solid fa-pastafarianism"></i>cd</p>',
+                    contentBeforeEdit:
+                        '<p>ab[]\ufeff<i class="fa-solid fa-pastafarianism" contenteditable="false">\u200b</i>\ufeffcd</p>',
+                    stepFunction: deleteBackward,
+                    contentAfterEdit:
+                        '<p>a[]\ufeff<i class="fa-solid fa-pastafarianism" contenteditable="false">\u200b</i>\ufeffcd</p>',
+                    contentAfter:
+                        '<p>a[]<i class="fa-solid fa-pastafarianism"></i>cd</p>',
+                });
+            });
+
+            test("should not delete a fontawesome after multiple deleteBackward", async () => {
+                await testEditor({
+                    contentBefore:
+                        '<p>abcde<i class="fa-solid fa-pastafarianism"></i>fgh[]ij</p>',
+                    contentBeforeEdit:
+                        '<p>abcde\ufeff<i class="fa-solid fa-pastafarianism" contenteditable="false">\u200b</i>\ufefffgh[]ij</p>',
+                    stepFunction: async (editor) => {
+                        deleteBackward(editor);
+                        deleteBackward(editor);
+                        deleteBackward(editor);
+                    },
+                    contentAfterEdit:
+                        '<p>abcde\ufeff<i class="fa-solid fa-pastafarianism" contenteditable="false">\u200b</i>\ufeff[]ij</p>',
+                    contentAfter:
+                        '<p>abcde<i class="fa-solid fa-pastafarianism"></i>[]ij</p>',
+                });
+            });
+
+            test("should not delete a fontawesome after multiple deleteBackward with spaces", async () => {
+                await testEditor({
+                    contentBefore:
+                        '<p>abcde <i class="fa-solid fa-pastafarianism"></i> fg[]hij</p>',
+                    contentBeforeEdit:
+                        '<p>abcde \ufeff<i class="fa-solid fa-pastafarianism" contenteditable="false">\u200b</i>\ufeff fg[]hij</p>',
+                    stepFunction: async (editor) => {
+                        deleteBackward(editor);
+                        deleteBackward(editor);
+                        deleteBackward(editor);
+                    },
+                    contentAfterEdit:
+                        '<p>abcde \ufeff<i class="fa-solid fa-pastafarianism" contenteditable="false">\u200b</i>\ufeff[]hij</p>',
+                    contentAfter:
+                        '<p>abcde <i class="fa-solid fa-pastafarianism"></i>[]hij</p>',
+                });
+            });
+        });
+    });
+    describe("Selection not collapsed", () => {
+        describe("Basic", () => {
+            test("should delete a fontawesome (forward selection, deleteBackward, !collapsed)", async () => {
+                await testEditor({
+                    contentBefore:
+                        '<p>ab[<i class="fa-solid fa-pastafarianism"></i>]cd</p>',
+                    stepFunction: deleteBackward,
+                    contentAfter: "<p>ab[]cd</p>",
+                });
+            });
+            test("should delete a fontawesome (backward selection, deleteBackward, !collapsed)", async () => {
+                await testEditor({
+                    contentBefore:
+                        '<p>ab]<i class="fa-solid fa-pastafarianism"></i>[cd</p>',
+                    stepFunction: deleteBackward,
+                    contentAfter: "<p>ab[]cd</p>",
+                });
+            });
+        });
+    });
+});
+
+describe("FontAwesome insertion", () => {
+    test("should insert a fontAwesome at the start of an element", async () => {
+        await testEditor({
+            contentBefore: "<p>[]abc</p>",
+            stepFunction: insertFontAwesome("fa-solid fa-star"),
+            contentAfterEdit:
+                '<p>\ufeff<i class="fa-solid fa-star" contenteditable="false">\u200b</i>[]\ufeffabc</p>',
+            contentAfter: '<p><i class="fa-solid fa-star"></i>[]abc</p>',
+        });
+    });
+
+    test("should insert a fontAwesome within an element", async () => {
+        await testEditor({
+            contentBefore: "<p>ab[]cd</p>",
+            stepFunction: insertFontAwesome("fa-solid fa-star"),
+            contentAfterEdit:
+                '<p>ab\ufeff<i class="fa-solid fa-star" contenteditable="false">\u200b</i>[]\ufeffcd</p>',
+            contentAfter: '<p>ab<i class="fa-solid fa-star"></i>[]cd</p>',
+        });
+    });
+
+    test("should insert a fontAwesome at the end of an element", async () => {
+        await testEditor({
+            contentBefore: "<p>abc[]</p>",
+            stepFunction: insertFontAwesome("fa-solid fa-star"),
+            contentAfterEdit:
+                '<p>abc\ufeff<i class="fa-solid fa-star" contenteditable="false">\u200b</i>[]\ufeff</p>',
+            contentAfter: '<p>abc<i class="fa-solid fa-star"></i>[]</p>',
+        });
+    });
+
+    test("should insert a fontAwesome after", async () => {
+        await testEditor({
+            contentBefore: '<p>ab<i class="fa-solid fa-pastafarianism"></i>c[]d</p>',
+            stepFunction: insertFontAwesome("fa-solid fa-star"),
+            contentAfterEdit:
+                '<p>ab\ufeff<i class="fa-solid fa-pastafarianism" contenteditable="false">\u200b</i>\ufeffc\ufeff<i class="fa-solid fa-star" contenteditable="false">\u200b</i>[]\ufeffd</p>',
+            contentAfter:
+                '<p>ab<i class="fa-solid fa-pastafarianism"></i>c<i class="fa-solid fa-star"></i>[]d</p>',
+        });
+    });
+
+    test("should insert a fontAwesome before", async () => {
+        await testEditor({
+            contentBefore: '<p>ab[]<i class="fa-solid fa-pastafarianism"></i>cd</p>',
+            contentBeforeEdit:
+                '<p>ab[]\ufeff<i class="fa-solid fa-pastafarianism" contenteditable="false">\u200b</i>\ufeffcd</p>',
+            stepFunction: insertFontAwesome("fa-solid fa-star"),
+            contentAfterEdit:
+                '<p>ab\ufeff<i class="fa-solid fa-star" contenteditable="false">\u200b</i>[]\ufeff<i class="fa-solid fa-pastafarianism" contenteditable="false">\u200b</i>\ufeffcd</p>',
+            contentAfter:
+                '<p>ab<i class="fa-solid fa-star"></i>[]<i class="fa-solid fa-pastafarianism"></i>cd</p>',
+        });
+    });
+    test.skip("should insert a fontAwesome and replace the icon", async () => {
+        await testEditor({
+            contentBefore: '<p>ab[<i class="fa-solid fa-pastafarianism"></i>]cd</p>',
+            stepFunction: insertFontAwesome("fa-solid fa-star"),
+            contentAfter: '<p>abs<i class="fa-solid fa-star"></i>[]cd</p>',
+        });
+    });
+
+    test("should insert fontAwesome consecutively", async () => {
+        await testEditor({
+            contentBefore: "<p>[]<br></p>",
+            stepFunction: async (editor) => {
+                execCommand(editor, "insertFontAwesome", {
+                    faClass: "fa-solid fa-star",
+                });
+                execCommand(editor, "insertFontAwesome", {
+                    faClass: "fa-solid fa-martini-glass-empty",
+                });
+            },
+            contentAfterEdit:
+                '<p>\ufeff<i class="fa-solid fa-star" contenteditable="false">\u200b</i>\ufeff<i class="fa-solid fa-martini-glass-empty" contenteditable="false">\u200b</i>[]\ufeff</p>',
+            contentAfter:
+                '<p><i class="fa-solid fa-star"></i><i class="fa-solid fa-martini-glass-empty"></i>[]</p>',
+        });
+    });
+});
+
+describe("Text insertion", () => {
+    test("should insert a character before", async () => {
+        await testEditor({
+            contentBefore: '<p>ab[]<i class="fa-solid fa-pastafarianism"></i>cd</p>',
+            contentBeforeEdit:
+                '<p>ab[]\ufeff<i class="fa-solid fa-pastafarianism" contenteditable="false">\u200b</i>\ufeffcd</p>',
+            stepFunction: async (editor) => {
+                await insertText(editor, "s");
+            },
+            contentAfterEdit:
+                '<p>abs[]\ufeff<i class="fa-solid fa-pastafarianism" contenteditable="false">\u200b</i>\ufeffcd</p>',
+            contentAfter: '<p>abs[]<i class="fa-solid fa-pastafarianism"></i>cd</p>',
+        });
+    });
+
+    test("should insert a character after", async () => {
+        await testEditor({
+            contentBefore: '<p>ab<i class="fa-solid fa-pastafarianism"></i>[]cd</p>',
+            contentBeforeEdit:
+                '<p>ab\ufeff<i class="fa-solid fa-pastafarianism" contenteditable="false">\u200b</i>\ufeff[]cd</p>',
+            stepFunction: async (editor) => {
+                await insertText(editor, "s");
+            },
+            contentAfterEdit:
+                '<p>ab\ufeff<i class="fa-solid fa-pastafarianism" contenteditable="false">\u200b</i>\ufeffs[]cd</p>',
+            contentAfter: '<p>ab<i class="fa-solid fa-pastafarianism"></i>s[]cd</p>',
+        });
+    });
+    test.skip("should insert a character and replace the icon", async () => {
+        await testEditor({
+            contentBefore: '<p>ab[<i class="fa-solid fa-pastafarianism"></i>]cd</p>',
+            stepFunction: async (editor) => {
+                await insertText(editor, "s");
+            },
+            contentAfter: "<p>abs[]cd</p>",
+        });
+    });
+
+    test("undo shouldn't remove changes applied by the editor setup", async () => {
+        const { el, editor } = await setupEditor(
+            `<p><i class="fa-solid fa-pastafarianism"></i></p>`,
+        );
+        expect(getContent(el)).toBe(
+            `<p>\ufeff<i class="fa-solid fa-pastafarianism" contenteditable="false">\u200b</i>\ufeff</p>`,
+        );
+        undo(editor);
+        expect(getContent(el)).toBe(
+            `<p>\ufeff<i class="fa-solid fa-pastafarianism" contenteditable="false">\u200b</i>\ufeff</p>`,
+        );
+    });
+});

@@ -1,0 +1,2 @@
+id,name,model_id/id,group_id/id,kind,operation,domain
+access_fsm_repair,access_fsm_repair,repair.model_repair_order,industry_fsm.group_fsm_user,permission,r,

@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="res_groups_privilege_geoengine" model="res.groups.privilege">
+        <field name="name">Geoengine</field>
+    </record>
+
+    <record id="group_geoengine_user" model="res.groups">
+        <field name="name">User</field>
+        <field name="privilege_id" ref="res_groups_privilege_geoengine" />
+    </record>
+
+    <record id="group_geoengine_admin" model="res.groups">
+        <field name="name">Admin</field>
+        <field name="privilege_id" ref="res_groups_privilege_geoengine" />
+        <field name="implied_ids" eval="[Command.link(ref('group_geoengine_user'))]" />
+        <field name="user_ids" eval="[Command.link(ref('base.user_root'))]" />
+    </record>
+
+    <record id="privilege_resolve_layer_view" model="res.groups">
+        <field
+            name="name">Privilege: a map layer finds the map view of the model it draws</field>
+        <field name="is_privilege" eval="True" />
+    </record>
+
+    <record id="base.group_user" model="res.groups">
+        <field name="implied_ids" eval="[Command.link(ref('group_geoengine_user'))]" />
+    </record>
+
+    <record id="base.group_erp_manager" model="res.groups">
+        <field name="implied_ids" eval="[Command.link(ref('group_geoengine_admin'))]" />
+    </record>
+
+</odoo>

@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <menuitem
+        id="menu_device_gps_speed_event"
+        name="Speeding Events"
+        parent="device.menu_device_data_analytics"
+        action="action_device_gps_speed_event"
+        sequence="31" />
+
+    <menuitem
+        id="menu_device_gps_speed_day"
+        name="Daily Speed"
+        parent="device.menu_device_data_analytics"
+        action="action_device_gps_speed_day"
+        sequence="32" />
+
+    <menuitem
+        id="menu_device_gps_speed_alert"
+        name="Speed Alerts"
+        parent="device.menu_device_data_analytics"
+        action="action_device_gps_speed_alert"
+        sequence="33" />
+
+    <menuitem
+        id="device_gps_stop_to_mark_menu"
+        name="Places to Mark"
+        parent="device.menu_device_data_analytics"
+        action="device_gps_stop_to_mark_action"
+        sequence="38" />
+
+    <menuitem
+        id="device_gps_stop_menu"
+        name="Stops"
+        parent="device.menu_device_data_analytics"
+        action="device_gps_stop_action"
+        sequence="30" />
+
+    <menuitem
+        id="device_gps_stop_map_menu"
+        name="Parked Vehicles and Places to Mark"
+        parent="device.menu_device_data_analytics"
+        action="device_gps_stop_map_action"
+        sequence="31" />
+
+    <menuitem
+        id="wizard_device_gps_stop_refresh_menu"
+        name="Refresh Stops"
+        parent="device_gps.menu_device_gps_config"
+        action="wizard_device_gps_stop_refresh_action"
+        sequence="90"
+        groups="device_gps.group_device_gps_manager" />
+
+</odoo>

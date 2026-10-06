@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="sale_order_loss_view_form_competition" model="ir.ui.view">
+        <field name="name">sale.order.loss.form.competition</field>
+        <field name="model">wizard.sale.order.mark.lost</field>
+        <field name="inherit_id" ref="sale.sale_order_loss_view_form" />
+        <field name="arch" type="xml">
+            <field name="loss_note" position="before">
+                <field
+                    name="lost_to_id"
+                    context="{'default_is_competitor': True, 'default_is_company': True}"
+                    invisible="outcome != 'lost'" />
+                <field name="winning_amount" invisible="not lost_to_id" />
+            </field>
+        </field>
+    </record>
+
+</odoo>

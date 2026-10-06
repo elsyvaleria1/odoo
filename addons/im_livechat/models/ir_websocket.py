@@ -1,0 +1,22 @@
+from odoo import models
+
+
+class IrWebsocket(models.AbstractModel):
+    _inherit = "ir.websocket"
+
+    def _get_bus_channels(self, channels):
+        channels = list(channels)
+        if any(
+            channel == "im_livechat.looking_for_help"
+            for channel in channels
+            if isinstance(channel, str)
+        ):
+            if self.env.user.has_group("im_livechat.im_livechat_group_user"):
+                channels.append(
+                    (
+                        self.env.ref("im_livechat.im_livechat_group_user"),
+                        "LOOKING_FOR_HELP",
+                    )
+                )
+            channels.remove("im_livechat.looking_for_help")
+        return super()._get_bus_channels(channels)

@@ -1,0 +1,69 @@
+from odoo import fields, models
+
+
+class WizardMailingContactAddList(models.TransientModel):
+    _name = "wizard.mailing.contact.add.list"
+    _description = "Add Contacts to Mailing List"
+
+    contact_ids = fields.Many2many(
+        comodel_name="mailing.contact",
+        string="Contacts",
+    )
+    mailing_list_id = fields.Many2one(
+        comodel_name="mailing.list",
+        required=True,
+    )
+
+    def action_add_contacts(self):
+        """Simply add contacts to the mailing list and close wizard."""
+        return self._add_contacts_to_mailing_list(
+            {"type": "ir.actions.act_window_close"}
+        )
+
+    def action_add_contacts_and_send_mailing(self):
+        """Add contacts to the mailing list and redirect to a new mailing on
+        this list."""
+        self.check_singleton()
+
+        action = self.env["ir.actions.actions"]._get_action_dict_by_xml_id(
+            "mass_mailing.mailing_mailing_action_mail"
+        )
+        action["views"] = [[False, "form"]]
+        action["target"] = "current"
+        action["context"] = {"default_contact_list_ids": [self.mailing_list_id.id]}
+        return self._add_contacts_to_mailing_list(action)
+
+    def _add_contacts_to_mailing_list(self, action) -> dict:
+        self.check_singleton()
+
+        contacts_to_add = self.contact_ids.filtered(
+            lambda c: c not in self.mailing_list_id.contact_ids
+        )
+        self.mailing_list_id.write(
+            {
+                "subscription_ids": [
+                    (
+                        0,
+                        0,
+                        {
+                            "contact_id": contact.id,
+                            "list_id": self.mailing_list_id.id,
+                        },
+                    )
+                    for contact in contacts_to_add
+                ]
+            }
+        )
+
+        return {
+            "type": "ir.actions.client",
+            "tag": "display_notification",
+            "params": {
+                "type": "info",
+                "message": self.env._(
+                    "%s Mailing Contacts have been added. ", len(contacts_to_add)
+                ),
+                "sticky": False,
+                "next": action,
+            },
+        }

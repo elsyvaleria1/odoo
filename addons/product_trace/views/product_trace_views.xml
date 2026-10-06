@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_product_trace_search" model="ir.ui.view">
+        <field name="name">product.trace.search</field>
+        <field name="model">product.trace</field>
+        <field name="priority">20</field>
+        <field name="arch" type="xml">
+            <search string="Product Lots Filter">
+                <field
+                    name="name"
+                    string="Lot/Serial Number"
+                    filter_domain="['|', ('name', 'ilike', self),('ref', 'ilike', self)]" />
+                <field name="product_id" />
+                <field name="lot_properties" />
+                <field name="create_date" />
+                <filter
+                    name="creation_date"
+                    string="Creation Date"
+                    date="create_date" />
+                <group>
+                    <filter
+                        name="group_by_product"
+                        string="Product"
+                        context="{'group_by': 'product_id'}" />
+                    <filter
+                        name="group_by_creation_date"
+                        string="Creation date"
+                        context="{'group_by': 'create_date'}" />
+                    <filter
+                        name="group_by_Company"
+                        string="Company"
+                        context="{'group_by': 'company_id'}" />
+                    <filter
+                        name="group_by_lot_properties"
+                        string="Properties"
+                        context="{'group_by': 'lot_properties'}" />
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="view_product_trace_list" model="ir.ui.view">
+        <field name="name">product.trace.list</field>
+        <field name="model">product.trace</field>
+        <field name="priority">20</field>
+        <field name="arch" type="xml">
+            <list string="Lots/Serial Numbers" multi_edit="1">
+                <field name="name" decoration-bf="1" />
+                <field name="product_id" readonly="1" />
+                <field name="ref" optional="hide" />
+                <field name="create_date" optional="show" />
+                <field name="company_id" groups="base.group_multi_company" />
+                <field name="activity_ids" widget="list_activity" optional="show" />
+                <field name="lot_properties" optional="hide" />
+            </list>
+        </field>
+    </record>
+
+    <record id="view_product_trace_kanban" model="ir.ui.view">
+        <field name="name">product.trace.kanban</field>
+        <field name="model">product.trace</field>
+        <field name="arch" type="xml">
+            <kanban group_create="false" group_delete="false">
+                <templates>
+                    <t t-name="card">
+                        <field name="name" class="fw-bolder fs-5" />
+                        <field name="product_id" class="small" />
+                        <field name="lot_properties" widget="properties" />
+                        <field name="activity_ids" widget="kanban_activity" />
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
+    <record id="view_product_trace_form" model="ir.ui.view">
+        <field name="name">product.trace.form</field>
+        <field name="model">product.trace</field>
+        <field name="priority">20</field>
+        <field name="arch" type="xml">
+            <form string="Lots/Serial Numbers">
+                <header />
+                <sheet>
+                    <field name="company_id" invisible="1" />
+                    <field name="display_complete" invisible="1" />
+                    <div
+                        class="oe_button_box"
+                        name="button_box"
+                        invisible="not display_complete" />
+                    <div class="oe_title">
+                        <label for="name" />
+                        <h1>
+                            <field name="name" placeholder="e.g. LOT/0001/20121" />
+                        </h1>
+                    </div>
+                    <group name="main_group">
+                        <group name="information_group" string="Information">
+                            <field
+                                name="product_id"
+                                help="Product this lot/serial number contains. You cannot change it anymore if it has already been moved."
+                                force_save="1"
+                                context="{'default_tracking': 'lot'}"
+                                readonly="context.get('set_product_readonly', False)" />
+                            <field name="ref" string="Reference" />
+                            <field
+                                name="company_id"
+                                placeholder="Visible to all"
+                                groups="base.group_multi_company" />
+                        </group>
+                        <field
+                            name="lot_properties"
+                            nolabel="1"
+                            columns="2"
+                            hideAddButton="1" />
+                    </group>
+                    <notebook invisible="not display_complete">
+                        <page name="description" string="Description">
+                            <field name="note" placeholder="Add an internal note" />
+                        </page>
+                        <page name="other_info" string="Other Info">
+                            <group>
+                                <group>
+                                </group>
+                                <group>
+                                    <field
+                                        name="company_id"
+                                        placeholder="Visible to all coompanies"
+                                        groups="base.group_multi_company" />
+                                </group>
+                            </group>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter />
+            </form>
+        </field>
+    </record>
+
+</odoo>

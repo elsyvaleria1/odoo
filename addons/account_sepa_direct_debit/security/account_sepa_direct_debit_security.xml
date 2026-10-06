@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="privilege_count_sdd_mandates" model="res.groups">
+        <field name="name">Privilege: count the SDD mandates of a partner</field>
+        <field name="is_privilege" eval="True" />
+    </record>
+
+</odoo>

@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_product_trace_search" model="ir.ui.view">
+        <field name="name">product.trace.search.stock</field>
+        <field name="model">product.trace</field>
+        <field name="inherit_id" ref="product_trace.view_product_trace_search" />
+        <field name="mode">primary</field>
+        <field name="arch" type="xml">
+            <field name="name" position="after">
+                <field name="partner_ids" string="Customers" />
+            </field>
+            <filter name="creation_date" position="before">
+                <filter
+                    name="at_customer"
+                    string="At Customer"
+                    domain="[('quant_ids.location_id.usage','=','customer'), ('quant_ids.quantity', '&gt;', 0)]" />
+                <filter
+                    name="on_hand"
+                    string="On Hand"
+                    domain="[('product_qty', '&gt;', 0)]" />
+            </filter>
+            <filter name="group_by_product" position="after">
+                <filter
+                    name="group_by_location"
+                    string="Location"
+                    context="{'group_by': 'location_id'}"
+                    groups="stock.group_stock_multi_locations" />
+            </filter>
+        </field>
+    </record>
+
+    <record id="view_product_trace_list" model="ir.ui.view">
+        <field name="name">product.trace.list.stock</field>
+        <field name="model">product.trace</field>
+        <field name="inherit_id" ref="product_trace.view_product_trace_list" />
+        <field name="mode">primary</field>
+        <field name="arch" type="xml">
+            <field name="company_id" position="after">
+                <field
+                    name="partner_ids"
+                    string="Transfer to"
+                    widget="many2many_tags"
+                    optional="hide" />
+            </field>
+            <field name="lot_properties" position="after">
+                <field name="product_qty" optional="hide" />
+            </field>
+        </field>
+    </record>
+
+    <record id="view_product_trace_form" model="ir.ui.view">
+        <field name="name">product.trace.form.stock</field>
+        <field name="model">product.trace</field>
+        <field name="inherit_id" ref="product_trace.view_product_trace_form" />
+        <field name="mode">primary</field>
+        <field name="priority">10</field>
+        <field name="arch" type="xml">
+            <div name="button_box" position="inside">
+                <button
+                    name="action_lot_open_transfers"
+                    type="object"
+                    help="Transfers"
+                    icon="fa-truck"
+                    invisible="count_transfer_outgoing == 0"
+                    class="oe_stat_button">
+                    <field
+                        name="count_transfer_outgoing"
+                        string="Transfers"
+                        widget="statinfo" />
+                </button>
+                <button
+                    name="action_lot_open_quants"
+                    type="object"
+                    icon="fa-arrows"
+                    groups="stock.group_stock_multi_locations"
+                    class="oe_stat_button">
+                    <div class="o_stat_info">
+                        <span class="o_stat_text">Location</span>
+                    </div>
+                </button>
+                <button
+                    name="%(action_stock_report)d"
+                    type="action"
+                    icon="oi-arrow-up"
+                    class="oe_stat_button">
+                    <div class="o_stat_info">
+                        <span class="o_stat_text">Traceability</span>
+                    </div>
+                </button>
+            </div>
+            <field name="product_id" position="attributes">
+                <attribute name="context">{'default_is_storable': True, 'default_tracking': 'lot'}</attribute>
+            </field>
+            <xpath
+                expr="//group[@name='information_group']/field[@name='company_id']"
+                position="after">
+                <field
+                    name="partner_ids"
+                    string="Customer"
+                    widget="many2many_tags"
+                    options="{'edit_tags': True}"
+                    groups="stock.group_stock_manager"
+                    invisible="not partner_ids or not location_id" />
+            </xpath>
+            <group name="information_group" position="after">
+                <group name="inventory_group" string="Inventory">
+                    <label for="product_qty" invisible="not display_complete" />
+                    <div invisible="not display_complete">
+                        <field name="product_qty" class="oe_inline me-1" />
+                        <field
+                            name="product_uom_id"
+                            widget="many2one_uom"
+                            options="{'no_open': True}"
+                            groups="uom.group_uom"
+                            class="oe_inline" />
+                    </div>
+                    <field
+                        name="location_id"
+                        groups="stock.group_stock_manager"
+                        invisible="not location_id" />
+                </group>
+            </group>
+        </field>
+    </record>
+
+    <record id="action_product_trace" model="ir.actions.act_window">
+        <field name="name">Lots / Serial Numbers</field>
+        <field name="res_model">product.trace</field>
+        <field name="path">lots</field>
+        <field name="search_view_id" ref="view_product_trace_search" />
+        <field
+            name="domain">['|', ('location_id', '=', False), ('location_id.company_id', 'in', allowed_company_ids + [False])]</field>
+        <field
+            name="context">{'search_default_group_by_location': True, 'display_complete': True}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Add a lot/serial number
+            </p>
+            <p>
+                Lots/Serial numbers help you tracking the path followed by your products.
+                From their traceability report you will see the full history of their use, as well
+                as their composition.
+            </p>
+        </field>
+        <field
+            name="view_ids"
+            eval="[Command.clear(), Command.create({'view_mode': 'list', 'view_id': ref('view_product_trace_list')}), Command.create({'view_mode': 'kanban', 'view_id': ref('product_trace.view_product_trace_kanban')}), Command.create({'view_mode': 'form', 'view_id': ref('view_product_trace_form')})]" />
+    </record>
+
+    <record id="action_product_trace_by_product" model="ir.actions.act_window">
+        <field name="name">Lots/Serial Numbers</field>
+        <field name="res_model">product.trace</field>
+        <field name="search_view_id" ref="view_product_trace_search" />
+        <field
+            name="domain">['|', ('location_id', '=', False), ('location_id.company_id', 'in', allowed_company_ids + [False])]</field>
+        <field
+            name="context">{'search_default_group_by_product': 1, 'display_complete': True}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Add a lot/serial number
+            </p>
+            <p>
+                Lots/Serial numbers help you tracking the path followed by your products.
+                From their traceability report you will see the full history of their use, as well
+                as their composition.
+            </p>
+        </field>
+        <field
+            name="view_ids"
+            eval="[Command.clear(), Command.create({'view_mode': 'kanban', 'view_id': ref('product_trace.view_product_trace_kanban')}), Command.create({'view_mode': 'list', 'view_id': ref('view_product_trace_list')}), Command.create({'view_mode': 'form', 'view_id': ref('view_product_trace_form')})]" />
+    </record>
+
+</odoo>

@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="planning_send_view_form" model="ir.ui.view">
+        <field name="name">planning.send.form</field>
+        <field name="model">wizard.planning.slot.publish</field>
+        <field name="arch" type="xml">
+            <form>
+                <group>
+                    <field name="slot_ids" invisible="1" />
+                    <label for="start_datetime" string="Period" />
+                    <div class="o_row">
+                        <field
+                            name="start_datetime"
+                            widget="daterange"
+                            options="{'end_date_field': 'end_datetime'}"
+                            class="oe_inline" />
+                        <field name="end_datetime" invisible="1" />
+                        <div><field name="include_unassigned" />Include Open Shifts</div>
+                    </div>
+                </group>
+                <group>
+                    <field
+                        name="resource_ids"
+                        widget="many2many_avatar_resource"
+                        default_focus="1" />
+                    <field
+                        name="note"
+                        placeholder="Additional message included in the email sent to your employees"
+                        colspan="2"
+                        nolabel="1" />
+                </group>
+                <footer>
+                    <button
+                        name="action_check_emails"
+                        type="object"
+                        string="Publish &amp; Send"
+                        class="btn-primary"
+                        data-hotkey="q" />
+                    <button
+                        name="discard"
+                        special="cancel"
+                        string="Discard"
+                        class="btn-secondary"
+                        data-hotkey="x" />
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="employee_no_email_list_wizard" model="ir.ui.view">
+        <field name="name">planning.send.no.email.wizard</field>
+        <field name="model">wizard.planning.slot.publish</field>
+        <field name="arch" type="xml">
+            <form string="People with no email address">
+                <p>
+                    Give the following people an email address so they receive the schedule.
+                </p>
+                <field
+                    name="resources_no_email"
+                    options="{'link': false, 'unlink': false}">
+                    <list editable="bottom">
+                        <field name="name" readonly="1" required="1" />
+                        <field name="email" required="1" />
+                    </list>
+                </field>
+                <footer>
+                    <button
+                        name="action_send"
+                        type="object"
+                        string="Save &amp; Send Schedule"
+                        class="btn-primary" />
+                    <button special="cancel" string="Discard" class="btn-secondary" />
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="planning_send_action" model="ir.actions.act_window">
+        <field name="name">Publish &amp; Send the Schedule by Email</field>
+        <field name="res_model">wizard.planning.slot.publish</field>
+        <field name="view_mode">form</field>
+        <field name="view_id" ref="planning_send_view_form" />
+        <field name="target">new</field>
+    </record>
+
+</odoo>

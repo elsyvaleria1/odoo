@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="ir_cron_remind_delivery_paper" model="ir.cron">
+        <field
+            name="name">Trips: remind whoever delivered to hand in the signed slip</field>
+        <field name="model_id" ref="stock.model_stock_picking" />
+        <field name="state">code</field>
+        <field name="code">model._cron_remind_delivery_paper()</field>
+        <field name="repeat_interval">1</field>
+        <field name="repeat_unit">day</field>
+        <field
+            name="nextcall"
+            eval="(DateTime.now().replace(hour=7, minute=30) + timedelta(days=1)).strftime('%Y-%m-%d %H:%M:%S')" />
+    </record>
+
+</odoo>

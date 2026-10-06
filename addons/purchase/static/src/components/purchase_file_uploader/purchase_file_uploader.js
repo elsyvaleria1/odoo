@@ -1,0 +1,59 @@
+/** @odoo-module native */
+import { DocumentFileUploader } from "@account/components/document_file_uploader/document_file_uploader";
+import { t } from "@odoo/owl";
+import { WarningDialog } from "@web/components/errors";
+import { registry } from "@web/core/registry";
+import { _t } from "@web/core/translation";
+import { useService } from "@web/core/utils/hooks";
+import { useViewConfig } from "@web/core/view_config_hooks";
+
+export class PurchaseFileUploader extends DocumentFileUploader {
+    static template = "purchase.DocumentFileUploader";
+    static props = { ...DocumentFileUploader.props, list: t.object().optional() };
+
+    setup() {
+        super.setup();
+        this.config = useViewConfig();
+        this.dialog = useService("dialog");
+    }
+
+    getResModel() {
+        return "purchase.order";
+    }
+
+    getUploadMethod() {
+        return "action_create_invoice_from_file";
+    }
+
+    /** @returns {Promise<number[]>} */
+    async getUploadIds() {
+        if (this.props.record) {
+            return [this.props.record.resId];
+        }
+        return this.props.list.getResIds(true);
+    }
+
+    onClick(ev) {
+        if (this.config.viewType !== "list") {
+            return;
+        }
+        const vendorSet = new Set(
+            this.props.list.selection.map((record) => record.data.partner_id.id),
+        );
+        if (vendorSet.size > 1) {
+            this.dialog.add(WarningDialog, {
+                title: _t("Validation Error"),
+                message: _t(
+                    "You can only upload a bill for a single vendor at a time.",
+                ),
+            });
+            return false;
+        }
+    }
+}
+
+export const purchaseFileUploader = {
+    component: PurchaseFileUploader,
+};
+
+registry.category("view_widgets").add("purchase_file_uploader", purchaseFileUploader);

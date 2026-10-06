@@ -1,0 +1,14 @@
+/** @odoo-module native */
+import { registry } from "@web/core/registry";
+import { _t } from "@web/core/translation";
+import { BooleanField, booleanField } from "@web/fields/basic/boolean/boolean_field";
+
+export class BooleanPhoneField extends BooleanField {
+    static template = "im_livechat.BooleanPhoneField";
+}
+
+registry.category("fields").add("boolean_phone", {
+    ...booleanField,
+    component: BooleanPhoneField,
+    displayName: _t("In call"),
+});

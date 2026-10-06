@@ -1,0 +1,56 @@
+/** @odoo-module native */
+import { AvatarEmployee } from "@hr/components/avatar_employee/avatar_employee";
+import { Component, onWillStart, t, useProps } from "@odoo/owl";
+import { registry } from "@web/core/registry";
+import { user } from "@web/core/user";
+import {
+    buildM2OFieldDescription,
+    computeM2OProps,
+    extractM2OFieldProps,
+    Many2One,
+    Many2OneField,
+} from "@web/fields/relational/many2one";
+
+export class Many2OneAvatarEmployeeField extends Component {
+    static template = "hr.Many2OneAvatarEmployeeField";
+    static components = { AvatarEmployee, Many2One };
+    static props = { ...Many2OneField.props, relation: t.string().optional() };
+    props = useProps(this.constructor.props);
+
+    setup() {
+        onWillStart(async () => {
+            this.isHrUser = await user.hasGroup("hr.group_hr_user");
+        });
+    }
+
+    get m2oProps() {
+        return {
+            ...computeM2OProps(this.props),
+            canQuickCreate: false,
+            relation: this.relation,
+        };
+    }
+
+    get relation() {
+        return this.props.relation ?? "hr.employee";
+    }
+}
+
+registry.category("fields").add("many2one_avatar_employee", {
+    ...buildM2OFieldDescription(Many2OneAvatarEmployeeField),
+    additionalClasses: [
+        "o_field_many2one_avatar",
+        "o_field_many2one_avatar_kanban",
+        "o_field_many2one_avatar_user",
+    ],
+    extractProps(staticInfo, dynamicInfo) {
+        return {
+            ...extractM2OFieldProps(staticInfo, dynamicInfo),
+            relation: staticInfo.options.relation,
+            canOpen:
+                "no_open" in staticInfo.options
+                    ? !staticInfo.options.no_open
+                    : staticInfo.viewType === "form",
+        };
+    },
+});

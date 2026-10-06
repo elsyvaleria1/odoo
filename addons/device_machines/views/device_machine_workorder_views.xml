@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="device_machine_workorder_view_list" model="ir.ui.view">
+        <field name="name">device.machine.workorder.list</field>
+        <field name="model">device.machine.workorder</field>
+        <field name="arch" type="xml">
+            <list string="PLC Work Order Runs" create="false">
+                <field name="workorder_id" />
+                <field name="production_id" />
+                <field name="device_id" />
+                <field name="workcenter_id" optional="show" />
+                <field name="date_start" />
+                <field name="date_end" />
+                <field name="duration_min" widget="float_time" />
+                <field name="bottles" sum="Total" />
+                <field name="bottles_per_hour" optional="show" />
+            </list>
+        </field>
+    </record>
+
+    <record id="device_machine_workorder_view_form" model="ir.ui.view">
+        <field name="name">device.machine.workorder.form</field>
+        <field name="model">device.machine.workorder</field>
+        <field name="arch" type="xml">
+            <form string="PLC Work Order Run">
+                <sheet>
+                    <group>
+                        <group string="Link">
+                            <field name="workorder_id" />
+                            <field name="production_id" />
+                            <field name="device_id" />
+                            <field name="workcenter_id" />
+                        </group>
+                        <group string="Counter">
+                            <field name="count_start" />
+                            <field name="count_end" />
+                            <field name="bottles" />
+                        </group>
+                        <group string="Time &amp; KPI">
+                            <field name="date_start" />
+                            <field name="date_end" />
+                            <field name="duration_min" widget="float_time" />
+                            <field name="bottles_per_hour" />
+                            <field name="bottles_per_min" />
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="device_machine_workorder_view_graph" model="ir.ui.view">
+        <field name="name">device.machine.workorder.graph</field>
+        <field name="model">device.machine.workorder</field>
+        <field name="arch" type="xml">
+            <graph type="bar" string="Bottles by Machine" sample="1">
+                <field name="device_id" />
+                <field name="bottles" type="measure" />
+            </graph>
+        </field>
+    </record>
+
+    <record id="device_machine_workorder_view_pivot" model="ir.ui.view">
+        <field name="name">device.machine.workorder.pivot</field>
+        <field name="model">device.machine.workorder</field>
+        <field name="arch" type="xml">
+            <pivot string="PLC Runs" sample="1">
+                <field name="production_id" type="row" />
+                <field name="device_id" type="col" />
+                <field name="bottles" type="measure" />
+            </pivot>
+        </field>
+    </record>
+
+    <record id="device_machine_workorder_action" model="ir.actions.act_window">
+        <field name="name">PLC Work Order Runs</field>
+        <field name="res_model">device.machine.workorder</field>
+        <field name="view_mode">graph,pivot,list,form</field>
+    </record>
+
+    <record id="plc_dashboard_action" model="ir.actions.client">
+        <field name="name">Bottles Filled and Labeled</field>
+        <field name="tag">plc_dashboard</field>
+        <field name="target">main</field>
+    </record>
+
+</odoo>

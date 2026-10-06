@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="ir_cron_notify_overdue_custody" model="ir.cron">
+        <field
+            name="name">Field Collections: remind collectors of custody held too long</field>
+        <field name="model_id" ref="account.model_account_payment" />
+        <field name="state">code</field>
+        <field name="code">model._cron_notify_overdue_custody()</field>
+        <field name="repeat_interval">1</field>
+        <field name="repeat_unit">day</field>
+        <field
+            name="nextcall"
+            eval="(DateTime.now().replace(hour=7, minute=0) + timedelta(days=1)).strftime('%Y-%m-%d %H:%M:%S')" />
+    </record>
+
+    <record id="ir_cron_match_remittance_bank_transactions" model="ir.cron">
+        <field
+            name="name">Field Collections: validate remittances the bank reports</field>
+        <field name="model_id" ref="model_account_collection_remittance" />
+        <field name="state">code</field>
+        <field name="code">model._cron_match_bank_transactions()</field>
+        <field name="repeat_interval">1</field>
+        <field name="repeat_unit">hour</field>
+    </record>
+
+</odoo>

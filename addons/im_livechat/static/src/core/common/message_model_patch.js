@@ -1,0 +1,27 @@
+/** @odoo-module native */
+import { Message } from "@mail/core/common/message_model";
+import { fields } from "@mail/core/common/record";
+import { patch } from "@web/core/utils/patch";
+
+/** @type {import("models").Message} */
+const messagePatch = {
+    setup() {
+        super.setup(...arguments);
+        this.chatbotStep = fields.One("ChatbotStep", { inverse: "message" });
+    },
+    canReplyTo(thread) {
+        return (
+            super.canReplyTo(thread) &&
+            (!thread?.isLivechat || !thread.composerDisabled)
+        );
+    },
+    isTranslatable(thread) {
+        return (
+            super.isTranslatable(thread) ||
+            (this.store.hasMessageTranslationFeature &&
+                thread?.isLivechat &&
+                this.store.selfIsInternalUser)
+        );
+    },
+};
+patch(Message.prototype, messagePatch);

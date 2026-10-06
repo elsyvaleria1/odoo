@@ -1,0 +1,412 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Planning views: a shift may have a customer -->
+    <record id="planning_view_form" model="ir.ui.view">
+        <field name="name">planning.slot.form.inherit.field.service</field>
+        <field name="model">planning.slot</field>
+        <field name="inherit_id" ref="planning.planning_view_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//header/button[@name='action_send'][last()]" position="after">
+                <button
+                    name="action_sign_in"
+                    type="object"
+                    string="Start"
+                    groups="planning.group_planning_manager"
+                    invisible="state != '2_published' or not partner_id" />
+                <button
+                    name="action_complete"
+                    type="object"
+                    string="Complete"
+                    groups="planning.group_planning_manager"
+                    invisible="not partner_id or not (state == '3_in_progress' or state == '2_published' and is_past)"
+                    class="btn-primary" />
+                <button
+                    name="action_sign_in"
+                    type="object"
+                    string="Start"
+                    groups="!planning.group_planning_manager"
+                    invisible="state != '2_published' or not partner_id or user_id != uid" />
+                <button
+                    name="action_complete"
+                    type="object"
+                    string="Complete"
+                    groups="!planning.group_planning_manager"
+                    invisible="not partner_id or user_id != uid or not (state == '3_in_progress' or state == '2_published' and is_past)"
+                    class="btn-primary" />
+            </xpath>
+            <xpath expr="//field[@name='resource_id']" position="after">
+                <label for="partner_id" />
+                <div class="d-flex align-items-start">
+                    <field
+                        name="partner_id"
+                        context="{'res_partner_search_mode': 'customer'}" />
+                    <button
+                        name="action_open_map_navigation"
+                        type="object"
+                        title="Navigate"
+                        icon="fa-location-arrow"
+                        invisible="not partner_id"
+                        class="btn btn-link p-0 ms-2"
+                        aria-label="Navigate" />
+                </div>
+            </xpath>
+            <button name="action_switch_shift" position="attributes">
+                <attribute
+                    name="invisible"
+                    add="state in ['3_in_progress', '4_completed']"
+                    separator="or" />
+            </button>
+        </field>
+    </record>
+
+    <record id="planning_view_tree" model="ir.ui.view">
+        <field name="name">planning.slot.list.inherit.field.service</field>
+        <field name="model">planning.slot</field>
+        <field name="inherit_id" ref="planning.planning_view_tree" />
+        <field name="arch" type="xml">
+            <field name="role_id" position="after">
+                <field name="partner_id" optional="show" />
+                <field name="partner_city" optional="hide" />
+            </field>
+            <field name="state" position="attributes">
+                <attribute name="decoration-info">state == '3_in_progress'</attribute>
+                <attribute name="decoration-muted">state == '4_completed'</attribute>
+            </field>
+        </field>
+    </record>
+
+    <!--
+        The base search is shared: planning.analysis.report builds its own search
+        on it, and that report has no customer. The state filters suit both; the
+        customer lives in the shift searches below.
+    -->
+    <record id="planning_view_search_base" model="ir.ui.view">
+        <field name="name">planning.slot.search.base.inherit.field.service</field>
+        <field name="model">planning.slot</field>
+        <field name="inherit_id" ref="planning.planning_view_search_base" />
+        <field name="arch" type="xml">
+            <filter name="published_shifts" position="after">
+                <filter
+                    name="in_progress_filter"
+                    string="In Progress"
+                    domain="[('state', '=', '3_in_progress')]" />
+                <filter
+                    name="completed_filter"
+                    string="Completed"
+                    domain="[('state', '=', '4_completed')]" />
+            </filter>
+            <filter name="group_by_start_datetime" position="before">
+                <filter
+                    name="group_by_state"
+                    string="Status"
+                    context="{'group_by': 'state'}" />
+            </filter>
+        </field>
+    </record>
+
+    <record id="planning_view_search" model="ir.ui.view">
+        <field name="name">planning.slot.search.inherit.field.service</field>
+        <field name="model">planning.slot</field>
+        <field name="inherit_id" ref="planning.planning_view_search" />
+        <field name="arch" type="xml">
+            <field name="resource_id" position="after">
+                <field name="partner_id" />
+                <field name="partner_city" />
+            </field>
+            <filter name="group_by_state" position="before">
+                <filter
+                    name="group_by_customer"
+                    string="Customer"
+                    context="{'group_by': 'partner_id'}" />
+            </filter>
+        </field>
+    </record>
+
+    <!-- Visit views: the employee's side, meant for the phone -->
+    <record id="planning_slot_view_form_visit" model="ir.ui.view">
+        <field name="name">planning.slot.form.visit</field>
+        <field name="model">planning.slot</field>
+        <field name="priority">100</field>
+        <field name="arch" type="xml">
+            <form string="Visit" js_class="planning_form">
+                <header>
+                    <button
+                        name="action_sign_in"
+                        type="object"
+                        string="Start"
+                        invisible="state != '2_published' or not id"
+                        class="btn-primary" />
+                    <button
+                        name="action_complete"
+                        type="object"
+                        string="Complete"
+                        invisible="not id or not (state == '3_in_progress' or state == '2_published' and is_past)"
+                        class="btn-primary" />
+                    <button
+                        name="action_open_map_navigation"
+                        type="object"
+                        string="Navigate"
+                        icon="fa-location-arrow"
+                        invisible="not partner_id" />
+                    <field
+                        name="state"
+                        widget="statusbar"
+                        statusbar_visible="2_published,3_in_progress,4_completed" />
+                </header>
+                <field name="is_past" invisible="1" />
+                <field name="user_id" invisible="1" />
+                <field name="company_id" invisible="1" />
+                <sheet>
+                    <div class="oe_title">
+                        <label for="partner_id" />
+                        <h1>
+                            <field
+                                name="partner_id"
+                                placeholder="Customer"
+                                context="{'res_partner_search_mode': 'customer'}"
+                                readonly="state == '4_completed'"
+                                required="1" />
+                        </h1>
+                        <field name="partner_city" />
+                    </div>
+                    <group>
+                        <group>
+                            <label for="start_datetime" string="Date" />
+                            <div class="d-flex">
+                                <field
+                                    name="start_datetime"
+                                    widget="daterange"
+                                    options="{'end_date_field': 'end_datetime'}"
+                                    readonly="state == '4_completed'" />
+                                <field name="end_datetime" invisible="1" />
+                            </div>
+                        </group>
+                        <group>
+                            <field
+                                name="resource_id"
+                                widget="many2one_avatar_resource"
+                                groups="!planning.group_planning_manager"
+                                readonly="1" />
+                            <field
+                                name="resource_id"
+                                widget="many2one_avatar_resource"
+                                groups="planning.group_planning_manager" />
+                        </group>
+                    </group>
+                    <field name="name" placeholder="Notes about the visit" />
+                </sheet>
+                <chatter />
+            </form>
+        </field>
+    </record>
+
+    <record id="planning_slot_view_kanban_visit" model="ir.ui.view">
+        <field name="name">planning.slot.kanban.visit</field>
+        <field name="model">planning.slot</field>
+        <field name="priority">100</field>
+        <field name="arch" type="xml">
+            <kanban sample="1" group_create="false">
+                <field name="state" />
+                <templates>
+                    <t t-name="card">
+                        <div class="d-flex justify-content-between">
+                            <field name="partner_id" class="fw-bold" />
+                            <field
+                                name="state"
+                                widget="label_selection"
+                                options="{'classes': {'2_published': 'info', '3_in_progress': 'warning', '4_completed': 'success'}}" />
+                        </div>
+                        <field name="partner_city" class="text-muted" />
+                        <footer class="pt-1">
+                            <field
+                                name="start_datetime"
+                                widget="daterange"
+                                options="{'end_date_field': 'end_datetime'}" />
+                            <field
+                                name="resource_id"
+                                widget="many2one_avatar_resource"
+                                class="ms-auto" />
+                        </footer>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
+    <record id="planning_slot_view_list_visit" model="ir.ui.view">
+        <field name="name">planning.slot.list.visit</field>
+        <field name="model">planning.slot</field>
+        <field name="priority">100</field>
+        <field name="arch" type="xml">
+            <list string="Visits" sample="1">
+                <field name="start_datetime" string="Date" />
+                <field name="end_datetime" optional="hide" />
+                <field name="partner_id" />
+                <field name="partner_city" optional="show" />
+                <field
+                    name="resource_id"
+                    widget="many2one_avatar_resource"
+                    optional="show" />
+                <field
+                    name="company_id"
+                    optional="hide"
+                    groups="base.group_multi_company" />
+                <field
+                    name="state"
+                    widget="badge"
+                    decoration-info="state == '2_published'"
+                    decoration-success="state == '4_completed'"
+                    decoration-warning="state == '3_in_progress'" />
+            </list>
+        </field>
+    </record>
+
+    <record id="planning_slot_view_map_visit" model="ir.ui.view">
+        <field name="name">planning.slot.map.visit</field>
+        <field name="model">planning.slot</field>
+        <field name="arch" type="xml">
+            <map default_order="start_datetime" res_partner="partner_id">
+                <field name="partner_id" string="Customer" />
+                <field name="start_datetime" string="Date" />
+                <field name="resource_id" string="Employee" />
+                <field name="state" string="Status" />
+            </map>
+        </field>
+    </record>
+
+    <record id="planning_slot_view_search_visit" model="ir.ui.view">
+        <field name="name">planning.slot.search.visit</field>
+        <field name="model">planning.slot</field>
+        <field name="inherit_id" ref="planning.planning_view_search_base" />
+        <field name="mode">primary</field>
+        <field name="arch" type="xml">
+            <field name="resource_id" position="after">
+                <field name="partner_id" />
+                <field name="partner_city" />
+            </field>
+            <filter name="open_shifts" position="before">
+                <filter
+                    name="to_do"
+                    string="To Do"
+                    domain="[('state', 'in', ['2_published', '3_in_progress'])]" />
+                <separator />
+            </filter>
+            <filter name="group_by_state" position="before">
+                <filter
+                    name="group_by_customer"
+                    string="Customer"
+                    context="{'group_by': 'partner_id'}" />
+            </filter>
+        </field>
+    </record>
+
+    <!-- Actions -->
+    <record id="planning_field_service_action_my_visits" model="ir.actions.act_window">
+        <field name="name">My Visits</field>
+        <field name="res_model">planning.slot</field>
+        <field name="path">my-visits</field>
+        <field name="view_mode">kanban,list,map,form</field>
+        <field name="search_view_id" ref="planning_slot_view_search_visit" />
+        <field
+            name="domain">[('partner_id', '!=', False), ('user_id', '=', uid)]</field>
+        <field
+            name="context">{'field_service_declare_visit': 1, 'search_default_to_do': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No visits to do
+            </p><p>
+                Declare the customers you visit, and start and complete each visit on site.
+            </p>
+        </field>
+    </record>
+
+    <record
+        id="planning_field_service_action_my_visits_view_kanban"
+        model="ir.actions.act_window.view">
+        <field name="sequence">10</field>
+        <field name="view_mode">kanban</field>
+        <field name="view_id" ref="planning_slot_view_kanban_visit" />
+        <field name="act_window_id" ref="planning_field_service_action_my_visits" />
+    </record>
+
+    <record
+        id="planning_field_service_action_my_visits_view_list"
+        model="ir.actions.act_window.view">
+        <field name="sequence">20</field>
+        <field name="view_mode">list</field>
+        <field name="view_id" ref="planning_slot_view_list_visit" />
+        <field name="act_window_id" ref="planning_field_service_action_my_visits" />
+    </record>
+
+    <record
+        id="planning_field_service_action_my_visits_view_map"
+        model="ir.actions.act_window.view">
+        <field name="sequence">30</field>
+        <field name="view_mode">map</field>
+        <field name="view_id" ref="planning_slot_view_map_visit" />
+        <field name="act_window_id" ref="planning_field_service_action_my_visits" />
+    </record>
+
+    <record
+        id="planning_field_service_action_my_visits_view_form"
+        model="ir.actions.act_window.view">
+        <field name="sequence">40</field>
+        <field name="view_mode">form</field>
+        <field name="view_id" ref="planning_slot_view_form_visit" />
+        <field name="act_window_id" ref="planning_field_service_action_my_visits" />
+    </record>
+
+    <record id="planning_field_service_action_visits" model="ir.actions.act_window">
+        <field name="name">Visits</field>
+        <field name="res_model">planning.slot</field>
+        <field name="path">visits</field>
+        <field name="view_mode">list,kanban,map,form</field>
+        <field name="search_view_id" ref="planning_slot_view_search_visit" />
+        <field name="domain">[('partner_id', '!=', False)]</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No visits
+            </p><p>
+                A shift with a customer is a visit.
+            </p>
+        </field>
+    </record>
+
+    <record
+        id="planning_field_service_action_visits_view_list"
+        model="ir.actions.act_window.view">
+        <field name="sequence">10</field>
+        <field name="view_mode">list</field>
+        <field name="view_id" ref="planning_slot_view_list_visit" />
+        <field name="act_window_id" ref="planning_field_service_action_visits" />
+    </record>
+
+    <record
+        id="planning_field_service_action_visits_view_kanban"
+        model="ir.actions.act_window.view">
+        <field name="sequence">20</field>
+        <field name="view_mode">kanban</field>
+        <field name="view_id" ref="planning_slot_view_kanban_visit" />
+        <field name="act_window_id" ref="planning_field_service_action_visits" />
+    </record>
+
+    <record
+        id="planning_field_service_action_visits_view_map"
+        model="ir.actions.act_window.view">
+        <field name="sequence">30</field>
+        <field name="view_mode">map</field>
+        <field name="view_id" ref="planning_slot_view_map_visit" />
+        <field name="act_window_id" ref="planning_field_service_action_visits" />
+    </record>
+
+    <record
+        id="planning_field_service_action_visits_view_form"
+        model="ir.actions.act_window.view">
+        <field name="sequence">40</field>
+        <field name="view_mode">form</field>
+        <field name="view_id" ref="planning_slot_view_form_visit" />
+        <field name="act_window_id" ref="planning_field_service_action_visits" />
+    </record>
+
+</odoo>

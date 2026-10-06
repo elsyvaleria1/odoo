@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+
+    <record id="product_wallet_reload" model="product.product">
+        <field name="name">Electronic Wallet Top-up</field>
+        <field name="type">service</field>
+        <field name="purchase_ok" eval="True" />
+        <field name="sale_ok" eval="False" />
+        <field name="list_price" eval="0.0" />
+    </record>
+
+</odoo>

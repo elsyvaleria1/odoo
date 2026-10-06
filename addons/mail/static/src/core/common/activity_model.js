@@ -1,0 +1,79 @@
+// @ts-check
+/** @odoo-module native */
+import { fields, Record } from "@mail/core/common/record";
+import { assignDefined } from "@mail/utils/common/misc";
+import { makeLogger } from "@web/core/debug/debug_logger";
+
+const log = makeLogger("mail.activity");
+
+export class Activity extends Record {
+    static _name = "mail.activity";
+    static id = "id";
+    /**
+     * @param {Object} data
+     * @param {Object} [param1]
+     * @param {boolean} [param1.broadcast]
+     * @returns {import("models").Activity}
+     */
+    static _insert(data, { broadcast = true } = {}) {
+        /** @type {import("models").Activity} */
+        const activity = /** @type {import("models").Activity} */ (
+            this.preinsert(data)
+        );
+        assignDefined(activity, data);
+        log.pipeline("_insert", () => ({
+            id: activity.id,
+            res_model: activity.res_model,
+            res_id: activity.res_id,
+            broadcast,
+        }));
+        if (broadcast) {
+            this.store.activityBroadcastChannel?.postMessage({
+                type: "INSERT",
+                payload: activity.serialize(),
+            });
+        }
+        return activity;
+    }
+
+    /** @type {number} */
+    id;
+    /** @type {string} */
+    activity_category;
+    activity_type_id = fields.One("mail.activity.type");
+    /** @type {Object[]} */
+    attachment_ids;
+    /** @type {boolean} */
+    can_write;
+    /** @type {'suggest'|'trigger'} */
+    chaining_type;
+    create_date = fields.Datetime();
+    create_uid = fields.One("res.users");
+    date_deadline = fields.Date();
+    date_done = fields.Date();
+    /** @type {string} */
+    display_name;
+    /** @type {string} */
+    feedback;
+    /** @type {string} */
+    icon = "fa-tasks";
+    mail_template_ids = fields.Many("mail.template");
+    note = fields.Html("");
+    /** @type {string} */
+    res_model;
+    /** @type {number} */
+    res_id;
+    /** @type {string} */
+    res_name;
+    /** @type {'overdue'|'planned'|'today'|'done'} */
+    state;
+    /** @type {string} */
+    summary;
+    user_id = fields.One("res.users");
+
+    serialize() {
+        return JSON.parse(JSON.stringify(this.toData(["user_id"])));
+    }
+}
+
+Activity.register();

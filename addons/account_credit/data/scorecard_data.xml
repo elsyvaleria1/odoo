@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+
+    <record id="scorecard_credit" model="scorecard">
+        <field name="name">Credit Scorecard</field>
+        <field name="res_model">credit.profile</field>
+    </record>
+
+    <record id="scorecard_dimension_dbt" model="scorecard.dimension">
+        <field name="scorecard_id" ref="scorecard_credit" />
+        <field name="code">dbt</field>
+        <field name="name">Days Beyond Terms</field>
+        <field name="kind">measure</field>
+        <field name="weight" eval="40.0" />
+        <field name="missing">skip</field>
+        <field name="precision" eval="1" />
+        <field name="sequence" eval="10" />
+        <field
+            name="band_ids"
+            eval="[             Command.create({'min_value': -100000, 'max_value': 0.1, 'points': 100.0}),             Command.create({'min_value': 0.1, 'max_value': 15.1, 'points': 80.0}),             Command.create({'min_value': 15.1, 'max_value': 30.1, 'points': 60.0}),             Command.create({'min_value': 30.1, 'max_value': 60.1, 'points': 40.0}),             Command.create({'min_value': 60.1, 'max_value': 90.1, 'points': 20.0}),             Command.create({'min_value': 90.1, 'max_value': 0, 'points': 0.0}),         ]" />
+    </record>
+
+    <record id="scorecard_dimension_late_ratio" model="scorecard.dimension">
+        <field name="scorecard_id" ref="scorecard_credit" />
+        <field name="code">late_ratio</field>
+        <field name="name">Late Payment Share</field>
+        <field name="kind">measure</field>
+        <field name="weight" eval="10.0" />
+        <field name="missing">skip</field>
+        <field name="precision" eval="2" />
+        <field name="sequence" eval="20" />
+        <field
+            name="band_ids"
+            eval="[             Command.create({'min_value': 0, 'max_value': 10.01, 'points': 100.0}),             Command.create({'min_value': 10.01, 'max_value': 30.01, 'points': 70.0}),             Command.create({'min_value': 30.01, 'max_value': 60.01, 'points': 40.0}),             Command.create({'min_value': 60.01, 'max_value': 0, 'points': 0.0}),         ]" />
+    </record>
+
+    <record id="scorecard_dimension_oldest_open_days" model="scorecard.dimension">
+        <field name="scorecard_id" ref="scorecard_credit" />
+        <field name="code">oldest_open_days</field>
+        <field name="name">Oldest Open Receivable</field>
+        <field name="kind">measure</field>
+        <field name="weight" eval="20.0" />
+        <field name="missing">skip</field>
+        <field name="precision" eval="0" />
+        <field name="sequence" eval="30" />
+        <field
+            name="band_ids"
+            eval="[             Command.create({'min_value': 0, 'max_value': 1, 'points': 100.0}),             Command.create({'min_value': 1, 'max_value': 31, 'points': 70.0}),             Command.create({'min_value': 31, 'max_value': 61, 'points': 40.0}),             Command.create({'min_value': 61, 'max_value': 91, 'points': 15.0}),             Command.create({'min_value': 91, 'max_value': 0, 'points': 0.0}),         ]" />
+    </record>
+
+    <record id="scorecard_dimension_collateral_coverage" model="scorecard.dimension">
+        <field name="scorecard_id" ref="scorecard_credit" />
+        <field name="code">collateral_coverage</field>
+        <field name="name">Collateral Coverage</field>
+        <field name="kind">measure</field>
+        <field name="weight" eval="15.0" />
+        <field name="missing">skip</field>
+        <field name="precision" eval="2" />
+        <field name="sequence" eval="40" />
+        <field
+            name="band_ids"
+            eval="[             Command.create({'min_value': 0, 'max_value': 0.01, 'points': 0.0}),             Command.create({'min_value': 0.01, 'max_value': 50.01, 'points': 40.0}),             Command.create({'min_value': 50.01, 'max_value': 100, 'points': 70.0}),             Command.create({'min_value': 100, 'max_value': 0, 'points': 100.0}),         ]" />
+    </record>
+
+    <record id="scorecard_dimension_tenure_months" model="scorecard.dimension">
+        <field name="scorecard_id" ref="scorecard_credit" />
+        <field name="code">tenure_months</field>
+        <field name="name">Tenure</field>
+        <field name="kind">measure</field>
+        <field name="weight" eval="10.0" />
+        <field name="missing">skip</field>
+        <field name="precision" eval="0" />
+        <field name="sequence" eval="50" />
+        <field
+            name="band_ids"
+            eval="[             Command.create({'min_value': 0, 'max_value': 7, 'points': 30.0}),             Command.create({'min_value': 7, 'max_value': 13, 'points': 50.0}),             Command.create({'min_value': 13, 'max_value': 37, 'points': 80.0}),             Command.create({'min_value': 37, 'max_value': 0, 'points': 100.0}),         ]" />
+    </record>
+
+    <record id="scorecard_dimension_document_compliance" model="scorecard.dimension">
+        <field name="scorecard_id" ref="scorecard_credit" />
+        <field name="code">document_compliance</field>
+        <field name="name">Document Compliance</field>
+        <field name="kind">measure</field>
+        <field name="weight" eval="5.0" />
+        <field name="missing">skip</field>
+        <field name="precision" eval="0" />
+        <field name="sequence" eval="60" />
+        <field
+            name="band_ids"
+            eval="[             Command.create({'min_value': 0, 'max_value': 1, 'points': 0.0}),             Command.create({'min_value': 1, 'max_value': 0, 'points': 100.0}),         ]" />
+    </record>
+
+    <record id="scorecard_dimension_bureau_score" model="scorecard.dimension">
+        <field name="scorecard_id" ref="scorecard_credit" />
+        <field name="code">bureau_score</field>
+        <field name="name">Bureau Score</field>
+        <field name="kind">measure</field>
+        <field name="weight" eval="10.0" />
+        <field name="missing">skip</field>
+        <field name="precision" eval="0" />
+        <field name="sequence" eval="70" />
+        <field
+            name="band_ids"
+            eval="[             Command.create({'min_value': 0, 'max_value': 501, 'points': 0.0}),             Command.create({'min_value': 501, 'max_value': 601, 'points': 30.0}),             Command.create({'min_value': 601, 'max_value': 681, 'points': 60.0}),             Command.create({'min_value': 681, 'max_value': 751, 'points': 85.0}),             Command.create({'min_value': 751, 'max_value': 0, 'points': 100.0}),         ]" />
+    </record>
+
+    <record id="scorecard_dimension_z_score" model="scorecard.dimension">
+        <field name="scorecard_id" ref="scorecard_credit" />
+        <field name="code">z_score</field>
+        <field name="name">Altman Z'' Score</field>
+        <field name="kind">measure</field>
+        <field name="weight" eval="20.0" />
+        <field name="missing">skip</field>
+        <field name="precision" eval="2" />
+        <field name="sequence" eval="80" />
+        <field
+            name="band_ids"
+            eval="[             Command.create({'min_value': -100000, 'max_value': 1.11, 'points': 0.0}),             Command.create({'min_value': 1.11, 'max_value': 1.81, 'points': 35.0}),             Command.create({'min_value': 1.81, 'max_value': 2.61, 'points': 65.0}),             Command.create({'min_value': 2.61, 'max_value': 4.01, 'points': 90.0}),             Command.create({'min_value': 4.01, 'max_value': 0, 'points': 100.0}),         ]" />
+    </record>
+
+</odoo>

@@ -1,0 +1,81 @@
+/** @odoo-module native */
+import { Builder } from "@html_builder/builder";
+import { CORE_PLUGINS } from "@html_builder/core/core_plugins";
+import { CustomizeTab } from "@html_builder/sidebar/customize_tab";
+import { removePlugins } from "@html_builder/utils/utils";
+import { DYNAMIC_PLACEHOLDER_PLUGINS } from "@html_editor/backend/plugin_sets";
+import { PowerButtonsPlugin } from "@html_editor/main/power_buttons_plugin";
+import { Component, t, useProps } from "@odoo/owl";
+import { registry } from "@web/core/registry";
+
+import { OptionsContainerWithSnippetVersionControl } from "./options/options_container.js";
+
+class CustomizeTabWithSnippetVersionControl extends CustomizeTab {
+    static components = {
+        ...CustomizeTab.components,
+        OptionsContainer: OptionsContainerWithSnippetVersionControl,
+    };
+}
+
+class BuilderWithSnippetVersionControl extends Builder {
+    static components = {
+        ...Builder.components,
+        CustomizeTab: CustomizeTabWithSnippetVersionControl,
+    };
+}
+
+export class MassMailingBuilder extends Component {
+    static template = "mass_mailing.MassMailingBuilder";
+    static components = { Builder: BuilderWithSnippetVersionControl };
+    static props = {
+        builderProps: t.object(),
+        toggleCodeView: t.function().optional(),
+        toggleFullScreen: t.function(),
+    };
+    props = useProps(this.constructor.props);
+
+    get builderProps() {
+        const builderProps = Object.assign({}, this.props.builderProps);
+        const pluginsToRemove = [
+            "BuilderFontPlugin", // Makes call to Google API (can't be used for emails)
+            "SavePlugin",
+            "SaveSnippetPlugin",
+            "AnchorPlugin",
+            "ColorUIPlugin",
+            "EmbeddedFilePlugin",
+            "FilePlugin",
+            "AddDocumentsAttachmentPlugin",
+            "BannerPlugin",
+            "CTABadgeOptionPlugin",
+        ];
+        const massMailingPlugins = removePlugins(
+            [
+                ...registry.category("builder-plugins").getAll(),
+                ...registry.category("mass_mailing-plugins").getAll(),
+            ],
+            pluginsToRemove,
+        );
+        const builderEditorPlugins = removePlugins(
+            [...CORE_PLUGINS, PowerButtonsPlugin],
+            pluginsToRemove,
+        );
+        const optionalPlugins = [
+            ...(this.props.builderProps.config.dynamicPlaceholder
+                ? removePlugins(
+                      DYNAMIC_PLACEHOLDER_PLUGINS,
+                      ["PromptPlugin"], // mass_mailing does not use the dependency banner plugin
+                  )
+                : []),
+        ];
+        builderProps.Plugins = [
+            ...builderEditorPlugins,
+            ...massMailingPlugins,
+            ...optionalPlugins,
+        ];
+        return builderProps;
+    }
+}
+
+registry
+    .category("lazy_components")
+    .add("mass_mailing.MassMailingBuilder", MassMailingBuilder);

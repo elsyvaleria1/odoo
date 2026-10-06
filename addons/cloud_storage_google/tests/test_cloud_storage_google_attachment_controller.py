@@ -1,0 +1,103 @@
+import re
+
+import odoo
+from odoo.libs.hashing import content_hash
+from odoo.libs.json import loads as json_loads
+from odoo.tools.misc import file_open
+
+from odoo.addons.base.tests.common import HttpCaseWithUserDemo
+from odoo.addons.cloud_storage_google.tests.test_cloud_storage_google import (
+    TestCloudStorageGoogleCommon,
+)
+
+
+@odoo.tests.tagged("-at_install", "post_install", "mail_controller")
+class TestCloudStorageAttachmentController(
+    HttpCaseWithUserDemo, TestCloudStorageGoogleCommon
+):
+    def test_cloud_storage_google_attachment_upload(self):
+        """Test uploading an attachment with google cloud storage."""
+        thread = self.env["res.partner"].create({"name": "Test"})
+        self.env["ir.config_parameter"].set_param("cloud_storage_provider", "google")
+        self.authenticate(self.user_demo.login, self.user_demo.login)
+
+        with file_open("addons/web/__init__.py") as file:
+            res = self.url_open(
+                url="/mail/attachment/upload",
+                data={
+                    "csrf_token": odoo.http.Request.csrf_token(self),
+                    "is_pending": True,
+                    "thread_id": thread.id,
+                    "thread_model": thread._name,
+                    "cloud_storage": True,
+                },
+                files={"ufile": file},
+            )
+            res.raise_for_status()
+            attachment = self.env["ir.attachment"].search([], order="id desc", limit=1)
+            # ignore signature in url
+            content = re.sub(
+                r'"url":\s*"https://storage\.googleapis\.com/[^"]*"',
+                '"url":"[url]"',
+                res.content.decode("utf-8"),
+            )
+            payload = json_loads(content)
+            [entry] = payload["data"]["store_data"]["ir.attachment"]
+            named = {
+                "checksum",
+                "create_date",
+                "file_size",
+                "has_thumbnail",
+                "id",
+                "mimetype",
+                "name",
+                "ownership_token",
+                "raw_access_token",
+                "res_model",
+                "res_name",
+                "thread",
+                "thumbnail_access_token",
+                "type",
+                "url",
+                "voice_ids",
+            }
+            payload["data"]["store_data"]["ir.attachment"] = [
+                {key: value for key, value in entry.items() if key in named}
+            ]
+            self.assertEqual(
+                payload,
+                {
+                    "data": {
+                        "attachment_id": attachment.id,
+                        "store_data": {
+                            "ir.attachment": [
+                                {
+                                    "checksum": content_hash(b""),
+                                    "create_date": odoo.fields.Datetime.to_string(
+                                        attachment.create_date
+                                    ),
+                                    "file_size": 0,
+                                    "has_thumbnail": False,
+                                    "id": attachment.id,
+                                    "mimetype": "text/x-python",
+                                    "name": "__init__.py",
+                                    "ownership_token": attachment._get_ownership_token(),
+                                    "raw_access_token": attachment._get_raw_access_token(),
+                                    "res_model": "wizard.mail.message.send",
+                                    "res_name": False,
+                                    "thread": False,
+                                    "thumbnail_access_token": attachment._get_thumbnail_token(),
+                                    "type": "cloud_storage",
+                                    "url": "[url]",
+                                    "voice_ids": [],
+                                }
+                            ],
+                        },
+                    },
+                    "upload_info": {
+                        "method": "PUT",
+                        "response_status": 200,
+                        "url": "[url]",
+                    },
+                },
+            )

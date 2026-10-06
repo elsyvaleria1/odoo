@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+ <t t-name="web.PropertiesField">
+ <div t-ref="this.propertiesRef" class="row" t-att-columns="this.renderedColumnsCount">
+ <t t-set="_groupedPropertiesList" t-value="this.groupedPropertiesList"/>
+ <t t-foreach="_groupedPropertiesList" t-as="propertiesListGroup" t-key="propertiesListGroup_index">
+ <t t-set="foldable" t-value="propertiesListGroup.name and propertiesListGroup.title and propertiesListGroup.title.length"/>
+ <div class="o_inner_group o_group col-lg-6 o_property_group"
+ t-att-property-name="propertiesListGroup.name || ''">
+ <div t-if="!propertiesListGroup.invisibleLabel"
+ class="o_field_property_label o_field_property_group_label d-flex flex-row w-100 mb-3 text-uppercase fw-bolder align-items-baseline pe-2"
+ t-att-class="{'invisible': propertiesListGroup.columnSeparator, 'folded': propertiesListGroup.isFolded}"
+ t-on-click="() => this.onSeparatorClick(propertiesListGroup.name)">
+ <div t-if="foldable" class="me-2">
+ <i class="fa-solid " t-att-class="propertiesListGroup.isFolded ? 'fa-caret-right' : 'fa-caret-down'"/>
+ </div>
+ <span t-if="propertiesListGroup.title" t-out="propertiesListGroup.title"/>
+ <i
+ t-if="this.state.isInEditMode and !propertiesListGroup.columnSeparator"
+ class="o_field_property_open_popover fa-solid fa-pencil ms-3"
+ t-on-click.prevent.stop="(event) => this.onPropertyEdit(event, propertiesListGroup.name)"/>
+ <i t-if="this.state.isInEditMode"
+ class="oi oi-draggable ms-1 d-none d-sm-block"/>
+ </div>
+ <div
+ t-foreach="propertiesListGroup.elements"
+ t-as="propertyConfiguration"
+ t-key="this.getPropertyKey(propertyConfiguration.name)"
+ class="o_property_field o_wrap_label text-900"
+ t-att-class="{
+ 'd-flex flex-row': !this.ui.isSmall and !propertiesListGroup.isFolded, 'o_property_folded': propertiesListGroup.isFolded,
+ 'mb-4': this.renderedColumnsCount === 1, 'mb-3': this.renderedColumnsCount !== 1
+ }"
+ t-att-property-name="propertyConfiguration.name">
+ <t t-set="domId" t-value="this.getPropertyDomID(propertyConfiguration.name)"/>
+ <label
+ class="o_field_property_label o_form_label text-break d-flex align-items-baseline mb-0 pe-2"
+ t-att-class="{'w-auto': this.ui.isSmall}"
+ t-att-for="domId">
+ <span
+ t-if="propertyConfiguration.string and propertyConfiguration.string.length"
+ t-out="propertyConfiguration.string"
+ t-att-class="{'o_property_field_highlight': this.state.movedPropertyName === propertyConfiguration.name}"/>
+ <i
+ t-else="" class="o_field_property_empty_label mt-1">
+ New Property
+ </i>
+ <i
+ t-if="this.state.isInEditMode"
+ class="o_field_property_open_popover fa-solid fa-pencil ms-2"
+ t-att-class="{'o_property_popover_pending': this.state.popoverPropertyName === propertyConfiguration.name}"
+ t-on-click="(event) => this.onPropertyEdit(event, propertyConfiguration.name)"/>
+ <i t-if="this.state.isInEditMode"
+ class="oi oi-draggable ms-1 d-none d-sm-block mt-1"/>
+ </label>
+ <div class="o_property_field_value d-flex w-100">
+ <div class="w-100">
+ <PropertyValue
+ id="domId"
+ canChangeDefinition="this.state.canChangeDefinition"
+ comodel="propertyConfiguration.comodel || ''"
+ currencyField="propertyConfiguration.currency_field || ''"
+ context="this.props.context"
+ domain="propertyConfiguration.domain || '[]'"
+ readonly="this.props.readonly"
+ selection="propertyConfiguration.selection"
+ string="propertyConfiguration.string"
+ tags="propertyConfiguration.tags"
+ type="propertyConfiguration.type"
+ value="propertyConfiguration.value"
+ onChange.bind="(value) => this.onPropertyValueChange(propertyConfiguration.name, value)"
+ onTagsChange.bind="(newTags, newValue) => this.onTagsChange(propertyConfiguration.name, newTags, newValue)"
+ record="this.props.record"
+ />
+ </div>
+ <span class="o_property_field_value_suffix w-50" t-if="propertyConfiguration.suffix" t-out="propertyConfiguration.suffix"/>
+ </div>
+ </div>
+ <div
+ t-if="propertiesListGroup_index === _groupedPropertiesList.length - 1"
+ class="o_field_property_add d-none d-sm-block"
+ t-att-class="{'g-col-2': this.props.columns !== 1}">
+ <button
+ t-if="this.state.isInEditMode and this.definitionRecordId"
+ class="btn btn-light text-muted text-break m-0"
+ t-on-click="this.onPropertyCreate">
+ <i class="fa-solid fa-plus"/>
+ Add Property
+ </button>
+ </div>
+ </div>
+ </t>
+ </div>
+ </t>
+</templates>

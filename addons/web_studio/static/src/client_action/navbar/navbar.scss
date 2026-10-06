@@ -1,0 +1,74 @@
+.o_studio_navbar {
+    --NavBar-brand-color: #{rgba($o-web-studio-text-light, 0.9)};
+    --NavBar-entry-color: #{rgba($o-web-studio-text-light, 0.9)};
+    --NavBar-entry-backgroundColor: #{o-token(
+            --o-web-studio-bg-dark,
+            $o-web-studio-bg-dark
+        )};
+    --NavBar-entry-backgroundColor--hover: #{o-token(
+            --o-web-studio-bg-medium,
+            $o-web-studio-bg-medium
+        )};
+    --NavBar-entry-backgroundColor--focus: #{o-token(
+            --o-web-studio-bg-medium,
+            $o-web-studio-bg-medium
+        )};
+    --NavBar-menuToggle-color: #{rgba($o-web-studio-text-light, 0.9)};
+    --NavBar-entry-borderColor-active: #{o-token(
+            --o-web-studio-bg-medium,
+            $o-web-studio-bg-medium
+        )};
+    --NavBar-entry-backgroundColor--active: #{o-token(
+            --o-web-studio-bg-medium,
+            $o-web-studio-bg-medium
+        )};
+    --NavBar-entry-color--active: #{$o-web-studio-text-light};
+    --NavBar-entry-color--hover: #{$o-web-studio-text-light};
+
+    background: o-token(--o-web-studio-bg-dark, $o-web-studio-bg-dark);
+    border-color: o-token(--o-web-studio-bg-dark, $o-web-studio-bg-dark);
+
+    &.o_main_navbar {
+        .o_menu_toggle {
+            &.o_menu_toggle_studio_app_creator_back {
+                transform: scaleX(1);
+            }
+        }
+        grid-template-areas: "apps brand sections studiomenu systray";
+        grid-template-columns:
+            minmax(var(--o-navbar-height, #{$o-navbar-height}), max-content)
+            max-content
+            minmax(var(--o-navbar-height, #{$o-navbar-height}), max-content)
+            minmax(max-content, 1fr)
+            fit-content(100%);
+    }
+
+    .o_menu_sections {
+        color: lightgrey;
+        height: $o-web-studio-menu-height - 1;
+    }
+
+    .o-studio--menu {
+        grid-area: studiomenu;
+        display: flex;
+    }
+
+    .o_web_edit_menu,
+    .o_web_create_new_model {
+        color: $o-web-studio-text-inactive;
+        margin-left: 15px;
+        padding: 2px 10px 2px 10px;
+        font-size: 12px;
+    }
+
+    .o_studio_buttons {
+        grid-area: systray;
+        display: flex;
+        margin: calc(-1 * var(--o-navbar-padding-v, #{$o-navbar-padding-v})) 0;
+
+        .o_web_studio_leave > a {
+            // Allows to keep the same alignment as the navbar entries
+            line-height: $o-navbar-entry-height;
+        }
+    }
+}

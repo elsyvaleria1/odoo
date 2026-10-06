@@ -1,0 +1,745 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* wallet
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-09-27 05:12+0000\n"
+"PO-Revision-Date: 2026-09-27 05:12+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: wallet
+#: model_terms:ir.ui.view,arch_db:wallet.view_wallet_card_form
+msgid "<span class=\"o_stat_text\">Balance</span>"
+msgstr ""
+
+#. module: wallet
+#: model:ir.model.constraint,message:wallet.constraint_wallet_balance_card_date_uniq
+msgid "A card holds one balance snapshot per instant."
+msgstr ""
+
+#. module: wallet
+#: model:ir.model.constraint,message:wallet.constraint_wallet_card_number_account_uniq
+msgid "A card number must be unique per wallet account."
+msgstr ""
+
+#. module: wallet
+#: model_terms:ir.actions.act_window,help:wallet.action_wallet_card
+msgid ""
+"A card or tag the issuer handed out, with its number, holder and latest "
+"balance."
+msgstr ""
+
+#. module: wallet
+#: model:ir.model.fields,help:wallet.field_wallet_account__amount_threshold_low
+#: model:ir.model.fields,help:wallet.field_wallet_card__amount_threshold_low
+msgid "A card whose balance falls below this is flagged."
+msgstr ""
+
+#. module: wallet
+#: model:ir.model.constraint,message:wallet.constraint_wallet_statement_check_period
+msgid "A statement cannot end before it starts."
+msgstr ""
+
+#. module: wallet
+#: model:ir.model.constraint,message:wallet.constraint_wallet_transaction_external_ref_account_uniq
+msgid "A transaction reference must be unique per wallet account."
+msgstr ""
+
+#. module: wallet
+#: model_terms:ir.actions.act_window,help:wallet.action_wallet_account
+msgid ""
+"A wallet account is a prepaid balance held with an issuer: a fuel-card "
+"scheme, a toll operator."
+msgstr ""
+
+#. module: wallet
+#: model:ir.model.constraint,message:wallet.constraint_wallet_account_name_company_uniq
+msgid "A wallet account's name must be unique per company."
+msgstr ""
+
+#. module: wallet
+#: model:ir.model.fields,field_description:wallet.field_wallet_balance__account_id
+#: model:ir.model.fields,field_description:wallet.field_wallet_card__account_id
+#: model:ir.model.fields,field_description:wallet.field_wallet_statement__account_id
+#: model:ir.model.fields,field_description:wallet.field_wallet_transaction__account_id
+#: model_terms:ir.ui.view,arch_db:wallet.view_wallet_card_search
+msgid "Account"
+msgstr ""
+
+#. module: wallet
+#: model:ir.model.fields,field_description:wallet.field_wallet_account__message_needaction
+#: model:ir.model.fields,field_description:wallet.field_wallet_card__message_needaction
+msgid "Action Needed"
+msgstr ""
+
+#. module: wallet
+#: model:ir.model.fields,field_description:wallet.field_wallet_card__active
+msgid "Active"
+msgstr ""
+
+#. module: wallet
+#: model:ir.model.fields,field_description:wallet.field_wallet_transaction__amount
+msgid "Amount"
+msgstr ""
+
+#. module: wallet
+#: model:ir.model.fields,field_description:wallet.field_wallet_account__amount_balance
+#: model:ir.model.fields,field_description:wallet.field_wallet_balance__amount_balance
+#: model:ir.model.fields,field_description:wallet.field_wallet_card__amount_balance
+msgid "Amount Balance"
+msgstr ""
+
+#. module: wallet
+#: model:ir.model.fields,field_description:wallet.field_wallet_card__amount_spent
+msgid "Amount Spent"
+msgstr ""
+
+#. module: wallet
+#: model:ir.model.fields,field_description:wallet.field_wallet_account__amount_threshold_low
+#: model:ir.model.fields,field_description:wallet.field_wallet_card__amount_threshold_low
+msgid "Amount Threshold Low"
+msgstr ""
+
+#. module: wallet
+#: model:ir.model.fields,field_description:wallet.field_wallet_statement__amount_total
+msgid "Amount Total"
+msgstr ""
+
+#. module: wallet
+#: model_terms:ir.ui.view,arch_db:wallet.view_wallet_account_search
+#: model_terms:ir.ui.view,arch_db:wallet.view_wallet_card_search
+msgid "Archived"
+msgstr ""
+
+#. module: wallet
+#: model:ir.model.fields,field_description:wallet.field_wallet_statement__attachment_id
+msgid "Attachment"
+msgstr ""
+
+#. module: wallet
+#: model:ir.model.fields,field_description:wallet.field_wallet_account__message_attachment_count
+#: model:ir.model.fields,field_description:wallet.field_wallet_card__message_attachment_count
+msgid "Attachment Count"
+msgstr ""
+
+#. module: wallet
+#: model:ir.model.fields,field_description:wallet.field_wallet_card__balance_ids
+msgid "Balance"
+msgstr ""
+
+#. module: wallet
+#. odoo-python
+#: code:addons/wallet/models/wallet_card.py:0
+msgid "Balance History"
+msgstr ""
+
+#. module: wallet
+#: model:ir.actions.act_window,name:wallet.action_wallet_balance
+#: model:ir.ui.menu,name:wallet.menu_wallet_balance
+msgid "Balances"
+msgstr ""
+
+#. module: wallet
+#: model:res.groups,comment:wallet.group_wallet_user
+msgid "Can read wallets, cards, balances and transactions"
+msgstr ""
+
+#. module: wallet
+#: model:ir.model.fields,field_description:wallet.field_wallet_account__card_ids
+#: model:ir.model.fields,field_description:wallet.field_wallet_balance__card_id
+#: model:ir.model.fields,field_description:wallet.field_wallet_transaction__card_id
+#: model_terms:ir.ui.view,arch_db:wallet.view_wallet_balance_search
+#: model_terms:ir.ui.view,arch_db:wallet.view_wallet_transaction_search
+msgid "Card"
+msgstr ""
+
+#. module: wallet
+#. odoo-python
+#: code:addons/wallet/models/wallet_account.py:0
+#: model:ir.actions.act_window,name:wallet.action_wallet_card
+#: model:ir.ui.menu,name:wallet.menu_wallet_card
+#: model_terms:ir.ui.view,arch_db:wallet.view_wallet_account_form
+msgid "Cards"
+msgstr ""
+
+#. module: wallet
+#: model:ir.model.fields,field_description:wallet.field_wallet_balance__company_id
+#: model:ir.model.fields,field_description:wallet.field_wallet_card__company_id
+#: model:ir.model.fields,field_description:wallet.field_wallet_statement__company_id
+#: model:ir.model.fields,field_description:wallet.field_wallet_transaction__company_id
+msgid "Company"
+msgstr ""
+
+#. module: wallet
+#: model:ir.ui.menu,name:wallet.menu_wallet_config
+msgid "Configuration"
+msgstr ""
+
+#. module: wallet
+#: model:res.groups,comment:wallet.group_wallet_manager
+msgid "Configure wallet accounts and cards, record balances and transactions"
+msgstr ""
+
+#. module: wallet
+#: model:ir.model.fields,field_description:wallet.field_wallet_account__count_card
+msgid "Count Card"
+msgstr ""
+
+#. module: wallet
+#: model:ir.model.fields,field_description:wallet.field_wallet_account__count_card_low
+msgid "Count Card Low"
+msgstr ""
+
+#. module: wallet
+#: model:ir.model.fields,field_description:wallet.field_wallet_card__count_transaction
+#: model:ir.model.fields,field_description:wallet.field_wallet_statement__count_transaction
+msgid "Count Transaction"
+msgstr ""
+
+#. module: wallet
+#: model:ir.model.fields,field_description:wallet.field_wallet_account__create_uid
+#: model:ir.model.fields,field_description:wallet.field_wallet_balance__create_uid
+#: model:ir.model.fields,field_description:wallet.field_wallet_card__create_uid
+#: model:ir.model.fields,field_description:wallet.field_wallet_statement__create_uid
+#: model:ir.model.fields,field_description:wallet.field_wallet_transaction__create_uid
+msgid "Created by"
+msgstr ""
+
+#. module: wallet
+#: model:ir.model.fields,field_description:wallet.field_wallet_account__create_date
+#: model:ir.model.fields,field_description:wallet.field_wallet_balance__create_date
+#: model:ir.model.fields,field_description:wallet.field_wallet_card__create_date
+#: model:ir.model.fields,field_description:wallet.field_wallet_statement__create_date
+#: model:ir.model.fields,field_description:wallet.field_wallet_transaction__create_date
+msgid "Created on"
+msgstr ""
+
+#. module: wallet
+#: model:ir.model.fields,field_description:wallet.field_wallet_account__currency_id
+#: model:ir.model.fields,field_description:wallet.field_wallet_balance__currency_id
+#: model:ir.model.fields,field_description:wallet.field_wallet_card__currency_id
+#: model:ir.model.fields,field_description:wallet.field_wallet_statement__currency_id
+#: model:ir.model.fields,field_description:wallet.field_wallet_transaction__currency_id
+msgid "Currency"
+msgstr ""
+
+#. module: wallet
+#: model:ir.model.fields,field_description:wallet.field_wallet_balance__date
+#: model:ir.model.fields,field_description:wallet.field_wallet_transaction__date
+#: model_terms:ir.ui.view,arch_db:wallet.view_wallet_balance_search
+msgid "Date"
+msgstr ""
+
+#. module: wallet
+#: model:ir.model.fields,field_description:wallet.field_wallet_card__date_balance
+msgid "Date Balance"
+msgstr ""
+
+#. module: wallet
+#: model:ir.model.fields,field_description:wallet.field_wallet_statement__date_end
+msgid "Date End"
+msgstr ""
+
+#. module: wallet
+#: model:ir.model.fields,field_description:wallet.field_wallet_statement__date_start
+msgid "Date Start"
+msgstr ""
+
+#. module: wallet
+#: model:ir.model.fields,field_description:wallet.field_wallet_transaction__date_transaction
+msgid "Date Transaction"
+msgstr ""
+
+#. module: wallet
+#: model:ir.module.category,name:wallet.module_category_wallet
+#: model:res.groups.privilege,name:wallet.res_groups_privilege_wallet
+msgid "Electronic Wallets"
+msgstr ""
+
+#. module: wallet
+#. odoo-javascript
+#: code:addons/wallet/static/src/home_tile/wallet_low_tile.xml:0
+msgid "Every card is above its threshold."
+msgstr ""
+
+#. module: wallet
+#: model:ir.model.fields,field_description:wallet.field_wallet_transaction__external_ref
+msgid "External Ref"
+msgstr ""
+
+#. module: wallet
+#: model:ir.model.fields,field_description:wallet.field_wallet_account__message_follower_ids
+#: model:ir.model.fields,field_description:wallet.field_wallet_card__message_follower_ids
+msgid "Followers"
+msgstr ""
+
+#. module: wallet
+#: model:ir.model.fields,field_description:wallet.field_wallet_account__message_partner_ids
+#: model:ir.model.fields,field_description:wallet.field_wallet_card__message_partner_ids
+msgid "Followers (Partners)"
+msgstr ""
+
+#. module: wallet
+#: model:ir.model.fields.selection,name:wallet.selection__wallet_account__kind__fuel
+#: model_terms:ir.ui.view,arch_db:wallet.view_wallet_account_search
+#: model_terms:ir.ui.view,arch_db:wallet.view_wallet_transaction_search
+msgid "Fuel"
+msgstr ""
+
+#. module: wallet
+#: model:ir.model.fields,field_description:wallet.field_wallet_account__has_message
+#: model:ir.model.fields,field_description:wallet.field_wallet_card__has_message
+msgid "Has Message"
+msgstr ""
+
+#. module: wallet
+#: model:ir.model.fields,field_description:wallet.field_wallet_card__holder_id
+#: model_terms:ir.ui.view,arch_db:wallet.view_wallet_card_search
+msgid "Holder"
+msgstr ""
+
+#. module: wallet
+#: model:ir.model.fields,help:wallet.field_wallet_statement__count_transaction
+msgid "How many transactions the issuer reports on the statement."
+msgstr ""
+
+#. module: wallet
+#: model:ir.model.fields,help:wallet.field_wallet_account__message_needaction
+#: model:ir.model.fields,help:wallet.field_wallet_card__message_needaction
+msgid "If checked, new messages require your attention."
+msgstr ""
+
+#. module: wallet
+#: model:ir.model.fields,help:wallet.field_wallet_account__message_has_error
+#: model:ir.model.fields,help:wallet.field_wallet_account__message_has_sms_error
+#: model:ir.model.fields,help:wallet.field_wallet_card__message_has_error
+#: model:ir.model.fields,help:wallet.field_wallet_card__message_has_sms_error
+msgid "If checked, some messages have a delivery error."
+msgstr ""
+
+#. module: wallet
+#: model:ir.model.fields.selection,name:wallet.selection__wallet_balance__source__import
+msgid "Imported"
+msgstr ""
+
+#. module: wallet
+#: model:ir.model.fields,field_description:wallet.field_wallet_account__message_is_follower
+#: model:ir.model.fields,field_description:wallet.field_wallet_card__message_is_follower
+msgid "Is Follower"
+msgstr ""
+
+#. module: wallet
+#: model:ir.model.fields,field_description:wallet.field_wallet_card__is_low_balance
+msgid "Is Low Balance"
+msgstr ""
+
+#. module: wallet
+#: model:ir.model.fields,field_description:wallet.field_wallet_account__issuer_id
+#: model_terms:ir.ui.view,arch_db:wallet.view_wallet_account_search
+msgid "Issuer"
+msgstr ""
+
+#. module: wallet
+#: model:ir.model.fields,field_description:wallet.field_wallet_account__kind
+#: model:ir.model.fields,field_description:wallet.field_wallet_card__kind
+#: model:ir.model.fields,field_description:wallet.field_wallet_transaction__kind
+#: model_terms:ir.ui.view,arch_db:wallet.view_wallet_account_search
+msgid "Kind"
+msgstr ""
+
+#. module: wallet
+#: model:ir.model.fields,field_description:wallet.field_wallet_account__write_uid
+#: model:ir.model.fields,field_description:wallet.field_wallet_balance__write_uid
+#: model:ir.model.fields,field_description:wallet.field_wallet_card__write_uid
+#: model:ir.model.fields,field_description:wallet.field_wallet_statement__write_uid
+#: model:ir.model.fields,field_description:wallet.field_wallet_transaction__write_uid
+msgid "Last Updated by"
+msgstr ""
+
+#. module: wallet
+#: model:ir.model.fields,field_description:wallet.field_wallet_account__write_date
+#: model:ir.model.fields,field_description:wallet.field_wallet_balance__write_date
+#: model:ir.model.fields,field_description:wallet.field_wallet_card__write_date
+#: model:ir.model.fields,field_description:wallet.field_wallet_statement__write_date
+#: model:ir.model.fields,field_description:wallet.field_wallet_transaction__write_date
+msgid "Last Updated on"
+msgstr ""
+
+#. module: wallet
+#: model:ir.model.fields,help:wallet.field_wallet_transaction__quantity
+msgid "Litres, crossings, units: what the amount bought."
+msgstr ""
+
+#. module: wallet
+#: model_terms:ir.ui.view,arch_db:wallet.view_wallet_card_kanban
+msgid "Low"
+msgstr ""
+
+#. module: wallet
+#: model_terms:ir.ui.view,arch_db:wallet.view_wallet_card_search
+msgid "Low balance"
+msgstr ""
+
+#. module: wallet
+#. odoo-python
+#: code:addons/wallet/models/home_tile.py:0
+msgid "Low wallet balances"
+msgstr ""
+
+#. module: wallet
+#: model:res.groups,name:wallet.group_wallet_manager
+msgid "Manager"
+msgstr ""
+
+#. module: wallet
+#: model:ir.model.fields.selection,name:wallet.selection__wallet_balance__source__manual
+msgid "Manual Entry"
+msgstr ""
+
+#. module: wallet
+#: model:ir.model.fields,field_description:wallet.field_wallet_account__message_has_error
+#: model:ir.model.fields,field_description:wallet.field_wallet_card__message_has_error
+msgid "Message Delivery error"
+msgstr ""
+
+#. module: wallet
+#: model:ir.model.fields,field_description:wallet.field_wallet_account__message_ids
+#: model:ir.model.fields,field_description:wallet.field_wallet_card__message_ids
+msgid "Messages"
+msgstr ""
+
+#. module: wallet
+#: model_terms:ir.ui.view,arch_db:wallet.view_wallet_transaction_search
+msgid "Month"
+msgstr ""
+
+#. module: wallet
+#: model:ir.model.fields,field_description:wallet.field_wallet_card__name
+#: model:ir.model.fields,field_description:wallet.field_wallet_statement__name
+#: model:ir.model.fields,field_description:wallet.field_wallet_transaction__name
+msgid "Name"
+msgstr ""
+
+#. module: wallet
+#: model_terms:ir.actions.act_window,help:wallet.action_wallet_card
+msgid "No card yet"
+msgstr ""
+
+#. module: wallet
+#: model_terms:ir.actions.act_window,help:wallet.action_wallet_account
+msgid "No wallet account yet"
+msgstr ""
+
+#. module: wallet
+#: model:ir.model.fields,field_description:wallet.field_wallet_account__note
+#: model:ir.model.fields,field_description:wallet.field_wallet_card__note
+msgid "Note"
+msgstr ""
+
+#. module: wallet
+#: model_terms:ir.ui.view,arch_db:wallet.view_wallet_account_form
+#: model_terms:ir.ui.view,arch_db:wallet.view_wallet_card_form
+msgid "Notes"
+msgstr ""
+
+#. module: wallet
+#: model:ir.model.fields,field_description:wallet.field_wallet_card__number
+msgid "Number"
+msgstr ""
+
+#. module: wallet
+#: model:ir.model.fields,field_description:wallet.field_wallet_account__message_needaction_counter
+#: model:ir.model.fields,field_description:wallet.field_wallet_card__message_needaction_counter
+msgid "Number of Actions"
+msgstr ""
+
+#. module: wallet
+#: model:ir.model.fields,field_description:wallet.field_wallet_account__message_has_error_counter
+#: model:ir.model.fields,field_description:wallet.field_wallet_card__message_has_error_counter
+msgid "Number of errors"
+msgstr ""
+
+#. module: wallet
+#: model:ir.model.fields,help:wallet.field_wallet_account__message_needaction_counter
+#: model:ir.model.fields,help:wallet.field_wallet_card__message_needaction_counter
+msgid "Number of messages requiring action"
+msgstr ""
+
+#. module: wallet
+#: model:ir.model.fields,help:wallet.field_wallet_account__message_has_error_counter
+#: model:ir.model.fields,help:wallet.field_wallet_card__message_has_error_counter
+msgid "Number of messages with delivery error"
+msgstr ""
+
+#. module: wallet
+#: model:ir.model.fields.selection,name:wallet.selection__wallet_account__kind__other
+msgid "Other"
+msgstr ""
+
+#. module: wallet
+#: model:ir.model.fields,field_description:wallet.field_wallet_transaction__place
+msgid "Place"
+msgstr ""
+
+#. module: wallet
+#: model:ir.model.fields,field_description:wallet.field_wallet_transaction__place_code
+msgid "Place Code"
+msgstr ""
+
+#. module: wallet
+#: model:ir.model.fields,field_description:wallet.field_wallet_account__website_message_ids
+#: model:ir.model.fields,field_description:wallet.field_wallet_card__website_message_ids
+msgid "Portal Messages"
+msgstr ""
+
+#. module: wallet
+#: model:ir.model.fields,help:wallet.field_wallet_account__website_message_ids
+#: model:ir.model.fields,help:wallet.field_wallet_card__website_message_ids
+msgid "Portal communication history for this record."
+msgstr ""
+
+#. module: wallet
+#: model:ir.model.fields,field_description:wallet.field_wallet_account__account_id
+msgid "Prepaid Account"
+msgstr ""
+
+#. module: wallet
+#: model:ir.module.category,description:wallet.module_category_wallet
+msgid "Prepaid balances held with issuers"
+msgstr ""
+
+#. module: wallet
+#: model:ir.model.fields,field_description:wallet.field_wallet_transaction__quantity
+msgid "Quantity"
+msgstr ""
+
+#. module: wallet
+#: model:ir.model.fields,field_description:wallet.field_wallet_account__rating_ids
+#: model:ir.model.fields,field_description:wallet.field_wallet_card__rating_ids
+msgid "Ratings"
+msgstr ""
+
+#. module: wallet
+#: model:ir.model.fields,field_description:wallet.field_wallet_transaction__raw_data
+msgid "Raw Data"
+msgstr ""
+
+#. module: wallet
+#: model_terms:ir.ui.view,arch_db:wallet.view_wallet_transaction_form
+msgid "Raw data"
+msgstr ""
+
+#. module: wallet
+#: model:ir.model.fields,field_description:wallet.field_wallet_account__reference
+msgid "Reference"
+msgstr ""
+
+#. module: wallet
+#: model:ir.model.fields,field_description:wallet.field_wallet_account__message_has_sms_error
+#: model:ir.model.fields,field_description:wallet.field_wallet_card__message_has_sms_error
+msgid "SMS Delivery error"
+msgstr ""
+
+#. module: wallet
+#: model:ir.model.fields,field_description:wallet.field_wallet_transaction__statement_id
+msgid "Statement"
+msgstr ""
+
+#. module: wallet
+#: model:ir.actions.act_window,name:wallet.action_wallet_statement
+#: model:ir.ui.menu,name:wallet.menu_wallet_statement
+msgid "Statements"
+msgstr ""
+
+#. module: wallet
+#: model:ir.model.fields,field_description:wallet.field_wallet_balance__status
+msgid "Status"
+msgstr ""
+
+#. module: wallet
+#: model:ir.model.fields,help:wallet.field_wallet_account__amount_balance
+msgid "Sum of the cards' latest balances."
+msgstr ""
+
+#. module: wallet
+#: model:ir.model.fields,help:wallet.field_wallet_account__account_id
+msgid ""
+"The asset account of the chart that carries the balance held with the "
+"issuer."
+msgstr ""
+
+#. module: wallet
+#: model:ir.model.fields,help:wallet.field_wallet_transaction__external_ref
+msgid "The issuer's own identifier of the transaction."
+msgstr ""
+
+#. module: wallet
+#: model:ir.model.fields,help:wallet.field_wallet_account__reference
+msgid ""
+"The issuer's own identifier of this account (client, contract, consignee)."
+msgstr ""
+
+#. module: wallet
+#: model:ir.model.fields,help:wallet.field_wallet_card__is_low_balance
+msgid "The latest balance is below the account's threshold."
+msgstr ""
+
+#. module: wallet
+#: model:ir.model.fields,help:wallet.field_wallet_card__amount_balance
+msgid "The latest balance snapshot."
+msgstr ""
+
+#. module: wallet
+#: model:ir.model.fields,help:wallet.field_wallet_transaction__vendor_id
+msgid "The merchant the issuer paid, when it is known as a partner."
+msgstr ""
+
+#. module: wallet
+#: model:ir.model.fields,help:wallet.field_wallet_card__number
+msgid "The number printed on the card or tag."
+msgstr ""
+
+#. module: wallet
+#: model:ir.model.fields,help:wallet.field_wallet_statement__attachment_id
+msgid "The statement as the issuer published it."
+msgstr ""
+
+#. module: wallet
+#: model:ir.model.fields,help:wallet.field_wallet_account__tz
+msgid ""
+"The time zone the issuer reports its times in, and the one a transaction is "
+"dated in."
+msgstr ""
+
+#. module: wallet
+#: model:ir.model.constraint,message:wallet.constraint_wallet_statement_account_period_uniq
+msgid "This account already has a statement for that period."
+msgstr ""
+
+#. module: wallet
+#: model:ir.model.fields,field_description:wallet.field_wallet_account__tz
+msgid "Timezone"
+msgstr ""
+
+#. module: wallet
+#: model:ir.model.fields.selection,name:wallet.selection__wallet_account__kind__toll
+#: model_terms:ir.ui.view,arch_db:wallet.view_wallet_account_search
+#: model_terms:ir.ui.view,arch_db:wallet.view_wallet_transaction_search
+msgid "Toll"
+msgstr ""
+
+#. module: wallet
+#: model_terms:ir.ui.view,arch_db:wallet.view_wallet_account_list
+#: model_terms:ir.ui.view,arch_db:wallet.view_wallet_card_list
+#: model_terms:ir.ui.view,arch_db:wallet.view_wallet_statement_list
+#: model_terms:ir.ui.view,arch_db:wallet.view_wallet_transaction_list
+msgid "Total"
+msgstr ""
+
+#. module: wallet
+#: model:ir.model.fields,field_description:wallet.field_wallet_card__transaction_ids
+#: model:ir.model.fields,field_description:wallet.field_wallet_statement__transaction_ids
+msgid "Transaction"
+msgstr ""
+
+#. module: wallet
+#. odoo-python
+#: code:addons/wallet/models/wallet_card.py:0
+#: model:ir.actions.act_window,name:wallet.action_wallet_transaction
+#: model:ir.ui.menu,name:wallet.menu_wallet_transaction
+#: model_terms:ir.ui.view,arch_db:wallet.view_wallet_card_form
+#: model_terms:ir.ui.view,arch_db:wallet.view_wallet_statement_form
+msgid "Transactions"
+msgstr ""
+
+#. module: wallet
+#: model:ir.model.fields,field_description:wallet.field_wallet_transaction__uom_id
+msgid "Unit"
+msgstr ""
+
+#. module: wallet
+#: model:res.groups,name:wallet.group_wallet_user
+msgid "User"
+msgstr ""
+
+#. module: wallet
+#: model:ir.model.fields,field_description:wallet.field_wallet_transaction__vendor_id
+msgid "Vendor"
+msgstr ""
+
+#. module: wallet
+#. odoo-python
+#: code:addons/wallet/models/wallet_account.py:0
+msgid ""
+"Wallet %(wallet)s: %(account)s is a %(type)s account; a prepaid balance sits"
+" on a prepayment, current-asset or cash account."
+msgstr ""
+
+#. module: wallet
+#: model:ir.actions.act_window,name:wallet.action_wallet_account
+#: model:ir.ui.menu,name:wallet.menu_wallet_account
+msgid "Wallet Accounts"
+msgstr ""
+
+#. module: wallet
+#: model_terms:ir.ui.view,arch_db:wallet.view_wallet_account_form
+msgid "Wallet account"
+msgstr ""
+
+#. module: wallet
+#: model:ir.ui.menu,name:wallet.menu_wallet_root
+msgid "Wallets"
+msgstr ""
+
+#. module: wallet
+#: model:ir.actions.server,name:wallet.ir_cron_downsample_wallet_balances_ir_actions_server
+msgid "Wallets: downsample old balance snapshots"
+msgstr ""
+
+#. module: wallet
+#: model:ir.model.fields,help:wallet.field_wallet_transaction__amount
+msgid ""
+"What left the wallet: positive for a purchase, negative for a top-up or a "
+"refund."
+msgstr ""
+
+#. module: wallet
+#: model:ir.model.fields,help:wallet.field_wallet_balance__status
+msgid "What the issuer reported about the card at that instant."
+msgstr ""
+
+#. module: wallet
+#: model:ir.model.fields,help:wallet.field_wallet_account__kind
+#: model:ir.model.fields,help:wallet.field_wallet_card__kind
+#: model:ir.model.fields,help:wallet.field_wallet_transaction__kind
+msgid "What the wallet pays for. Cards inherit it."
+msgstr ""
+
+#. module: wallet
+#: model:ir.model.fields,help:wallet.field_wallet_transaction__place
+msgid "Where it was paid: the station, the toll plaza."
+msgstr ""
+
+#. module: wallet
+#: model:ir.model.fields,help:wallet.field_wallet_card__holder_id
+msgid "Who carries the card."
+msgstr ""
+
+#. module: wallet
+#: model:ir.model.fields,help:wallet.field_wallet_account__issuer_id
+msgid "Who holds the prepaid balance and issued the cards."
+msgstr ""
+
+#. module: wallet
+#. odoo-javascript
+#: code:addons/wallet/static/src/home_tile/wallet_low_tile.xml:0
+msgid "below their threshold"
+msgstr ""

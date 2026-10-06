@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="project_task_map_view" model="ir.ui.view">
+        <field name="name">project.task.view.map</field>
+        <field name="model">project.task</field>
+        <field name="priority">12</field>
+        <field name="arch" type="xml">
+            <map
+                default_order="sequence, date_start"
+                allow_resequence="true"
+                js_class="project_task_map"
+                res_partner="partner_id"
+                routing="1">
+                <field name="partner_id" string="Customer" />
+                <field name="project_id" string="Project" />
+                <field name="milestone_id" string="Milestone" />
+                <field name="user_names" string="Assignees" />
+                <field name="date_start" string="Date" />
+            </map>
+        </field>
+    </record>
+
+    <record id="project_task_map_view_no_title" model="ir.ui.view">
+        <field name="name">project.task.view.map.no.title</field>
+        <field name="model">project.task</field>
+        <field name="priority">12</field>
+        <field name="arch" type="xml">
+            <map
+                default_order="sequence, date_start"
+                allow_resequence="true"
+                js_class="project_task_map"
+                res_partner="partner_id"
+                routing="1">
+                <field name="partner_id" string="Customer" />
+                <field name="milestone_id" string="Milestone" />
+                <field name="user_names" string="Assignees" />
+            </map>
+        </field>
+    </record>
+
+    <record id="project_task_map_view_no_title_no_milestone" model="ir.ui.view">
+        <field name="name">project.task.view.map.no.milestone</field>
+        <field name="model">project.task</field>
+        <field name="inherit_id" ref="project_task_map_view_no_title" />
+        <field name="mode">primary</field>
+        <field name="arch" type="xml">
+            <field name="milestone_id" position="replace" />
+        </field>
+    </record>
+
+    <record id="project_all_task_map_action_view" model="ir.actions.act_window.view">
+        <field name="sequence" eval="60" />
+        <field name="view_mode">map</field>
+        <field name="view_id" ref="project_task_map_view_no_title" />
+        <field
+            name="act_window_id"
+            ref="project.act_project_project_2_project_task_all" />
+    </record>
+
+    <record id="project_task_map_action_view" model="ir.actions.act_window.view">
+        <field name="sequence" eval="60" />
+        <field name="view_mode">map</field>
+        <field name="view_id" ref="project_task_map_view_no_title" />
+        <field name="act_window_id" ref="project.action_view_task" />
+    </record>
+
+    <record
+        id="project_task_from_milestone_action_map_view"
+        model="ir.actions.act_window.view">
+        <field name="sequence" eval="40" />
+        <field name="view_mode">map</field>
+        <field name="view_id" ref="project_task_map_view_no_title" />
+        <field name="act_window_id" ref="project.action_view_task_from_milestone" />
+    </record>
+
+</odoo>

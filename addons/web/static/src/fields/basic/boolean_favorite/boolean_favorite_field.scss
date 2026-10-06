@@ -1,0 +1,17 @@
+.o_field_widget {
+    &.o_favorite,
+    & .o_favorite {
+        i.fa-star {
+            font-size: var(--Favorite-font-size, 1rem);
+        }
+        i.fa-regular.fa-star {
+            @include o-hover-text-color(
+                o-token(--o-text-muted, $o-main-color-muted),
+                o-token(--o-favorite, $o-main-favorite-color)
+            );
+        }
+        i.fa-solid.fa-star {
+            color: o-token(--o-favorite, $o-main-favorite-color);
+        }
+    }
+}

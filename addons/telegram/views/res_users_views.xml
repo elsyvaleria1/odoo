@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="res_users_view_form_preferences_telegram" model="ir.ui.view">
+        <field name="name">res.users.preferences.form.telegram</field>
+        <field name="model">res.users</field>
+        <field name="inherit_id" ref="base.view_users_form_simple_modif" />
+        <field name="arch" type="xml">
+            <xpath expr="//page[@name='preferences_page']" position="inside">
+                <group
+                    name="telegram"
+                    string="Telegram"
+                    invisible="not telegram_connect_bot_ids">
+                    <field name="telegram_connect_bot_ids" invisible="1" />
+                    <field
+                        name="telegram_account_ids"
+                        widget="many2many_tags"
+                        invisible="not telegram_account_ids"
+                        readonly="1" />
+                    <div colspan="2">
+                        <button
+                            name="action_telegram_connect"
+                            type="object"
+                            string="Connect Telegram"
+                            icon="fa-paper-plane"
+                            class="btn-secondary" />
+                        <button
+                            name="action_telegram_disconnect"
+                            type="object"
+                            string="Disconnect"
+                            confirm="Your Telegram account will no longer act as you in Odoo. Continue?"
+                            invisible="not telegram_account_ids"
+                            class="btn-link" />
+                    </div>
+                </group>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="crm_enterprise.CrmBusinessCardsScannerCogMenu">
+        <div class="d-none o_crm_business_card_scanner">
+            <CrmBusinessCardScanner/>
+        </div>
+        <CogMenuItem closingMode="'none'" class="'o_crm_business_card_scanner_menu'" icon="'fa-solid fa-camera'" description.translate="Import Business Cards…" onSelected.bind="this.onItemSelected"/>
+    </t>
+</templates>

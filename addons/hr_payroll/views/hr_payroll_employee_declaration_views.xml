@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="hr_payroll_employee_declaration_view_tree" model="ir.ui.view">
+        <field name="name">hr.payroll.employee.declaration.view.list</field>
+        <field name="model">hr.payroll.employee.declaration</field>
+        <field name="arch" type="xml">
+            <list editable="bottom" js_class="employee_declaration_list">
+                <field
+                    name="employee_id"
+                    widget="many2one_avatar_employee"
+                    options="{'no_create': True, 'no_create_edit': True}"
+                    readonly="pdf_file" />
+                <field name="res_model" column_invisible="True" />
+                <field name="res_id" column_invisible="True" />
+                <field name="pdf_filename" column_invisible="True" />
+                <field
+                    name="pdf_file"
+                    widget="binary"
+                    filename="pdf_filename"
+                    readonly="1" />
+                <field name="pdf_to_generate" optional="hide" />
+                <field
+                    name="state"
+                    widget="badge"
+                    decoration-info="state == 'draft'"
+                    decoration-primary="state == 'pdf_posted'"
+                    decoration-success="state == 'pdf_generated'"
+                    decoration-warning="state in ['pdf_to_generate', 'pdf_to_post']" />
+            </list>
+        </field>
+    </record>
+
+    <record id="hr_payroll_employee_declaration_view_search" model="ir.ui.view">
+        <field name="name">hr.payroll.employee.declaration.view.search</field>
+        <field name="model">hr.payroll.employee.declaration</field>
+        <field name="arch" type="xml">
+            <search string="Search Declarations">
+                <field name="employee_id" />
+                <group>
+                    <filter
+                        name="group_by_state"
+                        string="State"
+                        context="{'group_by': 'state'}" />
+                </group>
+            </search>
+        </field>
+    </record>
+
+</odoo>

@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+
+    <record id="approval_category_maintenance_preventive" model="approval.category">
+        <field name="name">Mantenimiento Preventivo</field>
+        <field name="approval_type">maintenance_preventive</field>
+        <field name="description">Approval for preventive maintenance orders</field>
+        <field name="sequence" eval="100" />
+        <field name="approval_minimum">1</field>
+        <field name="sequence_code">MNT-P</field>
+        <field name="has_amount">required</field>
+        <field name="has_product">required</field>
+        <field name="has_quantity">required</field>
+        <field name="has_partner">optional</field>
+        <field name="has_date">optional</field>
+        <field name="has_reference">optional</field>
+        <field name="has_document">required</field>
+    </record>
+
+    <record
+        id="approval_category_maintenance_preventive_step_approvers"
+        model="approval.category.step"
+        forcecreate="0">
+        <field name="category_id" ref="approval_category_maintenance_preventive" />
+        <field name="name">Inventory Managers</field>
+        <field name="sequence" eval="10" />
+        <field name="minimum" eval="1" />
+        <field name="counts_added_approvers" eval="True" />
+        <field name="group_id" ref="stock.group_stock_manager" />
+    </record>
+
+    <record id="approval_category_maintenance_corrective" model="approval.category">
+        <field name="name">Mantenimiento Correctivo</field>
+        <field name="approval_type">maintenance_corrective</field>
+        <field name="description">Approval for corrective maintenance orders</field>
+        <field name="sequence" eval="101" />
+        <field name="approval_minimum">1</field>
+        <field name="sequence_code">MNT-C</field>
+        <field name="has_amount">required</field>
+        <field name="has_product">required</field>
+        <field name="has_quantity">required</field>
+        <field name="has_partner">optional</field>
+        <field name="has_date">optional</field>
+        <field name="has_reference">optional</field>
+        <field name="has_document">required</field>
+    </record>
+
+    <record
+        id="approval_category_maintenance_corrective_step_approvers"
+        model="approval.category.step"
+        forcecreate="0">
+        <field name="category_id" ref="approval_category_maintenance_corrective" />
+        <field name="name">Inventory Managers</field>
+        <field name="sequence" eval="10" />
+        <field name="minimum" eval="1" />
+        <field name="counts_added_approvers" eval="True" />
+        <field name="group_id" ref="stock.group_stock_manager" />
+    </record>
+
+</odoo>

@@ -1,0 +1,17 @@
+.o_map_view {
+    height: 100%;
+
+    .o_content {
+        height: 100%;
+    }
+
+    // Leaflet's panes are 400, and `.o_view_nocontent` is
+    // `position: absolute; inset: 0` at 1 -- so the no-content helper renders
+    // behind the map unless it is lifted, and a DOM assertion that it exists,
+    // or even that it is `toBeVisible`, cannot tell. It has to sit here rather
+    // than under `.o-map-renderer`: the chassis draws it as a sibling of the
+    // renderer, not inside it.
+    .o_view_nocontent {
+        z-index: 401;
+    }
+}

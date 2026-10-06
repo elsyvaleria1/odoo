@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="demo_calendar_personal" model="dav.calendar">
+        <field name="name">Personal Calendar</field>
+        <field name="user_id" ref="base.user_admin" />
+        <field name="description">Personal calendar for events and meetings</field>
+        <field name="color">#3a87ad</field>
+        <field name="event_domain">[]</field>
+        <field name="include_shared_events" eval="True" />
+    </record>
+
+</odoo>

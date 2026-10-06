@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="utm_campaign_view_kanban" model="ir.ui.view">
+        <field name="name">utm.campaign.view.kanban</field>
+        <field name="model">utm.campaign</field>
+        <field name="inherit_id" ref="utm.utm_campaign_view_kanban" />
+        <field name="arch" type="xml">
+            <xpath expr="//footer/div" position="inside">
+                <a
+                    t-if="record.invoiced_amount"
+                    href="#"
+                    title="Revenues"
+                    role="button"
+                    groups="sale.group_sale_salesman"
+                    type="object"
+                    name="action_redirect_to_invoiced"
+                    class="btn-outline-primary rounded-pill me-1 order-1">
+                    <span class="badge">
+                        <field name="currency_id" invisible="True" />
+                        <field
+                            name="invoiced_amount"
+                            widget="monetary"
+                            options="{'currency_field': 'currency_id'}" />
+                    </span>
+                </a>
+                <a
+                    t-if="record.quotation_count"
+                    href="#"
+                    title="Quotations"
+                    role="button"
+                    groups="sale.group_sale_salesman"
+                    type="object"
+                    name="action_redirect_to_quotations"
+                    class="btn-outline-primary rounded-pill me-1 order-2">
+                    <span class="badge">
+                        <i
+                            class="fa-solid fa-money-bill-1 me-1"
+                            aria-label="Quotations"
+                            role="img" />
+                        <field name="quotation_count" />
+                    </span>
+                </a>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="utm_campaign_view_form" model="ir.ui.view">
+        <field name="name">utm.campaign.view.form</field>
+        <field name="model">utm.campaign</field>
+        <field name="inherit_id" ref="utm.utm_campaign_view_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//div[hasclass('oe_button_box')]" position="inside">
+                <button
+                    name="action_redirect_to_invoiced"
+                    type="object"
+                    icon="fa-usd"
+                    groups="sale.group_sale_salesman"
+                    class="oe_stat_button order-1">
+                    <field name="invoiced_amount" string="Revenues" widget="statinfo" />
+                </button>
+                <button
+                    name="action_redirect_to_quotations"
+                    type="object"
+                    icon="fa-money"
+                    groups="sale.group_sale_salesman"
+                    class="oe_stat_button order-2">
+                    <field
+                        name="quotation_count"
+                        string="Quotations"
+                        widget="statinfo" />
+                </button>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

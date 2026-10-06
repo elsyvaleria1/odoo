@@ -1,0 +1,294 @@
+from odoo import fields, models
+from odoo.fields import Domain
+from odoo.libs.json import dumps as json_dumps
+
+
+class ProjectProject(models.Model):
+    _name = "project.project"
+    _inherit = "project.project"
+
+    purchase_orders_count = fields.Integer(
+        string="# Purchase Orders",
+        export_string_translation=False,
+        compute="_compute_purchase_orders_count",
+        groups="purchase.group_purchase_user",
+    )
+
+    def _compute_purchase_orders_count(self) -> None:
+        purchase_orders_per_project = dict(
+            self.env["purchase.order"]._read_group(
+                domain=[
+                    ("project_id", "in", self.ids),
+                    ("line_ids", "!=", False),
+                ],
+                groupby=["project_id"],
+                aggregates=["id:array_agg"],
+            )
+        )
+        purchase_orders_count_per_project_from_lines = dict(
+            self.env["purchase.order.line"]._read_group(
+                domain=[
+                    (
+                        "order_id",
+                        "not in",
+                        [
+                            order_id
+                            for values in purchase_orders_per_project.values()
+                            for order_id in values
+                        ],
+                    ),
+                    ("analytic_distribution", "in", self.account_id.ids),
+                ],
+                groupby=["analytic_distribution"],
+                aggregates=["__count"],
+            )
+        )
+
+        projects_no_account = self.filtered(lambda project: not project.account_id)
+        for project in projects_no_account:
+            project.purchase_orders_count = len(
+                purchase_orders_per_project.get(project, [])
+            )
+
+        purchase_orders_per_project = {
+            project.account_id.id: len(orders)
+            for project, orders in purchase_orders_per_project.items()
+        }
+        for project in self - projects_no_account:
+            project.purchase_orders_count = purchase_orders_per_project.get(
+                project.account_id.id, 0
+            ) + purchase_orders_count_per_project_from_lines.get(
+                project.account_id.id, 0
+            )
+
+    def action_view_project_purchase_orders(self):
+        purchase_orders = (
+            self.env["purchase.order.line"]
+            .search(
+                [
+                    "|",
+                    ("analytic_distribution", "in", self.account_id.ids),
+                    ("order_id.project_id", "=", self.id),
+                ]
+            )
+            .order_id
+        )
+        action_window = {
+            "name": self.env._("Purchase Orders"),
+            "type": "ir.actions.act_window",
+            "res_model": "purchase.order",
+            "views": [
+                [False, "list"],
+                [
+                    self.env.ref(
+                        "purchase.view_purchase_order_kanban_without_dashboard"
+                    ).id,
+                    "kanban",
+                ],
+                [False, "form"],
+                [False, "calendar"],
+                [False, "pivot"],
+                [False, "graph"],
+                [False, "activity"],
+            ],
+            "domain": [("id", "in", purchase_orders.ids)],
+            "context": {
+                "default_project_id": self.id,
+            },
+            "help": "<p class='o_view_nocontent_smiling_face'>%s</p><p>%s</p>"
+            % (
+                self.env._("No purchase order found. Let's create one."),
+                self.env._(
+                    "Once you ordered your products from your supplier, confirm your request for quotation and it will turn "
+                    "into a purchase order."
+                ),
+            ),
+        }
+        if len(purchase_orders) == 1 and not self.env.context.get(
+            "from_embedded_action"
+        ):
+            action_window["views"] = [[False, "form"]]
+            action_window["res_id"] = purchase_orders.id
+        return action_window
+
+    def action_profitability_items(self, section_name, domain=None, res_id=False):
+        if section_name == "purchase_order":
+            action = {
+                "name": self.env._("Purchase Orders"),
+                "type": "ir.actions.act_window",
+                "res_model": "purchase.order",
+                "views": [[False, "list"], [False, "form"]],
+                "domain": domain,
+                "context": {
+                    "create": False,
+                    "edit": False,
+                },
+            }
+            if res_id:
+                action["res_id"] = res_id
+                if "views" in action:
+                    action["views"] = [
+                        (view_id, view_type)
+                        for view_id, view_type in action["views"]
+                        if view_type == "form"
+                    ] or [False, "form"]
+                action["view_mode"] = "form"
+            return action
+        return super().action_profitability_items(section_name, domain, res_id)
+
+    def _get_stat_buttons(self):
+        buttons = super()._get_stat_buttons()
+        if self.env.user.has_group("purchase.group_purchase_user"):
+            buttons.append(
+                {
+                    "icon": "credit-card",
+                    "text": self.env._("Purchase Orders"),
+                    "number": self.purchase_orders_count,
+                    "action_type": "object",
+                    "action": "action_view_project_purchase_orders",
+                    "show": self.purchase_orders_count > 0,
+                    "sequence": 36,
+                }
+            )
+        return buttons
+
+    def _get_domain_profitability_aal(self):
+        return Domain.AND(
+            [
+                super()._get_domain_profitability_aal(),
+                [
+                    "|",
+                    ("move_line_id", "=", False),
+                    ("move_line_id.purchase_line_ids", "=", False),
+                ],
+            ]
+        )
+
+    def _get_profitability_purchase_lines(self):
+        if not self.account_id:
+            return self.env["purchase.order.line"]
+        return (
+            self.env["purchase.order.line"]
+            .sudo()
+            .search(
+                [
+                    ("analytic_distribution", "in", self.account_id.ids),
+                    ("state", "=", "done"),
+                ]
+            )
+        )
+
+    def _get_already_included_profitability_invoice_line_ids(self):
+        move_line_ids = super()._get_already_included_profitability_invoice_line_ids()
+        return (
+            move_line_ids
+            + self._get_profitability_purchase_lines().invoice_line_ids.ids
+        )
+
+    def _add_purchase_items(self, profitability_items, with_action=True) -> None:
+        purchase_lines = self._get_profitability_purchase_lines()
+        if purchase_lines:
+            with_purchase_action = with_action and (
+                self.env.user.has_group("purchase.group_purchase_user")
+                or self.env.user.has_group("account.group_account_invoice")
+                or self.env.user.has_group("account.group_account_readonly")
+            )
+            amount_invoiced = amount_to_invoice = 0.0
+            for purchase_line in purchase_lines:
+                price_subtotal = purchase_line.currency_id._convert(
+                    purchase_line.price_subtotal, self.currency_id, self.company_id
+                )
+                analytic_contribution = (
+                    sum(
+                        percentage
+                        for ids, percentage in purchase_line.analytic_distribution.items()
+                        if str(self.account_id.id) in ids.split(",")
+                    )
+                    / 100.0
+                )
+                purchase_line_amount_to_invoice = price_subtotal * analytic_contribution
+                invoice_lines = purchase_line.invoice_line_ids.filtered(
+                    lambda l: (
+                        l.parent_state != "cancel"
+                        and l.analytic_distribution
+                        and any(
+                            key == str(self.account_id.id)
+                            or key.startswith(str(self.account_id.id) + ",")
+                            for key in l.analytic_distribution
+                        )
+                    )
+                )
+                if invoice_lines:
+                    invoiced_qty = sum(
+                        invoice_lines.filtered(lambda l: not l.is_refund).mapped(
+                            "quantity"
+                        )
+                    )
+                    if invoiced_qty < purchase_line.product_qty:
+                        amount_to_invoice -= purchase_line_amount_to_invoice * (
+                            (purchase_line.product_qty - invoiced_qty)
+                            / purchase_line.product_qty
+                        )
+                    for line in invoice_lines:
+                        price_subtotal = line.currency_id._convert(
+                            line.price_subtotal, self.currency_id, self.company_id
+                        )
+                        if not line.analytic_distribution:
+                            continue
+                        analytic_contribution = (
+                            sum(
+                                percentage
+                                for ids, percentage in line.analytic_distribution.items()
+                                if str(self.account_id.id) in ids.split(",")
+                            )
+                            / 100.0
+                        )
+                        cost = (
+                            price_subtotal
+                            * analytic_contribution
+                            * (-1 if line.is_refund else 1)
+                        )
+                        if line.parent_state == "posted":
+                            amount_invoiced -= cost
+                        else:
+                            amount_to_invoice -= cost
+                else:
+                    amount_to_invoice -= purchase_line_amount_to_invoice
+
+            costs = profitability_items["costs"]
+            section_id = "purchase_order"
+            purchase_order_costs = {
+                "id": section_id,
+                "sequence": self._get_profitability_sequence_per_invoice_type()[
+                    section_id
+                ],
+                "billed": amount_invoiced,
+                "to_bill": amount_to_invoice,
+            }
+            if with_purchase_action:
+                purchase_order = purchase_lines.order_id
+                args = [section_id, [("id", "in", purchase_order.ids)]]
+                if len(purchase_order) == 1:
+                    args.append(purchase_order.id)
+                action = {
+                    "name": "action_profitability_items",
+                    "type": "object",
+                    "args": json_dumps(args),
+                }
+                purchase_order_costs["action"] = action
+            costs["data"].append(purchase_order_costs)
+            costs["total"]["billed"] += amount_invoiced
+            costs["total"]["to_bill"] += amount_to_invoice
+        super()._add_purchase_items(profitability_items, with_action=with_action)
+
+    def _get_profitability_labels(self):
+        labels = super()._get_profitability_labels()
+        labels["purchase_order"] = self.env._("Purchase Orders")
+        return labels
+
+    def _get_profitability_sequence_per_invoice_type(self):
+        sequence_per_invoice_type = (
+            super()._get_profitability_sequence_per_invoice_type()
+        )
+        sequence_per_invoice_type["purchase_order"] = 10
+        return sequence_per_invoice_type

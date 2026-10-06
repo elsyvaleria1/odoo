@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="res_config_settings_view_form" model="ir.ui.view">
+        <field name="name">res.config.settings.view.form.inherit.base.vat</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="account.res_config_settings_view_form" />
+        <field name="arch" type="xml">
+            <setting position="after" id="eu_service">
+                <setting
+                    id="vies_service_setting"
+                    title="If this checkbox is ticked, the default fiscal position that applies will depend upon the output of the verification by the European VIES Service."
+                    help="Verify VAT numbers using the European VIES service"
+                    company_dependent="1"
+                    documentation="/applications/finance/accounting/taxation/taxes/vat_validation.html">
+                    <field name="vat_check_vies" />
+                </setting>
+            </setting>
+        </field>
+    </record>
+
+</odoo>

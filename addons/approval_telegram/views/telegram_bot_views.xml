@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="telegram_bot_view_form_approval_request" model="ir.ui.view">
+        <field name="name">telegram.bot.form.inherit.approval_request</field>
+        <field name="model">telegram.bot</field>
+        <field name="inherit_id" ref="telegram.view_telegram_bot_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='command_ids']" position="after">
+                <field name="has_approval_command" invisible="1" />
+            </xpath>
+            <xpath expr="//notebook" position="inside">
+                <page
+                    name="approval_notifications"
+                    string="Approvals"
+                    invisible="not has_approval_command">
+                    <group string="Approval Notifications">
+                        <field name="notify_approvals" widget="boolean_toggle" />
+                    </group>
+                    <div
+                        class="alert alert-info"
+                        role="alert"
+                        invisible="not notify_approvals">
+                        This bot sends each approver a notification when a
+                        request awaits them, with buttons to approve, ask for
+                        changes or refuse.
+                    </div>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

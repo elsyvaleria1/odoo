@@ -1,0 +1,49 @@
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-09-26 22:42+0000\n"
+"PO-Revision-Date: 2026-09-26 22:42+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: fr_CA\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: purchase_tender_stock
+#: model:ir.model.fields,field_description:purchase_tender_stock.field_purchase_order__display_name
+#: model:ir.model.fields,field_description:purchase_tender_stock.field_purchase_order_line__display_name
+#: model:ir.model.fields,field_description:purchase_tender_stock.field_wizard_purchase_order_invite_vendor__display_name
+msgid "Display Name"
+msgstr "Nom affiché"
+
+#. module: purchase_tender_stock
+#: model:ir.model.fields,field_description:purchase_tender_stock.field_purchase_order__id
+#: model:ir.model.fields,field_description:purchase_tender_stock.field_purchase_order_line__id
+#: model:ir.model.fields,field_description:purchase_tender_stock.field_wizard_purchase_order_invite_vendor__id
+msgid "ID"
+msgstr "Identifiant"
+
+#. module: purchase_tender_stock
+#: model:ir.model,name:purchase_tender_stock.model_wizard_purchase_order_invite_vendor
+msgid "Invite vendors to a tender"
+msgstr ""
+
+#. module: purchase_tender_stock
+#: model:ir.model.fields,field_description:purchase_tender_stock.field_purchase_order__on_time_rate_perc
+#: model:ir.model.fields,field_description:purchase_tender_stock.field_purchase_order_line__on_time_rate_perc
+msgid "OTD"
+msgstr ""
+
+#. module: purchase_tender_stock
+#: model:ir.model,name:purchase_tender_stock.model_purchase_order
+msgid "Purchase Order"
+msgstr ""
+
+#. module: purchase_tender_stock
+#: model:ir.model,name:purchase_tender_stock.model_purchase_order_line
+msgid "Purchase Order Line"
+msgstr ""

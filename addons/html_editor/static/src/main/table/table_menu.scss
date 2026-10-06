@@ -1,0 +1,9 @@
+.o-we-table-menu {
+    border: $border-width solid o-token(--o-brand-odoo, $o-brand-odoo);
+    color: #fff;
+    background-color: o-token-alpha(--o-brand-odoo, $o-brand-odoo, 0.7);
+
+    &.oi-ellipsis-v {
+        width: 17px;
+    }
+}

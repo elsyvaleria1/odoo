@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_device_data_log_gps_map" model="ir.ui.view">
+        <field name="name">device.data.log.gps.map.geo</field>
+        <field name="model">device.data.log.gps</field>
+        <field name="arch" type="xml">
+            <geoengine>
+                <field name="device_id" />
+                <field name="timestamp" />
+                <field name="the_point" />
+                <field name="speed" />
+                <field name="ignition" />
+                <field name="movement" />
+                <templates>
+                    <t t-name="info_box">
+                        <div class="o_geoengine_popup">
+                            <strong><t t-out="record.timestamp.value" /></strong>
+                            <div><b>Device:</b> <t t-out="record.device_id.value" /></div>
+                            <div><b>Speed:</b> <t t-out="record.speed.value" /> km/h</div>
+                            <div><b>Ignition:</b> <t t-out="record.ignition.raw_value ? 'On' : 'Off'" /></div>
+                            <div><b>Movement:</b> <t t-out="record.movement.raw_value ? 'Yes' : 'No'" /></div>
+                        </div>
+                    </t>
+                </templates>
+            </geoengine>
+        </field>
+    </record>
+
+    <record
+        id="action_device_data_log_gps_view_list"
+        model="ir.actions.act_window.view">
+        <field name="sequence" eval="1" />
+        <field name="view_mode">list</field>
+        <field name="act_window_id" ref="device_gps.action_device_data_log_gps" />
+    </record>
+
+    <record id="action_device_data_log_gps_view_map" model="ir.actions.act_window.view">
+        <field name="sequence" eval="2" />
+        <field name="view_mode">geoengine</field>
+        <field name="view_id" ref="view_device_data_log_gps_map" />
+        <field name="act_window_id" ref="device_gps.action_device_data_log_gps" />
+    </record>
+
+    <record id="raster_layer_device_data_log_gps_osm" model="geoengine.raster.layer">
+        <field name="name">OpenStreetMap</field>
+        <field name="view_id" ref="view_device_data_log_gps_map" />
+        <field name="raster_type">osm</field>
+        <field name="overlay">0</field>
+        <field name="url">https://tile.openstreetmap.org/{z}/{x}/{y}.png</field>
+        <field name="sequence" eval="1" />
+    </record>
+
+    <record
+        id="raster_layer_device_data_log_gps_google_sat"
+        model="geoengine.raster.layer">
+        <field name="name">Google Satellite</field>
+        <field name="view_id" ref="view_device_data_log_gps_map" />
+        <field name="raster_type">xyz</field>
+        <field name="overlay">0</field>
+        <field
+            name="url">https://mt1.google.com/vt/lyrs=s&amp;x={x}&amp;y={y}&amp;z={z}</field>
+        <field name="sequence" eval="2" />
+    </record>
+
+    <record
+        id="raster_layer_device_data_log_gps_google_hybrid"
+        model="geoengine.raster.layer">
+        <field name="name">Google Hybrid</field>
+        <field name="view_id" ref="view_device_data_log_gps_map" />
+        <field name="raster_type">xyz</field>
+        <field name="overlay">0</field>
+        <field
+            name="url">https://mt1.google.com/vt/lyrs=y&amp;x={x}&amp;y={y}&amp;z={z}</field>
+        <field name="sequence" eval="3" />
+    </record>
+
+    <record
+        id="raster_layer_device_data_log_gps_google_terrain"
+        model="geoengine.raster.layer">
+        <field name="name">Google Terrain</field>
+        <field name="view_id" ref="view_device_data_log_gps_map" />
+        <field name="raster_type">xyz</field>
+        <field name="overlay">0</field>
+        <field
+            name="url">https://mt1.google.com/vt/lyrs=p&amp;x={x}&amp;y={y}&amp;z={z}</field>
+        <field name="sequence" eval="4" />
+    </record>
+
+    <record
+        id="raster_layer_device_data_log_gps_esri_satellite"
+        model="geoengine.raster.layer">
+        <field name="name">ESRI Satellite</field>
+        <field name="view_id" ref="view_device_data_log_gps_map" />
+        <field name="raster_type">xyz</field>
+        <field name="overlay">0</field>
+        <field
+            name="url">https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}</field>
+        <field name="sequence" eval="5" />
+    </record>
+
+    <record
+        id="raster_layer_device_data_log_gps_carto_light"
+        model="geoengine.raster.layer">
+        <field name="name">CartoDB Light</field>
+        <field name="view_id" ref="view_device_data_log_gps_map" />
+        <field name="raster_type">xyz</field>
+        <field name="overlay">0</field>
+        <field
+            name="url">https://cartodb-basemaps-a.global.ssl.fastly.net/light_all/{z}/{x}/{y}.png</field>
+        <field name="sequence" eval="6" />
+    </record>
+
+    <record
+        id="raster_layer_device_data_log_gps_carto_dark"
+        model="geoengine.raster.layer">
+        <field name="name">CartoDB Dark</field>
+        <field name="view_id" ref="view_device_data_log_gps_map" />
+        <field name="raster_type">xyz</field>
+        <field name="overlay">0</field>
+        <field
+            name="url">https://cartodb-basemaps-a.global.ssl.fastly.net/dark_all/{z}/{x}/{y}.png</field>
+        <field name="sequence" eval="7" />
+    </record>
+
+    <record id="raster_layer_device_data_log_gps_topo" model="geoengine.raster.layer">
+        <field name="name">OpenTopoMap</field>
+        <field name="view_id" ref="view_device_data_log_gps_map" />
+        <field name="raster_type">xyz</field>
+        <field name="overlay">0</field>
+        <field name="url">https://tile.opentopomap.org/{z}/{x}/{y}.png</field>
+        <field name="sequence" eval="8" />
+    </record>
+
+    <record id="vector_layer_device_data_log_gps_points" model="geoengine.vector.layer">
+        <field name="name">GPS Tracking Points</field>
+        <field name="view_id" ref="view_device_data_log_gps_map" />
+        <field
+            name="geo_field_id"
+            ref="device_gps_geoengine.field_device_data_log_gps__the_point" />
+        <field name="geo_repr">basic</field>
+        <field name="nb_class">1</field>
+        <field name="begin_color">#FF6600</field>
+        <field name="sequence" eval="1" />
+        <field name="active_on_startup" eval="True" />
+        <field name="layer_opacity">0.8</field>
+    </record>
+
+</odoo>

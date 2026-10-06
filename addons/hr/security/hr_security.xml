@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="res_groups_privilege_employees" model="res.groups.privilege">
+        <field name="name">Employees</field>
+        <field name="sequence">9</field>
+        <field name="category_id" ref="base.module_category_human_resources" />
+    </record>
+
+    <record id="group_hr_user" model="res.groups">
+        <field name="name">Officer: Manage all employees</field>
+        <field name="sequence">10</field>
+        <field name="privilege_id" ref="res_groups_privilege_employees" />
+        <field
+            name="comment">The user will be able to create and edit employees.</field>
+        <field name="implied_ids" eval="[Command.set([ref('base.group_user')])]" />
+    </record>
+
+    <record id="group_hr_manager" model="res.groups">
+        <field name="name">Administrator</field>
+        <field name="sequence">20</field>
+        <field name="privilege_id" ref="res_groups_privilege_employees" />
+        <field
+            name="comment">The user will have access to the human resources configuration as well as statistic reports.</field>
+        <field name="implied_ids" eval="[Command.link(ref('group_hr_user'))]" />
+        <field
+            name="user_ids"
+            eval="[Command.link(ref('base.user_root')), Command.link(ref('base.user_admin'))]" />
+    </record>
+
+    <record id="privilege_apply_employee_change" model="res.groups">
+        <field name="name">Apply an Approved Employee Change</field>
+        <field
+            name="comment">An approved change request writes the private details it proposed as the employee who asked for them, onto their own employee and private address only.</field>
+        <field name="is_privilege" eval="True" />
+    </record>
+
+    <data noupdate="1">
+        <record id="access_res_partner_employees_hr_user" model="ir.access">
+            <field
+                name="name">HR: officers edit the partners of their companies' employees</field>
+            <field name="model_id" ref="base.model_res_partner" />
+            <field name="group_id" ref="group_hr_user" />
+            <field name="kind">permission</field>
+            <field name="operation">cud</field>
+            <field name="domain">[('employee_ids', '!=', False)]</field>
+            <field name="anchor">employee_company</field>
+            <field name="reach">company</field>
+        </record>
+    </data>
+
+</odoo>

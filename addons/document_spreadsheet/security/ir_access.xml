@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record
+        id="spreadsheet_edition.spreadsheet_cell_thread_system_cru"
+        model="ir.access">
+        <field name="active" eval="False" />
+    </record>
+
+    <record id="spreadsheet_edition.spreadsheet_cell_thread_user_cru" model="ir.access">
+        <field name="active" eval="False" />
+    </record>
+
+</odoo>

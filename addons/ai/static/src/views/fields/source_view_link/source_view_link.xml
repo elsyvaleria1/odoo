@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates>
+    <t t-name="ai.SourceViewLink">
+        <span class="o_field_char o_field_widget">
+            <t t-if="this.isClickable">
+                <a href="#" t-on-click="this.onClickField" class="btn-link text-decoration-none" t-out="this.props.record.data[this.props.name]"/>
+            </t>
+            <t t-else="">
+                <span t-out="this.props.record.data[this.props.name]"/>
+            </t>
+        </span>
+    </t>
+</templates>

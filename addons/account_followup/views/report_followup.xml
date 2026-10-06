@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <data>
+        <template id="template_followup_report">
+            <!-- doc is a 'res.partner' -->
+            <t t-set="report" t-value="doc.env['account.followup.report']" />
+                <div class="o_account_reports_body">
+                    <div
+                        class="o_account_reports_page o_account_reports_no_print o_account_followup">
+                        <t t-call="account_followup.followup_filter_info_template" />
+
+                        <div class="o_account_reports_header">
+                            <div class="print_only">
+                                <h2>
+                                <strong>
+                                    Pending Invoices
+                                </strong>
+                                </h2>
+                            </div>
+                        </div>
+
+                        <div class="o_account_reports_summary">
+                            <t
+                                t-set="report_summary"
+                                t-value="report._get_main_body(followup_request)" />
+                            <div class="o_account_report_summary" role="alert">
+                                <span
+                                    class="o_account_report_summary_content"
+                                    t-att-style="'' if report_summary else 'display: none;'">
+                                    <span t-out="report_summary">Invoices Analysis</span>
+                                </span>
+                                <span
+                                    t-if="not report_summary and not context.get('print_mode')"
+                                    class="o_account_report_summary_placeholder">
+                                    Add a note
+                                </span>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="oe_structure" />
+                        </div>
+                    </div>
+                </div>
+        </template>
+        <template id="followup_filter_info_template">
+            <div
+                t-if="context.get(&quot;mail&quot;) != True"
+                class="print_only"
+                style="margin-bottom: 20px;">
+                <t
+                    t-set="invoice_address_id"
+                    t-value="doc.env['res.partner'].browse(doc.address_get(['invoice'])['invoice'])" />
+                <t
+                    t-if="invoice_address_id"
+                    t-set="partner_addr"
+                    t-value="invoice_address_id" />
+                <t t-else="" t-set="partner_addr" t-value="doc" />
+
+                <t
+                    t-if="context.get('snailmail_layout')"
+                    t-set="contact_widget_fields"
+                    t-value="['address', 'name']" />
+                <t
+                    t-else=""
+                    t-set="contact_widget_fields"
+                    t-value="['address', 'name', 'phone']" />
+
+                <div class="oe_structure" />
+                <div class="row fallback_header">
+                    <div class="o_followup_address col-5 offset-7">
+                        <span t-out="partner_addr" t-options="{&quot;widget&quot;: &quot;contact&quot;, &quot;fields&quot;: contact_widget_fields, &quot;no_marker&quot;: True}">Address</span>
+                        <span t-field="partner_addr.vat" />
+                    </div>
+                </div>
+
+                <p style="margin-top: 35px;">
+                    Date: <span t-out="datetime.date.today()" t-options="{'widget': 'date'}">2023-09-06</span><br />
+                    <span t-if="partner_addr.ref">Customer ref: <span t-field="partner_addr.ref">Demo Ref</span></span>
+                </p>
+            </div>
+        </template>
+        <template id="report_followup_print_all">
+            <t t-call="web.html_container">
+                <t t-set="company" t-value="docs.env.company" />
+                <div class="oe_structure" />
+                <t t-foreach="docs" t-as="doc"> <!-- each doc is a 'res.partner', called doc for the 'web.external_layout' template -->
+                    <t t-call="web.external_layout">
+                        <t
+                            t-set="fallback_address"
+                            t-value="doc.browse(doc.address_get(['invoice'])['invoice']) or doc" />
+                        <t
+                            t-call-assets="account_followup.assets_followup_report"
+                            t-autoprefix="true" />
+                        <div class="page">
+                            <span t-out="doc.get_followup_html(followup_request)">Follow-up details</span>
+                        </div>
+                    </t>
+                    <div class="oe_structure" />
+                    <!-- The invoice PDFs are attached by extending function _render_qweb_pdf_prepare_streams of ir.actions.report -->
+                </t>
+            </t>
+        </template>
+        <record id="action_report_followup" model="ir.actions.report">
+            <field name="name">Print Follow-up Letter</field>
+            <field name="model">res.partner</field>
+            <field name="report_type">qweb-pdf</field>
+            <field name="report_name">account_followup.report_followup_print_all</field>
+            <field name="report_file">account_followup.report_followup_print_all</field>
+            <field name="print_report_name">'Follow-up ' + object.display_name</field>
+        </record>
+    </data>
+
+</odoo>

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <menuitem
+        id="root_menu"
+        name="Amazon"
+        parent="sale.menu_sale_config"
+        sequence="43"
+        groups="sale.group_sale_manager">
+        <menuitem
+            id="accounts_menu"
+            name="Accounts"
+            action="list_amazon_account_action"
+            sequence="10" />
+        <menuitem
+            id="offers_menu"
+            name="Offers"
+            action="amazon_offer_action"
+            sequence="20" />
+    </menuitem>
+
+</odoo>

@@ -1,0 +1,488 @@
+// @ts-check
+/** @odoo-module native */
+
+/** @import { PeriodWindow } from "../search_types" */
+import { makeLogger } from "@web/core/debug/debug_logger";
+import { Domain } from "@web/core/domain";
+import {
+    endOf,
+    formatValue,
+    serializeDate,
+    serializeDateTime,
+    startOf,
+    toDate,
+} from "@web/core/l10n/dates";
+import { localization } from "@web/core/l10n/localization";
+import { _t } from "@web/core/translation";
+import { pick } from "@web/core/utils/collections/objects";
+import { clamp } from "@web/core/utils/format/numbers";
+
+const log = makeLogger("web.search");
+/** @type {Record<number, {description: any, coveredMonths: number[]}>} */
+const QUARTERS = {
+    1: { description: _t("Q1"), coveredMonths: [1, 2, 3] },
+    2: { description: _t("Q2"), coveredMonths: [4, 5, 6] },
+    3: { description: _t("Q3"), coveredMonths: [7, 8, 9] },
+    4: { description: _t("Q4"), coveredMonths: [10, 11, 12] },
+};
+
+const QUARTER_OPTIONS = {
+    fourth_quarter: {
+        id: "fourth_quarter",
+        groupNumber: 1,
+        description: QUARTERS[4].description,
+        setParam: { quarter: 4 },
+        granularity: "quarter",
+    },
+    third_quarter: {
+        id: "third_quarter",
+        groupNumber: 1,
+        description: QUARTERS[3].description,
+        setParam: { quarter: 3 },
+        granularity: "quarter",
+    },
+    second_quarter: {
+        id: "second_quarter",
+        groupNumber: 1,
+        description: QUARTERS[2].description,
+        setParam: { quarter: 2 },
+        granularity: "quarter",
+    },
+    first_quarter: {
+        id: "first_quarter",
+        groupNumber: 1,
+        description: QUARTERS[1].description,
+        setParam: { quarter: 1 },
+        granularity: "quarter",
+    },
+};
+
+export const DEFAULT_INTERVAL = "month";
+
+export const INTERVAL_OPTIONS = {
+    year: { description: _t("Year"), id: "year", groupNumber: 1 },
+    quarter: { description: _t("Quarter"), id: "quarter", groupNumber: 1 },
+    month: { description: _t("Month"), id: "month", groupNumber: 1 },
+    week: { description: _t("Week"), id: "week", groupNumber: 1 },
+    day: { description: _t("Day"), id: "day", groupNumber: 1 },
+};
+
+/** @type {Record<string, {description: any, id: string, groupNumber?: number}>} */
+export const BACKEND_INTERVAL_OPTIONS = {
+    ...INTERVAL_OPTIONS,
+    hour: { description: _t("Hour"), id: "hour" },
+};
+
+/**
+ * @param {any} referenceMoment
+ * @param {Record<string, any>} searchItem
+ * @param {string[]} selectedOptionIds
+ * @returns {{domain: any, description: string}}
+ */
+export function constructDateDomain(referenceMoment, searchItem, selectedOptionIds) {
+    const selectedOptions = getSelectedOptions(
+        referenceMoment,
+        searchItem,
+        selectedOptionIds,
+    );
+    if ("withDomain" in selectedOptions) {
+        const customOptions = /** @type {any[]} */ (selectedOptions.withDomain);
+        return {
+            description: customOptions.map((o) => o.description).join("/"),
+            domain: Domain.and([
+                Domain.or(customOptions.map((o) => o.domain)),
+                searchItem.domain,
+            ]),
+        };
+    }
+    const yearOptions = selectedOptions.year;
+    const otherOptions = [
+        ...(selectedOptions.quarter || []),
+        ...(selectedOptions.month || []),
+    ];
+    if (!yearOptions.length && otherOptions.length) {
+        console.warn(
+            `[search] date filter "${
+                searchItem.description || searchItem.fieldName
+            }": period options selected without a year; the resulting domain matches all records.`,
+        );
+    }
+    sortPeriodOptions(yearOptions);
+    sortPeriodOptions(otherOptions);
+    const ranges = [];
+    const { fieldName, fieldType } = searchItem;
+    for (const yearOption of yearOptions) {
+        const constructRangeParams = {
+            referenceMoment,
+            fieldName,
+            fieldType,
+        };
+        if (otherOptions.length) {
+            for (const option of otherOptions) {
+                const setParam = Object.assign(
+                    {},
+                    yearOption.setParam,
+                    option ? option.setParam : {},
+                );
+                const { granularity } = option;
+                const range = constructDateRange(
+                    Object.assign({ granularity, setParam }, constructRangeParams),
+                );
+                ranges.push(range);
+            }
+        } else {
+            const { granularity, setParam } = yearOption;
+            const range = constructDateRange(
+                Object.assign({ granularity, setParam }, constructRangeParams),
+            );
+            ranges.push(range);
+        }
+    }
+    let domain = Domain.combine(
+        ranges.map((range) => range.domain),
+        "OR",
+    );
+    domain = Domain.and([domain, searchItem.domain]);
+    const description = ranges.map((range) => range.description).join("/");
+    return { domain, description };
+}
+
+/**
+ * @param {Record<string, any>} params
+ * @returns {{domain: any, description: string}}
+ */
+function constructDateRange(params) {
+    const { fieldName, fieldType, granularity, plusParam } = params;
+    const referenceMoment =
+        fieldType === "date" ? toDate(params.referenceMoment) : params.referenceMoment;
+    const setParam = { ...params.setParam };
+    if ("quarter" in setParam) {
+        setParam.month = QUARTERS[setParam.quarter].coveredMonths[0];
+        delete setParam.quarter;
+    }
+    const setDate = Object.keys(setParam).length
+        ? referenceMoment.with(setParam, { overflow: "constrain" })
+        : referenceMoment;
+    const date =
+        plusParam && Object.keys(plusParam).length ? setDate.add(plusParam) : setDate;
+    const leftDate = startOf(date, granularity);
+    const rightDate = endOf(date, granularity);
+    let leftBound;
+    let rightBound;
+    if (fieldType === "date") {
+        leftBound = serializeDate(toDate(leftDate));
+        rightBound = serializeDate(toDate(rightDate));
+    } else {
+        leftBound = serializeDateTime(leftDate);
+        rightBound = serializeDateTime(rightDate);
+    }
+    const domain = new Domain([
+        "&",
+        [fieldName, ">=", leftBound],
+        [fieldName, "<=", rightBound],
+    ]);
+    const descriptions = [formatValue(date, "yyyy")];
+    const method = localization.direction === "rtl" ? "push" : "unshift";
+    if (granularity === "month") {
+        descriptions[method](formatValue(date, "MMMM"));
+    } else if (granularity === "quarter") {
+        const quarter = Math.ceil(date.month / 3);
+        descriptions[method](QUARTERS[quarter].description.toString());
+    }
+    const description = descriptions.join(" ");
+    return { domain, description };
+}
+
+export function getIntervalOptions() {
+    return getOptionsWithDescriptions(INTERVAL_OPTIONS);
+}
+
+/**
+ * @param {object} OPTIONS
+ * @returns {object[]}
+ */
+function getOptionsWithDescriptions(OPTIONS) {
+    const options = [];
+    for (const option of Object.values(OPTIONS)) {
+        options.push({
+            ...option,
+            description: option.description.toString(),
+        });
+    }
+    return options;
+}
+
+/** @type {WeakMap<object, {referenceMoment: any, options: readonly Record<string, any>[]}>} */
+const PERIOD_OPTIONS_CACHE = new WeakMap();
+
+/**
+ * @param {any} referenceMoment
+ * @param {{startYear: number, endYear: number, startMonth: number, endMonth: number, customOptions: {id: string, description: string, domain: string}[]}} optionsParams
+ * @returns {readonly Record<string, any>[]}
+ */
+export function getPeriodOptions(referenceMoment, optionsParams) {
+    const cached = PERIOD_OPTIONS_CACHE.get(optionsParams);
+    if (cached && cached.referenceMoment === referenceMoment) {
+        return cached.options;
+    }
+    const options = Object.freeze([
+        ...getMonthPeriodOptions(referenceMoment, optionsParams),
+        ...getQuarterPeriodOptions(optionsParams),
+        ...getYearPeriodOptions(referenceMoment, optionsParams),
+        ...getCustomPeriodOptions(optionsParams),
+    ]);
+    for (const option of options) {
+        Object.freeze(option);
+    }
+    PERIOD_OPTIONS_CACHE.set(optionsParams, { referenceMoment, options });
+    return options;
+}
+
+/**
+ * @param {string} unit
+ * @param {number} [offset=0]
+ * @returns {string}
+ */
+export function toGeneratorId(unit, offset) {
+    if (!offset) {
+        return unit;
+    }
+    const sep = offset > 0 ? "+" : "-";
+    const val = Math.abs(offset);
+    return `${unit}${sep}${val}`;
+}
+
+/**
+ * When the current year is in the year window, the month options are real
+ * months around today, so the window stretches to the years they reach: in
+ * December, "month+1" is January of next year, not of this one. A window that
+ * excludes the current year keeps its months inside it.
+ *
+ * @param {any} referenceMoment
+ * @param {{ startYear: number, endYear: number, startMonth: number, endMonth: number }} optionsParams
+ * @returns {[number, number]}
+ */
+function getYearWindow(referenceMoment, optionsParams) {
+    const { startYear, endYear, startMonth, endMonth } = optionsParams;
+    if (startYear > 0 || endYear < 0) {
+        return [startYear, endYear];
+    }
+    const yearOffsetOf = (/** @type {number} */ months) =>
+        referenceMoment.add({ months }).year - referenceMoment.year;
+    /** @type {[number, number]} */
+    const window = [
+        Math.min(startYear, yearOffsetOf(startMonth)),
+        Math.max(endYear, yearOffsetOf(endMonth)),
+    ];
+    if (window[0] !== startYear || window[1] !== endYear) {
+        log.logic("yearWindow:stretched", () => ({
+            referenceMonth: formatValue(referenceMoment, "yyyy-MM"),
+            months: `${startMonth}..${endMonth}`,
+            years: `${startYear}..${endYear}`,
+            window: window.join(".."),
+        }));
+    }
+    return window;
+}
+
+/**
+ * @param {string} optionId
+ * @returns {number | undefined}
+ */
+function yearOffsetOfId(optionId) {
+    const match = /^year(?:([+-])(\d+))?$/.exec(optionId);
+    if (!match) {
+        return undefined;
+    }
+    return match[1] ? Number(`${match[1]}${match[2]}`) : 0;
+}
+
+/**
+ * @param {any} referenceMoment
+ * @param {{ startYear: number, endYear: number, startMonth: number, endMonth: number }} optionsParams
+ * @returns {Array<Object>}
+ */
+export function getMonthPeriodOptions(referenceMoment, optionsParams) {
+    const { startYear, endYear, startMonth, endMonth } = optionsParams;
+    const [firstYear, lastYear] = getYearWindow(referenceMoment, optionsParams);
+    return [...Array(endMonth - startMonth + 1).keys()]
+        .map((i) => {
+            const monthOffset = startMonth + i;
+            // one month count: a Temporal duration cannot mix signs
+            const date = referenceMoment.add({
+                months: monthOffset + 12 * clamp(0, startYear, endYear),
+            });
+            const yearOffset = date.year - referenceMoment.year;
+            return {
+                id: toGeneratorId("month", monthOffset),
+                defaultYearId: toGeneratorId(
+                    "year",
+                    clamp(yearOffset, firstYear, lastYear),
+                ),
+                description: formatValue(date, "MMMM"),
+                granularity: "month",
+                groupNumber: 1,
+                plusParam: { months: monthOffset },
+            };
+        })
+        .reverse();
+}
+
+/**
+ * @param {{ startYear: number, endYear: number }} optionsParams
+ * @returns {Array<Object>}
+ */
+function getQuarterPeriodOptions(optionsParams) {
+    const { startYear, endYear } = optionsParams;
+    const defaultYearId = toGeneratorId("year", clamp(0, startYear, endYear));
+    return Object.values(QUARTER_OPTIONS).map((quarter) => ({
+        ...quarter,
+        defaultYearId,
+    }));
+}
+
+/**
+ * @param {any} referenceMoment
+ * @param {{ startYear: number, endYear: number, startMonth: number, endMonth: number }} optionsParams
+ * @returns {Array<Object>}
+ */
+function getYearPeriodOptions(referenceMoment, optionsParams) {
+    const [firstYear, lastYear] = getYearWindow(referenceMoment, optionsParams);
+    return [...Array(lastYear - firstYear + 1).keys()]
+        .map((i) => {
+            const offset = firstYear + i;
+            const date = referenceMoment.add({ years: offset });
+            return {
+                id: toGeneratorId("year", offset),
+                description: formatValue(date, "yyyy"),
+                granularity: "year",
+                groupNumber: 2,
+                plusParam: { years: offset },
+            };
+        })
+        .reverse();
+}
+
+/**
+ * @param {{ customOptions: Array<{id: string, description: string, domain: string}> }} optionsParams
+ * @returns {Array<Object>}
+ */
+function getCustomPeriodOptions(optionsParams) {
+    const { customOptions } = optionsParams;
+    return customOptions.map((option) => ({
+        id: option.id,
+        description: option.description,
+        granularity: "withDomain",
+        groupNumber: 3,
+        domain: option.domain,
+    }));
+}
+
+/**
+ * The year window follows the months around today, so a stored year id can
+ * fall out of it (a December "year+1" in January). A month or quarter then
+ * takes its default year, as selecting it today would; a year alone keeps its
+ * offset. Neither silently turns the filter into "every record".
+ *
+ * @param {any} referenceMoment
+ * @param {Record<string, any>} searchItem
+ * @param {string[]} selectedOptionIds
+ * @returns {Record<string, any[]>}
+ */
+function getSelectedOptions(referenceMoment, searchItem, selectedOptionIds) {
+    /** @type {Record<string, any[]>} */
+    const selectedOptions = { year: [] };
+    const periodOptions = getPeriodOptions(referenceMoment, searchItem.optionsParams);
+    /** @type {Set<number>} */
+    const staleYearOffsets = new Set();
+    /** @type {Set<number>} */
+    const defaultYearOffsets = new Set();
+    for (const optionId of selectedOptionIds) {
+        const option = periodOptions.find((option) => option.id === optionId);
+        if (!option) {
+            const offset = yearOffsetOfId(optionId);
+            if (offset !== undefined) {
+                staleYearOffsets.add(offset);
+            }
+            continue;
+        }
+        if (option.defaultYearId) {
+            defaultYearOffsets.add(
+                /** @type {number} */ (yearOffsetOfId(option.defaultYearId)),
+            );
+        }
+        const granularity = option.granularity;
+        if (!selectedOptions[granularity]) {
+            selectedOptions[granularity] = [];
+        }
+        if (option.domain) {
+            selectedOptions[granularity].push(pick(option, "domain", "description"));
+        } else {
+            const setParam = getSetParam(option, referenceMoment);
+            selectedOptions[granularity].push({ granularity, setParam });
+        }
+    }
+    if (!selectedOptions.year.length && staleYearOffsets.size) {
+        const offsets = defaultYearOffsets.size ? defaultYearOffsets : staleYearOffsets;
+        log.logic("dateFilter:staleYearIds", () => ({
+            fieldName: searchItem.fieldName,
+            selectedOptionIds: selectedOptionIds.join(","),
+            resolvedYearOffsets: [...offsets].join(","),
+        }));
+        for (const years of offsets) {
+            selectedOptions.year.push({
+                granularity: "year",
+                setParam: { year: referenceMoment.add({ years }).year },
+            });
+        }
+    }
+    return selectedOptions;
+}
+
+/**
+ * @param {Record<string, any>} periodOption
+ * @param {any} referenceMoment
+ * @returns {Record<string, any>}
+ */
+function getSetParam(periodOption, referenceMoment) {
+    if (periodOption.granularity === "quarter") {
+        return periodOption.setParam;
+    }
+    const date = referenceMoment.add(periodOption.plusParam);
+    const granularity = periodOption.granularity;
+    const setParam = { [granularity]: date[granularity] };
+    return setParam;
+}
+
+/** @type {Record<string, number>} */
+const INTERVAL_RANKS = Object.fromEntries(
+    Object.keys(BACKEND_INTERVAL_OPTIONS).map((id, index) => [id, index]),
+);
+
+/**
+ * @param {string} intervalOptionId
+ * @returns {number}
+ */
+export function rankInterval(intervalOptionId) {
+    return intervalOptionId in INTERVAL_RANKS ? INTERVAL_RANKS[intervalOptionId] : -1;
+}
+
+/** @param {Record<string, any>[]} options */
+function sortPeriodOptions(options) {
+    options.sort((/** @type {any} */ o1, /** @type {any} */ o2) => {
+        const granularity1 = o1.granularity;
+        const granularity2 = o2.granularity;
+        if (granularity1 === granularity2) {
+            return (o1.setParam[granularity1] ?? 0) - (o2.setParam[granularity1] ?? 0);
+        }
+        return granularity1 < granularity2 ? -1 : 1;
+    });
+}
+
+/**
+ * @param {string[]} selectedOptionIds
+ * @returns {boolean}
+ */
+export function yearSelected(selectedOptionIds) {
+    return selectedOptionIds.some((optionId) => optionId.startsWith("year"));
+}

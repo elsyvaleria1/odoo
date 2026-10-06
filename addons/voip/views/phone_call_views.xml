@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="phone_call_view_list" model="ir.ui.view">
+        <field name="name">phone.call.view.list.voip</field>
+        <field name="model">phone.call</field>
+        <field name="inherit_id" ref="phone_call.phone_call_view_list" />
+        <field name="arch" type="xml">
+            <field name="create_date" position="attributes">
+                <attribute name="widget">voip_simple_datetime</attribute>
+            </field>
+            <field name="phone_number" position="attributes">
+                <attribute name="widget">voip_flag_phone</attribute>
+            </field>
+            <field name="phone_number" position="after">
+                <field name="country_flag_url" column_invisible="True" />
+            </field>
+            <field name="user_id" position="after">
+                <field name="country_id" optional="hide" />
+            </field>
+            <field name="state" position="attributes">
+                <attribute name="widget">voip_call_status_badge</attribute>
+            </field>
+            <field name="direction" position="after">
+                <field name="id" column_invisible="True" />
+            </field>
+        </field>
+    </record>
+
+    <record id="phone_call_view_search" model="ir.ui.view">
+        <field name="name">phone.call.view.search.voip</field>
+        <field name="model">phone.call</field>
+        <field name="inherit_id" ref="phone_call.phone_call_view_search" />
+        <field name="arch" type="xml">
+            <filter name="my_calls" position="after">
+                <separator />
+                <filter
+                    name="internal"
+                    string="Internal"
+                    domain="[('is_within_same_company', '=', True)]" />
+                <filter
+                    name="external"
+                    string="External"
+                    domain="[('is_within_same_company', '=', False)]" />
+            </filter>
+        </field>
+    </record>
+
+    <record id="phone_call_view_form" model="ir.ui.view">
+        <field name="name">phone.call.view.form.voip</field>
+        <field name="model">phone.call</field>
+        <field name="inherit_id" ref="phone_call.phone_call_view_form" />
+        <field name="arch" type="xml">
+            <div name="correspondent" position="before">
+                <field
+                    name="image_1920"
+                    widget="contact_image"
+                    options="{'preview_image': 'avatar_128', 'size': [130,130], 'img_class': 'rounded border'}"
+                    invisible="not partner_id" />
+                <field name="avatar_128" invisible="True" />
+                <img
+                    src="/base/static/img/avatar_grey.png"
+                    class="rounded border"
+                    width="130"
+                    height="130"
+                    invisible="partner_id"
+                    alt="Contact Avatar" />
+            </div>
+            <field name="phone_number" position="before">
+                <field
+                    name="country_flag_url"
+                    widget="image_url"
+                    options="{&quot;size&quot;: [20, 20]}"
+                    class="me-1" />
+            </field>
+            <xpath
+                expr="//div[@name='heading_row']/field[@name='state']"
+                position="attributes">
+                <attribute name="widget">voip_call_status_badge</attribute>
+            </xpath>
+            <xpath
+                expr="//div[@name='heading_row']/field[@name='direction']"
+                position="after">
+                <field name="id" invisible="True" />
+            </xpath>
+            <xpath
+                expr="//group[@name='timing']/field[@name='create_date']"
+                position="attributes">
+                <attribute name="widget">voip_simple_datetime</attribute>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="phone_call_action_history" model="ir.actions.act_window">
+        <field name="name">History</field>
+        <field name="res_model">phone.call</field>
+        <field name="view_mode">list,pivot,graph,form</field>
+        <field name="context">{"search_default_my_calls": True}</field>
+    </record>
+
+</odoo>

@@ -1,0 +1,109 @@
+// = Gantt View Variables
+// ============================================================================
+
+// Define the necessary conditions to provide visual feedback on hover,
+// focus, drag, clone and resize.
+@mixin o-gantt-hover() {
+    &:hover,
+    &:focus {
+        // No visual feedback while the renderer is dragging or copying a pill.
+        @at-root #{selector-replace(
+            &,
+            ".o_gantt_renderer",
+            ".o_gantt_renderer:not(.o_grabbing):not(.o_copying)"
+        )} {
+            @content;
+        }
+    }
+}
+
+@function o-gantt-subdle($-color: var(--o-gantt-color)) {
+    @return unquote("color-mix(in srgb, #{$-color} 60%, white)");
+}
+
+// Publish record colour $-index under the index-free names the rules read.
+@mixin o-gantt-color-vars($-index) {
+    --o-gantt-color: var(--o-record-color-#{$-index});
+    --o-gantt-color-text: var(--o-gantt-color-#{$-index}-text);
+    --o-gantt-color-on-rgb: var(--o-record-color-#{$-index}-on-rgb);
+}
+
+@mixin o-gantt-colors() {
+    color: var(--o-gantt-color-text);
+    background-color: o-gantt-subdle();
+}
+
+@mixin o-gantt-gradient-decorations() {
+    background-image: repeating-linear-gradient(
+        -45deg,
+        #{o-gantt-subdle()} 0 10px,
+        var(--o-gantt-color-subdle-lit) 10px 20px
+    );
+
+    @include o-gantt-hover() {
+        background-image: repeating-linear-gradient(
+            -45deg,
+            var(--o-gantt-color) 0 10px,
+            var(--o-gantt-color-lit) 10px 20px
+        );
+    }
+}
+
+@mixin o-gantt-cell {
+    &.o_gantt_today {
+        background-color: $gantt-highlight-today-bg;
+        border-left-color: $gantt-highlight-today-border;
+        border-top-color: $gantt-highlight-today-border;
+
+        + .o_gantt_header_cell,
+        + .o_gantt_cell {
+            border-left-color: $gantt-highlight-today-border;
+        }
+    }
+}
+
+@mixin o-gantt-zindex($level) {
+    z-index: map-get(
+        (
+            // Grid and grid interactions level
+            grid: 0,
+            grid-interact: 1,
+            folded: 2,
+            // Pills and pills interactions level
+            pill: 10,
+            pill-interact: 11,
+            // Interactions => over pills
+            interact: 20,
+            // No-content helper
+            view-nocontent: 25,
+            headers: 30,
+            // Top-most elements
+            column-header-groups: 35,
+            title: 40,
+            controls: 50,
+            badge: 50,
+        ),
+        $level
+    );
+}
+
+$gantt-border-color: $o-gray-300 !default;
+$gantt-highlight-cell-color: rgba(0, 160, 157, 0.3) !default;
+$gantt-highlight-today-border: #dca665 !default;
+$gantt-highlight-today-bg: #fffaeb !default;
+$gantt-row-open-bg: $o-gray-100 !default;
+$gantt-unavailability-bg: $o-gray-200 !default;
+
+// The dark answers, here rather than in a `*.variables.dark.scss`: that file was
+// inserted *before* this one, so nothing declared here was visible to it, and it
+// had to reach into the theme's palette for the one name it needed.
+// `$o-gray-200` inverts to the view background, which would make day-off cells
+// invisible, so dark uses a translucent overlay instead of a ramp step.
+$o-dark-gantt-row-open-bg: $o-dark-gray-100 !default;
+$o-dark-gantt-unavailability-bg: rgba(255, 255, 255, 0.12) !default;
+$o-dark-gantt-highlight-today-bg: rgba($o-dark-bs-warning, 0.15) !default;
+$o-connector-creator-bullet-radius: 3px !default;
+$o-connector-creator-size: 8px !default;
+$o-connector-creator-bullet-diameter: 2 * $o-connector-creator-bullet-radius !default;
+$o-connector-wrapper-height: $o-connector-creator-size +
+    $o-connector-creator-bullet-radius !default;

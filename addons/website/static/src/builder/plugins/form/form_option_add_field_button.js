@@ -1,0 +1,28 @@
+/** @odoo-module native */
+import { useBuilderContext } from "@html_builder/core/builder_context";
+import { useOperation } from "@html_builder/core/operation_plugin";
+import { BaseOptionComponent } from "@html_builder/core/utils";
+import { t } from "@odoo/owl";
+import { makeLogger } from "@web/core/debug/debug_logger";
+import { useLifecycleLog } from "@web/core/debug/logger_hooks";
+
+const log = makeLogger("website.builder.option.form_option_add_field_button");
+
+export class FormOptionAddFieldButton extends BaseOptionComponent {
+    static template = "website.s_website_form_form_option_add_field_button";
+    static props = { addField: t.function(), tooltip: t.string() };
+
+    setup() {
+        super.setup();
+        this.builderContext = useBuilderContext();
+        useLifecycleLog(log);
+        this.callOperation = useOperation();
+    }
+
+    addField() {
+        log.pipeline("addField", () => ({ tooltip: this.props.tooltip }));
+        this.callOperation(() => {
+            this.props.addField(this.builderContext.getEditingElement());
+        });
+    }
+}

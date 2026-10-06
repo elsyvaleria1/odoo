@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="device_enrollment_list" model="ir.ui.view">
+        <field name="name">device.enrollment.list</field>
+        <field name="model">device.enrollment</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name" />
+                <field name="device_id" />
+                <field name="state" />
+                <field name="company_id" groups="base.group_multi_company" />
+            </list>
+        </field>
+    </record>
+
+    <record id="device_enrollment_form" model="ir.ui.view">
+        <field name="name">device.enrollment.form</field>
+        <field name="model">device.enrollment</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button
+                        name="action_provision_credential"
+                        type="object"
+                        string="Provision / Rotate Credential"
+                        groups="device.group_device_manager"
+                        invisible="state == 'revoked'" />
+                    <button
+                        name="action_activate"
+                        type="object"
+                        string="Activate"
+                        groups="device.group_device_manager"
+                        invisible="state != 'draft'" />
+                    <button
+                        name="action_revoke"
+                        type="object"
+                        string="Revoke"
+                        groups="device.group_device_manager"
+                        invisible="state == 'revoked'" />
+                    <field name="state" widget="statusbar" />
+                </header>
+                <sheet>
+                    <group>
+                        <field name="name" />
+                        <field name="key" />
+                        <field
+                            name="company_id"
+                            groups="base.group_multi_company"
+                            readonly="id" />
+                        <field name="device_id" readonly="state != 'draft'" />
+                        <field
+                            name="credential_id"
+                            groups="device.group_device_manager" />
+                        <field name="service_user_id" readonly="state != 'draft'" />
+                    </group>
+                    <field name="channel_ids" context="{'default_enrollment_id': id}">
+                        <list>
+                            <field name="name" />
+                            <field name="external_identifier" />
+                            <field name="purpose" />
+                            <field name="active" />
+                        </list>
+                    </field>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="device_enrollment_action" model="ir.actions.act_window">
+        <field name="name">Enrollments</field>
+        <field name="res_model">device.enrollment</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+</odoo>

@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="account_invoice_form" model="ir.ui.view">
+        <field name="name">Account Invoice</field>
+        <field name="model">account.move</field>
+        <field name="inherit_id" ref="account.view_move_form" />
+        <field name="arch" type="xml">
+            <field name="invoice_vendor_bill_id" position="after">
+                <t groups="sale.group_sale_salesman">
+                    <field name="sale_id" invisible="1" readonly="state != 'draft'" />
+                    <label
+                        for="sale_customer_invoice_id"
+                        string="Auto-Complete"
+                        invisible="state != 'draft' or move_type not in ('out_invoice', 'out_refund')"
+                        class="oe_edit_only" />
+                    <field
+                        name="sale_customer_invoice_id"
+                        placeholder="Select a sale document"
+                        nolabel="1"
+                        domain="[('company_id', 'in', [False, company_id]), '|', ('order_id', '!=', False), ('move_type', '=', move_type)] + (['|', ('partner_id', '=', False), ('partner_id.commercial_partner_id', '=', commercial_partner_id)] if partner_id else [])"
+                        context="{'show_total_amount': True}"
+                        options="{'no_create': True, 'no_open': True}"
+                        invisible="state != 'draft' or move_type not in ('out_invoice', 'out_refund')"
+                        readonly="state != 'draft'"
+                        class="oe_edit_only" />
+                </t>
+            </field>
+            <xpath expr="//group[@id='other_tab_group']" position="inside">
+                <group
+                    name="utm_link"
+                    string="Marketing"
+                    groups="base.group_no_one"
+                    invisible="move_type not in ('out_invoice', 'out_refund')">
+                    <field
+                        name="campaign_id"
+                        options="{'create_name_field': 'title'}" />
+                    <field name="medium_id" />
+                    <field name="source_id" />
+                </group>
+            </xpath>
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <button
+                    name="action_sale_matching"
+                    type="object"
+                    icon="fa-bullseye"
+                    groups="sale.group_sale_salesman"
+                    invisible="not partner_id or move_type not in ('out_invoice', 'out_refund') or is_sale_matched"
+                    class="oe_stat_button">
+                    <div class="o_field_statinfo">
+                        <span class="o_stat_text">Sale Matching</span>
+                    </div>
+                </button>
+                <button
+                    name="action_view_source_sale_orders"
+                    type="object"
+                    icon="fa-regular fa-pen-to-square"
+                    groups="sale.group_sale_salesman"
+                    invisible="sale_order_count == 0 or move_type not in ('out_invoice', 'out_refund', 'in_invoice', 'in_refund', 'out_receipt', 'in_receipt')"
+                    class="oe_stat_button">
+                    <field
+                        name="sale_order_name"
+                        string="Sale Orders"
+                        widget="statinfo"
+                        invisible="sale_order_count != 1" />
+                    <field
+                        name="sale_order_count"
+                        string="Sale Orders"
+                        widget="statinfo"
+                        invisible="sale_order_count == 1" />
+                </button>
+            </xpath>
+            <xpath expr="//field[@name='invoice_line_ids']/list" position="inside">
+                <field name="is_downpayment" column_invisible="1" />
+                <field
+                    name="sale_line_ids"
+                    groups="sale.group_sale_salesman"
+                    column_invisible="True" />
+            </xpath>
+            <xpath expr="//field[@name='line_ids']/list" position="inside">
+                <field
+                    name="sale_line_ids"
+                    groups="sale.group_sale_salesman"
+                    column_invisible="True" />
+            </xpath>
+            <xpath
+                expr="//field[@name='invoice_line_ids']/list/field[@name='product_id']"
+                position="attributes">
+                <attribute name="readonly">is_downpayment</attribute>
+            </xpath>
+            <header position="inside">
+                <field
+                    name="sale_order_count"
+                    groups="sale.group_sale_salesman"
+                    invisible="1" />
+                <button
+                    name="create_sale_order"
+                    type="object"
+                    string="Create Sale"
+                    groups="sale.group_sale_salesman"
+                    invisible="move_type != 'out_invoice' or state != 'posted' or sale_order_count != 0"
+                    class="oe_highlight" />
+            </header>
+            <header position="after">
+                <div
+                    class="alert alert-warning"
+                    role="alert"
+                    invisible="not sale_warning_text or move_type != 'out_invoice'">
+                    <field name="sale_warning_text" class="fw-bold" />
+                </div>
+            </header>
+            <list name="journal_items" position="attributes">
+                <attribute
+                    name="decoration-warning"
+                    add="(sale_line_warn_msg and move_type == 'out_invoice')"
+                    separator=" or " />
+            </list>
+        </field>
+    </record>
+
+</odoo>

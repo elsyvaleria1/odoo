@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="wizard_stock_picking_delivery_proof_form" model="ir.ui.view">
+        <field
+            name="name">wizard.stock.picking.delivery.proof.form.inherit.trace</field>
+        <field name="model">wizard.stock.picking.delivery.proof</field>
+        <field
+            name="inherit_id"
+            ref="stock_fleet.wizard_stock_picking_delivery_proof_form" />
+        <field name="arch" type="xml">
+            <field name="delivery_proof" position="after">
+                <p class="text-muted mt-3">
+                    Without the paper at hand, whoever received writes their name
+                    and signs here instead.
+                </p>
+                <group>
+                    <field name="receiver_name" />
+                    <field name="signature" widget="signature" />
+                </group>
+            </field>
+        </field>
+    </record>
+
+</odoo>

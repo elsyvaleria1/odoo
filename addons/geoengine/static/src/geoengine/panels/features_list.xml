@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<templates>
+    <t t-name="geoengine.FeaturesList">
+        <section class="o_search_panel_section o_features_list_section">
+            <header
+                class="o_search_panel_section_header pt-4 pb-2 text-uppercase cursor-pointer d-flex justify-content-between align-items-center"
+                t-on-click="this.onToggleExpand"
+            >
+                <span class="fs-6 fw-bold">
+                    Features
+                    <span class="badge bg-secondary ms-1" t-out="this.totalCount" />
+                </span>
+                <i
+                    t-attf-class="fa-solid fa-chevron-{{ this.state.isExpanded ? 'up' : 'down' }} text-muted"
+                />
+            </header>
+
+            <div t-if="this.state.isExpanded" class="o_features_list_content">
+                <div class="o_features_search position-relative mb-2">
+                    <input
+                        type="text"
+                        class="form-control form-control-sm"
+                        placeholder="Search..."
+                        t-att-value="this.state.searchTerm"
+                        t-on-input="this.onSearchInput"
+                    />
+                    <button
+                        t-if="this.state.searchTerm"
+                        class="btn btn-link position-absolute end-0 top-50 translate-middle-y p-0 pe-2"
+                        t-on-click="this.onClearSearch"
+                        aria-label="Clear search"
+                    >
+                        <i class="fa-solid fa-times text-muted" />
+                    </button>
+                </div>
+
+                <div
+                    t-if="this.state.searchTerm and this.filteredCount !== this.totalCount"
+                    class="small text-muted mb-2"
+                >
+                    Showing <t t-out="this.filteredCount" /> of <t t-out="this.totalCount" />
+                </div>
+
+                <div class="o_features_grouped_list">
+                    <t t-foreach="this.sortedStates" t-as="stateName" t-key="stateName">
+                        <div
+                            class="o_features_state_header d-flex align-items-center py-1 px-2 cursor-pointer bg-light border-bottom"
+                            t-on-click="() => this.toggleState(stateName)"
+                        >
+                            <i
+                                t-attf-class="fa-solid fa-caret-{{ this.isStateExpanded(stateName) ? 'down' : 'right' }} me-2 text-primary"
+                                style="width: 12px;"
+                            />
+                            <i class="fa-solid fa-location-dot me-2 text-primary" />
+                            <span
+                                class="fw-bold flex-grow-1 text-truncate"
+                                t-out="stateName"
+                            />
+                            <span
+                                class="badge bg-primary"
+                                t-out="this.getStateCount(stateName)"
+                            />
+                            <button
+                                class="btn btn-link btn-sm p-0 ms-2"
+                                t-on-click="(ev) => this.onZoomToState(stateName, ev)"
+                                aria-label="Zoom to this group"
+                                title="Zoom to this group"
+                            >
+                                <i
+                                    class="fa-solid fa-magnifying-glass-location text-primary"
+                                />
+                            </button>
+                        </div>
+
+                        <ul
+                            t-if="this.isStateExpanded(stateName)"
+                            class="o_features_list list-unstyled ps-3 mb-0"
+                        >
+                            <t
+                                t-foreach="this.getRecordsForState(stateName)"
+                                t-as="record"
+                                t-key="record.resId or record.id"
+                            >
+                                <li
+                                    class="o_feature_item py-1 px-2 cursor-pointer d-flex align-items-center"
+                                    t-att-class="{ 'bg-info bg-opacity-25': this.isSelected(record) }"
+                                    t-on-click="() => this.onFeatureSelect(record)"
+                                >
+                                    <i
+                                        class="fa-solid fa-map-pin me-2 text-muted"
+                                        style="font-size: 10px;"
+                                    />
+                                    <span
+                                        class="text-truncate"
+                                        t-out="this._getRecordName(record)"
+                                    />
+                                </li>
+                            </t>
+                        </ul>
+                    </t>
+
+                    <div
+                        t-if="this.sortedStates.length === 0"
+                        class="text-muted text-center py-3"
+                    >
+                        <i class="fa-solid fa-search fa-2x mb-2 d-block" />
+                        <span t-if="this.state.searchTerm">No results found</span>
+                        <span t-else="">No data</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </t>
+</templates>

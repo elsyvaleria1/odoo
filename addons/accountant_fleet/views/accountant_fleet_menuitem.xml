@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <data>
+        <menuitem
+            id="menu_action_audit_inventory_fleet"
+            name="Vehicles"
+            parent="account_depreciation.account_assets_liabilities_menu"
+            action="resource_asset_vehicle.fleet_vehicle_action"
+            sequence="65"
+            groups="account.group_account_readonly" />
+    </data>
+
+</odoo>

@@ -1,0 +1,3 @@
+id,name,model_id/id,group_id/id,kind,operation,domain
+access_extract_line_wizard,wizard.account.move.add.extracted.line,model_wizard_account_move_add_extracted_line,account.group_account_invoice,permission,crud,
+access_extract_line_proposal,wizard.account.move.add.extracted.line.proposal,model_wizard_account_move_add_extracted_line_proposal,account.group_account_invoice,permission,crud,

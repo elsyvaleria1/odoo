@@ -1,0 +1,2 @@
+from . import wizard_crm_lead_forward_to_partner
+from . import wizard_crm_lead_forward_to_partner_line

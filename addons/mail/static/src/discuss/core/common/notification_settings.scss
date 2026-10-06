@@ -1,0 +1,30 @@
+.o-discuss-NotificationSettings {
+    .o-mail-NotificationSettings-submenu {
+        max-width: 250px !important;
+    }
+    .o-discuss-NotificationSettings-separator {
+        min-width: 20px;
+    }
+
+    button {
+        &:hover,
+        &.show {
+            background-color: var(
+                --mail-NotificationSettings-btnHoverBg,
+                o-palette-token(--o-gray-200, $gray-200)
+            );
+        }
+    }
+}
+
+.o-discuss-NotificationSettings-defaultValue {
+    color: o-token(--o-action, $o-action);
+}
+
+@include media-only(screen) {
+    :root[data-color-scheme="dark"] {
+        .o-discuss-NotificationSettings {
+            --mail-NotificationSettings-btnHoverBg: #{$o-dark-gray-300};
+        }
+    }
+}

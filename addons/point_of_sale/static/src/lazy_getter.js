@@ -1,0 +1,113 @@
+/** @odoo-module native */
+import { computed, proxy } from "@odoo/owl";
+
+import { getDisabler } from "./proxy_trap.js";
+function getAllGetters(proto) {
+    const getters = new Map();
+    while (proto !== null) {
+        const descriptors = Object.getOwnPropertyDescriptors(proto);
+        for (const [name, descriptor] of Object.entries(descriptors)) {
+            if (descriptor.get && !getters.has(name)) {
+                getters.set(name, descriptor.get);
+            }
+        }
+        proto = Object.getPrototypeOf(proto);
+    }
+    return getters;
+}
+
+const classGetters = new Map();
+
+export function clearGettersCache() {
+    classGetters.clear();
+}
+
+function getLazyGetters(Class) {
+    if (!classGetters.has(Class)) {
+        const getters = new Map();
+        const excludedLazyGetters = Class.excludedLazyGetters || [];
+        for (const [name, func] of getAllGetters(Class.prototype)) {
+            if (
+                (name.startsWith("__") && name.endsWith("__")) ||
+                excludedLazyGetters.includes(name)
+            ) {
+                continue;
+            }
+            getters.set(name, _defineLazyGetter(name, func));
+        }
+        classGetters.set(Class, getters);
+    }
+    return classGetters.get(Class);
+}
+
+function _defineLazyGetter(name, func) {
+    return [`__lazy_${name}`, (obj) => func.call(obj)];
+}
+
+/**
+ * @param {Object} object
+ * @param {string} name
+ * @param {Function} func
+ */
+export function createLazyGetter(object, name, func) {
+    if (!(object instanceof WithLazyGetterTrap)) {
+        throw new Error("The object must be an instance of WithLazyGetterTrap");
+    }
+    const [lazyName, lazyMethod] = _defineLazyGetter(name, func);
+    lazyComputed(object, lazyName, lazyMethod);
+    const getter = function () {
+        const disabler = getDisabler(object, name);
+        if (disabler.isDisabled()) {
+            return func.call(object);
+        }
+        return object[lazyName];
+    };
+    Object.defineProperty(object, name, {
+        get: function () {
+            return getter();
+        },
+    });
+}
+
+function defineLazyGetterTrap(Class) {
+    const getters = getLazyGetters(Class);
+    return function get(target, prop, receiver) {
+        if (!getters.has(prop)) {
+            return Reflect.get(target, prop, receiver);
+        }
+        const disabler = getDisabler(target, prop);
+        if (disabler.isDisabled()) {
+            return Reflect.get(target, prop, receiver);
+        }
+        return disabler.call(() => {
+            const [lazyName] = getters.get(prop);
+            return receiver[lazyName];
+        });
+    };
+}
+
+function lazyComputed(obj, propName, compute) {
+    // read through the canonical proxy: the value it hands out is the same
+    // record another reader gets, and what it reads invalidates it
+    const value = computed(() => compute(proxy(obj)), { detached: true });
+    Object.defineProperty(obj, propName, {
+        get() {
+            return value();
+        },
+        configurable: true,
+    });
+}
+
+export class WithLazyGetterTrap {
+    constructor({ traps = {} }) {
+        const Class = this.constructor;
+        const instance = new Proxy(this, {
+            get: defineLazyGetterTrap(Class),
+            ...traps,
+        });
+        for (const [lazyName, func] of getLazyGetters(Class).values()) {
+            lazyComputed(instance, lazyName, func);
+        }
+        return instance;
+    }
+}

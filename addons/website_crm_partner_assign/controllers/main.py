@@ -1,0 +1,569 @@
+from typing import Any
+from urllib.parse import urlencode
+
+from werkzeug.exceptions import NotFound
+
+from odoo import fields, http
+from odoo.fields import Domain
+from odoo.http import request
+from odoo.libs.debug_log import DebugLog
+from odoo.tools.translate import LazyTranslate
+
+from odoo.addons.portal.controllers.portal import CustomerPortal
+from odoo.addons.website_google_map.controllers.main import GoogleMap
+from odoo.addons.website_partner.controllers.main import WebsitePartnerPage
+
+_debug = DebugLog(__name__)
+
+_lt = LazyTranslate(__name__)
+
+
+class WebsiteAccount(CustomerPortal):
+    def get_domain_my_lead(self, user):
+        return [
+            ("partner_assigned_id", "child_of", user.commercial_partner_id.id),
+            ("type", "=", "lead"),
+        ]
+
+    def get_domain_my_opp(self, user):
+        return [
+            ("partner_assigned_id", "child_of", user.commercial_partner_id.id),
+            ("type", "=", "opportunity"),
+        ]
+
+    def _prepare_home_portal_values(self, counters):
+        values = super()._prepare_home_portal_values(counters)
+        CrmLead = request.env["crm.lead"]
+        if "lead_count" in counters:
+            values["lead_count"] = (
+                CrmLead.search_count(self.get_domain_my_lead(request.env.user))
+                if CrmLead.has_access("read")
+                else 0
+            )
+        if "opp_count" in counters:
+            values["opp_count"] = (
+                CrmLead.search_count(self.get_domain_my_opp(request.env.user))
+                if CrmLead.has_access("read")
+                else 0
+            )
+        return values
+
+    @http.route(
+        ["/my/leads", "/my/leads/page/<int:page>"],
+        type="http",
+        auth="user",
+        website=True,
+    )
+    def portal_my_leads(
+        self, page=1, date_begin=None, date_end=None, sortby=None, **kw
+    ):
+        values = self._prepare_portal_layout_values()
+        CrmLead = request.env["crm.lead"]
+        domain = self.get_domain_my_lead(request.env.user)
+
+        searchbar_sortings = {
+            "date": {"label": request.env._("Newest"), "order": "create_date desc"},
+            "name": {"label": request.env._("Name"), "order": "name"},
+            "contact_name": {
+                "label": request.env._("Contact Name"),
+                "order": "contact_name",
+            },
+        }
+
+        sortby = self._resolve_searchbar_option(searchbar_sortings, sortby, "date")
+        order = searchbar_sortings[sortby]["order"]
+
+        if date_begin and date_end:
+            domain += [
+                ("create_date", ">", date_begin),
+                ("create_date", "<=", date_end),
+            ]
+
+        lead_count = CrmLead.search_count(domain)
+        pager = request.website.pager(
+            url="/my/leads",
+            url_args={"date_begin": date_begin, "date_end": date_end, "sortby": sortby},
+            total=lead_count,
+            page=page,
+            step=self._items_per_page,
+        )
+        leads = CrmLead.search(
+            domain, order=order, limit=self._items_per_page, offset=pager["offset"]
+        )
+
+        values.update(
+            {
+                "date": date_begin,
+                "leads": leads,
+                "page_name": "lead",
+                "default_url": "/my/leads",
+                "pager": pager,
+                "searchbar_sortings": searchbar_sortings,
+                "sortby": sortby,
+            }
+        )
+        return request.render("website_crm_partner_assign.portal_my_leads", values)
+
+    @http.route(
+        ["/my/opportunities", "/my/opportunities/page/<int:page>"],
+        type="http",
+        auth="user",
+        website=True,
+    )
+    def portal_my_opportunities(
+        self, page=1, date_begin=None, date_end=None, sortby=None, filterby=None, **kw
+    ):
+        values = self._prepare_portal_layout_values()
+        CrmLead = request.env["crm.lead"]
+        domain = self.get_domain_my_opp(request.env.user)
+
+        today = fields.Date.today()
+
+        searchbar_filters = {
+            "all": {"label": request.env._("Active"), "domain": []},
+            "no_activities": {
+                "label": request.env._("No Activities"),
+                "domain": [
+                    (
+                        "activity_ids",
+                        "not any",
+                        [("user_id", "=", request.env.user.id)],
+                    ),
+                    ("stage_id.is_won", "=", False),
+                ],
+            },
+            "overdue": {
+                "label": request.env._("Late Activities"),
+                "domain": [("activity_date_deadline", "<", today)],
+            },
+            "today": {
+                "label": request.env._("Today Activities"),
+                "domain": [("activity_date_deadline", "=", today)],
+            },
+            "future": {
+                "label": request.env._("Future Activities"),
+                "domain": [("activity_date_deadline", ">", today)],
+            },
+            "won": {
+                "label": request.env._("Won"),
+                "domain": [("won_status", "=", "won")],
+            },
+            "lost": {
+                "label": request.env._("Lost"),
+                "domain": [("won_status", "=", "lost")],
+            },
+        }
+        searchbar_sortings = {
+            "date": {"label": request.env._("Newest"), "order": "create_date desc"},
+            "name": {"label": request.env._("Name"), "order": "name"},
+            "contact_name": {
+                "label": request.env._("Contact Name"),
+                "order": "contact_name",
+            },
+            "revenue": {
+                "label": request.env._("Expected Revenue"),
+                "order": "expected_revenue desc",
+            },
+            "probability": {
+                "label": request.env._("Probability"),
+                "order": "probability desc",
+            },
+            "stage": {"label": request.env._("Stage"), "order": "stage_id"},
+        }
+
+        sortby = self._resolve_searchbar_option(searchbar_sortings, sortby, "date")
+        order = searchbar_sortings[sortby]["order"]
+        filterby = self._resolve_searchbar_option(searchbar_filters, filterby, "all")
+        domain += searchbar_filters[filterby]["domain"]
+        if filterby == "lost":
+            CrmLead = CrmLead.with_context(active_test=False)
+
+        if date_begin and date_end:
+            domain += [
+                ("create_date", ">", date_begin),
+                ("create_date", "<=", date_end),
+            ]
+        leads_sudo = CrmLead.sudo()._search(domain)
+        domain = [("id", "in", leads_sudo)]
+        opp_count = CrmLead.search_count(domain)
+        pager = request.website.pager(
+            url="/my/opportunities",
+            url_args={
+                "date_begin": date_begin,
+                "date_end": date_end,
+                "sortby": sortby,
+                "filterby": filterby,
+            },
+            total=opp_count,
+            page=page,
+            step=self._items_per_page,
+        )
+        opportunities = CrmLead.search(
+            domain, order=order, limit=self._items_per_page, offset=pager["offset"]
+        )
+
+        values.update(
+            {
+                "date": date_begin,
+                "opportunities": opportunities,
+                "page_name": "opportunity",
+                "default_url": "/my/opportunities",
+                "pager": pager,
+                "searchbar_sortings": searchbar_sortings,
+                "sortby": sortby,
+                "searchbar_filters": searchbar_filters,
+                "filterby": filterby,
+            }
+        )
+        return request.render(
+            "website_crm_partner_assign.portal_my_opportunities", values
+        )
+
+    @http.route(
+        ["""/my/lead/<model('crm.lead', "[('type','=', 'lead')]"):lead>"""],
+        type="http",
+        auth="user",
+        website=True,
+    )
+    def portal_my_lead(self, lead, **kw):
+        if lead.type != "lead":
+            _debug.logic("portal_lead_refused", reason="not_a_lead", lead=lead.id)
+            raise NotFound
+        return request.render(
+            "website_crm_partner_assign.portal_my_lead", {"lead": lead}
+        )
+
+    @http.route(
+        [
+            """/my/opportunity/<model('crm.lead', "[('type','=', 'opportunity')]"):opp>"""
+        ],
+        type="http",
+        auth="user",
+        website=True,
+    )
+    def portal_my_opportunity(self, opp, **kw):
+        if opp.type != "opportunity":
+            _debug.logic(
+                "portal_opportunity_refused", reason="not_an_opportunity", lead=opp.id
+            )
+            raise NotFound
+
+        return request.render(
+            "website_crm_partner_assign.portal_my_opportunity",
+            {
+                "opportunity": opp,
+                "user_activity": opp.sudo().activity_ids.filtered(
+                    lambda activity: activity.user_id == request.env.user
+                )[:1],
+                "stages": request.env["crm.stage"].search(
+                    [
+                        ("is_won", "!=", True),
+                        "|",
+                        ("team_ids", "=", False),
+                        ("team_ids", "in", opp.team_id.id),
+                    ],
+                    order="sequence desc, name desc, id desc",
+                ),
+                "activity_types": request.env["mail.activity.type"]
+                .sudo()
+                .search(
+                    ["|", ("res_model", "=", opp._name), ("res_model", "=", False)]
+                ),
+                "states": request.env["res.country.state"].sudo().search([]),
+                "countries": request.env["res.country"].sudo().search([]),
+            },
+        )
+
+
+class WebsiteCrmPartnerAssign(WebsitePartnerPage, GoogleMap):
+    _references_per_page = 40
+
+    def _get_gmap_domains(self, **kw):
+        if kw.get("dom", "") != "website_crm_partner_assign.partners":
+            return super()._get_gmap_domains(**kw)
+        current_grade = kw.get("current_grade")
+        current_country = kw.get("current_country")
+
+        domain = [("grade_id", "!=", False), ("is_company", "=", True)]
+        if not request.env.user.has_group("website.group_website_restricted_editor"):
+            domain += [("grade_id.website_published", "=", True)]
+
+        if current_country:
+            domain += [("country_id", "=", int(current_country))]
+
+        if current_grade:
+            domain += [("grade_id", "=", int(current_grade))]
+
+        return domain
+
+    @staticmethod
+    def sitemap_partners(env, rule, qs):
+        if not qs or qs.lower() in "/partners":
+            yield {"loc": "/partners"}
+
+        slug = env["ir.http"]._slug
+        base_partner_domain = [
+            ("is_company", "=", True),
+            ("grade_id", "!=", False),
+            ("website_published", "=", True),
+            ("grade_id.website_published", "=", True),
+            ("grade_id.active", "=", True),
+        ]
+        grades = (
+            env["res.partner"]
+            .sudo()
+            ._read_group(base_partner_domain, groupby=["grade_id"])
+        )
+        for [grade] in grades:
+            loc = "/partners/grade/%s" % slug(grade)
+            if not qs or qs.lower() in loc:
+                yield {"loc": loc}
+        country_partner_domain = base_partner_domain + [("country_id", "!=", False)]
+        countries = (
+            env["res.partner"]
+            .sudo()
+            ._read_group(country_partner_domain, groupby=["country_id"])
+        )
+        for [country] in countries:
+            loc = "/partners/country/%s" % slug(country)
+            if not qs or qs.lower() in loc:
+                yield {"loc": loc}
+
+    def _get_partners_url(self, grade, country, search, country_all, current_industry):
+        slug = request.env["ir.http"]._slug
+        if grade and not country:
+            url = "/partners/grade/" + slug(grade)
+        elif country and not grade:
+            url = "/partners/country/" + slug(country)
+        elif country and grade:
+            url = "/partners/grade/" + slug(grade) + "/country/" + slug(country)
+        else:
+            url = "/partners"
+        url_args = {}
+        if search:
+            url_args["search"] = search
+        if country_all:
+            url_args["country_all"] = True
+        if current_industry:
+            url_args["industry"] = slug(current_industry)
+        return url, url_args
+
+    def _prepare_partners_render_values(
+        self, country=None, grade=None, page=0, references_per_page=20, **post
+    ) -> dict[str, Any]:
+        country_all = post.pop("country_all", False)
+        partner_obj = request.env["res.partner"]
+        country_obj = request.env["res.country"]
+
+        industries = request.env["res.partner.industry"].sudo().search([])
+        industry_param = request.env["ir.http"]._unslug(post.pop("industry", ""))[1]
+        current_industry = industry_param in industries.ids and industries.browse(
+            int(industry_param)
+        )
+
+        search = post.get("search", "")
+
+        base_partner_domain = [
+            ("is_company", "=", True),
+            ("grade_id", "!=", False),
+            ("website_published", "=", True),
+            ("grade_id.active", "=", True),
+        ]
+        if not request.env.user.has_group("website.group_website_restricted_editor"):
+            base_partner_domain += [("grade_id.website_published", "=", True)]
+        if search:
+            base_partner_domain += Domain.OR(
+                Domain(field, "ilike", search)
+                for field in (
+                    "name",
+                    "website_description",
+                    "street",
+                    "street2",
+                    "city",
+                    "zip",
+                    "state_id",
+                    "country_id",
+                )
+            )
+
+        if not country and not country_all:
+            if request.geoip.country_code:
+                country = country_obj.search(
+                    [("code", "=", request.geoip.country_code)], limit=1
+                )
+
+        country_domain = list(base_partner_domain)
+        if grade:
+            country_domain += [("grade_id", "=", grade.id)]
+
+        country_groups = partner_obj.sudo()._read_group(
+            country_domain + [("country_id", "!=", False)],
+            ["country_id"],
+            ["__count"],
+            order="country_id",
+        )
+
+        fallback_all_countries = country and country.id not in (
+            c.id for c, __ in country_groups
+        )
+        if fallback_all_countries:
+            country = None
+
+        grade_domain = list(base_partner_domain)
+        if country:
+            grade_domain += [("country_id", "=", country.id)]
+        grade_groups = partner_obj.sudo()._read_group(
+            grade_domain, ["grade_id"], ["__count"], order="grade_id"
+        )
+        grades = [
+            {
+                "grade_id_count": sum(count for __, count in grade_groups),
+                "grade_id": (0, ""),
+                "active": grade is None,
+            }
+        ]
+        for g_grade, count in grade_groups:
+            grades.append(
+                {
+                    "grade_id_count": count,
+                    "grade_id": (g_grade.id, g_grade.display_name),
+                    "active": grade and grade.id == g_grade.id,
+                }
+            )
+
+        countries = [
+            {
+                "country_id_count": sum(count for __, count in country_groups),
+                "country_id": (0, request.env._("All Countries")),
+                "active": country is None,
+            }
+        ]
+        for g_country, count in country_groups:
+            countries.append(
+                {
+                    "country_id_count": count,
+                    "country_id": (g_country.id, g_country.display_name),
+                    "active": country and g_country.id == country.id,
+                }
+            )
+
+        if grade:
+            base_partner_domain += [("grade_id", "=", grade.id)]
+        if country:
+            base_partner_domain += [("country_id", "=", country.id)]
+        if current_industry:
+            base_partner_domain += [
+                (
+                    "implemented_partner_ids.primary_industry_id",
+                    "in",
+                    current_industry.id,
+                )
+            ]
+
+        url, url_args = self._get_partners_url(
+            grade, country, search, country_all, current_industry
+        )
+
+        partner_count = partner_obj.sudo().search_count(base_partner_domain)
+        pager = request.website.pager(
+            url=url,
+            total=partner_count,
+            page=page,
+            step=references_per_page,
+            scope=7,
+            url_args=url_args,
+        )
+
+        partner_ids = partner_obj.sudo().search(
+            base_partner_domain,
+            order="grade_sequence ASC, implemented_partner_count DESC, complete_name ASC, id ASC",
+            offset=pager["offset"],
+            limit=references_per_page,
+        )
+        partners = partner_ids.sudo()
+
+        google_maps_api_key = request.website.google_maps_api_key
+
+        return {
+            "industries": industries,
+            "current_industry": current_industry,
+            "countries": countries,
+            "country_all": country_all,
+            "current_country": country,
+            "grades": grades,
+            "current_grade": grade,
+            "partners": partners,
+            "pager": pager,
+            "searches": post,
+            "search_path": "%s" % urlencode(post),
+            "search": search,
+            "google_maps_api_key": google_maps_api_key,
+            "fallback_all_countries": fallback_all_countries,
+        }
+
+    @http.route(
+        [
+            "/partners",
+            "/partners/page/<int:page>",
+            '/partners/grade/<model("res.partner.grade"):grade>',
+            '/partners/grade/<model("res.partner.grade"):grade>/page/<int:page>',
+            '/partners/country/<model("res.country"):country>',
+            '/partners/country/<model("res.country"):country>/page/<int:page>',
+            '/partners/grade/<model("res.partner.grade"):grade>/country/<model("res.country"):country>',
+            '/partners/grade/<model("res.partner.grade"):grade>/country/<model("res.country"):country>/page/<int:page>',
+        ],
+        type="http",
+        auth="public",
+        website=True,
+        sitemap=sitemap_partners,
+        readonly=True,
+        list_as_website_content=_lt("Partners"),
+    )
+    def partners(self, country=None, grade=None, page=0, **post):
+        values = self._prepare_partners_render_values(
+            country=country,
+            grade=grade,
+            page=page,
+            references_per_page=self._references_per_page,
+            **post,
+        )
+        return request.render(
+            "website_crm_partner_assign.index",
+            values,
+            status=(values.get("partners") and 200) or 404,
+        )
+
+    @http.route()
+    def partners_detail(self, partner_id, **post):
+        current_slug = partner_id
+        _, partner_id = request.env["ir.http"]._unslug(partner_id)
+        current_grade, current_country = None, None
+        grade_id = post.get("grade_id")
+        country_id = post.get("country_id")
+        if grade_id:
+            current_grade = (
+                request.env["res.partner.grade"].browse(int(grade_id)).exists()
+            )
+        if country_id:
+            current_country = (
+                request.env["res.country"].browse(int(country_id)).exists()
+            )
+        if partner_id:
+            partner = request.env["res.partner"].sudo().browse(partner_id)
+            is_website_restricted_editor = request.env.user.has_group(
+                "website.group_website_restricted_editor"
+            )
+            if partner.exists() and (
+                partner.website_published or is_website_restricted_editor
+            ):
+                partner_slug = request.env["ir.http"]._slug(partner)
+                if partner_slug != current_slug:
+                    return request.redirect("/partners/%s" % partner_slug)
+                values = {
+                    "main_object": partner,
+                    "partner": partner,
+                    "current_grade": current_grade,
+                    "current_country": current_country,
+                }
+                return request.render("website_crm_partner_assign.partner", values)
+        raise request.prepare_not_found_error()

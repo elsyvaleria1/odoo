@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <data noupdate="1">
+        <!-- opportunities' lost causes -->
+        <record id="lost_reason_1" model="loss.reason">
+            <field name="name">Too expensive</field>
+            <field name="scope">sale</field>
+        </record>
+        <record id="lost_reason_2" model="loss.reason">
+            <field name="name">We don't have people/skills</field>
+            <field name="scope">sale</field>
+        </record>
+        <record id="lost_reason_3" model="loss.reason">
+            <field name="name">Not enough stock</field>
+            <field name="scope">sale</field>
+        </record>
+    </data>
+
+</odoo>

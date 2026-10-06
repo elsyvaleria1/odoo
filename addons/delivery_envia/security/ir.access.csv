@@ -1,0 +1,3 @@
+id,name,model_id/id,group_id/id,kind,operation,domain
+access_envia_shipping_wizard_stock,access.envia.shipping.wizard.stock,model_wizard_delivery_carrier_update_envia_service,stock.group_stock_manager,permission,crud,
+access_envia_shipping_wizard_sale,access.envia.shipping.wizard.sale,model_wizard_delivery_carrier_update_envia_service,sale.group_sale_manager,permission,crud,

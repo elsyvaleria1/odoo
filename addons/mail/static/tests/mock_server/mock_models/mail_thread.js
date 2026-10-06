@@ -1,0 +1,724 @@
+// @ts-check
+import {
+    mailDataHelpers,
+    registeredRoutes,
+} from "@mail/../tests/mock_server/mail_mock_server";
+import { parseEmail } from "@mail/utils/common/format";
+import {
+    Command,
+    getKwArgs,
+    makeKwArgs,
+    models,
+    unmakeKwArgs,
+} from "@web/../tests/web_test_helpers";
+
+export class MailThread extends models.ServerModel {
+    _name = "mixin.mail.thread";
+    // Every /mail route the client reaches a thread through travels with the
+    // model: defineModels() registers them for any helper that spreads
+    // mailModels, whether or not it went through defineMailModels().
+    static _mockRoutes = registeredRoutes;
+    _inherit = ["base"];
+
+    mail_get_reference_model_name() {
+        return this._name;
+    }
+
+    /**
+     * @param {number[]} ids
+     * @param {number} [after]
+     * @param {number} [limit=100]
+     */
+    message_get_followers(ids, after, limit) {
+        const kwargs = getKwArgs(arguments, "ids", "after", "limit");
+        ids = kwargs.ids;
+        after = kwargs.after || 0;
+        limit = kwargs.limit || 100;
+        /** @type {import("mock_models").MailThread} */
+        const MailThread = this.env["mixin.mail.thread"];
+
+        const store = new mailDataHelpers.Store();
+        MailThread._message_followers_to_store.call(this, ids, store, after, limit);
+        return store.get_result();
+    }
+
+    _message_followers_to_store(ids, store, after, limit, reset) {
+        const kwargs = getKwArgs(arguments, "ids", "store", "after", "limit", "reset");
+        ids = kwargs.ids;
+        store = kwargs.store;
+        after = kwargs.after || 0;
+        limit = kwargs.limit || 100;
+        reset = kwargs.reset || false;
+
+        /** @type {import("mock_models").MailFollowers} */
+        const MailFollowers = this.env["mail.followers"];
+
+        /** @type {import("@web/core/domain").DomainListRepr} */
+        const domain = [
+            ["res_id", "=", ids[0]],
+            ["res_model", "=", this._name],
+            ["partner_id", "!=", this.env.user.partner_id],
+        ];
+        if (after) {
+            domain.push(["id", ">", after]);
+        }
+        const followers = MailFollowers._filter(domain).sort((f1, f2) =>
+            f1.id < f2.id ? -1 : 1,
+        );
+        followers.length = Math.min(followers.length, limit);
+        store.add(
+            this.browse(ids[0]),
+            {
+                followers: mailDataHelpers.Store.many(
+                    followers,
+                    makeKwArgs({ mode: reset ? "REPLACE" : "ADD" }),
+                ),
+            },
+            makeKwArgs({ as_thread: true }),
+        );
+    }
+
+    /**
+     * @param {number[]} ids
+     * @param {...any} _args
+     */
+    message_post(ids, ..._args) {
+        const kwargs = getKwArgs(arguments, "ids", "subtype_id", "tracking_value_ids");
+        ids = kwargs.ids;
+        delete kwargs.ids;
+
+        /** @type {import("mock_models").IrAttachment} */
+        const IrAttachment = this.env["ir.attachment"];
+        /** @type {import("mock_models").MailGuest} */
+        const MailGuest = this.env["mail.guest"];
+        /** @type {import("mock_models").MailMessage} */
+        const MailMessage = this.env["mail.message"];
+        /** @type {import("mock_models").MailNotification} */
+        const MailNotification = this.env["mail.notification"];
+        /** @type {import("mock_models").MailThread} */
+        const MailThread = this.env["mixin.mail.thread"];
+        /** @type {import("mock_models").ResUsers} */
+        const ResUsers = this.env["res.users"];
+        /** @type {import("mock_models").MailMessageSubtype} */
+        const MailMessageSubtype = this.env["mail.message.subtype"];
+
+        const id = ids[0];
+        if (kwargs.context?.mail_post_autofollow && kwargs.partner_ids?.length) {
+            MailThread.message_subscribe.call(this, ids, kwargs.partner_ids, []);
+        }
+        if (kwargs.attachment_ids) {
+            const attachments = IrAttachment._filter([
+                ["id", "in", kwargs.attachment_ids],
+                ["res_model", "=", "wizard.mail.message.send"],
+                ["res_id", "=", false],
+            ]);
+            const attachmentIds = attachments.map((attachment) => attachment.id);
+            IrAttachment.write(attachmentIds, {
+                res_id: id,
+                res_model: this._name,
+            });
+            kwargs.attachment_ids = attachmentIds.map((attachmentId) =>
+                Command.link(attachmentId),
+            );
+        }
+        let author_id;
+        let email_from;
+        const author_guest_id =
+            ResUsers._is_public(this.env.uid) &&
+            MailGuest._get_guest_from_context()?.id;
+        if (!author_guest_id) {
+            [author_id, email_from] = MailThread._message_compute_author.call(
+                this,
+                kwargs.author_id,
+                kwargs.email_from,
+            );
+        }
+        email_from ||= false;
+        const message_type = kwargs.message_type || "notification";
+        const values = unmakeKwArgs({
+            ...kwargs,
+            author_id,
+            author_guest_id,
+            email_from,
+            message_type,
+            subtype_id: MailMessageSubtype._filter([
+                ["subtype_xmlid", "=", kwargs.subtype_xmlid || "mail.mt_note"],
+            ])[0]?.id,
+            model: this._name,
+            res_id: id,
+        });
+        delete values.context;
+        Reflect.deleteProperty(values, "subtype_xmlid");
+        const messageId = /** @type {number} */ (MailMessage.create(values));
+        for (const partnerId of kwargs.partner_ids || []) {
+            /** @type {number} */ (
+                MailNotification.create({
+                    mail_message_id: messageId,
+                    notification_type: "inbox",
+                    res_partner_id: partnerId,
+                })
+            );
+        }
+        MailThread._notify_thread.call(
+            this,
+            ids,
+            messageId,
+            kwargs.context?.temporary_id,
+        );
+        return [messageId];
+    }
+
+    /**
+     * @param {number[]} ids
+     * @param {number[]} partner_ids
+     * @param {number[]} subtype_ids
+     */
+    message_subscribe(ids, partner_ids, subtype_ids) {
+        const kwargs = getKwArgs(arguments, "ids", "partner_ids", "subtype_ids");
+        ids = kwargs.ids;
+        delete kwargs.ids;
+        partner_ids = kwargs.partner_ids || [];
+        subtype_ids = kwargs.subtype_ids || [];
+
+        /** @type {import("mock_models").MailFollowers} */
+        const MailFollowers = this.env["mail.followers"];
+        /** @type {import("mock_models").MailMessageSubtype} */
+        const MailMessageSubtype = this.env["mail.message.subtype"];
+
+        for (const id of ids) {
+            for (const partner_id of partner_ids) {
+                let followerId = MailFollowers.search([
+                    ["partner_id", "=", partner_id],
+                ])[0];
+                if (!followerId) {
+                    if (!subtype_ids?.length) {
+                        subtype_ids = MailMessageSubtype.search([
+                            ["default", "=", true],
+                            "|",
+                            ["res_model", "=", this._name],
+                            ["res_model", "=", false],
+                        ]);
+                    }
+                    followerId = /** @type {number} */ (
+                        MailFollowers.create({
+                            is_active: true,
+                            partner_id,
+                            res_id: id,
+                            res_model: this._name,
+                            subtype_ids: subtype_ids,
+                        })
+                    );
+                }
+                this.env[this._name].write(ids, {
+                    message_follower_ids: [Command.link(followerId)],
+                });
+            }
+        }
+    }
+
+    /**
+     * @param {number[]} ids
+     * @param {number[]} partner_ids
+     */
+    message_unsubscribe(ids, partner_ids) {
+        const kwargs = getKwArgs(arguments, "ids", "partner_ids");
+        ids = kwargs.ids;
+        delete kwargs.ids;
+        partner_ids = kwargs.partner_ids || [];
+
+        /** @type {import("mock_models").MailFollowers} */
+        const MailFollowers = this.env["mail.followers"];
+
+        if (!partner_ids.length) {
+            return true;
+        }
+        const followers = MailFollowers.search([
+            ["res_model", "=", this._name],
+            ["res_id", "in", ids],
+            ["partner_id", "in", partner_ids],
+        ]);
+        MailFollowers.unlink(followers);
+    }
+
+    /** @param {string} notification_type */
+    notify_cancel_by_type(notification_type) {
+        const kwargs = getKwArgs(arguments, "notification_type");
+        notification_type = kwargs.notification_type;
+
+        /** @type {import("mock_models").BusBus} */
+        const BusBus = this.env["bus.bus"];
+        /** @type {import("mock_models").MailMessage} */
+        const MailMessage = this.env["mail.message"];
+        /** @type {import("mock_models").MailNotification} */
+        const MailNotification = this.env["mail.notification"];
+        /** @type {import("mock_models").ResPartner} */
+        const ResPartner = this.env["res.partner"];
+
+        const notifications = MailNotification._filter([
+            ["notification_type", "=", notification_type],
+            ["notification_status", "in", ["bounce", "exception"]],
+        ]).filter((notification) => {
+            const [message] = MailMessage.browse(notification.mail_message_id);
+            return (
+                message.model === this._name &&
+                message.author_id === this.env.user.partner_id
+            );
+        });
+        MailNotification.write(
+            notifications.map((notification) => notification.id),
+            { notification_status: "canceled" },
+        );
+        const [partner] = ResPartner.read(this.env.user.partner_id);
+        const store = new mailDataHelpers.Store();
+        MailMessage._message_notifications_to_store(
+            notifications.map((notification) => notification.mail_message_id),
+            store,
+        );
+        BusBus._sendone(partner, "mail.record/insert", store.get_result());
+    }
+
+    /**
+     * @param {number} id
+     * @param {Object} result
+     * @param {Object} [partner]
+     * @param {string} [email]
+     * @param {string} [lang]
+     * @param {string} [reason]
+     * @param {string} [name]
+     */
+    _message_add_suggested_recipient(
+        id,
+        result,
+        partner,
+        email,
+        lang,
+        reason = "",
+        name,
+    ) {
+        const kwargs = getKwArgs(
+            arguments,
+            "id",
+            "result",
+            "partner",
+            "email",
+            "lang",
+            "reason",
+            "name",
+        );
+        id = kwargs.id;
+        delete kwargs.id;
+        result = kwargs.result;
+        partner = kwargs.partner;
+        email = kwargs.email;
+        lang = kwargs.lang;
+        reason = kwargs.reason;
+        name = kwargs.name;
+
+        /** @type {import("mock_models").ResPartner} */
+        const ResPartner = this.env["res.partner"];
+
+        if (email !== undefined && partner === undefined) {
+            const partnerInfo = parseEmail(email);
+            partner = ResPartner._filter([["email", "=", partnerInfo[1]]])[0];
+        }
+        if (partner) {
+            result.push({
+                partner_id: partner.id,
+                name: partner.display_name,
+                email: partner.email,
+                lang,
+                reason,
+                create_values: {},
+            });
+        } else {
+            const partnerCreateValues = this._mail_get_customer_information(id);
+            result.push({
+                email,
+                name,
+                lang,
+                reason,
+                create_values: partnerCreateValues,
+            });
+        }
+        return result;
+    }
+
+    _mail_get_customer_information(id) {
+        return {};
+    }
+
+    /**
+     * @param {number} [author_id]
+     * @param {string} [email_from]
+     */
+    _message_compute_author(author_id, email_from) {
+        const kwargs = getKwArgs(arguments, "author_id", "email_from");
+        author_id = kwargs.author_id;
+        email_from = kwargs.email_from;
+
+        /** @type {import("mock_models").ResPartner} */
+        const ResPartner = this.env["res.partner"];
+
+        if (!author_id) {
+            const [author] = ResPartner.browse(this.env.user.partner_id);
+            author_id = author.id;
+            email_from = `${author.display_name} <${author.email}>`;
+        }
+        if (!email_from && author_id) {
+            const [author] = ResPartner.browse(author_id);
+            email_from = `${author.display_name} <${author.email}>`;
+        }
+        if (email_from === undefined) {
+            if (author_id) {
+                const [author] = ResPartner.browse(author_id);
+                email_from = `${author.display_name} <${author.email}>`;
+            }
+        }
+        if (!email_from) {
+            throw Error("Unable to log message due to missing author email.");
+        }
+        return [author_id, email_from];
+    }
+
+    /** @param {number[]} ids */
+    _message_compute_subject(ids) {
+        const records = this.browse(ids);
+        return new Map(records.map((record) => [record.id, record.name || ""]));
+    }
+
+    /** @param {number[]} ids */
+    _message_get_suggested_recipients(
+        ids,
+        additional_partners = [],
+        primary_email = false,
+    ) {
+        /** @type {import("mock_models").MailThread} */
+        const MailThread = this.env["mixin.mail.thread"];
+        /** @type {import("mock_models").ResFake} */
+        const ResFake = this.env["res.fake"];
+        /** @type {import("mock_models").ResPartner} */
+        const ResPartner = this.env["res.partner"];
+        /** @type {import("mock_models").ResUsers} */
+        const ResUsers = this.env["res.users"];
+
+        if (this._name === "res.fake") {
+            return ResFake._message_get_suggested_recipients(
+                ids,
+                additional_partners,
+                primary_email,
+            );
+        }
+        const result = [];
+        const model = this.env[this._name];
+        for (const record of model.browse(ids)) {
+            if (record.user_id) {
+                const [user] = ResUsers.browse(record.user_id);
+                if (user.partner_id) {
+                    const reason = model._fields["user_id"].string;
+                    const [partner] = ResPartner.browse(user.partner_id);
+                    MailThread._message_add_suggested_recipient.call(
+                        this,
+                        record.id,
+                        result,
+                        makeKwArgs({ email: partner.email, partner, reason }),
+                    );
+                }
+            }
+        }
+        return result;
+    }
+
+    /**
+     * @param {number[]} ids
+     * @param {number} message_id
+     * @param {number} [temporary_id]
+     */
+    _notify_thread(ids, message_id, temporary_id) {
+        const kwargs = getKwArgs(arguments, "ids", "message_id", "temporary_id");
+        ids = kwargs.ids;
+        delete kwargs.ids;
+        message_id = kwargs.message_id;
+        temporary_id = kwargs.temporary_id;
+
+        /** @type {import("mock_models").BusBus} */
+        const BusBus = this.env["bus.bus"];
+        /** @type {import("mock_models").DiscussChannel} */
+        const DiscussChannel = this.env["discuss.channel"];
+        /** @type {import("mock_models").MailMessage} */
+        const MailMessage = this.env["mail.message"];
+        /** @type {import("mock_models").ResPartner} */
+        const ResPartner = this.env["res.partner"];
+        /** @type {import("mock_models").ResUsers} */
+        const ResUsers = this.env["res.users"];
+
+        const [message] = MailMessage.browse(message_id);
+        /** @type {[any, string, any][]} */
+        const notifications = [];
+        if (this._name === "discuss.channel") {
+            const channels = DiscussChannel.browse(message.res_id);
+            for (const channel of channels) {
+                notifications.push([
+                    channel,
+                    "discuss.channel/new_message",
+                    {
+                        data: new mailDataHelpers.Store(MailMessage.browse(message_id))
+                            .add(DiscussChannel.browse(channel.id), [
+                                "last_interest_dt",
+                            ])
+                            .get_result(),
+                        id: channel.id,
+                        message_id: message.id,
+                        temporary_id,
+                    },
+                ]);
+                const memberOfCurrentUser =
+                    DiscussChannel._get_or_create_member_for_self(ids[0]);
+                if (memberOfCurrentUser) {
+                    this.env["discuss.channel.member"]._set_last_seen_message(
+                        [memberOfCurrentUser.id],
+                        message.id,
+                        false,
+                    );
+                    this.env["discuss.channel.member"]._update_new_message_separator(
+                        [memberOfCurrentUser.id],
+                        message.id + 1,
+                        true,
+                    );
+                }
+            }
+        }
+        if (message.partner_ids) {
+            for (const partner_id of message.partner_ids) {
+                const [partner] = ResPartner.search_read([["id", "=", partner_id]]);
+                if (partner.user_ids.length > 0) {
+                    const [user] = ResUsers.search_read([
+                        ["id", "=", partner.user_ids[0]],
+                    ]);
+                    if (user.notification_type === "inbox") {
+                        notifications.push([
+                            partner,
+                            "mail.message/needaction",
+                            {
+                                message_id: message.id,
+                                needaction_delta:
+                                    message.model === "discuss.channel" ? 0 : 1,
+                                store_data: new mailDataHelpers.Store(
+                                    MailMessage.browse(message.id),
+                                    makeKwArgs({
+                                        for_current_user: true,
+                                        add_followers: true,
+                                    }),
+                                ).get_result(),
+                            },
+                        ]);
+                    }
+                }
+            }
+        }
+        BusBus._sendmany(notifications);
+    }
+
+    /**
+     * @param {string[]} fields_iter
+     * @param {Object} initial_values_dict
+     */
+    _message_track(fields_iter, initial_values_dict) {
+        const kwargs = getKwArgs(arguments, "fields_iter", "initial_values_dict");
+        fields_iter = kwargs.fields_iter;
+        initial_values_dict = kwargs.initial_values_dict;
+
+        /** @type {import("mock_models").Base} */
+        const Base = this.env["base"];
+        /** @type {import("mock_models").MailThread} */
+        const MailThread = this.env["mixin.mail.thread"];
+
+        const trackFieldNamesToField = this.env[this._name].fields_get(fields_iter);
+        const tracking = {};
+        const model = this.env[this._name];
+        for (const record of model) {
+            tracking[record.id] = Base._mail_track.call(
+                this,
+                trackFieldNamesToField,
+                initial_values_dict[record.id],
+                record,
+            );
+        }
+        for (const record of model) {
+            const { trackingValueIds, changedFieldNames } = tracking[record.id] || {};
+            if (!changedFieldNames || !changedFieldNames.length) {
+                continue;
+            }
+            const changedFieldsInitialValues = {};
+            const initialFieldValues = initial_values_dict[record.id];
+            for (const fname in changedFieldNames) {
+                changedFieldsInitialValues[fname] = initialFieldValues[fname];
+            }
+            const subtype = MailThread._track_subtype.call(
+                this,
+                changedFieldsInitialValues,
+            );
+            MailThread.message_post.call(
+                this,
+                [record.id],
+                subtype && subtype.id,
+                trackingValueIds,
+            );
+        }
+        return tracking;
+    }
+
+    /** @param {Object} initial_values */
+    _track_finalize(initial_values) {
+        const kwargs = getKwArgs(arguments, "initial_values");
+        initial_values = kwargs.initial_values;
+
+        /** @type {import("mock_models").MailThread} */
+        const MailThread = this.env["mixin.mail.thread"];
+
+        MailThread._message_track.call(
+            this,
+            MailThread._track_get_fields.call(this),
+            initial_values,
+        );
+    }
+
+    _track_get_fields() {
+        return Object.entries(this.env[this._name]._fields).reduce((prev, next) => {
+            if (next[1].tracking) {
+                prev.push(next[0]);
+            }
+            return prev;
+        }, []);
+    }
+
+    _track_prepare() {
+        /** @type {import("mock_models").MailThread} */
+        const MailThread = this.env["mixin.mail.thread"];
+
+        const trackedFieldNames = MailThread._track_get_fields.call(this);
+        if (!trackedFieldNames.length) {
+            return;
+        }
+        const initialTrackedFieldValuesByRecordId = {};
+        for (const record of this.env[this._name]) {
+            const values = {};
+            initialTrackedFieldValuesByRecordId[record.id] = values;
+            for (const fname of trackedFieldNames) {
+                values[fname] = record[fname];
+            }
+        }
+        return initialTrackedFieldValuesByRecordId;
+    }
+
+    /**
+     * @param {Object} initial_values
+     * @returns {false | {id: number}}
+     */
+    _track_subtype(initial_values) {
+        return false;
+    }
+
+    _thread_to_store(store, fields, request_list) {
+        const kwargs = getKwArgs(arguments, "store", "fields", "request_list");
+        store = kwargs.store;
+        fields = kwargs.fields;
+        request_list = kwargs.request_list || [];
+
+        /** @type {import("mock_models").IrAttachment} */
+        const IrAttachment = this.env["ir.attachment"];
+        /** @type {import("mock_models").MailActivity} */
+        const MailActivity = this.env["mail.activity"];
+        /** @type {import("mock_models").MailFollowers} */
+        const MailFollowers = this.env["mail.followers"];
+        /** @type {import("mock_models").MailThread} */
+        const MailThread = this.env["mixin.mail.thread"];
+        /** @type {import("mock_models").MailScheduledMessage} */
+        const MailScheduledMessage = this.env["mail.scheduled.message"];
+
+        const is_request =
+            kwargs.request_list !== undefined && kwargs.request_list !== null;
+        if (!fields) {
+            fields = [];
+        }
+        const thread = this[0];
+        store._add_record_fields(this.env[this._name].browse(thread.id), fields, true);
+        const res = {};
+        if (is_request) {
+            res.hasReadAccess = true;
+            res.hasWriteAccess = thread.hasWriteAccess ?? true;
+            res["canPostOnReadonly"] = this._mail_post_access === "read";
+        }
+        const model = this.env[this._name];
+
+        if (request_list.includes("activities") && model.has_activities) {
+            res["activities"] = mailDataHelpers.Store.many(
+                MailActivity._filter([["id", "in", thread.activity_ids]]),
+            );
+        }
+        if (request_list.includes("attachments")) {
+            res["attachments"] = mailDataHelpers.Store.many(
+                IrAttachment._filter([
+                    ["res_id", "=", thread.id],
+                    ["res_model", "=", this._name],
+                ]).sort((a1, a2) => a1.id - a2.id),
+            );
+            res["areAttachmentsLoaded"] = true;
+            res["isLoadingAttachments"] = false;
+            if (this.env[this._name]._fields.message_main_attachment_id) {
+                res["message_main_attachment_id"] = mailDataHelpers.Store.one(
+                    IrAttachment.browse(thread.message_main_attachment_id),
+                    makeKwArgs({ only_id: true }),
+                );
+            }
+        }
+        if (request_list.includes("contact_fields")) {
+            res.primary_email_field = this.env[this._name]._primary_email;
+            res.partner_fields = this.env[this._name]._mail_get_partner_fields?.();
+        }
+        if (request_list.includes("display_name")) {
+            res.display_name = thread.display_name;
+        }
+        if (fields.includes("display_name")) {
+            res.name = thread.display_name ?? thread.name;
+        }
+        if (request_list.includes("followers")) {
+            res["followersCount"] = this.env["mail.followers"].search_count([
+                ["res_id", "=", thread.id],
+                ["res_model", "=", this._name],
+            ]);
+            res["selfFollower"] = mailDataHelpers.Store.one(
+                MailFollowers.browse(
+                    MailFollowers.search([
+                        ["res_id", "=", thread.id],
+                        ["res_model", "=", this._name],
+                        ["partner_id", "=", this.env.user.partner_id],
+                    ]),
+                ),
+            );
+            MailThread._message_followers_to_store.call(
+                this,
+                [thread.id],
+                store,
+                makeKwArgs({ reset: true }),
+            );
+        }
+        if (fields.includes("modelName")) {
+            res.modelName = this._description;
+        }
+        if (request_list.includes("suggestedRecipients")) {
+            res["suggestedRecipients"] =
+                MailThread._message_get_suggested_recipients.call(this, [
+                    Number(thread.id),
+                ]);
+        }
+        if (request_list.includes("scheduledMessages")) {
+            res["scheduledMessages"] = mailDataHelpers.Store.many(
+                MailScheduledMessage.filter(
+                    (message) =>
+                        message.model === this._name && message.res_id === thread.id,
+                ),
+            );
+        }
+        store._add_record_fields(this.env[this._name].browse(thread.id), res, true);
+    }
+}

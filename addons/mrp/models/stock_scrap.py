@@ -1,0 +1,145 @@
+from odoo import api, fields, models
+from odoo.libs.debug_log import DebugLog
+
+_debug = DebugLog(__name__)
+
+
+class StockScrap(models.Model):
+    _inherit = "stock.scrap"
+
+    production_id = fields.Many2one(
+        comodel_name="mrp.production",
+        string="Manufacturing Order",
+        index="btree_not_null",
+        check_company=True,
+    )
+    workorder_id = fields.Many2one(
+        comodel_name="mrp.workorder",
+        string="Work Order",
+        index="btree_not_null",
+        check_company=True,
+    )
+    product_is_kit = fields.Boolean(compute="_compute_product_is_kit")
+    product_template = fields.Many2one(related="product_id.product_tmpl_id")
+    bom_id = fields.Many2one(
+        comodel_name="mrp.bom",
+        string="Kit",
+        domain="[('type', '=', 'phantom'), '|', ('product_id', '=', product_id), '&', ('product_id', '=', False), ('product_tmpl_id', '=', product_template)]",
+        check_company=True,
+    )
+
+    @api.depends("workorder_id", "production_id")
+    def _compute_location_id(self):
+        remaining_scrap = self.browse()
+
+        for scrap in self:
+            if scrap.production_id:
+                if scrap.production_id.state != "done":
+                    scrap.location_id = scrap.production_id.location_src_id.id
+                else:
+                    scrap.location_id = scrap.production_id.location_dest_id.id
+            elif scrap.workorder_id:
+                scrap.location_id = scrap.workorder_id.production_id.location_src_id.id
+            else:
+                remaining_scrap |= scrap
+
+        return super(StockScrap, remaining_scrap)._compute_location_id()
+
+    def _prepare_move_values(self):
+        vals = super()._prepare_move_values()
+        if self.production_id:
+            vals["origin"] = vals["origin"] or self.production_id.name
+            if self.product_id in self.production_id.move_finished_ids.mapped(
+                "product_id"
+            ):
+                vals.update({"production_id": self.production_id.id})
+            else:
+                vals.update({"raw_material_production_id": self.production_id.id})
+        return vals
+
+    @api.onchange("trace_id")
+    def _onchange_serial_number(self):
+        if self.product_id.tracking == "serial" and self.trace_id:
+            if self.production_id:
+                message, recommended_location = (
+                    self.env["stock.quant"]
+                    .sudo()
+                    ._get_serial_number_warning(
+                        self.product_id,
+                        self.trace_id,
+                        self.company_id,
+                        self.location_id,
+                        self.production_id.location_dest_id,
+                    )
+                )
+                if message:
+                    if recommended_location:
+                        self.location_id = recommended_location
+                    return {
+                        "warning": {"title": self.env._("Warning"), "message": message}
+                    }
+            else:
+                return super()._onchange_serial_number()
+        return None
+
+    @api.onchange("product_id")
+    def _onchange_product_id(self):
+        if self.product_is_kit:
+            self.bom_id = self.env["mrp.bom"]._get_bom_by_product(
+                self.product_id, company_id=self.company_id.id, bom_type="phantom"
+            )[self.product_id]
+        else:
+            self.bom_id = False
+
+    @api.depends("product_id", "company_id")
+    def _compute_product_is_kit(self) -> None:
+        for scrap in self:
+            scrap.product_is_kit = scrap.product_id.with_company(
+                scrap.company_id
+            ).is_kit
+
+    @api.depends("move_ids", "move_ids.move_line_ids.quantity", "product_id")
+    def _compute_scrap_qty(self) -> None:
+        kit_scraps = self.filtered("bom_id")
+        super(StockScrap, self - kit_scraps)._compute_scrap_qty()
+        filters = {
+            "incoming_moves": lambda m: True,
+            "outgoing_moves": lambda m: False,
+        }
+        for scrap in kit_scraps:
+            if not scrap.move_ids:
+                scrap.scrap_qty = 1
+                continue
+            bom = scrap.bom_id
+            kits = scrap.move_ids._get_kit_quantity(
+                scrap.product_id, bom.product_qty, bom, filters
+            )
+            scrap.scrap_qty = bom.product_uom_id._get_quantity_stored(
+                kits, scrap.product_uom_id
+            )
+
+    def _is_available_qty_check_required(self) -> bool:
+        return bool(super()._is_available_qty_check_required() or self.product_is_kit)
+
+    def _create_scrap_move(self):
+        move = super()._create_scrap_move()
+        if self.product_is_kit:
+            move = move.with_context(is_scrap=True).action_explode()
+        return move
+
+    def _replenish_scrapped_quantity(self, values=False) -> None:
+        self.check_singleton()
+        values = values or {}
+        _debug.pipeline(
+            "scrap_replenished",
+            scrap=self.id,
+            production=self.production_id,
+            grouped=bool(self.production_id.production_group_id),
+        )
+        if self.production_id and self.production_id.production_group_id:
+            values.update(
+                {
+                    "production_group_id": self.production_id.production_group_id.id,
+                }
+            )
+        super()._replenish_scrapped_quantity(values)

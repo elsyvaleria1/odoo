@@ -1,0 +1,538 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <data noupdate="1">
+        <!-- 360 Feedback -->
+        <record id="appraisal_360_feedback_template" model="survey.survey">
+            <field name="survey_type">appraisal</field>
+            <field name="title">360 Feedback</field>
+            <field name="user_id" ref="base.user_admin" />
+            <field name="access_mode">token</field>
+            <field name="is_attempts_limited" eval="True" />
+            <field name="users_can_go_back" eval="True" />
+            <field name="description" type="html">
+                <p>Welcome to this survey, <br /><br />
+                    You've been asked to participate to a 360 Feedback. It's a small survey that will allow managers to get more feedback about their employee.
+                    By working with them, you're the best to share your thoughts and explain how your collaboration was.<br /><br />
+                    Your answers will be viewed only by the managers. This is not an anonymous survey.</p>
+            </field>
+            <field name="description_done" type="html">
+                <p>Thanks a lot for your time and participation !</p>
+            </field>
+            <field name="lang_ids" eval="False" />
+        </record>
+        <record id="appraisal_360_1" model="survey.question">
+            <field name="title">About you</field>
+            <field name="survey_id" ref="appraisal_360_feedback_template" />
+            <field name="is_page" eval="True" />
+            <field name="question_type" eval="False" />
+            <field name="sequence">1</field>
+            <field name="description" type="html"><p> </p></field>
+        </record>
+        <record id="appraisal_360_2" model="survey.question">
+            <field name="survey_id" ref="appraisal_360_feedback_template" />
+            <field name="sequence">2</field>
+            <field name="title">What's your name?</field>
+            <field name="question_type">char_box</field>
+            <field name="constr_mandatory" eval="True" />
+        </record>
+        <record id="appraisal_360_3" model="survey.question">
+            <field name="survey_id" ref="appraisal_360_feedback_template" />
+            <field name="sequence">3</field>
+            <field
+                name="title">What's the relation between the employee and you?</field>
+            <field name="question_type">simple_choice</field>
+            <field name="constr_mandatory" eval="True" />
+        </record>
+        <record id="appraisal_360_3_sug1" model="survey.question.answer">
+            <field name="question_id" ref="appraisal_360_3" />
+            <field name="sequence">1</field>
+            <field name="value">We're colleagues, for the same manager.</field>
+        </record>
+        <record id="appraisal_360_3_sug2" model="survey.question.answer">
+            <field name="question_id" ref="appraisal_360_3" />
+            <field name="sequence">2</field>
+            <field name="value">We're colleagues, in different teams.</field>
+        </record>
+        <record id="appraisal_360_3_sug3" model="survey.question.answer">
+            <field name="question_id" ref="appraisal_360_3" />
+            <field name="sequence">3</field>
+            <field name="value">I manage them.</field>
+        </record>
+        <record id="appraisal_360_3_sug4" model="survey.question.answer">
+            <field name="question_id" ref="appraisal_360_3" />
+            <field name="sequence">4</field>
+            <field name="value">They report to me.</field>
+        </record>
+        <record id="appraisal_360_3_sug5" model="survey.question.answer">
+            <field name="question_id" ref="appraisal_360_3" />
+            <field name="sequence">5</field>
+            <field name="value">I'm not from the company.</field>
+        </record>
+        <record id="appraisal_360_4" model="survey.question">
+            <field name="title">About us</field>
+            <field name="survey_id" ref="appraisal_360_feedback_template" />
+            <field name="is_page" eval="True" />
+            <field name="question_type" eval="False" />
+            <field name="sequence">4</field>
+            <field name="description" type="html"><p> </p></field>
+        </record>
+        <record id="appraisal_360_5" model="survey.question">
+            <field name="survey_id" ref="appraisal_360_feedback_template" />
+            <field name="sequence">5</field>
+            <field
+                name="title">How does it feel to work with the employee? Are they ... </field>
+            <field name="question_type">matrix</field>
+            <field name="matrix_subtype">simple</field>
+        </record>
+        <record id="x_360_5_1" model="survey.question.answer">
+            <field name="question_id" ref="appraisal_360_5" />
+            <field name="sequence">1</field>
+            <field name="value">Never</field>
+        </record>
+        <record id="x_360_5_2" model="survey.question.answer">
+            <field name="question_id" ref="appraisal_360_5" />
+            <field name="sequence">2</field>
+            <field name="value">Rarely</field>
+        </record>
+        <record id="x_360_5_3" model="survey.question.answer">
+            <field name="question_id" ref="appraisal_360_5" />
+            <field name="sequence">3</field>
+            <field name="value">Sometimes</field>
+        </record>
+        <record id="x_360_5_4" model="survey.question.answer">
+            <field name="question_id" ref="appraisal_360_5" />
+            <field name="sequence">4</field>
+            <field name="value">Often</field>
+        </record>
+        <record id="x_360_5_5" model="survey.question.answer">
+            <field name="question_id" ref="appraisal_360_5" />
+            <field name="sequence">5</field>
+            <field name="value">Almost always</field>
+        </record>
+        <record id="y_360_5_1" model="survey.question.answer">
+            <field name="matrix_question_id" ref="appraisal_360_5" />
+            <field name="sequence">1</field>
+            <field name="value">Listening well to others</field>
+        </record>
+        <record id="y_360_5_2" model="survey.question.answer">
+            <field name="matrix_question_id" ref="appraisal_360_5" />
+            <field name="sequence">2</field>
+            <field
+                name="value">Create space for different ideas and options to be voiced</field>
+        </record>
+        <record id="y_360_5_3" model="survey.question.answer">
+            <field name="matrix_question_id" ref="appraisal_360_5" />
+            <field name="sequence">3</field>
+            <field
+                name="value">Collaborate effectively with others to achieve shared goals</field>
+        </record>
+        <record id="y_360_5_4" model="survey.question.answer">
+            <field name="matrix_question_id" ref="appraisal_360_5" />
+            <field name="sequence">4</field>
+            <field name="value">Show good judgment in decision making</field>
+        </record>
+        <record id="y_360_5_5" model="survey.question.answer">
+            <field name="matrix_question_id" ref="appraisal_360_5" />
+            <field name="sequence">5</field>
+            <field
+                name="value">Seek to understand the problem before working on a solution</field>
+        </record>
+        <record id="y_360_5_6" model="survey.question.answer">
+            <field name="matrix_question_id" ref="appraisal_360_5" />
+            <field name="sequence">6</field>
+            <field name="value">Admit their mistakes</field>
+        </record>
+        <record id="y_360_5_7" model="survey.question.answer">
+            <field name="matrix_question_id" ref="appraisal_360_5" />
+            <field name="sequence">7</field>
+            <field
+                name="value">Recognize the contributions of teammates and peers</field>
+        </record>
+        <record id="appraisal_360_6" model="survey.question">
+            <field name="survey_id" ref="appraisal_360_feedback_template" />
+            <field name="sequence">6</field>
+            <field
+                name="title">What should they do in order to improve on their day-to-day job?</field>
+            <field name="question_type">char_box</field>
+            <field name="constr_mandatory" eval="True" />
+        </record>
+        <record id="appraisal_360_7" model="survey.question">
+            <field name="survey_id" ref="appraisal_360_feedback_template" />
+            <field name="sequence">7</field>
+            <field name="title">What's their greatest strength?</field>
+            <field name="question_type">text_box</field>
+            <field name="constr_mandatory" eval="True" />
+        </record>
+        <record id="appraisal_360_8" model="survey.question">
+            <field name="survey_id" ref="appraisal_360_feedback_template" />
+            <field name="sequence">8</field>
+            <field name="title">What's their greatest weakness?</field>
+            <field name="question_type">text_box</field>
+            <field name="constr_mandatory" eval="True" />
+        </record>
+        <record id="appraisal_360_9" model="survey.question">
+            <field name="title">Conclusion</field>
+            <field name="survey_id" ref="appraisal_360_feedback_template" />
+            <field name="is_page" eval="True" />
+            <field name="question_type" eval="False" />
+            <field name="sequence">9</field>
+            <field name="description" type="html"><p> </p></field>
+        </record>
+        <record id="appraisal_360_10" model="survey.question">
+            <field name="survey_id" ref="appraisal_360_feedback_template" />
+            <field name="sequence">10</field>
+            <field
+                name="title">Do you have any comment to tell them in order to improve?</field>
+            <field name="question_type">text_box</field>
+        </record>
+        <!-- appraisal form -->
+        <record id="appraisal_feedback_template" model="survey.survey">
+            <field name="survey_type">appraisal</field>
+            <field name="title">Employee Appraisal Form</field>
+            <field name="user_id" ref="base.user_admin" />
+            <field name="access_mode">token</field>
+            <field name="is_attempts_limited" eval="True" />
+            <field name="users_can_go_back" eval="True" />
+            <field name="description" type="html">
+                <p>This survey allows you to give a feedback about your collaboration with an employee. Filling it helps us improve the appraisal process.</p>
+            </field>
+            <field name="lang_ids" eval="False" />
+        </record>
+        <!-- Page 1 -->
+        <record id="appraisal_1" model="survey.question">
+            <field name="title">Introduction</field>
+            <field name="survey_id" ref="appraisal_feedback_template" />
+            <field name="is_page" eval="True" />
+            <field name="question_type" eval="False" />
+            <field name="sequence">1</field>
+            <field name="description" type="html">
+                <h2>Overall Purpose Of Employee Appraisal</h2>
+                <ul>
+                    <li>To initiate a clear and open communication of performance expectations</li>
+                    <li>To assist employees in their professional growth, through the identification of strengths and opportunities for development</li>
+                </ul>
+
+                <h2>At the outset of the appraisal time period</h2>
+                <ul>
+                    <li>It is the joint responsibility of the employee and the supervisor (appraiser) to establish a feasible work plan for the coming year, including major employee responsibilities and corresponding benchmarks against which results will be evaluated.</li>
+                    <li>Critical or key elements of performance and professional development needs (if any), should also be noted at this time</li>
+                </ul>
+
+                <h2>At the conclusion of the appraisal time period</h2>
+                <ul>
+                    <li>The employee will be responsible for completing a draft of the Appraisal Form as a tool for self-appraisal and a starting point for the supervisor’s evaluation. The employee can add examples of achievements for each criterion. Once the form has been filled in, the employee sends it to their supervisor.</li>
+                    <li>It is the primary responsibility of the supervisor to gather the necessary input from the appropriate sources of feedback (internal and/or external customers, peers).</li>
+                    <li>The supervisor synthesizes and integrates all input into the completed appraisal. The motivation of the evaluation is explained in the ad hoc fields.</li>
+                    <li>The employee may choose to offer comments or explanation regarding the completed review.</li>
+                </ul>
+            </field>
+        </record>
+        <record id="appraisal_1_1" model="survey.question">
+            <field name="survey_id" ref="appraisal_feedback_template" />
+            <field name="sequence">2</field>
+            <field name="title">Name</field>
+            <field name="question_type">text_box</field>
+            <field name="constr_mandatory" eval="True" />
+        </record>
+        <record id="appraisal_1_2" model="survey.question">
+            <field name="survey_id" ref="appraisal_feedback_template" />
+            <field name="sequence">3</field>
+            <field name="title">Position Title</field>
+            <field name="question_type">text_box</field>
+            <field name="constr_mandatory" eval="True" />
+        </record>
+        <record id="appraisal_1_3" model="survey.question">
+            <field name="survey_id" ref="appraisal_feedback_template" />
+            <field name="sequence">4</field>
+            <field name="title">Appraisal for Period</field>
+            <field name="question_type">text_box</field>
+            <field name="constr_mandatory" eval="True" />
+        </record>
+        <record id="appraisal_1_4" model="survey.question">
+            <field name="survey_id" ref="appraisal_feedback_template" />
+            <field name="sequence">5</field>
+            <field name="title">Date of review</field>
+            <field name="question_type">date</field>
+            <field name="constr_mandatory" eval="True" />
+        </record>
+        <record id="appraisal_1_5" model="survey.question">
+            <field name="survey_id" ref="appraisal_feedback_template" />
+            <field name="sequence">6</field>
+            <field name="title">Appraiser</field>
+            <field name="question_type">text_box</field>
+            <field name="constr_mandatory" eval="True" />
+        </record>
+        <!-- Page 2 -->
+        <record id="appraisal_2" model="survey.question">
+            <field name="title">Work Plan</field>
+            <field name="survey_id" ref="appraisal_feedback_template" />
+            <field name="is_page" eval="True" />
+            <field name="question_type" eval="False" />
+            <field name="sequence">7</field>
+            <field name="description" type="html"><p> </p></field>
+        </record>
+        <record id="appraisal_2_1" model="survey.question">
+            <field name="survey_id" ref="appraisal_feedback_template" />
+            <field name="sequence">8</field>
+            <field name="title">Objectives</field>
+            <field name="question_type">text_box</field>
+            <field name="constr_mandatory" eval="True" />
+        </record>
+        <record id="appraisal_2_2" model="survey.question">
+            <field name="survey_id" ref="appraisal_feedback_template" />
+            <field name="sequence">9</field>
+            <field name="title">Results</field>
+            <field name="question_type">text_box</field>
+            <field name="constr_mandatory" eval="True" />
+        </record>
+        <record id="appraisal_2_3" model="survey.question">
+            <field name="survey_id" ref="appraisal_feedback_template" />
+            <field name="sequence">10</field>
+            <field name="title">Additional Comments</field>
+            <field name="question_type">text_box</field>
+        </record>
+        <!-- Page 3 -->
+        <record id="appraisal_3" model="survey.question">
+            <field name="title">Employee Performance in Key Areas</field>
+            <field name="survey_id" ref="appraisal_feedback_template" />
+            <field name="is_page" eval="True" />
+            <field name="question_type" eval="False" />
+            <field name="sequence">11</field>
+            <field name="description" type="html">
+                <p>The appraiser should rate the employee’s major work accomplishments and performance according to the metric provided below:</p>
+                <ol>
+                    <li> Significantly exceeds standards and expectations required of the position</li>
+                    <li> Exceeds standards and expectations</li>
+                    <li> Meet standards and expectations</li>
+                    <li> Did not meet standards and expectations</li>
+                    <li> Significantly below standards and expectations</li>
+                </ol>
+            </field>
+        </record>
+        <record id="appraisal_3_1" model="survey.question">
+            <field name="survey_id" ref="appraisal_feedback_template" />
+            <field name="sequence">12</field>
+            <field name="title">Subject</field>
+            <field name="question_type">matrix</field>
+            <field name="matrix_subtype">simple</field>
+            <field name="constr_mandatory" eval="True" />
+        </record>
+        <record id="acol_3_1_1" model="survey.question.answer">
+            <field name="question_id" ref="appraisal_3_1" />
+            <field name="sequence">1</field>
+            <field name="value">1</field>
+        </record>
+        <record id="acol_3_1_2" model="survey.question.answer">
+            <field name="question_id" ref="appraisal_3_1" />
+            <field name="sequence">2</field>
+            <field name="value">2</field>
+        </record>
+        <record id="acol_3_1_3" model="survey.question.answer">
+            <field name="question_id" ref="appraisal_3_1" />
+            <field name="sequence">3</field>
+            <field name="value">3</field>
+        </record>
+        <record id="acol_3_1_4" model="survey.question.answer">
+            <field name="question_id" ref="appraisal_3_1" />
+            <field name="sequence">4</field>
+            <field name="value">4</field>
+        </record>
+        <record id="acol_3_1_5" model="survey.question.answer">
+            <field name="question_id" ref="appraisal_3_1" />
+            <field name="sequence">5</field>
+            <field name="value">5</field>
+        </record>
+        <record id="arow_3_1_1" model="survey.question.answer">
+            <field name="matrix_question_id" ref="appraisal_3_1" />
+            <field name="sequence">1</field>
+            <field name="value">Ability to cope with multidisciplinarity of team</field>
+        </record>
+        <record id="arow_3_1_2" model="survey.question.answer">
+            <field name="matrix_question_id" ref="appraisal_3_1" />
+            <field name="sequence">2</field>
+            <field
+                name="value">Enthusiasm &amp; implication toward projects/assignments</field>
+        </record>
+        <record id="arow_3_1_3" model="survey.question.answer">
+            <field name="matrix_question_id" ref="appraisal_3_1" />
+            <field name="sequence">3</field>
+            <field
+                name="value">Compliance to internal rules and processes (timesheets completion, etc.)</field>
+        </record>
+        <record id="arow_3_1_4" model="survey.question.answer">
+            <field name="matrix_question_id" ref="appraisal_3_1" />
+            <field name="sequence">4</field>
+            <field
+                name="value">Team spirit: ability to work efficiently with peers, manage the conflicts with diplomacy</field>
+        </record>
+        <record id="arow_3_1_5" model="survey.question.answer">
+            <field name="matrix_question_id" ref="appraisal_3_1" />
+            <field name="sequence">5</field>
+            <field name="value">Initiative and self autonomy</field>
+        </record>
+        <record id="arow_3_1_6" model="survey.question.answer">
+            <field name="matrix_question_id" ref="appraisal_3_1" />
+            <field name="sequence">6</field>
+            <field
+                name="value">Ability to follow and complete work as instructed</field>
+        </record>
+        <record id="arow_3_1_7" model="survey.question.answer">
+            <field name="matrix_question_id" ref="appraisal_3_1" />
+            <field name="sequence">7</field>
+            <field name="value">Decision making</field>
+        </record>
+        <record id="arow_3_1_8" model="survey.question.answer">
+            <field name="matrix_question_id" ref="appraisal_3_1" />
+            <field name="sequence">8</field>
+            <field name="value">Customer commitment</field>
+        </record>
+        <record id="arow_3_1_9" model="survey.question.answer">
+            <field name="matrix_question_id" ref="appraisal_3_1" />
+            <field name="sequence">9</field>
+            <field
+                name="value">Communication skills (written &amp; verbally): clearness, concision, exactitude</field>
+        </record>
+        <record id="arow_3_1_10" model="survey.question.answer">
+            <field name="matrix_question_id" ref="appraisal_3_1" />
+            <field name="sequence">10</field>
+            <field
+                name="value">Technical skills regarding to the job requirements</field>
+        </record>
+        <record id="arow_3_1_11" model="survey.question.answer">
+            <field name="matrix_question_id" ref="appraisal_3_1" />
+            <field name="sequence">11</field>
+            <field name="value">Analytical and synthetic mind</field>
+        </record>
+        <record id="arow_3_1_12" model="survey.question.answer">
+            <field name="matrix_question_id" ref="appraisal_3_1" />
+            <field name="sequence">12</field>
+            <field name="value">Promptness and attendance record</field>
+        </record>
+        <record id="arow_3_1_13" model="survey.question.answer">
+            <field name="matrix_question_id" ref="appraisal_3_1" />
+            <field name="sequence">13</field>
+            <field
+                name="value">Adaptability: Ability to adapt oneself to organizational changes while keeping efficiency</field>
+        </record>
+        <record id="arow_3_1_14" model="survey.question.answer">
+            <field name="matrix_question_id" ref="appraisal_3_1" />
+            <field name="sequence">14</field>
+            <field name="value">Creativity and forward looking aptitude</field>
+        </record>
+        <record id="arow_3_1_15" model="survey.question.answer">
+            <field name="matrix_question_id" ref="appraisal_3_1" />
+            <field name="sequence">15</field>
+            <field
+                name="value">Time management: projects/tasks are completed on time</field>
+        </record>
+        <record id="appraisal_3_2" model="survey.question">
+            <field name="survey_id" ref="appraisal_feedback_template" />
+            <field name="sequence">13</field>
+            <field name="title">Supervisors only</field>
+            <field name="question_type">matrix</field>
+            <field name="matrix_subtype">simple</field>
+        </record>
+        <record id="acol_3_2_1" model="survey.question.answer">
+            <field name="question_id" ref="appraisal_3_2" />
+            <field name="sequence">1</field>
+            <field name="value">1</field>
+        </record>
+        <record id="acol_3_2_2" model="survey.question.answer">
+            <field name="question_id" ref="appraisal_3_2" />
+            <field name="sequence">2</field>
+            <field name="value">2</field>
+        </record>
+        <record id="acol_3_2_3" model="survey.question.answer">
+            <field name="question_id" ref="appraisal_3_2" />
+            <field name="sequence">3</field>
+            <field name="value">3</field>
+        </record>
+        <record id="acol_3_2_4" model="survey.question.answer">
+            <field name="question_id" ref="appraisal_3_2" />
+            <field name="sequence">4</field>
+            <field name="value">4</field>
+        </record>
+        <record id="acol_3_2_5" model="survey.question.answer">
+            <field name="question_id" ref="appraisal_3_2" />
+            <field name="sequence">5</field>
+            <field name="value">5</field>
+        </record>
+        <record id="arow_3_2_1" model="survey.question.answer">
+            <field name="matrix_question_id" ref="appraisal_3_2" />
+            <field name="sequence">1</field>
+            <field
+                name="value">Results of the bottom-up survey and mitigation actions to face technical, organizational, structural and/or relational issues</field>
+        </record>
+        <record id="arow_3_2_2" model="survey.question.answer">
+            <field name="matrix_question_id" ref="appraisal_3_2" />
+            <field name="sequence">2</field>
+            <field
+                name="value">Delegation: Ability to efficiently assign tasks to other people</field>
+        </record>
+        <record id="arow_3_2_3" model="survey.question.answer">
+            <field name="matrix_question_id" ref="appraisal_3_2" />
+            <field name="sequence">3</field>
+            <field
+                name="value">Leadership: create a challenging and motivating work environment aligned with the company's strategy</field>
+        </record>
+        <record id="arow_3_2_4" model="survey.question.answer">
+            <field name="matrix_question_id" ref="appraisal_3_2" />
+            <field name="sequence">4</field>
+            <field
+                name="value">Leadership: sustain subordinates in their professional growth</field>
+        </record>
+        <record id="arow_3_2_5" model="survey.question.answer">
+            <field name="matrix_question_id" ref="appraisal_3_2" />
+            <field name="sequence">5</field>
+            <field
+                name="value">Ability to manage planning resources, risks, budgets and deadlines</field>
+        </record>
+        <!-- Page 4 -->
+        <record id="appraisal_4" model="survey.question">
+            <field name="title">Professional Development and Performance Plan</field>
+            <field name="survey_id" ref="appraisal_feedback_template" />
+            <field name="is_page" eval="True" />
+            <field name="question_type" eval="False" />
+            <field name="sequence">14</field>
+            <field name="description" type="html">
+                <p>Identify professional, performance, or project objectives you recommend for employee’s continued career development over the coming year.</p>
+            </field>
+        </record>
+        <record id="appraisal_4_1" model="survey.question">
+            <field name="survey_id" ref="appraisal_feedback_template" />
+            <field name="sequence">15</field>
+            <field name="title">Professional Development Objectives</field>
+            <field name="question_type">text_box</field>
+        </record>
+        <record id="appraisal_4_2" model="survey.question">
+            <field name="survey_id" ref="appraisal_feedback_template" />
+            <field name="sequence">16</field>
+            <field name="title">Personal Performance Objectives</field>
+            <field name="question_type">text_box</field>
+        </record>
+        <record id="appraisal_4_3" model="survey.question">
+            <field name="survey_id" ref="appraisal_feedback_template" />
+            <field name="sequence">17</field>
+            <field name="title">Project Objectives</field>
+            <field name="question_type">text_box</field>
+        </record>
+        <!-- Page 5 -->
+        <record id="appraisal_5" model="survey.question">
+            <field name="title">Employee Comments</field>
+            <field name="survey_id" ref="appraisal_feedback_template" />
+            <field name="is_page" eval="True" />
+            <field name="question_type" eval="False" />
+            <field name="description" type="html"><p /></field>
+            <field name="sequence">18</field>
+        </record>
+        <record id="appraisal_5_1" model="survey.question">
+            <field name="survey_id" ref="appraisal_feedback_template" />
+            <field name="sequence">19</field>
+            <field
+                name="title">Use the following space to make any comments regarding the above performance evaluation.</field>
+            <field name="question_type">text_box</field>
+        </record>
+    </data>
+
+</odoo>

@@ -1,0 +1,477 @@
+// @ts-check
+/** @odoo-module native */
+
+import { makeLogger } from "@web/core/debug/debug_logger";
+import { Domain } from "@web/core/domain";
+import { UPDATE_METHODS } from "@web/core/network/model_mutation";
+import { rpc } from "@web/core/network/rpc";
+import { registry } from "@web/core/registry";
+import { user } from "@web/core/user";
+
+/** @param {any} value */
+function checkModel(value) {
+    if (typeof value !== "string" || !value.length) {
+        throw new Error(`Invalid model name: ${value}`);
+    }
+}
+/**
+ * @param {string} name
+ * @param {string} type
+ * @param {any} value
+ */
+function checkPrimitiveList(name, type, value) {
+    if (!Array.isArray(value) || value.some((val) => typeof val !== type)) {
+        throw new Error(`Invalid ${name} list: ${value}`);
+    }
+}
+/**
+ * @param {string} name
+ * @param {any} obj
+ */
+function checkObject(name, obj) {
+    if (typeof obj !== "object" || obj === null || Array.isArray(obj)) {
+        throw new Error(`${name} should be an object`);
+    }
+}
+/**
+ * @param {string} name
+ * @param {any} array
+ */
+function checkArray(name, array) {
+    if (!Array.isArray(array)) {
+        throw new Error(`${name} should be an array`);
+    }
+}
+
+const log = makeLogger("web.orm");
+
+const NON_IDEMPOTENT_METHODS = new Set([
+    ...UPDATE_METHODS,
+    "web_resequence",
+    "name_create",
+    "copy",
+]);
+
+/**
+ * @param {string} model
+ * @param {string} method
+ * @param {any[]} args
+ * @param {any} kwargs
+ */
+function callRequest(model, method, args, kwargs) {
+    return {
+        url: `/web/dataset/call_kw/${model}/${method}`,
+        params: {
+            model,
+            method,
+            args,
+            kwargs: { ...kwargs, context: { ...user.context, ...kwargs.context } },
+        },
+    };
+}
+
+export class ORM {
+    constructor() {
+        this.rpc = rpc;
+        /** @protected */
+        this._silent = false;
+        this._cache = false;
+        this._retry = false;
+        this._dedup = false;
+        /** @type {AbortSignal | false} */
+        this._signal = false;
+    }
+
+    /** @returns {ORM} */
+    get silent() {
+        return Object.assign(Object.create(this), { _silent: true });
+    }
+
+    /**
+     * @param {AbortSignal} signal
+     * @returns {ORM}
+     */
+    withSignal(signal) {
+        return Object.assign(Object.create(this), { _signal: signal });
+    }
+
+    /**
+     * @param {import("@web/core/network/rpc_cache").RPCCacheSettings} [options]
+     * @returns {ORM}
+     */
+    cache(options = {}) {
+        return Object.assign(Object.create(this), { _cache: options });
+    }
+
+    /** @returns {ORM} */
+    get dedup() {
+        return Object.assign(Object.create(this), { _dedup: true });
+    }
+
+    /**
+     * @param {number | { retries?: number, baseMs?: number, maxMs?: number }} [options=1]
+     * @returns {ORM}
+     */
+    retry(options = 1) {
+        return Object.assign(Object.create(this), { _retry: options });
+    }
+
+    /**
+     * Whether `orm.cache()` would find this call's answer in the cache.
+     *
+     * @param {string} model
+     * @param {string} method
+     * @param {any[]} [args=[]]
+     * @param {any} [kwargs={}]
+     * @returns {boolean}
+     */
+    isCached(model, method, args = [], kwargs = {}) {
+        const { url, params } = callRequest(model, method, args, kwargs);
+        return this.rpc.cacheHolds?.(url, params) ?? false;
+    }
+
+    /**
+     * @param {string} model
+     * @param {string} method
+     * @param {any[]} [args=[]]
+     * @param {any} [kwargs={}]
+     * @returns {Promise<any>}
+     */
+    call(model, method, args = [], kwargs = {}) {
+        checkModel(model);
+        if (NON_IDEMPOTENT_METHODS.has(method)) {
+            if (this._retry) {
+                throw new Error(
+                    `orm.retry() cannot be applied to mutating method "${method}": ` +
+                        `a retry could re-apply a partially-committed server mutation`,
+                );
+            }
+            if (this._dedup) {
+                throw new Error(
+                    `orm.dedup cannot be applied to mutating method "${method}": ` +
+                        `identical payloads are still distinct invocations for writes`,
+                );
+            }
+            if (this._cache) {
+                throw new Error(
+                    `orm.cache() cannot be applied to mutating method "${method}": ` +
+                        `the write's result would be stored and a later identical ` +
+                        `write served from cache without ever reaching the server`,
+                );
+            }
+            if (this._signal) {
+                throw new Error(
+                    `orm.withSignal() cannot be applied to mutating method "${method}": ` +
+                        `aborting only drops the client's interest in the response -- ` +
+                        `the write has already reached the server and is not undone`,
+                );
+            }
+        }
+        const { url, params } = callRequest(model, method, args, kwargs);
+        /** @type {Record<string, any>} */
+        const settings = {
+            silent: this._silent,
+            cache: this._cache,
+            retry: this._retry,
+            dedup: this._dedup,
+        };
+        if (this._signal) {
+            settings.signal = this._signal;
+        }
+        log.pipeline("call", () => ({
+            model,
+            method,
+            args: args.length,
+            silent: this._silent,
+            cache: Boolean(this._cache),
+            dedup: Boolean(this._dedup),
+            retry: this._retry,
+        }));
+        return this.rpc(url, params, settings);
+    }
+
+    /**
+     * @param {string} model
+     * @param {any[]} records
+     * @param {any} [kwargs=[]]
+     * @returns {Promise<number[]>}
+     */
+    create(model, records, kwargs = {}) {
+        checkArray("records", records);
+        for (const record of records) {
+            checkObject("record", record);
+        }
+        return this.call(model, "create", [records], kwargs);
+    }
+
+    /**
+     * @param {string} model
+     * @param {number[]} ids
+     * @param {string[]} [fields]
+     * @param {any} [kwargs={}]
+     * @returns {Promise<any[]>}
+     */
+    read(model, ids, fields, kwargs = {}) {
+        checkPrimitiveList("ids", "number", ids);
+        if (fields) {
+            checkPrimitiveList("fields", "string", fields);
+        }
+        if (!ids.length) {
+            return Promise.resolve([]);
+        }
+        return this.call(model, "read", [ids, fields], kwargs);
+    }
+
+    /**
+     * @param {string} model
+     * @param {import("@web/core/domain").DomainListRepr} domain
+     * @param {string[]} groupby
+     * @param {string[]} aggregates
+     * @param {any} [kwargs={}]
+     * @returns {Promise<any[]>}
+     */
+    async formattedReadGroup(model, domain, groupby, aggregates, kwargs = {}) {
+        checkArray("domain", domain);
+        checkPrimitiveList("groupby", "string", groupby);
+        checkPrimitiveList("aggregates", "string", aggregates);
+        /** @type {any[]} */
+        const res = await this.call(model, "formatted_read_group", [], {
+            ...kwargs,
+            domain,
+            groupby,
+            aggregates,
+        });
+        return res.map((group) => ({
+            ...group,
+            __domain: Domain.and([domain, group["__extra_domain"]]).toList(),
+        }));
+    }
+
+    /**
+     * @param {string} model
+     * @param {import("@web/core/domain").DomainListRepr} domain
+     * @param {string[][]} grouping_sets
+     * @param {string[]} aggregates
+     * @param {any} [kwargs={}]
+     * @returns {Promise<any[]>}
+     */
+    async formattedReadGroupingSets(
+        model,
+        domain,
+        grouping_sets,
+        aggregates,
+        kwargs = {},
+    ) {
+        checkArray("domain", domain);
+        checkArray("grouping_sets", grouping_sets);
+        checkPrimitiveList("aggregates", "string", aggregates);
+        /** @type {any[][]} */
+        const res = await this.call(model, "formatted_read_grouping_sets", [], {
+            ...kwargs,
+            domain,
+            grouping_sets,
+            aggregates,
+        });
+        return res.map((groups) =>
+            groups.map((group) => ({
+                ...group,
+                __domain: Domain.and([domain, group["__extra_domain"]]).toList(),
+            })),
+        );
+    }
+
+    /**
+     * @param {string} model
+     * @param {import("@web/core/domain").DomainListRepr} domain
+     * @param {any} [kwargs={}]
+     * @returns {Promise<any[]>}
+     */
+    search(model, domain, kwargs = {}) {
+        checkArray("domain", domain);
+        return this.call(model, "search", [domain], kwargs);
+    }
+
+    /**
+     * @param {string} model
+     * @param {import("@web/core/domain").DomainListRepr} domain
+     * @param {string[]} fields
+     * @param {any} [kwargs={}]
+     * @returns {Promise<any[]>}
+     */
+    searchRead(model, domain, fields, kwargs = {}) {
+        checkArray("domain", domain);
+        if (fields) {
+            checkPrimitiveList("fields", "string", fields);
+        }
+        return this.call(model, "search_read", [], {
+            ...kwargs,
+            domain,
+            fields,
+        });
+    }
+
+    /**
+     * @param {string} model
+     * @param {import("@web/core/domain").DomainListRepr} domain
+     * @param {any} [kwargs={}]
+     * @returns {Promise<number>}
+     */
+    searchCount(model, domain, kwargs = {}) {
+        checkArray("domain", domain);
+        return this.call(model, "search_count", [domain], kwargs);
+    }
+
+    /**
+     * @param {string} model
+     * @param {number[]} ids
+     * @param {any} [kwargs={}]
+     * @returns {Promise<boolean>}
+     */
+    unlink(model, ids, kwargs = {}) {
+        checkPrimitiveList("ids", "number", ids);
+        if (!ids.length) {
+            return Promise.resolve(true);
+        }
+        return this.call(model, "unlink", [ids], kwargs);
+    }
+
+    /**
+     * @param {string} model
+     * @param {import("@web/core/domain").DomainListRepr} domain
+     * @param {string[]} groupby
+     * @param {string[]} aggregates
+     * @param {any} [kwargs={}]
+     * @returns {Promise<{ groups: any[]; length: number }>}
+     */
+    webReadGroup(model, domain, groupby, aggregates, kwargs = {}) {
+        checkArray("domain", domain);
+        checkPrimitiveList("groupby", "string", groupby);
+        checkPrimitiveList("aggregates", "string", aggregates);
+        return this.call(model, "web_read_group", [], {
+            ...kwargs,
+            domain,
+            groupby,
+            aggregates,
+        });
+    }
+
+    /**
+     * @param {string} model
+     * @param {number[]} ids
+     * @param {object} [kwargs={}]
+     * @param {Object} [kwargs.specification]
+     * @param {Object} [kwargs.context]
+     * @returns {Promise<any[]>}
+     */
+    webRead(model, ids, kwargs = {}) {
+        checkPrimitiveList("ids", "number", ids);
+        if (!ids.length) {
+            return Promise.resolve([]);
+        }
+        return this.call(model, "web_read", [ids], kwargs);
+    }
+
+    /**
+     * @param {string} model
+     * @param {number[]} ids
+     * @param {object} [kwargs={}]
+     * @param {object} [kwargs.context]
+     * @param {string} [kwargs.field_name]
+     * @param {number} [kwargs.offset]
+     * @param {object} [kwargs.specification]
+     * @returns {Promise<any[]>}
+     */
+    webResequence(model, ids, kwargs = {}) {
+        checkPrimitiveList("ids", "number", ids);
+        if (!ids.length) {
+            return Promise.resolve([]);
+        }
+        return this.call(model, "web_resequence", [ids], {
+            ...kwargs,
+            specification: kwargs.specification || {},
+        });
+    }
+
+    /**
+     * @param {string} model
+     * @param {import("@web/core/domain").DomainListRepr} domain
+     * @param {any} [kwargs={}]
+     * @returns {Promise<{ records: any[]; length: number }>}
+     */
+    webSearchRead(model, domain, kwargs = {}) {
+        checkArray("domain", domain);
+        return this.call(model, "web_search_read", [], { ...kwargs, domain });
+    }
+
+    /**
+     * @param {string} model
+     * @param {number[]} ids
+     * @param {any} data
+     * @param {any} [kwargs={}]
+     * @returns {Promise<boolean>}
+     */
+    write(model, ids, data, kwargs = {}) {
+        checkPrimitiveList("ids", "number", ids);
+        checkObject("data", data);
+        return this.call(model, "write", [ids, data], kwargs);
+    }
+
+    /**
+     * @param {string} model
+     * @param {number[]} ids
+     * @param {any} data
+     * @param {object} [kwargs={}]
+     * @param {Object} [kwargs.specification]
+     * @param {Object} [kwargs.context]
+     * @returns {Promise<any[]>}
+     */
+    webSave(model, ids, data, kwargs = {}) {
+        checkPrimitiveList("ids", "number", ids);
+        checkObject("data", data);
+        return this.call(model, "web_save", [ids, data], kwargs);
+    }
+
+    /**
+     * @param {string} model
+     * @param {number[]} ids
+     * @param {Object[]} data
+     * @param {Object} [kwargs={}]
+     * @param {Object} [kwargs.specification]
+     * @param {Object} [kwargs.context]
+     * @returns {Promise<any[]>}
+     */
+    webSaveMulti(model, ids, data, kwargs = {}) {
+        checkPrimitiveList("ids", "number", ids);
+        checkArray("data", data);
+        data.forEach((d) => {
+            checkObject("data item", d);
+        });
+        return this.call(model, "web_save_multi", [ids, data], kwargs);
+    }
+}
+
+export const ormService = {
+    async: [
+        "call",
+        "create",
+        "formattedReadGroup",
+        "formattedReadGroupingSets",
+        "read",
+        "search",
+        "searchCount",
+        "searchRead",
+        "unlink",
+        "webRead",
+        "webReadGroup",
+        "webResequence",
+        "webSave",
+        "webSaveMulti",
+        "webSearchRead",
+        "write",
+    ],
+    start() {
+        return new ORM();
+    },
+};
+
+registry.category("services").add("orm", ormService);

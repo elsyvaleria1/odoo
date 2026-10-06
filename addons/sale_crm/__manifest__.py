@@ -1,0 +1,26 @@
+{
+    "name": "CRM Quotations",
+    "version": "1.1",
+    "oldest_upgradable_version": "1.1",
+    "category": "Sales/Sales",
+    "summary": "Create sales quotations from CRM opportunities",
+    "description": "Link quotations and orders to opportunities and expose their sales totals. Provides actions to create or inspect the associated sales documents.",
+    "author": "Odoo S.A.",
+    "license": "LGPL-3",
+    "depends": [
+        "sale",
+        "crm",
+    ],
+    "data": [
+        "security/ir.access.csv",
+        "data/crm_lead_merge_template.xml",
+        "views/sale_order_views.xml",
+        "views/crm_lead_views.xml",
+        "views/crm_team_views.xml",
+        "wizards/wizard_crm_lead_create_quotation_missing_customer_views.xml",
+        "wizards/wizard_sale_order_mark_lost_views.xml",
+        "views/sale_crm_menus.xml",
+    ],
+    "auto_install": True,
+    "uninstall_hook": "uninstall_hook",
+}

@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="res_config_settings_view_form" model="ir.ui.view">
+        <field name="name">res.config.settings.view.form.inherit.documents</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="document.res_config_settings_view_form" />
+        <field name="priority" eval="40" />
+        <field name="arch" type="xml">
+            <xpath expr="//app[@name='document']" position="attributes">
+                <attribute name="notApp">0</attribute>
+            </xpath>
+            <xpath
+                expr="//block[@id='files_centralization_section']"
+                position="attributes">
+                <attribute name="invisible">0</attribute>
+            </xpath>
+            <xpath expr="//block[@id='files_centralization_section']" position="inside">
+                <setting
+                    string="Accounting"
+                    help="Centralize accounting files and documents"
+                    company_dependent="1">
+                    <label
+                        for="account_folder_id"
+                        string="Folder"
+                        class="o_form_label col-lg-3" />
+                    <field
+                        name="account_folder_id"
+                        widget="documents_folder_many2one"
+                        options="{'no_create': True, 'no_create_edit': True}"
+                        required="True" />
+                    <div class="row col-lg-4">
+                        <button
+                            name="%(document_account.action_folder_settings_installer)d"
+                            type="action"
+                            string="Journals"
+                            icon="oi-arrow-right"
+                            class="btn-link" />
+                    </div>
+                </setting>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

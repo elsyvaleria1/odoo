@@ -1,0 +1,27 @@
+// The enterprise twin of hr_work_entry's calendar header: same 55% fill, same
+// 45% hover, same contrast picks. It reads the tokens that module publishes
+// (`--o-work-entry-color-N-hover-text`) and web's ramp, so the rules follow a
+// scheme change instead of being decided by whichever palette compiled. Both
+// fills mix with `--o-white`, which inverts per scheme, so they derive in CSS.
+@function o-work-entries-gantt-tint($-index, $-weight) {
+    @return unquote(
+        "color-mix(in srgb, var(--o-white) #{$-weight}, var(--o-record-color-#{$-index}))"
+    );
+}
+
+.o_gantt_popover,
+.o_gantt_renderer_controls {
+    @for $index from 1 through length($o-colors-complete) {
+        .o_gantt_color_#{$index - 1} {
+            color: var(--o-record-color-#{$index}-text);
+            background-color: o-work-entries-gantt-tint($index, 55%);
+            border-color: o-work-entries-gantt-tint($index, 55%);
+        }
+
+        .btn.o_gantt_color_#{$index - 1}:hover {
+            color: var(--o-work-entry-color-#{$index}-hover-text);
+            background-color: o-work-entries-gantt-tint($index, 45%);
+            border-color: o-work-entries-gantt-tint($index, 45%);
+        }
+    }
+}

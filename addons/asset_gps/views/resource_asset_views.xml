@@ -1,0 +1,292 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="resource_asset_view_list_fleet_gps" model="ir.ui.view">
+        <field name="name">resource.asset.fleet.list.gps</field>
+        <field name="model">resource.asset.vehicle</field>
+        <field name="inherit_id" ref="asset_ledger.resource_asset_view_list_fleet" />
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='odometer']" position="after">
+                <field name="gps_device_id" string="GPS Device" optional="show" />
+            </xpath>
+        </field>
+    </record>
+
+    <record id="resource_asset_view_form_gps" model="ir.ui.view">
+        <field name="name">resource.asset.form.gps</field>
+        <field name="model">resource.asset</field>
+        <field name="inherit_id" ref="asset_ledger.resource_asset_view_form_ledger" />
+        <field name="arch" type="xml">
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <button
+                    name="action_view_gps_device"
+                    type="object"
+                    icon="fa-map-marker"
+                    groups="device.group_device_user"
+                    invisible="not gps_device_id"
+                    class="oe_stat_button">
+                    <div class="o_field_widget o_stat_info">
+                        <span class="o_stat_text">GPS</span>
+                        <span class="o_stat_text">Device</span>
+                    </div>
+                </button>
+                <button
+                    name="action_view_tracking_history"
+                    type="object"
+                    icon="fa-road"
+                    groups="device_gps.group_device_gps_user"
+                    invisible="not gps_device_id"
+                    class="oe_stat_button">
+                    <div class="o_field_widget o_stat_info">
+                        <span class="o_stat_text">Tracking</span>
+                        <span class="o_stat_text">History</span>
+                    </div>
+                </button>
+            </xpath>
+            <xpath expr="//field[@name='brand_new']" position="after">
+                <field
+                    name="gps_device_id"
+                    options="{'no_create': True}"
+                    invisible="kind_code == 'property'" />
+            </xpath>
+        </field>
+    </record>
+
+    <record id="resource_asset_view_kanban_fleet_gps" model="ir.ui.view">
+        <field name="name">resource.asset.fleet.kanban.gps</field>
+        <field name="model">resource.asset.vehicle</field>
+        <field name="inherit_id" ref="asset_ledger.resource_asset_view_kanban_fleet" />
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='state']" position="after">
+                <field name="gps_device_id" />
+                <field name="gps_connection_state" />
+                <field name="gps_ignition_state" />
+                <field name="gps_movement_state" />
+                <field name="gps_current_speed" />
+                <field name="gps_fuel_level_l" />
+                <field name="gps_fuel_level" />
+                <field name="gps_battery_level" />
+                <field name="gps_tracking_enabled" />
+                <field name="gps_date_last_data" />
+            </xpath>
+
+            <xpath expr="//main/field[@name='display_name']" position="after">
+                <t
+                    groups="device_gps.group_device_gps_user"
+                    t-if="record.gps_device_id.raw_value">
+                    <span
+                        t-if="record.gps_connection_state.raw_value == 'connected'"
+                        class="badge text-bg-success ms-2"
+                        title="GPS Online">
+                        <i class="fa-solid fa-signal" />
+                    </span>
+                    <span
+                        t-elif="record.gps_connection_state.raw_value == 'error'"
+                        class="badge text-bg-danger ms-2"
+                        title="GPS Error">
+                        <i class="fa-solid fa-exclamation-triangle" />
+                    </span>
+                    <span
+                        t-else=""
+                        class="badge text-bg-secondary ms-2"
+                        title="GPS Offline">
+                        <i class="fa-solid fa-signal" />
+                    </span>
+                </t>
+            </xpath>
+
+            <xpath expr="//div[hasclass('row') and hasclass('g-2')]" position="after">
+                <t
+                    groups="device_gps.group_device_gps_user"
+                    t-if="record.gps_device_id.raw_value">
+                    <div class="row g-2 mt-2 pt-2 border-top">
+                        <div class="col-12">
+                            <div class="text-muted small fw-bold mb-1">
+                                <i class="fa-solid fa-satellite-dish me-1" />GPS Live Status <span t-if="record.gps_date_last_data.raw_value" class="float-end fw-normal" title="Last data received from the device">
+                                    <field name="gps_date_last_data" />
+                                </span>
+                            </div>
+                        </div>
+                        <div class="col text-center">
+                            <t t-if="record.gps_ignition_state.raw_value">
+                                <i
+                                    class="fa-solid fa-power-off text-success"
+                                    title="Ignition On" />
+                                <div class="small text-success fw-bold">ON</div>
+                            </t>
+                            <t t-else="">
+                                <i
+                                    class="fa-solid fa-power-off text-muted"
+                                    title="Ignition Off" />
+                                <div class="small text-muted">OFF</div>
+                            </t>
+                            <div class="text-muted small">Ignition</div>
+                        </div>
+                        <div class="col text-center">
+                            <t t-if="record.gps_movement_state.raw_value">
+                                <i
+                                    class="fa-solid fa-car text-primary"
+                                    title="Moving" />
+                                <div class="small text-primary fw-bold">Moving</div>
+                            </t>
+                            <t t-else="">
+                                <i class="fa-solid fa-car text-muted" title="Stopped" />
+                                <div class="small text-muted">Stopped</div>
+                            </t>
+                            <div class="text-muted small">Status</div>
+                        </div>
+                        <div class="col text-center">
+                            <i class="fa-solid fa-gauge-high text-info" title="Speed" />
+                            <div class="small fw-bold">
+                                <t
+                                    t-out="Math.round(record.gps_current_speed.raw_value || 0)" />
+                                <span class="text-muted"> km/h</span>
+                            </div>
+                            <div class="text-muted small">Speed</div>
+                        </div>
+                        <div class="col text-center">
+                            <i
+                                class="fa-solid fa-gas-pump text-warning"
+                                title="Fuel Level" />
+                            <t t-if="record.gps_fuel_level_l.raw_value">
+                                <div class="small fw-bold">
+                                    <t
+                                        t-out="Math.round(record.gps_fuel_level_l.raw_value * 10) / 10" />
+                                    <span class="text-muted"> L</span>
+                                </div>
+                            </t>
+                            <t t-elif="record.gps_fuel_level.raw_value">
+                                <div class="small fw-bold">
+                                    <t
+                                        t-out="Math.round(record.gps_fuel_level.raw_value)" />
+                                    <span class="text-muted"> %</span>
+                                </div>
+                            </t>
+                            <t t-elif="record.gps_date_last_data.raw_value">
+                                <!-- A tank that reads empty is worth seeing, and
+                                    0 is falsy in JS, so the two branches above
+                                    both fall through for it. The unit is not
+                                    knowable here: both fuel fields read 0 and
+                                    either could be the one this device
+                                    populates, so print the bare number and let
+                                    the "Fuel" label below carry the meaning.
+                                    "N/A" is now reserved for a device that has
+                                    never reported at all. -->
+                                <div class="small fw-bold">0</div>
+                            </t>
+                            <t t-else="">
+                                <div class="small text-muted">N/A</div>
+                            </t>
+                            <div class="text-muted small">Fuel</div>
+                        </div>
+                        <div class="col text-center">
+                            <i
+                                class="fa-solid fa-battery-half text-secondary"
+                                title="GPS Battery" />
+                            <!-- Truthiness is the right guard here, unlike the
+                                fuel column beside it: gps_battery_level is the
+                                device's battery_voltage, and a battery that is
+                                reporting at all is never at 0 V, so 0 means
+                                "no reading" rather than a real measurement. -->
+                            <t t-if="record.gps_battery_level.raw_value">
+                                <div class="small fw-bold">
+                                    <t
+                                        t-out="Math.round(record.gps_battery_level.raw_value * 10) / 10" />
+                                    <span class="text-muted"> V</span>
+                                </div>
+                            </t>
+                            <t t-else="">
+                                <div class="small text-muted">N/A</div>
+                            </t>
+                            <div class="text-muted small">Battery</div>
+                        </div>
+                    </div>
+                </t>
+            </xpath>
+
+            <xpath expr="//main" position="inside">
+                <t
+                    groups="device_gps.group_device_gps_user"
+                    t-if="record.gps_device_id.raw_value">
+                    <span
+                        t-if="record.gps_connection_state.raw_value == 'error'"
+                        class="badge bg-danger">
+                        <i class="fa-solid fa-exclamation-circle me-1" />GPS Error </span>
+                    <span
+                        t-if="record.gps_tracking_enabled.raw_value and record.gps_connection_state.raw_value == 'connected'"
+                        class="badge bg-success">
+                        <i class="fa-solid fa-crosshairs me-1" />Tracking </span>
+                </t>
+            </xpath>
+
+            <xpath expr="//main" position="inside">
+                <a
+                    t-if="record.gps_device_id.raw_value"
+                    role="button"
+                    type="object"
+                    name="action_view_tracking_history"
+                    groups="device_gps.group_device_gps_user"
+                    class="btn btn-sm btn-outline-info"
+                    title="View GPS tracking history">
+                    <i class="fa-solid fa-location-dot me-1" title="GPS History" />GPS History
+                </a>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="resource_asset_view_kanban_general_gps" model="ir.ui.view">
+        <field name="name">resource.asset.general.kanban.gps</field>
+        <field name="model">resource.asset</field>
+        <field
+            name="inherit_id"
+            ref="asset_ledger.resource_asset_view_kanban_general" />
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='activity_state']" position="after">
+                <field name="gps_device_id" />
+                <field name="gps_connection_state" />
+                <field name="gps_ignition_state" />
+                <field name="gps_movement_state" />
+                <field name="gps_current_speed" />
+            </xpath>
+
+            <xpath
+                expr="//div[hasclass('o_kanban_card_header_title')]/div[hasclass('o_primary')]"
+                position="inside">
+                <t
+                    groups="device_gps.group_device_gps_user"
+                    t-if="record.gps_device_id.raw_value">
+                    <span
+                        t-if="record.gps_connection_state.raw_value == 'connected'"
+                        class="badge text-bg-success ms-2"
+                        title="GPS Online">
+                        <i class="fa-solid fa-signal" />
+                    </span>
+                    <span
+                        t-elif="record.gps_connection_state.raw_value == 'error'"
+                        class="badge text-bg-danger ms-2"
+                        title="GPS Error">
+                        <i class="fa-solid fa-exclamation-triangle" />
+                    </span>
+                </t>
+            </xpath>
+
+            <xpath
+                expr="//div[hasclass('d-flex')][hasclass('gap-1')][hasclass('flex-wrap')][hasclass('mt-2')]"
+                position="inside">
+                <t
+                    groups="device_gps.group_device_gps_user"
+                    t-if="record.gps_device_id.raw_value">
+                    <span
+                        t-if="record.gps_movement_state.raw_value"
+                        class="badge bg-primary">
+                        <i class="fa-solid fa-car me-1" />Moving </span>
+                    <span
+                        t-if="record.gps_connection_state.raw_value == 'connected' and !record.gps_movement_state.raw_value"
+                        class="badge bg-secondary">
+                        <i class="fa-solid fa-crosshairs me-1" />GPS Active </span>
+                </t>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

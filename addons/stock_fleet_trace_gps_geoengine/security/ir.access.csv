@@ -1,0 +1,9 @@
+id,name,model_id/id,group_id/id,kind,operation,reach,anchor,predicate_id/id,predicate_args,domain
+access_wizard_stock_trip_track_point_user,wizard.stock.trip.track.point: a stock user reads the points of the tracks they drew,model_wizard_stock_trip_track_point,stock.group_stock_user,permission,r,own,creator,,,
+access_wizard_stock_trip_track_point_gps_user,wizard.stock.trip.track.point: every trail map reads the trip layer,model_wizard_stock_trip_track_point,device_gps.group_device_gps_user,permission,r,own,creator,,,
+access_gps_trail_result_stock_user,gps.trail.result: a stock user reads the trip tracks they drew,device_gps_geoengine.model_wizard_device_device_view_trail_result,stock.group_stock_user,permission,r,own,creator,,,"[('device_id', '=', False)]"
+privilege_trip_track_point,wizard.stock.trip.track.point: a trip marks its track,model_wizard_stock_trip_track_point,privilege_trip_track,permission,crud,,,,,
+privilege_trip_track_device,device.device: a trip reads its vehicle's GPS device,device.model_device_device,privilege_trip_track,permission,r,,,,,
+privilege_trip_track_trail_wizard,gps.trail.wizard: a trip draws its GPS track,device_gps_geoengine.model_wizard_device_device_view_trail,privilege_trip_track,permission,crud,,,,,
+privilege_trip_track_trail_result,gps.trail.result: a trip draws its GPS track,device_gps_geoengine.model_wizard_device_device_view_trail_result,privilege_trip_track,permission,crud,,,,,
+privilege_trip_track_log,GPS observations: a trip draws its track,device_gps.model_device_data_log_gps,privilege_trip_track,permission,r,company,,,,

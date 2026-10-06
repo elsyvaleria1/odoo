@@ -1,0 +1,193 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_device_data_log_gps_search" model="ir.ui.view">
+        <field name="name">device.data.log.gps.search</field>
+        <field name="model">device.data.log.gps</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="device_id" />
+                <field name="timestamp" />
+                <filter
+                    name="today"
+                    string="Today"
+                    domain="[('timestamp', '&gt;=', datetime.datetime.now().replace(hour=0, minute=0, second=0))]" />
+                <filter
+                    name="yesterday"
+                    string="Yesterday"
+                    domain="[('timestamp', '&gt;=', (datetime.datetime.now() - datetime.timedelta(days=1)).replace(hour=0, minute=0, second=0)), ('timestamp', '&lt;', datetime.datetime.now().replace(hour=0, minute=0, second=0))]" />
+                <filter
+                    name="last_week"
+                    string="Last 7 Days"
+                    domain="[('timestamp', '&gt;=', datetime.datetime.now() - datetime.timedelta(days=7))]" />
+                <filter
+                    name="last_fortnight"
+                    string="Last 15 Days"
+                    domain="[('timestamp', '&gt;=', datetime.datetime.now() - datetime.timedelta(days=15))]" />
+                <filter
+                    name="last_month"
+                    string="Last 30 Days"
+                    domain="[('timestamp', '&gt;=', datetime.datetime.now() - datetime.timedelta(days=30))]" />
+                <separator />
+                <filter
+                    name="moving"
+                    string="Moving"
+                    domain="[('movement', '=', True)]" />
+                <filter
+                    name="stopped"
+                    string="Stopped"
+                    domain="[('movement', '=', False)]" />
+                <filter
+                    name="ignition_on"
+                    string="Ignition On"
+                    domain="[('ignition', '=', True)]" />
+                <filter
+                    name="ignition_off"
+                    string="Ignition Off"
+                    domain="[('ignition', '=', False)]" />
+                <separator />
+                <filter
+                    name="high_speed"
+                    string="High Speed (&gt; 80 km/h)"
+                    domain="[('speed', '&gt;', 80)]" />
+                <filter
+                    name="low_accuracy"
+                    string="Low Accuracy"
+                    domain="[('accuracy', '&gt;', 50)]" />
+                <separator />
+                <filter
+                    name="odometer_valid"
+                    string="Valid Odometer"
+                    domain="[('odometer_valid', '=', True)]" />
+                <filter
+                    name="odometer_invalid"
+                    string="Invalid Odometer"
+                    domain="[('odometer_valid', '=', False)]" />
+                <group>
+                    <filter
+                        name="group_device"
+                        string="Device"
+                        context="{'group_by': 'device_id'}" />
+                    <filter
+                        name="group_date"
+                        string="Date"
+                        context="{'group_by': 'timestamp:day'}" />
+                    <filter
+                        name="group_hour"
+                        string="Hour"
+                        context="{'group_by': 'timestamp:hour'}" />
+                    <filter
+                        name="group_source"
+                        string="Source"
+                        context="{'group_by': 'source'}" />
+                    <filter
+                        name="group_movement"
+                        string="Movement"
+                        context="{'group_by': 'movement'}" />
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="view_device_data_log_gps_tree" model="ir.ui.view">
+        <field name="name">device.data.log.gps.tree</field>
+        <field name="model">device.data.log.gps</field>
+        <field name="arch" type="xml">
+            <list default_order="timestamp desc">
+                <field name="timestamp" />
+                <field name="device_id" />
+                <field name="latitude" />
+                <field name="longitude" />
+                <field name="speed" />
+                <field name="altitude" />
+                <field name="satellites" />
+                <field name="accuracy" />
+                <field name="ignition" widget="boolean_toggle" />
+                <field name="movement" widget="boolean_toggle" />
+                <field name="real_odometer" optional="hide" />
+                <field name="odometer_valid" widget="boolean_toggle" optional="hide" />
+                <field name="source" widget="badge" />
+            </list>
+        </field>
+    </record>
+
+    <record id="view_device_data_log_gps_form" model="ir.ui.view">
+        <field name="name">device.data.log.gps.form</field>
+        <field name="model">device.data.log.gps</field>
+        <field name="arch" type="xml">
+            <form string="GPS Tracking Point" create="false">
+                <sheet>
+                    <group>
+                        <group string="Device &amp; Time">
+                            <field name="device_id" />
+                            <field name="timestamp" />
+                            <field name="source" />
+                        </group>
+                        <group string="Position">
+                            <field name="latitude" />
+                            <field name="longitude" />
+                            <field name="altitude" />
+                        </group>
+                    </group>
+                    <group>
+                        <group string="Motion">
+                            <field name="speed" />
+                            <field name="heading" />
+                            <field name="ignition" />
+                            <field name="movement" />
+                        </group>
+                        <group string="GPS Quality">
+                            <field name="satellites" />
+                            <field name="accuracy" />
+                            <field name="hdop" />
+                            <field name="pdop" />
+                        </group>
+                    </group>
+                    <group string="Vehicle Telemetry">
+                        <group>
+                            <field name="odometer" />
+                            <field name="total_odometer" />
+                            <field name="fuel_level" widget="progressbar" />
+                            <field name="fuel_consumed" />
+                            <field name="engine_hours" />
+                        </group>
+                        <group>
+                            <field name="engine_temperature" />
+                            <field name="engine_speed_rpm" />
+                            <field name="battery_voltage" />
+                            <field name="external_voltage" />
+                            <field name="gsm_signal" />
+                        </group>
+                    </group>
+                    <group string="Event Information" invisible="not event_type">
+                        <field name="event_type" />
+                        <field name="event_id" invisible="not event_id" />
+                        <field name="priority" />
+                    </group>
+                    <group string="Odometer Data">
+                        <field name="real_odometer" />
+                        <field name="odometer_valid" widget="boolean_toggle" />
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_device_data_log_gps" model="ir.actions.act_window">
+        <field name="name">GPS Tracking Points</field>
+        <field name="res_model">device.data.log.gps</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{'search_default_last_week': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No tracking points recorded yet
+            </p>
+            <p>
+                GPS tracking points are automatically recorded when GPS devices
+                send position updates. You can view historical tracking data,
+                analyze routes, and monitor vehicle movements.
+            </p>
+        </field>
+    </record>
+
+</odoo>

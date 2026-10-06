@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <data>
+        <record id="chatbot_script_view_form" model="ir.ui.view">
+            <field name="name">chatbot.script.view.form</field>
+            <field name="model">chatbot.script</field>
+            <field name="arch" type="xml">
+                <form>
+                    <header>
+                    </header>
+                    <field name="first_step_warning" invisible="1" />
+                    <div
+                        class="alert alert-info text-center"
+                        role="alert"
+                        invisible="first_step_warning != 'first_step_operator'">
+                        <span>Tip: At least one interaction (Question, Email, ...) is needed before the Bot can perform more complex actions (Forward to an Operator, ...). </span>
+                        <span>Use Channel Rules if you want the Bot to interact with visitors only when no operator is available.</span>
+                    </div>
+                    <div
+                        class="alert alert-info text-center"
+                        role="alert"
+                        invisible="first_step_warning != 'first_step_invalid'">
+                        <span>Tip: At least one interaction (Question, Email, ...) is needed before the Bot can perform more complex actions (Forward to an Operator, ...).</span>
+                    </div>
+                    <sheet>
+                        <div class="oe_button_box" name="button_box">
+                            <button
+                                name="action_view_livechat_channels"
+                                type="object"
+                                icon="fa-comments"
+                                invisible="livechat_channel_count == 0"
+                                class="oe_stat_button">
+                                <field
+                                    name="livechat_channel_count"
+                                    string="Channels"
+                                    widget="statinfo" />
+                            </button>
+                        </div>
+                        <field name="active" invisible="1" />
+                        <widget
+                            name="web_ribbon"
+                            title="Archived"
+                            invisible="active"
+                            bg_color="text-bg-danger" />
+                        <field
+                            name="image_1920"
+                            widget="image"
+                            options="{'preview_image': 'image_128'}"
+                            class="oe_avatar" />
+                        <div class="oe_title">
+                            <label for="title" string="Chatbot Name" />
+                            <h1><field name="title" placeholder="e.g. &quot;Meeting Scheduler Bot&quot;" default_focus="1" /></h1>
+                        </div>
+                        <notebook>
+                            <page name="page_script" string="Script">
+                                <field
+                                    name="script_step_ids"
+                                    widget="chatbot_steps_one2many"
+                                    context="{'chatbot_script_answer_display_short_name': 1}" />
+                            </page>
+                        </notebook>
+                    </sheet>
+                </form>
+            </field>
+        </record>
+        <record id="chatbot_script_view_tree" model="ir.ui.view">
+            <field name="name">chatbot.script.view.list</field>
+            <field name="model">chatbot.script</field>
+            <field name="arch" type="xml">
+                <list sample="1">
+                    <field name="title" />
+                </list>
+            </field>
+        </record>
+        <record id="chatbot_script_view_search" model="ir.ui.view">
+            <field name="name">chatbot.script.view.search</field>
+            <field name="model">chatbot.script</field>
+            <field name="arch" type="xml">
+                <search>
+                    <field
+                        name="title"
+                        string="Name"
+                        filter_domain="[('title', 'ilike', self)]" />
+                    <filter
+                        name="inactive"
+                        string="Archived"
+                        domain="[('active', '=', False)]" />
+                </search>
+            </field>
+        </record>
+        <record id="chatbot_script_action" model="ir.actions.act_window">
+            <field name="name">Chatbot</field>
+            <field name="res_model">chatbot.script</field>
+            <field name="view_mode">list,form</field>
+            <field name="help" type="html">
+                <p class="o_view_nocontent_smiling_face">
+                    Create a Chatbot
+                </p><p>
+                    You can create a new Chatbot with a defined script to speak to your website visitors.
+                </p>
+            </field>
+        </record>
+    </data>
+
+</odoo>

@@ -1,0 +1,351 @@
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-09-27 00:08+0000\n"
+"PO-Revision-Date: 2026-09-27 00:08+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: es\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: sale_competition
+#: model_terms:ir.ui.view,arch_db:sale_competition.sale_order_form_competition
+msgid "<span>of</span>"
+msgstr "<span>de</span>"
+
+#. module: sale_competition
+#: model_terms:ir.ui.view,arch_db:sale_competition.sale_order_form_competition
+msgid "<span>offers</span>"
+msgstr "<span>ofertas</span>"
+
+#. module: sale_competition
+#: model:ir.model,name:sale_competition.model_sale_config
+msgid "A company's sale configuration"
+msgstr "Configuración de ventas de una empresa"
+
+#. module: sale_competition
+#: model_terms:ir.ui.view,arch_db:sale_competition.res_config_settings_view_form_sale_competition
+msgid "Compare offers on what they cost the customer, not only on their price"
+msgstr ""
+"Compare las ofertas por lo que le cuestan al cliente, no solo por su precio"
+
+#. module: sale_competition
+#: model_terms:ir.ui.view,arch_db:sale_competition.sale_order_form_competition
+msgid "Compare the Offers"
+msgstr "Comparar las ofertas"
+
+#. module: sale_competition
+#: model:ir.ui.menu,name:sale_competition.menu_sale_competition
+#: model_terms:ir.ui.view,arch_db:sale_competition.res_config_settings_view_form_sale_competition
+msgid "Competition"
+msgstr "Competencia"
+
+#. module: sale_competition
+#: model:ir.model,name:sale_competition.model_competitor_offer
+msgid "Competitor Offer"
+msgstr "Oferta de competidor"
+
+#. module: sale_competition
+#: model:ir.model.fields,field_description:sale_competition.field_sale_order__competitor_offer_count
+msgid "Competitor Offer Count"
+msgstr "Número de ofertas de competidores"
+
+#. module: sale_competition
+#: model:ir.actions.act_window,name:sale_competition.competitor_offer_action_sale
+#: model:ir.model.fields,field_description:sale_competition.field_sale_order__competitor_offer_ids
+#: model:ir.ui.menu,name:sale_competition.menu_sale_competitor_offers
+msgid "Competitor Offers"
+msgstr "Ofertas de competidores"
+
+#. module: sale_competition
+#: model_terms:ir.ui.view,arch_db:sale_competition.view_sale_order_line_price_history_form_competition
+msgid "Competitor Prices"
+msgstr "Precios de la competencia"
+
+#. module: sale_competition
+#: model:ir.actions.act_window,name:sale_competition.competitor_action_sale
+#: model:ir.model.fields,field_description:sale_competition.field_sale_order__competitor_ids
+#: model:ir.ui.menu,name:sale_competition.menu_sale_competitors
+#: model_terms:ir.ui.view,arch_db:sale_competition.view_sale_order_line_price_history_form_competition
+msgid "Competitors"
+msgstr "Competidores"
+
+#. module: sale_competition
+#: model:ir.model,name:sale_competition.model_res_config_settings
+msgid "Config Settings"
+msgstr "Ajustes de configuración"
+
+#. module: sale_competition
+#: model:ir.model.fields,field_description:sale_competition.field_competitor_offer__display_name
+#: model:ir.model.fields,field_description:sale_competition.field_product_category__display_name
+#: model:ir.model.fields,field_description:sale_competition.field_res_config_settings__display_name
+#: model:ir.model.fields,field_description:sale_competition.field_sale_config__display_name
+#: model:ir.model.fields,field_description:sale_competition.field_sale_order__display_name
+#: model:ir.model.fields,field_description:sale_competition.field_sale_order_line__display_name
+msgid "Display Name"
+msgstr "Nombre para mostrar"
+
+#. module: sale_competition
+#: model:ir.model.fields,field_description:sale_competition.field_sale_order_line__limit_price
+msgid "Floor Price"
+msgstr "Precio mínimo"
+
+#. module: sale_competition
+#: model:ir.model.fields,field_description:sale_competition.field_sale_order_line__price_gap
+msgid "Gap to Market (%)"
+msgstr "Diferencia con el mercado (%)"
+
+#. module: sale_competition
+#: model:ir.model.fields,field_description:sale_competition.field_sale_order__price_gap_at_close
+msgid "Gap to Market at Close (%)"
+msgstr "Diferencia con el mercado al cierre (%)"
+
+#. module: sale_competition
+#: model:ir.model.fields,help:sale_competition.field_res_config_settings__sale_competition_leader_gap
+#: model:ir.model.fields,help:sale_competition.field_sale_config__competition_leader_gap
+msgid ""
+"How far below the market a price must be to count as leading it, with room "
+"to raise."
+msgstr ""
+"Qué tan por debajo del mercado debe estar un precio para considerarse líder,"
+" con margen para subir."
+
+#. module: sale_competition
+#: model:ir.model.fields,help:sale_competition.field_res_config_settings__sale_competition_undercut
+#: model:ir.model.fields,help:sale_competition.field_sale_config__competition_undercut
+msgid "How far below the market price the recommended price goes."
+msgstr "Qué tan por debajo del precio de mercado queda el precio recomendado."
+
+#. module: sale_competition
+#: model:ir.model.fields,help:sale_competition.field_sale_order_line__price_gap
+msgid ""
+"How far our net price sits above (positive) or below (negative) the market "
+"price."
+msgstr ""
+"Qué tan por encima (positivo) o por debajo (negativo) del precio de mercado "
+"está nuestro precio neto."
+
+#. module: sale_competition
+#: model_terms:ir.ui.view,arch_db:sale_competition.res_config_settings_view_form_sale_competition
+msgid "How quotations are measured against competitor offers"
+msgstr "Cómo se miden los presupuestos frente a las ofertas de competidores"
+
+#. module: sale_competition
+#: model:ir.model.fields,field_description:sale_competition.field_competitor_offer__id
+#: model:ir.model.fields,field_description:sale_competition.field_product_category__id
+#: model:ir.model.fields,field_description:sale_competition.field_res_config_settings__id
+#: model:ir.model.fields,field_description:sale_competition.field_sale_config__id
+#: model:ir.model.fields,field_description:sale_competition.field_sale_order__id
+#: model:ir.model.fields,field_description:sale_competition.field_sale_order_line__id
+msgid "ID"
+msgstr "ID"
+
+#. module: sale_competition
+#: model:ir.model.fields.selection,name:sale_competition.selection__sale_order_line__market_scope__segment
+msgid "Its Industry"
+msgstr "Su industria"
+
+#. module: sale_competition
+#: model:ir.model.fields,field_description:sale_competition.field_sale_config__competition_leader_gap
+msgid "Leader Gap (%)"
+msgstr "Diferencia de liderazgo (%)"
+
+#. module: sale_competition
+#: model:ir.model.fields.selection,name:sale_competition.selection__sale_order_line__market_scope__market
+#: model_terms:ir.ui.view,arch_db:sale_competition.sale_order_form_competition
+msgid "Market"
+msgstr "Mercado"
+
+#. module: sale_competition
+#: model:ir.model.fields,field_description:sale_competition.field_sale_order__market_position
+#: model:ir.model.fields,field_description:sale_competition.field_sale_order_line__market_position
+msgid "Market Position"
+msgstr "Posición en el mercado"
+
+#. module: sale_competition
+#: model:ir.model.fields,field_description:sale_competition.field_sale_order_line__market_price
+msgid "Market Price"
+msgstr "Precio de mercado"
+
+#. module: sale_competition
+#: model:ir.actions.act_window,name:sale_competition.market_price_action_sale
+#: model:ir.ui.menu,name:sale_competition.menu_sale_market_prices
+msgid "Market Prices"
+msgstr "Precios de mercado"
+
+#. module: sale_competition
+#: model:ir.model.fields,field_description:sale_competition.field_sale_order_line__market_scope
+msgid "Market Scope"
+msgstr "Alcance del mercado"
+
+#. module: sale_competition
+#: model:ir.model.fields,field_description:sale_competition.field_sale_config__competition_min_margin
+msgid "Minimum Margin (%)"
+msgstr "Margen mínimo (%)"
+
+#. module: sale_competition
+#: model:ir.model.fields,field_description:sale_competition.field_product_category__sale_min_margin
+msgid "Minimum Sale Margin (%)"
+msgstr "Margen mínimo de venta (%)"
+
+#. module: sale_competition
+#: model:ir.model.fields,field_description:sale_competition.field_sale_order__market_offer_count
+msgid "Offers Compared"
+msgstr "Ofertas comparadas"
+
+#. module: sale_competition
+#: model:ir.model.fields,field_description:sale_competition.field_sale_order__market_rank
+msgid "Our Rank"
+msgstr "Nuestra posición"
+
+#. module: sale_competition
+#: model:ir.model.fields,help:sale_competition.field_sale_order_line__limit_price
+msgid "Our cost plus the minimum margin: the lowest price to offer."
+msgstr ""
+"Nuestro costo más el margen mínimo: el precio más bajo que se puede ofrecer."
+
+#. module: sale_competition
+#: model:ir.model.fields,help:sale_competition.field_competitor_offer__sale_order_id
+msgid "Our quotation this offer competes with."
+msgstr "Nuestro presupuesto con el que compite esta oferta."
+
+#. module: sale_competition
+#: model_terms:ir.actions.act_window,help:sale_competition.competitor_offer_action_sale
+msgid ""
+"Price, terms, source and confidence: every offer feeds the market\n"
+"                price your quotations are compared with."
+msgstr ""
+"Precio, condiciones, fuente y confianza: cada oferta alimenta el precio\n"
+"                de mercado con el que se comparan sus presupuestos."
+
+#. module: sale_competition
+#: model:ir.model,name:sale_competition.model_product_category
+msgid "Product Category"
+msgstr "Categoría de producto"
+
+#. module: sale_competition
+#: model:ir.model.fields,field_description:sale_competition.field_competitor_offer__sale_order_id
+msgid "Quotation"
+msgstr "Presupuesto"
+
+#. module: sale_competition
+#: model:ir.model.fields,field_description:sale_competition.field_sale_order_line__recommended_price
+msgid "Recommended Price"
+msgstr "Precio recomendado"
+
+#. module: sale_competition
+#: model_terms:ir.ui.view,arch_db:sale_competition.sale_order_form_competition
+msgid "Record a Competitor Offer"
+msgstr "Registrar una oferta de competidor"
+
+#. module: sale_competition
+#: model_terms:ir.actions.act_window,help:sale_competition.competitor_offer_action_sale
+msgid "Record what a competitor offered one of your customers"
+msgstr "Registre lo que un competidor ofreció a uno de sus clientes"
+
+#. module: sale_competition
+#: model:ir.model,name:sale_competition.model_sale_order
+msgid "Sale Order"
+msgstr "Pedido de venta"
+
+#. module: sale_competition
+#: model:ir.model.fields,field_description:sale_competition.field_res_config_settings__sale_competition_leader_gap
+msgid "Sales Leader Gap (%)"
+msgstr "Diferencia de liderazgo en ventas (%)"
+
+#. module: sale_competition
+#: model:ir.model.fields,field_description:sale_competition.field_res_config_settings__sale_competition_min_margin
+msgid "Sales Minimum Margin (%)"
+msgstr "Margen mínimo de ventas (%)"
+
+#. module: sale_competition
+#: model:ir.model,name:sale_competition.model_sale_order_line
+msgid "Sales Order Line"
+msgstr "Línea de pedido de venta"
+
+#. module: sale_competition
+#: model:ir.model.fields,help:sale_competition.field_sale_order__competitor_ids
+msgid "The competitors whose offers compete with this quotation."
+msgstr "Los competidores cuyas ofertas compiten con este presupuesto."
+
+#. module: sale_competition
+#: model:ir.model.fields,help:sale_competition.field_sale_order__market_position
+msgid "The least favourable position among the quotation's lines."
+msgstr "La posición menos favorable entre las líneas del presupuesto."
+
+#. module: sale_competition
+#: model:ir.model.fields,help:sale_competition.field_sale_order_line__market_price
+msgid ""
+"The lowest comparable price a competitor offers for this product: to this "
+"customer when known, else to its industry, else to the market. Per this "
+"line's unit."
+msgstr ""
+"El precio comparable más bajo que un competidor ofrece por este producto: a "
+"este cliente cuando se conoce, si no, a su industria, si no, al mercado. Por"
+" la unidad de esta línea."
+
+#. module: sale_competition
+#: model:ir.model.fields,help:sale_competition.field_product_category__sale_min_margin
+msgid ""
+"The margin over cost below which a quotation line of this category should "
+"not go. Empty: the company's."
+msgstr ""
+"El margen sobre el costo por debajo del cual no debe quedar una línea de "
+"presupuesto de esta categoría. Vacío: el de la empresa."
+
+#. module: sale_competition
+#: model:ir.model.fields,help:sale_competition.field_res_config_settings__sale_competition_min_margin
+#: model:ir.model.fields,help:sale_competition.field_sale_config__competition_min_margin
+msgid ""
+"The margin over cost below which a quotation line should not go, for a "
+"product whose category sets none."
+msgstr ""
+"El margen sobre el costo por debajo del cual no debe quedar una línea de "
+"presupuesto, para un producto cuya categoría no define ninguno."
+
+#. module: sale_competition
+#: model:ir.model.fields,help:sale_competition.field_sale_order_line__recommended_price
+msgid "The market price less the undercut, never below the floor."
+msgstr ""
+"El precio de mercado menos la rebaja, nunca por debajo del precio mínimo."
+
+#. module: sale_competition
+#: model:ir.model.fields,help:sale_competition.field_sale_order__price_gap_at_close
+msgid ""
+"The quotation's gap to the market, weighted by line, when it was won or "
+"lost."
+msgstr ""
+"La diferencia del presupuesto con el mercado, ponderada por línea, cuando se"
+" ganó o se perdió."
+
+#. module: sale_competition
+#: model:ir.model.fields.selection,name:sale_competition.selection__sale_order_line__market_scope__partner
+msgid "This Customer"
+msgstr "Este cliente"
+
+#. module: sale_competition
+#: model:ir.model.fields,field_description:sale_competition.field_res_config_settings__sale_competition_undercut
+#: model:ir.model.fields,field_description:sale_competition.field_sale_config__competition_undercut
+msgid "Undercut (%)"
+msgstr "Rebaja (%)"
+
+#. module: sale_competition
+#: model:ir.model.fields,help:sale_competition.field_sale_order__market_rank
+msgid ""
+"Where this order stands among the competitor offers linked to it, compared "
+"on the products each offer quotes: 1 when no offer beats it."
+msgstr ""
+"Dónde queda este pedido entre las ofertas de competidores vinculadas a él, "
+"comparadas en los productos que cotiza cada oferta: 1 cuando ninguna oferta "
+"lo supera."
+
+#. module: sale_competition
+#: model:ir.actions.act_window,name:sale_competition.win_loss_action_sale
+#: model:ir.ui.menu,name:sale_competition.menu_sale_win_loss
+msgid "Win/Loss Analysis"
+msgstr "Análisis de ganados y perdidos"

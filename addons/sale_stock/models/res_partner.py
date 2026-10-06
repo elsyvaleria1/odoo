@@ -1,0 +1,100 @@
+from collections import defaultdict
+from datetime import timedelta
+
+from odoo import api, fields, models
+from odoo.libs.debug_log import DebugLog
+
+_debug = DebugLog(__name__)
+
+
+class ResPartner(models.Model):
+    _inherit = "res.partner"
+
+    sale_line_ids = fields.One2many(
+        comodel_name="sale.order.line",
+        inverse_name="partner_id",
+        string="Sale Lines",
+    )
+    customer_on_time_rate = fields.Float(
+        string="Customer On-Time Delivery Rate",
+        compute="_compute_customer_on_time_rate",
+        help="Over the past x days; the number of products delivered on time to this customer divided by the number of ordered products. "
+        "x is either the System Parameter sale_stock.on_time_delivery_days or the default 365",
+    )
+
+    @api.depends("sale_line_ids")
+    def _compute_customer_on_time_rate(self) -> None:
+        if not (
+            self.env["sale.order.line"].has_access("read")
+            and self.env["stock.move"].has_access("read")
+        ):
+            # a partner is readable by users who may not read its orders or
+            # moves; the rate over records they cannot see is -1, not an error
+            self.customer_on_time_rate = -1
+            _debug.logic("on_time_rate_unavailable", partners=self, reason="no_access")
+            return
+        date_order_days_delta = int(
+            self.env.registry.settings.get(
+                self.env, "sale_stock.on_time_delivery_days", "365"
+            ),
+        )
+        order_lines = self.env["sale.order.line"].search(
+            [
+                ("partner_id", "in", self.ids),
+                (
+                    "order_id.date_order",
+                    ">",
+                    fields.Date.today() - timedelta(date_order_days_delta),
+                ),
+                ("qty_transferred", "!=", 0),
+                ("order_id.state", "=", "done"),
+                (
+                    "product_id",
+                    "in",
+                    self.env["product.product"]
+                    .sudo()
+                    ._search([("type", "!=", "service")]),
+                ),
+            ],
+        )
+        lines_quantity = defaultdict(lambda: 0)
+        moves = self.env["stock.move"].search(
+            [("sale_line_id", "in", order_lines.ids), ("state", "=", "done")],
+        )
+        order_lines.read(["order_id", "partner_id", "product_uom_qty"], load="")
+        order_lines.order_id.read(["date_commitment"], load="")
+        moves.read(["sale_line_id", "date", "location_dest_id"], load="")
+        moves = moves.filtered(
+            lambda m: (
+                m.location_dest_id._is_outgoing()
+                and m.sale_line_id.order_id.date_commitment
+                and m.date.date() <= m.sale_line_id.order_id.date_commitment.date()
+            ),
+        )
+        for move in moves:
+            lines_quantity[move.sale_line_id.id] += (
+                move.product_uom_id._get_quantity_in_unit(
+                    move.quantity,
+                    move.product_id.uom_id,
+                    rounding_method="HALF-UP",
+                )
+            )
+        partner_dict = {}
+        for line in order_lines:
+            on_time, ordered = partner_dict.get(line.partner_id, (0, 0))
+            ordered += line.product_uom_qty
+            on_time += lines_quantity[line.id]
+            partner_dict[line.partner_id] = (on_time, ordered)
+        _debug.perf.count(
+            "customer_on_time_rate",
+            partners=len(self),
+            order_lines=len(order_lines),
+            moves=len(moves),
+            window_days=date_order_days_delta,
+        )
+        seen_partner = self.env["res.partner"]
+        for partner, numbers in partner_dict.items():
+            seen_partner |= partner
+            on_time, ordered = numbers
+            partner.customer_on_time_rate = on_time / ordered * 100 if ordered else -1
+        (self - seen_partner).customer_on_time_rate = -1

@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="crm_quotation_partner_view_form" model="ir.ui.view">
+        <field name="name">crm.quotation.partner.view.form</field>
+        <field name="model">wizard.crm.lead.create.quotation.missing.customer</field>
+        <field name="arch" type="xml">
+            <form string="New Quotation">
+                <group>
+                    <group>
+                        <field name="action" widget="radio" />
+                        <field name="lead_id" invisible="1" />
+                    </group>
+                </group>
+                <group invisible="action != 'exist'" required="action == 'exist'">
+                    <group>
+                        <field
+                            name="partner_id"
+                            context="{'res_partner_search_mode': 'customer'}"
+                            invisible="action != 'exist'"
+                            required="action == 'exist'" />
+                    </group>
+                </group>
+                <footer>
+                    <button
+                        name="action_apply"
+                        type="object"
+                        string="Confirm"
+                        class="btn-primary"
+                        data-hotkey="q" />
+                    <button
+                        special="cancel"
+                        string="Cancel"
+                        class="btn-secondary"
+                        data-hotkey="x" />
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="crm_quotation_partner_action" model="ir.actions.act_window">
+        <field name="name">New Quotation</field>
+        <field
+            name="res_model">wizard.crm.lead.create.quotation.missing.customer</field>
+        <field name="view_mode">form</field>
+        <field name="view_id" ref="crm_quotation_partner_view_form" />
+        <field name="target">new</field>
+    </record>
+
+</odoo>

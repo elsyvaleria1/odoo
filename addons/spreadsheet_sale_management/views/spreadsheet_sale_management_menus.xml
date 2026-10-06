@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <menuitem
+        id="menu_technical_spreadsheet_sale_order_template"
+        name="Sale Order Spreadsheets"
+        parent="spreadsheet_edition.menu_technical_spreadsheet"
+        action="sale_order_spreadsheet_action"
+        sequence="15" />
+
+</odoo>
